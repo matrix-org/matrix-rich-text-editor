@@ -1,0 +1,21 @@
+[package]
+authors = ["Andy Balaam <andy.balaam@matrix.org>"]
+edition = "2021"
+homepage = "https://gitlab.com/andybalaam/wysiwyg-rust"
+repository = "https://gitlab.com/andybalaam/wysiwyg-rust"
+description = "Swift and Kotlin bindings for wysiwyg-rust"
+keywords = ["matrix", "chat", "messaging", "composer", "wysiwyg"]
+license = "Apache-2.0"
+name = "wysiwyg-ffi"
+version = "0.1.0"
+rust-version = "1.60"
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+uniffi = "0.18.0"  # Keep in sync with where we run uniffi_bindgen
+wysiwyg = { path = "../../crates/wysiwyg" }
+
+[build-dependencies]
+uniffi_build = { version = "0.18.0", features = ["builtin-bindgen"] }

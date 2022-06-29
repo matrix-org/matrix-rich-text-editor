@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "bindings/wysiwyg-ffi",
+    "bindings/wysiwyg-wasm",
+    "crates/wysiwyg",
+]

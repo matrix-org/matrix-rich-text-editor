@@ -1,0 +1,23 @@
+[package]
+authors = ["Andy Balaam <andy.balaam@matrix.org>"]
+edition = "2021"
+homepage = "https://gitlab.com/andybalaam/wysiwyg-rust"
+repository = "https://gitlab.com/andybalaam/wysiwyg-rust"
+description = "WASM bindings for wysiwyg-rust"
+keywords = ["matrix", "chat", "messaging", "composer", "wysiwyg"]
+license = "Apache-2.0"
+name = "wysiwyg-wasm"
+version = "0.1.0"
+rust-version = "1.60"
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ['-Oz']
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+js-sys = "0.3.49"
+wasm-bindgen = "0.2.80"
+wasm-bindgen-futures = "0.4.30"
+wysiwyg = { path = "../../crates/wysiwyg" }

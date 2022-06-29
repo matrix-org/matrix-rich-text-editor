@@ -1,0 +1,17 @@
+[package]
+authors = ["Andy Balaam <andy.balaam@matrix.org>"]
+edition = "2021"
+homepage = "https://gitlab.com/andybalaam/wysiwyg-rust"
+repository = "https://gitlab.com/andybalaam/wysiwyg-rust"
+description = "Model code to power a WYSIWYG editor for Matrix"
+keywords = ["matrix", "chat", "messaging", "composer", "wysiwyg"]
+license = "Apache-2.0"
+name = "wysiwyg"
+version = "0.1.0"
+rust-version = "1.60"
+
+[features]
+
+[dependencies]
+
+[dev-dependencies]

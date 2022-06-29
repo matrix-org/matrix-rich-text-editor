@@ -1,0 +1,40 @@
+{
+    "name": "wysiwyg-wasm",
+    "version": "0.1.0",
+    "homepage": "https://gitlab.com/andybalaam/wysiwyg-rust",
+    "description": "WASM bindings for wysiwyg-rust",
+    "license": "Apache-2.0",
+    "collaborators": [
+        "Andy Balaam <andy.balaam@matrix.org>"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://gitlab.com/andybalaam/wysiwyg-rust"
+    },
+    "keywords": [
+        "matrix",
+        "chat",
+        "messaging",
+        "wysiwyg"
+    ],
+    "main": "wysiwyg.js",
+    "types": "pkg/wysiwyg.d.ts",
+    "files": [
+        "pkg/wysiwyg_bg.wasm",
+        "pkg/wysiwyg.js",
+        "pkg/wysiwyg.d.ts"
+    ],
+    "devDependencies": {
+        "wasm-pack": "^0.10.2",
+        "jest": "^28.1.0",
+        "typedoc": "^0.22.17"
+    },
+    "engines": {
+        "node": ">= 10"
+    },
+    "scripts": {
+        "build": "RUSTFLAGS='-C opt-level=z' wasm-pack build --release --target nodejs --out-name wysiwyg --out-dir ./pkg",
+        "test": "jest --verbose",
+        "doc": "typedoc --tsconfig ."
+    }
+}
