@@ -12,8 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+uniffi_macros::include_scaffolding!("my_rust_code");
+
+use std::sync::Arc;
+
 pub use wysiwyg::ComposerModel;
 
-pub fn new_composer_model() -> ComposerModel {
-    ComposerModel {}
+pub fn new_composer_model() -> Arc<ComposerModel> {
+    Arc::new(ComposerModel {})
 }

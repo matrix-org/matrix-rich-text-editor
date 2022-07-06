@@ -12,13 +12,27 @@ cargo test
 
 ## Building the bindings
 
-### WASM/JavaScript
+`Makefile` contains all the commands you need to run to get set up on
+Ubuntu, Debian and similar distros:
 
-* [bindings/wysiwyg-wasm/README.md](bindings/wysiwyg-wasm/README.md)
+```bash
+make prerequisites
+```
 
-### Kotlin/Android
+Now, to build all the bindings (on most Linux distros, hopefully), try:
 
-* [bindings/wysiwyg-ffi/README.md](bindings/wysiwyg-ffi/README.md)
+```bash
+make
+```
+
+Alternatively, to build for a single platform, or to learn more, see the
+individual README files:
+
+* WASM/JavaScript:
+  [bindings/wysiwyg-wasm/README.md](bindings/wysiwyg-wasm/README.md)
+
+* Kotlin/Android:
+  [bindings/wysiwyg-ffi/README.md](bindings/wysiwyg-ffi/README.md)
 
 ## License
 

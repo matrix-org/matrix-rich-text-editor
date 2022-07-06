@@ -14,7 +14,11 @@ rust-version = "1.60"
 crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
-uniffi = "0.18.0"  # Keep in sync with where we run uniffi_bindgen
+# Keep the uniffi version here in sync with the installed version of
+# uniffi-bindgen that is called from
+# ../../examples/example-android/app/build.gradle
+uniffi = "0.18.0"
+uniffi_macros = "0.18.0"
 wysiwyg = { path = "../../crates/wysiwyg" }
 
 [build-dependencies]

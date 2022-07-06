@@ -1,0 +1,7 @@
+namespace my_rust_code {
+    ComposerModel new_composer_model();
+};
+
+interface ComposerModel {
+    string identify_thyself();
+};

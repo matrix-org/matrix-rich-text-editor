@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Example Android</string>
+    <string name="initial_string">Initial String</string>
+</resources>
