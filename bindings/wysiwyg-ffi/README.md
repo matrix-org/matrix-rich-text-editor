@@ -82,34 +82,32 @@ This will create:
 ```bash
 mkdir -p ../../examples/example-android/app/src/main/jniLibs/aarch64
 cp ../../target/aarch64-linux-android/debug/libwysiwyg_ffi.so \
-    ../../examples/example-android/app/src/main/jniLibs/aarch64
+    ANDROID_PROJECT_HOME/app/src/main/jniLibs/aarch64
 
 mkdir -p ../../examples/example-android/app/src/main/jniLibs/x86_64
 cp ../../target/x86_64-linux-android/debug/libwysiwyg_ffi.so \
-    ../../examples/example-android/app/src/main/jniLibs/x86_64
+    ANDROID_PROJECT_HOME/app/src/main/jniLibs/x86_64
 ```
 
-Where ANDROID_PROJECT_HOME is something like
-`../../../wysiwyg-android/RustFFITest`.
+Where ANDROID_PROJECT_HOME is the root folder of an Android Studio project.
 
-(The example target path above is for Element Android.)
+In your Android project's app/build.gradle you need a section like this:
 
-See
-[Include prebuilt native libraries](https://developer.android.com/studio/projects/gradle-external-native-builds#jniLibs)
-in the Android documentation for more details.
-
-* Generate the Kotlin and Swift bindings:
-
-```bash
-cd bindings/wysiwyg-ffi
-uniffi-bindgen generate src/api.udl \
-    --language kotlin \
-    --out-dir ../../examples/example-android/app/build/generated/source/
-
-# TODO
-# uniffi-bindgen generate src/api.udl \
-#     --language swift \
-#     --out-dir ../../examples/example-kotlin/TODO
+```gradle
+android.applicationVariants.all { variant ->
+    def t = tasks.register("generate${variant.name.capitalize()}UniFFIBindings", Exec) {
+        workingDir "${project.projectDir}"
+        // Runs the bindings generation, note that you must have uniffi-bindgen installed and in your PATH environment variable
+        commandLine 'uniffi-bindgen', 'generate', '../../../bindings/ffi/src/wysiwyg_composer.udl', '--language', 'kotlin', '--out-dir', "${buildDir}/generated/source/uniffi/${variant.name}/java"
+    }
+    variant.javaCompileProvider.get().dependsOn(t)
+    def sourceSet = variant.sourceSets.find { it.name == variant.name }
+    sourceSet.java.srcDir new File(buildDir, "generated/source/uniffi/${variant.name}/java")
+}
 ```
 
-## Trying it out
+which will then allow you to use the Rust code in your Kotlin like this:
+
+```kotlin
+val y = uniffi.wysiwyg_composer.someMethod()
+```

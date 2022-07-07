@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-uniffi_macros::include_scaffolding!("my_rust_code");
+uniffi_macros::include_scaffolding!("wysiwyg_composer");
 
 use std::sync::Arc;
 

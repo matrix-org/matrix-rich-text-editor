@@ -23,24 +23,21 @@ pkg/matrix_sdk_wysiwyg_bg.wasm
 pkg/matrix_sdk_wysiwyg_bg.wasm.d.ts
 pkg/matrix_sdk_wysiwyg.d.ts
 pkg/matrix_sdk_wysiwyg.js
-pkg/package.json
-... plus other files copied in from the project root
+... plus other files
 ```
 
-## Trying it out
+These files should be copied into a web project and imported with code like:
 
-Create a file inside `pkg/`, called `try_it.mjs` like this:
+```html
+<script type="module">
+import init, { some_method_from_rust }
+    from './generated/matrix_sdk_wysiwyg.js';
 
-```javascript
-import { new_composer_model } from './wysiwyg.js';
+async function run() {
+    await init();
+    some_method_from_rust();
+}
 
-const m = new_composer_model();
-console.log(m.identify_thyself());
-```
-
-Run it like this:
-
-```bash
-$ node ./try_it.js
-I am a ComposerModel
+run();
+</script>
 ```

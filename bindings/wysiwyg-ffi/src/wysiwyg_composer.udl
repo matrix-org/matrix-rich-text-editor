@@ -1,4 +1,4 @@
-namespace my_rust_code {
+namespace wysiwyg_composer {
     ComposerModel new_composer_model();
 };
 

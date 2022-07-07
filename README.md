@@ -4,35 +4,28 @@ Model code and bindings to power a WYSIWYG editor for Matrix.
 
 ## Building the code
 
-* [Install Rust](https://www.rust-lang.org/tools/install)
-
-```bash
-cargo test
-```
-
-## Building the bindings
-
-`Makefile` contains all the commands you need to run to get set up on
-Ubuntu, Debian and similar distros:
-
-```bash
-make prerequisites
-```
-
-Now, to build all the bindings (on most Linux distros, hopefully), try:
-
-```bash
-make
-```
-
-Alternatively, to build for a single platform, or to learn more, see the
-individual README files:
+Get the prerequisites for each platform by reading the READMEs for them:
 
 * WASM/JavaScript:
   [bindings/wysiwyg-wasm/README.md](bindings/wysiwyg-wasm/README.md)
 
 * Kotlin/Android:
   [bindings/wysiwyg-ffi/README.md](bindings/wysiwyg-ffi/README.md)
+
+Now, to build all the bindings, try:
+
+```bash
+make
+```
+
+To build for a single platform, or to learn more, see the individual README
+files:
+
+## More info
+
+For more detailed explanations and examples of platform-specific code to use
+Rust bindings like those generated here, see
+[Building cross-platform Rust for Web, Android and iOS – a minimal example](https://www.artificialworlds.net/blog/2022/07/06/building-cross-platform-rust-for-web-android-and-ios-a-minimal-example/).
 
 ## License
 
