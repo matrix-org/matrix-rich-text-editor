@@ -15,7 +15,17 @@ android-x86_64:
 	echo - bindings/wysiwyg-ffi/src/wysiwyg_composer.udl
 
 ios:
-	# TODO
+	cd bindings/ffi && \
+	cargo build --target aarch64-apple-ios && \
+	cargo build --target aarch64-apple-ios-sim && \
+	cargo build --target x86_64-apple-ios && \
+	mkdir -p ../../target/ios-combined && \
+	lipo -create \
+	  ../../target/x86_64-apple-ios/debug/libwysiwyg_composer.a \
+	  ../../target/aarch64-apple-ios-sim/debug/libwysiwyg_composer.a \
+	  -output ../../target/ios-combined/libwysiwyg_composer.a
+	echo Outputs for iOS:
+	echo - target/ios-combined/libwysiwyg_composer.a
 
 web:
 	cd bindings/wysiwyg-wasm && \

@@ -5,6 +5,8 @@ wysiwyg-rust.
 
 ## Building
 
+### Android
+
 * [Install Rust](https://www.rust-lang.org/tools/install)
 * [Install Android NDK](https://developer.android.com/ndk/downloads) - download
   android-ndk-r22b-linux-x86_64.zip and unzip it e.g.:
@@ -111,3 +113,70 @@ which will then allow you to use the Rust code in your Kotlin like this:
 ```kotlin
 val y = uniffi.wysiwyg_composer.someMethod()
 ```
+
+See
+[Example Rust Bindings](https://gitlab.com/andybalaam/example-rust-bindings/)
+for a full example of how it all fits together.
+
+### iOS
+
+* Build shared object:
+
+```bash
+cd bindings/ffi
+cargo build --target aarch64-apple-ios
+cargo build --target aarch64-apple-ios-sim
+cargo build --target x86_64-apple-ios
+
+mkdir -p ../../target/ios-combined
+lipo -create \
+  ../../target/x86_64-apple-ios/debug/libwysiwyg_composer.a \
+  ../../target/aarch64-apple-ios-sim/debug/libwysiwyg_composer.a \
+  -output ../../target/ios-combined/libwysiwyg_composer.a
+```
+
+This will create:
+
+```
+../../target/x86_64-apple-ios/debug/libwysiwyg_composer.a
+../../target/aarch64-apple-ios-sim/debug/libwysiwyg_composer.a
+../../target/ios-combined/libwysiwyg_composer.a
+```
+
+* Copy the shared object into your XCode project
+
+```bash
+cp ../../target/ios-combined/libwysiwyg_composer.a MY_XCODE_PROJECT/
+```
+
+(Where MY_XCODE_PROJECT is the location of the XCode project.)
+
+* Generate the bindings:
+
+```bash
+uniffi-bindgen \
+    generate src/wysiwyg_composer.udl \
+    --language swift \
+    --config uniffi.toml \
+    --out-dir MY_XCODE_PROJECT
+
+cd MY_XCODE_PROJECT
+mv *.h         headers/
+mv *.modulemap headers/
+mv *.swift     Sources/
+```
+
+* Generate the .xcframework file:
+
+```bash
+xcodebuild -create-xcframework \
+  -library ../../target/aarch64-apple-ios/debug/libwysiwyg_composer.a" \
+  -headers MY_XCODE_PROJECT/headers \
+  -library MY_XCODE_PROJECT/libwysiwyg_composer.a" \
+  -headers MY_XCODE_PROJECT/headers \
+  -output MY_XCODE_PROJECT/ExampleRustBindings.xcframework"
+```
+
+Now you can use the code in your XCode project.  See
+[Example Rust Bindings](https://gitlab.com/andybalaam/example-rust-bindings/)
+for a full example of how it all fits together.
