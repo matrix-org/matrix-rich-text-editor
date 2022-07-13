@@ -12,12 +12,85 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! WYSIWYG composer library
-
 pub struct ComposerModel {}
 
 impl ComposerModel {
-    pub fn identify_thyself(&self) -> String {
-        String::from("I am a ComposerModel")
+    pub fn new() -> Self {
+        Self {}
     }
+
+    /**
+     * Cursor is at end_codepoint.
+     */
+    pub fn select(&mut self, start_codepoint: usize, end_codepoint: usize) {
+        drop(start_codepoint);
+        drop(end_codepoint);
+    }
+
+    pub fn replace_text(&mut self, new_text: String) -> ComposerUpdate {
+        drop(new_text);
+        ComposerUpdate::keep(MenuState::None)
+    }
+
+    pub fn backspace(&mut self) -> ComposerUpdate {
+        ComposerUpdate::keep(MenuState::None)
+    }
+
+    pub fn delete(&mut self) -> ComposerUpdate {
+        ComposerUpdate::keep(MenuState::None)
+    }
+
+    pub fn action_response(
+        &mut self,
+        action_id: String,
+        response: ActionResponse,
+    ) -> ComposerUpdate {
+        drop(action_id);
+        drop(response);
+        ComposerUpdate::keep(MenuState::None)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ComposerUpdate {
+    pub text_update: TextUpdate,
+    pub menu_state: MenuState,
+    pub actions: Vec<ComposerAction>,
+}
+
+impl ComposerUpdate {
+    pub fn keep(menu_state: MenuState) -> Self {
+        Self {
+            text_update: TextUpdate::Keep,
+            menu_state,
+            actions: Vec::new(),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum TextUpdate {
+    Keep,
+    ReplaceAll(String),
+}
+
+#[derive(Debug, Clone)]
+pub enum MenuState {
+    None,
+}
+
+#[derive(Debug, Clone)]
+pub struct ComposerAction {
+    pub action_id: String,
+    pub action: ActionRequest,
+}
+
+#[derive(Debug, Clone)]
+pub enum ActionRequest {
+    Dummy,
+}
+
+#[derive(Debug, Clone)]
+pub enum ActionResponse {
+    Dummy,
 }

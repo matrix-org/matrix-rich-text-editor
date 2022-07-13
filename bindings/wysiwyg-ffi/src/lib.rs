@@ -14,10 +14,24 @@
 
 uniffi_macros::include_scaffolding!("wysiwyg_composer");
 
+mod ffi_action_request;
+mod ffi_action_response;
+mod ffi_composer_action;
+mod ffi_composer_model;
+mod ffi_composer_update;
+mod ffi_menu_state;
+mod ffi_text_update;
+
 use std::sync::Arc;
 
-pub use wysiwyg::ComposerModel;
+pub use crate::ffi_action_request::ActionRequest;
+pub use crate::ffi_action_response::ActionResponse;
+pub use crate::ffi_composer_action::ComposerAction;
+pub use crate::ffi_composer_model::ComposerModel;
+pub use crate::ffi_composer_update::ComposerUpdate;
+pub use crate::ffi_menu_state::MenuState;
+pub use crate::ffi_text_update::TextUpdate;
 
 pub fn new_composer_model() -> Arc<ComposerModel> {
-    Arc::new(ComposerModel {})
+    Arc::new(ComposerModel::new())
 }
