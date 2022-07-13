@@ -14,18 +14,38 @@ android-x86_64:
 	echo - target/x86_64-linux-android/release/libwysiwyg_ffi.so
 	echo - bindings/wysiwyg-ffi/src/wysiwyg_composer.udl
 
+EXAMPLE_IOS := ../../examples/example-ios
+
 ios:
-	cd bindings/ffi && \
-	cargo build -release --target aarch64-apple-ios && \
-	cargo build -release --target aarch64-apple-ios-sim && \
-	cargo build -release --target x86_64-apple-ios && \
-	mkdir -p ../../target/ios-combined && \
+	cd bindings/wysiwyg-ffi && \
+	cargo build --release --target aarch64-apple-ios && \
+	cargo build --release --target aarch64-apple-ios-sim && \
+	cargo build --release --target x86_64-apple-ios && \
+	mkdir -p ../../target/ios-simulator && \
 	lipo -create \
-	  ../../target/x86_64-apple-ios/release/libwysiwyg_composer.a \
-	  ../../target/aarch64-apple-ios-sim/release/libwysiwyg_composer.a \
-	  -output ../../target/ios-combined/libwysiwyg_composer.a
-	echo Outputs for iOS:
-	echo - target/ios-combined/libwysiwyg_composer.a
+	  ../../target/x86_64-apple-ios/release/libwysiwyg_ffi.a \
+	  ../../target/aarch64-apple-ios-sim/release/libwysiwyg_ffi.a \
+	  -output ../../target/ios-simulator/libwysiwyg_ffi.a && \
+	mkdir -p ${EXAMPLE_IOS} && \
+	rm -rf ${EXAMPLE_IOS}/Sources && \
+	rm -rf ${EXAMPLE_IOS}/headers && \
+	rm -rf ${EXAMPLE_IOS}/LibWysiwyg.xcframework && \
+	uniffi-bindgen \
+		generate src/wysiwyg_composer.udl \
+		--language swift \
+		--config uniffi.toml \
+		--out-dir ${EXAMPLE_IOS} && \
+	mkdir -p ${EXAMPLE_IOS}/headers && \
+	mkdir -p ${EXAMPLE_IOS}/Sources && \
+	mv ${EXAMPLE_IOS}/*.h         ${EXAMPLE_IOS}/headers/ && \
+	mv ${EXAMPLE_IOS}/*.modulemap ${EXAMPLE_IOS}/headers/module.modulemap && \
+	mv ${EXAMPLE_IOS}/*.swift     ${EXAMPLE_IOS}/Sources/ && \
+	xcodebuild -create-xcframework \
+	  -library ../../target/aarch64-apple-ios/release/libwysiwyg_ffi.a \
+	  -headers ${EXAMPLE_IOS}/headers \
+	  -library ../../target/ios-simulator/libwysiwyg_ffi.a \
+	  -headers ${EXAMPLE_IOS}/headers \
+	  -output ${EXAMPLE_IOS}/LibWysiwyg.xcframework
 
 web:
 	cd bindings/wysiwyg-wasm && \
