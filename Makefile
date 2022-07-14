@@ -30,9 +30,14 @@ ios:
 web:
 	cd bindings/wysiwyg-wasm && \
 	npm install && \
-	npm run build
-	echo Outputs for web:
-	echo - pkg/*
+	npm run build && \
+	mkdir -p ../../examples/example-web/generated && \
+	cp \
+		pkg/wysiwyg_bg.wasm \
+		pkg/wysiwyg_bg.wasm.d.ts \
+		pkg/wysiwyg.d.ts \
+		pkg/wysiwyg.js \
+		../../examples/example-web/generated/
 
 clean:
 	cargo clean

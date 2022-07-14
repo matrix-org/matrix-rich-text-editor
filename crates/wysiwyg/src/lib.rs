@@ -28,16 +28,23 @@ impl ComposerModel {
     }
 
     pub fn replace_text(&mut self, new_text: String) -> ComposerUpdate {
-        drop(new_text);
-        ComposerUpdate::keep(MenuState::None)
+        if new_text == "a" {
+            ComposerUpdate::replace_all(String::from("BOO!"), 2, 3)
+        } else {
+            ComposerUpdate::keep()
+        }
+    }
+
+    pub fn enter(&mut self) -> ComposerUpdate {
+        ComposerUpdate::keep()
     }
 
     pub fn backspace(&mut self) -> ComposerUpdate {
-        ComposerUpdate::keep(MenuState::None)
+        ComposerUpdate::keep()
     }
 
     pub fn delete(&mut self) -> ComposerUpdate {
-        ComposerUpdate::keep(MenuState::None)
+        ComposerUpdate::keep()
     }
 
     pub fn action_response(
@@ -47,7 +54,7 @@ impl ComposerModel {
     ) -> ComposerUpdate {
         drop(action_id);
         drop(response);
-        ComposerUpdate::keep(MenuState::None)
+        ComposerUpdate::keep()
     }
 }
 
@@ -59,10 +66,26 @@ pub struct ComposerUpdate {
 }
 
 impl ComposerUpdate {
-    pub fn keep(menu_state: MenuState) -> Self {
+    pub fn keep() -> Self {
         Self {
             text_update: TextUpdate::Keep,
-            menu_state,
+            menu_state: MenuState::None,
+            actions: Vec::new(),
+        }
+    }
+
+    pub fn replace_all(
+        replacement_html: String,
+        selection_start_codepoint: usize,
+        selection_end_codepoint: usize,
+    ) -> Self {
+        Self {
+            text_update: TextUpdate::ReplaceAll(ReplaceAll {
+                replacement_html,
+                selection_start_codepoint,
+                selection_end_codepoint,
+            }),
+            menu_state: MenuState::None,
             actions: Vec::new(),
         }
     }
@@ -71,7 +94,14 @@ impl ComposerUpdate {
 #[derive(Debug, Clone)]
 pub enum TextUpdate {
     Keep,
-    ReplaceAll(String),
+    ReplaceAll(ReplaceAll),
+}
+
+#[derive(Debug, Clone)]
+pub struct ReplaceAll {
+    pub replacement_html: String,
+    pub selection_start_codepoint: usize,
+    pub selection_end_codepoint: usize,
 }
 
 #[derive(Debug, Clone)]
