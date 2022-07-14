@@ -83,9 +83,9 @@ This will create:
 
 ```bash
 NDK_HOME/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-strip \
-    examples/example-android/app/src/main/jniLibs/aarch64/libuniffi_my_rust_code.so
+    ../../target/aarch64-linux-android/debug/libwysiwyg_ffi.so
 NDK_HOME/toolchains/x86_64-4.9/prebuilt/linux-x86_64/bin/x86_64-linux-android-strip \
-    examples/example-android/app/src/main/jniLibs/aarch64/libuniffi_my_rust_code.so
+    ../../target/x86_64-linux-android/debug/libwysiwyg_ffi.so
 ```
 
 Replacing NDK_HOME with something like `/home/andy/android-ndk-r22b/`.
