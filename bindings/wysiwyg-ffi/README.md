@@ -89,6 +89,10 @@ cp ../../target/aarch64-linux-android/debug/libwysiwyg_ffi.so \
 mkdir -p ../../examples/example-android/app/src/main/jniLibs/x86_64
 cp ../../target/x86_64-linux-android/debug/libwysiwyg_ffi.so \
     ANDROID_PROJECT_HOME/app/src/main/jniLibs/x86_64
+
+mkdir -p ../../examples/example-android/app/src/main/jniLibs/arm64-v8a
+cp ../../target/aarch64-linux-android/debug/libwysiwyg_ffi.so \
+    ANDROID_PROJECT_HOME/app/src/main/jniLibs/arm64-v8a
 ```
 
 Where ANDROID_PROJECT_HOME is the root folder of an Android Studio project.
