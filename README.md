@@ -1,6 +1,7 @@
 # WYSIWYG-rust
 
-Model code and bindings to power a WYSIWYG editor for Matrix.
+Experiments with a WYSIWYG editor for Matrix, for possible inclusion in Element
+clients.
 
 ## Building the code
 
