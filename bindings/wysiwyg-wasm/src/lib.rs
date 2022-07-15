@@ -19,7 +19,7 @@ use wasm_bindgen::prelude::*;
 #[wasm_bindgen]
 pub fn new_composer_model() -> ComposerModel {
     ComposerModel {
-        inner: wysiwyg::ComposerModel {},
+        inner: wysiwyg::ComposerModel::new(),
     }
 }
 
@@ -40,7 +40,7 @@ impl ComposerModel {
         self.inner.select(
             usize::try_from(start_codepoint).unwrap(),
             usize::try_from(end_codepoint).unwrap(),
-        )
+        );
     }
 
     pub fn replace_text(&mut self, new_text: String) -> ComposerUpdate {
@@ -57,6 +57,10 @@ impl ComposerModel {
 
     pub fn delete(&mut self) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.delete())
+    }
+
+    pub fn bold(&mut self) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.bold())
     }
 
     /*pub fn action_response(

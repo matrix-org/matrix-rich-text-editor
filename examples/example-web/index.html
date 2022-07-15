@@ -12,76 +12,11 @@
 </style>
 </head>
 <body>
-<div
-    id="editor"
-    contenteditable="true"
-    role="textbox"
-/>
-
-<script type="module">
-import init, { new_composer_model, ComposerUpdate } from './generated/wysiwyg.js';
-
-let composer_model;
-let editor;
-
-async function run() {
-    await init();
-
-    composer_model = new_composer_model();
-
-    editor = document.getElementById('editor');
-    editor.addEventListener('input', editor_input);
-}
-
-function editor_input(e) {
-    const update = process_input(e);
-    if (update) {
-        const repl = update.text_update().replace_all;
-        if (repl) {
-            replace_editor(
-                repl.replacement_html,
-                repl.selection_start_codepoint,
-                repl.selection_end_codepoint
-            );
-        }
-    }
-}
-
-function replace_editor(html, start_codepoint, end_codepoint) {
-    editor.innerHTML = html;
-
-    const range = document.createRange();
-    const textNode = editor.childNodes[0];
-    range.setStart(textNode, start_codepoint);
-    range.setEnd(textNode, end_codepoint);
-    var sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-}
-
-function process_input(e) {
-    switch (e.inputType) {
-        case "insertText":
-            return composer_model.replace_text(e.data);
-            break;
-        case "insertParagraph":
-            return composer_model.enter(e.data);
-            break;
-        case "deleteContentBackward":
-            return composer_model.backspace(e.data);
-            break;
-        case "deleteContentForward":
-            return composer_model.delete(e.data);
-            break;
-        default:
-            // TODO: cover all of https://rawgit.com/w3c/input-events/v1/index.html#interface-InputEvent-Attributes
-            console.error(`Unknown input type: ${e.inputType}`);
-            console.error(e);
-            return null;
-    }
-}
-
-run();
-</script>
-    </body>
+<div id="editor" contenteditable="true" role="textbox"><br/></div>
+<!--
+<button id="setrange">!</button>
+<input type="checkbox" id="doselectionchange" checked></input>
+-->
+<script type="module" src="wysiwyg.js"></script>
+</body>
 </html>

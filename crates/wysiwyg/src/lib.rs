@@ -12,27 +12,62 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub struct ComposerModel {}
+pub struct ComposerModel {
+    html: String, // TODO: not an AST yet!
+    selection_start_codepoint: usize,
+    selection_end_codepoint: usize,
+}
 
 impl ComposerModel {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            html: String::from(""),
+            selection_start_codepoint: 0,
+            selection_end_codepoint: 0,
+        }
+    }
+
+    pub fn create_update_replace_all(&self) -> ComposerUpdate {
+        ComposerUpdate::replace_all(
+            self.html.clone(),
+            self.selection_start_codepoint,
+            self.selection_end_codepoint,
+        )
+    }
+
+    /**
+     * TODO: just a hack
+     */
+    fn do_bold(&mut self) {
+        let mut range =
+            [self.selection_start_codepoint, self.selection_end_codepoint];
+        range.sort();
+
+        self.html = format!(
+            "{}<strong>{}</strong>{}",
+            &self.html[..range[0]],
+            &self.html[range[0]..range[1]],
+            &self.html[range[1]..]
+        );
     }
 
     /**
      * Cursor is at end_codepoint.
      */
     pub fn select(&mut self, start_codepoint: usize, end_codepoint: usize) {
-        drop(start_codepoint);
-        drop(end_codepoint);
+        self.selection_start_codepoint = start_codepoint;
+        self.selection_end_codepoint = end_codepoint;
     }
 
     pub fn replace_text(&mut self, new_text: String) -> ComposerUpdate {
-        if new_text == "a" {
-            ComposerUpdate::replace_all(String::from("BOO!"), 2, 3)
-        } else {
-            ComposerUpdate::keep()
-        }
+        self.html += &new_text; // TODO: just a hack
+        self.selection_start_codepoint += 1;
+        self.selection_end_codepoint += 1;
+
+        // TODO: for now, we replace every time, to check ourselves, but
+        // at least some of the time we should not
+        self.create_update_replace_all()
+        //ComposerUpdate::keep()
     }
 
     pub fn enter(&mut self) -> ComposerUpdate {
@@ -45,6 +80,11 @@ impl ComposerModel {
 
     pub fn delete(&mut self) -> ComposerUpdate {
         ComposerUpdate::keep()
+    }
+
+    pub fn bold(&mut self) -> ComposerUpdate {
+        self.do_bold();
+        self.create_update_replace_all()
     }
 
     pub fn action_response(
