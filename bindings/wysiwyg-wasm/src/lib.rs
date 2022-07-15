@@ -43,7 +43,7 @@ impl ComposerModel {
         );
     }
 
-    pub fn replace_text(&mut self, new_text: String) -> ComposerUpdate {
+    pub fn replace_text(&mut self, new_text: &str) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.replace_text(new_text))
     }
 

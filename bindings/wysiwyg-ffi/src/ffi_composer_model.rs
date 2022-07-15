@@ -26,7 +26,7 @@ impl ComposerModel {
         new_text: String,
     ) -> Arc<ComposerUpdate> {
         Arc::new(ComposerUpdate::from(
-            self.inner.lock().unwrap().replace_text(new_text),
+            self.inner.lock().unwrap().replace_text(&new_text),
         ))
     }
 

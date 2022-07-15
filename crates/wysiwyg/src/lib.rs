@@ -59,8 +59,8 @@ impl ComposerModel {
         self.selection_end_codepoint = end_codepoint;
     }
 
-    pub fn replace_text(&mut self, new_text: String) -> ComposerUpdate {
-        self.html += &new_text; // TODO: just a hack
+    pub fn replace_text(&mut self, new_text: &str) -> ComposerUpdate {
+        self.html += new_text; // TODO: just a hack
         self.selection_start_codepoint += 1;
         self.selection_end_codepoint += 1;
 
