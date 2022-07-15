@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod composer_action;
-mod composer_model;
-mod composer_update;
-mod menu_state;
-mod text_update;
+#[derive(Debug, Clone)]
+pub enum TextUpdate {
+    Keep,
+    ReplaceAll(ReplaceAll),
+}
 
-pub use crate::composer_action::ActionRequest;
-pub use crate::composer_action::ActionResponse;
-pub use crate::composer_action::ComposerAction;
-pub use crate::composer_model::ComposerModel;
-pub use crate::composer_update::ComposerUpdate;
-pub use crate::menu_state::MenuState;
-pub use crate::text_update::ReplaceAll;
-pub use crate::text_update::TextUpdate;
+#[derive(Debug, Clone)]
+pub struct ReplaceAll {
+    pub replacement_html: String,
+    pub selection_start_codepoint: usize,
+    pub selection_end_codepoint: usize,
+}

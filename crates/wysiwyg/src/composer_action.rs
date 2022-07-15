@@ -12,17 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod composer_action;
-mod composer_model;
-mod composer_update;
-mod menu_state;
-mod text_update;
+#[derive(Debug, Clone)]
+pub struct ComposerAction {
+    pub action_id: String,
+    pub action: ActionRequest,
+}
 
-pub use crate::composer_action::ActionRequest;
-pub use crate::composer_action::ActionResponse;
-pub use crate::composer_action::ComposerAction;
-pub use crate::composer_model::ComposerModel;
-pub use crate::composer_update::ComposerUpdate;
-pub use crate::menu_state::MenuState;
-pub use crate::text_update::ReplaceAll;
-pub use crate::text_update::TextUpdate;
+#[derive(Debug, Clone)]
+pub enum ActionRequest {
+    Dummy,
+}
+
+#[derive(Debug, Clone)]
+pub enum ActionResponse {
+    Dummy,
+}
