@@ -11,4 +11,5 @@
 
 ## Later
 
+- [ ] Characters made from multiple codepoints - how does web handle these?
 - [ ] Allow pasting rich text - use InputEvent.dataTransfer to find it

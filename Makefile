@@ -43,3 +43,6 @@ clean:
 	cargo clean
 	rm -rf bindings/wysiwyg-wasm/node_modules
 	rm -rf bindings/wysiwyg-wasm/pkg
+
+test:
+	cargo test
