@@ -125,11 +125,11 @@ impl TextUpdate {
                 replace_all: Some(ReplaceAll {
                     replacement_html: r.replacement_html,
                     selection_start_codepoint: u32::try_from(
-                        r.selection_start_codepoint,
+                        r.selection_start_codepoint.as_usize(),
                     )
                     .unwrap(),
                     selection_end_codepoint: u32::try_from(
-                        r.selection_end_codepoint,
+                        r.selection_end_codepoint.as_usize(),
                     )
                     .unwrap(),
                 }),

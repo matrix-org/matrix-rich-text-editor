@@ -14,11 +14,11 @@ impl TextUpdate {
             wysiwyg::TextUpdate::ReplaceAll(replace_all) => Self::ReplaceAll {
                 replacement_html: replace_all.replacement_html,
                 selection_start_codepoint: u32::try_from(
-                    replace_all.selection_start_codepoint,
+                    replace_all.selection_start_codepoint.as_usize(),
                 )
                 .unwrap(),
                 selection_end_codepoint: u32::try_from(
-                    replace_all.selection_end_codepoint,
+                    replace_all.selection_end_codepoint.as_usize(),
                 )
                 .unwrap(),
             },

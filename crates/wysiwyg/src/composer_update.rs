@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{text_update::ReplaceAll, ComposerAction, MenuState, TextUpdate};
+use crate::{
+    composer_model::CodepointLocation, text_update::ReplaceAll, ComposerAction,
+    MenuState, TextUpdate,
+};
 
 #[derive(Debug, Clone)]
 pub struct ComposerUpdate {
@@ -32,8 +35,8 @@ impl ComposerUpdate {
 
     pub fn replace_all(
         replacement_html: String,
-        selection_start_codepoint: usize,
-        selection_end_codepoint: usize,
+        selection_start_codepoint: CodepointLocation,
+        selection_end_codepoint: CodepointLocation,
     ) -> Self {
         Self {
             text_update: TextUpdate::ReplaceAll(ReplaceAll {

@@ -24,8 +24,8 @@ fn can_instantiate_a_model_and_call_methods() {
 
     if let TextUpdate::ReplaceAll(r) = update.text_update {
         assert_eq!(r.replacement_html, "f<strong>o</strong>o");
-        assert_eq!(r.selection_start_codepoint, 1);
-        assert_eq!(r.selection_end_codepoint, 2);
+        assert_eq!(r.selection_start_codepoint.as_usize(), 1);
+        assert_eq!(r.selection_end_codepoint.as_usize(), 2);
     } else {
         panic!("Expected to receive a ReplaceAll response");
     }

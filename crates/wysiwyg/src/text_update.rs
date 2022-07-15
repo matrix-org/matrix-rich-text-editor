@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::composer_model::CodepointLocation;
+
 #[derive(Debug, Clone)]
 pub enum TextUpdate {
     Keep,
@@ -21,6 +23,6 @@ pub enum TextUpdate {
 #[derive(Debug, Clone)]
 pub struct ReplaceAll {
     pub replacement_html: String,
-    pub selection_start_codepoint: usize,
-    pub selection_end_codepoint: usize,
+    pub selection_start_codepoint: CodepointLocation,
+    pub selection_end_codepoint: CodepointLocation,
 }
