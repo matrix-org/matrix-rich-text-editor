@@ -60,6 +60,9 @@ checked in to Git.)
 cargo install uniffi_bindgen
 ```
 
+Make sure you install same version of uniffi_bindgen that is mentioned in
+`bindings/wysiwyg-ffi/Cargo.toml`, otherwise you will get weird errors.
+
 * Build shared object:
 
 ```bash
