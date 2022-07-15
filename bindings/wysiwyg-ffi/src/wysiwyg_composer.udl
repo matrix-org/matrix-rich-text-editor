@@ -33,7 +33,11 @@ interface ComposerUpdate {
 [Enum]
 interface TextUpdate {
     Keep();
-    ReplaceAll(string replacement_text);
+    ReplaceAll(
+        string replacement_html,
+        u32 selection_start_codepoint,
+        u32 selection_end_codepoint
+    );
 };
 
 [Enum]
