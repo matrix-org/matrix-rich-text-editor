@@ -12,10 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use wysiwyg::ComposerModel;
+use wysiwyg::{ComposerModel, TextUpdate};
 
 #[test]
-fn test_self_identity() {
-    let model = ComposerModel {};
-    assert_eq!(model.identify_thyself(), "I am a ComposerModel");
+fn can_instantiate_a_model_and_call_methods() {
+    let mut model = ComposerModel::new();
+    model.replace_text("foo");
+    model.select(1, 2);
+
+    let update = model.bold();
+
+    if let TextUpdate::ReplaceAll(r) = update.text_update {
+        assert_eq!(r.replacement_html, "f<strong>o</strong>o");
+        assert_eq!(r.selection_start_codepoint, 1);
+        assert_eq!(r.selection_end_codepoint, 2);
+    } else {
+        panic!("Expected to receive a ReplaceAll response");
+    }
 }
