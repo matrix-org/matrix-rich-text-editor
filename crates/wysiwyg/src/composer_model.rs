@@ -55,11 +55,14 @@ impl ComposerModel {
             &self.html[range[1]..]
         );
 
+        /*
+        TODO: probably requires a real AST
         let start_b = ByteLocation::from(range[0]);
         let end_b = ByteLocation::from(range[1] + "<strong></strong>".len());
 
         self.selection_start_codepoint = start_b.codepoint(&self.html);
         self.selection_end_codepoint = end_b.codepoint(&self.html);
+        */
     }
 
     /**
