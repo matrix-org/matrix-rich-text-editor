@@ -142,59 +142,54 @@ for a full example of how it all fits together.
 
 ```bash
 cd bindings/ffi
-cargo build --target aarch64-apple-ios
-cargo build --target aarch64-apple-ios-sim
-cargo build --target x86_64-apple-ios
+cargo build --release --target aarch64-apple-ios
+cargo build --release --target aarch64-apple-ios-sim
+cargo build --release --target x86_64-apple-ios
 
-mkdir -p ../../target/ios-combined
+mkdir -p ../../target/ios-simulator
 lipo -create \
-  ../../target/x86_64-apple-ios/debug/libwysiwyg_composer.a \
-  ../../target/aarch64-apple-ios-sim/debug/libwysiwyg_composer.a \
-  -output ../../target/ios-combined/libwysiwyg_composer.a
+  ../../target/x86_64-apple-ios/release/libwysiwyg_ffi.a \
+  ../../target/aarch64-apple-ios-sim/release/libwysiwyg_ffi.a \
+  -output ../../target/ios-simulator/libwysiwyg_ffi.a
 ```
 
-This will create:
+* This will create static libraries for both iOS devices and simulators:
 
 ```
-../../target/x86_64-apple-ios/debug/libwysiwyg_composer.a
-../../target/aarch64-apple-ios-sim/debug/libwysiwyg_composer.a
-../../target/ios-combined/libwysiwyg_composer.a
+../../target/x86_64-apple-ios/debug/libwysiwyg_ffi.a
+../../target/ios-simulator/libwysiwyg_ffi.a
 ```
 
-* Copy the shared object into your XCode project
+* Generate the bindings inside given output dir:
 
-```bash
-cp ../../target/ios-combined/libwysiwyg_composer.a MY_XCODE_PROJECT/
-```
-
-(Where MY_XCODE_PROJECT is the location of the XCode project.)
-
-* Generate the bindings:
+⚠️ The installed version should always match the version used by Cargo, see `Cargo.toml` content inside this directory to retrieve it and use `cargo install uniffi_bindgen --version <VERSION_NUMBER>` if needed. 
 
 ```bash
 uniffi-bindgen \
     generate src/wysiwyg_composer.udl \
     --language swift \
     --config uniffi.toml \
-    --out-dir MY_XCODE_PROJECT
+    --out-dir MY_OUTPUT_DIR
 
-cd MY_XCODE_PROJECT
+cd MY_OUTPUT_DIR
 mv *.h         headers/
-mv *.modulemap headers/
+mv *.modulemap headers/module.modulemap
 mv *.swift     Sources/
 ```
+
+Note: The project should always have a single Swift modulemap file, and it should be named `module.modulemap` otherwise the generated framework will not expose symbols properly to Swift.
 
 * Generate the .xcframework file:
 
 ```bash
 xcodebuild -create-xcframework \
   -library ../../target/aarch64-apple-ios/debug/libwysiwyg_composer.a" \
-  -headers MY_XCODE_PROJECT/headers \
-  -library MY_XCODE_PROJECT/libwysiwyg_composer.a" \
-  -headers MY_XCODE_PROJECT/headers \
-  -output MY_XCODE_PROJECT/ExampleRustBindings.xcframework"
+  -headers MY_OUTPUT_DIR/headers \
+  -library MY_OUTPUT_DIR/libwysiwyg_composer.a" \
+  -headers MY_OUTPUT_DIR/headers \
+  -output MY_OUTPUT_DIR/ExampleRustBindings.xcframework"
 ```
 
-Now you can use the code in your XCode project.  See
-[Example Rust Bindings](https://gitlab.com/andybalaam/example-rust-bindings/)
+Now you can use the framework wherever you see fit, just add the framework (as well as the generated Swift code from `MY_OUTPUT_DIR/Sources/`) as a dependency inside an existing XCode project, or package them with your preferred dependency manager.  
+See [Example Rust Bindings](https://gitlab.com/andybalaam/example-rust-bindings/)
 for a full example of how it all fits together.
