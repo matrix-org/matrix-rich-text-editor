@@ -3,7 +3,7 @@ import init, { new_composer_model } from './generated/wysiwyg.js';
 let composer_model;
 let editor;
 
-async function run() {
+async function wysiwyg_run() {
     await init();
 
     composer_model = new_composer_model();
@@ -30,7 +30,7 @@ function editor_input(e) {
 }
 
 function editor_keydown(e) {
-    if (!e.ctrlKey) {
+    if (!(e.ctrlKey || e.metaKey)) {
         return;
     }
     switch (e.key) {
@@ -88,6 +88,19 @@ function codepoint(current_node, offset) {
     }
 }
 
+/**
+ * Find the node that is codepoint characters into current_node, by traversing
+ * its subnodes.
+ *
+ * Returns {
+ *   node: // The node that contains the codepoint-th character
+ *   offset: // How far into the found node we can find that character
+ * }
+ *
+ * If there are not that many characters, returns { node: null, offset: n }
+ * where n is the number of characters past the end of our last subnode we would
+ * need to go to find the requested position.
+ */
 function node_and_offset(current_node, codepoint) {
     if (current_node.nodeType === Node.TEXT_NODE) {
         if (codepoint <= current_node.textContent.length) {
@@ -104,7 +117,7 @@ function node_and_offset(current_node, codepoint) {
             if (ret.node) {
                 return { node: ret.node, offset: ret.offset };
             } else {
-                codepoint -= ret.offset;
+                codepoint = ret.offset;
             }
         }
         return { node: null, offset: codepoint };
@@ -164,4 +177,4 @@ function process_input(e) {
     }
 }
 
-run();
+export { wysiwyg_run, codepoint, node_and_offset };

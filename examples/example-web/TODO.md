@@ -6,10 +6,10 @@
 - [x] Setting selection sets the end but not a range
 - [x] After bolding text, it is not selected any more
 - [x] Ctrl-b to bold text
-- [ ] Anything you type is added at the end
-- [ ] Firefox: Selection is one character too long after bolding (or too short)
+- [x] Anything you type is added at the end
+- [x] Firefox: Selection is one character too long after bolding (or too short)
+- [ ] Characters made from multiple codepoints - how does web handle these?
 
 ## Later
 
-- [ ] Characters made from multiple codepoints - how does web handle these?
 - [ ] Allow pasting rich text - use InputEvent.dataTransfer to find it
