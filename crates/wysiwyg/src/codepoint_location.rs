@@ -38,11 +38,15 @@ impl CodepointLocation {
         self.0
     }
 
+    /**
+     * Add `delta` to the current codepoint value.
+     * If the sum is negative or too big to be a usize, the current value
+     * is set to 0.
+     */
     pub fn move_forward(&mut self, delta: CodepointDelta) {
         let mut value = isize::try_from(self.0).unwrap();
         value += delta.as_isize();
-        self.0 = usize::try_from(value)
-            .expect("Negative (or too large) codepoint location!");
+        self.0 = usize::try_from(value).unwrap_or(0);
     }
 
     pub fn as_delta(&self) -> CodepointDelta {

@@ -79,14 +79,20 @@ impl ComposerModel {
 
     pub fn replace_text(&mut self, new_text: &str) -> ComposerUpdate {
         // TODO: escape any HTML?
-        self.html.replace_range(
-            self.selection_start_byte().as_usize()
-                ..self.selection_end_byte().as_usize(),
-            new_text,
-        );
 
-        self.selection_start_codepoint
-            .move_forward(CodepointDelta::len_of(new_text));
+        let range = &mut [
+            self.selection_start_byte().as_usize(),
+            self.selection_end_byte().as_usize(),
+        ];
+        range.sort();
+        self.html.replace_range(range[0]..range[1], new_text);
+
+        // Move cursor to after the inserted text
+        let new_cp = self.selection_earliest_codepoint();
+        self.selection_start_codepoint = ByteLocation::from(
+            new_cp.byte(&self.html).as_usize() + new_text.len(),
+        )
+        .codepoint(&self.html);
         self.selection_end_codepoint = self.selection_start_codepoint;
 
         // TODO: for now, we replace every time, to check ourselves, but
@@ -100,11 +106,23 @@ impl ComposerModel {
     }
 
     pub fn backspace(&mut self) -> ComposerUpdate {
-        ComposerUpdate::keep()
+        if self.selection_start_codepoint == self.selection_end_codepoint {
+            // Go back 1 from the current location
+            self.selection_start_codepoint
+                .move_forward(CodepointDelta::from(-1));
+        }
+
+        self.replace_text("")
     }
 
     pub fn delete(&mut self) -> ComposerUpdate {
-        ComposerUpdate::keep()
+        if self.selection_start_codepoint == self.selection_end_codepoint {
+            // Go forward 1 from the current location
+            self.selection_end_codepoint
+                .move_forward(CodepointDelta::from(1));
+        }
+
+        self.replace_text("")
     }
 
     pub fn bold(&mut self) -> ComposerUpdate {
@@ -128,6 +146,16 @@ impl ComposerModel {
 
     fn selection_end_byte(&self) -> ByteLocation {
         self.selection_end_codepoint.byte(&self.html)
+    }
+
+    fn selection_earliest_codepoint(&self) -> CodepointLocation {
+        if self.selection_start_codepoint.as_usize()
+            <= self.selection_end_codepoint.as_usize()
+        {
+            self.selection_start_codepoint
+        } else {
+            self.selection_end_codepoint
+        }
     }
 }
 
@@ -165,6 +193,83 @@ mod test {
         let mut model = cm("abc{def}|ghi");
         model.replace_text("Z");
         assert_eq!(tx(model), "abcZ|ghi");
+    }
+
+    #[test]
+    fn replacing_a_backwards_selection_with_a_character() {
+        let mut model = cm("abc|{def}ghi");
+        model.replace_text("Z");
+        assert_eq!(tx(model), "abcZ|ghi");
+    }
+
+    #[test]
+    fn backspacing_a_character_at_the_end_deletes_it() {
+        let mut model = cm("abc|");
+        model.backspace();
+        assert_eq!(tx(model), "ab|");
+    }
+
+    #[test]
+    fn backspacing_a_character_at_the_beginning_does_nothing() {
+        let mut model = cm("|abc");
+        model.backspace();
+        assert_eq!(tx(model), "|abc");
+    }
+
+    #[test]
+    fn backspacing_a_character_in_the_middle_deletes_it() {
+        let mut model = cm("ab|c");
+        model.backspace();
+        assert_eq!(tx(model), "a|c");
+    }
+
+    #[test]
+    fn backspacing_a_selection_deletes_it() {
+        let mut model = cm("a{bc}|");
+        model.backspace();
+        assert_eq!(tx(model), "a|");
+    }
+
+    #[test]
+    fn backspacing_a_backwards_selection_deletes_it() {
+        let mut model = cm("a|{bc}");
+        model.backspace();
+        assert_eq!(tx(model), "a|");
+    }
+
+    #[test]
+    fn deleting_a_character_at_the_end_does_nothing() {
+        let mut model = cm("abc|");
+        model.delete();
+        assert_eq!(tx(model), "abc|");
+    }
+
+    #[test]
+    fn deleting_a_character_at_the_beginning_deletes_it() {
+        let mut model = cm("|abc");
+        model.delete();
+        assert_eq!(tx(model), "|bc");
+    }
+
+    #[test]
+    fn deleting_a_character_in_the_middle_deletes_it() {
+        let mut model = cm("a|bc");
+        model.delete();
+        assert_eq!(tx(model), "a|c");
+    }
+
+    #[test]
+    fn deleting_a_selection_deletes_it() {
+        let mut model = cm("a{bc}|");
+        model.delete();
+        assert_eq!(tx(model), "a|");
+    }
+
+    #[test]
+    fn deleting_a_backwards_selection_deletes_it() {
+        let mut model = cm("a|{bc}");
+        model.delete();
+        assert_eq!(tx(model), "a|");
     }
 
     // Test utils
