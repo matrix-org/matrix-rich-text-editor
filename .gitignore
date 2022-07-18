@@ -1,4 +1,7 @@
+# ENV
 **/.python-version
+**/.vscode
+# Generated
 /target/
 /bindings/wysiwyg-ffi/.cargo/
 /bindings/wysiwyg-wasm/pkg/
