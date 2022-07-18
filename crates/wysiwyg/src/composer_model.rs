@@ -162,7 +162,7 @@ impl ComposerModel {
 mod test {
     use speculoos::{prelude::*, AssertionFailure, Spec};
 
-    use crate::{ByteLocation, CodepointDelta};
+    use crate::{ByteLocation, CodepointDelta, CodepointLocation};
 
     use super::ComposerModel;
 
@@ -188,6 +188,14 @@ mod test {
     }
 
     #[test]
+    fn selecting_past_the_end_is_harmless() {
+        let mut model = cm("|");
+        model.select(CodepointLocation::from(7), CodepointLocation::from(7));
+        model.replace_text("Z");
+        assert_eq!(tx(model), "Z|");
+    }
+
+    #[test]
     fn replacing_a_selection_with_a_character() {
         let mut model = cm("abc{def}|ghi");
         model.replace_text("Z");
@@ -199,6 +207,15 @@ mod test {
         let mut model = cm("abc|{def}ghi");
         model.replace_text("Z");
         assert_eq!(tx(model), "abcZ|ghi");
+    }
+
+    #[test]
+    fn typing_a_character_after_a_multi_codepoint_character() {
+        // Woman Astronaut:
+        // Woman+Dark Skin Tone+Zero Width Joiner+Rocket
+        let mut model = cm("\u{1F469}\u{1F3FF}\u{200D}\u{1F680}|");
+        model.replace_text("Z");
+        assert_eq!(tx(model), "\u{1F469}\u{1F3FF}\u{200D}\u{1F680}Z|");
     }
 
     #[test]

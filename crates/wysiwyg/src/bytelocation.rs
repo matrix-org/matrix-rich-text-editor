@@ -21,7 +21,7 @@ impl ByteLocation {
     pub fn codepoint(&self, s: &str) -> CodepointLocation {
         let mut i = 0;
         let mut cp = 0;
-        while i < self.0 {
+        while i < self.0 && i < s.len() {
             cp += 1;
             i += 1;
             while !s.is_char_boundary(i) {
@@ -39,5 +39,16 @@ impl ByteLocation {
 impl From<usize> for ByteLocation {
     fn from(value: usize) -> Self {
         Self(value)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::ByteLocation;
+
+    #[test]
+    fn codepoint_of_point_off_end_is_end() {
+        let loc = ByteLocation::from(20);
+        assert_eq!(loc.codepoint("foo").as_usize(), 3);
     }
 }

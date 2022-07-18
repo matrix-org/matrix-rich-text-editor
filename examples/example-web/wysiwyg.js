@@ -6,6 +6,7 @@ let editor;
 async function wysiwyg_run() {
     await init();
 
+    console.debug(`new_composer_model`);
     composer_model = new_composer_model();
 
     editor = document.getElementById('editor');
@@ -55,6 +56,10 @@ function selectionchange() {
     //       change the selection, cutting off at the edge.
     const start_codepoint = codepoint(s.anchorNode, s.anchorOffset);
     const end_codepoint = codepoint(s.focusNode, s.focusOffset);
+
+    console.debug(`
+        composer_model.select(${start_codepoint}, ${end_codepoint})`
+    );
     composer_model.select(start_codepoint, end_codepoint);
 }
 
@@ -160,14 +165,19 @@ function replace_editor(html, start_codepoint, end_codepoint) {
 function process_input(e) {
     switch (e.inputType) {
         case "insertText":
+            console.debug(`composer_model.replace_text(${e.data})`);
             return composer_model.replace_text(e.data);
         case "insertParagraph":
-            return composer_model.enter(e.data);
+            console.debug(`composer_model.enter()`);
+            return composer_model.enter();
         case "deleteContentBackward":
-            return composer_model.backspace(e.data);
+            console.debug(`composer_model.backspace()`);
+            return composer_model.backspace();
         case "deleteContentForward":
-            return composer_model.delete(e.data);
+            console.debug(`composer_model.delete()`);
+            return composer_model.delete();
         case "formatBold":
+            console.debug(`composer_model.bold()`);
             return composer_model.bold();
         default:
             // TODO: cover all of https://rawgit.com/w3c/input-events/v1/index.html#interface-InputEvent-Attributes

@@ -59,3 +59,14 @@ impl From<usize> for CodepointLocation {
         Self(value)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::CodepointLocation;
+
+    #[test]
+    fn byte_of_point_off_end_is_end() {
+        let loc = CodepointLocation::from(20);
+        assert_eq!(loc.byte("foo").as_usize(), 3);
+    }
+}
