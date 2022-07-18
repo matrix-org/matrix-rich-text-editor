@@ -17,9 +17,9 @@ crate-type = ["cdylib", "staticlib"]
 # Keep the uniffi version here in sync with the installed version of
 # uniffi-bindgen that is called from
 # ../../examples/example-android/app/build.gradle
-uniffi = "0.19.2"
-uniffi_macros = "0.19.2"
+uniffi = "=0.19.2"
+uniffi_macros = "=0.19.2"
 wysiwyg = { path = "../../crates/wysiwyg" }
 
 [build-dependencies]
-uniffi_build = { version = "0.19.2", features = ["builtin-bindgen"] }
+uniffi_build = { version = "=0.19.2", features = ["builtin-bindgen"] }

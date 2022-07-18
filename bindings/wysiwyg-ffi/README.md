@@ -162,7 +162,7 @@ lipo -create \
 
 * Generate the bindings inside given output dir:
 
-⚠️ The installed version should always match the version used by Cargo, see `Cargo.lock` content inside the main project directory to retrieve it and use `cargo install uniffi_bindgen --version <VERSION_NUMBER>` if needed. 
+⚠️ The installed version should always match the version used by Cargo, see `Cargo.toml` content inside this directory to retrieve it and use `cargo install uniffi_bindgen --version <VERSION_NUMBER>` if needed. 
 
 ```bash
 uniffi-bindgen \
@@ -191,6 +191,5 @@ xcodebuild -create-xcframework \
 ```
 
 Now you can use the framework wherever you see fit, just add the framework (as well as the generated Swift code from `MY_OUTPUT_DIR/Sources/`) as a dependency inside an existing XCode project, or package them with your preferred dependency manager.  
-See
-[Example Rust Bindings](https://gitlab.com/andybalaam/example-rust-bindings/)
+See [Example Rust Bindings](https://gitlab.com/andybalaam/example-rust-bindings/)
 for a full example of how it all fits together.
