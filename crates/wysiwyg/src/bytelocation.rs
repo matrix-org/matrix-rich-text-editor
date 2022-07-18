@@ -14,15 +14,30 @@
 
 use crate::CodepointLocation;
 
-#[derive(Debug, Clone)]
-pub enum TextUpdate {
-    Keep,
-    ReplaceAll(ReplaceAll),
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ByteLocation(usize);
+
+impl ByteLocation {
+    pub fn codepoint(&self, s: &str) -> CodepointLocation {
+        let mut i = 0;
+        let mut cp = 0;
+        while i < self.0 {
+            cp += 1;
+            i += 1;
+            while !s.is_char_boundary(i) {
+                i += 1;
+            }
+        }
+        CodepointLocation::from(cp)
+    }
+
+    pub(crate) fn as_usize(&self) -> usize {
+        self.0
+    }
 }
 
-#[derive(Debug, Clone)]
-pub struct ReplaceAll {
-    pub replacement_html: String,
-    pub selection_start_codepoint: CodepointLocation,
-    pub selection_end_codepoint: CodepointLocation,
+impl From<usize> for ByteLocation {
+    fn from(value: usize) -> Self {
+        Self(value)
+    }
 }

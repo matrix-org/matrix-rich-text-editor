@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use wysiwyg;
-
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -38,8 +36,12 @@ impl ComposerModel {
 
     pub fn select(&mut self, start_codepoint: u32, end_codepoint: u32) {
         self.inner.select(
-            usize::try_from(start_codepoint).unwrap(),
-            usize::try_from(end_codepoint).unwrap(),
+            wysiwyg::CodepointLocation::from(
+                usize::try_from(start_codepoint).unwrap(),
+            ),
+            wysiwyg::CodepointLocation::from(
+                usize::try_from(end_codepoint).unwrap(),
+            ),
         );
     }
 

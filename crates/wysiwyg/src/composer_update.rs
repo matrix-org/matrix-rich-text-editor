@@ -13,8 +13,7 @@
 // limitations under the License.
 
 use crate::{
-    composer_model::CodepointLocation, text_update::ReplaceAll, ComposerAction,
-    MenuState, TextUpdate,
+    CodepointLocation, ComposerAction, MenuState, ReplaceAll, TextUpdate,
 };
 
 #[derive(Debug, Clone)]

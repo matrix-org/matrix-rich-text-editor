@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{composer_action::ActionResponse, ComposerUpdate};
+use crate::{
+    ActionResponse, ByteLocation, CodepointDelta, CodepointLocation,
+    ComposerUpdate,
+};
 
 pub struct ComposerModel {
     html: String, // TODO: not an AST yet!
@@ -24,8 +27,8 @@ impl ComposerModel {
     pub fn new() -> Self {
         Self {
             html: String::from(""),
-            selection_start_codepoint: CodepointLocation(0),
-            selection_end_codepoint: CodepointLocation(0),
+            selection_start_codepoint: CodepointLocation::from(0),
+            selection_end_codepoint: CodepointLocation::from(0),
         }
     }
 
@@ -38,8 +41,10 @@ impl ComposerModel {
     }
 
     fn do_bold(&mut self) {
-        let mut range =
-            [self.selection_start_byte().0, self.selection_end_byte().0];
+        let mut range = [
+            self.selection_start_byte().as_usize(),
+            self.selection_end_byte().as_usize(),
+        ];
         range.sort();
 
         // TODO: not a real AST
@@ -54,20 +59,26 @@ impl ComposerModel {
     /**
      * Cursor is at end_codepoint.
      */
-    pub fn select(&mut self, start_codepoint: usize, end_codepoint: usize) {
-        self.selection_start_codepoint = CodepointLocation(start_codepoint);
-        self.selection_end_codepoint = CodepointLocation(end_codepoint);
+    pub fn select(
+        &mut self,
+        start_codepoint: CodepointLocation,
+        end_codepoint: CodepointLocation,
+    ) {
+        self.selection_start_codepoint = start_codepoint;
+        self.selection_end_codepoint = end_codepoint;
     }
 
     pub fn replace_text(&mut self, new_text: &str) -> ComposerUpdate {
         // TODO: escape any HTML?
         self.html.replace_range(
-            self.selection_start_byte().0..self.selection_end_byte().0,
+            self.selection_start_byte().as_usize()
+                ..self.selection_end_byte().as_usize(),
             new_text,
         );
 
-        self.selection_start_codepoint.0 += 1;
-        self.selection_end_codepoint.0 += 1;
+        self.selection_start_codepoint
+            .move_forward(CodepointDelta::len_of(new_text));
+        self.selection_end_codepoint = self.selection_start_codepoint;
 
         // TODO: for now, we replace every time, to check ourselves, but
         // at least some of the time we should not
@@ -111,54 +122,13 @@ impl ComposerModel {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct ByteLocation(usize);
-
-impl ByteLocation {
-    pub fn codepoint(&self, s: &str) -> CodepointLocation {
-        let mut i = 0;
-        let mut cp = 0;
-        while i < self.0 {
-            cp += 1;
-            i += 1;
-            while !s.is_char_boundary(i) {
-                i += 1;
-            }
-        }
-        CodepointLocation(cp)
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct CodepointLocation(usize);
-
-impl CodepointLocation {
-    pub fn byte(&self, s: &str) -> ByteLocation {
-        let mut i = 0;
-        let mut cp = 0;
-        while i < s.len() {
-            if cp == self.0 {
-                return ByteLocation(i);
-            }
-            cp += 1;
-            i += 1;
-            while !s.is_char_boundary(i) {
-                i += 1;
-            }
-        }
-        ByteLocation(s.len())
-    }
-
-    pub fn as_usize(&self) -> usize {
-        self.0
-    }
-}
-
 #[cfg(test)]
 mod test {
     use speculoos::{prelude::*, AssertionFailure, Spec};
 
-    use super::{ByteLocation, ComposerModel};
+    use crate::ByteLocation;
+
+    use super::ComposerModel;
 
     #[test]
     fn typing_a_character_into_an_empty_box_appends_it() {
@@ -207,7 +177,7 @@ mod test {
      * Create a ComposerModel from a text representation.
      */
     fn cm(text: &str) -> ComposerModel {
-        let i = ByteLocation(text.find('|').expect(&format!(
+        let i = ByteLocation::from(text.find('|').expect(&format!(
             "ComposerModel text did not contain a '|' symbol: '{}'",
             text,
         )));
@@ -219,7 +189,8 @@ mod test {
         let mut ret = ComposerModel::new();
         ret.selection_start_codepoint = cp;
         ret.selection_end_codepoint = cp;
-        ret.html = String::from(&text[..i.0]) + &text[i.0 + 1..];
+        ret.html =
+            String::from(&text[..i.as_usize()]) + &text[i.as_usize() + 1..];
 
         ret
     }
@@ -230,7 +201,7 @@ mod test {
     fn tx(model: ComposerModel) -> String {
         if model.selection_start_codepoint == model.selection_end_codepoint {
             let mut ret = model.html.clone();
-            ret.insert(model.selection_start_byte().0, '|');
+            ret.insert(model.selection_start_byte().as_usize(), '|');
             ret
         } else {
             todo!();

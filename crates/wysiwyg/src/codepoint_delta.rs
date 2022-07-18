@@ -12,17 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::CodepointLocation;
+use crate::ByteLocation;
 
-#[derive(Debug, Clone)]
-pub enum TextUpdate {
-    Keep,
-    ReplaceAll(ReplaceAll),
-}
+pub struct CodepointDelta(usize);
 
-#[derive(Debug, Clone)]
-pub struct ReplaceAll {
-    pub replacement_html: String,
-    pub selection_start_codepoint: CodepointLocation,
-    pub selection_end_codepoint: CodepointLocation,
+impl CodepointDelta {
+    pub fn from(value: usize) -> Self {
+        Self(value)
+    }
+
+    pub fn as_usize(&self) -> usize {
+        self.0
+    }
+
+    pub fn len_of(s: &str) -> CodepointDelta {
+        ByteLocation::from(s.len()).codepoint(s).as_delta()
+    }
 }

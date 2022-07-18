@@ -18,7 +18,7 @@ use wysiwyg::{ComposerModel, TextUpdate};
 fn can_instantiate_a_model_and_call_methods() {
     let mut model = ComposerModel::new();
     model.replace_text("foo");
-    model.select(1, 2);
+    model.select(cp(1), cp(2));
 
     let update = model.bold();
 
@@ -29,4 +29,8 @@ fn can_instantiate_a_model_and_call_methods() {
     } else {
         panic!("Expected to receive a ReplaceAll response");
     }
+}
+
+fn cp(value: usize) -> wysiwyg::CodepointLocation {
+    wysiwyg::CodepointLocation::from(value)
 }

@@ -12,12 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+mod bytelocation;
+mod codepoint_delta;
+mod codepoint_location;
 mod composer_action;
 mod composer_model;
 mod composer_update;
 mod menu_state;
 mod text_update;
 
+pub use crate::bytelocation::ByteLocation;
+pub use crate::codepoint_delta::CodepointDelta;
+pub use crate::codepoint_location::CodepointLocation;
 pub use crate::composer_action::ActionRequest;
 pub use crate::composer_action::ActionResponse;
 pub use crate::composer_action::ComposerAction;

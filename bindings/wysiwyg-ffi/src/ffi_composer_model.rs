@@ -15,10 +15,14 @@ impl ComposerModel {
     }
 
     pub fn select(self: &Arc<Self>, start_codepoint: u32, end_codepoint: u32) {
-        self.inner.lock().unwrap().select(
+        let start = wysiwyg::CodepointLocation::from(
             usize::try_from(start_codepoint).unwrap(),
+        );
+        let end = wysiwyg::CodepointLocation::from(
             usize::try_from(end_codepoint).unwrap(),
-        )
+        );
+
+        self.inner.lock().unwrap().select(start, end);
     }
 
     pub fn replace_text(
