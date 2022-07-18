@@ -32,39 +32,6 @@ impl ComposerModel {
         }
     }
 
-    pub fn create_update_replace_all(&self) -> ComposerUpdate {
-        ComposerUpdate::replace_all(
-            self.html.clone(),
-            self.selection_start_codepoint,
-            self.selection_end_codepoint,
-        )
-    }
-
-    fn do_bold(&mut self) {
-        let mut range = [
-            self.selection_start_byte().as_usize(),
-            self.selection_end_byte().as_usize(),
-        ];
-        range.sort();
-
-        // TODO: not a real AST
-        self.html = format!(
-            "{}<strong>{}</strong>{}",
-            &self.html[..range[0]],
-            &self.html[range[0]..range[1]],
-            &self.html[range[1]..]
-        );
-
-        /*
-        TODO: probably requires a real AST
-        let start_b = ByteLocation::from(range[0]);
-        let end_b = ByteLocation::from(range[1] + "<strong></strong>".len());
-
-        self.selection_start_codepoint = start_b.codepoint(&self.html);
-        self.selection_end_codepoint = end_b.codepoint(&self.html);
-        */
-    }
-
     /**
      * Cursor is at end_codepoint.
      */
@@ -126,7 +93,29 @@ impl ComposerModel {
     }
 
     pub fn bold(&mut self) -> ComposerUpdate {
-        self.do_bold();
+        let mut range = [
+            self.selection_start_byte().as_usize(),
+            self.selection_end_byte().as_usize(),
+        ];
+        range.sort();
+
+        // TODO: not a real AST
+        self.html = format!(
+            "{}<strong>{}</strong>{}",
+            &self.html[..range[0]],
+            &self.html[range[0]..range[1]],
+            &self.html[range[1]..]
+        );
+
+        /*
+        TODO: probably requires a real AST
+        let start_b = ByteLocation::from(range[0]);
+        let end_b = ByteLocation::from(range[1] + "<strong></strong>".len());
+
+        self.selection_start_codepoint = start_b.codepoint(&self.html);
+        self.selection_end_codepoint = end_b.codepoint(&self.html);
+        */
+
         self.create_update_replace_all()
     }
 
@@ -138,6 +127,16 @@ impl ComposerModel {
         drop(action_id);
         drop(response);
         ComposerUpdate::keep()
+    }
+
+    // Internal functions
+
+    fn create_update_replace_all(&self) -> ComposerUpdate {
+        ComposerUpdate::replace_all(
+            self.html.clone(),
+            self.selection_start_codepoint,
+            self.selection_end_codepoint,
+        )
     }
 
     fn selection_start_byte(&self) -> ByteLocation {
