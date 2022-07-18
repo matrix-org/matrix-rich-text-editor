@@ -39,11 +39,14 @@ impl CodepointLocation {
     }
 
     pub fn move_forward(&mut self, delta: CodepointDelta) {
-        self.0 += delta.as_usize()
+        let mut value = isize::try_from(self.0).unwrap();
+        value += delta.as_isize();
+        self.0 = usize::try_from(value)
+            .expect("Negative (or too large) codepoint location!");
     }
 
     pub fn as_delta(&self) -> CodepointDelta {
-        CodepointDelta::from(self.as_usize())
+        CodepointDelta::from(isize::try_from(self.as_usize()).unwrap())
     }
 }
 

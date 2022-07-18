@@ -14,14 +14,14 @@
 
 use crate::ByteLocation;
 
-pub struct CodepointDelta(usize);
+pub struct CodepointDelta(isize);
 
 impl CodepointDelta {
-    pub fn from(value: usize) -> Self {
+    pub fn from(value: isize) -> Self {
         Self(value)
     }
 
-    pub fn as_usize(&self) -> usize {
+    pub fn as_isize(&self) -> isize {
         self.0
     }
 

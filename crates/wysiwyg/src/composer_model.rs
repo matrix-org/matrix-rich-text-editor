@@ -54,6 +54,12 @@ impl ComposerModel {
             &self.html[range[0]..range[1]],
             &self.html[range[1]..]
         );
+
+        let start_b = ByteLocation::from(range[0]);
+        let end_b = ByteLocation::from(range[1] + "<strong></strong>".len());
+
+        self.selection_start_codepoint = start_b.codepoint(&self.html);
+        self.selection_end_codepoint = end_b.codepoint(&self.html);
     }
 
     /**
@@ -126,7 +132,7 @@ impl ComposerModel {
 mod test {
     use speculoos::{prelude::*, AssertionFailure, Spec};
 
-    use crate::ByteLocation;
+    use crate::{ByteLocation, CodepointDelta};
 
     use super::ComposerModel;
 
@@ -149,6 +155,13 @@ mod test {
         let mut model = cm("|abc");
         model.replace_text("Z");
         assert_eq!(tx(model), "Z|abc");
+    }
+
+    #[test]
+    fn replacing_a_selection_with_a_character() {
+        let mut model = cm("abc{def}|ghi");
+        model.replace_text("Z");
+        assert_eq!(tx(model), "abcZ|ghi");
     }
 
     // Test utils
@@ -177,21 +190,53 @@ mod test {
      * Create a ComposerModel from a text representation.
      */
     fn cm(text: &str) -> ComposerModel {
-        let i = ByteLocation::from(text.find('|').expect(&format!(
+        let curs = text.find('|').expect(&format!(
             "ComposerModel text did not contain a '|' symbol: '{}'",
             text,
-        )));
+        ));
+        let curs_b = ByteLocation::from(curs);
+        let curs_cp = curs_b.codepoint(text);
 
-        // TODO: range selections
-
-        let cp = i.codepoint(text);
+        let s = text.find('{');
+        let e = text.find('}');
 
         let mut ret = ComposerModel::new();
-        ret.selection_start_codepoint = cp;
-        ret.selection_end_codepoint = cp;
-        ret.html =
-            String::from(&text[..i.as_usize()]) + &text[i.as_usize() + 1..];
+        if let (Some(s), Some(e)) = (s, e) {
+            let s_b = ByteLocation::from(s);
+            let e_b = ByteLocation::from(e);
+            let s_cp = s_b.codepoint(text);
+            let mut e_cp = e_b.codepoint(text);
 
+            if curs == e + 1 {
+                // Cursor after end: foo{bar}|baz
+                // The { made an extra codepoint - move the end back 1
+                e_cp.move_forward(CodepointDelta::from(-1));
+                ret.selection_start_codepoint = s_cp;
+                ret.selection_end_codepoint = e_cp;
+                ret.html = String::from(&text[..s])
+                    + &text[s + 1..e]
+                    + &text[curs + 1..];
+            } else if curs == s - 1 {
+                // Cursor before beginning: foo|{bar}baz
+                // The |{ made an extra 2 codepoints - move the end back 2
+                e_cp.move_forward(CodepointDelta::from(-2));
+                ret.selection_start_codepoint = e_cp;
+                ret.selection_end_codepoint = curs_cp;
+                ret.html = String::from(&text[..curs])
+                    + &text[s + 1..e]
+                    + &text[e + 1..];
+            } else {
+                panic!(
+                    "The cursor ('|') must always be directly before or after \
+                    the selection ('{{..}}')! \
+                    E.g.: 'foo|{{bar}}baz' or 'foo{{bar}}|baz'."
+                )
+            }
+        } else {
+            ret.selection_start_codepoint = curs_cp;
+            ret.selection_end_codepoint = curs_cp;
+            ret.html = String::from(&text[..curs]) + &text[curs + 1..];
+        }
         ret
     }
 
@@ -199,13 +244,116 @@ mod test {
      * Convert a ComposerModel to a text representation.
      */
     fn tx(model: ComposerModel) -> String {
+        let mut ret = model.html.clone();
         if model.selection_start_codepoint == model.selection_end_codepoint {
-            let mut ret = model.html.clone();
             ret.insert(model.selection_start_byte().as_usize(), '|');
-            ret
         } else {
-            todo!();
+            let s = model.selection_start_byte().as_usize();
+            let e = model.selection_end_byte().as_usize();
+            if s < e {
+                ret.insert_str(e, "}|");
+                ret.insert_str(s, "{");
+            } else {
+                ret.insert_str(s, "}");
+                ret.insert_str(e, "|{");
+            }
         }
+        ret
+    }
+
+    #[test]
+    fn cm_creates_correct_component_model() {
+        assert_eq!(cm("|").selection_start_codepoint.as_usize(), 0);
+        assert_eq!(cm("|").selection_end_codepoint.as_usize(), 0);
+        assert_eq!(cm("|").html, "");
+
+        assert_eq!(cm("a|").selection_start_codepoint.as_usize(), 1);
+        assert_eq!(cm("a|").selection_end_codepoint.as_usize(), 1);
+        assert_eq!(cm("a|").html, "a");
+
+        assert_eq!(cm("a|b").selection_start_codepoint.as_usize(), 1);
+        assert_eq!(cm("a|b").selection_end_codepoint.as_usize(), 1);
+        assert_eq!(cm("a|b").html, "ab");
+
+        assert_eq!(cm("|ab").selection_start_codepoint.as_usize(), 0);
+        assert_eq!(cm("|ab").selection_end_codepoint.as_usize(), 0);
+        assert_eq!(cm("|ab").html, "ab");
+
+        assert_eq!(cm("foo|").selection_start_codepoint.as_usize(), 3);
+        assert_eq!(cm("foo|").selection_end_codepoint.as_usize(), 3);
+        assert_eq!(cm("foo|").html, "foo");
+
+        let t1 = cm("foo|\u{1F4A9}bar");
+        assert_eq!(t1.selection_start_codepoint.as_usize(), 3);
+        assert_eq!(t1.selection_end_codepoint.as_usize(), 3);
+        assert_eq!(t1.html, "foo\u{1F4A9}bar");
+
+        let t2 = cm("foo\u{1F4A9}|bar");
+        assert_eq!(t2.selection_start_codepoint.as_usize(), 4);
+        assert_eq!(t2.selection_end_codepoint.as_usize(), 4);
+        assert_eq!(t2.html, "foo\u{1F4A9}bar");
+
+        assert_eq!(cm("foo|\u{1F4A9}").selection_start_codepoint.as_usize(), 3);
+        assert_eq!(cm("foo|\u{1F4A9}").selection_end_codepoint.as_usize(), 3);
+        assert_eq!(cm("foo|\u{1F4A9}").html, "foo\u{1F4A9}");
+
+        assert_eq!(cm("foo\u{1F4A9}|").selection_start_codepoint.as_usize(), 4);
+        assert_eq!(cm("foo\u{1F4A9}|").selection_end_codepoint.as_usize(), 4);
+        assert_eq!(cm("foo\u{1F4A9}|").html, "foo\u{1F4A9}");
+
+        assert_eq!(cm("|\u{1F4A9}bar").selection_start_codepoint.as_usize(), 0);
+        assert_eq!(cm("|\u{1F4A9}bar").selection_end_codepoint.as_usize(), 0);
+        assert_eq!(cm("|\u{1F4A9}bar").html, "\u{1F4A9}bar");
+
+        assert_eq!(cm("\u{1F4A9}|bar").selection_start_codepoint.as_usize(), 1);
+        assert_eq!(cm("\u{1F4A9}|bar").selection_end_codepoint.as_usize(), 1);
+        assert_eq!(cm("\u{1F4A9}|bar").html, "\u{1F4A9}bar");
+
+        assert_eq!(cm("{a}|").selection_start_codepoint.as_usize(), 0);
+        assert_eq!(cm("{a}|").selection_end_codepoint.as_usize(), 1);
+        assert_eq!(cm("{a}|").html, "a");
+
+        assert_eq!(cm("|{a}").selection_start_codepoint.as_usize(), 1);
+        assert_eq!(cm("|{a}").selection_end_codepoint.as_usize(), 0);
+        assert_eq!(cm("|{a}").html, "a");
+
+        assert_eq!(cm("abc{def}|ghi").selection_start_codepoint.as_usize(), 3);
+        assert_eq!(cm("abc{def}|ghi").selection_end_codepoint.as_usize(), 6);
+        assert_eq!(cm("abc{def}|ghi").html, "abcdefghi");
+
+        assert_eq!(cm("abc|{def}ghi").selection_start_codepoint.as_usize(), 6);
+        assert_eq!(cm("abc|{def}ghi").selection_end_codepoint.as_usize(), 3);
+        assert_eq!(cm("abc|{def}ghi").html, "abcdefghi");
+
+        let t3 = cm("\u{1F4A9}{def}|ghi");
+        assert_eq!(t3.selection_start_codepoint.as_usize(), 1);
+        assert_eq!(t3.selection_end_codepoint.as_usize(), 4);
+        assert_eq!(t3.html, "\u{1F4A9}defghi");
+
+        let t4 = cm("\u{1F4A9}|{def}ghi");
+        assert_eq!(t4.selection_start_codepoint.as_usize(), 4);
+        assert_eq!(t4.selection_end_codepoint.as_usize(), 1);
+        assert_eq!(t4.html, "\u{1F4A9}defghi");
+
+        let t5 = cm("abc{d\u{1F4A9}f}|ghi");
+        assert_eq!(t5.selection_start_codepoint.as_usize(), 3);
+        assert_eq!(t5.selection_end_codepoint.as_usize(), 6);
+        assert_eq!(t5.html, "abcd\u{1F4A9}fghi");
+
+        let t6 = cm("abc|{d\u{1F4A9}f}ghi");
+        assert_eq!(t6.selection_start_codepoint.as_usize(), 6);
+        assert_eq!(t6.selection_end_codepoint.as_usize(), 3);
+        assert_eq!(t6.html, "abcd\u{1F4A9}fghi");
+
+        let t7 = cm("abc{def}|\u{1F4A9}ghi");
+        assert_eq!(t7.selection_start_codepoint.as_usize(), 3);
+        assert_eq!(t7.selection_end_codepoint.as_usize(), 6);
+        assert_eq!(t7.html, "abcdef\u{1F4A9}ghi");
+
+        let t8 = cm("abc|{def}\u{1F4A9}ghi");
+        assert_eq!(t8.selection_start_codepoint.as_usize(), 6);
+        assert_eq!(t8.selection_end_codepoint.as_usize(), 3);
+        assert_eq!(t8.html, "abcdef\u{1F4A9}ghi");
     }
 
     #[test]
@@ -220,5 +368,15 @@ mod test {
         assert_that!("foo\u{1F4A9}|").roundtrips();
         assert_that!("|\u{1F4A9}bar").roundtrips();
         assert_that!("\u{1F4A9}|bar").roundtrips();
+        assert_that!("{a}|").roundtrips();
+        assert_that!("|{a}").roundtrips();
+        assert_that!("abc{def}|ghi").roundtrips();
+        assert_that!("abc|{def}ghi").roundtrips();
+        assert_that!("\u{1F4A9}{def}|ghi").roundtrips();
+        assert_that!("\u{1F4A9}|{def}ghi").roundtrips();
+        assert_that!("abc{d\u{1F4A9}f}|ghi").roundtrips();
+        assert_that!("abc|{d\u{1F4A9}f}ghi").roundtrips();
+        assert_that!("abc{def}|\u{1F4A9}ghi").roundtrips();
+        assert_that!("abc|{def}\u{1F4A9}ghi").roundtrips();
     }
 }
