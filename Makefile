@@ -14,7 +14,7 @@ android-x86_64:
 	echo - target/x86_64-linux-android/release/libwysiwyg_ffi.so
 	echo - bindings/wysiwyg-ffi/src/wysiwyg_composer.udl
 
-EXAMPLE_IOS := ../../examples/example-ios
+IOS_GENERATED_DIR := ../../examples/example-ios/Generated
 
 ios:
 	cd bindings/wysiwyg-ffi && \
@@ -26,27 +26,25 @@ ios:
 	  ../../target/x86_64-apple-ios/release/libwysiwyg_ffi.a \
 	  ../../target/aarch64-apple-ios-sim/release/libwysiwyg_ffi.a \
 	  -output ../../target/ios-simulator/libwysiwyg_ffi.a && \
-	mkdir -p ${EXAMPLE_IOS} && \
-	rm -rf ${EXAMPLE_IOS}/Sources && \
-	rm -rf ${EXAMPLE_IOS}/headers && \
-	rm -rf ${EXAMPLE_IOS}/LibWysiwyg.xcframework && \
+	rm -rf ${IOS_GENERATED_DIR} && \
+	mkdir -p ${IOS_GENERATED_DIR} && \
 	uniffi-bindgen \
 		generate src/wysiwyg_composer.udl \
 		--language swift \
 		--config uniffi.toml \
-		--out-dir ${EXAMPLE_IOS} && \
-	mkdir -p ${EXAMPLE_IOS}/headers && \
-	mkdir -p ${EXAMPLE_IOS}/Sources && \
-	mv ${EXAMPLE_IOS}/*.h         ${EXAMPLE_IOS}/headers/ && \
-	mv ${EXAMPLE_IOS}/*.modulemap ${EXAMPLE_IOS}/headers/module.modulemap && \
-	mv ${EXAMPLE_IOS}/*.swift     ${EXAMPLE_IOS}/Sources/ && \
+		--out-dir ${IOS_GENERATED_DIR} && \
+	mkdir -p ${IOS_GENERATED_DIR}/headers && \
+	mkdir -p ${IOS_GENERATED_DIR}/Sources && \
+	mv ${IOS_GENERATED_DIR}/*.h         ${IOS_GENERATED_DIR}/headers/ && \
+	mv ${IOS_GENERATED_DIR}/*.modulemap ${IOS_GENERATED_DIR}/headers/module.modulemap && \
+	mv ${IOS_GENERATED_DIR}/*.swift     ${IOS_GENERATED_DIR}/Sources && \
 	xcodebuild -create-xcframework \
 	  -library ../../target/aarch64-apple-ios/release/libwysiwyg_ffi.a \
-	  -headers ${EXAMPLE_IOS}/headers \
+	  -headers ${IOS_GENERATED_DIR}/headers \
 	  -library ../../target/ios-simulator/libwysiwyg_ffi.a \
-	  -headers ${EXAMPLE_IOS}/headers \
-	  -output ${EXAMPLE_IOS}/LibWysiwyg.xcframework
-
+	  -headers ${IOS_GENERATED_DIR}/headers \
+	  -output ${IOS_GENERATED_DIR}/WysiwygComposerFFI.xcframework && \
+	rm -rf ${IOS_GENERATED_DIR}/headers
 web:
 	cd bindings/wysiwyg-wasm && \
 	npm install && \

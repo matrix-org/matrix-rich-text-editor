@@ -1,0 +1,9 @@
+# ENV
+build/
+xcuserdata
+*.xcuserstate
+.vscode/
+vendor/
+.DS_Store
+# Generated
+Generated/
