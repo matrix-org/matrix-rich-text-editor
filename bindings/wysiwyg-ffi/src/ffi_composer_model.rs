@@ -61,4 +61,12 @@ impl ComposerModel {
                 .action_response(action_id, response.into()),
         ))
     }
+
+    pub fn enter(self: &Arc<Self>) -> Arc<ComposerUpdate> {
+        Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().enter()))
+    }
+
+    pub fn bold(self: &Arc<Self>) -> Arc<ComposerUpdate> {
+        Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().bold()))
+    }
 }

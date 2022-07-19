@@ -638,6 +638,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "uniffi-wysiwyg-composer"
+version = "0.1.0"
+dependencies = [
+ "uniffi",
+ "uniffi_build",
+ "uniffi_macros",
+ "wysiwyg",
+]
+
+[[package]]
 name = "uniffi_bindgen"
 version = "0.19.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -810,16 +820,6 @@ name = "wysiwyg"
 version = "0.1.0"
 dependencies = [
  "speculoos",
-]
-
-[[package]]
-name = "wysiwyg-ffi"
-version = "0.1.0"
-dependencies = [
- "uniffi",
- "uniffi_build",
- "uniffi_macros",
- "wysiwyg",
 ]
 
 [[package]]

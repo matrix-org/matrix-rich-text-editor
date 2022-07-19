@@ -21,6 +21,8 @@ interface ComposerModel {
     ComposerUpdate replace_text(string new_text);
     ComposerUpdate backspace();
     ComposerUpdate delete();
+    ComposerUpdate enter();
+    ComposerUpdate bold();
     ComposerUpdate action_response(string action_id, ActionResponse response);
 };
 
