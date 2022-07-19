@@ -17,7 +17,7 @@ namespace wysiwyg_composer {
 };
 
 interface ComposerModel {
-    void select(u32 start_codepoint, u32 end_codepoint);
+    void select(u32 start_utf16_codeunit, u32 end_utf16_codeunit);
     ComposerUpdate replace_text(string new_text);
     ComposerUpdate backspace();
     ComposerUpdate delete();
@@ -34,9 +34,9 @@ interface ComposerUpdate {
 interface TextUpdate {
     Keep();
     ReplaceAll(
-        string replacement_html,
-        u32 selection_start_codepoint,
-        u32 selection_end_codepoint
+        sequence<u16> replacement_html,
+        u32 start_utf16_codeunit,
+        u32 end_utf16_codeunit
     );
 };
 

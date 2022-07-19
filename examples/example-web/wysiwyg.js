@@ -29,8 +29,8 @@ function editor_input(e) {
         if (repl) {
             replace_editor(
                 repl.replacement_html,
-                repl.selection_start_codepoint,
-                repl.selection_end_codepoint
+                repl.start_utf16_codeunit,
+                repl.end_utf16_codeunit
             );
         }
     }
@@ -64,8 +64,8 @@ function selectionchange() {
     const start = codeunit_count(editor, s.anchorNode, s.anchorOffset);
     const end = codeunit_count(editor, s.focusNode, s.focusOffset);
 
-    console.debug(`composer_model.select_utf16_codeunits(${start}, ${end})`);
-    composer_model.select_utf16_codeunits(start, end);
+    console.debug(`composer_model.select(${start}, ${end})`);
+    composer_model.select(start, end);
 }
 
 /**
@@ -166,16 +166,21 @@ function node_and_offset(current_node, codeunits) {
     }
 }
 
-function replace_editor(html, start_codepoint, end_codepoint) {
-    console.log("replace_editor", html, start_codepoint, end_codepoint);
+function replace_editor(html, start_utf16_codeunit, end_utf16_codeunit) {
+    console.log(
+        "replace_editor",
+        html,
+        start_utf16_codeunit,
+        end_utf16_codeunit
+    );
     editor.innerHTML = html;
 
     const sr = () => {
 
         const range = document.createRange();
 
-        let start = node_and_offset(editor, start_codepoint);
-        let end = node_and_offset(editor, end_codepoint);
+        let start = node_and_offset(editor, start_utf16_codeunit);
+        let end = node_and_offset(editor, end_utf16_codeunit);
 
         if (start.node && end.node) {
             // Ranges must always have start before end
@@ -201,12 +206,6 @@ function replace_editor(html, start_codepoint, end_codepoint) {
 
 function process_input(e) {
     switch (e.inputType) {
-        case "insertText":
-            console.debug(`composer_model.replace_text(${e.data})`);
-            return composer_model.replace_text(e.data);
-        case "insertParagraph":
-            console.debug(`composer_model.enter()`);
-            return composer_model.enter();
         case "deleteContentBackward":
             console.debug(`composer_model.backspace()`);
             return composer_model.backspace();
@@ -216,6 +215,18 @@ function process_input(e) {
         case "formatBold":
             console.debug(`composer_model.bold()`);
             return composer_model.bold();
+        case "insertFromPaste":
+        {
+            const data = e.dataTransfer.getData("text");
+            console.debug(`composer_model.replace_text(${data})`);
+            return composer_model.replace_text(data);
+        }
+        case "insertParagraph":
+            console.debug(`composer_model.enter()`);
+            return composer_model.enter();
+        case "insertText":
+            console.debug(`composer_model.replace_text(${e.data})`);
+            return composer_model.replace_text(e.data);
         default:
             // TODO: cover all of https://rawgit.com/w3c/input-events/v1/index.html#interface-InputEvent-Attributes
             console.error(`Unknown input type: ${e.inputType}`);

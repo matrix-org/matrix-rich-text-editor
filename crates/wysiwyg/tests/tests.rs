@@ -12,25 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use wysiwyg::{ComposerModel, TextUpdate};
+use wysiwyg::{ComposerModel, Location, TextUpdate};
 
 #[test]
 fn can_instantiate_a_model_and_call_methods() {
-    let mut model = ComposerModel::new();
-    model.replace_text("foo");
-    model.select(cp(1), cp(2));
+    let mut model = ComposerModel::<u16>::new();
+    model.replace_text(&"foo".encode_utf16().collect::<Vec<_>>());
+    model.select(Location::from(1), Location::from(2));
 
     let update = model.bold();
 
     if let TextUpdate::ReplaceAll(r) = update.text_update {
-        assert_eq!(r.replacement_html, "f<strong>o</strong>o");
-        assert_eq!(r.selection_start_codepoint.as_usize(), 1);
-        assert_eq!(r.selection_end_codepoint.as_usize(), 2);
+        assert_eq!(
+            String::from_utf16(&r.replacement_html).unwrap(),
+            "f<strong>o</strong>o"
+        );
+        assert_eq!(r.start, 1);
+        assert_eq!(r.end, 2);
     } else {
         panic!("Expected to receive a ReplaceAll response");
     }
-}
-
-fn cp(value: usize) -> wysiwyg::CodepointLocation {
-    wysiwyg::CodepointLocation::from(value)
 }

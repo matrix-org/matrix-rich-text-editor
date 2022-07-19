@@ -12,25 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod bytelocation;
-mod codepoint_delta;
-mod codepoint_location;
 mod composer_action;
 mod composer_model;
 mod composer_update;
+mod location;
 mod menu_state;
 mod text_update;
-mod utf16_codeunit_location;
 
-pub use crate::bytelocation::ByteLocation;
-pub use crate::codepoint_delta::CodepointDelta;
-pub use crate::codepoint_location::CodepointLocation;
 pub use crate::composer_action::ActionRequest;
 pub use crate::composer_action::ActionResponse;
 pub use crate::composer_action::ComposerAction;
 pub use crate::composer_model::ComposerModel;
 pub use crate::composer_update::ComposerUpdate;
+pub use crate::location::Location;
 pub use crate::menu_state::MenuState;
 pub use crate::text_update::ReplaceAll;
 pub use crate::text_update::TextUpdate;
-pub use crate::utf16_codeunit_location::Utf16CodeunitLocation;

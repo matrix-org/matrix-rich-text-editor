@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::CodepointLocation;
+use crate::Location;
 
 #[derive(Debug, Clone)]
-pub enum TextUpdate {
+pub enum TextUpdate<C> {
     Keep,
-    ReplaceAll(ReplaceAll),
+    ReplaceAll(ReplaceAll<C>),
 }
 
 #[derive(Debug, Clone)]
-pub struct ReplaceAll {
-    pub replacement_html: String,
-    pub selection_start_codepoint: CodepointLocation,
-    pub selection_end_codepoint: CodepointLocation,
+pub struct ReplaceAll<C> {
+    pub replacement_html: Vec<C>,
+    pub start: Location,
+    pub end: Location,
 }

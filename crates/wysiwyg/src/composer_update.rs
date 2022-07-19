@@ -12,36 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{
-    CodepointLocation, ComposerAction, MenuState, ReplaceAll, TextUpdate,
-};
+use crate::{ComposerAction, Location, MenuState, ReplaceAll, TextUpdate};
 
 #[derive(Debug, Clone)]
-pub struct ComposerUpdate {
-    pub text_update: TextUpdate,
+pub struct ComposerUpdate<C> {
+    pub text_update: TextUpdate<C>,
     pub menu_state: MenuState,
     pub actions: Vec<ComposerAction>,
 }
 
-impl ComposerUpdate {
+impl<C> ComposerUpdate<C> {
     pub fn keep() -> Self {
         Self {
-            text_update: TextUpdate::Keep,
+            text_update: TextUpdate::<C>::Keep,
             menu_state: MenuState::None,
             actions: Vec::new(),
         }
     }
 
     pub fn replace_all(
-        replacement_html: String,
-        selection_start_codepoint: CodepointLocation,
-        selection_end_codepoint: CodepointLocation,
+        replacement_html: Vec<C>,
+        start: Location,
+        end: Location,
     ) -> Self {
         Self {
             text_update: TextUpdate::ReplaceAll(ReplaceAll {
                 replacement_html,
-                selection_start_codepoint,
-                selection_end_codepoint,
+                start,
+                end,
             }),
             menu_state: MenuState::None,
             actions: Vec::new(),

@@ -4,7 +4,7 @@ use crate::ffi_action_response::ActionResponse;
 use crate::ffi_composer_update::ComposerUpdate;
 
 pub struct ComposerModel {
-    inner: Mutex<wysiwyg::ComposerModel>,
+    inner: Mutex<wysiwyg::ComposerModel<u16>>,
 }
 
 impl ComposerModel {
@@ -14,12 +14,16 @@ impl ComposerModel {
         }
     }
 
-    pub fn select(self: &Arc<Self>, start_codepoint: u32, end_codepoint: u32) {
-        let start = wysiwyg::CodepointLocation::from(
-            usize::try_from(start_codepoint).unwrap(),
+    pub fn select(
+        self: &Arc<Self>,
+        start_utf16_codeunit: u32,
+        end_utf16_codeunit: u32,
+    ) {
+        let start = wysiwyg::Location::from(
+            usize::try_from(start_utf16_codeunit).unwrap(),
         );
-        let end = wysiwyg::CodepointLocation::from(
-            usize::try_from(end_codepoint).unwrap(),
+        let end = wysiwyg::Location::from(
+            usize::try_from(end_utf16_codeunit).unwrap(),
         );
 
         self.inner.lock().unwrap().select(start, end);
@@ -30,7 +34,10 @@ impl ComposerModel {
         new_text: String,
     ) -> Arc<ComposerUpdate> {
         Arc::new(ComposerUpdate::from(
-            self.inner.lock().unwrap().replace_text(&new_text),
+            self.inner
+                .lock()
+                .unwrap()
+                .replace_text(&new_text.encode_utf16().collect::<Vec<_>>()),
         ))
     }
 

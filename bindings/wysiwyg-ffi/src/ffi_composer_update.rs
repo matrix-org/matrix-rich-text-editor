@@ -5,11 +5,11 @@ use crate::ffi_menu_state::MenuState;
 use crate::ffi_text_update::TextUpdate;
 
 pub struct ComposerUpdate {
-    inner: wysiwyg::ComposerUpdate,
+    inner: wysiwyg::ComposerUpdate<u16>,
 }
 
 impl ComposerUpdate {
-    pub fn from(inner: wysiwyg::ComposerUpdate) -> Self {
+    pub fn from(inner: wysiwyg::ComposerUpdate<u16>) -> Self {
         Self { inner }
     }
 

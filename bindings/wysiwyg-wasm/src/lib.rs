@@ -23,7 +23,7 @@ pub fn new_composer_model() -> ComposerModel {
 
 #[wasm_bindgen]
 pub struct ComposerModel {
-    inner: wysiwyg::ComposerModel,
+    inner: wysiwyg::ComposerModel<u16>,
 }
 
 #[wasm_bindgen]
@@ -34,23 +34,29 @@ impl ComposerModel {
         }
     }
 
-    pub fn select_utf16_codeunits(
+    pub fn select(
         &mut self,
         start_utf16_codeunit: u32,
         end_utf16_codeunit: u32,
     ) {
-        self.inner.select_utf16_codeunits(
-            wysiwyg::Utf16CodeunitLocation::from(
+        self.inner.select(
+            wysiwyg::Location::from(
                 usize::try_from(start_utf16_codeunit).unwrap(),
             ),
-            wysiwyg::Utf16CodeunitLocation::from(
+            wysiwyg::Location::from(
                 usize::try_from(end_utf16_codeunit).unwrap(),
             ),
         );
     }
 
     pub fn replace_text(&mut self, new_text: &str) -> ComposerUpdate {
-        ComposerUpdate::from(self.inner.replace_text(new_text))
+        // TODO: conversion here to UTF-16, which has presumably just been
+        // converted to UTF-8 in the bindings layer!
+        // If the performance is a problem, we could fix this.
+        ComposerUpdate::from(
+            self.inner
+                .replace_text(&new_text.encode_utf16().collect::<Vec<_>>()),
+        )
     }
 
     pub fn enter(&mut self) -> ComposerUpdate {
@@ -85,11 +91,11 @@ impl ComposerModel {
 
 #[wasm_bindgen]
 pub struct ComposerUpdate {
-    inner: wysiwyg::ComposerUpdate,
+    inner: wysiwyg::ComposerUpdate<u16>,
 }
 
 impl ComposerUpdate {
-    fn from(inner: wysiwyg::ComposerUpdate) -> Self {
+    fn from(inner: wysiwyg::ComposerUpdate<u16>) -> Self {
         Self { inner }
     }
 }
@@ -120,26 +126,31 @@ pub struct TextUpdate {
 }
 
 impl TextUpdate {
-    pub fn from(inner: wysiwyg::TextUpdate) -> Self {
+    pub fn from(inner: wysiwyg::TextUpdate<u16>) -> Self {
         match inner {
             wysiwyg::TextUpdate::Keep => Self {
                 keep: Some(Keep),
                 replace_all: None,
             },
-            wysiwyg::TextUpdate::ReplaceAll(r) => Self {
-                keep: None,
-                replace_all: Some(ReplaceAll {
-                    replacement_html: r.replacement_html,
-                    selection_start_codepoint: u32::try_from(
-                        r.selection_start_codepoint.as_usize(),
-                    )
-                    .unwrap(),
-                    selection_end_codepoint: u32::try_from(
-                        r.selection_end_codepoint.as_usize(),
-                    )
-                    .unwrap(),
-                }),
-            },
+            wysiwyg::TextUpdate::ReplaceAll(r) => {
+                let start_utf16_codeunit: usize = r.start.into();
+                let end_utf16_codeunit: usize = r.end.into();
+                Self {
+                    keep: None,
+                    replace_all: Some(ReplaceAll {
+                        replacement_html: String::from_utf16(
+                            &r.replacement_html,
+                        )
+                        .expect("Model returned invalid UTF-16"),
+                        start_utf16_codeunit: u32::try_from(
+                            start_utf16_codeunit,
+                        )
+                        .unwrap(),
+                        end_utf16_codeunit: u32::try_from(end_utf16_codeunit)
+                            .unwrap(),
+                    }),
+                }
+            }
         }
     }
 }
@@ -152,20 +163,20 @@ pub struct Keep;
 #[wasm_bindgen(getter_with_clone)]
 pub struct ReplaceAll {
     pub replacement_html: String,
-    pub selection_start_codepoint: u32,
-    pub selection_end_codepoint: u32,
+    pub start_utf16_codeunit: u32,
+    pub end_utf16_codeunit: u32,
 }
 
 #[wasm_bindgen]
 pub struct MenuState {
-    none: Option<NoneMenuState>,
+    _none: Option<NoneMenuState>,
 }
 
 impl MenuState {
     pub fn from(inner: wysiwyg::MenuState) -> Self {
         match inner {
             wysiwyg::MenuState::None => Self {
-                none: Some(NoneMenuState),
+                _none: Some(NoneMenuState),
             },
         }
     }
@@ -192,30 +203,33 @@ impl ComposerAction {
 
 #[wasm_bindgen]
 pub struct ActionRequest {
-    dummy: Option<Dummy>,
+    _dummy: Option<Dummy>,
 }
 
 impl ActionRequest {
     pub fn from(inner: wysiwyg::ActionRequest) -> Self {
         match inner {
-            wysiwyg::ActionRequest::Dummy => Self { dummy: Some(Dummy) },
+            wysiwyg::ActionRequest::Dummy => Self {
+                _dummy: Some(Dummy),
+            },
         }
     }
 }
 
 #[wasm_bindgen]
 pub struct ActionResponse {
-    dummy: Option<Dummy>,
+    _dummy: Option<Dummy>,
 }
 
 impl ActionResponse {
+    /*
     fn into(self) -> wysiwyg::ActionResponse {
-        if let Some(_dummy) = self.dummy {
+        if let Some(_dummy) = self._dummy {
             wysiwyg::ActionResponse::Dummy
         } else {
             panic!("Unknown ActionResponse type");
         }
-    }
+    }*/
 }
 
 pub struct Dummy;

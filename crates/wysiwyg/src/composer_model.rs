@@ -12,69 +12,62 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{
-    ActionResponse, ByteLocation, CodepointDelta, CodepointLocation,
-    ComposerUpdate, Utf16CodeunitLocation,
-};
-
-pub struct ComposerModel {
-    html: String, // TODO: not an AST yet!
-    selection_start_codepoint: CodepointLocation,
-    selection_end_codepoint: CodepointLocation,
+use crate::{ActionResponse, ComposerUpdate, Location};
+pub struct ComposerModel<C>
+where
+    C: Clone,
+{
+    html: Vec<C>, // TODO: not an AST yet!
+    start: Location,
+    end: Location,
 }
 
-impl ComposerModel {
+impl<C> ComposerModel<C>
+where
+    C: Clone,
+{
     pub fn new() -> Self {
         Self {
-            html: String::from(""),
-            selection_start_codepoint: CodepointLocation::from(0),
-            selection_end_codepoint: CodepointLocation::from(0),
+            html: Vec::new(),
+            start: Location::from(0),
+            end: Location::from(0),
         }
     }
 
     /**
-     * Cursor is at end_codepoint.
+     * Cursor is at end.
      */
-    pub fn select(
-        &mut self,
-        start_codepoint: CodepointLocation,
-        end_codepoint: CodepointLocation,
-    ) {
-        self.selection_start_codepoint = start_codepoint;
-        self.selection_end_codepoint = end_codepoint;
+    pub fn select(&mut self, start: Location, end: Location) {
+        self.start = start;
+        self.end = end;
     }
 
-    pub fn select_utf16_codeunits(
-        &mut self,
-        start_utf16_codeunit: Utf16CodeunitLocation,
-        end_utf16_codeunit: Utf16CodeunitLocation,
-    ) {
-        // TODO: this might be too inefficient - might need to store the UTF-16
-        // location until the last minute
-
-        self.select(
-            start_utf16_codeunit.codepoint(&self.html),
-            end_utf16_codeunit.codepoint(&self.html),
-        );
+    /**
+     * Return the start and end of the selection, ensuring the first number
+     * returned is <= the second, and they are both 0<=n<=html.len().
+     */
+    fn safe_selection(&self) -> (usize, usize) {
+        let mut s: usize = self.start.into();
+        let mut e: usize = self.end.into();
+        s = s.clamp(0, self.html.len());
+        e = e.clamp(0, self.html.len());
+        if s > e {
+            (e, s)
+        } else {
+            (s, e)
+        }
     }
 
-    pub fn replace_text(&mut self, new_text: &str) -> ComposerUpdate {
+    pub fn replace_text(&mut self, new_text: &[C]) -> ComposerUpdate<C> {
         // TODO: escape any HTML?
+        let (s, e) = self.safe_selection();
+        let mut new_html = self.html[..s].to_vec();
+        new_html.extend_from_slice(new_text);
+        new_html.extend_from_slice(&self.html[e..]);
+        self.html = new_html;
 
-        let range = &mut [
-            self.selection_start_byte().as_usize(),
-            self.selection_end_byte().as_usize(),
-        ];
-        range.sort();
-        self.html.replace_range(range[0]..range[1], new_text);
-
-        // Move cursor to after the inserted text
-        let new_cp = self.selection_earliest_codepoint();
-        self.selection_start_codepoint = ByteLocation::from(
-            new_cp.byte(&self.html).as_usize() + new_text.len(),
-        )
-        .codepoint(&self.html);
-        self.selection_end_codepoint = self.selection_start_codepoint;
+        self.start = Location::from(s + new_text.len());
+        self.end = self.start;
 
         // TODO: for now, we replace every time, to check ourselves, but
         // at least some of the time we should not
@@ -82,44 +75,56 @@ impl ComposerModel {
         //ComposerUpdate::keep()
     }
 
-    pub fn enter(&mut self) -> ComposerUpdate {
+    pub fn enter(&mut self) -> ComposerUpdate<C> {
         ComposerUpdate::keep()
     }
 
-    pub fn backspace(&mut self) -> ComposerUpdate {
-        if self.selection_start_codepoint == self.selection_end_codepoint {
+    pub fn backspace(&mut self) -> ComposerUpdate<C> {
+        if self.start == self.end {
             // Go back 1 from the current location
-            self.selection_start_codepoint
-                .move_forward(CodepointDelta::from(-1));
+            self.start -= 1;
         }
 
-        self.replace_text("")
+        self.replace_text(&[])
     }
 
-    pub fn delete(&mut self) -> ComposerUpdate {
-        if self.selection_start_codepoint == self.selection_end_codepoint {
+    pub fn delete(&mut self) -> ComposerUpdate<C> {
+        if self.start == self.end {
             // Go forward 1 from the current location
-            self.selection_end_codepoint
-                .move_forward(CodepointDelta::from(1));
+            self.end += 1;
         }
 
-        self.replace_text("")
+        self.replace_text(&[])
     }
 
-    pub fn bold(&mut self) -> ComposerUpdate {
-        let mut range = [
-            self.selection_start_byte().as_usize(),
-            self.selection_end_byte().as_usize(),
-        ];
-        range.sort();
+    pub fn action_response(
+        &mut self,
+        action_id: String,
+        response: ActionResponse,
+    ) -> ComposerUpdate<C> {
+        drop(action_id);
+        drop(response);
+        ComposerUpdate::keep()
+    }
+
+    // Internal functions
+
+    fn create_update_replace_all(&self) -> ComposerUpdate<C> {
+        ComposerUpdate::replace_all(self.html.clone(), self.start, self.end)
+    }
+}
+
+impl ComposerModel<u16> {
+    pub fn bold(&mut self) -> ComposerUpdate<u16> {
+        let (s, e) = self.safe_selection();
 
         // TODO: not a real AST
-        self.html = format!(
-            "{}<strong>{}</strong>{}",
-            &self.html[..range[0]],
-            &self.html[range[0]..range[1]],
-            &self.html[range[1]..]
-        );
+        let mut new_html = self.html[..s].to_vec();
+        new_html.extend("<strong>".encode_utf16().collect::<Vec<_>>());
+        new_html.extend_from_slice(&self.html[s..e]);
+        new_html.extend("</strong>".encode_utf16().collect::<Vec<_>>());
+        new_html.extend_from_slice(&self.html[e..]);
+        self.html = new_html;
 
         /*
         TODO: probably requires a real AST
@@ -132,96 +137,56 @@ impl ComposerModel {
 
         self.create_update_replace_all()
     }
-
-    pub fn action_response(
-        &mut self,
-        action_id: String,
-        response: ActionResponse,
-    ) -> ComposerUpdate {
-        drop(action_id);
-        drop(response);
-        ComposerUpdate::keep()
-    }
-
-    // Internal functions
-
-    fn create_update_replace_all(&self) -> ComposerUpdate {
-        ComposerUpdate::replace_all(
-            self.html.clone(),
-            self.selection_start_codepoint,
-            self.selection_end_codepoint,
-        )
-    }
-
-    fn selection_start_byte(&self) -> ByteLocation {
-        self.selection_start_codepoint.byte(&self.html)
-    }
-
-    fn selection_end_byte(&self) -> ByteLocation {
-        self.selection_end_codepoint.byte(&self.html)
-    }
-
-    fn selection_earliest_codepoint(&self) -> CodepointLocation {
-        if self.selection_start_codepoint.as_usize()
-            <= self.selection_end_codepoint.as_usize()
-        {
-            self.selection_start_codepoint
-        } else {
-            self.selection_end_codepoint
-        }
-    }
 }
 
 #[cfg(test)]
 mod test {
     use speculoos::{prelude::*, AssertionFailure, Spec};
 
-    use crate::{
-        ByteLocation, CodepointDelta, CodepointLocation, Utf16CodeunitLocation,
-    };
+    use crate::Location;
 
     use super::ComposerModel;
 
     #[test]
     fn typing_a_character_into_an_empty_box_appends_it() {
         let mut model = cm("|");
-        model.replace_text("v");
+        replace_text(&mut model, "v");
         assert_eq!(tx(&model), "v|");
     }
 
     #[test]
     fn typing_a_character_at_the_end_appends_it() {
         let mut model = cm("abc|");
-        model.replace_text("d");
+        replace_text(&mut model, "d");
         assert_eq!(tx(&model), "abcd|");
     }
 
     #[test]
     fn typing_a_character_in_the_middle_inserts_it() {
         let mut model = cm("|abc");
-        model.replace_text("Z");
+        replace_text(&mut model, "Z");
         assert_eq!(tx(&model), "Z|abc");
     }
 
     #[test]
     fn selecting_past_the_end_is_harmless() {
         let mut model = cm("|");
-        model.select(CodepointLocation::from(7), CodepointLocation::from(7));
-        model.replace_text("Z");
+        model.select(Location::from(7), Location::from(7));
+        replace_text(&mut model, "Z");
         assert_eq!(tx(&model), "Z|");
     }
 
     #[test]
     fn replacing_a_selection_with_a_character() {
         let mut model = cm("abc{def}|ghi");
-        model.replace_text("Z");
+        replace_text(&mut model, "Z");
         assert_eq!(tx(&model), "abcZ|ghi");
     }
 
     #[test]
     fn replacing_a_backwards_selection_with_a_character() {
         let mut model = cm("abc|{def}ghi");
-        model.replace_text("Z");
+        replace_text(&mut model, "Z");
         assert_eq!(tx(&model), "abcZ|ghi");
     }
 
@@ -230,7 +195,7 @@ mod test {
         // Woman Astronaut:
         // Woman+Dark Skin Tone+Zero Width Joiner+Rocket
         let mut model = cm("\u{1F469}\u{1F3FF}\u{200D}\u{1F680}|");
-        model.replace_text("Z");
+        replace_text(&mut model, "Z");
         assert_eq!(tx(&model), "\u{1F469}\u{1F3FF}\u{200D}\u{1F680}Z|");
     }
 
@@ -307,17 +272,45 @@ mod test {
     #[test]
     fn selecting_ascii_characters() {
         let mut model = cm("abcdefgh|");
-        model.select(CodepointLocation::from(0), CodepointLocation::from(1));
+        model.select(Location::from(0), Location::from(1));
         assert_eq!(tx(&model), "{a}|bcdefgh");
 
-        model.select(CodepointLocation::from(1), CodepointLocation::from(3));
+        model.select(Location::from(1), Location::from(3));
         assert_eq!(tx(&model), "a{bc}|defgh");
 
-        model.select(CodepointLocation::from(4), CodepointLocation::from(8));
+        model.select(Location::from(4), Location::from(8));
         assert_eq!(tx(&model), "abcd{efgh}|");
 
-        model.select(CodepointLocation::from(4), CodepointLocation::from(9));
+        model.select(Location::from(4), Location::from(9));
         assert_eq!(tx(&model), "abcd{efgh}|");
+    }
+
+    #[test]
+    fn selecting_single_utf16_code_unit_characters() {
+        let mut model = cm("\u{03A9}\u{03A9}\u{03A9}|");
+
+        model.select(Location::from(0), Location::from(1));
+        assert_eq!(tx(&model), "{\u{03A9}}|\u{03A9}\u{03A9}");
+
+        model.select(Location::from(0), Location::from(3));
+        assert_eq!(tx(&model), "{\u{03A9}\u{03A9}\u{03A9}}|");
+
+        model.select(Location::from(1), Location::from(2));
+        assert_eq!(tx(&model), "\u{03A9}{\u{03A9}}|\u{03A9}");
+    }
+
+    #[test]
+    fn selecting_multiple_utf16_code_unit_characters() {
+        let mut model = cm("\u{1F4A9}\u{1F4A9}\u{1F4A9}|");
+
+        model.select(Location::from(0), Location::from(2));
+        assert_eq!(tx(&model), "{\u{1F4A9}}|\u{1F4A9}\u{1F4A9}");
+
+        model.select(Location::from(0), Location::from(6));
+        assert_eq!(tx(&model), "{\u{1F4A9}\u{1F4A9}\u{1F4A9}}|");
+
+        model.select(Location::from(2), Location::from(4));
+        assert_eq!(tx(&model), "\u{1F4A9}{\u{1F4A9}}|\u{1F4A9}");
     }
 
     #[test]
@@ -325,25 +318,25 @@ mod test {
         let mut model =
             cm("aaa\u{03A9}bbb\u{1F469}\u{1F3FF}\u{200D}\u{1F680}ccc|");
 
-        model.select(CodepointLocation::from(0), CodepointLocation::from(3));
+        model.select(Location::from(0), Location::from(3));
         assert_eq!(
             tx(&model),
             "{aaa}|\u{03A9}bbb\u{1F469}\u{1F3FF}\u{200D}\u{1F680}ccc"
         );
 
-        model.select(CodepointLocation::from(0), CodepointLocation::from(4));
+        model.select(Location::from(0), Location::from(4));
         assert_eq!(
             tx(&model),
             "{aaa\u{03A9}}|bbb\u{1F469}\u{1F3FF}\u{200D}\u{1F680}ccc"
         );
 
-        model.select(CodepointLocation::from(7), CodepointLocation::from(11));
+        model.select(Location::from(7), Location::from(14));
         assert_eq!(
             tx(&model),
             "aaa\u{03A9}bbb{\u{1F469}\u{1F3FF}\u{200D}\u{1F680}}|ccc"
         );
 
-        model.select(CodepointLocation::from(7), CodepointLocation::from(12));
+        model.select(Location::from(7), Location::from(15));
         assert_eq!(
             tx(&model),
             "aaa\u{03A9}bbb{\u{1F469}\u{1F3FF}\u{200D}\u{1F680}c}|cc"
@@ -351,122 +344,22 @@ mod test {
     }
 
     #[test]
-    fn selecting_ascii_characters_via_utf16() {
-        let mut model = cm("abcdefgh|");
-        model.select_utf16_codeunits(
-            Utf16CodeunitLocation::from(0),
-            Utf16CodeunitLocation::from(1),
-        );
-        assert_eq!(tx(&model), "{a}|bcdefgh");
+    fn bolding_ascii_adds_strong_tags() {
+        let mut model = cm("aa{bb}|cc");
+        model.bold();
+        // TODO: because it's not an AST
+        assert_eq!(tx(&model), "aa{<s}|trong>bb</strong>cc");
 
-        model.select_utf16_codeunits(
-            Utf16CodeunitLocation::from(1),
-            Utf16CodeunitLocation::from(3),
-        );
-        assert_eq!(tx(&model), "a{bc}|defgh");
-
-        model.select_utf16_codeunits(
-            Utf16CodeunitLocation::from(4),
-            Utf16CodeunitLocation::from(8),
-        );
-        assert_eq!(tx(&model), "abcd{efgh}|");
-
-        model.select_utf16_codeunits(
-            Utf16CodeunitLocation::from(4),
-            Utf16CodeunitLocation::from(9),
-        );
-        assert_eq!(tx(&model), "abcd{efgh}|");
-    }
-
-    #[test]
-    fn selecting_single_utf16_code_unit_characters_utf16() {
-        let mut model = cm("\u{03A9}\u{03A9}\u{03A9}|");
-
-        model.select_utf16_codeunits(
-            Utf16CodeunitLocation::from(0),
-            Utf16CodeunitLocation::from(1),
-        );
-        assert_eq!(tx(&model), "{\u{03A9}}|\u{03A9}\u{03A9}");
-
-        model.select_utf16_codeunits(
-            Utf16CodeunitLocation::from(0),
-            Utf16CodeunitLocation::from(3),
-        );
-        assert_eq!(tx(&model), "{\u{03A9}\u{03A9}\u{03A9}}|");
-
-        model.select_utf16_codeunits(
-            Utf16CodeunitLocation::from(1),
-            Utf16CodeunitLocation::from(2),
-        );
-        assert_eq!(tx(&model), "\u{03A9}{\u{03A9}}|\u{03A9}");
-    }
-
-    #[test]
-    fn selecting_multiple_utf16_code_unit_characters_utf16() {
-        let mut model = cm("\u{1F4A9}\u{1F4A9}\u{1F4A9}|");
-
-        model.select_utf16_codeunits(
-            Utf16CodeunitLocation::from(0),
-            Utf16CodeunitLocation::from(2),
-        );
-        assert_eq!(tx(&model), "{\u{1F4A9}}|\u{1F4A9}\u{1F4A9}");
-
-        model.select_utf16_codeunits(
-            Utf16CodeunitLocation::from(0),
-            Utf16CodeunitLocation::from(6),
-        );
-        assert_eq!(tx(&model), "{\u{1F4A9}\u{1F4A9}\u{1F4A9}}|");
-
-        model.select_utf16_codeunits(
-            Utf16CodeunitLocation::from(2),
-            Utf16CodeunitLocation::from(4),
-        );
-        assert_eq!(tx(&model), "\u{1F4A9}{\u{1F4A9}}|\u{1F4A9}");
-    }
-
-    #[test]
-    fn selecting_complex_characters_via_utf16() {
-        let mut model =
-            cm("aaa\u{03A9}bbb\u{1F469}\u{1F3FF}\u{200D}\u{1F680}ccc|");
-
-        model.select_utf16_codeunits(
-            Utf16CodeunitLocation::from(0),
-            Utf16CodeunitLocation::from(3),
-        );
-        assert_eq!(
-            tx(&model),
-            "{aaa}|\u{03A9}bbb\u{1F469}\u{1F3FF}\u{200D}\u{1F680}ccc"
-        );
-
-        model.select_utf16_codeunits(
-            Utf16CodeunitLocation::from(0),
-            Utf16CodeunitLocation::from(4),
-        );
-        assert_eq!(
-            tx(&model),
-            "{aaa\u{03A9}}|bbb\u{1F469}\u{1F3FF}\u{200D}\u{1F680}ccc"
-        );
-
-        model.select_utf16_codeunits(
-            Utf16CodeunitLocation::from(7),
-            Utf16CodeunitLocation::from(14),
-        );
-        assert_eq!(
-            tx(&model),
-            "aaa\u{03A9}bbb{\u{1F469}\u{1F3FF}\u{200D}\u{1F680}}|ccc"
-        );
-
-        model.select_utf16_codeunits(
-            Utf16CodeunitLocation::from(7),
-            Utf16CodeunitLocation::from(15),
-        );
-        assert_eq!(
-            tx(&model),
-            "aaa\u{03A9}bbb{\u{1F469}\u{1F3FF}\u{200D}\u{1F680}c}|cc"
-        );
+        let mut model = cm("aa|{bb}cc");
+        model.bold();
+        assert_eq!(tx(&model), "aa|{<s}trong>bb</strong>cc");
     }
 
     // Test utils
+
+    fn replace_text(model: &mut ComposerModel<u16>, new_text: &str) {
+        model.replace_text(&new_text.encode_utf16().collect::<Vec<u16>>());
+    }
 
     trait Roundtrips<T> {
         fn roundtrips(&self);
@@ -491,42 +384,47 @@ mod test {
     /**
      * Create a ComposerModel from a text representation.
      */
-    fn cm(text: &str) -> ComposerModel {
-        let curs = text.find('|').expect(&format!(
-            "ComposerModel text did not contain a '|' symbol: '{}'",
-            text,
-        ));
-        let curs_b = ByteLocation::from(curs);
-        let curs_cp = curs_b.codepoint(text);
+    fn cm(text: &str) -> ComposerModel<u16> {
+        let text: Vec<u16> = text.encode_utf16().collect();
 
-        let s = text.find('{');
-        let e = text.find('}');
+        fn find(haystack: &[u16], needle: &str) -> Option<usize> {
+            let needle = needle.encode_utf16().collect::<Vec<u16>>()[0];
+            for (i, &ch) in haystack.iter().enumerate() {
+                if ch == needle {
+                    return Some(i);
+                }
+            }
+            None
+        }
+
+        let curs = find(&text, "|").expect(&format!(
+            "ComposerModel text did not contain a '|' symbol: '{}'",
+            String::from_utf16(&text)
+                .expect("ComposerModel text was not UTF-16"),
+        ));
+
+        let s = find(&text, "{");
+        let e = find(&text, "}");
 
         let mut ret = ComposerModel::new();
-        if let (Some(s), Some(e)) = (s, e) {
-            let s_b = ByteLocation::from(s);
-            let e_b = ByteLocation::from(e);
-            let s_cp = s_b.codepoint(text);
-            let mut e_cp = e_b.codepoint(text);
 
+        if let (Some(s), Some(e)) = (s, e) {
             if curs == e + 1 {
                 // Cursor after end: foo{bar}|baz
-                // The { made an extra codepoint - move the end back 1
-                e_cp.move_forward(CodepointDelta::from(-1));
-                ret.selection_start_codepoint = s_cp;
-                ret.selection_end_codepoint = e_cp;
-                ret.html = String::from(&text[..s])
-                    + &text[s + 1..e]
-                    + &text[curs + 1..];
+                // The { made an extra codeunit - move the end back 1
+                ret.start = Location::from(s);
+                ret.end = Location::from(e - 1);
+                ret.html = text[..s].to_vec();
+                ret.html.extend_from_slice(&text[s + 1..e]);
+                ret.html.extend_from_slice(&text[curs + 1..]);
             } else if curs == s - 1 {
                 // Cursor before beginning: foo|{bar}baz
-                // The |{ made an extra 2 codepoints - move the end back 2
-                e_cp.move_forward(CodepointDelta::from(-2));
-                ret.selection_start_codepoint = e_cp;
-                ret.selection_end_codepoint = curs_cp;
-                ret.html = String::from(&text[..curs])
-                    + &text[s + 1..e]
-                    + &text[e + 1..];
+                // The |{ made an extra 2 codeunits - move the end back 2
+                ret.start = Location::from(e - 2);
+                ret.end = Location::from(curs);
+                ret.html = text[..curs].to_vec();
+                ret.html.extend_from_slice(&text[s + 1..e]);
+                ret.html.extend_from_slice(&text[e + 1..]);
             } else {
                 panic!(
                     "The cursor ('|') must always be directly before or after \
@@ -535,127 +433,181 @@ mod test {
                 )
             }
         } else {
-            ret.selection_start_codepoint = curs_cp;
-            ret.selection_end_codepoint = curs_cp;
-            ret.html = String::from(&text[..curs]) + &text[curs + 1..];
+            ret.start = Location::from(curs);
+            ret.end = Location::from(curs);
+            ret.html = text[..curs].to_vec();
+            ret.html.extend_from_slice(&text[curs + 1..]);
         }
+
         ret
     }
 
     /**
      * Convert a ComposerModel to a text representation.
      */
-    fn tx(model: &ComposerModel) -> String {
-        let mut ret = model.html.clone();
-        if model.selection_start_codepoint == model.selection_end_codepoint {
-            ret.insert(model.selection_start_byte().as_usize(), '|');
+    fn tx(model: &ComposerModel<u16>) -> String {
+        let mut ret;
+        if model.start == model.end {
+            ret =
+                String::from_utf16(&model.html[..model.start.into()]).unwrap();
+            ret.push('|');
+            ret +=
+                &String::from_utf16(&model.html[model.start.into()..]).unwrap();
         } else {
-            let s = model.selection_start_byte().as_usize();
-            let e = model.selection_end_byte().as_usize();
-            if s < e {
-                ret.insert_str(e, "}|");
-                ret.insert_str(s, "{");
+            let (s, e) = model.safe_selection();
+
+            ret = String::from_utf16(&model.html[..s]).unwrap();
+            if model.start < model.end {
+                ret.push('{');
             } else {
-                ret.insert_str(s, "}");
-                ret.insert_str(e, "|{");
+                ret += "|{";
             }
+            ret += &String::from_utf16(&model.html[s..e]).unwrap();
+            if model.start < model.end {
+                ret += "}|";
+            } else {
+                ret.push('}');
+            }
+            ret += &String::from_utf16(&model.html[e..]).unwrap()
         }
         ret
     }
 
     #[test]
     fn cm_creates_correct_component_model() {
-        assert_eq!(cm("|").selection_start_codepoint.as_usize(), 0);
-        assert_eq!(cm("|").selection_end_codepoint.as_usize(), 0);
-        assert_eq!(cm("|").html, "");
+        assert_eq!(cm("|").start, 0);
+        assert_eq!(cm("|").end, 0);
+        assert_eq!(cm("|").html, &[]);
 
-        assert_eq!(cm("a|").selection_start_codepoint.as_usize(), 1);
-        assert_eq!(cm("a|").selection_end_codepoint.as_usize(), 1);
-        assert_eq!(cm("a|").html, "a");
+        assert_eq!(cm("a|").start, 1);
+        assert_eq!(cm("a|").end, 1);
+        assert_eq!(cm("a|").html, "a".encode_utf16().collect::<Vec<_>>());
 
-        assert_eq!(cm("a|b").selection_start_codepoint.as_usize(), 1);
-        assert_eq!(cm("a|b").selection_end_codepoint.as_usize(), 1);
-        assert_eq!(cm("a|b").html, "ab");
+        assert_eq!(cm("a|b").start, 1);
+        assert_eq!(cm("a|b").end, 1);
+        assert_eq!(cm("a|b").html, "ab".encode_utf16().collect::<Vec<_>>());
 
-        assert_eq!(cm("|ab").selection_start_codepoint.as_usize(), 0);
-        assert_eq!(cm("|ab").selection_end_codepoint.as_usize(), 0);
-        assert_eq!(cm("|ab").html, "ab");
+        assert_eq!(cm("|ab").start, 0);
+        assert_eq!(cm("|ab").end, 0);
+        assert_eq!(cm("|ab").html, "ab".encode_utf16().collect::<Vec<_>>());
 
-        assert_eq!(cm("foo|").selection_start_codepoint.as_usize(), 3);
-        assert_eq!(cm("foo|").selection_end_codepoint.as_usize(), 3);
-        assert_eq!(cm("foo|").html, "foo");
+        assert_eq!(cm("foo|").start, 3);
+        assert_eq!(cm("foo|").end, 3);
+        assert_eq!(cm("foo|").html, "foo".encode_utf16().collect::<Vec<_>>());
 
         let t1 = cm("foo|\u{1F4A9}bar");
-        assert_eq!(t1.selection_start_codepoint.as_usize(), 3);
-        assert_eq!(t1.selection_end_codepoint.as_usize(), 3);
-        assert_eq!(t1.html, "foo\u{1F4A9}bar");
+        assert_eq!(t1.start, 3);
+        assert_eq!(t1.end, 3);
+        assert_eq!(
+            t1.html,
+            "foo\u{1F4A9}bar".encode_utf16().collect::<Vec<_>>()
+        );
 
         let t2 = cm("foo\u{1F4A9}|bar");
-        assert_eq!(t2.selection_start_codepoint.as_usize(), 4);
-        assert_eq!(t2.selection_end_codepoint.as_usize(), 4);
-        assert_eq!(t2.html, "foo\u{1F4A9}bar");
+        assert_eq!(t2.start, 5);
+        assert_eq!(t2.end, 5);
+        assert_eq!(
+            t2.html,
+            "foo\u{1F4A9}bar".encode_utf16().collect::<Vec<_>>()
+        );
 
-        assert_eq!(cm("foo|\u{1F4A9}").selection_start_codepoint.as_usize(), 3);
-        assert_eq!(cm("foo|\u{1F4A9}").selection_end_codepoint.as_usize(), 3);
-        assert_eq!(cm("foo|\u{1F4A9}").html, "foo\u{1F4A9}");
+        assert_eq!(cm("foo|\u{1F4A9}").start, 3);
+        assert_eq!(cm("foo|\u{1F4A9}").end, 3);
+        assert_eq!(
+            cm("foo|\u{1F4A9}").html,
+            "foo\u{1F4A9}".encode_utf16().collect::<Vec<_>>()
+        );
 
-        assert_eq!(cm("foo\u{1F4A9}|").selection_start_codepoint.as_usize(), 4);
-        assert_eq!(cm("foo\u{1F4A9}|").selection_end_codepoint.as_usize(), 4);
-        assert_eq!(cm("foo\u{1F4A9}|").html, "foo\u{1F4A9}");
+        assert_eq!(cm("foo\u{1F4A9}|").start, 5);
+        assert_eq!(cm("foo\u{1F4A9}|").end, 5);
+        assert_eq!(
+            cm("foo\u{1F4A9}|").html,
+            "foo\u{1F4A9}".encode_utf16().collect::<Vec<_>>()
+        );
 
-        assert_eq!(cm("|\u{1F4A9}bar").selection_start_codepoint.as_usize(), 0);
-        assert_eq!(cm("|\u{1F4A9}bar").selection_end_codepoint.as_usize(), 0);
-        assert_eq!(cm("|\u{1F4A9}bar").html, "\u{1F4A9}bar");
+        assert_eq!(cm("|\u{1F4A9}bar").start, 0);
+        assert_eq!(cm("|\u{1F4A9}bar").end, 0);
+        assert_eq!(
+            cm("|\u{1F4A9}bar").html,
+            "\u{1F4A9}bar".encode_utf16().collect::<Vec<_>>()
+        );
 
-        assert_eq!(cm("\u{1F4A9}|bar").selection_start_codepoint.as_usize(), 1);
-        assert_eq!(cm("\u{1F4A9}|bar").selection_end_codepoint.as_usize(), 1);
-        assert_eq!(cm("\u{1F4A9}|bar").html, "\u{1F4A9}bar");
+        assert_eq!(cm("\u{1F4A9}|bar").start, 2);
+        assert_eq!(cm("\u{1F4A9}|bar").end, 2);
+        assert_eq!(
+            cm("\u{1F4A9}|bar").html,
+            "\u{1F4A9}bar".encode_utf16().collect::<Vec<_>>()
+        );
 
-        assert_eq!(cm("{a}|").selection_start_codepoint.as_usize(), 0);
-        assert_eq!(cm("{a}|").selection_end_codepoint.as_usize(), 1);
-        assert_eq!(cm("{a}|").html, "a");
+        assert_eq!(cm("{a}|").start, 0);
+        assert_eq!(cm("{a}|").end, 1);
+        assert_eq!(cm("{a}|").html, "a".encode_utf16().collect::<Vec<_>>());
 
-        assert_eq!(cm("|{a}").selection_start_codepoint.as_usize(), 1);
-        assert_eq!(cm("|{a}").selection_end_codepoint.as_usize(), 0);
-        assert_eq!(cm("|{a}").html, "a");
+        assert_eq!(cm("|{a}").start, 1);
+        assert_eq!(cm("|{a}").end, 0);
+        assert_eq!(cm("|{a}").html, "a".encode_utf16().collect::<Vec<_>>());
 
-        assert_eq!(cm("abc{def}|ghi").selection_start_codepoint.as_usize(), 3);
-        assert_eq!(cm("abc{def}|ghi").selection_end_codepoint.as_usize(), 6);
-        assert_eq!(cm("abc{def}|ghi").html, "abcdefghi");
+        assert_eq!(cm("abc{def}|ghi").start, 3);
+        assert_eq!(cm("abc{def}|ghi").end, 6);
+        assert_eq!(
+            cm("abc{def}|ghi").html,
+            "abcdefghi".encode_utf16().collect::<Vec<_>>()
+        );
 
-        assert_eq!(cm("abc|{def}ghi").selection_start_codepoint.as_usize(), 6);
-        assert_eq!(cm("abc|{def}ghi").selection_end_codepoint.as_usize(), 3);
-        assert_eq!(cm("abc|{def}ghi").html, "abcdefghi");
+        assert_eq!(cm("abc|{def}ghi").start, 6);
+        assert_eq!(cm("abc|{def}ghi").end, 3);
+        assert_eq!(
+            cm("abc|{def}ghi").html,
+            "abcdefghi".encode_utf16().collect::<Vec<_>>()
+        );
 
         let t3 = cm("\u{1F4A9}{def}|ghi");
-        assert_eq!(t3.selection_start_codepoint.as_usize(), 1);
-        assert_eq!(t3.selection_end_codepoint.as_usize(), 4);
-        assert_eq!(t3.html, "\u{1F4A9}defghi");
+        assert_eq!(t3.start, 2);
+        assert_eq!(t3.end, 5);
+        assert_eq!(
+            t3.html,
+            "\u{1F4A9}defghi".encode_utf16().collect::<Vec<_>>()
+        );
 
         let t4 = cm("\u{1F4A9}|{def}ghi");
-        assert_eq!(t4.selection_start_codepoint.as_usize(), 4);
-        assert_eq!(t4.selection_end_codepoint.as_usize(), 1);
-        assert_eq!(t4.html, "\u{1F4A9}defghi");
+        assert_eq!(t4.start, 5);
+        assert_eq!(t4.end, 2);
+        assert_eq!(
+            t4.html,
+            "\u{1F4A9}defghi".encode_utf16().collect::<Vec<_>>()
+        );
 
         let t5 = cm("abc{d\u{1F4A9}f}|ghi");
-        assert_eq!(t5.selection_start_codepoint.as_usize(), 3);
-        assert_eq!(t5.selection_end_codepoint.as_usize(), 6);
-        assert_eq!(t5.html, "abcd\u{1F4A9}fghi");
+        assert_eq!(t5.start, 3);
+        assert_eq!(t5.end, 7);
+        assert_eq!(
+            t5.html,
+            "abcd\u{1F4A9}fghi".encode_utf16().collect::<Vec<_>>()
+        );
 
         let t6 = cm("abc|{d\u{1F4A9}f}ghi");
-        assert_eq!(t6.selection_start_codepoint.as_usize(), 6);
-        assert_eq!(t6.selection_end_codepoint.as_usize(), 3);
-        assert_eq!(t6.html, "abcd\u{1F4A9}fghi");
+        assert_eq!(t6.start, 7);
+        assert_eq!(t6.end, 3);
+        assert_eq!(
+            t6.html,
+            "abcd\u{1F4A9}fghi".encode_utf16().collect::<Vec<_>>()
+        );
 
         let t7 = cm("abc{def}|\u{1F4A9}ghi");
-        assert_eq!(t7.selection_start_codepoint.as_usize(), 3);
-        assert_eq!(t7.selection_end_codepoint.as_usize(), 6);
-        assert_eq!(t7.html, "abcdef\u{1F4A9}ghi");
+        assert_eq!(t7.start, 3);
+        assert_eq!(t7.end, 6);
+        assert_eq!(
+            t7.html,
+            "abcdef\u{1F4A9}ghi".encode_utf16().collect::<Vec<_>>()
+        );
 
         let t8 = cm("abc|{def}\u{1F4A9}ghi");
-        assert_eq!(t8.selection_start_codepoint.as_usize(), 6);
-        assert_eq!(t8.selection_end_codepoint.as_usize(), 3);
-        assert_eq!(t8.html, "abcdef\u{1F4A9}ghi");
+        assert_eq!(t8.start, 6);
+        assert_eq!(t8.end, 3);
+        assert_eq!(
+            t8.html,
+            "abcdef\u{1F4A9}ghi".encode_utf16().collect::<Vec<_>>()
+        );
     }
 
     #[test]
