@@ -2,6 +2,7 @@ import init, { new_composer_model } from './generated/wysiwyg.js';
 
 let composer_model;
 let editor;
+let button_bold;
 
 async function wysiwyg_run() {
     await init();
@@ -9,9 +10,14 @@ async function wysiwyg_run() {
     console.debug(`new_composer_model`);
     composer_model = new_composer_model();
 
-    editor = document.getElementById('editor');
+    editor = document.getElementsByClassName('editor')[0];
     editor.addEventListener('input', editor_input);
     editor.addEventListener("keydown", editor_keydown);
+
+    button_bold = document.getElementsByClassName('button_bold')[0];
+    button_bold.addEventListener('click', button_bold_click);
+    button_bold.href = "";
+
     document.addEventListener('selectionchange', selectionchange);
     editor.focus();
 }
@@ -37,14 +43,16 @@ function editor_keydown(e) {
     switch (e.key) {
         case 'b':
             editor.dispatchEvent(
-                new InputEvent(
-                    'input',
-                    { inputType: "formatBold" }
-                )
+                new InputEvent('input', { inputType: "formatBold" })
             );
             e.preventDefault();
             break;
     }
+}
+
+function button_bold_click(e) {
+    editor.dispatchEvent(new InputEvent('input', { inputType: "formatBold" }));
+    e.preventDefault();
 }
 
 function selectionchange() {

@@ -1,7 +1,6 @@
 import { node_and_offset } from "./wysiwyg.js";
 
 const editor = document.getElementById('editor');
-editor.style.display = "none";
 
 run_tests([
     { name: "node_and_offset finds at the start of simple text", test: () => {
@@ -51,8 +50,59 @@ run_tests([
         let { node, offset } = node_and_offset(editor, 7);
         assert_same(node, editor.childNodes[2]);
         assert_eq(offset, 1);
+    }},
+
+    { name: "ASCII characters have width 1", test: () => {
+        editor.innerHTML = "abcd";
+        deleteRange(0, 1);
+        assert_eq(editor.innerHTML, "bcd");
+
+        editor.innerHTML = "abcd";
+        deleteRange(0, 2);
+        assert_eq(editor.innerHTML, "cd");
+    }},
+
+    { name: "UCS-2 characters have width 1", test: () => {
+        editor.innerHTML = "\u{03A9}bcd";
+        deleteRange(0, 1);
+        assert_eq(editor.innerHTML, "bcd");
+
+        editor.innerHTML = "\u{03A9}bcd";
+        deleteRange(0, 2);
+        assert_eq(editor.innerHTML, "cd");
+    }},
+
+    { name: "Multi-code unit UTF-16 characters have width 2", test: () => {
+        editor.innerHTML = "\u{1F4A9}bcd";
+        deleteRange(0, 2);
+        assert_eq(editor.innerHTML, "bcd");
+
+        editor.innerHTML = "\u{1F4A9}bcd";
+        deleteRange(0, 3);
+        assert_eq(editor.innerHTML, "cd");
+    }},
+
+    { name: "Complex characters width = num UTF-16 code units", test: () => {
+        editor.innerHTML = "\u{1F469}\u{1F3FF}\u{200D}\u{1F680}bcd";
+        deleteRange(0, 7);
+        assert_eq(editor.innerHTML, "bcd");
+
+        editor.innerHTML = "\u{1F469}\u{1F3FF}\u{200D}\u{1F680}bcd";
+        deleteRange(0, 8);
+        assert_eq(editor.innerHTML, "cd");
     }}
 ]);
+
+function deleteRange(start, end) {
+    let textNode = editor.childNodes[0];
+    const range = document.createRange();
+    range.setStart(textNode, start);
+    range.setEnd(textNode, end);
+    var sel = document.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    sel.deleteFromDocument();
+}
 
 function run_tests(tests) {
     log("Running tests:");

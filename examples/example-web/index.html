@@ -3,16 +3,35 @@
 <head>
 <meta content="text/html;charset=utf-8" http-equiv="Content-Type"/>
 <style>
-#editor {
+body {
+    background-color: #fff;
+}
+.editor_container {
+    border: 2px solid #eee;
+    border-radius: 10px;
+    box-shadow: none;
+    box-sizing: border-box;
+}
+.editor_toolbar {
+    border-bottom: none;
+    box-shadow: 0 2px 2px -2px rgba(34,47,62,.1),0 8px 8px -4px rgba(34,47,62,.07);
+    padding: 0.4em 1em 0.1em 0.3em;
+}
+.editor {
     height: 4em;
-    border: 0.2em solid black;
-    border-radius: 0.4em;
     padding: 0.3em;
+    font-family: "Inter", "Twemoji", "Apple Color Emoji", "Segoe UI Emoji",
+    "STIXGeneral", "Arial", "Helvetica", sans-serif, "Noto Color Emoji";
 }
 </style>
 </head>
 <body>
-<div id="editor" contenteditable="true" role="textbox"><br/></div>
+<div class="editor_container">
+<div class="editor_toolbar">
+    <a class="button_bold" href="#"><img src="images/bold.svg"/></a>
+</div>
+<div class="editor" contenteditable="true" role="textbox"><br/></div>
+</div>
 <!--
 <button id="setrange">!</button>
 <input type="checkbox" id="doselectionchange" checked></input>
