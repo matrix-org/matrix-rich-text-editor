@@ -14,8 +14,7 @@
 		A6472CBC2886CF840021A0E8 /* WysiwygTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6472CBB2886CF840021A0E8 /* WysiwygTests.swift */; };
 		A6472CC62886CF840021A0E8 /* WysiwygUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6472CC52886CF840021A0E8 /* WysiwygUITests.swift */; };
 		A6472CC82886CF840021A0E8 /* WysiwygUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6472CC72886CF840021A0E8 /* WysiwygUITestsLaunchTests.swift */; };
-		A6472CD72886CFD50021A0E8 /* WysiwygComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6472CD62886CFD50021A0E8 /* WysiwygComposer.swift */; };
-		A6472CD92886CFDC0021A0E8 /* WysiwygComposerFFI.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = A6472CD82886CFDC0021A0E8 /* WysiwygComposerFFI.xcframework */; };
+		A6E6B26F2886D9AA009596F2 /* WysiwygComposer in Frameworks */ = {isa = PBXBuildFile; productRef = A6E6B26E2886D9AA009596F2 /* WysiwygComposer */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -46,8 +45,7 @@
 		A6472CC12886CF840021A0E8 /* WysiwygUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WysiwygUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A6472CC52886CF840021A0E8 /* WysiwygUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygUITests.swift; sourceTree = "<group>"; };
 		A6472CC72886CF840021A0E8 /* WysiwygUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygUITestsLaunchTests.swift; sourceTree = "<group>"; };
-		A6472CD62886CFD50021A0E8 /* WysiwygComposer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WysiwygComposer.swift; sourceTree = "<group>"; };
-		A6472CD82886CFDC0021A0E8 /* WysiwygComposerFFI.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = WysiwygComposerFFI.xcframework; sourceTree = "<group>"; };
+		A6E6B2712886DA6E009596F2 /* WysiwygComposer */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = WysiwygComposer; path = Packages/WysiwygComposer; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -55,7 +53,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A6472CD92886CFDC0021A0E8 /* WysiwygComposerFFI.xcframework in Frameworks */,
+				A6E6B26F2886D9AA009596F2 /* WysiwygComposer in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -79,11 +77,12 @@
 		A6472C9E2886CF830021A0E8 = {
 			isa = PBXGroup;
 			children = (
-				A6472CD42886CFA80021A0E8 /* Generated */,
+				A6E6B2702886DA6E009596F2 /* Packages */,
 				A6472CA92886CF830021A0E8 /* Wysiwyg */,
 				A6472CBA2886CF840021A0E8 /* WysiwygTests */,
 				A6472CC42886CF840021A0E8 /* WysiwygUITests */,
 				A6472CA82886CF830021A0E8 /* Products */,
+				A6E6B26D2886D9AA009596F2 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -133,21 +132,19 @@
 			path = WysiwygUITests;
 			sourceTree = "<group>";
 		};
-		A6472CD42886CFA80021A0E8 /* Generated */ = {
+		A6E6B26D2886D9AA009596F2 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				A6472CD82886CFDC0021A0E8 /* WysiwygComposerFFI.xcframework */,
-				A6472CD52886CFB00021A0E8 /* Sources */,
 			);
-			path = Generated;
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		A6472CD52886CFB00021A0E8 /* Sources */ = {
+		A6E6B2702886DA6E009596F2 /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				A6472CD62886CFD50021A0E8 /* WysiwygComposer.swift */,
+				A6E6B2712886DA6E009596F2 /* WysiwygComposer */,
 			);
-			path = Sources;
+			name = Packages;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -166,6 +163,9 @@
 			dependencies = (
 			);
 			name = Wysiwyg;
+			packageProductDependencies = (
+				A6E6B26E2886D9AA009596F2 /* WysiwygComposer */,
+			);
 			productName = Wysiwyg;
 			productReference = A6472CA72886CF830021A0E8 /* Wysiwyg.app */;
 			productType = "com.apple.product-type.application";
@@ -282,7 +282,6 @@
 			files = (
 				A6472CAD2886CF830021A0E8 /* ContentView.swift in Sources */,
 				A6472CAB2886CF830021A0E8 /* WysiwygApp.swift in Sources */,
-				A6472CD72886CFD50021A0E8 /* WysiwygComposer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -607,6 +606,13 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A6E6B26E2886D9AA009596F2 /* WysiwygComposer */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WysiwygComposer;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A6472C9F2886CF830021A0E8 /* Project object */;
 }

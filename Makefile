@@ -14,7 +14,8 @@ android-x86_64:
 	echo - target/x86_64-linux-android/release/libwysiwyg_ffi.so
 	echo - bindings/wysiwyg-ffi/src/wysiwyg_composer.udl
 
-IOS_GENERATED_DIR := ../../examples/example-ios/Generated
+IOS_PACKAGE_DIR := ../../examples/example-ios/Packages/WysiwygComposer/
+IOS_GENERATION_DIR := ../../examples/example-ios/Generated
 
 ios:
 	cd bindings/wysiwyg-ffi && \
@@ -26,25 +27,25 @@ ios:
 	  ../../target/x86_64-apple-ios/release/libwysiwyg_ffi.a \
 	  ../../target/aarch64-apple-ios-sim/release/libwysiwyg_ffi.a \
 	  -output ../../target/ios-simulator/libwysiwyg_ffi.a && \
-	rm -rf ${IOS_GENERATED_DIR} && \
-	mkdir -p ${IOS_GENERATED_DIR} && \
+	rm -rf ${IOS_PACKAGE_DIR}/WysiwygComposerFFI.xcframework && \
+	rm -f ${IOS_PACKAGE_DIR}/Sources/WysiwygComposer/WysiwygComposer.swift && \
+	rm -rf ${IOS_GENERATION_DIR} && \
+	mkdir -p ${IOS_GENERATION_DIR} && \
 	uniffi-bindgen \
 		generate src/wysiwyg_composer.udl \
 		--language swift \
 		--config uniffi.toml \
-		--out-dir ${IOS_GENERATED_DIR} && \
-	mkdir -p ${IOS_GENERATED_DIR}/headers && \
-	mkdir -p ${IOS_GENERATED_DIR}/Sources && \
-	mv ${IOS_GENERATED_DIR}/*.h         ${IOS_GENERATED_DIR}/headers/ && \
-	mv ${IOS_GENERATED_DIR}/*.modulemap ${IOS_GENERATED_DIR}/headers/module.modulemap && \
-	mv ${IOS_GENERATED_DIR}/*.swift     ${IOS_GENERATED_DIR}/Sources && \
+		--out-dir ${IOS_GENERATION_DIR} && \
+	mkdir -p ${IOS_GENERATION_DIR}/headers && \
+	mv ${IOS_GENERATION_DIR}/*.h         ${IOS_GENERATION_DIR}/headers/ && \
+	mv ${IOS_GENERATION_DIR}/*.modulemap ${IOS_GENERATION_DIR}/headers/module.modulemap && \
+	mv ${IOS_GENERATION_DIR}/*.swift     ${IOS_PACKAGE_DIR}/Sources/WysiwygComposer/ && \
 	xcodebuild -create-xcframework \
 	  -library ../../target/aarch64-apple-ios/release/libwysiwyg_ffi.a \
-	  -headers ${IOS_GENERATED_DIR}/headers \
+	  -headers ${IOS_GENERATION_DIR}/headers \
 	  -library ../../target/ios-simulator/libwysiwyg_ffi.a \
-	  -headers ${IOS_GENERATED_DIR}/headers \
-	  -output ${IOS_GENERATED_DIR}/WysiwygComposerFFI.xcframework && \
-	rm -rf ${IOS_GENERATED_DIR}/headers
+	  -headers ${IOS_GENERATION_DIR}/headers \
+	  -output ${IOS_PACKAGE_DIR}/WysiwygComposerFFI.xcframework
 web:
 	cd bindings/wysiwyg-wasm && \
 	npm install && \

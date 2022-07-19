@@ -6,28 +6,13 @@
 //
 
 import SwiftUI
-import WysiwygComposerFFI
+import WysiwygComposer
+
 
 struct ContentView: View {
     var body: some View {
-        Text(getRustString())
+        WysiwygTextView()
             .padding()
-    }
-
-    // FIXME: remove this test func
-    private func getRustString() -> String {
-        let model = newComposerModel()
-        let update = model.replaceText(newText: "Test string that goes through Rust")
-        let rawHTML: String
-        switch update.textUpdate() {
-        case .replaceAll(replacementHtml: let html,
-                         selectionStartCodepoint: _,
-                         selectionEndCodepoint: _):
-            rawHTML = html
-        default:
-            rawHTML = "Unable to load from Rust"
-        }
-        return rawHTML
     }
 }
 
