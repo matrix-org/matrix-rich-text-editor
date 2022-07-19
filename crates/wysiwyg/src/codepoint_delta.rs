@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::ByteLocation;
+use crate::CodepointLocation;
 
 pub struct CodepointDelta(isize);
 
@@ -26,6 +26,6 @@ impl CodepointDelta {
     }
 
     pub fn len_of(s: &str) -> CodepointDelta {
-        ByteLocation::from(s.len()).codepoint(s).as_delta()
+        CodepointLocation::end_of(s).as_delta()
     }
 }

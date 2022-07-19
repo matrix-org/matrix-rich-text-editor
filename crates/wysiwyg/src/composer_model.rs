@@ -14,7 +14,7 @@
 
 use crate::{
     ActionResponse, ByteLocation, CodepointDelta, CodepointLocation,
-    ComposerUpdate,
+    ComposerUpdate, Utf16CodeunitLocation,
 };
 
 pub struct ComposerModel {
@@ -42,6 +42,20 @@ impl ComposerModel {
     ) {
         self.selection_start_codepoint = start_codepoint;
         self.selection_end_codepoint = end_codepoint;
+    }
+
+    pub fn select_utf16_codeunits(
+        &mut self,
+        start_utf16_codeunit: Utf16CodeunitLocation,
+        end_utf16_codeunit: Utf16CodeunitLocation,
+    ) {
+        // TODO: this might be too inefficient - might need to store the UTF-16
+        // location until the last minute
+
+        self.select(
+            start_utf16_codeunit.codepoint(&self.html),
+            end_utf16_codeunit.codepoint(&self.html),
+        );
     }
 
     pub fn replace_text(&mut self, new_text: &str) -> ComposerUpdate {
@@ -162,7 +176,9 @@ impl ComposerModel {
 mod test {
     use speculoos::{prelude::*, AssertionFailure, Spec};
 
-    use crate::{ByteLocation, CodepointDelta, CodepointLocation};
+    use crate::{
+        ByteLocation, CodepointDelta, CodepointLocation, Utf16CodeunitLocation,
+    };
 
     use super::ComposerModel;
 
@@ -170,21 +186,21 @@ mod test {
     fn typing_a_character_into_an_empty_box_appends_it() {
         let mut model = cm("|");
         model.replace_text("v");
-        assert_eq!(tx(model), "v|");
+        assert_eq!(tx(&model), "v|");
     }
 
     #[test]
     fn typing_a_character_at_the_end_appends_it() {
         let mut model = cm("abc|");
         model.replace_text("d");
-        assert_eq!(tx(model), "abcd|");
+        assert_eq!(tx(&model), "abcd|");
     }
 
     #[test]
     fn typing_a_character_in_the_middle_inserts_it() {
         let mut model = cm("|abc");
         model.replace_text("Z");
-        assert_eq!(tx(model), "Z|abc");
+        assert_eq!(tx(&model), "Z|abc");
     }
 
     #[test]
@@ -192,21 +208,21 @@ mod test {
         let mut model = cm("|");
         model.select(CodepointLocation::from(7), CodepointLocation::from(7));
         model.replace_text("Z");
-        assert_eq!(tx(model), "Z|");
+        assert_eq!(tx(&model), "Z|");
     }
 
     #[test]
     fn replacing_a_selection_with_a_character() {
         let mut model = cm("abc{def}|ghi");
         model.replace_text("Z");
-        assert_eq!(tx(model), "abcZ|ghi");
+        assert_eq!(tx(&model), "abcZ|ghi");
     }
 
     #[test]
     fn replacing_a_backwards_selection_with_a_character() {
         let mut model = cm("abc|{def}ghi");
         model.replace_text("Z");
-        assert_eq!(tx(model), "abcZ|ghi");
+        assert_eq!(tx(&model), "abcZ|ghi");
     }
 
     #[test]
@@ -215,77 +231,239 @@ mod test {
         // Woman+Dark Skin Tone+Zero Width Joiner+Rocket
         let mut model = cm("\u{1F469}\u{1F3FF}\u{200D}\u{1F680}|");
         model.replace_text("Z");
-        assert_eq!(tx(model), "\u{1F469}\u{1F3FF}\u{200D}\u{1F680}Z|");
+        assert_eq!(tx(&model), "\u{1F469}\u{1F3FF}\u{200D}\u{1F680}Z|");
     }
 
     #[test]
     fn backspacing_a_character_at_the_end_deletes_it() {
         let mut model = cm("abc|");
         model.backspace();
-        assert_eq!(tx(model), "ab|");
+        assert_eq!(tx(&model), "ab|");
     }
 
     #[test]
     fn backspacing_a_character_at_the_beginning_does_nothing() {
         let mut model = cm("|abc");
         model.backspace();
-        assert_eq!(tx(model), "|abc");
+        assert_eq!(tx(&model), "|abc");
     }
 
     #[test]
     fn backspacing_a_character_in_the_middle_deletes_it() {
         let mut model = cm("ab|c");
         model.backspace();
-        assert_eq!(tx(model), "a|c");
+        assert_eq!(tx(&model), "a|c");
     }
 
     #[test]
     fn backspacing_a_selection_deletes_it() {
         let mut model = cm("a{bc}|");
         model.backspace();
-        assert_eq!(tx(model), "a|");
+        assert_eq!(tx(&model), "a|");
     }
 
     #[test]
     fn backspacing_a_backwards_selection_deletes_it() {
         let mut model = cm("a|{bc}");
         model.backspace();
-        assert_eq!(tx(model), "a|");
+        assert_eq!(tx(&model), "a|");
     }
 
     #[test]
     fn deleting_a_character_at_the_end_does_nothing() {
         let mut model = cm("abc|");
         model.delete();
-        assert_eq!(tx(model), "abc|");
+        assert_eq!(tx(&model), "abc|");
     }
 
     #[test]
     fn deleting_a_character_at_the_beginning_deletes_it() {
         let mut model = cm("|abc");
         model.delete();
-        assert_eq!(tx(model), "|bc");
+        assert_eq!(tx(&model), "|bc");
     }
 
     #[test]
     fn deleting_a_character_in_the_middle_deletes_it() {
         let mut model = cm("a|bc");
         model.delete();
-        assert_eq!(tx(model), "a|c");
+        assert_eq!(tx(&model), "a|c");
     }
 
     #[test]
     fn deleting_a_selection_deletes_it() {
         let mut model = cm("a{bc}|");
         model.delete();
-        assert_eq!(tx(model), "a|");
+        assert_eq!(tx(&model), "a|");
     }
 
     #[test]
     fn deleting_a_backwards_selection_deletes_it() {
         let mut model = cm("a|{bc}");
         model.delete();
-        assert_eq!(tx(model), "a|");
+        assert_eq!(tx(&model), "a|");
+    }
+
+    #[test]
+    fn selecting_ascii_characters() {
+        let mut model = cm("abcdefgh|");
+        model.select(CodepointLocation::from(0), CodepointLocation::from(1));
+        assert_eq!(tx(&model), "{a}|bcdefgh");
+
+        model.select(CodepointLocation::from(1), CodepointLocation::from(3));
+        assert_eq!(tx(&model), "a{bc}|defgh");
+
+        model.select(CodepointLocation::from(4), CodepointLocation::from(8));
+        assert_eq!(tx(&model), "abcd{efgh}|");
+
+        model.select(CodepointLocation::from(4), CodepointLocation::from(9));
+        assert_eq!(tx(&model), "abcd{efgh}|");
+    }
+
+    #[test]
+    fn selecting_complex_characters() {
+        let mut model =
+            cm("aaa\u{03A9}bbb\u{1F469}\u{1F3FF}\u{200D}\u{1F680}ccc|");
+
+        model.select(CodepointLocation::from(0), CodepointLocation::from(3));
+        assert_eq!(
+            tx(&model),
+            "{aaa}|\u{03A9}bbb\u{1F469}\u{1F3FF}\u{200D}\u{1F680}ccc"
+        );
+
+        model.select(CodepointLocation::from(0), CodepointLocation::from(4));
+        assert_eq!(
+            tx(&model),
+            "{aaa\u{03A9}}|bbb\u{1F469}\u{1F3FF}\u{200D}\u{1F680}ccc"
+        );
+
+        model.select(CodepointLocation::from(7), CodepointLocation::from(11));
+        assert_eq!(
+            tx(&model),
+            "aaa\u{03A9}bbb{\u{1F469}\u{1F3FF}\u{200D}\u{1F680}}|ccc"
+        );
+
+        model.select(CodepointLocation::from(7), CodepointLocation::from(12));
+        assert_eq!(
+            tx(&model),
+            "aaa\u{03A9}bbb{\u{1F469}\u{1F3FF}\u{200D}\u{1F680}c}|cc"
+        );
+    }
+
+    #[test]
+    fn selecting_ascii_characters_via_utf16() {
+        let mut model = cm("abcdefgh|");
+        model.select_utf16_codeunits(
+            Utf16CodeunitLocation::from(0),
+            Utf16CodeunitLocation::from(1),
+        );
+        assert_eq!(tx(&model), "{a}|bcdefgh");
+
+        model.select_utf16_codeunits(
+            Utf16CodeunitLocation::from(1),
+            Utf16CodeunitLocation::from(3),
+        );
+        assert_eq!(tx(&model), "a{bc}|defgh");
+
+        model.select_utf16_codeunits(
+            Utf16CodeunitLocation::from(4),
+            Utf16CodeunitLocation::from(8),
+        );
+        assert_eq!(tx(&model), "abcd{efgh}|");
+
+        model.select_utf16_codeunits(
+            Utf16CodeunitLocation::from(4),
+            Utf16CodeunitLocation::from(9),
+        );
+        assert_eq!(tx(&model), "abcd{efgh}|");
+    }
+
+    #[test]
+    fn selecting_single_utf16_code_unit_characters_utf16() {
+        let mut model = cm("\u{03A9}\u{03A9}\u{03A9}|");
+
+        model.select_utf16_codeunits(
+            Utf16CodeunitLocation::from(0),
+            Utf16CodeunitLocation::from(1),
+        );
+        assert_eq!(tx(&model), "{\u{03A9}}|\u{03A9}\u{03A9}");
+
+        model.select_utf16_codeunits(
+            Utf16CodeunitLocation::from(0),
+            Utf16CodeunitLocation::from(3),
+        );
+        assert_eq!(tx(&model), "{\u{03A9}\u{03A9}\u{03A9}}|");
+
+        model.select_utf16_codeunits(
+            Utf16CodeunitLocation::from(1),
+            Utf16CodeunitLocation::from(2),
+        );
+        assert_eq!(tx(&model), "\u{03A9}{\u{03A9}}|\u{03A9}");
+    }
+
+    #[test]
+    fn selecting_multiple_utf16_code_unit_characters_utf16() {
+        let mut model = cm("\u{1F4A9}\u{1F4A9}\u{1F4A9}|");
+
+        model.select_utf16_codeunits(
+            Utf16CodeunitLocation::from(0),
+            Utf16CodeunitLocation::from(2),
+        );
+        assert_eq!(tx(&model), "{\u{1F4A9}}|\u{1F4A9}\u{1F4A9}");
+
+        model.select_utf16_codeunits(
+            Utf16CodeunitLocation::from(0),
+            Utf16CodeunitLocation::from(6),
+        );
+        assert_eq!(tx(&model), "{\u{1F4A9}\u{1F4A9}\u{1F4A9}}|");
+
+        model.select_utf16_codeunits(
+            Utf16CodeunitLocation::from(2),
+            Utf16CodeunitLocation::from(4),
+        );
+        assert_eq!(tx(&model), "\u{1F4A9}{\u{1F4A9}}|\u{1F4A9}");
+    }
+
+    #[test]
+    fn selecting_complex_characters_via_utf16() {
+        let mut model =
+            cm("aaa\u{03A9}bbb\u{1F469}\u{1F3FF}\u{200D}\u{1F680}ccc|");
+
+        model.select_utf16_codeunits(
+            Utf16CodeunitLocation::from(0),
+            Utf16CodeunitLocation::from(3),
+        );
+        assert_eq!(
+            tx(&model),
+            "{aaa}|\u{03A9}bbb\u{1F469}\u{1F3FF}\u{200D}\u{1F680}ccc"
+        );
+
+        model.select_utf16_codeunits(
+            Utf16CodeunitLocation::from(0),
+            Utf16CodeunitLocation::from(4),
+        );
+        assert_eq!(
+            tx(&model),
+            "{aaa\u{03A9}}|bbb\u{1F469}\u{1F3FF}\u{200D}\u{1F680}ccc"
+        );
+
+        model.select_utf16_codeunits(
+            Utf16CodeunitLocation::from(7),
+            Utf16CodeunitLocation::from(14),
+        );
+        assert_eq!(
+            tx(&model),
+            "aaa\u{03A9}bbb{\u{1F469}\u{1F3FF}\u{200D}\u{1F680}}|ccc"
+        );
+
+        model.select_utf16_codeunits(
+            Utf16CodeunitLocation::from(7),
+            Utf16CodeunitLocation::from(15),
+        );
+        assert_eq!(
+            tx(&model),
+            "aaa\u{03A9}bbb{\u{1F469}\u{1F3FF}\u{200D}\u{1F680}c}|cc"
+        );
     }
 
     // Test utils
@@ -300,8 +478,8 @@ mod test {
     {
         fn roundtrips(&self) {
             let subject = self.subject.as_ref();
-            let output = tx(cm(subject));
-            if tx(cm(subject)) != subject {
+            let output = tx(&cm(subject));
+            if output != subject {
                 AssertionFailure::from_spec(self)
                     .with_expected(String::from(subject))
                     .with_actual(output)
@@ -367,7 +545,7 @@ mod test {
     /**
      * Convert a ComposerModel to a text representation.
      */
-    fn tx(model: ComposerModel) -> String {
+    fn tx(model: &ComposerModel) -> String {
         let mut ret = model.html.clone();
         if model.selection_start_codepoint == model.selection_end_codepoint {
             ret.insert(model.selection_start_byte().as_usize(), '|');

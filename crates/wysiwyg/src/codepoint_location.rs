@@ -52,6 +52,10 @@ impl CodepointLocation {
     pub fn as_delta(&self) -> CodepointDelta {
         CodepointDelta::from(isize::try_from(self.as_usize()).unwrap())
     }
+
+    pub(crate) fn end_of(s: &str) -> CodepointLocation {
+        ByteLocation::from(s.len()).codepoint(s)
+    }
 }
 
 impl From<usize> for CodepointLocation {

@@ -1,8 +1,48 @@
-import { node_and_offset } from "./wysiwyg.js";
+import { codeunit_count, node_and_offset } from "./wysiwyg.js";
 
 const editor = document.getElementById('editor');
 
 run_tests([
+    { name: "ASCII characters have width 1", test: () => {
+        editor.innerHTML = "abcd";
+        deleteRange(0, 1);
+        assert_eq(editor.innerHTML, "bcd");
+
+        editor.innerHTML = "abcd";
+        deleteRange(0, 2);
+        assert_eq(editor.innerHTML, "cd");
+    }},
+
+    { name: "UCS-2 characters have width 1", test: () => {
+        editor.innerHTML = "\u{03A9}bcd";
+        deleteRange(0, 1);
+        assert_eq(editor.innerHTML, "bcd");
+
+        editor.innerHTML = "\u{03A9}bcd";
+        deleteRange(0, 2);
+        assert_eq(editor.innerHTML, "cd");
+    }},
+
+    { name: "Multi-code unit UTF-16 characters have width 2", test: () => {
+        editor.innerHTML = "\u{1F4A9}bcd";
+        deleteRange(0, 2);
+        assert_eq(editor.innerHTML, "bcd");
+
+        editor.innerHTML = "\u{1F4A9}bcd";
+        deleteRange(0, 3);
+        assert_eq(editor.innerHTML, "cd");
+    }},
+
+    { name: "Complex characters width = num UTF-16 code units", test: () => {
+        editor.innerHTML = "\u{1F469}\u{1F3FF}\u{200D}\u{1F680}bcd";
+        deleteRange(0, 7);
+        assert_eq(editor.innerHTML, "bcd");
+
+        editor.innerHTML = "\u{1F469}\u{1F3FF}\u{200D}\u{1F680}bcd";
+        deleteRange(0, 8);
+        assert_eq(editor.innerHTML, "cd");
+    }},
+
     { name: "node_and_offset finds at the start of simple text", test: () => {
         editor.innerHTML = "abcdefgh";
         let { node, offset } = node_and_offset(editor, 0);
@@ -52,44 +92,71 @@ run_tests([
         assert_eq(offset, 1);
     }},
 
-    { name: "ASCII characters have width 1", test: () => {
-        editor.innerHTML = "abcd";
-        deleteRange(0, 1);
-        assert_eq(editor.innerHTML, "bcd");
-
-        editor.innerHTML = "abcd";
-        deleteRange(0, 2);
-        assert_eq(editor.innerHTML, "cd");
+    { name: "codeunit_count ASCII", test: () => {
+        editor.innerHTML = "abcdefgh";
+        let textNode = editor.childNodes[0];
+        assert_eq(codeunit_count(editor, textNode, 0), 0);
+        assert_eq(codeunit_count(editor, textNode, 3), 3);
+        assert_eq(codeunit_count(editor, textNode, 7), 7);
+        // Just past the end is allowed
+        assert_eq(codeunit_count(editor, textNode, 8), 8);
+        // But not past that
+        assert_eq(codeunit_count(editor, textNode, 9), -1);
     }},
 
-    { name: "UCS-2 characters have width 1", test: () => {
-        editor.innerHTML = "\u{03A9}bcd";
-        deleteRange(0, 1);
-        assert_eq(editor.innerHTML, "bcd");
-
-        editor.innerHTML = "\u{03A9}bcd";
-        deleteRange(0, 2);
-        assert_eq(editor.innerHTML, "cd");
+    { name: "codeunit_count UCS-2", test: () => {
+        editor.innerHTML = "a\u{03A9}b\u{03A9}c";
+        let textNode = editor.childNodes[0];
+        assert_eq(codeunit_count(editor, textNode, 0), 0);
+        assert_eq(codeunit_count(editor, textNode, 1), 1);
+        assert_eq(codeunit_count(editor, textNode, 4), 4);
+        assert_eq(codeunit_count(editor, textNode, 5), 5);
+        assert_eq(codeunit_count(editor, textNode, 6), -1);
     }},
 
-    { name: "Multi-code unit UTF-16 characters have width 2", test: () => {
-        editor.innerHTML = "\u{1F4A9}bcd";
-        deleteRange(0, 2);
-        assert_eq(editor.innerHTML, "bcd");
-
-        editor.innerHTML = "\u{1F4A9}bcd";
-        deleteRange(0, 3);
-        assert_eq(editor.innerHTML, "cd");
+    { name: "codeunit_count complex", test: () => {
+        editor.innerHTML = "a\u{1F469}\u{1F3FF}\u{200D}\u{1F680}b";
+        let textNode = editor.childNodes[0];
+        assert_eq(codeunit_count(editor, textNode, 0), 0);
+        assert_eq(codeunit_count(editor, textNode, 7), 7);
+        assert_eq(codeunit_count(editor, textNode, 8), 8);
+        assert_eq(codeunit_count(editor, textNode, 9), 9);
+        assert_eq(codeunit_count(editor, textNode, 10), -1);
     }},
 
-    { name: "Complex characters width = num UTF-16 code units", test: () => {
-        editor.innerHTML = "\u{1F469}\u{1F3FF}\u{200D}\u{1F680}bcd";
-        deleteRange(0, 7);
-        assert_eq(editor.innerHTML, "bcd");
+    { name: "codeunit_count nested", test: () => {
+        editor.innerHTML = "a<b>b</b>c";
+        let firstTextNode = editor.childNodes[0];
+        let boldTextNode = editor.childNodes[1].childNodes[0];
+        let thirdTextNode = editor.childNodes[2];
+        assert_eq(codeunit_count(editor, firstTextNode, 0), 0);
+        assert_eq(codeunit_count(editor, boldTextNode, 0), 1);
+        assert_eq(codeunit_count(editor, thirdTextNode, 0), 2);
+    }},
 
-        editor.innerHTML = "\u{1F469}\u{1F3FF}\u{200D}\u{1F680}bcd";
-        deleteRange(0, 8);
-        assert_eq(editor.innerHTML, "cd");
+    { name: "codeunit_count deeply nested", test: () => {
+        editor.innerHTML = "aaa<b><i>bbb</i>ccc</b>ddd";
+        let firstTextNode = editor.childNodes[0];
+        let boldItalicNode = editor.childNodes[1].childNodes[0];
+        let boldItalicTextNode = editor.childNodes[1].childNodes[0].childNodes[0];
+        let boldOnlyNode = editor.childNodes[1].childNodes[1];
+        let thirdTextNode = editor.childNodes[2];
+        assert_eq(codeunit_count(editor, firstTextNode, 1), 1);
+        assert_eq(codeunit_count(editor, firstTextNode, 2), 2);
+        assert_eq(codeunit_count(editor, firstTextNode, 3), 3);
+        assert_eq(codeunit_count(editor, boldItalicNode, 0), 3);
+        assert_eq(codeunit_count(editor, boldItalicNode, 1), 4);
+        assert_eq(codeunit_count(editor, boldItalicNode, 2), 5);
+        // We can supply the text node or its parent
+        assert_eq(codeunit_count(editor, boldItalicTextNode, 0), 3);
+        assert_eq(codeunit_count(editor, boldItalicTextNode, 1), 4);
+        assert_eq(codeunit_count(editor, boldItalicTextNode, 2), 5);
+        assert_eq(codeunit_count(editor, boldOnlyNode, 0), 6);
+        assert_eq(codeunit_count(editor, boldOnlyNode, 1), 7);
+        assert_eq(codeunit_count(editor, boldOnlyNode, 2), 8);
+        assert_eq(codeunit_count(editor, thirdTextNode, 0), 9);
+        assert_eq(codeunit_count(editor, thirdTextNode, 1), 10);
+        assert_eq(codeunit_count(editor, thirdTextNode, 2), 11);
     }}
 ]);
 

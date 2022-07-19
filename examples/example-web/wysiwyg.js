@@ -57,83 +57,112 @@ function button_bold_click(e) {
 
 function selectionchange() {
     const s = document.getSelection();
-    //const textNode = editor.childNodes[0];
     // TODO: check that the selection is happening within the editor!
     // TODO: any node within editor is relevant, not just editor itself.
     // TODO: if anchor or focus are outside editor but not both, we should
     //       change the selection, cutting off at the edge.
-    const start_codepoint = codepoint(s.anchorNode, s.anchorOffset);
-    const end_codepoint = codepoint(s.focusNode, s.focusOffset);
+    const start = codeunit_count(editor, s.anchorNode, s.anchorOffset);
+    const end = codeunit_count(editor, s.focusNode, s.focusOffset);
 
-    console.debug(`
-        composer_model.select(${start_codepoint}, ${end_codepoint})`
-    );
-    composer_model.select(start_codepoint, end_codepoint);
+    console.debug(`composer_model.select_utf16_codeunits(${start}, ${end})`);
+    composer_model.select_utf16_codeunits(start, end);
 }
 
-function codepoint(current_node, offset) {
+/**
+ * Given a position in the document, count how many codeunits through the
+ * editor that position is, by counting from the beginning of the editor,
+ * traversing subnodes, until we hit the supplied position.
+ *
+ * "Position" means a node and an offset, meaning the offset-th codeunit in
+ * node.
+ *
+ * A "codeunit" here means a UTF-16 code unit.
+ */
+function codeunit_count(editor, node, offset) {
     function impl(current_node, offset) {
-        if (current_node.nodeType === Node.TEXT_NODE) {
-            if (offset <= current_node.textContent.length) {
-                return { found: true, offset };
+        if (current_node === node) {
+            // We've found the right node
+            if (
+                current_node.nodeType === Node.TEXT_NODE
+                && offset > current_node.textContent.length
+            ) {
+                // If the offset is wrong, we didn't find it
+                return { found: false, offset: 0 };
             } else {
-                return { found: false, offset: current_node.textContent.length };
+                // Otherwise, we did
+                return { found: true, offset };
             }
         } else {
-            let sum = 0;
-            for (const ch of current_node.childNodes) {
-                const cp = impl(ch, offset - sum);
-                if (cp.found) {
-                    return { found: true, offset: sum + cp.offset };
-                } else {
-                    sum += cp.offset;
+            // We have not found the right node yet
+            if (current_node.nodeType === Node.TEXT_NODE) {
+                // Return how many steps forward we progress by skipping
+                // this node.
+                return {
+                    found: false,
+                    offset: current_node.textContent.length
+                };
+            } else {
+                // Add up all the amounts we need progress by skipping
+                // nodes inside this one.
+                let sum = 0;
+                for (const ch of current_node.childNodes) {
+                    const cp = impl(ch, offset);
+                    if (cp.found) {
+                        // We found it! Return how far we walked to find it
+                        return { found: true, offset: sum + cp.offset };
+                    } else {
+                        // We didn't find it - remember how much to skip
+                        sum += cp.offset;
+                    }
                 }
+                return { found: false, offset: sum };
             }
-            return { found: false, offset: sum };
         }
     }
 
-    const ret = impl(current_node, offset);
+    const ret = impl(editor, offset);
     if (ret.found) {
         return ret.offset;
     } else {
-        return 0;
+        return -1;
     }
 }
 
 /**
- * Find the node that is codepoint characters into current_node, by traversing
+ * Find the node that is codeunits into current_node, by traversing
  * its subnodes.
  *
  * Returns {
- *   node: // The node that contains the codepoint-th character
- *   offset: // How far into the found node we can find that character
+ *   node: // The node that contains the codeunits-th codeunit
+ *   offset: // How far into the found node we can find that codeunit
  * }
  *
- * If there are not that many characters, returns { node: null, offset: n }
- * where n is the number of characters past the end of our last subnode we would
+ * If there are not that many codeunits, returns { node: null, offset: n }
+ * where n is the number of codeunits past the end of our last subnode we would
  * need to go to find the requested position.
+ *
+ * A "codeunit" here means a UTF-16 code unit.
  */
-function node_and_offset(current_node, codepoint) {
+function node_and_offset(current_node, codeunits) {
     if (current_node.nodeType === Node.TEXT_NODE) {
-        if (codepoint <= current_node.textContent.length) {
-            return { node: current_node, offset: codepoint };
+        if (codeunits <= current_node.textContent.length) {
+            return { node: current_node, offset: codeunits };
         } else {
             return {
                 node: null,
-                offset: codepoint - current_node.textContent.length
+                offset: codeunits - current_node.textContent.length
             };
         }
     } else {
         for (const ch of current_node.childNodes) {
-            const ret = node_and_offset(ch, codepoint);
+            const ret = node_and_offset(ch, codeunits);
             if (ret.node) {
                 return { node: ret.node, offset: ret.offset };
             } else {
-                codepoint = ret.offset;
+                codeunits = ret.offset;
             }
         }
-        return { node: null, offset: codepoint };
+        return { node: null, offset: codeunits };
     }
 }
 
@@ -195,4 +224,4 @@ function process_input(e) {
     }
 }
 
-export { wysiwyg_run, codepoint, node_and_offset };
+export { wysiwyg_run, codeunit_count, node_and_offset };

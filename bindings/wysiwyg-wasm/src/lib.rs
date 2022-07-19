@@ -34,13 +34,17 @@ impl ComposerModel {
         }
     }
 
-    pub fn select(&mut self, start_codepoint: u32, end_codepoint: u32) {
-        self.inner.select(
-            wysiwyg::CodepointLocation::from(
-                usize::try_from(start_codepoint).unwrap(),
+    pub fn select_utf16_codeunits(
+        &mut self,
+        start_utf16_codeunit: u32,
+        end_utf16_codeunit: u32,
+    ) {
+        self.inner.select_utf16_codeunits(
+            wysiwyg::Utf16CodeunitLocation::from(
+                usize::try_from(start_utf16_codeunit).unwrap(),
             ),
-            wysiwyg::CodepointLocation::from(
-                usize::try_from(end_codepoint).unwrap(),
+            wysiwyg::Utf16CodeunitLocation::from(
+                usize::try_from(end_utf16_codeunit).unwrap(),
             ),
         );
     }
