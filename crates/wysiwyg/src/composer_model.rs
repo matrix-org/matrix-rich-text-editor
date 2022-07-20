@@ -58,12 +58,18 @@ where
         }
     }
 
+    /**
+     * Replaces text in the current selection with new_text.
+     */
     pub fn replace_text(&mut self, new_text: &[C]) -> ComposerUpdate<C> {
         // TODO: escape any HTML?
         let (s, e) = self.safe_selection();
         self.replace_text_in(&new_text, s, e)
     }
 
+    /**
+     * Replaces text in the an arbitrary start..end range with new_text.
+     */
     pub fn replace_text_in(&mut self, new_text: &[C], start: usize, end: usize) -> ComposerUpdate<C> {
         let mut new_html = self.html[..start].to_vec();
         new_html.extend_from_slice(new_text);
@@ -92,11 +98,17 @@ where
         self.replace_text(&[])
     }
 
+    /**
+     * Deletes text in an arbitrary start..end range.
+     */
     pub fn delete_in(&mut self, start: usize, end: usize) -> ComposerUpdate<C> {
         self.end = Location::from(start);
         self.replace_text_in(&[], start, end)
     }
 
+    /**
+     * Deletes the character after the current cursor position.
+     */
     pub fn delete(&mut self) -> ComposerUpdate<C> {
         if self.start == self.end {
             // Go forward 1 from the current location
@@ -116,6 +128,9 @@ where
         ComposerUpdate::keep()
     }
 
+    /**
+     * Dumps the contents of the html buffer.
+     */
     pub fn dump_contents(&self) -> Vec<C> {
         self.html.clone()
     }

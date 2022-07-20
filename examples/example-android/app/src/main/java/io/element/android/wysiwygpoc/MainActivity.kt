@@ -2,6 +2,7 @@ package io.element.android.wysiwygpoc
 
 import android.os.Bundle
 import android.text.*
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.text.HtmlCompat
 import io.element.android.wysiwygpoc.databinding.ActivityMainBinding
@@ -16,80 +17,33 @@ import kotlin.coroutines.CoroutineContext
 class MainActivity : AppCompatActivity() {
 
     private val composer: ComposerModel = uniffi.wysiwyg_composer.newComposerModel()
-    private val inputProcessor = InputProcessor(composer, Dispatchers.IO)
+    private val inputProcessor = InputProcessor(composer)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val filter = InterceptInputFilter { inputProcessor.queue(it) }
-        inputProcessor.start(binding.editor, filter)
-
         with (binding.editor) {
-            filters += filter
             requestFocus()
             selectionChangeListener = EditorEditText.OnSelectionChangeListener { start, end ->
                 composer.select(start.toUInt(), end.toUInt())
             }
-//            addTextChangedListener(EditorTextWatcher(inputProcessor))
+            addTextChangedListener(EditorTextWatcher(inputProcessor))
         }
 
         binding.buttonBold.setOnClickListener {
-            inputProcessor.queue(
+            val update = inputProcessor.processInput(
                 EditorInputAction.ApplyInlineFormat(InlineFormat.Bold)
-            )
-//            result?.let { binding.editor.setText(it, TextView.BufferType.SPANNABLE) }
+            ) ?: return@setOnClickListener
+            val text = inputProcessor.processUpdate(update)
+            text?.let { binding.editor.setText(it, TextView.BufferType.SPANNABLE) }
         }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-
-        inputProcessor.stop()
     }
 
     class InputProcessor(
         private val composer: ComposerModel,
-        private val backgroundCoroutineContext: CoroutineContext,
     ) {
-
-        private lateinit var editText: EditorEditText
-        private lateinit var filter: InterceptInputFilter
-
-        private val actionChannel = Channel<EditorInputAction>(capacity = UNLIMITED)
-        private val updateChannel = Channel<TextUpdate>(capacity = UNLIMITED)
-        private var actionJob: Job? = null
-        private var updateJob: Job? = null
-
-        fun start(editText: EditorEditText, filter: InterceptInputFilter) {
-            this.editText = editText
-            this.filter = filter
-
-            actionJob = CoroutineScope(backgroundCoroutineContext).launch {
-                actionChannel.consumeEach { action ->
-                    val update = processInput(action)
-                    update?.let { updateChannel.trySend(it) }
-                }
-            }
-            updateJob = CoroutineScope(backgroundCoroutineContext).launch {
-                updateChannel.consumeEach { update ->
-                    processUpdate(update)
-                }
-            }
-        }
-
-        fun stop() {
-            actionJob?.cancel()
-            actionJob = null
-
-            updateJob?.cancel()
-            updateJob = null
-        }
-
-        fun queue(action: EditorInputAction) {
-            actionChannel.trySend(action)
-        }
 
         fun processInput(action: EditorInputAction): TextUpdate? {
             return when (action) {
@@ -115,18 +69,11 @@ class MainActivity : AppCompatActivity() {
             }.textUpdate()
         }
 
-        private suspend fun processUpdate(update: TextUpdate) {
-            when (update) {
-                is TextUpdate.Keep -> return
+        fun processUpdate(update: TextUpdate): CharSequence? {
+            return when (update) {
+                is TextUpdate.Keep -> null
                 is TextUpdate.ReplaceAll -> {
-                    val text = stringToSpans(update.replacementHtml.string())
-                    withContext(Dispatchers.Main) {
-                        val editableText = editText.editableText as SpannableStringBuilder
-                        filter.isReentrant = true
-                        editableText.replace(0, editableText.length, text)
-                        editText.invalidate()
-                        editText.requestLayout()
-                    }
+                    stringToSpans(update.replacementHtml.string())
                 }
             }
         }
@@ -137,104 +84,61 @@ class MainActivity : AppCompatActivity() {
             return HtmlCompat.fromHtml(preparedString, 0)
         }
     }
-
-//    class EditorTextWatcher(
-//        private val inputProcessor: InputProcessor,
-//    ) : TextWatcher {
-//        private var replacement: CharSequence? = null
-//
-//        override fun beforeTextChanged(source: CharSequence?, start: Int, count: Int, after: Int) {}
-//
-//        override fun onTextChanged(source: CharSequence?, start: Int, before: Int, count: Int) {
-//            // When we make any changes to the editor's text using `replacement` the TextWatcher
-//            // will be called again. When this happens, clean `replacement` and just return.
-//            if (replacement != null) {
-//                replacement = null
-//                return
-//            }
-//            // When all text is deleted, clean `replacement` and early return.
-//            if (source == null) {
-//                replacement = null
-//                return
-//            }
-//
-//            // TODO: instead of using `replaced` + `ReplaceAll`, add a new replace operation with
-//            //  indexes in Rust to modify the underlying buffer. Otherwise, we're going to have to
-//            //  fight the IME's autocorrect feature.
-//            val replaced = source.substring(start until start+count)
-//            when {
-//                start == 0 && count == before -> {
-//                    inputProcessor.queue(EditorInputAction.ReplaceAll(replaced))
-//                }
-//                before > count -> {
-//                    if (before - count == 1) {
-//                        inputProcessor.queue(EditorInputAction.BackPress)
-//                    } else {
-//                        // I think this case (deleting a selection) should be automatically handled
-//                        // by `backpress` in the Rust lib, but that's not the case at the moment.
-//                        inputProcessor.queue(EditorInputAction.Delete(start, start+before))
-//                    }
-//                }
-//                count != 0 && replaced != "\n" -> {
-//                    inputProcessor.queue(EditorInputAction.InsertText(replaced, start, start + before))
-//                }
-//                replaced == "\n" -> {
-//                    inputProcessor.queue(EditorInputAction.InsertParagraph)
-//                }
-//                else -> {}
-//            }
-//        }
-//
-//        override fun afterTextChanged(s: Editable?) {
-//            replacement?.let {
-//                // Note: this is reentrant, it will call the TextWatcher again
-//                s?.replace(0, s.length, it, 0, it.length)
-//                if (s?.length == 0) {
-//                    replacement = null
-//                }
-//            }
-//        }
-//    }
 }
 
-class InterceptInputFilter(
-    private val editorActionEmitter: (EditorInputAction) -> Unit,
-): InputFilter {
+class EditorTextWatcher(
+    private val inputProcessor: MainActivity.InputProcessor,
+) : TextWatcher {
+    private var replacement: CharSequence? = null
 
-    // Used to avoid emitting actions in a loop
-    var isReentrant = false
+    override fun beforeTextChanged(source: CharSequence?, start: Int, count: Int, after: Int) {}
 
-    override fun filter(
-        source: CharSequence,
-        start: Int,
-        end: Int,
-        dest: Spanned,
-        dstart: Int,
-        dend: Int
-    ): CharSequence {
-        if (isReentrant) {
-            isReentrant = false
-            return source
+    override fun onTextChanged(source: CharSequence?, start: Int, before: Int, count: Int) {
+        // When we make any changes to the editor's text using `replacement` the TextWatcher
+        // will be called again. When this happens, clean `replacement` and just return.
+        if (replacement != null) {
+            replacement = null
+            return
         }
-        when {
-            source.isNotEmpty() && source != "\n" -> {
-                editorActionEmitter(EditorInputAction.InsertText(source, dstart, dend))
+        // When all text is deleted, clean `replacement` and early return.
+        if (source == null) {
+            replacement = null
+            return
+        }
+
+        val replaced = source.substring(start until start+count)
+        val update = when {
+            start == 0 && count == before -> {
+                inputProcessor.processInput(EditorInputAction.ReplaceAll(replaced))
             }
-            source == "\n" -> {
-                editorActionEmitter(EditorInputAction.InsertParagraph)
-            }
-            source.isEmpty() && dend > dstart -> {
-                if (dend - dstart == 1) {
-                    editorActionEmitter(EditorInputAction.BackPress)
+            before > count -> {
+                if (before - count == 1) {
+                    inputProcessor.processInput(EditorInputAction.BackPress)
                 } else {
                     // I think this case (deleting a selection) should be automatically handled
                     // by `backpress` in the Rust lib, but that's not the case at the moment.
-                    editorActionEmitter(EditorInputAction.Delete(dstart, dend))
+                    inputProcessor.processInput(EditorInputAction.Delete(start, start+before))
                 }
             }
-            else -> {}
+            count != 0 && replaced != "\n" -> {
+                inputProcessor.processInput(EditorInputAction.InsertText(replaced, start, start + before))
+            }
+            replaced == "\n" -> {
+                inputProcessor.processInput(EditorInputAction.InsertParagraph)
+            }
+            else -> null
         }
-        return source
+        replacement = update?.let { inputProcessor.processUpdate(update) }
+    }
+
+    override fun afterTextChanged(s: Editable?) {
+        replacement?.let {
+            // Note: this is reentrant, it will call the TextWatcher again
+            s?.replace(0, s.length, it, 0, it.length)
+            if (s?.length == 0) {
+                replacement = null
+            }
+        }
     }
 }
 
