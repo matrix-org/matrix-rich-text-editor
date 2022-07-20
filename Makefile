@@ -5,13 +5,13 @@ android: android-aarch64 android-x86_64
 android-aarch64:
 	cd bindings/wysiwyg-ffi && cargo build --release --target aarch64-linux-android
 	echo Outputs for android-aarch64:
-	echo - target/aarch64-linux-android/release/libwysiwyg_ffi.so
+	echo - target/aarch64-linux-android/release/libuniffi_wysiwyg_composer.so
 	echo - bindings/wysiwyg-ffi/src/wysiwyg_composer.udl
 
 android-x86_64:
 	cd bindings/wysiwyg-ffi && cargo build --release --target x86_64-linux-android
 	echo Outputs for android-x86_64:
-	echo - target/x86_64-linux-android/release/libwysiwyg_ffi.so
+	echo - target/x86_64-linux-android/release/libuniffi_wysiwyg_composer.so
 	echo - bindings/wysiwyg-ffi/src/wysiwyg_composer.udl
 
 IOS_PACKAGE_DIR := ../../examples/example-ios/Packages/WysiwygComposer/
@@ -24,9 +24,9 @@ ios:
 	cargo build --release --target x86_64-apple-ios && \
 	mkdir -p ../../target/ios-simulator && \
 	lipo -create \
-	  ../../target/x86_64-apple-ios/release/libwysiwyg_ffi.a \
-	  ../../target/aarch64-apple-ios-sim/release/libwysiwyg_ffi.a \
-	  -output ../../target/ios-simulator/libwysiwyg_ffi.a && \
+	  ../../target/x86_64-apple-ios/release/libuniffi_wysiwyg_composer.a \
+	  ../../target/aarch64-apple-ios-sim/release/libuniffi_wysiwyg_composer.a \
+	  -output ../../target/ios-simulator/libuniffi_wysiwyg_composer.a && \
 	rm -rf ${IOS_PACKAGE_DIR}/WysiwygComposerFFI.xcframework && \
 	rm -f ${IOS_PACKAGE_DIR}/Sources/WysiwygComposer/WysiwygComposer.swift && \
 	rm -rf ${IOS_GENERATION_DIR} && \
@@ -41,9 +41,9 @@ ios:
 	mv ${IOS_GENERATION_DIR}/*.modulemap ${IOS_GENERATION_DIR}/headers/module.modulemap && \
 	mv ${IOS_GENERATION_DIR}/*.swift     ${IOS_PACKAGE_DIR}/Sources/WysiwygComposer/ && \
 	xcodebuild -create-xcframework \
-	  -library ../../target/aarch64-apple-ios/release/libwysiwyg_ffi.a \
+	  -library ../../target/aarch64-apple-ios/release/libuniffi_wysiwyg_composer.a \
 	  -headers ${IOS_GENERATION_DIR}/headers \
-	  -library ../../target/ios-simulator/libwysiwyg_ffi.a \
+	  -library ../../target/ios-simulator/libuniffi_wysiwyg_composer.a \
 	  -headers ${IOS_GENERATION_DIR}/headers \
 	  -output ${IOS_PACKAGE_DIR}/WysiwygComposerFFI.xcframework
 web:
