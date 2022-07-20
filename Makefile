@@ -1,18 +1,12 @@
 all: android ios web
 
-android: android-aarch64 android-x86_64
-
-android-aarch64:
-	cd bindings/wysiwyg-ffi && cargo build --release --target aarch64-linux-android
-	echo Outputs for android-aarch64:
-	echo - target/aarch64-linux-android/release/libuniffi_wysiwyg_composer.so
-	echo - bindings/wysiwyg-ffi/src/wysiwyg_composer.udl
+android: android-x86_64
 
 android-x86_64:
-	cd bindings/wysiwyg-ffi && cargo build --release --target x86_64-linux-android
-	echo Outputs for android-x86_64:
-	echo - target/x86_64-linux-android/release/libuniffi_wysiwyg_composer.so
-	echo - bindings/wysiwyg-ffi/src/wysiwyg_composer.udl
+	cd bindings/wysiwyg-ffi \
+		&& cargo build --release --target x86_64-linux-android
+	# Not copying into the Android project here, since the gradle plugin
+	# actually performs this build itself.
 
 IOS_PACKAGE_DIR := ../../examples/example-ios/Packages/WysiwygComposer/
 IOS_GENERATION_DIR := ../../examples/example-ios/Generated
@@ -62,6 +56,8 @@ clean:
 	cargo clean
 	rm -rf bindings/wysiwyg-wasm/node_modules
 	rm -rf bindings/wysiwyg-wasm/pkg
+	rm -rf bindings/wysiwyg-ffi/src/generated
+
 
 test:
 	cargo test

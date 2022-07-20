@@ -25,11 +25,15 @@ earlier, because later versions fail with an error like
 ```bash
 rustup target add aarch64-linux-android
 rustup target add x86_64-linux-android
+rustup target add i686-linux-android
+rustup target add armv7-linux-androideabi
 ```
 
 (Note: `aarch64` is for most physical Android devices, but `x86_64` is useful
 for running an Android emulator on a PC. You can also add `i686` if you use
-32-bit emulators.)
+32-bit emulators.  `armv7` and `i686` are for older devices, but they can be
+used by default in the Android Studio build, so it's useful to have it
+available.)
 
 * Edit Cargo config `bindings/wysiwyg-ffi/.cargo/config.toml` to contain
   something like:
