@@ -23,9 +23,9 @@ public struct WysiwygTextView: View {
         let rawHTML: String
         switch update.textUpdate() {
         case .replaceAll(replacementHtml: let html,
-                         selectionStartCodepoint: _,
-                         selectionEndCodepoint: _):
-            rawHTML = html
+                         startUtf16Codeunit: _,
+                         endUtf16Codeunit: _):
+            rawHTML = String(utf16CodeUnits: html, count: html.count)
         default:
             rawHTML = "Unable to load from Rust"
         }
