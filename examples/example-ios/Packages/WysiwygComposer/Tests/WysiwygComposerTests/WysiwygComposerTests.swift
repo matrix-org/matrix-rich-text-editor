@@ -8,10 +8,11 @@ final class WysiwygComposerTests: XCTestCase {
         switch update.textUpdate() {
         case .keep:
             XCTFail()
-        case .replaceAll(replacementHtml: let html,
-                         selectionStartCodepoint: _,
-                         selectionEndCodepoint: _):
-            XCTAssertEqual(html, "Test")
+        case .replaceAll(replacementHtml: let codeUnits,
+                         startUtf16Codeunit: _,
+                         endUtf16Codeunit: _):
+            XCTAssertEqual(String(utf16CodeUnits: codeUnits, count: codeUnits.count),
+                           "Test")
         }
     }
 }
