@@ -8,10 +8,9 @@
 import SwiftUI
 import WysiwygComposer
 
-
 struct ContentView: View {
     var body: some View {
-        WysiwygTextView()
+        WysiwygView()
             .padding()
     }
 }
