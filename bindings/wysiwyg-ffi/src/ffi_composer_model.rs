@@ -41,12 +41,38 @@ impl ComposerModel {
         ))
     }
 
+    pub fn replace_text_in(
+        self: &Arc<Self>,
+        new_text: String,
+        start: u64,
+        end: u64,
+    ) -> Arc<ComposerUpdate> {
+        let startSize = usize::try_from(start).unwrap();
+        let endSize = usize::try_from(end).unwrap();
+        Arc::new(ComposerUpdate::from(
+            self.inner
+                .lock()
+                .unwrap()
+                .replace_text_in(
+                    &new_text.encode_utf16().collect::<Vec<_>>(),
+                    startSize,
+                    endSize,
+                ),
+        ))
+    }
+
     pub fn backspace(self: &Arc<Self>) -> Arc<ComposerUpdate> {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().backspace()))
     }
 
     pub fn delete(self: &Arc<Self>) -> Arc<ComposerUpdate> {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().delete()))
+    }
+
+    pub fn delete_in(self: &Arc<Self>, start: u64, end: u64) -> Arc<ComposerUpdate> {
+        let startSize = usize::try_from(start).unwrap();
+        let endSize = usize::try_from(end).unwrap();
+        Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().delete_in(startSize, endSize)))
     }
 
     pub fn action_response(
@@ -68,5 +94,9 @@ impl ComposerModel {
 
     pub fn bold(self: &Arc<Self>) -> Arc<ComposerUpdate> {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().bold()))
+    }
+
+    pub fn dump_contents(self: &Arc<Self>) -> Vec<u16> {
+        self.inner.lock().unwrap().dump_contents()
     }
 }

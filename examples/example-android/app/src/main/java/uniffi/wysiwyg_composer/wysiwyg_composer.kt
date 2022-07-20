@@ -42,7 +42,7 @@ open class RustBuffer : Structure() {
 
     companion object {
         internal fun alloc(size: Int = 0) = rustCall() { status ->
-            _UniFFILib.INSTANCE.ffi_wysiwyg_composer_e48b_rustbuffer_alloc(size, status).also {
+            _UniFFILib.INSTANCE.ffi_wysiwyg_composer_5ca3_rustbuffer_alloc(size, status).also {
                 if(it.data == null) {
                    throw RuntimeException("RustBuffer.alloc() returned null data pointer (size=${size})")
                }
@@ -50,7 +50,7 @@ open class RustBuffer : Structure() {
         }
 
         internal fun free(buf: RustBuffer.ByValue) = rustCall() { status ->
-            _UniFFILib.INSTANCE.ffi_wysiwyg_composer_e48b_rustbuffer_free(buf, status)
+            _UniFFILib.INSTANCE.ffi_wysiwyg_composer_5ca3_rustbuffer_free(buf, status)
         }
     }
 
@@ -259,83 +259,95 @@ internal interface _UniFFILib : Library {
         }
     }
 
-    fun ffi_wysiwyg_composer_e48b_ComposerModel_object_free(`ptr`: Pointer,
+    fun ffi_wysiwyg_composer_5ca3_ComposerModel_object_free(`ptr`: Pointer,
     _uniffi_out_err: RustCallStatus
     ): Unit
 
-    fun wysiwyg_composer_e48b_ComposerModel_select(`ptr`: Pointer,`startUtf16Codeunit`: Int,`endUtf16Codeunit`: Int,
+    fun wysiwyg_composer_5ca3_ComposerModel_select(`ptr`: Pointer,`startUtf16Codeunit`: Int,`endUtf16Codeunit`: Int,
     _uniffi_out_err: RustCallStatus
     ): Unit
 
-    fun wysiwyg_composer_e48b_ComposerModel_replace_text(`ptr`: Pointer,`newText`: RustBuffer.ByValue,
+    fun wysiwyg_composer_5ca3_ComposerModel_replace_text(`ptr`: Pointer,`newText`: RustBuffer.ByValue,
     _uniffi_out_err: RustCallStatus
     ): Pointer
 
-    fun wysiwyg_composer_e48b_ComposerModel_backspace(`ptr`: Pointer,
+    fun wysiwyg_composer_5ca3_ComposerModel_replace_text_in(`ptr`: Pointer,`newText`: RustBuffer.ByValue,`start`: Long,`end`: Long,
     _uniffi_out_err: RustCallStatus
     ): Pointer
 
-    fun wysiwyg_composer_e48b_ComposerModel_delete(`ptr`: Pointer,
+    fun wysiwyg_composer_5ca3_ComposerModel_backspace(`ptr`: Pointer,
     _uniffi_out_err: RustCallStatus
     ): Pointer
 
-    fun wysiwyg_composer_e48b_ComposerModel_enter(`ptr`: Pointer,
+    fun wysiwyg_composer_5ca3_ComposerModel_delete(`ptr`: Pointer,
     _uniffi_out_err: RustCallStatus
     ): Pointer
 
-    fun wysiwyg_composer_e48b_ComposerModel_bold(`ptr`: Pointer,
+    fun wysiwyg_composer_5ca3_ComposerModel_delete_in(`ptr`: Pointer,`start`: Long,`end`: Long,
     _uniffi_out_err: RustCallStatus
     ): Pointer
 
-    fun wysiwyg_composer_e48b_ComposerModel_action_response(`ptr`: Pointer,`actionId`: RustBuffer.ByValue,`response`: RustBuffer.ByValue,
+    fun wysiwyg_composer_5ca3_ComposerModel_enter(`ptr`: Pointer,
     _uniffi_out_err: RustCallStatus
     ): Pointer
 
-    fun ffi_wysiwyg_composer_e48b_ComposerUpdate_object_free(`ptr`: Pointer,
+    fun wysiwyg_composer_5ca3_ComposerModel_bold(`ptr`: Pointer,
+    _uniffi_out_err: RustCallStatus
+    ): Pointer
+
+    fun wysiwyg_composer_5ca3_ComposerModel_dump_contents(`ptr`: Pointer,
+    _uniffi_out_err: RustCallStatus
+    ): RustBuffer.ByValue
+
+    fun wysiwyg_composer_5ca3_ComposerModel_action_response(`ptr`: Pointer,`actionId`: RustBuffer.ByValue,`response`: RustBuffer.ByValue,
+    _uniffi_out_err: RustCallStatus
+    ): Pointer
+
+    fun ffi_wysiwyg_composer_5ca3_ComposerUpdate_object_free(`ptr`: Pointer,
     _uniffi_out_err: RustCallStatus
     ): Unit
 
-    fun wysiwyg_composer_e48b_ComposerUpdate_text_update(`ptr`: Pointer,
+    fun wysiwyg_composer_5ca3_ComposerUpdate_text_update(`ptr`: Pointer,
     _uniffi_out_err: RustCallStatus
     ): RustBuffer.ByValue
 
-    fun wysiwyg_composer_e48b_ComposerUpdate_menu_state(`ptr`: Pointer,
+    fun wysiwyg_composer_5ca3_ComposerUpdate_menu_state(`ptr`: Pointer,
     _uniffi_out_err: RustCallStatus
     ): RustBuffer.ByValue
 
-    fun wysiwyg_composer_e48b_ComposerUpdate_actions(`ptr`: Pointer,
+    fun wysiwyg_composer_5ca3_ComposerUpdate_actions(`ptr`: Pointer,
     _uniffi_out_err: RustCallStatus
     ): RustBuffer.ByValue
 
-    fun ffi_wysiwyg_composer_e48b_ComposerAction_object_free(`ptr`: Pointer,
+    fun ffi_wysiwyg_composer_5ca3_ComposerAction_object_free(`ptr`: Pointer,
     _uniffi_out_err: RustCallStatus
     ): Unit
 
-    fun wysiwyg_composer_e48b_ComposerAction_action_id(`ptr`: Pointer,
+    fun wysiwyg_composer_5ca3_ComposerAction_action_id(`ptr`: Pointer,
     _uniffi_out_err: RustCallStatus
     ): RustBuffer.ByValue
 
-    fun wysiwyg_composer_e48b_ComposerAction_action(`ptr`: Pointer,
+    fun wysiwyg_composer_5ca3_ComposerAction_action(`ptr`: Pointer,
     _uniffi_out_err: RustCallStatus
     ): RustBuffer.ByValue
 
-    fun wysiwyg_composer_e48b_new_composer_model(
+    fun wysiwyg_composer_5ca3_new_composer_model(
     _uniffi_out_err: RustCallStatus
     ): Pointer
 
-    fun ffi_wysiwyg_composer_e48b_rustbuffer_alloc(`size`: Int,
+    fun ffi_wysiwyg_composer_5ca3_rustbuffer_alloc(`size`: Int,
     _uniffi_out_err: RustCallStatus
     ): RustBuffer.ByValue
 
-    fun ffi_wysiwyg_composer_e48b_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,
+    fun ffi_wysiwyg_composer_5ca3_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,
     _uniffi_out_err: RustCallStatus
     ): RustBuffer.ByValue
 
-    fun ffi_wysiwyg_composer_e48b_rustbuffer_free(`buf`: RustBuffer.ByValue,
+    fun ffi_wysiwyg_composer_5ca3_rustbuffer_free(`buf`: RustBuffer.ByValue,
     _uniffi_out_err: RustCallStatus
     ): Unit
 
-    fun ffi_wysiwyg_composer_e48b_rustbuffer_reserve(`buf`: RustBuffer.ByValue,`additional`: Int,
+    fun ffi_wysiwyg_composer_5ca3_rustbuffer_reserve(`buf`: RustBuffer.ByValue,`additional`: Int,
     _uniffi_out_err: RustCallStatus
     ): RustBuffer.ByValue
 
@@ -382,6 +394,26 @@ public object FfiConverterUInt: FfiConverter<UInt, Int> {
 
     override fun write(value: UInt, buf: ByteBuffer) {
         buf.putInt(value.toInt())
+    }
+}
+
+public object FfiConverterULong: FfiConverter<ULong, Long> {
+    override fun lift(value: Long): ULong {
+        return value.toULong()
+    }
+
+    override fun read(buf: ByteBuffer): ULong {
+        return lift(buf.getLong())
+    }
+
+    override fun lower(value: ULong): Long {
+        return value.toLong()
+    }
+
+    override fun allocationSize(value: ULong) = 8
+
+    override fun write(value: ULong, buf: ByteBuffer) {
+        buf.putLong(value.toLong())
     }
 }
 
@@ -616,14 +648,14 @@ class ComposerAction(
      */
     override protected fun freeRustArcPtr() {
         rustCall() { status ->
-            _UniFFILib.INSTANCE.ffi_wysiwyg_composer_e48b_ComposerAction_object_free(this.pointer, status)
+            _UniFFILib.INSTANCE.ffi_wysiwyg_composer_5ca3_ComposerAction_object_free(this.pointer, status)
         }
     }
 
     override fun `actionId`(): String =
         callWithPointer {
     rustCall() { _status ->
-    _UniFFILib.INSTANCE.wysiwyg_composer_e48b_ComposerAction_action_id(it,  _status)
+    _UniFFILib.INSTANCE.wysiwyg_composer_5ca3_ComposerAction_action_id(it,  _status)
 }
         }.let {
             FfiConverterString.lift(it)
@@ -631,7 +663,7 @@ class ComposerAction(
     override fun `action`(): ActionRequest =
         callWithPointer {
     rustCall() { _status ->
-    _UniFFILib.INSTANCE.wysiwyg_composer_e48b_ComposerAction_action(it,  _status)
+    _UniFFILib.INSTANCE.wysiwyg_composer_5ca3_ComposerAction_action(it,  _status)
 }
         }.let {
             FfiConverterTypeActionRequest.lift(it)
@@ -672,13 +704,19 @@ public interface ComposerModelInterface {
     
     fun `replaceText`(`newText`: String): ComposerUpdate
     
+    fun `replaceTextIn`(`newText`: String, `start`: ULong, `end`: ULong): ComposerUpdate
+    
     fun `backspace`(): ComposerUpdate
     
     fun `delete`(): ComposerUpdate
     
+    fun `deleteIn`(`start`: ULong, `end`: ULong): ComposerUpdate
+    
     fun `enter`(): ComposerUpdate
     
     fun `bold`(): ComposerUpdate
+    
+    fun `dumpContents`(): List<UShort>
     
     fun `actionResponse`(`actionId`: String, `response`: ActionResponse): ComposerUpdate
     
@@ -698,21 +736,29 @@ class ComposerModel(
      */
     override protected fun freeRustArcPtr() {
         rustCall() { status ->
-            _UniFFILib.INSTANCE.ffi_wysiwyg_composer_e48b_ComposerModel_object_free(this.pointer, status)
+            _UniFFILib.INSTANCE.ffi_wysiwyg_composer_5ca3_ComposerModel_object_free(this.pointer, status)
         }
     }
 
     override fun `select`(`startUtf16Codeunit`: UInt, `endUtf16Codeunit`: UInt) =
         callWithPointer {
     rustCall() { _status ->
-    _UniFFILib.INSTANCE.wysiwyg_composer_e48b_ComposerModel_select(it, FfiConverterUInt.lower(`startUtf16Codeunit`), FfiConverterUInt.lower(`endUtf16Codeunit`),  _status)
+    _UniFFILib.INSTANCE.wysiwyg_composer_5ca3_ComposerModel_select(it, FfiConverterUInt.lower(`startUtf16Codeunit`), FfiConverterUInt.lower(`endUtf16Codeunit`),  _status)
 }
         }
     
     override fun `replaceText`(`newText`: String): ComposerUpdate =
         callWithPointer {
     rustCall() { _status ->
-    _UniFFILib.INSTANCE.wysiwyg_composer_e48b_ComposerModel_replace_text(it, FfiConverterString.lower(`newText`),  _status)
+    _UniFFILib.INSTANCE.wysiwyg_composer_5ca3_ComposerModel_replace_text(it, FfiConverterString.lower(`newText`),  _status)
+}
+        }.let {
+            FfiConverterTypeComposerUpdate.lift(it)
+        }
+    override fun `replaceTextIn`(`newText`: String, `start`: ULong, `end`: ULong): ComposerUpdate =
+        callWithPointer {
+    rustCall() { _status ->
+    _UniFFILib.INSTANCE.wysiwyg_composer_5ca3_ComposerModel_replace_text_in(it, FfiConverterString.lower(`newText`), FfiConverterULong.lower(`start`), FfiConverterULong.lower(`end`),  _status)
 }
         }.let {
             FfiConverterTypeComposerUpdate.lift(it)
@@ -720,7 +766,7 @@ class ComposerModel(
     override fun `backspace`(): ComposerUpdate =
         callWithPointer {
     rustCall() { _status ->
-    _UniFFILib.INSTANCE.wysiwyg_composer_e48b_ComposerModel_backspace(it,  _status)
+    _UniFFILib.INSTANCE.wysiwyg_composer_5ca3_ComposerModel_backspace(it,  _status)
 }
         }.let {
             FfiConverterTypeComposerUpdate.lift(it)
@@ -728,7 +774,15 @@ class ComposerModel(
     override fun `delete`(): ComposerUpdate =
         callWithPointer {
     rustCall() { _status ->
-    _UniFFILib.INSTANCE.wysiwyg_composer_e48b_ComposerModel_delete(it,  _status)
+    _UniFFILib.INSTANCE.wysiwyg_composer_5ca3_ComposerModel_delete(it,  _status)
+}
+        }.let {
+            FfiConverterTypeComposerUpdate.lift(it)
+        }
+    override fun `deleteIn`(`start`: ULong, `end`: ULong): ComposerUpdate =
+        callWithPointer {
+    rustCall() { _status ->
+    _UniFFILib.INSTANCE.wysiwyg_composer_5ca3_ComposerModel_delete_in(it, FfiConverterULong.lower(`start`), FfiConverterULong.lower(`end`),  _status)
 }
         }.let {
             FfiConverterTypeComposerUpdate.lift(it)
@@ -736,7 +790,7 @@ class ComposerModel(
     override fun `enter`(): ComposerUpdate =
         callWithPointer {
     rustCall() { _status ->
-    _UniFFILib.INSTANCE.wysiwyg_composer_e48b_ComposerModel_enter(it,  _status)
+    _UniFFILib.INSTANCE.wysiwyg_composer_5ca3_ComposerModel_enter(it,  _status)
 }
         }.let {
             FfiConverterTypeComposerUpdate.lift(it)
@@ -744,15 +798,23 @@ class ComposerModel(
     override fun `bold`(): ComposerUpdate =
         callWithPointer {
     rustCall() { _status ->
-    _UniFFILib.INSTANCE.wysiwyg_composer_e48b_ComposerModel_bold(it,  _status)
+    _UniFFILib.INSTANCE.wysiwyg_composer_5ca3_ComposerModel_bold(it,  _status)
 }
         }.let {
             FfiConverterTypeComposerUpdate.lift(it)
         }
+    override fun `dumpContents`(): List<UShort> =
+        callWithPointer {
+    rustCall() { _status ->
+    _UniFFILib.INSTANCE.wysiwyg_composer_5ca3_ComposerModel_dump_contents(it,  _status)
+}
+        }.let {
+            FfiConverterSequenceUShort.lift(it)
+        }
     override fun `actionResponse`(`actionId`: String, `response`: ActionResponse): ComposerUpdate =
         callWithPointer {
     rustCall() { _status ->
-    _UniFFILib.INSTANCE.wysiwyg_composer_e48b_ComposerModel_action_response(it, FfiConverterString.lower(`actionId`), FfiConverterTypeActionResponse.lower(`response`),  _status)
+    _UniFFILib.INSTANCE.wysiwyg_composer_5ca3_ComposerModel_action_response(it, FfiConverterString.lower(`actionId`), FfiConverterTypeActionResponse.lower(`response`),  _status)
 }
         }.let {
             FfiConverterTypeComposerUpdate.lift(it)
@@ -811,14 +873,14 @@ class ComposerUpdate(
      */
     override protected fun freeRustArcPtr() {
         rustCall() { status ->
-            _UniFFILib.INSTANCE.ffi_wysiwyg_composer_e48b_ComposerUpdate_object_free(this.pointer, status)
+            _UniFFILib.INSTANCE.ffi_wysiwyg_composer_5ca3_ComposerUpdate_object_free(this.pointer, status)
         }
     }
 
     override fun `textUpdate`(): TextUpdate =
         callWithPointer {
     rustCall() { _status ->
-    _UniFFILib.INSTANCE.wysiwyg_composer_e48b_ComposerUpdate_text_update(it,  _status)
+    _UniFFILib.INSTANCE.wysiwyg_composer_5ca3_ComposerUpdate_text_update(it,  _status)
 }
         }.let {
             FfiConverterTypeTextUpdate.lift(it)
@@ -826,7 +888,7 @@ class ComposerUpdate(
     override fun `menuState`(): MenuState =
         callWithPointer {
     rustCall() { _status ->
-    _UniFFILib.INSTANCE.wysiwyg_composer_e48b_ComposerUpdate_menu_state(it,  _status)
+    _UniFFILib.INSTANCE.wysiwyg_composer_5ca3_ComposerUpdate_menu_state(it,  _status)
 }
         }.let {
             FfiConverterTypeMenuState.lift(it)
@@ -834,7 +896,7 @@ class ComposerUpdate(
     override fun `actions`(): List<ComposerAction> =
         callWithPointer {
     rustCall() { _status ->
-    _UniFFILib.INSTANCE.wysiwyg_composer_e48b_ComposerUpdate_actions(it,  _status)
+    _UniFFILib.INSTANCE.wysiwyg_composer_5ca3_ComposerUpdate_actions(it,  _status)
 }
         }.let {
             FfiConverterSequenceTypeComposerAction.lift(it)
@@ -1105,7 +1167,7 @@ public object FfiConverterSequenceTypeComposerAction: FfiConverterRustBuffer<Lis
 fun `newComposerModel`(): ComposerModel {
     return FfiConverterTypeComposerModel.lift(
     rustCall() { _status ->
-    _UniFFILib.INSTANCE.wysiwyg_composer_e48b_new_composer_model( _status)
+    _UniFFILib.INSTANCE.wysiwyg_composer_5ca3_new_composer_model( _status)
 })
 }
 
