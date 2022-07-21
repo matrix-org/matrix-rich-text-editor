@@ -58,15 +58,30 @@ where
         }
     }
 
+    /**
+     * Replaces text in the current selection with new_text.
+     */
     pub fn replace_text(&mut self, new_text: &[C]) -> ComposerUpdate<C> {
         // TODO: escape any HTML?
         let (s, e) = self.safe_selection();
-        let mut new_html = self.html[..s].to_vec();
+        self.replace_text_in(&new_text, s, e)
+    }
+
+    /**
+     * Replaces text in the an arbitrary start..end range with new_text.
+     */
+    pub fn replace_text_in(
+        &mut self,
+        new_text: &[C],
+        start: usize,
+        end: usize,
+    ) -> ComposerUpdate<C> {
+        let mut new_html = self.html[..start].to_vec();
         new_html.extend_from_slice(new_text);
-        new_html.extend_from_slice(&self.html[e..]);
+        new_html.extend_from_slice(&self.html[end..]);
         self.html = new_html;
 
-        self.start = Location::from(s + new_text.len());
+        self.start = Location::from(start + new_text.len());
         self.end = self.start;
 
         // TODO: for now, we replace every time, to check ourselves, but
@@ -88,6 +103,17 @@ where
         self.replace_text(&[])
     }
 
+    /**
+     * Deletes text in an arbitrary start..end range.
+     */
+    pub fn delete_in(&mut self, start: usize, end: usize) -> ComposerUpdate<C> {
+        self.end = Location::from(start);
+        self.replace_text_in(&[], start, end)
+    }
+
+    /**
+     * Deletes the character after the current cursor position.
+     */
     pub fn delete(&mut self) -> ComposerUpdate<C> {
         if self.start == self.end {
             // Go forward 1 from the current location
@@ -105,6 +131,14 @@ where
         drop(action_id);
         drop(response);
         ComposerUpdate::keep()
+    }
+
+    pub fn get_html(&self) -> Vec<C> {
+        self.html.clone()
+    }
+
+    pub fn get_selection(&self) -> (Location, Location) {
+        (self.start, self.end)
     }
 
     // Internal functions
@@ -200,6 +234,14 @@ mod test {
     }
 
     #[test]
+    fn typing_a_character_in_a_range_inserts_it() {
+        let mut model = cm("0123456789|");
+        let new_text = "654".encode_utf16().collect::<Vec<u16>>();
+        model.replace_text_in(&new_text, 4, 7);
+        assert_eq!(tx(&model), "0123654|789");
+    }
+
+    #[test]
     fn backspacing_a_character_at_the_end_deletes_it() {
         let mut model = cm("abc|");
         model.backspace();
@@ -267,6 +309,13 @@ mod test {
         let mut model = cm("a|{bc}");
         model.delete();
         assert_eq!(tx(&model), "a|");
+    }
+
+    #[test]
+    fn deleting_a_range_removes_it() {
+        let mut model = cm("abcd|");
+        model.delete_in(1, 3);
+        assert_eq!(tx(&model), "a|d");
     }
 
     #[test]

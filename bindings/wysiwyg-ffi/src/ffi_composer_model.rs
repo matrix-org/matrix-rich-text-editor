@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use crate::ffi_action_response::ActionResponse;
+use crate::ffi_composer_state::ComposerState;
 use crate::ffi_composer_update::ComposerUpdate;
 
 pub struct ComposerModel {
@@ -41,12 +42,41 @@ impl ComposerModel {
         ))
     }
 
+    pub fn replace_text_in(
+        self: &Arc<Self>,
+        new_text: String,
+        start: u32,
+        end: u32,
+    ) -> Arc<ComposerUpdate> {
+        let start = usize::try_from(start).unwrap();
+        let end = usize::try_from(end).unwrap();
+        Arc::new(ComposerUpdate::from(
+            self.inner.lock().unwrap().replace_text_in(
+                &new_text.encode_utf16().collect::<Vec<_>>(),
+                start,
+                end,
+            ),
+        ))
+    }
+
     pub fn backspace(self: &Arc<Self>) -> Arc<ComposerUpdate> {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().backspace()))
     }
 
     pub fn delete(self: &Arc<Self>) -> Arc<ComposerUpdate> {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().delete()))
+    }
+
+    pub fn delete_in(
+        self: &Arc<Self>,
+        start: u32,
+        end: u32,
+    ) -> Arc<ComposerUpdate> {
+        let start = usize::try_from(start).unwrap();
+        let end = usize::try_from(end).unwrap();
+        Arc::new(ComposerUpdate::from(
+            self.inner.lock().unwrap().delete_in(start, end),
+        ))
     }
 
     pub fn action_response(
@@ -68,5 +98,17 @@ impl ComposerModel {
 
     pub fn bold(self: &Arc<Self>) -> Arc<ComposerUpdate> {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().bold()))
+    }
+
+    pub fn dump_state(self: &Arc<Self>) -> ComposerState {
+        let model = self.inner.lock().unwrap();
+        let (start, end) = model.get_selection();
+        let start: usize = start.into();
+        let end: usize = end.into();
+        ComposerState {
+            html: model.get_html(),
+            start: start as u32,
+            end: end as u32,
+        }
     }
 }

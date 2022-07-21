@@ -2,14 +2,18 @@ package io.element.android.wysiwygpoc
 
 import android.os.Bundle
 import android.text.Editable
-import android.text.InputFilter
+import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.TextWatcher
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.text.HtmlCompat
 import io.element.android.wysiwygpoc.databinding.ActivityMainBinding
 import uniffi.wysiwyg_composer.ComposerModel
+import uniffi.wysiwyg_composer.ComposerState
 import uniffi.wysiwyg_composer.TextUpdate
+
+val LOG_ENABLED = BuildConfig.DEBUG
 
 class MainActivity : AppCompatActivity() {
 
@@ -25,23 +29,34 @@ class MainActivity : AppCompatActivity() {
             requestFocus()
             selectionChangeListener = EditorEditText.OnSelectionChangeListener { start, end ->
                 composer.select(start.toUInt(), end.toUInt())
+                composer.log()
             }
             addTextChangedListener(EditorTextWatcher(inputProcessor))
         }
 
         binding.buttonBold.setOnClickListener {
-            val result = inputProcessor.processInput(
+            val update = inputProcessor.processInput(
                 EditorInputAction.ApplyInlineFormat(InlineFormat.Bold)
-            )
-            result?.let { binding.editor.setText(it) }
+            ) ?: return@setOnClickListener
+            val text = inputProcessor.processUpdate(update)
+            text?.let {
+                val currentText = binding.editor.editableText as? SpannableStringBuilder
+                currentText?.replace(0, currentText.length, text)
+                binding.editor.invalidate()
+            }
         }
     }
 
     class InputProcessor(
         private val composer: ComposerModel,
     ) {
-        fun processInput(action: EditorInputAction): CharSequence? {
-            val update = when (action) {
+
+        fun updateSelection(start: Int, end: Int) {
+            composer.select(start.toUInt(), end.toUInt())
+        }
+
+        fun processInput(action: EditorInputAction): TextUpdate? {
+            return when (action) {
                 is EditorInputAction.InsertText -> {
                     // This conversion to a plain String might be too simple
                     composer.replaceText(action.value.toString())
@@ -57,88 +72,80 @@ class MainActivity : AppCompatActivity() {
                         is InlineFormat.Bold -> composer.bold()
                     }
                 }
-                is EditorInputAction.ReplaceAll -> return null
+                is EditorInputAction.Delete -> {
+                    composer.deleteIn(action.start.toUInt(), action.end.toUInt())
+                }
+                is EditorInputAction.ReplaceAll -> null
+            }?.textUpdate().also {
+                composer.log()
             }
-            return when (val textUpdate = update.textUpdate()) {
+        }
+
+        fun processUpdate(update: TextUpdate): CharSequence? {
+            return when (update) {
                 is TextUpdate.Keep -> null
                 is TextUpdate.ReplaceAll -> {
-                    stringToSpans(textUpdate.htmlString())
+                    stringToSpans(update.replacementHtml.string())
                 }
             }
         }
 
         private fun stringToSpans(string: String): Spanned {
             // TODO: Check parsing flags
-            return HtmlCompat.fromHtml(string, 0)
+            val preparedString = string.replace(" ", "&nbsp;")
+            return HtmlCompat.fromHtml(preparedString, 0)
         }
     }
+}
 
-    class EditorTextWatcher(
-        private val inputProcessor: InputProcessor,
-    ) : TextWatcher {
-        private var replacement: CharSequence? = null
+class EditorTextWatcher(
+    private val inputProcessor: MainActivity.InputProcessor,
+) : TextWatcher {
+    private var replacement: CharSequence? = null
 
-        override fun beforeTextChanged(source: CharSequence?, start: Int, count: Int, after: Int) {}
+    override fun beforeTextChanged(source: CharSequence?, start: Int, count: Int, after: Int) {}
 
-        override fun onTextChanged(source: CharSequence?, start: Int, before: Int, count: Int) {
-            // When we make any changes to the editor's text using `replacement` the TextWatcher
-            // will be called again. When this happens, clean `replacement` and just return.
-            if (replacement != null) {
-                replacement = null
-                return
-            }
-            // When all text is deleted, clean `replacement` and early return.
-            if (source == null) {
-                replacement = null
-                return
-            }
-
-            // TODO: instead of using `replaced` + `ReplaceAll`, add a new replace operation with
-            //  indexes in Rust to modify the underlying buffer. Otherwise, we're going to have to
-            //  fight the IME's autocorrect feature.
-            val replaced = if (before <= count) source.substring(start+before, start+count) else ""
-            replacement = when {
-                start == 0 && count == before -> {
-                    inputProcessor.processInput(EditorInputAction.ReplaceAll(replaced))
-                }
-                before > count -> {
-                    inputProcessor.processInput(EditorInputAction.BackPress)
-                }
-                count != 0 && replaced != "\n" -> {
-                    inputProcessor.processInput(EditorInputAction.InsertText(replaced))
-                }
-                replaced == "\n" -> {
-                    inputProcessor.processInput(EditorInputAction.InsertParagraph)
-                }
-                else -> null
-            }
+    override fun onTextChanged(source: CharSequence?, start: Int, before: Int, count: Int) {
+        // When we make any changes to the editor's text using `replacement` the TextWatcher
+        // will be called again. When this happens, clean `replacement` and just return.
+        if (replacement != null) {
+            replacement = null
+            return
+        }
+        // When all text is deleted, clean `replacement` and early return.
+        if (source == null) {
+            replacement = null
+            return
         }
 
-        override fun afterTextChanged(s: Editable?) {
-            replacement?.let {
-                // Note: this is reentrant, it will call the TextWatcher again
-                s?.replace(0, s.length, it, 0, it.length)
-                if (s?.length == 0) {
-                    replacement = null
-                }
-            }
-        }
-    }
+        inputProcessor.updateSelection(start, start+before)
 
-    // InputFilter would be a lot cleaner to use, but it only allows modification of the current
-    // word being written, not the whole text.
-    private val inputFilter = InputFilter { source, start, end, dest, dstart, dend ->
-        when {
-            source.isNotEmpty() && source != "\n" -> {
-                inputProcessor.processInput(EditorInputAction.InsertText(source))
+        val newText = source.substring(start until start+count)
+        val update = when {
+            start == 0 && count == before -> {
+                inputProcessor.processInput(EditorInputAction.ReplaceAll(newText))
             }
-            source == "\n" -> {
-                inputProcessor.processInput(EditorInputAction.InsertParagraph)
-            }
-            source.isEmpty() && dend > dstart -> {
+            before > count -> {
                 inputProcessor.processInput(EditorInputAction.BackPress)
             }
+            count != 0 && newText != "\n" -> {
+                inputProcessor.processInput(EditorInputAction.InsertText(newText))
+            }
+            newText == "\n" -> {
+                inputProcessor.processInput(EditorInputAction.InsertParagraph)
+            }
             else -> null
+        }
+        replacement = update?.let { inputProcessor.processUpdate(update) }
+    }
+
+    override fun afterTextChanged(s: Editable?) {
+        replacement?.let {
+            // Note: this is reentrant, it will call the TextWatcher again
+            s?.replace(0, s.length, it, 0, it.length)
+            if (s?.length == 0) {
+                replacement = null
+            }
         }
     }
 }
@@ -146,6 +153,7 @@ class MainActivity : AppCompatActivity() {
 sealed interface EditorInputAction {
     data class InsertText(val value: CharSequence): EditorInputAction
     data class ReplaceAll(val value: CharSequence): EditorInputAction
+    data class Delete(val start: Int, val end: Int): EditorInputAction
     object InsertParagraph: EditorInputAction
     object BackPress: EditorInputAction
     data class ApplyInlineFormat(val format: InlineFormat): EditorInputAction
@@ -155,9 +163,14 @@ sealed interface InlineFormat {
     object Bold: InlineFormat
 }
 
-fun TextUpdate.ReplaceAll.htmlString(): String = with(StringBuffer()) {
-    replacementHtml.forEach {
+private fun List<UShort>.string() = with(StringBuffer()) {
+    this@string.forEach {
         appendCodePoint(it.toInt())
     }
     toString()
 }
+
+fun ComposerState.dump() = "'${html.string()}' | Start: $start | End: $end"
+fun ComposerModel.log() = if (LOG_ENABLED)
+    Log.d("COMPOSER_PROCESSOR", dumpState().dump())
+else 0

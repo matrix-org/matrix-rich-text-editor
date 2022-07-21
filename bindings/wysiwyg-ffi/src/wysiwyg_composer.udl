@@ -19,10 +19,13 @@ namespace wysiwyg_composer {
 interface ComposerModel {
     void select(u32 start_utf16_codeunit, u32 end_utf16_codeunit);
     ComposerUpdate replace_text(string new_text);
+    ComposerUpdate replace_text_in(string new_text, u32 start, u32 end);
     ComposerUpdate backspace();
     ComposerUpdate delete();
+    ComposerUpdate delete_in(u32 start, u32 end);
     ComposerUpdate enter();
     ComposerUpdate bold();
+    ComposerState dump_state();
     ComposerUpdate action_response(string action_id, ActionResponse response);
 };
 
@@ -30,6 +33,12 @@ interface ComposerUpdate {
     TextUpdate text_update();
     MenuState menu_state();
     sequence<ComposerAction> actions();
+};
+
+dictionary ComposerState {
+    sequence<u16> html;
+    u32 start;
+    u32 end;
 };
 
 [Enum]
