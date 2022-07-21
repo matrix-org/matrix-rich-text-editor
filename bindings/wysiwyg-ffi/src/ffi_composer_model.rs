@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use crate::ffi_action_response::ActionResponse;
+use crate::ffi_composer_state::ComposerState;
 use crate::ffi_composer_update::ComposerUpdate;
 
 pub struct ComposerModel {
@@ -47,17 +48,14 @@ impl ComposerModel {
         start: u64,
         end: u64,
     ) -> Arc<ComposerUpdate> {
-        let startSize = usize::try_from(start).unwrap();
-        let endSize = usize::try_from(end).unwrap();
+        let start = usize::try_from(start).unwrap();
+        let end = usize::try_from(end).unwrap();
         Arc::new(ComposerUpdate::from(
-            self.inner
-                .lock()
-                .unwrap()
-                .replace_text_in(
-                    &new_text.encode_utf16().collect::<Vec<_>>(),
-                    startSize,
-                    endSize,
-                ),
+            self.inner.lock().unwrap().replace_text_in(
+                &new_text.encode_utf16().collect::<Vec<_>>(),
+                start,
+                end,
+            ),
         ))
     }
 
@@ -69,10 +67,16 @@ impl ComposerModel {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().delete()))
     }
 
-    pub fn delete_in(self: &Arc<Self>, start: u64, end: u64) -> Arc<ComposerUpdate> {
-        let startSize = usize::try_from(start).unwrap();
-        let endSize = usize::try_from(end).unwrap();
-        Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().delete_in(startSize, endSize)))
+    pub fn delete_in(
+        self: &Arc<Self>,
+        start: u64,
+        end: u64,
+    ) -> Arc<ComposerUpdate> {
+        let start = usize::try_from(start).unwrap();
+        let end = usize::try_from(end).unwrap();
+        Arc::new(ComposerUpdate::from(
+            self.inner.lock().unwrap().delete_in(start, end),
+        ))
     }
 
     pub fn action_response(
@@ -96,7 +100,15 @@ impl ComposerModel {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().bold()))
     }
 
-    pub fn dump_contents(self: &Arc<Self>) -> Vec<u16> {
-        self.inner.lock().unwrap().dump_contents()
+    pub fn dump_state(self: &Arc<Self>) -> ComposerState {
+        let model = self.inner.lock().unwrap();
+        let (start, end) = model.get_selection();
+        let start: usize = start.into();
+        let end: usize = end.into();
+        ComposerState {
+            html: model.get_html(),
+            start: start as u64,
+            end: end as u64,
+        }
     }
 }

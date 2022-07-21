@@ -70,7 +70,12 @@ where
     /**
      * Replaces text in the an arbitrary start..end range with new_text.
      */
-    pub fn replace_text_in(&mut self, new_text: &[C], start: usize, end: usize) -> ComposerUpdate<C> {
+    pub fn replace_text_in(
+        &mut self,
+        new_text: &[C],
+        start: usize,
+        end: usize,
+    ) -> ComposerUpdate<C> {
         let mut new_html = self.html[..start].to_vec();
         new_html.extend_from_slice(new_text);
         new_html.extend_from_slice(&self.html[end..]);
@@ -128,11 +133,12 @@ where
         ComposerUpdate::keep()
     }
 
-    /**
-     * Dumps the contents of the html buffer.
-     */
-    pub fn dump_contents(&self) -> Vec<C> {
+    pub fn get_html(&self) -> Vec<C> {
         self.html.clone()
+    }
+
+    pub fn get_selection(&self) -> (Location, Location) {
+        (self.start, self.end)
     }
 
     // Internal functions
@@ -225,6 +231,13 @@ mod test {
         let mut model = cm("\u{1F469}\u{1F3FF}\u{200D}\u{1F680}|");
         replace_text(&mut model, "Z");
         assert_eq!(tx(&model), "\u{1F469}\u{1F3FF}\u{200D}\u{1F680}Z|");
+    }
+
+    #[test]
+    fn typing_a_character_in_a_range_inserts_it() {
+        let mut model = cm("0123456789");
+        replace_text_in(&mut model, "654", 3, 6);
+        assert_eq!(tx(&model), "0123654789");
     }
 
     #[test]

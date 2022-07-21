@@ -1,18 +1,20 @@
 package io.element.android.wysiwygpoc
 
 import android.os.Bundle
-import android.text.*
+import android.text.Editable
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.TextWatcher
+import android.util.Log
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.text.HtmlCompat
 import io.element.android.wysiwygpoc.databinding.ActivityMainBinding
-import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
-import kotlinx.coroutines.channels.consumeEach
 import uniffi.wysiwyg_composer.ComposerModel
+import uniffi.wysiwyg_composer.ComposerState
 import uniffi.wysiwyg_composer.TextUpdate
-import kotlin.coroutines.CoroutineContext
+
+val LOG_ENABLED = BuildConfig.DEBUG
 
 class MainActivity : AppCompatActivity() {
 
@@ -28,6 +30,7 @@ class MainActivity : AppCompatActivity() {
             requestFocus()
             selectionChangeListener = EditorEditText.OnSelectionChangeListener { start, end ->
                 composer.select(start.toUInt(), end.toUInt())
+                composer.log()
             }
             addTextChangedListener(EditorTextWatcher(inputProcessor))
         }
@@ -37,7 +40,11 @@ class MainActivity : AppCompatActivity() {
                 EditorInputAction.ApplyInlineFormat(InlineFormat.Bold)
             ) ?: return@setOnClickListener
             val text = inputProcessor.processUpdate(update)
-            text?.let { binding.editor.setText(it, TextView.BufferType.SPANNABLE) }
+            text?.let {
+                val currentText = binding.editor.editableText as? SpannableStringBuilder
+                currentText?.replace(0, currentText.length, text)
+                binding.editor.invalidate()
+            }
         }
     }
 
@@ -45,11 +52,15 @@ class MainActivity : AppCompatActivity() {
         private val composer: ComposerModel,
     ) {
 
+        fun updateSelection(start: Int, end: Int) {
+            composer.select(start.toUInt(), end.toUInt())
+        }
+
         fun processInput(action: EditorInputAction): TextUpdate? {
             return when (action) {
                 is EditorInputAction.InsertText -> {
                     // This conversion to a plain String might be too simple
-                    composer.replaceTextIn(action.value.toString(), action.start.toULong(), action.end.toULong())
+                    composer.replaceText(action.value.toString())
                 }
                 is EditorInputAction.InsertParagraph -> {
                     composer.enter()
@@ -65,8 +76,10 @@ class MainActivity : AppCompatActivity() {
                 is EditorInputAction.Delete -> {
                     composer.deleteIn(action.start.toULong(), action.end.toULong())
                 }
-                is EditorInputAction.ReplaceAll -> return null
-            }.textUpdate()
+                is EditorInputAction.ReplaceAll -> null
+            }?.textUpdate().also {
+                composer.log()
+            }
         }
 
         fun processUpdate(update: TextUpdate): CharSequence? {
@@ -106,24 +119,20 @@ class EditorTextWatcher(
             return
         }
 
-        val replaced = source.substring(start until start+count)
+        inputProcessor.updateSelection(start, start+before)
+
+        val newText = source.substring(start until start+count)
         val update = when {
             start == 0 && count == before -> {
-                inputProcessor.processInput(EditorInputAction.ReplaceAll(replaced))
+                inputProcessor.processInput(EditorInputAction.ReplaceAll(newText))
             }
             before > count -> {
-                if (before - count == 1) {
-                    inputProcessor.processInput(EditorInputAction.BackPress)
-                } else {
-                    // I think this case (deleting a selection) should be automatically handled
-                    // by `backpress` in the Rust lib, but that's not the case at the moment.
-                    inputProcessor.processInput(EditorInputAction.Delete(start, start+before))
-                }
+                inputProcessor.processInput(EditorInputAction.BackPress)
             }
-            count != 0 && replaced != "\n" -> {
-                inputProcessor.processInput(EditorInputAction.InsertText(replaced, start, start + before))
+            count != 0 && newText != "\n" -> {
+                inputProcessor.processInput(EditorInputAction.InsertText(newText))
             }
-            replaced == "\n" -> {
+            newText == "\n" -> {
                 inputProcessor.processInput(EditorInputAction.InsertParagraph)
             }
             else -> null
@@ -143,7 +152,7 @@ class EditorTextWatcher(
 }
 
 sealed interface EditorInputAction {
-    data class InsertText(val value: CharSequence, val start: Int, val end: Int): EditorInputAction
+    data class InsertText(val value: CharSequence): EditorInputAction
     data class ReplaceAll(val value: CharSequence): EditorInputAction
     data class Delete(val start: Int, val end: Int): EditorInputAction
     object InsertParagraph: EditorInputAction
@@ -161,3 +170,8 @@ private fun List<UShort>.string() = with(StringBuffer()) {
     }
     toString()
 }
+
+fun ComposerState.dump() = "'${html.string()}' | Start: $start | End: $end"
+fun ComposerModel.log() = if (LOG_ENABLED)
+    Log.d("COMPOSER_PROCESSOR", dumpState().dump())
+else 0

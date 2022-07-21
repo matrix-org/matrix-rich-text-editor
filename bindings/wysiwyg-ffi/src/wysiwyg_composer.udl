@@ -25,7 +25,7 @@ interface ComposerModel {
     ComposerUpdate delete_in(u64 start, u64 end);
     ComposerUpdate enter();
     ComposerUpdate bold();
-    sequence<u16> dump_contents();
+    ComposerState dump_state();
     ComposerUpdate action_response(string action_id, ActionResponse response);
 };
 
@@ -33,6 +33,12 @@ interface ComposerUpdate {
     TextUpdate text_update();
     MenuState menu_state();
     sequence<ComposerAction> actions();
+};
+
+dictionary ComposerState {
+    sequence<u16> html;
+    u64 start;
+    u64 end;
 };
 
 [Enum]
