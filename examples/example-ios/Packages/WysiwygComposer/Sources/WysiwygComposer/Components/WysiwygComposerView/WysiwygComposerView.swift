@@ -1,14 +1,23 @@
 //
-//  WysiwygComposerView.swift
-//  
+// Copyright 2022 The Matrix.org Foundation C.I.C
 //
-//  Created by Arnaud Ringenbach on 19/07/2022.
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 //
 
 import SwiftUI
+import OSLog
 
 struct WysiwygComposerView: UIViewRepresentable {
-
     var viewState: WysiwygComposerViewState
     var change: (String, NSRange, String) -> ()
     var textDidUpdate: (String, NSRange) -> ()
@@ -27,16 +36,9 @@ struct WysiwygComposerView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: UITextView, context: Context) {
-        guard let data = viewState.html.data(using: .utf16, allowLossyConversion: false) else {
-            return
-        }
-        guard let attrString = try? NSAttributedString(data: data, options: [.documentType: NSAttributedString.DocumentType.html], documentAttributes: nil) else {
-            return
-        }
-
-        uiView.attributedText = attrString
+        Logger.composer.debug("New text: \(viewState.displayText.string)")
+        uiView.attributedText = viewState.displayText
         uiView.selectedRange = viewState.textSelection
-        print("WYSIWYG: Update UI: \(attrString.string) length: \(attrString.length)")
     }
 
     func makeCoordinator() -> Coordinator {

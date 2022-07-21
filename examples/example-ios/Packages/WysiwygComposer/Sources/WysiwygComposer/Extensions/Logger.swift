@@ -14,18 +14,10 @@
 // limitations under the License.
 //
 
-import SwiftUI
-import WysiwygComposer
+import OSLog
 
-struct ContentView: View {
-    var body: some View {
-        WysiwygView()
-            .padding()
-    }
-}
+extension Logger {
+    private static var subsystem = "org.matrix.WysiwygComposer"
 
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView()
-    }
+    static let composer = Logger(subsystem: subsystem, category: "composer")
 }
