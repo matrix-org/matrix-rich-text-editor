@@ -45,8 +45,8 @@ impl ComposerModel {
     pub fn replace_text_in(
         self: &Arc<Self>,
         new_text: String,
-        start: u64,
-        end: u64,
+        start: u32,
+        end: u32,
     ) -> Arc<ComposerUpdate> {
         let start = usize::try_from(start).unwrap();
         let end = usize::try_from(end).unwrap();
@@ -69,8 +69,8 @@ impl ComposerModel {
 
     pub fn delete_in(
         self: &Arc<Self>,
-        start: u64,
-        end: u64,
+        start: u32,
+        end: u32,
     ) -> Arc<ComposerUpdate> {
         let start = usize::try_from(start).unwrap();
         let end = usize::try_from(end).unwrap();
@@ -107,8 +107,8 @@ impl ComposerModel {
         let end: usize = end.into();
         ComposerState {
             html: model.get_html(),
-            start: start as u64,
-            end: end as u64,
+            start: start as u32,
+            end: end as u32,
         }
     }
 }

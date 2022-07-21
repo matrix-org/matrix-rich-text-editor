@@ -6,7 +6,6 @@ import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.TextWatcher
 import android.util.Log
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.text.HtmlCompat
 import io.element.android.wysiwygpoc.databinding.ActivityMainBinding
@@ -74,7 +73,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 is EditorInputAction.Delete -> {
-                    composer.deleteIn(action.start.toULong(), action.end.toULong())
+                    composer.deleteIn(action.start.toUInt(), action.end.toUInt())
                 }
                 is EditorInputAction.ReplaceAll -> null
             }?.textUpdate().also {

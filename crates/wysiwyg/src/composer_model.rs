@@ -235,9 +235,10 @@ mod test {
 
     #[test]
     fn typing_a_character_in_a_range_inserts_it() {
-        let mut model = cm("0123456789");
-        replace_text_in(&mut model, "654", 3, 6);
-        assert_eq!(tx(&model), "0123654789");
+        let mut model = cm("0123456789|");
+        let new_text = "654".encode_utf16().collect::<Vec<u16>>();
+        model.replace_text_in(&new_text, 4, 7);
+        assert_eq!(tx(&model), "0123654|789");
     }
 
     #[test]
@@ -308,6 +309,13 @@ mod test {
         let mut model = cm("a|{bc}");
         model.delete();
         assert_eq!(tx(&model), "a|");
+    }
+
+    #[test]
+    fn deleting_a_range_removes_it() {
+        let mut model = cm("abcd|");
+        model.delete_in(1, 3);
+        assert_eq!(tx(&model), "a|d");
     }
 
     #[test]
