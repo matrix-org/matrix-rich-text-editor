@@ -25,14 +25,10 @@ struct WysiwygComposerViewState {
 class WysiwygComposerViewModel: ObservableObject {
     @Published var viewState: WysiwygComposerViewState
 
-    private var operationQueue: OperationQueue
     private var model: ComposerModel
 
     static let initialText = ""
     init() {
-        self.operationQueue = OperationQueue()
-        self.operationQueue.maxConcurrentOperationCount = 1
-        self.operationQueue.qualityOfService = .userInteractive
         self.model = newComposerModel()
         self.viewState = WysiwygComposerViewState(
             textSelection: .init(location: 0, length: 0),
@@ -41,37 +37,28 @@ class WysiwygComposerViewModel: ObservableObject {
     }
 
     func didAttemptChange(of text: String, range: NSRange, replacementText: String) {
-        operationQueue.addOperation {
-            let update: ComposerUpdate
-            if replacementText == "" {
-                update = self.model.backspace()
-            } else {
-                update = self.model.replaceText(newText: replacementText)
-            }
-            self.applyUpdate(update)
-       }
+        let update: ComposerUpdate
+        if replacementText == "" {
+            update = self.model.backspace()
+        } else {
+            update = self.model.replaceText(newText: replacementText)
+        }
+        self.applyUpdate(update)
     }
 
     func textDidUpdate(text: String, range: NSRange) {
-        operationQueue.addOperation {
-            // TODO if needed
-        }
+        // TODO if needed
     }
 
     func textDidChangeSelection(text: String, range: NSRange) {
-        operationQueue.addOperation {
-            Logger.composer.debug("New selection: \(range) totalLength: \(text.count)")
-            self.model.select(startUtf16Codeunit: UInt32(range.location),
-                              endUtf16Codeunit: UInt32(range.location+range.length))
-
-        }
+        Logger.composer.debug("New selection: \(range) totalLength: \(text.count)")
+        self.model.select(startUtf16Codeunit: UInt32(range.location),
+                          endUtf16Codeunit: UInt32(range.location+range.length))
     }
 
     func applyBold() {
-        operationQueue.addOperation {
-            let update = self.model.bold()
-            self.applyUpdate(update)
-        }
+        let update = self.model.bold()
+        self.applyUpdate(update)
     }
 }
 
@@ -81,16 +68,14 @@ private extension WysiwygComposerViewModel {
         case .replaceAll(replacementHtml: let codeUnits,
                          startUtf16Codeunit: let start,
                          endUtf16Codeunit: let end):
-            let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count)
+            let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count).replacingOccurrences(of: "\n", with: "<br>")
             do {
                 let attributed = try NSAttributedString(html: html)
                 let textSelection = NSRange(location: Int(start), length: Int(end-start))
-                DispatchQueue.main.async {
-                    self.viewState = WysiwygComposerViewState(
-                        textSelection: textSelection,
-                        displayText: attributed
-                    )
-                }
+                self.viewState = WysiwygComposerViewState(
+                    textSelection: textSelection,
+                    displayText: attributed
+                )
                 Logger.composer.debug("HTML from Rust: \(html), selection: \(textSelection)")
             } catch {
                 Logger.composer.error("Unable to update composer display: \(error.localizedDescription)")
