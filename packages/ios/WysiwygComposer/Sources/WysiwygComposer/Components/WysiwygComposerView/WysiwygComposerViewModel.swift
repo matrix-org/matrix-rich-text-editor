@@ -39,6 +39,10 @@ class WysiwygComposerViewModel: ObservableObject {
     func didAttemptChange(of text: String, range: NSRange, replacementText: String) {
         let update: ComposerUpdate
         if replacementText == "" {
+            if range.length > 1 {
+                self.model.select(startUtf16Codeunit: UInt32(range.location),
+                                  endUtf16Codeunit: UInt32(range.location+range.length))
+            }
             update = self.model.backspace()
         } else {
             update = self.model.replaceText(newText: replacementText)

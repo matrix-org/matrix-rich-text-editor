@@ -36,4 +36,17 @@ extension NSAttributedString {
                       options: [.documentType: NSAttributedString.DocumentType.html],
                       documentAttributes: nil)
     }
+
+    func enumerateTypedAttribute<T>(_ attrName: NSAttributedString.Key,
+                                    in enumerationRange: NSRange? = nil,
+                                    options opts: NSAttributedString.EnumerationOptions = [],
+                                    using block: (T, NSRange, UnsafeMutablePointer<ObjCBool>) -> Void) {
+        self.enumerateAttribute(attrName,
+                                in: enumerationRange ?? .init(location: 0, length: length),
+                                options: opts) { (attr: Any?, range: NSRange, stop: UnsafeMutablePointer<ObjCBool>) in
+            guard let typedAttr = attr as? T else { return }
+
+            block(typedAttr, range, stop)
+        }
+    }
 }
