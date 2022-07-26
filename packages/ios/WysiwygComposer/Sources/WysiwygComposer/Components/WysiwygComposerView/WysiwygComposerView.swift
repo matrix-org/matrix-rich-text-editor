@@ -17,11 +17,12 @@
 import SwiftUI
 import OSLog
 
+/// Provides a SwiftUI displayable view for the composer UITextView component.
 struct WysiwygComposerView: UIViewRepresentable {
+    // MARK: - Internal
     var viewState: WysiwygComposerViewState
-    var change: (String, NSRange, String) -> ()
-    var textDidUpdate: (String, NSRange) -> ()
-    var textDidChangeSelection: (String, NSRange) -> ()
+    var replaceText: (String, NSRange, String) -> ()
+    var select: (String, NSRange) -> ()
 
     func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
@@ -42,33 +43,27 @@ struct WysiwygComposerView: UIViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(change, textDidUpdate, textDidChangeSelection)
+        Coordinator(replaceText, select)
     }
 
+    /// Coordinates UIKit communication.
     class Coordinator: NSObject, UITextViewDelegate, NSTextStorageDelegate {
-        var change: (String, NSRange, String) -> ()
-        var textDidUpdate: (String, NSRange) -> ()
-        var textDidChangeSelection: (String, NSRange) -> ()
+        var replaceText: (String, NSRange, String) -> ()
+        var select: (String, NSRange) -> ()
 
-        init(_ change: @escaping (String, NSRange, String) -> (),
-             _ textDidUpdate: @escaping (String, NSRange) -> (),
-             _ textDidChangeSelection: @escaping (String, NSRange) -> ()) {
-            self.change = change
-            self.textDidUpdate = textDidUpdate
-            self.textDidChangeSelection = textDidChangeSelection
+        init(_ replaceText: @escaping (String, NSRange, String) -> (),
+             _ select: @escaping (String, NSRange) -> ()) {
+            self.replaceText = replaceText
+            self.select = select
         }
 
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-            self.change(textView.text, range, text)
+            self.replaceText(textView.text, range, text)
             return false
         }
 
-        func textViewDidChange(_ textView: UITextView) {
-            textDidUpdate(textView.text, textView.selectedRange)
-        }
-
         func textViewDidChangeSelection(_ textView: UITextView) {
-            textDidChangeSelection(textView.text, textView.selectedRange)
+            self.select(textView.text, textView.selectedRange)
         }
     }
 }

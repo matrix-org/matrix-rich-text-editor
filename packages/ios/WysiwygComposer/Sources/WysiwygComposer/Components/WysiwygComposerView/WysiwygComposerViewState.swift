@@ -1,4 +1,4 @@
-//
+// 
 // Copyright 2022 The Matrix.org Foundation C.I.C
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,23 +14,12 @@
 // limitations under the License.
 //
 
-import SwiftUI
+import Foundation
 
-public struct WysiwygView: View {
-    // MARK: - Public
-    public var body: some View {
-        VStack {
-            WysiwygComposerView(viewState: viewModel.viewState,
-                                replaceText: viewModel.replaceText,
-                                select: viewModel.select)
-            Button("Bold") {
-                viewModel.applyBold()
-            }.buttonStyle(.automatic)
-        }
-    }
-
-    public init() {}
-
-    // MARK: - Internal
-    @StateObject var viewModel = WysiwygComposerViewModel()
+/// Describe the current state of the composer.
+struct WysiwygComposerViewState {
+    /// Current text selection.
+    var textSelection: NSRange
+    /// Current text to display.
+    var displayText: NSAttributedString
 }

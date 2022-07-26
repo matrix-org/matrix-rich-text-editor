@@ -17,17 +17,16 @@
 import Foundation
 import OSLog
 
-struct WysiwygComposerViewState {
-    var textSelection: NSRange
-    var displayText: NSAttributedString
-}
-
+/// Main view model for the `WysiwygComposerView`. Provides user actions
+/// to the Rust model and publishes result `WysiwygComposerViewState`.
 class WysiwygComposerViewModel: ObservableObject {
+    // MARK: - Internal
     @Published var viewState: WysiwygComposerViewState
 
+    // MARK: - Private
     private var model: ComposerModel
 
-    static let initialText = ""
+    // MARK: - Init
     init() {
         self.model = newComposerModel()
         self.viewState = WysiwygComposerViewState(
@@ -36,9 +35,17 @@ class WysiwygComposerViewModel: ObservableObject {
         )
     }
 
-    func didAttemptChange(of text: String, range: NSRange, replacementText: String) {
+    // MARK: - Internal
+    /// Replace text in the model.
+    ///
+    /// - Parameters:
+    ///   - text: Text currently displayed in the composer.
+    ///   - range: Range to replace.
+    ///   - replacementText: Replacement text to apply.
+    func replaceText(_ text: String, range: NSRange, replacementText: String) {
         let update: ComposerUpdate
         if replacementText == "" {
+            // When trying to backspace more than one UTF16 code unit, selection is required.
             if range.length > 1 {
                 self.model.select(startUtf16Codeunit: UInt32(range.location),
                                   endUtf16Codeunit: UInt32(range.location+range.length))
@@ -50,23 +57,29 @@ class WysiwygComposerViewModel: ObservableObject {
         self.applyUpdate(update)
     }
 
-    func textDidUpdate(text: String, range: NSRange) {
-        // TODO if needed
-    }
-
-    func textDidChangeSelection(text: String, range: NSRange) {
+    /// Select given range of text within the model.
+    ///
+    /// - Parameters:
+    ///   - text: Text currently displayed in the composer.
+    ///   - range: Range to select.
+    func select(text: String, range: NSRange) {
         Logger.composer.debug("New selection: \(range) totalLength: \(text.count)")
         self.model.select(startUtf16Codeunit: UInt32(range.location),
                           endUtf16Codeunit: UInt32(range.location+range.length))
     }
 
+    /// Apply bold formatting to the current selection.
     func applyBold() {
         let update = self.model.bold()
         self.applyUpdate(update)
     }
 }
 
+// MARK: - Private
 private extension WysiwygComposerViewModel {
+    /// Apply given composer update to the view state.
+    ///
+    /// - Parameter update: ComposerUpdate to apply.
     func applyUpdate(_ update: ComposerUpdate) {
         switch update.textUpdate() {
         case .replaceAll(replacementHtml: let codeUnits,
