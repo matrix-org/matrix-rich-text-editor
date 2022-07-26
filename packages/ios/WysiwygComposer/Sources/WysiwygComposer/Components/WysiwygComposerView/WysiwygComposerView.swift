@@ -21,8 +21,8 @@ import OSLog
 struct WysiwygComposerView: UIViewRepresentable {
     // MARK: - Internal
     var viewState: WysiwygComposerViewState
-    var replaceText: (String, NSRange, String) -> ()
-    var select: (String, NSRange) -> ()
+    var replaceText: (NSAttributedString, NSRange, String) -> ()
+    var select: (NSAttributedString, NSRange) -> ()
 
     func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
@@ -48,22 +48,22 @@ struct WysiwygComposerView: UIViewRepresentable {
 
     /// Coordinates UIKit communication.
     class Coordinator: NSObject, UITextViewDelegate, NSTextStorageDelegate {
-        var replaceText: (String, NSRange, String) -> ()
-        var select: (String, NSRange) -> ()
+        var replaceText: (NSAttributedString, NSRange, String) -> ()
+        var select: (NSAttributedString, NSRange) -> ()
 
-        init(_ replaceText: @escaping (String, NSRange, String) -> (),
-             _ select: @escaping (String, NSRange) -> ()) {
+        init(_ replaceText: @escaping (NSAttributedString, NSRange, String) -> (),
+             _ select: @escaping (NSAttributedString, NSRange) -> ()) {
             self.replaceText = replaceText
             self.select = select
         }
 
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-            self.replaceText(textView.text, range, text)
+            self.replaceText(textView.attributedText, range, text)
             return false
         }
 
         func textViewDidChangeSelection(_ textView: UITextView) {
-            self.select(textView.text, textView.selectedRange)
+            self.select(textView.attributedText, textView.selectedRange)
         }
     }
 }

@@ -42,7 +42,7 @@ class WysiwygComposerViewModel: ObservableObject {
     ///   - text: Text currently displayed in the composer.
     ///   - range: Range to replace.
     ///   - replacementText: Replacement text to apply.
-    func replaceText(_ text: String, range: NSRange, replacementText: String) {
+    func replaceText(_ text: NSAttributedString, range: NSRange, replacementText: String) {
         let update: ComposerUpdate
         if replacementText == "" {
             // When trying to backspace more than one UTF16 code unit, selection is required.
@@ -62,8 +62,8 @@ class WysiwygComposerViewModel: ObservableObject {
     /// - Parameters:
     ///   - text: Text currently displayed in the composer.
     ///   - range: Range to select.
-    func select(text: String, range: NSRange) {
-        Logger.composer.debug("New selection: \(range) totalLength: \(text.count)")
+    func select(text: NSAttributedString, range: NSRange) {
+        Logger.composer.debug("New selection: \(range) totalLength: \(text.length)")
         self.model.select(startUtf16Codeunit: UInt32(range.location),
                           endUtf16Codeunit: UInt32(range.location+range.length))
     }
