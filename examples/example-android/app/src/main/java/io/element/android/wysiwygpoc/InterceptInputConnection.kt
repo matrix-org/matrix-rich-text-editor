@@ -7,26 +7,36 @@ import android.text.Selection
 import android.view.KeyEvent
 import android.view.inputmethod.*
 import android.widget.TextView
-import androidx.core.widget.addTextChangedListener
+import androidx.annotation.VisibleForTesting
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.launch
 import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 
 class InterceptInputConnection(
-    private val editorEditText: TextView
+    private val editorEditText: TextView,
+    private val inputProcessor: InputProcessor,
 ) : BaseInputConnection(editorEditText, true) {
 
     private var batchEditNesting = 0
-    val inputProcessor = InputProcessor(uniffi.wysiwyg_composer.newComposerModel())
+    private val keyboardEventQueue = Channel<KeyEvent>(capacity = Channel.UNLIMITED)
 
-    private var expectedEditable: CharSequence? = null
+    private var keyEventJob: Job? = null
 
     init {
+        keyEventJob = processKeyEvents()
         // Used to try to catch spell checker actions. Sadly, this would only work if we always
         // used TextUpdate.ReplaceAll instead of TextUpdate.Keep.
-        editorEditText.addTextChangedListener(onTextChanged = { text, start, before, count ->
-            println("Changed: $text | $expectedEditable")
-            if (expectedEditable != null && text.contentEquals(expectedEditable)) return@addTextChangedListener
-            println("Actually changed.")
-        })
+//        editorEditText.addTextChangedListener(onTextChanged = { text, start, before, count ->
+//            println("Changed: $text | $expectedEditable")
+//            if (expectedEditable != null && text.contentEquals(expectedEditable)) return@addTextChangedListener
+//            println("Actually changed.")
+//        })
     }
 
     override fun getEditable(): Editable {
@@ -70,6 +80,9 @@ class InterceptInputConnection(
             }
             // Will prevent any further calls to begin or endBatchEdit
             batchEditNesting--
+
+            keyEventJob?.cancel()
+            keyEventJob = null
         }
     }
 
@@ -136,50 +149,69 @@ class InterceptInputConnection(
      * Hack to have keyboard input events work as IME ones.
      */
     fun sendHardwareKeyboardInput(keyEvent: KeyEvent) {
-        val char = Char(keyEvent.unicodeChar)
-        val isNotPrintable = char == Char(0)
-        val start = Selection.getSelectionStart(editable)
-        val end = Selection.getSelectionEnd(editable)
-        val (cStart, cEnd) = getCurrentComposition()
-        if (cStart != -1 && cEnd != -1) {
-            removeComposingSpans(editable)
-        }
-        when {
-            isNotPrintable -> {
-                if (keyEvent.keyCode == KeyEvent.KEYCODE_DEL) {
-                    inputProcessor.updateSelection(start, end)
-                    backspace()
-                }
-            }
-            else -> {
-                // Replace selection
-                if (abs(end - start) > 1) {
-                    val newText = editable.subSequence(start, end) as Editable
-                    newText.replace(0, end - start, char.toString())
-                    setComposingRegion(start, end)
-                    setComposingText(newText, 1)
-                } else {
-                    val newText = editable.subSequence(cStart, cEnd) as Editable
-                    newText.insert(cEnd - cStart, char.toString())
-                    setComposingRegion(cStart, end)
-                    if (newText.toString() != " ") {
-                        setComposingText(newText, 1)
-                    } else {
-                        commitText(newText, 1)
+        keyboardEventQueue.trySend(keyEvent)
+    }
+
+    private fun processKeyEvents() =
+        CoroutineScope(Dispatchers.Main).launch {
+            keyboardEventQueue.consumeEach { keyEvent ->
+                val content = editable
+                val start = Selection.getSelectionStart(content)
+                val end = Selection.getSelectionEnd(content)
+                val (cStart, cEnd) = getCurrentComposition()
+                when {
+                    keyEvent.isPrintingKey || keyEvent.keyCode == KeyEvent.KEYCODE_SPACE -> {
+                        withProcessor {
+                            updateSelection(start, end)
+                            val newText = if (keyEvent.keyCode == KeyEvent.KEYCODE_SPACE) {
+                                " "
+                            } else {
+                                Char(keyEvent.unicodeChar).toString()
+                            }
+                            val result = processInput(EditorInputAction.InsertText(newText))?.let {
+                                processUpdate(it)
+                            }
+                            val selectionLength = end-start
+                            beginBatchEdit()
+                            if (result != null) {
+                                editable.replace(0, editable.length, result)
+                            } else {
+                                editable.replace(start, end, newText)
+                            }
+                            setComposingRegion(cStart, cEnd - selectionLength)
+                            Selection.setSelection(editable, start+1)
+                            endBatchEdit()
+                        }
+                    }
+                    keyEvent.keyCode == KeyEvent.KEYCODE_ENTER -> {
+                        val result = withProcessor {
+                            processInput(EditorInputAction.InsertParagraph)?.let {
+                                processUpdate(it)
+                            }
+                        }
+                        beginBatchEdit()
+                        if (result != null) {
+                            editable.replace(0, editable.length, result)
+                        } else {
+                            editable.replace(start, end, "\n")
+                        }
+                        endBatchEdit()
+                    }
+                    keyEvent.keyCode == KeyEvent.KEYCODE_DEL -> {
+                        inputProcessor.updateSelection(start, end)
+                        backspace()
                     }
                 }
             }
         }
-    }
 
     // Called when started typing
     override fun setComposingText(text: CharSequence?, newCursorPosition: Int): Boolean {
         val (start, end) = getCurrentComposition()
         inputProcessor.updateSelection(start, end)
-        val textUpdate = inputProcessor.processInput(EditorInputAction.InsertText(text.toString()))
-        val result = textUpdate?.let { inputProcessor.processUpdate(it) }
-
-//        return super.setComposingText(text, newCursorPosition)
+        val result = withProcessor {
+            processInput(EditorInputAction.InsertText(text.toString()))?.let { processUpdate(it) }
+        }
 
         return if (result != null) {
             replaceAll(result, newCursorPosition)
@@ -193,10 +225,13 @@ class InterceptInputConnection(
     override fun commitText(text: CharSequence?, newCursorPosition: Int): Boolean {
         val (start, end) = getCurrentComposition()
         inputProcessor.updateSelection(start, end)
-        val textUpdate = inputProcessor.processInput(EditorInputAction.InsertText(text.toString()))
-        val result = textUpdate?.let { inputProcessor.processUpdate(it) }
-
-//        return super.commitText(text, newCursorPosition)
+        val result = withProcessor {
+            if (text.contentEquals("\n")) {
+                processInput(EditorInputAction.InsertParagraph)
+            } else {
+                processInput(EditorInputAction.InsertText(text.toString()))
+            }?.let { processUpdate(it) }
+        }
 
         return if (result != null) {
             replaceAll(result, newCursorPosition)
@@ -206,42 +241,79 @@ class InterceptInputConnection(
         }
     }
 
-    private fun backspace(): Boolean {
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal fun backspace(): Boolean {
         val start = Selection.getSelectionStart(editable)
         val end = Selection.getSelectionEnd(editable)
         if (start == 0 && end == 0) return false
 
-        val textUpdate = inputProcessor.processInput(EditorInputAction.BackPress)
-        val result = textUpdate?.let { inputProcessor.processUpdate(it) }
+        val result = withProcessor {
+            updateSelection(start, end)
+            processInput(EditorInputAction.BackPress)?.let { processUpdate(it) }
+        }
 
         return if (result != null) {
-            replaceAll(result, newCursorPosition = 1)
+            val newSelection = if (start == end) end-1 else min(start, end)
+            beginBatchEdit()
+            editable.replace(0, editable.length, result)
+            Selection.setSelection(editable, newSelection)
+            endBatchEdit()
             true
         } else {
             // Workaround for keyboard input
-            if (end != start) {
-                setSelection(end, end)
-            }
-            super.deleteSurroundingText(end - start, 0)
+            val maxValue = max(end, start)
+            setSelection(maxValue, maxValue)
+            val toDelete = if (start == end) 1 else abs(start - end)
+            super.deleteSurroundingText(toDelete, 0)
         }
     }
 
+    // FIXME: it's not working as intended
     override fun deleteSurroundingText(beforeLength: Int, afterLength: Int): Boolean {
+        if (beforeLength == 0 && afterLength == 0) return false
         val end = Selection.getSelectionEnd(editable)
         val start = end - beforeLength + afterLength
+        val deleteFrom = (start - beforeLength).coerceAtLeast(0)
+        val deleteTo = end + afterLength
 
-        inputProcessor.updateSelection(start, end)
+        var handled = false
+        beginBatchEdit()
+        if (afterLength > 0) {
+            val result = withProcessor {
+                updateSelection(end, deleteTo)
+                processInput(EditorInputAction.BackPress)?.let { processUpdate(it) }
+            }
+            if (result != null) {
+                editable.replace(0, editable.length, result)
+            }
+            // TODO: handle result == null
+            handled = true
+        }
 
-        return backspace()
+        if (beforeLength > 0) {
+            val result = withProcessor {
+                updateSelection(deleteFrom, start)
+                processInput(EditorInputAction.BackPress)?.let { processUpdate(it) }
+            }
+            if (result != null) {
+                editable.replace(0, editable.length, result)
+            }
+            // TODO: handle result == null
+            handled = true
+        }
+        endBatchEdit()
+
+        return handled
     }
 
     fun applyInlineFormat(format: InlineFormat) {
         val start = Selection.getSelectionStart(editable)
         val end = Selection.getSelectionEnd(editable)
-        inputProcessor.updateSelection(start, end)
+        withProcessor { updateSelection(start, end) }
 
-        val update = inputProcessor.processInput(EditorInputAction.ApplyInlineFormat(format))
-        val result = update?.let { inputProcessor.processUpdate(it) }
+        val result = withProcessor {
+            processInput(EditorInputAction.ApplyInlineFormat(format))?.let { processUpdate(it) }
+        }
 
         result?.let { replaceAll(result, newCursorPosition = 0) }
     }
@@ -288,7 +360,6 @@ class InterceptInputConnection(
     private fun replaceAll(charSequence: CharSequence, newCursorPosition: Int) {
         beginBatchEdit()
         updateSelectionInternal(newCursorPosition)
-        expectedEditable = charSequence
         editable.replace(0, editable.length, charSequence)
         endBatchEdit()
     }
@@ -300,5 +371,9 @@ class InterceptInputConnection(
         cursorPosition += if (newCursorPosition > 0) end else start
         cursorPosition = cursorPosition.coerceIn(0, content.length)
         Selection.setSelection(content, cursorPosition)
+    }
+
+    private fun <T> withProcessor(block: InputProcessor.() -> T): T {
+        return inputProcessor.run(block)
     }
 }

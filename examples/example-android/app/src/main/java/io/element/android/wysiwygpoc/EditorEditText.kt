@@ -14,7 +14,8 @@ import androidx.appcompat.widget.AppCompatEditText
 
 class EditorEditText : AppCompatEditText {
 
-    val inputConnection = InterceptInputConnection(this)
+    val inputProcessor = InputProcessor(uniffi.wysiwyg_composer.newComposerModel())
+    val inputConnection = InterceptInputConnection(this, inputProcessor)
 
     private val spannableFactory = object : Spannable.Factory() {
         override fun newSpannable(source: CharSequence?): Spannable {
@@ -34,6 +35,8 @@ class EditorEditText : AppCompatEditText {
         setSpannableFactory(spannableFactory)
         addHardwareKeyInterceptor()
         setHorizontallyScrolling(false)
+        setLines(10)
+        isSingleLine = false
     }
 
     fun interface OnSelectionChangeListener {
@@ -56,7 +59,12 @@ class EditorEditText : AppCompatEditText {
     private fun addHardwareKeyInterceptor() {
         // This seems to be the only way to prevent EditText from automatically handling key strokes
         setOnKeyListener { v, keyCode, event ->
-            if (event.action != MotionEvent.ACTION_DOWN) {
+            if (event.keyCode == KeyEvent.KEYCODE_ENTER) {
+                if (event.action == MotionEvent.ACTION_DOWN) {
+                    inputConnection.sendHardwareKeyboardInput(event)
+                }
+                true
+            } else if (event.action != MotionEvent.ACTION_DOWN) {
                 false
             } else if (event.isMovementKey()) {
                 false
