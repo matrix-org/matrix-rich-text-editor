@@ -37,6 +37,18 @@ class WysiwygUITests: XCTestCase {
         app.launch()
 
         // Use XCTAssert and related functions to verify your tests produce the correct results.
+        let textView = app.textViews["WysiwygComposer"]
+        textView.tap()
+        textView.typeText("abc🎉🎉👩🏿‍🚀")
+        XCTAssertEqual(textView.value as? String, "abc🎉🎉👩🏿‍🚀")
+
+        let deleteKey = app.keys["delete"]
+        deleteKey.tap()
+        XCTAssertEqual(textView.value as? String, "abc🎉🎉")
+
+        let delete3CharString = String(repeating: XCUIKeyboardKey.delete.rawValue, count: 3)
+        textView.typeText(delete3CharString)
+        XCTAssertEqual(textView.value as? String, "ab")
     }
 
     func testLaunchPerformance() throws {
