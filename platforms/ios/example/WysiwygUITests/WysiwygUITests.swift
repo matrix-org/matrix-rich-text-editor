@@ -63,7 +63,6 @@ class WysiwygUITests: XCTestCase {
         textView.tap()
         textView.typeText("Some bold text")
 
-
         textView.doubleTap()
         // We can't detect data being properly reported back to the model but
         // 1s is more than enough for the Rust side to get notified for the selection.

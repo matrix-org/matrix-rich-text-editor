@@ -8,7 +8,7 @@ android-x86_64:
 	# Not copying into the Android project here, since the gradle plugin
 	# actually performs this build itself.
 
-IOS_PACKAGE_DIR := ../../packages/ios/WysiwygComposer/
+IOS_PACKAGE_DIR := ../../platforms/ios/lib/WysiwygComposer
 IOS_GENERATION_DIR := .generated/ios
 
 ios:

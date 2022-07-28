@@ -36,7 +36,7 @@
                BlueprintIdentifier = "WysiwygComposerTests"
                BuildableName = "WysiwygComposerTests"
                BlueprintName = "WysiwygComposerTests"
-               ReferencedContainer = "container:../../packages/ios/WysiwygComposer">
+               ReferencedContainer = "container:../lib/WysiwygComposer">
             </BuildableReference>
          </TestableReference>
          <TestableReference
