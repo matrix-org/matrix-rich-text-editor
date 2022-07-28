@@ -1,5 +1,6 @@
 # ENV
 build/
+DerivedData/
 xcuserdata
 *.xcuserstate
 .vscode/
