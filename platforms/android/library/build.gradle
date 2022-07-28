@@ -1,0 +1,87 @@
+plugins {
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
+
+    // Rust
+    id 'org.mozilla.rust-android-gradle.rust-android'
+}
+
+if (project.hasProperty("coverage")) {
+    apply plugin: 'jacoco'
+}
+
+cargo {
+    module = "../../../crates"       // Or whatever directory contains your Cargo.toml
+    libname = "uniffi-wysiwyg-composer"          // Or whatever matches Cargo.toml's [package] name.
+    targets = ["arm", "x86", "x86_64", "arm64"]
+    targetIncludes = ["libuniffi_wysiwyg_composer.so"]
+    targetDirectory = '../../../target'
+}
+
+android {
+    compileSdk 32
+
+    defaultConfig {
+        minSdk 21
+        targetSdk 32
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        debug {
+            testCoverageEnabled true
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+}
+
+dependencies {
+
+    implementation "net.java.dev.jna:jna:5.7.0@aar"
+
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+
+    implementation 'androidx.core:core-ktx:1.7.0'
+    implementation 'androidx.appcompat:appcompat:1.4.2'
+    implementation 'com.google.android.material:material:1.6.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.3'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+}
+
+android.libraryVariants.all { variant ->
+    def generateBindingTasks = tasks.register("generate${variant.name.capitalize()}UniFFIBindings", Exec) {
+        workingDir "${project.projectDir}"
+        // Runs the bindings generation, note that you must have uniffi-bindgen installed and in your PATH environment variable
+        commandLine 'uniffi-bindgen', 'generate', '../../../bindings/wysiwyg-ffi/src/wysiwyg_composer.udl', '--language', 'kotlin', '--out-dir', "${buildDir}/generated/source/uniffi/${variant.name}/java"
+    }
+    variant.javaCompileProvider.get().dependsOn(generateBindingTasks)
+    def sourceSet = variant.sourceSets.find { it.name == variant.name }
+    sourceSet.java.srcDir new File(buildDir, "generated/source/uniffi/${variant.name}/java")
+}
+
+afterEvaluate {
+    // The `cargoBuild` task isn't available until after evaluation.
+    android.libraryVariants.all { variant ->
+        def productFlavor = ""
+        variant.productFlavors.each {
+            productFlavor += "${it.name.capitalize()}"
+        }
+        def buildType = "${variant.buildType.name.capitalize()}"
+        def generateAssetsTask = tasks["generate${productFlavor}${buildType}Assets"]
+        generateAssetsTask.dependsOn(tasks["cargoBuild"])
+    }
+}
