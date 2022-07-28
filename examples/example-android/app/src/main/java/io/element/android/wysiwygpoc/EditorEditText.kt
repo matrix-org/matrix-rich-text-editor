@@ -7,6 +7,7 @@ import android.text.SpannableStringBuilder
 import android.util.AttributeSet
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.view.inputmethod.BaseInputConnection
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.view.textservice.TextServicesManager
@@ -14,8 +15,8 @@ import androidx.appcompat.widget.AppCompatEditText
 
 class EditorEditText : AppCompatEditText {
 
+    lateinit var inputConnection: InterceptInputConnection
     val inputProcessor = InputProcessor(uniffi.wysiwyg_composer.newComposerModel())
-    val inputConnection = InterceptInputConnection(this, inputProcessor)
 
     private val spannableFactory = object : Spannable.Factory() {
         override fun newSpannable(source: CharSequence?): Spannable {
@@ -51,9 +52,8 @@ class EditorEditText : AppCompatEditText {
     }
 
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection? {
-        super.onCreateInputConnection(outAttrs)
-
-        return inputConnection
+        val baseInputConnection = requireNotNull(super.onCreateInputConnection(outAttrs))
+        return ensureInputConnection(baseInputConnection)
     }
 
     private fun addHardwareKeyInterceptor() {
@@ -76,6 +76,11 @@ class EditorEditText : AppCompatEditText {
                 true
             }
         }
+    }
+
+    private fun ensureInputConnection(baseInputConnection: InputConnection): InterceptInputConnection {
+        this.inputConnection = InterceptInputConnection(baseInputConnection, this, inputProcessor)
+        return this.inputConnection
     }
 }
 

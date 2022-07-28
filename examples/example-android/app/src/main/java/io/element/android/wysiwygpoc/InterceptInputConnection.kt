@@ -4,6 +4,8 @@ import android.content.Context
 import android.os.Bundle
 import android.text.Editable
 import android.text.Selection
+import android.text.Spannable
+import android.text.style.BackgroundColorSpan
 import android.view.KeyEvent
 import android.view.inputmethod.*
 import android.widget.TextView
@@ -19,11 +21,11 @@ import kotlin.math.max
 import kotlin.math.min
 
 class InterceptInputConnection(
+    private val baseInputConnection: InputConnection,
     private val editorEditText: TextView,
     private val inputProcessor: InputProcessor,
 ) : BaseInputConnection(editorEditText, true) {
 
-    private var batchEditNesting = 0
     private val keyboardEventQueue = Channel<KeyEvent>(capacity = Channel.UNLIMITED)
 
     private var keyEventJob: Job? = null
@@ -46,56 +48,23 @@ class InterceptInputConnection(
     private val inputMethodManager: InputMethodManager? = editorEditText.context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
 
     override fun beginBatchEdit(): Boolean {
-        synchronized(this) {
-            if (batchEditNesting >= 0) {
-                editorEditText.beginBatchEdit()
-                batchEditNesting++
-                return true
-            }
-        }
-        return false
+        return baseInputConnection.beginBatchEdit()
     }
 
     override fun endBatchEdit(): Boolean {
-        synchronized(this) {
-            if (batchEditNesting > 0) {
-                // When the connection is reset by the InputMethodManager and reportFinish
-                // is called, some endBatchEdit calls may still be asynchronously received from the
-                // IME. Do not take these into account, thus ensuring that this IC's final
-                // contribution to mTextView's nested batch edit count is zero.
-                editorEditText.endBatchEdit()
-                batchEditNesting--
-                return true
-            }
-        }
-        return false
+        return baseInputConnection.endBatchEdit()
     }
 
     override fun closeConnection() {
         super.closeConnection()
+        baseInputConnection.closeConnection()
 
-        synchronized(this) {
-            while (batchEditNesting > 0) {
-                endBatchEdit()
-            }
-            // Will prevent any further calls to begin or endBatchEdit
-            batchEditNesting--
-
-            keyEventJob?.cancel()
-            keyEventJob = null
-        }
+        keyEventJob?.cancel()
+        keyEventJob = null
     }
 
     override fun clearMetaKeyStates(states: Int): Boolean {
-        val content = editorEditText.editableText ?: return false
-        val keyListener = editorEditText.keyListener
-        try {
-            keyListener?.clearMetaKeyState(editorEditText, content, states)
-        } catch (e: AbstractMethodError) {
-            // This is an old listener that doesn't implement the
-            // new method.
-        }
-        return true
+        return baseInputConnection.clearMetaKeyStates(states)
     }
 
     override fun sendKeyEvent(event: KeyEvent?): Boolean {
@@ -103,46 +72,27 @@ class InterceptInputConnection(
     }
 
     override fun commitCompletion(text: CompletionInfo?): Boolean {
-        with (editorEditText) {
-            beginBatchEdit()
-            onCommitCompletion(text)
-            endBatchEdit()
-        }
-        return true
+        return baseInputConnection.commitCompletion(text)
     }
 
     override fun commitCorrection(correctionInfo: CorrectionInfo?): Boolean {
-        with (editorEditText) {
-            beginBatchEdit()
-            onCommitCorrection(correctionInfo)
-            endBatchEdit()
-        }
-        return true
+        return baseInputConnection.commitCorrection(correctionInfo)
     }
 
     override fun performEditorAction(actionCode: Int): Boolean {
-        editorEditText.onEditorAction(actionCode)
-        return true
+        return baseInputConnection.performEditorAction(actionCode)
     }
 
     override fun performContextMenuAction(id: Int): Boolean {
-        with (editorEditText) {
-            beginBatchEdit()
-            onTextContextMenuItem(id)
-            endBatchEdit()
-        }
-        return true
+        return baseInputConnection.performContextMenuAction(id)
     }
 
     override fun getExtractedText(request: ExtractedTextRequest?, flags: Int): ExtractedText {
-        val text = ExtractedText()
-        editorEditText.extractText(request, text)
-        return text
+        return baseInputConnection.getExtractedText(request, flags)
     }
 
     override fun performPrivateCommand(action: String?, data: Bundle?): Boolean {
-        editorEditText.onPrivateIMECommand(action, data)
-        return true
+        return baseInputConnection.performPrivateCommand(action, data)
     }
 
     /**
@@ -214,7 +164,14 @@ class InterceptInputConnection(
         }
 
         return if (result != null) {
+            val compositionEnd = text?.length?.let { it + start } ?: end
+            // Here we restore the background color spans from the IME input. This seems to be
+            // important for Japanese input.
+            if (text is Spannable && result is Spannable) {
+                copyImeHighlightSpans(text, result, start)
+            }
             replaceAll(result, newCursorPosition)
+            setComposingRegion(start, compositionEnd)
             true
         } else {
             super.setComposingText(text, newCursorPosition)
@@ -235,6 +192,7 @@ class InterceptInputConnection(
 
         return if (result != null) {
             replaceAll(result, newCursorPosition)
+            setComposingRegion(end, end)
             true
         } else {
             super.commitText(text, newCursorPosition)
@@ -319,25 +277,7 @@ class InterceptInputConnection(
     }
 
     override fun requestCursorUpdates(cursorUpdateMode: Int): Boolean {
-        // It is possible that any other bit is used as a valid flag in a future release.
-        // We should reject the entire request in such a case.
-        val knownFlagsMask = InputConnection.CURSOR_UPDATE_IMMEDIATE or InputConnection.CURSOR_UPDATE_MONITOR
-        val unknownFlags = cursorUpdateMode and knownFlagsMask.inv()
-
-        if (unknownFlags != 0) {
-            return false
-        }
-
-        if (inputMethodManager == null) {
-            return false
-        }
-
-        if (cursorUpdateMode and InputConnection.CURSOR_UPDATE_IMMEDIATE != 0) {
-            if (!editorEditText.isInLayout) {
-                editorEditText.requestLayout()
-            }
-        }
-        return true
+        return baseInputConnection.requestCursorUpdates(cursorUpdateMode)
     }
 
     private fun getCurrentComposition(): Pair<Int, Int> {
@@ -371,6 +311,16 @@ class InterceptInputConnection(
         cursorPosition += if (newCursorPosition > 0) end else start
         cursorPosition = cursorPosition.coerceIn(0, content.length)
         Selection.setSelection(content, cursorPosition)
+    }
+
+    private fun copyImeHighlightSpans(from: Spannable, to: Spannable, offset: Int) {
+        val highlightSpans = from.getSpans(0, from.count(), BackgroundColorSpan::class.java)
+            .orEmpty()
+        for (span in highlightSpans) {
+            val spanStart = from.getSpanStart(span) + offset
+            val spanEnd = from.getSpanEnd(span) + offset
+            to.setSpan(span, spanStart, spanEnd, 0)
+        }
     }
 
     private fun <T> withProcessor(block: InputProcessor.() -> T): T {
