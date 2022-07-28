@@ -25,7 +25,9 @@ public struct WysiwygView: View {
                                 select: viewModel.select)
             Button("Bold") {
                 viewModel.applyBold()
-            }.buttonStyle(.automatic)
+            }
+            .buttonStyle(.automatic)
+            .accessibilityIdentifier("WysiwygBoldButton")
         }
     }
 

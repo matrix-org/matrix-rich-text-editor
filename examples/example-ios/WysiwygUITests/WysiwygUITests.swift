@@ -17,31 +17,23 @@
 import XCTest
 
 class WysiwygUITests: XCTestCase {
+    private let app = XCUIApplication()
 
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-
-        // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
-
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
-    }
-
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
-
-    func testExample() throws {
-        // UI tests must launch the application that they test.
-        let app = XCUIApplication()
         app.launch()
+    }
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+    override func tearDownWithError() throws { }
+
+    func testTypingAndDeleting() throws {
         let textView = app.textViews["WysiwygComposer"]
+        // Select text view and type something.
         textView.tap()
         textView.typeText("abc🎉🎉👩🏿‍🚀")
         XCTAssertEqual(textView.value as? String, "abc🎉🎉👩🏿‍🚀")
 
+        // Test deleting parts of the text.
         let deleteKey = app.keys["delete"]
         deleteKey.tap()
         XCTAssertEqual(textView.value as? String, "abc🎉🎉")
@@ -49,6 +41,44 @@ class WysiwygUITests: XCTestCase {
         let delete3CharString = String(repeating: XCUIKeyboardKey.delete.rawValue, count: 3)
         textView.typeText(delete3CharString)
         XCTAssertEqual(textView.value as? String, "ab")
+
+        // Rewrite some content.
+        textView.typeText("cde 🥳 fgh")
+        XCTAssertEqual(textView.value as? String, "abcde 🥳 fgh")
+
+        // Double tap results in selecting the last word.
+        textView.doubleTap()
+        deleteKey.tap()
+        XCTAssertEqual(textView.value as? String, "abcde 🥳 ")
+
+        // Triple tap selects the entire line.
+        textView.tap(withNumberOfTaps: 3, numberOfTouches: 1)
+        deleteKey.tap()
+        XCTAssertEqual(textView.value as? String, "")
+    }
+
+    func testTypingAndBolding() throws {
+        let textView = app.textViews["WysiwygComposer"]
+        // Select text view and type something.
+        textView.tap()
+        textView.typeText("Some bold text")
+
+
+        textView.doubleTap()
+        // We can't detect data being properly reported back to the model but
+        // 1s is more than enough for the Rust side to get notified for the selection.
+        sleep(1)
+
+        let boldButton = app.buttons["WysiwygBoldButton"]
+        boldButton.tap()
+        // Bolding doesn't change text and we can't test text attributes from this context.
+        XCTAssertEqual(textView.value as? String, "Some bold text")
+
+        // Keep a screenshot of the bolded text.
+        let screenshot = textView.screenshot()
+        let attachment = XCTAttachment(screenshot: screenshot)
+        attachment.lifetime = .keepAlways
+        self.add(attachment)
     }
 
     func testLaunchPerformance() throws {

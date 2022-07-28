@@ -17,33 +17,10 @@
 import XCTest
 @testable import WysiwygComposer
 
-private enum Constants {
-    /// Test string with emojis inputed both with codepoints and Xcode emoji insertion.
-    /// String is actually 6 char long "abc🎉🎉👩🏿‍🚀" and represents 14 UTF-16 code units (3+2+2+7)
-    static let testStringWithEmojis = "abc🎉\u{1f389}\u{1F469}\u{1F3FF}\u{200D}\u{1F680}"
-    static let testStringAfterBackspace = "abc🎉🎉"
-}
-
 final class WysiwygComposerTests: XCTestCase {
-    func testTextViewUTF16Encoding() {
-        let textView = UITextView()
-        textView.attributedText = try! NSAttributedString(html: Constants.testStringWithEmojis)
-        // Selection is at the end of the text, with a UTF-16 length of 10.
-        XCTAssertEqual(textView.selectedRange, NSRange(location: 14, length: 0))
-        // Text count what is perceived as character.
-        XCTAssertEqual(textView.text.count, 6)
-        XCTAssertEqual(textView.text.utf16.count, 14)
-        // AttributedString counts UTF-16 directly
-        XCTAssertEqual(textView.attributedText.length, 14)
-        // Test deleting the latest emoji.
-        textView.deleteBackward()
-        XCTAssertEqual(textView.attributedText.length, 7)
-        XCTAssertEqual(textView.text, Constants.testStringAfterBackspace)
-    }
-
     func testSetBaseStringWithEmoji() {
         let composer = newComposerModel()
-        let update = composer.replaceText(newText: Constants.testStringWithEmojis)
+        let update = composer.replaceText(newText: TestConstants.testStringWithEmojis)
         switch update.textUpdate() {
         case .keep:
             XCTFail()
@@ -52,7 +29,7 @@ final class WysiwygComposerTests: XCTestCase {
                          endUtf16Codeunit: let end):
             // Text is preserved, including emojis.
             XCTAssertEqual(String(utf16CodeUnits: codeUnits, count: codeUnits.count),
-                           Constants.testStringWithEmojis)
+                           TestConstants.testStringWithEmojis)
             // Selection is set at the end of the text.
             XCTAssertEqual(start, end)
             XCTAssertEqual(end, 14)
@@ -61,7 +38,7 @@ final class WysiwygComposerTests: XCTestCase {
 
     func testBackspacingEmoji() {
         let composer = newComposerModel()
-        _ = composer.replaceText(newText: Constants.testStringWithEmojis)
+        _ = composer.replaceText(newText: TestConstants.testStringWithEmojis)
 
         // FIXME: are we smart enough to detect emoji length from Rust?
         composer.select(startUtf16Codeunit: 7, endUtf16Codeunit: 14)
@@ -75,7 +52,7 @@ final class WysiwygComposerTests: XCTestCase {
                          endUtf16Codeunit: let end):
             // Text should remove exactly the last emoji.
             XCTAssertEqual(String(utf16CodeUnits: codeUnits, count: codeUnits.count),
-                           Constants.testStringAfterBackspace)
+                           TestConstants.testStringAfterBackspace)
             XCTAssertEqual(start, end)
             XCTAssertEqual(start, 7)
         }
