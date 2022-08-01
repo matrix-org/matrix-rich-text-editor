@@ -1,6 +1,5 @@
 package io.element.android.wysiwyg
 
-import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.text.Editable
@@ -171,8 +170,7 @@ class InterceptInputConnection(
             if (text is Spannable && result is Spannable) {
                 copyImeHighlightSpans(text, result, start)
             }
-            replaceAll(result, newCursorPosition)
-            setComposingRegion(start, compositionEnd)
+            replaceAll(result, compositionStart = start, compositionEnd = compositionEnd, newCursorPosition)
             true
         } else {
             super.setComposingText(text, newCursorPosition)
@@ -192,8 +190,7 @@ class InterceptInputConnection(
         }
 
         return if (result != null) {
-            replaceAll(result, newCursorPosition)
-            setComposingRegion(end, end)
+            replaceAll(result, compositionStart = end, compositionEnd = end, newCursorPosition)
             true
         } else {
             super.commitText(text, newCursorPosition)
@@ -267,13 +264,13 @@ class InterceptInputConnection(
     fun applyInlineFormat(format: InlineFormat) {
         val start = Selection.getSelectionStart(editable)
         val end = Selection.getSelectionEnd(editable)
-        withProcessor { updateSelection(start, end) }
 
         val result = withProcessor {
+            updateSelection(start, end)
             processInput(EditorInputAction.ApplyInlineFormat(format))?.let { processUpdate(it) }
         }
 
-        result?.let { replaceAll(result, newCursorPosition = 0) }
+        result?.let { replaceAll(result, start, end, newCursorPosition = 0) }
     }
 
     override fun requestCursorUpdates(cursorUpdateMode: Int): Boolean {
@@ -297,18 +294,19 @@ class InterceptInputConnection(
         return start to end
     }
 
-    private fun replaceAll(charSequence: CharSequence, newCursorPosition: Int) {
+    private fun replaceAll(charSequence: CharSequence, compositionStart: Int, compositionEnd: Int, newCursorPosition: Int) {
         beginBatchEdit()
         updateSelectionInternal(newCursorPosition)
         editable.replace(0, editable.length, charSequence)
+        setComposingRegion(compositionStart, compositionEnd)
         endBatchEdit()
     }
 
     private fun updateSelectionInternal(newCursorPosition: Int) {
         val (start, end) = getCurrentComposition()
         val content = editable
-        var cursorPosition = newCursorPosition
-        cursorPosition += if (newCursorPosition > 0) end else start
+        var cursorPosition = if (newCursorPosition < 0) 0 else newCursorPosition
+        cursorPosition += if (newCursorPosition > 0) end - 1 else start
         cursorPosition = cursorPosition.coerceIn(0, content.length)
         Selection.setSelection(content, cursorPosition)
     }
