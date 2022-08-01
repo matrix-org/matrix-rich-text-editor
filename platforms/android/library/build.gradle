@@ -4,8 +4,6 @@ plugins {
 
     // Rust
     id 'org.mozilla.rust-android-gradle.rust-android'
-    // Fat-Aar for bundling
-    id 'com.kezong.fat-aar'
 }
 
 if (project.hasProperty("coverage")) {
@@ -50,7 +48,7 @@ android {
 
 dependencies {
 
-    embed "net.java.dev.jna:jna:5.7.0@aar"
+    implementation "net.java.dev.jna:jna:5.7.0@aar"
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
