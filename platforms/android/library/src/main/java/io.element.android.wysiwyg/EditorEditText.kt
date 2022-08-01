@@ -33,9 +33,6 @@ class EditorEditText : AppCompatEditText {
     init {
         setSpannableFactory(spannableFactory)
         addHardwareKeyInterceptor()
-        setHorizontallyScrolling(false)
-        setLines(10)
-        isSingleLine = false
     }
 
     fun interface OnSelectionChangeListener {
@@ -49,9 +46,8 @@ class EditorEditText : AppCompatEditText {
         selectionChangeListener?.selectionChanged(selStart, selEnd)
     }
 
-    override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection? {
-        val baseInputConnection = requireNotNull(super.onCreateInputConnection(outAttrs))
-        return ensureInputConnection(baseInputConnection)
+    override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
+        return ensureInputConnection(outAttrs)
     }
 
     private fun addHardwareKeyInterceptor() {
@@ -76,12 +72,37 @@ class EditorEditText : AppCompatEditText {
         }
     }
 
-    private fun ensureInputConnection(baseInputConnection: InputConnection): InterceptInputConnection {
+    /**
+     * We wrap the internal [EditableInputConnection] as it's not public, but its internal behavior
+     * is probably needed to work properly with the EditText.
+     */
+    private fun ensureInputConnection(outAttrs: EditorInfo): InterceptInputConnection {
         if (!this::inputConnection.isInitialized) {
+            val baseInputConnection = requireNotNull(super.onCreateInputConnection(outAttrs))
             this.inputConnection =
                 InterceptInputConnection(baseInputConnection, this, inputProcessor)
         }
         return this.inputConnection
+    }
+
+    override fun setText(text: CharSequence?, type: BufferType?) {
+        val currentText = this.text
+        val end = currentText?.length ?: 0
+        // Although inputProcessor is assured to be not null, that's not the case while inflating.
+        // We have to add this here to prevent some NullPointerExceptions from being thrown.
+        if (inputProcessor == null) {
+            super.setText(text, type)
+        } else {
+            inputProcessor.updateSelection(0, end)
+            val update = inputProcessor.processInput(EditorInputAction.InsertText(text.toString()))
+            val result = update?.let { inputProcessor.processUpdate(it) }
+
+            if (result != null) {
+                editableText.replace(0, end, result)
+            } else {
+                super.setText(text, type)
+            }
+        }
     }
 }
 

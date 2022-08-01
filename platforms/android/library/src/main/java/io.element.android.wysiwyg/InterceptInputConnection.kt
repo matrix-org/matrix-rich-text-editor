@@ -1,6 +1,7 @@
 package io.element.android.wysiwyg
 
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.Selection
@@ -9,6 +10,7 @@ import android.text.style.BackgroundColorSpan
 import android.view.KeyEvent
 import android.view.inputmethod.*
 import android.widget.TextView
+import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -45,8 +47,6 @@ class InterceptInputConnection(
         return editorEditText.editableText
     }
 
-    private val inputMethodManager: InputMethodManager? = editorEditText.context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
-
     override fun beginBatchEdit(): Boolean {
         return baseInputConnection.beginBatchEdit()
     }
@@ -55,6 +55,7 @@ class InterceptInputConnection(
         return baseInputConnection.endBatchEdit()
     }
 
+    @RequiresApi(Build.VERSION_CODES.N)
     override fun closeConnection() {
         super.closeConnection()
         baseInputConnection.closeConnection()
@@ -226,12 +227,11 @@ class InterceptInputConnection(
         }
     }
 
-    // FIXME: it's not working as intended
     override fun deleteSurroundingText(beforeLength: Int, afterLength: Int): Boolean {
         if (beforeLength == 0 && afterLength == 0) return false
+        val start = Selection.getSelectionStart(editable)
         val end = Selection.getSelectionEnd(editable)
-        val start = end - beforeLength + afterLength
-        val deleteFrom = (start - beforeLength).coerceAtLeast(0)
+        val deleteFrom = (start-beforeLength).coerceAtLeast(0)
         val deleteTo = end + afterLength
 
         var handled = false

@@ -41,7 +41,7 @@ class EditorEditTextInputTests {
     fun testReplace() {
         onView(withId(R.id.editor))
             .perform(replaceText(ipsum))
-            .check(matches(withText(ipsum)))
+            .check(matches(withText(ipsum.asHtml())))
     }
 
     @Test
