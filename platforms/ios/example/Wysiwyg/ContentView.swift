@@ -18,14 +18,31 @@ import SwiftUI
 import WysiwygComposer
 
 struct ContentView: View {
+    @State private var content: MessageContent = .init()
+    @State private var requiredHeight: CGFloat = 104.0
+    @State private var isTextViewEmpty: Bool = true
+    @State private var sentMessage: MessageContent?
+
     var body: some View {
         WysiwygView()
-            .padding()
-    }
-}
-
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView()
+            .onPreferenceChange(MessageContentPreferenceKey.self) { content in
+                self.content = content
+            }
+            .onPreferenceChange(RequiredHeightPreferenceKey.self) { height in
+                self.requiredHeight = height
+            }
+            .onPreferenceChange(IsEmptyContentPreferenceKey.self) { isEmpty in
+                self.isTextViewEmpty = isEmpty
+            }
+            .frame(maxHeight: min(requiredHeight, 250),
+                   alignment: .center)
+        Button("Send") {
+            sentMessage = content
+        }
+        .disabled(isTextViewEmpty)
+        if let sentMessage = sentMessage {
+            Text("Content: \(sentMessage.plainText)\nHTML: \(sentMessage.html)")
+        }
+        Spacer()
     }
 }

@@ -23,12 +23,13 @@ struct WysiwygComposerView: UIViewRepresentable {
     var viewState: WysiwygComposerViewState
     var replaceText: (NSAttributedString, NSRange, String) -> ()
     var select: (NSAttributedString, NSRange) -> ()
+    var didUpdateText: (UITextView) -> ()
 
     func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
 
         textView.accessibilityIdentifier = "WysiwygComposer"
-        textView.font = UIFont.systemFont(ofSize: 24)
+        textView.font = UIFont(name: "Times New Roman", size: 12.0)
         textView.autocapitalizationType = .sentences
         textView.isSelectable = true
         textView.isUserInteractionEnabled = true
@@ -41,26 +42,35 @@ struct WysiwygComposerView: UIViewRepresentable {
         Logger.composer.debug("New text: \(viewState.displayText.string)")
         uiView.attributedText = viewState.displayText
         uiView.selectedRange = viewState.textSelection
+        context.coordinator.didUpdateText(uiView)
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(replaceText, select)
+        Coordinator(replaceText, select, didUpdateText)
     }
 
     /// Coordinates UIKit communication.
     class Coordinator: NSObject, UITextViewDelegate, NSTextStorageDelegate {
         var replaceText: (NSAttributedString, NSRange, String) -> ()
         var select: (NSAttributedString, NSRange) -> ()
+        var didUpdateText: (UITextView) -> ()
 
         init(_ replaceText: @escaping (NSAttributedString, NSRange, String) -> (),
-             _ select: @escaping (NSAttributedString, NSRange) -> ()) {
+             _ select: @escaping (NSAttributedString, NSRange) -> (),
+             _ didUpdateText: @escaping (UITextView) -> ()) {
             self.replaceText = replaceText
             self.select = select
+            self.didUpdateText = didUpdateText
         }
 
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
             self.replaceText(textView.attributedText, range, text)
             return false
+        }
+
+        // never called yet
+        func textViewDidChange(_ textView: UITextView) {
+            self.didUpdateText(textView)
         }
 
         func textViewDidChangeSelection(_ textView: UITextView) {

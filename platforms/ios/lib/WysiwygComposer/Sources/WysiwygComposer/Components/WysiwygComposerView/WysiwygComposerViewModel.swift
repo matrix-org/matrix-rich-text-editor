@@ -16,6 +16,7 @@
 
 import Foundation
 import OSLog
+import UIKit
 
 /// Main view model for the `WysiwygComposerView`. Provides user actions
 /// to the Rust model and publishes result `WysiwygComposerViewState`.
@@ -31,7 +32,9 @@ class WysiwygComposerViewModel: ObservableObject {
         self.model = newComposerModel()
         self.viewState = WysiwygComposerViewState(
             textSelection: .init(location: 0, length: 0),
-            displayText: NSAttributedString()
+            displayText: NSAttributedString(),
+            requiredHeight: 110,
+            html: ""
         )
     }
 
@@ -68,6 +71,10 @@ class WysiwygComposerViewModel: ObservableObject {
                           endUtf16Codeunit: UInt32(range.location+range.length))
     }
 
+    func didUpdateText(textView: UITextView) {
+        self.updateRequiredHeightIfNeeded(textView)
+    }
+
     /// Apply bold formatting to the current selection.
     func applyBold() {
         let update = self.model.bold()
@@ -91,7 +98,9 @@ private extension WysiwygComposerViewModel {
                 let textSelection = NSRange(location: Int(start), length: Int(end-start))
                 self.viewState = WysiwygComposerViewState(
                     textSelection: textSelection,
-                    displayText: attributed
+                    displayText: attributed,
+                    requiredHeight: self.viewState.requiredHeight,
+                    html: html
                 )
                 Logger.composer.debug("HTML from Rust: \(html), selection: \(textSelection)")
             } catch {
@@ -100,5 +109,16 @@ private extension WysiwygComposerViewModel {
         default:
             break
         }
+    }
+
+    func updateRequiredHeightIfNeeded(_ textView: UITextView) {
+        // TODO: remove magic numbers
+        let requiredHeight = 50 + 16 + 8 + textView
+            .sizeThatFits(CGSize(width: textView.bounds.size.width,
+                                 height: CGFloat.greatestFiniteMagnitude)
+            )
+            .height
+        guard requiredHeight != viewState.requiredHeight else { return }
+        self.viewState.requiredHeight = requiredHeight
     }
 }

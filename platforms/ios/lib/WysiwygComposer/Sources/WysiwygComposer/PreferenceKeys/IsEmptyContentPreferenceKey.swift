@@ -14,17 +14,12 @@
 // limitations under the License.
 //
 
-import Foundation
-import CoreGraphics
+import SwiftUI
 
-/// Describe the current state of the composer.
-public struct WysiwygComposerViewState {
-    /// Current text selection.
-    public var textSelection: NSRange
-    /// Current text to display.
-    public var displayText: NSAttributedString
+public struct IsEmptyContentPreferenceKey: PreferenceKey {
+    public static var defaultValue: Bool = true
 
-    public var requiredHeight: CGFloat
-
-    public var html: String
+    public static func reduce(value: inout Bool, nextValue: () -> Bool) {
+        value = nextValue()
+    }
 }

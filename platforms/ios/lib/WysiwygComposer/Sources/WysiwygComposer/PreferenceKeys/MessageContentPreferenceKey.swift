@@ -14,17 +14,23 @@
 // limitations under the License.
 //
 
-import Foundation
-import CoreGraphics
+import SwiftUI
 
-/// Describe the current state of the composer.
-public struct WysiwygComposerViewState {
-    /// Current text selection.
-    public var textSelection: NSRange
-    /// Current text to display.
-    public var displayText: NSAttributedString
+public struct MessageContentPreferenceKey: PreferenceKey {
+    public static var defaultValue: MessageContent = MessageContent()
 
-    public var requiredHeight: CGFloat
+    public static func reduce(value: inout MessageContent, nextValue: () -> MessageContent) {
+        value = nextValue()
+    }
+}
 
-    public var html: String
+@objcMembers
+public class MessageContent: NSObject {
+    public let plainText: String
+    public let html: String
+
+    public init(plainText: String = "", html: String = "") {
+        self.plainText = plainText
+        self.html = html
+    }
 }

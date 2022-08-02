@@ -15,6 +15,7 @@
 //
 
 import SwiftUI
+import OSLog
 
 public struct WysiwygView: View {
     // MARK: - Public
@@ -22,10 +23,28 @@ public struct WysiwygView: View {
         VStack {
             WysiwygComposerView(viewState: viewModel.viewState,
                                 replaceText: viewModel.replaceText,
-                                select: viewModel.select)
+                                select: viewModel.select,
+                                didUpdateText: viewModel.didUpdateText)
+            .padding(.all, 8)
+            /*
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(.blue)
+            )
+             */
+            .padding([.leading, .trailing], 8)
+            .padding([.top, .bottom], 4)
+            .preference(key: MessageContentPreferenceKey.self,
+                        value: MessageContent(plainText: viewModel.viewState.displayText.string,
+                                              html: viewModel.viewState.html))
+            .preference(key: RequiredHeightPreferenceKey.self,
+                        value: viewModel.viewState.requiredHeight)
+            .preference(key: IsEmptyContentPreferenceKey.self,
+                        value: viewModel.viewState.displayText.string.isEmpty)
             Button("Bold") {
                 viewModel.applyBold()
             }
+            .frame(width: nil, height: 50, alignment: .center)
             .buttonStyle(.automatic)
             .accessibilityIdentifier("WysiwygBoldButton")
         }
