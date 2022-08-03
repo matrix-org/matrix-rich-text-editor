@@ -6,6 +6,16 @@
     android:orientation="vertical"
     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
+    <io.element.android.wysiwyg.EditorEditText
+        android:id="@+id/editText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:inputType="text"
+        android:gravity="top"
+        android:singleLine="false"
+        android:hint="Rich text editor"/>
+
     <LinearLayout android:id="@+id/menu"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -19,15 +29,5 @@
             android:text="Bold" />
 
     </LinearLayout>
-
-    <io.element.android.wysiwyg.EditorEditText
-        android:id="@+id/editText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="48dp"
-        android:inputType="text"
-        android:gravity="top"
-        android:singleLine="false"
-        android:hint="Rich text editor"/>
 
 </LinearLayout>
