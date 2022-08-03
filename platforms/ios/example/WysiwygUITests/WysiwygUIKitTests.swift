@@ -34,4 +34,14 @@ class WysiwygUIKitTests: XCTestCase {
         let attachment = try WysiwygSharedTests.testTypingAndBolding(app)
         self.add(attachment)
     }
+
+    func testTypingAndSending() throws {
+        try WysiwygSharedTests.typeAndSendMessage(app)
+
+        let content = app.staticTexts["WysiwygContentLabel"]
+        let htmlContent = app.staticTexts["WysiwygHtmlContentLabel"]
+
+        XCTAssertEqual(content.label, "Some bold text")
+        XCTAssertEqual(htmlContent.label, "Some bold <strong>text</strong>")
+    }
 }

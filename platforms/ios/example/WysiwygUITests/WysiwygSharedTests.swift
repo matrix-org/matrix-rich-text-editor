@@ -20,6 +20,7 @@ import XCTest
 final class WysiwygSharedTests {
     private init() { }
 
+    /// Type a text and delete some different kind of text selections with Wysiwyg composer inside given app.
     static func testTypingAndDeleting(_ app: XCUIApplication) throws {
         let textView = app.textViews["WysiwygComposer"]
         // Select text view and type something.
@@ -51,6 +52,8 @@ final class WysiwygSharedTests {
         XCTAssertEqual(textView.value as? String, "")
     }
 
+    /// Type a text and make it bold in Wysiwyg composer inside given app.
+    /// A screenshot is saved since string attributes can't be read from this context.
     static func testTypingAndBolding(_ app: XCUIApplication) throws -> XCTAttachment {
         let textView = app.textViews["WysiwygComposer"]
         // Select text view and type something.
@@ -72,5 +75,30 @@ final class WysiwygSharedTests {
         let attachment = XCTAttachment(screenshot: screenshot)
         attachment.lifetime = .keepAlways
         return attachment
+    }
+
+    /// Type and send a message with Wysiwyg composer inside given app.
+    ///
+    /// Expected plain text content is "Some bold text" and
+    /// HTML representation is "Some bold <strong>text</strong>"
+    static func typeAndSendMessage(_ app: XCUIApplication) throws {
+        let textView = app.textViews["WysiwygComposer"]
+        // Select text view and type something.
+        textView.tap()
+        textView.typeText("Some bold text")
+
+        textView.doubleTap()
+        // 1s is more than enough for the Rust side to get notified for the selection.
+        sleep(1)
+
+        let boldButton = app.buttons["WysiwygBoldButton"]
+        boldButton.tap()
+
+        // We can't detect data being properly reported back to the model but
+        // 1s is more than enough for the Rust side to get notified for the selection.
+        sleep(1)
+
+        let sendButton = app.buttons["WysiwygSendButton"]
+        sendButton.tap()
     }
 }
