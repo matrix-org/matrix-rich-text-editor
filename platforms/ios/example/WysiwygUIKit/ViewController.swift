@@ -22,6 +22,8 @@ private enum Constants {
     static let maxHeight: CGFloat = 200
 }
 
+/// Example UIKit view that adds a WysiwygComposer as well as a button that
+/// displays the message (+ HTML representation) the composer would send.
 final class ViewController: UIViewController {
     @IBOutlet private weak var wysiwygHostingView: WysiwygHostingView!
     @IBOutlet private weak var sendButton: UIButton!
@@ -40,11 +42,13 @@ final class ViewController: UIViewController {
 
 private extension ViewController {
     @IBAction func sendButtonTouchedUpInside(_ sender: UIButton) {
+        // Get the current content of the composer.
         contentLabel.text = wysiwygHostingView.content.plainText
         htmlContentLabel.text = wysiwygHostingView.content.html
     }
 }
 
+// Implement delegate that gets notified on composer updates.
 extension ViewController: WysiwygHostingViewDelegate {
     func requiredHeightDidChange(_ height: CGFloat) {
         wysiwygHostingViewHeightConstraint.constant = min(Constants.maxHeight, height)
