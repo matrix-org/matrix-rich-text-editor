@@ -67,7 +67,7 @@ object Ime {
             if (view == null) return
             val editorInfo = EditorInfo()
             val inputConnection = view.onCreateInputConnection(editorInfo)
-            (inputConnection as? io.element.android.wysiwyg.InterceptInputConnection)?.backspace()
+            (inputConnection as? InterceptInputConnection)?.backspace()
         }
     }
 

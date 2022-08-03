@@ -12,7 +12,17 @@ object TextInputMatchers {
         private val end: Int,
     ) : BaseMatcher<View>() {
         override fun describeTo(description: Description?) {
-            description?.appendText("selection was ($start, $end)")
+            description?.appendText("selection should be ($start, $end)")
+        }
+
+        override fun describeMismatch(item: Any?, description: Description?) {
+            if (item is TextView) {
+                val expected = "($start, $end)"
+                val result = "(${item.selectionStart}, ${item.selectionEnd})"
+                description?.appendText("selection should be $expected, it was $result")
+            } else {
+                super.describeMismatch(item, description)
+            }
         }
 
         override fun matches(item: Any?): Boolean {

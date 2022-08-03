@@ -261,23 +261,11 @@ class InterceptInputConnection(
         return handled
     }
 
-    fun applyInlineFormat(format: InlineFormat) {
-        val start = Selection.getSelectionStart(editable)
-        val end = Selection.getSelectionEnd(editable)
-
-        val result = withProcessor {
-            updateSelection(start, end)
-            processInput(EditorInputAction.ApplyInlineFormat(format))?.let { processUpdate(it) }
-        }
-
-        result?.let { replaceAll(result, start, end, newCursorPosition = 0) }
-    }
-
     override fun requestCursorUpdates(cursorUpdateMode: Int): Boolean {
         return baseInputConnection.requestCursorUpdates(cursorUpdateMode)
     }
 
-    private fun getCurrentComposition(): Pair<Int, Int> {
+    fun getCurrentComposition(): Pair<Int, Int> {
         val content = editable
         var start = getComposingSpanStart(content)
         var end = getComposingSpanEnd(content)

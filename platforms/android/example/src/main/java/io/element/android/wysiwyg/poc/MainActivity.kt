@@ -2,7 +2,6 @@ package io.element.android.wysiwyg.poc
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import io.element.android.wysiwyg.InlineFormat
 import io.element.android.wysiwyg.poc.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -13,11 +12,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         binding.editor.requestFocus()
-
-        binding.buttonBold.setOnClickListener {
-            val inputProcessor = binding.editor.inputConnection
-            inputProcessor.applyInlineFormat(InlineFormat.Bold)
-        }
     }
 
 }

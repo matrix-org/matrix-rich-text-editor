@@ -6,14 +6,10 @@
     android:layout_height="match_parent"
     tools:context="io.element.android.wysiwyg.poc.MainActivity">
 
-    <io.element.android.wysiwyg.EditorEditText
-        android:id="@+id/editor"
+    <io.element.android.wysiwyg.RichTextEditor
+        android:id="@+id/richTextEditor"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:hint="Hello World!"
-        android:layout_margin="20dp"
-        android:inputType="text"
-        android:gravity="top"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
