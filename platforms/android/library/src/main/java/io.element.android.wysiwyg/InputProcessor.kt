@@ -14,6 +14,7 @@ class InputProcessor(
     fun updateSelection(start: Int, end: Int) {
         if (start < 0 || end < 0) return
         composer.select(start.toUInt(), end.toUInt())
+        composer.log()
     }
 
     fun processInput(action: EditorInputAction): TextUpdate? {

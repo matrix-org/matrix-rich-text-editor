@@ -10,6 +10,7 @@ import android.view.MotionEvent
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import androidx.appcompat.widget.AppCompatEditText
+import com.google.android.material.textfield.TextInputEditText
 
 class EditorEditText : AppCompatEditText {
 
@@ -43,6 +44,9 @@ class EditorEditText : AppCompatEditText {
 
     override fun onSelectionChanged(selStart: Int, selEnd: Int) {
         super.onSelectionChanged(selStart, selEnd)
+        if (inputProcessor != null) {
+            inputProcessor.updateSelection(selStart, selEnd)
+        }
         selectionChangeListener?.selectionChanged(selStart, selEnd)
     }
 
@@ -103,6 +107,29 @@ class EditorEditText : AppCompatEditText {
                 super.setText(text, type)
             }
         }
+    }
+
+    override fun append(text: CharSequence?, start: Int, end: Int) {
+        val update = inputProcessor.processInput(EditorInputAction.InsertText(text.toString()))
+        val result = update?.let { inputProcessor.processUpdate(it) }
+
+        if (result != null) {
+            editableText.replace(0, end, result)
+        } else {
+            super.append(text, start, end)
+        }
+    }
+
+    fun toggleInlineFormat(inlineFormat: InlineFormat): Boolean {
+        val (start, end) = inputConnection.getCurrentComposition()
+        inputProcessor.updateSelection(start, end)
+        val update = inputProcessor.processInput(EditorInputAction.ApplyInlineFormat(inlineFormat))
+        val result = update?.let { inputProcessor.processUpdate(it) }
+
+        if (result != null) {
+            editableText.replace(0, editableText.length, result)
+        }
+        return result != null
     }
 }
 
