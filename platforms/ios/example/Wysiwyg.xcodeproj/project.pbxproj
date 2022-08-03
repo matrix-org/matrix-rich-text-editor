@@ -21,7 +21,6 @@
 		A6472CAF2886CF840021A0E8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A6472CAE2886CF840021A0E8 /* Assets.xcassets */; };
 		A6472CB22886CF840021A0E8 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A6472CB12886CF840021A0E8 /* Preview Assets.xcassets */; };
 		A6472CC62886CF840021A0E8 /* WysiwygUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6472CC52886CF840021A0E8 /* WysiwygUITests.swift */; };
-		A6472CC82886CF840021A0E8 /* WysiwygUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6472CC72886CF840021A0E8 /* WysiwygUITestsLaunchTests.swift */; };
 		A6E6B26F2886D9AA009596F2 /* WysiwygComposer in Frameworks */ = {isa = PBXBuildFile; productRef = A6E6B26E2886D9AA009596F2 /* WysiwygComposer */; };
 /* End PBXBuildFile section */
 
@@ -60,7 +59,6 @@
 		A6472CB12886CF840021A0E8 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		A6472CC12886CF840021A0E8 /* WysiwygUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WysiwygUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A6472CC52886CF840021A0E8 /* WysiwygUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygUITests.swift; sourceTree = "<group>"; };
-		A6472CC72886CF840021A0E8 /* WysiwygUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		A6E6B2712886DA6E009596F2 /* WysiwygComposer */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = WysiwygComposer; path = ../lib/WysiwygComposer; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -152,7 +150,6 @@
 				A623EBE4289AA6DE00067E57 /* WysiwygSharedTests.swift */,
 				A623EBE2289AA69E00067E57 /* WysiwygUIKitTests.swift */,
 				A6472CC52886CF840021A0E8 /* WysiwygUITests.swift */,
-				A6472CC72886CF840021A0E8 /* WysiwygUITestsLaunchTests.swift */,
 			);
 			path = WysiwygUITests;
 			sourceTree = "<group>";
@@ -329,7 +326,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A6472CC82886CF840021A0E8 /* WysiwygUITestsLaunchTests.swift in Sources */,
 				A6472CC62886CF840021A0E8 /* WysiwygUITests.swift in Sources */,
 				A623EBE5289AA6DE00067E57 /* WysiwygSharedTests.swift in Sources */,
 				A623EBE3289AA69E00067E57 /* WysiwygUIKitTests.swift in Sources */,
