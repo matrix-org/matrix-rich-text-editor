@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A623EBE3289AA69E00067E57 /* WysiwygUIKitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A623EBE2289AA69E00067E57 /* WysiwygUIKitTests.swift */; };
+		A623EBE5289AA6DE00067E57 /* WysiwygSharedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A623EBE4289AA6DE00067E57 /* WysiwygSharedTests.swift */; };
 		A64369212899175400ECCF8A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A64369202899175400ECCF8A /* AppDelegate.swift */; };
 		A64369232899175400ECCF8A /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A64369222899175400ECCF8A /* SceneDelegate.swift */; };
 		A64369252899175400ECCF8A /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A64369242899175400ECCF8A /* ViewController.swift */; };
@@ -24,6 +26,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		A623EBE0289AA59100067E57 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A6472C9F2886CF830021A0E8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A643691D2899175400ECCF8A;
+			remoteInfo = WysiwygUIKit;
+		};
 		A6472CC22886CF840021A0E8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = A6472C9F2886CF830021A0E8 /* Project object */;
@@ -34,6 +43,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		A623EBE2289AA69E00067E57 /* WysiwygUIKitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygUIKitTests.swift; sourceTree = "<group>"; };
+		A623EBE4289AA6DE00067E57 /* WysiwygSharedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygSharedTests.swift; sourceTree = "<group>"; };
 		A643691E2899175400ECCF8A /* WysiwygUIKit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WysiwygUIKit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A64369202899175400ECCF8A /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A64369222899175400ECCF8A /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -99,8 +110,8 @@
 			children = (
 				A6E6B2702886DA6E009596F2 /* Packages */,
 				A6472CA92886CF830021A0E8 /* Wysiwyg */,
-				A643691F2899175400ECCF8A /* WysiwygUIKit */,
 				A6472CC42886CF840021A0E8 /* WysiwygUITests */,
+				A643691F2899175400ECCF8A /* WysiwygUIKit */,
 				A6472CA82886CF830021A0E8 /* Products */,
 				A6E6B26D2886D9AA009596F2 /* Frameworks */,
 			);
@@ -138,6 +149,8 @@
 		A6472CC42886CF840021A0E8 /* WysiwygUITests */ = {
 			isa = PBXGroup;
 			children = (
+				A623EBE4289AA6DE00067E57 /* WysiwygSharedTests.swift */,
+				A623EBE2289AA69E00067E57 /* WysiwygUIKitTests.swift */,
 				A6472CC52886CF840021A0E8 /* WysiwygUITests.swift */,
 				A6472CC72886CF840021A0E8 /* WysiwygUITestsLaunchTests.swift */,
 			);
@@ -213,6 +226,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				A623EBE1289AA59100067E57 /* PBXTargetDependency */,
 				A6472CC32886CF840021A0E8 /* PBXTargetDependency */,
 			);
 			name = WysiwygUITests;
@@ -317,12 +331,19 @@
 			files = (
 				A6472CC82886CF840021A0E8 /* WysiwygUITestsLaunchTests.swift in Sources */,
 				A6472CC62886CF840021A0E8 /* WysiwygUITests.swift in Sources */,
+				A623EBE5289AA6DE00067E57 /* WysiwygSharedTests.swift in Sources */,
+				A623EBE3289AA69E00067E57 /* WysiwygUIKitTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		A623EBE1289AA59100067E57 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A643691D2899175400ECCF8A /* WysiwygUIKit */;
+			targetProxy = A623EBE0289AA59100067E57 /* PBXContainerItemProxy */;
+		};
 		A6472CC32886CF840021A0E8 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = A6472CA62886CF830021A0E8 /* Wysiwyg */;
@@ -360,6 +381,7 @@
 				DEVELOPMENT_TEAM = 7J4U792NQT;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WysiwygUIKit/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = WysiwygUIKit;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -371,7 +393,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = im.vector.WysiwygUIKit.WysiwygUIKit;
+				PRODUCT_BUNDLE_IDENTIFIER = org.matrix.WysiwygUIKit;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -389,6 +411,7 @@
 				DEVELOPMENT_TEAM = 7J4U792NQT;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WysiwygUIKit/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = WysiwygUIKit;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -400,7 +423,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = im.vector.WysiwygUIKit.WysiwygUIKit;
+				PRODUCT_BUNDLE_IDENTIFIER = org.matrix.WysiwygUIKit;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;

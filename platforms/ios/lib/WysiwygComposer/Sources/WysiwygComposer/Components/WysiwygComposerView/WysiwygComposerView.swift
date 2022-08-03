@@ -68,7 +68,7 @@ struct WysiwygComposerView: UIViewRepresentable {
             return false
         }
 
-        // never called yet
+        // FIXME: Never called yet, will be called when we "trust" some user inputs.
         func textViewDidChange(_ textView: UITextView) {
             self.didUpdateText(textView)
         }

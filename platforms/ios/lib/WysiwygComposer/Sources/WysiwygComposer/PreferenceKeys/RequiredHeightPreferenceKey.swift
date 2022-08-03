@@ -16,6 +16,7 @@
 
 import SwiftUI
 
+/// `PreferenceKey` for the composer's required height.
 public struct RequiredHeightPreferenceKey: PreferenceKey {
     public static var defaultValue: CGFloat = 0.0
 

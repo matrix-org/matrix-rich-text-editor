@@ -71,6 +71,9 @@ class WysiwygComposerViewModel: ObservableObject {
                           endUtf16Codeunit: UInt32(range.location+range.length))
     }
 
+    /// Notify that the text view content has changed.
+    ///
+    /// - Parameter textView: The composer's text view.
     func didUpdateText(textView: UITextView) {
         self.updateRequiredHeightIfNeeded(textView)
     }
@@ -111,6 +114,10 @@ private extension WysiwygComposerViewModel {
         }
     }
 
+    /// Update the composer total required height if it has changed.
+    ///
+    /// - Parameters:
+    ///   - textView: The composer's text view.
     func updateRequiredHeightIfNeeded(_ textView: UITextView) {
         // TODO: remove magic numbers
         let requiredHeight = 50 + 16 + 8 + textView

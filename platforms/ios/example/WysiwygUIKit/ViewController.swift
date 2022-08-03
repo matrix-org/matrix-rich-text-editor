@@ -32,6 +32,9 @@ final class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         wysiwygHostingView.delegate = self
+        sendButton.accessibilityIdentifier = "WysiwygSendButton"
+        contentLabel.accessibilityIdentifier = "WysiwygContentLabel"
+        htmlContentLabel.accessibilityIdentifier = "WysiwygHtmlContentLabel"
     }
 }
 

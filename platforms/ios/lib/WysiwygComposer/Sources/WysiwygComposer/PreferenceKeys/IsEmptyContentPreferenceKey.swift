@@ -16,6 +16,7 @@
 
 import SwiftUI
 
+/// `PreferenceKey` for the composer's empty content state.
 public struct IsEmptyContentPreferenceKey: PreferenceKey {
     public static var defaultValue: Bool = true
 

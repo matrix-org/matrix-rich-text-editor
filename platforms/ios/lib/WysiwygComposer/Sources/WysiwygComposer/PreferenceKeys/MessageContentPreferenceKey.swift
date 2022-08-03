@@ -16,6 +16,7 @@
 
 import SwiftUI
 
+/// `PreferenceKey` for the composer's displayed message content.
 public struct MessageContentPreferenceKey: PreferenceKey {
     public static var defaultValue: MessageContent = MessageContent()
 
@@ -25,10 +26,19 @@ public struct MessageContentPreferenceKey: PreferenceKey {
 }
 
 @objcMembers
+/// Defines message content displayed in the composer.
 public class MessageContent: NSObject {
+    /// Displayed text, as plain text.
     public let plainText: String
+    /// HTML representation of the displayed text.
     public let html: String
 
+
+    /// Init.
+    ///
+    /// - Parameters:
+    ///   - plainText: Displayed text, as plain text.
+    ///   - html: HTML representation of the displayed text.
     public init(plainText: String = "", html: String = "") {
         self.plainText = plainText
         self.html = html

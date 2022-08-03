@@ -19,12 +19,12 @@ import CoreGraphics
 
 /// Describe the current state of the composer.
 public struct WysiwygComposerViewState {
-    /// Current text selection.
+    /// Text slection.
     public var textSelection: NSRange
-    /// Current text to display.
+    /// Displayed text.
     public var displayText: NSAttributedString
-
+    /// Required height.
     public var requiredHeight: CGFloat
-
+    /// HTML representation of the text
     public var html: String
 }

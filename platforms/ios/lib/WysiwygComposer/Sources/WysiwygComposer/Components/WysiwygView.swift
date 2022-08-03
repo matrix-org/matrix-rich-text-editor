@@ -17,6 +17,7 @@
 import SwiftUI
 import OSLog
 
+/// Composer's main view. Displays a text view and a toolbar for advanced edition capabilities.
 public struct WysiwygView: View {
     // MARK: - Public
     public var body: some View {
@@ -53,5 +54,6 @@ public struct WysiwygView: View {
     public init() {}
 
     // MARK: - Internal
+    /// View model that manages the composer updates.
     @StateObject var viewModel = WysiwygComposerViewModel()
 }
