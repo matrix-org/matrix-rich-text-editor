@@ -22,6 +22,7 @@ class WysiwygUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app.launch()
+        try WysiwygSharedTests.focusComposerAndClearTutorialIfNeeded(app)
     }
 
     override func tearDownWithError() throws { }

@@ -20,11 +20,21 @@ import XCTest
 final class WysiwygSharedTests {
     private init() { }
 
+    /// Focus the composer text view inside given app and
+    /// clear the tutorial for keyboard swipe if it is displayed.
+    static func focusComposerAndClearTutorialIfNeeded(_ app: XCUIApplication) throws {
+        app.textViews["WysiwygComposer"].tap()
+        let continueButton = app.buttons["Continue"]
+        // If a continue button exists, we are on the keyboard Swipe tutorial.
+        if continueButton.exists {
+            continueButton.tap()
+        }
+    }
+
     /// Type a text and delete some different kind of text selections with Wysiwyg composer inside given app.
     static func testTypingAndDeleting(_ app: XCUIApplication) throws {
         let textView = app.textViews["WysiwygComposer"]
-        // Select text view and type something.
-        textView.tap()
+        // Type something into composer.
         textView.typeText("abc🎉🎉👩🏿‍🚀")
         XCTAssertEqual(textView.value as? String, "abc🎉🎉👩🏿‍🚀")
 
@@ -56,8 +66,7 @@ final class WysiwygSharedTests {
     /// A screenshot is saved since string attributes can't be read from this context.
     static func testTypingAndBolding(_ app: XCUIApplication) throws -> XCTAttachment {
         let textView = app.textViews["WysiwygComposer"]
-        // Select text view and type something.
-        textView.tap()
+        // Type something into composer.
         textView.typeText("Some bold text")
 
         textView.doubleTap()
@@ -83,8 +92,7 @@ final class WysiwygSharedTests {
     /// HTML representation is "Some bold <strong>text</strong>"
     static func typeAndSendMessage(_ app: XCUIApplication) throws {
         let textView = app.textViews["WysiwygComposer"]
-        // Select text view and type something.
-        textView.tap()
+        // Type something into composer.
         textView.typeText("Some bold text")
 
         textView.doubleTap()
