@@ -24,6 +24,8 @@ struct ContentView: View {
     @State private var sentMessage: MessageContent?
 
     var body: some View {
+        Spacer()
+            .frame(width: nil, height: 50, alignment: .center)
         WysiwygView()
             .onPreferenceChange(MessageContentPreferenceKey.self) { content in
                 self.content = content
