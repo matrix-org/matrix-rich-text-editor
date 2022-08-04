@@ -16,6 +16,7 @@
 
 import UIKit
 import SwiftUI
+import Combine
 import OSLog
 
 /// Declares methods that should be adopted by an object that aim to react on the Wysiwyg composer actions.
@@ -29,7 +30,7 @@ import OSLog
     ///
     /// - Parameters:
     ///   - isEmpty: whether the composer is empty or not.
-    func isEmptyContentDidChange(_ isEmpty: Bool)
+    func isContentEmptyDidChange(_ isEmpty: Bool)
 }
 
 /// Hosting view that provides support for Wysiwyg UIKit implementation.
@@ -39,23 +40,40 @@ public final class WysiwygHostingView: UIView {
     /// The delegate of the `WysiwygHostingView`.
     public weak var delegate: WysiwygHostingViewDelegate?
     /// The content currently displayed in the composer.
-    public private(set) var content: MessageContent = MessageContent()
+    public var content: WysiwygComposerContent {
+        return viewModel.content
+    }
+
+    // MARK: - Private
+    @ObservedObject private var viewModel = WysiwygComposerViewModel()
+    private var cancellables: Set<AnyCancellable>?
+
+    // MARK: - Public
+    /// Clear the content of the composer.
+    public func clearContent() {
+        viewModel.clearContent()
+    }
 
     // MARK: - Override
     public override func awakeFromNib() {
         super.awakeFromNib()
 
-        // Create the SwiftUI view and map its preference keys changes to delegate and properties.
         let wysiwygView = WysiwygView()
-            .onPreferenceChange(MessageContentPreferenceKey.self) { [unowned self] (messageContent: MessageContent) in
-                self.content = messageContent
-            }
-            .onPreferenceChange(RequiredHeightPreferenceKey.self) { [unowned self] (height: CGFloat) in
-                self.delegate?.requiredHeightDidChange(height)
-            }
-            .onPreferenceChange(IsEmptyContentPreferenceKey.self) { [unowned self] (isEmpty: Bool) in
-                self.delegate?.isEmptyContentDidChange(isEmpty)
-            }
+            .environmentObject(viewModel)
+
+        // Subscribe to relevant events and map them to UIKit-style delegate.
+        cancellables = [
+            viewModel.$isContentEmpty
+                .removeDuplicates()
+                .sink(receiveValue: { [unowned self] isContentEmpty in
+                    self.delegate?.isContentEmptyDidChange(isContentEmpty)
+                }),
+            viewModel.$requiredHeight
+                .removeDuplicates()
+                .sink(receiveValue: { [unowned self] requiredHeight in
+                    self.delegate?.requiredHeightDidChange(requiredHeight)
+                })
+        ]
 
         // Attach the view to a hosting controller and display it's UIView container.
         let hostingController = UIHostingController(rootView: wysiwygView)

@@ -45,6 +45,7 @@ private extension ViewController {
         // Get the current content of the composer.
         contentLabel.text = wysiwygHostingView.content.plainText
         htmlContentLabel.text = wysiwygHostingView.content.html
+        wysiwygHostingView.clearContent()
     }
 }
 
@@ -54,7 +55,7 @@ extension ViewController: WysiwygHostingViewDelegate {
         wysiwygHostingViewHeightConstraint.constant = min(Constants.maxHeight, height)
     }
 
-    func isEmptyContentDidChange(_ isEmpty: Bool) {
+    func isContentEmptyDidChange(_ isEmpty: Bool) {
         sendButton.isEnabled = !isEmpty
     }
 }

@@ -17,28 +17,40 @@
 import Foundation
 import OSLog
 import UIKit
+import Combine
 
-/// Main view model for the `WysiwygComposerView`. Provides user actions
-/// to the Rust model and publishes result `WysiwygComposerViewState`.
-class WysiwygComposerViewModel: ObservableObject {
-    // MARK: - Internal
-    @Published var viewState: WysiwygComposerViewState
+/// Main view model for the composer. Forwards actions to the Rust model and publishes resulting states.
+public class WysiwygComposerViewModel: ObservableObject {
+    // MARK: - Public
+    /// Published object for the composer content.
+    @Published public var content: WysiwygComposerContent = .init()
+    /// Published boolean for the composer empty content state.
+    @Published public var isContentEmpty: Bool = true
+    /// Published value for the composer required height to fit entirely without scrolling.
+    @Published public var requiredHeight: CGFloat = .zero
 
     // MARK: - Private
     private var model: ComposerModel
+    private var cancellable: AnyCancellable?
 
-    // MARK: - Init
-    init() {
+    // MARK: - Public
+    public init() {
         self.model = newComposerModel()
-        self.viewState = WysiwygComposerViewState(
-            textSelection: .init(location: 0, length: 0),
-            displayText: NSAttributedString(),
-            requiredHeight: 110,
-            html: ""
-        )
+        // Publish composer empty state.
+        cancellable = $content.sink(receiveValue: { [unowned self] content in
+            self.isContentEmpty = content.plainText.isEmpty
+        })
     }
 
-    // MARK: - Internal
+    /// Clear the content of the composer.
+    public func clearContent() {
+        self.model = newComposerModel()
+        self.content = WysiwygComposerContent()
+    }
+}
+
+// MARK: - Internal
+extension WysiwygComposerViewModel {
     /// Replace text in the model.
     ///
     /// - Parameters:
@@ -87,7 +99,7 @@ class WysiwygComposerViewModel: ObservableObject {
 
 // MARK: - Private
 private extension WysiwygComposerViewModel {
-    /// Apply given composer update to the view state.
+    /// Apply given composer update to the composer.
     ///
     /// - Parameter update: ComposerUpdate to apply.
     func applyUpdate(_ update: ComposerUpdate) {
@@ -99,12 +111,11 @@ private extension WysiwygComposerViewModel {
             do {
                 let attributed = try NSAttributedString(html: html)
                 let textSelection = NSRange(location: Int(start), length: Int(end-start))
-                self.viewState = WysiwygComposerViewState(
-                    textSelection: textSelection,
-                    displayText: attributed,
-                    requiredHeight: self.viewState.requiredHeight,
-                    html: html
-                )
+                self.content = WysiwygComposerContent(
+                    plainText: attributed.string,
+                    html: html,
+                    attributed: attributed,
+                    selection: textSelection)
                 Logger.composer.debug("HTML from Rust: \(html), selection: \(textSelection)")
             } catch {
                 Logger.composer.error("Unable to update composer display: \(error.localizedDescription)")
@@ -125,7 +136,6 @@ private extension WysiwygComposerViewModel {
                                  height: CGFloat.greatestFiniteMagnitude)
             )
             .height
-        guard requiredHeight != viewState.requiredHeight else { return }
-        self.viewState.requiredHeight = requiredHeight
+        self.requiredHeight = requiredHeight
     }
 }
