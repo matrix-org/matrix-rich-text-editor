@@ -12,14 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::marker::PhantomData;
+
+use crate::dom::{Dom, DomNode, FormattingNode, TextNode};
 use crate::{ActionResponse, ComposerUpdate, Location};
+
 pub struct ComposerModel<C>
 where
     C: Clone,
 {
-    html: Vec<C>, // TODO: not an AST yet!
+    html: Dom,
     start: Location,
     end: Location,
+
+    // TODO: do we need this, or should we adopt u16 fully? Or just offer multiple
+    // replace_text style functions for different encodings?
+    phantom_data: PhantomData<C>,
 }
 
 impl<C> ComposerModel<C>
@@ -28,9 +36,10 @@ where
 {
     pub fn new() -> Self {
         Self {
-            html: Vec::new(),
+            html: Dom::new(Vec::new()),
             start: Location::from(0),
             end: Location::from(0),
+            phantom_data: PhantomData::default(),
         }
     }
 
@@ -47,10 +56,13 @@ where
      * returned is <= the second, and they are both 0<=n<=html.len().
      */
     fn safe_selection(&self) -> (usize, usize) {
+        // TODO: do we really need to serialise here just for this?
+        let html = self.html.to_string();
+
         let mut s: usize = self.start.into();
         let mut e: usize = self.end.into();
-        s = s.clamp(0, self.html.len());
-        e = e.clamp(0, self.html.len());
+        s = s.clamp(0, html.len());
+        e = e.clamp(0, html.len());
         if s > e {
             (e, s)
         } else {
@@ -58,69 +70,8 @@ where
         }
     }
 
-    /**
-     * Replaces text in the current selection with new_text.
-     */
-    pub fn replace_text(&mut self, new_text: &[C]) -> ComposerUpdate<C> {
-        // TODO: escape any HTML?
-        let (s, e) = self.safe_selection();
-        self.replace_text_in(&new_text, s, e)
-    }
-
-    /**
-     * Replaces text in the an arbitrary start..end range with new_text.
-     */
-    pub fn replace_text_in(
-        &mut self,
-        new_text: &[C],
-        start: usize,
-        end: usize,
-    ) -> ComposerUpdate<C> {
-        let mut new_html = self.html[..start].to_vec();
-        new_html.extend_from_slice(new_text);
-        new_html.extend_from_slice(&self.html[end..]);
-        self.html = new_html;
-
-        self.start = Location::from(start + new_text.len());
-        self.end = self.start;
-
-        // TODO: for now, we replace every time, to check ourselves, but
-        // at least some of the time we should not
-        self.create_update_replace_all()
-        //ComposerUpdate::keep()
-    }
-
     pub fn enter(&mut self) -> ComposerUpdate<C> {
         ComposerUpdate::keep()
-    }
-
-    pub fn backspace(&mut self) -> ComposerUpdate<C> {
-        if self.start == self.end {
-            // Go back 1 from the current location
-            self.start -= 1;
-        }
-
-        self.replace_text(&[])
-    }
-
-    /**
-     * Deletes text in an arbitrary start..end range.
-     */
-    pub fn delete_in(&mut self, start: usize, end: usize) -> ComposerUpdate<C> {
-        self.end = Location::from(start);
-        self.replace_text_in(&[], start, end)
-    }
-
-    /**
-     * Deletes the character after the current cursor position.
-     */
-    pub fn delete(&mut self) -> ComposerUpdate<C> {
-        if self.start == self.end {
-            // Go forward 1 from the current location
-            self.end += 1;
-        }
-
-        self.replace_text(&[])
     }
 
     pub fn action_response(
@@ -133,43 +84,133 @@ where
         ComposerUpdate::keep()
     }
 
-    pub fn get_html(&self) -> Vec<C> {
-        self.html.clone()
-    }
-
     pub fn get_selection(&self) -> (Location, Location) {
         (self.start, self.end)
     }
+}
 
-    // Internal functions
-
-    fn create_update_replace_all(&self) -> ComposerUpdate<C> {
-        ComposerUpdate::replace_all(self.html.clone(), self.start, self.end)
-    }
+// TODO: delete this and do things more properly
+fn utf8(utf16: &[u16]) -> String {
+    String::from_utf16(&utf16).expect("Invalid UTF-16!")
 }
 
 impl ComposerModel<u16> {
-    pub fn bold(&mut self) -> ComposerUpdate<u16> {
+    /**
+     * Replaces text in the current selection with new_text.
+     */
+    pub fn replace_text(&mut self, new_text: &[u16]) -> ComposerUpdate<u16> {
+        // TODO: escape any HTML?
         let (s, e) = self.safe_selection();
+        self.replace_text_in(&new_text, s, e)
+    }
 
-        // TODO: not a real AST
-        let mut new_html = self.html[..s].to_vec();
-        new_html.extend("<strong>".encode_utf16().collect::<Vec<_>>());
-        new_html.extend_from_slice(&self.html[s..e]);
-        new_html.extend("</strong>".encode_utf16().collect::<Vec<_>>());
-        new_html.extend_from_slice(&self.html[e..]);
-        self.html = new_html;
+    /**
+     * Replaces text in the an arbitrary start..end range with new_text.
+     */
+    pub fn replace_text_in(
+        &mut self,
+        new_text: &[u16],
+        start: usize,
+        end: usize,
+    ) -> ComposerUpdate<u16> {
+        // Temporary: only works if we have a single text node
 
-        /*
-        TODO: probably requires a real AST
-        let start_b = ByteLocation::from(range[0]);
-        let end_b = ByteLocation::from(range[1] + "<strong></strong>".len());
+        if self.html.children().is_empty() {
+            self.html.append(DomNode::Text(TextNode::from("")))
+        }
 
-        self.selection_start_codepoint = start_b.codepoint(&self.html);
-        self.selection_end_codepoint = end_b.codepoint(&self.html);
-        */
+        if self.html.children().len() == 1 {
+            if let DomNode::Text(t) = &mut self.html.children_mut()[0] {
+                let text: Vec<u16> = t.data().encode_utf16().collect();
+                let mut n = text[..start].to_vec();
+                n.extend_from_slice(new_text);
+                n.extend_from_slice(&text[end..]);
+                t.set_data(utf8(&n));
 
-        self.create_update_replace_all()
+                self.start = Location::from(start + new_text.len());
+                self.end = self.start;
+
+                // TODO: for now, we replace every time, to check ourselves, but
+                // at least some of the time we should not
+                return self.create_update_replace_all();
+            }
+        }
+
+        panic!("Can't replace_text_in in complex object models yet");
+    }
+
+    pub fn backspace(&mut self) -> ComposerUpdate<u16> {
+        if self.start == self.end {
+            // Go back 1 from the current location
+            self.start -= 1;
+        }
+
+        self.replace_text(&[])
+    }
+
+    /**
+     * Deletes text in an arbitrary start..end range.
+     */
+    pub fn delete_in(
+        &mut self,
+        start: usize,
+        end: usize,
+    ) -> ComposerUpdate<u16> {
+        self.end = Location::from(start);
+        self.replace_text_in(&[], start, end)
+    }
+
+    /**
+     * Deletes the character after the current cursor position.
+     */
+    pub fn delete(&mut self) -> ComposerUpdate<u16> {
+        if self.start == self.end {
+            // Go forward 1 from the current location
+            self.end += 1;
+        }
+
+        self.replace_text(&[])
+    }
+
+    pub fn bold(&mut self) -> ComposerUpdate<u16> {
+        // Temporary: only works if we have a single text node
+        if self.html.children().len() == 1 {
+            let (s, e) = self.safe_selection();
+            if let DomNode::Text(t) = &mut self.html.children_mut()[0] {
+                let text: Vec<u16> = t.data().encode_utf16().collect();
+
+                let text1 = utf8(&text[..s]);
+                let text2 = utf8(&text[s..e]);
+                let text3 = utf8(&text[e..]);
+                let b = DomNode::Formatting(FormattingNode::new(
+                    "strong",
+                    vec![DomNode::Text(TextNode::from(&text2))],
+                ));
+
+                t.set_data(text1);
+                self.html.append(b);
+                self.html.append(DomNode::Text(TextNode::from(&text3)));
+
+                // TODO: for now, we replace every time, to check ourselves, but
+                // at least some of the time we should not
+                return self.create_update_replace_all();
+            }
+        }
+
+        panic!("Can't bold in complex object models yet");
+    }
+
+    pub fn get_html(&self) -> Vec<u16> {
+        self.html.to_string().encode_utf16().collect()
+    }
+
+    // Internal functions
+    fn create_update_replace_all(&self) -> ComposerUpdate<u16> {
+        ComposerUpdate::replace_all(
+            self.html.to_string().encode_utf16().collect(),
+            self.start,
+            self.end,
+        )
     }
 }
 
@@ -177,7 +218,11 @@ impl ComposerModel<u16> {
 mod test {
     use speculoos::{prelude::*, AssertionFailure, Spec};
 
-    use crate::Location;
+    use crate::{
+        composer_model::utf8,
+        dom::{Dom, DomNode, TextNode},
+        Location,
+    };
 
     use super::ComposerModel;
 
@@ -456,6 +501,7 @@ mod test {
         let e = find(&text, "}");
 
         let mut ret = ComposerModel::new();
+        let mut ret_text;
 
         if let (Some(s), Some(e)) = (s, e) {
             if curs == e + 1 {
@@ -463,17 +509,17 @@ mod test {
                 // The { made an extra codeunit - move the end back 1
                 ret.start = Location::from(s);
                 ret.end = Location::from(e - 1);
-                ret.html = text[..s].to_vec();
-                ret.html.extend_from_slice(&text[s + 1..e]);
-                ret.html.extend_from_slice(&text[curs + 1..]);
+                ret_text = utf8(&text[..s]);
+                ret_text += &utf8(&text[s + 1..e]);
+                ret_text += &utf8(&text[curs + 1..]);
             } else if curs == s - 1 {
                 // Cursor before beginning: foo|{bar}baz
                 // The |{ made an extra 2 codeunits - move the end back 2
                 ret.start = Location::from(e - 2);
                 ret.end = Location::from(curs);
-                ret.html = text[..curs].to_vec();
-                ret.html.extend_from_slice(&text[s + 1..e]);
-                ret.html.extend_from_slice(&text[e + 1..]);
+                ret_text = utf8(&text[..curs]);
+                ret_text += &utf8(&text[s + 1..e]);
+                ret_text += &utf8(&text[e + 1..]);
             } else {
                 panic!(
                     "The cursor ('|') must always be directly before or after \
@@ -484,10 +530,11 @@ mod test {
         } else {
             ret.start = Location::from(curs);
             ret.end = Location::from(curs);
-            ret.html = text[..curs].to_vec();
-            ret.html.extend_from_slice(&text[curs + 1..]);
+            ret_text = utf8(&text[..curs]);
+            ret_text += &utf8(&text[curs + 1..]);
         }
 
+        ret.html = Dom::new(vec![DomNode::Text(TextNode::from(&ret_text))]);
         ret
     }
 
@@ -496,167 +543,150 @@ mod test {
      */
     fn tx(model: &ComposerModel<u16>) -> String {
         let mut ret;
+
+        let utf16: Vec<u16> = model.html.to_string().encode_utf16().collect();
         if model.start == model.end {
-            ret =
-                String::from_utf16(&model.html[..model.start.into()]).unwrap();
+            ret = utf8(&utf16[..model.start.into()]);
             ret.push('|');
-            ret +=
-                &String::from_utf16(&model.html[model.start.into()..]).unwrap();
+            ret += &utf8(&utf16[model.start.into()..]);
         } else {
             let (s, e) = model.safe_selection();
 
-            ret = String::from_utf16(&model.html[..s]).unwrap();
+            ret = utf8(&utf16[..s]);
             if model.start < model.end {
                 ret.push('{');
             } else {
                 ret += "|{";
             }
-            ret += &String::from_utf16(&model.html[s..e]).unwrap();
+            ret += &utf8(&utf16[s..e]);
             if model.start < model.end {
                 ret += "}|";
             } else {
                 ret.push('}');
             }
-            ret += &String::from_utf16(&model.html[e..]).unwrap()
+            ret += &utf8(&utf16[e..]);
         }
         ret
+    }
+
+    fn utf16(utf8: &str) -> Vec<u16> {
+        utf8.encode_utf16().collect()
     }
 
     #[test]
     fn cm_creates_correct_component_model() {
         assert_eq!(cm("|").start, 0);
         assert_eq!(cm("|").end, 0);
-        assert_eq!(cm("|").html, &[]);
+        assert_eq!(utf16(&cm("|").html.to_string()), &[]);
 
         assert_eq!(cm("a|").start, 1);
         assert_eq!(cm("a|").end, 1);
-        assert_eq!(cm("a|").html, "a".encode_utf16().collect::<Vec<_>>());
+        assert_eq!(utf16(&cm("a|").html.to_string()), utf16("a"));
 
         assert_eq!(cm("a|b").start, 1);
         assert_eq!(cm("a|b").end, 1);
-        assert_eq!(cm("a|b").html, "ab".encode_utf16().collect::<Vec<_>>());
+        assert_eq!(
+            utf16(&cm("a|b").html.to_string()),
+            "ab".encode_utf16().collect::<Vec<_>>()
+        );
 
         assert_eq!(cm("|ab").start, 0);
         assert_eq!(cm("|ab").end, 0);
-        assert_eq!(cm("|ab").html, "ab".encode_utf16().collect::<Vec<_>>());
+        assert_eq!(utf16(&cm("|ab").html.to_string()), utf16("ab"));
 
         assert_eq!(cm("foo|").start, 3);
         assert_eq!(cm("foo|").end, 3);
-        assert_eq!(cm("foo|").html, "foo".encode_utf16().collect::<Vec<_>>());
+        assert_eq!(utf16(&cm("foo|").html.to_string()), utf16("foo"));
 
         let t1 = cm("foo|\u{1F4A9}bar");
         assert_eq!(t1.start, 3);
         assert_eq!(t1.end, 3);
-        assert_eq!(
-            t1.html,
-            "foo\u{1F4A9}bar".encode_utf16().collect::<Vec<_>>()
-        );
+        assert_eq!(utf16(&t1.html.to_string()), utf16("foo\u{1F4A9}bar"));
 
         let t2 = cm("foo\u{1F4A9}|bar");
         assert_eq!(t2.start, 5);
         assert_eq!(t2.end, 5);
-        assert_eq!(
-            t2.html,
-            "foo\u{1F4A9}bar".encode_utf16().collect::<Vec<_>>()
-        );
+        assert_eq!(utf16(&t2.html.to_string()), utf16("foo\u{1F4A9}bar"));
 
         assert_eq!(cm("foo|\u{1F4A9}").start, 3);
         assert_eq!(cm("foo|\u{1F4A9}").end, 3);
         assert_eq!(
-            cm("foo|\u{1F4A9}").html,
-            "foo\u{1F4A9}".encode_utf16().collect::<Vec<_>>()
+            utf16(&cm("foo|\u{1F4A9}").html.to_string()),
+            utf16("foo\u{1F4A9}")
         );
 
         assert_eq!(cm("foo\u{1F4A9}|").start, 5);
         assert_eq!(cm("foo\u{1F4A9}|").end, 5);
         assert_eq!(
-            cm("foo\u{1F4A9}|").html,
-            "foo\u{1F4A9}".encode_utf16().collect::<Vec<_>>()
+            utf16(&cm("foo\u{1F4A9}|").html.to_string()),
+            utf16("foo\u{1F4A9}")
         );
 
         assert_eq!(cm("|\u{1F4A9}bar").start, 0);
         assert_eq!(cm("|\u{1F4A9}bar").end, 0);
         assert_eq!(
-            cm("|\u{1F4A9}bar").html,
-            "\u{1F4A9}bar".encode_utf16().collect::<Vec<_>>()
+            utf16(&cm("|\u{1F4A9}bar").html.to_string()),
+            utf16("\u{1F4A9}bar")
         );
 
         assert_eq!(cm("\u{1F4A9}|bar").start, 2);
         assert_eq!(cm("\u{1F4A9}|bar").end, 2);
         assert_eq!(
-            cm("\u{1F4A9}|bar").html,
-            "\u{1F4A9}bar".encode_utf16().collect::<Vec<_>>()
+            utf16(&cm("\u{1F4A9}|bar").html.to_string()),
+            utf16("\u{1F4A9}bar")
         );
 
         assert_eq!(cm("{a}|").start, 0);
         assert_eq!(cm("{a}|").end, 1);
-        assert_eq!(cm("{a}|").html, "a".encode_utf16().collect::<Vec<_>>());
+        assert_eq!(utf16(&cm("{a}|").html.to_string()), utf16("a"));
 
         assert_eq!(cm("|{a}").start, 1);
         assert_eq!(cm("|{a}").end, 0);
-        assert_eq!(cm("|{a}").html, "a".encode_utf16().collect::<Vec<_>>());
+        assert_eq!(utf16(&cm("|{a}").html.to_string()), utf16("a"));
 
         assert_eq!(cm("abc{def}|ghi").start, 3);
         assert_eq!(cm("abc{def}|ghi").end, 6);
         assert_eq!(
-            cm("abc{def}|ghi").html,
-            "abcdefghi".encode_utf16().collect::<Vec<_>>()
+            utf16(&cm("abc{def}|ghi").html.to_string()),
+            utf16("abcdefghi")
         );
 
         assert_eq!(cm("abc|{def}ghi").start, 6);
         assert_eq!(cm("abc|{def}ghi").end, 3);
         assert_eq!(
-            cm("abc|{def}ghi").html,
-            "abcdefghi".encode_utf16().collect::<Vec<_>>()
+            utf16(&cm("abc|{def}ghi").html.to_string()),
+            utf16("abcdefghi")
         );
 
         let t3 = cm("\u{1F4A9}{def}|ghi");
         assert_eq!(t3.start, 2);
         assert_eq!(t3.end, 5);
-        assert_eq!(
-            t3.html,
-            "\u{1F4A9}defghi".encode_utf16().collect::<Vec<_>>()
-        );
+        assert_eq!(utf16(&t3.html.to_string()), utf16("\u{1F4A9}defghi"));
 
         let t4 = cm("\u{1F4A9}|{def}ghi");
         assert_eq!(t4.start, 5);
         assert_eq!(t4.end, 2);
-        assert_eq!(
-            t4.html,
-            "\u{1F4A9}defghi".encode_utf16().collect::<Vec<_>>()
-        );
+        assert_eq!(utf16(&t4.html.to_string()), utf16("\u{1F4A9}defghi"));
 
         let t5 = cm("abc{d\u{1F4A9}f}|ghi");
         assert_eq!(t5.start, 3);
         assert_eq!(t5.end, 7);
-        assert_eq!(
-            t5.html,
-            "abcd\u{1F4A9}fghi".encode_utf16().collect::<Vec<_>>()
-        );
+        assert_eq!(utf16(&t5.html.to_string()), utf16("abcd\u{1F4A9}fghi"));
 
         let t6 = cm("abc|{d\u{1F4A9}f}ghi");
         assert_eq!(t6.start, 7);
         assert_eq!(t6.end, 3);
-        assert_eq!(
-            t6.html,
-            "abcd\u{1F4A9}fghi".encode_utf16().collect::<Vec<_>>()
-        );
+        assert_eq!(utf16(&t6.html.to_string()), utf16("abcd\u{1F4A9}fghi"));
 
         let t7 = cm("abc{def}|\u{1F4A9}ghi");
         assert_eq!(t7.start, 3);
         assert_eq!(t7.end, 6);
-        assert_eq!(
-            t7.html,
-            "abcdef\u{1F4A9}ghi".encode_utf16().collect::<Vec<_>>()
-        );
+        assert_eq!(utf16(&t7.html.to_string()), utf16("abcdef\u{1F4A9}ghi"));
 
         let t8 = cm("abc|{def}\u{1F4A9}ghi");
         assert_eq!(t8.start, 6);
         assert_eq!(t8.end, 3);
-        assert_eq!(
-            t8.html,
-            "abcdef\u{1F4A9}ghi".encode_utf16().collect::<Vec<_>>()
-        );
+        assert_eq!(utf16(&t8.html.to_string()), utf16("abcdef\u{1F4A9}ghi"));
     }
 
     #[test]
