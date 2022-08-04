@@ -138,8 +138,11 @@ class EditorEditTextInputTests {
             .check(matches(withText("밥")))
     }
 
+    // About IME backspace on Korean, that's handled by the IME, which automatically seems to either
+    // remove the last code unit from the code point, or 'undo' the last action and send the last
+    // compositing text.
     @Test
-    @Ignore("These are failing at the moment. The whole text is deleted.")
+    @Ignore("These are failing at the moment. The whole text is deleted. Note that this backspace action mimicks HW keyboard backspace, not IME.")
     fun testKoreanInputSeparateCharactersDeletion() {
         onView(withId(R.id.editText))
             .perform(ImeActions.setComposingText("ㅂ")) // B/P (Piup)
@@ -149,7 +152,7 @@ class EditorEditTextInputTests {
     }
 
     @Test
-    @Ignore("These are failing at the moment. The whole text is deleted.")
+    @Ignore("These are failing at the moment. The whole text is deleted. Note that this backspace action mimicks HW keyboard backspace, not IME.")
     fun testKoreanInputJoinedCharactersDeletion() {
         onView(withId(R.id.editText))
             .perform(ImeActions.commitText("밥")) // Bap (autocomplete)
