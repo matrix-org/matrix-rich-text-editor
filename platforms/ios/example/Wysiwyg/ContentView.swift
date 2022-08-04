@@ -17,15 +17,43 @@
 import SwiftUI
 import WysiwygComposer
 
+/// Example SwiftUI view that adds a WysiwygComposer as well as a button that
+/// displays the message (+ HTML representation) the composer would send.
 struct ContentView: View {
-    var body: some View {
-        WysiwygView()
-            .padding()
-    }
-}
+    /// Displayed content and HTML representation.
+    @State private var content: MessageContent = .init()
+    /// Height required by the composer.
+    @State private var requiredHeight: CGFloat = 104.0
+    /// Whether the composer content is currently empty.
+    @State private var isTextViewEmpty: Bool = true
+    /// A composer content "saved" and displayed upon hitting the send button.
+    @State private var sentMessage: MessageContent?
 
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView()
+    var body: some View {
+        Spacer()
+            .frame(width: nil, height: 50, alignment: .center)
+        WysiwygView()
+            // Register preference changes to retrieve the statuses of the composer.
+            .onPreferenceChange(MessageContentPreferenceKey.self) { content in
+                self.content = content
+            }
+            .onPreferenceChange(RequiredHeightPreferenceKey.self) { height in
+                self.requiredHeight = height
+            }
+            .onPreferenceChange(IsEmptyContentPreferenceKey.self) { isEmpty in
+                self.isTextViewEmpty = isEmpty
+            }
+            .frame(maxHeight: min(requiredHeight, 250),
+                   alignment: .center)
+        Button("Send") {
+            sentMessage = content
+        }
+        .disabled(isTextViewEmpty)
+        .accessibilityIdentifier("WysiwygSendButton")
+        if let sentMessage = sentMessage {
+            Text("Content: \(sentMessage.plainText)\nHTML: \(sentMessage.html)")
+                .accessibilityIdentifier("WysiwygContentText")
+        }
+        Spacer()
     }
 }

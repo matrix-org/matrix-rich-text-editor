@@ -14,17 +14,13 @@
 // limitations under the License.
 //
 
-import Foundation
-import CoreGraphics
+import SwiftUI
 
-/// Describe the current state of the composer.
-public struct WysiwygComposerViewState {
-    /// Text slection.
-    public var textSelection: NSRange
-    /// Displayed text.
-    public var displayText: NSAttributedString
-    /// Required height.
-    public var requiredHeight: CGFloat
-    /// HTML representation of the text
-    public var html: String
+/// `PreferenceKey` for the composer's required height.
+public struct RequiredHeightPreferenceKey: PreferenceKey {
+    public static var defaultValue: CGFloat = 0.0
+
+    public static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
 }

@@ -1,4 +1,4 @@
-//
+// 
 // Copyright 2022 The Matrix.org Foundation C.I.C
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +16,8 @@
 
 import XCTest
 
-class WysiwygUITests: XCTestCase {
-    private let app = XCUIApplication(bundleIdentifier: "org.matrix.Wysiwyg")
+class WysiwygUIKitTests: XCTestCase {
+    private let app = XCUIApplication(bundleIdentifier: "org.matrix.WysiwygUIKit")
 
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -39,13 +39,10 @@ class WysiwygUITests: XCTestCase {
     func testTypingAndSending() throws {
         try WysiwygSharedTests.typeAndSendMessage(app)
 
-        let contentText = app.staticTexts["WysiwygContentText"]
+        let content = app.staticTexts["WysiwygContentLabel"]
+        let htmlContent = app.staticTexts["WysiwygHtmlContentLabel"]
 
-        let expectedContentText = """
-        Content: Some bold text
-        HTML: Some bold <strong>text</strong>
-        """
-
-        XCTAssertEqual(contentText.label, expectedContentText)
+        XCTAssertEqual(content.label, "Some bold text")
+        XCTAssertEqual(htmlContent.label, "Some bold <strong>text</strong>")
     }
 }
