@@ -1,12 +1,28 @@
 all: android ios web
 
-android: android-x86_64
+# The gradle plugin will take care of building the bindings too
+android:
+	cd platforms/android && \
+		./gradlew :library:assembleRelease && \
+		mkdir -p out && \
+		cp library/build/outputs/aar/library-release.aar out/wysiwyg-release.aar
 
-android-x86_64:
-	cd bindings/wysiwyg-ffi \
-		&& cargo build --release --target x86_64-linux-android
+android-bindings: android-bindings-armv7 android-bindings-aarch64 android-bindings-x86_64
+
+android-bindings-armv7:
+	cd bindings/wysiwyg-ffi && \
+		cargo build --release --target armv7-linux-androideabi
+
+android-bindings-aarch64:
+	cd bindings/wysiwyg-ffi && \
+		cargo build --release --target aarch64-linux-android
+
+android-bindings-x86_64:
+	cd bindings/wysiwyg-ffi && \
+		cargo build --release --target x86_64-linux-android
 	# Not copying into the Android project here, since the gradle plugin
 	# actually performs this build itself.
+
 
 IOS_PACKAGE_DIR := ../../platforms/ios/lib/WysiwygComposer
 IOS_GENERATION_DIR := .generated/ios
@@ -57,6 +73,8 @@ clean:
 	rm -rf bindings/wysiwyg-wasm/node_modules
 	rm -rf bindings/wysiwyg-wasm/pkg
 	rm -rf bindings/wysiwyg-ffi/src/generated
+	rm -rf platforms/android/out
+	cd platforms/android && ./gradlew clean
 
 
 test:
