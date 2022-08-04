@@ -14,122 +14,186 @@
 
 use std::fmt::Display;
 
-trait Element<'a> {
-    fn name(&'a self) -> &'a str;
-    fn children(&'a self) -> &'a Vec<DomNode>;
+fn utf8(input: &[u16]) -> String {
+    String::from_utf16(input).expect("Invalid UTF-16!")
 }
 
-fn fmt_element<'a>(
-    element: &'a impl Element<'a>,
-    f: &mut std::fmt::Formatter<'_>,
-) -> std::fmt::Result {
+trait Element<'a, C> {
+    fn name(&'a self) -> &'a Vec<C>;
+    fn children(&'a self) -> &'a Vec<DomNode<C>>;
+}
+
+fn fmt_element<'a, C>(
+    element: &'a impl Element<'a, C>,
+    lt: C,
+    gt: C,
+    fwd_slash: C,
+    f: &mut HtmlFormatter<C>,
+) where
+    C: 'static + Clone,
+    DomNode<C>: ToHtml<C>,
+{
     let name = element.name();
     if !name.is_empty() {
-        f.write_fmt(format_args!("<{}>", name))?;
+        f.write_char(&lt);
+        f.write(element.name());
+        f.write_char(&gt);
     }
     for child in element.children() {
-        child.fmt(f)?;
+        child.fmt_html(f);
     }
     if !name.is_empty() {
-        f.write_fmt(format_args!("</{}>", name))?;
+        f.write_char(&lt);
+        f.write_char(&fwd_slash);
+        f.write(element.name());
+        f.write_char(&gt);
     }
-    Ok(())
+}
+
+fn fmt_element_u16<'a>(
+    element: &'a impl Element<'a, u16>,
+    f: &mut HtmlFormatter<u16>,
+) {
+    fmt_element(element, '<' as u16, '>' as u16, '/' as u16, f);
+}
+
+pub struct HtmlFormatter<C> {
+    chars: Vec<C>,
+}
+
+impl<C> HtmlFormatter<C>
+where
+    C: Clone,
+{
+    fn new() -> Self {
+        Self { chars: Vec::new() }
+    }
+
+    fn write_char(&mut self, c: &C) {
+        self.chars.push(c.clone());
+    }
+
+    fn write(&mut self, slice: &[C]) {
+        self.chars.extend_from_slice(slice);
+    }
+
+    fn finish(self) -> Vec<C> {
+        self.chars
+    }
+}
+
+pub trait ToHtml<C>
+where
+    C: Clone,
+{
+    fn fmt_html(&self, f: &mut HtmlFormatter<C>);
+
+    fn to_html(&self) -> Vec<C> {
+        let mut f = HtmlFormatter::new();
+        self.fmt_html(&mut f);
+        f.finish()
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Dom {
-    document: ContainerNode,
+pub struct Dom<C> {
+    document: ContainerNode<C>,
 }
 
-impl Dom {
-    pub fn new(top_level_items: Vec<DomNode>) -> Self {
+impl<C> Dom<C> {
+    pub fn new(top_level_items: Vec<DomNode<C>>) -> Self {
         Self {
-            document: ContainerNode::new("", top_level_items),
+            document: ContainerNode::new(Vec::new(), top_level_items),
         }
     }
 
-    pub fn children(&self) -> &Vec<DomNode> {
+    pub fn children(&self) -> &Vec<DomNode<C>> {
         self.document.children()
     }
 
-    pub fn children_mut(&mut self) -> &mut Vec<DomNode> {
+    pub fn children_mut(&mut self) -> &mut Vec<DomNode<C>> {
         &mut self.document.children
     }
 
-    pub fn append(&mut self, child: DomNode) {
+    pub fn append(&mut self, child: DomNode<C>) {
         self.document.append(child)
     }
 }
 
-impl Display for Dom {
+impl<C> ToHtml<C> for Dom<C>
+where
+    C: Clone,
+    ContainerNode<C>: ToHtml<C>,
+{
+    fn fmt_html(&self, f: &mut HtmlFormatter<C>) {
+        self.document.fmt_html(f)
+    }
+}
+
+impl Display for Dom<u16> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.document.fmt(f)
+        f.write_str(&utf8(&self.to_html()))?;
+        Ok(())
     }
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ContainerNode {
-    name: String,
-    children: Vec<DomNode>,
+pub struct ContainerNode<C> {
+    name: Vec<C>,
+    children: Vec<DomNode<C>>,
 }
 
-impl ContainerNode {
-    pub fn new(name: &str, children: Vec<DomNode>) -> Self {
-        Self {
-            name: String::from(name),
-            children,
-        }
+impl<C> ContainerNode<C> {
+    pub fn new(name: Vec<C>, children: Vec<DomNode<C>>) -> Self {
+        Self { name, children }
     }
 
-    pub fn append(&mut self, child: DomNode) {
+    pub fn append(&mut self, child: DomNode<C>) {
         self.children.push(child);
     }
 }
 
-impl<'a> Element<'a> for ContainerNode {
-    fn name(&'a self) -> &'a str {
+impl<'a, C> Element<'a, C> for ContainerNode<C> {
+    fn name(&'a self) -> &'a Vec<C> {
         &self.name
     }
 
-    fn children(&'a self) -> &'a Vec<DomNode> {
+    fn children(&'a self) -> &'a Vec<DomNode<C>> {
         &self.children
     }
 }
 
-impl Display for ContainerNode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        fmt_element(self, f)
+impl ToHtml<u16> for ContainerNode<u16> {
+    fn fmt_html(&self, f: &mut HtmlFormatter<u16>) {
+        fmt_element_u16(self, f)
     }
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct FormattingNode {
-    name: String,
-    children: Vec<DomNode>,
+pub struct FormattingNode<C> {
+    name: Vec<C>,
+    children: Vec<DomNode<C>>,
 }
 
-impl FormattingNode {
-    pub fn new(name: &str, children: Vec<DomNode>) -> Self {
-        Self {
-            name: String::from(name),
-            children,
-        }
+impl<C> FormattingNode<C> {
+    pub fn new(name: Vec<C>, children: Vec<DomNode<C>>) -> Self {
+        Self { name, children }
     }
 }
 
-impl<'a> Element<'a> for FormattingNode {
-    fn name(&'a self) -> &'a str {
+impl<'a, C> Element<'a, C> for FormattingNode<C> {
+    fn name(&'a self) -> &'a Vec<C> {
         &self.name
     }
 
-    fn children(&'a self) -> &'a Vec<DomNode> {
+    fn children(&'a self) -> &'a Vec<DomNode<C>> {
         &self.children
     }
 }
 
-impl Display for FormattingNode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        fmt_element(self, f)
+impl ToHtml<u16> for FormattingNode<u16> {
+    fn fmt_html(&self, f: &mut HtmlFormatter<u16>) {
+        fmt_element_u16(self, f)
     }
 }
 
@@ -145,47 +209,48 @@ impl Display for ItemNode {
 */
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct TextNode {
-    data: String,
+pub struct TextNode<C> {
+    data: Vec<C>,
 }
 
-impl TextNode {
-    pub fn from(data: &str) -> Self {
-        Self {
-            data: String::from(data),
-        }
+impl<C> TextNode<C> {
+    pub fn from(data: Vec<C>) -> Self
+    where
+        C: Clone,
+    {
+        Self { data }
     }
 
-    pub fn data(&self) -> &str {
+    pub fn data(&self) -> &[C] {
         &self.data
     }
 
-    pub fn set_data(&mut self, data: String) {
+    pub fn set_data(&mut self, data: Vec<C>) {
         self.data = data;
     }
 }
 
-impl Display for TextNode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.data)
+impl ToHtml<u16> for TextNode<u16> {
+    fn fmt_html(&self, f: &mut HtmlFormatter<u16>) {
+        f.write(&self.data)
     }
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum DomNode {
-    // TODO Container(ContainerNode),   // E.g. html, div
-    Formatting(FormattingNode), // E.g. b, i
-    // TODO Item(ItemNode),             // E.g. a, pills
-    Text(TextNode),
+pub enum DomNode<C> {
+    // TODO Container(ContainerNode<C>),   // E.g. html, div
+    Formatting(FormattingNode<C>), // E.g. b, i
+    // TODO Item(ItemNode<C>),             // E.g. a, pills
+    Text(TextNode<C>),
 }
 
-impl Display for DomNode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl ToHtml<u16> for DomNode<u16> {
+    fn fmt_html(&self, f: &mut HtmlFormatter<u16>) {
         match self {
-            // TODO DomNode::Container(s) => s.fmt(f),
-            DomNode::Formatting(s) => s.fmt(f),
-            // TODO DomNode::Item(s) => s.fmt(f),
-            DomNode::Text(s) => s.fmt(f),
+            // TODO DomNode::Container(s) => s.fmt_html(f),
+            DomNode::Formatting(s) => s.fmt_html(f),
+            // TODO DomNode::Item(s) => s.fmt_html(f),
+            DomNode::Text(s) => s.fmt_html(f),
         }
     }
 }
@@ -194,26 +259,46 @@ impl Display for DomNode {
 mod test {
     use super::*;
 
-    fn clone_children<'a>(
-        children: impl IntoIterator<Item = &'a DomNode>,
-    ) -> Vec<DomNode> {
+    fn utf16(input: &str) -> Vec<u16> {
+        input.encode_utf16().collect()
+    }
+
+    fn clone_children<'a, C>(
+        children: impl IntoIterator<Item = &'a DomNode<C>>,
+    ) -> Vec<DomNode<C>>
+    where
+        C: 'static + Clone,
+    {
         children.into_iter().cloned().collect()
     }
 
-    fn dom<'a>(children: impl IntoIterator<Item = &'a DomNode>) -> Dom {
+    fn dom<'a, C>(children: impl IntoIterator<Item = &'a DomNode<C>>) -> Dom<C>
+    where
+        C: 'static + Clone,
+    {
         Dom::new(clone_children(children))
     }
 
-    fn b<'a>(children: impl IntoIterator<Item = &'a DomNode>) -> DomNode {
-        DomNode::Formatting(FormattingNode::new("b", clone_children(children)))
+    fn b<'a>(
+        children: impl IntoIterator<Item = &'a DomNode<u16>>,
+    ) -> DomNode<u16> {
+        DomNode::Formatting(FormattingNode::new(
+            utf16("b"),
+            clone_children(children),
+        ))
     }
 
-    fn i<'a>(children: impl IntoIterator<Item = &'a DomNode>) -> DomNode {
-        DomNode::Formatting(FormattingNode::new("i", clone_children(children)))
+    fn i<'a>(
+        children: impl IntoIterator<Item = &'a DomNode<u16>>,
+    ) -> DomNode<u16> {
+        DomNode::Formatting(FormattingNode::new(
+            utf16("i"),
+            clone_children(children),
+        ))
     }
 
-    fn tx(data: &str) -> DomNode {
-        DomNode::Text(TextNode::from(data))
+    fn tx(data: &str) -> DomNode<u16> {
+        DomNode::Text(TextNode::from(utf16(data)))
     }
 
     #[test]

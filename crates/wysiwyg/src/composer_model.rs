@@ -12,34 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::marker::PhantomData;
-
-use crate::dom::{Dom, DomNode, FormattingNode, TextNode};
+use crate::dom::{Dom, DomNode, FormattingNode, TextNode, ToHtml};
 use crate::{ActionResponse, ComposerUpdate, Location};
 
 pub struct ComposerModel<C>
 where
     C: Clone,
 {
-    html: Dom,
+    html: Dom<C>,
     start: Location,
     end: Location,
-
-    // TODO: do we need this, or should we adopt u16 fully? Or just offer multiple
-    // replace_text style functions for different encodings?
-    phantom_data: PhantomData<C>,
 }
 
 impl<C> ComposerModel<C>
 where
     C: Clone,
+    Dom<C>: ToHtml<C>,
 {
     pub fn new() -> Self {
         Self {
             html: Dom::new(Vec::new()),
             start: Location::from(0),
             end: Location::from(0),
-            phantom_data: PhantomData::default(),
         }
     }
 
@@ -57,7 +51,7 @@ where
      */
     fn safe_selection(&self) -> (usize, usize) {
         // TODO: do we really need to serialise here just for this?
-        let html = self.html.to_string();
+        let html = self.html.to_html();
 
         let mut s: usize = self.start.into();
         let mut e: usize = self.end.into();
@@ -68,6 +62,79 @@ where
         } else {
             (s, e)
         }
+    }
+
+    /**
+     * Replaces text in the current selection with new_text.
+     */
+    pub fn replace_text(&mut self, new_text: &[C]) -> ComposerUpdate<C> {
+        // TODO: escape any HTML?
+        let (s, e) = self.safe_selection();
+        self.replace_text_in(&new_text, s, e)
+    }
+
+    /**
+     * Replaces text in the an arbitrary start..end range with new_text.
+     */
+    pub fn replace_text_in(
+        &mut self,
+        new_text: &[C],
+        start: usize,
+        end: usize,
+    ) -> ComposerUpdate<C> {
+        // Temporary: only works if we have a single text node
+
+        if self.html.children().is_empty() {
+            self.html.append(DomNode::Text(TextNode::from(Vec::new())))
+        }
+
+        if self.html.children().len() == 1 {
+            if let DomNode::Text(t) = &mut self.html.children_mut()[0] {
+                let text = t.data();
+                let mut n = text[..start].to_vec();
+                n.extend_from_slice(new_text);
+                n.extend_from_slice(&text[end..]);
+                t.set_data(n);
+
+                self.start = Location::from(start + new_text.len());
+                self.end = self.start;
+
+                // TODO: for now, we replace every time, to check ourselves, but
+                // at least some of the time we should not
+                return self.create_update_replace_all();
+            }
+        }
+
+        panic!("Can't replace_text_in in complex object models yet");
+    }
+
+    pub fn backspace(&mut self) -> ComposerUpdate<C> {
+        if self.start == self.end {
+            // Go back 1 from the current location
+            self.start -= 1;
+        }
+
+        self.replace_text(&[])
+    }
+
+    /**
+     * Deletes text in an arbitrary start..end range.
+     */
+    pub fn delete_in(&mut self, start: usize, end: usize) -> ComposerUpdate<C> {
+        self.end = Location::from(start);
+        self.replace_text_in(&[], start, end)
+    }
+
+    /**
+     * Deletes the character after the current cursor position.
+     */
+    pub fn delete(&mut self) -> ComposerUpdate<C> {
+        if self.start == self.end {
+            // Go forward 1 from the current location
+            self.end += 1;
+        }
+
+        self.replace_text(&[])
     }
 
     pub fn enter(&mut self) -> ComposerUpdate<C> {
@@ -87,109 +154,38 @@ where
     pub fn get_selection(&self) -> (Location, Location) {
         (self.start, self.end)
     }
+
+    // Internal functions
+    fn create_update_replace_all(&self) -> ComposerUpdate<C> {
+        ComposerUpdate::replace_all(self.html.to_html(), self.start, self.end)
+    }
 }
 
 // TODO: delete this and do things more properly
-fn utf8(utf16: &[u16]) -> String {
-    String::from_utf16(&utf16).expect("Invalid UTF-16!")
+fn utf16(utf8: &str) -> Vec<u16> {
+    utf8.encode_utf16().collect()
 }
 
 impl ComposerModel<u16> {
-    /**
-     * Replaces text in the current selection with new_text.
-     */
-    pub fn replace_text(&mut self, new_text: &[u16]) -> ComposerUpdate<u16> {
-        // TODO: escape any HTML?
-        let (s, e) = self.safe_selection();
-        self.replace_text_in(&new_text, s, e)
-    }
-
-    /**
-     * Replaces text in the an arbitrary start..end range with new_text.
-     */
-    pub fn replace_text_in(
-        &mut self,
-        new_text: &[u16],
-        start: usize,
-        end: usize,
-    ) -> ComposerUpdate<u16> {
-        // Temporary: only works if we have a single text node
-
-        if self.html.children().is_empty() {
-            self.html.append(DomNode::Text(TextNode::from("")))
-        }
-
-        if self.html.children().len() == 1 {
-            if let DomNode::Text(t) = &mut self.html.children_mut()[0] {
-                let text: Vec<u16> = t.data().encode_utf16().collect();
-                let mut n = text[..start].to_vec();
-                n.extend_from_slice(new_text);
-                n.extend_from_slice(&text[end..]);
-                t.set_data(utf8(&n));
-
-                self.start = Location::from(start + new_text.len());
-                self.end = self.start;
-
-                // TODO: for now, we replace every time, to check ourselves, but
-                // at least some of the time we should not
-                return self.create_update_replace_all();
-            }
-        }
-
-        panic!("Can't replace_text_in in complex object models yet");
-    }
-
-    pub fn backspace(&mut self) -> ComposerUpdate<u16> {
-        if self.start == self.end {
-            // Go back 1 from the current location
-            self.start -= 1;
-        }
-
-        self.replace_text(&[])
-    }
-
-    /**
-     * Deletes text in an arbitrary start..end range.
-     */
-    pub fn delete_in(
-        &mut self,
-        start: usize,
-        end: usize,
-    ) -> ComposerUpdate<u16> {
-        self.end = Location::from(start);
-        self.replace_text_in(&[], start, end)
-    }
-
-    /**
-     * Deletes the character after the current cursor position.
-     */
-    pub fn delete(&mut self) -> ComposerUpdate<u16> {
-        if self.start == self.end {
-            // Go forward 1 from the current location
-            self.end += 1;
-        }
-
-        self.replace_text(&[])
-    }
-
     pub fn bold(&mut self) -> ComposerUpdate<u16> {
         // Temporary: only works if we have a single text node
         if self.html.children().len() == 1 {
             let (s, e) = self.safe_selection();
             if let DomNode::Text(t) = &mut self.html.children_mut()[0] {
-                let text: Vec<u16> = t.data().encode_utf16().collect();
+                let text = t.data();
+                let before = text[..s].to_vec();
+                let during = text[s..e].to_vec();
+                let after = text[e..].to_vec();
 
-                let text1 = utf8(&text[..s]);
-                let text2 = utf8(&text[s..e]);
-                let text3 = utf8(&text[e..]);
-                let b = DomNode::Formatting(FormattingNode::new(
-                    "strong",
-                    vec![DomNode::Text(TextNode::from(&text2))],
-                ));
+                t.set_data(before);
 
-                t.set_data(text1);
-                self.html.append(b);
-                self.html.append(DomNode::Text(TextNode::from(&text3)));
+                // TODO: nicer construction of DOM nodes
+                self.html.append(DomNode::Formatting(FormattingNode::new(
+                    utf16("strong"),
+                    vec![DomNode::Text(TextNode::from(during))],
+                )));
+
+                self.html.append(DomNode::Text(TextNode::from(after)));
 
                 // TODO: for now, we replace every time, to check ourselves, but
                 // at least some of the time we should not
@@ -201,16 +197,7 @@ impl ComposerModel<u16> {
     }
 
     pub fn get_html(&self) -> Vec<u16> {
-        self.html.to_string().encode_utf16().collect()
-    }
-
-    // Internal functions
-    fn create_update_replace_all(&self) -> ComposerUpdate<u16> {
-        ComposerUpdate::replace_all(
-            self.html.to_string().encode_utf16().collect(),
-            self.start,
-            self.end,
-        )
+        self.html.to_html()
     }
 }
 
@@ -219,12 +206,15 @@ mod test {
     use speculoos::{prelude::*, AssertionFailure, Spec};
 
     use crate::{
-        composer_model::utf8,
         dom::{Dom, DomNode, TextNode},
         Location,
     };
 
-    use super::ComposerModel;
+    use super::{utf16, ComposerModel};
+
+    fn utf8(utf16: &[u16]) -> String {
+        String::from_utf16(&utf16).expect("Invalid UTF-16!")
+    }
 
     #[test]
     fn typing_a_character_into_an_empty_box_appends_it() {
@@ -534,7 +524,8 @@ mod test {
             ret_text += &utf8(&text[curs + 1..]);
         }
 
-        ret.html = Dom::new(vec![DomNode::Text(TextNode::from(&ret_text))]);
+        ret.html =
+            Dom::new(vec![DomNode::Text(TextNode::from(utf16(&ret_text)))]);
         ret
     }
 
@@ -567,10 +558,6 @@ mod test {
             ret += &utf8(&utf16[e..]);
         }
         ret
-    }
-
-    fn utf16(utf8: &str) -> Vec<u16> {
-        utf8.encode_utf16().collect()
     }
 
     #[test]
