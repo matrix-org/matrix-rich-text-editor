@@ -9,13 +9,12 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
-import androidx.appcompat.widget.AppCompatEditText
 import com.google.android.material.textfield.TextInputEditText
 
-class EditorEditText : AppCompatEditText {
+class EditorEditText : TextInputEditText {
 
     lateinit var inputConnection: InterceptInputConnection
-    val inputProcessor = InputProcessor(uniffi.wysiwyg_composer.newComposerModel())
+    private val inputProcessor = InputProcessor(uniffi.wysiwyg_composer.newComposerModel())
 
     private val spannableFactory = object : Spannable.Factory() {
         override fun newSpannable(source: CharSequence?): Spannable {
@@ -50,8 +49,15 @@ class EditorEditText : AppCompatEditText {
         selectionChangeListener?.selectionChanged(selStart, selEnd)
     }
 
+    /**
+     * We wrap the internal [EditableInputConnection] as it's not public, but its internal behavior
+     * is probably needed to work properly with the EditText.
+     */
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
-        return ensureInputConnection(outAttrs)
+        val baseInputConnection = requireNotNull(super.onCreateInputConnection(outAttrs))
+        this.inputConnection =
+            InterceptInputConnection(baseInputConnection, this, inputProcessor)
+        return this.inputConnection
     }
 
     private fun addHardwareKeyInterceptor() {
@@ -74,19 +80,6 @@ class EditorEditText : AppCompatEditText {
                 true
             }
         }
-    }
-
-    /**
-     * We wrap the internal [EditableInputConnection] as it's not public, but its internal behavior
-     * is probably needed to work properly with the EditText.
-     */
-    private fun ensureInputConnection(outAttrs: EditorInfo): InterceptInputConnection {
-        if (!this::inputConnection.isInitialized) {
-            val baseInputConnection = requireNotNull(super.onCreateInputConnection(outAttrs))
-            this.inputConnection =
-                InterceptInputConnection(baseInputConnection, this, inputProcessor)
-        }
-        return this.inputConnection
     }
 
     override fun setText(text: CharSequence?, type: BufferType?) {

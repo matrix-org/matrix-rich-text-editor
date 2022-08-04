@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<com.google.android.material.textfield.TextInputLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+    android:hint="Rich text editor"
+    style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox">
 
     <io.element.android.wysiwyg.EditorEditText
         android:id="@+id/editText"
@@ -13,8 +14,7 @@
         android:minHeight="48dp"
         android:inputType="text"
         android:gravity="top"
-        android:singleLine="false"
-        android:hint="Rich text editor"/>
+        android:singleLine="false" />
 
     <LinearLayout android:id="@+id/menu"
         android:layout_width="match_parent"
@@ -30,4 +30,4 @@
 
     </LinearLayout>
 
-</LinearLayout>
+</com.google.android.material.textfield.TextInputLayout>

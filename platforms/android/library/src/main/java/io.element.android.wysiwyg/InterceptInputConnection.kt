@@ -95,6 +95,11 @@ class InterceptInputConnection(
         return baseInputConnection.performPrivateCommand(action, data)
     }
 
+    override fun setImeConsumesInput(imeConsumesInput: Boolean): Boolean {
+        baseInputConnection.setImeConsumesInput(imeConsumesInput)
+        return super.setImeConsumesInput(imeConsumesInput)
+    }
+
     /**
      * Hack to have keyboard input events work as IME ones.
      */

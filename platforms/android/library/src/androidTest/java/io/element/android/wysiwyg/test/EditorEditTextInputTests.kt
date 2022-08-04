@@ -10,6 +10,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.FlakyTest
+import io.element.android.wysiwyg.R
 import io.element.android.wysiwyg.test.utils.ImeActions
 import io.element.android.wysiwyg.test.utils.TestActivity
 import io.element.android.wysiwyg.test.utils.selectionIsAt
@@ -18,7 +19,6 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import io.element.android.wysiwyg.R
 
 @RunWith(AndroidJUnit4::class)
 class EditorEditTextInputTests {
@@ -96,7 +96,7 @@ class EditorEditTextInputTests {
     }
 
     @Test
-    @FlakyTest(detail = "It might be a race condition, but some times it does not work at all.")
+    @FlakyTest(detail = "Sometimes the pressKey event doesn't reach the view.")
     fun testHardwareKeyMovementNotIntercepted() {
         onView(withId(R.id.editText))
             .perform(ImeActions.setComposingText("Test"))

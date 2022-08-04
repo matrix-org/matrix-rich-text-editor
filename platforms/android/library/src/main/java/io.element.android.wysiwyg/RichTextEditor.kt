@@ -7,8 +7,9 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
+import com.google.android.material.textfield.TextInputLayout
 
-class RichTextEditor : LinearLayout {
+class RichTextEditor : TextInputLayout {
 
     val editText by lazy { findViewById<EditorEditText>(R.id.editText) }
     val menu by lazy { findViewById<ViewGroup>(R.id.menu) }
