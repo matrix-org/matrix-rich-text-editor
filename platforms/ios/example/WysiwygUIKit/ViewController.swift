@@ -51,7 +51,7 @@ private extension ViewController {
 
 // Implement delegate that gets notified on composer updates.
 extension ViewController: WysiwygHostingViewDelegate {
-    func requiredHeightDidChange(_ height: CGFloat) {
+    func idealHeightDidChange(_ height: CGFloat) {
         wysiwygHostingViewHeightConstraint.constant = min(Constants.maxHeight, height)
     }
 

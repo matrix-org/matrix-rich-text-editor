@@ -30,7 +30,7 @@ struct ContentView: View {
             .frame(width: nil, height: 50, alignment: .center)
         WysiwygView()
             .environmentObject(viewModel)
-            .frame(maxHeight: min(viewModel.requiredHeight, 250),
+            .frame(maxHeight: min(viewModel.idealHeight, 250),
                    alignment: .center)
         Button("Send") {
             sentMessage = viewModel.content

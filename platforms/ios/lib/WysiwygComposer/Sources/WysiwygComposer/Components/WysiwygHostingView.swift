@@ -21,11 +21,11 @@ import OSLog
 
 /// Declares methods that should be adopted by an object that aim to react on the Wysiwyg composer actions.
 @objc public protocol WysiwygHostingViewDelegate: AnyObject {
-    /// Tells the delegate that the current requiredHeight of the composer has updated.
+    /// Tells the delegate that the current idealHeight of the composer has updated.
     ///
     /// - Parameters:
     ///   - height: new required height
-    func requiredHeightDidChange(_ height: CGFloat)
+    func idealHeightDidChange(_ height: CGFloat)
     /// Tells the delegate that the composer empty content state has updated.
     ///
     /// - Parameters:
@@ -68,10 +68,10 @@ public final class WysiwygHostingView: UIView {
                 .sink(receiveValue: { [unowned self] isContentEmpty in
                     self.delegate?.isContentEmptyDidChange(isContentEmpty)
                 }),
-            viewModel.$requiredHeight
+            viewModel.$idealHeight
                 .removeDuplicates()
-                .sink(receiveValue: { [unowned self] requiredHeight in
-                    self.delegate?.requiredHeightDidChange(requiredHeight)
+                .sink(receiveValue: { [unowned self] idealHeight in
+                    self.delegate?.idealHeightDidChange(idealHeight)
                 })
         ]
 

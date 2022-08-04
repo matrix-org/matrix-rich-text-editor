@@ -27,7 +27,7 @@ public class WysiwygComposerViewModel: ObservableObject {
     /// Published boolean for the composer empty content state.
     @Published public var isContentEmpty: Bool = true
     /// Published value for the composer required height to fit entirely without scrolling.
-    @Published public var requiredHeight: CGFloat = .zero
+    @Published public var idealHeight: CGFloat = .zero
 
     // MARK: - Private
     private var model: ComposerModel
@@ -87,7 +87,7 @@ extension WysiwygComposerViewModel {
     ///
     /// - Parameter textView: The composer's text view.
     func didUpdateText(textView: UITextView) {
-        self.updateRequiredHeightIfNeeded(textView)
+        self.updateIdealHeightIfNeeded(textView)
     }
 
     /// Apply bold formatting to the current selection.
@@ -129,13 +129,13 @@ private extension WysiwygComposerViewModel {
     ///
     /// - Parameters:
     ///   - textView: The composer's text view.
-    func updateRequiredHeightIfNeeded(_ textView: UITextView) {
+    func updateIdealHeightIfNeeded(_ textView: UITextView) {
         // TODO: remove magic numbers
-        let requiredHeight = 50 + 16 + 8 + textView
+        let idealHeight = 50 + 16 + 8 + textView
             .sizeThatFits(CGSize(width: textView.bounds.size.width,
                                  height: CGFloat.greatestFiniteMagnitude)
             )
             .height
-        self.requiredHeight = requiredHeight
+        self.idealHeight = idealHeight
     }
 }
