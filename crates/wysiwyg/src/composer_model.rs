@@ -24,10 +24,11 @@ where
     end: Location,
 }
 
-impl<C> ComposerModel<C>
+impl<'a, C> ComposerModel<C>
 where
     C: Clone,
     Dom<C>: ToHtml<C>,
+    &'a str: ToHtml<C>,
 {
     pub fn new() -> Self {
         Self {
@@ -159,15 +160,8 @@ where
     fn create_update_replace_all(&self) -> ComposerUpdate<C> {
         ComposerUpdate::replace_all(self.html.to_html(), self.start, self.end)
     }
-}
 
-// TODO: delete this and do things more properly
-fn utf16(utf8: &str) -> Vec<u16> {
-    utf8.encode_utf16().collect()
-}
-
-impl ComposerModel<u16> {
-    pub fn bold(&mut self) -> ComposerUpdate<u16> {
+    pub fn bold(&mut self) -> ComposerUpdate<C> {
         // Temporary: only works if we have a single text node
         if self.html.children().len() == 1 {
             let (s, e) = self.safe_selection();
@@ -181,7 +175,7 @@ impl ComposerModel<u16> {
 
                 // TODO: nicer construction of DOM nodes
                 self.html.append(DomNode::Formatting(FormattingNode::new(
-                    utf16("strong"),
+                    "strong".to_html(),
                     vec![DomNode::Text(TextNode::from(during))],
                 )));
 
@@ -196,21 +190,23 @@ impl ComposerModel<u16> {
         panic!("Can't bold in complex object models yet");
     }
 
-    pub fn get_html(&self) -> Vec<u16> {
+    pub fn get_html(&self) -> Vec<C> {
         self.html.to_html()
     }
 }
+
+impl ComposerModel<u16> {}
 
 #[cfg(test)]
 mod test {
     use speculoos::{prelude::*, AssertionFailure, Spec};
 
     use crate::{
-        dom::{Dom, DomNode, TextNode},
+        dom::{Dom, DomNode, TextNode, ToHtml},
         Location,
     };
 
-    use super::{utf16, ComposerModel};
+    use super::ComposerModel;
 
     fn utf8(utf16: &[u16]) -> String {
         String::from_utf16(&utf16).expect("Invalid UTF-16!")
@@ -525,7 +521,7 @@ mod test {
         }
 
         ret.html =
-            Dom::new(vec![DomNode::Text(TextNode::from(utf16(&ret_text)))]);
+            Dom::new(vec![DomNode::Text(TextNode::from(ret_text.to_html()))]);
         ret
     }
 
@@ -564,116 +560,95 @@ mod test {
     fn cm_creates_correct_component_model() {
         assert_eq!(cm("|").start, 0);
         assert_eq!(cm("|").end, 0);
-        assert_eq!(utf16(&cm("|").html.to_string()), &[]);
+        assert_eq!(cm("|").get_html(), &[]);
 
         assert_eq!(cm("a|").start, 1);
         assert_eq!(cm("a|").end, 1);
-        assert_eq!(utf16(&cm("a|").html.to_string()), utf16("a"));
+        assert_eq!(cm("a|").get_html(), "a".to_html());
 
         assert_eq!(cm("a|b").start, 1);
         assert_eq!(cm("a|b").end, 1);
-        assert_eq!(
-            utf16(&cm("a|b").html.to_string()),
-            "ab".encode_utf16().collect::<Vec<_>>()
-        );
+        assert_eq!(cm("a|b").get_html(), "ab".to_html());
 
         assert_eq!(cm("|ab").start, 0);
         assert_eq!(cm("|ab").end, 0);
-        assert_eq!(utf16(&cm("|ab").html.to_string()), utf16("ab"));
+        assert_eq!(cm("|ab").get_html(), "ab".to_html());
 
         assert_eq!(cm("foo|").start, 3);
         assert_eq!(cm("foo|").end, 3);
-        assert_eq!(utf16(&cm("foo|").html.to_string()), utf16("foo"));
+        assert_eq!(cm("foo|").get_html(), ("foo".to_html()));
 
         let t1 = cm("foo|\u{1F4A9}bar");
         assert_eq!(t1.start, 3);
         assert_eq!(t1.end, 3);
-        assert_eq!(utf16(&t1.html.to_string()), utf16("foo\u{1F4A9}bar"));
+        assert_eq!(t1.get_html(), ("foo\u{1F4A9}bar").to_html());
 
         let t2 = cm("foo\u{1F4A9}|bar");
         assert_eq!(t2.start, 5);
         assert_eq!(t2.end, 5);
-        assert_eq!(utf16(&t2.html.to_string()), utf16("foo\u{1F4A9}bar"));
+        assert_eq!(t2.get_html(), ("foo\u{1F4A9}bar").to_html());
 
         assert_eq!(cm("foo|\u{1F4A9}").start, 3);
         assert_eq!(cm("foo|\u{1F4A9}").end, 3);
-        assert_eq!(
-            utf16(&cm("foo|\u{1F4A9}").html.to_string()),
-            utf16("foo\u{1F4A9}")
-        );
+        assert_eq!(cm("foo|\u{1F4A9}").get_html(), ("foo\u{1F4A9}").to_html());
 
         assert_eq!(cm("foo\u{1F4A9}|").start, 5);
         assert_eq!(cm("foo\u{1F4A9}|").end, 5);
-        assert_eq!(
-            utf16(&cm("foo\u{1F4A9}|").html.to_string()),
-            utf16("foo\u{1F4A9}")
-        );
+        assert_eq!(cm("foo\u{1F4A9}|").get_html(), ("foo\u{1F4A9}").to_html());
 
         assert_eq!(cm("|\u{1F4A9}bar").start, 0);
         assert_eq!(cm("|\u{1F4A9}bar").end, 0);
-        assert_eq!(
-            utf16(&cm("|\u{1F4A9}bar").html.to_string()),
-            utf16("\u{1F4A9}bar")
-        );
+        assert_eq!(cm("|\u{1F4A9}bar").get_html(), ("\u{1F4A9}bar").to_html());
 
         assert_eq!(cm("\u{1F4A9}|bar").start, 2);
         assert_eq!(cm("\u{1F4A9}|bar").end, 2);
-        assert_eq!(
-            utf16(&cm("\u{1F4A9}|bar").html.to_string()),
-            utf16("\u{1F4A9}bar")
-        );
+        assert_eq!(cm("\u{1F4A9}|bar").get_html(), ("\u{1F4A9}bar").to_html());
 
         assert_eq!(cm("{a}|").start, 0);
         assert_eq!(cm("{a}|").end, 1);
-        assert_eq!(utf16(&cm("{a}|").html.to_string()), utf16("a"));
+        assert_eq!(cm("{a}|").get_html(), ("a").to_html());
 
         assert_eq!(cm("|{a}").start, 1);
         assert_eq!(cm("|{a}").end, 0);
-        assert_eq!(utf16(&cm("|{a}").html.to_string()), utf16("a"));
+        assert_eq!(cm("|{a}").get_html(), ("a").to_html());
 
         assert_eq!(cm("abc{def}|ghi").start, 3);
         assert_eq!(cm("abc{def}|ghi").end, 6);
-        assert_eq!(
-            utf16(&cm("abc{def}|ghi").html.to_string()),
-            utf16("abcdefghi")
-        );
+        assert_eq!(cm("abc{def}|ghi").get_html(), ("abcdefghi").to_html());
 
         assert_eq!(cm("abc|{def}ghi").start, 6);
         assert_eq!(cm("abc|{def}ghi").end, 3);
-        assert_eq!(
-            utf16(&cm("abc|{def}ghi").html.to_string()),
-            utf16("abcdefghi")
-        );
+        assert_eq!(cm("abc|{def}ghi").get_html(), ("abcdefghi").to_html());
 
         let t3 = cm("\u{1F4A9}{def}|ghi");
         assert_eq!(t3.start, 2);
         assert_eq!(t3.end, 5);
-        assert_eq!(utf16(&t3.html.to_string()), utf16("\u{1F4A9}defghi"));
+        assert_eq!(t3.get_html(), ("\u{1F4A9}defghi").to_html());
 
         let t4 = cm("\u{1F4A9}|{def}ghi");
         assert_eq!(t4.start, 5);
         assert_eq!(t4.end, 2);
-        assert_eq!(utf16(&t4.html.to_string()), utf16("\u{1F4A9}defghi"));
+        assert_eq!(t4.get_html(), ("\u{1F4A9}defghi").to_html());
 
         let t5 = cm("abc{d\u{1F4A9}f}|ghi");
         assert_eq!(t5.start, 3);
         assert_eq!(t5.end, 7);
-        assert_eq!(utf16(&t5.html.to_string()), utf16("abcd\u{1F4A9}fghi"));
+        assert_eq!(t5.get_html(), ("abcd\u{1F4A9}fghi").to_html());
 
         let t6 = cm("abc|{d\u{1F4A9}f}ghi");
         assert_eq!(t6.start, 7);
         assert_eq!(t6.end, 3);
-        assert_eq!(utf16(&t6.html.to_string()), utf16("abcd\u{1F4A9}fghi"));
+        assert_eq!(t6.get_html(), ("abcd\u{1F4A9}fghi").to_html());
 
         let t7 = cm("abc{def}|\u{1F4A9}ghi");
         assert_eq!(t7.start, 3);
         assert_eq!(t7.end, 6);
-        assert_eq!(utf16(&t7.html.to_string()), utf16("abcdef\u{1F4A9}ghi"));
+        assert_eq!(t7.get_html(), ("abcdef\u{1F4A9}ghi").to_html());
 
         let t8 = cm("abc|{def}\u{1F4A9}ghi");
         assert_eq!(t8.start, 6);
         assert_eq!(t8.end, 3);
-        assert_eq!(utf16(&t8.html.to_string()), utf16("abcdef\u{1F4A9}ghi"));
+        assert_eq!(t8.get_html(), ("abcdef\u{1F4A9}ghi").to_html());
     }
 
     #[test]

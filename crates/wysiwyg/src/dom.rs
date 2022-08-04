@@ -65,19 +65,23 @@ impl<C> HtmlFormatter<C>
 where
     C: Clone,
 {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self { chars: Vec::new() }
     }
 
-    fn write_char(&mut self, c: &C) {
+    pub fn write_char(&mut self, c: &C) {
         self.chars.push(c.clone());
     }
 
-    fn write(&mut self, slice: &[C]) {
+    pub fn write(&mut self, slice: &[C]) {
         self.chars.extend_from_slice(slice);
     }
 
-    fn finish(self) -> Vec<C> {
+    pub fn write_iter(&mut self, chars: impl Iterator<Item = C>) {
+        self.chars.extend(chars)
+    }
+
+    pub fn finish(self) -> Vec<C> {
         self.chars
     }
 }
@@ -92,6 +96,18 @@ where
         let mut f = HtmlFormatter::new();
         self.fmt_html(&mut f);
         f.finish()
+    }
+}
+
+impl ToHtml<u16> for &str {
+    fn fmt_html(&self, f: &mut HtmlFormatter<u16>) {
+        f.write_iter(self.encode_utf16());
+    }
+}
+
+impl ToHtml<u16> for String {
+    fn fmt_html(&self, f: &mut HtmlFormatter<u16>) {
+        f.write_iter(self.encode_utf16());
     }
 }
 
