@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::dom::{Dom, DomNode, FormattingNode, TextNode, ToHtml};
+use crate::dom::{
+    Dom, DomNode, FormattingNode, Range, SameNodeRange, TextNode, ToHtml,
+};
 use crate::{ActionResponse, ComposerUpdate, Location};
 
 pub struct ComposerModel<C>
@@ -51,7 +53,8 @@ where
      * returned is <= the second, and they are both 0<=n<=html.len().
      */
     fn safe_selection(&self) -> (usize, usize) {
-        // TODO: do we really need to serialise here just for this?
+        // TODO: Does not work with tags, and will probably be obselete when
+        // we can look for ranges properly.
         let html = self.html.to_html();
 
         let mut s: usize = self.start.into();
@@ -83,30 +86,28 @@ where
         start: usize,
         end: usize,
     ) -> ComposerUpdate<C> {
-        // Temporary: only works if we have a single text node
-
-        if self.html.children().is_empty() {
-            self.html.append(DomNode::Text(TextNode::from(Vec::new())))
-        }
-
-        if self.html.children().len() == 1 {
-            if let DomNode::Text(t) = &mut self.html.children_mut()[0] {
-                let text = t.data();
-                let mut n = text[..start].to_vec();
-                n.extend_from_slice(new_text);
-                n.extend_from_slice(&text[end..]);
-                t.set_data(n);
-
+        let range = self.html.find_range_mut(start, end);
+        match range {
+            Range::SameNode(range) => {
+                self.replace_same_node(range, new_text);
                 self.start = Location::from(start + new_text.len());
                 self.end = self.start;
-
-                // TODO: for now, we replace every time, to check ourselves, but
-                // at least some of the time we should not
-                return self.create_update_replace_all();
             }
+
+            Range::NoNode => {
+                self.html
+                    .append(DomNode::Text(TextNode::from(new_text.to_vec())));
+
+                self.start = Location::from(new_text.len());
+                self.end = self.start;
+            }
+
+            _ => panic!("Can't replace_text_in in complex object models yet"),
         }
 
-        panic!("Can't replace_text_in in complex object models yet");
+        // TODO: for now, we replace every time, to check ourselves, but
+        // at least some of the time we should not
+        self.create_update_replace_all()
     }
 
     pub fn backspace(&mut self) -> ComposerUpdate<C> {
@@ -156,11 +157,6 @@ where
         (self.start, self.end)
     }
 
-    // Internal functions
-    fn create_update_replace_all(&self) -> ComposerUpdate<C> {
-        ComposerUpdate::replace_all(self.html.to_html(), self.start, self.end)
-    }
-
     pub fn bold(&mut self) -> ComposerUpdate<C> {
         // Temporary: only works if we have a single text node
         if self.html.children().len() == 1 {
@@ -193,9 +189,25 @@ where
     pub fn get_html(&self) -> Vec<C> {
         self.html.to_html()
     }
-}
 
-impl ComposerModel<u16> {}
+    // Internal functions
+    fn create_update_replace_all(&self) -> ComposerUpdate<C> {
+        ComposerUpdate::replace_all(self.html.to_html(), self.start, self.end)
+    }
+
+    fn replace_same_node(&mut self, range: SameNodeRange, new_text: &[C]) {
+        let node = self.html.lookup_node_mut(range.node_handle);
+        if let DomNode::Text(ref mut t) = node {
+            let text = t.data();
+            let mut n = text[..range.start_offset].to_vec();
+            n.extend_from_slice(new_text);
+            n.extend_from_slice(&text[range.end_offset..]);
+            t.set_data(n);
+        } else {
+            panic!("Can't deal with ranges containing non-text nodes (yet?)")
+        }
+    }
+}
 
 #[cfg(test)]
 mod test {
@@ -554,6 +566,13 @@ mod test {
             ret += &utf8(&utf16[e..]);
         }
         ret
+    }
+
+    #[test]
+    fn can_replace_text_in_an_empty_composer_model() {
+        let mut cm = ComposerModel::new();
+        cm.replace_text(&"foo".to_html());
+        assert_eq!(tx(&cm), "foo|");
     }
 
     #[test]
