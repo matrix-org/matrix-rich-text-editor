@@ -45,16 +45,17 @@ private extension ViewController {
         // Get the current content of the composer.
         contentLabel.text = wysiwygHostingView.content.plainText
         htmlContentLabel.text = wysiwygHostingView.content.html
+        wysiwygHostingView.clearContent()
     }
 }
 
 // Implement delegate that gets notified on composer updates.
 extension ViewController: WysiwygHostingViewDelegate {
-    func requiredHeightDidChange(_ height: CGFloat) {
+    func idealHeightDidChange(_ height: CGFloat) {
         wysiwygHostingViewHeightConstraint.constant = min(Constants.maxHeight, height)
     }
 
-    func isEmptyContentDidChange(_ isEmpty: Bool) {
+    func isContentEmptyDidChange(_ isEmpty: Bool) {
         sendButton.isEnabled = !isEmpty
     }
 }

@@ -14,33 +14,36 @@
 // limitations under the License.
 //
 
-import SwiftUI
-
-/// `PreferenceKey` for the composer's displayed message content.
-public struct MessageContentPreferenceKey: PreferenceKey {
-    public static var defaultValue: MessageContent = MessageContent()
-
-    public static func reduce(value: inout MessageContent, nextValue: () -> MessageContent) {
-        value = nextValue()
-    }
-}
+import Foundation
 
 @objcMembers
 /// Defines message content displayed in the composer.
-public class MessageContent: NSObject {
+public class WysiwygComposerContent: NSObject {
+    // MARK: - Public
     /// Displayed text, as plain text.
     public let plainText: String
     /// HTML representation of the displayed text.
     public let html: String
+    /// Attributed string representation of the displayed text.
+    public let attributed: NSAttributedString
+    /// Range of the selected text within the attributed representation.
+    public let selection: NSRange
 
-
+    // MARK: - Internal
     /// Init.
     ///
     /// - Parameters:
     ///   - plainText: Displayed text, as plain text.
     ///   - html: HTML representation of the displayed text.
-    public init(plainText: String = "", html: String = "") {
+    ///   - attributed: Attributed string representation of the displayed text.
+    ///   - selection: Range of the selected text within the attributed representation.
+    init(plainText: String = "",
+         html: String = "",
+         attributed: NSAttributedString = .init(string: ""),
+         selection: NSRange = .init(location: 0, length: 0)) {
         self.plainText = plainText
         self.html = html
+        self.attributed = attributed
+        self.selection = selection
     }
 }

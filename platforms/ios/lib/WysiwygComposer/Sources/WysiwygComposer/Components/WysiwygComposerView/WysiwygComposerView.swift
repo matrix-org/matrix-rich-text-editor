@@ -20,7 +20,7 @@ import OSLog
 /// Provides a SwiftUI displayable view for the composer UITextView component.
 struct WysiwygComposerView: UIViewRepresentable {
     // MARK: - Internal
-    var viewState: WysiwygComposerViewState
+    var content: WysiwygComposerContent
     var replaceText: (NSAttributedString, NSRange, String) -> ()
     var select: (NSAttributedString, NSRange) -> ()
     var didUpdateText: (UITextView) -> ()
@@ -39,9 +39,9 @@ struct WysiwygComposerView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: UITextView, context: Context) {
-        Logger.composer.debug("New text: \(viewState.displayText.string)")
-        uiView.attributedText = viewState.displayText
-        uiView.selectedRange = viewState.textSelection
+        Logger.composer.debug("New text: \(content.plainText)")
+        uiView.attributedText = content.attributed
+        uiView.selectedRange = content.selection
         context.coordinator.didUpdateText(uiView)
     }
 
