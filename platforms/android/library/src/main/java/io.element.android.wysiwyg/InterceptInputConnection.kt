@@ -129,7 +129,7 @@ class InterceptInputConnection(
                             val selectionLength = end-start
                             beginBatchEdit()
                             if (result != null) {
-                                editable.replace(0, editable.length, result)
+                                editable.replace(0, editable.length, result.text)
                             } else {
                                 editable.replace(start, end, newText)
                             }
@@ -146,7 +146,7 @@ class InterceptInputConnection(
                         }
                         beginBatchEdit()
                         if (result != null) {
-                            editable.replace(0, editable.length, result)
+                            editable.replace(0, editable.length, result.text)
                         } else {
                             editable.replace(start, end, "\n")
                         }
@@ -172,10 +172,11 @@ class InterceptInputConnection(
             val compositionEnd = text?.length?.let { it + start } ?: end
             // Here we restore the background color spans from the IME input. This seems to be
             // important for Japanese input.
-            if (text is Spannable && result is Spannable) {
-                copyImeHighlightSpans(text, result, start)
+            if (text is Spannable && result.text is Spannable) {
+                copyImeHighlightSpans(text, result.text, start)
             }
-            replaceAll(result, compositionStart = start, compositionEnd = compositionEnd, newCursorPosition)
+            replaceAll(result.text, compositionStart = start, compositionEnd = compositionEnd, newCursorPosition)
+            setSelection(result.selection.last, result.selection.last)
             true
         } else {
             super.setComposingText(text, newCursorPosition)
@@ -195,7 +196,8 @@ class InterceptInputConnection(
         }
 
         return if (result != null) {
-            replaceAll(result, compositionStart = end, compositionEnd = end, newCursorPosition)
+            replaceAll(result.text, compositionStart = end, compositionEnd = end, newCursorPosition)
+            setSelection(result.selection.last, result.selection.last)
             true
         } else {
             super.commitText(text, newCursorPosition)
@@ -216,7 +218,7 @@ class InterceptInputConnection(
         return if (result != null) {
             val newSelection = if (start == end) end-1 else min(start, end)
             beginBatchEdit()
-            editable.replace(0, editable.length, result)
+            editable.replace(0, editable.length, result.text)
             Selection.setSelection(editable, newSelection)
             endBatchEdit()
             true
@@ -244,7 +246,7 @@ class InterceptInputConnection(
                 processInput(EditorInputAction.BackPress)?.let { processUpdate(it) }
             }
             if (result != null) {
-                editable.replace(0, editable.length, result)
+                editable.replace(0, editable.length, result.text)
             }
             // TODO: handle result == null
             handled = true
@@ -256,7 +258,7 @@ class InterceptInputConnection(
                 processInput(EditorInputAction.BackPress)?.let { processUpdate(it) }
             }
             if (result != null) {
-                editable.replace(0, editable.length, result)
+                editable.replace(0, editable.length, result.text)
             }
             // TODO: handle result == null
             handled = true

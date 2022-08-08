@@ -25,6 +25,8 @@ interface ComposerModel {
     ComposerUpdate delete_in(u32 start, u32 end);
     ComposerUpdate enter();
     ComposerUpdate bold();
+    ComposerUpdate undo();
+    ComposerUpdate redo();
     ComposerState dump_state();
     ComposerUpdate action_response(string action_id, ActionResponse response);
 };

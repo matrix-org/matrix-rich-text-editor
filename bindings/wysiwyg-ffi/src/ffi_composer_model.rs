@@ -100,15 +100,15 @@ impl ComposerModel {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().bold()))
     }
 
+    pub fn undo(self: &Arc<Self>) -> Arc<ComposerUpdate> {
+        Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().undo()))
+    }
+
+    pub fn redo(self: &Arc<Self>) -> Arc<ComposerUpdate> {
+        Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().redo()))
+    }
+
     pub fn dump_state(self: &Arc<Self>) -> ComposerState {
-        let model = self.inner.lock().unwrap();
-        let (start, end) = model.get_selection();
-        let start: usize = start.into();
-        let end: usize = end.into();
-        ComposerState {
-            html: model.get_html(),
-            start: start as u32,
-            end: end as u32,
-        }
+        self.inner.lock().unwrap().get_current_state().clone().into()
     }
 }

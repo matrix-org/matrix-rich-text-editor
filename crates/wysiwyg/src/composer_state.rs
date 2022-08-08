@@ -12,23 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod composer_action;
-mod composer_model;
-mod composer_state;
-mod composer_update;
-mod dom;
-mod location;
-mod menu_state;
-mod text_update;
+use crate::dom::{Dom, ToHtml};
+use crate::{Location};
 
-pub use crate::composer_action::ActionRequest;
-pub use crate::composer_action::ActionResponse;
-pub use crate::composer_action::ComposerAction;
-pub use crate::composer_model::ComposerModel;
-pub use crate::composer_state::ComposerState;
-pub use crate::composer_update::ComposerUpdate;
-pub use crate::dom::ToHtml;
-pub use crate::location::Location;
-pub use crate::menu_state::MenuState;
-pub use crate::text_update::ReplaceAll;
-pub use crate::text_update::TextUpdate;
+#[derive(Clone, Debug, PartialEq)]
+pub struct ComposerState<C>
+where
+    C: Clone,
+{
+	pub dom: Dom<C>,
+	pub start: Location,
+	pub end: Location,
+}
+
+impl<C> ComposerState<C>
+where
+C: Clone,
+Dom<C>: ToHtml<C> {
+	pub fn new() -> Self {
+		Self {
+			dom: Dom::new(Vec::new()),
+			start: Location::from(0),
+			end: Location::from(0),
+		}
+	}
+}

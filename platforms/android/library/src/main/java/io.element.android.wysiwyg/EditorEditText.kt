@@ -89,13 +89,14 @@ class EditorEditText : TextInputEditText {
         // We have to add this here to prevent some NullPointerExceptions from being thrown.
         if (inputProcessor == null) {
             super.setText(text, type)
-        } else {
+        } else if (text.isNullOrEmpty().not()) {
             inputProcessor.updateSelection(0, end)
             val update = inputProcessor.processInput(EditorInputAction.InsertText(text.toString()))
             val result = update?.let { inputProcessor.processUpdate(it) }
 
             if (result != null) {
-                editableText.replace(0, end, result)
+                editableText.replace(0, end, result.text)
+                setSelection(result.selection.first, result.selection.last)
             } else {
                 super.setText(text, type)
             }
@@ -107,7 +108,8 @@ class EditorEditText : TextInputEditText {
         val result = update?.let { inputProcessor.processUpdate(it) }
 
         if (result != null) {
-            editableText.replace(0, end, result)
+            editableText.replace(0, end, result.text)
+            setSelection(result.selection.first, result.selection.last)
         } else {
             super.append(text, start, end)
         }
@@ -120,9 +122,30 @@ class EditorEditText : TextInputEditText {
         val result = update?.let { inputProcessor.processUpdate(it) }
 
         if (result != null) {
-            editableText.replace(0, editableText.length, result)
+            editableText.replace(0, editableText.length, result.text)
+            setSelection(result.selection.last)
         }
         return result != null
+    }
+
+    fun undo() {
+        val update = inputProcessor.processInput(EditorInputAction.Undo)
+        val result = update?.let { inputProcessor.processUpdate(it) }
+
+        if (result != null) {
+            editableText.replace(0, editableText.length, result.text)
+            setSelection(result.selection.last)
+        }
+    }
+
+    fun redo() {
+        val update = inputProcessor.processInput(EditorInputAction.Redo)
+        val result = update?.let { inputProcessor.processUpdate(it) }
+
+        if (result != null) {
+            editableText.replace(0, editableText.length, result.text)
+            setSelection(result.selection.first)
+        }
     }
 }
 
