@@ -125,10 +125,24 @@ impl DomHandle {
         Self { path }
     }
 
+    fn parent_handle(&self) -> DomHandle {
+        assert!(self.path.len() > 0);
+
+        let mut new_path = self.path.clone();
+        new_path.pop();
+        DomHandle::from_raw(new_path)
+    }
+
     fn child_handle(&self, child_index: usize) -> DomHandle {
         let mut new_path = self.path.clone();
         new_path.push(child_index);
         DomHandle::from_raw(new_path)
+    }
+
+    fn index_in_parent(&self) -> usize {
+        assert!(self.path.len() > 0);
+
+        self.path.last().unwrap().clone()
     }
 
     fn raw(&self) -> &Vec<usize> {
@@ -230,6 +244,16 @@ impl<C> Dom<C> {
 
     pub fn append(&mut self, child: DomNode<C>) {
         self.document_mut().append(child)
+    }
+
+    pub fn replace(&mut self, node_handle: DomHandle, nodes: Vec<DomNode<C>>) {
+        let parent_node = self.lookup_node_mut(node_handle.parent_handle());
+        let index = node_handle.index_in_parent();
+        match parent_node {
+            DomNode::Text(_n) => panic!("Text nodes can't have children"),
+            DomNode::Formatting(n) => n.replace_child(index, nodes),
+            DomNode::Container(n) => n.replace_child(index, nodes),        
+        }
     }
 
     pub fn find_range_mut(&mut self, start: usize, end: usize) -> Range {
@@ -437,6 +461,25 @@ impl<C> ContainerNode<C> {
         self.children.push(child);
     }
 
+    fn replace_child(&mut self, index: usize, nodes: Vec<DomNode<C>>) {
+        assert!(self.handle.is_valid());
+        assert!(index < self.children().len());
+
+        self.children.remove(index);
+        let mut current_index = index;
+        for mut node in nodes {
+            let child_handle = self.handle.child_handle(current_index);
+            node.set_handle(child_handle);
+            self.children.insert(current_index, node);
+            current_index += 1;
+        }
+
+        for child_index in current_index..self.children.len() {
+            let new_handle = self.handle.child_handle(child_index);
+            self.children[child_index].set_handle(new_handle);
+        }
+    }
+
     fn handle(&self) -> DomHandle {
         self.handle.clone()
     }
@@ -511,6 +554,26 @@ impl<C> FormattingNode<C> {
         let child_handle = self.handle.child_handle(child_index);
         child.set_handle(child_handle);
         self.children.push(child);
+    }
+
+    fn replace_child(&mut self, index: usize, nodes: Vec<DomNode<C>>) {
+        assert!(self.handle.is_valid());
+        assert!(index < self.children().len());
+        // TODO: copied into 2 places - move into Element?
+
+        self.children.remove(index);
+        let mut current_index = index;
+        for mut node in nodes {
+            let child_handle = self.handle.child_handle(current_index);
+            node.set_handle(child_handle);
+            self.children.insert(current_index, node);
+            current_index += 1;
+        }
+
+        for child_index in current_index..self.children.len() {
+            let new_handle = self.handle.child_handle(child_index);
+            self.children[child_index].set_handle(new_handle);
+        }
     }
 }
 
@@ -671,6 +734,17 @@ mod test {
         DomNode::Text(TextNode::from(utf16(data)))
     }
 
+    /// If this node is an element, return its children - otherwise panic
+    fn kids<C>(node: &DomNode<C>) -> &Vec<DomNode<C>> {
+        match node {
+            DomNode::Container(n) => n.children(),
+            DomNode::Formatting(n) => n.children(),
+            DomNode::Text(_) => {
+                panic!("We expected an Element, but found Text")
+            }
+        }    
+    }   
+
     // Creation and handles
 
     #[test]
@@ -715,17 +789,6 @@ mod test {
             tx("bar"),
         ]);
 
-        /// If this node is an element, return its children - otherwise panic
-        fn kids<C>(node: &DomNode<C>) -> &Vec<DomNode<C>> {
-            match node {
-                DomNode::Container(n) => n.children(),
-                DomNode::Formatting(n) => n.children(),
-                DomNode::Text(_) => {
-                    panic!("We expected an Element, but found Text")
-                }
-            }
-        }
-
         // Given a DOM with a nested node
         let nested_node = &kids(&kids(&dom.children()[1])[1])[0];
 
@@ -734,6 +797,48 @@ mod test {
 
         // Then we can look it up and find the same node
         assert_eq!(dom.lookup_node(handle), nested_node);
+    }
+
+    #[test]
+    fn can_replace_toplevel_node_with_multiple_nodes() {
+        let mut dom = dom(&[
+            tx("foo"),
+            tx("bar"),
+        ]);
+
+        let node = &dom.children()[0];
+        let inserted_nodes = vec![
+            tx("ab"),
+            b(&[tx("cd")]),
+            tx("ef"),
+        ];
+
+        dom.replace(node.handle(), inserted_nodes);
+
+        // Node is replaced by new insertion
+        assert_eq!(dom.to_string(), "ab<b>cd</b>efbar");
+        // Subsequent node handle is properly updated
+        let bar_node = &dom.children()[3];
+        assert_eq!(bar_node.handle().index_in_parent(), 3);
+    }
+
+    #[test]
+    fn can_replace_deep_node_with_multiple_nodes() {
+        let mut dom = dom(&[
+            b(&[tx("foo")]),
+        ]);
+
+        let node = &kids(&dom.children()[0])[0];
+        let inserted_nodes = vec![
+            tx("f"),
+            i(&[tx("o")]),
+            tx("o"),
+        ];
+
+        dom.replace(node.handle(), inserted_nodes);
+
+        // Node is replaced by new insertion
+        assert_eq!(dom.to_string(), "<b>f<i>o</i>o</b>");
     }
 
     // Serialisation
