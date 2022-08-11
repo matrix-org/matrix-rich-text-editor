@@ -15,15 +15,15 @@
 use crate::dom::{
     Dom, DomNode, FormattingNode, Range, SameNodeRange, TextNode, ToHtml,
 };
-use crate::{ActionResponse, ComposerUpdate, Location};
+use crate::{ActionResponse, ComposerState, ComposerUpdate, Location};
 
 pub struct ComposerModel<C>
 where
     C: Clone,
 {
-    html: Dom<C>,
-    start: Location,
-    end: Location,
+    state: ComposerState<C>,
+    previous_states: Vec<ComposerState<C>>,
+    next_states: Vec<ComposerState<C>>,
 }
 
 impl<'a, C> ComposerModel<C>
@@ -34,9 +34,9 @@ where
 {
     pub fn new() -> Self {
         Self {
-            html: Dom::new(Vec::new()),
-            start: Location::from(0),
-            end: Location::from(0),
+            state: ComposerState::new(),
+            previous_states: Vec::new(),
+            next_states: Vec::new(),
         }
     }
 
@@ -44,8 +44,8 @@ where
      * Cursor is at end.
      */
     pub fn select(&mut self, start: Location, end: Location) {
-        self.start = start;
-        self.end = end;
+        self.state.start = start;
+        self.state.end = end;
     }
 
     /**
@@ -55,10 +55,10 @@ where
     fn safe_selection(&self) -> (usize, usize) {
         // TODO: Does not work with tags, and will probably be obselete when
         // we can look for ranges properly.
-        let html = self.html.to_html();
+        let html = self.state.dom.to_html();
 
-        let mut s: usize = self.start.into();
-        let mut e: usize = self.end.into();
+        let mut s: usize = self.state.start.into();
+        let mut e: usize = self.state.end.into();
         s = s.clamp(0, html.len());
         e = e.clamp(0, html.len());
         if s > e {
@@ -86,20 +86,23 @@ where
         start: usize,
         end: usize,
     ) -> ComposerUpdate<C> {
-        let range = self.html.find_range_mut(start, end);
+        // Store current Dom
+        self.push_state_to_history();
+
+        let range = self.state.dom.find_range_mut(start, end);
         match range {
             Range::SameNode(range) => {
                 self.replace_same_node(range, new_text);
-                self.start = Location::from(start + new_text.len());
-                self.end = self.start;
+                self.state.start = Location::from(start + new_text.len());
+                self.state.end = self.state.start;
             }
 
             Range::NoNode => {
-                self.html
+                self.state.dom
                     .append(DomNode::Text(TextNode::from(new_text.to_vec())));
 
-                self.start = Location::from(new_text.len());
-                self.end = self.start;
+                self.state.start = Location::from(new_text.len());
+                self.state.end = self.state.start;
             }
 
             _ => panic!("Can't replace_text_in in complex object models yet"),
@@ -111,9 +114,9 @@ where
     }
 
     pub fn backspace(&mut self) -> ComposerUpdate<C> {
-        if self.start == self.end {
+        if self.state.start == self.state.end {
             // Go back 1 from the current location
-            self.start -= 1;
+            self.state.start -= 1;
         }
 
         self.replace_text(&[])
@@ -123,7 +126,7 @@ where
      * Deletes text in an arbitrary start..end range.
      */
     pub fn delete_in(&mut self, start: usize, end: usize) -> ComposerUpdate<C> {
-        self.end = Location::from(start);
+        self.state.end = Location::from(start);
         self.replace_text_in(&[], start, end)
     }
 
@@ -131,9 +134,9 @@ where
      * Deletes the character after the current cursor position.
      */
     pub fn delete(&mut self) -> ComposerUpdate<C> {
-        if self.start == self.end {
+        if self.state.start == self.state.end {
             // Go forward 1 from the current location
-            self.end += 1;
+            self.state.end += 1;
         }
 
         self.replace_text(&[])
@@ -154,12 +157,15 @@ where
     }
 
     pub fn get_selection(&self) -> (Location, Location) {
-        (self.start, self.end)
+        (self.state.start, self.state.end)
     }
 
     pub fn bold(&mut self) -> ComposerUpdate<C> {
+        // Store current Dom
+        self.push_state_to_history();
+
         let (s, e) = self.safe_selection();
-        let range = self.html.find_range_mut(s, e);
+        let range = self.state.dom.find_range_mut(s, e);
         match range {
             Range::SameNode(range) => {
                 self.bold_same_node(range);
@@ -169,7 +175,7 @@ where
             }
 
             Range::NoNode => {
-                self.html.append(DomNode::Formatting(FormattingNode::new(
+                self.state.dom.append(DomNode::Formatting(FormattingNode::new(
                     "strong".to_html(),
                     vec![DomNode::Text(TextNode::from("".to_html()))],
                 )));
@@ -181,16 +187,40 @@ where
     }
 
     pub fn get_html(&self) -> Vec<C> {
-        self.html.to_html()
+        self.state.dom.to_html()
+    }
+
+    pub fn undo(&mut self) -> ComposerUpdate<C> {
+        if let Some(prev) = self.previous_states.pop() {
+            self.next_states.push(self.state.clone());
+            self.state = prev;
+            self.create_update_replace_all()
+        } else {
+            ComposerUpdate::keep()
+        }
+    }
+
+    pub fn redo(&mut self) -> ComposerUpdate<C> {
+        if let Some(next) = self.next_states.pop() {
+            self.previous_states.push(self.state.clone());
+            self.state = next;
+            self.create_update_replace_all()
+        } else {
+            ComposerUpdate::keep()
+        }
+    }
+
+    pub fn get_current_state(&self) -> &ComposerState<C> {
+        &self.state
     }
 
     // Internal functions
     fn create_update_replace_all(&self) -> ComposerUpdate<C> {
-        ComposerUpdate::replace_all(self.html.to_html(), self.start, self.end)
+        ComposerUpdate::replace_all(self.state.dom.to_html(), self.state.start, self.state.end)
     }
 
     fn replace_same_node(&mut self, range: SameNodeRange, new_text: &[C]) {
-        let node = self.html.lookup_node_mut(range.node_handle);
+        let node = self.state.dom.lookup_node_mut(range.node_handle);
         if let DomNode::Text(ref mut t) = node {
             let text = t.data();
             let mut n = text[..range.start_offset].to_vec();
@@ -203,7 +233,7 @@ where
     }
 
     fn bold_same_node(& mut self, range: SameNodeRange) {
-        let node = self.html.lookup_node(range.node_handle.clone());
+        let node = self.state.dom.lookup_node(range.node_handle.clone());
         if let DomNode::Text(t) = node {
             let text = t.data();
             // TODO: can we be globally smart about not leaving empty text nodes ?
@@ -218,10 +248,17 @@ where
                 )),
                 DomNode::Text(TextNode::from(after)),
             ];
-            self.html.replace(range.node_handle, new_nodes);
+            self.state.dom.replace(range.node_handle, new_nodes);
         } else {
             panic!("Trying to bold a non-text node")
         }
+    }
+
+    fn push_state_to_history(&mut self) {
+        // Clear future events as they're no longer valid
+        self.next_states.clear();
+        // Store a copy of the current state in the previous_states
+        self.previous_states.push(self.state.clone());
     }
 }
 
@@ -235,6 +272,7 @@ mod test {
     };
 
     use super::ComposerModel;
+    use crate::ComposerState;
 
     fn utf8(utf16: &[u16]) -> String {
         String::from_utf16(&utf16).expect("Invalid UTF-16!")
@@ -458,7 +496,7 @@ mod test {
         model.bold();
         model.select(Location::from(4), Location::from(6));
         model.bold();
-        assert_eq!(&model.html.to_string(), "<strong>aa</strong>bb<strong>cc</strong>");
+        assert_eq!(&model.state.dom.to_string(), "<strong>aa</strong>bb<strong>cc</strong>");
     }
 
     #[test]
@@ -471,6 +509,95 @@ mod test {
         let mut model = cm("aa|{bb}cc");
         model.bold();
         assert_eq!(tx(&model), "aa|{<s}trong>bb</strong>cc");
+    }
+
+    #[test]
+    fn undoing_action_restores_previous_state() {
+        let mut model = cm("hello |");
+        let mut prev = model.state.clone();
+        let prev_text_node = TextNode::from("world!".encode_utf16().collect::<Vec<u16>>());
+        prev.dom.append(DomNode::Text(prev_text_node));
+        model.previous_states.push(prev.clone());
+
+        model.undo();
+
+        assert_eq!(prev.dom.children().len(), model.state.dom.children().len());
+    }
+
+    #[test]
+    fn inserting_text_creates_previous_state() {
+        let mut model = cm("|");
+        assert!(model.previous_states.is_empty());
+
+        replace_text(&mut model, "hello world!");
+        assert!(!model.previous_states.is_empty());
+    }
+
+    #[test]
+    fn backspacing_text_creates_previous_state() {
+        let mut model = cm("hello world!|");
+        assert!(model.previous_states.is_empty());
+
+        model.backspace();
+        assert!(!model.previous_states.is_empty());
+    }
+
+    #[test]
+    fn deleting_text_creates_previous_state() {
+        let mut model = cm("hello |world!");
+        assert!(model.previous_states.is_empty());
+
+        model.delete();
+        assert!(!model.previous_states.is_empty());
+    }
+
+    #[test]
+    fn formatting_text_creates_previous_state() {
+        let mut model = cm("hello {world}|!");
+        assert!(model.previous_states.is_empty());
+
+        model.bold();
+        assert!(!model.previous_states.is_empty());
+    }
+
+    #[test]
+    fn undoing_action_removes_last_previous_state() {
+        let mut model = cm("hello {world}|!");
+        model.previous_states.push(model.state.clone());
+
+        model.undo();
+
+        assert!(model.previous_states.is_empty());
+    }
+
+    #[test]
+    fn undoing_action_adds_popped_state_to_next_states() {
+        let mut model = cm("hello {world}|!");
+        model.previous_states.push(model.state.clone());
+
+        model.undo();
+
+        assert_eq!(model.next_states[0], model.state);
+    }
+
+    #[test]
+    fn redo_pops_state_from_next_states() {
+        let mut model = cm("hello {world}|!");
+        model.next_states.push(model.state.clone());
+
+        model.redo();
+
+        assert!(model.next_states.is_empty());
+    }
+
+    #[test]
+    fn redoing_action_adds_popped_state_to_previous_states() {
+        let mut model = cm("hello {world}|!");
+        model.next_states.push(model.state.clone());
+
+        model.redo();
+
+        assert_eq!(model.previous_states[0], model.state);
     }
 
     // Test utils
@@ -524,23 +651,23 @@ mod test {
         let s = find(&text, "{");
         let e = find(&text, "}");
 
-        let mut ret = ComposerModel::new();
         let mut ret_text;
+        let mut state = ComposerState::new();
 
         if let (Some(s), Some(e)) = (s, e) {
             if curs == e + 1 {
                 // Cursor after end: foo{bar}|baz
                 // The { made an extra codeunit - move the end back 1
-                ret.start = Location::from(s);
-                ret.end = Location::from(e - 1);
+                state.start = Location::from(s);
+                state.end = Location::from(e - 1);
                 ret_text = utf8(&text[..s]);
                 ret_text += &utf8(&text[s + 1..e]);
                 ret_text += &utf8(&text[curs + 1..]);
             } else if curs == s - 1 {
                 // Cursor before beginning: foo|{bar}baz
                 // The |{ made an extra 2 codeunits - move the end back 2
-                ret.start = Location::from(e - 2);
-                ret.end = Location::from(curs);
+                state.start = Location::from(e - 2);
+                state.end = Location::from(curs);
                 ret_text = utf8(&text[..curs]);
                 ret_text += &utf8(&text[s + 1..e]);
                 ret_text += &utf8(&text[e + 1..]);
@@ -552,15 +679,18 @@ mod test {
                 )
             }
         } else {
-            ret.start = Location::from(curs);
-            ret.end = Location::from(curs);
+            state.start = Location::from(curs);
+            state.end = Location::from(curs);
             ret_text = utf8(&text[..curs]);
             ret_text += &utf8(&text[curs + 1..]);
         }
 
-        ret.html =
-            Dom::new(vec![DomNode::Text(TextNode::from(ret_text.to_html()))]);
-        ret
+        state.dom = Dom::new(vec![DomNode::Text(TextNode::from(ret_text.to_html()))]);
+        ComposerModel {
+            state,
+            previous_states: Vec::new(),
+            next_states: Vec::new(),
+        }
     }
 
     /**
@@ -569,22 +699,22 @@ mod test {
     fn tx(model: &ComposerModel<u16>) -> String {
         let mut ret;
 
-        let utf16: Vec<u16> = model.html.to_string().encode_utf16().collect();
-        if model.start == model.end {
-            ret = utf8(&utf16[..model.start.into()]);
+        let utf16: Vec<u16> = model.state.dom.to_string().encode_utf16().collect();
+        if model.state.start == model.state.end {
+            ret = utf8(&utf16[..model.state.start.into()]);
             ret.push('|');
-            ret += &utf8(&utf16[model.start.into()..]);
+            ret += &utf8(&utf16[model.state.start.into()..]);
         } else {
             let (s, e) = model.safe_selection();
 
             ret = utf8(&utf16[..s]);
-            if model.start < model.end {
+            if model.state.start < model.state.end {
                 ret.push('{');
             } else {
                 ret += "|{";
             }
             ret += &utf8(&utf16[s..e]);
-            if model.start < model.end {
+            if model.state.start < model.state.end {
                 ret += "}|";
             } else {
                 ret.push('}');
@@ -603,96 +733,96 @@ mod test {
 
     #[test]
     fn cm_creates_correct_component_model() {
-        assert_eq!(cm("|").start, 0);
-        assert_eq!(cm("|").end, 0);
+        assert_eq!(cm("|").state.start, 0);
+        assert_eq!(cm("|").state.end, 0);
         assert_eq!(cm("|").get_html(), &[]);
 
-        assert_eq!(cm("a|").start, 1);
-        assert_eq!(cm("a|").end, 1);
+        assert_eq!(cm("a|").state.start, 1);
+        assert_eq!(cm("a|").state.end, 1);
         assert_eq!(cm("a|").get_html(), "a".to_html());
 
-        assert_eq!(cm("a|b").start, 1);
-        assert_eq!(cm("a|b").end, 1);
+        assert_eq!(cm("a|b").state.start, 1);
+        assert_eq!(cm("a|b").state.end, 1);
         assert_eq!(cm("a|b").get_html(), "ab".to_html());
 
-        assert_eq!(cm("|ab").start, 0);
-        assert_eq!(cm("|ab").end, 0);
+        assert_eq!(cm("|ab").state.start, 0);
+        assert_eq!(cm("|ab").state.end, 0);
         assert_eq!(cm("|ab").get_html(), "ab".to_html());
 
-        assert_eq!(cm("foo|").start, 3);
-        assert_eq!(cm("foo|").end, 3);
+        assert_eq!(cm("foo|").state.start, 3);
+        assert_eq!(cm("foo|").state.end, 3);
         assert_eq!(cm("foo|").get_html(), ("foo".to_html()));
 
         let t1 = cm("foo|\u{1F4A9}bar");
-        assert_eq!(t1.start, 3);
-        assert_eq!(t1.end, 3);
+        assert_eq!(t1.state.start, 3);
+        assert_eq!(t1.state.end, 3);
         assert_eq!(t1.get_html(), ("foo\u{1F4A9}bar").to_html());
 
         let t2 = cm("foo\u{1F4A9}|bar");
-        assert_eq!(t2.start, 5);
-        assert_eq!(t2.end, 5);
+        assert_eq!(t2.state.start, 5);
+        assert_eq!(t2.state.end, 5);
         assert_eq!(t2.get_html(), ("foo\u{1F4A9}bar").to_html());
 
-        assert_eq!(cm("foo|\u{1F4A9}").start, 3);
-        assert_eq!(cm("foo|\u{1F4A9}").end, 3);
+        assert_eq!(cm("foo|\u{1F4A9}").state.start, 3);
+        assert_eq!(cm("foo|\u{1F4A9}").state.end, 3);
         assert_eq!(cm("foo|\u{1F4A9}").get_html(), ("foo\u{1F4A9}").to_html());
 
-        assert_eq!(cm("foo\u{1F4A9}|").start, 5);
-        assert_eq!(cm("foo\u{1F4A9}|").end, 5);
+        assert_eq!(cm("foo\u{1F4A9}|").state.start, 5);
+        assert_eq!(cm("foo\u{1F4A9}|").state.end, 5);
         assert_eq!(cm("foo\u{1F4A9}|").get_html(), ("foo\u{1F4A9}").to_html());
 
-        assert_eq!(cm("|\u{1F4A9}bar").start, 0);
-        assert_eq!(cm("|\u{1F4A9}bar").end, 0);
+        assert_eq!(cm("|\u{1F4A9}bar").state.start, 0);
+        assert_eq!(cm("|\u{1F4A9}bar").state.end, 0);
         assert_eq!(cm("|\u{1F4A9}bar").get_html(), ("\u{1F4A9}bar").to_html());
 
-        assert_eq!(cm("\u{1F4A9}|bar").start, 2);
-        assert_eq!(cm("\u{1F4A9}|bar").end, 2);
+        assert_eq!(cm("\u{1F4A9}|bar").state.start, 2);
+        assert_eq!(cm("\u{1F4A9}|bar").state.end, 2);
         assert_eq!(cm("\u{1F4A9}|bar").get_html(), ("\u{1F4A9}bar").to_html());
 
-        assert_eq!(cm("{a}|").start, 0);
-        assert_eq!(cm("{a}|").end, 1);
+        assert_eq!(cm("{a}|").state.start, 0);
+        assert_eq!(cm("{a}|").state.end, 1);
         assert_eq!(cm("{a}|").get_html(), ("a").to_html());
 
-        assert_eq!(cm("|{a}").start, 1);
-        assert_eq!(cm("|{a}").end, 0);
+        assert_eq!(cm("|{a}").state.start, 1);
+        assert_eq!(cm("|{a}").state.end, 0);
         assert_eq!(cm("|{a}").get_html(), ("a").to_html());
 
-        assert_eq!(cm("abc{def}|ghi").start, 3);
-        assert_eq!(cm("abc{def}|ghi").end, 6);
+        assert_eq!(cm("abc{def}|ghi").state.start, 3);
+        assert_eq!(cm("abc{def}|ghi").state.end, 6);
         assert_eq!(cm("abc{def}|ghi").get_html(), ("abcdefghi").to_html());
 
-        assert_eq!(cm("abc|{def}ghi").start, 6);
-        assert_eq!(cm("abc|{def}ghi").end, 3);
+        assert_eq!(cm("abc|{def}ghi").state.start, 6);
+        assert_eq!(cm("abc|{def}ghi").state.end, 3);
         assert_eq!(cm("abc|{def}ghi").get_html(), ("abcdefghi").to_html());
 
         let t3 = cm("\u{1F4A9}{def}|ghi");
-        assert_eq!(t3.start, 2);
-        assert_eq!(t3.end, 5);
+        assert_eq!(t3.state.start, 2);
+        assert_eq!(t3.state.end, 5);
         assert_eq!(t3.get_html(), ("\u{1F4A9}defghi").to_html());
 
         let t4 = cm("\u{1F4A9}|{def}ghi");
-        assert_eq!(t4.start, 5);
-        assert_eq!(t4.end, 2);
+        assert_eq!(t4.state.start, 5);
+        assert_eq!(t4.state.end, 2);
         assert_eq!(t4.get_html(), ("\u{1F4A9}defghi").to_html());
 
         let t5 = cm("abc{d\u{1F4A9}f}|ghi");
-        assert_eq!(t5.start, 3);
-        assert_eq!(t5.end, 7);
+        assert_eq!(t5.state.start, 3);
+        assert_eq!(t5.state.end, 7);
         assert_eq!(t5.get_html(), ("abcd\u{1F4A9}fghi").to_html());
 
         let t6 = cm("abc|{d\u{1F4A9}f}ghi");
-        assert_eq!(t6.start, 7);
-        assert_eq!(t6.end, 3);
+        assert_eq!(t6.state.start, 7);
+        assert_eq!(t6.state.end, 3);
         assert_eq!(t6.get_html(), ("abcd\u{1F4A9}fghi").to_html());
 
         let t7 = cm("abc{def}|\u{1F4A9}ghi");
-        assert_eq!(t7.start, 3);
-        assert_eq!(t7.end, 6);
+        assert_eq!(t7.state.start, 3);
+        assert_eq!(t7.state.end, 6);
         assert_eq!(t7.get_html(), ("abcdef\u{1F4A9}ghi").to_html());
 
         let t8 = cm("abc|{def}\u{1F4A9}ghi");
-        assert_eq!(t8.start, 6);
-        assert_eq!(t8.end, 3);
+        assert_eq!(t8.state.start, 6);
+        assert_eq!(t8.state.end, 3);
         assert_eq!(t8.get_html(), ("abcdef\u{1F4A9}ghi").to_html());
     }
 

@@ -38,16 +38,21 @@ class InputProcessor(
                 composer.deleteIn(action.start.toUInt(), action.end.toUInt())
             }
             is EditorInputAction.ReplaceAll -> null
+            is EditorInputAction.Undo -> composer.undo()
+            is EditorInputAction.Redo -> composer.redo()
         }?.textUpdate().also {
             composer.log()
         }
     }
 
-    fun processUpdate(update: TextUpdate): CharSequence? {
+    fun processUpdate(update: TextUpdate): ReplaceTextResult? {
         return when (update) {
             is TextUpdate.Keep -> null
             is TextUpdate.ReplaceAll -> {
-                stringToSpans(update.replacementHtml.string())
+                ReplaceTextResult(
+                    text = stringToSpans(update.replacementHtml.string()),
+                    selection = update.startUtf16Codeunit.toInt()..update.endUtf16Codeunit.toInt(),
+                )
             }
         }
     }
@@ -66,8 +71,15 @@ sealed interface EditorInputAction {
     object InsertParagraph: EditorInputAction
     object BackPress: EditorInputAction
     data class ApplyInlineFormat(val format: InlineFormat): EditorInputAction
+    object Undo: EditorInputAction
+    object Redo: EditorInputAction
 }
 
 sealed interface InlineFormat {
     object Bold: InlineFormat
 }
+
+data class ReplaceTextResult(
+    val text: CharSequence,
+    val selection: IntRange,
+)

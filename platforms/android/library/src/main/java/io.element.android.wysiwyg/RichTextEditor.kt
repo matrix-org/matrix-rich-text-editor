@@ -8,11 +8,11 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
 import com.google.android.material.textfield.TextInputLayout
+import io.element.android.wysiwyg.databinding.ViewRichTextEditorBinding
 
 class RichTextEditor : TextInputLayout {
 
-    val editText by lazy { findViewById<EditorEditText>(R.id.editText) }
-    val menu by lazy { findViewById<ViewGroup>(R.id.menu) }
+    private val binding = ViewRichTextEditorBinding.inflate(LayoutInflater.from(context), this, true)
 
     constructor(context: Context): super(context)
 
@@ -21,20 +21,24 @@ class RichTextEditor : TextInputLayout {
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
             super(context, attrs, defStyleAttr)
 
-    init {
-        LayoutInflater.from(context).inflate(R.layout.view_rich_text_editor, this)
-    }
-
     override fun onFinishInflate() {
         super.onFinishInflate()
 
-        menu.findViewById<Button>(R.id.formatBoldButton).setOnClickListener {
-            editText.toggleInlineFormat(InlineFormat.Bold)
+        with (binding) {
+            formatBoldButton.setOnClickListener {
+                editText.toggleInlineFormat(InlineFormat.Bold)
+            }
+            undoButton.setOnClickListener {
+                editText.undo()
+            }
+            redoButton.setOnClickListener {
+                editText.redo()
+            }
         }
     }
 
     override fun requestFocus(direction: Int, previouslyFocusedRect: Rect?): Boolean {
-        return editText.requestFocus(direction, previouslyFocusedRect)
+        return binding.editText.requestFocus(direction, previouslyFocusedRect)
     }
 
 }
