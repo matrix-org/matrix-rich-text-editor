@@ -72,7 +72,7 @@ impl ComposerModel {
     }
 
     pub fn bold(&mut self) -> ComposerUpdate {
-        ComposerUpdate::from(self.inner.bold())
+        ComposerUpdate::from(self.inner.format(wysiwyg::InlineFormatType::Bold))
     }
 
     /*pub fn action_response(

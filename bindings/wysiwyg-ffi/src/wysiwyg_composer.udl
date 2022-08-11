@@ -24,7 +24,7 @@ interface ComposerModel {
     ComposerUpdate delete();
     ComposerUpdate delete_in(u32 start, u32 end);
     ComposerUpdate enter();
-    ComposerUpdate bold();
+    ComposerUpdate format(InlineFormatType type);
     ComposerUpdate undo();
     ComposerUpdate redo();
     ComposerState dump_state();
@@ -71,4 +71,12 @@ interface ActionRequest {
 [Enum]
 interface ActionResponse {
     Dummy();
+};
+
+[Enum]
+interface InlineFormatType {
+    Bold();
+    Italic();
+    Strikethrough();
+    Underline();
 };

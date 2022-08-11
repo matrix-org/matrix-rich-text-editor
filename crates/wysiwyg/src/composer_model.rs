@@ -15,7 +15,7 @@
 use crate::dom::{
     Dom, DomNode, FormattingNode, Range, SameNodeRange, TextNode, ToHtml,
 };
-use crate::{ActionResponse, ComposerState, ComposerUpdate, Location};
+use crate::{ActionResponse, ComposerState, ComposerUpdate, InlineFormatType, Location};
 
 pub struct ComposerModel<C>
 where
@@ -160,15 +160,14 @@ where
         (self.state.start, self.state.end)
     }
 
-    pub fn bold(&mut self) -> ComposerUpdate<C> {
+    pub fn format(&mut self, format: InlineFormatType) -> ComposerUpdate<C> {
         // Store current Dom
         self.push_state_to_history();
-
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range_mut(s, e);
         match range {
             Range::SameNode(range) => {
-                self.bold_same_node(range);
+                self.format_same_node(range, format);
                 // TODO: for now, we replace every time, to check ourselves, but
                 // at least some of the time we should not
                 return self.create_update_replace_all();
@@ -176,13 +175,13 @@ where
 
             Range::NoNode => {
                 self.state.dom.append(DomNode::Formatting(FormattingNode::new(
-                    "strong".to_html(),
+                    format.tag().to_html(),
                     vec![DomNode::Text(TextNode::from("".to_html()))],
                 )));
                 return ComposerUpdate::keep();
             }
 
-            _ => panic!("Can't bold in complex object models yet"),
+            _ => panic!("Can't format in complex object models yet"),
         }
     }
 
@@ -232,7 +231,7 @@ where
         }
     }
 
-    fn bold_same_node(& mut self, range: SameNodeRange) {
+    fn format_same_node(& mut self, range: SameNodeRange, format: InlineFormatType) {
         let node = self.state.dom.lookup_node(range.node_handle.clone());
         if let DomNode::Text(t) = node {
             let text = t.data();
@@ -243,7 +242,7 @@ where
             let new_nodes = vec![
                 DomNode::Text(TextNode::from(before)),
                 DomNode::Formatting(FormattingNode::new(
-                         "strong".to_html(),
+                         format.tag().to_html(),
                          vec![DomNode::Text(TextNode::from(during))],
                 )),
                 DomNode::Text(TextNode::from(after)),
@@ -268,6 +267,7 @@ mod test {
 
     use crate::{
         dom::{Dom, DomNode, TextNode, ToHtml},
+        InlineFormatType,
         Location,
     };
 
@@ -493,21 +493,21 @@ mod test {
     fn selecting_and_bolding_multiple_times() {
         let mut model = cm("aabbcc|");
         model.select(Location::from(0), Location::from(2));
-        model.bold();
+        model.format(InlineFormatType::Bold);
         model.select(Location::from(4), Location::from(6));
-        model.bold();
+        model.format(InlineFormatType::Bold);
         assert_eq!(&model.state.dom.to_string(), "<strong>aa</strong>bb<strong>cc</strong>");
     }
 
     #[test]
     fn bolding_ascii_adds_strong_tags() {
         let mut model = cm("aa{bb}|cc");
-        model.bold();
+        model.format(InlineFormatType::Bold);
         // TODO: because it's not an AST
         assert_eq!(tx(&model), "aa{<s}|trong>bb</strong>cc");
 
         let mut model = cm("aa|{bb}cc");
-        model.bold();
+        model.format(InlineFormatType::Bold);
         assert_eq!(tx(&model), "aa|{<s}trong>bb</strong>cc");
     }
 

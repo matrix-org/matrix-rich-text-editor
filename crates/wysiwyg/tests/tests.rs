@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use wysiwyg::{ComposerModel, Location, TextUpdate};
+use wysiwyg::{ComposerModel, InlineFormatType, Location, TextUpdate};
 
 #[test]
 fn can_instantiate_a_model_and_call_methods() {
@@ -20,7 +20,7 @@ fn can_instantiate_a_model_and_call_methods() {
     model.replace_text(&"foo".encode_utf16().collect::<Vec<_>>());
     model.select(Location::from(1), Location::from(2));
 
-    let update = model.bold();
+    let update = model.format(InlineFormatType::Bold);
 
     if let TextUpdate::ReplaceAll(r) = update.text_update {
         assert_eq!(

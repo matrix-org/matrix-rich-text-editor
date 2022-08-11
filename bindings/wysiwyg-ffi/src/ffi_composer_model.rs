@@ -3,6 +3,7 @@ use std::sync::{Arc, Mutex};
 use crate::ffi_action_response::ActionResponse;
 use crate::ffi_composer_state::ComposerState;
 use crate::ffi_composer_update::ComposerUpdate;
+use crate::ffi_format_type::InlineFormatType;
 
 pub struct ComposerModel {
     inner: Mutex<wysiwyg::ComposerModel<u16>>,
@@ -96,8 +97,8 @@ impl ComposerModel {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().enter()))
     }
 
-    pub fn bold(self: &Arc<Self>) -> Arc<ComposerUpdate> {
-        Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().bold()))
+    pub fn format(self: &Arc<Self>, format: InlineFormatType) -> Arc<ComposerUpdate> {
+        Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().format(format.into())))
     }
 
     pub fn undo(self: &Arc<Self>) -> Arc<ComposerUpdate> {
