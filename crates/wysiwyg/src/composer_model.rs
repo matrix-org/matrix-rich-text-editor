@@ -87,8 +87,7 @@ where
         end: usize,
     ) -> ComposerUpdate<C> {
         // Store current Dom
-        self.next_states.clear();
-        self.previous_states.push(self.state.clone());
+        self.push_state_to_history();
 
         let range = self.state.dom.find_range_mut(start, end);
         match range {
@@ -163,8 +162,7 @@ where
 
     pub fn bold(&mut self) -> ComposerUpdate<C> {
         // Store current Dom
-        self.next_states.clear();
-        self.previous_states.push(self.state.clone());
+        self.push_state_to_history();
 
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range_mut(s, e);
@@ -254,6 +252,13 @@ where
         } else {
             panic!("Trying to bold a non-text node")
         }
+    }
+
+    fn push_state_to_history(&mut self) {
+        // Clear future events as they're no longer valid
+        self.next_states.clear();
+        // Store a copy of the current state in the previous_states
+        self.previous_states.push(self.state.clone());
     }
 }
 
