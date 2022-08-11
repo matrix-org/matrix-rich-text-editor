@@ -158,32 +158,26 @@ where
     }
 
     pub fn bold(&mut self) -> ComposerUpdate<C> {
-        // Temporary: only works if we have a single text node
-        if self.html.children().len() == 1 {
-            let (s, e) = self.safe_selection();
-            if let DomNode::Text(t) = &mut self.html.children_mut()[0] {
-                let text = t.data();
-                let before = text[..s].to_vec();
-                let during = text[s..e].to_vec();
-                let after = text[e..].to_vec();
-
-                t.set_data(before);
-
-                // TODO: nicer construction of DOM nodes
-                self.html.append(DomNode::Formatting(FormattingNode::new(
-                    "strong".to_html(),
-                    vec![DomNode::Text(TextNode::from(during))],
-                )));
-
-                self.html.append(DomNode::Text(TextNode::from(after)));
-
+        let (s, e) = self.safe_selection();
+        let range = self.html.find_range_mut(s, e);
+        match range {
+            Range::SameNode(range) => {
+                self.bold_same_node(range);
                 // TODO: for now, we replace every time, to check ourselves, but
                 // at least some of the time we should not
                 return self.create_update_replace_all();
             }
-        }
 
-        panic!("Can't bold in complex object models yet");
+            Range::NoNode => {
+                self.html.append(DomNode::Formatting(FormattingNode::new(
+                    "strong".to_html(),
+                    vec![DomNode::Text(TextNode::from("".to_html()))],
+                )));
+                return ComposerUpdate::keep();
+            }
+
+            _ => panic!("Can't bold in complex object models yet"),
+        }
     }
 
     pub fn get_html(&self) -> Vec<C> {
@@ -205,6 +199,28 @@ where
             t.set_data(n);
         } else {
             panic!("Can't deal with ranges containing non-text nodes (yet?)")
+        }
+    }
+
+    fn bold_same_node(& mut self, range: SameNodeRange) {
+        let node = self.html.lookup_node(range.node_handle.clone());
+        if let DomNode::Text(t) = node {
+            let text = t.data();
+            // TODO: can we be globally smart about not leaving empty text nodes ?
+            let before = text[..range.start_offset].to_vec();
+            let during = text[range.start_offset..range.end_offset].to_vec();
+            let after = text[range.end_offset..].to_vec();
+            let new_nodes = vec![
+                DomNode::Text(TextNode::from(before)),
+                DomNode::Formatting(FormattingNode::new(
+                         "strong".to_html(),
+                         vec![DomNode::Text(TextNode::from(during))],
+                )),
+                DomNode::Text(TextNode::from(after)),
+            ];
+            self.html.replace(range.node_handle, new_nodes);
+        } else {
+            panic!("Trying to bold a non-text node")
         }
     }
 }
@@ -433,6 +449,16 @@ mod test {
             tx(&model),
             "aaa\u{03A9}bbb{\u{1F469}\u{1F3FF}\u{200D}\u{1F680}c}|cc"
         );
+    }
+
+    #[test]
+    fn selecting_and_bolding_multiple_times() {
+        let mut model = cm("aabbcc|");
+        model.select(Location::from(0), Location::from(2));
+        model.bold();
+        model.select(Location::from(4), Location::from(6));
+        model.bold();
+        assert_eq!(&model.html.to_string(), "<strong>aa</strong>bb<strong>cc</strong>");
     }
 
     #[test]
