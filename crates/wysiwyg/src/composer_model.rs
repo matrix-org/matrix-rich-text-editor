@@ -561,6 +561,8 @@ mod test {
         model.previous_states.push(model.state.clone());
 
         model.undo();
+
+        assert!(model.previous_states.is_empty());
     }
 
     #[test]
