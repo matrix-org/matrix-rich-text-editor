@@ -430,10 +430,10 @@ mod test {
     fn can_replace_toplevel_node_with_multiple_nodes() {
         let mut dom = dom(&[tx("foo"), tx("bar")]);
 
-        let node = &dom.children()[0];
+        let node_handle = dom.children()[0].handle();
         let inserted_nodes = vec![tx("ab"), b(&[tx("cd")]), tx("ef")];
 
-        dom.replace(node.handle(), inserted_nodes);
+        dom.replace(node_handle, inserted_nodes);
 
         // Node is replaced by new insertion
         assert_eq!(dom.to_string(), "ab<b>cd</b>efbar");
@@ -446,10 +446,10 @@ mod test {
     fn can_replace_deep_node_with_multiple_nodes() {
         let mut dom = dom(&[b(&[tx("foo")])]);
 
-        let node = &kids(&dom.children()[0])[0];
+        let node_handle = kids(&dom.children()[0])[0].handle();
         let inserted_nodes = vec![tx("f"), i(&[tx("o")]), tx("o")];
 
-        dom.replace(node.handle(), inserted_nodes);
+        dom.replace(node_handle, inserted_nodes);
 
         // Node is replaced by new insertion
         assert_eq!(dom.to_string(), "<b>f<i>o</i>o</b>");
