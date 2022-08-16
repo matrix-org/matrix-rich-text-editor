@@ -60,13 +60,13 @@ web:
 	cd bindings/wysiwyg-wasm && \
 	npm install && \
 	npm run build && \
-	mkdir -p ../../examples/example-web/generated && \
+	mkdir -p ../../platforms/web/example/generated && \
 	cp \
 		pkg/wysiwyg_bg.wasm \
 		pkg/wysiwyg_bg.wasm.d.ts \
 		pkg/wysiwyg.d.ts \
 		pkg/wysiwyg.js \
-		../../examples/example-web/generated/
+		../../platforms/web/example/generated/
 
 clean:
 	cargo clean
