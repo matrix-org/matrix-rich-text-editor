@@ -252,7 +252,7 @@ impl<C> Dom<C> {
         match parent_node {
             DomNode::Text(_n) => panic!("Text nodes can't have children"),
             DomNode::Formatting(n) => n.replace_child(index, nodes),
-            DomNode::Container(n) => n.replace_child(index, nodes),        
+            DomNode::Container(n) => n.replace_child(index, nodes),
         }
     }
 
@@ -742,8 +742,8 @@ mod test {
             DomNode::Text(_) => {
                 panic!("We expected an Element, but found Text")
             }
-        }    
-    }   
+        }
+    }
 
     // Creation and handles
 
@@ -801,17 +801,10 @@ mod test {
 
     #[test]
     fn can_replace_toplevel_node_with_multiple_nodes() {
-        let mut dom = dom(&[
-            tx("foo"),
-            tx("bar"),
-        ]);
+        let mut dom = dom(&[tx("foo"), tx("bar")]);
 
         let node = &dom.children()[0];
-        let inserted_nodes = vec![
-            tx("ab"),
-            b(&[tx("cd")]),
-            tx("ef"),
-        ];
+        let inserted_nodes = vec![tx("ab"), b(&[tx("cd")]), tx("ef")];
 
         dom.replace(node.handle(), inserted_nodes);
 
@@ -824,16 +817,10 @@ mod test {
 
     #[test]
     fn can_replace_deep_node_with_multiple_nodes() {
-        let mut dom = dom(&[
-            b(&[tx("foo")]),
-        ]);
+        let mut dom = dom(&[b(&[tx("foo")])]);
 
         let node = &kids(&dom.children()[0])[0];
-        let inserted_nodes = vec![
-            tx("f"),
-            i(&[tx("o")]),
-            tx("o"),
-        ];
+        let inserted_nodes = vec![tx("f"), i(&[tx("o")]), tx("o")];
 
         dom.replace(node.handle(), inserted_nodes);
 
@@ -1040,6 +1027,6 @@ mod test {
         assert_eq!(range, Range::TooDifficultForMe);
     }*/
 
-    // TODO: copy tests from examples/example-web/test.js
+    // TODO: copy tests from platforms/web/example/test.js
     // TODO: improve tests when we have HTML parsing
 }
