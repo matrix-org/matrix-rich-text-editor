@@ -18,8 +18,10 @@ pub mod html_formatter;
 pub mod to_html;
 pub mod range;
 pub mod nodes;
+pub mod find_result;
 
 use std::fmt::Display;
+pub use crate::dom::find_result::FindResult;
 pub use crate::dom::nodes::container_node::ContainerNode;
 pub use crate::dom::dom_handle::DomHandle;
 pub use crate::dom::element::Element;
@@ -66,17 +68,6 @@ pub fn fmt_element_u16<'a>(
     f: &mut HtmlFormatter<u16>,
 ) {
     fmt_element(element, '<' as u16, '>' as u16, '/' as u16, f);
-}
-
-#[derive(Debug, PartialEq)]
-enum FindResult {
-    Found {
-        node_handle: DomHandle,
-        offset: usize,
-    },
-    NotFound {
-        new_offset: usize,
-    },
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -309,28 +300,6 @@ impl Display for Dom<u16> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&utf8(&self.to_html()))?;
         Ok(())
-    }
-}
-
-
-
-impl<'a, C> Element<'a, C> for FormattingNode<C> {
-    fn name(&'a self) -> &'a Vec<C> {
-        &self.name
-    }
-
-    fn children(&'a self) -> &'a Vec<DomNode<C>> {
-        &self.children
-    }
-
-    fn children_mut(&'a mut self) -> &'a mut Vec<DomNode<C>> {
-        &mut self.children
-    }
-}
-
-impl ToHtml<u16> for FormattingNode<u16> {
-    fn fmt_html(&self, f: &mut HtmlFormatter<u16>) {
-        fmt_element_u16(self, f)
     }
 }
 

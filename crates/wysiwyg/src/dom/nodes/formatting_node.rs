@@ -14,7 +14,10 @@
 
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::element::Element;
+use crate::dom::fmt_element_u16;
+use crate::dom::html_formatter::HtmlFormatter;
 use crate::dom::nodes::dom_node::DomNode;
+use crate::ToHtml;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct FormattingNode<C> {
@@ -76,5 +79,25 @@ impl<C> FormattingNode<C> {
             let new_handle = self.handle.child_handle(child_index);
             self.children[child_index].set_handle(new_handle);
         }
+    }
+}
+
+impl<'a, C> Element<'a, C> for FormattingNode<C> {
+    fn name(&'a self) -> &'a Vec<C> {
+        &self.name
+    }
+
+    fn children(&'a self) -> &'a Vec<DomNode<C>> {
+        &self.children
+    }
+
+    fn children_mut(&'a mut self) -> &'a mut Vec<DomNode<C>> {
+        &mut self.children
+    }
+}
+
+impl ToHtml<u16> for FormattingNode<u16> {
+    fn fmt_html(&self, f: &mut HtmlFormatter<u16>) {
+        fmt_element_u16(self, f)
     }
 }
