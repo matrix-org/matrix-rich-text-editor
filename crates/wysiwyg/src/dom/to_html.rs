@@ -15,8 +15,8 @@
 use crate::dom::html_formatter::HtmlFormatter;
 
 pub trait ToHtml<C>
-    where
-        C: Clone,
+where
+    C: Clone,
 {
     fn fmt_html(&self, f: &mut HtmlFormatter<C>);
 

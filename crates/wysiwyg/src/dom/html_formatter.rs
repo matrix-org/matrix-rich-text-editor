@@ -17,8 +17,8 @@ pub struct HtmlFormatter<C> {
 }
 
 impl<C> HtmlFormatter<C>
-    where
-        C: Clone,
+where
+    C: Clone,
 {
     pub fn new() -> Self {
         Self { chars: Vec::new() }

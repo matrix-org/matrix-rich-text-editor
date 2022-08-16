@@ -28,8 +28,8 @@ impl<C> TextNode<C> {
     /// NOTE: Its handle() will be invalid until you call set_handle() or
     /// append() it to another node.
     pub fn from(data: Vec<C>) -> Self
-        where
-            C: Clone,
+    where
+        C: Clone,
     {
         Self {
             data,

@@ -13,10 +13,10 @@
 // limitations under the License.
 
 use crate::dom::dom_handle::DomHandle;
-use crate::dom::nodes::dom_node::DomNode;
 use crate::dom::element::Element;
 use crate::dom::fmt_element_u16;
 use crate::dom::html_formatter::HtmlFormatter;
+use crate::dom::nodes::dom_node::DomNode;
 use crate::dom::to_html::ToHtml;
 
 #[derive(Clone, Debug, PartialEq)]

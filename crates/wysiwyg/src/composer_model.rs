@@ -15,7 +15,9 @@
 use crate::dom::{
     Dom, DomNode, FormattingNode, Range, SameNodeRange, TextNode, ToHtml,
 };
-use crate::{ActionResponse, ComposerState, ComposerUpdate, InlineFormatType, Location};
+use crate::{
+    ActionResponse, ComposerState, ComposerUpdate, InlineFormatType, Location,
+};
 
 pub struct ComposerModel<C>
 where
@@ -98,7 +100,8 @@ where
             }
 
             Range::NoNode => {
-                self.state.dom
+                self.state
+                    .dom
                     .append(DomNode::Text(TextNode::from(new_text.to_vec())));
 
                 self.state.start = Location::from(new_text.len());
@@ -174,10 +177,12 @@ where
             }
 
             Range::NoNode => {
-                self.state.dom.append(DomNode::Formatting(FormattingNode::new(
-                    format.tag().to_html(),
-                    vec![DomNode::Text(TextNode::from("".to_html()))],
-                )));
+                self.state.dom.append(DomNode::Formatting(
+                    FormattingNode::new(
+                        format.tag().to_html(),
+                        vec![DomNode::Text(TextNode::from("".to_html()))],
+                    ),
+                ));
                 return ComposerUpdate::keep();
             }
 
@@ -215,7 +220,11 @@ where
 
     // Internal functions
     fn create_update_replace_all(&self) -> ComposerUpdate<C> {
-        ComposerUpdate::replace_all(self.state.dom.to_html(), self.state.start, self.state.end)
+        ComposerUpdate::replace_all(
+            self.state.dom.to_html(),
+            self.state.start,
+            self.state.end,
+        )
     }
 
     fn replace_same_node(&mut self, range: SameNodeRange, new_text: &[C]) {
@@ -231,7 +240,11 @@ where
         }
     }
 
-    fn format_same_node(& mut self, range: SameNodeRange, format: InlineFormatType) {
+    fn format_same_node(
+        &mut self,
+        range: SameNodeRange,
+        format: InlineFormatType,
+    ) {
         let node = self.state.dom.lookup_node(range.node_handle.clone());
         if let DomNode::Text(t) = node {
             let text = t.data();
@@ -242,8 +255,8 @@ where
             let new_nodes = vec![
                 DomNode::Text(TextNode::from(before)),
                 DomNode::Formatting(FormattingNode::new(
-                         format.tag().to_html(),
-                         vec![DomNode::Text(TextNode::from(during))],
+                    format.tag().to_html(),
+                    vec![DomNode::Text(TextNode::from(during))],
                 )),
                 DomNode::Text(TextNode::from(after)),
             ];
@@ -267,8 +280,7 @@ mod test {
 
     use crate::{
         dom::{Dom, DomNode, TextNode, ToHtml},
-        InlineFormatType,
-        Location,
+        InlineFormatType, Location,
     };
 
     use super::ComposerModel;
@@ -497,7 +509,10 @@ mod test {
         model.format(InlineFormatType::Bold);
         model.select(Location::from(4), Location::from(6));
         model.format(InlineFormatType::Bold);
-        assert_eq!(&model.state.dom.to_string(), "<strong>aa</strong>bb<strong>cc</strong>");
+        assert_eq!(
+            &model.state.dom.to_string(),
+            "<strong>aa</strong>bb<strong>cc</strong>"
+        );
     }
 
     #[test]
@@ -516,7 +531,8 @@ mod test {
     fn undoing_action_restores_previous_state() {
         let mut model = cm("hello |");
         let mut prev = model.state.clone();
-        let prev_text_node = TextNode::from("world!".encode_utf16().collect::<Vec<u16>>());
+        let prev_text_node =
+            TextNode::from("world!".encode_utf16().collect::<Vec<u16>>());
         prev.dom.append(DomNode::Text(prev_text_node));
         model.previous_states.push(prev.clone());
 
@@ -686,7 +702,8 @@ mod test {
             ret_text += &utf8(&text[curs + 1..]);
         }
 
-        state.dom = Dom::new(vec![DomNode::Text(TextNode::from(ret_text.to_html()))]);
+        state.dom =
+            Dom::new(vec![DomNode::Text(TextNode::from(ret_text.to_html()))]);
         ComposerModel {
             state,
             previous_states: Vec::new(),
@@ -700,7 +717,8 @@ mod test {
     fn tx(model: &ComposerModel<u16>) -> String {
         let mut ret;
 
-        let utf16: Vec<u16> = model.state.dom.to_string().encode_utf16().collect();
+        let utf16: Vec<u16> =
+            model.state.dom.to_string().encode_utf16().collect();
         if model.state.start == model.state.end {
             ret = utf8(&utf16[..model.state.start.into()]);
             ret.push('|');

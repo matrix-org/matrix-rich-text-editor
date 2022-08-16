@@ -14,23 +14,23 @@
 
 pub mod dom_handle;
 pub mod element;
-pub mod html_formatter;
-pub mod to_html;
-pub mod range;
-pub mod nodes;
 pub mod find_result;
+pub mod html_formatter;
+pub mod nodes;
+pub mod range;
+pub mod to_html;
 
-use std::fmt::Display;
-pub use crate::dom::find_result::FindResult;
-pub use crate::dom::nodes::container_node::ContainerNode;
 pub use crate::dom::dom_handle::DomHandle;
 pub use crate::dom::element::Element;
-pub use crate::dom::nodes::formatting_node::FormattingNode;
+pub use crate::dom::find_result::FindResult;
 pub use crate::dom::html_formatter::HtmlFormatter;
+pub use crate::dom::nodes::container_node::ContainerNode;
 pub use crate::dom::nodes::dom_node::DomNode;
-pub use crate::dom::to_html::ToHtml;
-pub use crate::dom::range::{Range, SameNodeRange};
+pub use crate::dom::nodes::formatting_node::FormattingNode;
 pub use crate::dom::nodes::text_node::TextNode;
+pub use crate::dom::range::{Range, SameNodeRange};
+pub use crate::dom::to_html::ToHtml;
+use std::fmt::Display;
 
 fn utf8(input: &[u16]) -> String {
     String::from_utf16(input).expect("Invalid UTF-16!")
@@ -287,9 +287,9 @@ impl<C> Dom<C> {
 }
 
 impl<C> ToHtml<C> for Dom<C>
-    where
-        C: Clone,
-        ContainerNode<C>: ToHtml<C>,
+where
+    C: Clone,
+    ContainerNode<C>: ToHtml<C>,
 {
     fn fmt_html(&self, f: &mut HtmlFormatter<C>) {
         self.document().fmt_html(f)
@@ -316,8 +316,8 @@ impl Display for ItemNode {
 
 #[cfg(test)]
 mod test {
-    use crate::dom::nodes::dom_node::DomNode;
     use super::*;
+    use crate::dom::nodes::dom_node::DomNode;
 
     fn utf16(input: &str) -> Vec<u16> {
         input.encode_utf16().collect()
@@ -326,15 +326,15 @@ mod test {
     fn clone_children<'a, C>(
         children: impl IntoIterator<Item = &'a DomNode<C>>,
     ) -> Vec<DomNode<C>>
-        where
-            C: 'static + Clone,
+    where
+        C: 'static + Clone,
     {
         children.into_iter().cloned().collect()
     }
 
     fn dom<'a, C>(children: impl IntoIterator<Item = &'a DomNode<C>>) -> Dom<C>
-        where
-            C: 'static + Clone,
+    where
+        C: 'static + Clone,
     {
         Dom::new(clone_children(children))
     }
@@ -484,7 +484,7 @@ mod test {
                 i(&[tx("it")]),
                 tx("bar")
             ])
-                .to_string(),
+            .to_string(),
             "foo<b>BO<i>LD</i></b><i>it</i>bar"
         );
     }

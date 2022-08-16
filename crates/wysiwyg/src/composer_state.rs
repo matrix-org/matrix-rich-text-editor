@@ -13,27 +13,28 @@
 // limitations under the License.
 
 use crate::dom::{Dom, ToHtml};
-use crate::{Location};
+use crate::Location;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ComposerState<C>
 where
     C: Clone,
 {
-	pub dom: Dom<C>,
-	pub start: Location,
-	pub end: Location,
+    pub dom: Dom<C>,
+    pub start: Location,
+    pub end: Location,
 }
 
 impl<C> ComposerState<C>
 where
-C: Clone,
-Dom<C>: ToHtml<C> {
-	pub fn new() -> Self {
-		Self {
-			dom: Dom::new(Vec::new()),
-			start: Location::from(0),
-			end: Location::from(0),
-		}
-	}
+    C: Clone,
+    Dom<C>: ToHtml<C>,
+{
+    pub fn new() -> Self {
+        Self {
+            dom: Dom::new(Vec::new()),
+            start: Location::from(0),
+            end: Location::from(0),
+        }
+    }
 }

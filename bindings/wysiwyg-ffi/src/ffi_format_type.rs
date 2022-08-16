@@ -10,7 +10,9 @@ impl From<InlineFormatType> for wysiwyg::InlineFormatType {
         match inner {
             InlineFormatType::Bold => wysiwyg::InlineFormatType::Bold,
             InlineFormatType::Italic => wysiwyg::InlineFormatType::Italic,
-            InlineFormatType::Strikethrough => wysiwyg::InlineFormatType::Strikethrough,
+            InlineFormatType::Strikethrough => {
+                wysiwyg::InlineFormatType::Strikethrough
+            }
             InlineFormatType::Underline => wysiwyg::InlineFormatType::Underline,
         }
     }

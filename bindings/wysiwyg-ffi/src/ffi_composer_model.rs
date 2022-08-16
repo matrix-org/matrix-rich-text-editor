@@ -97,8 +97,13 @@ impl ComposerModel {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().enter()))
     }
 
-    pub fn format(self: &Arc<Self>, format: InlineFormatType) -> Arc<ComposerUpdate> {
-        Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().format(format.into())))
+    pub fn format(
+        self: &Arc<Self>,
+        format: InlineFormatType,
+    ) -> Arc<ComposerUpdate> {
+        Arc::new(ComposerUpdate::from(
+            self.inner.lock().unwrap().format(format.into()),
+        ))
     }
 
     pub fn undo(self: &Arc<Self>) -> Arc<ComposerUpdate> {
@@ -110,6 +115,11 @@ impl ComposerModel {
     }
 
     pub fn dump_state(self: &Arc<Self>) -> ComposerState {
-        self.inner.lock().unwrap().get_current_state().clone().into()
+        self.inner
+            .lock()
+            .unwrap()
+            .get_current_state()
+            .clone()
+            .into()
     }
 }
