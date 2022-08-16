@@ -1,7 +1,7 @@
 pub enum InlineFormatType {
     Bold,
     Italic,
-    Strikethrough,
+    StrikeThrough,
     Underline,
 }
 
@@ -10,8 +10,8 @@ impl From<InlineFormatType> for wysiwyg::InlineFormatType {
         match inner {
             InlineFormatType::Bold => wysiwyg::InlineFormatType::Bold,
             InlineFormatType::Italic => wysiwyg::InlineFormatType::Italic,
-            InlineFormatType::Strikethrough => {
-                wysiwyg::InlineFormatType::Strikethrough
+            InlineFormatType::StrikeThrough => {
+                wysiwyg::InlineFormatType::StrikeThrough
             }
             InlineFormatType::Underline => wysiwyg::InlineFormatType::Underline,
         }

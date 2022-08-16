@@ -101,8 +101,8 @@ extension WysiwygComposerViewModel {
         self.applyUpdate(update)
     }
 
-    func applyStrikethrough() {
-        let update = self.model.format(type: .strikethrough)
+    func applyStrikeThrough() {
+        let update = self.model.format(type: .strike_through)
         self.applyUpdate(update)
     }
 

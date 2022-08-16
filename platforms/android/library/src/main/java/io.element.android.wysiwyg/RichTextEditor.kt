@@ -34,8 +34,8 @@ class RichTextEditor : TextInputLayout {
             formatUnderlineButton.setOnClickListener {
                 editText.toggleInlineFormat(InlineFormat.Underline)
             }
-            formatStrikethroughButton.setOnClickListener {
-                editText.toggleInlineFormat(InlineFormat.Strikethrough)
+            formatStrikeThroughButton.setOnClickListener {
+                editText.toggleInlineFormat(InlineFormat.StrikeThrough)
             }
             undoButton.setOnClickListener {
                 editText.undo()

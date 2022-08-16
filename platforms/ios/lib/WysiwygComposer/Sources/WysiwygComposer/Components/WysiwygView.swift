@@ -46,11 +46,11 @@ public struct WysiwygView: View {
                 }
                 .buttonStyle(.automatic)
                 .accessibilityIdentifier("WysiwygItalicButton")
-                Button("Strikethrough") {
-                    viewModel.applyStrikethrough()
+                Button("StrikeThrough") {
+                    viewModel.applyStrikeThrough()
                 }
                 .buttonStyle(.automatic)
-                .accessibilityIdentifier("WysiwygStrikethroughButton")
+                .accessibilityIdentifier("WysiwygStrikeThroughButton")
                 Button("Underline") {
                     viewModel.applyUnderline()
                 }
