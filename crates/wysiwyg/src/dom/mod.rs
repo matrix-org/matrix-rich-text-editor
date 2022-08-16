@@ -12,16 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+pub mod dom_handle;
+pub mod element;
+pub mod html_formatter;
+pub mod to_html;
+pub mod range;
+pub mod nodes;
+pub mod find_result;
+
 use std::fmt::Display;
+pub use crate::dom::find_result::FindResult;
+pub use crate::dom::nodes::container_node::ContainerNode;
+pub use crate::dom::dom_handle::DomHandle;
+pub use crate::dom::element::Element;
+pub use crate::dom::nodes::formatting_node::FormattingNode;
+pub use crate::dom::html_formatter::HtmlFormatter;
+pub use crate::dom::nodes::dom_node::DomNode;
+pub use crate::dom::to_html::ToHtml;
+pub use crate::dom::range::{Range, SameNodeRange};
+pub use crate::dom::nodes::text_node::TextNode;
 
 fn utf8(input: &[u16]) -> String {
     String::from_utf16(input).expect("Invalid UTF-16!")
-}
-
-trait Element<'a, C> {
-    fn name(&'a self) -> &'a Vec<C>;
-    fn children(&'a self) -> &'a Vec<DomNode<C>>;
-    fn children_mut(&'a mut self) -> &'a mut Vec<DomNode<C>>;
 }
 
 fn fmt_element<'a, C>(
@@ -51,152 +63,11 @@ fn fmt_element<'a, C>(
     }
 }
 
-fn fmt_element_u16<'a>(
+pub fn fmt_element_u16<'a>(
     element: &'a impl Element<'a, u16>,
     f: &mut HtmlFormatter<u16>,
 ) {
     fmt_element(element, '<' as u16, '>' as u16, '/' as u16, f);
-}
-
-pub struct HtmlFormatter<C> {
-    chars: Vec<C>,
-}
-
-impl<C> HtmlFormatter<C>
-where
-    C: Clone,
-{
-    pub fn new() -> Self {
-        Self { chars: Vec::new() }
-    }
-
-    pub fn write_char(&mut self, c: &C) {
-        self.chars.push(c.clone());
-    }
-
-    pub fn write(&mut self, slice: &[C]) {
-        self.chars.extend_from_slice(slice);
-    }
-
-    pub fn write_iter(&mut self, chars: impl Iterator<Item = C>) {
-        self.chars.extend(chars)
-    }
-
-    pub fn finish(self) -> Vec<C> {
-        self.chars
-    }
-}
-
-pub trait ToHtml<C>
-where
-    C: Clone,
-{
-    fn fmt_html(&self, f: &mut HtmlFormatter<C>);
-
-    fn to_html(&self) -> Vec<C> {
-        let mut f = HtmlFormatter::new();
-        self.fmt_html(&mut f);
-        f.finish()
-    }
-}
-
-impl ToHtml<u16> for &str {
-    fn fmt_html(&self, f: &mut HtmlFormatter<u16>) {
-        f.write_iter(self.encode_utf16());
-    }
-}
-
-impl ToHtml<u16> for String {
-    fn fmt_html(&self, f: &mut HtmlFormatter<u16>) {
-        f.write_iter(self.encode_utf16());
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct DomHandle {
-    // Later, we will want to allow continuing iterating from this handle, and
-    // comparing handles to see which is first in the iteration order. This
-    // will allow us to walk the tree from earliest to latest of 2 handles.
-    path: Vec<usize>,
-}
-
-impl DomHandle {
-    fn from_raw(path: Vec<usize>) -> Self {
-        Self { path }
-    }
-
-    fn parent_handle(&self) -> DomHandle {
-        assert!(self.path.len() > 0);
-
-        let mut new_path = self.path.clone();
-        new_path.pop();
-        DomHandle::from_raw(new_path)
-    }
-
-    fn child_handle(&self, child_index: usize) -> DomHandle {
-        let mut new_path = self.path.clone();
-        new_path.push(child_index);
-        DomHandle::from_raw(new_path)
-    }
-
-    fn index_in_parent(&self) -> usize {
-        assert!(self.path.len() > 0);
-
-        self.path.last().unwrap().clone()
-    }
-
-    fn raw(&self) -> &Vec<usize> {
-        &self.path
-    }
-
-    /// Create a new INVALID handle
-    ///
-    /// Don't use this to lookup_node(). It will return the wrong node
-    fn new_invalid() -> Self {
-        Self {
-            path: vec![usize::MAX],
-        }
-    }
-
-    pub fn is_valid(&self) -> bool {
-        !self.path.contains(&usize::MAX)
-    }
-}
-
-/// The answer supplied when you ask where a range is in the DOM, and the start
-/// and end are both inside the same node.
-#[derive(Debug, PartialEq)]
-pub struct SameNodeRange {
-    /// The node containing the range
-    pub node_handle: DomHandle,
-
-    /// The position within this node that corresponds to the start of the range
-    pub start_offset: usize,
-
-    /// The position within this node that corresponds to the end of the range
-    pub end_offset: usize,
-}
-
-#[derive(Debug, PartialEq)]
-pub enum Range {
-    SameNode(SameNodeRange),
-
-    // The range is too complex to calculate (for now)
-    TooDifficultForMe,
-
-    // The DOM contains no nodes at all!
-    NoNode,
-}
-
-#[derive(Debug, PartialEq)]
-enum FindResult {
-    Found {
-        node_handle: DomHandle,
-        offset: usize,
-    },
-    NotFound {
-        new_offset: usize,
-    },
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -416,9 +287,9 @@ impl<C> Dom<C> {
 }
 
 impl<C> ToHtml<C> for Dom<C>
-where
-    C: Clone,
-    ContainerNode<C>: ToHtml<C>,
+    where
+        C: Clone,
+        ContainerNode<C>: ToHtml<C>,
 {
     fn fmt_html(&self, f: &mut HtmlFormatter<C>) {
         self.document().fmt_html(f)
@@ -429,171 +300,6 @@ impl Display for Dom<u16> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&utf8(&self.to_html()))?;
         Ok(())
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct ContainerNode<C> {
-    name: Vec<C>,
-    children: Vec<DomNode<C>>,
-    handle: DomHandle,
-}
-
-impl<C> ContainerNode<C> {
-    /// Create a new ContainerNode
-    ///
-    /// NOTE: Its handle() will be invalid until you call set_handle() or
-    /// append() it to another node.
-    pub fn new(name: Vec<C>, children: Vec<DomNode<C>>) -> Self {
-        Self {
-            name,
-            children,
-            handle: DomHandle::new_invalid(),
-        }
-    }
-
-    pub fn append(&mut self, mut child: DomNode<C>) {
-        assert!(self.handle.is_valid());
-
-        let child_index = self.children.len();
-        let child_handle = self.handle.child_handle(child_index);
-        child.set_handle(child_handle);
-        self.children.push(child);
-    }
-
-    fn replace_child(&mut self, index: usize, nodes: Vec<DomNode<C>>) {
-        assert!(self.handle.is_valid());
-        assert!(index < self.children().len());
-
-        self.children.remove(index);
-        let mut current_index = index;
-        for mut node in nodes {
-            let child_handle = self.handle.child_handle(current_index);
-            node.set_handle(child_handle);
-            self.children.insert(current_index, node);
-            current_index += 1;
-        }
-
-        for child_index in current_index..self.children.len() {
-            let new_handle = self.handle.child_handle(child_index);
-            self.children[child_index].set_handle(new_handle);
-        }
-    }
-
-    fn handle(&self) -> DomHandle {
-        self.handle.clone()
-    }
-
-    fn set_handle(&mut self, handle: DomHandle) {
-        self.handle = handle;
-        for (i, child) in self.children.iter_mut().enumerate() {
-            child.set_handle(self.handle.child_handle(i))
-        }
-    }
-}
-
-impl<'a, C> Element<'a, C> for ContainerNode<C> {
-    fn name(&'a self) -> &'a Vec<C> {
-        &self.name
-    }
-
-    fn children(&'a self) -> &'a Vec<DomNode<C>> {
-        &self.children
-    }
-
-    fn children_mut(&'a mut self) -> &'a mut Vec<DomNode<C>> {
-        // TODO: replace with soemthing like get_child_mut - we want to avoid
-        // anyone pushing onto this, because the handles will be invalid
-        &mut self.children
-    }
-}
-
-impl ToHtml<u16> for ContainerNode<u16> {
-    fn fmt_html(&self, f: &mut HtmlFormatter<u16>) {
-        fmt_element_u16(self, f)
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct FormattingNode<C> {
-    name: Vec<C>,
-    children: Vec<DomNode<C>>,
-    handle: DomHandle,
-}
-
-impl<C> FormattingNode<C> {
-    /// Create a new FormattingNode
-    ///
-    /// NOTE: Its handle() will be invalid until you call set_handle() or
-    /// append() it to another node.
-    pub fn new(name: Vec<C>, children: Vec<DomNode<C>>) -> Self {
-        Self {
-            name,
-            children,
-            handle: DomHandle::new_invalid(),
-        }
-    }
-
-    fn handle(&self) -> DomHandle {
-        self.handle.clone()
-    }
-
-    fn set_handle(&mut self, handle: DomHandle) {
-        // TODO: copied into 2 places - move into Element?
-        self.handle = handle;
-        for (i, child) in self.children.iter_mut().enumerate() {
-            child.set_handle(self.handle.child_handle(i))
-        }
-    }
-
-    pub fn append(&mut self, mut child: DomNode<C>) {
-        assert!(self.handle.is_valid());
-        // TODO: copied into 2 places - move into Element?
-
-        let child_index = self.children.len();
-        let child_handle = self.handle.child_handle(child_index);
-        child.set_handle(child_handle);
-        self.children.push(child);
-    }
-
-    fn replace_child(&mut self, index: usize, nodes: Vec<DomNode<C>>) {
-        assert!(self.handle.is_valid());
-        assert!(index < self.children().len());
-        // TODO: copied into 2 places - move into Element?
-
-        self.children.remove(index);
-        let mut current_index = index;
-        for mut node in nodes {
-            let child_handle = self.handle.child_handle(current_index);
-            node.set_handle(child_handle);
-            self.children.insert(current_index, node);
-            current_index += 1;
-        }
-
-        for child_index in current_index..self.children.len() {
-            let new_handle = self.handle.child_handle(child_index);
-            self.children[child_index].set_handle(new_handle);
-        }
-    }
-}
-
-impl<'a, C> Element<'a, C> for FormattingNode<C> {
-    fn name(&'a self) -> &'a Vec<C> {
-        &self.name
-    }
-
-    fn children(&'a self) -> &'a Vec<DomNode<C>> {
-        &self.children
-    }
-
-    fn children_mut(&'a mut self) -> &'a mut Vec<DomNode<C>> {
-        &mut self.children
-    }
-}
-
-impl ToHtml<u16> for FormattingNode<u16> {
-    fn fmt_html(&self, f: &mut HtmlFormatter<u16>) {
-        fmt_element_u16(self, f)
     }
 }
 
@@ -608,88 +314,9 @@ impl Display for ItemNode {
 }
 */
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct TextNode<C> {
-    data: Vec<C>,
-    handle: DomHandle,
-}
-
-impl<C> TextNode<C> {
-    /// Create a new TextNode
-    ///
-    /// NOTE: Its handle() will be invalid until you call set_handle() or
-    /// append() it to another node.
-    pub fn from(data: Vec<C>) -> Self
-    where
-        C: Clone,
-    {
-        Self {
-            data,
-            handle: DomHandle::new_invalid(),
-        }
-    }
-
-    pub fn data(&self) -> &[C] {
-        &self.data
-    }
-
-    pub fn set_data(&mut self, data: Vec<C>) {
-        self.data = data;
-    }
-
-    fn handle(&self) -> DomHandle {
-        self.handle.clone()
-    }
-
-    fn set_handle(&mut self, handle: DomHandle) {
-        self.handle = handle;
-    }
-}
-
-impl ToHtml<u16> for TextNode<u16> {
-    fn fmt_html(&self, f: &mut HtmlFormatter<u16>) {
-        f.write(&self.data)
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum DomNode<C> {
-    Container(ContainerNode<C>),   // E.g. html, div
-    Formatting(FormattingNode<C>), // E.g. b, i
-    // TODO Item(ItemNode<C>),             // E.g. a, pills
-    Text(TextNode<C>),
-}
-
-impl<C> DomNode<C> {
-    pub fn handle(&self) -> DomHandle {
-        match self {
-            DomNode::Container(n) => n.handle(),
-            DomNode::Formatting(n) => n.handle(),
-            DomNode::Text(n) => n.handle(),
-        }
-    }
-
-    fn set_handle(&mut self, handle: DomHandle) {
-        match self {
-            DomNode::Container(n) => n.set_handle(handle),
-            DomNode::Formatting(n) => n.set_handle(handle),
-            DomNode::Text(n) => n.set_handle(handle),
-        }
-    }
-}
-impl ToHtml<u16> for DomNode<u16> {
-    fn fmt_html(&self, f: &mut HtmlFormatter<u16>) {
-        match self {
-            DomNode::Container(s) => s.fmt_html(f),
-            DomNode::Formatting(s) => s.fmt_html(f),
-            // TODO DomNode::Item(s) => s.fmt_html(f),
-            DomNode::Text(s) => s.fmt_html(f),
-        }
-    }
-}
-
 #[cfg(test)]
 mod test {
+    use crate::dom::nodes::dom_node::DomNode;
     use super::*;
 
     fn utf16(input: &str) -> Vec<u16> {
@@ -699,15 +326,15 @@ mod test {
     fn clone_children<'a, C>(
         children: impl IntoIterator<Item = &'a DomNode<C>>,
     ) -> Vec<DomNode<C>>
-    where
-        C: 'static + Clone,
+        where
+            C: 'static + Clone,
     {
         children.into_iter().cloned().collect()
     }
 
     fn dom<'a, C>(children: impl IntoIterator<Item = &'a DomNode<C>>) -> Dom<C>
-    where
-        C: 'static + Clone,
+        where
+            C: 'static + Clone,
     {
         Dom::new(clone_children(children))
     }
@@ -857,7 +484,7 @@ mod test {
                 i(&[tx("it")]),
                 tx("bar")
             ])
-            .to_string(),
+                .to_string(),
             "foo<b>BO<i>LD</i></b><i>it</i>bar"
         );
     }
