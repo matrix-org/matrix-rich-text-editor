@@ -14,17 +14,29 @@ async function wysiwyg_run() {
     editor.addEventListener('input', editor_input);
     editor.addEventListener("keydown", editor_keydown);
 
-    button_undo = document.getElementById('button_undo');
-    button_undo.addEventListener('click', button_undo_click);
-    button_undo.href = "";
+    button_bold = document.getElementById('button_bold');
+    button_bold.addEventListener('click', button_bold_click);
+    button_bold.href = "";
+
+    button_italic = document.getElementById('button_italic');
+    button_italic.addEventListener('click', button_italic_click);
+    button_italic.href = "";
 
     button_redo = document.getElementById('button_redo');
     button_redo.addEventListener('click', button_redo_click);
     button_redo.href = "";
 
-    button_bold = document.getElementById('button_bold');
-    button_bold.addEventListener('click', button_bold_click);
-    button_bold.href = "";
+    button_strike_through = document.getElementById('button_strike_through');
+    button_strike_through.addEventListener('click', button_strike_through_click);
+    button_strike_through.href = "";
+
+    button_underline = document.getElementById('button_underline');
+    button_underline.addEventListener('click', button_underline_click);
+    button_underline.href = "";
+
+    button_undo = document.getElementById('button_undo');
+    button_undo.addEventListener('click', button_undo_click);
+    button_undo.href = "";
 
     document.addEventListener('selectionchange', selectionchange);
     editor.focus();
@@ -44,40 +56,61 @@ function editor_input(e) {
     }
 }
 
-function editor_keydown(e) {
-    let inputType = input_for_editor_keydown(e);
-    if (inputType) {
-        editor.dispatchEvent(new InputEvent('input', { inputType }));
-        e.preventDefault();
-    }
+function send_input(e, inputType) {
+    editor.dispatchEvent(new InputEvent('input', { inputType }));
+    e.preventDefault();
 }
 
 function input_for_editor_keydown(e) {
-    if (!(e.ctrlKey || e.metaKey)) {
-        return null;
+    if (e.shiftKey && e.altKey) {
+        switch (e.key) {
+            case '5': return "formatStrikeThrough";
+        }
     }
 
-    switch (e.key) {
-        case 'b': return "formatBold";
-        case 'y': return "historyRedo";
-        case 'z': return "historyUndo";
-        case 'Z': return "historyRedo";
+    if ((e.ctrlKey || e.metaKey)) {
+        switch (e.key) {
+            case 'b': return "formatBold";
+            case 'i': return "formatItalic";
+            case 'u': return "formatUnderline";
+            case 'y': return "historyRedo";
+            case 'z': return "historyUndo";
+            case 'Z': return "historyRedo";
+        }
     }
+
+    return null;
 }
 
-function button_undo_click(e) {
-    editor.dispatchEvent(new InputEvent('input', { inputType: "historyUndo" }));
-    e.preventDefault();
-}
-
-function button_redo_click(e) {
-    editor.dispatchEvent(new InputEvent('input', { inputType: "historyRedo" }));
-    e.preventDefault();
+function editor_keydown(e) {
+    let inputType = input_for_editor_keydown(e);
+    if (inputType) {
+        send_input(e, inputType);
+    }
 }
 
 function button_bold_click(e) {
-    editor.dispatchEvent(new InputEvent('input', { inputType: "formatBold" }));
-    e.preventDefault();
+    send_input(e, "formatBold");
+}
+
+function button_italic_click(e) {
+    send_input(e, "formatItalic");
+}
+
+function button_strike_through_click(e) {
+    send_input(e, "formatStrikeThrough");
+}
+
+function button_redo_click(e) {
+    send_input(e, "historyRedo");
+}
+
+function button_underline_click(e) {
+    send_input(e, "formatUnderline");
+}
+
+function button_undo_click(e) {
+    send_input(e, "historyUndo");
 }
 
 function selectionchange() {
@@ -240,6 +273,15 @@ function process_input(e) {
         case "formatBold":
             console.debug(`composer_model.bold()`);
             return composer_model.bold();
+        case "formatItalic":
+            console.debug(`composer_model.italic()`);
+            return composer_model.italic();
+        case "formatStrikeThrough":
+            console.debug(`composer_model.strike_through()`);
+            return composer_model.strike_through();
+        case "formatUnderline":
+            console.debug(`composer_model.underline()`);
+            return composer_model.underline();
         case "historyRedo":
             console.debug(`composer_model.redo()`);
             return composer_model.redo();
