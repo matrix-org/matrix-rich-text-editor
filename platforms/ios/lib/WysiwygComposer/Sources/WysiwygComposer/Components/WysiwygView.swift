@@ -36,26 +36,48 @@ public struct WysiwygView: View {
             .padding([.leading, .trailing], 8)
             .padding([.top, .bottom], 4)
             HStack {
-                Button("Bold") {
+                Button {
                     viewModel.applyBold()
+                } label: {
+                    Image(systemName: "bold")
                 }
                 .buttonStyle(.automatic)
                 .accessibilityIdentifier("WysiwygBoldButton")
-                Button("Italic") {
+                Button {
                     viewModel.applyItalic()
+                } label: {
+                    Image(systemName: "italic")
                 }
                 .buttonStyle(.automatic)
                 .accessibilityIdentifier("WysiwygItalicButton")
-                Button("StrikeThrough") {
+                Button {
                     viewModel.applyStrikeThrough()
+                } label: {
+                    Image(systemName: "strikethrough")
                 }
                 .buttonStyle(.automatic)
                 .accessibilityIdentifier("WysiwygStrikeThroughButton")
-                Button("Underline") {
+                Button {
                     viewModel.applyUnderline()
+                } label: {
+                    Image(systemName: "underline")
                 }
                 .buttonStyle(.automatic)
                 .accessibilityIdentifier("WysiwygUnderlineButton")
+                Button {
+                    viewModel.undo()
+                } label: {
+                    Image(systemName: "arrow.uturn.backward")
+                }
+                .buttonStyle(.automatic)
+                .accessibilityIdentifier("WysiwygUndoButton")
+                Button {
+                    viewModel.redo()
+                } label: {
+                    Image(systemName: "arrow.uturn.forward")
+                }
+                .buttonStyle(.automatic)
+                .accessibilityIdentifier("WysiwygRedoButton")
             }
             .frame(width: nil, height: 50, alignment: .center)
         }

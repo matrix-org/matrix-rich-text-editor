@@ -110,6 +110,16 @@ extension WysiwygComposerViewModel {
         let update = self.model.format(type: .underline)
         self.applyUpdate(update)
     }
+
+    func undo() {
+        let update = self.model.undo()
+        self.applyUpdate(update)
+    }
+
+    func redo() {
+        let update = self.model.redo()
+        self.applyUpdate(update)
+    }
 }
 
 // MARK: - Private
