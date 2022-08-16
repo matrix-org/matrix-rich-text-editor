@@ -75,8 +75,26 @@ impl ComposerModel {
         ComposerUpdate::from(self.inner.format(wysiwyg::InlineFormatType::Bold))
     }
 
+    pub fn italic(&mut self) -> ComposerUpdate {
+        ComposerUpdate::from(
+            self.inner.format(wysiwyg::InlineFormatType::Italic),
+        )
+    }
+
     pub fn redo(&mut self) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.redo())
+    }
+
+    pub fn strike_through(&mut self) -> ComposerUpdate {
+        ComposerUpdate::from(
+            self.inner.format(wysiwyg::InlineFormatType::StrikeThrough),
+        )
+    }
+
+    pub fn underline(&mut self) -> ComposerUpdate {
+        ComposerUpdate::from(
+            self.inner.format(wysiwyg::InlineFormatType::Underline),
+        )
     }
 
     pub fn undo(&mut self) -> ComposerUpdate {
