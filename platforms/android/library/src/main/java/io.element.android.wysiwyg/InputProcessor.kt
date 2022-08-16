@@ -5,6 +5,7 @@ import androidx.core.text.HtmlCompat
 import io.element.android.wysiwyg.extensions.log
 import io.element.android.wysiwyg.extensions.string
 import uniffi.wysiwyg_composer.ComposerModel
+import uniffi.wysiwyg_composer.InlineFormatType
 import uniffi.wysiwyg_composer.TextUpdate
 
 class InputProcessor(
@@ -30,9 +31,7 @@ class InputProcessor(
                 composer.backspace()
             }
             is EditorInputAction.ApplyInlineFormat -> {
-                when (action.format) {
-                    is InlineFormat.Bold -> composer.bold()
-                }
+                composer.format(action.format.toBindings())
             }
             is EditorInputAction.Delete -> {
                 composer.deleteIn(action.start.toUInt(), action.end.toUInt())
@@ -77,6 +76,16 @@ sealed interface EditorInputAction {
 
 sealed interface InlineFormat {
     object Bold: InlineFormat
+    object Italic: InlineFormat
+    object Underline: InlineFormat
+    object Strikethrough: InlineFormat
+
+    fun toBindings(): InlineFormatType = when (this) {
+        Bold -> InlineFormatType.Bold
+        Italic -> InlineFormatType.Italic
+        Underline -> InlineFormatType.Underline
+        Strikethrough -> InlineFormatType.Strikethrough
+    }
 }
 
 data class ReplaceTextResult(

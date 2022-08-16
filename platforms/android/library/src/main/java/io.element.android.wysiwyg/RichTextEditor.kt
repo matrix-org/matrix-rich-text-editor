@@ -28,6 +28,15 @@ class RichTextEditor : TextInputLayout {
             formatBoldButton.setOnClickListener {
                 editText.toggleInlineFormat(InlineFormat.Bold)
             }
+            formatItalicButton.setOnClickListener {
+                editText.toggleInlineFormat(InlineFormat.Italic)
+            }
+            formatUnderlineButton.setOnClickListener {
+                editText.toggleInlineFormat(InlineFormat.Underline)
+            }
+            formatStrikethroughButton.setOnClickListener {
+                editText.toggleInlineFormat(InlineFormat.Strikethrough)
+            }
             undoButton.setOnClickListener {
                 editText.undo()
             }
