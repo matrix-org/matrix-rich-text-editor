@@ -273,6 +273,7 @@ mod test {
 
     use super::ComposerModel;
     use crate::ComposerState;
+    use crate::InlineFormatType::Bold;
 
     fn utf8(utf16: &[u16]) -> String {
         String::from_utf16(&utf16).expect("Invalid UTF-16!")
@@ -556,7 +557,7 @@ mod test {
         let mut model = cm("hello {world}|!");
         assert!(model.previous_states.is_empty());
 
-        model.bold();
+        model.format(Bold);
         assert!(!model.previous_states.is_empty());
     }
 
