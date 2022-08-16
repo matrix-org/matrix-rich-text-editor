@@ -78,13 +78,13 @@ sealed interface InlineFormat {
     object Bold: InlineFormat
     object Italic: InlineFormat
     object Underline: InlineFormat
-    object Strikethrough: InlineFormat
+    object StrikeThrough: InlineFormat
 
     fun toBindings(): InlineFormatType = when (this) {
         Bold -> InlineFormatType.Bold
         Italic -> InlineFormatType.Italic
         Underline -> InlineFormatType.Underline
-        Strikethrough -> InlineFormatType.Strikethrough
+        StrikeThrough -> InlineFormatType.StrikeThrough
     }
 }
 

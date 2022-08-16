@@ -16,7 +16,7 @@
 pub enum InlineFormatType {
     Bold,
     Italic,
-    Strikethrough,
+    StrikeThrough,
     Underline,
 }
 
@@ -25,7 +25,7 @@ impl InlineFormatType {
         match self {
             InlineFormatType::Bold => "strong",
             InlineFormatType::Italic => "em",
-            InlineFormatType::Strikethrough => "del",
+            InlineFormatType::StrikeThrough => "del",
             InlineFormatType::Underline => "u",
         }
     }
