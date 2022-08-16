@@ -92,7 +92,22 @@ extension WysiwygComposerViewModel {
 
     /// Apply bold formatting to the current selection.
     func applyBold() {
-        let update = self.model.bold()
+        let update = self.model.format(type: .bold)
+        self.applyUpdate(update)
+    }
+
+    func applyItalic() {
+        let update = self.model.format(type: .italic)
+        self.applyUpdate(update)
+    }
+
+    func applyStrikethrough() {
+        let update = self.model.format(type: .strikethrough)
+        self.applyUpdate(update)
+    }
+
+    func applyUnderline() {
+        let update = self.model.format(type: .underline)
         self.applyUpdate(update)
     }
 }

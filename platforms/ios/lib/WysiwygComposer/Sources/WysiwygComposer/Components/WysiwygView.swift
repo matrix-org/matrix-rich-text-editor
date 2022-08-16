@@ -35,12 +35,29 @@ public struct WysiwygView: View {
              */
             .padding([.leading, .trailing], 8)
             .padding([.top, .bottom], 4)
-            Button("Bold") {
-                viewModel.applyBold()
+            HStack {
+                Button("Bold") {
+                    viewModel.applyBold()
+                }
+                .buttonStyle(.automatic)
+                .accessibilityIdentifier("WysiwygBoldButton")
+                Button("Italic") {
+                    viewModel.applyItalic()
+                }
+                .buttonStyle(.automatic)
+                .accessibilityIdentifier("WysiwygItalicButton")
+                Button("Strikethrough") {
+                    viewModel.applyStrikethrough()
+                }
+                .buttonStyle(.automatic)
+                .accessibilityIdentifier("WysiwygStrikethroughButton")
+                Button("Underline") {
+                    viewModel.applyUnderline()
+                }
+                .buttonStyle(.automatic)
+                .accessibilityIdentifier("WysiwygUnderlineButton")
             }
             .frame(width: nil, height: 50, alignment: .center)
-            .buttonStyle(.automatic)
-            .accessibilityIdentifier("WysiwygBoldButton")
         }
     }
 
