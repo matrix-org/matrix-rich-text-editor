@@ -75,6 +75,14 @@ impl ComposerModel {
         ComposerUpdate::from(self.inner.format(wysiwyg::InlineFormatType::Bold))
     }
 
+    pub fn redo(&mut self) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.redo())
+    }
+
+    pub fn undo(&mut self) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.undo())
+    }
+
     /*pub fn action_response(
         self: &Arc<Self>,
         action_id: String,
