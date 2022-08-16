@@ -14,7 +14,15 @@ async function wysiwyg_run() {
     editor.addEventListener('input', editor_input);
     editor.addEventListener("keydown", editor_keydown);
 
-    button_bold = document.getElementsByClassName('button_bold')[0];
+    button_undo = document.getElementById('button_undo');
+    button_undo.addEventListener('click', button_undo_click);
+    button_undo.href = "";
+
+    button_redo = document.getElementById('button_redo');
+    button_redo.addEventListener('click', button_redo_click);
+    button_redo.href = "";
+
+    button_bold = document.getElementById('button_bold');
     button_bold.addEventListener('click', button_bold_click);
     button_bold.href = "";
 
@@ -37,17 +45,34 @@ function editor_input(e) {
 }
 
 function editor_keydown(e) {
+    let inputType = input_for_editor_keydown(e);
+    if (inputType) {
+        editor.dispatchEvent(new InputEvent('input', { inputType }));
+        e.preventDefault();
+    }
+}
+
+function input_for_editor_keydown(e) {
     if (!(e.ctrlKey || e.metaKey)) {
-        return;
+        return null;
     }
+
     switch (e.key) {
-        case 'b':
-            editor.dispatchEvent(
-                new InputEvent('input', { inputType: "formatBold" })
-            );
-            e.preventDefault();
-            break;
+        case 'b': return "formatBold";
+        case 'y': return "historyRedo";
+        case 'z': return "historyUndo";
+        case 'Z': return "historyRedo";
     }
+}
+
+function button_undo_click(e) {
+    editor.dispatchEvent(new InputEvent('input', { inputType: "historyUndo" }));
+    e.preventDefault();
+}
+
+function button_redo_click(e) {
+    editor.dispatchEvent(new InputEvent('input', { inputType: "historyRedo" }));
+    e.preventDefault();
 }
 
 function button_bold_click(e) {
@@ -215,6 +240,12 @@ function process_input(e) {
         case "formatBold":
             console.debug(`composer_model.bold()`);
             return composer_model.bold();
+        case "historyRedo":
+            console.debug(`composer_model.redo()`);
+            return composer_model.redo();
+        case "historyUndo":
+            console.debug(`composer_model.undo()`);
+            return composer_model.undo();
         case "insertFromPaste":
         {
             const data = e.dataTransfer.getData("text");
