@@ -110,7 +110,7 @@ where
             }
 
             _ => panic!(
-                "Can't replace_text_in in complex object models yet. {}",
+                "Can't replace_text_in in complex object models yet. {:?}",
                 range
             ),
         }
@@ -686,8 +686,7 @@ mod test {
     #[test]
     fn set_link_wraps_selection_in_link_tag() {
         let mut model = cm("{hello}| world");
-        let update =
-            model.set_link("https://element.io".encode_utf16().collect());
+        model.set_link("https://element.io".encode_utf16().collect());
         assert_eq!(
             model.state.dom.to_string(),
             "<a href=\"https://element.io\">hello</a> world"

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 use crate::dom::dom_handle::DomHandle;
-use std::fmt::{Display, Formatter};
 
 #[derive(Debug, PartialEq)]
 pub enum Range {
@@ -38,20 +37,4 @@ pub struct SameNodeRange {
 
     /// The position within this node that corresponds to the end of the range
     pub end_offset: usize,
-}
-
-impl Display for Range {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Range::SameNode(range) => f.write_str(
-                format!(
-                    "SameNode: {} {}",
-                    range.start_offset, range.end_offset
-                )
-                .as_str(),
-            ),
-            Range::TooDifficultForMe => f.write_str("TooDifficultForMe"),
-            Range::NoNode => f.write_str("NoNode"),
-        }
-    }
 }
