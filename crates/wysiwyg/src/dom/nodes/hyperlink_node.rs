@@ -13,27 +13,38 @@
 // limitations under the License.
 
 use crate::dom::dom_handle::DomHandle;
-use crate::dom::element::Element;
-use crate::dom::fmt_element_u16;
-use crate::dom::html_formatter::HtmlFormatter;
 use crate::dom::nodes::dom_node::DomNode;
+use crate::dom::{fmt_element_u16, Element, HtmlFormatter};
 use crate::ToHtml;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct FormattingNode<C> {
+pub struct HyperlinkNode<C> {
     name: Vec<C>,
+    attrs: Vec<(Vec<C>, Vec<C>)>,
     children: Vec<DomNode<C>>,
     handle: DomHandle,
 }
 
-impl<C> FormattingNode<C> {
-    /// Create a new FormattingNode
-    ///
-    /// NOTE: Its handle() will be invalid until you call set_handle() or
-    /// append() it to another node.
-    pub fn new(name: Vec<C>, children: Vec<DomNode<C>>) -> Self {
+impl HyperlinkNode<u16> {
+    pub fn new_utf16(link: Vec<u16>, children: Vec<DomNode<u16>>) -> Self {
+        Self {
+            name: "a".encode_utf16().collect(),
+            attrs: vec![("href".encode_utf16().collect(), link)],
+            children,
+            handle: DomHandle::new_invalid(),
+        }
+    }
+}
+
+impl<C> HyperlinkNode<C> {
+    pub fn new(
+        name: Vec<C>,
+        attrs: Vec<(Vec<C>, Vec<C>)>,
+        children: Vec<DomNode<C>>,
+    ) -> Self {
         Self {
             name,
+            attrs,
             children,
             handle: DomHandle::new_invalid(),
         }
@@ -63,7 +74,7 @@ impl<C> FormattingNode<C> {
 
     pub fn replace_child(&mut self, index: usize, nodes: Vec<DomNode<C>>) {
         assert!(self.handle.is_valid());
-        assert!(index < self.children().len());
+        assert!(index < self.children.len());
         // TODO: copied into 2 places - move into Element?
 
         self.children.remove(index);
@@ -82,13 +93,13 @@ impl<C> FormattingNode<C> {
     }
 }
 
-impl<'a, C> Element<'a, C> for FormattingNode<C> {
+impl<'a, C> Element<'a, C> for HyperlinkNode<C> {
     fn name(&'a self) -> &'a Vec<C> {
         &self.name
     }
 
     fn attributes(&'a self) -> Option<&'a Vec<(Vec<C>, Vec<C>)>> {
-        None
+        Some(&self.attrs)
     }
 
     fn children(&'a self) -> &'a Vec<DomNode<C>> {
@@ -96,11 +107,13 @@ impl<'a, C> Element<'a, C> for FormattingNode<C> {
     }
 
     fn children_mut(&'a mut self) -> &'a mut Vec<DomNode<C>> {
+        // TODO: replace with soemthing like get_child_mut - we want to avoid
+        // anyone pushing onto this, because the handles will be invalid
         &mut self.children
     }
 }
 
-impl ToHtml<u16> for FormattingNode<u16> {
+impl ToHtml<u16> for HyperlinkNode<u16> {
     fn fmt_html(&self, f: &mut HtmlFormatter<u16>) {
         fmt_element_u16(self, f)
     }

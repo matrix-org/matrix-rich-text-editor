@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::dom::nodes::hyperlink_node::HyperlinkNode;
 use crate::dom::{
     Dom, DomNode, FormattingNode, Range, SameNodeRange, TextNode, ToHtml,
 };
@@ -108,7 +109,10 @@ where
                 self.state.end = self.state.start;
             }
 
-            _ => panic!("Can't replace_text_in in complex object models yet"),
+            _ => panic!(
+                "Can't replace_text_in in complex object models yet. {}",
+                range
+            ),
         }
 
         // TODO: for now, we replace every time, to check ourselves, but
@@ -274,13 +278,67 @@ where
     }
 }
 
+impl<'a> ComposerModel<u16>
+where
+    Dom<u16>: ToHtml<u16>,
+    &'a str: ToHtml<u16>,
+{
+    pub fn set_link(&mut self, link: Vec<u16>) -> ComposerUpdate<u16> {
+        let (s, e) = self.safe_selection();
+        // Can't add a link to an empty selection
+        if s == e {
+            return ComposerUpdate::keep();
+        }
+        // Store current Dom
+        self.push_state_to_history();
+
+        let range = self.state.dom.find_range_mut(s, e);
+        match range {
+            Range::SameNode(range) => {
+                self.set_link_same_node(range, link);
+                // TODO: for now, we replace every time, to check ourselves, but
+                // at least some of the time we should not
+                return self.create_update_replace_all();
+            }
+
+            Range::NoNode => {
+                panic!("Can't add link to empty range");
+            }
+
+            _ => panic!("Can't add link in complex object models yet"),
+        }
+    }
+
+    fn set_link_same_node(&mut self, range: SameNodeRange, link: Vec<u16>) {
+        // TODO: set link should be able to wrap container nodes, unlike formatting
+        let node = self.state.dom.lookup_node(range.node_handle.clone());
+        if let DomNode::Text(t) = node {
+            let text = t.data();
+            // TODO: can we be globally smart about not leaving empty text nodes ?
+            let before = text[..range.start_offset].to_vec();
+            let during = text[range.start_offset..range.end_offset].to_vec();
+            let after = text[range.end_offset..].to_vec();
+            let new_nodes = vec![
+                DomNode::Text(TextNode::from(before)),
+                DomNode::Link(HyperlinkNode::new_utf16(
+                    link,
+                    vec![DomNode::Text(TextNode::from(during))],
+                )),
+                DomNode::Text(TextNode::from(after)),
+            ];
+            self.state.dom.replace(range.node_handle, new_nodes);
+        } else {
+            panic!("Trying to bold a non-text node")
+        }
+    }
+}
 #[cfg(test)]
 mod test {
     use speculoos::{prelude::*, AssertionFailure, Spec};
 
     use crate::{
         dom::{Dom, DomNode, TextNode, ToHtml},
-        InlineFormatType, Location,
+        InlineFormatType, Location, TextUpdate,
     };
 
     use super::ComposerModel;
@@ -615,6 +673,25 @@ mod test {
         model.redo();
 
         assert_eq!(model.previous_states[0], model.state);
+    }
+
+    #[test]
+    fn cant_set_link_to_empty_selection() {
+        let mut model = cm("hello |world");
+        let update =
+            model.set_link("https://element.io".encode_utf16().collect());
+        assert!(matches!(update.text_update, TextUpdate::Keep));
+    }
+
+    #[test]
+    fn set_link_wraps_selection_in_link_tag() {
+        let mut model = cm("{hello}| world");
+        let update =
+            model.set_link("https://element.io".encode_utf16().collect());
+        assert_eq!(
+            model.state.dom.to_string(),
+            "<a href=\"https://element.io\">hello</a> world"
+        );
     }
 
     // Test utils

@@ -36,6 +36,7 @@ class InputProcessor(
             is EditorInputAction.Delete -> {
                 composer.deleteIn(action.start.toUInt(), action.end.toUInt())
             }
+            is EditorInputAction.SetLink -> composer.setLink(action.link)
             is EditorInputAction.ReplaceAll -> null
             is EditorInputAction.Undo -> composer.undo()
             is EditorInputAction.Redo -> composer.redo()
@@ -58,8 +59,8 @@ class InputProcessor(
 
     private fun stringToSpans(string: String): Spanned {
         // TODO: Check parsing flags
-        val preparedString = string.replace(" ", "&nbsp;")
-        return HtmlCompat.fromHtml(preparedString, 0)
+//        val preparedString = string.replace(" ", "&nbsp;")
+        return HtmlCompat.fromHtml(string, 0)
     }
 }
 
@@ -72,6 +73,7 @@ sealed interface EditorInputAction {
     data class ApplyInlineFormat(val format: InlineFormat): EditorInputAction
     object Undo: EditorInputAction
     object Redo: EditorInputAction
+    data class SetLink(val link: String): EditorInputAction
 }
 
 sealed interface InlineFormat {

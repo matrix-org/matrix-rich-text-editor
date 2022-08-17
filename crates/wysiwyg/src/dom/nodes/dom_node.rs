@@ -16,6 +16,7 @@ use crate::dom::dom_handle::DomHandle;
 use crate::dom::html_formatter::HtmlFormatter;
 use crate::dom::nodes::container_node::ContainerNode;
 use crate::dom::nodes::formatting_node::FormattingNode;
+use crate::dom::nodes::hyperlink_node::HyperlinkNode;
 use crate::dom::nodes::text_node::TextNode;
 use crate::dom::to_html::ToHtml;
 
@@ -25,6 +26,7 @@ pub enum DomNode<C> {
     Formatting(FormattingNode<C>), // E.g. b, i
     // TODO Item(ItemNode<C>),             // E.g. a, pills
     Text(TextNode<C>),
+    Link(HyperlinkNode<C>),
 }
 
 impl<C> DomNode<C> {
@@ -33,6 +35,7 @@ impl<C> DomNode<C> {
             DomNode::Container(n) => n.handle(),
             DomNode::Formatting(n) => n.handle(),
             DomNode::Text(n) => n.handle(),
+            DomNode::Link(n) => n.handle(),
         }
     }
 
@@ -41,6 +44,7 @@ impl<C> DomNode<C> {
             DomNode::Container(n) => n.set_handle(handle),
             DomNode::Formatting(n) => n.set_handle(handle),
             DomNode::Text(n) => n.set_handle(handle),
+            DomNode::Link(n) => n.set_handle(handle),
         }
     }
 }
@@ -51,6 +55,7 @@ impl ToHtml<u16> for DomNode<u16> {
             DomNode::Formatting(s) => s.fmt_html(f),
             // TODO DomNode::Item(s) => s.fmt_html(f),
             DomNode::Text(s) => s.fmt_html(f),
+            DomNode::Link(s) => s.fmt_html(f),
         }
     }
 }

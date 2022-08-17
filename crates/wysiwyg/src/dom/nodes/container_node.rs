@@ -84,6 +84,10 @@ impl<'a, C> Element<'a, C> for ContainerNode<C> {
         &self.name
     }
 
+    fn attributes(&'a self) -> Option<&'a Vec<(Vec<C>, Vec<C>)>> {
+        None
+    }
+
     fn children(&'a self) -> &'a Vec<DomNode<C>> {
         &self.children
     }
