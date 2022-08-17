@@ -40,6 +40,9 @@ fn fmt_element<'a, C>(
     element: &'a impl Element<'a, C>,
     lt: C,
     gt: C,
+    equal: C,
+    quote: C,
+    space: C,
     fwd_slash: C,
     f: &mut HtmlFormatter<C>,
 ) where
@@ -50,8 +53,20 @@ fn fmt_element<'a, C>(
     if !name.is_empty() {
         f.write_char(&lt);
         f.write(element.name());
+        if let Some(attrs) = element.attributes() {
+            for attr in attrs {
+                f.write_char(&space);
+                let (name, value) = attr;
+                f.write(name);
+                f.write_char(&equal);
+                f.write_char(&quote);
+                f.write(value);
+                f.write_char(&quote);
+            }
+        }
         f.write_char(&gt);
     }
+
     for child in element.children() {
         child.fmt_html(f);
     }
@@ -67,7 +82,10 @@ pub fn fmt_element_u16<'a>(
     element: &'a impl Element<'a, u16>,
     f: &mut HtmlFormatter<u16>,
 ) {
-    fmt_element(element, '<' as u16, '>' as u16, '/' as u16, f);
+    fmt_element(
+        element, '<' as u16, '>' as u16, '=' as u16, '"' as u16, ' ' as u16,
+        '/' as u16, f,
+    );
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -124,6 +142,7 @@ impl<C> Dom<C> {
             DomNode::Text(_n) => panic!("Text nodes can't have children"),
             DomNode::Formatting(n) => n.replace_child(index, nodes),
             DomNode::Container(n) => n.replace_child(index, nodes),
+            DomNode::Link(n) => n.replace_child(index, nodes),
         }
     }
 
@@ -212,6 +231,7 @@ impl<C> Dom<C> {
             }
             DomNode::Formatting(n) => process_element(self, n, offset),
             DomNode::Container(n) => process_element(self, n, offset),
+            DomNode::Link(n) => process_element(self, n, offset),
         }
     }
 
@@ -248,6 +268,7 @@ impl<C> Dom<C> {
                     "Handle path looks for the child of a text node, but text \
                     nodes cannot have children."
                 ),
+                DomNode::Link(n) => nth_child(n, *idx),
             }
         }
         node
@@ -280,6 +301,7 @@ impl<C> Dom<C> {
                     "Handle path looks for the child of a text node, but text \
                     nodes cannot have children."
                 ),
+                DomNode::Link(n) => nth_child(n, *idx),
             }
         }
         node
@@ -318,6 +340,7 @@ impl Display for ItemNode {
 mod test {
     use super::*;
     use crate::dom::nodes::dom_node::DomNode;
+    use crate::dom::nodes::hyperlink_node::HyperlinkNode;
 
     fn utf16(input: &str) -> Vec<u16> {
         input.encode_utf16().collect()
@@ -337,6 +360,15 @@ mod test {
         C: 'static + Clone,
     {
         Dom::new(clone_children(children))
+    }
+
+    fn a<'a>(
+        children: impl IntoIterator<Item = &'a DomNode<u16>>,
+    ) -> DomNode<u16> {
+        DomNode::Link(HyperlinkNode::new_utf16(
+            utf16("https://element.io"),
+            clone_children(children),
+        ))
     }
 
     fn b<'a>(
@@ -369,6 +401,7 @@ mod test {
             DomNode::Text(_) => {
                 panic!("We expected an Element, but found Text")
             }
+            DomNode::Link(n) => n.children(),
         }
     }
 
@@ -644,6 +677,28 @@ mod test {
         } else {
             panic!("Should have been a SameNodeRange: {:?}", range)
         }
+    }
+
+    #[test]
+    fn hyperlink_formatting_simple() {
+        let d = dom(&[a(&[tx("foo")])]);
+        let mut formatter = HtmlFormatter::new();
+        fmt_element_u16(d.document(), &mut formatter);
+        assert_eq!(
+            "<a href=\"https://element.io\">foo</a>",
+            String::from_utf16(&formatter.finish()).unwrap()
+        );
+    }
+
+    #[test]
+    fn hyperlink_formatting_complex() {
+        let d = dom(&[a(&[b(&[tx("foo")]), tx(" "), i(&[tx("bar")])])]);
+        let mut formatter = HtmlFormatter::new();
+        fmt_element_u16(d.document(), &mut formatter);
+        assert_eq!(
+            "<a href=\"https://element.io\"><b>foo</b> <i>bar</i></a>",
+            String::from_utf16(&formatter.finish()).unwrap()
+        );
     }
 
     /*#[test]

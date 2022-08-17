@@ -114,6 +114,13 @@ impl ComposerModel {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().redo()))
     }
 
+    pub fn set_link(self: &Arc<Self>, link: String) -> Arc<ComposerUpdate> {
+        let link = link.encode_utf16().collect();
+        Arc::new(ComposerUpdate::from(
+            self.inner.lock().unwrap().set_link(link),
+        ))
+    }
+
     pub fn dump_state(self: &Arc<Self>) -> ComposerState {
         self.inner
             .lock()

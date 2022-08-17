@@ -134,7 +134,7 @@ class EditorEditText : TextInputEditText {
 
         if (result != null) {
             editableText.replace(0, editableText.length, result.text)
-            setSelection(result.selection.last)
+            setSelection(result.selection.first, result.selection.last)
         }
     }
 
@@ -145,6 +145,16 @@ class EditorEditText : TextInputEditText {
         if (result != null) {
             editableText.replace(0, editableText.length, result.text)
             setSelection(result.selection.first)
+        }
+    }
+
+    fun setLink(link: String) {
+        val update = inputProcessor.processInput(EditorInputAction.SetLink(link))
+        val result = update?.let { inputProcessor.processUpdate(it) }
+
+        if (result != null) {
+            editableText.replace(0, editableText.length, result.text)
+            setSelection(result.selection.last)
         }
     }
 }

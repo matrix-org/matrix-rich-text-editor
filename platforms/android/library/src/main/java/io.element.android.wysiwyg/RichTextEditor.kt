@@ -4,9 +4,6 @@ import android.content.Context
 import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.LayoutInflater
-import android.view.ViewGroup
-import android.widget.Button
-import android.widget.LinearLayout
 import com.google.android.material.textfield.TextInputLayout
 import io.element.android.wysiwyg.databinding.ViewRichTextEditorBinding
 
@@ -20,6 +17,8 @@ class RichTextEditor : TextInputLayout {
 
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
             super(context, attrs, defStyleAttr)
+
+    var onSetLinkListener: OnSetLinkListener? = null
 
     override fun onFinishInflate() {
         super.onFinishInflate()
@@ -37,6 +36,11 @@ class RichTextEditor : TextInputLayout {
             formatStrikeThroughButton.setOnClickListener {
                 editText.toggleInlineFormat(InlineFormat.StrikeThrough)
             }
+            addLinkButton.setOnClickListener {
+                onSetLinkListener?.openLinkDialog(null) { link ->
+                    editText.setLink(link)
+                }
+            }
             undoButton.setOnClickListener {
                 editText.undo()
             }
@@ -50,4 +54,8 @@ class RichTextEditor : TextInputLayout {
         return binding.editText.requestFocus(direction, previouslyFocusedRect)
     }
 
+}
+
+interface OnSetLinkListener {
+    fun openLinkDialog(link: String?, callback: (String) -> Unit)
 }

@@ -16,6 +16,7 @@ use crate::dom::nodes::dom_node::DomNode;
 
 pub trait Element<'a, C> {
     fn name(&'a self) -> &'a Vec<C>;
+    fn attributes(&'a self) -> Option<&'a Vec<(Vec<C>, Vec<C>)>>;
     fn children(&'a self) -> &'a Vec<DomNode<C>>;
     fn children_mut(&'a mut self) -> &'a mut Vec<DomNode<C>>;
 }

@@ -34,29 +34,40 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
 
-                <Button android:id="@+id/formatBoldButton"
+                <ImageButton android:id="@+id/formatBoldButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
-                    android:text="Bold" />
+                    android:src="@drawable/ic_format_bold"
+                    android:contentDescription="Bold" />
 
-                <Button android:id="@+id/formatItalicButton"
+                <ImageButton android:id="@+id/formatItalicButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
-                    android:text="Italic" />
+                    android:src="@drawable/ic_format_italic"
+                    android:contentDescription="Italic" />
 
-                <Button android:id="@+id/formatUnderlineButton"
+                <ImageButton android:id="@+id/formatUnderlineButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
-                    android:text="Underline" />
+                    android:src="@drawable/ic_format_underline"
+                    android:contentDescription="Underline" />
 
-                <Button android:id="@+id/formatStrikeThroughButton"
+                <ImageButton android:id="@+id/formatStrikeThroughButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
-                    android:text="Strike" />
+                    android:src="@drawable/ic_format_strikethrough"
+                    android:contentDescription="Strike" />
+
+                <ImageButton android:id="@+id/addLinkButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"
+                    android:src="@drawable/ic_link"
+                    android:contentDescription="Hyperlink" />
 
             </LinearLayout>
         </HorizontalScrollView>
@@ -72,17 +83,19 @@
             android:orientation="horizontal"
             android:paddingHorizontal="10dp">
 
-            <Button android:id="@+id/undoButton"
+            <ImageButton android:id="@+id/undoButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="4dp"
-                android:text="Undo" />
+                android:src="@drawable/ic_undo"
+                android:contentDescription="Undo" />
 
-            <Button android:id="@+id/redoButton"
+            <ImageButton android:id="@+id/redoButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="4dp"
-                android:text="Redo" />
+                android:src="@drawable/ic_redo"
+                android:contentDescription="Redo" />
 
         </LinearLayout>
 

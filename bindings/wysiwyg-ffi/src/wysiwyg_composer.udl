@@ -27,6 +27,7 @@ interface ComposerModel {
     ComposerUpdate format(InlineFormatType type);
     ComposerUpdate undo();
     ComposerUpdate redo();
+    ComposerUpdate set_link(string new_text);
     ComposerState dump_state();
     ComposerUpdate action_response(string action_id, ActionResponse response);
 };
