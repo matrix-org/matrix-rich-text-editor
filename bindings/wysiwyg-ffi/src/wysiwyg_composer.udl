@@ -80,4 +80,5 @@ interface InlineFormatType {
     Italic();
     StrikeThrough();
     Underline();
+    InlineCode();
 };

@@ -14,7 +14,7 @@ import com.google.android.material.textfield.TextInputEditText
 class EditorEditText : TextInputEditText {
 
     lateinit var inputConnection: InterceptInputConnection
-    private val inputProcessor = InputProcessor(uniffi.wysiwyg_composer.newComposerModel())
+    private val inputProcessor = InputProcessor(context, uniffi.wysiwyg_composer.newComposerModel())
 
     private val spannableFactory = object : Spannable.Factory() {
         override fun newSpannable(source: CharSequence?): Spannable {
@@ -144,7 +144,7 @@ class EditorEditText : TextInputEditText {
 
         if (result != null) {
             editableText.replace(0, editableText.length, result.text)
-            setSelection(result.selection.first)
+            setSelection(result.selection.last)
         }
     }
 

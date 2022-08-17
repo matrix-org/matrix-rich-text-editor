@@ -16,6 +16,8 @@ use crate::dom::dom_handle::DomHandle;
 use crate::dom::html_formatter::HtmlFormatter;
 use crate::dom::to_html::ToHtml;
 
+use html_escape;
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct TextNode<C> {
     data: Vec<C>,
@@ -56,6 +58,9 @@ impl<C> TextNode<C> {
 
 impl ToHtml<u16> for TextNode<u16> {
     fn fmt_html(&self, f: &mut HtmlFormatter<u16>) {
-        f.write(&self.data)
+        let string = String::from_utf16(&self.data).unwrap();
+        let mut escaped = String::new();
+        html_escape::encode_text_to_string(&string, &mut escaped);
+        f.write(&escaped.encode_utf16().collect::<Vec<u16>>());
     }
 }

@@ -18,6 +18,7 @@ pub enum InlineFormatType {
     Italic,
     StrikeThrough,
     Underline,
+    InlineCode,
 }
 
 impl InlineFormatType {
@@ -27,6 +28,7 @@ impl InlineFormatType {
             InlineFormatType::Italic => "em",
             InlineFormatType::StrikeThrough => "del",
             InlineFormatType::Underline => "u",
+            InlineFormatType::InlineCode => "code",
         }
     }
 }
