@@ -32,8 +32,8 @@ where
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ContainerNodeKind<C: Clone> {
-    Generic, // This is probably needed to create the DOM's root node
-    Formatting(Vec<C>),
+    Generic,            // E.g. the root node (the containing div)
+    Formatting(Vec<C>), // TODO: the format parameter is a copy of name
     Link(Vec<C>),
 }
 
@@ -43,7 +43,7 @@ where
 {
     /// Create a new ContainerNode
     ///
-    /// NOTE: Its handle() will be invalid until you call set_handle() or
+    /// NOTE: Its handle() will be unset until you call set_handle() or
     /// append() it to another node.
     pub fn new(
         name: Vec<C>,
@@ -56,7 +56,7 @@ where
             kind,
             attrs,
             children,
-            handle: DomHandle::new_invalid(),
+            handle: DomHandle::new_unset(),
         }
     }
 
@@ -66,12 +66,12 @@ where
             kind: ContainerNodeKind::Formatting(format),
             attrs: None,
             children,
-            handle: DomHandle::new_invalid(),
+            handle: DomHandle::new_unset(),
         }
     }
 
     pub fn append(&mut self, mut child: DomNode<C>) {
-        assert!(self.handle.is_valid());
+        assert!(self.handle.is_set());
 
         let child_index = self.children.len();
         let child_handle = self.handle.child_handle(child_index);
@@ -80,7 +80,7 @@ where
     }
 
     pub fn replace_child(&mut self, index: usize, nodes: Vec<DomNode<C>>) {
-        assert!(self.handle.is_valid());
+        assert!(self.handle.is_set());
         assert!(index < self.children().len());
 
         self.children.remove(index);
@@ -123,7 +123,7 @@ where
 
     pub fn children_mut(&mut self) -> &mut Vec<DomNode<C>> {
         // TODO: replace with soemthing like get_child_mut - we want to avoid
-        // anyone pushing onto this, because the handles will be invalid
+        // anyone pushing onto this, because the handles will be unset
         &mut self.children
     }
 }
@@ -135,7 +135,7 @@ impl ContainerNode<u16> {
             kind: ContainerNodeKind::Link(url.clone()),
             attrs: Some(vec![("href".encode_utf16().collect(), url)]),
             children,
-            handle: DomHandle::new_invalid(),
+            handle: DomHandle::new_unset(),
         }
     }
 }

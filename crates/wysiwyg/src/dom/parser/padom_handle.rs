@@ -12,11 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod container_node;
-pub mod dom_node;
-pub mod text_node;
-
-pub use container_node::ContainerNode;
-pub use container_node::ContainerNodeKind;
-pub use dom_node::DomNode;
-pub use text_node::TextNode;
+#[derive(Clone, Debug, PartialEq)]
+pub struct PaDomHandle(pub usize);

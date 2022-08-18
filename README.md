@@ -12,7 +12,7 @@ Get the prerequisites for each platform by reading the READMEs for them:
 
 * Kotlin/Android:
   [bindings/wysiwyg-ffi/README.md#android](bindings/wysiwyg-ffi/README.md#android)
-  
+
 * Swift/iOS:
   [bindings/wysiwyg-ffi/README.md#ios](bindings/wysiwyg-ffi/README.md#ios)
 

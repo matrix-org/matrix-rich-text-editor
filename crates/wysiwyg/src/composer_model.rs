@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::dom::{Dom, DomNode, Range, SameNodeRange, TextNode, ToHtml};
+use crate::dom::nodes::{DomNode, TextNode};
+use crate::dom::parser::parse;
+use crate::dom::{Dom, Range, SameNodeRange, ToHtml};
 use crate::{
     ActionResponse, ComposerState, ComposerUpdate, InlineFormatType, Location,
 };
@@ -278,6 +280,22 @@ where
     Dom<u16>: ToHtml<u16>,
     &'a str: ToHtml<u16>,
 {
+    pub fn replace_all_html(&mut self, html: &[u16]) -> ComposerUpdate<u16> {
+        let dom = parse(&String::from_utf16(html).expect("Invalid UTF-16"));
+
+        match dom {
+            Ok(dom) => {
+                self.state.dom = dom;
+                self.create_update_replace_all()
+            }
+            Err(e) => {
+                // TODO: log error
+                self.state.dom = e.dom;
+                self.create_update_replace_all()
+            }
+        }
+    }
+
     pub fn set_link(&mut self, link: Vec<u16>) -> ComposerUpdate<u16> {
         let (s, e) = self.safe_selection();
         // Can't add a link to an empty selection
@@ -331,12 +349,11 @@ where
 mod test {
     use speculoos::{prelude::*, AssertionFailure, Spec};
 
+    use crate::dom::nodes::{DomNode, TextNode};
+    use crate::dom::{Dom, ToHtml};
     use crate::ComposerState;
     use crate::InlineFormatType::Bold;
-    use crate::{
-        dom::{Dom, DomNode, TextNode, ToHtml},
-        InlineFormatType, Location, TextUpdate,
-    };
+    use crate::{InlineFormatType, Location, TextUpdate};
 
     use super::ComposerModel;
 
@@ -686,6 +703,13 @@ mod test {
             model.state.dom.to_string(),
             "<a href=\"https://element.io\">hello</a> world"
         );
+    }
+
+    #[test]
+    fn completely_replacing_html_works() {
+        let mut model = cm("{hello}| world");
+        model.replace_all_html(&"foo <b>bar</b>".to_html());
+        assert_eq!(model.state.dom.to_string(), "foo <b>bar</b>");
     }
 
     // Test utils

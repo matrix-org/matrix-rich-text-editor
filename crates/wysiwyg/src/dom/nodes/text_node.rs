@@ -27,7 +27,7 @@ pub struct TextNode<C> {
 impl<C> TextNode<C> {
     /// Create a new TextNode
     ///
-    /// NOTE: Its handle() will be invalid until you call set_handle() or
+    /// NOTE: Its handle() will be unset until you call set_handle() or
     /// append() it to another node.
     pub fn from(data: Vec<C>) -> Self
     where
@@ -35,7 +35,7 @@ impl<C> TextNode<C> {
     {
         Self {
             data,
-            handle: DomHandle::new_invalid(),
+            handle: DomHandle::new_unset(),
         }
     }
 

@@ -12,22 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+pub mod dom_creation_error;
 pub mod dom_handle;
 pub mod find_result;
 pub mod html_formatter;
 pub mod nodes;
+pub mod parser;
 pub mod range;
 pub mod to_html;
 
-pub use crate::dom::dom_handle::DomHandle;
-pub use crate::dom::find_result::FindResult;
-pub use crate::dom::html_formatter::HtmlFormatter;
-pub use crate::dom::nodes::container_node::ContainerNode;
-pub use crate::dom::nodes::container_node::ContainerNodeKind;
-pub use crate::dom::nodes::dom_node::DomNode;
-pub use crate::dom::nodes::text_node::TextNode;
-pub use crate::dom::range::{Range, SameNodeRange};
-pub use crate::dom::to_html::ToHtml;
+pub use dom_creation_error::DomCreationError;
+pub use dom_handle::DomHandle;
+pub use find_result::FindResult;
+pub use html_formatter::HtmlFormatter;
+pub use range::Range;
+pub use range::SameNodeRange;
+pub use to_html::ToHtml;
+
+use self::nodes::{ContainerNode, ContainerNodeKind};
+use self::nodes::{DomNode, TextNode};
+
 use std::fmt::Display;
 
 fn utf8(input: &[u16]) -> String {
@@ -200,12 +204,8 @@ where
             let mut off = offset;
             for child in node.children() {
                 let child_handle = child.handle();
-                assert!(
-                    !child_handle.raw().is_empty(),
-                    "Invalid child handle!"
-                );
+                assert!(!child_handle.is_root(), "Incorrect child handle!");
                 let find_child = dom.find_pos(child_handle, off);
-                //let find_child = FindResult::NotFound { new_offset: offset };
                 match find_child {
                     FindResult::Found { .. } => {
                         return find_child;
@@ -242,23 +242,22 @@ where
     }
 
     /// Find the node based on its handle.
-    /// Panics if the handle is invalid
+    /// Panics if the handle is unset or invalid
     pub fn lookup_node(&self, node_handle: DomHandle) -> &DomNode<C> {
         fn nth_child<C: Clone>(
             element: &ContainerNode<C>,
             idx: usize,
         ) -> &DomNode<C> {
-            element.children().get(idx).expect(&format!(
-                "This DomHandle wants child {} of this node, but it does \
-                not have that many children.",
-                idx
-            ))
+            element.children().get(idx).expect(
+                "Handle is invalid: it refers to a child index which is too \
+                large for the number of children in this node.",
+            )
         }
 
         let mut node = &self.document;
-        if !node_handle.is_valid() {
+        if !node_handle.is_set() {
             panic!(
-                "Attempting to lookup a node using an invalid DomHandle ({:?})",
+                "Attempting to lookup a node using an unset DomHandle ({:?})",
                 node_handle.raw()
             );
         }
@@ -266,8 +265,8 @@ where
             node = match node {
                 DomNode::Container(n) => nth_child(n, *idx),
                 DomNode::Text(_) => panic!(
-                    "Handle path looks for the child of a text node, but text \
-                    nodes cannot have children."
+                    "Handle is invalid: refers to the child of a text node, \
+                    but text nodes cannot have children."
                 ),
             }
         }
@@ -275,7 +274,7 @@ where
     }
 
     /// Find the node based on its handle and returns a mutable reference.
-    /// Panics if the handle is invalid
+    /// Panics if the handle is invalid or unset
     pub fn lookup_node_mut(
         &mut self,
         node_handle: DomHandle,
@@ -285,23 +284,29 @@ where
             element: &mut ContainerNode<C>,
             idx: usize,
         ) -> &mut DomNode<C> {
-            element.children_mut().get_mut(idx).expect(&format!(
-                "This DomHandle wants child {} of this node, but it does \
-                not have that many children.",
-                idx
-            ))
+            element.children_mut().get_mut(idx).expect(
+                "Handle is invalid: it refers to a child index which is too \
+                large for the number of children in this node.",
+            )
         }
 
         let mut node = &mut self.document;
+        if !node_handle.is_set() {
+            panic!(
+                "Attempting to lookup a node using an unset DomHandle ({:?})",
+                node_handle.raw()
+            );
+        }
         for idx in node_handle.raw() {
             node = match node {
                 DomNode::Container(n) => nth_child(n, *idx),
                 DomNode::Text(_) => panic!(
-                    "Handle path looks for the child of a text node, but text \
-                    nodes cannot have children."
+                    "Handle is invalid: refers to the child of a text node, \
+                    but text nodes cannot have children."
                 ),
             }
         }
+
         node
     }
 }
