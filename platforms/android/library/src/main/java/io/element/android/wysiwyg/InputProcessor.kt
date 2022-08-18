@@ -1,14 +1,22 @@
 package io.element.android.wysiwyg
 
+import android.content.Context
+import android.text.Editable
+import android.text.Html
+import android.text.Spannable
 import android.text.Spanned
 import androidx.core.text.HtmlCompat
+import androidx.core.text.getSpans
 import io.element.android.wysiwyg.extensions.log
 import io.element.android.wysiwyg.extensions.string
+import io.element.android.wysiwyg.spans.InlineCodeSpan
+import org.xml.sax.XMLReader
 import uniffi.wysiwyg_composer.ComposerModel
 import uniffi.wysiwyg_composer.InlineFormatType
 import uniffi.wysiwyg_composer.TextUpdate
 
 class InputProcessor(
+    private val context: Context,
     private val composer: ComposerModel,
 ) {
 
@@ -60,8 +68,35 @@ class InputProcessor(
     private fun stringToSpans(string: String): Spanned {
         // TODO: Check parsing flags
 //        val preparedString = string.replace(" ", "&nbsp;")
-        return HtmlCompat.fromHtml(string, 0)
+        return HtmlCompat.fromHtml(string, 0, null, CustomTagHandler(context))
     }
+}
+
+private class CustomTagHandler(
+    private val context: Context,
+): Html.TagHandler {
+    override fun handleTag(
+        opening: Boolean,
+        tag: String?,
+        output: Editable?,
+        xmlReader: XMLReader?
+    ) {
+        val end = output?.length ?: 0
+        when (tag) {
+            "code" -> {
+                if (opening) {
+                    output?.setSpan(InlineCodeSpan(context), end, end, Spannable.SPAN_MARK_MARK)
+                } else {
+                    val last = output?.getSpans<InlineCodeSpan>()?.lastOrNull() ?: return
+                    val lastIndex = output.getSpanStart(last)
+                    output.removeSpan(last)
+
+                    output.setSpan(last, lastIndex, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                }
+            }
+        }
+    }
+
 }
 
 sealed interface EditorInputAction {
@@ -81,12 +116,14 @@ sealed interface InlineFormat {
     object Italic: InlineFormat
     object Underline: InlineFormat
     object StrikeThrough: InlineFormat
+    object InlineCode: InlineFormat
 
     fun toBindings(): InlineFormatType = when (this) {
         Bold -> InlineFormatType.Bold
         Italic -> InlineFormatType.Italic
         Underline -> InlineFormatType.Underline
         StrikeThrough -> InlineFormatType.StrikeThrough
+        InlineCode -> InlineFormatType.InlineCode
     }
 }
 

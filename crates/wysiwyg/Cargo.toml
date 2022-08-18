@@ -13,6 +13,7 @@ rust-version = "1.60"
 [features]
 
 [dependencies]
+html-escape = "0.2.11"
 
 [dev-dependencies]
 speculoos = "0.9"

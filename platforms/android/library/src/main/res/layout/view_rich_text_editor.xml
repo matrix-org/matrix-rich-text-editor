@@ -62,12 +62,20 @@
                     android:src="@drawable/ic_format_strikethrough"
                     android:contentDescription="Strike" />
 
+                <ImageButton android:id="@+id/formatInlineCodeButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"
+                    android:src="@drawable/ic_code"
+                    android:contentDescription="Inline code" />
+
                 <ImageButton android:id="@+id/addLinkButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
                     android:src="@drawable/ic_link"
                     android:contentDescription="Hyperlink" />
+
 
             </LinearLayout>
         </HorizontalScrollView>

@@ -3,6 +3,7 @@ pub enum InlineFormatType {
     Italic,
     StrikeThrough,
     Underline,
+    InlineCode,
 }
 
 impl From<InlineFormatType> for wysiwyg::InlineFormatType {
@@ -14,6 +15,9 @@ impl From<InlineFormatType> for wysiwyg::InlineFormatType {
                 wysiwyg::InlineFormatType::StrikeThrough
             }
             InlineFormatType::Underline => wysiwyg::InlineFormatType::Underline,
+            InlineFormatType::InlineCode => {
+                wysiwyg::InlineFormatType::InlineCode
+            }
         }
     }
 }

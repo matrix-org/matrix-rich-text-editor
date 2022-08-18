@@ -23,7 +23,7 @@ pub use crate::dom::dom_handle::DomHandle;
 pub use crate::dom::find_result::FindResult;
 pub use crate::dom::html_formatter::HtmlFormatter;
 pub use crate::dom::nodes::container_node::ContainerNode;
-use crate::dom::nodes::container_node::ContainerNodeKind;
+pub use crate::dom::nodes::container_node::ContainerNodeKind;
 pub use crate::dom::nodes::dom_node::DomNode;
 pub use crate::dom::nodes::text_node::TextNode;
 pub use crate::dom::range::{Range, SameNodeRange};
@@ -377,6 +377,12 @@ mod test {
         DomNode::new_formatting(utf16("i"), clone_children(children))
     }
 
+    fn i_c<'a>(
+        children: impl IntoIterator<Item = &'a DomNode<u16>>,
+    ) -> DomNode<u16> {
+        DomNode::new_formatting(utf16("code"), clone_children(children))
+    }
+
     fn tx(data: &str) -> DomNode<u16> {
         DomNode::Text(TextNode::from(utf16(data)))
     }
@@ -683,6 +689,50 @@ mod test {
         fmt_node_u16(d.document(), &mut formatter);
         assert_eq!(
             "<a href=\"https://element.io\"><b>foo</b> <i>bar</i></a>",
+            String::from_utf16(&formatter.finish()).unwrap()
+        );
+    }
+
+    #[test]
+    fn inline_code_gets_formatted() {
+        let d = dom(&[i_c(&[tx("some_code")])]);
+        let mut formatter = HtmlFormatter::new();
+        fmt_node_u16(d.document(), &mut formatter);
+        assert_eq!(
+            "<code>some_code</code>",
+            String::from_utf16(&formatter.finish()).unwrap()
+        );
+    }
+
+    #[test]
+    fn html_symbols_inside_text_tags_get_escaped() {
+        let d = dom(&[tx("<p>Foo & bar</p>")]);
+        let mut formatter = HtmlFormatter::new();
+        fmt_node_u16(d.document(), &mut formatter);
+        assert_eq!(
+            "&lt;p&gt;Foo &amp; bar&lt;/p&gt;",
+            String::from_utf16(&formatter.finish()).unwrap()
+        );
+    }
+
+    #[test]
+    fn inline_code_text_contents_get_escaped() {
+        let d = dom(&[i_c(&[tx("<b>some</b> code")])]);
+        let mut formatter = HtmlFormatter::new();
+        fmt_node_u16(d.document(), &mut formatter);
+        assert_eq!(
+            "<code>&lt;b&gt;some&lt;/b&gt; code</code>",
+            String::from_utf16(&formatter.finish()).unwrap()
+        );
+    }
+
+    #[test]
+    fn inline_code_node_contents_do_not_get_escaped() {
+        let d = dom(&[i_c(&[b(&[tx("some")]), tx(" code")])]);
+        let mut formatter = HtmlFormatter::new();
+        fmt_node_u16(d.document(), &mut formatter);
+        assert_eq!(
+            "<code><b>some</b> code</code>",
             String::from_utf16(&formatter.finish()).unwrap()
         );
     }

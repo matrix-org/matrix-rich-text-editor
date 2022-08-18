@@ -36,6 +36,10 @@ where
         self.chars.extend(chars)
     }
 
+    pub fn write_vec(&mut self, chars: Vec<C>) {
+        self.chars.extend(chars)
+    }
+
     pub fn finish(self) -> Vec<C> {
         self.chars
     }

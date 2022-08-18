@@ -36,6 +36,9 @@ class RichTextEditor : TextInputLayout {
             formatStrikeThroughButton.setOnClickListener {
                 editText.toggleInlineFormat(InlineFormat.StrikeThrough)
             }
+            formatInlineCodeButton.setOnClickListener {
+                editText.toggleInlineFormat(InlineFormat.InlineCode)
+            }
             addLinkButton.setOnClickListener {
                 onSetLinkListener?.openLinkDialog(null) { link ->
                     editText.setLink(link)
