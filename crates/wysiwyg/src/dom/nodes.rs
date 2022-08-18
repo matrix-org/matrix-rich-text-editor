@@ -14,6 +14,4 @@
 
 pub mod container_node;
 pub mod dom_node;
-pub mod formatting_node;
-pub mod hyperlink_node;
 pub mod text_node;

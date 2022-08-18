@@ -14,7 +14,10 @@
 
 use crate::dom::nodes::dom_node::DomNode;
 
-pub trait Element<'a, C> {
+pub trait Element<'a, C>
+where
+    C: Clone,
+{
     fn name(&'a self) -> &'a Vec<C>;
     fn attributes(&'a self) -> Option<&'a Vec<(Vec<C>, Vec<C>)>>;
     fn children(&'a self) -> &'a Vec<DomNode<C>>;

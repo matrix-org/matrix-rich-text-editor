@@ -20,20 +20,52 @@ use crate::dom::nodes::dom_node::DomNode;
 use crate::dom::to_html::ToHtml;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ContainerNode<C> {
+pub struct ContainerNode<C>
+where
+    C: Clone,
+{
     name: Vec<C>,
+    kind: ContainerNodeKind<C>,
+    attrs: Option<Vec<(Vec<C>, Vec<C>)>>,
     children: Vec<DomNode<C>>,
     handle: DomHandle,
 }
 
-impl<C> ContainerNode<C> {
+#[derive(Clone, Debug, PartialEq)]
+pub enum ContainerNodeKind<C: Clone> {
+    Generic, // This is probably needed to create the DOM's root node
+    Formatting(Vec<C>),
+    Link(Vec<C>),
+}
+
+impl<C> ContainerNode<C>
+where
+    C: Clone,
+{
     /// Create a new ContainerNode
     ///
     /// NOTE: Its handle() will be invalid until you call set_handle() or
     /// append() it to another node.
-    pub fn new(name: Vec<C>, children: Vec<DomNode<C>>) -> Self {
+    pub fn new(
+        name: Vec<C>,
+        kind: ContainerNodeKind<C>,
+        attrs: Option<Vec<(Vec<C>, Vec<C>)>>,
+        children: Vec<DomNode<C>>,
+    ) -> Self {
         Self {
             name,
+            kind,
+            attrs,
+            children,
+            handle: DomHandle::new_invalid(),
+        }
+    }
+
+    pub fn new_formatting(format: Vec<C>, children: Vec<DomNode<C>>) -> Self {
+        Self {
+            name: format.clone(),
+            kind: ContainerNodeKind::Formatting(format),
+            attrs: None,
             children,
             handle: DomHandle::new_invalid(),
         }
@@ -79,13 +111,25 @@ impl<C> ContainerNode<C> {
     }
 }
 
-impl<'a, C> Element<'a, C> for ContainerNode<C> {
+impl ContainerNode<u16> {
+    pub fn new_link(url: Vec<u16>, children: Vec<DomNode<u16>>) -> Self {
+        Self {
+            name: "a".encode_utf16().collect(),
+            kind: ContainerNodeKind::Link(url.clone()),
+            attrs: Some(vec![("href".encode_utf16().collect(), url)]),
+            children,
+            handle: DomHandle::new_invalid(),
+        }
+    }
+}
+
+impl<'a, C: Clone> Element<'a, C> for ContainerNode<C> {
     fn name(&'a self) -> &'a Vec<C> {
         &self.name
     }
 
     fn attributes(&'a self) -> Option<&'a Vec<(Vec<C>, Vec<C>)>> {
-        None
+        self.attrs.as_ref()
     }
 
     fn children(&'a self) -> &'a Vec<DomNode<C>> {
