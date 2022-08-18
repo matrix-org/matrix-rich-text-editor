@@ -25,8 +25,8 @@ pub use crate::dom::element::Element;
 pub use crate::dom::find_result::FindResult;
 pub use crate::dom::html_formatter::HtmlFormatter;
 pub use crate::dom::nodes::container_node::ContainerNode;
+use crate::dom::nodes::container_node::ContainerNodeKind;
 pub use crate::dom::nodes::dom_node::DomNode;
-pub use crate::dom::nodes::formatting_node::FormattingNode;
 pub use crate::dom::nodes::text_node::TextNode;
 pub use crate::dom::range::{Range, SameNodeRange};
 pub use crate::dom::to_html::ToHtml;
@@ -89,13 +89,24 @@ pub fn fmt_element_u16<'a>(
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Dom<C> {
+pub struct Dom<C>
+where
+    C: Clone,
+{
     document: DomNode<C>,
 }
 
-impl<C> Dom<C> {
+impl<C> Dom<C>
+where
+    C: Clone,
+{
     pub fn new(top_level_items: Vec<DomNode<C>>) -> Self {
-        let mut document = ContainerNode::new(Vec::new(), top_level_items);
+        let mut document = ContainerNode::new(
+            Vec::new(),
+            ContainerNodeKind::Generic,
+            None,
+            top_level_items,
+        );
         document.set_handle(DomHandle::from_raw(Vec::new()));
 
         Self {
@@ -140,9 +151,7 @@ impl<C> Dom<C> {
         let index = node_handle.index_in_parent();
         match parent_node {
             DomNode::Text(_n) => panic!("Text nodes can't have children"),
-            DomNode::Formatting(n) => n.replace_child(index, nodes),
             DomNode::Container(n) => n.replace_child(index, nodes),
-            DomNode::Link(n) => n.replace_child(index, nodes),
         }
     }
 
@@ -188,7 +197,7 @@ impl<C> Dom<C> {
     fn find_pos(&self, node_handle: DomHandle, offset: usize) -> FindResult {
         // TODO: consider whether cloning DomHandles is damaging performance,
         // and look for ways to pass around references, maybe.
-        fn process_element<'a, C: 'a>(
+        fn process_element<'a, C: 'a + Clone>(
             dom: &Dom<C>,
             element: &'a impl Element<'a, C>,
             offset: usize,
@@ -229,9 +238,7 @@ impl<C> Dom<C> {
                     }
                 }
             }
-            DomNode::Formatting(n) => process_element(self, n, offset),
             DomNode::Container(n) => process_element(self, n, offset),
-            DomNode::Link(n) => process_element(self, n, offset),
         }
     }
 
@@ -242,7 +249,7 @@ impl<C> Dom<C> {
     /// Find the node based on its handle.
     /// Panics if the handle is invalid
     pub fn lookup_node(&self, node_handle: DomHandle) -> &DomNode<C> {
-        fn nth_child<'a, C>(
+        fn nth_child<'a, C: Clone>(
             element: &'a impl Element<'a, C>,
             idx: usize,
         ) -> &DomNode<C> {
@@ -263,12 +270,10 @@ impl<C> Dom<C> {
         for idx in node_handle.raw() {
             node = match node {
                 DomNode::Container(n) => nth_child(n, *idx),
-                DomNode::Formatting(n) => nth_child(n, *idx),
                 DomNode::Text(_) => panic!(
                     "Handle path looks for the child of a text node, but text \
                     nodes cannot have children."
                 ),
-                DomNode::Link(n) => nth_child(n, *idx),
             }
         }
         node
@@ -281,7 +286,7 @@ impl<C> Dom<C> {
         node_handle: DomHandle,
     ) -> &mut DomNode<C> {
         // TODO: horrible that we repeat lookup_node's logic. Can we share?
-        fn nth_child<'a, C>(
+        fn nth_child<'a, C: Clone>(
             element: &'a mut impl Element<'a, C>,
             idx: usize,
         ) -> &mut DomNode<C> {
@@ -296,12 +301,10 @@ impl<C> Dom<C> {
         for idx in node_handle.raw() {
             node = match node {
                 DomNode::Container(n) => nth_child(n, *idx),
-                DomNode::Formatting(n) => nth_child(n, *idx),
                 DomNode::Text(_) => panic!(
                     "Handle path looks for the child of a text node, but text \
                     nodes cannot have children."
                 ),
-                DomNode::Link(n) => nth_child(n, *idx),
             }
         }
         node
@@ -340,7 +343,6 @@ impl Display for ItemNode {
 mod test {
     use super::*;
     use crate::dom::nodes::dom_node::DomNode;
-    use crate::dom::nodes::hyperlink_node::HyperlinkNode;
 
     fn utf16(input: &str) -> Vec<u16> {
         input.encode_utf16().collect()
@@ -365,28 +367,19 @@ mod test {
     fn a<'a>(
         children: impl IntoIterator<Item = &'a DomNode<u16>>,
     ) -> DomNode<u16> {
-        DomNode::Link(HyperlinkNode::new_utf16(
-            utf16("https://element.io"),
-            clone_children(children),
-        ))
+        DomNode::new_link(utf16("https://element.io"), clone_children(children))
     }
 
     fn b<'a>(
         children: impl IntoIterator<Item = &'a DomNode<u16>>,
     ) -> DomNode<u16> {
-        DomNode::Formatting(FormattingNode::new(
-            utf16("b"),
-            clone_children(children),
-        ))
+        DomNode::new_formatting(utf16("b"), clone_children(children))
     }
 
     fn i<'a>(
         children: impl IntoIterator<Item = &'a DomNode<u16>>,
     ) -> DomNode<u16> {
-        DomNode::Formatting(FormattingNode::new(
-            utf16("i"),
-            clone_children(children),
-        ))
+        DomNode::new_formatting(utf16("i"), clone_children(children))
     }
 
     fn tx(data: &str) -> DomNode<u16> {
@@ -394,14 +387,12 @@ mod test {
     }
 
     /// If this node is an element, return its children - otherwise panic
-    fn kids<C>(node: &DomNode<C>) -> &Vec<DomNode<C>> {
+    fn kids<C: Clone>(node: &DomNode<C>) -> &Vec<DomNode<C>> {
         match node {
             DomNode::Container(n) => n.children(),
-            DomNode::Formatting(n) => n.children(),
             DomNode::Text(_) => {
                 panic!("We expected an Element, but found Text")
             }
-            DomNode::Link(n) => n.children(),
         }
     }
 
@@ -412,10 +403,10 @@ mod test {
         // Create a simple DOM
         let dom = Dom::new(vec![
             DomNode::Text(TextNode::from("a".to_html())),
-            DomNode::Formatting(FormattingNode::new(
+            DomNode::new_formatting(
                 "b".to_html(),
                 vec![DomNode::Text(TextNode::from("b".to_html()))],
-            )),
+            ),
         ]);
 
         // The DOM was created successfully
@@ -427,10 +418,10 @@ mod test {
         // Create a simple DOM
         let dom = Dom::new(vec![
             DomNode::Text(TextNode::from("a".to_html())),
-            DomNode::Formatting(FormattingNode::new(
+            DomNode::new_formatting(
                 "b".to_html(),
                 vec![DomNode::Text(TextNode::from("b".to_html()))],
-            )),
+            ),
         ]);
 
         let child0 = &dom.children()[0];

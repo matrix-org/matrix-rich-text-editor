@@ -12,10 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::dom::nodes::hyperlink_node::HyperlinkNode;
-use crate::dom::{
-    Dom, DomNode, FormattingNode, Range, SameNodeRange, TextNode, ToHtml,
-};
+use crate::dom::{Dom, DomNode, Range, SameNodeRange, TextNode, ToHtml};
 use crate::{
     ActionResponse, ComposerState, ComposerUpdate, InlineFormatType, Location,
 };
@@ -181,11 +178,9 @@ where
             }
 
             Range::NoNode => {
-                self.state.dom.append(DomNode::Formatting(
-                    FormattingNode::new(
-                        format.tag().to_html(),
-                        vec![DomNode::Text(TextNode::from("".to_html()))],
-                    ),
+                self.state.dom.append(DomNode::new_formatting(
+                    format.tag().to_html(),
+                    vec![DomNode::Text(TextNode::from("".to_html()))],
                 ));
                 return ComposerUpdate::keep();
             }
@@ -258,10 +253,10 @@ where
             let after = text[range.end_offset..].to_vec();
             let new_nodes = vec![
                 DomNode::Text(TextNode::from(before)),
-                DomNode::Formatting(FormattingNode::new(
+                DomNode::new_formatting(
                     format.tag().to_html(),
                     vec![DomNode::Text(TextNode::from(during))],
-                )),
+                ),
                 DomNode::Text(TextNode::from(after)),
             ];
             self.state.dom.replace(range.node_handle, new_nodes);
@@ -320,10 +315,10 @@ where
             let after = text[range.end_offset..].to_vec();
             let new_nodes = vec![
                 DomNode::Text(TextNode::from(before)),
-                DomNode::Link(HyperlinkNode::new_utf16(
+                DomNode::new_link(
                     link,
                     vec![DomNode::Text(TextNode::from(during))],
-                )),
+                ),
                 DomNode::Text(TextNode::from(after)),
             ];
             self.state.dom.replace(range.node_handle, new_nodes);
@@ -336,14 +331,14 @@ where
 mod test {
     use speculoos::{prelude::*, AssertionFailure, Spec};
 
+    use crate::ComposerState;
+    use crate::InlineFormatType::Bold;
     use crate::{
         dom::{Dom, DomNode, TextNode, ToHtml},
         InlineFormatType, Location, TextUpdate,
     };
 
     use super::ComposerModel;
-    use crate::ComposerState;
-    use crate::InlineFormatType::Bold;
 
     fn utf8(utf16: &[u16]) -> String {
         String::from_utf16(&utf16).expect("Invalid UTF-16!")
