@@ -75,7 +75,7 @@ fn padom_to_dom_u16(padom: PaDom) -> Dom<u16> {
     ) {
         let tag = child.name.local.as_ref();
         match tag {
-            "b" | "i" | "strong" | "em" | "del" | "u" => {
+            "b" | "code" | "del" | "em" | "i" | "strong" | "u" => {
                 node.append(new_formatting(tag));
                 convert_children(padom, child, node.children_mut().last_mut());
             }
