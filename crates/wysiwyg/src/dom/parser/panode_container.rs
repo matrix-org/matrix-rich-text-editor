@@ -12,11 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod container_node;
-pub mod dom_node;
-pub mod text_node;
+use html5ever::QualName;
 
-pub use container_node::ContainerNode;
-pub use container_node::ContainerNodeKind;
-pub use dom_node::DomNode;
-pub use text_node::TextNode;
+use super::PaDomHandle;
+
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct PaNodeContainer {
+    pub(crate) name: QualName,
+    pub(crate) attrs: Vec<(String, String)>,
+    pub(crate) children: Vec<PaDomHandle>,
+}
+impl PaNodeContainer {
+    pub(crate) fn get_attr(&self, name: &str) -> Option<&str> {
+        self.attrs
+            .iter()
+            .find(|(n, _v)| n == name)
+            .map(|(_n, v)| v.as_str())
+    }
+}

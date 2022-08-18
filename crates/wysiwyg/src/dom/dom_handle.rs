@@ -49,16 +49,22 @@ impl DomHandle {
         &self.path
     }
 
-    /// Create a new INVALID handle
+    /// Create a new UNSET handle
     ///
     /// Don't use this to lookup_node(). It will return the wrong node
-    pub fn new_invalid() -> Self {
+    pub fn new_unset() -> Self {
         Self {
             path: vec![usize::MAX],
         }
     }
 
-    pub fn is_valid(&self) -> bool {
+    /// Returns true if this handle has been set to a value
+    pub fn is_set(&self) -> bool {
         !self.path.contains(&usize::MAX)
+    }
+
+    /// Returns true if this handle refers to a root node
+    pub fn is_root(&self) -> bool {
+        self.path.is_empty()
     }
 }
