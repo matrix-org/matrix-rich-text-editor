@@ -13,8 +13,7 @@
 // limitations under the License.
 
 use crate::dom::dom_handle::DomHandle;
-use crate::dom::element::Element;
-use crate::dom::fmt_element_u16;
+use crate::dom::fmt_node_u16;
 use crate::dom::html_formatter::HtmlFormatter;
 use crate::dom::nodes::dom_node::DomNode;
 use crate::dom::to_html::ToHtml;
@@ -109,6 +108,24 @@ where
             child.set_handle(self.handle.child_handle(i))
         }
     }
+
+    pub fn name(&self) -> &Vec<C> {
+        &self.name
+    }
+
+    pub fn attributes(&self) -> Option<&Vec<(Vec<C>, Vec<C>)>> {
+        self.attrs.as_ref()
+    }
+
+    pub fn children(&self) -> &Vec<DomNode<C>> {
+        &self.children
+    }
+
+    pub fn children_mut(&mut self) -> &mut Vec<DomNode<C>> {
+        // TODO: replace with soemthing like get_child_mut - we want to avoid
+        // anyone pushing onto this, because the handles will be invalid
+        &mut self.children
+    }
 }
 
 impl ContainerNode<u16> {
@@ -123,28 +140,8 @@ impl ContainerNode<u16> {
     }
 }
 
-impl<'a, C: Clone> Element<'a, C> for ContainerNode<C> {
-    fn name(&'a self) -> &'a Vec<C> {
-        &self.name
-    }
-
-    fn attributes(&'a self) -> Option<&'a Vec<(Vec<C>, Vec<C>)>> {
-        self.attrs.as_ref()
-    }
-
-    fn children(&'a self) -> &'a Vec<DomNode<C>> {
-        &self.children
-    }
-
-    fn children_mut(&'a mut self) -> &'a mut Vec<DomNode<C>> {
-        // TODO: replace with soemthing like get_child_mut - we want to avoid
-        // anyone pushing onto this, because the handles will be invalid
-        &mut self.children
-    }
-}
-
 impl ToHtml<u16> for ContainerNode<u16> {
     fn fmt_html(&self, f: &mut HtmlFormatter<u16>) {
-        fmt_element_u16(self, f)
+        fmt_node_u16(self, f)
     }
 }

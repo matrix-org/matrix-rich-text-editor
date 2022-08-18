@@ -13,7 +13,6 @@
 // limitations under the License.
 
 pub mod dom_handle;
-pub mod element;
 pub mod find_result;
 pub mod html_formatter;
 pub mod nodes;
@@ -21,7 +20,6 @@ pub mod range;
 pub mod to_html;
 
 pub use crate::dom::dom_handle::DomHandle;
-pub use crate::dom::element::Element;
 pub use crate::dom::find_result::FindResult;
 pub use crate::dom::html_formatter::HtmlFormatter;
 pub use crate::dom::nodes::container_node::ContainerNode;
@@ -36,8 +34,8 @@ fn utf8(input: &[u16]) -> String {
     String::from_utf16(input).expect("Invalid UTF-16!")
 }
 
-fn fmt_element<'a, C>(
-    element: &'a impl Element<'a, C>,
+fn fmt_node<C>(
+    node: &ContainerNode<C>,
     lt: C,
     gt: C,
     equal: C,
@@ -49,11 +47,11 @@ fn fmt_element<'a, C>(
     C: 'static + Clone,
     DomNode<C>: ToHtml<C>,
 {
-    let name = element.name();
+    let name = node.name();
     if !name.is_empty() {
         f.write_char(&lt);
-        f.write(element.name());
-        if let Some(attrs) = element.attributes() {
+        f.write(node.name());
+        if let Some(attrs) = node.attributes() {
             for attr in attrs {
                 f.write_char(&space);
                 let (name, value) = attr;
@@ -67,23 +65,20 @@ fn fmt_element<'a, C>(
         f.write_char(&gt);
     }
 
-    for child in element.children() {
+    for child in node.children() {
         child.fmt_html(f);
     }
     if !name.is_empty() {
         f.write_char(&lt);
         f.write_char(&fwd_slash);
-        f.write(element.name());
+        f.write(node.name());
         f.write_char(&gt);
     }
 }
 
-pub fn fmt_element_u16<'a>(
-    element: &'a impl Element<'a, u16>,
-    f: &mut HtmlFormatter<u16>,
-) {
-    fmt_element(
-        element, '<' as u16, '>' as u16, '=' as u16, '"' as u16, ' ' as u16,
+pub fn fmt_node_u16(node: &ContainerNode<u16>, f: &mut HtmlFormatter<u16>) {
+    fmt_node(
+        node, '<' as u16, '>' as u16, '=' as u16, '"' as u16, ' ' as u16,
         '/' as u16, f,
     );
 }
@@ -197,13 +192,13 @@ where
     fn find_pos(&self, node_handle: DomHandle, offset: usize) -> FindResult {
         // TODO: consider whether cloning DomHandles is damaging performance,
         // and look for ways to pass around references, maybe.
-        fn process_element<'a, C: 'a + Clone>(
+        fn process_container_node<C: Clone>(
             dom: &Dom<C>,
-            element: &'a impl Element<'a, C>,
+            node: &ContainerNode<C>,
             offset: usize,
         ) -> FindResult {
             let mut off = offset;
-            for child in element.children() {
+            for child in node.children() {
                 let child_handle = child.handle();
                 assert!(
                     !child_handle.raw().is_empty(),
@@ -238,7 +233,7 @@ where
                     }
                 }
             }
-            DomNode::Container(n) => process_element(self, n, offset),
+            DomNode::Container(n) => process_container_node(self, n, offset),
         }
     }
 
@@ -249,8 +244,8 @@ where
     /// Find the node based on its handle.
     /// Panics if the handle is invalid
     pub fn lookup_node(&self, node_handle: DomHandle) -> &DomNode<C> {
-        fn nth_child<'a, C: Clone>(
-            element: &'a impl Element<'a, C>,
+        fn nth_child<C: Clone>(
+            element: &ContainerNode<C>,
             idx: usize,
         ) -> &DomNode<C> {
             element.children().get(idx).expect(&format!(
@@ -286,8 +281,8 @@ where
         node_handle: DomHandle,
     ) -> &mut DomNode<C> {
         // TODO: horrible that we repeat lookup_node's logic. Can we share?
-        fn nth_child<'a, C: Clone>(
-            element: &'a mut impl Element<'a, C>,
+        fn nth_child<C: Clone>(
+            element: &mut ContainerNode<C>,
             idx: usize,
         ) -> &mut DomNode<C> {
             element.children_mut().get_mut(idx).expect(&format!(
@@ -674,7 +669,7 @@ mod test {
     fn hyperlink_formatting_simple() {
         let d = dom(&[a(&[tx("foo")])]);
         let mut formatter = HtmlFormatter::new();
-        fmt_element_u16(d.document(), &mut formatter);
+        fmt_node_u16(d.document(), &mut formatter);
         assert_eq!(
             "<a href=\"https://element.io\">foo</a>",
             String::from_utf16(&formatter.finish()).unwrap()
@@ -685,7 +680,7 @@ mod test {
     fn hyperlink_formatting_complex() {
         let d = dom(&[a(&[b(&[tx("foo")]), tx(" "), i(&[tx("bar")])])]);
         let mut formatter = HtmlFormatter::new();
-        fmt_element_u16(d.document(), &mut formatter);
+        fmt_node_u16(d.document(), &mut formatter);
         assert_eq!(
             "<a href=\"https://element.io\"><b>foo</b> <i>bar</i></a>",
             String::from_utf16(&formatter.finish()).unwrap()
