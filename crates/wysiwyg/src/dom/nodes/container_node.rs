@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::dom::dom_handle::DomHandle;
-use crate::dom::fmt_element_u16;
+use crate::dom::fmt_node_u16;
 use crate::dom::html_formatter::HtmlFormatter;
 use crate::dom::nodes::dom_node::DomNode;
 use crate::dom::to_html::ToHtml;
@@ -142,6 +142,6 @@ impl ContainerNode<u16> {
 
 impl ToHtml<u16> for ContainerNode<u16> {
     fn fmt_html(&self, f: &mut HtmlFormatter<u16>) {
-        fmt_element_u16(self, f)
+        fmt_node_u16(self, f)
     }
 }
