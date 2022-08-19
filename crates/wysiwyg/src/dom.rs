@@ -160,14 +160,14 @@ where
         }
     }
 
-    pub fn find_range_mut(&mut self, start: usize, end: usize) -> Range {
+    pub fn find_range(&self, start: usize, end: usize) -> Range {
         if self.children().is_empty() {
             return Range::NoNode;
         }
 
         // TODO: We walk the whole tree twice (by calling find_pos twice) -
-	// maybe we can do better than that?  (But very unlikely to be a
-	// performance problem.)
+        // maybe we can do better than that?  (But very unlikely to be a
+        // performance problem.)
 
         // TODO: more tests that directly exercise this beginning and end stuff
         let (find_start, find_end) = match start.cmp(&end) {
@@ -700,15 +700,15 @@ mod test {
 
     #[test]
     fn finding_a_range_within_an_empty_dom_returns_no_node() {
-        let mut d: Dom<u16> = dom(&[]);
-        let range = d.find_range_mut(0, 0);
+        let d: Dom<u16> = dom(&[]);
+        let range = d.find_range(0, 0);
         assert_eq!(range, Range::NoNode);
     }
 
     #[test]
     fn finding_a_range_within_the_single_text_node_works() {
-        let mut d = dom(&[tx("foo bar baz")]);
-        let range = d.find_range_mut(4, 7);
+        let d = dom(&[tx("foo bar baz")]);
+        let range = d.find_range(4, 7);
 
         if let Range::SameNode(range) = range {
             assert_eq!(range.start_offset, 4);
@@ -728,8 +728,8 @@ mod test {
 
     #[test]
     fn finding_a_range_that_includes_the_end_works_simple_case() {
-        let mut d = dom(&[tx("foo bar baz")]);
-        let range = d.find_range_mut(4, 11);
+        let d = dom(&[tx("foo bar baz")]);
+        let range = d.find_range(4, 11);
 
         if let Range::SameNode(range) = range {
             assert_eq!(range.start_offset, 4);
@@ -749,8 +749,8 @@ mod test {
 
     #[test]
     fn finding_a_range_within_some_nested_node_works() {
-        let mut d = dom(&[tx("foo "), b(&[tx("bar")]), tx(" baz")]);
-        let range = d.find_range_mut(5, 6);
+        let d = dom(&[tx("foo "), b(&[tx("bar")]), tx(" baz")]);
+        let range = d.find_range(5, 6);
 
         if let Range::SameNode(range) = range {
             assert_eq!(range.start_offset, 1);
