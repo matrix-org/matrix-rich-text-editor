@@ -358,7 +358,7 @@ where
 
 #[cfg(test)]
 mod test {
-    use crate::tests::testutils::cm;
+    use crate::tests::testutils_composer_model::cm;
 
     use crate::dom::ToHtml;
 

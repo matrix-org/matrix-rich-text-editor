@@ -14,7 +14,7 @@
 
 #![cfg(test)]
 
-use crate::tests::testutils::{cm, tx};
+use crate::tests::testutils_composer_model::{cm, tx};
 
 use crate::{ComposerModel, Location, ToHtml};
 
