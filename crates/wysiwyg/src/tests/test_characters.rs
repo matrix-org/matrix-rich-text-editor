@@ -87,9 +87,65 @@ fn typing_a_character_in_a_range_inserts_it() {
 
 #[test]
 fn can_replace_text_in_an_empty_composer_model() {
-    let mut cm = ComposerModel::new();
+    let mut cm = ComposerModel::<u16>::new();
     cm.replace_text(&"foo".to_html());
     assert_eq!(tx(&cm), "foo|");
+}
+
+#[test]
+fn typing_a_character_when_spanning_two_tags_extends_the_first_tag() {
+    let mut model = cm("before<b>bo{ld</b>aft}|er");
+    replace_text(&mut model, "Z");
+    assert_eq!(tx(&model), "before<b>boZ|</b>er");
+}
+
+#[test]
+fn typing_a_character_when_spanning_two_whole_tags_extends_the_first_tag() {
+    let mut model = cm("before<b>{bold</b>after}|");
+    replace_text(&mut model, "Z");
+    assert_eq!(tx(&model), "before<b>Z|</b>");
+}
+
+#[test]
+fn typing_a_character_when_spanning_entire_tag_keeps_formatting() {
+    let mut model = cm("before<b>{bo<i>x</i>ld}|</b>after");
+    replace_text(&mut model, "Z");
+    assert_eq!(tx(&model), "before<b>Z|</b>after");
+}
+
+#[test]
+fn typing_a_character_when_spanning_over_newly_opened_tags_deletes_them() {
+    let mut model = cm("before<b>bo{ld</b>a<i>f</i>t}|er");
+    replace_text(&mut model, "Z");
+    assert_eq!(tx(&model), "before<b>boZ|</b>er");
+}
+
+#[test]
+fn typing_when_spanning_multiple_close_tags_extends_the_first_tag() {
+    let mut model = cm("00<code><i>2<b>33{33</b></i>55</code>6}|6");
+    replace_text(&mut model, "Z");
+    assert_eq!(tx(&model), "00<code><i>2<b>33Z|</b></i></code>6");
+}
+
+#[test]
+fn typing_when_spanning_open_tags_moves_their_start_forwards() {
+    let mut model = cm("0{0<b>1<i>2}|2</i>3</b>44");
+    replace_text(&mut model, "Z");
+    assert_eq!(tx(&model), "0Z|<b><i>2</i>3</b>44");
+}
+
+#[test]
+fn typing_that_empties_an_end_tag_deletes_it() {
+    let mut model = cm("00{00<b>1111}|</b>");
+    replace_text(&mut model, "Z");
+    assert_eq!(tx(&model), "00Z|");
+}
+
+#[test]
+fn typing_when_spanning_whole_open_tags_moves_their_start_forwards() {
+    let mut model = cm("{00<b>1<i>22}|</i>3</b>44");
+    replace_text(&mut model, "Z");
+    assert_eq!(tx(&model), "Z|<b>3</b>44");
 }
 
 fn replace_text(model: &mut ComposerModel<u16>, new_text: &str) {

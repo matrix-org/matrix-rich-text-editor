@@ -14,6 +14,7 @@
 
 use crate::dom::dom_handle::DomHandle;
 
+// TODO: is this the same as find_range::RangeLocation?
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum RangeLocationType {
     Start,
@@ -30,6 +31,7 @@ pub enum Range {
     MultipleNodes(MultipleNodesRange),
 
     // The DOM contains no nodes at all!
+    // TODO: maybe can remove this, always finding a valid range?
     NoNode,
 }
 

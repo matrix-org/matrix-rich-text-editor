@@ -28,6 +28,8 @@ pub use dom_handle::DomHandle;
 pub use dom_struct::Dom;
 pub use find_result::FindResult;
 pub use html_formatter::HtmlFormatter;
+pub use range::DomLocation;
+pub use range::MultipleNodesRange;
 pub use range::Range;
 pub use range::SameNodeRange;
 pub use to_html::ToHtml;

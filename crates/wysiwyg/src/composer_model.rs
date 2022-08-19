@@ -14,7 +14,10 @@
 
 use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
 use crate::dom::parser::parse;
-use crate::dom::{Dom, DomHandle, Range, SameNodeRange, ToHtml};
+use crate::dom::range::RangeLocationType;
+use crate::dom::{
+    Dom, DomHandle, MultipleNodesRange, Range, SameNodeRange, ToHtml,
+};
 use crate::{
     ActionResponse, ComposerState, ComposerUpdate, InlineFormatType, Location,
 };
@@ -101,28 +104,37 @@ where
         start: usize,
         end: usize,
     ) -> ComposerUpdate<C> {
-        let range = self.state.dom.find_range(start, end);
+        self.do_replace_text_in_range(
+            new_text,
+            start,
+            self.state.dom.find_range(start, end),
+        )
+    }
+
+    fn do_replace_text_in_range(
+        &mut self,
+        new_text: &[C],
+        mut start: usize,
+        range: Range,
+    ) -> ComposerUpdate<C> {
         match range {
             Range::SameNode(range) => {
                 self.replace_same_node(range, new_text);
-                self.state.start = Location::from(start + new_text.len());
-                self.state.end = self.state.start;
             }
-
+            Range::MultipleNodes(range) => {
+                self.replace_multiple_nodes(range, new_text)
+            }
             Range::NoNode => {
                 self.state
                     .dom
                     .append(DomNode::Text(TextNode::from(new_text.to_vec())));
 
-                self.state.start = Location::from(new_text.len());
-                self.state.end = self.state.start;
+                start = 0;
             }
-
-            _ => panic!(
-                "Can't replace_text_in in complex object models yet. {:?}",
-                range
-            ),
         }
+
+        self.state.start = Location::from(start + new_text.len());
+        self.state.end = self.state.start;
 
         // TODO: for now, we replace every time, to check ourselves, but
         // at least some of the time we should not
@@ -295,6 +307,95 @@ where
             t.set_data(n);
         } else {
             panic!("Can't deal with ranges containing non-text nodes (yet?)")
+        }
+    }
+
+    fn replace_multiple_nodes(
+        &mut self,
+        range: MultipleNodesRange,
+        new_text: &[C],
+    ) {
+        let mut to_delete = Vec::new();
+        for loc in range.into_iter() {
+            match loc.location_type {
+                RangeLocationType::Start => {
+                    let mut node =
+                        self.state.dom.lookup_node_mut(loc.node_handle);
+                    match &mut node {
+                        DomNode::Container(_) => {
+                            panic!("Start node must be text!")
+                        }
+                        DomNode::Text(node) => {
+                            let old_data = node.data();
+                            let mut new_data =
+                                old_data[..loc.start_offset].to_vec();
+                            new_data.extend_from_slice(new_text);
+                            node.set_data(new_data);
+                        }
+                    }
+                }
+                RangeLocationType::Middle => {
+                    let node =
+                        self.state.dom.lookup_node(loc.node_handle.clone());
+                    match node {
+                        DomNode::Container(_) => {
+                            // Ignore containers for now
+                        }
+                        DomNode::Text(_) => {
+                            to_delete.push(loc.node_handle);
+                        }
+                    }
+                }
+                RangeLocationType::End => {
+                    let mut node =
+                        self.state.dom.lookup_node_mut(loc.node_handle.clone());
+                    match &mut node {
+                        DomNode::Container(_) => {
+                            panic!("End node must be text!")
+                        }
+                        DomNode::Text(node) => {
+                            // TODO: maybe no need for RangeLocation here?
+                            let data = node.data();
+                            if loc.end_offset < data.len() {
+                                node.set_data(
+                                    node.data()[loc.end_offset..].to_vec(),
+                                );
+                            } else {
+                                to_delete.push(loc.node_handle);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Delete in reverse order to avoid invalidating handles
+        to_delete.reverse();
+
+        while !to_delete.is_empty() {
+            let mut new_to_delete = Vec::new();
+
+            for handle in to_delete.into_iter() {
+                let child_index =
+                    handle.raw().last().expect("Text node can't be root!");
+                let parent_handle = handle.parent_handle();
+                let mut parent =
+                    self.state.dom.lookup_node_mut(parent_handle.clone());
+                match &mut parent {
+                    DomNode::Container(parent) => {
+                        parent.remove(*child_index);
+                        adjust_handles_for_delete(&mut new_to_delete, &handle);
+                        if parent.children().is_empty() {
+                            new_to_delete.push(parent_handle);
+                        }
+                    }
+                    DomNode::Text(_) => {
+                        panic!("Parent must be a container!");
+                    }
+                }
+            }
+
+            to_delete = new_to_delete;
         }
     }
 
@@ -496,11 +597,73 @@ where
     }
 }
 
+fn starts_with(subject: &DomHandle, object: &DomHandle) -> bool {
+    // Can't start with something longer than you
+    if subject.raw().len() < object.raw().len() {
+        return false;
+    }
+
+    // If any path element doesn't match we don't start with this
+    for (s, o) in subject.raw().iter().zip(object.raw().iter()) {
+        if s != o {
+            return false;
+        }
+    }
+
+    // All elements match, so we do start with it
+    true
+}
+
+fn adjust_handles_for_delete(
+    handles: &mut Vec<DomHandle>,
+    deleted: &DomHandle,
+) {
+    let mut indices_in_handles_to_delete = Vec::new();
+    let mut handles_to_replace = Vec::new();
+
+    let parent = deleted.parent_handle();
+    for (i, handle) in handles.iter().enumerate() {
+        if starts_with(handle, deleted) {
+            // We are the deleted node (or a descendant of it)
+            indices_in_handles_to_delete.push(i);
+        } else if starts_with(handle, &parent) {
+            // We are a sibling of the deleted node (or a descendant of one)
+
+            // If we're after a deleted node, reduce our index
+            let mut child_index = handle.raw()[parent.raw().len()];
+            let deleted_index = *deleted.raw().last().unwrap();
+            if child_index > deleted_index {
+                child_index -= 1;
+            }
+
+            // Create a handle with the adjusted index (but missing anything
+            // after the delete node's length).
+            let mut new_handle = parent.child_handle(child_index);
+
+            // Add back the rest of our original handle, unadjusted
+            for h in &handle.raw()[deleted.raw().len()..] {
+                new_handle = new_handle.child_handle(*h);
+            }
+            handles_to_replace.push((i, new_handle));
+        }
+    }
+
+    for (i, new_handle) in handles_to_replace {
+        handles[i] = new_handle;
+    }
+
+    indices_in_handles_to_delete.reverse();
+    for i in indices_in_handles_to_delete {
+        handles.remove(i);
+    }
+}
+
 #[cfg(test)]
 mod test {
+    use super::*;
     use crate::tests::testutils_composer_model::cm;
 
-    use crate::dom::ToHtml;
+    use crate::dom::{DomHandle, ToHtml};
 
     // Most tests for ComposerModel are inside the tests/ modules
 
@@ -509,5 +672,58 @@ mod test {
         let mut model = cm("{hello}| world");
         model.replace_all_html(&"foo <b>bar</b>".to_html());
         assert_eq!(model.state.dom.to_string(), "foo <b>bar</b>");
+    }
+
+    #[test]
+    fn starts_with_works() {
+        let h0123 = DomHandle::from_raw(vec![0, 1, 2, 3]);
+        let h012 = DomHandle::from_raw(vec![0, 1, 2]);
+        let h123 = DomHandle::from_raw(vec![1, 2, 3]);
+        let h = DomHandle::from_raw(vec![]);
+
+        assert!(starts_with(&h0123, &h012));
+        assert!(!starts_with(&h012, &h0123));
+        assert!(starts_with(&h012, &h012));
+        assert!(starts_with(&h012, &h));
+        assert!(!starts_with(&h123, &h012));
+        assert!(!starts_with(&h012, &h123));
+    }
+
+    #[test]
+    fn can_adjust_handles_when_removing_nodes() {
+        let mut handles = vec![
+            DomHandle::from_raw(vec![1, 2, 3]), // Ignored because before
+            DomHandle::from_raw(vec![2, 3, 4, 5]), // Deleted because inside
+            DomHandle::from_raw(vec![3, 4, 5]), // Adjusted because after
+            DomHandle::from_raw(vec![3]),       // Adjusted because after
+        ];
+
+        let to_delete = DomHandle::from_raw(vec![2]);
+
+        adjust_handles_for_delete(&mut handles, &to_delete);
+
+        assert_eq!(*handles[0].raw(), vec![1, 2, 3]);
+        assert_eq!(*handles[1].raw(), vec![2, 4, 5]);
+        assert_eq!(*handles[2].raw(), vec![2]);
+        assert_eq!(handles.len(), 3);
+    }
+
+    #[test]
+    fn can_adjust_handles_when_removing_nested_nodes() {
+        let mut handles = vec![
+            DomHandle::from_raw(vec![0, 9, 1, 2, 3]),
+            DomHandle::from_raw(vec![0, 9, 2, 3, 4, 5]),
+            DomHandle::from_raw(vec![0, 9, 3, 4, 5]),
+            DomHandle::from_raw(vec![0, 9, 3]),
+        ];
+
+        let to_delete = DomHandle::from_raw(vec![0, 9, 2]);
+
+        adjust_handles_for_delete(&mut handles, &to_delete);
+
+        assert_eq!(*handles[0].raw(), vec![0, 9, 1, 2, 3]);
+        assert_eq!(*handles[1].raw(), vec![0, 9, 2, 4, 5]);
+        assert_eq!(*handles[2].raw(), vec![0, 9, 2]);
+        assert_eq!(handles.len(), 3);
     }
 }

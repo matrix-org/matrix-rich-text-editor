@@ -14,11 +14,11 @@
 
 use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
 use crate::dom::range::RangeLocationType::Middle;
-use crate::dom::range::{DomLocation, MultipleNodesRange, RangeLocationType};
+use crate::dom::range::{
+    DomLocation, MultipleNodesRange, RangeLocationType, SameNodeRange,
+};
 use crate::dom::{Dom, DomHandle, FindResult, Range};
 use std::cmp::{max, min};
-
-use super::SameNodeRange;
 
 pub fn find_range<C>(dom: &Dom<C>, start: usize, end: usize) -> Range
 where
@@ -157,13 +157,13 @@ where
     }
     match node {
         DomNode::Text(n) => {
-            if let Some(location) = process_text_node(n, start, end, offset) {
+            if let Some(location) = process_text_node(&n, start, end, offset) {
                 locations.push(location);
             }
         }
         DomNode::Container(n) => {
             locations
-                .extend(process_container_node(dom, n, start, end, offset));
+                .extend(process_container_node(dom, &n, start, end, offset));
         }
     }
     locations
@@ -284,7 +284,7 @@ mod test {
 
     #[test]
     fn finding_a_node_within_an_empty_dom_returns_not_found() {
-        let d: Dom<u16> = dom(&[]);
+        let d = dom(&[]);
         assert_eq!(
             find_pos(&d, d.document_handle(), 0, 0),
             FindResult::NotFound
@@ -293,7 +293,7 @@ mod test {
 
     #[test]
     fn finding_a_node_within_a_single_text_node_is_found() {
-        let d: Dom<u16> = dom(&[tn("foo")]);
+        let d = dom(&[tn("foo")]);
         assert_eq!(
             find_pos(&d, d.document_handle(), 1, 1),
             found_single_node(
@@ -307,7 +307,7 @@ mod test {
 
     #[test]
     fn finding_a_node_within_flat_text_nodes_is_found() {
-        let d: Dom<u16> = dom(&[tn("foo"), tn("bar")]);
+        let d = dom(&[tn("foo"), tn("bar")]);
         assert_eq!(
             find_pos(&d, d.document_handle(), 0, 0),
             found_single_node(
@@ -405,7 +405,7 @@ mod test {
 
     #[test]
     fn finding_a_range_within_an_empty_dom_returns_no_node() {
-        let d: Dom<u16> = dom(&[]);
+        let d = dom(&[]);
         let range = d.find_range(0, 0);
         assert_eq!(range, Range::NoNode);
     }
