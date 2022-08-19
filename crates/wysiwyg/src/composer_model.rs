@@ -19,6 +19,7 @@ use crate::{
     ActionResponse, ComposerState, ComposerUpdate, InlineFormatType, Location,
 };
 
+#[derive(Clone)]
 pub struct ComposerModel<C>
 where
     C: Clone,
@@ -90,7 +91,16 @@ where
     ) -> ComposerUpdate<C> {
         // Store current Dom
         self.push_state_to_history();
+        self.do_replace_text_in(new_text, start, end)
+    }
 
+    /// Internal: replace some text without modifying the undo/redo state.
+    fn do_replace_text_in(
+        &mut self,
+        new_text: &[C],
+        start: usize,
+        end: usize,
+    ) -> ComposerUpdate<C> {
         let range = self.state.dom.find_range_mut(start, end);
         match range {
             Range::SameNode(range) => {
@@ -350,7 +360,8 @@ mod test {
     use speculoos::{prelude::*, AssertionFailure, Spec};
 
     use crate::dom::nodes::{DomNode, TextNode};
-    use crate::dom::{Dom, ToHtml};
+    use crate::dom::parser::parse;
+    use crate::dom::{Range, SameNodeRange, ToHtml};
     use crate::ComposerState;
     use crate::InlineFormatType::Bold;
     use crate::{InlineFormatType, Location, TextUpdate};
@@ -373,6 +384,13 @@ mod test {
         let mut model = cm("abc|");
         replace_text(&mut model, "d");
         assert_eq!(tx(&model), "abcd|");
+    }
+
+    #[test]
+    fn typing_a_character_inside_a_tag_inserts_it() {
+        let mut model = cm("AAA<b>BB|B</b>CCC");
+        replace_text(&mut model, "Z");
+        assert_eq!(tx(&model), "AAA<b>BBZ|B</b>CCC");
     }
 
     #[test]
@@ -509,10 +527,10 @@ mod test {
 
         model.select(Location::from(4), Location::from(8));
         assert_eq!(tx(&model), "abcd{efgh}|");
-
-        model.select(Location::from(4), Location::from(9));
-        assert_eq!(tx(&model), "abcd{efgh}|");
     }
+
+    // TODO: Test selecting invalid ranges, including starting and ending off
+    // the end.
 
     #[test]
     fn selecting_single_utf16_code_unit_characters() {
@@ -589,12 +607,11 @@ mod test {
     fn bolding_ascii_adds_strong_tags() {
         let mut model = cm("aa{bb}|cc");
         model.format(InlineFormatType::Bold);
-        // TODO: because it's not an AST
-        assert_eq!(tx(&model), "aa{<s}|trong>bb</strong>cc");
+        assert_eq!(tx(&model), "aa<strong>{bb}|</strong>cc");
 
         let mut model = cm("aa|{bb}cc");
         model.format(InlineFormatType::Bold);
-        assert_eq!(tx(&model), "aa|{<s}trong>bb</strong>cc");
+        assert_eq!(tx(&model), "aa<strong>|{bb}</strong>cc");
     }
 
     #[test]
@@ -738,104 +755,158 @@ mod test {
         }
     }
 
+    // TODO: too many tests and utils - split them up.
+
     /**
      * Create a ComposerModel from a text representation.
      */
     fn cm(text: &str) -> ComposerModel<u16> {
-        let text: Vec<u16> = text.encode_utf16().collect();
+        let text_u16: Vec<u16> = text.encode_utf16().collect();
 
         fn find(haystack: &[u16], needle: &str) -> Option<usize> {
-            let needle = needle.encode_utf16().collect::<Vec<u16>>()[0];
+            let mut skip_count = 0; // How many tag characters we have seen
+            let mut in_tag = false; // Are we in a tag now?
+
+            let needle = needle.to_html()[0];
+            let open = "<".to_html()[0];
+            let close = ">".to_html()[0];
+
             for (i, &ch) in haystack.iter().enumerate() {
                 if ch == needle {
-                    return Some(i);
+                    return Some(i - skip_count);
+                } else if ch == open {
+                    in_tag = true;
+                } else if ch == close {
+                    skip_count += 1;
+                    in_tag = false;
+                }
+                if in_tag {
+                    skip_count += 1;
                 }
             }
             None
         }
 
-        let curs = find(&text, "|").expect(&format!(
+        let curs = find(&text_u16, "|").expect(&format!(
             "ComposerModel text did not contain a '|' symbol: '{}'",
-            String::from_utf16(&text)
+            String::from_utf16(&text_u16)
                 .expect("ComposerModel text was not UTF-16"),
         ));
 
-        let s = find(&text, "{");
-        let e = find(&text, "}");
+        let s = find(&text_u16, "{");
+        let e = find(&text_u16, "}");
 
-        let mut ret_text;
-        let mut state = ComposerState::new();
+        let mut model = ComposerModel {
+            state: ComposerState::new(),
+            previous_states: Vec::new(),
+            next_states: Vec::new(),
+        };
+        model.state.dom = parse(&text).unwrap();
+
+        fn delete_range(model: &mut ComposerModel<u16>, p1: usize, p2: usize) {
+            model.do_replace_text_in(&[], p1, p2);
+        }
 
         if let (Some(s), Some(e)) = (s, e) {
             if curs == e + 1 {
                 // Cursor after end: foo{bar}|baz
                 // The { made an extra codeunit - move the end back 1
-                state.start = Location::from(s);
-                state.end = Location::from(e - 1);
-                ret_text = utf8(&text[..s]);
-                ret_text += &utf8(&text[s + 1..e]);
-                ret_text += &utf8(&text[curs + 1..]);
+                delete_range(&mut model, s, s + 1);
+                delete_range(&mut model, e - 1, e + 1);
+                model.state.start = Location::from(s);
+                model.state.end = Location::from(e - 1);
             } else if curs == s - 1 {
                 // Cursor before beginning: foo|{bar}baz
                 // The |{ made an extra 2 codeunits - move the end back 2
-                state.start = Location::from(e - 2);
-                state.end = Location::from(curs);
-                ret_text = utf8(&text[..curs]);
-                ret_text += &utf8(&text[s + 1..e]);
-                ret_text += &utf8(&text[e + 1..]);
+                delete_range(&mut model, s - 1, s + 1);
+                delete_range(&mut model, e - 2, e - 1);
+                model.state.start = Location::from(e - 2);
+                model.state.end = Location::from(curs);
             } else {
                 panic!(
                     "The cursor ('|') must always be directly before or after \
                     the selection ('{{..}}')! \
                     E.g.: 'foo|{{bar}}baz' or 'foo{{bar}}|baz'."
-                )
+                );
             }
         } else {
-            state.start = Location::from(curs);
-            state.end = Location::from(curs);
-            ret_text = utf8(&text[..curs]);
-            ret_text += &utf8(&text[curs + 1..]);
+            delete_range(&mut model, curs, curs + 1);
+            model.state.start = Location::from(curs);
+            model.state.end = Location::from(curs);
         }
 
-        state.dom =
-            Dom::new(vec![DomNode::Text(TextNode::from(ret_text.to_html()))]);
-        ComposerModel {
-            state,
-            previous_states: Vec::new(),
-            next_states: Vec::new(),
-        }
+        model
     }
 
     /**
      * Convert a ComposerModel to a text representation.
      */
     fn tx(model: &ComposerModel<u16>) -> String {
-        let mut ret;
-
-        let utf16: Vec<u16> =
-            model.state.dom.to_string().encode_utf16().collect();
-        if model.state.start == model.state.end {
-            ret = utf8(&utf16[..model.state.start.into()]);
-            ret.push('|');
-            ret += &utf8(&utf16[model.state.start.into()..]);
-        } else {
-            let (s, e) = model.safe_selection();
-
-            ret = utf8(&utf16[..s]);
-            if model.state.start < model.state.end {
-                ret.push('{');
+        fn update_text_node_with_cursor(
+            text_node: &mut TextNode<u16>,
+            range: SameNodeRange,
+        ) {
+            let orig_s: usize = range.start_offset.into();
+            let orig_e: usize = range.end_offset.into();
+            let (s, e) = if orig_s < orig_e {
+                (orig_s, orig_e)
             } else {
-                ret += "|{";
-            }
-            ret += &utf8(&utf16[s..e]);
-            if model.state.start < model.state.end {
-                ret += "}|";
+                (orig_e, orig_s)
+            };
+
+            let data = text_node.data();
+            let mut new_data;
+            if s == e {
+                new_data = utf8(&data[..s]);
+                new_data.push('|');
+                new_data += &utf8(&data[s..]);
             } else {
-                ret.push('}');
+                new_data = utf8(&data[..s]);
+                if orig_s < orig_e {
+                    new_data.push('{');
+                } else {
+                    new_data += "|{";
+                }
+                new_data += &utf8(&data[s..e]);
+                if orig_s < orig_e {
+                    new_data += "}|";
+                } else {
+                    new_data.push('}');
+                }
+                new_data += &utf8(&data[e..]);
             }
-            ret += &utf8(&utf16[e..]);
+            text_node.set_data(new_data.to_html());
         }
-        ret
+
+        // Clone the model because we will modify it to add selection markers
+        let mut model = model.clone();
+
+        let range = model
+            .state
+            .dom
+            .find_range_mut(model.state.start.into(), model.state.end.into());
+
+        match range {
+            Range::SameNode(range) => {
+                let node =
+                    model.state.dom.lookup_node_mut(range.node_handle.clone());
+                match node {
+                    DomNode::Container(_) => {
+                        panic!("Don't know how to tx in a non-text node")
+                    }
+                    DomNode::Text(text_node) => {
+                        update_text_node_with_cursor(text_node, range)
+                    }
+                }
+            }
+            Range::NoNode => panic!("No node!"),
+            Range::TooDifficultForMe => {
+                dbg!((model.state.start, model.state.end));
+                todo!("Range too difficult!")
+            }
+        }
+
+        model.state.dom.to_string()
     }
 
     #[test]
@@ -847,6 +918,7 @@ mod test {
 
     #[test]
     fn cm_creates_correct_component_model() {
+        // TODO: can we split and/or make these tests clearer?
         assert_eq!(cm("|").state.start, 0);
         assert_eq!(cm("|").state.end, 0);
         assert_eq!(cm("|").get_html(), &[]);
@@ -866,6 +938,11 @@ mod test {
         assert_eq!(cm("foo|").state.start, 3);
         assert_eq!(cm("foo|").state.end, 3);
         assert_eq!(cm("foo|").get_html(), ("foo".to_html()));
+
+        let t0 = cm("AAA<b>B|BB</b>CCC");
+        assert_eq!(t0.state.start, 4);
+        assert_eq!(t0.state.end, 4);
+        assert_eq!(t0.get_html(), "AAA<b>BBB</b>CCC".to_html());
 
         let t1 = cm("foo|\u{1F4A9}bar");
         assert_eq!(t1.state.start, 3);
@@ -962,5 +1039,15 @@ mod test {
         assert_that!("abc|{d\u{1F4A9}f}ghi").roundtrips();
         assert_that!("abc{def}|\u{1F4A9}ghi").roundtrips();
         assert_that!("abc|{def}\u{1F4A9}ghi").roundtrips();
+        assert_that!("AAA<b>B|BB</b>CCC").roundtrips();
+        assert_that!("AAA<b>{BBB}|</b>CCC").roundtrips();
+        assert_that!("AAA<b>|{BBB}</b>CCC").roundtrips();
+        assert_that!("AAA<b>B<em>B|</em>B</b>CCC").roundtrips();
+        assert_that!("AAA<b>B|<em>B</em>B</b>CCC").roundtrips();
+        assert_that!("AAA<b>B<em>{B}|</em>B</b>CCC").roundtrips();
+        assert_that!("AAA<b>B<em>|{B}</em>B</b>CCC").roundtrips();
+        assert_that!("AAA<b>B<em>B</em>B</b>C|CC").roundtrips();
+        assert_that!("AAA<b>B<em>B</em>B</b>{C}|CC").roundtrips();
+        assert_that!("AAA<b>B<em>B</em>B</b>|{C}CC").roundtrips();
     }
 }
