@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
 use crate::dom::parser::PaNodeContainer;
-use crate::dom::{ContainerNode, Dom, DomCreationError, DomNode, TextNode};
+use crate::dom::{Dom, DomCreationError};
 use crate::ToHtml;
 
 use super::padom_node::PaDomNode;
