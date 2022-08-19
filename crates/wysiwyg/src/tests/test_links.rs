@@ -12,10 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod test_characters;
-pub mod test_deleting;
-pub mod test_formatting;
-pub mod test_links;
-pub mod test_selection;
-pub mod test_undo_redo;
-pub mod testutils;
+#![cfg(test)]
+
+use crate::tests::testutils::cm;
+
+use crate::TextUpdate;
+
+#[test]
+fn cant_set_link_to_empty_selection() {
+    let mut model = cm("hello |world");
+    let update = model.set_link("https://element.io".encode_utf16().collect());
+    assert!(matches!(update.text_update, TextUpdate::Keep));
+}
+
+#[test]
+fn set_link_wraps_selection_in_link_tag() {
+    let mut model = cm("{hello}| world");
+    model.set_link("https://element.io".encode_utf16().collect());
+    assert_eq!(
+        model.state.dom.to_string(),
+        "<a href=\"https://element.io\">hello</a> world"
+    );
+}
