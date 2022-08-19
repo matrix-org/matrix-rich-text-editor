@@ -17,10 +17,9 @@
 use crate::dom::nodes::{DomNode, TextNode};
 use crate::dom::Dom;
 
-pub fn dom<'a, C>(children: impl IntoIterator<Item = &'a DomNode<C>>) -> Dom<C>
-where
-    C: 'static + Clone,
-{
+pub fn dom<'a>(
+    children: impl IntoIterator<Item = &'a DomNode<u16>>,
+) -> Dom<u16> {
     Dom::new(clone_children(children))
 }
 
