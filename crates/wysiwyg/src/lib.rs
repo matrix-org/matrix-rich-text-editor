@@ -20,6 +20,7 @@ mod dom;
 mod format_type;
 mod location;
 mod menu_state;
+mod tests;
 mod text_update;
 
 pub use crate::composer_action::ActionRequest;
