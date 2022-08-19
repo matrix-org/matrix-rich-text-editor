@@ -14,7 +14,7 @@
 
 #![cfg(test)]
 
-use crate::tests::testutils::{cm, tx};
+use crate::tests::testutils_composer_model::{cm, tx};
 
 #[test]
 fn backspacing_a_character_at_the_end_deletes_it() {

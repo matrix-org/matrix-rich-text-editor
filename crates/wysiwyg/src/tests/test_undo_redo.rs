@@ -14,7 +14,7 @@
 
 #![cfg(test)]
 
-use crate::tests::testutils::cm;
+use crate::tests::testutils_composer_model::cm;
 
 use crate::dom::nodes::{DomNode, TextNode};
 use crate::{InlineFormatType, ToHtml};

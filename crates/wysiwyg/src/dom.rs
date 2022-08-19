@@ -14,6 +14,7 @@
 
 pub mod dom_creation_error;
 pub mod dom_handle;
+mod find_range;
 pub mod find_result;
 pub mod html_formatter;
 pub mod nodes;
@@ -95,12 +96,6 @@ where
     document: DomNode<C>,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-enum RangeLocation {
-    Start,
-    End,
-}
-
 impl<C> Dom<C>
 where
     C: Clone,
@@ -160,155 +155,12 @@ where
         }
     }
 
+    // TODO: document this
     pub fn find_range(&self, start: usize, end: usize) -> Range {
-        if self.children().is_empty() {
-            return Range::NoNode;
-        }
-
-        // TODO: We walk the whole tree twice (by calling find_pos twice) -
-        // maybe we can do better than that?  (But very unlikely to be a
-        // performance problem.)
-
-        // TODO: more tests that directly exercise this beginning and end stuff
-        let (find_start, find_end) = match start.cmp(&end) {
-            std::cmp::Ordering::Equal => {
-                // When there is no range, only a cursor, we use "end" style,
-                // staying within a tag if we are near the end
-                let pos = self.find_pos(
-                    self.document_handle(),
-                    end,
-                    RangeLocation::End,
-                );
-                (pos.clone(), pos)
-            }
-            std::cmp::Ordering::Less => {
-                // Start and end are in expected order - use normal start
-                // and end style for find them.
-                (
-                    self.find_pos(
-                        self.document_handle(),
-                        start,
-                        RangeLocation::Start,
-                    ),
-                    self.find_pos(
-                        self.document_handle(),
-                        end,
-                        RangeLocation::End,
-                    ),
-                )
-            }
-            std::cmp::Ordering::Greater => {
-                // Start and end are in opposite order - use opposite start
-                // and end style for find them.
-                (
-                    self.find_pos(
-                        self.document_handle(),
-                        start,
-                        RangeLocation::End,
-                    ),
-                    self.find_pos(
-                        self.document_handle(),
-                        end,
-                        RangeLocation::Start,
-                    ),
-                )
-            }
-        };
-
-        // TODO: needs careful handling when on the boundary of 2 ranges:
-        // we want to be greedy about when we state something is the same range
-        // - maybe find_pos should return 2 nodes when we are on the boundary?
-        match (find_start, find_end) {
-            (
-                FindResult::Found {
-                    node_handle: start_handle,
-                    offset: start_offset,
-                },
-                FindResult::Found {
-                    node_handle: end_handle,
-                    offset: end_offset,
-                },
-            ) => {
-                if start_handle == end_handle {
-                    Range::SameNode(SameNodeRange {
-                        node_handle: start_handle,
-                        start_offset,
-                        end_offset,
-                    })
-                } else {
-                    Range::TooDifficultForMe
-                }
-            }
-            _ => Range::TooDifficultForMe,
-        }
+        find_range::find_range(self, start, end)
     }
 
-    /// Find a particular character position in the DOM
-    ///
-    /// location controls whether we are looking for the start or the end
-    /// of a range. When we are on the border of a tag, if we are looking for
-    /// the start, we return the character at the beginning of the next tag,
-    /// whereas if we are looking for the end of a range, we return the
-    /// position after the last character of the previous tag.
-    ///
-    /// When searching for an individual character (rather than a range), you
-    /// should ask for RangeLocation::End.
-    fn find_pos(
-        &self,
-        node_handle: DomHandle,
-        offset: usize,
-        location: RangeLocation,
-    ) -> FindResult {
-        // TODO: move this function into its own file
-        // TODO: consider whether cloning DomHandles is damaging performance,
-        // and look for ways to pass around references, maybe.
-        fn process_container_node<C: Clone>(
-            dom: &Dom<C>,
-            node: &ContainerNode<C>,
-            offset: usize,
-            location: RangeLocation,
-        ) -> FindResult {
-            let mut off = offset;
-            for child in node.children() {
-                let child_handle = child.handle();
-                assert!(!child_handle.is_root(), "Incorrect child handle!");
-                let find_child = dom.find_pos(child_handle, off, location);
-                match find_child {
-                    FindResult::Found { .. } => {
-                        return find_child;
-                    }
-                    FindResult::NotFound { new_offset } => {
-                        off = new_offset;
-                    }
-                }
-            }
-            FindResult::NotFound { new_offset: off }
-        }
-
-        let node = self.lookup_node(node_handle.clone());
-        match node {
-            DomNode::Text(n) => {
-                let len = n.data().len();
-                if (location == RangeLocation::Start && offset < len)
-                    || (location == RangeLocation::End && offset <= len)
-                {
-                    FindResult::Found {
-                        node_handle,
-                        offset,
-                    }
-                } else {
-                    FindResult::NotFound {
-                        new_offset: offset - len,
-                    }
-                }
-            }
-            DomNode::Container(n) => {
-                process_container_node(self, n, offset, location)
-            }
-        }
-    }
-
-    fn document_handle(&self) -> DomHandle {
+    pub(crate) fn document_handle(&self) -> DomHandle {
         self.document.handle()
     }
 
@@ -413,55 +265,9 @@ impl Display for ItemNode {
 #[cfg(test)]
 mod test {
     use super::*;
+
     use crate::dom::nodes::dom_node::DomNode;
-
-    fn utf16(input: &str) -> Vec<u16> {
-        input.encode_utf16().collect()
-    }
-
-    fn clone_children<'a, C>(
-        children: impl IntoIterator<Item = &'a DomNode<C>>,
-    ) -> Vec<DomNode<C>>
-    where
-        C: 'static + Clone,
-    {
-        children.into_iter().cloned().collect()
-    }
-
-    fn dom<'a, C>(children: impl IntoIterator<Item = &'a DomNode<C>>) -> Dom<C>
-    where
-        C: 'static + Clone,
-    {
-        Dom::new(clone_children(children))
-    }
-
-    fn a<'a>(
-        children: impl IntoIterator<Item = &'a DomNode<u16>>,
-    ) -> DomNode<u16> {
-        DomNode::new_link(utf16("https://element.io"), clone_children(children))
-    }
-
-    fn b<'a>(
-        children: impl IntoIterator<Item = &'a DomNode<u16>>,
-    ) -> DomNode<u16> {
-        DomNode::new_formatting(utf16("b"), clone_children(children))
-    }
-
-    fn i<'a>(
-        children: impl IntoIterator<Item = &'a DomNode<u16>>,
-    ) -> DomNode<u16> {
-        DomNode::new_formatting(utf16("i"), clone_children(children))
-    }
-
-    fn i_c<'a>(
-        children: impl IntoIterator<Item = &'a DomNode<u16>>,
-    ) -> DomNode<u16> {
-        DomNode::new_formatting(utf16("code"), clone_children(children))
-    }
-
-    fn tx(data: &str) -> DomNode<u16> {
-        DomNode::Text(TextNode::from(utf16(data)))
-    }
+    use crate::tests::testutils_dom::{a, b, dom, i, i_c, tn};
 
     /// If this node is an element, return its children - otherwise panic
     fn kids<C: Clone>(node: &DomNode<C>) -> &Vec<DomNode<C>> {
@@ -512,9 +318,9 @@ mod test {
     #[test]
     fn can_find_deep_nodes_via_handles() {
         let dom = dom(&[
-            tx("foo"),
-            b(&[tx("BOLD"), b(&[tx("uberbold")])]),
-            tx("bar"),
+            tn("foo"),
+            b(&[tn("BOLD"), b(&[tn("uberbold")])]),
+            tn("bar"),
         ]);
 
         // Given a DOM with a nested node
@@ -529,10 +335,10 @@ mod test {
 
     #[test]
     fn can_replace_toplevel_node_with_multiple_nodes() {
-        let mut dom = dom(&[tx("foo"), tx("bar")]);
+        let mut dom = dom(&[tn("foo"), tn("bar")]);
 
         let node_handle = dom.children()[0].handle();
-        let inserted_nodes = vec![tx("ab"), b(&[tx("cd")]), tx("ef")];
+        let inserted_nodes = vec![tn("ab"), b(&[tn("cd")]), tn("ef")];
 
         dom.replace(node_handle, inserted_nodes);
 
@@ -545,10 +351,10 @@ mod test {
 
     #[test]
     fn can_replace_deep_node_with_multiple_nodes() {
-        let mut dom = dom(&[b(&[tx("foo")])]);
+        let mut dom = dom(&[b(&[tn("foo")])]);
 
         let node_handle = kids(&dom.children()[0])[0].handle();
-        let inserted_nodes = vec![tx("f"), i(&[tx("o")]), tx("o")];
+        let inserted_nodes = vec![tn("f"), i(&[tn("o")]), tn("o")];
 
         dom.replace(node_handle, inserted_nodes);
 
@@ -565,13 +371,13 @@ mod test {
 
     #[test]
     fn plain_text_serialises_to_just_the_text() {
-        assert_eq!(dom(&[tx("foo")]).to_string(), "foo");
+        assert_eq!(dom(&[tn("foo")]).to_string(), "foo");
     }
 
     #[test]
     fn mixed_text_and_tags_serialises() {
         assert_eq!(
-            dom(&[tx("foo"), b(&[tx("BOLD")]), tx("bar")]).to_string(),
+            dom(&[tn("foo"), b(&[tn("BOLD")]), tn("bar")]).to_string(),
             "foo<b>BOLD</b>bar"
         );
     }
@@ -580,10 +386,10 @@ mod test {
     fn nested_tags_serialise() {
         assert_eq!(
             dom(&[
-                tx("foo"),
-                b(&[tx("BO"), i(&[tx("LD")])]),
-                i(&[tx("it")]),
-                tx("bar")
+                tn("foo"),
+                b(&[tn("BO"), i(&[tn("LD")])]),
+                i(&[tn("it")]),
+                tn("bar")
             ])
             .to_string(),
             "foo<b>BO<i>LD</i></b><i>it</i>bar"
@@ -595,182 +401,9 @@ mod test {
         assert_eq!(dom(&[b(&[]),]).to_string(), "<b></b>");
     }
 
-    // Finding nodes
-
-    // TODO: more tests for start and end of ranges
-
-    #[test]
-    fn finding_a_node_within_an_empty_dom_returns_not_found() {
-        let d: Dom<u16> = dom(&[]);
-        assert_eq!(
-            d.find_pos(d.document_handle(), 0, RangeLocation::Start),
-            FindResult::NotFound { new_offset: 0 }
-        );
-    }
-
-    #[test]
-    fn finding_a_node_within_a_single_text_node_is_found() {
-        let d: Dom<u16> = dom(&[tx("foo")]);
-        assert_eq!(
-            d.find_pos(d.document_handle(), 1, RangeLocation::Start),
-            FindResult::Found {
-                node_handle: DomHandle::from_raw(vec![0]),
-                offset: 1
-            }
-        );
-    }
-
-    #[test]
-    fn finding_a_node_within_flat_text_nodes_is_found() {
-        let d: Dom<u16> = dom(&[tx("foo"), tx("bar")]);
-        assert_eq!(
-            d.find_pos(d.document_handle(), 0, RangeLocation::Start),
-            FindResult::Found {
-                node_handle: DomHandle::from_raw(vec![0]),
-                offset: 0
-            }
-        );
-        assert_eq!(
-            d.find_pos(d.document_handle(), 1, RangeLocation::Start),
-            FindResult::Found {
-                node_handle: DomHandle::from_raw(vec![0]),
-                offset: 1
-            }
-        );
-        assert_eq!(
-            d.find_pos(d.document_handle(), 2, RangeLocation::Start),
-            FindResult::Found {
-                node_handle: DomHandle::from_raw(vec![0]),
-                offset: 2
-            }
-        );
-        assert_eq!(
-            d.find_pos(d.document_handle(), 3, RangeLocation::Start),
-            FindResult::Found {
-                node_handle: DomHandle::from_raw(vec![1]),
-                offset: 0
-            }
-        );
-        assert_eq!(
-            d.find_pos(d.document_handle(), 3, RangeLocation::End),
-            FindResult::Found {
-                node_handle: DomHandle::from_raw(vec![0]),
-                offset: 3
-            }
-        );
-        // TODO: break up this test and name parts!
-        assert_eq!(
-            d.find_pos(d.document_handle(), 4, RangeLocation::Start),
-            FindResult::Found {
-                node_handle: DomHandle::from_raw(vec![1]),
-                offset: 1
-            }
-        );
-        assert_eq!(
-            d.find_pos(d.document_handle(), 4, RangeLocation::End),
-            FindResult::Found {
-                node_handle: DomHandle::from_raw(vec![1]),
-                offset: 1
-            }
-        );
-        assert_eq!(
-            d.find_pos(d.document_handle(), 5, RangeLocation::Start),
-            FindResult::Found {
-                node_handle: DomHandle::from_raw(vec![1]),
-                offset: 2
-            }
-        );
-        assert_eq!(
-            d.find_pos(d.document_handle(), 5, RangeLocation::End),
-            FindResult::Found {
-                node_handle: DomHandle::from_raw(vec![1]),
-                offset: 2
-            }
-        );
-        assert_eq!(
-            d.find_pos(d.document_handle(), 6, RangeLocation::End),
-            FindResult::Found {
-                node_handle: DomHandle::from_raw(vec![1]),
-                offset: 3
-            }
-        );
-    }
-
-    // TODO: comprehensive test like above for non-flat nodes
-
-    #[test]
-    fn finding_a_range_within_an_empty_dom_returns_no_node() {
-        let d: Dom<u16> = dom(&[]);
-        let range = d.find_range(0, 0);
-        assert_eq!(range, Range::NoNode);
-    }
-
-    #[test]
-    fn finding_a_range_within_the_single_text_node_works() {
-        let d = dom(&[tx("foo bar baz")]);
-        let range = d.find_range(4, 7);
-
-        if let Range::SameNode(range) = range {
-            assert_eq!(range.start_offset, 4);
-            assert_eq!(range.end_offset, 7);
-
-            if let DomNode::Text(t) = d.lookup_node(range.node_handle.clone()) {
-                assert_eq!(t.data(), "foo bar baz".to_html());
-            } else {
-                panic!("Should have been a text node!")
-            }
-
-            assert_eq!(range.node_handle.raw(), &vec![0]);
-        } else {
-            panic!("Should have been a SameNodeRange: {:?}", range)
-        }
-    }
-
-    #[test]
-    fn finding_a_range_that_includes_the_end_works_simple_case() {
-        let d = dom(&[tx("foo bar baz")]);
-        let range = d.find_range(4, 11);
-
-        if let Range::SameNode(range) = range {
-            assert_eq!(range.start_offset, 4);
-            assert_eq!(range.end_offset, 11);
-
-            if let DomNode::Text(t) = d.lookup_node(range.node_handle.clone()) {
-                assert_eq!(t.data(), "foo bar baz".to_html());
-            } else {
-                panic!("Should have been a text node!")
-            }
-
-            assert_eq!(range.node_handle.raw(), &vec![0]);
-        } else {
-            panic!("Should have been a SameNodeRange: {:?}", range)
-        }
-    }
-
-    #[test]
-    fn finding_a_range_within_some_nested_node_works() {
-        let d = dom(&[tx("foo "), b(&[tx("bar")]), tx(" baz")]);
-        let range = d.find_range(5, 6);
-
-        if let Range::SameNode(range) = range {
-            assert_eq!(range.start_offset, 1);
-            assert_eq!(range.end_offset, 2);
-
-            if let DomNode::Text(t) = d.lookup_node(range.node_handle.clone()) {
-                assert_eq!(t.data(), "bar".to_html());
-            } else {
-                panic!("Should have been a text node!")
-            }
-
-            assert_eq!(range.node_handle.raw(), &vec![1, 0]);
-        } else {
-            panic!("Should have been a SameNodeRange: {:?}", range)
-        }
-    }
-
     #[test]
     fn hyperlink_formatting_simple() {
-        let d = dom(&[a(&[tx("foo")])]);
+        let d = dom(&[a(&[tn("foo")])]);
         let mut formatter = HtmlFormatter::new();
         fmt_node_u16(d.document(), &mut formatter);
         assert_eq!(
@@ -781,7 +414,7 @@ mod test {
 
     #[test]
     fn hyperlink_formatting_complex() {
-        let d = dom(&[a(&[b(&[tx("foo")]), tx(" "), i(&[tx("bar")])])]);
+        let d = dom(&[a(&[b(&[tn("foo")]), tn(" "), i(&[tn("bar")])])]);
         let mut formatter = HtmlFormatter::new();
         fmt_node_u16(d.document(), &mut formatter);
         assert_eq!(
@@ -792,7 +425,7 @@ mod test {
 
     #[test]
     fn inline_code_gets_formatted() {
-        let d = dom(&[i_c(&[tx("some_code")])]);
+        let d = dom(&[i_c(&[tn("some_code")])]);
         let mut formatter = HtmlFormatter::new();
         fmt_node_u16(d.document(), &mut formatter);
         assert_eq!(
@@ -803,7 +436,7 @@ mod test {
 
     #[test]
     fn html_symbols_inside_text_tags_get_escaped() {
-        let d = dom(&[tx("<p>Foo & bar</p>")]);
+        let d = dom(&[tn("<p>Foo & bar</p>")]);
         let mut formatter = HtmlFormatter::new();
         fmt_node_u16(d.document(), &mut formatter);
         assert_eq!(
@@ -814,7 +447,7 @@ mod test {
 
     #[test]
     fn inline_code_text_contents_get_escaped() {
-        let d = dom(&[i_c(&[tx("<b>some</b> code")])]);
+        let d = dom(&[i_c(&[tn("<b>some</b> code")])]);
         let mut formatter = HtmlFormatter::new();
         fmt_node_u16(d.document(), &mut formatter);
         assert_eq!(
@@ -825,7 +458,7 @@ mod test {
 
     #[test]
     fn inline_code_node_contents_do_not_get_escaped() {
-        let d = dom(&[i_c(&[b(&[tx("some")]), tx(" code")])]);
+        let d = dom(&[i_c(&[b(&[tn("some")]), tn(" code")])]);
         let mut formatter = HtmlFormatter::new();
         fmt_node_u16(d.document(), &mut formatter);
         assert_eq!(
