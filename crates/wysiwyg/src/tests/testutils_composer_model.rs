@@ -14,51 +14,58 @@
 
 #![cfg(test)]
 
+//! Convenience functions to allow working with ComposerModel instances based
+//! on ASCII-art-style representions.
+//!
+//! We provide 2 functions: [cm] to create a ComposerModel from text, and
+//! [tx] to convert a ComposerModel to text.
+//!
+//! ## Format
+//!
+//! The text format is HTML with 3 special characters: `{` and `}` to indicate
+//! the current selections, and `|` to indicate the cursor position.
+//!
+//! For example, `aa{bb}|cc` means the text `aabbcc`, with a selection starting
+//! at 2 and ending at 4.
+//!
+//! The `|` is mandatory, but you can leave out both `{` and `}` to indicate
+//! that no characters are selected, so `aa|bb` means the text `aabb`, with a
+//! selection starting at 2 and ending at 2.
+//!
+//! If `{` and `}` are included, the `|` must be immediately before `{`, or
+//! immediately after `|`. So `aa|{bb}cc` means the text `aabbcc`, with a
+//! selection starting at 4 and ending at 2 (i.e. the user dragged from right
+//! to left to select).
+//!
+//! The characters `{`, `}` or `|` must not appear anywhere else in the text.
+//!
+//! HTML works, so `AA<b>B|B</b>CC` means a text node containing `AA`, followed
+//! but a bold node containing a text node containing `BB`, followed by a text
+//! node containing `CC`, with a selection starting and ending at 3.
+//!
+//! ## Examples
+//!
+//! See the test immediately below this comment in the source code. Doctests
+//! can't be used inside #[cfg(test)], so it is included as a normal test.
+
+#[test]
+fn example() {
+    let mut model = cm("aa{bb}|cc");
+    assert_eq!(
+        String::from_utf16(&model.state.dom.to_html()).unwrap(),
+        "aabbcc"
+    );
+    assert_eq!(model.state.start, 2);
+    assert_eq!(model.state.end, 4);
+
+    model.select(Location::from(1), Location::from(5));
+    assert_eq!(tx(&model), "a{abbc}|c");
+}
+
 use crate::dom::nodes::{DomNode, TextNode};
 use crate::dom::parser::parse;
 use crate::dom::{Range, SameNodeRange};
 use crate::{ComposerModel, ComposerState, Location, ToHtml};
-
-/// Convenience functions to allow working with ComposerModel instances based
-/// on ASCII-art-style representions.
-///
-/// We provide 2 functions: [cm] to create a ComposerModel from text, and
-/// [tx] to convert a ComposerModel to text.
-///
-/// ## Format
-///
-/// The text format is HTML with 3 special characters: `{` and `}` to indicate
-/// the current selections, and `|` to indicate the cursor position.
-///
-/// For example, `aa{bb}|cc` means the text `aabbcc`, with a selection starting
-/// at 2 and ending at 4.
-///
-/// The `|` is mandatory, but you can leave out both `{` and `}` to indicate
-/// that no characters are selected, so `aa|bb` means the text `aabb`, with a
-/// selection starting at 2 and ending at 2.
-///
-/// If `{` and `}` are included, the `|` must be immediately before `{`, or
-/// immediately after `|`. So `aa|{bb}cc` means the text `aabbcc`, with a
-/// selection starting at 4 and ending at 2 (i.e. the user dragged from right
-/// to left to select).
-///
-/// The characters `{`, `}` or `|` must not appear anywhere else in the text.
-///
-/// HTML works, so `AA<b>B|B</b>CC` means a text node containing `AA`, followed
-/// but a bold node containing a text node containing `BB`, followed by a text
-/// node containing `CC`, with a selection starting and ending at 3.
-///
-/// ## Examples
-///
-/// ```
-/// let model = cm("aa{bb}|cc");
-/// assert_eq!(String::from_utf16(model.state.dom.to_html()), "aabbcc")
-/// assert_eq!(model.state.selection.start, 2);
-/// assert_eq!(model.state.selection.start, 4);
-///
-/// model.select(1, 5);
-/// assert_eq!(tx(model), "a{abbc}|c");
-/// ```
 
 /// Create a ComposerModel from a text representation. See the [testutils]
 /// module documentation for details about the format.
