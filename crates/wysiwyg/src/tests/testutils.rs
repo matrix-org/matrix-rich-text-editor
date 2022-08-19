@@ -185,7 +185,7 @@ pub fn tx(model: &ComposerModel<u16>) -> String {
     let range = model
         .state
         .dom
-        .find_range_mut(model.state.start.into(), model.state.end.into());
+        .find_range(model.state.start.into(), model.state.end.into());
 
     match range {
         Range::SameNode(range) => {

@@ -101,7 +101,7 @@ where
         start: usize,
         end: usize,
     ) -> ComposerUpdate<C> {
-        let range = self.state.dom.find_range_mut(start, end);
+        let range = self.state.dom.find_range(start, end);
         match range {
             Range::SameNode(range) => {
                 self.replace_same_node(range, new_text);
@@ -180,7 +180,7 @@ where
         // Store current Dom
         self.push_state_to_history();
         let (s, e) = self.safe_selection();
-        let range = self.state.dom.find_range_mut(s, e);
+        let range = self.state.dom.find_range(s, e);
         match range {
             Range::SameNode(range) => {
                 self.format_same_node(range, format);
@@ -315,7 +315,7 @@ where
         // Store current Dom
         self.push_state_to_history();
 
-        let range = self.state.dom.find_range_mut(s, e);
+        let range = self.state.dom.find_range(s, e);
         match range {
             Range::SameNode(range) => {
                 self.set_link_same_node(range, link);
