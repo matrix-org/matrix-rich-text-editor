@@ -14,7 +14,7 @@
 
 use crate::dom::dom_handle::DomHandle;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum FindResult {
     Found {
         node_handle: DomHandle,

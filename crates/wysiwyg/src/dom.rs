@@ -95,6 +95,12 @@ where
     document: DomNode<C>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum RangeLocation {
+    Start,
+    End,
+}
+
 impl<C> Dom<C>
 where
     C: Clone,
@@ -159,11 +165,55 @@ where
             return Range::NoNode;
         }
 
-        // Potentially silly to walk the tree twice to find both parts, but
-        // care will be needed since end may be before start. Very unlikely to
-        // be a performance bottleneck, so it's probably fine like this.
-        let find_start = self.find_pos(self.document_handle(), start);
-        let find_end = self.find_pos(self.document_handle(), end);
+        // TODO: We walk the whole tree twice (by calling find_pos twice) -
+	// maybe we can do better than that?  (But very unlikely to be a
+	// performance problem.)
+
+        // TODO: more tests that directly exercise this beginning and end stuff
+        let (find_start, find_end) = match start.cmp(&end) {
+            std::cmp::Ordering::Equal => {
+                // When there is no range, only a cursor, we use "end" style,
+                // staying within a tag if we are near the end
+                let pos = self.find_pos(
+                    self.document_handle(),
+                    end,
+                    RangeLocation::End,
+                );
+                (pos.clone(), pos)
+            }
+            std::cmp::Ordering::Less => {
+                // Start and end are in expected order - use normal start
+                // and end style for find them.
+                (
+                    self.find_pos(
+                        self.document_handle(),
+                        start,
+                        RangeLocation::Start,
+                    ),
+                    self.find_pos(
+                        self.document_handle(),
+                        end,
+                        RangeLocation::End,
+                    ),
+                )
+            }
+            std::cmp::Ordering::Greater => {
+                // Start and end are in opposite order - use opposite start
+                // and end style for find them.
+                (
+                    self.find_pos(
+                        self.document_handle(),
+                        start,
+                        RangeLocation::End,
+                    ),
+                    self.find_pos(
+                        self.document_handle(),
+                        end,
+                        RangeLocation::Start,
+                    ),
+                )
+            }
+        };
 
         // TODO: needs careful handling when on the boundary of 2 ranges:
         // we want to be greedy about when we state something is the same range
@@ -193,19 +243,36 @@ where
         }
     }
 
-    fn find_pos(&self, node_handle: DomHandle, offset: usize) -> FindResult {
+    /// Find a particular character position in the DOM
+    ///
+    /// location controls whether we are looking for the start or the end
+    /// of a range. When we are on the border of a tag, if we are looking for
+    /// the start, we return the character at the beginning of the next tag,
+    /// whereas if we are looking for the end of a range, we return the
+    /// position after the last character of the previous tag.
+    ///
+    /// When searching for an individual character (rather than a range), you
+    /// should ask for RangeLocation::End.
+    fn find_pos(
+        &self,
+        node_handle: DomHandle,
+        offset: usize,
+        location: RangeLocation,
+    ) -> FindResult {
+        // TODO: move this function into its own file
         // TODO: consider whether cloning DomHandles is damaging performance,
         // and look for ways to pass around references, maybe.
         fn process_container_node<C: Clone>(
             dom: &Dom<C>,
             node: &ContainerNode<C>,
             offset: usize,
+            location: RangeLocation,
         ) -> FindResult {
             let mut off = offset;
             for child in node.children() {
                 let child_handle = child.handle();
                 assert!(!child_handle.is_root(), "Incorrect child handle!");
-                let find_child = dom.find_pos(child_handle, off);
+                let find_child = dom.find_pos(child_handle, off, location);
                 match find_child {
                     FindResult::Found { .. } => {
                         return find_child;
@@ -222,7 +289,9 @@ where
         match node {
             DomNode::Text(n) => {
                 let len = n.data().len();
-                if offset <= len {
+                if (location == RangeLocation::Start && offset < len)
+                    || (location == RangeLocation::End && offset <= len)
+                {
                     FindResult::Found {
                         node_handle,
                         offset,
@@ -233,7 +302,9 @@ where
                     }
                 }
             }
-            DomNode::Container(n) => process_container_node(self, n, offset),
+            DomNode::Container(n) => {
+                process_container_node(self, n, offset, location)
+            }
         }
     }
 
@@ -526,11 +597,13 @@ mod test {
 
     // Finding nodes
 
+    // TODO: more tests for start and end of ranges
+
     #[test]
     fn finding_a_node_within_an_empty_dom_returns_not_found() {
         let d: Dom<u16> = dom(&[]);
         assert_eq!(
-            d.find_pos(d.document_handle(), 0),
+            d.find_pos(d.document_handle(), 0, RangeLocation::Start),
             FindResult::NotFound { new_offset: 0 }
         );
     }
@@ -539,7 +612,7 @@ mod test {
     fn finding_a_node_within_a_single_text_node_is_found() {
         let d: Dom<u16> = dom(&[tx("foo")]);
         assert_eq!(
-            d.find_pos(d.document_handle(), 1),
+            d.find_pos(d.document_handle(), 1, RangeLocation::Start),
             FindResult::Found {
                 node_handle: DomHandle::from_raw(vec![0]),
                 offset: 1
@@ -551,52 +624,71 @@ mod test {
     fn finding_a_node_within_flat_text_nodes_is_found() {
         let d: Dom<u16> = dom(&[tx("foo"), tx("bar")]);
         assert_eq!(
-            d.find_pos(d.document_handle(), 0),
+            d.find_pos(d.document_handle(), 0, RangeLocation::Start),
             FindResult::Found {
                 node_handle: DomHandle::from_raw(vec![0]),
                 offset: 0
             }
         );
         assert_eq!(
-            d.find_pos(d.document_handle(), 1),
+            d.find_pos(d.document_handle(), 1, RangeLocation::Start),
             FindResult::Found {
                 node_handle: DomHandle::from_raw(vec![0]),
                 offset: 1
             }
         );
         assert_eq!(
-            d.find_pos(d.document_handle(), 2),
+            d.find_pos(d.document_handle(), 2, RangeLocation::Start),
             FindResult::Found {
                 node_handle: DomHandle::from_raw(vec![0]),
                 offset: 2
             }
         );
-        // TODO: selections at boundaries need work
-        /*
         assert_eq!(
-            d.find_pos(d.document_handle(), 3),
+            d.find_pos(d.document_handle(), 3, RangeLocation::Start),
             FindResult::Found {
                 node_handle: DomHandle::from_raw(vec![1]),
                 offset: 0
             }
         );
         assert_eq!(
-            d.find_pos(d.document_handle(), 4),
+            d.find_pos(d.document_handle(), 3, RangeLocation::End),
+            FindResult::Found {
+                node_handle: DomHandle::from_raw(vec![0]),
+                offset: 3
+            }
+        );
+        // TODO: break up this test and name parts!
+        assert_eq!(
+            d.find_pos(d.document_handle(), 4, RangeLocation::Start),
             FindResult::Found {
                 node_handle: DomHandle::from_raw(vec![1]),
                 offset: 1
             }
         );
         assert_eq!(
-            d.find_pos(d.document_handle(), 5),
+            d.find_pos(d.document_handle(), 4, RangeLocation::End),
+            FindResult::Found {
+                node_handle: DomHandle::from_raw(vec![1]),
+                offset: 1
+            }
+        );
+        assert_eq!(
+            d.find_pos(d.document_handle(), 5, RangeLocation::Start),
             FindResult::Found {
                 node_handle: DomHandle::from_raw(vec![1]),
                 offset: 2
             }
         );
-        */
         assert_eq!(
-            d.find_pos(d.document_handle(), 6),
+            d.find_pos(d.document_handle(), 5, RangeLocation::End),
+            FindResult::Found {
+                node_handle: DomHandle::from_raw(vec![1]),
+                offset: 2
+            }
+        );
+        assert_eq!(
+            d.find_pos(d.document_handle(), 6, RangeLocation::End),
             FindResult::Found {
                 node_handle: DomHandle::from_raw(vec![1]),
                 offset: 3
