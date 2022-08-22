@@ -78,6 +78,18 @@ where
         self.children.push(child);
     }
 
+    pub fn remove(&mut self, index: usize) {
+        assert!(self.handle.is_set());
+        assert!(index < self.children().len());
+
+        self.children.remove(index);
+
+        for child_index in index..self.children.len() {
+            let new_handle = self.handle.child_handle(child_index);
+            self.children[child_index].set_handle(new_handle);
+        }
+    }
+
     pub fn replace_child(&mut self, index: usize, nodes: Vec<DomNode<C>>) {
         assert!(self.handle.is_set());
         assert!(index < self.children().len());
@@ -142,5 +154,119 @@ impl ContainerNode<u16> {
 impl ToHtml<u16> for ContainerNode<u16> {
     fn fmt_html(&self, f: &mut HtmlFormatter<u16>) {
         fmt_node_u16(self, f)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::dom::nodes::TextNode;
+
+    use super::*;
+
+    #[test]
+    fn adding_a_child_sets_the_correct_handle() {
+        let mut node = container_with_handle(&[4, 5, 4]);
+
+        // Append some children to a node
+        node.append(text_node("0"));
+        node.append(text_node("1"));
+        node.append(text_node("2"));
+
+        let text_node0 = &node.children[0];
+        let text_node1 = &node.children[1];
+        let text_node2 = &node.children[2];
+
+        // Nodes got inserted in the right places
+        assert_eq!(text_node0.to_html(), "0".to_html());
+        assert_eq!(text_node1.to_html(), "1".to_html());
+        assert_eq!(text_node2.to_html(), "2".to_html());
+
+        // And they have the right handles
+        assert_eq!(text_node0.handle().raw(), &[4, 5, 4, 0]);
+        assert_eq!(text_node1.handle().raw(), &[4, 5, 4, 1]);
+        assert_eq!(text_node2.handle().raw(), &[4, 5, 4, 2]);
+    }
+
+    #[test]
+    fn removing_a_child_sets_the_correct_handles_after() {
+        let mut node = container_with_handle(&[4, 5, 4]);
+        node.append(text_node("0"));
+        node.append(text_node("1"));
+        node.append(text_node("2"));
+        node.append(text_node("3"));
+
+        // Remove 2 children from a node (reverse order to make indices nice)
+        node.remove(2);
+        node.remove(0);
+
+        let text_node1 = &node.children[0];
+        let text_node3 = &node.children[1];
+
+        // The right nodes got deleted
+        assert_eq!(text_node1.to_html(), "1".to_html());
+        assert_eq!(text_node3.to_html(), "3".to_html());
+
+        // And they have the right handles
+        assert_eq!(text_node1.handle().raw(), &[4, 5, 4, 0]);
+        assert_eq!(text_node3.handle().raw(), &[4, 5, 4, 1]);
+    }
+
+    #[test]
+    fn replacing_child_updates_the_relevant_handles() {
+        let mut node = container_with_handle(&[4, 5, 4]);
+
+        node.append(text_node("0"));
+        node.append(text_node("1"));
+        node.append(text_node("2"));
+
+        // Replace the middle child with three new ones
+        node.replace_child(
+            1,
+            vec![text_node("1a"), text_node("1b"), text_node("1c")],
+        );
+
+        let text_node0 = &node.children[0];
+        let text_node1a = &node.children[1];
+        let text_node1b = &node.children[2];
+        let text_node1c = &node.children[3];
+        let text_node2 = &node.children[4];
+
+        // The new nodes got inserted in the right places
+        assert_eq!(text_node0.to_html(), "0".to_html());
+        assert_eq!(text_node1a.to_html(), "1a".to_html());
+        assert_eq!(text_node1b.to_html(), "1b".to_html());
+        assert_eq!(text_node1c.to_html(), "1c".to_html());
+        assert_eq!(text_node2.to_html(), "2".to_html());
+
+        assert_eq!(text_node0.handle().raw(), &[4, 5, 4, 0]);
+
+        // The new children got inserted with the right handles
+        assert_eq!(text_node1a.handle().raw(), &[4, 5, 4, 1]);
+        assert_eq!(text_node1b.handle().raw(), &[4, 5, 4, 2]);
+        assert_eq!(text_node1c.handle().raw(), &[4, 5, 4, 3]);
+
+        // The previous node 2 was updated because it has moved to the right
+        assert_eq!(text_node2.handle().raw(), &[4, 5, 4, 4]);
+    }
+
+    // TODO: more tests of ContainerNode
+
+    fn container_with_handle<'a>(
+        raw_handle: impl IntoIterator<Item = &'a usize>,
+    ) -> ContainerNode<u16> {
+        let mut node = ContainerNode::new(
+            "div".to_html(),
+            ContainerNodeKind::Generic,
+            None,
+            Vec::new(),
+        );
+        let handle =
+            DomHandle::from_raw(raw_handle.into_iter().cloned().collect());
+        node.set_handle(handle);
+        node
+    }
+
+    fn text_node(content: &str) -> DomNode<u16> {
+        DomNode::Text(TextNode::from(content.to_html()))
     }
 }
