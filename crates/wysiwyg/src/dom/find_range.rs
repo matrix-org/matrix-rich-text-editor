@@ -16,6 +16,7 @@ use crate::dom::find_result::{DomLocation, RangeLocationType};
 use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
 use crate::dom::range::MultipleNodesRange;
 use crate::dom::{Dom, DomHandle, FindResult, Range};
+use std::cmp::{max, min};
 
 use super::SameNodeRange;
 
@@ -27,19 +28,20 @@ where
         return Range::NoNode;
     }
 
-    let (s, e) = if end >= start {
-        (start, end)
-    } else {
+    let is_reversed = end < start;
+    let (start, end) = if is_reversed {
         (end, start)
+    } else {
+        (start, end)
     };
 
-    let result = find_pos(dom, dom.document_handle(), s, e);
+    let result = find_pos(dom, dom.document_handle(), start, end);
     match result {
-        FindResult::Found(mut locations) => {
+        FindResult::Found(locations) => {
             if locations.len() == 1 {
                 let location = locations.first().unwrap();
                 // TODO: check offsets
-                let location = if end < start {
+                let location = if is_reversed {
                     location.reversed()
                 } else {
                     location.clone()
@@ -50,7 +52,7 @@ where
                     end_offset: location.end_offset,
                 })
             } else {
-                let locations: Vec<DomLocation> = if end < start {
+                let locations: Vec<DomLocation> = if is_reversed {
                     locations
                         .iter()
                         .map(|location| location.reversed())
@@ -63,12 +65,6 @@ where
         }
         FindResult::NotFound => Range::NoNode,
     }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-enum RangeLocation {
-    Start,
-    End,
 }
 
 /// Find a particular character position in the DOM
@@ -149,7 +145,7 @@ fn process_container_node<C: Clone>(
             results.extend(locations);
         }
         // Container node is completely selected
-        let container_node_len = node.len();
+        let container_node_len = node.text_len();
         if !node.handle().is_root()
             && start <= off
             && off + container_node_len <= end
@@ -162,6 +158,20 @@ fn process_container_node<C: Clone>(
             })
         }
     }
+
+    // // Cleanup
+    // let mut to_remove = Vec::new();
+    // for i in 0..results.len() {
+    //     let location = results.get(i).unwrap();
+    //     // Remove previous node
+    //     if start == end && start == location.end_offset && results.len() > 1 {
+    //         to_remove.push(i);
+    //     }
+    // }
+    // for i in to_remove.iter().rev() {
+    //     results.remove(*i);
+    // }
+
     results
 }
 
@@ -172,19 +182,30 @@ fn process_text_node<C: Clone>(
     offset: &mut usize,
 ) -> Option<DomLocation> {
     let len = node.data().len();
-    let from_start = *offset <= start;
-    // Used to prevent selection of the current node if the cursor is at the end of the previous one
-    let is_start = start > 0 && start == end && *offset == start;
-    let from_end = end <= *offset + len;
-    let result = if from_start && from_end && !is_start {
+    let node_start = *offset;
+    let node_end = *offset + len;
+    let is_cursor = start == end;
+    // Intersect selection and node ranges with a couple of exceptions
+    let result = if start > node_end
+        || node_start > end
+        // Selection start is at the end of a node, but it's not a cursor
+        || (start == node_end && !is_cursor)
+        // Selection end is at the start of a node, but not on position 0
+        || (node_start == end && end != 0)
+    {
+        // Node discarded, it's not selected
+        None
+    } else {
+        let n_start = max(start, node_start);
+        let n_end = min(end, node_end);
+
         Some(DomLocation {
             node_handle: node.handle(),
-            start_offset: start - *offset, // Diff between selected position and the start position of the node
-            end_offset: end - *offset,
+            // Diff between selected position and the start position of the node
+            start_offset: n_start - node_start,
+            end_offset: n_end - node_start,
             location_type: RangeLocationType::Middle,
         })
-    } else {
-        None
     };
     *offset += len;
     result
@@ -195,7 +216,7 @@ mod test {
     // TODO: more tests for start and end of ranges
 
     use crate::dom::Dom;
-    use crate::dom::FindResult::NotFound;
+    use crate::tests::testutils_composer_model::cm;
     use crate::tests::testutils_dom::{b, dom, tn};
     use crate::ToHtml;
 
@@ -403,6 +424,18 @@ mod test {
             assert_eq!(range.node_handle.raw(), &vec![1, 0]);
         } else {
             panic!("Should have been a SameNodeRange: {:?}", range)
+        }
+    }
+
+    #[test]
+    fn finding_a_range_across_several_nodes_works() {
+        let d = cm("test<b>ing a| </b>new feature").state.dom;
+        let range = d.find_range(2, 12);
+        if let Range::MultipleNodes(r) = range {
+            // 3 text nodes + bold node
+            assert_eq!(4, r.nodes.len());
+        } else {
+            panic!("Should have been a MultipleNodesRange {:?}", range);
         }
     }
 }

@@ -167,12 +167,8 @@ where
         }
     }
 
-    pub fn len(&self) -> usize {
-        let mut result: usize = 0;
-        for child in self.children() {
-            result += child.len()
-        }
-        result
+    pub fn text_len(&self) -> usize {
+        self.children.iter().map(|child| child.text_len()).sum()
     }
 }
 

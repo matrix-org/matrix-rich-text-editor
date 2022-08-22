@@ -44,7 +44,7 @@ pub struct SameNodeRange {
 
 #[derive(Debug, PartialEq)]
 pub struct MultipleNodesRange {
-    nodes: Vec<DomLocation>,
+    pub nodes: Vec<DomLocation>,
 }
 
 impl MultipleNodesRange {

@@ -64,7 +64,7 @@ fn example() {
 
 use crate::dom::nodes::{DomNode, TextNode};
 use crate::dom::parser::parse;
-use crate::dom::{Dom, Range, SameNodeRange};
+use crate::dom::{Range, SameNodeRange};
 use crate::{ComposerModel, ComposerState, Location, ToHtml};
 
 /// Create a ComposerModel from a text representation. See the [testutils]
@@ -187,7 +187,7 @@ pub fn tx(model: &ComposerModel<u16>) -> String {
     }
 
     // Clone the model because we will modify it to add selection markers
-    let mut state = model.state.clone();
+    let state = model.state.clone();
     let mut dom = state.dom;
 
     let range = dom.find_range(state.start.into(), state.end.into());

@@ -66,10 +66,10 @@ where
         }
     }
 
-    pub fn len(&self) -> usize {
+    pub fn text_len(&self) -> usize {
         match self {
             DomNode::Text(n) => n.data().len(),
-            DomNode::Container(n) => n.len(),
+            DomNode::Container(n) => n.text_len(),
         }
     }
 }
