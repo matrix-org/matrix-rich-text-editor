@@ -65,6 +65,13 @@ where
             DomNode::Text(n) => n.set_handle(handle),
         }
     }
+
+    pub fn len(&self) -> usize {
+        match self {
+            DomNode::Text(n) => n.data().len(),
+            DomNode::Container(n) => n.len(),
+        }
+    }
 }
 
 impl DomNode<u16> {

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use crate::dom::dom_handle::DomHandle;
+use crate::dom::find_result::DomLocation;
 
 #[derive(Debug, PartialEq)]
 pub enum Range {
@@ -20,6 +21,8 @@ pub enum Range {
 
     // The range is too complex to calculate (for now)
     TooDifficultForMe,
+
+    MultipleNodes(MultipleNodesRange),
 
     // The DOM contains no nodes at all!
     NoNode,
@@ -37,4 +40,26 @@ pub struct SameNodeRange {
 
     /// The position within this node that corresponds to the end of the range
     pub end_offset: usize,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct MultipleNodesRange {
+    nodes: Vec<DomLocation>,
+}
+
+impl MultipleNodesRange {
+    pub fn new<'a>(nodes: impl IntoIterator<Item = &'a DomLocation>) -> Self {
+        Self {
+            nodes: nodes.into_iter().cloned().collect(),
+        }
+    }
+}
+
+impl IntoIterator for MultipleNodesRange {
+    type Item = DomLocation;
+    type IntoIter = std::vec::IntoIter<DomLocation>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.nodes.into_iter()
+    }
 }

@@ -64,7 +64,7 @@ fn example() {
 
 use crate::dom::nodes::{DomNode, TextNode};
 use crate::dom::parser::parse;
-use crate::dom::{Range, SameNodeRange};
+use crate::dom::{Dom, Range, SameNodeRange};
 use crate::{ComposerModel, ComposerState, Location, ToHtml};
 
 /// Create a ComposerModel from a text representation. See the [testutils]
@@ -187,17 +187,14 @@ pub fn tx(model: &ComposerModel<u16>) -> String {
     }
 
     // Clone the model because we will modify it to add selection markers
-    let mut model = model.clone();
+    let mut state = model.state.clone();
+    let mut dom = state.dom;
 
-    let range = model
-        .state
-        .dom
-        .find_range(model.state.start.into(), model.state.end.into());
+    let range = dom.find_range(state.start.into(), state.end.into());
 
     match range {
         Range::SameNode(range) => {
-            let node =
-                model.state.dom.lookup_node_mut(range.node_handle.clone());
+            let node = dom.lookup_node_mut(range.node_handle.clone());
             match node {
                 DomNode::Container(_) => {
                     panic!("Don't know how to tx in a non-text node")
@@ -208,13 +205,40 @@ pub fn tx(model: &ComposerModel<u16>) -> String {
             }
         }
         Range::NoNode => panic!("No node!"),
+        Range::MultipleNodes(locations) => {
+            let text_node_location = locations.into_iter().find(|location| {
+                matches!(
+                    dom.lookup_node(location.node_handle.clone()),
+                    DomNode::Text(_),
+                )
+            });
+
+            if let Some(text_location) = text_node_location {
+                let node =
+                    dom.lookup_node_mut(text_location.node_handle.clone());
+                match node {
+                    DomNode::Text(text_node) => {
+                        let same_node_range = SameNodeRange {
+                            node_handle: text_location.node_handle.clone(),
+                            start_offset: text_location.start_offset,
+                            end_offset: text_location.end_offset,
+                        };
+                        update_text_node_with_cursor(
+                            text_node,
+                            same_node_range,
+                        );
+                    }
+                    _ => {}
+                }
+            }
+        }
         Range::TooDifficultForMe => {
-            dbg!((model.state.start, model.state.end));
+            dbg!((state.start, state.end));
             todo!("Range too difficult!")
         }
     }
 
-    model.state.dom.to_string()
+    dom.to_string()
 }
 
 fn utf8(utf16: &[u16]) -> String {

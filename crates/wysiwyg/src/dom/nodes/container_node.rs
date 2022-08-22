@@ -166,6 +166,14 @@ where
             _ => false,
         }
     }
+
+    pub fn len(&self) -> usize {
+        let mut result: usize = 0;
+        for child in self.children() {
+            result += child.len()
+        }
+        result
+    }
 }
 
 impl ContainerNode<u16> {
