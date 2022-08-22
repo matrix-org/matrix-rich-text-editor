@@ -101,6 +101,14 @@ impl ComposerModel {
         ComposerUpdate::from(self.inner.undo())
     }
 
+    pub fn create_ordered_list(&mut self) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.create_ordered_list())
+    }
+
+    pub fn create_unordered_list(&mut self) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.create_unordered_list())
+    }
+
     /*pub fn action_response(
         self: &Arc<Self>,
         action_id: String,

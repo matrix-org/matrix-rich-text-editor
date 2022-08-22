@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::dom::nodes::{DomNode, TextNode};
+use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
 use crate::dom::parser::parse;
-use crate::dom::{Dom, Range, SameNodeRange, ToHtml};
+use crate::dom::{Dom, DomHandle, Range, SameNodeRange, ToHtml};
 use crate::{
     ActionResponse, ComposerState, ComposerUpdate, InlineFormatType, Location,
 };
@@ -158,10 +158,6 @@ where
         self.replace_text(&[])
     }
 
-    pub fn enter(&mut self) -> ComposerUpdate<C> {
-        ComposerUpdate::keep()
-    }
-
     pub fn action_response(
         &mut self,
         action_id: String,
@@ -201,6 +197,14 @@ where
         }
     }
 
+    pub fn create_ordered_list(&mut self) -> ComposerUpdate<C> {
+        self.create_list(true)
+    }
+
+    pub fn create_unordered_list(&mut self) -> ComposerUpdate<C> {
+        self.create_list(false)
+    }
+
     pub fn get_html(&self) -> Vec<C> {
         self.state.dom.to_html()
     }
@@ -236,6 +240,47 @@ where
             self.state.start,
             self.state.end,
         )
+    }
+
+    fn create_list(&mut self, ordered: bool) -> ComposerUpdate<C> {
+        // Store current Dom
+        self.push_state_to_history();
+        let list_tag = if ordered { "ol" } else { "ul" };
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        match range {
+            Range::SameNode(range) => {
+                let node =
+                    self.state.dom.lookup_node(range.node_handle.clone());
+                if let DomNode::Text(t) = node {
+                    let text = t.data();
+                    let list_node = DomNode::new_list(
+                        list_tag.to_html(),
+                        vec![DomNode::Container(ContainerNode::new_list_item(
+                            "li".to_html(),
+                            vec![DomNode::Text(TextNode::from(text.to_vec()))],
+                        ))],
+                    );
+                    self.state.dom.replace(range.node_handle, vec![list_node]);
+                }
+                return self.create_update_replace_all();
+            }
+
+            Range::NoNode => {
+                self.state.dom.append(DomNode::new_list(
+                    list_tag.to_html(),
+                    vec![DomNode::Container(ContainerNode::new_list_item(
+                        "li".to_html(),
+                        vec![DomNode::Text(TextNode::from("".to_html()))],
+                    ))],
+                ));
+                return self.create_update_replace_all();
+            }
+
+            _ => {
+                panic!("Can't create ordered list in complex object models yet")
+            }
+        }
     }
 
     fn replace_same_node(&mut self, range: SameNodeRange, new_text: &[C]) {
@@ -290,6 +335,43 @@ where
     Dom<u16>: ToHtml<u16>,
     &'a str: ToHtml<u16>,
 {
+    pub fn enter(&mut self) -> ComposerUpdate<u16> {
+        // Store current Dom
+        self.push_state_to_history();
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        match range {
+            Range::SameNode(range) => {
+                let parent_list_item_handle = self
+                    .state
+                    .dom
+                    .find_parent_list_item(range.node_handle.clone());
+                if let Some(parent_handle) = parent_list_item_handle {
+                    let parent_node =
+                        self.state.dom.lookup_node(parent_handle.clone());
+                    let list_node_handle = parent_node.handle().parent_handle();
+                    if let DomNode::Container(parent) = parent_node {
+                        if parent.is_empty_list_item() {
+                            self.remove_list_item(
+                                list_node_handle,
+                                e,
+                                parent_handle.index_in_parent(),
+                            );
+                        } else {
+                            self.add_list_item(list_node_handle, e);
+                        }
+                        self.create_update_replace_all()
+                    } else {
+                        panic!("No list item found")
+                    }
+                } else {
+                    self.replace_text(&"\n".encode_utf16().collect::<Vec<_>>())
+                }
+            }
+            _ => self.replace_text(&"\n".encode_utf16().collect::<Vec<_>>()),
+        }
+    }
+
     pub fn replace_all_html(&mut self, html: &[u16]) -> ComposerUpdate<u16> {
         let dom = parse(&String::from_utf16(html).expect("Invalid UTF-16"));
 
@@ -352,6 +434,61 @@ where
             self.state.dom.replace(range.node_handle, new_nodes);
         } else {
             panic!("Trying to bold a non-text node")
+        }
+    }
+
+    fn add_list_item(&mut self, handle: DomHandle, location: usize) {
+        let list_node = self.state.dom.lookup_node_mut(handle);
+        if let DomNode::Container(list) = list_node {
+            list.append(DomNode::new_list_item(
+                "li".to_html(),
+                vec![DomNode::Text(TextNode::from("\u{200B}".to_html()))],
+            ));
+            self.state.start = Location::from(location + 1);
+            self.state.end = Location::from(location + 1);
+        } else {
+            panic!("Handle doesn't match a list container node")
+        }
+    }
+
+    fn remove_list_item(
+        &mut self,
+        handle: DomHandle,
+        location: usize,
+        list_item_index: usize,
+    ) {
+        let list_node = self.state.dom.lookup_node_mut(handle.clone());
+        if let DomNode::Container(list) = list_node {
+            if list.children().len() == 1 {
+                let parent_handle = handle.parent_handle();
+                let parent_node = self.state.dom.lookup_node_mut(parent_handle);
+                if let DomNode::Container(parent) = parent_node {
+                    parent.remove(handle.index_in_parent());
+                    if parent.children().len() == 0 {
+                        parent.append(DomNode::Text(TextNode::from(
+                            "".to_html(),
+                        )));
+                    }
+                    self.state.start = Location::from(location);
+                    self.state.end = Location::from(location);
+                } else {
+                    panic!("List has no parent container")
+                }
+            } else {
+                list.remove(list_item_index);
+                let parent_handle = handle.parent_handle();
+                let parent_node = self.state.dom.lookup_node_mut(parent_handle);
+                if let DomNode::Container(parent) = parent_node {
+                    // TODO: should probably append a paragraph instead
+                    parent.append(DomNode::Text(TextNode::from(
+                        "\u{200B}".to_html(),
+                    )));
+                    self.state.start = Location::from(location);
+                    self.state.end = Location::from(location);
+                } else {
+                    panic!("List has no parent container")
+                }
+            }
         }
     }
 }
