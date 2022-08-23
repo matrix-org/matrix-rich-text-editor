@@ -34,6 +34,8 @@ pub enum ContainerNodeKind<C: Clone> {
     Generic,            // E.g. the root node (the containing div)
     Formatting(Vec<C>), // TODO: the format parameter is a copy of name
     Link(Vec<C>),
+    List(Vec<C>),
+    ListItem(),
 }
 
 impl<C> ContainerNode<C>
@@ -63,6 +65,26 @@ where
         Self {
             name: format.clone(),
             kind: ContainerNodeKind::Formatting(format),
+            attrs: None,
+            children,
+            handle: DomHandle::new_unset(),
+        }
+    }
+
+    pub fn new_list(list_type: Vec<C>, children: Vec<DomNode<C>>) -> Self {
+        Self {
+            name: list_type.clone(),
+            kind: ContainerNodeKind::List(list_type),
+            attrs: None,
+            children,
+            handle: DomHandle::new_unset(),
+        }
+    }
+
+    pub fn new_list_item(item_name: Vec<C>, children: Vec<DomNode<C>>) -> Self {
+        Self {
+            name: item_name,
+            kind: ContainerNodeKind::ListItem(),
             attrs: None,
             children,
             handle: DomHandle::new_unset(),
@@ -137,6 +159,13 @@ where
         // anyone pushing onto this, because the handles will be unset
         &mut self.children
     }
+
+    pub fn is_list_item(&self) -> bool {
+        match self.kind {
+            ContainerNodeKind::ListItem() => true,
+            _ => false,
+        }
+    }
 }
 
 impl ContainerNode<u16> {
@@ -147,6 +176,18 @@ impl ContainerNode<u16> {
             attrs: Some(vec![("href".encode_utf16().collect(), url)]),
             children,
             handle: DomHandle::new_unset(),
+        }
+    }
+
+    pub fn is_empty_list_item(&self) -> bool {
+        match self.kind {
+            ContainerNodeKind::ListItem() => {
+                // TODO: make a helper that reads all the plain text contained in a node and its children
+                let html = self.to_html();
+                return html == "<li></li>".to_html()
+                    || html == "<li>\u{200b}</li>".to_html();
+            }
+            _ => false,
         }
     }
 }

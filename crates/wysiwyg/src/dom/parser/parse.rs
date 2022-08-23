@@ -68,6 +68,19 @@ fn padom_to_dom_u16(padom: PaDom) -> Dom<u16> {
         ))
     }
 
+    /// Create a list node
+    fn new_list(tag: &str) -> DomNode<u16> {
+        DomNode::Container(ContainerNode::new_list(tag.to_html(), Vec::new()))
+    }
+
+    /// Create a list item node
+    fn new_list_item(tag: &str) -> DomNode<u16> {
+        DomNode::Container(ContainerNode::new_list_item(
+            tag.to_html(),
+            Vec::new(),
+        ))
+    }
+
     /// Copy all panode's information into node (now we know it's a container).
     fn convert_container(
         padom: &PaDom,
@@ -78,6 +91,14 @@ fn padom_to_dom_u16(padom: PaDom) -> Dom<u16> {
         match tag {
             "b" | "code" | "del" | "em" | "i" | "strong" | "u" => {
                 node.append(new_formatting(tag));
+                convert_children(padom, child, node.children_mut().last_mut());
+            }
+            "ol" | "ul" => {
+                node.append(new_list(tag));
+                convert_children(padom, child, node.children_mut().last_mut());
+            }
+            "li" => {
+                node.append(new_list_item(tag));
                 convert_children(padom, child, node.children_mut().last_mut());
             }
             "a" => {

@@ -25,6 +25,8 @@ interface ComposerModel {
     ComposerUpdate delete_in(u32 start, u32 end);
     ComposerUpdate enter();
     ComposerUpdate format(InlineFormatType type);
+    ComposerUpdate create_ordered_list();
+    ComposerUpdate create_unordered_list();
     ComposerUpdate undo();
     ComposerUpdate redo();
     ComposerUpdate set_link(string new_text);

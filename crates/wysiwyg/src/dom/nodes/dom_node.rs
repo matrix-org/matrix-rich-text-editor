@@ -38,6 +38,20 @@ where
         DomNode::Container(ContainerNode::new_formatting(format, children))
     }
 
+    pub fn new_list(
+        list_type: Vec<C>,
+        children: Vec<DomNode<C>>,
+    ) -> DomNode<C> {
+        DomNode::Container(ContainerNode::new_list(list_type, children))
+    }
+
+    pub fn new_list_item(
+        item_name: Vec<C>,
+        children: Vec<DomNode<C>>,
+    ) -> DomNode<C> {
+        DomNode::Container(ContainerNode::new_list_item(item_name, children))
+    }
+
     pub fn handle(&self) -> DomHandle {
         match self {
             DomNode::Container(n) => n.handle(),

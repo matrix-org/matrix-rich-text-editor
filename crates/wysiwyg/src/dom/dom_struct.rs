@@ -98,6 +98,35 @@ where
         self.document.handle()
     }
 
+    pub fn find_parent_list_item(
+        &mut self,
+        child_handle: DomHandle,
+    ) -> Option<DomHandle> {
+        fn find_list_item<C: Clone>(
+            dom: &Dom<C>,
+            node: &DomNode<C>,
+        ) -> Option<DomHandle> {
+            if !node.handle().has_parent() {
+                return None;
+            }
+            let parent_handle = node.handle().parent_handle();
+            let parent_node = dom.lookup_node(parent_handle.clone());
+
+            match parent_node {
+                DomNode::Text(_) => find_list_item(dom, parent_node),
+                DomNode::Container(n) => {
+                    if n.is_list_item() {
+                        Some(parent_handle)
+                    } else {
+                        find_list_item(dom, parent_node)
+                    }
+                }
+            }
+        }
+
+        find_list_item(self, self.lookup_node(child_handle))
+    }
+
     /// Find the node based on its handle.
     /// Panics if the handle is unset or invalid
     pub fn lookup_node(&self, node_handle: DomHandle) -> &DomNode<C> {

@@ -39,6 +39,10 @@ impl DomHandle {
         DomHandle::from_raw(new_path)
     }
 
+    pub fn has_parent(&self) -> bool {
+        self.path.len() > 0
+    }
+
     pub fn index_in_parent(&self) -> usize {
         assert!(self.path.len() > 0);
 

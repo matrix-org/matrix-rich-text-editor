@@ -106,6 +106,18 @@ impl ComposerModel {
         ))
     }
 
+    pub fn create_ordered_list(self: &Arc<Self>) -> Arc<ComposerUpdate> {
+        Arc::new(ComposerUpdate::from(
+            self.inner.lock().unwrap().create_ordered_list(),
+        ))
+    }
+
+    pub fn create_unordered_list(self: &Arc<Self>) -> Arc<ComposerUpdate> {
+        Arc::new(ComposerUpdate::from(
+            self.inner.lock().unwrap().create_unordered_list(),
+        ))
+    }
+
     pub fn undo(self: &Arc<Self>) -> Arc<ComposerUpdate> {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().undo()))
     }
