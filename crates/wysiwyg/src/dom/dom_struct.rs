@@ -106,7 +106,7 @@ where
             dom: &Dom<C>,
             node: &DomNode<C>,
         ) -> Option<DomHandle> {
-            if node.handle().has_parent() == false {
+            if !node.handle().has_parent() {
                 return None;
             }
             let parent_handle = node.handle().parent_handle();

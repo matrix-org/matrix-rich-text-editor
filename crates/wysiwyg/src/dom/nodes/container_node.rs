@@ -182,14 +182,10 @@ impl ContainerNode<u16> {
     pub fn is_empty_list_item(&self) -> bool {
         match self.kind {
             ContainerNodeKind::ListItem() => {
+                // TODO: make a helper that reads all the plain text contained in a node and its children
                 let html = self.to_html();
-                if html == "<li></li>".to_html()
-                    || html == "<li>\u{200b}</li>".to_html()
-                {
-                    true
-                } else {
-                    false
-                }
+                return html == "<li></li>".to_html()
+                    || html == "<li>\u{200b}</li>".to_html();
             }
             _ => false,
         }

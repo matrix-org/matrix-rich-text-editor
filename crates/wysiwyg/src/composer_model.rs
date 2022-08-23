@@ -262,8 +262,10 @@ where
                         ))],
                     );
                     self.state.dom.replace(range.node_handle, vec![list_node]);
+                    return self.create_update_replace_all();
+                } else {
+                    panic!("Can't create a list from a non-text node")
                 }
-                return self.create_update_replace_all();
             }
 
             Range::NoNode => {
@@ -472,6 +474,7 @@ where
                     self.state.start = Location::from(location);
                     self.state.end = Location::from(location);
                 } else {
+                    // TODO: handle list items outside of lists
                     panic!("List has no parent container")
                 }
             } else {
