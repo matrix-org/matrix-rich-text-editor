@@ -232,10 +232,6 @@ pub fn tx(model: &ComposerModel<u16>) -> String {
                 }
             }
         }
-        Range::TooDifficultForMe => {
-            dbg!((state.start, state.end));
-            todo!("Range too difficult!")
-        }
     }
 
     dom.to_string()

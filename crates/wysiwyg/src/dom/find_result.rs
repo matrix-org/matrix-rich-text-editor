@@ -12,50 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::dom::dom_handle::DomHandle;
+use crate::dom::range::DomLocation;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum FindResult {
     Found(Vec<DomLocation>),
     NotFound,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct DomLocation {
-    pub node_handle: DomHandle,
-    pub start_offset: usize,
-    pub end_offset: usize,
-    pub location_type: RangeLocationType,
-}
-
-impl DomLocation {
-    pub fn new(
-        node_handle: DomHandle,
-        start_offset: usize,
-        end_offset: usize,
-        location_type: RangeLocationType,
-    ) -> Self {
-        Self {
-            node_handle,
-            start_offset,
-            end_offset,
-            location_type,
-        }
-    }
-
-    pub fn reversed(&self) -> Self {
-        Self {
-            node_handle: self.node_handle.clone(),
-            start_offset: self.end_offset,
-            end_offset: self.start_offset,
-            location_type: self.location_type,
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum RangeLocationType {
-    Start,
-    Middle,
-    End,
 }
