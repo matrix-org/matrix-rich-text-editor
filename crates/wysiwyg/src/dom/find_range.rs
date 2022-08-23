@@ -136,27 +136,32 @@ fn process_container_node<C: Clone>(
     offset: &mut usize,
 ) -> Vec<DomLocation> {
     let mut results = Vec::new();
+    let container_start = *offset;
     for child in node.children() {
-        let cur_offset = *offset;
         let child_handle = child.handle();
         assert!(!child_handle.is_root(), "Incorrect child handle!");
         let locations = do_find_pos(dom, child_handle, start, end, offset);
         if !locations.is_empty() {
             results.extend(locations);
         }
-        // Container node is completely selected
-        let container_node_len = node.text_len();
-        if !node.handle().is_root()
-            && start <= cur_offset
-            && cur_offset + container_node_len <= end
-        {
-            results.push(DomLocation {
-                node_handle: node.handle(),
-                start_offset: 0,
-                end_offset: container_node_len,
-                location_type: RangeLocationType::Middle,
-            })
-        }
+    }
+    // If container node is completely selected, include it
+    let container_end = *offset;
+    let container_node_len = container_end - container_start;
+    // We never want to return the root node
+    if !node.handle().is_root()
+        // We want to include the container node only if we traversed through it.
+        // That is, going from at least container_start-1 to container_end 
+        // or from at least container_start to container_end+1.
+        && ((start < container_start && container_end <= end)
+        || (start <= container_start && container_end < end))
+    {
+        results.push(DomLocation {
+            node_handle: node.handle(),
+            start_offset: 0,
+            end_offset: container_node_len,
+            location_type: RangeLocationType::Middle,
+        })
     }
     results
 }
