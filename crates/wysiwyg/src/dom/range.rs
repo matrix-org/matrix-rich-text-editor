@@ -14,12 +14,20 @@
 
 use crate::dom::dom_handle::DomHandle;
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum RangeLocationType {
+    Start,
+    Middle,
+    End,
+}
+
 #[derive(Debug, PartialEq)]
 pub enum Range {
+    // The range is within a single node
     SameNode(SameNodeRange),
 
-    // The range is too complex to calculate (for now)
-    TooDifficultForMe,
+    // The range covers several nodes
+    MultipleNodes(MultipleNodesRange),
 
     // The DOM contains no nodes at all!
     NoNode,
@@ -37,4 +45,61 @@ pub struct SameNodeRange {
 
     /// The position within this node that corresponds to the end of the range
     pub end_offset: usize,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct DomLocation {
+    pub node_handle: DomHandle,
+    pub start_offset: usize,
+    pub end_offset: usize,
+    pub location_type: RangeLocationType,
+}
+
+impl DomLocation {
+    pub fn new(
+        node_handle: DomHandle,
+        start_offset: usize,
+        end_offset: usize,
+        location_type: RangeLocationType,
+    ) -> Self {
+        Self {
+            node_handle,
+            start_offset,
+            end_offset,
+            location_type,
+        }
+    }
+
+    pub fn reversed(&self) -> Self {
+        Self {
+            node_handle: self.node_handle.clone(),
+            start_offset: self.end_offset,
+            end_offset: self.start_offset,
+            location_type: self.location_type,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct MultipleNodesRange {
+    pub locations: Vec<DomLocation>,
+}
+
+impl MultipleNodesRange {
+    pub fn new<'a>(
+        locations: impl IntoIterator<Item = &'a DomLocation>,
+    ) -> Self {
+        Self {
+            locations: locations.into_iter().cloned().collect(),
+        }
+    }
+}
+
+impl IntoIterator for MultipleNodesRange {
+    type Item = DomLocation;
+    type IntoIter = std::vec::IntoIter<DomLocation>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.locations.into_iter()
+    }
 }

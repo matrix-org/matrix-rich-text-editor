@@ -166,6 +166,10 @@ where
             _ => false,
         }
     }
+
+    pub fn text_len(&self) -> usize {
+        self.children.iter().map(|child| child.text_len()).sum()
+    }
 }
 
 impl ContainerNode<u16> {

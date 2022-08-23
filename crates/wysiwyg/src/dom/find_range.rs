@@ -12,8 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::dom::nodes::{ContainerNode, DomNode};
+use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
+use crate::dom::range::RangeLocationType::Middle;
+use crate::dom::range::{DomLocation, MultipleNodesRange, RangeLocationType};
 use crate::dom::{Dom, DomHandle, FindResult, Range};
+use std::cmp::{max, min};
 
 use super::SameNodeRange;
 
@@ -25,74 +28,84 @@ where
         return Range::NoNode;
     }
 
-    // TODO: We walk the whole tree twice (by calling find_pos twice) -
-    // maybe we can do better than that?  (But very unlikely to be a
-    // performance problem.)
-
-    // TODO: more tests that directly exercise this beginning and end stuff
-    let (find_start, find_end) = match start.cmp(&end) {
-        std::cmp::Ordering::Equal => {
-            // When there is no range, only a cursor, we use "end" style,
-            // staying within a tag if we are near the end
-            let pos =
-                find_pos(dom, dom.document_handle(), end, RangeLocation::End);
-            (pos.clone(), pos)
-        }
-        std::cmp::Ordering::Less => {
-            // Start and end are in expected order - use normal start
-            // and end style for find them.
-            (
-                find_pos(
-                    dom,
-                    dom.document_handle(),
-                    start,
-                    RangeLocation::Start,
-                ),
-                find_pos(dom, dom.document_handle(), end, RangeLocation::End),
-            )
-        }
-        std::cmp::Ordering::Greater => {
-            // Start and end are in opposite order - use opposite start
-            // and end style for find them.
-            (
-                find_pos(dom, dom.document_handle(), start, RangeLocation::End),
-                find_pos(dom, dom.document_handle(), end, RangeLocation::Start),
-            )
-        }
+    // If end < start, we swap start & end to make calculations easier, then reverse the returned ranges
+    let is_reversed = end < start;
+    let (start, end) = if is_reversed {
+        (end, start)
+    } else {
+        (start, end)
     };
 
-    // TODO: needs careful handling when on the boundary of 2 ranges:
-    // we want to be greedy about when we state something is the same range
-    // - maybe find_pos should return 2 nodes when we are on the boundary?
-    match (find_start, find_end) {
-        (
-            FindResult::Found {
-                node_handle: start_handle,
-                offset: start_offset,
-            },
-            FindResult::Found {
-                node_handle: end_handle,
-                offset: end_offset,
-            },
-        ) => {
-            if start_handle == end_handle {
+    let result = find_pos(dom, dom.document_handle(), start, end);
+    match result {
+        FindResult::Found(locations) => {
+            if locations.len() == 1 {
+                // TODO: check offsets
+                let location = locations.first().unwrap();
+                let location = if is_reversed {
+                    location.reversed()
+                } else {
+                    location.clone()
+                };
                 Range::SameNode(SameNodeRange {
-                    node_handle: start_handle,
-                    start_offset,
-                    end_offset,
+                    node_handle: location.node_handle.clone(),
+                    start_offset: location.start_offset,
+                    end_offset: location.end_offset,
                 })
             } else {
-                Range::TooDifficultForMe
+                let mut locations: Vec<DomLocation> = if is_reversed {
+                    locations
+                        .iter()
+                        .map(|location| location.reversed())
+                        .collect()
+                } else {
+                    locations
+                };
+                set_start_and_end_nodes(dom, &mut locations, is_reversed);
+                Range::MultipleNodes(MultipleNodesRange::new(&locations))
             }
         }
-        _ => Range::TooDifficultForMe,
+        FindResult::NotFound => Range::NoNode,
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-enum RangeLocation {
-    Start,
-    End,
+fn set_start_and_end_nodes<C: Clone>(
+    dom: &Dom<C>,
+    locations: &mut Vec<DomLocation>,
+    is_reversed: bool,
+) {
+    // Find first and last text nodes
+    let mut locations_iter = locations.iter_mut();
+    let start_text_node_location = locations_iter.find(|location| {
+        matches!(
+            dom.lookup_node(location.node_handle.clone()),
+            DomNode::Text(_)
+        )
+    });
+    let end_text_node_location = locations_iter.rev().find(|location| {
+        matches!(
+            dom.lookup_node(location.node_handle.clone()),
+            DomNode::Text(_)
+        )
+    });
+
+    // If found both, try to set Start and End
+    if let (Some(l_s), Some(l_e)) =
+        (start_text_node_location, end_text_node_location)
+    {
+        let (l_s, l_e) = if is_reversed { (l_e, l_s) } else { (l_s, l_e) };
+
+        // They're the same node, can't set Start or End
+        if l_s.node_handle == l_e.node_handle {
+            return;
+        }
+        if l_s.location_type == Middle {
+            l_s.location_type = RangeLocationType::Start;
+        }
+        if l_e.location_type == Middle {
+            l_e.location_type = RangeLocationType::End;
+        }
+    }
 }
 
 /// Find a particular character position in the DOM
@@ -108,8 +121,8 @@ enum RangeLocation {
 fn find_pos<C>(
     dom: &Dom<C>,
     node_handle: DomHandle,
-    offset: usize,
-    location: RangeLocation,
+    start: usize,
+    end: usize,
 ) -> FindResult
 where
     C: Clone,
@@ -117,50 +130,120 @@ where
     // TODO: consider whether cloning DomHandles is damaging performance,
     // and look for ways to pass around references, maybe.
 
+    let mut offset = 0;
+    let locations = do_find_pos(dom, node_handle, start, end, &mut offset);
+
+    if locations.is_empty() {
+        FindResult::NotFound
+    } else {
+        FindResult::Found(locations)
+    }
+}
+
+fn do_find_pos<C>(
+    dom: &Dom<C>,
+    node_handle: DomHandle,
+    start: usize,
+    end: usize,
+    offset: &mut usize,
+) -> Vec<DomLocation>
+where
+    C: Clone,
+{
     let node = dom.lookup_node(node_handle.clone());
+    let mut locations = Vec::new();
+    if *offset > end {
+        return locations;
+    }
     match node {
         DomNode::Text(n) => {
-            let len = n.data().len();
-            if (location == RangeLocation::Start && offset < len)
-                || (location == RangeLocation::End && offset <= len)
-            {
-                FindResult::Found {
-                    node_handle,
-                    offset,
-                }
-            } else {
-                FindResult::NotFound {
-                    new_offset: offset - len,
-                }
+            if let Some(location) = process_text_node(n, start, end, offset) {
+                locations.push(location);
             }
         }
         DomNode::Container(n) => {
-            process_container_node(dom, n, offset, location)
+            locations
+                .extend(process_container_node(dom, n, start, end, offset));
         }
     }
+    locations
 }
 
 fn process_container_node<C: Clone>(
     dom: &Dom<C>,
     node: &ContainerNode<C>,
-    offset: usize,
-    location: RangeLocation,
-) -> FindResult {
-    let mut off = offset;
+    start: usize,
+    end: usize,
+    offset: &mut usize,
+) -> Vec<DomLocation> {
+    let mut results = Vec::new();
+    let container_start = *offset;
     for child in node.children() {
         let child_handle = child.handle();
         assert!(!child_handle.is_root(), "Incorrect child handle!");
-        let find_child = find_pos(dom, child_handle, off, location);
-        match find_child {
-            FindResult::Found { .. } => {
-                return find_child;
-            }
-            FindResult::NotFound { new_offset } => {
-                off = new_offset;
-            }
+        let locations = do_find_pos(dom, child_handle, start, end, offset);
+        if !locations.is_empty() {
+            results.extend(locations);
         }
     }
-    FindResult::NotFound { new_offset: off }
+    // If container node is completely selected, include it
+    let container_end = *offset;
+    let container_node_len = container_end - container_start;
+    // We never want to return the root node
+    if !node.handle().is_root()
+        // We want to include the container node only if we traversed through it.
+        // That is, going from at least container_start-1 to container_end 
+        // or from at least container_start to container_end+1.
+        && ((start < container_start && container_end <= end)
+        || (start <= container_start && container_end < end))
+    {
+        results.push(DomLocation {
+            node_handle: node.handle(),
+            start_offset: 0,
+            end_offset: container_node_len,
+            location_type: RangeLocationType::Middle,
+        })
+    }
+    results
+}
+
+fn process_text_node<C: Clone>(
+    node: &TextNode<C>,
+    start: usize,
+    end: usize,
+    offset: &mut usize,
+) -> Option<DomLocation> {
+    let node_len = node.data().len();
+    let node_start = *offset;
+    let node_end = node_start + node_len;
+
+    // Increase offset to keep track of the current position
+    *offset += node_len;
+
+    let outside_selection_range = start > node_end || end < node_start;
+    let is_cursor = start == end;
+
+    // Intersect selection and node ranges with a couple of exceptions
+    if outside_selection_range
+        // Selection start is at the end of a node, but it's not a cursor
+        || (start == node_end && !is_cursor)
+        // Selection end is at the start of a node, but not on position 0
+        || (node_start == end && end != 0)
+    {
+        // Node discarded, it's not selected
+        None
+    } else {
+        // Diff between selected position and the start position of the node
+        let start_offset = max(start, node_start) - node_start;
+        let end_offset = min(end, node_end) - node_start;
+
+        Some(DomLocation {
+            node_handle: node.handle(),
+            start_offset,
+            end_offset,
+            location_type: RangeLocationType::Middle,
+        })
+    }
 }
 
 #[cfg(test)]
@@ -168,18 +251,43 @@ mod test {
     // TODO: more tests for start and end of ranges
 
     use super::*;
-
+    use crate::tests::testutils_composer_model::cm;
     use crate::tests::testutils_dom::{b, dom, tn};
     use crate::ToHtml;
 
-    use crate::dom::Dom;
+    fn found_single_node(
+        handle: DomHandle,
+        start_offset: usize,
+        end_offset: usize,
+        location_type: RangeLocationType,
+    ) -> FindResult {
+        FindResult::Found(vec![DomLocation {
+            node_handle: handle,
+            start_offset,
+            end_offset,
+            location_type,
+        }])
+    }
+
+    fn ranges_to_html(
+        dom: &Dom<u16>,
+        range: &MultipleNodesRange,
+    ) -> Vec<Vec<u16>> {
+        range
+            .locations
+            .iter()
+            .map(|location| {
+                dom.lookup_node(location.node_handle.clone()).to_html()
+            })
+            .collect()
+    }
 
     #[test]
     fn finding_a_node_within_an_empty_dom_returns_not_found() {
         let d: Dom<u16> = dom(&[]);
         assert_eq!(
-            find_pos(&d, d.document_handle(), 0, RangeLocation::Start),
-            FindResult::NotFound { new_offset: 0 }
+            find_pos(&d, d.document_handle(), 0, 0),
+            FindResult::NotFound
         );
     }
 
@@ -187,11 +295,13 @@ mod test {
     fn finding_a_node_within_a_single_text_node_is_found() {
         let d: Dom<u16> = dom(&[tn("foo")]);
         assert_eq!(
-            find_pos(&d, d.document_handle(), 1, RangeLocation::Start),
-            FindResult::Found {
-                node_handle: DomHandle::from_raw(vec![0]),
-                offset: 1
-            }
+            find_pos(&d, d.document_handle(), 1, 1),
+            found_single_node(
+                DomHandle::from_raw(vec![0]),
+                1,
+                1,
+                RangeLocationType::Middle
+            )
         );
     }
 
@@ -199,75 +309,95 @@ mod test {
     fn finding_a_node_within_flat_text_nodes_is_found() {
         let d: Dom<u16> = dom(&[tn("foo"), tn("bar")]);
         assert_eq!(
-            find_pos(&d, d.document_handle(), 0, RangeLocation::Start),
-            FindResult::Found {
-                node_handle: DomHandle::from_raw(vec![0]),
-                offset: 0
-            }
+            find_pos(&d, d.document_handle(), 0, 0),
+            found_single_node(
+                DomHandle::from_raw(vec![0]),
+                0,
+                0,
+                RangeLocationType::Middle
+            )
         );
         assert_eq!(
-            find_pos(&d, d.document_handle(), 1, RangeLocation::Start),
-            FindResult::Found {
-                node_handle: DomHandle::from_raw(vec![0]),
-                offset: 1
-            }
+            find_pos(&d, d.document_handle(), 1, 1),
+            found_single_node(
+                DomHandle::from_raw(vec![0]),
+                1,
+                1,
+                RangeLocationType::Middle
+            )
         );
         assert_eq!(
-            find_pos(&d, d.document_handle(), 2, RangeLocation::Start),
-            FindResult::Found {
-                node_handle: DomHandle::from_raw(vec![0]),
-                offset: 2
-            }
+            find_pos(&d, d.document_handle(), 2, 2),
+            found_single_node(
+                DomHandle::from_raw(vec![0]),
+                2,
+                2,
+                RangeLocationType::Middle
+            )
         );
         assert_eq!(
-            find_pos(&d, d.document_handle(), 3, RangeLocation::Start),
-            FindResult::Found {
-                node_handle: DomHandle::from_raw(vec![1]),
-                offset: 0
-            }
+            find_pos(&d, d.document_handle(), 3, 3),
+            found_single_node(
+                DomHandle::from_raw(vec![0]),
+                3,
+                3,
+                RangeLocationType::Middle
+            )
         );
         assert_eq!(
-            find_pos(&d, d.document_handle(), 3, RangeLocation::End),
-            FindResult::Found {
-                node_handle: DomHandle::from_raw(vec![0]),
-                offset: 3
-            }
+            find_pos(&d, d.document_handle(), 3, 4),
+            found_single_node(
+                DomHandle::from_raw(vec![1]),
+                0,
+                1,
+                RangeLocationType::Middle
+            )
         );
         // TODO: break up this test and name parts!
         assert_eq!(
-            find_pos(&d, d.document_handle(), 4, RangeLocation::Start),
-            FindResult::Found {
-                node_handle: DomHandle::from_raw(vec![1]),
-                offset: 1
-            }
+            find_pos(&d, d.document_handle(), 4, 4),
+            found_single_node(
+                DomHandle::from_raw(vec![1]),
+                1,
+                1,
+                RangeLocationType::Middle
+            )
         );
         assert_eq!(
-            find_pos(&d, d.document_handle(), 4, RangeLocation::End),
-            FindResult::Found {
-                node_handle: DomHandle::from_raw(vec![1]),
-                offset: 1
-            }
+            find_pos(&d, d.document_handle(), 4, 4),
+            found_single_node(
+                DomHandle::from_raw(vec![1]),
+                1,
+                1,
+                RangeLocationType::Middle
+            )
         );
         assert_eq!(
-            find_pos(&d, d.document_handle(), 5, RangeLocation::Start),
-            FindResult::Found {
-                node_handle: DomHandle::from_raw(vec![1]),
-                offset: 2
-            }
+            find_pos(&d, d.document_handle(), 5, 5),
+            found_single_node(
+                DomHandle::from_raw(vec![1]),
+                2,
+                2,
+                RangeLocationType::Middle
+            )
         );
         assert_eq!(
-            find_pos(&d, d.document_handle(), 5, RangeLocation::End),
-            FindResult::Found {
-                node_handle: DomHandle::from_raw(vec![1]),
-                offset: 2
-            }
+            find_pos(&d, d.document_handle(), 5, 5),
+            found_single_node(
+                DomHandle::from_raw(vec![1]),
+                2,
+                2,
+                RangeLocationType::Middle
+            )
         );
         assert_eq!(
-            find_pos(&d, d.document_handle(), 6, RangeLocation::End),
-            FindResult::Found {
-                node_handle: DomHandle::from_raw(vec![1]),
-                offset: 3
-            }
+            find_pos(&d, d.document_handle(), 6, 6),
+            found_single_node(
+                DomHandle::from_raw(vec![1]),
+                3,
+                3,
+                RangeLocationType::Middle
+            )
         );
     }
 
@@ -340,6 +470,80 @@ mod test {
             assert_eq!(range.node_handle.raw(), &vec![1, 0]);
         } else {
             panic!("Should have been a SameNodeRange: {:?}", range)
+        }
+    }
+
+    #[test]
+    fn finding_a_range_across_several_nodes_works() {
+        let d = cm("test<b>ing a </b>new feature|").state.dom;
+        let range = d.find_range(2, 12);
+        if let Range::MultipleNodes(r) = range {
+            // 3 text nodes + bold node
+            assert_eq!(4, r.locations.len());
+            let html_of_ranges = ranges_to_html(&d, &r);
+            assert_eq!("test".to_html(), html_of_ranges[0]);
+            assert_eq!("ing a ".to_html(), html_of_ranges[1]);
+            assert_eq!("<b>ing a </b>".to_html(), html_of_ranges[2]);
+            assert_eq!("new feature".to_html(), html_of_ranges[3]);
+        } else {
+            panic!("Should have been a MultipleNodesRange {:?}", range);
+        }
+    }
+
+    #[test]
+    fn finding_a_range_across_several_nested_nodes_works() {
+        let d = cm("test<b>ing <i>a </i></b>new feature|").state.dom;
+        let range = d.find_range(2, 12);
+        if let Range::MultipleNodes(r) = range {
+            // 4 text nodes + bold node + italic node
+            assert_eq!(6, r.locations.len());
+            let html_of_ranges = ranges_to_html(&d, &r);
+            assert_eq!("test".to_html(), html_of_ranges[0]);
+            assert_eq!("ing ".to_html(), html_of_ranges[1]);
+            assert_eq!("a ".to_html(), html_of_ranges[2]);
+            assert_eq!("<i>a </i>".to_html(), html_of_ranges[3]);
+            assert_eq!("<b>ing <i>a </i></b>".to_html(), html_of_ranges[4]);
+            assert_eq!("new feature".to_html(), html_of_ranges[5]);
+        } else {
+            panic!("Should have been a MultipleNodesRange {:?}", range);
+        }
+    }
+
+    #[test]
+    fn finding_a_range_inside_several_nested_nodes_returns_only_text_node() {
+        let d = cm("test<b>ing <i>a </i></b>new feature|").state.dom;
+        let range = d.find_range(9, 10);
+        if let Range::SameNode(r) = range {
+            // Selected the 'a' character inside the <i> tag, but as it only covers it partially,
+            // only the text node is selected
+            assert_eq!(
+                r,
+                SameNodeRange {
+                    node_handle: DomHandle::from_raw(vec![1, 1, 0]),
+                    start_offset: 1,
+                    end_offset: 2,
+                }
+            );
+        } else {
+            panic!("Should have been a SameNodeRange {:?}", range);
+        }
+    }
+
+    #[test]
+    fn finding_a_range_wrapping_several_nested_nodes_selects_text_node_and_parent(
+    ) {
+        let d = cm("test<b>ing <i>a </i></b>new feature|").state.dom;
+        // The range of the whole <i> tag
+        let range = d.find_range(8, 11);
+        if let Range::MultipleNodes(r) = range {
+            // 2 text nodes + italic node
+            assert_eq!(3, r.locations.len());
+            let html_of_ranges = ranges_to_html(&d, &r);
+            assert_eq!("a ".to_html(), html_of_ranges[0]);
+            assert_eq!("<i>a </i>".to_html(), html_of_ranges[1]);
+            assert_eq!("new feature".to_html(), html_of_ranges[2]);
+        } else {
+            panic!("Should have been a MultipleNodesRange {:?}", range);
         }
     }
 }

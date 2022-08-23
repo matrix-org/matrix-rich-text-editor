@@ -12,15 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::dom::dom_handle::DomHandle;
+use crate::dom::range::DomLocation;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum FindResult {
-    Found {
-        node_handle: DomHandle,
-        offset: usize,
-    },
-    NotFound {
-        new_offset: usize,
-    },
+    Found(Vec<DomLocation>),
+    NotFound,
 }
