@@ -82,13 +82,15 @@ impl DomLocation {
 
 #[derive(Debug, PartialEq)]
 pub struct MultipleNodesRange {
-    pub nodes: Vec<DomLocation>,
+    pub locations: Vec<DomLocation>,
 }
 
 impl MultipleNodesRange {
-    pub fn new<'a>(nodes: impl IntoIterator<Item = &'a DomLocation>) -> Self {
+    pub fn new<'a>(
+        locations: impl IntoIterator<Item = &'a DomLocation>,
+    ) -> Self {
         Self {
-            nodes: nodes.into_iter().cloned().collect(),
+            locations: locations.into_iter().cloned().collect(),
         }
     }
 }
@@ -98,6 +100,6 @@ impl IntoIterator for MultipleNodesRange {
     type IntoIter = std::vec::IntoIter<DomLocation>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.nodes.into_iter()
+        self.locations.into_iter()
     }
 }

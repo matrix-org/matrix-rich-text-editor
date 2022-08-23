@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
+use crate::dom::range::RangeLocationType::Middle;
 use crate::dom::range::{DomLocation, MultipleNodesRange, RangeLocationType};
 use crate::dom::{Dom, DomHandle, FindResult, Range};
 use std::cmp::{max, min};
@@ -52,7 +53,7 @@ where
                     end_offset: location.end_offset,
                 })
             } else {
-                let locations: Vec<DomLocation> = if is_reversed {
+                let mut locations: Vec<DomLocation> = if is_reversed {
                     locations
                         .iter()
                         .map(|location| location.reversed())
@@ -60,10 +61,50 @@ where
                 } else {
                     locations
                 };
+                set_start_and_end_nodes(dom, &mut locations, is_reversed);
                 Range::MultipleNodes(MultipleNodesRange::new(&locations))
             }
         }
         FindResult::NotFound => Range::NoNode,
+    }
+}
+
+fn set_start_and_end_nodes<C: Clone>(
+    dom: &Dom<C>,
+    locations: &mut Vec<DomLocation>,
+    is_reversed: bool,
+) {
+    // Find first and last text nodes
+    let mut locations_iter = locations.iter_mut();
+    let start_text_node_location = locations_iter.find(|location| {
+        matches!(
+            dom.lookup_node(location.node_handle.clone()),
+            DomNode::Text(_)
+        )
+    });
+    let end_text_node_location = locations_iter.rev().find(|location| {
+        matches!(
+            dom.lookup_node(location.node_handle.clone()),
+            DomNode::Text(_)
+        )
+    });
+
+    // If found both, try to set Start and End
+    if let (Some(l_s), Some(l_e)) =
+        (start_text_node_location, end_text_node_location)
+    {
+        let (l_s, l_e) = if is_reversed { (l_e, l_s) } else { (l_s, l_e) };
+
+        // They're the same node, can't set Start or End
+        if l_s.node_handle == l_e.node_handle {
+            return;
+        }
+        if l_s.location_type == Middle {
+            l_s.location_type = RangeLocationType::Start;
+        }
+        if l_e.location_type == Middle {
+            l_e.location_type = RangeLocationType::End;
+        }
     }
 }
 
@@ -226,6 +267,19 @@ mod test {
             end_offset,
             location_type,
         }])
+    }
+
+    fn ranges_to_html(
+        dom: &Dom<u16>,
+        range: &MultipleNodesRange,
+    ) -> Vec<Vec<u16>> {
+        range
+            .locations
+            .iter()
+            .map(|location| {
+                dom.lookup_node(location.node_handle.clone()).to_html()
+            })
+            .collect()
     }
 
     #[test]
@@ -421,11 +475,16 @@ mod test {
 
     #[test]
     fn finding_a_range_across_several_nodes_works() {
-        let d = cm("test<b>ing a| </b>new feature").state.dom;
+        let d = cm("test<b>ing a </b>new feature|").state.dom;
         let range = d.find_range(2, 12);
         if let Range::MultipleNodes(r) = range {
             // 3 text nodes + bold node
-            assert_eq!(4, r.nodes.len());
+            assert_eq!(4, r.locations.len());
+            let html_of_ranges = ranges_to_html(&d, &r);
+            assert_eq!("test".to_html(), html_of_ranges[0]);
+            assert_eq!("ing a ".to_html(), html_of_ranges[1]);
+            assert_eq!("<b>ing a </b>".to_html(), html_of_ranges[2]);
+            assert_eq!("new feature".to_html(), html_of_ranges[3]);
         } else {
             panic!("Should have been a MultipleNodesRange {:?}", range);
         }
@@ -433,11 +492,18 @@ mod test {
 
     #[test]
     fn finding_a_range_across_several_nested_nodes_works() {
-        let d = cm("test<b>ing <i>a| </i></b>new feature").state.dom;
+        let d = cm("test<b>ing <i>a </i></b>new feature|").state.dom;
         let range = d.find_range(2, 12);
         if let Range::MultipleNodes(r) = range {
             // 4 text nodes + bold node + italic node
-            assert_eq!(6, r.nodes.len());
+            assert_eq!(6, r.locations.len());
+            let html_of_ranges = ranges_to_html(&d, &r);
+            assert_eq!("test".to_html(), html_of_ranges[0]);
+            assert_eq!("ing ".to_html(), html_of_ranges[1]);
+            assert_eq!("a ".to_html(), html_of_ranges[2]);
+            assert_eq!("<i>a </i>".to_html(), html_of_ranges[3]);
+            assert_eq!("<b>ing <i>a </i></b>".to_html(), html_of_ranges[4]);
+            assert_eq!("new feature".to_html(), html_of_ranges[5]);
         } else {
             panic!("Should have been a MultipleNodesRange {:?}", range);
         }
@@ -445,7 +511,7 @@ mod test {
 
     #[test]
     fn finding_a_range_inside_several_nested_nodes_returns_only_text_node() {
-        let d = cm("test<b>ing <i>a| </i></b>new feature").state.dom;
+        let d = cm("test<b>ing <i>a </i></b>new feature|").state.dom;
         let range = d.find_range(9, 10);
         if let Range::SameNode(r) = range {
             // Selected the 'a' character inside the <i> tag, but as it only covers it partially,
@@ -466,12 +532,16 @@ mod test {
     #[test]
     fn finding_a_range_wrapping_several_nested_nodes_selects_text_node_and_parent(
     ) {
-        let d = cm("test<b>ing <i>a| </i></b>new feature").state.dom;
+        let d = cm("test<b>ing <i>a </i></b>new feature|").state.dom;
         // The range of the whole <i> tag
-        let range = d.find_range(9, 11);
+        let range = d.find_range(8, 11);
         if let Range::MultipleNodes(r) = range {
-            // text node + italic node
-            assert_eq!(2, r.nodes.len());
+            // 2 text nodes + italic node
+            assert_eq!(3, r.locations.len());
+            let html_of_ranges = ranges_to_html(&d, &r);
+            assert_eq!("a ".to_html(), html_of_ranges[0]);
+            assert_eq!("<i>a </i>".to_html(), html_of_ranges[1]);
+            assert_eq!("new feature".to_html(), html_of_ranges[2]);
         } else {
             panic!("Should have been a MultipleNodesRange {:?}", range);
         }

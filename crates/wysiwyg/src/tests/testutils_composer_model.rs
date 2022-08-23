@@ -48,6 +48,13 @@
 //! See the test immediately below this comment in the source code. Doctests
 //! can't be used inside #[cfg(test)], so it is included as a normal test.
 
+use crate::dom::nodes::{DomNode, TextNode};
+use crate::dom::parser::parse;
+use crate::dom::range::DomLocation;
+use crate::dom::range::RangeLocationType::{End, Start};
+use crate::dom::{Range, SameNodeRange};
+use crate::{ComposerModel, ComposerState, Location, ToHtml};
+
 #[test]
 fn example() {
     let mut model = cm("aa{bb}|cc");
@@ -61,11 +68,6 @@ fn example() {
     model.select(Location::from(1), Location::from(5));
     assert_eq!(tx(&model), "a{abbc}|c");
 }
-
-use crate::dom::nodes::{DomNode, TextNode};
-use crate::dom::parser::parse;
-use crate::dom::{Range, SameNodeRange};
-use crate::{ComposerModel, ComposerState, Location, ToHtml};
 
 /// Create a ComposerModel from a text representation. See the [testutils]
 /// module documentation for details about the format.
@@ -152,7 +154,7 @@ pub fn cm(text: &str) -> ComposerModel<u16> {
 pub fn tx(model: &ComposerModel<u16>) -> String {
     fn update_text_node_with_cursor(
         text_node: &mut TextNode<u16>,
-        range: SameNodeRange,
+        range: &SameNodeRange,
     ) {
         let orig_s: usize = range.start_offset.into();
         let orig_e: usize = range.end_offset.into();
@@ -186,11 +188,54 @@ pub fn tx(model: &ComposerModel<u16>) -> String {
         text_node.set_data(new_data.to_html());
     }
 
+    fn update_text_nodes_start_with_selection(
+        start_text_node: &mut TextNode<u16>,
+        start_location: &DomLocation,
+        is_reversed: bool,
+    ) {
+        let start = start_location.start_offset;
+        let data = start_text_node.data();
+        let mut new_start_data = utf8(&data[..start]);
+        add_selection_start(&mut new_start_data, is_reversed);
+        new_start_data += &utf8(&data[start..]);
+        start_text_node.set_data(new_start_data.to_html());
+    }
+
+    fn update_text_nodes_end_with_selection(
+        end_text_node: &mut TextNode<u16>,
+        end_location: &DomLocation,
+        is_reversed: bool,
+    ) {
+        let end = end_location.end_offset;
+        let data = end_text_node.data();
+        let mut new_end_data = utf8(&data[..end]);
+        add_selection_end(&mut new_end_data, is_reversed);
+        new_end_data += &utf8(&data[end..]);
+        end_text_node.set_data(new_end_data.to_html());
+    }
+
+    fn add_selection_start(new_data: &mut String, is_reversed: bool) {
+        if is_reversed {
+            new_data.push('}');
+        } else {
+            new_data.push('{');
+        }
+    }
+
+    fn add_selection_end(new_data: &mut String, is_reversed: bool) {
+        if is_reversed {
+            new_data.push_str("|{");
+        } else {
+            new_data.push_str("}|");
+        }
+    }
+
     // Clone the model because we will modify it to add selection markers
     let state = model.state.clone();
     let mut dom = state.dom;
 
     let range = dom.find_range(state.start.into(), state.end.into());
+    let is_reversed = state.start > state.end;
 
     match range {
         Range::SameNode(range) => {
@@ -200,35 +245,41 @@ pub fn tx(model: &ComposerModel<u16>) -> String {
                     panic!("Don't know how to tx in a non-text node")
                 }
                 DomNode::Text(text_node) => {
-                    update_text_node_with_cursor(text_node, range)
+                    update_text_node_with_cursor(text_node, &range)
                 }
             }
         }
         Range::NoNode => panic!("No node!"),
-        Range::MultipleNodes(locations) => {
-            let text_node_location = locations.into_iter().find(|location| {
-                matches!(
-                    dom.lookup_node(location.node_handle.clone()),
-                    DomNode::Text(_),
-                )
-            });
+        Range::MultipleNodes(range) => {
+            // Update start node selection
+            let start_text_node_location = range
+                .locations
+                .iter()
+                .find(|location| location.location_type == Start);
 
-            if let Some(text_location) = text_node_location {
-                let node =
-                    dom.lookup_node_mut(text_location.node_handle.clone());
-                match node {
-                    DomNode::Text(text_node) => {
-                        let same_node_range = SameNodeRange {
-                            node_handle: text_location.node_handle.clone(),
-                            start_offset: text_location.start_offset,
-                            end_offset: text_location.end_offset,
-                        };
-                        update_text_node_with_cursor(
-                            text_node,
-                            same_node_range,
-                        );
-                    }
-                    _ => {}
+            if let Some(start) = start_text_node_location {
+                if let DomNode::Text(n) =
+                    dom.lookup_node_mut(start.node_handle.clone())
+                {
+                    update_text_nodes_start_with_selection(
+                        n,
+                        &start,
+                        is_reversed,
+                    );
+                }
+            }
+
+            // Update end node selection
+            let end_text_node_location = range
+                .locations
+                .iter()
+                .find(|location| location.location_type == End);
+
+            if let Some(end) = end_text_node_location {
+                if let DomNode::Text(n) =
+                    dom.lookup_node_mut(end.node_handle.clone())
+                {
+                    update_text_nodes_end_with_selection(n, &end, is_reversed);
                 }
             }
         }
@@ -379,6 +430,8 @@ mod test {
         assert_that!("AAA<b>B<em>B</em>B</b>C|CC").roundtrips();
         assert_that!("AAA<b>B<em>B</em>B</b>{C}|CC").roundtrips();
         assert_that!("AAA<b>B<em>B</em>B</b>|{C}CC").roundtrips();
+        assert_that!("AA{A<b>B<em>B</em>B</b>C}|CC").roundtrips();
+        assert_that!("AA|{A<b>B<em>B</em>B</b>C}CC").roundtrips();
     }
 
     trait Roundtrips<T> {
