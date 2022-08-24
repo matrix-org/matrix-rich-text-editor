@@ -301,8 +301,21 @@ where
         range: MultipleNodesRange,
         new_text: &[C],
     ) {
-        let mut first_text_node = true;
+        let to_delete = self.replace_in_text_nodes(range, new_text);
+        self.delete_nodes(to_delete)
+    }
+
+    /// Given a range to replace and some new text, modify the nodes in the
+    /// range to replace the text with the supplied text.
+    /// Returns a list of (handles to) nodes that have become empty and should
+    /// be deleted.
+    fn replace_in_text_nodes(
+        &mut self,
+        range: MultipleNodesRange,
+        new_text: &[C],
+    ) -> Vec<DomHandle> {
         let mut to_delete = Vec::new();
+        let mut first_text_node = true;
         for loc in range.into_iter() {
             let mut node =
                 self.state.dom.lookup_node_mut(loc.node_handle.clone());
@@ -321,10 +334,11 @@ where
                     {
                         to_delete.push(loc.node_handle);
                     } else {
-                        // Otherwise, replace the selected text
+                        // Otherwise, delete the selected text
                         let mut new_data =
                             old_data[..loc.start_offset].to_vec();
 
+                        // and replace with the new content
                         if first_text_node {
                             new_data.extend_from_slice(new_text);
                         }
@@ -337,11 +351,17 @@ where
                 }
             }
         }
+        to_delete
+    }
 
+    fn delete_nodes(&mut self, mut to_delete: Vec<DomHandle>) {
         // Delete in reverse order to avoid invalidating handles
         to_delete.reverse();
 
+        // We repeatedly delete to ensure anything that became empty because
+        // of deletions is itself deleted.
         while !to_delete.is_empty() {
+            // Keep a list of things we will delete next time around the loop
             let mut new_to_delete = Vec::new();
 
             for handle in to_delete.into_iter() {
