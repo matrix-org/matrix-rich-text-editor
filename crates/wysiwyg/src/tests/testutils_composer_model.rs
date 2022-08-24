@@ -51,7 +51,6 @@
 use crate::dom::nodes::{DomNode, TextNode};
 use crate::dom::parser::parse;
 use crate::dom::range::DomLocation;
-use crate::dom::range::RangeLocationType::{End, Start};
 use crate::dom::{Range, SameNodeRange};
 use crate::{ComposerModel, ComposerState, Location, ToHtml};
 
@@ -237,55 +236,87 @@ pub fn tx(model: &ComposerModel<u16>) -> String {
     let range = dom.find_range(state.start.into(), state.end.into());
     let is_reversed = state.start > state.end;
 
+    let (first, last): (usize, usize) = if state.start > state.end {
+        (state.end.into(), state.start.into())
+    } else {
+        (state.start.into(), state.end.into())
+    };
+
+    let mut done_last = false;
+
     match range {
         Range::SameNode(range) => {
-            let node = dom.lookup_node_mut(range.node_handle.clone());
-            match node {
+            let mut node = dom.lookup_node_mut(range.node_handle.clone());
+            match &mut node {
                 DomNode::Container(_) => {
                     panic!("Don't know how to tx in a non-text node")
                 }
-                DomNode::Text(text_node) => {
-                    update_text_node_with_cursor(text_node, &range)
-                }
-            }
+                DomNode::Text(n) => update_text_node_with_cursor(n, &range),
+            };
+            done_last = true;
         }
         Range::NoNode => panic!("No node!"),
         Range::MultipleNodes(range) => {
-            // Update start node selection
-            let start_text_node_location = range
-                .locations
-                .iter()
-                .find(|location| location.location_type == Start);
+            let mut i = 0;
+            let mut done_first = false;
+            for loc in range.locations {
+                let mut node = dom.lookup_node_mut(loc.node_handle.clone());
+                match &mut node {
+                    DomNode::Container(_) => {}
+                    DomNode::Text(n) => {
+                        i += n.data().len();
+                        let mut do_start = false;
+                        let mut do_end = false;
+                        if first < i && !done_first {
+                            if is_reversed {
+                                do_end = true;
+                            } else {
+                                do_start = true;
+                            }
+                            done_first = true;
+                        }
+                        if last < i && !done_last {
+                            if is_reversed {
+                                do_start = true;
+                            } else {
+                                do_end = true;
+                            }
+                            done_last = true;
+                        }
 
-            if let Some(start) = start_text_node_location {
-                if let DomNode::Text(n) =
-                    dom.lookup_node_mut(start.node_handle.clone())
-                {
-                    update_text_nodes_start_with_selection(
-                        n,
-                        &start,
-                        is_reversed,
-                    );
+                        if do_start {
+                            update_text_nodes_start_with_selection(
+                                n,
+                                &loc,
+                                is_reversed,
+                            );
+                        }
+                        if do_end {
+                            update_text_nodes_end_with_selection(
+                                n,
+                                &loc,
+                                is_reversed,
+                            );
+                        }
+                    }
                 }
             }
 
-            // Update end node selection
-            let end_text_node_location = range
-                .locations
-                .iter()
-                .find(|location| location.location_type == End);
-
-            if let Some(end) = end_text_node_location {
-                if let DomNode::Text(n) =
-                    dom.lookup_node_mut(end.node_handle.clone())
-                {
-                    update_text_nodes_end_with_selection(n, &end, is_reversed);
-                }
-            }
+            assert!(done_first);
         }
     }
 
-    dom.to_string()
+    let mut ret = dom.to_string();
+
+    if !done_last {
+        if is_reversed {
+            ret += "}";
+        } else {
+            ret += "}|";
+        }
+    }
+
+    ret
 }
 
 fn utf8(utf16: &[u16]) -> String {
@@ -432,6 +463,8 @@ mod test {
         assert_that!("AAA<b>B<em>B</em>B</b>|{C}CC").roundtrips();
         assert_that!("AA{A<b>B<em>B</em>B</b>C}|CC").roundtrips();
         assert_that!("AA|{A<b>B<em>B</em>B</b>C}CC").roundtrips();
+        assert_that!("{AAA<b>B<em>B</em>B</b>CCC}|").roundtrips();
+        assert_that!("|{AAA<b>B<em>B</em>B</b>CCC}").roundtrips();
     }
 
     trait Roundtrips<T> {

@@ -14,7 +14,6 @@
 
 use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
 use crate::dom::parser::parse;
-use crate::dom::range::RangeLocationType;
 use crate::dom::{
     Dom, DomHandle, MultipleNodesRange, Range, SameNodeRange, ToHtml,
 };
@@ -302,56 +301,39 @@ where
         range: MultipleNodesRange,
         new_text: &[C],
     ) {
+        let mut first_text_node = true;
         let mut to_delete = Vec::new();
         for loc in range.into_iter() {
-            match loc.location_type {
-                RangeLocationType::Start => {
-                    let mut node =
-                        self.state.dom.lookup_node_mut(loc.node_handle);
-                    match &mut node {
-                        DomNode::Container(_) => {
-                            panic!("Start node must be text!")
-                        }
-                        DomNode::Text(node) => {
-                            let old_data = node.data();
-                            let mut new_data =
-                                old_data[..loc.start_offset].to_vec();
+            let mut node =
+                self.state.dom.lookup_node_mut(loc.node_handle.clone());
+            match &mut node {
+                DomNode::Container(_) => {
+                    // Nothing to do for container nodes
+                }
+                DomNode::Text(node) => {
+                    let old_data = node.data();
+
+                    // If this is not the first node, and the selections spans
+                    // it, delete it.
+                    if loc.start_offset == 0
+                        && loc.end_offset == old_data.len()
+                        && !first_text_node
+                    {
+                        to_delete.push(loc.node_handle);
+                    } else {
+                        // Otherwise, replace the selected text
+                        let mut new_data =
+                            old_data[..loc.start_offset].to_vec();
+
+                        if first_text_node {
                             new_data.extend_from_slice(new_text);
-                            node.set_data(new_data);
                         }
+
+                        new_data.extend_from_slice(&old_data[loc.end_offset..]);
+                        node.set_data(new_data);
                     }
-                }
-                RangeLocationType::Middle => {
-                    let node =
-                        self.state.dom.lookup_node(loc.node_handle.clone());
-                    match node {
-                        DomNode::Container(_) => {
-                            // Ignore containers for now
-                        }
-                        DomNode::Text(_) => {
-                            to_delete.push(loc.node_handle);
-                        }
-                    }
-                }
-                RangeLocationType::End => {
-                    let mut node =
-                        self.state.dom.lookup_node_mut(loc.node_handle.clone());
-                    match &mut node {
-                        DomNode::Container(_) => {
-                            panic!("End node must be text!")
-                        }
-                        DomNode::Text(node) => {
-                            // TODO: maybe no need for RangeLocation here?
-                            let data = node.data();
-                            if loc.end_offset < data.len() {
-                                node.set_data(
-                                    node.data()[loc.end_offset..].to_vec(),
-                                );
-                            } else {
-                                to_delete.push(loc.node_handle);
-                            }
-                        }
-                    }
+
+                    first_text_node = false;
                 }
             }
         }

@@ -14,14 +14,6 @@
 
 use crate::dom::dom_handle::DomHandle;
 
-// TODO: is this the same as find_range::RangeLocation?
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum RangeLocationType {
-    Start,
-    Middle,
-    End,
-}
-
 #[derive(Debug, PartialEq)]
 pub enum Range {
     // The range is within a single node
@@ -54,7 +46,6 @@ pub struct DomLocation {
     pub node_handle: DomHandle,
     pub start_offset: usize,
     pub end_offset: usize,
-    pub location_type: RangeLocationType,
 }
 
 impl DomLocation {
@@ -62,13 +53,11 @@ impl DomLocation {
         node_handle: DomHandle,
         start_offset: usize,
         end_offset: usize,
-        location_type: RangeLocationType,
     ) -> Self {
         Self {
             node_handle,
             start_offset,
             end_offset,
-            location_type,
         }
     }
 
@@ -77,7 +66,6 @@ impl DomLocation {
             node_handle: self.node_handle.clone(),
             start_offset: self.end_offset,
             end_offset: self.start_offset,
-            location_type: self.location_type,
         }
     }
 }
