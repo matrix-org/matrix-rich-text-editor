@@ -16,6 +16,7 @@
 
 import SwiftUI
 import WysiwygComposer
+import WysiwygShared
 
 /// Example SwiftUI view that adds a WysiwygComposer as well as a button that
 /// displays the message (+ HTML representation) the composer would send.
@@ -37,11 +38,25 @@ struct ContentView: View {
             viewModel.clearContent()
         }
         .disabled(viewModel.isContentEmpty)
-        .accessibilityIdentifier("WysiwygSendButton")
+        .accessibilityIdentifier(.sendButton)
         if let sentMessage = sentMessage {
-            Text("Content: \(sentMessage.plainText)\nHTML: \(sentMessage.html)")
-                .accessibilityIdentifier("WysiwygContentText")
+            VStack {
+                HStack {
+                    Text("Content:")
+                    Text(sentMessage.plainText)
+                        .accessibilityIdentifier(.contentText)
+                }
+                HStack {
+                    Text("HTML:")
+                    Text(sentMessage.html)
+                        .accessibilityIdentifier(.htmlContentText)
+                }
+            }
         }
         Spacer()
     }
+}
+
+private extension View {
+    
 }

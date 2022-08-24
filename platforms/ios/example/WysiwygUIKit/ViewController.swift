@@ -16,7 +16,7 @@
 
 import UIKit
 import WysiwygComposer
-import OSLog
+import WysiwygShared
 
 private enum Constants {
     static let maxHeight: CGFloat = 200
@@ -34,9 +34,9 @@ final class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         wysiwygHostingView.delegate = self
-        sendButton.accessibilityIdentifier = "WysiwygSendButton"
-        contentLabel.accessibilityIdentifier = "WysiwygContentLabel"
-        htmlContentLabel.accessibilityIdentifier = "WysiwygHtmlContentLabel"
+        sendButton.setAccessibilityIdentifier(.sendButton)
+        contentLabel.setAccessibilityIdentifier(.contentText)
+        htmlContentLabel.setAccessibilityIdentifier(.htmlContentText)
     }
 }
 

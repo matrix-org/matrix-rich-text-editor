@@ -17,6 +17,11 @@
 import XCTest
 @testable import WysiwygComposer
 
+// FIXME: replace ZWSP with another solution
+private enum Constants {
+    static let zwsp = "\u{200B}"
+}
+
 final class WysiwygComposerTests: XCTestCase {
     func testSetBaseStringWithEmoji() {
         let composer = newComposerModel()
@@ -81,6 +86,67 @@ final class WysiwygComposerTests: XCTestCase {
                 XCTAssertEqual(range, .init(location: 8, length: 4))
                 XCTAssertTrue(font.fontDescriptor.symbolicTraits.contains(.traitBold))
             }
+        }
+    }
+
+    func testLists() {
+        let composer = newComposerModel()
+        _ = composer.createOrderedList()
+        _ = composer.replaceText(newText: "Item 1")
+        _ = composer.enter()
+        _ = composer.replaceText(newText: "Item 2")
+        // Add a third list item
+        let update = composer.enter()
+        switch update.textUpdate() {
+        case .keep:
+            XCTFail()
+        case .replaceAll(replacementHtml: let codeUnits,
+                         startUtf16Codeunit: let start,
+                         endUtf16Codeunit: let end):
+            let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count)
+            XCTAssertEqual(html,
+                           "<ol><li>Item 1</li><li>"
+                           + Constants.zwsp
+                           + "Item 2</li><li>"
+                           + Constants.zwsp
+                           + "</li></ol>")
+            XCTAssertEqual(start, end)
+            XCTAssertEqual(start, 14)
+        }
+        // Remove it
+        let update2 = composer.enter()
+        switch update2.textUpdate() {
+        case .keep:
+            XCTFail()
+        case .replaceAll(replacementHtml: let codeUnits,
+                         startUtf16Codeunit: let start,
+                         endUtf16Codeunit: let end):
+            let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count)
+            XCTAssertEqual(html,
+                           "<ol><li>Item 1</li><li>"
+                           + Constants.zwsp
+                           + "Item 2</li></ol>"
+                           + Constants.zwsp)
+            XCTAssertEqual(start, end)
+            XCTAssertEqual(start, 14)
+        }
+        // Insert some text afterwards
+        let update3 = composer.replaceText(newText: "Some text")
+        switch update3.textUpdate() {
+        case .keep:
+            XCTFail()
+        case .replaceAll(replacementHtml: let codeUnits,
+                         startUtf16Codeunit: let start,
+                         endUtf16Codeunit: let end):
+            let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count)
+            XCTAssertEqual(html,
+                           "<ol><li>Item 1</li><li>"
+                           + Constants.zwsp
+                           + "Item 2</li></ol>"
+                           + Constants.zwsp
+                           + "Some text")
+            XCTAssertEqual(start, end)
+            XCTAssertEqual(start, 23)
         }
     }
 }

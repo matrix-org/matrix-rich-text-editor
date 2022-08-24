@@ -29,16 +29,4 @@ final class NSAttributedStringTests: XCTestCase {
             XCTAssertTrue(range == .init(location: 0, length: 2))
         }
     }
-
-    func testInvalidEncodingString() throws {
-        let invalidString = "\u{F023}"
-        let encoding = String.Encoding.ascii
-        do {
-            _ = try NSAttributedString(html: invalidString, encoding: encoding)
-        } catch {
-            XCTAssertEqual(error as? BuildHtmlAttributedError, BuildHtmlAttributedError.dataError(encoding: encoding))
-            XCTAssertEqual(error.localizedDescription,
-                           "Unable to encode string with: \(encoding.description) rawValue: \(encoding.rawValue)")
-        }
-    }
 }

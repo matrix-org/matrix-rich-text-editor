@@ -22,7 +22,7 @@ final class UITextViewTests: XCTestCase {
     func testTextViewUTF16Encoding() throws {
         let textView = UITextView()
         textView.attributedText = try NSAttributedString(html: TestConstants.testStringWithEmojis)
-        // Selection is at the end of the text, with a UTF-16 length of 10.
+        // Selection is at the end of the text, with a UTF-16 length of 14.
         XCTAssertEqual(textView.selectedRange, NSRange(location: 14, length: 0))
         // Text count what is perceived as character.
         XCTAssertEqual(textView.text.count, 6)

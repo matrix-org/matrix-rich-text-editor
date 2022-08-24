@@ -41,7 +41,7 @@ struct WysiwygComposerView: UIViewRepresentable {
     func updateUIView(_ uiView: UITextView, context: Context) {
         Logger.composer.debug("New text: \(content.plainText)")
         uiView.attributedText = content.attributed
-        uiView.selectedRange = content.selection
+        uiView.selectedRange = content.attributedSelection
         context.coordinator.didUpdateText(uiView)
     }
 
