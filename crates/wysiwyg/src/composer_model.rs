@@ -98,26 +98,13 @@ where
     }
 
     /// Internal: replace some text without modifying the undo/redo state.
-    pub(crate) fn do_replace_text_in(
-        &mut self,
-        new_text: &[C],
-        start: usize,
-        end: usize,
-    ) -> ComposerUpdate<C> {
-        self.do_replace_text_in_range(
-            new_text,
-            start,
-            self.state.dom.find_range(start, end),
-        )
-    }
-
-    fn do_replace_text_in_range(
+    pub fn do_replace_text_in(
         &mut self,
         new_text: &[C],
         mut start: usize,
-        range: Range,
+        end: usize,
     ) -> ComposerUpdate<C> {
-        match range {
+        match self.state.dom.find_range(start, end) {
             Range::SameNode(range) => {
                 self.replace_same_node(range, new_text);
             }
