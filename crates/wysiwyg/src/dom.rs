@@ -22,6 +22,7 @@ pub mod nodes;
 pub mod parser;
 pub mod range;
 pub mod to_html;
+pub mod to_raw_text;
 pub mod unicode_string;
 
 pub use dom_creation_error::DomCreationError;
@@ -35,4 +36,5 @@ pub use range::MultipleNodesRange;
 pub use range::Range;
 pub use range::SameNodeRange;
 pub use to_html::ToHtml;
+pub use to_raw_text::ToRawText;
 pub use unicode_string::UnicodeString;

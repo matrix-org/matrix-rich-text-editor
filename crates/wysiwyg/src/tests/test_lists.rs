@@ -19,7 +19,7 @@ use widestring::Utf16String;
 use crate::tests::testutils_composer_model::{cm, tx};
 use crate::tests::testutils_conversion::utf16;
 
-use crate::ComposerModel;
+use crate::{ComposerModel, ToRawText};
 
 #[test]
 fn test_ordered_list() {
@@ -32,6 +32,7 @@ fn test_ordered_list() {
     assert_eq!(tx(&model), "<ol><li>abcd</li><li>\u{200b}|</li></ol>");
     replace_text(&mut model, "efgh");
     assert_eq!(tx(&model), "<ol><li>abcd</li><li>\u{200b}efgh|</li></ol>");
+    assert_eq!(&model.state.dom.to_raw_text(), "abcd\u{200b}efgh");
 }
 
 #[test]

@@ -16,6 +16,7 @@ use crate::dom::dom_handle::DomHandle;
 use crate::dom::html_formatter::HtmlFormatter;
 use crate::dom::nodes::dom_node::DomNode;
 use crate::dom::to_html::ToHtml;
+use crate::dom::to_raw_text::ToRawText;
 use crate::dom::{HtmlChar, UnicodeString};
 
 #[derive(Clone, Debug, PartialEq)]
@@ -190,10 +191,8 @@ where
     pub fn is_empty_list_item(&self) -> bool {
         match self.kind {
             ContainerNodeKind::ListItem() => {
-                // TODO: make a helper that reads all the plain text contained in a node and its children
-                let html = self.to_html();
-                return html.to_utf8() == "<li></li>"
-                    || html.to_utf8() == "<li>\u{200b}</li>";
+                let raw_text = self.to_raw_text().to_utf8();
+                return raw_text == "" || raw_text == "\u{200B}";
             }
             _ => false,
         }
@@ -233,6 +232,19 @@ where
             f.write(name.as_slice());
             f.write_char(HtmlChar::Gt);
         }
+    }
+}
+
+impl<S> ToRawText<S> for ContainerNode<S>
+where
+    S: UnicodeString,
+{
+    fn to_raw_text(&self) -> S {
+        let mut text = S::from_str("");
+        for child in &self.children {
+            text.push_string(&child.to_raw_text());
+        }
+        return text;
     }
 }
 

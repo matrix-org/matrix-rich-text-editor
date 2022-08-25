@@ -15,7 +15,9 @@
 use std::fmt::Display;
 
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode};
-use crate::dom::{find_range, DomHandle, Range, UnicodeString};
+use crate::dom::{
+    find_range, to_raw_text::ToRawText, DomHandle, Range, UnicodeString,
+};
 use crate::ToHtml;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -202,6 +204,15 @@ where
 {
     fn fmt_html(&self, f: &mut super::HtmlFormatter<S>) {
         self.document.fmt_html(f)
+    }
+}
+
+impl<S> ToRawText<S> for Dom<S>
+where
+    S: UnicodeString,
+{
+    fn to_raw_text(&self) -> S {
+        self.document.to_raw_text()
     }
 }
 
