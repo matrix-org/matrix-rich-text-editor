@@ -129,6 +129,7 @@ where
     /// Find the node based on its handle.
     /// Panics if the handle is unset or invalid
     pub fn lookup_node(&self, node_handle: DomHandle) -> &DomNode<S> {
+        // TODO: consider taking a reference to handle to avoid clones
         fn nth_child<S>(element: &ContainerNode<S>, idx: usize) -> &DomNode<S>
         where
             S: UnicodeString,

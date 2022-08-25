@@ -76,7 +76,7 @@ where
 ///
 /// When searching for an individual character (rather than a range), you
 /// should ask for RangeLocation::End.
-fn find_pos<S>(
+pub fn find_pos<S>(
     dom: &Dom<S>,
     node_handle: DomHandle,
     start: usize,

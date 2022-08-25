@@ -162,6 +162,7 @@ pub fn cm(text: &str) -> ComposerModel<Utf16String> {
 /// Convert a ComposerModel into a text representation. See the [testutils]
 /// module documentation for details about the format.
 pub fn tx(model: &ComposerModel<Utf16String>) -> String {
+    // TODO: break into a separate file
     fn update_text_node_with_cursor(
         text_node: &mut TextNode<Utf16String>,
         range: SameNodeRange,
