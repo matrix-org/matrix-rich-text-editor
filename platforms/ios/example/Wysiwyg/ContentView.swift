@@ -56,7 +56,3 @@ struct ContentView: View {
         Spacer()
     }
 }
-
-private extension View {
-    
-}
