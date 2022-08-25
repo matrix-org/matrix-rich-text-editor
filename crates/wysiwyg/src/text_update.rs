@@ -12,17 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::Location;
+use crate::{dom::UnicodeString, Location};
 
 #[derive(Debug, Clone)]
-pub enum TextUpdate<C> {
+pub enum TextUpdate<S>
+where
+    S: UnicodeString,
+{
     Keep,
-    ReplaceAll(ReplaceAll<C>),
+    ReplaceAll(ReplaceAll<S>),
 }
 
 #[derive(Debug, Clone)]
-pub struct ReplaceAll<C> {
-    pub replacement_html: Vec<C>,
+pub struct ReplaceAll<S>
+where
+    S: UnicodeString,
+{
+    pub replacement_html: S,
     pub start: Location,
     pub end: Location,
 }

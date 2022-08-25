@@ -1,15 +1,17 @@
 use std::sync::Arc;
 
+use widestring::Utf16String;
+
 use crate::ffi_composer_action::ComposerAction;
 use crate::ffi_menu_state::MenuState;
 use crate::ffi_text_update::TextUpdate;
 
 pub struct ComposerUpdate {
-    inner: wysiwyg::ComposerUpdate<u16>,
+    inner: wysiwyg::ComposerUpdate<Utf16String>,
 }
 
 impl ComposerUpdate {
-    pub fn from(inner: wysiwyg::ComposerUpdate<u16>) -> Self {
+    pub fn from(inner: wysiwyg::ComposerUpdate<Utf16String>) -> Self {
         Self { inner }
     }
 

@@ -14,28 +14,25 @@
 
 use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
 use crate::dom::parser::parse;
-use crate::dom::{
-    Dom, DomHandle, MultipleNodesRange, Range, SameNodeRange, ToHtml,
-};
+use crate::dom::UnicodeString;
+use crate::dom::{DomHandle, MultipleNodesRange, Range, SameNodeRange, ToHtml};
 use crate::{
     ActionResponse, ComposerState, ComposerUpdate, InlineFormatType, Location,
 };
 
 #[derive(Clone)]
-pub struct ComposerModel<C>
+pub struct ComposerModel<S>
 where
-    C: Clone,
+    S: UnicodeString,
 {
-    pub state: ComposerState<C>,
-    pub previous_states: Vec<ComposerState<C>>,
-    pub next_states: Vec<ComposerState<C>>,
+    pub state: ComposerState<S>,
+    pub previous_states: Vec<ComposerState<S>>,
+    pub next_states: Vec<ComposerState<S>>,
 }
 
-impl<'a, C> ComposerModel<C>
+impl<'a, S> ComposerModel<S>
 where
-    C: Clone,
-    Dom<C>: ToHtml<C>,
-    &'a str: ToHtml<C>,
+    S: UnicodeString,
 {
     pub fn new() -> Self {
         Self {
@@ -76,10 +73,10 @@ where
     /**
      * Replaces text in the current selection with new_text.
      */
-    pub fn replace_text(&mut self, new_text: &[C]) -> ComposerUpdate<C> {
+    pub fn replace_text(&mut self, new_text: S) -> ComposerUpdate<S> {
         // TODO: escape any HTML?
         let (s, e) = self.safe_selection();
-        self.replace_text_in(&new_text, s, e)
+        self.replace_text_in(new_text, s, e)
     }
 
     /**
@@ -87,22 +84,24 @@ where
      */
     pub fn replace_text_in(
         &mut self,
-        new_text: &[C],
+        new_text: S,
         start: usize,
         end: usize,
-    ) -> ComposerUpdate<C> {
+    ) -> ComposerUpdate<S> {
         // Store current Dom
         self.push_state_to_history();
         self.do_replace_text_in(new_text, start, end)
     }
 
     /// Internal: replace some text without modifying the undo/redo state.
-    pub fn do_replace_text_in(
+    pub(crate) fn do_replace_text_in(
         &mut self,
-        new_text: &[C],
+        new_text: S,
         mut start: usize,
         end: usize,
-    ) -> ComposerUpdate<C> {
+    ) -> ComposerUpdate<S> {
+        let len = new_text.len();
+
         match self.state.dom.find_range(start, end) {
             Range::SameNode(range) => {
                 self.replace_same_node(range, new_text);
@@ -113,13 +112,13 @@ where
             Range::NoNode => {
                 self.state
                     .dom
-                    .append(DomNode::Text(TextNode::from(new_text.to_vec())));
+                    .append(DomNode::Text(TextNode::from(new_text)));
 
                 start = 0;
             }
         }
 
-        self.state.start = Location::from(start + new_text.len());
+        self.state.start = Location::from(start + len);
         self.state.end = self.state.start;
 
         // TODO: for now, we replace every time, to check ourselves, but
@@ -127,40 +126,40 @@ where
         self.create_update_replace_all()
     }
 
-    pub fn backspace(&mut self) -> ComposerUpdate<C> {
+    pub fn backspace(&mut self) -> ComposerUpdate<S> {
         if self.state.start == self.state.end {
             // Go back 1 from the current location
             self.state.start -= 1;
         }
 
-        self.replace_text(&[])
+        self.replace_text(S::new())
     }
 
     /**
      * Deletes text in an arbitrary start..end range.
      */
-    pub fn delete_in(&mut self, start: usize, end: usize) -> ComposerUpdate<C> {
+    pub fn delete_in(&mut self, start: usize, end: usize) -> ComposerUpdate<S> {
         self.state.end = Location::from(start);
-        self.replace_text_in(&[], start, end)
+        self.replace_text_in(S::new(), start, end)
     }
 
     /**
      * Deletes the character after the current cursor position.
      */
-    pub fn delete(&mut self) -> ComposerUpdate<C> {
+    pub fn delete(&mut self) -> ComposerUpdate<S> {
         if self.state.start == self.state.end {
             // Go forward 1 from the current location
             self.state.end += 1;
         }
 
-        self.replace_text(&[])
+        self.replace_text(S::new())
     }
 
     pub fn action_response(
         &mut self,
         action_id: String,
         response: ActionResponse,
-    ) -> ComposerUpdate<C> {
+    ) -> ComposerUpdate<S> {
         drop(action_id);
         drop(response);
         ComposerUpdate::keep()
@@ -170,7 +169,7 @@ where
         (self.state.start, self.state.end)
     }
 
-    pub fn format(&mut self, format: InlineFormatType) -> ComposerUpdate<C> {
+    pub fn format(&mut self, format: InlineFormatType) -> ComposerUpdate<S> {
         // Store current Dom
         self.push_state_to_history();
         let (s, e) = self.safe_selection();
@@ -185,8 +184,8 @@ where
 
             Range::NoNode => {
                 self.state.dom.append(DomNode::new_formatting(
-                    format.tag().to_html(),
-                    vec![DomNode::Text(TextNode::from("".to_html()))],
+                    S::from_str(format.tag()),
+                    vec![DomNode::Text(TextNode::from(S::from_str("")))],
                 ));
                 return ComposerUpdate::keep();
             }
@@ -195,19 +194,19 @@ where
         }
     }
 
-    pub fn create_ordered_list(&mut self) -> ComposerUpdate<C> {
+    pub fn create_ordered_list(&mut self) -> ComposerUpdate<S> {
         self.create_list(true)
     }
 
-    pub fn create_unordered_list(&mut self) -> ComposerUpdate<C> {
+    pub fn create_unordered_list(&mut self) -> ComposerUpdate<S> {
         self.create_list(false)
     }
 
-    pub fn get_html(&self) -> Vec<C> {
+    pub fn get_html(&self) -> S {
         self.state.dom.to_html()
     }
 
-    pub fn undo(&mut self) -> ComposerUpdate<C> {
+    pub fn undo(&mut self) -> ComposerUpdate<S> {
         if let Some(prev) = self.previous_states.pop() {
             self.next_states.push(self.state.clone());
             self.state = prev;
@@ -217,7 +216,7 @@ where
         }
     }
 
-    pub fn redo(&mut self) -> ComposerUpdate<C> {
+    pub fn redo(&mut self) -> ComposerUpdate<S> {
         if let Some(next) = self.next_states.pop() {
             self.previous_states.push(self.state.clone());
             self.state = next;
@@ -227,12 +226,12 @@ where
         }
     }
 
-    pub fn get_current_state(&self) -> &ComposerState<C> {
+    pub fn get_current_state(&self) -> &ComposerState<S> {
         &self.state
     }
 
     // Internal functions
-    fn create_update_replace_all(&self) -> ComposerUpdate<C> {
+    fn create_update_replace_all(&self) -> ComposerUpdate<S> {
         ComposerUpdate::replace_all(
             self.state.dom.to_html(),
             self.state.start,
@@ -240,7 +239,7 @@ where
         )
     }
 
-    fn create_list(&mut self, ordered: bool) -> ComposerUpdate<C> {
+    fn create_list(&mut self, ordered: bool) -> ComposerUpdate<S> {
         // Store current Dom
         self.push_state_to_history();
         let list_tag = if ordered { "ol" } else { "ul" };
@@ -253,10 +252,10 @@ where
                 if let DomNode::Text(t) = node {
                     let text = t.data();
                     let list_node = DomNode::new_list(
-                        list_tag.to_html(),
+                        S::from_str(list_tag),
                         vec![DomNode::Container(ContainerNode::new_list_item(
-                            "li".to_html(),
-                            vec![DomNode::Text(TextNode::from(text.to_vec()))],
+                            S::from_str("li"),
+                            vec![DomNode::Text(TextNode::from(text.clone()))],
                         ))],
                     );
                     self.state.dom.replace(range.node_handle, vec![list_node]);
@@ -268,10 +267,10 @@ where
 
             Range::NoNode => {
                 self.state.dom.append(DomNode::new_list(
-                    list_tag.to_html(),
+                    S::from_str(list_tag),
                     vec![DomNode::Container(ContainerNode::new_list_item(
-                        "li".to_html(),
-                        vec![DomNode::Text(TextNode::from("".to_html()))],
+                        S::from_str("li"),
+                        vec![DomNode::Text(TextNode::from(S::from_str("")))],
                     ))],
                 ));
                 return self.create_update_replace_all();
@@ -283,13 +282,13 @@ where
         }
     }
 
-    fn replace_same_node(&mut self, range: SameNodeRange, new_text: &[C]) {
+    fn replace_same_node(&mut self, range: SameNodeRange, new_text: S) {
         let node = self.state.dom.lookup_node_mut(range.node_handle);
         if let DomNode::Text(ref mut t) = node {
             let text = t.data();
-            let mut n = text[..range.start_offset].to_vec();
-            n.extend_from_slice(new_text);
-            n.extend_from_slice(&text[range.end_offset..]);
+            let mut n = slice_to(text, ..range.start_offset);
+            n.push_string(&new_text);
+            n.push_string(&slice_from(&text, range.end_offset..));
             t.set_data(n);
         } else {
             panic!("Can't deal with ranges containing non-text nodes (yet?)")
@@ -299,7 +298,7 @@ where
     fn replace_multiple_nodes(
         &mut self,
         range: MultipleNodesRange,
-        new_text: &[C],
+        new_text: S,
     ) {
         let to_delete = self.replace_in_text_nodes(range, new_text);
         self.delete_nodes(to_delete)
@@ -312,7 +311,7 @@ where
     fn replace_in_text_nodes(
         &mut self,
         range: MultipleNodesRange,
-        new_text: &[C],
+        new_text: S,
     ) -> Vec<DomHandle> {
         let mut to_delete = Vec::new();
         let mut first_text_node = true;
@@ -336,14 +335,17 @@ where
                     } else {
                         // Otherwise, delete the selected text
                         let mut new_data =
-                            old_data[..loc.start_offset].to_vec();
+                            slice_to(old_data, ..loc.start_offset);
 
                         // and replace with the new content
                         if first_text_node {
-                            new_data.extend_from_slice(new_text);
+                            new_data.push_string(&new_text);
                         }
 
-                        new_data.extend_from_slice(&old_data[loc.end_offset..]);
+                        new_data.push_string(&slice_from(
+                            old_data,
+                            loc.end_offset..,
+                        ));
                         node.set_data(new_data);
                     }
 
@@ -397,13 +399,13 @@ where
         if let DomNode::Text(t) = node {
             let text = t.data();
             // TODO: can we be globally smart about not leaving empty text nodes ?
-            let before = text[..range.start_offset].to_vec();
-            let during = text[range.start_offset..range.end_offset].to_vec();
-            let after = text[range.end_offset..].to_vec();
+            let before = slice_to(text, ..range.start_offset);
+            let during = slice(text, range.start_offset..range.end_offset);
+            let after = slice_from(text, range.end_offset..);
             let new_nodes = vec![
                 DomNode::Text(TextNode::from(before)),
                 DomNode::new_formatting(
-                    format.tag().to_html(),
+                    S::from_str(format.tag()),
                     vec![DomNode::Text(TextNode::from(during))],
                 ),
                 DomNode::Text(TextNode::from(after)),
@@ -420,14 +422,8 @@ where
         // Store a copy of the current state in the previous_states
         self.previous_states.push(self.state.clone());
     }
-}
 
-impl<'a> ComposerModel<u16>
-where
-    Dom<u16>: ToHtml<u16>,
-    &'a str: ToHtml<u16>,
-{
-    pub fn enter(&mut self) -> ComposerUpdate<u16> {
+    pub fn enter(&mut self) -> ComposerUpdate<S> {
         // Store current Dom
         self.push_state_to_history();
         let (s, e) = self.safe_selection();
@@ -457,15 +453,15 @@ where
                         panic!("No list item found")
                     }
                 } else {
-                    self.replace_text(&"\n".encode_utf16().collect::<Vec<_>>())
+                    self.replace_text(S::from_str("\n"))
                 }
             }
-            _ => self.replace_text(&"\n".encode_utf16().collect::<Vec<_>>()),
+            _ => self.replace_text(S::from_str("\n")),
         }
     }
 
-    pub fn replace_all_html(&mut self, html: &[u16]) -> ComposerUpdate<u16> {
-        let dom = parse(&String::from_utf16(html).expect("Invalid UTF-16"));
+    pub fn replace_all_html(&mut self, html: &S) -> ComposerUpdate<S> {
+        let dom = parse(&html.to_utf8());
 
         match dom {
             Ok(dom) => {
@@ -480,7 +476,7 @@ where
         }
     }
 
-    pub fn set_link(&mut self, link: Vec<u16>) -> ComposerUpdate<u16> {
+    pub fn set_link(&mut self, link: S) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
         // Can't add a link to an empty selection
         if s == e {
@@ -506,15 +502,15 @@ where
         }
     }
 
-    fn set_link_same_node(&mut self, range: SameNodeRange, link: Vec<u16>) {
+    fn set_link_same_node(&mut self, range: SameNodeRange, link: S) {
         // TODO: set link should be able to wrap container nodes, unlike formatting
         let node = self.state.dom.lookup_node(range.node_handle.clone());
         if let DomNode::Text(t) = node {
             let text = t.data();
             // TODO: can we be globally smart about not leaving empty text nodes ?
-            let before = text[..range.start_offset].to_vec();
-            let during = text[range.start_offset..range.end_offset].to_vec();
-            let after = text[range.end_offset..].to_vec();
+            let before = slice_to(text, ..range.start_offset);
+            let during = slice(text, range.start_offset..range.end_offset);
+            let after = slice_from(text, range.end_offset..);
             let new_nodes = vec![
                 DomNode::Text(TextNode::from(before)),
                 DomNode::new_link(
@@ -533,8 +529,8 @@ where
         let list_node = self.state.dom.lookup_node_mut(handle);
         if let DomNode::Container(list) = list_node {
             list.append(DomNode::new_list_item(
-                "li".to_html(),
-                vec![DomNode::Text(TextNode::from("\u{200B}".to_html()))],
+                S::from_str("li"),
+                vec![DomNode::Text(TextNode::from(S::from_str("\u{200B}")))],
             ));
             self.state.start = Location::from(location + 1);
             self.state.end = Location::from(location + 1);
@@ -558,7 +554,7 @@ where
                     parent.remove(handle.index_in_parent());
                     if parent.children().len() == 0 {
                         parent.append(DomNode::Text(TextNode::from(
-                            "".to_html(),
+                            S::from_str(""),
                         )));
                     }
                     self.state.start = Location::from(location);
@@ -573,9 +569,9 @@ where
                 let parent_node = self.state.dom.lookup_node_mut(parent_handle);
                 if let DomNode::Container(parent) = parent_node {
                     // TODO: should probably append a paragraph instead
-                    parent.append(DomNode::Text(TextNode::from(
-                        "\u{200B}".to_html(),
-                    )));
+                    parent.append(DomNode::Text(TextNode::from(S::from_str(
+                        "\u{200B}",
+                    ))));
                     self.state.start = Location::from(location);
                     self.state.end = Location::from(location);
                 } else {
@@ -584,6 +580,29 @@ where
             }
         }
     }
+}
+
+fn slice_to<S>(s: &S, range: std::ops::RangeTo<usize>) -> S
+where
+    S: UnicodeString,
+{
+    slice(s, 0..range.end)
+}
+
+fn slice_from<S>(s: &S, range: std::ops::RangeFrom<usize>) -> S
+where
+    S: UnicodeString,
+{
+    slice(s, range.start..s.len())
+}
+
+/// Panics when given start or end not on boundaries of a code point
+/// TODO: don't panic but do something sensible in that case
+fn slice<S>(s: &S, range: std::ops::Range<usize>) -> S
+where
+    S: UnicodeString,
+{
+    S::from_vec(s.as_slice()[range].to_vec()).expect("Invalid slice!")
 }
 
 fn starts_with(subject: &DomHandle, object: &DomHandle) -> bool {
@@ -649,17 +668,19 @@ fn adjust_handles_for_delete(
 
 #[cfg(test)]
 mod test {
+    use widestring::Utf16String;
+
     use super::*;
     use crate::tests::testutils_composer_model::cm;
 
-    use crate::dom::{DomHandle, ToHtml};
+    use crate::dom::DomHandle;
 
     // Most tests for ComposerModel are inside the tests/ modules
 
     #[test]
     fn completely_replacing_html_works() {
         let mut model = cm("{hello}| world");
-        model.replace_all_html(&"foo <b>bar</b>".to_html());
+        model.replace_all_html(&Utf16String::from_str("foo <b>bar</b>"));
         assert_eq!(model.state.dom.to_string(), "foo <b>bar</b>");
     }
 

@@ -14,15 +14,17 @@
 
 use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
 use crate::dom::parser::PaNodeContainer;
-use crate::dom::{Dom, DomCreationError};
-use crate::ToHtml;
+use crate::dom::{Dom, DomCreationError, UnicodeString};
 
 use super::padom_node::PaDomNode;
 use super::{PaDom, PaDomCreationError, PaDomCreator};
 
-pub fn parse(html: &str) -> Result<Dom<u16>, DomCreationError<u16>> {
+pub fn parse<S>(html: &str) -> Result<Dom<S>, DomCreationError<S>>
+where
+    S: UnicodeString,
+{
     PaDomCreator::parse(html)
-        .map(padom_to_dom_u16)
+        .map(padom_to_dom)
         .map_err(padom_creation_error_to_dom_creation_error)
 }
 
@@ -38,13 +40,18 @@ pub fn parse(html: &str) -> Result<Dom<u16>, DomCreationError<u16>> {
 ///
 /// [Dom] is for general use. Parent nodes own their children, and Dom may be
 /// cloned, compared, and converted into an HTML string.
-fn padom_to_dom_u16(padom: PaDom) -> Dom<u16> {
+fn padom_to_dom<S>(padom: PaDom) -> Dom<S>
+where
+    S: UnicodeString,
+{
     /// Recurse into panode's children and convert them too
-    fn convert_children(
+    fn convert_children<S>(
         padom: &PaDom,
         child: &PaNodeContainer,
-        new_node: Option<&mut DomNode<u16>>,
-    ) {
+        new_node: Option<&mut DomNode<S>>,
+    ) where
+        S: UnicodeString,
+    {
         if let DomNode::Container(new_node) = new_node.unwrap() {
             convert(padom, child, new_node);
         } else {
@@ -53,40 +60,57 @@ fn padom_to_dom_u16(padom: PaDom) -> Dom<u16> {
     }
 
     /// Create a formatting node
-    fn new_formatting(tag: &str) -> DomNode<u16> {
+    fn new_formatting<S>(tag: &str) -> DomNode<S>
+    where
+        S: UnicodeString,
+    {
         DomNode::Container(ContainerNode::new_formatting(
-            tag.to_html(),
+            S::from_str(tag),
             Vec::new(),
         ))
     }
 
     /// Create a link node
-    fn new_link(child: &PaNodeContainer) -> DomNode<u16> {
+    fn new_link<S>(child: &PaNodeContainer) -> DomNode<S>
+    where
+        S: UnicodeString,
+    {
         DomNode::Container(ContainerNode::new_link(
-            child.get_attr("href").unwrap_or("").to_html(),
+            S::from_str(child.get_attr("href").unwrap_or("")),
             Vec::new(),
         ))
     }
 
     /// Create a list node
-    fn new_list(tag: &str) -> DomNode<u16> {
-        DomNode::Container(ContainerNode::new_list(tag.to_html(), Vec::new()))
+    fn new_list<S>(tag: &str) -> DomNode<S>
+    where
+        S: UnicodeString,
+    {
+        DomNode::Container(ContainerNode::new_list(
+            S::from_str(tag),
+            Vec::new(),
+        ))
     }
 
     /// Create a list item node
-    fn new_list_item(tag: &str) -> DomNode<u16> {
+    fn new_list_item<S>(tag: &str) -> DomNode<S>
+    where
+        S: UnicodeString,
+    {
         DomNode::Container(ContainerNode::new_list_item(
-            tag.to_html(),
+            S::from_str(tag),
             Vec::new(),
         ))
     }
 
     /// Copy all panode's information into node (now we know it's a container).
-    fn convert_container(
+    fn convert_container<S>(
         padom: &PaDom,
         child: &PaNodeContainer,
-        node: &mut ContainerNode<u16>,
-    ) {
+        node: &mut ContainerNode<S>,
+    ) where
+        S: UnicodeString,
+    {
         let tag = child.name.local.as_ref();
         match tag {
             "b" | "code" | "del" | "em" | "i" | "strong" | "u" => {
@@ -118,11 +142,13 @@ fn padom_to_dom_u16(padom: PaDom) -> Dom<u16> {
     }
 
     /// Copy all panode's information into node.
-    fn convert(
+    fn convert<S>(
         padom: &PaDom,
         panode: &PaNodeContainer,
-        node: &mut ContainerNode<u16>,
-    ) {
+        node: &mut ContainerNode<S>,
+    ) where
+        S: UnicodeString,
+    {
         for child_handle in &panode.children {
             let child = padom.get_node(child_handle);
             match child {
@@ -133,9 +159,9 @@ fn padom_to_dom_u16(padom: PaDom) -> Dom<u16> {
                     panic!("Found a document inside a document!")
                 }
                 PaDomNode::Text(text) => {
-                    node.append(DomNode::Text(TextNode::from(
-                        text.content.to_html(),
-                    )));
+                    node.append(DomNode::Text(TextNode::from(S::from_str(
+                        &text.content,
+                    ))));
                 }
             }
         }
@@ -153,11 +179,14 @@ fn padom_to_dom_u16(padom: PaDom) -> Dom<u16> {
     ret
 }
 
-fn padom_creation_error_to_dom_creation_error(
+fn padom_creation_error_to_dom_creation_error<S>(
     e: PaDomCreationError,
-) -> DomCreationError<u16> {
+) -> DomCreationError<S>
+where
+    S: UnicodeString,
+{
     DomCreationError {
-        dom: padom_to_dom_u16(e.dom),
+        dom: padom_to_dom(e.dom),
         parse_errors: e.parse_errors,
     }
 }
@@ -165,8 +194,9 @@ fn padom_creation_error_to_dom_creation_error(
 #[cfg(test)]
 mod test {
     use speculoos::{assert_that, AssertionFailure, Spec};
+    use widestring::Utf16String;
 
-    use crate::ToHtml;
+    use crate::{dom::UnicodeString, ToHtml};
 
     use super::parse;
 
@@ -180,8 +210,8 @@ mod test {
     {
         fn roundtrips(&self) {
             let subject = self.subject.as_ref();
-            let dom = parse(subject).unwrap();
-            let output = String::from_utf16(&dom.to_html()).unwrap();
+            let dom = parse::<Utf16String>(subject).unwrap();
+            let output = dom.to_html().to_utf8();
             if output != subject {
                 AssertionFailure::from_spec(self)
                     .with_expected(String::from(subject))

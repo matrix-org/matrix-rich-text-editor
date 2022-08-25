@@ -15,20 +15,21 @@
 #![cfg(test)]
 
 use crate::tests::testutils_composer_model::cm;
+use crate::tests::testutils_conversion::utf16;
 
 use crate::TextUpdate;
 
 #[test]
 fn cant_set_link_to_empty_selection() {
     let mut model = cm("hello |world");
-    let update = model.set_link("https://element.io".encode_utf16().collect());
+    let update = model.set_link(utf16("https://element.io"));
     assert!(matches!(update.text_update, TextUpdate::Keep));
 }
 
 #[test]
 fn set_link_wraps_selection_in_link_tag() {
     let mut model = cm("{hello}| world");
-    model.set_link("https://element.io".encode_utf16().collect());
+    model.set_link(utf16("https://element.io"));
     assert_eq!(
         model.state.dom.to_string(),
         "<a href=\"https://element.io\">hello</a> world"

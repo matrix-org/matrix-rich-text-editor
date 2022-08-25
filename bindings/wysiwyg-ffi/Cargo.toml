@@ -19,6 +19,7 @@ crate-type = ["cdylib", "staticlib"]
 # ../../examples/example-android/app/build.gradle
 uniffi = "=0.19.2"
 uniffi_macros = "=0.19.2"
+widestring = "1.0.2"
 wysiwyg = { path = "../../crates/wysiwyg" }
 
 [build-dependencies]

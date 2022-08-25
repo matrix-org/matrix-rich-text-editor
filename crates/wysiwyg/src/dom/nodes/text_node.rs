@@ -15,35 +15,39 @@
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::html_formatter::HtmlFormatter;
 use crate::dom::to_html::ToHtml;
+use crate::dom::UnicodeString;
 
 use html_escape;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct TextNode<C> {
-    data: Vec<C>,
+pub struct TextNode<S>
+where
+    S: UnicodeString,
+{
+    data: S,
     handle: DomHandle,
 }
 
-impl<C> TextNode<C> {
+impl<S> TextNode<S>
+where
+    S: UnicodeString,
+{
     /// Create a new TextNode
     ///
     /// NOTE: Its handle() will be unset until you call set_handle() or
     /// append() it to another node.
-    pub fn from(data: Vec<C>) -> Self
-    where
-        C: Clone,
-    {
+    pub fn from(data: S) -> Self {
         Self {
             data,
             handle: DomHandle::new_unset(),
         }
     }
 
-    pub fn data(&self) -> &[C] {
+    pub fn data(&self) -> &S {
         &self.data
     }
 
-    pub fn set_data(&mut self, data: Vec<C>) {
+    pub fn set_data(&mut self, data: S) {
         self.data = data;
     }
 
@@ -56,11 +60,15 @@ impl<C> TextNode<C> {
     }
 }
 
-impl ToHtml<u16> for TextNode<u16> {
-    fn fmt_html(&self, f: &mut HtmlFormatter<u16>) {
-        let string = String::from_utf16(&self.data).unwrap();
+impl<S> ToHtml<S> for TextNode<S>
+where
+    S: UnicodeString,
+{
+    fn fmt_html(&self, f: &mut HtmlFormatter<S>) {
+        dbg!("4");
+        let string = self.data.to_utf8();
         let mut escaped = String::new();
         html_escape::encode_text_to_string(&string, &mut escaped);
-        f.write(&escaped.encode_utf16().collect::<Vec<u16>>());
+        f.write(S::from_str(&escaped).as_slice());
     }
 }

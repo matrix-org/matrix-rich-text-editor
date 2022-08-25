@@ -15,28 +15,24 @@
 use std::fmt::Display;
 
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode};
-use crate::dom::{find_range, DomHandle, Range};
+use crate::dom::{find_range, DomHandle, Range, UnicodeString};
 use crate::ToHtml;
 
-fn utf8(input: &[u16]) -> String {
-    String::from_utf16(input).expect("Invalid UTF-16!")
-}
-
 #[derive(Clone, Debug, PartialEq)]
-pub struct Dom<C>
+pub struct Dom<S>
 where
-    C: Clone,
+    S: UnicodeString,
 {
-    document: DomNode<C>,
+    document: DomNode<S>,
 }
 
-impl<C> Dom<C>
+impl<S> Dom<S>
 where
-    C: Clone,
+    S: UnicodeString,
 {
-    pub fn new(top_level_items: Vec<DomNode<C>>) -> Self {
+    pub fn new(top_level_items: Vec<DomNode<S>>) -> Self {
         let mut document = ContainerNode::new(
-            Vec::new(),
+            S::new(),
             ContainerNodeKind::Generic,
             None,
             top_level_items,
@@ -48,7 +44,7 @@ where
         }
     }
 
-    pub fn document(&self) -> &ContainerNode<C> {
+    pub fn document(&self) -> &ContainerNode<S> {
         // Would be nice if we could avoid this, but it is really convenient
         // in several places to be able to treat document as a DomNode.
         if let DomNode::Container(ret) = &self.document {
@@ -58,7 +54,7 @@ where
         }
     }
 
-    pub fn document_mut(&mut self) -> &mut ContainerNode<C> {
+    pub fn document_mut(&mut self) -> &mut ContainerNode<S> {
         // Would be nice if we could avoid this, but it is really convenient
         // in several places to be able to treat document as a DomNode.
         if let DomNode::Container(ret) = &mut self.document {
@@ -68,19 +64,19 @@ where
         }
     }
 
-    pub fn children(&self) -> &Vec<DomNode<C>> {
+    pub fn children(&self) -> &Vec<DomNode<S>> {
         self.document().children()
     }
 
-    pub fn children_mut(&mut self) -> &mut Vec<DomNode<C>> {
+    pub fn children_mut(&mut self) -> &mut Vec<DomNode<S>> {
         self.document_mut().children_mut()
     }
 
-    pub fn append(&mut self, child: DomNode<C>) {
+    pub fn append(&mut self, child: DomNode<S>) {
         self.document_mut().append(child)
     }
 
-    pub fn replace(&mut self, node_handle: DomHandle, nodes: Vec<DomNode<C>>) {
+    pub fn replace(&mut self, node_handle: DomHandle, nodes: Vec<DomNode<S>>) {
         let parent_node = self.lookup_node_mut(node_handle.parent_handle());
         let index = node_handle.index_in_parent();
         match parent_node {
@@ -102,10 +98,13 @@ where
         &mut self,
         child_handle: DomHandle,
     ) -> Option<DomHandle> {
-        fn find_list_item<C: Clone>(
-            dom: &Dom<C>,
-            node: &DomNode<C>,
-        ) -> Option<DomHandle> {
+        fn find_list_item<S>(
+            dom: &Dom<S>,
+            node: &DomNode<S>,
+        ) -> Option<DomHandle>
+        where
+            S: UnicodeString,
+        {
             if !node.handle().has_parent() {
                 return None;
             }
@@ -129,11 +128,11 @@ where
 
     /// Find the node based on its handle.
     /// Panics if the handle is unset or invalid
-    pub fn lookup_node(&self, node_handle: DomHandle) -> &DomNode<C> {
-        fn nth_child<C: Clone>(
-            element: &ContainerNode<C>,
-            idx: usize,
-        ) -> &DomNode<C> {
+    pub fn lookup_node(&self, node_handle: DomHandle) -> &DomNode<S> {
+        fn nth_child<S>(element: &ContainerNode<S>, idx: usize) -> &DomNode<S>
+        where
+            S: UnicodeString,
+        {
             element.children().get(idx).expect(
                 "Handle is invalid: it refers to a child index which is too \
                 large for the number of children in this node.",
@@ -164,12 +163,15 @@ where
     pub fn lookup_node_mut(
         &mut self,
         node_handle: DomHandle,
-    ) -> &mut DomNode<C> {
+    ) -> &mut DomNode<S> {
         // TODO: horrible that we repeat lookup_node's logic. Can we share?
-        fn nth_child<C: Clone>(
-            element: &mut ContainerNode<C>,
+        fn nth_child<S>(
+            element: &mut ContainerNode<S>,
             idx: usize,
-        ) -> &mut DomNode<C> {
+        ) -> &mut DomNode<S>
+        where
+            S: UnicodeString,
+        {
             element.children_mut().get_mut(idx).expect(
                 "Handle is invalid: it refers to a child index which is too \
                 large for the number of children in this node.",
@@ -197,10 +199,22 @@ where
     }
 }
 
-impl Display for Dom<u16> {
+impl<S> ToHtml<S> for Dom<S>
+where
+    S: UnicodeString,
+{
+    fn fmt_html(&self, f: &mut super::HtmlFormatter<S>) {
+        dbg!("5");
+        self.document.fmt_html(f)
+    }
+}
+
+impl<S> Display for Dom<S>
+where
+    S: UnicodeString,
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&utf8(&self.to_html()))?;
-        Ok(())
+        f.write_str(&self.to_html().to_utf8())
     }
 }
 
@@ -221,19 +235,8 @@ mod test {
 
     use crate::dom::nodes::dom_node::DomNode;
     use crate::dom::nodes::TextNode;
-    use crate::dom::to_html::fmt_node_u16;
-    use crate::dom::HtmlFormatter;
+    use crate::tests::testutils_conversion::utf16;
     use crate::tests::testutils_dom::{a, b, dom, i, i_c, tn};
-
-    /// If this node is an element, return its children - otherwise panic
-    fn kids<C: Clone>(node: &DomNode<C>) -> &Vec<DomNode<C>> {
-        match node {
-            DomNode::Container(n) => n.children(),
-            DomNode::Text(_) => {
-                panic!("We expected an Element, but found Text")
-            }
-        }
-    }
 
     // Creation and handles
 
@@ -241,10 +244,10 @@ mod test {
     fn can_create_a_dom_and_add_nodes() {
         // Create a simple DOM
         let dom = Dom::new(vec![
-            DomNode::Text(TextNode::from("a".to_html())),
+            DomNode::Text(TextNode::from(utf16("a"))),
             DomNode::new_formatting(
-                "b".to_html(),
-                vec![DomNode::Text(TextNode::from("b".to_html()))],
+                utf16("b"),
+                vec![DomNode::Text(TextNode::from(utf16("b")))],
             ),
         ]);
 
@@ -256,10 +259,10 @@ mod test {
     fn can_find_toplevel_nodes_via_handles() {
         // Create a simple DOM
         let dom = Dom::new(vec![
-            DomNode::Text(TextNode::from("a".to_html())),
+            DomNode::Text(TextNode::from(utf16("a"))),
             DomNode::new_formatting(
-                "b".to_html(),
-                vec![DomNode::Text(TextNode::from("b".to_html()))],
+                utf16("b"),
+                vec![DomNode::Text(TextNode::from(utf16("b")))],
             ),
         ]);
 
@@ -360,67 +363,46 @@ mod test {
     #[test]
     fn hyperlink_formatting_simple() {
         let d = dom(&[a(&[tn("foo")])]);
-        let mut formatter = HtmlFormatter::new();
-        fmt_node_u16(d.document(), &mut formatter);
         assert_eq!(
             "<a href=\"https://element.io\">foo</a>",
-            String::from_utf16(&formatter.finish()).unwrap()
+            d.to_html().to_utf8()
         );
     }
 
     #[test]
     fn hyperlink_formatting_complex() {
         let d = dom(&[a(&[b(&[tn("foo")]), tn(" "), i(&[tn("bar")])])]);
-        let mut formatter = HtmlFormatter::new();
-        fmt_node_u16(d.document(), &mut formatter);
         assert_eq!(
             "<a href=\"https://element.io\"><b>foo</b> <i>bar</i></a>",
-            String::from_utf16(&formatter.finish()).unwrap()
+            d.to_html().to_utf8()
         );
     }
 
     #[test]
     fn inline_code_gets_formatted() {
         let d = dom(&[i_c(&[tn("some_code")])]);
-        let mut formatter = HtmlFormatter::new();
-        fmt_node_u16(d.document(), &mut formatter);
-        assert_eq!(
-            "<code>some_code</code>",
-            String::from_utf16(&formatter.finish()).unwrap()
-        );
+        assert_eq!("<code>some_code</code>", d.to_html().to_utf8());
     }
 
     #[test]
     fn html_symbols_inside_text_tags_get_escaped() {
         let d = dom(&[tn("<p>Foo & bar</p>")]);
-        let mut formatter = HtmlFormatter::new();
-        fmt_node_u16(d.document(), &mut formatter);
-        assert_eq!(
-            "&lt;p&gt;Foo &amp; bar&lt;/p&gt;",
-            String::from_utf16(&formatter.finish()).unwrap()
-        );
+        assert_eq!("&lt;p&gt;Foo &amp; bar&lt;/p&gt;", d.to_html().to_utf8());
     }
 
     #[test]
     fn inline_code_text_contents_get_escaped() {
         let d = dom(&[i_c(&[tn("<b>some</b> code")])]);
-        let mut formatter = HtmlFormatter::new();
-        fmt_node_u16(d.document(), &mut formatter);
         assert_eq!(
             "<code>&lt;b&gt;some&lt;/b&gt; code</code>",
-            String::from_utf16(&formatter.finish()).unwrap()
+            d.to_html().to_utf8()
         );
     }
 
     #[test]
     fn inline_code_node_contents_do_not_get_escaped() {
         let d = dom(&[i_c(&[b(&[tn("some")]), tn(" code")])]);
-        let mut formatter = HtmlFormatter::new();
-        fmt_node_u16(d.document(), &mut formatter);
-        assert_eq!(
-            "<code><b>some</b> code</code>",
-            String::from_utf16(&formatter.finish()).unwrap()
-        );
+        assert_eq!("<code><b>some</b> code</code>", d.to_html().to_utf8());
     }
 
     /*#[test]
@@ -433,4 +415,17 @@ mod test {
 
     // TODO: copy tests from platforms/web/example/test.js
     // TODO: improve tests when we have HTML parsing
+
+    /// If this node is an element, return its children - otherwise panic
+    fn kids<S>(node: &DomNode<S>) -> &Vec<DomNode<S>>
+    where
+        S: UnicodeString,
+    {
+        match node {
+            DomNode::Container(n) => n.children(),
+            DomNode::Text(_) => {
+                panic!("We expected an Element, but found Text")
+            }
+        }
+    }
 }

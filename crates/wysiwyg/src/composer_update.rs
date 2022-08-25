@@ -12,26 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::dom::UnicodeString;
 use crate::{ComposerAction, Location, MenuState, ReplaceAll, TextUpdate};
 
 #[derive(Debug, Clone)]
-pub struct ComposerUpdate<C> {
-    pub text_update: TextUpdate<C>,
+pub struct ComposerUpdate<S>
+where
+    S: UnicodeString,
+{
+    pub text_update: TextUpdate<S>,
     pub menu_state: MenuState,
     pub actions: Vec<ComposerAction>,
 }
 
-impl<C> ComposerUpdate<C> {
+impl<S> ComposerUpdate<S>
+where
+    S: UnicodeString,
+{
     pub fn keep() -> Self {
         Self {
-            text_update: TextUpdate::<C>::Keep,
+            text_update: TextUpdate::<S>::Keep,
             menu_state: MenuState::None,
             actions: Vec::new(),
         }
     }
 
     pub fn replace_all(
-        replacement_html: Vec<C>,
+        replacement_html: S,
         start: Location,
         end: Location,
     ) -> Self {

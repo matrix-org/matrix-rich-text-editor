@@ -1,3 +1,5 @@
+use widestring::Utf16String;
+
 pub enum TextUpdate {
     Keep,
     ReplaceAll {
@@ -8,14 +10,14 @@ pub enum TextUpdate {
 }
 
 impl TextUpdate {
-    pub fn from(inner: wysiwyg::TextUpdate<u16>) -> Self {
+    pub fn from(inner: wysiwyg::TextUpdate<Utf16String>) -> Self {
         match inner {
             wysiwyg::TextUpdate::Keep => Self::Keep,
             wysiwyg::TextUpdate::ReplaceAll(replace_all) => {
                 let start_utf16_codeunit: usize = replace_all.start.into();
                 let end_utf16_codeunit: usize = replace_all.end.into();
                 Self::ReplaceAll {
-                    replacement_html: replace_all.replacement_html,
+                    replacement_html: replace_all.replacement_html.into_vec(),
                     start_utf16_codeunit: u32::try_from(start_utf16_codeunit)
                         .unwrap(),
                     end_utf16_codeunit: u32::try_from(end_utf16_codeunit)

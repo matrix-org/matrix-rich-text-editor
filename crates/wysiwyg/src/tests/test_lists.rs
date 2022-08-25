@@ -14,9 +14,12 @@
 
 #![cfg(test)]
 
-use crate::tests::testutils_composer_model::{cm, tx};
+use widestring::Utf16String;
 
-use crate::{ComposerModel, ToHtml};
+use crate::tests::testutils_composer_model::{cm, tx};
+use crate::tests::testutils_conversion::utf16;
+
+use crate::ComposerModel;
 
 #[test]
 fn test_ordered_list() {
@@ -53,6 +56,6 @@ fn test_removing_list() {
     assert_eq!(tx(&model), "|");
 }
 
-fn replace_text(model: &mut ComposerModel<u16>, new_text: &str) {
-    model.replace_text(&new_text.to_html());
+fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
+    model.replace_text(utf16(new_text));
 }

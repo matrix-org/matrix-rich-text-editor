@@ -12,91 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::dom::nodes::ContainerNode;
-use crate::dom::{Dom, HtmlFormatter};
+use crate::dom::HtmlFormatter;
 
-use super::nodes::DomNode;
+use super::UnicodeString;
 
-pub trait ToHtml<C>
+pub trait ToHtml<S>
 where
-    C: Clone,
+    S: UnicodeString,
 {
-    fn fmt_html(&self, f: &mut HtmlFormatter<C>);
+    fn fmt_html(&self, f: &mut HtmlFormatter<S>);
 
-    fn to_html(&self) -> Vec<C> {
+    fn to_html(&self) -> S {
+        dbg!("1");
         let mut f = HtmlFormatter::new();
         self.fmt_html(&mut f);
         f.finish()
     }
-}
-
-impl ToHtml<u16> for &str {
-    fn fmt_html(&self, f: &mut HtmlFormatter<u16>) {
-        f.write_iter(self.encode_utf16());
-    }
-}
-
-impl ToHtml<u16> for String {
-    fn fmt_html(&self, f: &mut HtmlFormatter<u16>) {
-        f.write_iter(self.encode_utf16());
-    }
-}
-
-impl<C> ToHtml<C> for Dom<C>
-where
-    C: Clone,
-    ContainerNode<C>: ToHtml<C>,
-{
-    fn fmt_html(&self, f: &mut HtmlFormatter<C>) {
-        self.document().fmt_html(f)
-    }
-}
-
-fn fmt_node<C>(
-    node: &ContainerNode<C>,
-    lt: C,
-    gt: C,
-    equal: C,
-    quote: C,
-    space: C,
-    fwd_slash: C,
-    f: &mut HtmlFormatter<C>,
-) where
-    C: 'static + Clone,
-    DomNode<C>: ToHtml<C>,
-{
-    let name = node.name();
-    if !name.is_empty() {
-        f.write_char(&lt);
-        f.write(node.name());
-        if let Some(attrs) = node.attributes() {
-            for attr in attrs {
-                f.write_char(&space);
-                let (name, value) = attr;
-                f.write(name);
-                f.write_char(&equal);
-                f.write_char(&quote);
-                f.write(value);
-                f.write_char(&quote);
-            }
-        }
-        f.write_char(&gt);
-    }
-
-    for child in node.children() {
-        child.fmt_html(f);
-    }
-    if !name.is_empty() {
-        f.write_char(&lt);
-        f.write_char(&fwd_slash);
-        f.write(node.name());
-        f.write_char(&gt);
-    }
-}
-
-pub fn fmt_node_u16(node: &ContainerNode<u16>, f: &mut HtmlFormatter<u16>) {
-    fmt_node(
-        node, '<' as u16, '>' as u16, '=' as u16, '"' as u16, ' ' as u16,
-        '/' as u16, f,
-    );
 }

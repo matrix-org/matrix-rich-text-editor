@@ -17,14 +17,15 @@
 use crate::tests::testutils_composer_model::cm;
 
 use crate::dom::nodes::{DomNode, TextNode};
-use crate::{InlineFormatType, ToHtml};
+use crate::InlineFormatType;
+
+use crate::tests::testutils_conversion::utf16;
 
 #[test]
 fn undoing_action_restores_previous_state() {
     let mut model = cm("hello |");
     let mut prev = model.state.clone();
-    let prev_text_node =
-        TextNode::from("world!".encode_utf16().collect::<Vec<u16>>());
+    let prev_text_node = TextNode::from(utf16("world!"));
     prev.dom.append(DomNode::Text(prev_text_node));
     model.previous_states.push(prev.clone());
 
@@ -38,7 +39,7 @@ fn inserting_text_creates_previous_state() {
     let mut model = cm("|");
     assert!(model.previous_states.is_empty());
 
-    model.replace_text(&"hello world!".to_html());
+    model.replace_text(utf16("hello world!"));
     assert!(!model.previous_states.is_empty());
 }
 

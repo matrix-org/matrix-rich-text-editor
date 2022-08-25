@@ -12,21 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use widestring::Utf16String;
 use wysiwyg::{ComposerModel, InlineFormatType, Location, TextUpdate};
 
 #[test]
 fn can_instantiate_a_model_and_call_methods() {
-    let mut model = ComposerModel::<u16>::new();
-    model.replace_text(&"foo".encode_utf16().collect::<Vec<_>>());
+    let mut model = ComposerModel::new();
+    model.replace_text(Utf16String::from_str("foo"));
     model.select(Location::from(1), Location::from(2));
 
     let update = model.format(InlineFormatType::Bold);
 
     if let TextUpdate::ReplaceAll(r) = update.text_update {
-        assert_eq!(
-            String::from_utf16(&r.replacement_html).unwrap(),
-            "f<strong>o</strong>o"
-        );
+        assert_eq!(r.replacement_html.to_string(), "f<strong>o</strong>o");
         assert_eq!(r.start, 1);
         assert_eq!(r.end, 2);
     } else {
