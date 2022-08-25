@@ -65,7 +65,6 @@ where
     S: UnicodeString,
 {
     fn fmt_html(&self, f: &mut HtmlFormatter<S>) {
-        dbg!("4");
         let string = self.data.to_utf8();
         let mut escaped = String::new();
         html_escape::encode_text_to_string(&string, &mut escaped);
