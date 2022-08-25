@@ -16,6 +16,7 @@ use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
 use crate::dom::parser::parse;
 use crate::dom::UnicodeString;
 use crate::dom::{DomHandle, MultipleNodesRange, Range, SameNodeRange, ToHtml};
+use crate::NodeJoiner;
 use crate::{
     ActionResponse, ComposerState, ComposerUpdate, InlineFormatType, Location,
 };
@@ -283,6 +284,7 @@ where
     }
 
     fn replace_same_node(&mut self, range: SameNodeRange, new_text: S) {
+        // TODO: remove SameNode and NoNode?
         let node = self.state.dom.lookup_node_mut(range.node_handle);
         if let DomNode::Text(ref mut t) = node {
             let text = t.data();
@@ -300,8 +302,14 @@ where
         range: MultipleNodesRange,
         new_text: S,
     ) {
+        let len = new_text.len();
+        let node_joiner = NodeJoiner::from_range(&self.state.dom, &range);
+
         let to_delete = self.replace_in_text_nodes(range, new_text);
-        self.delete_nodes(to_delete)
+        self.delete_nodes(to_delete);
+
+        let pos: usize = self.state.start.into();
+        node_joiner.join_nodes(&mut self.state.dom, pos + len);
     }
 
     /// Given a range to replace and some new text, modify the nodes in the

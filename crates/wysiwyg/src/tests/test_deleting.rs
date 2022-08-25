@@ -92,3 +92,42 @@ fn deleting_a_range_removes_it() {
     model.delete_in(1, 3);
     assert_eq!(tx(&model), "a|d");
 }
+
+#[test]
+fn deleting_when_spanning_two_separate_identical_tags_joins_them() {
+    let mut model = cm("<b>bo{ld</b> plain <b>BO}|LD</b>");
+    model.delete();
+    assert_eq!(tx(&model), "<b>bo|LD</b>");
+}
+
+#[test]
+fn deleting_across_list_items_joins_them() {
+    let mut model = cm("<ol>
+            <li>1{1</li>
+            <li>22</li>
+            <li>33</li>
+            <li>4}|4</li>
+        </ol>");
+    model.delete();
+    assert_eq!(
+        tx(&model),
+        "<ol>
+            <li>1|4</li>
+        </ol>"
+    );
+}
+
+#[test]
+#[ignore = "TODO Fails because of an invalid handle"]
+fn deleting_across_lists_joins_them() {
+    let mut model = cm("<ol>
+            <li>1{1</li>
+            <li>22</li>
+        </ol>
+        <ol>
+            <li>33</li>
+            <li>4}|4</li>
+        </ol>");
+    model.delete();
+    assert_eq!(tx(&model), "<ol><li>14</li></ol>");
+}

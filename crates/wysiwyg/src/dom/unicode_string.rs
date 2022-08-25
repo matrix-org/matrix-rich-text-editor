@@ -18,7 +18,7 @@ use widestring::{Utf16String, Utf32String};
 /// contain valid Unicode, and allow slicing by code unit positions.
 /// We implement this for String, Utf16String and Utf32String (from the
 /// widestring crate).
-pub trait UnicodeString: Clone {
+pub trait UnicodeString: Clone + std::fmt::Debug + PartialEq {
     type CodeUnit: Clone;
 
     fn new() -> Self;

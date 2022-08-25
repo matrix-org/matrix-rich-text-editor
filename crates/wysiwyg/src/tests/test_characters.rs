@@ -124,6 +124,21 @@ fn typing_a_character_when_spanning_over_newly_opened_tags_deletes_them() {
 }
 
 #[test]
+fn typing_a_character_when_spanning_two_separate_identical_tags_joins_them() {
+    let mut model = cm("<b>bo{ld</b> plain <b>BO}|LD</b>");
+    replace_text(&mut model, "Z");
+    assert_eq!(tx(&model), "<b>boZ|LD</b>");
+}
+
+#[test]
+#[ignore = "TODO Fails because it crashes with an invalid handle"]
+fn typing_a_character_can_join_the_parents_and_grandparents() {
+    let mut model = cm("<b>BB<i>II{II</i>BB</b> gap <b>CC<i>JJ}|JJ</i>CC</b>");
+    replace_text(&mut model, "_");
+    assert_eq!(tx(&model), "<b>BB<i>II_JJ</i>CC</b>");
+}
+
+#[test]
 fn typing_when_spanning_multiple_close_tags_extends_the_first_tag() {
     let mut model = cm("00<code><i>2<b>33{33</b></i>55</code>6}|6");
     replace_text(&mut model, "Z");
@@ -149,6 +164,53 @@ fn typing_when_spanning_whole_open_tags_moves_their_start_forwards() {
     let mut model = cm("{00<b>1<i>22}|</i>3</b>44");
     replace_text(&mut model, "Z");
     assert_eq!(tx(&model), "Z|<b>3</b>44");
+}
+
+#[test]
+fn typing_into_a_list_item_adds_characters() {
+    let mut model = cm("<ul><li>item|</li></ul>");
+    replace_text(&mut model, "Z");
+    assert_eq!(tx(&model), "<ul><li>itemZ|</li></ul>");
+}
+
+#[test]
+fn replacing_within_a_list_replaces_characters() {
+    let mut model = cm("<ul><li>i{te}|m</li></ul>");
+    replace_text(&mut model, "Z");
+    assert_eq!(tx(&model), "<ul><li>iZ|m</li></ul>");
+}
+
+#[test]
+fn replacing_across_list_items_deletes_intervening_ones() {
+    let mut model = cm("<ol>
+            <li>1{1</li>
+            <li>22</li>
+            <li>3}|3</li>
+            <li>44</li>
+        </ol>");
+    replace_text(&mut model, "Z");
+    assert_eq!(
+        tx(&model),
+        "<ol>
+            <li>1Z|3</li>
+            <li>44</li>
+        </ol>"
+    );
+}
+
+#[test]
+#[ignore = "TODO Fails because it leaves 2 different lists"]
+fn replacing_across_lists_joins_them() {
+    let mut model = cm("<ol>
+            <li>1{1</li>
+            <li>22</li>
+        </ol>
+        <ol>
+            <li>33</li>
+            <li>4}|4</li>
+        </ol>");
+    replace_text(&mut model, "Z");
+    assert_eq!(tx(&model), "<ol><li>1Z4</li></ol>");
 }
 
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
