@@ -27,7 +27,7 @@ public class WysiwygComposerContent: NSObject {
     /// Attributed string representation of the displayed text.
     public let attributed: NSAttributedString
     /// Range of the selected text within the attributed representation.
-    public let selection: NSRange
+    public var attributedSelection: NSRange
 
     // MARK: - Internal
     /// Init.
@@ -36,14 +36,14 @@ public class WysiwygComposerContent: NSObject {
     ///   - plainText: Displayed text, as plain text.
     ///   - html: HTML representation of the displayed text.
     ///   - attributed: Attributed string representation of the displayed text.
-    ///   - selection: Range of the selected text within the attributed representation.
+    ///   - attributedSelection: Range of the selected text within the attributed representation.
     init(plainText: String = "",
          html: String = "",
          attributed: NSAttributedString = .init(string: ""),
-         selection: NSRange = .init(location: 0, length: 0)) {
+         attributedSelection: NSRange = .init(location: 0, length: 0)) {
         self.plainText = plainText
         self.html = html
         self.attributed = attributed
-        self.selection = selection
+        self.attributedSelection = attributedSelection
     }
 }

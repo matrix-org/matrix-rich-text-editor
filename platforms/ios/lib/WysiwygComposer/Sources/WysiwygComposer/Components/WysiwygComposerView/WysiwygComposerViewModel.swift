@@ -66,6 +66,8 @@ extension WysiwygComposerViewModel {
                                   endUtf16Codeunit: UInt32(range.location+range.length))
             }
             update = self.model.backspace()
+        } else if replacementText == "\n" {
+            update = self.model.enter()
         } else {
             update = self.model.replaceText(newText: replacementText)
         }
@@ -78,9 +80,13 @@ extension WysiwygComposerViewModel {
     ///   - text: Text currently displayed in the composer.
     ///   - range: Range to select.
     func select(text: NSAttributedString, range: NSRange) {
-        Logger.composer.debug("New selection: \(range) totalLength: \(text.length)")
-        self.model.select(startUtf16Codeunit: UInt32(range.location),
-                          endUtf16Codeunit: UInt32(range.location+range.length))
+        // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
+        let htmlSelection = try! text.htmlRange(from: range,
+                                                shouldIgnoreTrailingNewline: false)
+
+        Logger.composer.debug("New selection: Attributed {\(range.location),\(range.upperBound)} HTML {\(htmlSelection.location),\(htmlSelection.upperBound)}")
+        self.model.select(startUtf16Codeunit: UInt32(htmlSelection.location),
+                          endUtf16Codeunit: UInt32(htmlSelection.upperBound))
     }
 
     /// Notify that the text view content has changed.
@@ -96,28 +102,45 @@ extension WysiwygComposerViewModel {
         self.applyUpdate(update)
     }
 
+    /// Apply italic formatting to the current selection.
     func applyItalic() {
         let update = self.model.format(type: .italic)
         self.applyUpdate(update)
     }
 
+    /// Apply strike through formatting to the current selection.
     func applyStrikeThrough() {
         let update = self.model.format(type: .strikeThrough)
         self.applyUpdate(update)
     }
 
+    /// Apply underline formatting to the current selection.
     func applyUnderline() {
         let update = self.model.format(type: .underline)
         self.applyUpdate(update)
     }
 
+    /// Undo last model operation.
     func undo() {
         let update = self.model.undo()
         self.applyUpdate(update)
     }
 
+    /// Redo latest undone operation.
     func redo() {
         let update = self.model.redo()
+        self.applyUpdate(update)
+    }
+
+    /// Create an ordered list.
+    func createOrderedList() {
+        let update = self.model.createOrderedList()
+        self.applyUpdate(update)
+    }
+
+    /// Create an unordered list.
+    func createUnorderedList() {
+        let update = self.model.createUnorderedList()
         self.applyUpdate(update)
     }
 }
@@ -132,16 +155,22 @@ private extension WysiwygComposerViewModel {
         case .replaceAll(replacementHtml: let codeUnits,
                          startUtf16Codeunit: let start,
                          endUtf16Codeunit: let end):
-            let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count).replacingOccurrences(of: "\n", with: "<br>")
+            let html = String(utf16CodeUnits: codeUnits,
+                              count: codeUnits.count)
+                .replacingOccurrences(of: "\n", with: "<br>")
             do {
                 let attributed = try NSAttributedString(html: html)
-                let textSelection = NSRange(location: Int(start), length: Int(end-start))
+                // FIXME: handle error for out of bounds index
+                let htmlSelection = NSRange(location: Int(start), length: Int(end-start))
+                // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
+                let textSelection = try! attributed.attributedRange(from: htmlSelection,
+                                                                    shouldIgnoreTrailingNewline: false)
                 self.content = WysiwygComposerContent(
                     plainText: attributed.string,
                     html: html,
                     attributed: attributed,
-                    selection: textSelection)
-                Logger.composer.debug("HTML from Rust: \(html), selection: \(textSelection)")
+                    attributedSelection: textSelection)
+                Logger.composer.debug("HTML from Rust: \(html), rustSelection: \(htmlSelection) selection: \(textSelection)")
             } catch {
                 Logger.composer.error("Unable to update composer display: \(error.localizedDescription)")
             }

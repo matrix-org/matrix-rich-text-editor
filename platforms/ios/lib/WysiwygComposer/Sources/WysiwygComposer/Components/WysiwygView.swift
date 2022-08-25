@@ -42,42 +42,56 @@ public struct WysiwygView: View {
                     Image(systemName: "bold")
                 }
                 .buttonStyle(.automatic)
-                .accessibilityIdentifier("WysiwygBoldButton")
+                .accessibilityIdentifier(.boldButton)
                 Button {
                     viewModel.applyItalic()
                 } label: {
                     Image(systemName: "italic")
                 }
                 .buttonStyle(.automatic)
-                .accessibilityIdentifier("WysiwygItalicButton")
+                .accessibilityIdentifier(.italicButton)
                 Button {
                     viewModel.applyStrikeThrough()
                 } label: {
                     Image(systemName: "strikethrough")
                 }
                 .buttonStyle(.automatic)
-                .accessibilityIdentifier("WysiwygStrikeThroughButton")
+                .accessibilityIdentifier(.strikeThroughButton)
                 Button {
                     viewModel.applyUnderline()
                 } label: {
                     Image(systemName: "underline")
                 }
                 .buttonStyle(.automatic)
-                .accessibilityIdentifier("WysiwygUnderlineButton")
+                .accessibilityIdentifier(.underlineButton)
                 Button {
                     viewModel.undo()
                 } label: {
                     Image(systemName: "arrow.uturn.backward")
                 }
                 .buttonStyle(.automatic)
-                .accessibilityIdentifier("WysiwygUndoButton")
+                .accessibilityIdentifier(.undoButton)
                 Button {
                     viewModel.redo()
                 } label: {
                     Image(systemName: "arrow.uturn.forward")
                 }
                 .buttonStyle(.automatic)
-                .accessibilityIdentifier("WysiwygRedoButton")
+                .accessibilityIdentifier(.redoButton)
+                Button {
+                    viewModel.createOrderedList()
+                } label: {
+                    Image(systemName: "list.number")
+                }
+                .buttonStyle(.automatic)
+                .accessibilityIdentifier(.orderedListButton)
+                Button {
+                    viewModel.createUnorderedList()
+                } label: {
+                    Image(systemName: "list.bullet")
+                }
+                .buttonStyle(.automatic)
+                .accessibilityIdentifier(.unorderedListButton)
             }
             .frame(width: nil, height: 50, alignment: .center)
         }

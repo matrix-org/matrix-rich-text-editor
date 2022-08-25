@@ -1,4 +1,4 @@
-//
+// 
 // Copyright 2022 The Matrix.org Foundation C.I.C
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -42,25 +42,5 @@ extension NSAttributedString {
         try self.init(data: data,
                       options: [.documentType: NSAttributedString.DocumentType.html],
                       documentAttributes: nil)
-    }
-
-    /// Enumerate attribute for given key and conveniently ignore any attribute that doesn't match given generic type.
-    ///
-    /// - Parameters:
-    ///   - attrName: The name of the attribute to enumerate.
-    ///   - enumerationRange: The range over which the attribute values are enumerated. If omitted, the entire range is used.
-    ///   - opts: The options used by the enumeration. For possible values, see NSAttributedStringEnumerationOptions.
-    ///   - block: The block to apply to ranges of the specified attribute in the attributed string.
-    func enumerateTypedAttribute<T>(_ attrName: NSAttributedString.Key,
-                                    in enumerationRange: NSRange? = nil,
-                                    options opts: NSAttributedString.EnumerationOptions = [],
-                                    using block: (T, NSRange, UnsafeMutablePointer<ObjCBool>) -> Void) {
-        self.enumerateAttribute(attrName,
-                                in: enumerationRange ?? .init(location: 0, length: length),
-                                options: opts) { (attr: Any?, range: NSRange, stop: UnsafeMutablePointer<ObjCBool>) in
-            guard let typedAttr = attr as? T else { return }
-
-            block(typedAttr, range, stop)
-        }
     }
 }

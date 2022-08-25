@@ -15,6 +15,9 @@
 //
 
 import XCTest
+// FIXME: fix usage of identifiers from shared package
+//import WysiwygShared
+@testable import WysiwygComposer
 
 /// Defines tests that can be shared between the SwiftUI and the UIKit example implementations.
 final class WysiwygSharedTests {
@@ -108,5 +111,11 @@ final class WysiwygSharedTests {
 
         let sendButton = app.buttons["WysiwygSendButton"]
         sendButton.tap()
+
+        let content = app.staticTexts["WysiwygContentText"]
+        let htmlContent = app.staticTexts["WysiwygHtmlContentText"]
+
+        XCTAssertEqual(content.label, "Some bold text")
+        XCTAssertEqual(htmlContent.label, "Some bold <strong>text</strong>")
     }
 }
