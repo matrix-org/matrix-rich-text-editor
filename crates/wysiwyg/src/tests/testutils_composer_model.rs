@@ -209,6 +209,9 @@ pub fn tx(model: &ComposerModel<u16>) -> String {
         // Have we written out the "}" or "}|" yet?
         done_last: bool,
 
+        // The length of the whole document
+        length: usize,
+
         // The location of the leftmost part of the selection (code_units)
         first: usize,
 
@@ -220,7 +223,7 @@ pub fn tx(model: &ComposerModel<u16>) -> String {
     }
 
     impl SelectionWritingState {
-        fn new(start: usize, end: usize) -> Self {
+        fn new(start: usize, end: usize, length: usize) -> Self {
             let reversed = start > end;
 
             let (first, last): (usize, usize) = if start > end {
@@ -233,6 +236,7 @@ pub fn tx(model: &ComposerModel<u16>) -> String {
                 current_pos: 0,
                 done_first: false,
                 done_last: false,
+                length,
                 first,
                 last,
                 reversed,
@@ -251,9 +255,13 @@ pub fn tx(model: &ComposerModel<u16>) -> String {
         ) -> Vec<(&'static str, usize)> {
             self.current_pos += code_units;
 
-            // If we just passed first or last, write out { or {
+            // If we just passed first, write out {
             let do_first = !self.done_first && self.first < self.current_pos;
-            let do_last = !self.done_last && self.last < self.current_pos;
+
+            // If we just passed last or we're at the end, write out }
+            let do_last = !self.done_last
+                && (self.last < self.current_pos
+                    || self.current_pos == self.length);
 
             // Remember that we have passed them, so we don't repeat
             self.done_first = self.done_first || do_first;
@@ -305,18 +313,6 @@ pub fn tx(model: &ComposerModel<u16>) -> String {
                 "}|"
             }
         }
-
-        /// Return any remaining stuff that needs to be added when we
-        /// have reached the end of the string.
-        /// This will be "" if we've already written the relevant markers,
-        /// or "}" or "}|" if not.
-        fn trailing_marker(&self) -> &'static str {
-            if self.done_last {
-                ""
-            } else {
-                self.last_marker()
-            }
-        }
     }
 
     /// Insert {, } and | to mark the start and end of a range
@@ -327,8 +323,9 @@ pub fn tx(model: &ComposerModel<u16>) -> String {
         range: MultipleNodesRange,
         start: usize,
         end: usize,
-    ) -> &'static str {
-        let mut state = SelectionWritingState::new(start, end);
+    ) {
+        let mut state =
+            SelectionWritingState::new(start, end, dom.document().text_len());
 
         for location in range.locations {
             let mut node = dom.lookup_node_mut(location.node_handle.clone());
@@ -346,12 +343,6 @@ pub fn tx(model: &ComposerModel<u16>) -> String {
 
         // Since we are in a multi-node selection, we should always write {
         assert!(state.done_first);
-
-        // If the cursor is off the end, done_last will be false - we need
-        // to add a cursor at the very end. We could do that in here by
-        // finding the last text node and appending, but it's easier to
-        // ask the surrounding code to append it to the final string.
-        state.trailing_marker()
     }
 
     // Clone the model because we will modify it to add selection markers
@@ -362,7 +353,7 @@ pub fn tx(model: &ComposerModel<u16>) -> String {
     let range = dom.find_range(state.start.into(), state.end.into());
 
     // Modify the text nodes to a {, } and |
-    let append_text = match range {
+    match range {
         Range::SameNode(range) => {
             let mut node = dom.lookup_node_mut(range.node_handle.clone());
             match &mut node {
@@ -371,7 +362,6 @@ pub fn tx(model: &ComposerModel<u16>) -> String {
                 }
                 DomNode::Text(n) => update_text_node_with_cursor(n, &range),
             };
-            "" // We know we've written the } here - no need to append anything
         }
         Range::NoNode => panic!("No node!"),
         Range::MultipleNodes(range) => write_selection_multi(
@@ -380,11 +370,9 @@ pub fn tx(model: &ComposerModel<u16>) -> String {
             state.start.into(),
             state.end.into(),
         ),
-    };
+    }
 
-    // Return the dom as HTML, and add the extra text on the end if needed -
-    // this will be "" or "}" or "}|".
-    dom.to_string() + append_text
+    dom.to_string()
 }
 
 fn utf8(utf16: &[u16]) -> String {
