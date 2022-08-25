@@ -23,7 +23,6 @@ where
     fn fmt_html(&self, f: &mut HtmlFormatter<S>);
 
     fn to_html(&self) -> S {
-        dbg!("1");
         let mut f = HtmlFormatter::new();
         self.fmt_html(&mut f);
         f.finish()

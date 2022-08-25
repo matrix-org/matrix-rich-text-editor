@@ -204,7 +204,6 @@ where
     S: UnicodeString,
 {
     fn fmt_html(&self, f: &mut super::HtmlFormatter<S>) {
-        dbg!("5");
         self.document.fmt_html(f)
     }
 }

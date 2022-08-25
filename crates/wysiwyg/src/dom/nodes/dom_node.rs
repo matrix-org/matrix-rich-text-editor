@@ -78,7 +78,6 @@ where
     S: UnicodeString,
 {
     fn fmt_html(&self, f: &mut HtmlFormatter<S>) {
-        dbg!("2");
         match self {
             DomNode::Container(s) => s.fmt_html(f),
             // TODO DomNode::Item(s) => s.fmt_html(f),
