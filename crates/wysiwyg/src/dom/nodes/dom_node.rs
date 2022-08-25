@@ -17,38 +17,33 @@ use crate::dom::html_formatter::HtmlFormatter;
 use crate::dom::nodes::container_node::ContainerNode;
 use crate::dom::nodes::text_node::TextNode;
 use crate::dom::to_html::ToHtml;
+use crate::dom::UnicodeString;
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum DomNode<C>
+pub enum DomNode<S>
 where
-    C: Clone,
+    S: UnicodeString,
 {
-    Container(ContainerNode<C>), // E.g. html, div
-    Text(TextNode<C>),
+    Container(ContainerNode<S>), // E.g. html, div
+    Text(TextNode<S>),
 }
 
-impl<C> DomNode<C>
+impl<S> DomNode<S>
 where
-    C: Clone,
+    S: UnicodeString,
 {
-    pub fn new_formatting(
-        format: Vec<C>,
-        children: Vec<DomNode<C>>,
-    ) -> DomNode<C> {
+    pub fn new_formatting(format: S, children: Vec<DomNode<S>>) -> DomNode<S> {
         DomNode::Container(ContainerNode::new_formatting(format, children))
     }
 
-    pub fn new_list(
-        list_type: Vec<C>,
-        children: Vec<DomNode<C>>,
-    ) -> DomNode<C> {
+    pub fn new_list(list_type: S, children: Vec<DomNode<S>>) -> DomNode<S> {
         DomNode::Container(ContainerNode::new_list(list_type, children))
     }
 
     pub fn new_list_item(
-        item_name: Vec<C>,
-        children: Vec<DomNode<C>>,
-    ) -> DomNode<C> {
+        item_name: S,
+        children: Vec<DomNode<S>>,
+    ) -> DomNode<S> {
         DomNode::Container(ContainerNode::new_list_item(item_name, children))
     }
 
@@ -72,19 +67,18 @@ where
             DomNode::Container(n) => n.text_len(),
         }
     }
-}
 
-impl DomNode<u16> {
-    pub fn new_link(
-        url: Vec<u16>,
-        children: Vec<DomNode<u16>>,
-    ) -> DomNode<u16> {
+    pub fn new_link(url: S, children: Vec<DomNode<S>>) -> DomNode<S> {
         DomNode::Container(ContainerNode::new_link(url, children))
     }
 }
 
-impl ToHtml<u16> for DomNode<u16> {
-    fn fmt_html(&self, f: &mut HtmlFormatter<u16>) {
+impl<S> ToHtml<S> for DomNode<S>
+where
+    S: UnicodeString,
+{
+    fn fmt_html(&self, f: &mut HtmlFormatter<S>) {
+        dbg!("2");
         match self {
             DomNode::Container(s) => s.fmt_html(f),
             // TODO DomNode::Item(s) => s.fmt_html(f),

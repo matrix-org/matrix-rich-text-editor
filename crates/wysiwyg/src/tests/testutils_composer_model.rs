@@ -48,19 +48,10 @@
 //! See the test immediately below this comment in the source code. Doctests
 //! can't be used inside #[cfg(test)], so it is included as a normal test.
 
-use crate::dom::nodes::{DomNode, TextNode};
-use crate::dom::parser::parse;
-
-use crate::dom::{Dom, DomLocation, MultipleNodesRange, Range, SameNodeRange};
-use crate::{ComposerModel, ComposerState, Location, ToHtml};
-
 #[test]
 fn example() {
     let mut model = cm("aa{bb}|cc");
-    assert_eq!(
-        String::from_utf16(&model.state.dom.to_html()).unwrap(),
-        "aabbcc"
-    );
+    assert_eq!(model.state.dom.to_html().to_utf8(), "aabbcc");
     assert_eq!(model.state.start, 2);
     assert_eq!(model.state.end, 4);
 
@@ -68,18 +59,34 @@ fn example() {
     assert_eq!(tx(&model), "a{abbc}|c");
 }
 
+use widestring::Utf16String;
+
+use crate::dom::nodes::{DomNode, TextNode};
+use crate::dom::parser::parse;
+use crate::dom::{Dom, DomLocation, MultipleNodesRange, Range, SameNodeRange};
+use crate::{ComposerModel, ComposerState, Location, ToHtml, UnicodeString};
+
 /// Create a ComposerModel from a text representation. See the [testutils]
 /// module documentation for details about the format.
-pub fn cm(text: &str) -> ComposerModel<u16> {
-    let text_u16: Vec<u16> = text.encode_utf16().collect();
+pub fn cm(text: &str) -> ComposerModel<Utf16String> {
+    let text_u16 = Utf16String::from_str(text).into_vec();
+
+    /// Return the UTF-16 code unit for a character
+    /// Panics if s is more than one code unit long.
+    fn utf16_code_unit(s: &str) -> u16 {
+        let mut ret = Utf16String::new();
+        ret.push_str(s);
+        assert_eq!(ret.len(), 1);
+        ret.into_vec()[0]
+    }
 
     fn find(haystack: &[u16], needle: &str) -> Option<usize> {
         let mut skip_count = 0; // How many tag characters we have seen
         let mut in_tag = false; // Are we in a tag now?
 
-        let needle = needle.to_html()[0];
-        let open = "<".to_html()[0];
-        let close = ">".to_html()[0];
+        let needle = utf16_code_unit(needle);
+        let open = utf16_code_unit("<");
+        let close = utf16_code_unit(">");
 
         for (i, &ch) in haystack.iter().enumerate() {
             if ch == needle {
@@ -113,8 +120,12 @@ pub fn cm(text: &str) -> ComposerModel<u16> {
     };
     model.state.dom = parse(&text).unwrap();
 
-    fn delete_range(model: &mut ComposerModel<u16>, p1: usize, p2: usize) {
-        model.do_replace_text_in(&[], p1, p2);
+    fn delete_range(
+        model: &mut ComposerModel<Utf16String>,
+        p1: usize,
+        p2: usize,
+    ) {
+        model.do_replace_text_in(Utf16String::new(), p1, p2);
     }
 
     if let (Some(s), Some(e)) = (s, e) {
@@ -150,10 +161,10 @@ pub fn cm(text: &str) -> ComposerModel<u16> {
 
 /// Convert a ComposerModel into a text representation. See the [testutils]
 /// module documentation for details about the format.
-pub fn tx(model: &ComposerModel<u16>) -> String {
+pub fn tx(model: &ComposerModel<Utf16String>) -> String {
     fn update_text_node_with_cursor(
-        text_node: &mut TextNode<u16>,
-        range: &SameNodeRange,
+        text_node: &mut TextNode<Utf16String>,
+        range: SameNodeRange,
     ) {
         let orig_s: usize = range.start_offset.into();
         let orig_e: usize = range.end_offset.into();
@@ -166,37 +177,37 @@ pub fn tx(model: &ComposerModel<u16>) -> String {
         let data = text_node.data();
         let mut new_data;
         if s == e {
-            new_data = utf8(&data[..s]);
+            new_data = data[..s].to_string();
             new_data.push('|');
-            new_data += &utf8(&data[s..]);
+            new_data += data[s..].to_string().as_str();
         } else {
-            new_data = utf8(&data[..s]);
+            new_data = data[..s].to_string();
             if orig_s < orig_e {
                 new_data.push('{');
             } else {
                 new_data += "|{";
             }
-            new_data += &utf8(&data[s..e]);
+            new_data += data[s..e].to_string().as_str();
             if orig_s < orig_e {
                 new_data += "}|";
             } else {
                 new_data.push('}');
             }
-            new_data += &utf8(&data[e..]);
+            new_data += data[e..].to_string().as_str();
         }
-        text_node.set_data(new_data.to_html());
+        text_node.set_data(Utf16String::from_str(&new_data));
     }
 
     fn update_text_node(
-        node: &mut TextNode<u16>,
+        node: &mut TextNode<Utf16String>,
         offset: usize,
         s: &'static str,
     ) {
         let data = node.data();
-        let mut new_start_data = utf8(&data[..offset]);
+        let mut new_start_data = data[..offset].to_string();
         new_start_data.push_str(s);
-        new_start_data += &utf8(&data[offset..]);
-        node.set_data(new_start_data.to_html());
+        new_start_data += &data[offset..].to_string();
+        node.set_data(Utf16String::from_str(&new_start_data));
     }
 
     struct SelectionWritingState {
@@ -319,7 +330,7 @@ pub fn tx(model: &ComposerModel<u16>) -> String {
     /// start is the absolute position of the start of the range
     /// end is the absolute position of the end of the range
     fn write_selection_multi(
-        dom: &mut Dom<u16>,
+        dom: &mut Dom<Utf16String>,
         range: MultipleNodesRange,
         start: usize,
         end: usize,
@@ -360,7 +371,7 @@ pub fn tx(model: &ComposerModel<u16>) -> String {
                 DomNode::Container(_) => {
                     panic!("Don't know how to tx in a non-text node")
                 }
-                DomNode::Text(n) => update_text_node_with_cursor(n, &range),
+                DomNode::Text(n) => update_text_node_with_cursor(n, range),
             };
         }
         Range::NoNode => panic!("No node!"),
@@ -375,12 +386,10 @@ pub fn tx(model: &ComposerModel<u16>) -> String {
     dom.to_string()
 }
 
-fn utf8(utf16: &[u16]) -> String {
-    String::from_utf16(&utf16).expect("Invalid UTF-16!")
-}
-
 mod test {
     use speculoos::{prelude::*, AssertionFailure, Spec};
+
+    use crate::tests::testutils_conversion::utf16;
 
     use super::*;
 
@@ -389,100 +398,100 @@ mod test {
         // TODO: can we split and/or make these tests clearer?
         assert_eq!(cm("|").state.start, 0);
         assert_eq!(cm("|").state.end, 0);
-        assert_eq!(cm("|").get_html(), &[]);
+        assert_eq!(cm("|").get_html(), utf16(""));
 
         assert_eq!(cm("a|").state.start, 1);
         assert_eq!(cm("a|").state.end, 1);
-        assert_eq!(cm("a|").get_html(), "a".to_html());
+        assert_eq!(cm("a|").get_html(), utf16("a"));
 
         assert_eq!(cm("a|b").state.start, 1);
         assert_eq!(cm("a|b").state.end, 1);
-        assert_eq!(cm("a|b").get_html(), "ab".to_html());
+        assert_eq!(cm("a|b").get_html(), utf16("ab"));
 
         assert_eq!(cm("|ab").state.start, 0);
         assert_eq!(cm("|ab").state.end, 0);
-        assert_eq!(cm("|ab").get_html(), "ab".to_html());
+        assert_eq!(cm("|ab").get_html(), utf16("ab"));
 
         assert_eq!(cm("foo|").state.start, 3);
         assert_eq!(cm("foo|").state.end, 3);
-        assert_eq!(cm("foo|").get_html(), ("foo".to_html()));
+        assert_eq!(cm("foo|").get_html(), (utf16("foo")));
 
         let t0 = cm("AAA<b>B|BB</b>CCC");
         assert_eq!(t0.state.start, 4);
         assert_eq!(t0.state.end, 4);
-        assert_eq!(t0.get_html(), "AAA<b>BBB</b>CCC".to_html());
+        assert_eq!(t0.get_html(), utf16("AAA<b>BBB</b>CCC"));
 
         let t1 = cm("foo|\u{1F4A9}bar");
         assert_eq!(t1.state.start, 3);
         assert_eq!(t1.state.end, 3);
-        assert_eq!(t1.get_html(), ("foo\u{1F4A9}bar").to_html());
+        assert_eq!(t1.get_html(), utf16("foo\u{1F4A9}bar"));
 
         let t2 = cm("foo\u{1F4A9}|bar");
         assert_eq!(t2.state.start, 5);
         assert_eq!(t2.state.end, 5);
-        assert_eq!(t2.get_html(), ("foo\u{1F4A9}bar").to_html());
+        assert_eq!(t2.get_html(), utf16("foo\u{1F4A9}bar"));
 
         assert_eq!(cm("foo|\u{1F4A9}").state.start, 3);
         assert_eq!(cm("foo|\u{1F4A9}").state.end, 3);
-        assert_eq!(cm("foo|\u{1F4A9}").get_html(), ("foo\u{1F4A9}").to_html());
+        assert_eq!(cm("foo|\u{1F4A9}").get_html(), utf16("foo\u{1F4A9}"));
 
         assert_eq!(cm("foo\u{1F4A9}|").state.start, 5);
         assert_eq!(cm("foo\u{1F4A9}|").state.end, 5);
-        assert_eq!(cm("foo\u{1F4A9}|").get_html(), ("foo\u{1F4A9}").to_html());
+        assert_eq!(cm("foo\u{1F4A9}|").get_html(), utf16("foo\u{1F4A9}"));
 
         assert_eq!(cm("|\u{1F4A9}bar").state.start, 0);
         assert_eq!(cm("|\u{1F4A9}bar").state.end, 0);
-        assert_eq!(cm("|\u{1F4A9}bar").get_html(), ("\u{1F4A9}bar").to_html());
+        assert_eq!(cm("|\u{1F4A9}bar").get_html(), utf16("\u{1F4A9}bar"));
 
         assert_eq!(cm("\u{1F4A9}|bar").state.start, 2);
         assert_eq!(cm("\u{1F4A9}|bar").state.end, 2);
-        assert_eq!(cm("\u{1F4A9}|bar").get_html(), ("\u{1F4A9}bar").to_html());
+        assert_eq!(cm("\u{1F4A9}|bar").get_html(), utf16("\u{1F4A9}bar"));
 
         assert_eq!(cm("{a}|").state.start, 0);
         assert_eq!(cm("{a}|").state.end, 1);
-        assert_eq!(cm("{a}|").get_html(), ("a").to_html());
+        assert_eq!(cm("{a}|").get_html(), utf16("a"));
 
         assert_eq!(cm("|{a}").state.start, 1);
         assert_eq!(cm("|{a}").state.end, 0);
-        assert_eq!(cm("|{a}").get_html(), ("a").to_html());
+        assert_eq!(cm("|{a}").get_html(), utf16("a"));
 
         assert_eq!(cm("abc{def}|ghi").state.start, 3);
         assert_eq!(cm("abc{def}|ghi").state.end, 6);
-        assert_eq!(cm("abc{def}|ghi").get_html(), ("abcdefghi").to_html());
+        assert_eq!(cm("abc{def}|ghi").get_html(), utf16("abcdefghi"));
 
         assert_eq!(cm("abc|{def}ghi").state.start, 6);
         assert_eq!(cm("abc|{def}ghi").state.end, 3);
-        assert_eq!(cm("abc|{def}ghi").get_html(), ("abcdefghi").to_html());
+        assert_eq!(cm("abc|{def}ghi").get_html(), utf16("abcdefghi"));
 
         let t3 = cm("\u{1F4A9}{def}|ghi");
         assert_eq!(t3.state.start, 2);
         assert_eq!(t3.state.end, 5);
-        assert_eq!(t3.get_html(), ("\u{1F4A9}defghi").to_html());
+        assert_eq!(t3.get_html(), utf16("\u{1F4A9}defghi"));
 
         let t4 = cm("\u{1F4A9}|{def}ghi");
         assert_eq!(t4.state.start, 5);
         assert_eq!(t4.state.end, 2);
-        assert_eq!(t4.get_html(), ("\u{1F4A9}defghi").to_html());
+        assert_eq!(t4.get_html(), utf16("\u{1F4A9}defghi"));
 
         let t5 = cm("abc{d\u{1F4A9}f}|ghi");
         assert_eq!(t5.state.start, 3);
         assert_eq!(t5.state.end, 7);
-        assert_eq!(t5.get_html(), ("abcd\u{1F4A9}fghi").to_html());
+        assert_eq!(t5.get_html(), utf16("abcd\u{1F4A9}fghi"));
 
         let t6 = cm("abc|{d\u{1F4A9}f}ghi");
         assert_eq!(t6.state.start, 7);
         assert_eq!(t6.state.end, 3);
-        assert_eq!(t6.get_html(), ("abcd\u{1F4A9}fghi").to_html());
+        assert_eq!(t6.get_html(), utf16("abcd\u{1F4A9}fghi"));
 
         let t7 = cm("abc{def}|\u{1F4A9}ghi");
         assert_eq!(t7.state.start, 3);
         assert_eq!(t7.state.end, 6);
-        assert_eq!(t7.get_html(), ("abcdef\u{1F4A9}ghi").to_html());
+        assert_eq!(t7.get_html(), utf16("abcdef\u{1F4A9}ghi"));
 
         let t8 = cm("abc|{def}\u{1F4A9}ghi");
         assert_eq!(t8.state.start, 6);
         assert_eq!(t8.state.end, 3);
-        assert_eq!(t8.get_html(), ("abcdef\u{1F4A9}ghi").to_html());
+        assert_eq!(t8.get_html(), utf16("abcdef\u{1F4A9}ghi"));
     }
 
     #[test]

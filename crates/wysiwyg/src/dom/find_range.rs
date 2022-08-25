@@ -15,11 +15,12 @@
 use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
 use crate::dom::range::{DomLocation, MultipleNodesRange, SameNodeRange};
 use crate::dom::{Dom, DomHandle, FindResult, Range};
+use crate::UnicodeString;
 use std::cmp::{max, min};
 
-pub fn find_range<C>(dom: &Dom<C>, start: usize, end: usize) -> Range
+pub fn find_range<S>(dom: &Dom<S>, start: usize, end: usize) -> Range
 where
-    C: Clone,
+    S: UnicodeString,
 {
     if dom.children().is_empty() {
         return Range::NoNode;
@@ -75,14 +76,14 @@ where
 ///
 /// When searching for an individual character (rather than a range), you
 /// should ask for RangeLocation::End.
-fn find_pos<C>(
-    dom: &Dom<C>,
+fn find_pos<S>(
+    dom: &Dom<S>,
     node_handle: DomHandle,
     start: usize,
     end: usize,
 ) -> FindResult
 where
-    C: Clone,
+    S: UnicodeString,
 {
     // TODO: consider whether cloning DomHandles is damaging performance,
     // and look for ways to pass around references, maybe.
@@ -97,15 +98,15 @@ where
     }
 }
 
-fn do_find_pos<C>(
-    dom: &Dom<C>,
+fn do_find_pos<S>(
+    dom: &Dom<S>,
     node_handle: DomHandle,
     start: usize,
     end: usize,
     offset: &mut usize,
 ) -> Vec<DomLocation>
 where
-    C: Clone,
+    S: UnicodeString,
 {
     let node = dom.lookup_node(node_handle.clone());
     let mut locations = Vec::new();
@@ -126,13 +127,16 @@ where
     locations
 }
 
-fn process_container_node<C: Clone>(
-    dom: &Dom<C>,
-    node: &ContainerNode<C>,
+fn process_container_node<S>(
+    dom: &Dom<S>,
+    node: &ContainerNode<S>,
     start: usize,
     end: usize,
     offset: &mut usize,
-) -> Vec<DomLocation> {
+) -> Vec<DomLocation>
+where
+    S: UnicodeString,
+{
     let mut results = Vec::new();
     let container_start = *offset;
     for child in node.children() {
@@ -163,12 +167,15 @@ fn process_container_node<C: Clone>(
     results
 }
 
-fn process_text_node<C: Clone>(
-    node: &TextNode<C>,
+fn process_text_node<S>(
+    node: &TextNode<S>,
     start: usize,
     end: usize,
     offset: &mut usize,
-) -> Option<DomLocation> {
+) -> Option<DomLocation>
+where
+    S: UnicodeString,
+{
     let node_len = node.data().len();
     let node_start = *offset;
     let node_end = node_start + node_len;
@@ -205,8 +212,11 @@ fn process_text_node<C: Clone>(
 mod test {
     // TODO: more tests for start and end of ranges
 
+    use widestring::Utf16String;
+
     use super::*;
     use crate::tests::testutils_composer_model::cm;
+    use crate::tests::testutils_conversion::utf16;
     use crate::tests::testutils_dom::{b, dom, tn};
     use crate::ToHtml;
 
@@ -223,9 +233,9 @@ mod test {
     }
 
     fn ranges_to_html(
-        dom: &Dom<u16>,
+        dom: &Dom<Utf16String>,
         range: &MultipleNodesRange,
-    ) -> Vec<Vec<u16>> {
+    ) -> Vec<Utf16String> {
         range
             .locations
             .iter()
@@ -318,7 +328,7 @@ mod test {
             assert_eq!(range.end_offset, 7);
 
             if let DomNode::Text(t) = d.lookup_node(range.node_handle.clone()) {
-                assert_eq!(t.data(), "foo bar baz".to_html());
+                assert_eq!(*t.data(), utf16("foo bar baz"));
             } else {
                 panic!("Should have been a text node!")
             }
@@ -339,7 +349,7 @@ mod test {
             assert_eq!(range.end_offset, 11);
 
             if let DomNode::Text(t) = d.lookup_node(range.node_handle.clone()) {
-                assert_eq!(t.data(), "foo bar baz".to_html());
+                assert_eq!(*t.data(), utf16("foo bar baz"));
             } else {
                 panic!("Should have been a text node!")
             }
@@ -360,7 +370,7 @@ mod test {
             assert_eq!(range.end_offset, 2);
 
             if let DomNode::Text(t) = d.lookup_node(range.node_handle.clone()) {
-                assert_eq!(t.data(), "bar".to_html());
+                assert_eq!(*t.data(), utf16("bar"));
             } else {
                 panic!("Should have been a text node!")
             }
@@ -379,10 +389,10 @@ mod test {
             // 3 text nodes + bold node
             assert_eq!(4, r.locations.len());
             let html_of_ranges = ranges_to_html(&d, &r);
-            assert_eq!("test".to_html(), html_of_ranges[0]);
-            assert_eq!("ing a ".to_html(), html_of_ranges[1]);
-            assert_eq!("<b>ing a </b>".to_html(), html_of_ranges[2]);
-            assert_eq!("new feature".to_html(), html_of_ranges[3]);
+            assert_eq!(utf16("test"), html_of_ranges[0]);
+            assert_eq!(utf16("ing a "), html_of_ranges[1]);
+            assert_eq!(utf16("<b>ing a </b>"), html_of_ranges[2]);
+            assert_eq!(utf16("new feature"), html_of_ranges[3]);
         } else {
             panic!("Should have been a MultipleNodesRange {:?}", range);
         }
@@ -396,12 +406,12 @@ mod test {
             // 4 text nodes + bold node + italic node
             assert_eq!(6, r.locations.len());
             let html_of_ranges = ranges_to_html(&d, &r);
-            assert_eq!("test".to_html(), html_of_ranges[0]);
-            assert_eq!("ing ".to_html(), html_of_ranges[1]);
-            assert_eq!("a ".to_html(), html_of_ranges[2]);
-            assert_eq!("<i>a </i>".to_html(), html_of_ranges[3]);
-            assert_eq!("<b>ing <i>a </i></b>".to_html(), html_of_ranges[4]);
-            assert_eq!("new feature".to_html(), html_of_ranges[5]);
+            assert_eq!(utf16("test"), html_of_ranges[0]);
+            assert_eq!(utf16("ing "), html_of_ranges[1]);
+            assert_eq!(utf16("a "), html_of_ranges[2]);
+            assert_eq!(utf16("<i>a </i>"), html_of_ranges[3]);
+            assert_eq!(utf16("<b>ing <i>a </i></b>"), html_of_ranges[4]);
+            assert_eq!(utf16("new feature"), html_of_ranges[5]);
         } else {
             panic!("Should have been a MultipleNodesRange {:?}", range);
         }
@@ -437,9 +447,9 @@ mod test {
             // 2 text nodes + italic node
             assert_eq!(3, r.locations.len());
             let html_of_ranges = ranges_to_html(&d, &r);
-            assert_eq!("a ".to_html(), html_of_ranges[0]);
-            assert_eq!("<i>a </i>".to_html(), html_of_ranges[1]);
-            assert_eq!("new feature".to_html(), html_of_ranges[2]);
+            assert_eq!(utf16("a "), html_of_ranges[0]);
+            assert_eq!(utf16("<i>a </i>"), html_of_ranges[1]);
+            assert_eq!(utf16("new feature"), html_of_ranges[2]);
         } else {
             panic!("Should have been a MultipleNodesRange {:?}", range);
         }

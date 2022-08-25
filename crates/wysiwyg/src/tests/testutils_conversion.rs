@@ -12,13 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use super::{Dom, UnicodeString};
+#![cfg(test)]
 
-#[derive(Debug)]
-pub struct DomCreationError<S>
-where
-    S: UnicodeString,
-{
-    pub dom: Dom<S>,
-    pub parse_errors: Vec<String>,
+use widestring::Utf16String;
+
+pub fn utf16(s: &str) -> Utf16String {
+    Utf16String::from_str(s)
 }

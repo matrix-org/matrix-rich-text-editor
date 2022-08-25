@@ -14,9 +14,12 @@
 
 #![cfg(test)]
 
-use crate::tests::testutils_composer_model::{cm, tx};
+use widestring::Utf16String;
 
-use crate::{ComposerModel, Location, ToHtml};
+use crate::tests::testutils_composer_model::{cm, tx};
+use crate::tests::testutils_conversion::utf16;
+
+use crate::{ComposerModel, Location};
 
 #[test]
 fn typing_a_character_into_an_empty_box_appends_it() {
@@ -80,15 +83,15 @@ fn typing_a_character_after_a_multi_codepoint_character() {
 #[test]
 fn typing_a_character_in_a_range_inserts_it() {
     let mut model = cm("0123456789|");
-    let new_text = "654".encode_utf16().collect::<Vec<u16>>();
-    model.replace_text_in(&new_text, 4, 7);
+    let new_text = utf16("654");
+    model.replace_text_in(new_text, 4, 7);
     assert_eq!(tx(&model), "0123654|789");
 }
 
 #[test]
 fn can_replace_text_in_an_empty_composer_model() {
-    let mut cm = ComposerModel::<u16>::new();
-    cm.replace_text(&"foo".to_html());
+    let mut cm = ComposerModel::new();
+    cm.replace_text(utf16("foo"));
     assert_eq!(tx(&cm), "foo|");
 }
 
@@ -148,6 +151,6 @@ fn typing_when_spanning_whole_open_tags_moves_their_start_forwards() {
     assert_eq!(tx(&model), "Z|<b>3</b>44");
 }
 
-fn replace_text(model: &mut ComposerModel<u16>, new_text: &str) {
-    model.replace_text(&new_text.to_html());
+fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
+    model.replace_text(utf16(new_text));
 }

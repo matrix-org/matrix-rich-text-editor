@@ -14,52 +14,49 @@
 
 #![cfg(test)]
 
+use widestring::Utf16String;
+
 use crate::dom::nodes::{DomNode, TextNode};
 use crate::dom::Dom;
 
+use crate::tests::testutils_conversion::utf16;
+
 pub fn dom<'a>(
-    children: impl IntoIterator<Item = &'a DomNode<u16>>,
-) -> Dom<u16> {
+    children: impl IntoIterator<Item = &'a DomNode<Utf16String>>,
+) -> Dom<Utf16String> {
     Dom::new(clone_children(children))
 }
 
 pub fn a<'a>(
-    children: impl IntoIterator<Item = &'a DomNode<u16>>,
-) -> DomNode<u16> {
+    children: impl IntoIterator<Item = &'a DomNode<Utf16String>>,
+) -> DomNode<Utf16String> {
     DomNode::new_link(utf16("https://element.io"), clone_children(children))
 }
 
 pub fn b<'a>(
-    children: impl IntoIterator<Item = &'a DomNode<u16>>,
-) -> DomNode<u16> {
+    children: impl IntoIterator<Item = &'a DomNode<Utf16String>>,
+) -> DomNode<Utf16String> {
     DomNode::new_formatting(utf16("b"), clone_children(children))
 }
 
 pub fn i<'a>(
-    children: impl IntoIterator<Item = &'a DomNode<u16>>,
-) -> DomNode<u16> {
+    children: impl IntoIterator<Item = &'a DomNode<Utf16String>>,
+) -> DomNode<Utf16String> {
     DomNode::new_formatting(utf16("i"), clone_children(children))
 }
 
 pub fn i_c<'a>(
-    children: impl IntoIterator<Item = &'a DomNode<u16>>,
-) -> DomNode<u16> {
+    children: impl IntoIterator<Item = &'a DomNode<Utf16String>>,
+) -> DomNode<Utf16String> {
     DomNode::new_formatting(utf16("code"), clone_children(children))
 }
 
-fn clone_children<'a, C>(
-    children: impl IntoIterator<Item = &'a DomNode<C>>,
-) -> Vec<DomNode<C>>
-where
-    C: 'static + Clone,
-{
+fn clone_children<'a>(
+    children: impl IntoIterator<Item = &'a DomNode<Utf16String>>,
+) -> Vec<DomNode<Utf16String>> {
     children.into_iter().cloned().collect()
 }
 
-pub fn tn(data: &str) -> DomNode<u16> {
+pub fn tn(data: &str) -> DomNode<Utf16String> {
     DomNode::Text(TextNode::from(utf16(data)))
-}
-
-fn utf16(input: &str) -> Vec<u16> {
-    input.encode_utf16().collect()
 }

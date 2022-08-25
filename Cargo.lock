@@ -978,6 +978,7 @@ dependencies = [
  "uniffi",
  "uniffi_build",
  "uniffi_macros",
+ "widestring",
  "wysiwyg",
 ]
 
@@ -1143,6 +1144,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "widestring"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "653f141f39ec16bba3c5abe400a0c60da7468261cc2cbf36805022876bc721a8"
+
+[[package]]
 name = "winapi"
 version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1224,6 +1231,7 @@ dependencies = [
  "html5ever",
  "once_cell",
  "speculoos",
+ "widestring",
 ]
 
 [[package]]
@@ -1233,6 +1241,7 @@ dependencies = [
  "js-sys",
  "wasm-bindgen",
  "wasm-bindgen-futures",
+ "widestring",
  "wysiwyg",
 ]
 

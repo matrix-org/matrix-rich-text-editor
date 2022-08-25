@@ -12,23 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::dom::{Dom, ToHtml};
+use crate::dom::{Dom, UnicodeString};
 use crate::Location;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ComposerState<C>
+pub struct ComposerState<S>
 where
-    C: Clone,
+    S: UnicodeString,
 {
-    pub dom: Dom<C>,
+    pub dom: Dom<S>,
     pub start: Location,
     pub end: Location,
 }
 
-impl<C> ComposerState<C>
+impl<S> ComposerState<S>
 where
-    C: Clone,
-    Dom<C>: ToHtml<C>,
+    S: UnicodeString,
 {
     pub fn new() -> Self {
         Self {

@@ -13,6 +13,8 @@
 // limitations under the License.
 
 use wasm_bindgen::prelude::*;
+use widestring::Utf16String;
+use wysiwyg::UnicodeString;
 
 #[wasm_bindgen]
 pub fn new_composer_model() -> ComposerModel {
@@ -23,7 +25,7 @@ pub fn new_composer_model() -> ComposerModel {
 
 #[wasm_bindgen]
 pub struct ComposerModel {
-    inner: wysiwyg::ComposerModel<u16>,
+    inner: wysiwyg::ComposerModel<Utf16String>,
 }
 
 #[wasm_bindgen]
@@ -54,8 +56,7 @@ impl ComposerModel {
         // converted to UTF-8 in the bindings layer!
         // If the performance is a problem, we could fix this.
         ComposerUpdate::from(
-            self.inner
-                .replace_text(&new_text.encode_utf16().collect::<Vec<_>>()),
+            self.inner.replace_text(Utf16String::from_str(new_text)),
         )
     }
 
@@ -125,11 +126,11 @@ impl ComposerModel {
 
 #[wasm_bindgen]
 pub struct ComposerUpdate {
-    inner: wysiwyg::ComposerUpdate<u16>,
+    inner: wysiwyg::ComposerUpdate<Utf16String>,
 }
 
 impl ComposerUpdate {
-    fn from(inner: wysiwyg::ComposerUpdate<u16>) -> Self {
+    fn from(inner: wysiwyg::ComposerUpdate<Utf16String>) -> Self {
         Self { inner }
     }
 }
@@ -160,7 +161,7 @@ pub struct TextUpdate {
 }
 
 impl TextUpdate {
-    pub fn from(inner: wysiwyg::TextUpdate<u16>) -> Self {
+    pub fn from(inner: wysiwyg::TextUpdate<Utf16String>) -> Self {
         match inner {
             wysiwyg::TextUpdate::Keep => Self {
                 keep: Some(Keep),
@@ -172,10 +173,7 @@ impl TextUpdate {
                 Self {
                     keep: None,
                     replace_all: Some(ReplaceAll {
-                        replacement_html: String::from_utf16(
-                            &r.replacement_html,
-                        )
-                        .expect("Model returned invalid UTF-16"),
+                        replacement_html: r.replacement_html.to_utf8(),
                         start_utf16_codeunit: u32::try_from(
                             start_utf16_codeunit,
                         )

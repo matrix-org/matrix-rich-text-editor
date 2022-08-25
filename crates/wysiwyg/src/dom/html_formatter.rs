@@ -12,35 +12,90 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub struct HtmlFormatter<C> {
-    chars: Vec<C>,
+use super::UnicodeString;
+
+pub struct HtmlFormatter<S>
+where
+    S: UnicodeString,
+{
+    chars: Vec<S::CodeUnit>,
+    known_char_data: KnownCharData<S>,
 }
 
-impl<C> HtmlFormatter<C>
+pub enum HtmlChar {
+    Equal,
+    ForwardSlash,
+    Gt,
+    Lt,
+    Quote,
+    Space,
+}
+
+impl<S> HtmlFormatter<S>
 where
-    C: Clone,
+    S: UnicodeString,
 {
     pub fn new() -> Self {
-        Self { chars: Vec::new() }
+        Self {
+            chars: Vec::new(),
+            known_char_data: KnownCharData::new(),
+        }
     }
 
-    pub fn write_char(&mut self, c: &C) {
-        self.chars.push(c.clone());
+    pub fn write_char(&mut self, c: HtmlChar) {
+        self.chars.push(match c {
+            HtmlChar::Equal => self.known_char_data.equal.clone(),
+            HtmlChar::ForwardSlash => {
+                self.known_char_data.forward_slash.clone()
+            }
+            HtmlChar::Gt => self.known_char_data.gt.clone(),
+            HtmlChar::Lt => self.known_char_data.lt.clone(),
+            HtmlChar::Quote => self.known_char_data.quote.clone(),
+            HtmlChar::Space => self.known_char_data.space.clone(),
+        });
     }
 
-    pub fn write(&mut self, slice: &[C]) {
+    pub fn write(&mut self, slice: &[S::CodeUnit]) {
         self.chars.extend_from_slice(slice);
     }
 
-    pub fn write_iter(&mut self, chars: impl Iterator<Item = C>) {
+    pub fn write_iter(&mut self, chars: impl Iterator<Item = S::CodeUnit>) {
         self.chars.extend(chars)
     }
 
-    pub fn write_vec(&mut self, chars: Vec<C>) {
+    pub fn write_vec(&mut self, chars: Vec<S::CodeUnit>) {
         self.chars.extend(chars)
     }
 
-    pub fn finish(self) -> Vec<C> {
-        self.chars
+    pub fn finish(self) -> S {
+        S::from_vec(self.chars).expect("Unable to convert to unicode!")
+    }
+}
+
+struct KnownCharData<S>
+where
+    S: UnicodeString,
+{
+    equal: S::CodeUnit,
+    forward_slash: S::CodeUnit,
+    gt: S::CodeUnit,
+    lt: S::CodeUnit,
+    quote: S::CodeUnit,
+    space: S::CodeUnit,
+}
+
+impl<S> KnownCharData<S>
+where
+    S: UnicodeString,
+{
+    fn new() -> Self {
+        Self {
+            equal: S::c_from_char('='),
+            forward_slash: S::c_from_char('/'),
+            gt: S::c_from_char('>'),
+            lt: S::c_from_char('<'),
+            quote: S::c_from_char('"'),
+            space: S::c_from_char(' '),
+        }
     }
 }

@@ -15,42 +15,46 @@
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::html_formatter::HtmlFormatter;
 use crate::dom::nodes::dom_node::DomNode;
-use crate::dom::to_html::{fmt_node_u16, ToHtml};
+use crate::dom::to_html::ToHtml;
+use crate::dom::{HtmlChar, UnicodeString};
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct ContainerNode<C>
+pub struct ContainerNode<S>
 where
-    C: Clone,
+    S: UnicodeString,
 {
-    name: Vec<C>,
-    kind: ContainerNodeKind<C>,
-    attrs: Option<Vec<(Vec<C>, Vec<C>)>>,
-    children: Vec<DomNode<C>>,
+    name: S,
+    kind: ContainerNodeKind<S>,
+    attrs: Option<Vec<(S, S)>>,
+    children: Vec<DomNode<S>>,
     handle: DomHandle,
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum ContainerNodeKind<C: Clone> {
-    Generic,            // E.g. the root node (the containing div)
-    Formatting(Vec<C>), // TODO: the format parameter is a copy of name
-    Link(Vec<C>),
-    List(Vec<C>),
+pub enum ContainerNodeKind<S>
+where
+    S: UnicodeString,
+{
+    Generic,       // E.g. the root node (the containing div)
+    Formatting(S), // TODO: the format parameter is a copy of name
+    Link(S),
+    List(S),
     ListItem(),
 }
 
-impl<C> ContainerNode<C>
+impl<S> ContainerNode<S>
 where
-    C: Clone,
+    S: UnicodeString,
 {
     /// Create a new ContainerNode
     ///
     /// NOTE: Its handle() will be unset until you call set_handle() or
     /// append() it to another node.
     pub fn new(
-        name: Vec<C>,
-        kind: ContainerNodeKind<C>,
-        attrs: Option<Vec<(Vec<C>, Vec<C>)>>,
-        children: Vec<DomNode<C>>,
+        name: S,
+        kind: ContainerNodeKind<S>,
+        attrs: Option<Vec<(S, S)>>,
+        children: Vec<DomNode<S>>,
     ) -> Self {
         Self {
             name,
@@ -61,7 +65,7 @@ where
         }
     }
 
-    pub fn new_formatting(format: Vec<C>, children: Vec<DomNode<C>>) -> Self {
+    pub fn new_formatting(format: S, children: Vec<DomNode<S>>) -> Self {
         Self {
             name: format.clone(),
             kind: ContainerNodeKind::Formatting(format),
@@ -71,7 +75,7 @@ where
         }
     }
 
-    pub fn new_list(list_type: Vec<C>, children: Vec<DomNode<C>>) -> Self {
+    pub fn new_list(list_type: S, children: Vec<DomNode<S>>) -> Self {
         Self {
             name: list_type.clone(),
             kind: ContainerNodeKind::List(list_type),
@@ -81,7 +85,7 @@ where
         }
     }
 
-    pub fn new_list_item(item_name: Vec<C>, children: Vec<DomNode<C>>) -> Self {
+    pub fn new_list_item(item_name: S, children: Vec<DomNode<S>>) -> Self {
         Self {
             name: item_name,
             kind: ContainerNodeKind::ListItem(),
@@ -91,7 +95,7 @@ where
         }
     }
 
-    pub fn append(&mut self, mut child: DomNode<C>) {
+    pub fn append(&mut self, mut child: DomNode<S>) {
         assert!(self.handle.is_set());
 
         let child_index = self.children.len();
@@ -112,7 +116,7 @@ where
         }
     }
 
-    pub fn replace_child(&mut self, index: usize, nodes: Vec<DomNode<C>>) {
+    pub fn replace_child(&mut self, index: usize, nodes: Vec<DomNode<S>>) {
         assert!(self.handle.is_set());
         assert!(index < self.children().len());
 
@@ -142,19 +146,19 @@ where
         }
     }
 
-    pub fn name(&self) -> &Vec<C> {
+    pub fn name(&self) -> &S {
         &self.name
     }
 
-    pub fn attributes(&self) -> Option<&Vec<(Vec<C>, Vec<C>)>> {
+    pub fn attributes(&self) -> Option<&Vec<(S, S)>> {
         self.attrs.as_ref()
     }
 
-    pub fn children(&self) -> &Vec<DomNode<C>> {
+    pub fn children(&self) -> &Vec<DomNode<S>> {
         &self.children
     }
 
-    pub fn children_mut(&mut self) -> &mut Vec<DomNode<C>> {
+    pub fn children_mut(&mut self) -> &mut Vec<DomNode<S>> {
         // TODO: replace with soemthing like get_child_mut - we want to avoid
         // anyone pushing onto this, because the handles will be unset
         &mut self.children
@@ -170,14 +174,12 @@ where
     pub fn text_len(&self) -> usize {
         self.children.iter().map(|child| child.text_len()).sum()
     }
-}
 
-impl ContainerNode<u16> {
-    pub fn new_link(url: Vec<u16>, children: Vec<DomNode<u16>>) -> Self {
+    pub fn new_link(url: S, children: Vec<DomNode<S>>) -> Self {
         Self {
-            name: "a".encode_utf16().collect(),
+            name: S::from_str("a"),
             kind: ContainerNodeKind::Link(url.clone()),
-            attrs: Some(vec![("href".encode_utf16().collect(), url)]),
+            attrs: Some(vec![(S::from_str("href"), url)]),
             children,
             handle: DomHandle::new_unset(),
         }
@@ -188,23 +190,57 @@ impl ContainerNode<u16> {
             ContainerNodeKind::ListItem() => {
                 // TODO: make a helper that reads all the plain text contained in a node and its children
                 let html = self.to_html();
-                return html == "<li></li>".to_html()
-                    || html == "<li>\u{200b}</li>".to_html();
+                return html.to_utf8() == "<li></li>"
+                    || html.to_utf8() == "<li>\u{200b}</li>";
             }
             _ => false,
         }
     }
 }
 
-impl ToHtml<u16> for ContainerNode<u16> {
-    fn fmt_html(&self, f: &mut HtmlFormatter<u16>) {
-        fmt_node_u16(self, f)
+impl<S> ToHtml<S> for ContainerNode<S>
+where
+    S: UnicodeString,
+{
+    fn fmt_html(&self, f: &mut HtmlFormatter<S>) {
+        let name = self.name();
+        if !name.is_empty() {
+            f.write_char(HtmlChar::Lt);
+            f.write(name.as_slice());
+            if let Some(attrs) = &self.attrs {
+                for attr in attrs {
+                    f.write_char(HtmlChar::Space);
+                    let (attr_name, value) = attr;
+                    f.write(attr_name.as_slice());
+                    f.write_char(HtmlChar::Equal);
+                    f.write_char(HtmlChar::Quote);
+                    f.write(value.as_slice());
+                    f.write_char(HtmlChar::Quote);
+                }
+            }
+            f.write_char(HtmlChar::Gt);
+        }
+
+        for child in &self.children {
+            child.fmt_html(f);
+        }
+
+        if !name.is_empty() {
+            f.write_char(HtmlChar::Lt);
+            f.write_char(HtmlChar::ForwardSlash);
+            f.write(name.as_slice());
+            f.write_char(HtmlChar::Gt);
+        }
     }
 }
 
 #[cfg(test)]
 mod test {
+    use widestring::Utf16String;
+
     use crate::dom::nodes::TextNode;
+
+    use crate::tests::testutils_conversion::utf16;
 
     use super::*;
 
@@ -222,9 +258,9 @@ mod test {
         let text_node2 = &node.children[2];
 
         // Nodes got inserted in the right places
-        assert_eq!(text_node0.to_html(), "0".to_html());
-        assert_eq!(text_node1.to_html(), "1".to_html());
-        assert_eq!(text_node2.to_html(), "2".to_html());
+        assert_eq!(text_node0.to_html(), utf16("0"));
+        assert_eq!(text_node1.to_html(), utf16("1"));
+        assert_eq!(text_node2.to_html(), utf16("2"));
 
         // And they have the right handles
         assert_eq!(text_node0.handle().raw(), &[4, 5, 4, 0]);
@@ -248,8 +284,8 @@ mod test {
         let text_node3 = &node.children[1];
 
         // The right nodes got deleted
-        assert_eq!(text_node1.to_html(), "1".to_html());
-        assert_eq!(text_node3.to_html(), "3".to_html());
+        assert_eq!(text_node1.to_html(), utf16("1"));
+        assert_eq!(text_node3.to_html(), utf16("3"));
 
         // And they have the right handles
         assert_eq!(text_node1.handle().raw(), &[4, 5, 4, 0]);
@@ -277,11 +313,11 @@ mod test {
         let text_node2 = &node.children[4];
 
         // The new nodes got inserted in the right places
-        assert_eq!(text_node0.to_html(), "0".to_html());
-        assert_eq!(text_node1a.to_html(), "1a".to_html());
-        assert_eq!(text_node1b.to_html(), "1b".to_html());
-        assert_eq!(text_node1c.to_html(), "1c".to_html());
-        assert_eq!(text_node2.to_html(), "2".to_html());
+        assert_eq!(text_node0.to_html(), utf16("0"));
+        assert_eq!(text_node1a.to_html(), utf16("1a"));
+        assert_eq!(text_node1b.to_html(), utf16("1b"));
+        assert_eq!(text_node1c.to_html(), utf16("1c"));
+        assert_eq!(text_node2.to_html(), utf16("2"));
 
         assert_eq!(text_node0.handle().raw(), &[4, 5, 4, 0]);
 
@@ -298,9 +334,9 @@ mod test {
 
     fn container_with_handle<'a>(
         raw_handle: impl IntoIterator<Item = &'a usize>,
-    ) -> ContainerNode<u16> {
+    ) -> ContainerNode<Utf16String> {
         let mut node = ContainerNode::new(
-            "div".to_html(),
+            Utf16String::from_str("div"),
             ContainerNodeKind::Generic,
             None,
             Vec::new(),
@@ -311,7 +347,10 @@ mod test {
         node
     }
 
-    fn text_node(content: &str) -> DomNode<u16> {
-        DomNode::Text(TextNode::from(content.to_html()))
+    fn text_node<S>(content: &str) -> DomNode<S>
+    where
+        S: UnicodeString,
+    {
+        DomNode::Text(TextNode::from(S::from_str(content)))
     }
 }

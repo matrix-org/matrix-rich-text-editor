@@ -1,12 +1,14 @@
 use std::sync::{Arc, Mutex};
 
+use widestring::Utf16String;
+
 use crate::ffi_action_response::ActionResponse;
 use crate::ffi_composer_state::ComposerState;
 use crate::ffi_composer_update::ComposerUpdate;
 use crate::ffi_format_type::InlineFormatType;
 
 pub struct ComposerModel {
-    inner: Mutex<wysiwyg::ComposerModel<u16>>,
+    inner: Mutex<wysiwyg::ComposerModel<Utf16String>>,
 }
 
 impl ComposerModel {
@@ -39,7 +41,7 @@ impl ComposerModel {
             self.inner
                 .lock()
                 .unwrap()
-                .replace_text(&new_text.encode_utf16().collect::<Vec<_>>()),
+                .replace_text(Utf16String::from_str(&new_text)),
         ))
     }
 
@@ -53,7 +55,7 @@ impl ComposerModel {
         let end = usize::try_from(end).unwrap();
         Arc::new(ComposerUpdate::from(
             self.inner.lock().unwrap().replace_text_in(
-                &new_text.encode_utf16().collect::<Vec<_>>(),
+                Utf16String::from_str(&new_text),
                 start,
                 end,
             ),
@@ -127,7 +129,7 @@ impl ComposerModel {
     }
 
     pub fn set_link(self: &Arc<Self>, link: String) -> Arc<ComposerUpdate> {
-        let link = link.encode_utf16().collect();
+        let link = Utf16String::from_str(&link);
         Arc::new(ComposerUpdate::from(
             self.inner.lock().unwrap().set_link(link),
         ))
