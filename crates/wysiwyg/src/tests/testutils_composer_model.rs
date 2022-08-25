@@ -50,8 +50,8 @@
 
 use crate::dom::nodes::{DomNode, TextNode};
 use crate::dom::parser::parse;
-use crate::dom::range::DomLocation;
-use crate::dom::{Range, SameNodeRange};
+
+use crate::dom::{Dom, DomLocation, MultipleNodesRange, Range, SameNodeRange};
 use crate::{ComposerModel, ComposerState, Location, ToHtml};
 
 #[test]
@@ -187,64 +187,182 @@ pub fn tx(model: &ComposerModel<u16>) -> String {
         text_node.set_data(new_data.to_html());
     }
 
-    fn update_text_nodes_start_with_selection(
-        start_text_node: &mut TextNode<u16>,
-        start_location: &DomLocation,
-        is_reversed: bool,
+    fn update_text_node(
+        node: &mut TextNode<u16>,
+        offset: usize,
+        s: &'static str,
     ) {
-        let start = start_location.start_offset;
-        let data = start_text_node.data();
-        let mut new_start_data = utf8(&data[..start]);
-        add_selection_start(&mut new_start_data, is_reversed);
-        new_start_data += &utf8(&data[start..]);
-        start_text_node.set_data(new_start_data.to_html());
+        let data = node.data();
+        let mut new_start_data = utf8(&data[..offset]);
+        new_start_data.push_str(s);
+        new_start_data += &utf8(&data[offset..]);
+        node.set_data(new_start_data.to_html());
     }
 
-    fn update_text_nodes_end_with_selection(
-        end_text_node: &mut TextNode<u16>,
-        end_location: &DomLocation,
-        is_reversed: bool,
-    ) {
-        let end = end_location.end_offset;
-        let data = end_text_node.data();
-        let mut new_end_data = utf8(&data[..end]);
-        add_selection_end(&mut new_end_data, is_reversed);
-        new_end_data += &utf8(&data[end..]);
-        end_text_node.set_data(new_end_data.to_html());
+    struct SelectionWritingState {
+        // Counts how far through the whole document we have got (code units)
+        current_pos: usize,
+
+        // Have we written out the "{" or "|{" yet?
+        done_first: bool,
+
+        // Have we written out the "}" or "}|" yet?
+        done_last: bool,
+
+        // The location of the leftmost part of the selection (code_units)
+        first: usize,
+
+        // The location of the rightmost part of the selection (code_units)
+        last: usize,
+
+        // Does the selection start at the right and end at the left?
+        reversed: bool,
     }
 
-    fn add_selection_start(new_data: &mut String, is_reversed: bool) {
-        if is_reversed {
-            new_data.push('}');
-        } else {
-            new_data.push('{');
+    impl SelectionWritingState {
+        fn new(start: usize, end: usize) -> Self {
+            let reversed = start > end;
+
+            let (first, last): (usize, usize) = if start > end {
+                (end, start)
+            } else {
+                (start, end)
+            };
+
+            Self {
+                current_pos: 0,
+                done_first: false,
+                done_last: false,
+                first,
+                last,
+                reversed,
+            }
+        }
+
+        /// Move forward code_units, and return what markers we should add
+        /// to the current node.
+        ///
+        /// Returns a Vec of (marker, offset) pairs. Each marker should be
+        /// added within its node at the supplied offset.
+        fn advance(
+            &mut self,
+            location: &DomLocation,
+            code_units: usize,
+        ) -> Vec<(&'static str, usize)> {
+            self.current_pos += code_units;
+
+            // If we just passed first or last, write out { or {
+            let do_first = !self.done_first && self.first < self.current_pos;
+            let do_last = !self.done_last && self.last < self.current_pos;
+
+            // Remember that we have passed them, so we don't repeat
+            self.done_first = self.done_first || do_first;
+            self.done_last = self.done_last || do_last;
+
+            let mut ret = Vec::new();
+
+            // Add the markers we want to write
+            if do_first {
+                ret.push((
+                    self.first_marker(),
+                    if self.reversed {
+                        location.end_offset
+                    } else {
+                        location.start_offset
+                    },
+                ));
+            };
+
+            if do_last {
+                ret.push((
+                    self.last_marker(),
+                    if self.reversed {
+                        location.start_offset
+                    } else {
+                        location.end_offset
+                    },
+                ));
+            };
+
+            // Return a list of markers to write and their locations
+            ret
+        }
+
+        /// Return the marker to insert into the leftmost edge of the selection
+        fn first_marker(&self) -> &'static str {
+            if self.reversed {
+                "|{"
+            } else {
+                "{"
+            }
+        }
+
+        /// Return the marker to insert into the rightmost edge of the selection
+        fn last_marker(&self) -> &'static str {
+            if self.reversed {
+                "}"
+            } else {
+                "}|"
+            }
+        }
+
+        /// Return any remaining stuff that needs to be added when we
+        /// have reached the end of the string.
+        /// This will be "" if we've already written the relevant markers,
+        /// or "}" or "}|" if not.
+        fn trailing_marker(&self) -> &'static str {
+            if self.done_last {
+                ""
+            } else {
+                self.last_marker()
+            }
         }
     }
 
-    fn add_selection_end(new_data: &mut String, is_reversed: bool) {
-        if is_reversed {
-            new_data.push_str("|{");
-        } else {
-            new_data.push_str("}|");
+    /// Insert {, } and | to mark the start and end of a range
+    /// start is the absolute position of the start of the range
+    /// end is the absolute position of the end of the range
+    fn write_selection_multi(
+        dom: &mut Dom<u16>,
+        range: MultipleNodesRange,
+        start: usize,
+        end: usize,
+    ) -> &'static str {
+        let mut state = SelectionWritingState::new(start, end);
+
+        for location in range.locations {
+            let mut node = dom.lookup_node_mut(location.node_handle.clone());
+            match &mut node {
+                DomNode::Container(_) => {}
+                DomNode::Text(n) => {
+                    let strings_to_add =
+                        state.advance(&location, n.data().len());
+                    for (s, offset) in strings_to_add {
+                        update_text_node(n, offset, s);
+                    }
+                }
+            }
         }
+
+        // Since we are in a multi-node selection, we should always write {
+        assert!(state.done_first);
+
+        // If the cursor is off the end, done_last will be false - we need
+        // to add a cursor at the very end. We could do that in here by
+        // finding the last text node and appending, but it's easier to
+        // ask the surrounding code to append it to the final string.
+        state.trailing_marker()
     }
 
     // Clone the model because we will modify it to add selection markers
     let state = model.state.clone();
     let mut dom = state.dom;
 
+    // Find out which nodes are involved in the selection
     let range = dom.find_range(state.start.into(), state.end.into());
-    let is_reversed = state.start > state.end;
 
-    let (first, last): (usize, usize) = if state.start > state.end {
-        (state.end.into(), state.start.into())
-    } else {
-        (state.start.into(), state.end.into())
-    };
-
-    let mut done_last = false;
-
-    match range {
+    // Modify the text nodes to a {, } and |
+    let append_text = match range {
         Range::SameNode(range) => {
             let mut node = dom.lookup_node_mut(range.node_handle.clone());
             match &mut node {
@@ -253,70 +371,20 @@ pub fn tx(model: &ComposerModel<u16>) -> String {
                 }
                 DomNode::Text(n) => update_text_node_with_cursor(n, &range),
             };
-            done_last = true;
+            "" // We know we've written the } here - no need to append anything
         }
         Range::NoNode => panic!("No node!"),
-        Range::MultipleNodes(range) => {
-            let mut i = 0;
-            let mut done_first = false;
-            for loc in range.locations {
-                let mut node = dom.lookup_node_mut(loc.node_handle.clone());
-                match &mut node {
-                    DomNode::Container(_) => {}
-                    DomNode::Text(n) => {
-                        i += n.data().len();
-                        let mut do_start = false;
-                        let mut do_end = false;
-                        if first < i && !done_first {
-                            if is_reversed {
-                                do_end = true;
-                            } else {
-                                do_start = true;
-                            }
-                            done_first = true;
-                        }
-                        if last < i && !done_last {
-                            if is_reversed {
-                                do_start = true;
-                            } else {
-                                do_end = true;
-                            }
-                            done_last = true;
-                        }
+        Range::MultipleNodes(range) => write_selection_multi(
+            &mut dom,
+            range,
+            state.start.into(),
+            state.end.into(),
+        ),
+    };
 
-                        if do_start {
-                            update_text_nodes_start_with_selection(
-                                n,
-                                &loc,
-                                is_reversed,
-                            );
-                        }
-                        if do_end {
-                            update_text_nodes_end_with_selection(
-                                n,
-                                &loc,
-                                is_reversed,
-                            );
-                        }
-                    }
-                }
-            }
-
-            assert!(done_first);
-        }
-    }
-
-    let mut ret = dom.to_string();
-
-    if !done_last {
-        if is_reversed {
-            ret += "}";
-        } else {
-            ret += "}|";
-        }
-    }
-
-    ret
+    // Return the dom as HTML, and add the extra text on the end if needed -
+    // this will be "" or "}" or "}|".
+    dom.to_string() + append_text
 }
 
 fn utf8(utf16: &[u16]) -> String {
