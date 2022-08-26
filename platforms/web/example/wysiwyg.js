@@ -115,10 +115,11 @@ function button_undo_click(e) {
 
 function selectionchange() {
     const s = document.getSelection();
-    // TODO: check that the selection is happening within the editor!
-    // TODO: any node within editor is relevant, not just editor itself.
-    // TODO: if anchor or focus are outside editor but not both, we should
-    //       change the selection, cutting off at the edge.
+    // We should check that the selection is happening within the editor!
+    // If anchor or focus are outside editor but not both, we should
+    // change the selection, cutting off at the edge.
+    // This should be done when we convert to React
+    // Internal task for changing to React: PSU-721
     const start = codeunit_count(editor, s.anchorNode, s.anchorOffset);
     const end = codeunit_count(editor, s.focusNode, s.focusOffset);
 
