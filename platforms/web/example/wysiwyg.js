@@ -302,7 +302,9 @@ function process_input(e) {
             console.debug(`composer_model.replace_text(${e.data})`);
             return composer_model.replace_text(e.data);
         default:
-            // TODO: cover all of https://rawgit.com/w3c/input-events/v1/index.html#interface-InputEvent-Attributes
+            // We should cover all of
+            // https://rawgit.com/w3c/input-events/v1/index.html#interface-InputEvent-Attributes
+            // Internal task to make sure we cover all inputs: PSU-740
             console.error(`Unknown input type: ${e.inputType}`);
             console.error(e);
             return null;
