@@ -81,7 +81,7 @@ fn typing_a_character_after_a_multi_codepoint_character() {
 }
 
 #[test]
-fn typing_a_character_in_a_range_inserts_it() {
+fn replacing_an_explicit_text_range_works() {
     let mut model = cm("0123456789|");
     let new_text = utf16("654");
     model.replace_text_in(new_text, 4, 7);
@@ -100,6 +100,13 @@ fn typing_a_character_when_spanning_two_tags_extends_the_first_tag() {
     let mut model = cm("before<b>bo{ld</b>aft}|er");
     replace_text(&mut model, "Z");
     assert_eq!(tx(&model), "before<b>boZ|</b>er");
+}
+
+#[test]
+fn replacing_an_explicit_range_when_spanning_two_tags_extends_the_first_tag() {
+    let mut model = cm("|before<b>bold</b>after");
+    model.replace_text_in(utf16("XYZ"), 8, 13);
+    assert_eq!(tx(&model), "before<b>boXYZ|</b>er");
 }
 
 #[test]
