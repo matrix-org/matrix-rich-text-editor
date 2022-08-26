@@ -16,7 +16,7 @@
 
 use crate::tests::testutils_composer_model::{cm, tx};
 
-use crate::{InlineFormatType, Location, ToRawText};
+use crate::{InlineFormatType, Location};
 
 #[test]
 fn selecting_and_bolding_multiple_times() {
@@ -29,7 +29,6 @@ fn selecting_and_bolding_multiple_times() {
         &model.state.dom.to_string(),
         "<strong>aa</strong>bb<strong>cc</strong>"
     );
-    assert_eq!(&model.state.dom.to_raw_text(), "aabbcc");
 }
 
 #[test]

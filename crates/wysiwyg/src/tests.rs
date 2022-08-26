@@ -18,6 +18,7 @@ pub mod test_formatting;
 pub mod test_links;
 pub mod test_lists;
 pub mod test_selection;
+pub mod test_to_raw_text;
 pub mod test_undo_redo;
 pub mod testutils_composer_model;
 pub mod testutils_conversion;
