@@ -43,18 +43,15 @@ where
         }
     }
 
-    /**
-     * Cursor is at end.
-     */
+    /// Select the text at the supplied code unit positions.
+    /// The cursor is at end.
     pub fn select(&mut self, start: Location, end: Location) {
         self.state.start = start;
         self.state.end = end;
     }
 
-    /**
-     * Return the start and end of the selection, ensuring the first number
-     * returned is <= the second, and they are both 0<=n<=html.len().
-     */
+    /// Return the start and end of the selection, ensuring the first number
+    /// returned is <= the second, and they are both 0<=n<=html.len().
     fn safe_selection(&self) -> (usize, usize) {
         // TODO: Does not work with tags, and will probably be obselete when
         // we can look for ranges properly.
@@ -71,18 +68,15 @@ where
         }
     }
 
-    /**
-     * Replaces text in the current selection with new_text.
-     */
+    /// Replaces text in the current selection with new_text.
+    /// Treats its input as plain text, so any HTML code will show up in
+    /// the document (i.e. it will be escaped).
     pub fn replace_text(&mut self, new_text: S) -> ComposerUpdate<S> {
-        // TODO: escape any HTML?
         let (s, e) = self.safe_selection();
         self.replace_text_in(new_text, s, e)
     }
 
-    /**
-     * Replaces text in the an arbitrary start..end range with new_text.
-     */
+    /// Replaces text in the an arbitrary start..end range with new_text.
     pub fn replace_text_in(
         &mut self,
         new_text: S,
@@ -136,17 +130,13 @@ where
         self.replace_text(S::new())
     }
 
-    /**
-     * Deletes text in an arbitrary start..end range.
-     */
+    /// Deletes text in an arbitrary start..end range.
     pub fn delete_in(&mut self, start: usize, end: usize) -> ComposerUpdate<S> {
         self.state.end = Location::from(start);
         self.replace_text_in(S::new(), start, end)
     }
 
-    /**
-     * Deletes the character after the current cursor position.
-     */
+    /// Deletes the character after the current cursor position.
     pub fn delete(&mut self) -> ComposerUpdate<S> {
         if self.state.start == self.state.end {
             // Go forward 1 from the current location
