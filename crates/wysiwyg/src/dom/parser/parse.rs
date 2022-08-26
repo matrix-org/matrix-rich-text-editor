@@ -115,19 +115,19 @@ where
         match tag {
             "b" | "code" | "del" | "em" | "i" | "strong" | "u" => {
                 node.append(new_formatting(tag));
-                convert_children(padom, child, node.children_mut().last_mut());
+                convert_children(padom, child, node.last_child_mut());
             }
             "ol" | "ul" => {
                 node.append(new_list(tag));
-                convert_children(padom, child, node.children_mut().last_mut());
+                convert_children(padom, child, node.last_child_mut());
             }
             "li" => {
                 node.append(new_list_item(tag));
-                convert_children(padom, child, node.children_mut().last_mut());
+                convert_children(padom, child, node.last_child_mut());
             }
             "a" => {
                 node.append(new_link(child));
-                convert_children(padom, child, node.children_mut().last_mut());
+                convert_children(padom, child, node.last_child_mut());
             }
             "html" => {
                 // Skip the html tag - add its children to the

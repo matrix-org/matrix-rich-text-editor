@@ -68,10 +68,6 @@ where
         self.document().children()
     }
 
-    pub fn children_mut(&mut self) -> &mut Vec<DomNode<S>> {
-        self.document_mut().children_mut()
-    }
-
     pub fn append(&mut self, child: DomNode<S>) {
         self.document_mut().append(child)
     }
@@ -172,7 +168,7 @@ where
         where
             S: UnicodeString,
         {
-            element.children_mut().get_mut(idx).expect(
+            element.get_child_mut(idx).expect(
                 "Handle is invalid: it refers to a child index which is too \
                 large for the number of children in this node.",
             )

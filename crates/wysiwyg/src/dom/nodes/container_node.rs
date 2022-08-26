@@ -135,6 +135,14 @@ where
         }
     }
 
+    pub fn get_child_mut(&mut self, idx: usize) -> Option<&mut DomNode<S>> {
+        self.children.get_mut(idx)
+    }
+
+    pub fn last_child_mut(&mut self) -> Option<&mut DomNode<S>> {
+        self.children.last_mut()
+    }
+
     pub fn handle(&self) -> DomHandle {
         self.handle.clone()
     }
@@ -156,12 +164,6 @@ where
 
     pub fn children(&self) -> &Vec<DomNode<S>> {
         &self.children
-    }
-
-    pub fn children_mut(&mut self) -> &mut Vec<DomNode<S>> {
-        // TODO: replace with soemthing like get_child_mut - we want to avoid
-        // anyone pushing onto this, because the handles will be unset
-        &mut self.children
     }
 
     pub fn is_list_item(&self) -> bool {
