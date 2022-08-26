@@ -16,9 +16,9 @@ use crate::dom::nodes::{DomNode, TextNode};
 use crate::dom::parser::parse;
 use crate::dom::UnicodeString;
 use crate::dom::{DomHandle, MultipleNodesRange, Range, SameNodeRange, ToHtml};
-use crate::NodeJoiner;
 use crate::{
     ActionResponse, ComposerState, ComposerUpdate, InlineFormatType, Location,
+    NodeJoiner,
 };
 
 #[derive(Clone)]
@@ -157,31 +157,6 @@ where
 
     pub fn get_selection(&self) -> (Location, Location) {
         (self.state.start, self.state.end)
-    }
-
-    pub fn format(&mut self, format: InlineFormatType) -> ComposerUpdate<S> {
-        // Store current Dom
-        self.push_state_to_history();
-        let (s, e) = self.safe_selection();
-        let range = self.state.dom.find_range(s, e);
-        match range {
-            Range::SameNode(range) => {
-                self.format_same_node(range, format);
-                // TODO: for now, we replace every time, to check ourselves, but
-                // at least some of the time we should not
-                return self.create_update_replace_all();
-            }
-
-            Range::NoNode => {
-                self.state.dom.append_child(DomNode::new_formatting(
-                    S::from_str(format.tag()),
-                    vec![DomNode::Text(TextNode::from(S::from_str("")))],
-                ));
-                return ComposerUpdate::keep();
-            }
-
-            _ => panic!("Can't format in complex object models yet"),
-        }
     }
 
     pub fn get_html(&self) -> S {
@@ -336,31 +311,6 @@ where
         }
     }
 
-    fn format_same_node(
-        &mut self,
-        range: SameNodeRange,
-        format: InlineFormatType,
-    ) {
-        let node = self.state.dom.lookup_node(range.node_handle.clone());
-        if let DomNode::Text(t) = node {
-            let text = t.data();
-            let before = slice_to(text, ..range.start_offset);
-            let during = slice(text, range.start_offset..range.end_offset);
-            let after = slice_from(text, range.end_offset..);
-            let new_nodes = vec![
-                DomNode::Text(TextNode::from(before)),
-                DomNode::new_formatting(
-                    S::from_str(format.tag()),
-                    vec![DomNode::Text(TextNode::from(during))],
-                ),
-                DomNode::Text(TextNode::from(after)),
-            ];
-            self.state.dom.replace(range.node_handle, new_nodes);
-        } else {
-            panic!("Trying to bold a non-text node")
-        }
-    }
-
     pub(crate) fn push_state_to_history(&mut self) {
         // Clear future events as they're no longer valid
         self.next_states.clear();
@@ -478,14 +428,14 @@ where
 
 /// Panics when given start or end not on boundaries of a code point
 /// TODO: don't panic but do something sensible in that case
-fn slice<S>(s: &S, range: std::ops::Range<usize>) -> S
+pub(crate) fn slice<S>(s: &S, range: std::ops::Range<usize>) -> S
 where
     S: UnicodeString,
 {
     S::from_vec(s.as_slice()[range].to_vec()).expect("Invalid slice!")
 }
 
-fn starts_with(subject: &DomHandle, object: &DomHandle) -> bool {
+pub(crate) fn starts_with(subject: &DomHandle, object: &DomHandle) -> bool {
     // Can't start with something longer than you
     if subject.raw().len() < object.raw().len() {
         return false;
@@ -550,10 +500,10 @@ fn adjust_handles_for_delete(
 mod test {
     use widestring::Utf16String;
 
-    use super::*;
+    use crate::dom::DomHandle;
     use crate::tests::testutils_composer_model::cm;
 
-    use crate::dom::DomHandle;
+    use super::*;
 
     // Most tests for ComposerModel are inside the tests/ modules
 

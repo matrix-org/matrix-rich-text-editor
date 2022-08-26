@@ -37,8 +37,11 @@ where
     let result = find_pos(dom, dom.document_handle(), start, end);
     match result {
         FindResult::Found(locations) => {
-            if locations.len() == 1 {
-                let location = locations.first().unwrap();
+            let leaf_locations: Vec<&DomLocation> =
+                locations.iter().filter(|l| l.is_leaf).collect();
+            if leaf_locations.len() == 1 {
+                // TODO: check offsets
+                let location = leaf_locations.first().unwrap().clone();
                 let location = if is_reversed {
                     location.reversed()
                 } else {
@@ -150,17 +153,16 @@ where
     let container_end = *offset;
     let container_node_len = container_end - container_start;
     // We never want to return the root node
-    if !node.handle().is_root()
-        // We want to include the container node only if we traversed through it.
-        // That is, going from at least container_start-1 to container_end
-        // or from at least container_start to container_end+1.
-        && ((start < container_start && container_end <= end)
-        || (start <= container_start && container_end < end))
-    {
+    if !node.handle().is_root() {
+        let start_offset = max(start, container_start) - container_start;
+        let end_offset = min(end, container_end) - container_start;
         results.push(DomLocation {
             node_handle: node.handle(),
-            start_offset: 0,
-            end_offset: container_node_len,
+            position: container_start,
+            start_offset,
+            end_offset,
+            length: container_node_len,
+            is_leaf: false,
         })
     }
     results
@@ -201,8 +203,11 @@ where
 
         Some(DomLocation {
             node_handle: node.handle(),
+            position: node_start,
             start_offset,
             end_offset,
+            length: node_len,
+            is_leaf: true,
         })
     }
 }
@@ -221,13 +226,18 @@ mod test {
 
     fn found_single_node(
         handle: DomHandle,
+        position: usize,
         start_offset: usize,
         end_offset: usize,
+        length: usize,
     ) -> FindResult {
         FindResult::Found(vec![DomLocation {
             node_handle: handle,
+            position,
             start_offset,
             end_offset,
+            length,
+            is_leaf: true,
         }])
     }
 
@@ -258,7 +268,7 @@ mod test {
         let d = dom(&[tn("foo")]);
         assert_eq!(
             find_pos(&d, d.document_handle(), 1, 1),
-            found_single_node(DomHandle::from_raw(vec![0]), 1, 1,)
+            found_single_node(DomHandle::from_raw(vec![0]), 0, 1, 1, 3)
         );
     }
 
@@ -267,44 +277,44 @@ mod test {
         let d = dom(&[tn("foo"), tn("bar")]);
         assert_eq!(
             find_pos(&d, d.document_handle(), 0, 0),
-            found_single_node(DomHandle::from_raw(vec![0]), 0, 0,)
+            found_single_node(DomHandle::from_raw(vec![0]), 0, 0, 0, 3)
         );
         assert_eq!(
             find_pos(&d, d.document_handle(), 1, 1),
-            found_single_node(DomHandle::from_raw(vec![0]), 1, 1,)
+            found_single_node(DomHandle::from_raw(vec![0]), 0, 1, 1, 3)
         );
         assert_eq!(
             find_pos(&d, d.document_handle(), 2, 2),
-            found_single_node(DomHandle::from_raw(vec![0]), 2, 2,)
+            found_single_node(DomHandle::from_raw(vec![0]), 0, 2, 2, 3)
         );
         assert_eq!(
             find_pos(&d, d.document_handle(), 3, 3),
-            found_single_node(DomHandle::from_raw(vec![0]), 3, 3,)
+            found_single_node(DomHandle::from_raw(vec![0]), 0, 3, 3, 3)
         );
         assert_eq!(
             find_pos(&d, d.document_handle(), 3, 4),
-            found_single_node(DomHandle::from_raw(vec![1]), 0, 1,)
+            found_single_node(DomHandle::from_raw(vec![1]), 3, 0, 1, 3)
         );
         // TODO: break up this test and name parts!
         assert_eq!(
             find_pos(&d, d.document_handle(), 4, 4),
-            found_single_node(DomHandle::from_raw(vec![1]), 1, 1,)
+            found_single_node(DomHandle::from_raw(vec![1]), 3, 1, 1, 3)
         );
         assert_eq!(
             find_pos(&d, d.document_handle(), 4, 4),
-            found_single_node(DomHandle::from_raw(vec![1]), 1, 1,)
+            found_single_node(DomHandle::from_raw(vec![1]), 3, 1, 1, 3)
         );
         assert_eq!(
             find_pos(&d, d.document_handle(), 5, 5),
-            found_single_node(DomHandle::from_raw(vec![1]), 2, 2,)
+            found_single_node(DomHandle::from_raw(vec![1]), 3, 2, 2, 3)
         );
         assert_eq!(
             find_pos(&d, d.document_handle(), 5, 5),
-            found_single_node(DomHandle::from_raw(vec![1]), 2, 2,)
+            found_single_node(DomHandle::from_raw(vec![1]), 3, 2, 2, 3)
         );
         assert_eq!(
             find_pos(&d, d.document_handle(), 6, 6),
-            found_single_node(DomHandle::from_raw(vec![1]), 3, 3,)
+            found_single_node(DomHandle::from_raw(vec![1]), 3, 3, 3, 3)
         );
     }
 
@@ -444,11 +454,12 @@ mod test {
         let range = d.find_range(8, 11);
         if let Range::MultipleNodes(r) = range {
             // 2 text nodes + italic node
-            assert_eq!(3, r.locations.len());
+            assert_eq!(4, r.locations.len());
             let html_of_ranges = ranges_to_html(&d, &r);
             assert_eq!(utf16("a "), html_of_ranges[0]);
             assert_eq!(utf16("<i>a </i>"), html_of_ranges[1]);
-            assert_eq!(utf16("new feature"), html_of_ranges[2]);
+            assert_eq!(utf16("<b>ing <i>a </i></b>"), html_of_ranges[2]);
+            assert_eq!(utf16("new feature"), html_of_ranges[3]);
         } else {
             panic!("Should have been a MultipleNodesRange {:?}", range);
         }

@@ -43,29 +43,62 @@ pub struct SameNodeRange {
 #[derive(Clone, Debug, PartialEq)]
 pub struct DomLocation {
     pub node_handle: DomHandle,
+    pub position: usize,
     pub start_offset: usize,
     pub end_offset: usize,
+    pub length: usize,
+    pub is_leaf: bool,
 }
 
 impl DomLocation {
     pub fn new(
         node_handle: DomHandle,
+        position: usize,
         start_offset: usize,
         end_offset: usize,
+        length: usize,
+        is_leaf: bool,
     ) -> Self {
         Self {
             node_handle,
+            position,
             start_offset,
             end_offset,
+            length,
+            is_leaf,
         }
     }
 
+    /// Calculated index in the Dom based on the [position] and [start_offset] values.
+    pub fn index_in_dom(&self) -> usize {
+        self.position + self.start_offset
+    }
+
+    /// Create a copy of this Location, but with start and end offsets reversed
     pub fn reversed(&self) -> Self {
         Self {
             node_handle: self.node_handle.clone(),
+            position: self.position,
             start_offset: self.end_offset,
             end_offset: self.start_offset,
+            length: self.length,
+            is_leaf: self.is_leaf,
         }
+    }
+
+    /// Whether the selection starts at this location or not
+    pub fn is_start(&self) -> bool {
+        self.end_offset == self.length
+    }
+
+    /// Whether the selection ends at this location or not
+    pub fn is_end(&self) -> bool {
+        self.start_offset == 0
+    }
+
+    /// Whether the selection completely covers this location
+    pub fn is_covered(&self) -> bool {
+        self.is_start() && self.is_end()
     }
 }
 

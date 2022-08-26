@@ -71,4 +71,18 @@ impl DomHandle {
     pub fn is_root(&self) -> bool {
         self.path.is_empty()
     }
+
+    pub fn next_sibling(&self) -> Self {
+        let index_in_parent = self.index_in_parent();
+        let mut path = self.parent_handle().path;
+        path.push(index_in_parent + 1);
+        Self { path }
+    }
+
+    pub fn prev_sibling(&self) -> Self {
+        let index_in_parent = self.index_in_parent();
+        let mut path = self.parent_handle().path;
+        path.push(index_in_parent - 1);
+        Self { path }
+    }
 }

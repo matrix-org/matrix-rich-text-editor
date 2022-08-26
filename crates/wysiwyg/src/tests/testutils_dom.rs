@@ -36,19 +36,19 @@ pub fn a<'a>(
 pub fn b<'a>(
     children: impl IntoIterator<Item = &'a DomNode<Utf16String>>,
 ) -> DomNode<Utf16String> {
-    DomNode::new_formatting(utf16("b"), clone_children(children))
+    DomNode::new_formatting_from_tag(utf16("b"), clone_children(children))
 }
 
 pub fn i<'a>(
     children: impl IntoIterator<Item = &'a DomNode<Utf16String>>,
 ) -> DomNode<Utf16String> {
-    DomNode::new_formatting(utf16("i"), clone_children(children))
+    DomNode::new_formatting_from_tag(utf16("i"), clone_children(children))
 }
 
 pub fn i_c<'a>(
     children: impl IntoIterator<Item = &'a DomNode<Utf16String>>,
 ) -> DomNode<Utf16String> {
-    DomNode::new_formatting(utf16("code"), clone_children(children))
+    DomNode::new_formatting_from_tag(utf16("code"), clone_children(children))
 }
 
 fn clone_children<'a>(

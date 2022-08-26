@@ -18,6 +18,7 @@ use crate::dom::nodes::dom_node::DomNode;
 use crate::dom::to_html::ToHtml;
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::{HtmlChar, UnicodeString};
+use crate::InlineFormatType;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ContainerNode<S>
@@ -37,7 +38,7 @@ where
     S: UnicodeString,
 {
     Generic, // E.g. the root node (the containing div)
-    Formatting,
+    Formatting(InlineFormatType),
     Link(S),
     List,
     ListItem,
@@ -66,10 +67,28 @@ where
         }
     }
 
-    pub fn new_formatting(format: S, children: Vec<DomNode<S>>) -> Self {
+    pub fn new_formatting_from_tag(
+        format: S,
+        children: Vec<DomNode<S>>,
+    ) -> Self {
         Self {
             name: format.clone(),
-            kind: ContainerNodeKind::Formatting,
+            kind: ContainerNodeKind::Formatting(
+                InlineFormatType::try_from(format).unwrap(),
+            ),
+            attrs: None,
+            children,
+            handle: DomHandle::new_unset(),
+        }
+    }
+
+    pub fn new_formatting(
+        format: InlineFormatType,
+        children: Vec<DomNode<S>>,
+    ) -> Self {
+        Self {
+            name: UnicodeString::from_str(format.tag().clone()),
+            kind: ContainerNodeKind::Formatting(format),
             attrs: None,
             children,
             handle: DomHandle::new_unset(),
@@ -101,20 +120,22 @@ where
 
         let child_index = self.children.len();
         let child_handle = self.handle.child_handle(child_index);
-        child.set_handle(child_handle);
+        child.set_handle(child_handle.clone());
         self.children.push(child);
     }
 
-    pub fn remove_child(&mut self, index: usize) {
+    pub fn remove_child(&mut self, index: usize) -> DomNode<S> {
         assert!(self.handle.is_set());
         assert!(index < self.children().len());
 
-        self.children.remove(index);
+        let ret = self.children.remove(index);
 
         for child_index in index..self.children.len() {
             let new_handle = self.handle.child_handle(child_index);
             self.children[child_index].set_handle(new_handle);
         }
+
+        ret
     }
 
     pub fn replace_child(&mut self, index: usize, nodes: Vec<DomNode<S>>) {
@@ -142,6 +163,18 @@ where
 
     pub fn last_child_mut(&mut self) -> Option<&mut DomNode<S>> {
         self.children.last_mut()
+    }
+
+    pub fn insert_child(&mut self, index: usize, node: DomNode<S>) {
+        assert!(self.handle.is_set());
+        assert!(index <= self.children().len());
+
+        self.children.insert(index, node);
+
+        for i in index..self.children.len() {
+            let new_handle = self.handle.child_handle(i);
+            self.children[i].set_handle(new_handle);
+        }
     }
 
     pub fn handle(&self) -> DomHandle {
@@ -180,7 +213,7 @@ where
 
     pub(crate) fn is_structure_node(&self) -> bool {
         match self.kind {
-            ContainerNodeKind::List(_) | ContainerNodeKind::ListItem() => true,
+            ContainerNodeKind::List | ContainerNodeKind::ListItem => true,
             _ => false,
         }
     }
@@ -213,6 +246,58 @@ where
                 return raw_text == "" || raw_text == "\u{200B}";
             }
             _ => false,
+        }
+    }
+
+    pub fn is_same_kind(&self, other: &ContainerNode<S>) -> bool {
+        match (&self.kind, &other.kind) {
+            (ContainerNodeKind::Generic, ContainerNodeKind::Generic) => true,
+            (ContainerNodeKind::Link(_), ContainerNodeKind::Link(_)) => true,
+            // Maybe this should be re-checked
+            (
+                ContainerNodeKind::Formatting(a),
+                ContainerNodeKind::Formatting(b),
+            ) => a == b,
+            // TODO: Should be re-done to distinguish ul and ol
+            (ContainerNodeKind::List, ContainerNodeKind::List) => true,
+            (ContainerNodeKind::ListItem, ContainerNodeKind::ListItem) => true,
+            _ => false,
+        }
+    }
+
+    pub fn merge_children(&mut self, from_index: usize, into_index: usize) {
+        assert!(into_index < self.children.len());
+        assert!(from_index < self.children.len());
+        let from_node = self.children.get(from_index).unwrap().clone();
+        let into_node = self.children.get_mut(into_index).unwrap();
+        match (into_node, from_node) {
+            (DomNode::Container(into_node), DomNode::Container(from_node)) => {
+                if !into_node.is_same_kind(&from_node) {
+                    return;
+                }
+                for c in from_node.children() {
+                    into_node.append_child(c.clone());
+                }
+                self.remove_child(from_index);
+            }
+            (DomNode::Text(into_node), DomNode::Text(from_node)) => {
+                let mut new_data = into_node.data().clone();
+                let from_data = from_node.data();
+                new_data.push_string(from_data);
+                into_node.set_data(new_data.clone());
+                self.remove_child(from_index);
+            }
+            _ => {}
+        };
+    }
+
+    pub fn duplicate(&self) -> Self {
+        Self {
+            name: self.name.clone(),
+            kind: self.kind.clone(),
+            attrs: self.attrs.clone(),
+            children: vec![],
+            handle: DomHandle::new_unset(),
         }
     }
 }
