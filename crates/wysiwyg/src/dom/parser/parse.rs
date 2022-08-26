@@ -114,19 +114,19 @@ where
         let tag = child.name.local.as_ref();
         match tag {
             "b" | "code" | "del" | "em" | "i" | "strong" | "u" => {
-                node.append(new_formatting(tag));
+                node.append_child(new_formatting(tag));
                 convert_children(padom, child, node.last_child_mut());
             }
             "ol" | "ul" => {
-                node.append(new_list(tag));
+                node.append_child(new_list(tag));
                 convert_children(padom, child, node.last_child_mut());
             }
             "li" => {
-                node.append(new_list_item(tag));
+                node.append_child(new_list_item(tag));
                 convert_children(padom, child, node.last_child_mut());
             }
             "a" => {
-                node.append(new_link(child));
+                node.append_child(new_link(child));
                 convert_children(padom, child, node.last_child_mut());
             }
             "html" => {
@@ -159,9 +159,9 @@ where
                     panic!("Found a document inside a document!")
                 }
                 PaDomNode::Text(text) => {
-                    node.append(DomNode::Text(TextNode::from(S::from_str(
-                        &text.content,
-                    ))));
+                    node.append_child(DomNode::Text(TextNode::from(
+                        S::from_str(&text.content),
+                    )));
                 }
             }
         }

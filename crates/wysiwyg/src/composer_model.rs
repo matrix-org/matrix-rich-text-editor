@@ -112,7 +112,7 @@ where
             Range::NoNode => {
                 self.state
                     .dom
-                    .append(DomNode::Text(TextNode::from(new_text)));
+                    .append_child(DomNode::Text(TextNode::from(new_text)));
 
                 start = 0;
             }
@@ -183,7 +183,7 @@ where
             }
 
             Range::NoNode => {
-                self.state.dom.append(DomNode::new_formatting(
+                self.state.dom.append_child(DomNode::new_formatting(
                     S::from_str(format.tag()),
                     vec![DomNode::Text(TextNode::from(S::from_str("")))],
                 ));
@@ -266,7 +266,7 @@ where
             }
 
             Range::NoNode => {
-                self.state.dom.append(DomNode::new_list(
+                self.state.dom.append_child(DomNode::new_list(
                     S::from_str(list_tag),
                     vec![DomNode::Container(ContainerNode::new_list_item(
                         S::from_str("li"),
@@ -374,7 +374,7 @@ where
                     self.state.dom.lookup_node_mut(parent_handle.clone());
                 match &mut parent {
                     DomNode::Container(parent) => {
-                        parent.remove(*child_index);
+                        parent.remove_child(*child_index);
                         adjust_handles_for_delete(&mut new_to_delete, &handle);
                         if parent.children().is_empty() {
                             new_to_delete.push(parent_handle);
@@ -528,7 +528,7 @@ where
     fn add_list_item(&mut self, handle: DomHandle, location: usize) {
         let list_node = self.state.dom.lookup_node_mut(handle);
         if let DomNode::Container(list) = list_node {
-            list.append(DomNode::new_list_item(
+            list.append_child(DomNode::new_list_item(
                 S::from_str("li"),
                 vec![DomNode::Text(TextNode::from(S::from_str("\u{200B}")))],
             ));
@@ -551,9 +551,9 @@ where
                 let parent_handle = handle.parent_handle();
                 let parent_node = self.state.dom.lookup_node_mut(parent_handle);
                 if let DomNode::Container(parent) = parent_node {
-                    parent.remove(handle.index_in_parent());
+                    parent.remove_child(handle.index_in_parent());
                     if parent.children().len() == 0 {
-                        parent.append(DomNode::Text(TextNode::from(
+                        parent.append_child(DomNode::Text(TextNode::from(
                             S::from_str(""),
                         )));
                     }
@@ -564,14 +564,14 @@ where
                     panic!("List has no parent container")
                 }
             } else {
-                list.remove(list_item_index);
+                list.remove_child(list_item_index);
                 let parent_handle = handle.parent_handle();
                 let parent_node = self.state.dom.lookup_node_mut(parent_handle);
                 if let DomNode::Container(parent) = parent_node {
                     // TODO: should probably append a paragraph instead
-                    parent.append(DomNode::Text(TextNode::from(S::from_str(
-                        "\u{200B}",
-                    ))));
+                    parent.append_child(DomNode::Text(TextNode::from(
+                        S::from_str("\u{200B}"),
+                    )));
                     self.state.start = Location::from(location);
                     self.state.end = Location::from(location);
                 } else {
