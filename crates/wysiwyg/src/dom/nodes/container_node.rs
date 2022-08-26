@@ -95,7 +95,7 @@ where
         }
     }
 
-    pub fn append(&mut self, mut child: DomNode<S>) {
+    pub fn append_child(&mut self, mut child: DomNode<S>) {
         assert!(self.handle.is_set());
 
         let child_index = self.children.len();
@@ -104,7 +104,7 @@ where
         self.children.push(child);
     }
 
-    pub fn remove(&mut self, index: usize) {
+    pub fn remove_child(&mut self, index: usize) {
         assert!(self.handle.is_set());
         assert!(index < self.children().len());
 
@@ -251,9 +251,9 @@ mod test {
         let mut node = container_with_handle(&[4, 5, 4]);
 
         // Append some children to a node
-        node.append(text_node("0"));
-        node.append(text_node("1"));
-        node.append(text_node("2"));
+        node.append_child(text_node("0"));
+        node.append_child(text_node("1"));
+        node.append_child(text_node("2"));
 
         let text_node0 = &node.children[0];
         let text_node1 = &node.children[1];
@@ -273,14 +273,14 @@ mod test {
     #[test]
     fn removing_a_child_sets_the_correct_handles_after() {
         let mut node = container_with_handle(&[4, 5, 4]);
-        node.append(text_node("0"));
-        node.append(text_node("1"));
-        node.append(text_node("2"));
-        node.append(text_node("3"));
+        node.append_child(text_node("0"));
+        node.append_child(text_node("1"));
+        node.append_child(text_node("2"));
+        node.append_child(text_node("3"));
 
         // Remove 2 children from a node (reverse order to make indices nice)
-        node.remove(2);
-        node.remove(0);
+        node.remove_child(2);
+        node.remove_child(0);
 
         let text_node1 = &node.children[0];
         let text_node3 = &node.children[1];
@@ -298,9 +298,9 @@ mod test {
     fn replacing_child_updates_the_relevant_handles() {
         let mut node = container_with_handle(&[4, 5, 4]);
 
-        node.append(text_node("0"));
-        node.append(text_node("1"));
-        node.append(text_node("2"));
+        node.append_child(text_node("0"));
+        node.append_child(text_node("1"));
+        node.append_child(text_node("2"));
 
         // Replace the middle child with three new ones
         node.replace_child(

@@ -68,8 +68,8 @@ where
         self.document().children()
     }
 
-    pub fn append(&mut self, child: DomNode<S>) {
-        self.document_mut().append(child)
+    pub fn append_child(&mut self, child: DomNode<S>) {
+        self.document_mut().append_child(child)
     }
 
     pub fn replace(&mut self, node_handle: DomHandle, nodes: Vec<DomNode<S>>) {
