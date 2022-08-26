@@ -52,9 +52,10 @@ impl ComposerModel {
     }
 
     pub fn replace_text(&mut self, new_text: &str) -> ComposerUpdate {
-        // TODO: conversion here to UTF-16, which has presumably just been
-        // converted to UTF-8 in the bindings layer!
+        // Conversion here to UTF-16, which has presumably just been
+        // converted to UTF-8 in the FFI bindings layer.
         // If the performance is a problem, we could fix this.
+        // Internal task to track this: PSU-739
         ComposerUpdate::from(
             self.inner.replace_text(Utf16String::from_str(new_text)),
         )

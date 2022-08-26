@@ -115,10 +115,11 @@ function button_undo_click(e) {
 
 function selectionchange() {
     const s = document.getSelection();
-    // TODO: check that the selection is happening within the editor!
-    // TODO: any node within editor is relevant, not just editor itself.
-    // TODO: if anchor or focus are outside editor but not both, we should
-    //       change the selection, cutting off at the edge.
+    // We should check that the selection is happening within the editor!
+    // If anchor or focus are outside editor but not both, we should
+    // change the selection, cutting off at the edge.
+    // This should be done when we convert to React
+    // Internal task for changing to React: PSU-721
     const start = codeunit_count(editor, s.anchorNode, s.anchorOffset);
     const end = codeunit_count(editor, s.focusNode, s.focusOffset);
 
@@ -301,7 +302,9 @@ function process_input(e) {
             console.debug(`composer_model.replace_text(${e.data})`);
             return composer_model.replace_text(e.data);
         default:
-            // TODO: cover all of https://rawgit.com/w3c/input-events/v1/index.html#interface-InputEvent-Attributes
+            // We should cover all of
+            // https://rawgit.com/w3c/input-events/v1/index.html#interface-InputEvent-Attributes
+            // Internal task to make sure we cover all inputs: PSU-740
             console.error(`Unknown input type: ${e.inputType}`);
             console.error(e);
             return null;
