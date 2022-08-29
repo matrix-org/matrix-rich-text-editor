@@ -149,7 +149,7 @@ where
         // Delete the sibling's container
         let parent_node = dom.lookup_node_mut(parent);
         if let DomNode::Container(parent_node) = parent_node {
-            parent_node.remove(sibling.index_in_parent())
+            parent_node.remove_child(sibling.index_in_parent())
         } else {
             panic!("Parent was not a container!");
         }
