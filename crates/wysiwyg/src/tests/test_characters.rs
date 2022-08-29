@@ -18,7 +18,6 @@ use widestring::Utf16String;
 
 use crate::tests::testutils_composer_model::{cm, tx};
 use crate::tests::testutils_conversion::utf16;
-
 use crate::{ComposerModel, Location};
 
 #[test]
@@ -138,11 +137,10 @@ fn typing_a_character_when_spanning_two_separate_identical_tags_joins_them() {
 }
 
 #[test]
-#[ignore = "TODO Fails because it crashes with an invalid handle"]
 fn typing_a_character_can_join_the_parents_and_grandparents() {
     let mut model = cm("<b>BB<i>II{II</i>BB</b> gap <b>CC<i>JJ}|JJ</i>CC</b>");
     replace_text(&mut model, "_");
-    assert_eq!(tx(&model), "<b>BB<i>II_JJ</i>CC</b>");
+    assert_eq!(tx(&model), "<b>BB<i>II_|JJ</i>CC</b>");
 }
 
 #[test]
@@ -206,7 +204,6 @@ fn replacing_across_list_items_deletes_intervening_ones() {
 }
 
 #[test]
-#[ignore = "TODO Fails because it leaves 2 different lists"]
 fn replacing_across_lists_joins_them() {
     let mut model = cm("<ol>
             <li>1{1</li>
@@ -217,7 +214,12 @@ fn replacing_across_lists_joins_them() {
             <li>4}|4</li>
         </ol>");
     replace_text(&mut model, "Z");
-    assert_eq!(tx(&model), "<ol><li>1Z4</li></ol>");
+    assert_eq!(
+        tx(&model),
+        "<ol>
+            <li>1Z|4</li>
+        </ol>"
+    );
 }
 
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {

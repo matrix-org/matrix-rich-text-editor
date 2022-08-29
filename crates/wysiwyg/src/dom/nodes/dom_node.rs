@@ -71,6 +71,13 @@ where
     pub fn new_link(url: S, children: Vec<DomNode<S>>) -> DomNode<S> {
         DomNode::Container(ContainerNode::new_link(url, children))
     }
+
+    pub fn is_structure_node(&self) -> bool {
+        match self {
+            DomNode::Container(n) => n.is_structure_node(),
+            _ => false,
+        }
+    }
 }
 
 impl<S> ToHtml<S> for DomNode<S>

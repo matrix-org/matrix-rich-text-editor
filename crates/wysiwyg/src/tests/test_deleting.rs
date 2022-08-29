@@ -118,7 +118,6 @@ fn deleting_across_list_items_joins_them() {
 }
 
 #[test]
-#[ignore = "TODO Fails because of an invalid handle"]
 fn deleting_across_lists_joins_them() {
     let mut model = cm("<ol>
             <li>1{1</li>
@@ -129,5 +128,10 @@ fn deleting_across_lists_joins_them() {
             <li>4}|4</li>
         </ol>");
     model.delete();
-    assert_eq!(tx(&model), "<ol><li>14</li></ol>");
+    assert_eq!(
+        tx(&model),
+        "<ol>
+            <li>1|4</li>
+        </ol>"
+    );
 }

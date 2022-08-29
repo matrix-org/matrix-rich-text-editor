@@ -14,7 +14,7 @@
 
 use std::marker::PhantomData;
 
-use crate::dom::nodes::DomNode;
+use crate::dom::nodes::{DomNode, TextNode};
 use crate::dom::{Dom, DomHandle, DomLocation, MultipleNodesRange, Range};
 use crate::UnicodeString;
 
@@ -27,10 +27,8 @@ pub(crate) struct NodeJoiner<S>
 where
     S: UnicodeString,
 {
-    first_type: Option<String>,
-    last_type: Option<String>,
+    start_handle: DomHandle,
 
-    /// This is just to allow us to have the S generic param
     phantom_data: PhantomData<S>,
 }
 
@@ -48,15 +46,11 @@ where
         // that demonstrate that this is not good enough. We need to consider
         // joining nodes all the way up the tree.
 
-        let first_type = Self::first_text_handle(dom, range)
-            .map(|h| Self::parent_container_type(dom, h));
-
-        let last_type = Self::last_text_handle(dom, range)
-            .map(|h| Self::parent_container_type(dom, h));
+        let start_handle = Self::first_text_handle(dom, range)
+            .expect("No start text node found");
 
         Self {
-            first_type,
-            last_type,
+            start_handle,
             phantom_data: PhantomData::default(),
         }
     }
@@ -64,16 +58,193 @@ where
     /// After the selection range we were given in from_range has been deleted,
     /// join any nodes that match up across the selection.
     pub(crate) fn join_nodes(&self, dom: &mut Dom<S>, new_pos: usize) {
-        match (self.first_type.as_ref(), self.last_type.as_ref()) {
-            (Some(first_type), Some(last_type)) => {
-                if first_type == last_type {
-                    // The selection started and ended in the same type of
-                    // node - we should join these 2 tags.
-                    Self::join_nodes_of_same_type(dom, new_pos)
+        // Find next node
+        if let Some(mut next_handle) = Self::find_next_node(dom, new_pos) {
+            // Find struct parents
+            if let (Some(struct_parent_start), Some(struct_parent_next)) =
+                Self::find_struct_parents(dom, &self.start_handle, &next_handle)
+            {
+                if struct_parent_start != struct_parent_next {
+                    // Move children
+                    let new_index = Self::move_children(
+                        dom,
+                        &struct_parent_next,
+                        &struct_parent_start,
+                    );
+
+                    next_handle = struct_parent_start.child_handle(new_index);
                 }
+
+                // Find ancestor lists
+                let ancestors_start =
+                    Self::find_ancestor_list(&self.start_handle);
+                let ancestors_next = Self::find_ancestor_list(&next_handle);
+
+                // Merge nodes based on ancestors
+                Self::do_join(dom, &ancestors_start, &ancestors_next);
             }
-            _ => {}
         }
+    }
+
+    fn do_join(
+        dom: &mut Dom<S>,
+        ancestors_start: &Vec<DomHandle>,
+        ancestors_next: &Vec<DomHandle>,
+    ) {
+        let mut i = 0;
+        let mut j = 0;
+        while i < ancestors_start.len() && j < ancestors_next.len() {
+            let start_handle = ancestors_start.get(i).unwrap();
+            let next_handle = ancestors_next.get(j).unwrap();
+
+            // If both lists contain this ancestor handle, continue to the next comparison.
+            if start_handle == next_handle {
+                i += 1;
+                j += 1;
+                continue;
+            }
+
+            let start_i = dom.lookup_node(start_handle.clone());
+            let next_i = dom.lookup_node(next_handle.clone());
+
+            match (start_i, next_i) {
+                (DomNode::Container(start_i), DomNode::Container(next_i)) => {
+                    if start_i.name() == next_i.name() {
+                        // Both containers with the same tag.
+                        // Move children from next to start node, remove next node.
+                        let new_index_in_parent =
+                            Self::move_children(dom, next_handle, start_handle);
+                        // This alters ancestors, so we need to re-calculate them and start again.
+                        // TODO: maybe move this to another fn?
+                        let mut new_next_path =
+                            start_handle.raw()[..i].to_vec();
+                        new_next_path.push(new_index_in_parent);
+                        let new_next_handle =
+                            DomHandle::from_raw(new_next_path);
+
+                        // Re-calculate ancestors
+                        let new_ancestors_next =
+                            Self::find_ancestor_list(&new_next_handle);
+                        // Restart the process
+                        Self::do_join(
+                            dom,
+                            ancestors_start,
+                            &new_ancestors_next,
+                        );
+                        return;
+                    } else {
+                        // Both containers, but different tags. We're done.
+                        return;
+                    }
+                }
+                (DomNode::Text(start_i), DomNode::Text(next_i)) => {
+                    let mut new_data = start_i.data().clone();
+                    new_data.push_string(&next_i.data());
+                    let text_node = DomNode::Text(TextNode::from(new_data));
+                    if let DomNode::Container(parent) =
+                        dom.lookup_node_mut(start_handle.parent_handle())
+                    {
+                        parent.remove_child(next_handle.index_in_parent());
+                        parent.replace_child(
+                            start_handle.index_in_parent(),
+                            vec![text_node],
+                        );
+                    }
+                    return;
+                }
+                _ => return,
+            }
+        }
+    }
+
+    fn find_next_node(dom: &Dom<S>, pos: usize) -> Option<DomHandle> {
+        let new_range = dom.find_range(pos, pos);
+        if let Range::SameNode(r) = new_range {
+            Some(r.node_handle)
+        } else {
+            None
+        }
+    }
+
+    fn find_struct_parents(
+        dom: &Dom<S>,
+        start: &DomHandle,
+        next: &DomHandle,
+    ) -> (Option<DomHandle>, Option<DomHandle>) {
+        let struct_parent_start = Self::find_struct_parent(dom, start);
+        let struct_parent_next = Self::find_struct_parent(dom, next);
+        (struct_parent_start, struct_parent_next)
+    }
+
+    fn find_struct_parent(
+        dom: &Dom<S>,
+        handle: &DomHandle,
+    ) -> Option<DomHandle> {
+        let parent_handle = handle.parent_handle();
+        let parent = dom.lookup_node(parent_handle.clone());
+        if parent.is_structure_node() && parent_handle.has_parent() {
+            if let Some(parent_result) =
+                Self::find_struct_parent(dom, &parent_handle)
+            {
+                Some(parent_result)
+            } else {
+                Some(parent_handle)
+            }
+        } else if parent_handle.has_parent() {
+            Self::find_struct_parent(dom, &parent_handle)
+        } else {
+            None
+        }
+    }
+
+    fn move_children(
+        dom: &mut Dom<S>,
+        from_handle: &DomHandle,
+        to_handle: &DomHandle,
+    ) -> usize {
+        let ret;
+        let children = if let DomNode::Container(from_node) =
+            dom.lookup_node(from_handle.clone())
+        {
+            from_node.children().clone()
+        } else {
+            panic!("Source node must be a ContainerNode");
+        };
+
+        if let DomNode::Container(to_node) =
+            dom.lookup_node_mut(to_handle.clone())
+        {
+            ret = to_node.children().len();
+            for c in children {
+                to_node.append_child(c)
+            }
+        } else {
+            panic!("Destination node must be a ContainerNode");
+        }
+
+        if let DomNode::Container(parent) =
+            dom.lookup_node_mut(from_handle.parent_handle())
+        {
+            parent.remove_child(from_handle.index_in_parent());
+        } else {
+            panic!("Previous parent of source node must be a ContainerNode");
+        }
+
+        ret
+    }
+
+    fn find_ancestor_list(handle: &DomHandle) -> Vec<DomHandle> {
+        let mut ancestors = Vec::new();
+        let mut cur_handle = handle.clone();
+        while cur_handle.has_parent() {
+            ancestors.push(cur_handle.clone());
+            cur_handle = cur_handle.parent_handle();
+        }
+        // Root node
+        ancestors.push(DomHandle::from_raw(Vec::new()));
+        // Reverse to start from root
+        ancestors.reverse();
+        ancestors
     }
 
     fn join_nodes_of_same_type(dom: &mut Dom<S>, new_pos: usize) {
@@ -135,6 +306,10 @@ where
             // TODO: Sibling is a text node - should probably join to
             // it, but bailing out for now.
         }
+    }
+
+    fn is_container(dom: &Dom<S>, handle: &DomHandle) -> bool {
+        matches!(dom.lookup_node(handle.clone()), DomNode::Container(_))
     }
 
     /// Actually join the nodes: delete the sibling, and append its text onto
