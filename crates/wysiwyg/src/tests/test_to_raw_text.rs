@@ -48,7 +48,7 @@ fn computing_raw_text() {
         "list: abcdef",
     );
     assert_eq!(
-        cm("emptynodes<b><i></i></b>|").state.dom.to_raw_text(),
+        cm("|emptynodes<b><i></i></b>").state.dom.to_raw_text(),
         "emptynodes",
     );
 }
