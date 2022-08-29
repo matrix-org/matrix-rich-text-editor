@@ -137,6 +137,9 @@ where
                         return;
                     }
                 }
+                (DomNode::Container(_), DomNode::Text(_)) => {
+                    i += 1;
+                }
                 (DomNode::Text(start_i), DomNode::Text(next_i)) => {
                     let mut new_data = start_i.data().clone();
                     new_data.push_string(&next_i.data());
