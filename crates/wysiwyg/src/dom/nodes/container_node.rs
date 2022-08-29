@@ -249,18 +249,14 @@ where
         }
     }
 
-    pub fn is_same_kind(&self, other: &ContainerNode<S>) -> bool {
+    pub fn can_merge_with(&self, other: &ContainerNode<S>) -> bool {
         match (&self.kind, &other.kind) {
             (ContainerNodeKind::Generic, ContainerNodeKind::Generic) => true,
-            (ContainerNodeKind::Link(_), ContainerNodeKind::Link(_)) => true,
             // Maybe this should be re-checked
             (
                 ContainerNodeKind::Formatting(a),
                 ContainerNodeKind::Formatting(b),
             ) => a == b,
-            // TODO: Should be re-done to distinguish ul and ol
-            (ContainerNodeKind::List, ContainerNodeKind::List) => true,
-            (ContainerNodeKind::ListItem, ContainerNodeKind::ListItem) => true,
             _ => false,
         }
     }
@@ -272,7 +268,7 @@ where
         let into_node = self.children.get_mut(into_index).unwrap();
         match (into_node, from_node) {
             (DomNode::Container(into_node), DomNode::Container(from_node)) => {
-                if !into_node.is_same_kind(&from_node) {
+                if !into_node.can_merge_with(&from_node) {
                     return;
                 }
                 for c in from_node.children() {
@@ -289,16 +285,6 @@ where
             }
             _ => {}
         };
-    }
-
-    pub fn duplicate(&self) -> Self {
-        Self {
-            name: self.name.clone(),
-            kind: self.kind.clone(),
-            attrs: self.attrs.clone(),
-            children: vec![],
-            handle: DomHandle::new_unset(),
-        }
     }
 }
 

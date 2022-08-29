@@ -17,8 +17,7 @@ use crate::dom::parser::parse;
 use crate::dom::UnicodeString;
 use crate::dom::{DomHandle, MultipleNodesRange, Range, SameNodeRange, ToHtml};
 use crate::{
-    ActionResponse, ComposerState, ComposerUpdate, InlineFormatType, Location,
-    NodeJoiner,
+    ActionResponse, ComposerState, ComposerUpdate, Location, NodeJoiner,
 };
 
 #[derive(Clone)]

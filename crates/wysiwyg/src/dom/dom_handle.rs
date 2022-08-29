@@ -81,6 +81,7 @@ impl DomHandle {
 
     pub fn prev_sibling(&self) -> Self {
         let index_in_parent = self.index_in_parent();
+        assert!(index_in_parent > 0);
         let mut path = self.parent_handle().path;
         path.push(index_in_parent - 1);
         Self { path }

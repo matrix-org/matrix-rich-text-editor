@@ -109,8 +109,7 @@ where
         let cur_handle = DomHandle::from_raw(handle.raw()[..level].to_vec());
         let index_in_parent = cur_handle.index_in_parent();
         if index_in_parent > 0 {
-            let prev_handle =
-                cur_handle.parent_handle().child_handle(index_in_parent - 1);
+            let prev_handle = cur_handle.prev_sibling();
             if let (
                 DomNode::Container(prev_node),
                 DomNode::Container(next_node),

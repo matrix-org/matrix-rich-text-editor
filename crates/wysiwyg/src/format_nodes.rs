@@ -72,14 +72,14 @@ where
     fn check_format_selection_type(
         &self,
         locations: &Vec<DomLocation>,
-        format: InlineFormatType,
+        format: &InlineFormatType,
     ) -> FormatSelectionType {
         // First sweep to understand what the underlying DOM looks like
         let found_format_locations: Vec<&DomLocation> = locations
             .iter()
             .filter(|l| {
                 let node = self.state.dom.lookup_node(l.node_handle.clone());
-                Self::is_format_node(node, format.clone())
+                Self::is_format_node(node, format)
             })
             .collect();
 
@@ -114,7 +114,7 @@ where
         format: InlineFormatType,
     ) {
         let selection_type =
-            self.check_format_selection_type(&range.locations, format.clone());
+            self.check_format_selection_type(&range.locations, &format);
 
         // Start from the end so modifications to the dom doesn't conflict with next steps
         match selection_type {
@@ -152,12 +152,17 @@ where
                 {
                     let index = loc.node_handle.index_in_parent();
                     let node = parent.remove_child(index);
-                    // Node completely covered, happy path
                     if loc.is_covered() {
+                        // Node completely covered by selection, happy path. Just replace the old
+                        // text node with a formatting node that contains a copy.
                         let format_node =
                             DomNode::new_formatting(format.clone(), vec![node]);
                         parent.insert_child(index, format_node);
                     } else {
+                        // Node only partially covered by selection, we need to split the text node,
+                        // add one part to a new formatting node, then replace the original text
+                        // node with both the new formatting node and the other half of the text
+                        // node to their original parent.
                         let position = if loc.is_start() {
                             loc.start_offset
                         } else {
@@ -198,14 +203,13 @@ where
         handle: DomHandle,
         format: &InlineFormatType,
     ) -> Option<DomHandle> {
-        if Self::is_format_node(dom.lookup_node(handle.clone()), format.clone())
-        {
+        if Self::is_format_node(dom.lookup_node(handle.clone()), format) {
             Some(handle)
         } else if handle.has_parent() {
             let parent_handle = handle.parent_handle();
             if Self::is_format_node(
                 dom.lookup_node(parent_handle.clone()),
-                format.clone(),
+                format,
             ) {
                 Some(parent_handle)
             } else {
@@ -216,10 +220,10 @@ where
         }
     }
 
-    fn is_format_node(node: &DomNode<S>, format: InlineFormatType) -> bool {
+    fn is_format_node(node: &DomNode<S>, format: &InlineFormatType) -> bool {
         if let DomNode::Container(n) = node {
             if let ContainerNodeKind::Formatting(kind) = n.kind() {
-                if *kind == format {
+                if kind == format {
                     return true;
                 }
             }
@@ -304,7 +308,7 @@ mod test {
         let range = find_multiple_range(&model);
         let selection_type = model.check_format_selection_type(
             &range.locations,
-            InlineFormatType::Italic,
+            &InlineFormatType::Italic,
         );
         assert_eq!(selection_type, FormatSelectionType::Extend);
     }
@@ -315,7 +319,7 @@ mod test {
         let range = find_multiple_range(&model);
         let selection_type = model.check_format_selection_type(
             &range.locations,
-            InlineFormatType::Bold,
+            &InlineFormatType::Bold,
         );
         assert_eq!(selection_type, FormatSelectionType::Extend);
     }
@@ -326,7 +330,7 @@ mod test {
         let range = find_multiple_range(&model);
         let selection_type = model.check_format_selection_type(
             &range.locations,
-            InlineFormatType::Bold,
+            &InlineFormatType::Bold,
         );
         assert_eq!(selection_type, FormatSelectionType::Extend);
     }
@@ -337,7 +341,7 @@ mod test {
         let range = find_multiple_range(&model);
         let selection_type = model.check_format_selection_type(
             &range.locations,
-            InlineFormatType::Bold,
+            &InlineFormatType::Bold,
         );
         assert_eq!(selection_type, FormatSelectionType::Extend);
     }
@@ -348,7 +352,7 @@ mod test {
         let range = find_multiple_range(&model);
         let selection_type = model.check_format_selection_type(
             &range.locations,
-            InlineFormatType::Bold,
+            &InlineFormatType::Bold,
         );
         assert_eq!(selection_type, FormatSelectionType::Remove);
     }
@@ -359,7 +363,7 @@ mod test {
         let range = find_multiple_range(&model);
         let selection_type = model.check_format_selection_type(
             &range.locations,
-            InlineFormatType::Bold,
+            &InlineFormatType::Bold,
         );
         assert_eq!(selection_type, FormatSelectionType::Remove);
     }
@@ -370,7 +374,7 @@ mod test {
         let range = find_multiple_range(&model);
         let selection_type = model.check_format_selection_type(
             &range.locations,
-            InlineFormatType::Bold,
+            &InlineFormatType::Bold,
         );
         assert_eq!(selection_type, FormatSelectionType::Remove);
     }
