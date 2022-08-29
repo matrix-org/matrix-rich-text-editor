@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
+use crate::dom::nodes::{DomNode, TextNode};
 use crate::dom::parser::parse;
 use crate::dom::UnicodeString;
 use crate::dom::{DomHandle, MultipleNodesRange, Range, SameNodeRange, ToHtml};
@@ -52,7 +52,7 @@ where
 
     /// Return the start and end of the selection, ensuring the first number
     /// returned is <= the second, and they are both 0<=n<=html.len().
-    fn safe_selection(&self) -> (usize, usize) {
+    pub(crate) fn safe_selection(&self) -> (usize, usize) {
         // TODO: Does not work with tags, and will probably be obselete when
         // we can look for ranges properly.
         let html = self.state.dom.to_html();
@@ -185,14 +185,6 @@ where
         }
     }
 
-    pub fn create_ordered_list(&mut self) -> ComposerUpdate<S> {
-        self.create_list(true)
-    }
-
-    pub fn create_unordered_list(&mut self) -> ComposerUpdate<S> {
-        self.create_list(false)
-    }
-
     pub fn get_html(&self) -> S {
         self.state.dom.to_html()
     }
@@ -222,55 +214,12 @@ where
     }
 
     // Internal functions
-    fn create_update_replace_all(&self) -> ComposerUpdate<S> {
+    pub(crate) fn create_update_replace_all(&self) -> ComposerUpdate<S> {
         ComposerUpdate::replace_all(
             self.state.dom.to_html(),
             self.state.start,
             self.state.end,
         )
-    }
-
-    fn create_list(&mut self, ordered: bool) -> ComposerUpdate<S> {
-        // Store current Dom
-        self.push_state_to_history();
-        let list_tag = if ordered { "ol" } else { "ul" };
-        let (s, e) = self.safe_selection();
-        let range = self.state.dom.find_range(s, e);
-        match range {
-            Range::SameNode(range) => {
-                let node =
-                    self.state.dom.lookup_node(range.node_handle.clone());
-                if let DomNode::Text(t) = node {
-                    let text = t.data();
-                    let list_node = DomNode::new_list(
-                        S::from_str(list_tag),
-                        vec![DomNode::Container(ContainerNode::new_list_item(
-                            S::from_str("li"),
-                            vec![DomNode::Text(TextNode::from(text.clone()))],
-                        ))],
-                    );
-                    self.state.dom.replace(range.node_handle, vec![list_node]);
-                    return self.create_update_replace_all();
-                } else {
-                    panic!("Can't create a list from a non-text node")
-                }
-            }
-
-            Range::NoNode => {
-                self.state.dom.append_child(DomNode::new_list(
-                    S::from_str(list_tag),
-                    vec![DomNode::Container(ContainerNode::new_list_item(
-                        S::from_str("li"),
-                        vec![DomNode::Text(TextNode::from(S::from_str("")))],
-                    ))],
-                ));
-                return self.create_update_replace_all();
-            }
-
-            _ => {
-                panic!("Can't create ordered list in complex object models yet")
-            }
-        }
     }
 
     fn replace_same_node(&mut self, range: SameNodeRange, new_text: S) {
@@ -414,7 +363,7 @@ where
         }
     }
 
-    fn push_state_to_history(&mut self) {
+    pub(crate) fn push_state_to_history(&mut self) {
         // Clear future events as they're no longer valid
         self.next_states.clear();
         // Store a copy of the current state in the previous_states
@@ -422,39 +371,31 @@ where
     }
 
     pub fn enter(&mut self) -> ComposerUpdate<S> {
-        // Store current Dom
-        self.push_state_to_history();
         let (s, e) = self.safe_selection();
-        let range = self.state.dom.find_range(s, e);
-        match range {
-            Range::SameNode(range) => {
-                let parent_list_item_handle = self
-                    .state
-                    .dom
-                    .find_parent_list_item(range.node_handle.clone());
-                if let Some(parent_handle) = parent_list_item_handle {
-                    let parent_node =
-                        self.state.dom.lookup_node(parent_handle.clone());
-                    let list_node_handle = parent_node.handle().parent_handle();
-                    if let DomNode::Container(parent) = parent_node {
-                        if parent.is_empty_list_item() {
-                            self.remove_list_item(
-                                list_node_handle,
-                                e,
-                                parent_handle.index_in_parent(),
-                            );
-                        } else {
-                            self.add_list_item(list_node_handle, e);
-                        }
-                        self.create_update_replace_all()
+
+        if s == e {
+            let range = self.state.dom.find_range(s, e);
+            match range {
+                Range::SameNode(range) => {
+                    let parent_list_item_handle = self
+                        .state
+                        .dom
+                        .find_parent_list_item(range.node_handle.clone());
+                    if let Some(parent_handle) = parent_list_item_handle {
+                        self.do_enter_in_list(parent_handle, e, range)
                     } else {
-                        panic!("No list item found")
+                        self.replace_text(S::from_str("\n"))
                     }
-                } else {
-                    self.replace_text(S::from_str("\n"))
                 }
+                Range::MultipleNodes(_) => {
+                    panic!("Unexpected multiple nodes on a 0 length selection")
+                }
+                Range::NoNode => self.replace_text(S::from_str("\n")),
             }
-            _ => self.replace_text(S::from_str("\n")),
+        } else {
+            // Clear selection then enter.
+            self.delete();
+            self.enter()
         }
     }
 
@@ -522,72 +463,16 @@ where
             panic!("Trying to bold a non-text node")
         }
     }
-
-    fn add_list_item(&mut self, handle: DomHandle, location: usize) {
-        let list_node = self.state.dom.lookup_node_mut(handle);
-        if let DomNode::Container(list) = list_node {
-            list.append_child(DomNode::new_list_item(
-                S::from_str("li"),
-                vec![DomNode::Text(TextNode::from(S::from_str("\u{200B}")))],
-            ));
-            self.state.start = Location::from(location + 1);
-            self.state.end = Location::from(location + 1);
-        } else {
-            panic!("Handle doesn't match a list container node")
-        }
-    }
-
-    fn remove_list_item(
-        &mut self,
-        handle: DomHandle,
-        location: usize,
-        list_item_index: usize,
-    ) {
-        let list_node = self.state.dom.lookup_node_mut(handle.clone());
-        if let DomNode::Container(list) = list_node {
-            if list.children().len() == 1 {
-                let parent_handle = handle.parent_handle();
-                let parent_node = self.state.dom.lookup_node_mut(parent_handle);
-                if let DomNode::Container(parent) = parent_node {
-                    parent.remove_child(handle.index_in_parent());
-                    if parent.children().len() == 0 {
-                        parent.append_child(DomNode::Text(TextNode::from(
-                            S::from_str(""),
-                        )));
-                    }
-                    self.state.start = Location::from(location);
-                    self.state.end = Location::from(location);
-                } else {
-                    // TODO: handle list items outside of lists
-                    panic!("List has no parent container")
-                }
-            } else {
-                list.remove_child(list_item_index);
-                let parent_handle = handle.parent_handle();
-                let parent_node = self.state.dom.lookup_node_mut(parent_handle);
-                if let DomNode::Container(parent) = parent_node {
-                    // TODO: should probably append a paragraph instead
-                    parent.append_child(DomNode::Text(TextNode::from(
-                        S::from_str("\u{200B}"),
-                    )));
-                    self.state.start = Location::from(location);
-                    self.state.end = Location::from(location);
-                } else {
-                    panic!("List has no parent container")
-                }
-            }
-        }
-    }
 }
 
-fn slice_to<S>(s: &S, range: std::ops::RangeTo<usize>) -> S
+pub(crate) fn slice_to<S>(s: &S, range: std::ops::RangeTo<usize>) -> S
 where
     S: UnicodeString,
 {
     slice(s, 0..range.end)
 }
 
-fn slice_from<S>(s: &S, range: std::ops::RangeFrom<usize>) -> S
+pub(crate) fn slice_from<S>(s: &S, range: std::ops::RangeFrom<usize>) -> S
 where
     S: UnicodeString,
 {
