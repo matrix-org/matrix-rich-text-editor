@@ -36,6 +36,9 @@ where
         location: usize,
         range: SameNodeRange,
     ) -> ComposerUpdate<S> {
+        // do_enter_in_list should only be called on a single location
+        // as selection can be deleted beforehand.
+        assert_eq!(range.start_offset, range.end_offset);
         // Store current Dom
         self.push_state_to_history();
         let parent_node = self.state.dom.lookup_node(parent_handle.clone());
@@ -106,7 +109,6 @@ where
         location: usize,
         range: SameNodeRange,
     ) {
-        assert_eq!(range.start_offset, range.end_offset);
         let text_node = self.state.dom.lookup_node_mut(range.node_handle);
         if let DomNode::Text(ref mut t) = text_node {
             let text = t.data();
@@ -177,7 +179,7 @@ where
                         self.state.start = new_location;
                         self.state.end = new_location;
                     } else {
-                        panic!("List has no parent container")
+                        panic!("Parent node is not a container")
                     }
                 } else {
                     let new_location = Location::from(location - li_len);
