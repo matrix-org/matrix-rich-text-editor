@@ -36,11 +36,11 @@ pub enum ContainerNodeKind<S>
 where
     S: UnicodeString,
 {
-    Generic,       // E.g. the root node (the containing div)
-    Formatting(S), // TODO: the format parameter is a copy of name
+    Generic, // E.g. the root node (the containing div)
+    Formatting,
     Link(S),
-    List(S),
-    ListItem(),
+    List,
+    ListItem,
 }
 
 impl<S> ContainerNode<S>
@@ -69,7 +69,7 @@ where
     pub fn new_formatting(format: S, children: Vec<DomNode<S>>) -> Self {
         Self {
             name: format.clone(),
-            kind: ContainerNodeKind::Formatting(format),
+            kind: ContainerNodeKind::Formatting,
             attrs: None,
             children,
             handle: DomHandle::new_unset(),
@@ -79,7 +79,7 @@ where
     pub fn new_list(list_type: S, children: Vec<DomNode<S>>) -> Self {
         Self {
             name: list_type.clone(),
-            kind: ContainerNodeKind::List(list_type),
+            kind: ContainerNodeKind::List,
             attrs: None,
             children,
             handle: DomHandle::new_unset(),
@@ -89,7 +89,7 @@ where
     pub fn new_list_item(item_name: S, children: Vec<DomNode<S>>) -> Self {
         Self {
             name: item_name,
-            kind: ContainerNodeKind::ListItem(),
+            kind: ContainerNodeKind::ListItem,
             attrs: None,
             children,
             handle: DomHandle::new_unset(),
@@ -169,7 +169,7 @@ where
 
     pub fn is_list_item(&self) -> bool {
         match self.kind {
-            ContainerNodeKind::ListItem() => true,
+            ContainerNodeKind::ListItem => true,
             _ => false,
         }
     }
@@ -190,7 +190,7 @@ where
 
     pub fn is_empty_list_item(&self) -> bool {
         match self.kind {
-            ContainerNodeKind::ListItem() => {
+            ContainerNodeKind::ListItem => {
                 let raw_text = self.to_raw_text().to_utf8();
                 return raw_text == "" || raw_text == "\u{200B}";
             }

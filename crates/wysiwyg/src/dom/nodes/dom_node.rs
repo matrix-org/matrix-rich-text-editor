@@ -81,7 +81,6 @@ where
     fn fmt_html(&self, f: &mut HtmlFormatter<S>) {
         match self {
             DomNode::Container(s) => s.fmt_html(f),
-            // TODO DomNode::Item(s) => s.fmt_html(f),
             DomNode::Text(s) => s.fmt_html(f),
         }
     }
