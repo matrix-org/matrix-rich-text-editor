@@ -51,16 +51,15 @@ where
     }
 
     /// Return the start and end of the selection, ensuring the first number
-    /// returned is <= the second, and they are both 0<=n<=html.len().
+    /// returned is <= the second, and they are both between 0 and the number
+    /// of code units in the string representation of the Dom.
     pub(crate) fn safe_selection(&self) -> (usize, usize) {
-        // TODO: Does not work with tags, and will probably be obselete when
-        // we can look for ranges properly.
-        let html = self.state.dom.to_html();
+        let len = self.state.dom.text_len();
 
         let mut s: usize = self.state.start.into();
         let mut e: usize = self.state.end.into();
-        s = s.clamp(0, html.len());
-        e = e.clamp(0, html.len());
+        s = s.clamp(0, len);
+        e = e.clamp(0, len);
         if s > e {
             (e, s)
         } else {
@@ -618,5 +617,29 @@ mod test {
         assert_eq!(*handles[1].raw(), vec![0, 9, 2, 4, 5]);
         assert_eq!(*handles[2].raw(), vec![0, 9, 2]);
         assert_eq!(handles.len(), 3);
+    }
+
+    #[test]
+    fn safe_selection_leaves_forward_selection_untouched() {
+        let model = cm("out{ <b>bol}|d</b> spot");
+        assert_eq!((3, 7), model.safe_selection());
+    }
+
+    #[test]
+    fn safe_selection_reverses_backward_selection() {
+        let model = cm("out|{ <b>bol}d</b> spot");
+        assert_eq!((3, 7), model.safe_selection());
+    }
+
+    #[test]
+    fn safe_selection_fixes_too_wide_selection() {
+        let mut model = cm("out <b>bol</b> spot|");
+        model.state.start = Location::from(0);
+        model.state.end = Location::from(13);
+        assert_eq!((0, 12), model.safe_selection());
+
+        let mut model = cm("out <b>bol</b> {spot}|");
+        model.state.end = Location::from(33);
+        assert_eq!((8, 12), model.safe_selection());
     }
 }

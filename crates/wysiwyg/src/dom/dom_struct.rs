@@ -196,6 +196,12 @@ where
 
         node
     }
+
+    // Return the number of code points in the string representation of this
+    // Dom.
+    pub fn text_len(&self) -> usize {
+        self.document.text_len()
+    }
 }
 
 impl<S> ToHtml<S> for Dom<S>
@@ -242,6 +248,7 @@ mod test {
 
     use crate::dom::nodes::dom_node::DomNode;
     use crate::dom::nodes::TextNode;
+    use crate::tests::testutils_composer_model::cm;
     use crate::tests::testutils_conversion::utf16;
     use crate::tests::testutils_dom::{a, b, dom, i, i_c, tn};
 
@@ -434,5 +441,13 @@ mod test {
                 panic!("We expected an Element, but found Text")
             }
         }
+    }
+
+    #[test]
+    fn text_len_ignores_html_tags() {
+        assert_eq!(0, cm("|").state.dom.text_len());
+        assert_eq!(2, cm("aa|").state.dom.text_len());
+        assert_eq!(2, cm("a<b>a|</b>").state.dom.text_len());
+        assert_eq!(2, cm("<del><i>a</i><b>a|</b></del>").state.dom.text_len());
     }
 }
