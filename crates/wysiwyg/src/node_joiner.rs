@@ -14,7 +14,7 @@
 
 use std::marker::PhantomData;
 
-use crate::dom::nodes::{DomNode, TextNode};
+use crate::dom::nodes::{ContainerNodeKind, DomNode, TextNode};
 use crate::dom::{Dom, DomHandle, DomLocation, MultipleNodesRange, Range};
 use crate::UnicodeString;
 
@@ -58,6 +58,11 @@ where
     /// After the selection range we were given in from_range has been deleted,
     /// join any nodes that match up across the selection.
     pub(crate) fn join_nodes(&self, dom: &mut Dom<S>, new_pos: usize) {
+        self.join_structure_nodes(dom, new_pos);
+        self.join_format_nodes(dom, new_pos);
+    }
+
+    fn join_structure_nodes(&self, dom: &mut Dom<S>, new_pos: usize) {
         // Find next node
         if let Some(mut next_handle) = Self::find_next_node(dom, new_pos) {
             // Find struct parents
@@ -82,6 +87,61 @@ where
 
                 // Merge nodes based on ancestors
                 Self::do_join(dom, &ancestors_start, &ancestors_next);
+            }
+        }
+    }
+
+    fn join_format_nodes(&self, dom: &mut Dom<S>, new_pos: usize) {
+        if let Some(mut next_node_handle) = Self::find_next_node(dom, new_pos) {
+            self.join_format_nodes_at_level(dom, next_node_handle, 1);
+        }
+    }
+
+    fn join_format_nodes_at_level(
+        &self,
+        dom: &mut Dom<S>,
+        handle: DomHandle,
+        level: usize,
+    ) {
+        if level >= handle.raw().len() {
+            return;
+        }
+        let cur_handle = DomHandle::from_raw(handle.raw()[..level].to_vec());
+        let index_in_parent = cur_handle.index_in_parent();
+        if index_in_parent > 0 {
+            let prev_handle =
+                cur_handle.parent_handle().child_handle(index_in_parent - 1);
+            if let (
+                DomNode::Container(prev_node),
+                DomNode::Container(next_node),
+            ) = (
+                dom.lookup_node(prev_handle.clone()),
+                dom.lookup_node(cur_handle.clone()),
+            ) {
+                if let (
+                    ContainerNodeKind::Formatting(prev_format),
+                    ContainerNodeKind::Formatting(next_format),
+                ) = (prev_node.kind(), next_node.kind())
+                {
+                    // Found a matching sibling node with the same format
+                    if prev_format == next_format {
+                        // Move the contents from the current node to the previous one
+                        let new_index =
+                            Self::move_children(dom, &cur_handle, &prev_handle);
+                        // Next iteration
+                        let mut cur_path = handle.raw().clone();
+                        let prev_path = prev_handle.raw();
+                        cur_path[level - 1] = prev_path[level - 1];
+                        cur_path[level] = new_index;
+                        let new_handle = DomHandle::from_raw(cur_path);
+
+                        self.join_format_nodes_at_level(
+                            dom,
+                            new_handle,
+                            level + 1,
+                        );
+                    }
+                }
             }
         }
     }
@@ -144,10 +204,15 @@ where
                     let mut new_data = start_i.data().clone();
                     new_data.push_string(&next_i.data());
                     let text_node = DomNode::Text(TextNode::from(new_data));
+                    if let DomNode::Container(old_parent) =
+                        dom.lookup_node_mut(next_handle.parent_handle())
+                    {
+                        old_parent.remove_child(next_handle.index_in_parent());
+                    }
                     if let DomNode::Container(parent) =
                         dom.lookup_node_mut(start_handle.parent_handle())
                     {
-                        parent.remove_child(next_handle.index_in_parent());
+                        let mut parent = parent;
                         parent.replace_child(
                             start_handle.index_in_parent(),
                             vec![text_node],
@@ -195,6 +260,21 @@ where
             }
         } else if parent_handle.has_parent() {
             Self::find_struct_parent(dom, &parent_handle)
+        } else {
+            None
+        }
+    }
+
+    fn find_closest_formatting_node(
+        dom: &Dom<S>,
+        handle: &DomHandle,
+    ) -> Option<DomHandle> {
+        let parent_handle = handle.parent_handle();
+        let parent = dom.lookup_node(parent_handle.clone());
+        if parent.is_formatting_node() {
+            Some(parent_handle)
+        } else if parent_handle.has_parent() {
+            Self::find_closest_formatting_node(dom, &parent_handle)
         } else {
             None
         }

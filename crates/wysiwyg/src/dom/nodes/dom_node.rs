@@ -78,6 +78,13 @@ where
             _ => false,
         }
     }
+
+    pub fn is_formatting_node(&self) -> bool {
+        match self {
+            DomNode::Container(n) => n.is_formatting_node(),
+            _ => false,
+        }
+    }
 }
 
 impl<S> ToHtml<S> for DomNode<S>

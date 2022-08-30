@@ -30,19 +30,6 @@ where
     handle: DomHandle,
 }
 
-impl<S> ContainerNode<S>
-where
-    S: UnicodeString,
-{
-    pub(crate) fn is_structure_node(&self) -> bool {
-        match self.kind {
-            ContainerNodeKind::List(_) | ContainerNodeKind::ListItem() => true,
-            ContainerNodeKind::Formatting(_) => true,
-            _ => false,
-        }
-    }
-}
-
 #[derive(Clone, Debug, PartialEq)]
 pub enum ContainerNodeKind<S>
 where
@@ -179,9 +166,27 @@ where
         &self.children
     }
 
+    pub fn kind(&self) -> &ContainerNodeKind<S> {
+        &self.kind
+    }
+
     pub fn is_list_item(&self) -> bool {
         match self.kind {
             ContainerNodeKind::ListItem() => true,
+            _ => false,
+        }
+    }
+
+    pub(crate) fn is_structure_node(&self) -> bool {
+        match self.kind {
+            ContainerNodeKind::List(_) | ContainerNodeKind::ListItem() => true,
+            _ => false,
+        }
+    }
+
+    pub(crate) fn is_formatting_node(&self) -> bool {
+        match self.kind {
+            ContainerNodeKind::Formatting(_) => true,
             _ => false,
         }
     }
