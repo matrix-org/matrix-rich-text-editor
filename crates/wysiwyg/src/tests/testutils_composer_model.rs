@@ -395,7 +395,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn cm_creates_correct_component_model() {
+    fn cm_creates_correct_component_model_plain() {
         // TODO: can we split and/or make these tests clearer?
         assert_eq!(cm("|").state.start, 0);
         assert_eq!(cm("|").state.end, 0);
@@ -416,12 +416,18 @@ mod test {
         assert_eq!(cm("foo|").state.start, 3);
         assert_eq!(cm("foo|").state.end, 3);
         assert_eq!(cm("foo|").get_html(), (utf16("foo")));
+    }
 
+    #[test]
+    fn cm_creates_correct_component_model_tags() {
         let t0 = cm("AAA<b>B|BB</b>CCC");
         assert_eq!(t0.state.start, 4);
         assert_eq!(t0.state.end, 4);
         assert_eq!(t0.get_html(), utf16("AAA<b>BBB</b>CCC"));
+    }
 
+    #[test]
+    fn cm_creates_correct_component_model_multi_code_unit_characters() {
         let t1 = cm("foo|\u{1F4A9}bar");
         assert_eq!(t1.state.start, 3);
         assert_eq!(t1.state.end, 3);
@@ -447,7 +453,10 @@ mod test {
         assert_eq!(cm("\u{1F4A9}|bar").state.start, 2);
         assert_eq!(cm("\u{1F4A9}|bar").state.end, 2);
         assert_eq!(cm("\u{1F4A9}|bar").get_html(), utf16("\u{1F4A9}bar"));
+    }
 
+    #[test]
+    fn cm_creates_correct_component_model_selection_plain_text() {
         assert_eq!(cm("{a}|").state.start, 0);
         assert_eq!(cm("{a}|").state.end, 1);
         assert_eq!(cm("{a}|").get_html(), utf16("a"));
@@ -463,7 +472,10 @@ mod test {
         assert_eq!(cm("abc|{def}ghi").state.start, 6);
         assert_eq!(cm("abc|{def}ghi").state.end, 3);
         assert_eq!(cm("abc|{def}ghi").get_html(), utf16("abcdefghi"));
+    }
 
+    #[test]
+    fn cm_creates_correct_model_selection_multi_code_units_selection() {
         let t3 = cm("\u{1F4A9}{def}|ghi");
         assert_eq!(t3.state.start, 2);
         assert_eq!(t3.state.end, 5);
@@ -493,6 +505,14 @@ mod test {
         assert_eq!(t8.state.start, 6);
         assert_eq!(t8.state.end, 3);
         assert_eq!(t8.get_html(), utf16("abcdef\u{1F4A9}ghi"));
+    }
+
+    #[test]
+    fn cm_creates_correct_model_selection_multi_code_units_and_tags() {
+        let t8 = cm("a<i>bc|{d<b>ef}\u{1F4A9}g</b>hi</i>");
+        assert_eq!(t8.state.start, 6);
+        assert_eq!(t8.state.end, 3);
+        assert_eq!(t8.get_html(), utf16("a<i>bcd<b>ef\u{1F4A9}g</b>hi</i>"));
     }
 
     #[test]
