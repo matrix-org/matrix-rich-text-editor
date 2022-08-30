@@ -444,7 +444,6 @@ where
         let node = self.state.dom.lookup_node(range.node_handle.clone());
         if let DomNode::Text(t) = node {
             let text = t.data();
-            // TODO: can we be globally smart about not leaving empty text nodes ?
             let before = slice_to(text, ..range.start_offset);
             let during = slice(text, range.start_offset..range.end_offset);
             let after = slice_from(text, range.end_offset..);
