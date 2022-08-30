@@ -13,6 +13,7 @@
 // limitations under the License.
 
 mod composer_action;
+mod composer_list_handler;
 mod composer_model;
 mod composer_state;
 mod composer_update;

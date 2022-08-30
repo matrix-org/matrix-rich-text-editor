@@ -22,7 +22,7 @@ use crate::tests::testutils_conversion::utf16;
 use crate::ComposerModel;
 
 #[test]
-fn test_ordered_list() {
+fn creating_ordered_list_and_writing() {
     let mut model = cm("|");
     model.create_ordered_list();
     assert_eq!(tx(&model), "<ol><li>|</li></ol>");
@@ -35,21 +35,51 @@ fn test_ordered_list() {
 }
 
 #[test]
-fn test_unordered_list() {
+fn creating_unordered_list() {
     let mut model = cm("|");
     model.create_unordered_list();
     assert_eq!(tx(&model), "<ul><li>|</li></ul>");
 }
 
 #[test]
-fn test_removing_list_item() {
+fn removing_list_item() {
     let mut model = cm("<ol><li>abcd</li><li>\u{200b}|</li></ol>");
     model.enter();
     assert_eq!(tx(&model), "<ol><li>abcd</li></ol>\u{200b}|");
 }
 
 #[test]
-fn test_removing_list() {
+fn entering_with_entire_selection() {
+    let mut model = cm("<ol><li>{abcd}|</li></ol>");
+    model.enter();
+    assert_eq!(tx(&model), "|");
+}
+
+#[test]
+fn entering_with_entire_selection_with_formatting() {
+    let mut model = cm("<ol><li><b>{abcd}|</b></li></ol>");
+    model.enter();
+    assert_eq!(tx(&model), "|");
+}
+
+#[test]
+fn entering_mid_text_node() {
+    let mut model = cm("<ol><li>ab|gh</li></ol>");
+    model.enter();
+    // FIXME: selection should be before the first char of second node
+    assert_eq!(tx(&model), "<ol><li>ab|</li><li>gh</li></ol>");
+}
+
+#[test]
+fn entering_mid_text_node_with_selection() {
+    let mut model = cm("<ol><li>ab{cdef}|gh</li></ol>");
+    model.enter();
+    // FIXME: selection should be before the first char of second node
+    assert_eq!(tx(&model), "<ol><li>ab|</li><li>gh</li></ol>");
+}
+
+#[test]
+fn removing_list() {
     let mut model = cm("|");
     model.create_ordered_list();
     model.enter();
