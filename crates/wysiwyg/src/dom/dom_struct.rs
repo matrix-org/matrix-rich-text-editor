@@ -164,7 +164,6 @@ where
         &mut self,
         node_handle: DomHandle,
     ) -> &mut DomNode<S> {
-        // TODO: horrible that we repeat lookup_node's logic. Can we share?
         fn nth_child<S>(
             element: &mut ContainerNode<S>,
             idx: usize,
