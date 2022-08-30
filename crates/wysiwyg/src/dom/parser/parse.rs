@@ -136,7 +136,7 @@ where
             }
             _ => {
                 // Ignore tags we don't recognise
-                // TODO: log warning (error?)  - we are ignoring?
+                // We should log - see internal task PSU-741
             }
         };
     }

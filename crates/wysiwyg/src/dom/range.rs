@@ -23,7 +23,6 @@ pub enum Range {
     MultipleNodes(MultipleNodesRange),
 
     // The DOM contains no nodes at all!
-    // TODO: maybe can remove this, always finding a valid range?
     NoNode,
 }
 

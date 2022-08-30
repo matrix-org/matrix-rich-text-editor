@@ -83,7 +83,8 @@ where
         }
     }
 
-    // TODO: document this
+    /// Given the start and end code units, find which nodes of this Dom are
+    /// selected. The returned range lists all the Dom nodes involved.
     pub fn find_range(&self, start: usize, end: usize) -> Range {
         find_range::find_range(self, start, end)
     }
