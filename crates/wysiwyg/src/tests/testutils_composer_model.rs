@@ -162,201 +162,6 @@ pub fn cm(text: &str) -> ComposerModel<Utf16String> {
 /// Convert a ComposerModel into a text representation. See the [testutils]
 /// module documentation for details about the format.
 pub fn tx(model: &ComposerModel<Utf16String>) -> String {
-    // TODO: break into a separate file
-    fn update_text_node_with_cursor(
-        text_node: &mut TextNode<Utf16String>,
-        range: SameNodeRange,
-    ) {
-        let orig_s: usize = range.start_offset.into();
-        let orig_e: usize = range.end_offset.into();
-        let (s, e) = if orig_s < orig_e {
-            (orig_s, orig_e)
-        } else {
-            (orig_e, orig_s)
-        };
-
-        let data = text_node.data();
-        let mut new_data;
-        if s == e {
-            new_data = data[..s].to_string();
-            new_data.push('|');
-            new_data += data[s..].to_string().as_str();
-        } else {
-            new_data = data[..s].to_string();
-            if orig_s < orig_e {
-                new_data.push('{');
-            } else {
-                new_data += "|{";
-            }
-            new_data += data[s..e].to_string().as_str();
-            if orig_s < orig_e {
-                new_data += "}|";
-            } else {
-                new_data.push('}');
-            }
-            new_data += data[e..].to_string().as_str();
-        }
-        text_node.set_data(Utf16String::from_str(&new_data));
-    }
-
-    fn update_text_node(
-        node: &mut TextNode<Utf16String>,
-        offset: usize,
-        s: &'static str,
-    ) {
-        let data = node.data();
-        let mut new_start_data = data[..offset].to_string();
-        new_start_data.push_str(s);
-        new_start_data += &data[offset..].to_string();
-        node.set_data(Utf16String::from_str(&new_start_data));
-    }
-
-    struct SelectionWritingState {
-        // Counts how far through the whole document we have got (code units)
-        current_pos: usize,
-
-        // Have we written out the "{" or "|{" yet?
-        done_first: bool,
-
-        // Have we written out the "}" or "}|" yet?
-        done_last: bool,
-
-        // The length of the whole document
-        length: usize,
-
-        // The location of the leftmost part of the selection (code_units)
-        first: usize,
-
-        // The location of the rightmost part of the selection (code_units)
-        last: usize,
-
-        // Does the selection start at the right and end at the left?
-        reversed: bool,
-    }
-
-    impl SelectionWritingState {
-        fn new(start: usize, end: usize, length: usize) -> Self {
-            let reversed = start > end;
-
-            let (first, last): (usize, usize) = if start > end {
-                (end, start)
-            } else {
-                (start, end)
-            };
-
-            Self {
-                current_pos: 0,
-                done_first: false,
-                done_last: false,
-                length,
-                first,
-                last,
-                reversed,
-            }
-        }
-
-        /// Move forward code_units, and return what markers we should add
-        /// to the current node.
-        ///
-        /// Returns a Vec of (marker, offset) pairs. Each marker should be
-        /// added within its node at the supplied offset.
-        fn advance(
-            &mut self,
-            location: &DomLocation,
-            code_units: usize,
-        ) -> Vec<(&'static str, usize)> {
-            self.current_pos += code_units;
-
-            // If we just passed first, write out {
-            let do_first = !self.done_first && self.first < self.current_pos;
-
-            // If we just passed last or we're at the end, write out }
-            let do_last = !self.done_last
-                && (self.last < self.current_pos
-                    || self.current_pos == self.length);
-
-            // Remember that we have passed them, so we don't repeat
-            self.done_first = self.done_first || do_first;
-            self.done_last = self.done_last || do_last;
-
-            let mut ret = Vec::new();
-
-            // Add the markers we want to write
-            if do_first {
-                ret.push((
-                    self.first_marker(),
-                    if self.reversed {
-                        location.end_offset
-                    } else {
-                        location.start_offset
-                    },
-                ));
-            };
-
-            if do_last {
-                ret.push((
-                    self.last_marker(),
-                    if self.reversed {
-                        location.start_offset
-                    } else {
-                        location.end_offset
-                    },
-                ));
-            };
-
-            // Return a list of markers to write and their locations
-            ret
-        }
-
-        /// Return the marker to insert into the leftmost edge of the selection
-        fn first_marker(&self) -> &'static str {
-            if self.reversed {
-                "|{"
-            } else {
-                "{"
-            }
-        }
-
-        /// Return the marker to insert into the rightmost edge of the selection
-        fn last_marker(&self) -> &'static str {
-            if self.reversed {
-                "}"
-            } else {
-                "}|"
-            }
-        }
-    }
-
-    /// Insert {, } and | to mark the start and end of a range
-    /// start is the absolute position of the start of the range
-    /// end is the absolute position of the end of the range
-    fn write_selection_multi(
-        dom: &mut Dom<Utf16String>,
-        range: MultipleNodesRange,
-        start: usize,
-        end: usize,
-    ) {
-        let mut state =
-            SelectionWritingState::new(start, end, dom.document().text_len());
-
-        for location in range.locations {
-            let mut node = dom.lookup_node_mut(location.node_handle.clone());
-            match &mut node {
-                DomNode::Container(_) => {}
-                DomNode::Text(n) => {
-                    let strings_to_add =
-                        state.advance(&location, n.data().len());
-                    for (s, offset) in strings_to_add {
-                        update_text_node(n, offset, s);
-                    }
-                }
-            }
-        }
-
-        // Since we are in a multi-node selection, we should always write {
-        assert!(state.done_first);
-    }
-
     // Clone the model because we will modify it to add selection markers
     let state = model.state.clone();
     let mut dom = state.dom;
@@ -385,6 +190,199 @@ pub fn tx(model: &ComposerModel<Utf16String>) -> String {
     }
 
     dom.to_string()
+}
+
+fn update_text_node_with_cursor(
+    text_node: &mut TextNode<Utf16String>,
+    range: SameNodeRange,
+) {
+    let orig_s: usize = range.start_offset.into();
+    let orig_e: usize = range.end_offset.into();
+    let (s, e) = if orig_s < orig_e {
+        (orig_s, orig_e)
+    } else {
+        (orig_e, orig_s)
+    };
+
+    let data = text_node.data();
+    let mut new_data;
+    if s == e {
+        new_data = data[..s].to_string();
+        new_data.push('|');
+        new_data += data[s..].to_string().as_str();
+    } else {
+        new_data = data[..s].to_string();
+        if orig_s < orig_e {
+            new_data.push('{');
+        } else {
+            new_data += "|{";
+        }
+        new_data += data[s..e].to_string().as_str();
+        if orig_s < orig_e {
+            new_data += "}|";
+        } else {
+            new_data.push('}');
+        }
+        new_data += data[e..].to_string().as_str();
+    }
+    text_node.set_data(Utf16String::from_str(&new_data));
+}
+
+fn update_text_node(
+    node: &mut TextNode<Utf16String>,
+    offset: usize,
+    s: &'static str,
+) {
+    let data = node.data();
+    let mut new_start_data = data[..offset].to_string();
+    new_start_data.push_str(s);
+    new_start_data += &data[offset..].to_string();
+    node.set_data(Utf16String::from_str(&new_start_data));
+}
+
+struct SelectionWritingState {
+    // Counts how far through the whole document we have got (code units)
+    current_pos: usize,
+
+    // Have we written out the "{" or "|{" yet?
+    done_first: bool,
+
+    // Have we written out the "}" or "}|" yet?
+    done_last: bool,
+
+    // The length of the whole document
+    length: usize,
+
+    // The location of the leftmost part of the selection (code_units)
+    first: usize,
+
+    // The location of the rightmost part of the selection (code_units)
+    last: usize,
+
+    // Does the selection start at the right and end at the left?
+    reversed: bool,
+}
+
+impl SelectionWritingState {
+    fn new(start: usize, end: usize, length: usize) -> Self {
+        let reversed = start > end;
+
+        let (first, last): (usize, usize) = if start > end {
+            (end, start)
+        } else {
+            (start, end)
+        };
+
+        Self {
+            current_pos: 0,
+            done_first: false,
+            done_last: false,
+            length,
+            first,
+            last,
+            reversed,
+        }
+    }
+
+    /// Move forward code_units, and return what markers we should add
+    /// to the current node.
+    ///
+    /// Returns a Vec of (marker, offset) pairs. Each marker should be
+    /// added within its node at the supplied offset.
+    fn advance(
+        &mut self,
+        location: &DomLocation,
+        code_units: usize,
+    ) -> Vec<(&'static str, usize)> {
+        self.current_pos += code_units;
+
+        // If we just passed first, write out {
+        let do_first = !self.done_first && self.first < self.current_pos;
+
+        // If we just passed last or we're at the end, write out }
+        let do_last = !self.done_last
+            && (self.last < self.current_pos
+                || self.current_pos == self.length);
+
+        // Remember that we have passed them, so we don't repeat
+        self.done_first = self.done_first || do_first;
+        self.done_last = self.done_last || do_last;
+
+        let mut ret = Vec::new();
+
+        // Add the markers we want to write
+        if do_first {
+            ret.push((
+                self.first_marker(),
+                if self.reversed {
+                    location.end_offset
+                } else {
+                    location.start_offset
+                },
+            ));
+        };
+
+        if do_last {
+            ret.push((
+                self.last_marker(),
+                if self.reversed {
+                    location.start_offset
+                } else {
+                    location.end_offset
+                },
+            ));
+        };
+
+        // Return a list of markers to write and their locations
+        ret
+    }
+
+    /// Return the marker to insert into the leftmost edge of the selection
+    fn first_marker(&self) -> &'static str {
+        if self.reversed {
+            "|{"
+        } else {
+            "{"
+        }
+    }
+
+    /// Return the marker to insert into the rightmost edge of the selection
+    fn last_marker(&self) -> &'static str {
+        if self.reversed {
+            "}"
+        } else {
+            "}|"
+        }
+    }
+}
+
+/// Insert {, } and | to mark the start and end of a range
+/// start is the absolute position of the start of the range
+/// end is the absolute position of the end of the range
+fn write_selection_multi(
+    dom: &mut Dom<Utf16String>,
+    range: MultipleNodesRange,
+    start: usize,
+    end: usize,
+) {
+    let mut state =
+        SelectionWritingState::new(start, end, dom.document().text_len());
+
+    for location in range.locations {
+        let mut node = dom.lookup_node_mut(location.node_handle.clone());
+        match &mut node {
+            DomNode::Container(_) => {}
+            DomNode::Text(n) => {
+                let strings_to_add = state.advance(&location, n.data().len());
+                for (s, offset) in strings_to_add {
+                    update_text_node(n, offset, s);
+                }
+            }
+        }
+    }
+
+    // Since we are in a multi-node selection, we should always write {
+    assert!(state.done_first);
 }
 
 mod test {
