@@ -14,61 +14,82 @@
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct DomHandle {
-    // Later, we will want to allow continuing iterating from this handle, and
-    // comparing handles to see which is first in the iteration order. This
-    // will allow us to walk the tree from earliest to latest of 2 handles.
-    path: Vec<usize>,
+    // The location of a node in the tree, or None if we don't know yet
+    path: Option<Vec<usize>>,
 }
 
 impl DomHandle {
+    /// Create a new handle with the provided path.
+    /// So long as the path provided points to a valid node, this handle
+    /// can be used (it is set).
     pub fn from_raw(path: Vec<usize>) -> Self {
-        Self { path }
-    }
-
-    pub fn parent_handle(&self) -> DomHandle {
-        assert!(self.path.len() > 0);
-
-        let mut new_path = self.path.clone();
-        new_path.pop();
-        DomHandle::from_raw(new_path)
-    }
-
-    pub fn child_handle(&self, child_index: usize) -> DomHandle {
-        let mut new_path = self.path.clone();
-        new_path.push(child_index);
-        DomHandle::from_raw(new_path)
-    }
-
-    pub fn has_parent(&self) -> bool {
-        self.path.len() > 0
-    }
-
-    pub fn index_in_parent(&self) -> usize {
-        assert!(self.path.len() > 0);
-
-        self.path.last().unwrap().clone()
-    }
-
-    pub fn raw(&self) -> &Vec<usize> {
-        &self.path
+        Self { path: Some(path) }
     }
 
     /// Create a new UNSET handle
-    ///
-    /// Don't use this to lookup_node(). It will return the wrong node
+    /// Don't use this handle for anything until it has been set.
+    /// Most methods will panic!
     pub fn new_unset() -> Self {
-        Self {
-            path: vec![usize::MAX],
-        }
+        Self { path: None }
     }
 
     /// Returns true if this handle has been set to a value
     pub fn is_set(&self) -> bool {
-        !self.path.contains(&usize::MAX)
+        !self.path.is_none()
     }
 
     /// Returns true if this handle refers to a root node
+    /// Panics if this handle is unset.
     pub fn is_root(&self) -> bool {
-        self.path.is_empty()
+        let path = self.path.as_ref().expect("Handle is unset!");
+        path.is_empty()
+    }
+
+    /// Return the handle of this node's parent, or None if this is the
+    /// root node.
+    /// Panics if this handle is unset
+    /// Panics if we have no parent (i.e. this handle is the root)
+    pub fn parent_handle(&self) -> DomHandle {
+        let path = self.path.as_ref().expect("Handle is unset!");
+        if path.is_empty() {
+            panic!("Root handle has no parent!");
+        } else {
+            let mut new_path = path.clone();
+            new_path.pop();
+            DomHandle::from_raw(new_path)
+        }
+    }
+
+    /// Return a new handle for one of our children, with the supplied index.
+    /// Panics if this handle is unset
+    pub fn child_handle(&self, child_index: usize) -> DomHandle {
+        let path = self.path.as_ref().expect("Handle is unset!");
+        let mut new_path = path.clone();
+        new_path.push(child_index);
+        DomHandle::from_raw(new_path)
+    }
+
+    /// Return true if this handle has a parent i.e. it is not the root. If
+    /// this returns true, it is safe to call index_in_parent() and
+    /// parent_handle().
+    /// Panics if this handle is unset
+    pub fn has_parent(&self) -> bool {
+        let path = self.path.as_ref().expect("Handle is unset!");
+        path.len() > 0
+    }
+
+    /// Return this handle's position within its parent.
+    /// Panics if this handle is unset
+    /// Panics if we have no parent (i.e. this handle is the root)
+    pub fn index_in_parent(&self) -> usize {
+        let path = self.path.as_ref().expect("Handle is unset!");
+        path.last().expect("Root handle has no parent!").clone()
+    }
+
+    /// Return the underlying path used to represent this handle.
+    /// Panics if this handle is unset
+    pub fn raw(&self) -> &Vec<usize> {
+        let path = self.path.as_ref().expect("Handle is unset!");
+        &path
     }
 }
