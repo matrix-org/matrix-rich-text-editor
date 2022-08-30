@@ -89,12 +89,13 @@ where
         } else {
             // Find text nodes inside the selection that are not formatted with this format
             let non_formatted_leaf_locations = locations.iter().filter(|l| {
-                Self::path_contains_format_node(
-                    &self.state.dom,
-                    l.node_handle.clone(),
-                    &format,
-                )
-                .is_none()
+                l.is_leaf
+                    && Self::path_contains_format_node(
+                        &self.state.dom,
+                        l.node_handle.clone(),
+                        &format,
+                    )
+                    .is_none()
             });
             // If there are selected non-formatted text nodes, we need to extend the format to them
             let is_extend = non_formatted_leaf_locations.count() > 0;
@@ -115,8 +116,6 @@ where
     ) {
         let selection_type =
             self.check_format_selection_type(&range.locations, &format);
-
-        // Start from the end so modifications to the dom doesn't conflict with next steps
         match selection_type {
             FormatSelectionType::Remove => {} // TODO: actually implement this
             FormatSelectionType::Extend => self
@@ -298,7 +297,7 @@ mod test {
         if let Range::MultipleNodes(r) = range {
             r
         } else {
-            panic!("Should have been a multiple range node, {:?}", range);
+            panic!("Should have been a multiple nodes range, {:?}", range);
         }
     }
 
@@ -348,7 +347,7 @@ mod test {
 
     #[test]
     fn selection_type_remove() {
-        let model = cm("<b>hel{lo </b><b>wor}|ld</b>");
+        let model = cm("<b>hel{lo</b><i><b>wor}|ld</b></i>");
         let range = find_multiple_range(&model);
         let selection_type = model.check_format_selection_type(
             &range.locations,
@@ -359,7 +358,7 @@ mod test {
 
     #[test]
     fn selection_type_remove_on_start_edge() {
-        let model = cm("{<b>hello </b><b>wor}|ld</b>");
+        let model = cm("{<b>hello </b><i><b>wor}|ld</b></i>");
         let range = find_multiple_range(&model);
         let selection_type = model.check_format_selection_type(
             &range.locations,
@@ -370,7 +369,7 @@ mod test {
 
     #[test]
     fn selection_type_remove_on_ending_edge() {
-        let model = cm("<b>hel{lo </b><b>world}|</b>");
+        let model = cm("<b>hel{lo </b><i><b>world}|</b></i>");
         let range = find_multiple_range(&model);
         let selection_type = model.check_format_selection_type(
             &range.locations,

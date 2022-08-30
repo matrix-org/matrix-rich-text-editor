@@ -45,9 +45,10 @@ where
         format: S,
         children: Vec<DomNode<S>>,
     ) -> DomNode<S> {
-        DomNode::Container(ContainerNode::new_formatting_from_tag(
-            format, children,
-        ))
+        DomNode::Container(
+            ContainerNode::new_formatting_from_tag(format.clone(), children)
+                .expect(&format!("Unknown format tag {}", format.to_utf8())),
+        )
     }
 
     pub fn new_list(list_type: S, children: Vec<DomNode<S>>) -> DomNode<S> {

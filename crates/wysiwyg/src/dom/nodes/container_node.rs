@@ -70,16 +70,16 @@ where
     pub fn new_formatting_from_tag(
         format: S,
         children: Vec<DomNode<S>>,
-    ) -> Self {
-        Self {
-            name: format.clone(),
-            kind: ContainerNodeKind::Formatting(
-                InlineFormatType::try_from(format).unwrap(),
-            ),
-            attrs: None,
-            children,
-            handle: DomHandle::new_unset(),
-        }
+    ) -> Option<Self> {
+        InlineFormatType::try_from(format.clone())
+            .map(|f| Self {
+                name: format,
+                kind: ContainerNodeKind::Formatting(f),
+                attrs: None,
+                children,
+                handle: DomHandle::new_unset(),
+            })
+            .ok()
     }
 
     pub fn new_formatting(
@@ -283,6 +283,7 @@ where
                 into_node.set_data(new_data.clone());
                 self.remove_child(from_index);
             }
+            // We don't want to merge Container and Text nodes
             _ => {}
         };
     }
