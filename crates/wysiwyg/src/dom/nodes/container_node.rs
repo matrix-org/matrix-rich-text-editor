@@ -344,8 +344,6 @@ mod test {
         assert_eq!(text_node2.handle().raw(), &[4, 5, 4, 4]);
     }
 
-    // TODO: more tests of ContainerNode
-
     fn container_with_handle<'a>(
         raw_handle: impl IntoIterator<Item = &'a usize>,
     ) -> ContainerNode<Utf16String> {
