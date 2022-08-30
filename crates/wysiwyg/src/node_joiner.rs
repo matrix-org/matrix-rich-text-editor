@@ -16,7 +16,7 @@ use std::marker::PhantomData;
 
 use crate::dom::nodes::{ContainerNodeKind, DomNode, TextNode};
 use crate::dom::{Dom, DomHandle, DomLocation, MultipleNodesRange, Range};
-use crate::UnicodeString;
+use crate::{ToHtml, UnicodeString};
 
 /// Handles joining together nodes after an edit event.
 ///
@@ -141,8 +141,14 @@ where
                             level + 1,
                         );
                     }
+                } else {
+                    // If both nodes weren't formatting nodes, try at the next level
+                    self.join_format_nodes_at_level(dom, handle, level + 1);
                 }
             }
+        } else {
+            // If there's no previous node, try at the next level
+            self.join_format_nodes_at_level(dom, handle, level + 1);
         }
     }
 
@@ -169,7 +175,11 @@ where
 
             match (start_i, next_i) {
                 (DomNode::Container(start_i), DomNode::Container(next_i)) => {
-                    if start_i.name() == next_i.name() {
+                    // TODO: check if this is_structure_node verification is needed.
+                    if start_i.is_structure_node()
+                        && next_i.is_structure_node()
+                        && start_i.name() == next_i.name()
+                    {
                         // Both containers with the same tag.
                         // Move children from next to start node, remove next node.
                         let new_index_in_parent =
@@ -260,21 +270,6 @@ where
             }
         } else if parent_handle.has_parent() {
             Self::find_struct_parent(dom, &parent_handle)
-        } else {
-            None
-        }
-    }
-
-    fn find_closest_formatting_node(
-        dom: &Dom<S>,
-        handle: &DomHandle,
-    ) -> Option<DomHandle> {
-        let parent_handle = handle.parent_handle();
-        let parent = dom.lookup_node(parent_handle.clone());
-        if parent.is_formatting_node() {
-            Some(parent_handle)
-        } else if parent_handle.has_parent() {
-            Self::find_closest_formatting_node(dom, &parent_handle)
         } else {
             None
         }

@@ -171,3 +171,10 @@ fn deleting_across_formatting_different_types_on_node_boundary() {
     model.delete();
     assert_eq!(tx(&model), "<b><i>some |</i>bold</b> text");
 }
+
+#[test]
+fn deleting_in_nested_structure_and_format_nodes_works() {
+    let mut model = cm("<ul><li>A</li><li><b>B{B</b><b>C}|C</b></li></ul>");
+    model.delete();
+    assert_eq!(tx(&model), "<ul><li>A</li><li><b>B|C</b></li></ul>");
+}
