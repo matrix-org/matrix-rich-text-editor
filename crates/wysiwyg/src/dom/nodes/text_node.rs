@@ -15,6 +15,7 @@
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::html_formatter::HtmlFormatter;
 use crate::dom::to_html::ToHtml;
+use crate::dom::to_raw_text::ToRawText;
 use crate::dom::UnicodeString;
 
 use html_escape;
@@ -69,5 +70,14 @@ where
         let mut escaped = String::new();
         html_escape::encode_text_to_string(&string, &mut escaped);
         f.write(S::from_str(&escaped).as_slice());
+    }
+}
+
+impl<S> ToRawText<S> for TextNode<S>
+where
+    S: UnicodeString,
+{
+    fn to_raw_text(&self) -> S {
+        self.data.clone()
     }
 }

@@ -17,6 +17,7 @@ use crate::dom::html_formatter::HtmlFormatter;
 use crate::dom::nodes::container_node::ContainerNode;
 use crate::dom::nodes::text_node::TextNode;
 use crate::dom::to_html::ToHtml;
+use crate::dom::to_raw_text::ToRawText;
 use crate::dom::UnicodeString;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -82,6 +83,18 @@ where
             DomNode::Container(s) => s.fmt_html(f),
             // TODO DomNode::Item(s) => s.fmt_html(f),
             DomNode::Text(s) => s.fmt_html(f),
+        }
+    }
+}
+
+impl<S> ToRawText<S> for DomNode<S>
+where
+    S: UnicodeString,
+{
+    fn to_raw_text(&self) -> S {
+        match self {
+            DomNode::Container(n) => n.to_raw_text(),
+            DomNode::Text(n) => n.to_raw_text(),
         }
     }
 }
