@@ -29,10 +29,13 @@ fn selecting_ascii_characters() {
 
     model.select(Location::from(4), Location::from(8));
     assert_eq!(tx(&model), "abcd{efgh}|");
-}
 
-// TODO: Test selecting invalid ranges, including starting and ending off
-// the end.
+    model.select(Location::from(4), Location::from(9));
+    assert_eq!(tx(&model), "abcd{efgh}|");
+
+    model.select(Location::from(4), Location::from(10));
+    assert_eq!(tx(&model), "abcd{efgh}|");
+}
 
 #[test]
 fn selecting_single_utf16_code_unit_characters() {

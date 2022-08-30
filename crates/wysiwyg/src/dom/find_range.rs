@@ -38,7 +38,6 @@ where
     match result {
         FindResult::Found(locations) => {
             if locations.len() == 1 {
-                // TODO: check offsets
                 let location = locations.first().unwrap();
                 let location = if is_reversed {
                     location.reversed()

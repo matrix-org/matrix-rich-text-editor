@@ -420,16 +420,13 @@ mod test {
         assert_eq!("<code><b>some</b> code</code>", d.to_html().to_utf8());
     }
 
-    /*#[test]
-    fn finding_range_within_complex_tags_doesnt_work_yet() {
-        // TODO: we can't do this yet
-        let d = dom(&[tx("foo "), b(&[tx("bar")]), tx(" baz")]);
-        let range = d.find_range(4, 7);
-        assert_eq!(range, Range::TooDifficultForMe);
-    }*/
-
-    // TODO: copy tests from platforms/web/example/test.js
-    // TODO: improve tests when we have HTML parsing
+    #[test]
+    fn text_len_ignores_html_tags() {
+        assert_eq!(0, cm("|").state.dom.text_len());
+        assert_eq!(2, cm("aa|").state.dom.text_len());
+        assert_eq!(2, cm("a<b>a|</b>").state.dom.text_len());
+        assert_eq!(2, cm("<del><i>a</i><b>a|</b></del>").state.dom.text_len());
+    }
 
     /// If this node is an element, return its children - otherwise panic
     fn kids<S>(node: &DomNode<S>) -> &Vec<DomNode<S>>
@@ -442,13 +439,5 @@ mod test {
                 panic!("We expected an Element, but found Text")
             }
         }
-    }
-
-    #[test]
-    fn text_len_ignores_html_tags() {
-        assert_eq!(0, cm("|").state.dom.text_len());
-        assert_eq!(2, cm("aa|").state.dom.text_len());
-        assert_eq!(2, cm("a<b>a|</b>").state.dom.text_len());
-        assert_eq!(2, cm("<del><i>a</i><b>a|</b></del>").state.dom.text_len());
     }
 }
