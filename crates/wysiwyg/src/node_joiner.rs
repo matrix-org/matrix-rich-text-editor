@@ -185,16 +185,11 @@ where
                         let new_index_in_parent =
                             Self::move_children(dom, next_handle, start_handle);
                         // This alters ancestors, so we need to re-calculate them and start again.
-                        // TODO: maybe move this to another fn?
-                        let mut new_next_path =
-                            start_handle.raw()[..i].to_vec();
-                        new_next_path.push(new_index_in_parent);
-                        let new_next_handle =
-                            DomHandle::from_raw(new_next_path);
-
-                        // Re-calculate ancestors
-                        let new_ancestors_next =
-                            Self::find_ancestor_list(&new_next_handle);
+                        let new_ancestors_next = Self::re_calculate_ancestors(
+                            start_handle,
+                            new_index_in_parent,
+                            i,
+                        );
                         // Restart the process
                         Self::do_join(
                             dom,
@@ -232,6 +227,19 @@ where
                 _ => return,
             }
         }
+    }
+
+    fn re_calculate_ancestors(
+        start_handle: &DomHandle,
+        new_index_in_parent: usize,
+        level: usize,
+    ) -> Vec<DomHandle> {
+        let mut new_next_path = start_handle.raw()[..level].to_vec();
+        new_next_path.push(new_index_in_parent);
+        let new_next_handle = DomHandle::from_raw(new_next_path);
+
+        // Re-calculate ancestors
+        Self::find_ancestor_list(&new_next_handle)
     }
 
     fn find_next_node(dom: &Dom<S>, pos: usize) -> Option<DomHandle> {
