@@ -17,6 +17,7 @@ use crate::dom::html_formatter::HtmlFormatter;
 use crate::dom::nodes::dom_node::DomNode;
 use crate::dom::to_html::ToHtml;
 use crate::dom::to_raw_text::ToRawText;
+use crate::dom::to_tree::ToTree;
 use crate::dom::{HtmlChar, UnicodeString};
 use crate::InlineFormatType;
 
@@ -335,6 +336,28 @@ where
             text.push_string(&child.to_raw_text());
         }
         return text;
+    }
+}
+
+impl<S> ToTree<S> for ContainerNode<S>
+where
+    S: UnicodeString,
+{
+    fn to_tree_display(&self, continuous_positions: Vec<usize>) -> S {
+        let mut tree_part = self.tree_line(
+            self.name.clone(),
+            self.handle.raw().len(),
+            continuous_positions.clone(),
+        );
+
+        for (i, child) in self.children.iter().enumerate() {
+            let mut new_positions = continuous_positions.clone();
+            if i < self.children.len() - 1 {
+                new_positions.push(self.handle.raw().len());
+            }
+            tree_part.push_string(&child.to_tree_display(new_positions));
+        }
+        return tree_part;
     }
 }
 

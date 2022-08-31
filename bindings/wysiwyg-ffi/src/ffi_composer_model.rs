@@ -135,6 +135,10 @@ impl ComposerModel {
         ))
     }
 
+    pub fn to_tree(self: &Arc<Self>) -> String {
+        self.inner.lock().unwrap().to_tree().to_string()
+    }
+
     pub fn dump_state(self: &Arc<Self>) -> ComposerState {
         self.inner
             .lock()

@@ -16,7 +16,7 @@ use std::fmt::Display;
 
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode};
 use crate::dom::{
-    find_range, to_raw_text::ToRawText, DomHandle, Range, UnicodeString,
+    find_range, to_raw_text::ToRawText, DomHandle, Range, ToTree, UnicodeString,
 };
 use crate::ToHtml;
 
@@ -219,6 +219,15 @@ where
 {
     fn to_raw_text(&self) -> S {
         self.document.to_raw_text()
+    }
+}
+
+impl<S> ToTree<S> for Dom<S>
+where
+    S: UnicodeString,
+{
+    fn to_tree_display(&self, continuous_positions: Vec<usize>) -> S {
+        self.document.to_tree_display(continuous_positions)
     }
 }
 

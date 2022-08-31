@@ -16,6 +16,7 @@ use crate::dom::dom_handle::DomHandle;
 use crate::dom::html_formatter::HtmlFormatter;
 use crate::dom::to_html::ToHtml;
 use crate::dom::to_raw_text::ToRawText;
+use crate::dom::to_tree::ToTree;
 use crate::dom::UnicodeString;
 
 use html_escape;
@@ -79,5 +80,21 @@ where
 {
     fn to_raw_text(&self) -> S {
         self.data.clone()
+    }
+}
+
+impl<S> ToTree<S> for TextNode<S>
+where
+    S: UnicodeString,
+{
+    fn to_tree_display(&self, continuous_positions: Vec<usize>) -> S {
+        let mut description = S::from_str("\"");
+        description.push_string(&self.data.clone());
+        description.push_string(&S::from_str("\""));
+        return self.tree_line(
+            description,
+            self.handle.raw().len(),
+            continuous_positions,
+        );
     }
 }

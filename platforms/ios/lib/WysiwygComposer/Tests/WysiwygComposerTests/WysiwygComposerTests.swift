@@ -87,6 +87,19 @@ final class WysiwygComposerTests: XCTestCase {
                 XCTAssertTrue(font.fontDescriptor.symbolicTraits.contains(.traitBold))
             }
         }
+
+        let tree = composer.toTree()
+        XCTAssertEqual(
+            tree,
+            """
+
+            ├>\"This is \"
+            ├>strong
+            │ └>\"bold\"
+            └>\" text\"
+
+            """
+        )
     }
 
     func testLists() {
