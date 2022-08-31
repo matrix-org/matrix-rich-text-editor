@@ -115,13 +115,14 @@ where
         }
     }
 
-    pub fn append_child(&mut self, mut child: DomNode<S>) {
+    pub fn append_child(&mut self, mut child: DomNode<S>) -> DomHandle {
         assert!(self.handle.is_set());
 
         let child_index = self.children.len();
         let child_handle = self.handle.child_handle(child_index);
         child.set_handle(child_handle.clone());
         self.children.push(child);
+        child_handle
     }
 
     pub fn remove_child(&mut self, index: usize) -> DomNode<S> {
@@ -138,9 +139,15 @@ where
         ret
     }
 
-    pub fn replace_child(&mut self, index: usize, nodes: Vec<DomNode<S>>) {
+    pub fn replace_child(
+        &mut self,
+        index: usize,
+        nodes: Vec<DomNode<S>>,
+    ) -> Vec<DomHandle> {
         assert!(self.handle.is_set());
         assert!(index < self.children().len());
+
+        let mut handles = Vec::new();
 
         self.children.remove(index);
         let mut current_index = index;
@@ -153,8 +160,10 @@ where
 
         for child_index in current_index..self.children.len() {
             let new_handle = self.handle.child_handle(child_index);
-            self.children[child_index].set_handle(new_handle);
+            self.children[child_index].set_handle(new_handle.clone());
+            handles.push(new_handle);
         }
+        handles
     }
 
     pub fn get_child_mut(&mut self, idx: usize) -> Option<&mut DomNode<S>> {
@@ -247,45 +256,6 @@ where
             }
             _ => false,
         }
-    }
-
-    pub fn can_merge_with(&self, other: &ContainerNode<S>) -> bool {
-        match (&self.kind, &other.kind) {
-            (ContainerNodeKind::Generic, ContainerNodeKind::Generic) => true,
-            // Maybe this should be re-checked
-            (
-                ContainerNodeKind::Formatting(a),
-                ContainerNodeKind::Formatting(b),
-            ) => a == b,
-            _ => false,
-        }
-    }
-
-    pub fn merge_children(&mut self, from_index: usize, into_index: usize) {
-        assert!(into_index < self.children.len());
-        assert!(from_index < self.children.len());
-        let from_node = self.children.get(from_index).unwrap().clone();
-        let into_node = self.children.get_mut(into_index).unwrap();
-        match (into_node, from_node) {
-            (DomNode::Container(into_node), DomNode::Container(from_node)) => {
-                if !into_node.can_merge_with(&from_node) {
-                    return;
-                }
-                for c in from_node.children() {
-                    into_node.append_child(c.clone());
-                }
-                self.remove_child(from_index);
-            }
-            (DomNode::Text(into_node), DomNode::Text(from_node)) => {
-                let mut new_data = into_node.data().clone();
-                let from_data = from_node.data();
-                new_data.push_string(from_data);
-                into_node.set_data(new_data.clone());
-                self.remove_child(from_index);
-            }
-            // We don't want to merge Container and Text nodes
-            _ => {}
-        };
     }
 }
 

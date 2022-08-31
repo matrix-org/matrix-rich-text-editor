@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::marker::PhantomData;
-
 use crate::dom::nodes::{ContainerNodeKind, DomNode, TextNode};
 use crate::dom::{Dom, DomHandle, DomLocation, MultipleNodesRange, Range};
 use crate::UnicodeString;
@@ -23,55 +21,43 @@ use crate::UnicodeString;
 /// For example, if your selection starts in a bold tag, leaves that tag,
 /// and then ends up in another bold tag, the final result should be a
 /// single bold tag containing all your text.
-pub(crate) struct NodeJoiner<S>
-where
-    S: UnicodeString,
-{
-    start_handle: DomHandle,
+pub(crate) struct NodeJoiner {}
 
-    phantom_data: PhantomData<S>,
-}
-
-impl<S> NodeJoiner<S>
-where
-    S: UnicodeString,
-{
-    /// Create a NodeJoiner that handles the supplied Range, using the supplied
-    /// model to look up nodes where needed.
-    pub(crate) fn from_range(dom: &Dom<S>, range: &MultipleNodesRange) -> Self {
-        // TODO: for now, to decide whether we will join nodes, we compare
-        // the types of the parents of the start and end nodes of the range.
-        //
-        // There are some ignored tests in test_characters and test_deleting
-        // that demonstrate that this is not good enough. We need to consider
-        // joining nodes all the way up the tree.
-
-        let start_handle = Self::first_text_handle(dom, range)
-            .expect("No start text node found");
-
-        Self {
-            start_handle,
-            phantom_data: PhantomData::default(),
-        }
-    }
-
+impl NodeJoiner {
     /// After the selection range we were given in from_range has been deleted,
     /// join any nodes that match up across the selection.
-    pub(crate) fn join_nodes(&self, dom: &mut Dom<S>, new_pos: usize) {
-        self.join_structure_nodes(dom, new_pos);
-        self.join_format_nodes(dom, new_pos);
+    pub(crate) fn join_nodes<S: UnicodeString>(
+        dom: &mut Dom<S>,
+        range: &MultipleNodesRange,
+        new_pos: usize,
+    ) {
+        let start_handle = Self::first_text_handle(dom, range)
+            .expect("No start text node found");
+        Self::join_structure_nodes(dom, start_handle, new_pos);
+        Self::join_format_nodes_at_index(dom, new_pos);
     }
 
-    fn join_structure_nodes(&self, dom: &mut Dom<S>, new_pos: usize) {
+    pub(crate) fn join_format_node_with_prev<S: UnicodeString>(
+        dom: &mut Dom<S>,
+        handle: DomHandle,
+    ) {
+        Self::join_format_nodes_at_level(dom, handle, 0);
+    }
+
+    fn join_structure_nodes<S: UnicodeString>(
+        dom: &mut Dom<S>,
+        start_handle: DomHandle,
+        new_pos: usize,
+    ) {
         // Find next node
         if let Some(mut next_handle) = Self::find_next_node(dom, new_pos) {
             // Find struct parents
             if let (Some(struct_parent_start), Some(struct_parent_next)) =
-                Self::find_struct_parents(dom, &self.start_handle, &next_handle)
+                Self::find_struct_parents(dom, &start_handle, &next_handle)
             {
                 if struct_parent_start != struct_parent_next {
                     // Move children
-                    let new_index = Self::move_children(
+                    let new_index = Self::move_children_and_delete_parent(
                         dom,
                         &struct_parent_next,
                         &struct_parent_start,
@@ -81,77 +67,96 @@ where
                 }
 
                 // Find ancestor lists
-                let ancestors_start =
-                    Self::find_ancestor_list(&self.start_handle);
+                let ancestors_start = Self::find_ancestor_list(&start_handle);
                 let ancestors_next = Self::find_ancestor_list(&next_handle);
 
                 // Merge nodes based on ancestors
-                Self::do_join(dom, &ancestors_start, &ancestors_next);
+                Self::do_join_structure_nodes(
+                    dom,
+                    &ancestors_start,
+                    &ancestors_next,
+                );
             }
         }
     }
 
-    fn join_format_nodes(&self, dom: &mut Dom<S>, new_pos: usize) {
-        if let Some(next_node_handle) = Self::find_next_node(dom, new_pos) {
-            self.join_format_nodes_at_level(dom, next_node_handle, 1);
+    fn join_format_nodes_at_index<S: UnicodeString>(
+        dom: &mut Dom<S>,
+        index: usize,
+    ) {
+        if let Some(next_node_handle) = Self::find_next_node(dom, index) {
+            Self::join_format_node_with_prev(dom, next_node_handle);
         }
     }
 
-    fn join_format_nodes_at_level(
-        &self,
+    fn join_format_nodes_at_level<S: UnicodeString>(
         dom: &mut Dom<S>,
         handle: DomHandle,
         level: usize,
     ) {
+        // Out of bounds
         if level >= handle.raw().len() {
             return;
         }
-        let cur_handle = DomHandle::from_raw(handle.raw()[..level].to_vec());
-        let index_in_parent = cur_handle.index_in_parent();
+        // Get the node handle at the current depth level
+        let cur_handle = DomHandle::from_raw(handle.raw()[..=level].to_vec());
+        let index_in_parent = if cur_handle.is_root() {
+            0
+        } else {
+            cur_handle.index_in_parent()
+        };
+        // We're comparing it to the previous sibling, so there's no point in allowing index 0
         if index_in_parent > 0 {
             let prev_handle = cur_handle.prev_sibling();
-            if let (
-                DomNode::Container(prev_node),
-                DomNode::Container(next_node),
-            ) = (
-                dom.lookup_node(prev_handle.clone()),
-                dom.lookup_node(cur_handle.clone()),
-            ) {
-                if let (
-                    ContainerNodeKind::Formatting(prev_format),
-                    ContainerNodeKind::Formatting(next_format),
-                ) = (prev_node.kind(), next_node.kind())
-                {
-                    // Found a matching sibling node with the same format
-                    if prev_format == next_format {
-                        // Move the contents from the current node to the previous one
-                        let new_index =
-                            Self::move_children(dom, &cur_handle, &prev_handle);
-                        // Next iteration
-                        let mut cur_path = handle.raw().clone();
-                        let prev_path = prev_handle.raw();
-                        cur_path[level - 1] = prev_path[level - 1];
-                        cur_path[level] = new_index;
-                        let new_handle = DomHandle::from_raw(cur_path);
-
-                        self.join_format_nodes_at_level(
-                            dom,
-                            new_handle,
-                            level + 1,
-                        );
-                    }
-                } else {
-                    // If both nodes weren't formatting nodes, try at the next level
-                    self.join_format_nodes_at_level(dom, handle, level + 1);
+            // Found a matching sibling node with the same format
+            if Self::can_merge_format_nodes(dom, &prev_handle, &cur_handle) {
+                // Move the contents from the current node to the previous one
+                let new_index = Self::move_children_and_delete_parent(
+                    dom,
+                    &cur_handle,
+                    &prev_handle,
+                );
+                // Next iteration
+                let mut cur_path = handle.raw().clone();
+                let prev_path = prev_handle.raw();
+                cur_path[level] = prev_path[level];
+                if level + 1 < cur_path.len() {
+                    cur_path[level + 1] = new_index;
                 }
+                let new_handle = DomHandle::from_raw(cur_path);
+
+                Self::join_format_nodes_at_level(dom, new_handle, level + 1);
+            } else {
+                // If both nodes couldn't be merged, try at the next level
+                Self::join_format_nodes_at_level(dom, handle, level + 1);
             }
         } else {
             // If there's no previous node, try at the next level
-            self.join_format_nodes_at_level(dom, handle, level + 1);
+            Self::join_format_nodes_at_level(dom, handle, level + 1);
         }
     }
 
-    fn do_join(
+    fn can_merge_format_nodes<S: UnicodeString>(
+        dom: &Dom<S>,
+        prev: &DomHandle,
+        next: &DomHandle,
+    ) -> bool {
+        if let (DomNode::Container(prev_node), DomNode::Container(next_node)) =
+            (dom.lookup_node(prev.clone()), dom.lookup_node(next.clone()))
+        {
+            if let (
+                ContainerNodeKind::Formatting(prev_format),
+                ContainerNodeKind::Formatting(next_format),
+            ) = (prev_node.kind(), next_node.kind())
+            {
+                // Found a matching sibling node with the same format
+                return prev_format == next_format;
+            }
+        }
+        false
+    }
+
+    fn do_join_structure_nodes<S: UnicodeString>(
         dom: &mut Dom<S>,
         ancestors_start: &Vec<DomHandle>,
         ancestors_next: &Vec<DomHandle>,
@@ -182,7 +187,11 @@ where
                         // Both containers with the same tag.
                         // Move children from next to start node, remove next node.
                         let new_index_in_parent =
-                            Self::move_children(dom, next_handle, start_handle);
+                            Self::move_children_and_delete_parent(
+                                dom,
+                                next_handle,
+                                start_handle,
+                            );
                         // This alters ancestors, so we need to re-calculate them and start again.
                         let new_ancestors_next = Self::re_calculate_ancestors(
                             start_handle,
@@ -190,7 +199,7 @@ where
                             i,
                         );
                         // Restart the process
-                        Self::do_join(
+                        Self::do_join_structure_nodes(
                             dom,
                             ancestors_start,
                             &new_ancestors_next,
@@ -241,7 +250,10 @@ where
         Self::find_ancestor_list(&new_next_handle)
     }
 
-    fn find_next_node(dom: &Dom<S>, pos: usize) -> Option<DomHandle> {
+    fn find_next_node<S: UnicodeString>(
+        dom: &Dom<S>,
+        pos: usize,
+    ) -> Option<DomHandle> {
         let new_range = dom.find_range(pos, pos);
         if let Range::SameNode(r) = new_range {
             Some(r.node_handle)
@@ -250,7 +262,7 @@ where
         }
     }
 
-    fn find_struct_parents(
+    fn find_struct_parents<S: UnicodeString>(
         dom: &Dom<S>,
         start: &DomHandle,
         next: &DomHandle,
@@ -260,7 +272,7 @@ where
         (struct_parent_start, struct_parent_next)
     }
 
-    fn find_struct_parent(
+    fn find_struct_parent<S: UnicodeString>(
         dom: &Dom<S>,
         handle: &DomHandle,
     ) -> Option<DomHandle> {
@@ -281,7 +293,7 @@ where
         }
     }
 
-    fn move_children(
+    fn move_children_and_delete_parent<S: UnicodeString>(
         dom: &mut Dom<S>,
         from_handle: &DomHandle,
         to_handle: &DomHandle,
@@ -300,7 +312,7 @@ where
         {
             ret = to_node.children().len();
             for c in children {
-                to_node.append_child(c)
+                to_node.append_child(c);
             }
         } else {
             panic!("Destination node must be a ContainerNode");
@@ -333,7 +345,7 @@ where
 
     /// Search the supplied iterator for a text node and return a handle to it,
     /// or None if there are no text nodes.
-    fn find_text_handle<'a>(
+    fn find_text_handle<'a, S: UnicodeString>(
         dom: &Dom<S>,
         mut locations: impl Iterator<Item = &'a DomLocation>,
     ) -> Option<DomHandle> {
@@ -346,7 +358,7 @@ where
         })
     }
 
-    fn first_text_handle(
+    fn first_text_handle<S: UnicodeString>(
         dom: &Dom<S>,
         range: &MultipleNodesRange,
     ) -> Option<DomHandle> {

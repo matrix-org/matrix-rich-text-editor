@@ -215,13 +215,11 @@ where
         new_text: S,
     ) {
         let len = new_text.len();
-        let node_joiner = NodeJoiner::from_range(&self.state.dom, &range);
-
-        let to_delete = self.replace_in_text_nodes(range, new_text);
+        let to_delete = self.replace_in_text_nodes(range.clone(), new_text);
         self.delete_nodes(to_delete);
 
         let pos: usize = self.state.start.into();
-        node_joiner.join_nodes(&mut self.state.dom, pos + len + 1);
+        NodeJoiner::join_nodes(&mut self.state.dom, &range, pos + len + 1);
     }
 
     /// Given a range to replace and some new text, modify the nodes in the

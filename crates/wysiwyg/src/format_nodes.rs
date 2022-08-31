@@ -3,7 +3,9 @@ use crate::dom::nodes::{ContainerNodeKind, DomNode, TextNode};
 use crate::dom::{
     Dom, DomHandle, DomLocation, MultipleNodesRange, Range, SameNodeRange,
 };
-use crate::{ComposerModel, ComposerUpdate, InlineFormatType, UnicodeString};
+use crate::{
+    ComposerModel, ComposerUpdate, InlineFormatType, NodeJoiner, UnicodeString,
+};
 
 #[derive(Eq, PartialEq, Debug)]
 enum FormatSelectionType {
@@ -25,7 +27,7 @@ where
                 self.format_same_node(range, format);
                 // TODO: for now, we replace every time, to check ourselves, but
                 // at least some of the time we should not
-                return self.create_update_replace_all();
+                self.create_update_replace_all()
             }
 
             Range::NoNode => {
@@ -33,12 +35,12 @@ where
                     format,
                     vec![DomNode::Text(TextNode::from(S::from_str("")))],
                 ));
-                return ComposerUpdate::keep();
+                ComposerUpdate::keep()
             }
 
             Range::MultipleNodes(range) => {
                 self.format_several_nodes(&range, format);
-                return self.create_update_replace_all();
+                self.create_update_replace_all()
             }
         }
     }
@@ -189,11 +191,15 @@ where
                             panic!("Node was not a text node so it cannot be split.");
                         }
                     }
+                    // Clean up by removing any empty text nodes and merging formatting nodes
+                    self.remove_empty_text_nodes(
+                        loc.node_handle.parent_handle(),
+                    );
+                    self.merge_formatting_node_with_siblings(
+                        loc.node_handle.clone(),
+                    );
                 }
             }
-            // Clean up by removing any empty text nodes and merging formatting nodes
-            self.remove_empty_text_nodes(loc.node_handle.parent_handle());
-            self.merge_formatting_nodes(loc.node_handle.parent_handle());
         }
     }
 
@@ -265,17 +271,19 @@ where
         }
     }
 
-    fn merge_formatting_nodes(&mut self, parent_handle: DomHandle) {
+    fn merge_formatting_node_with_siblings(&mut self, handle: DomHandle) {
+        // If has next sibling, try to join it with the current node
         if let DomNode::Container(parent) =
-            self.state.dom.lookup_node_mut(parent_handle.clone())
+            self.state.dom.lookup_node(handle.parent_handle())
         {
-            let children = parent.children();
-            for i in (0..children.len() - 1).rev() {
-                parent.merge_children(i + 1, i);
+            if parent.children().len() - handle.index_in_parent() > 1 {
+                NodeJoiner::join_format_node_with_prev(
+                    &mut self.state.dom,
+                    handle.next_sibling(),
+                );
             }
-        } else {
-            panic!("Parent node must be a Container.");
         }
+        NodeJoiner::join_format_node_with_prev(&mut self.state.dom, handle);
     }
 }
 
@@ -393,6 +401,13 @@ mod test {
         let mut model = cm("{hello <b>wor}|ld</b>");
         model.format(InlineFormatType::Bold);
         assert_eq!(model.state.dom.to_string(), "<strong>hello world</strong>");
+    }
+
+    #[test]
+    fn formatting_several_nodes_works_with_plain_text_between() {
+        let mut model = cm("<b>{hello</b> <b>wor}|ld</b>");
+        model.format(InlineFormatType::Bold);
+        assert_eq!(model.state.dom.to_string(), "<b>hello world</b>");
     }
 
     #[test]
