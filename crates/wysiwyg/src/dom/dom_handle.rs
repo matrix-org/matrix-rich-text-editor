@@ -88,22 +88,27 @@ impl DomHandle {
     /// Return the underlying path used to represent this handle.
     /// Panics if this handle is unset
     pub fn raw(&self) -> &Vec<usize> {
-        let path = self.path.as_ref().expect("Handle is unset!");
-        &path
+        self.path.as_ref().expect("Handle is unset!")
+    }
+
+    /// Consume self and return the underlying path.
+    /// Panics if this handle is unset
+    pub fn into_raw(self) -> Vec<usize> {
+        self.path.expect("Handle is unset!")
     }
 
     pub fn next_sibling(&self) -> Self {
         let index_in_parent = self.index_in_parent();
-        let mut path = self.parent_handle().path;
+        let mut path = self.parent_handle().into_raw();
         path.push(index_in_parent + 1);
-        Self { path }
+        Self::from_raw(path)
     }
 
     pub fn prev_sibling(&self) -> Self {
         let index_in_parent = self.index_in_parent();
         assert!(index_in_parent > 0);
-        let mut path = self.parent_handle().path;
+        let mut path = self.parent_handle().into_raw();
         path.push(index_in_parent - 1);
-        Self { path }
+        Self::from_raw(path)
     }
 }
