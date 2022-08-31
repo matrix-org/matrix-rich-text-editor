@@ -1,8 +1,17 @@
+"use strict"
+
 import init, { new_composer_model } from './generated/wysiwyg.js';
 
 let composer_model;
 let editor;
 let button_bold;
+let button_italic;
+let button_list_ordered;
+let button_list_unordered;
+let button_redo;
+let button_strike_through;
+let button_underline;
+let button_undo;
 
 async function wysiwyg_run() {
     await init();
@@ -21,6 +30,14 @@ async function wysiwyg_run() {
     button_italic = document.getElementById('button_italic');
     button_italic.addEventListener('click', button_italic_click);
     button_italic.href = "";
+
+    button_list_ordered = document.getElementById('button_list_ordered');
+    button_list_ordered.addEventListener('click', button_list_ordered_click);
+    button_list_ordered.href = "";
+
+    button_list_unordered = document.getElementById('button_list_unordered');
+    button_list_unordered.addEventListener('click', button_list_unordered_click);
+    button_list_unordered.href = "";
 
     button_redo = document.getElementById('button_redo');
     button_redo.addEventListener('click', button_redo_click);
@@ -95,6 +112,14 @@ function button_bold_click(e) {
 
 function button_italic_click(e) {
     send_input(e, "formatItalic");
+}
+
+function button_list_ordered_click(e) {
+    send_input(e, "insertOrderedList");
+}
+
+function button_list_unordered_click(e) {
+    send_input(e, "insertUnorderedList");
 }
 
 function button_strike_through_click(e) {
@@ -295,12 +320,18 @@ function process_input(e) {
             console.debug(`composer_model.replace_text(${data})`);
             return composer_model.replace_text(data);
         }
+        case "insertOrderedList":
+            console.debug(`composer_model.create_ordered_list()`);
+            return composer_model.create_ordered_list();
         case "insertParagraph":
             console.debug(`composer_model.enter()`);
             return composer_model.enter();
         case "insertText":
             console.debug(`composer_model.replace_text(${e.data})`);
             return composer_model.replace_text(e.data);
+        case "insertUnorderedList":
+            console.debug(`composer_model.create_unordered_list()`);
+            return composer_model.create_unordered_list();
         default:
             // We should cover all of
             // https://rawgit.com/w3c/input-events/v1/index.html#interface-InputEvent-Attributes
