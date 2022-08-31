@@ -64,10 +64,13 @@ where
     where
         S: UnicodeString,
     {
-        DomNode::Container(ContainerNode::new_formatting(
-            S::from_str(tag),
-            Vec::new(),
-        ))
+        DomNode::Container(
+            ContainerNode::new_formatting_from_tag(
+                S::from_str(tag),
+                Vec::new(),
+            )
+            .expect(&format!("Unknown format tag {}", tag)),
+        )
     }
 
     /// Create a link node

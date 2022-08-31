@@ -18,6 +18,7 @@ mod composer_model;
 mod composer_state;
 mod composer_update;
 mod dom;
+mod format_nodes;
 mod format_type;
 mod location;
 mod menu_state;

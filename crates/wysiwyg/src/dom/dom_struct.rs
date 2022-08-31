@@ -259,7 +259,7 @@ mod test {
         // Create a simple DOM
         let dom = Dom::new(vec![
             DomNode::Text(TextNode::from(utf16("a"))),
-            DomNode::new_formatting(
+            DomNode::new_formatting_from_tag(
                 utf16("b"),
                 vec![DomNode::Text(TextNode::from(utf16("b")))],
             ),
@@ -274,7 +274,7 @@ mod test {
         // Create a simple DOM
         let dom = Dom::new(vec![
             DomNode::Text(TextNode::from(utf16("a"))),
-            DomNode::new_formatting(
+            DomNode::new_formatting_from_tag(
                 utf16("b"),
                 vec![DomNode::Text(TextNode::from(utf16("b")))],
             ),

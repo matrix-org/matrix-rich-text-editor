@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#[derive(Debug, Clone)]
+use crate::UnicodeString;
+
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum InlineFormatType {
     Bold,
     Italic,
@@ -29,6 +31,21 @@ impl InlineFormatType {
             InlineFormatType::StrikeThrough => "del",
             InlineFormatType::Underline => "u",
             InlineFormatType::InlineCode => "code",
+        }
+    }
+}
+
+impl<S: UnicodeString> From<S> for InlineFormatType {
+    fn from(value: S) -> Self {
+        match value.to_utf8().as_str() {
+            "b" | "strong" => InlineFormatType::Bold,
+            "i" | "em" => InlineFormatType::Italic,
+            "del" => InlineFormatType::StrikeThrough,
+            "u" => InlineFormatType::Underline,
+            "code" => InlineFormatType::InlineCode,
+            _ => {
+                panic!("Unknown format type {}", value.to_utf8().as_str());
+            }
         }
     }
 }

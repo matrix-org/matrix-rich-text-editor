@@ -19,6 +19,7 @@ use crate::dom::nodes::text_node::TextNode;
 use crate::dom::to_html::ToHtml;
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::UnicodeString;
+use crate::InlineFormatType;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum DomNode<S>
@@ -33,8 +34,21 @@ impl<S> DomNode<S>
 where
     S: UnicodeString,
 {
-    pub fn new_formatting(format: S, children: Vec<DomNode<S>>) -> DomNode<S> {
+    pub fn new_formatting(
+        format: InlineFormatType,
+        children: Vec<DomNode<S>>,
+    ) -> DomNode<S> {
         DomNode::Container(ContainerNode::new_formatting(format, children))
+    }
+
+    pub fn new_formatting_from_tag(
+        format: S,
+        children: Vec<DomNode<S>>,
+    ) -> DomNode<S> {
+        DomNode::Container(
+            ContainerNode::new_formatting_from_tag(format.clone(), children)
+                .expect(&format!("Unknown format tag {}", format.to_utf8())),
+        )
     }
 
     pub fn new_list(list_type: S, children: Vec<DomNode<S>>) -> DomNode<S> {
@@ -71,6 +85,14 @@ where
 
     pub fn new_link(url: S, children: Vec<DomNode<S>>) -> DomNode<S> {
         DomNode::Container(ContainerNode::new_link(url, children))
+    }
+
+    pub fn is_container_node(&self) -> bool {
+        matches!(self, DomNode::Container(_))
+    }
+
+    pub fn is_text_node(&self) -> bool {
+        matches!(self, DomNode::Text(_))
     }
 
     pub fn is_structure_node(&self) -> bool {
