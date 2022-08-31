@@ -102,7 +102,7 @@ impl DomLocation {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct MultipleNodesRange {
     pub locations: Vec<DomLocation>,
 }

@@ -70,11 +70,15 @@ where
         self.document().children()
     }
 
-    pub fn append_child(&mut self, child: DomNode<S>) {
+    pub fn append_child(&mut self, child: DomNode<S>) -> DomHandle {
         self.document_mut().append_child(child)
     }
 
-    pub fn replace(&mut self, node_handle: DomHandle, nodes: Vec<DomNode<S>>) {
+    pub fn replace(
+        &mut self,
+        node_handle: DomHandle,
+        nodes: Vec<DomNode<S>>,
+    ) -> Vec<DomHandle> {
         let parent_node = self.lookup_node_mut(node_handle.parent_handle());
         let index = node_handle.index_in_parent();
         match parent_node {
