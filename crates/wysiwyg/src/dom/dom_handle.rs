@@ -41,8 +41,7 @@ impl DomHandle {
     /// Returns true if this handle refers to a root node
     /// Panics if this handle is unset.
     pub fn is_root(&self) -> bool {
-        let path = self.path.as_ref().expect("Handle is unset!");
-        path.is_empty()
+        self.raw().is_empty()
     }
 
     /// Return the handle of this node's parent, or None if this is the
@@ -50,7 +49,7 @@ impl DomHandle {
     /// Panics if this handle is unset
     /// Panics if we have no parent (i.e. this handle is the root)
     pub fn parent_handle(&self) -> DomHandle {
-        let path = self.path.as_ref().expect("Handle is unset!");
+        let path = self.raw();
         if path.is_empty() {
             panic!("Root handle has no parent!");
         } else {
@@ -63,8 +62,7 @@ impl DomHandle {
     /// Return a new handle for one of our children, with the supplied index.
     /// Panics if this handle is unset
     pub fn child_handle(&self, child_index: usize) -> DomHandle {
-        let path = self.path.as_ref().expect("Handle is unset!");
-        let mut new_path = path.clone();
+        let mut new_path = self.raw().clone();
         new_path.push(child_index);
         DomHandle::from_raw(new_path)
     }
@@ -74,16 +72,17 @@ impl DomHandle {
     /// parent_handle().
     /// Panics if this handle is unset
     pub fn has_parent(&self) -> bool {
-        let path = self.path.as_ref().expect("Handle is unset!");
-        path.len() > 0
+        self.raw().len() > 0
     }
 
     /// Return this handle's position within its parent.
     /// Panics if this handle is unset
     /// Panics if we have no parent (i.e. this handle is the root)
     pub fn index_in_parent(&self) -> usize {
-        let path = self.path.as_ref().expect("Handle is unset!");
-        path.last().expect("Root handle has no parent!").clone()
+        self.raw()
+            .last()
+            .expect("Root handle has no parent!")
+            .clone()
     }
 
     /// Return the underlying path used to represent this handle.
