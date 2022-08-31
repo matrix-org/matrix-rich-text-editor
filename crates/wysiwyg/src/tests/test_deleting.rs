@@ -118,7 +118,6 @@ fn deleting_across_list_items_joins_them() {
 }
 
 #[test]
-#[ignore = "TODO Fails because of an invalid handle"]
 fn deleting_across_lists_joins_them() {
     let mut model = cm("<ol>
             <li>1{1</li>
@@ -129,5 +128,53 @@ fn deleting_across_lists_joins_them() {
             <li>4}|4</li>
         </ol>");
     model.delete();
-    assert_eq!(tx(&model), "<ol><li>14</li></ol>");
+    assert_eq!(
+        tx(&model),
+        "<ol>
+            <li>1|4</li>
+        </ol>"
+    );
+}
+
+#[test]
+fn deleting_across_lists_joins_them_nested() {
+    let mut model = cm("<ol>
+            <li>1{1</li>
+            <li>22</li>
+            <ol>
+                <li>55</li>
+            </ol>
+        </ol>
+        <ol>
+            <li>33</li>
+            <li>4}|4</li>
+        </ol>");
+    model.delete();
+    assert_eq!(
+        tx(&model),
+        "<ol>
+            <li>1|4</li>
+        </ol>"
+    );
+}
+
+#[test]
+fn deleting_across_formatting_different_types() {
+    let mut model = cm("<b><i>some {italic</i></b> and}| <b>bold</b> text");
+    model.delete();
+    assert_eq!(tx(&model), "<b><i>some |</i></b> <b>bold</b> text");
+}
+
+#[test]
+fn deleting_across_formatting_different_types_on_node_boundary() {
+    let mut model = cm("<b><i>some {italic</i></b> and }|<b>bold</b> text");
+    model.delete();
+    assert_eq!(tx(&model), "<b><i>some |</i>bold</b> text");
+}
+
+#[test]
+fn deleting_in_nested_structure_and_format_nodes_works() {
+    let mut model = cm("<ul><li>A</li><li><b>B{B</b><b>C}|C</b></li></ul>");
+    model.delete();
+    assert_eq!(tx(&model), "<ul><li>A</li><li><b>B|C</b></li></ul>");
 }

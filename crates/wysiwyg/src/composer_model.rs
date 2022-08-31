@@ -247,7 +247,7 @@ where
         self.delete_nodes(to_delete);
 
         let pos: usize = self.state.start.into();
-        node_joiner.join_nodes(&mut self.state.dom, pos + len);
+        node_joiner.join_nodes(&mut self.state.dom, pos + len + 1);
     }
 
     /// Given a range to replace and some new text, modify the nodes in the
