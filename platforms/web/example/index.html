@@ -15,7 +15,10 @@ body {
 .editor_toolbar {
     border-bottom: none;
     box-shadow: 0 2px 2px -2px rgba(34,47,62,.1),0 8px 8px -4px rgba(34,47,62,.07);
-    padding: 0.4em 1em 0.1em 0.3em;
+    padding: 0.4em 1em 0.3em 0.3em;
+    display: flex;
+    gap: 0.1em;
+    flex-wrap: wrap;
 }
 .editor {
     height: 4em;
@@ -23,17 +26,41 @@ body {
     font-family: "Inter", "Twemoji", "Apple Color Emoji", "Segoe UI Emoji",
     "STIXGeneral", "Arial", "Helvetica", sans-serif, "Noto Color Emoji";
 }
+.editor ul,ol {
+    margin: 0em;
+}
+button {
+    line-height: 0.5em;
+    padding: 0.1em;
+    margin: 0em;
+    background-color: transparent;
+    border: 1px dotted transparent;
+}
+button:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    border: 1px dotted rgba(0, 0, 0, 0.3);
+}
 </style>
 </head>
 <body>
 <div class="editor_container">
 <div class="editor_toolbar">
-    <a id="button_undo" href="#"><img src="images/undo.svg"/></a>
-    <a id="button_redo" href="#"><img src="images/redo.svg"/></a>
-    <a id="button_bold" href="#"><img src="images/bold.svg"/></a>
-    <a id="button_italic" href="#"><img src="images/italic.svg"/></a>
-    <a id="button_strike_through" href="#"><img src="images/strike_through.svg"/></a>
-    <a id="button_underline" href="#"><img src="images/underline.svg"/></a>
+    <button id="button_undo" href="#"><img src="images/undo.svg"/></button>
+    <button id="button_redo" href="#"><img src="images/redo.svg"/></button>
+    <button id="button_bold" href="#"><img src="images/bold.svg"/></button>
+    <button id="button_italic" href="#"><img src="images/italic.svg"/></button>
+    <button id="button_strike_through" href="#">
+        <img src="images/strike_through.svg"/>
+    </button>
+    <button id="button_underline" href="#">
+        <img src="images/underline.svg"/>
+    </button>
+    <button id="button_list_unordered" href="#">
+        <img src="images/list-unordered.svg"/>
+    </button>
+    <button id="button_list_ordered" href="#">
+        <img src="images/list-ordered.svg"/>
+    </button>
 </div>
 <div class="editor" contenteditable="true" role="textbox"><br/></div>
 </div>
