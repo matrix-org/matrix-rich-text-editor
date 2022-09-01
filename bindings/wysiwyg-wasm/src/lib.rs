@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::collections::VecDeque;
+
 use wasm_bindgen::prelude::*;
 use widestring::Utf16String;
 use wysiwyg::UnicodeString;
@@ -33,6 +35,12 @@ impl ComposerModel {
     pub fn new() -> Self {
         Self {
             inner: wysiwyg::ComposerModel::new(),
+        }
+    }
+
+    pub fn document(&self) -> DomHandle {
+        DomHandle {
+            inner: self.inner.state.dom.document().handle(),
         }
     }
 
@@ -266,3 +274,142 @@ impl ActionResponse {
 }
 
 pub struct Dummy;
+
+/// An iterator-like view of a DomHandle's children, written to work around
+/// the lack of support for returning Vec<T> in wasm_bindgen.
+#[wasm_bindgen]
+pub struct DomChildren {
+    inner: VecDeque<DomHandle>,
+}
+
+#[wasm_bindgen]
+impl DomChildren {
+    fn new() -> Self {
+        Self {
+            inner: VecDeque::new(),
+        }
+    }
+
+    pub fn next(&mut self) -> Option<DomHandle> {
+        self.inner.pop_front()
+    }
+}
+
+impl FromIterator<DomHandle> for DomChildren {
+    fn from_iter<T: IntoIterator<Item = DomHandle>>(iter: T) -> Self {
+        Self {
+            inner: VecDeque::from_iter(iter),
+        }
+    }
+}
+
+#[wasm_bindgen]
+/// Refers to a node in the composer model.
+pub struct DomHandle {
+    inner: wysiwyg::DomHandle,
+}
+
+#[wasm_bindgen]
+impl DomHandle {
+    /// Returns either "container" or "text" depending on the type of
+    /// node we refer to.
+    /// Panics if we are not a valid reference (because the model has changed
+    /// since we were created, or because you passed in a different model
+    /// from the one that created us.)
+    pub fn node_type(&self, model: &ComposerModel) -> String {
+        let node = model.inner.state.dom.lookup_node(self.inner.clone());
+        String::from(match node {
+            wysiwyg::DomNode::Container(_) => "container",
+            wysiwyg::DomNode::Text(_) => "text",
+        })
+    }
+
+    /// Returns a list of our children nodes, or an empty list if we refer
+    /// to a text node.
+    /// Panics if we are not a valid reference (because the model has changed
+    /// since we were created, or because you passed in a different model
+    /// from the one that created us.)
+    pub fn children(&self, model: &ComposerModel) -> DomChildren {
+        let node = model.inner.state.dom.lookup_node(self.inner.clone());
+        match node {
+            wysiwyg::DomNode::Container(node) => node
+                .children()
+                .iter()
+                .map(|child| DomHandle {
+                    inner: child.handle(),
+                })
+                .collect(),
+            wysiwyg::DomNode::Text(_) => DomChildren::new(),
+        }
+    }
+
+    /// Returns the text of this node, or an empty string if this is a container.
+    /// Panics if we are not a valid reference (because the model has changed
+    /// since we were created, or because you passed in a different model
+    /// from the one that created us.)
+    pub fn text(&self, model: &ComposerModel) -> String {
+        let node = model.inner.state.dom.lookup_node(self.inner.clone());
+        match node {
+            wysiwyg::DomNode::Container(_) => String::from(""),
+            wysiwyg::DomNode::Text(node) => node.data().to_utf8(),
+        }
+    }
+
+    /// Returns our tagname, or "-text-" if we are a text node.
+    /// Panics if we are not a valid reference (because the model has changed
+    /// since we were created, or because you passed in a different model
+    /// from the one that created us.)
+    pub fn tag(&self, model: &ComposerModel) -> String {
+        let node = model.inner.state.dom.lookup_node(self.inner.clone());
+        match node {
+            wysiwyg::DomNode::Container(node) => node.name().to_utf8(),
+            wysiwyg::DomNode::Text(_) => String::from("-text-"),
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::ComposerModel;
+
+    #[test]
+    fn can_find_types_of_nodes() {
+        let mut model = ComposerModel::new();
+        model.replace_text("foo");
+
+        assert_eq!(model.document().node_type(&model), "container");
+        assert_eq!(
+            model.document().children(&model).inner[0].node_type(&model),
+            "text"
+        );
+    }
+
+    #[test]
+    fn can_enumerate_children_of_nodes() {
+        let mut model = ComposerModel::new();
+        model.replace_text("01234");
+        model.select(1, 4);
+        model.bold();
+        model.select(2, 3);
+        model.italic();
+
+        let children = model.document().children(&model).inner;
+        let grandchildren = children[1].children(&model).inner;
+        let great_grandchildren = grandchildren[1].children(&model).inner;
+
+        assert_eq!(children[0].node_type(&model), "text");
+        assert_eq!(children[0].text(&model), "0");
+        assert_eq!(children[1].node_type(&model), "container");
+        assert_eq!(children[1].tag(&model), "strong");
+        assert_eq!(grandchildren[0].node_type(&model), "text");
+        assert_eq!(grandchildren[0].text(&model), "1");
+        assert_eq!(grandchildren[1].node_type(&model), "container");
+        assert_eq!(grandchildren[1].tag(&model), "em");
+        assert_eq!(great_grandchildren[0].node_type(&model), "text");
+        assert_eq!(great_grandchildren[0].text(&model), "2");
+        assert_eq!(grandchildren[2].node_type(&model), "text");
+        assert_eq!(grandchildren[2].text(&model), "3");
+        assert_eq!(children[2].node_type(&model), "text");
+        assert_eq!(children[2].text(&model), "4");
+    }
+}

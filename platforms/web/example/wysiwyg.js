@@ -12,6 +12,7 @@ let button_redo;
 let button_strike_through;
 let button_underline;
 let button_undo;
+let dom;
 
 async function wysiwyg_run() {
     await init();
@@ -55,7 +56,10 @@ async function wysiwyg_run() {
     button_undo.addEventListener('click', button_undo_click);
     button_undo.href = "";
 
+    dom = document.getElementsByClassName('dom')[0];
+
     document.addEventListener('selectionchange', selectionchange);
+    refresh_dom();
     editor.focus();
 }
 
@@ -70,7 +74,64 @@ function editor_input(e) {
                 repl.end_utf16_codeunit
             );
         }
+        refresh_dom();
     }
+}
+
+function refresh_dom() {
+    dom.innerHTML = "";
+    const doc = composer_model.document();
+    let idcounter = 0;
+
+    function t(parent, name, text, attrs) {
+        const tag = document.createElement(name);
+        if (text) {
+            tag.innerHTML = text;
+        }
+        if (attrs) {
+            for (const [name, value] of Object.entries(attrs)) {
+                const attr = document.createAttribute(name);
+                if (value !== null) {
+                    attr.value = value;
+                }
+                tag.setAttributeNode(attr);
+            }
+        }
+        parent.appendChild(tag);
+        return tag;
+    }
+
+    function write_children(node, html) {
+        const list = t(html, "ul");
+        list.className = `group_${idcounter % 10}`;
+        const children = node.children(composer_model);
+        let child;
+        while (child = children.next()) {
+            if (child.node_type(composer_model) === "container") {
+                let id = `dom_${idcounter}`;
+                idcounter++;
+                const li = t(list, "li");
+                t(
+                    li,
+                    "input",
+                    null,
+                    {
+                        "type": "checkbox",
+                        "id": id,
+                        "checked": null
+                    }
+                );
+                t(li, "label", child.tag(composer_model), {"for": id});
+                id++;
+                write_children(child, li);
+            } else {
+                t(list, "li", `"${child.text(composer_model)}"`);
+            }
+        }
+    }
+
+    t(dom, "h2", "Model:");
+    write_children(doc, dom);
 }
 
 function send_input(e, inputType) {
