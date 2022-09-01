@@ -29,6 +29,8 @@ pub use crate::composer_action::ComposerAction;
 pub use crate::composer_model::ComposerModel;
 pub use crate::composer_state::ComposerState;
 pub use crate::composer_update::ComposerUpdate;
+pub use crate::dom::nodes::DomNode;
+pub use crate::dom::DomHandle;
 pub use crate::dom::ToHtml;
 pub use crate::dom::ToRawText;
 pub use crate::dom::ToTree;
