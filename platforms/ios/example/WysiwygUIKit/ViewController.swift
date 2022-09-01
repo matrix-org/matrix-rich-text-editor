@@ -16,7 +16,6 @@
 
 import UIKit
 import WysiwygComposer
-import WysiwygShared
 
 private enum Constants {
     static let maxHeight: CGFloat = 200

@@ -16,7 +16,6 @@
 
 import SwiftUI
 import WysiwygComposer
-import WysiwygShared
 
 /// Example SwiftUI view that adds a WysiwygComposer as well as a button that
 /// displays the message (+ HTML representation) the composer would send.

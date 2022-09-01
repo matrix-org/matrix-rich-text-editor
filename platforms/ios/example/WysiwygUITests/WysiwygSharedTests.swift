@@ -15,8 +15,6 @@
 //
 
 import XCTest
-// FIXME: fix usage of identifiers from shared package
-//import WysiwygShared
 @testable import WysiwygComposer
 
 /// Defines tests that can be shared between the SwiftUI and the UIKit example implementations.
@@ -109,13 +107,19 @@ final class WysiwygSharedTests {
         // 1s is more than enough for the Rust side to get notified for the selection.
         sleep(1)
 
-        let sendButton = app.buttons["WysiwygSendButton"]
+        let sendButton = app.buttons[rawIdentifier(.sendButton)]
         sendButton.tap()
 
-        let content = app.staticTexts["WysiwygContentText"]
-        let htmlContent = app.staticTexts["WysiwygHtmlContentText"]
+        let content = app.staticTexts[rawIdentifier(.contentText)]
+        let htmlContent = app.staticTexts[rawIdentifier(.htmlContentText)]
 
         XCTAssertEqual(content.label, "Some bold text")
         XCTAssertEqual(htmlContent.label, "Some bold <strong>text</strong>")
+    }
+}
+
+private extension WysiwygSharedTests {
+    static func rawIdentifier(_ id: WysiwygSharedAccessibilityIdentifier) -> String {
+        id.rawValue
     }
 }
