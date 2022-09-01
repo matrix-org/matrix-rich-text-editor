@@ -21,8 +21,9 @@
 		A6472CAF2886CF840021A0E8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A6472CAE2886CF840021A0E8 /* Assets.xcassets */; };
 		A6472CB22886CF840021A0E8 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A6472CB12886CF840021A0E8 /* Preview Assets.xcassets */; };
 		A6472CC62886CF840021A0E8 /* WysiwygUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6472CC52886CF840021A0E8 /* WysiwygUITests.swift */; };
-		A6C2156928B7ACD300C8E727 /* WysiwygShared in Frameworks */ = {isa = PBXBuildFile; productRef = A6C2156828B7ACD300C8E727 /* WysiwygShared */; };
-		A6C2156B28B7ACE700C8E727 /* WysiwygShared in Frameworks */ = {isa = PBXBuildFile; productRef = A6C2156A28B7ACE700C8E727 /* WysiwygShared */; };
+		A6C2157528C0E95C00C8E727 /* View+Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157428C0E95C00C8E727 /* View+Accessibility.swift */; };
+		A6C2157628C0E95C00C8E727 /* View+Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157428C0E95C00C8E727 /* View+Accessibility.swift */; };
+		A6C2157728C0E95C00C8E727 /* View+Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157428C0E95C00C8E727 /* View+Accessibility.swift */; };
 		A6E6B26F2886D9AA009596F2 /* WysiwygComposer in Frameworks */ = {isa = PBXBuildFile; productRef = A6E6B26E2886D9AA009596F2 /* WysiwygComposer */; };
 /* End PBXBuildFile section */
 
@@ -61,7 +62,7 @@
 		A6472CB12886CF840021A0E8 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		A6472CC12886CF840021A0E8 /* WysiwygUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WysiwygUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A6472CC52886CF840021A0E8 /* WysiwygUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygUITests.swift; sourceTree = "<group>"; };
-		A6C2156728B7AC9D00C8E727 /* WysiwygShared */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = WysiwygShared; sourceTree = "<group>"; };
+		A6C2157428C0E95C00C8E727 /* View+Accessibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Accessibility.swift"; sourceTree = "<group>"; };
 		A6E6B2712886DA6E009596F2 /* WysiwygComposer */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = WysiwygComposer; path = ../lib/WysiwygComposer; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -71,7 +72,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				A64369332899196F00ECCF8A /* WysiwygComposer in Frameworks */,
-				A6C2156B28B7ACE700C8E727 /* WysiwygShared in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -80,7 +80,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				A6E6B26F2886D9AA009596F2 /* WysiwygComposer in Frameworks */,
-				A6C2156928B7ACD300C8E727 /* WysiwygShared in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -111,6 +110,7 @@
 		A6472C9E2886CF830021A0E8 = {
 			isa = PBXGroup;
 			children = (
+				A6C2156F28C0E92A00C8E727 /* Shared */,
 				A6E6B2702886DA6E009596F2 /* Packages */,
 				A6472CA92886CF830021A0E8 /* Wysiwyg */,
 				A643691F2899175400ECCF8A /* WysiwygUIKit */,
@@ -159,6 +159,14 @@
 			path = WysiwygUITests;
 			sourceTree = "<group>";
 		};
+		A6C2156F28C0E92A00C8E727 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				A6C2157428C0E95C00C8E727 /* View+Accessibility.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
 		A6E6B26D2886D9AA009596F2 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -170,7 +178,6 @@
 			isa = PBXGroup;
 			children = (
 				A6E6B2712886DA6E009596F2 /* WysiwygComposer */,
-				A6C2156728B7AC9D00C8E727 /* WysiwygShared */,
 			);
 			name = Packages;
 			sourceTree = "<group>";
@@ -193,7 +200,6 @@
 			name = WysiwygUIKit;
 			packageProductDependencies = (
 				A64369322899196F00ECCF8A /* WysiwygComposer */,
-				A6C2156A28B7ACE700C8E727 /* WysiwygShared */,
 			);
 			productName = WysiwygUIKit;
 			productReference = A643691E2899175400ECCF8A /* WysiwygUIKit.app */;
@@ -214,7 +220,6 @@
 			name = Wysiwyg;
 			packageProductDependencies = (
 				A6E6B26E2886D9AA009596F2 /* WysiwygComposer */,
-				A6C2156828B7ACD300C8E727 /* WysiwygShared */,
 			);
 			productName = Wysiwyg;
 			productReference = A6472CA72886CF830021A0E8 /* Wysiwyg.app */;
@@ -318,6 +323,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A64369252899175400ECCF8A /* ViewController.swift in Sources */,
+				A6C2157628C0E95C00C8E727 /* View+Accessibility.swift in Sources */,
 				A64369212899175400ECCF8A /* AppDelegate.swift in Sources */,
 				A64369232899175400ECCF8A /* SceneDelegate.swift in Sources */,
 			);
@@ -327,6 +333,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A6C2157528C0E95C00C8E727 /* View+Accessibility.swift in Sources */,
 				A6472CAD2886CF830021A0E8 /* ContentView.swift in Sources */,
 				A6472CAB2886CF830021A0E8 /* WysiwygApp.swift in Sources */,
 			);
@@ -337,6 +344,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A6472CC62886CF840021A0E8 /* WysiwygUITests.swift in Sources */,
+				A6C2157728C0E95C00C8E727 /* View+Accessibility.swift in Sources */,
 				A623EBE5289AA6DE00067E57 /* WysiwygSharedTests.swift in Sources */,
 				A623EBE3289AA69E00067E57 /* WysiwygUIKitTests.swift in Sources */,
 			);
@@ -690,14 +698,6 @@
 		A64369322899196F00ECCF8A /* WysiwygComposer */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = WysiwygComposer;
-		};
-		A6C2156828B7ACD300C8E727 /* WysiwygShared */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = WysiwygShared;
-		};
-		A6C2156A28B7ACE700C8E727 /* WysiwygShared */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = WysiwygShared;
 		};
 		A6E6B26E2886D9AA009596F2 /* WysiwygComposer */ = {
 			isa = XCSwiftPackageProductDependency;
