@@ -47,6 +47,10 @@ public class WysiwygComposerViewModel: ObservableObject {
         self.model = newComposerModel()
         self.content = WysiwygComposerContent()
     }
+
+    public func treeRepresentation() -> String {
+        return self.model.toTree()
+    }
 }
 
 // MARK: - Internal

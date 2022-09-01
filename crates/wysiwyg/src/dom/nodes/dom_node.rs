@@ -18,6 +18,7 @@ use crate::dom::nodes::container_node::ContainerNode;
 use crate::dom::nodes::text_node::TextNode;
 use crate::dom::to_html::ToHtml;
 use crate::dom::to_raw_text::ToRawText;
+use crate::dom::to_tree::ToTree;
 use crate::dom::UnicodeString;
 use crate::InlineFormatType;
 
@@ -130,6 +131,18 @@ where
         match self {
             DomNode::Container(n) => n.to_raw_text(),
             DomNode::Text(n) => n.to_raw_text(),
+        }
+    }
+}
+
+impl<S> ToTree<S> for DomNode<S>
+where
+    S: UnicodeString,
+{
+    fn to_tree_display(&self, continuous_positions: Vec<usize>) -> S {
+        match self {
+            DomNode::Container(n) => n.to_tree_display(continuous_positions),
+            DomNode::Text(n) => n.to_tree_display(continuous_positions),
         }
     }
 }

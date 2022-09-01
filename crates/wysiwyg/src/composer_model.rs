@@ -15,7 +15,9 @@
 use crate::dom::nodes::{DomNode, TextNode};
 use crate::dom::parser::parse;
 use crate::dom::UnicodeString;
-use crate::dom::{DomHandle, MultipleNodesRange, Range, SameNodeRange, ToHtml};
+use crate::dom::{
+    DomHandle, MultipleNodesRange, Range, SameNodeRange, ToHtml, ToTree,
+};
 use crate::{
     ActionResponse, ComposerState, ComposerUpdate, Location, NodeJoiner,
 };
@@ -406,6 +408,10 @@ where
         } else {
             panic!("Trying to bold a non-text node")
         }
+    }
+
+    pub fn to_tree(&self) -> S {
+        self.state.dom.to_tree()
     }
 }
 

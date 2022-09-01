@@ -23,6 +23,7 @@ import WysiwygShared
 struct ContentView: View {
     /// A composer content "saved" and displayed upon hitting the send button.
     @State private var sentMessage: WysiwygComposerContent?
+    @State private var tree: String?
     /// View model for the composer.
     @StateObject private var viewModel = WysiwygComposerViewModel()
 
@@ -39,6 +40,14 @@ struct ContentView: View {
         }
         .disabled(viewModel.isContentEmpty)
         .accessibilityIdentifier(.sendButton)
+        Button("Show tree") {
+            tree = viewModel.treeRepresentation()
+        }
+        if let tree = tree {
+            Text(tree)
+                .font(.system(.body, design: .monospaced))
+                .multilineTextAlignment(.leading)
+        }
         if let sentMessage = sentMessage {
             VStack {
                 HStack {
