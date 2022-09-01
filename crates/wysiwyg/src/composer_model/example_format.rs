@@ -173,13 +173,11 @@ impl ComposerModel<Utf16String> {
             Range::SameNode(range) => {
                 let mut node = dom.lookup_node_mut(range.node_handle.clone());
                 match &mut node {
-                    DomNode::Container(_) => {
-                        panic!("Don't know how to tx in a non-text node")
-                    }
+                    DomNode::Container(_) => (), // Ignore - model is empty
                     DomNode::Text(n) => update_text_node_with_cursor(n, range),
                 };
             }
-            Range::NoNode => panic!("No node!"),
+            Range::NoNode => (), // No selection, so insert no text
             Range::MultipleNodes(range) => write_selection_multi(
                 &mut dom,
                 range,
@@ -395,7 +393,7 @@ mod test {
     use speculoos::{prelude::*, AssertionFailure, Spec};
     use widestring::Utf16String;
 
-    use crate::dom::parser;
+    use crate::dom::{parser, Dom};
     use crate::tests::testutils_composer_model::{cm, tx};
     use crate::tests::testutils_conversion::utf16;
     use crate::{ComposerModel, ComposerState, Location};
@@ -557,6 +555,20 @@ mod test {
             next_states: Vec::new(),
         };
         assert_eq!(tx(&model), "AAA<b>B|{BB</b>C}CC");
+    }
+
+    #[test]
+    fn tx_formats_empty_model() {
+        let model: ComposerModel<Utf16String> = ComposerModel {
+            state: ComposerState {
+                dom: Dom::new(Vec::new()),
+                start: Location::from(1),
+                end: Location::from(1),
+            },
+            previous_states: Vec::new(),
+            next_states: Vec::new(),
+        };
+        assert_eq!(tx(&model), "");
     }
 
     #[test]
