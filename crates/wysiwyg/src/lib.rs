@@ -13,16 +13,13 @@
 // limitations under the License.
 
 mod composer_action;
-mod composer_list_handler;
 mod composer_model;
 mod composer_state;
 mod composer_update;
 mod dom;
-mod format_nodes;
 mod format_type;
 mod location;
 mod menu_state;
-mod node_joiner;
 mod tests;
 mod text_update;
 
@@ -39,6 +36,5 @@ pub use crate::dom::UnicodeString;
 pub use crate::format_type::InlineFormatType;
 pub use crate::location::Location;
 pub use crate::menu_state::MenuState;
-use crate::node_joiner::NodeJoiner;
 pub use crate::text_update::ReplaceAll;
 pub use crate::text_update::TextUpdate;

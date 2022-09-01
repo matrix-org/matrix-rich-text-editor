@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::composer_model::{slice_from, slice_to};
+use crate::composer_model::base::{slice_from, slice_to};
 use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::{DomHandle, Range, SameNodeRange};
