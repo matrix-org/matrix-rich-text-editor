@@ -1,6 +1,6 @@
 "use strict"
 
-import init, { new_composer_model } from './generated/wysiwyg.js';
+import init, { new_composer_model, new_composer_model_from_html } from './generated/wysiwyg.js';
 
 let composer_model;
 let editor;
@@ -13,6 +13,11 @@ let button_strike_through;
 let button_underline;
 let button_undo;
 let dom;
+let testcase;
+let reset_testcase;
+
+let actions = [];
+let last_update_html = "";
 
 async function wysiwyg_run() {
     await init();
@@ -54,13 +59,25 @@ async function wysiwyg_run() {
 
     button_undo = document.getElementById('button_undo');
     button_undo.addEventListener('click', button_undo_click);
-    button_undo.href = "";
+
+    reset_testcase = document.getElementById('reset_testcase');
+    reset_testcase.addEventListener('click', resetTestcase);
 
     dom = document.getElementsByClassName('dom')[0];
+    testcase = document.getElementsByClassName('testcase')[0];
 
     document.addEventListener('selectionchange', selectionchange);
     refresh_dom();
     editor.focus();
+}
+
+function resetTestcase() {
+    let [start, end] = get_current_selection();
+    actions = [
+        ["replace_text", last_update_html],
+        ["select", start, end],
+    ];
+    update_testcase(null);
 }
 
 function editor_input(e) {
@@ -73,6 +90,7 @@ function editor_input(e) {
                 repl.start_utf16_codeunit,
                 repl.end_utf16_codeunit
             );
+            last_update_html = repl.replacement_html;
         }
         refresh_dom();
     }
@@ -89,7 +107,7 @@ function refresh_dom() {
             tag.innerHTML = text;
         }
         if (attrs) {
-            for (const [name, value] of Object.entries(attrs)) {
+            for (const [name, value] of attrs.entries()) {
                 const attr = document.createAttribute(name);
                 if (value !== null) {
                     attr.value = value;
@@ -115,13 +133,13 @@ function refresh_dom() {
                     li,
                     "input",
                     null,
-                    {
-                        "type": "checkbox",
-                        "id": id,
-                        "checked": null
-                    }
+                    new Map([
+                        ["type", "checkbox"],
+                        ["id", id],
+                        ["checked", null]
+                    ])
                 );
-                t(li, "label", child.tag(composer_model), {"for": id});
+                t(li, "label", child.tag(composer_model), new Map([["for", id]]));
                 id++;
                 write_children(child, li);
             } else {
@@ -130,7 +148,6 @@ function refresh_dom() {
         }
     }
 
-    t(dom, "h2", "Model:");
     write_children(doc, dom);
 }
 
@@ -199,7 +216,7 @@ function button_undo_click(e) {
     send_input(e, "historyUndo");
 }
 
-function selectionchange() {
+function get_current_selection() {
     const s = document.getSelection();
     // We should check that the selection is happening within the editor!
     // If anchor or focus are outside editor but not both, we should
@@ -209,8 +226,28 @@ function selectionchange() {
     const start = codeunit_count(editor, s.anchorNode, s.anchorOffset);
     const end = codeunit_count(editor, s.focusNode, s.focusOffset);
 
-    console.debug(`composer_model.select(${start}, ${end})`);
-    composer_model.select(start, end);
+    return [start, end];
+}
+
+function selectionchange() {
+    const [start, end] = get_current_selection();
+
+    const prev_start = composer_model.selection_start();
+    const prev_end = composer_model.selection_end();
+
+    // Ignore selection changes that do nothing
+    if (start == prev_start && end == prev_end) {
+        return;
+    }
+
+    // Ignore selection changes that just reverse the selection - all
+    // backwards selections actually do this, because the browser can't
+    // support backwards selections.
+    if (start == prev_end && end == prev_start) {
+        return;
+    }
+
+    action(composer_model.select(start, end), "select", start, end);
 }
 
 /**
@@ -328,10 +365,20 @@ function replace_editor(html, start_utf16_codeunit, end_utf16_codeunit) {
         let end = node_and_offset(editor, end_utf16_codeunit);
 
         if (start.node && end.node) {
-            // Ranges must always have start before end
-            if (
+
+            const endNodeBeforeStartNode = (
                 start.node.compareDocumentPosition(end.node)
                     & Node.DOCUMENT_POSITION_PRECEDING
+            );
+
+            const sameNodeButEndOffsetBeforeStartOffset = (
+                start.node === end.node && end.offset < start.offset
+            );
+
+            // Ranges must always have start before end
+            if (
+                endNodeBeforeStartNode
+                || sameNodeButEndOffsetBeforeStartOffset
             ) {
                 [start, end] = [end, start];
             }
@@ -349,50 +396,148 @@ function replace_editor(html, start_utf16_codeunit, end_utf16_codeunit) {
     sr();
 }
 
+function action(update, nme, value1, value2) {
+    if (value2 !== undefined) {
+        console.debug(`composer_model.${nme}(${value1}, ${value2})`);
+    } else if (value1 !== undefined) {
+        console.debug(`composer_model.${nme}(${value1})`);
+    } else {
+        console.debug(`composer_model.${nme}()`);
+    }
+
+    actions.push([nme, value1, value2]);
+
+    update_testcase(update);
+
+    return update;
+}
+
+function add_selection(text, start, end) {
+    const temp_model = new_composer_model_from_html(text);
+    temp_model.select(start, end);
+    return temp_model.to_example_format();
+}
+
+function update_testcase(update) {
+    let html = editor.innerHTML;
+    if (update) {
+        // TODO: if (replacement_html !== html) SHOW AN ERROR?
+        // TODO: handle other types of update (not just replace_all)
+        html = update.text_update().replace_all?.replacement_html;
+    }
+
+    testcase.innerText = generate_testcase(
+        actions, composer_model.to_example_format()
+    );
+
+    testcase.scrollTo(0, testcase.scrollTopMax);
+}
+
+function generate_testcase(actions, html) {
+    let ret = "";
+
+    function add(name, value1, value2) {
+        if (name === "select") {
+            ret += (
+                "model.select("
+                + `Location::from(${value1}), `
+                + `Location::from(${value2}));\n`
+            );
+        } else if (value2 !== undefined) {
+            ret += `model.${name}(${value1 ?? ""}, ${value2});\n`;
+        } else if (name === "replace_text") {
+            ret += `model.${name}("${value1 ?? ""}");\n`;
+        } else {
+            ret += `model.${name}(${value1 ?? ""});\n`;
+        }
+    }
+
+    function start() {
+        let text = add_selection(collected, selection[0], selection[1]);
+        ret += `let mut model = cm("${text}");\n`;
+    }
+
+    let last_name = null;
+    let collect_mode = true;
+    let collected = "";
+    let selection = [0, 0];
+    for (const [name, value1, value2] of actions) {
+        if (collect_mode) {
+            if (name === "replace_text") {
+                collected += value1;
+            } else if (name === "select") {
+                selection = [value1, value2];
+            } else {
+                collect_mode = false;
+                start();
+                add(name, value1, value2);
+            }
+        } else if (last_name === "select" && name === "select") {
+            const nl = ret.lastIndexOf("\n", ret.length - 2);
+            if (nl > -1) {
+                ret = ret.substring(0, nl) + "\n";
+                add(name, value1, value2);
+            }
+        } else {
+            add(name, value1, value2);
+        }
+        last_name = name;
+    }
+
+    if (collect_mode) {
+        start();
+    }
+
+    ret += `assert_eq!(tx(&model), "${html}");\n`;
+
+    return ret;
+}
+
 function process_input(e) {
     switch (e.inputType) {
         case "deleteContentBackward":
-            console.debug(`composer_model.backspace()`);
-            return composer_model.backspace();
+            return action(composer_model.backspace(), "backspace");
         case "deleteContentForward":
-            console.debug(`composer_model.delete()`);
-            return composer_model.delete();
+            return action(composer_model.delete(), "delete");
         case "formatBold":
-            console.debug(`composer_model.bold()`);
-            return composer_model.bold();
+            return action(composer_model.bold(), "bold");
         case "formatItalic":
-            console.debug(`composer_model.italic()`);
-            return composer_model.italic();
+            return action(composer_model.italic(), "italic");
         case "formatStrikeThrough":
-            console.debug(`composer_model.strike_through()`);
-            return composer_model.strike_through();
+            return action(composer_model.strike_through(), "strike_through");
         case "formatUnderline":
-            console.debug(`composer_model.underline()`);
-            return composer_model.underline();
+            return action(composer_model.underline(), "underline");
         case "historyRedo":
-            console.debug(`composer_model.redo()`);
-            return composer_model.redo();
+            return action(composer_model.redo(), "redo");
         case "historyUndo":
-            console.debug(`composer_model.undo()`);
-            return composer_model.undo();
+            return action(composer_model.undo(), "undo");
         case "insertFromPaste":
         {
             const data = e.dataTransfer.getData("text");
-            console.debug(`composer_model.replace_text(${data})`);
-            return composer_model.replace_text(data);
+            return action(
+                composer_model.replace_text(data),
+                "replace_text",
+                data
+            );
         }
         case "insertOrderedList":
-            console.debug(`composer_model.create_ordered_list()`);
-            return composer_model.create_ordered_list();
+            return action(
+                composer_model.create_ordered_list(),
+                "create_ordered_list"
+            );
         case "insertParagraph":
-            console.debug(`composer_model.enter()`);
-            return composer_model.enter();
+            return action(composer_model.enter(), "enter");
         case "insertText":
-            console.debug(`composer_model.replace_text(${e.data})`);
-            return composer_model.replace_text(e.data);
+            return action(
+                composer_model.replace_text(e.data),
+                "replace_text",
+                e.data
+            );
         case "insertUnorderedList":
-            console.debug(`composer_model.create_unordered_list()`);
-            return composer_model.create_unordered_list();
+            return action(
+                composer_model.create_unordered_list(),
+                "create_unordered_list"
+            );
         default:
             // We should cover all of
             // https://rawgit.com/w3c/input-events/v1/index.html#interface-InputEvent-Attributes
@@ -403,4 +548,4 @@ function process_input(e) {
     }
 }
 
-export { wysiwyg_run, codeunit_count, node_and_offset };
+export { wysiwyg_run, codeunit_count, node_and_offset, generate_testcase };

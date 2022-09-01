@@ -26,6 +26,21 @@ pub fn new_composer_model() -> ComposerModel {
 }
 
 #[wasm_bindgen]
+pub fn new_composer_model_from_html(
+    html: &str,
+    start_utf16_codeunit: u32,
+    end_utf16_codeunit: u32,
+) -> ComposerModel {
+    ComposerModel {
+        inner: wysiwyg::ComposerModel::<Utf16String>::from_html(
+            html,
+            usize::try_from(start_utf16_codeunit).unwrap(),
+            usize::try_from(end_utf16_codeunit).unwrap(),
+        ),
+    }
+}
+
+#[wasm_bindgen]
 pub struct ComposerModel {
     inner: wysiwyg::ComposerModel<Utf16String>,
 }
@@ -36,6 +51,16 @@ impl ComposerModel {
         Self {
             inner: wysiwyg::ComposerModel::new(),
         }
+    }
+
+    pub fn from_example_format(text: &str) -> Self {
+        Self {
+            inner: wysiwyg::ComposerModel::from_example_format(text),
+        }
+    }
+
+    pub fn to_example_format(&self) -> String {
+        self.inner.to_example_format()
     }
 
     pub fn document(&self) -> DomHandle {
@@ -57,6 +82,16 @@ impl ComposerModel {
                 usize::try_from(end_utf16_codeunit).unwrap(),
             ),
         );
+    }
+
+    pub fn selection_start(&self) -> u32 {
+        let ret: usize = self.inner.state.start.into();
+        ret as u32
+    }
+
+    pub fn selection_end(&self) -> u32 {
+        let ret: usize = self.inner.state.end.into();
+        ret as u32
     }
 
     pub fn replace_text(&mut self, new_text: &str) -> ComposerUpdate {

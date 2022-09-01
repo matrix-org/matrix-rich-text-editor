@@ -39,6 +39,24 @@ where
         }
     }
 
+    /// Create a UTF-16 model from an HTML string, or panic if HTML parsing
+    /// fails.
+    pub fn from_html(
+        html: &str,
+        start_codeunit: usize,
+        end_codeunit: usize,
+    ) -> Self {
+        Self {
+            state: ComposerState {
+                dom: parse(html).expect("HTML parsing failed"),
+                start: Location::from(start_codeunit),
+                end: Location::from(end_codeunit),
+            },
+            previous_states: Vec::new(),
+            next_states: Vec::new(),
+        }
+    }
+
     pub fn replace_all_html(&mut self, html: &S) -> ComposerUpdate<S> {
         let dom = parse(&html.to_utf8());
 

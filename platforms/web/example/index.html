@@ -6,6 +6,24 @@
 body {
     background-color: #fff;
     font-size: 2em;
+    margin: 0em;
+    padding: 0em;
+    border: 0em;
+}
+.wrapper {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 6em 0.1fr 1fr 0.1fr 1fr;
+    width: 100vw;
+    height: 100vh;
+    margin: 0em;
+    padding: 0em;
+    border: 0em;
+}
+.row1 {
+}
+.row2,.row3 {
+    overflow: auto;
 }
 .editor_container {
     border: 2px solid #eee;
@@ -29,38 +47,43 @@ body {
     max-height: 3.1em;
     overflow: auto;
 }
-.editor ul,ol {
+.editor_toolbar ul,ol {
     margin: 0em;
 }
-button {
+.editor_toolbar button {
     line-height: 0.5em;
     padding: 0.1em;
     margin: 0em;
     background-color: transparent;
     border: 1px dotted transparent;
 }
-button:hover {
+.editor_toolbar button:hover {
     background-color: rgba(0, 0, 0, 0.1);
     border: 1px dotted rgba(0, 0, 0, 0.3);
 }
-button img {
+.editor_toolbar button img {
     width: 3em;
 }
-.dom {
+pre {
+    margin: 0em;
+}
+.dom,.testcase {
     font-size: 45%;
     font-family: "Courier New","Ubuntu Mono","sans-serif";
     background-color: rgb(0, 0, 0.2, 0.1);
     padding: 0.3em;
     border: 2px solid #ccc;
-    margin-top: 2em;
-    max-height: 20em;
     overflow: auto;
+    white-space: nowrap;
 }
-.dom h2 {
+.dom {
+    line-height: 1.1;
+}
+h2 {
     font-family: sans-serif;
-    font-size: 100%;
+    font-size: 0.5em;
     font-weight: bold;
-    margin: 0.2em 0em;
+    margin: 1em 0em 0.2em 0em;
 }
 .dom ul {
     list-style: none;
@@ -107,6 +130,8 @@ button img {
 </style>
 </head>
 <body>
+<div class="wrapper">
+<div>
 <div class="editor_container">
 <div class="editor_toolbar">
     <button id="button_undo" href="#"><img src="images/undo.svg"/></button>
@@ -128,7 +153,16 @@ button img {
 </div>
 <div class="editor" contenteditable="true" role="textbox"><br/></div>
 </div>
+</div>
+<h2>Model:</h2>
 <div class="dom">
+</div>
+<h2>Test case: <button id="reset_testcase">Start from here</button></h2>
+<div class="testcase">
+let mut model = cm("");<br />
+assert_eq!(tx(&amp;model), "");
+</div>
+</div>
 </div>
 <script type="module" src="wysiwyg.js"></script>
 <script type="module">
