@@ -66,8 +66,7 @@ extension WysiwygComposerViewModel {
         if replacementText == "" {
             // When trying to backspace more than one UTF16 code unit, selection is required.
             if range.length > 1 {
-                self.model.select(startUtf16Codeunit: UInt32(range.location),
-                                  endUtf16Codeunit: UInt32(range.location+range.length))
+                self.select(text: text, range: range)
             }
             update = self.model.backspace()
         } else if replacementText == "\n" {
