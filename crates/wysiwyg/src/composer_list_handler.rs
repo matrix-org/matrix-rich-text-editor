@@ -30,6 +30,36 @@ where
         self.create_list(false)
     }
 
+    pub(crate) fn do_backspace_in_list(
+        &mut self,
+        parent_handle: DomHandle,
+        location: usize,
+        range: SameNodeRange,
+    ) -> ComposerUpdate<S> {
+        // do_backspace_in_list should only be called on a single location
+        // as selection can be handled in standard do_backspace.
+        assert_eq!(range.start_offset, range.end_offset);
+        let parent_node = self.state.dom.lookup_node(parent_handle.clone());
+        let list_node_handle = parent_node.handle().parent_handle();
+        if let DomNode::Container(parent) = parent_node {
+            if parent.is_empty_list_item() {
+                // Store current Dom
+                self.push_state_to_history();
+                self.remove_list_item(
+                    list_node_handle,
+                    location,
+                    parent_handle.index_in_parent(),
+                    false,
+                );
+                self.create_update_replace_all()
+            } else {
+                self.do_backspace()
+            }
+        } else {
+            panic!("No list item found")
+        }
+    }
+
     pub(crate) fn do_enter_in_list(
         &mut self,
         parent_handle: DomHandle,

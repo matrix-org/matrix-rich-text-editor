@@ -122,12 +122,27 @@ where
     }
 
     pub fn backspace(&mut self) -> ComposerUpdate<S> {
-        if self.state.start == self.state.end {
-            // Go back 1 from the current location
-            self.state.start -= 1;
-        }
+        let (s, e) = self.safe_selection();
 
-        self.replace_text(S::new())
+        if s == e {
+            let range = self.state.dom.find_range(s, e);
+            match range {
+                Range::SameNode(range) => {
+                    let parent_list_item_handle = self
+                        .state
+                        .dom
+                        .find_parent_list_item(range.node_handle.clone());
+                    if let Some(parent_handle) = parent_list_item_handle {
+                        self.do_backspace_in_list(parent_handle, e, range)
+                    } else {
+                        self.do_backspace()
+                    }
+                }
+                _ => self.do_backspace(),
+            }
+        } else {
+            self.do_backspace()
+        }
     }
 
     /// Deletes text in an arbitrary start..end range.
@@ -189,6 +204,15 @@ where
     }
 
     // Internal functions
+    pub(crate) fn do_backspace(&mut self) -> ComposerUpdate<S> {
+        if self.state.start == self.state.end {
+            // Go back 1 from the current location
+            self.state.start -= 1;
+        }
+
+        self.replace_text(S::new())
+    }
+
     pub(crate) fn create_update_replace_all(&self) -> ComposerUpdate<S> {
         ComposerUpdate::replace_all(
             self.state.dom.to_html(),

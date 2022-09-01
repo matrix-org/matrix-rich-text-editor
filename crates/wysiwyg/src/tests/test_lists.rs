@@ -46,11 +46,42 @@ fn removing_list_item() {
     let mut model = cm("<ol><li>abcd</li><li>\u{200b}|</li></ol>");
     model.enter();
     assert_eq!(tx(&model), "<ol><li>abcd</li></ol>\u{200b}|");
+
+    let mut model = cm("<ol><li>abcd</li><li>\u{200b}|</li></ol>");
+    model.backspace();
+    assert_eq!(tx(&model), "<ol><li>abcd|</li></ol>");
+
+    let mut model = cm("<ol><li>|</li></ol>");
+    model.enter();
+    assert_eq!(tx(&model), "|");
+
+    let mut model = cm("<ol><li>|</li></ol>");
+    model.backspace();
+    assert_eq!(tx(&model), "|");
+}
+
+#[test]
+fn backspacing_in_list() {
+    let mut model = cm("<ol><li>abcd</li><li>\u{200b}ef{gh}|</li></ol>");
+    model.backspace();
+    assert_eq!(tx(&model), "<ol><li>abcd</li><li>\u{200b}ef|</li></ol>");
+
+    let mut model = cm("<ol><li>ab{cd</li><li>\u{200b}efgh}|</li></ol>");
+    model.backspace();
+    assert_eq!(tx(&model), "<ol><li>ab|</li></ol>");
+
+    let mut model = cm("<ol><li>{abcd</li><li>\u{200b}}|</li></ol>");
+    model.backspace();
+    assert_eq!(tx(&model), "<ol><li>|</li></ol>");
 }
 
 #[test]
 fn entering_with_entire_selection() {
     let mut model = cm("<ol><li>{abcd}|</li></ol>");
+    model.enter();
+    assert_eq!(tx(&model), "|");
+
+    let mut model = cm("<ol><li>{abcd</li><li>\u{200b}}|</li></ol>");
     model.enter();
     assert_eq!(tx(&model), "|");
 }
