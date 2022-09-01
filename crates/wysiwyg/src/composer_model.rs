@@ -14,7 +14,7 @@
 
 pub mod base;
 pub mod delete_text;
-pub mod format_nodes;
+pub mod format;
 pub mod hyperlinks;
 pub mod join_nodes;
 pub mod lists;
