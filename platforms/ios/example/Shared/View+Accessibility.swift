@@ -19,6 +19,14 @@ import UIKit
 
 /// Defines accessibility identifiers shared between the UIKit and the SwiftUI example apps.
 public enum WysiwygSharedAccessibilityIdentifier: String {
+    case boldButton = "WysiwygBoldButton"
+    case italicButton = "WysiwygItalicButton"
+    case strikeThroughButton = "WysiwygStrikeThroughButton"
+    case underlineButton = "WysiwygUnderlineButton"
+    case undoButton = "WysiwygUndoButton"
+    case redoButton = "WysiwygRedoButton"
+    case orderedListButton = "WysiwygOrderedListButton"
+    case unorderedListButton = "WysiwygUnorderedListButton"
     case sendButton = "WysiwygSendButton"
     case contentText = "WysiwygContentText"
     case htmlContentText = "WysiwygHtmlContentText"

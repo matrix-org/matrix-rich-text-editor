@@ -75,7 +75,7 @@ final class WysiwygSharedTests {
         // 1s is more than enough for the Rust side to get notified for the selection.
         sleep(1)
 
-        let boldButton = app.buttons["WysiwygBoldButton"]
+        let boldButton = app.buttons[rawIdentifier(.boldButton)]
         boldButton.tap()
         // Bolding doesn't change text and we can't test text attributes from this context.
         XCTAssertEqual(textView.value as? String, "Some bold text")
@@ -100,7 +100,7 @@ final class WysiwygSharedTests {
         // 1s is more than enough for the Rust side to get notified for the selection.
         sleep(1)
 
-        let boldButton = app.buttons["WysiwygBoldButton"]
+        let boldButton = app.buttons[rawIdentifier(.boldButton)]
         boldButton.tap()
 
         // We can't detect data being properly reported back to the model but

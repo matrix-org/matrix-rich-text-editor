@@ -42,6 +42,33 @@ public class WysiwygComposerViewModel: ObservableObject {
         })
     }
 
+    /// Apply given action to the composer.
+    ///
+    /// - Parameters:
+    ///   - action: Action to apply.
+    public func apply(_ action: WysiwygAction) {
+        let update: ComposerUpdate
+        switch action {
+        case .bold:
+            update = self.model.format(type: .bold)
+        case .italic:
+            update = self.model.format(type: .italic)
+        case .strikethrough:
+            update = self.model.format(type: .strikeThrough)
+        case .underline:
+            update = self.model.format(type: .underline)
+        case .undo:
+            update = self.model.undo()
+        case .redo:
+            update = self.model.redo()
+        case .orderedList:
+            update = self.model.createOrderedList()
+        case .unorderedList:
+            update = self.model.createUnorderedList()
+        }
+        self.applyUpdate(update)
+    }
+
     /// Clear the content of the composer.
     public func clearContent() {
         self.model = newComposerModel()
@@ -97,54 +124,6 @@ extension WysiwygComposerViewModel {
     /// - Parameter textView: The composer's text view.
     func didUpdateText(textView: UITextView) {
         self.updateIdealHeightIfNeeded(textView)
-    }
-
-    /// Apply bold formatting to the current selection.
-    func applyBold() {
-        let update = self.model.format(type: .bold)
-        self.applyUpdate(update)
-    }
-
-    /// Apply italic formatting to the current selection.
-    func applyItalic() {
-        let update = self.model.format(type: .italic)
-        self.applyUpdate(update)
-    }
-
-    /// Apply strike through formatting to the current selection.
-    func applyStrikeThrough() {
-        let update = self.model.format(type: .strikeThrough)
-        self.applyUpdate(update)
-    }
-
-    /// Apply underline formatting to the current selection.
-    func applyUnderline() {
-        let update = self.model.format(type: .underline)
-        self.applyUpdate(update)
-    }
-
-    /// Undo last model operation.
-    func undo() {
-        let update = self.model.undo()
-        self.applyUpdate(update)
-    }
-
-    /// Redo latest undone operation.
-    func redo() {
-        let update = self.model.redo()
-        self.applyUpdate(update)
-    }
-
-    /// Create an ordered list.
-    func createOrderedList() {
-        let update = self.model.createOrderedList()
-        self.applyUpdate(update)
-    }
-
-    /// Create an unordered list.
-    func createUnorderedList() {
-        let update = self.model.createUnorderedList()
-        self.applyUpdate(update)
     }
 }
 

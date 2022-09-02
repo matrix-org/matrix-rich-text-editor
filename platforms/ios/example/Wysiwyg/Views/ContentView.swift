@@ -33,6 +33,9 @@ struct ContentView: View {
             .environmentObject(viewModel)
             .frame(maxHeight: min(viewModel.idealHeight, 250),
                    alignment: .center)
+        WysiwygActionToolbar { action in
+            viewModel.apply(action)
+        }
         Button("Send") {
             sentMessage = viewModel.content
             viewModel.clearContent()

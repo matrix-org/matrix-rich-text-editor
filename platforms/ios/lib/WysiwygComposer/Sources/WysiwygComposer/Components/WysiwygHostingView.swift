@@ -49,6 +49,14 @@ public final class WysiwygHostingView: UIView {
     private var cancellables: Set<AnyCancellable>?
 
     // MARK: - Public
+    /// Apply given action to the composer.
+    ///
+    /// - Parameters:
+    ///   - action: Action to apply.
+    public func apply(_ action: WysiwygAction) {
+        viewModel.apply(action)
+    }
+
     /// Clear the content of the composer.
     public func clearContent() {
         viewModel.clearContent()
