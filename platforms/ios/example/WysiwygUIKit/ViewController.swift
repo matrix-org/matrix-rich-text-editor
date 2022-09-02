@@ -25,6 +25,7 @@ private enum Constants {
 /// displays the message (+ HTML representation) the composer would send.
 final class ViewController: UIViewController {
     @IBOutlet private weak var wysiwygHostingView: WysiwygHostingView!
+    @IBOutlet private weak var wysiwygActionsStackView: UIStackView!
     @IBOutlet private weak var sendButton: UIButton!
     @IBOutlet private weak var contentLabel: UILabel!
     @IBOutlet private weak var htmlContentLabel: UILabel!
@@ -32,6 +33,15 @@ final class ViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        WysiwygAction.allCases.forEach { action in
+            let button = WysiwygActionButton()
+            button.setAction(action)
+            button.addTarget(self, action: #selector(onActionButtonTouchedUpInside),
+                             for: .touchUpInside)
+            wysiwygActionsStackView.addArrangedSubview(button)
+        }
+
         wysiwygHostingView.delegate = self
         sendButton.setAccessibilityIdentifier(.sendButton)
         contentLabel.setAccessibilityIdentifier(.contentText)
@@ -40,6 +50,12 @@ final class ViewController: UIViewController {
 }
 
 private extension ViewController {
+    @objc func onActionButtonTouchedUpInside(_ sender: WysiwygActionButton) {
+        guard let action = sender.wysiwygAction else { return }
+
+        wysiwygHostingView.apply(action)
+    }
+
     @IBAction func sendButtonTouchedUpInside(_ sender: UIButton) {
         // Get the current content of the composer.
         contentLabel.text = wysiwygHostingView.content.plainText
@@ -56,5 +72,17 @@ extension ViewController: WysiwygHostingViewDelegate {
 
     func isContentEmptyDidChange(_ isEmpty: Bool) {
         sendButton.isEnabled = !isEmpty
+    }
+}
+
+/// Custom button that contains a `WysiwygAction`
+private final class WysiwygActionButton: UIButton {
+    private(set) var wysiwygAction: WysiwygAction?
+
+    func setAction(_ wysiwygAction: WysiwygAction) {
+        self.wysiwygAction = wysiwygAction
+        self.accessibilityIdentifier = wysiwygAction.accessibilityIdentifier.rawValue
+        self.setImage(UIImage(systemName: wysiwygAction.iconName),
+                      for: .normal)
     }
 }

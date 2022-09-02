@@ -27,73 +27,8 @@ public struct WysiwygView: View {
                                 select: viewModel.select,
                                 didUpdateText: viewModel.didUpdateText)
             .padding(.all, 8)
-            /*
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(.blue)
-            )
-             */
             .padding([.leading, .trailing], 8)
             .padding([.top, .bottom], 4)
-            HStack {
-                Button {
-                    viewModel.applyBold()
-                } label: {
-                    Image(systemName: "bold")
-                }
-                .buttonStyle(.automatic)
-                .accessibilityIdentifier(.boldButton)
-                Button {
-                    viewModel.applyItalic()
-                } label: {
-                    Image(systemName: "italic")
-                }
-                .buttonStyle(.automatic)
-                .accessibilityIdentifier(.italicButton)
-                Button {
-                    viewModel.applyStrikeThrough()
-                } label: {
-                    Image(systemName: "strikethrough")
-                }
-                .buttonStyle(.automatic)
-                .accessibilityIdentifier(.strikeThroughButton)
-                Button {
-                    viewModel.applyUnderline()
-                } label: {
-                    Image(systemName: "underline")
-                }
-                .buttonStyle(.automatic)
-                .accessibilityIdentifier(.underlineButton)
-                Button {
-                    viewModel.undo()
-                } label: {
-                    Image(systemName: "arrow.uturn.backward")
-                }
-                .buttonStyle(.automatic)
-                .accessibilityIdentifier(.undoButton)
-                Button {
-                    viewModel.redo()
-                } label: {
-                    Image(systemName: "arrow.uturn.forward")
-                }
-                .buttonStyle(.automatic)
-                .accessibilityIdentifier(.redoButton)
-                Button {
-                    viewModel.createOrderedList()
-                } label: {
-                    Image(systemName: "list.number")
-                }
-                .buttonStyle(.automatic)
-                .accessibilityIdentifier(.orderedListButton)
-                Button {
-                    viewModel.createUnorderedList()
-                } label: {
-                    Image(systemName: "list.bullet")
-                }
-                .buttonStyle(.automatic)
-                .accessibilityIdentifier(.unorderedListButton)
-            }
-            .frame(width: nil, height: 50, alignment: .center)
         }
     }
 

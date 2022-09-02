@@ -24,6 +24,9 @@
 		A6C2157528C0E95C00C8E727 /* View+Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157428C0E95C00C8E727 /* View+Accessibility.swift */; };
 		A6C2157628C0E95C00C8E727 /* View+Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157428C0E95C00C8E727 /* View+Accessibility.swift */; };
 		A6C2157728C0E95C00C8E727 /* View+Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157428C0E95C00C8E727 /* View+Accessibility.swift */; };
+		A6C2157928C0F62000C8E727 /* WysiwygActionToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157828C0F62000C8E727 /* WysiwygActionToolbar.swift */; };
+		A6C2157C28C0FAAD00C8E727 /* WysiwygAction+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157B28C0FAAD00C8E727 /* WysiwygAction+Utils.swift */; };
+		A6C2157D28C0FAAE00C8E727 /* WysiwygAction+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157B28C0FAAD00C8E727 /* WysiwygAction+Utils.swift */; };
 		A6E6B26F2886D9AA009596F2 /* WysiwygComposer in Frameworks */ = {isa = PBXBuildFile; productRef = A6E6B26E2886D9AA009596F2 /* WysiwygComposer */; };
 /* End PBXBuildFile section */
 
@@ -63,6 +66,8 @@
 		A6472CC12886CF840021A0E8 /* WysiwygUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WysiwygUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A6472CC52886CF840021A0E8 /* WysiwygUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygUITests.swift; sourceTree = "<group>"; };
 		A6C2157428C0E95C00C8E727 /* View+Accessibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Accessibility.swift"; sourceTree = "<group>"; };
+		A6C2157828C0F62000C8E727 /* WysiwygActionToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygActionToolbar.swift; sourceTree = "<group>"; };
+		A6C2157B28C0FAAD00C8E727 /* WysiwygAction+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WysiwygAction+Utils.swift"; sourceTree = "<group>"; };
 		A6E6B2712886DA6E009596F2 /* WysiwygComposer */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = WysiwygComposer; path = ../lib/WysiwygComposer; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -134,9 +139,9 @@
 			isa = PBXGroup;
 			children = (
 				A6472CAA2886CF830021A0E8 /* WysiwygApp.swift */,
-				A6472CAC2886CF830021A0E8 /* ContentView.swift */,
 				A6472CAE2886CF840021A0E8 /* Assets.xcassets */,
 				A6472CB02886CF840021A0E8 /* Preview Content */,
+				A6C2157A28C0F63400C8E727 /* Views */,
 			);
 			path = Wysiwyg;
 			sourceTree = "<group>";
@@ -163,8 +168,18 @@
 			isa = PBXGroup;
 			children = (
 				A6C2157428C0E95C00C8E727 /* View+Accessibility.swift */,
+				A6C2157B28C0FAAD00C8E727 /* WysiwygAction+Utils.swift */,
 			);
 			path = Shared;
+			sourceTree = "<group>";
+		};
+		A6C2157A28C0F63400C8E727 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				A6472CAC2886CF830021A0E8 /* ContentView.swift */,
+				A6C2157828C0F62000C8E727 /* WysiwygActionToolbar.swift */,
+			);
+			path = Views;
 			sourceTree = "<group>";
 		};
 		A6E6B26D2886D9AA009596F2 /* Frameworks */ = {
@@ -326,6 +341,7 @@
 				A6C2157628C0E95C00C8E727 /* View+Accessibility.swift in Sources */,
 				A64369212899175400ECCF8A /* AppDelegate.swift in Sources */,
 				A64369232899175400ECCF8A /* SceneDelegate.swift in Sources */,
+				A6C2157D28C0FAAE00C8E727 /* WysiwygAction+Utils.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -336,6 +352,8 @@
 				A6C2157528C0E95C00C8E727 /* View+Accessibility.swift in Sources */,
 				A6472CAD2886CF830021A0E8 /* ContentView.swift in Sources */,
 				A6472CAB2886CF830021A0E8 /* WysiwygApp.swift in Sources */,
+				A6C2157928C0F62000C8E727 /* WysiwygActionToolbar.swift in Sources */,
+				A6C2157C28C0FAAD00C8E727 /* WysiwygAction+Utils.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
