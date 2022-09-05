@@ -95,6 +95,17 @@ final class NSAttributedStringRangeTests: XCTestCase {
                        NSRange(location: 0, length: 12))
     }
 
+    func testMultipleDigitsNumberedLists() throws {
+        var html = "<ol>"
+        for _ in 1...10 {
+            html.append(contentsOf: "<li>abcd</li>")
+        }
+        html.append(contentsOf: "</ol>")
+        let attributed = try NSAttributedString(html: html)
+        XCTAssertEqual(attributed.listPrefixesRanges().count,
+                       10)
+    }
+
     func testOutOfBoundsIndexes() throws {
         let html = "<ol><li>Item 1</li><li>Item 2</li></ol>Some Text"
         let attributed = try NSAttributedString(html: html)

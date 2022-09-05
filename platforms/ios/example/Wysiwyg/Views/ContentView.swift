@@ -45,22 +45,24 @@ struct ContentView: View {
         Button("Show tree") {
             tree = viewModel.treeRepresentation()
         }
-        if let tree = tree {
-            Text(tree)
-                .font(.system(.body, design: .monospaced))
-                .multilineTextAlignment(.leading)
-        }
-        if let sentMessage = sentMessage {
-            VStack {
-                HStack {
-                    Text("Content:")
-                    Text(sentMessage.plainText)
-                        .accessibilityIdentifier(.contentText)
-                }
-                HStack {
-                    Text("HTML:")
-                    Text(sentMessage.html)
-                        .accessibilityIdentifier(.htmlContentText)
+        ScrollView {
+            if let tree = tree {
+                Text(tree)
+                    .font(.system(.body, design: .monospaced))
+                    .multilineTextAlignment(.leading)
+            }
+            if let sentMessage = sentMessage {
+                VStack {
+                    HStack {
+                        Text("Content:")
+                        Text(sentMessage.plainText)
+                            .accessibilityIdentifier(.contentText)
+                    }
+                    HStack {
+                        Text("HTML:")
+                        Text(sentMessage.html)
+                            .accessibilityIdentifier(.htmlContentText)
+                    }
                 }
             }
         }
