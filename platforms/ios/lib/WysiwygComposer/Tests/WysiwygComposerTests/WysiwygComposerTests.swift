@@ -28,7 +28,7 @@ final class WysiwygComposerTests: XCTestCase {
         let update = composer.replaceText(newText: TestConstants.testStringWithEmojis)
         switch update.textUpdate() {
         case .keep:
-            XCTFail()
+            XCTFail("Expected replace all HTML update")
         case .replaceAll(replacementHtml: let codeUnits,
                          startUtf16Codeunit: let start,
                          endUtf16Codeunit: let end):
@@ -51,7 +51,7 @@ final class WysiwygComposerTests: XCTestCase {
         let update = composer.backspace()
         switch update.textUpdate() {
         case .keep:
-            XCTFail()
+            XCTFail("Expected replace all HTML update")
         case .replaceAll(replacementHtml: let codeUnits,
                          startUtf16Codeunit: let start,
                          endUtf16Codeunit: let end):
@@ -63,14 +63,14 @@ final class WysiwygComposerTests: XCTestCase {
         }
     }
 
-    func testFormatBold() {
+    func testFormatBold() throws {
         let composer = newComposerModel()
         _ = composer.replaceText(newText: "This is bold text")
         composer.select(startUtf16Codeunit: 8, endUtf16Codeunit: 12)
         let update = composer.format(type: .bold)
         switch update.textUpdate() {
         case .keep:
-            XCTFail()
+            XCTFail("Expected replace all HTML update")
         case .replaceAll(replacementHtml: let codeUnits,
                          startUtf16Codeunit: let start,
                          endUtf16Codeunit: let end):
@@ -81,7 +81,7 @@ final class WysiwygComposerTests: XCTestCase {
             XCTAssertEqual(start, 8)
             XCTAssertEqual(end, 12)
             // Constructed attributed string sets bold on the selected range.
-            let attributed = try! NSAttributedString(html: html)
+            let attributed = try NSAttributedString(html: html)
             attributed.enumerateTypedAttribute(.font, in: .init(location: 8, length: 4)) { (font: UIFont, range, _) in
                 XCTAssertEqual(range, .init(location: 8, length: 4))
                 XCTAssertTrue(font.fontDescriptor.symbolicTraits.contains(.traitBold))
@@ -102,6 +102,7 @@ final class WysiwygComposerTests: XCTestCase {
         )
     }
 
+    // swiftlint:disable:next function_body_length
     func testLists() {
         let composer = newComposerModel()
         _ = composer.createOrderedList()
@@ -112,7 +113,7 @@ final class WysiwygComposerTests: XCTestCase {
         let update = composer.enter()
         switch update.textUpdate() {
         case .keep:
-            XCTFail()
+            XCTFail("Expected replace all HTML update")
         case .replaceAll(replacementHtml: let codeUnits,
                          startUtf16Codeunit: let start,
                          endUtf16Codeunit: let end):
@@ -130,7 +131,7 @@ final class WysiwygComposerTests: XCTestCase {
         let update2 = composer.enter()
         switch update2.textUpdate() {
         case .keep:
-            XCTFail()
+            XCTFail("Expected replace all HTML update")
         case .replaceAll(replacementHtml: let codeUnits,
                          startUtf16Codeunit: let start,
                          endUtf16Codeunit: let end):
@@ -147,7 +148,7 @@ final class WysiwygComposerTests: XCTestCase {
         let update3 = composer.replaceText(newText: "Some text")
         switch update3.textUpdate() {
         case .keep:
-            XCTFail()
+            XCTFail("Expected replace all HTML update")
         case .replaceAll(replacementHtml: let codeUnits,
                          startUtf16Codeunit: let start,
                          endUtf16Codeunit: let end):

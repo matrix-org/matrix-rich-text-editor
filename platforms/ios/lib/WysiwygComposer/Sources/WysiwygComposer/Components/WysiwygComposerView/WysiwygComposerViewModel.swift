@@ -110,13 +110,19 @@ extension WysiwygComposerViewModel {
     ///   - text: Text currently displayed in the composer.
     ///   - range: Range to select.
     func select(text: NSAttributedString, range: NSRange) {
-        // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
-        let htmlSelection = try! text.htmlRange(from: range,
-                                                shouldIgnoreTrailingNewline: false)
-
-        Logger.composer.debug("New selection: Attributed {\(range.location),\(range.upperBound)} HTML {\(htmlSelection.location),\(htmlSelection.upperBound)}")
-        self.model.select(startUtf16Codeunit: UInt32(htmlSelection.location),
-                          endUtf16Codeunit: UInt32(htmlSelection.upperBound))
+        do {
+            // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
+            let htmlSelection = try text.htmlRange(from: range,
+                                                   shouldIgnoreTrailingNewline: false)
+            Logger.composer.debug("""
+                                  New selection: Attributed {\(range.location),\(range.upperBound)} \
+                                  HTML {\(htmlSelection.location),\(htmlSelection.upperBound)}
+                                  """)
+            self.model.select(startUtf16Codeunit: UInt32(htmlSelection.location),
+                              endUtf16Codeunit: UInt32(htmlSelection.upperBound))
+        } catch {
+            Logger.composer.error("Unable to select range: \(error.localizedDescription)")
+        }
     }
 
     /// Notify that the text view content has changed.
@@ -145,8 +151,8 @@ private extension WysiwygComposerViewModel {
                 // FIXME: handle error for out of bounds index
                 let htmlSelection = NSRange(location: Int(start), length: Int(end-start))
                 // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
-                let textSelection = try! attributed.attributedRange(from: htmlSelection,
-                                                                    shouldIgnoreTrailingNewline: false)
+                let textSelection = try attributed.attributedRange(from: htmlSelection,
+                                                                   shouldIgnoreTrailingNewline: false)
                 self.content = WysiwygComposerContent(
                     plainText: attributed.string,
                     html: html,

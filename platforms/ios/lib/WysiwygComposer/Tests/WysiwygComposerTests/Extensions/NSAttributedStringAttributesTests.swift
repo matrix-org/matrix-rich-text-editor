@@ -19,13 +19,15 @@ import XCTest
 
 final class NSAttributedStringTests: XCTestCase {
     func testEnumerateTypedAttribute() {
-        let attributed = NSMutableAttributedString(string: "Test", attributes: [.font : UIFont.boldSystemFont(ofSize: 15)])
+        let attributed = NSMutableAttributedString(string: "Test",
+                                                   attributes: [.font: UIFont.boldSystemFont(ofSize: 15)])
         attributed.enumerateTypedAttribute(.font) { (font: UIFont, range: NSRange, _) in
             XCTAssertTrue(font.fontDescriptor.symbolicTraits.contains(.traitBold))
             XCTAssertTrue(range == .init(location: 0, length: attributed.length))
         }
         attributed.addAttribute(.font, value: "bad type", range: .init(location: 2, length: 2))
         attributed.enumerateTypedAttribute(.font) { (font: UIFont, range: NSRange, _) in
+            XCTAssertTrue(font.fontDescriptor.symbolicTraits.contains(.traitBold))
             XCTAssertTrue(range == .init(location: 0, length: 2))
         }
     }

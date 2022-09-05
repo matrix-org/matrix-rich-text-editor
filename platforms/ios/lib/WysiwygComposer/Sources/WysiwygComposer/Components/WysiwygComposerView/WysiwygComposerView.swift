@@ -21,9 +21,9 @@ import OSLog
 struct WysiwygComposerView: UIViewRepresentable {
     // MARK: - Internal
     var content: WysiwygComposerContent
-    var replaceText: (NSAttributedString, NSRange, String) -> ()
-    var select: (NSAttributedString, NSRange) -> ()
-    var didUpdateText: (UITextView) -> ()
+    var replaceText: (NSAttributedString, NSRange, String) -> Void
+    var select: (NSAttributedString, NSRange) -> Void
+    var didUpdateText: (UITextView) -> Void
 
     func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
@@ -51,13 +51,13 @@ struct WysiwygComposerView: UIViewRepresentable {
 
     /// Coordinates UIKit communication.
     class Coordinator: NSObject, UITextViewDelegate, NSTextStorageDelegate {
-        var replaceText: (NSAttributedString, NSRange, String) -> ()
-        var select: (NSAttributedString, NSRange) -> ()
-        var didUpdateText: (UITextView) -> ()
+        var replaceText: (NSAttributedString, NSRange, String) -> Void
+        var select: (NSAttributedString, NSRange) -> Void
+        var didUpdateText: (UITextView) -> Void
 
-        init(_ replaceText: @escaping (NSAttributedString, NSRange, String) -> (),
-             _ select: @escaping (NSAttributedString, NSRange) -> (),
-             _ didUpdateText: @escaping (UITextView) -> ()) {
+        init(_ replaceText: @escaping (NSAttributedString, NSRange, String) -> Void,
+             _ select: @escaping (NSAttributedString, NSRange) -> Void,
+             _ didUpdateText: @escaping (UITextView) -> Void) {
             self.replaceText = replaceText
             self.select = select
             self.didUpdateText = didUpdateText
