@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "WysiwygComposer",
     platforms: [
-        .iOS(.v14)
+        .iOS(.v14),
     ],
     products: [
         .library(
@@ -22,7 +22,7 @@ let package = Package(
         .target(
             name: "WysiwygComposer",
             dependencies: [
-                .target(name: "WysiwygComposerFFI")
+                .target(name: "WysiwygComposerFFI"),
             ]
         ),
         .testTarget(

@@ -56,6 +56,4 @@ extension NSAttributedString {
         let font = self.attribute(.font, at: index, effectiveRange: nil) as? UIFont
         return font?.fontDescriptor.symbolicTraits ?? []
     }
-
-
 }

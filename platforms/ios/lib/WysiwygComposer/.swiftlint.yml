@@ -1,0 +1,14 @@
+# rule identifiers to exclude from running
+disabled_rules:
+  - todo
+
+# paths to ignore during linting. Takes precedence over `included`.
+excluded:
+  - Sources/WysiwygComposer/WysiwygComposer.swift
+
+line_length:
+  warning: 140
+  error: 200
+
+trailing_comma:
+    mandatory_comma: true

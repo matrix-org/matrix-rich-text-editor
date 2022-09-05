@@ -66,6 +66,7 @@ extension NSAttributedString {
                                     shouldIgnoreTrailingNewline: Bool = true) -> [NSRange] {
         let pattern = shouldIgnoreTrailingNewline ? "[\\n]?\\t•\\t" : "\\t•\\t"
         let actualRange = range ?? .init(location: 0, length: length)
+        // swiftlint:disable:next force_try
         let regex = try! NSRegularExpression(pattern: pattern)
         return regex
             .matches(in: string, range: actualRange)
@@ -84,6 +85,7 @@ extension NSAttributedString {
                                     shouldIgnoreTrailingNewline: Bool = true) -> [NSRange] {
         let pattern = shouldIgnoreTrailingNewline ? "[\\n]?\\t\\d+\\.\\t" : "\\t\\d\\.\\t"
         let actualRange = range ?? .init(location: 0, length: length)
+        // swiftlint:disable:next force_try
         let regex = try! NSRegularExpression(pattern: pattern)
         return regex
             .matches(in: string, range: actualRange)
@@ -138,7 +140,7 @@ extension NSAttributedString {
                 // Should only count the listPrefix in if we are
                 // not on an inserted newline from end of <li>
                 if !(attributedSubstring(from: .init(location: actualIndex, length: 1))
-                    .string == "\n"){
+                    .string == "\n") {
                     actualIndex += listPrefix.length
                 }
             }

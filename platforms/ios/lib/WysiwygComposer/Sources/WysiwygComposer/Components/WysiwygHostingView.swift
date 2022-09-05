@@ -80,7 +80,7 @@ public final class WysiwygHostingView: UIView {
                 .removeDuplicates()
                 .sink(receiveValue: { [unowned self] idealHeight in
                     self.delegate?.idealHeightDidChange(idealHeight)
-                })
+                }),
         ]
 
         // Attach the view to a hosting controller and display it's UIView container.
