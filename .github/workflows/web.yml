@@ -18,8 +18,8 @@ jobs:
     - name: Build
       run: make web
     - name: Upload github-pages
-      uses: actions/upload-pages-artifact
+      uses: actions/upload-pages-artifact@v1
       with:
         dir: "platforms/web/example/"
     - name: Deploy github-pages
-      uses: actions/deploy-pages
+      uses: actions/deploy-pages@v1
