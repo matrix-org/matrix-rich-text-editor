@@ -15,6 +15,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout
+      uses: actions/checkout@v3
     - name: Build
       run: make web
+    - name: Upload github-pages
+      uses: actions/upload-pages-artifact
+      with:
+        dir: "platforms/web/example/"
+    - name: Deploy github-pages
+      uses: actions/deploy-pages
