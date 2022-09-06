@@ -99,13 +99,13 @@ final class NSAttributedStringRangeTests: XCTestCase {
 
     func testMultipleDigitsNumberedLists() throws {
         var html = "<ol>"
-        for _ in 1...10 {
+        for _ in 1...100 {
             html.append(contentsOf: "<li>abcd</li>")
         }
         html.append(contentsOf: "</ol>")
         let attributed = try NSAttributedString(html: html)
         XCTAssertEqual(attributed.listPrefixesRanges().count,
-                       10)
+                       100)
     }
 
     func testOutOfBoundsIndexes() throws {
