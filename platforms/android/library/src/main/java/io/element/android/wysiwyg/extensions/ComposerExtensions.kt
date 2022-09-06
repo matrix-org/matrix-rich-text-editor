@@ -9,5 +9,7 @@ val LOG_ENABLED = BuildConfig.DEBUG
 
 fun ComposerState.dump() = "'${html.string()}' | Start: $start | End: $end"
 fun ComposerModel.log() = if (LOG_ENABLED)
-    Log.d("COMPOSER_PROCESSOR", dumpState().dump())
+    Log.d("COMPOSER_PROCESSOR", dumpState().dump()
+            // To visualize zero-width spaces easily
+        .replace("\u200b", "*"))
 else 0

@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:minHeight="48dp"
-        android:inputType="text"
+        android:inputType="textMultiLine"
         android:gravity="top"
         android:singleLine="false" />
 
@@ -75,6 +75,20 @@
                     android:layout_marginEnd="4dp"
                     android:src="@drawable/ic_link"
                     android:contentDescription="Hyperlink" />
+
+                <ImageButton android:id="@+id/orderedListButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"
+                    android:src="@drawable/ic_ordered_list"
+                    android:contentDescription="Ordered list" />
+
+                <ImageButton android:id="@+id/unorderedListButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"
+                    android:src="@drawable/ic_unordered_list"
+                    android:contentDescription="Unordered list" />
 
 
             </LinearLayout>
