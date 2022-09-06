@@ -1,28 +1,30 @@
 package io.element.android.wysiwyg
 
 import android.content.Context
-import android.text.Editable
-import android.text.Html
-import android.text.Spannable
-import android.text.Spanned
-import androidx.core.text.HtmlCompat
+import android.text.*
 import androidx.core.text.getSpans
 import io.element.android.wysiwyg.extensions.log
 import io.element.android.wysiwyg.extensions.string
-import io.element.android.wysiwyg.spans.InlineCodeSpan
-import org.xml.sax.XMLReader
+import io.element.android.wysiwyg.spans.HtmlToSpansParser
 import uniffi.wysiwyg_composer.ComposerModel
 import uniffi.wysiwyg_composer.InlineFormatType
 import uniffi.wysiwyg_composer.TextUpdate
+import kotlin.math.absoluteValue
 
 class InputProcessor(
     private val context: Context,
     private val composer: ComposerModel,
 ) {
 
-    fun updateSelection(start: Int, end: Int) {
+    fun updateSelection(editable: Editable, start: Int, end: Int) {
         if (start < 0 || end < 0) return
-        composer.select(start.toUInt(), end.toUInt())
+        val zeroWidthLineBreaksBefore = editable.getSpans<HtmlToSpansParser.ZeroWidthLineBreak>(0, start)
+            .sumOf { (editable.getSpanEnd(it) - editable.getSpanStart(it)).absoluteValue }
+
+        val newStart = (start - zeroWidthLineBreaksBefore).toUInt()
+        val newEnd = (end - zeroWidthLineBreaksBefore).toUInt()
+
+        composer.select(newStart, newEnd)
         composer.log()
     }
 
@@ -48,6 +50,9 @@ class InputProcessor(
             is EditorInputAction.ReplaceAll -> null
             is EditorInputAction.Undo -> composer.undo()
             is EditorInputAction.Redo -> composer.redo()
+            is EditorInputAction.ToggleList -> {
+                if (action.ordered) composer.createOrderedList() else composer.createUnorderedList()
+            }
         }?.textUpdate().also {
             composer.log()
         }
@@ -66,37 +71,8 @@ class InputProcessor(
     }
 
     private fun stringToSpans(string: String): Spanned {
-        // TODO: Check parsing flags
-//        val preparedString = string.replace(" ", "&nbsp;")
-        return HtmlCompat.fromHtml(string, 0, null, CustomTagHandler(context))
+        return HtmlToSpansParser(context, string).convert()
     }
-}
-
-private class CustomTagHandler(
-    private val context: Context,
-): Html.TagHandler {
-    override fun handleTag(
-        opening: Boolean,
-        tag: String?,
-        output: Editable?,
-        xmlReader: XMLReader?
-    ) {
-        val end = output?.length ?: 0
-        when (tag) {
-            "code" -> {
-                if (opening) {
-                    output?.setSpan(InlineCodeSpan(context), end, end, Spannable.SPAN_MARK_MARK)
-                } else {
-                    val last = output?.getSpans<InlineCodeSpan>()?.lastOrNull() ?: return
-                    val lastIndex = output.getSpanStart(last)
-                    output.removeSpan(last)
-
-                    output.setSpan(last, lastIndex, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-                }
-            }
-        }
-    }
-
 }
 
 sealed interface EditorInputAction {
@@ -109,6 +85,7 @@ sealed interface EditorInputAction {
     object Undo: EditorInputAction
     object Redo: EditorInputAction
     data class SetLink(val link: String): EditorInputAction
+    data class ToggleList(val ordered: Boolean): EditorInputAction
 }
 
 sealed interface InlineFormat {
@@ -131,3 +108,4 @@ data class ReplaceTextResult(
     val text: CharSequence,
     val selection: IntRange,
 )
+

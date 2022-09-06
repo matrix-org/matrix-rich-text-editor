@@ -9,7 +9,11 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
+import androidx.core.text.getSpans
 import com.google.android.material.textfield.TextInputEditText
+import io.element.android.wysiwyg.spans.HtmlToSpansParser
+import kotlin.math.absoluteValue
+import kotlin.math.min
 
 class EditorEditText : TextInputEditText {
 
@@ -44,7 +48,7 @@ class EditorEditText : TextInputEditText {
     override fun onSelectionChanged(selStart: Int, selEnd: Int) {
         super.onSelectionChanged(selStart, selEnd)
         if (inputProcessor != null) {
-            inputProcessor.updateSelection(selStart, selEnd)
+            inputProcessor.updateSelection(editableText, selStart, selEnd)
         }
         selectionChangeListener?.selectionChanged(selStart, selEnd)
     }
@@ -90,13 +94,14 @@ class EditorEditText : TextInputEditText {
         if (inputProcessor == null) {
             super.setText(text, type)
         } else if (text.isNullOrEmpty().not()) {
-            inputProcessor.updateSelection(0, end)
+            inputProcessor.updateSelection(editableText, 0, end)
             val update = inputProcessor.processInput(EditorInputAction.InsertText(text.toString()))
             val result = update?.let { inputProcessor.processUpdate(it) }
 
             if (result != null) {
+                editableText.clear()
                 editableText.replace(0, end, result.text)
-                setSelection(result.selection.first, result.selection.last)
+                setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
             } else {
                 super.setText(text, type)
             }
@@ -108,8 +113,9 @@ class EditorEditText : TextInputEditText {
         val result = update?.let { inputProcessor.processUpdate(it) }
 
         if (result != null) {
+            editableText.clear()
             editableText.replace(0, end, result.text)
-            setSelection(result.selection.first, result.selection.last)
+            setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
         } else {
             super.append(text, start, end)
         }
@@ -117,13 +123,14 @@ class EditorEditText : TextInputEditText {
 
     fun toggleInlineFormat(inlineFormat: InlineFormat): Boolean {
         val (start, end) = inputConnection.getCurrentComposition()
-        inputProcessor.updateSelection(start, end)
+        inputProcessor.updateSelection(editableText, start, end)
         val update = inputProcessor.processInput(EditorInputAction.ApplyInlineFormat(inlineFormat))
         val result = update?.let { inputProcessor.processUpdate(it) }
 
         if (result != null) {
+            editableText.clear()
             editableText.replace(0, editableText.length, result.text)
-            setSelection(result.selection.last)
+            setSelectionFromComposerUpdate(result.selection.last)
         }
         return result != null
     }
@@ -133,8 +140,9 @@ class EditorEditText : TextInputEditText {
         val result = update?.let { inputProcessor.processUpdate(it) }
 
         if (result != null) {
+            editableText.clear()
             editableText.replace(0, editableText.length, result.text)
-            setSelection(result.selection.first, result.selection.last)
+            setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
         }
     }
 
@@ -143,8 +151,9 @@ class EditorEditText : TextInputEditText {
         val result = update?.let { inputProcessor.processUpdate(it) }
 
         if (result != null) {
+            editableText.clear()
             editableText.replace(0, editableText.length, result.text)
-            setSelection(result.selection.last)
+            setSelectionFromComposerUpdate(result.selection.last)
         }
     }
 
@@ -153,9 +162,32 @@ class EditorEditText : TextInputEditText {
         val result = update?.let { inputProcessor.processUpdate(it) }
 
         if (result != null) {
+            editableText.clear()
             editableText.replace(0, editableText.length, result.text)
-            setSelection(result.selection.last)
+            setSelectionFromComposerUpdate(result.selection.last)
         }
+    }
+
+    fun toggleList(ordered: Boolean) {
+        val update = inputProcessor.processInput(EditorInputAction.ToggleList(ordered))
+        val result = update?.let { inputProcessor.processUpdate(it) }
+
+        if (result != null) {
+            editableText.clear()
+            editableText.replace(0, editableText.length, result.text)
+            setSelectionFromComposerUpdate(result.selection.last)
+        }
+    }
+
+    private fun setSelectionFromComposerUpdate(start: Int, end: Int = start) {
+        val zeroWidthLineBreaks = editableText.getSpans<HtmlToSpansParser.ZeroWidthLineBreak>()
+        val before = zeroWidthLineBreaks.filter { editableText.getSpanStart(it) <= start }
+            .sumOf { (editableText.getSpanEnd(it) - editableText.getSpanStart(it)).absoluteValue }
+        val during = zeroWidthLineBreaks.filter { editableText.getSpanStart(it) <= end }
+            .sumOf { (editableText.getSpanEnd(it) - editableText.getSpanStart(it)).absoluteValue }
+        val newStart = min(start + before, editableText.length)
+        val newEnd = min(end + during, editableText.length)
+        setSelection(newStart, newEnd)
     }
 }
 

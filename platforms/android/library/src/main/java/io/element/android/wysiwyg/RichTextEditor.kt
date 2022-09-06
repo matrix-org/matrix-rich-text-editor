@@ -50,6 +50,12 @@ class RichTextEditor : TextInputLayout {
             redoButton.setOnClickListener {
                 editText.redo()
             }
+            orderedListButton.setOnClickListener {
+                editText.toggleList(true)
+            }
+            unorderedListButton.setOnClickListener {
+                editText.toggleList(false)
+            }
         }
     }
 

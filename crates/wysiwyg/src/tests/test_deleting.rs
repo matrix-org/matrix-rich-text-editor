@@ -178,3 +178,11 @@ fn deleting_in_nested_structure_and_format_nodes_works() {
     model.delete();
     assert_eq!(tx(&model), "<ul><li>A</li><li><b>B|C</b></li></ul>");
 }
+
+#[test]
+#[ignore] // TODO: fix this test once this deletion works
+fn deleting_empty_list_item() {
+    let mut model = cm("<ul><li>A{</li><li>\u{200B}}|</li></ul>");
+    model.backspace();
+    assert_eq!(tx(&model), "<ul><li>A|</li></ul>");
+}
