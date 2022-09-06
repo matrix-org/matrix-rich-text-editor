@@ -23,7 +23,7 @@ make
 ```
 
 To build for a single platform, or to learn more, see the individual README
-files:
+files above.
 
 ## More info
 
