@@ -79,3 +79,8 @@ clean:
 
 test:
 	cargo test
+
+coverage:
+	@echo "Requires `rustup component add llvm-tools-preview`"
+	@echo "Requires `cargo install cargo-llvm-cov`"
+	cargo llvm-cov --open
