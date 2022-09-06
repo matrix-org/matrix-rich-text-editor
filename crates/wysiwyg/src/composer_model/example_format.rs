@@ -294,6 +294,11 @@ impl SelectionWritingState {
         location: &DomLocation,
         code_units: usize,
     ) -> Vec<(&'static str, usize)> {
+        if self.current_pos == 0 {
+            // If this is the first location we have visited, update our start
+            // position to the start of this location.
+            self.current_pos = location.position;
+        }
         self.current_pos += code_units;
 
         // If we just passed first, write out {
@@ -388,9 +393,12 @@ fn write_selection_multi(
 #[cfg(test)]
 mod test {
     use speculoos::{prelude::*, AssertionFailure, Spec};
+    use widestring::Utf16String;
 
+    use crate::dom::parser;
     use crate::tests::testutils_composer_model::{cm, tx};
     use crate::tests::testutils_conversion::utf16;
+    use crate::{ComposerModel, ComposerState, Location};
 
     // These tests use cm and tx for brevity, but those call directly through
     // to the code above.
@@ -508,6 +516,50 @@ mod test {
     }
 
     #[test]
+    fn cm_parses_selection_spanning_outwards_from_tag_forwards() {
+        let model = cm("AAA<b>B{BB</b>C}|CC");
+        assert_eq!(model.state.start, 4);
+        assert_eq!(model.state.end, 7);
+        assert_eq!(model.get_html(), utf16("AAA<b>BBB</b>CCC"));
+    }
+
+    #[test]
+    fn cm_parses_selection_spanning_outwards_from_tag_backwards() {
+        let model = cm("AAA<b>B|{BB</b>C}CC");
+        assert_eq!(model.state.start, 7);
+        assert_eq!(model.state.end, 4);
+        assert_eq!(model.get_html(), utf16("AAA<b>BBB</b>CCC"));
+    }
+
+    #[test]
+    fn tx_formats_selection_spanning_outwards_from_tag_forwards() {
+        let model: ComposerModel<Utf16String> = ComposerModel {
+            state: ComposerState {
+                dom: parser::parse("AAA<b>BBB</b>CCC").unwrap(),
+                start: Location::from(4),
+                end: Location::from(7),
+            },
+            previous_states: Vec::new(),
+            next_states: Vec::new(),
+        };
+        assert_eq!(tx(&model), "AAA<b>B{BB</b>C}|CC");
+    }
+
+    #[test]
+    fn tx_formats_selection_spanning_outwards_from_tag_backwards() {
+        let model: ComposerModel<Utf16String> = ComposerModel {
+            state: ComposerState {
+                dom: parser::parse("AAA<b>BBB</b>CCC").unwrap(),
+                start: Location::from(7),
+                end: Location::from(4),
+            },
+            previous_states: Vec::new(),
+            next_states: Vec::new(),
+        };
+        assert_eq!(tx(&model), "AAA<b>B|{BB</b>C}CC");
+    }
+
+    #[test]
     fn cm_creates_correct_model_selection_multi_code_units_and_tags() {
         let t8 = cm("a<i>bc|{d<b>ef}\u{1F4A9}g</b>hi</i>");
         assert_eq!(t8.state.start, 6);
@@ -551,6 +603,10 @@ mod test {
         assert_that!("AA|{A<b>B<em>B</em>B</b>C}CC").roundtrips();
         assert_that!("{AAA<b>B<em>B</em>B</b>CCC}|").roundtrips();
         assert_that!("|{AAA<b>B<em>B</em>B</b>CCC}").roundtrips();
+        assert_that!("A{AA<b>B}|BB</b>CCC").roundtrips();
+        assert_that!("A|{AA<b>B}BB</b>CCC").roundtrips();
+        assert_that!("AAA<b>B{BB</b>C}|CC").roundtrips();
+        assert_that!("AAA<b>B|{BB</b>C}CC").roundtrips();
     }
 
     trait Roundtrips<T> {
