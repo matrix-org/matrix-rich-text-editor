@@ -1,5 +1,10 @@
 import init from "./generated/wysiwyg.js";
-import { codeunit_count, node_and_offset, generate_testcase } from "./wysiwyg.js";
+import {
+    codeunit_count,
+    node_and_offset,
+    generate_testcase,
+    selection_according_to_actions
+} from "./wysiwyg.js";
 
 const editor = document.getElementById('editor');
 
@@ -158,6 +163,22 @@ run_tests([
         assert_eq(codeunit_count(editor, thirdTextNode, 0), 9);
         assert_eq(codeunit_count(editor, thirdTextNode, 1), 10);
         assert_eq(codeunit_count(editor, thirdTextNode, 2), 11);
+    }},
+
+    { name: "Selection according to no actions is -1, 1", test: () => {
+        const actions = [];
+        assert_eq([-1, -1], selection_according_to_actions(actions));
+    }},
+
+    { name: "Selection is found from the last action", test: () => {
+        const actions = [
+            ["foo", "bar", "baz"],
+            ["select", 10, 10],
+            ["foo", "bar", "baz"],
+            ["select", 12, 13],
+            ["foo", "bar", "baz"],
+        ];
+        assert_eq([12, 13], selection_according_to_actions(actions));
     }},
 
     { name: "Generate testcase from 1 character and selection", test: () => {
