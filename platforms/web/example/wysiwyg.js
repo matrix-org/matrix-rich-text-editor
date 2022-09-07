@@ -229,21 +229,44 @@ function get_current_selection() {
     return [start, end];
 }
 
+function selection_according_to_actions(actions) {
+    for (let i = actions.length - 1; i >= 0; i--) {
+        const action = actions[i];
+        console.log(action);
+        if (action[0] === "select") {
+            return [action[1], action[2]];
+        }
+    }
+    return [-1, -1];
+}
+
 function selectionchange() {
     const [start, end] = get_current_selection();
 
     const prev_start = composer_model.selection_start();
     const prev_end = composer_model.selection_end();
 
+    const [act_start, act_end] = selection_according_to_actions(actions);
+
     // Ignore selection changes that do nothing
-    if (start == prev_start && end == prev_end) {
+    if (
+        start === prev_start &&
+        start === act_start &&
+        end === prev_end &&
+        end === act_end
+    ) {
         return;
     }
 
     // Ignore selection changes that just reverse the selection - all
     // backwards selections actually do this, because the browser can't
     // support backwards selections.
-    if (start == prev_end && end == prev_start) {
+    if (
+        start === prev_end &&
+        start === act_end &&
+        end === prev_start &&
+        end === act_start
+    ) {
         return;
     }
 
@@ -548,4 +571,10 @@ function process_input(e) {
     }
 }
 
-export { wysiwyg_run, codeunit_count, node_and_offset, generate_testcase };
+export {
+    wysiwyg_run,
+    codeunit_count,
+    node_and_offset,
+    generate_testcase,
+    selection_according_to_actions
+};
