@@ -12,8 +12,17 @@ wysiwyg-rust.
   android-ndk-r22b-linux-x86_64.zip and unzip it e.g.:
 
 ```bash
-unzip android-ndk-r22b-linux-x86_64.zip
+cd $ANDROID_SDK_HOME
+mkdir ndk
+cd ndk
+unzip ~/Downloads/android-ndk-r22b-linux-x86_64.zip
+mv android-ndk-r22b 22.1.7171670
 ```
+
+You must use the "side-by-side" structure shown above - i.e. the ndk must be
+inside the Android SDK directory, in a path like `ndk/VERSION`. You can find
+the right version number for that directory by looking in source.properties
+inside the unzipped NDK.
 
 NOTE: at time of writing (2022-06-28) you needed to use android-ndk-r22b or
 earlier, because later versions fail with an error like
@@ -48,7 +57,7 @@ ar = "NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/ar"
 linker = "NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android30-clang"
 ```
 
-Replacing NDK_HOME with something like `/home/andy/android-ndk-r22b/`.
+Replacing NDK_HOME with something like `/home/andy/AndroidSdk/ndk/22.1.7171670`.
 
 (Again, add the equivalent for `i686` if you use a 32-bit emulator.)
 
@@ -67,13 +76,19 @@ cargo install uniffi_bindgen
 Make sure you install same version of uniffi_bindgen that is mentioned in
 `bindings/wysiwyg-ffi/Cargo.toml`, otherwise you will get weird errors.
 
-* Build shared object:
+* Build the library using Gradle:
+
+```bash
+ANDROID_SDK_ROOT=/home/andy/AndroidSdk make android
+```
+
+* To just build the shared object:
 
 ```bash
 cd bindings/wysiwyg-ffi
 cargo build --target x86_64-linux-android --release
-```
 
+```
 This will create:
 
 ```
@@ -87,7 +102,7 @@ NDK_HOME/toolchains/x86_64-4.9/prebuilt/linux-x86_64/bin/x86_64-linux-android-st
     ../../target/x86_64-linux-android/debug/libuniffi_wysiwyg_composer.so
 ```
 
-Replacing NDK_HOME with something like `/home/andy/android-ndk-r22b/`.
+Replacing NDK_HOME with something like `/home/andy/AndroidSdk/ndk/22.1.7171670`.
 
 See ../../examples/example-android for a Gradle project that runs the above
 and includes the built library in a real Android app.
