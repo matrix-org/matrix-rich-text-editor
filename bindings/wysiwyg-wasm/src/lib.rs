@@ -146,12 +146,12 @@ impl ComposerModel {
         ComposerUpdate::from(self.inner.undo())
     }
 
-    pub fn create_ordered_list(&mut self) -> ComposerUpdate {
-        ComposerUpdate::from(self.inner.create_ordered_list())
+    pub fn ordered_list(&mut self) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.ordered_list())
     }
 
-    pub fn create_unordered_list(&mut self) -> ComposerUpdate {
-        ComposerUpdate::from(self.inner.create_unordered_list())
+    pub fn unordered_list(&mut self) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.unordered_list())
     }
 
     /*pub fn action_response(
@@ -251,7 +251,11 @@ pub struct MenuState {
 impl MenuState {
     pub fn from(inner: wysiwyg::MenuState) -> Self {
         match inner {
-            wysiwyg::MenuState::None => Self {
+            // TODO: implement interface for MenuState
+            wysiwyg::MenuState::Keep => Self {
+                _none: Some(NoneMenuState),
+            },
+            _ => Self {
                 _none: Some(NoneMenuState),
             },
         }

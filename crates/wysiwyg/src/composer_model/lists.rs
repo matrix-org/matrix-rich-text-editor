@@ -13,21 +13,21 @@
 // limitations under the License.
 
 use crate::composer_model::base::{slice_from, slice_to};
-use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
+use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode, TextNode};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::{DomHandle, Range, SameNodeRange};
-use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
+use crate::{ComposerModel, ComposerUpdate, ListType, Location, UnicodeString};
 
 impl<S> ComposerModel<S>
 where
     S: UnicodeString,
 {
-    pub fn create_ordered_list(&mut self) -> ComposerUpdate<S> {
-        self.create_list(true)
+    pub fn ordered_list(&mut self) -> ComposerUpdate<S> {
+        self.toggle_list(ListType::Ordered)
     }
 
-    pub fn create_unordered_list(&mut self) -> ComposerUpdate<S> {
-        self.create_list(false)
+    pub fn unordered_list(&mut self) -> ComposerUpdate<S> {
+        self.toggle_list(ListType::Unordered)
     }
 
     pub(crate) fn do_backspace_in_list(
@@ -90,10 +90,95 @@ where
         }
     }
 
-    fn create_list(&mut self, ordered: bool) -> ComposerUpdate<S> {
+    fn toggle_list(&mut self, list_type: ListType) -> ComposerUpdate<S> {
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+
+        match range {
+            Range::SameNode(range) => {
+                let parent_list_item_handle = self
+                    .state
+                    .dom
+                    .find_parent_list_item(range.node_handle.clone());
+                if let Some(list_item_handle) = parent_list_item_handle {
+                    let list_node_handle = list_item_handle.parent_handle();
+                    let list_node =
+                        self.state.dom.lookup_node(list_node_handle.clone());
+                    if let DomNode::Container(list) = list_node {
+                        let current_list_type =
+                            ListType::try_from(list.name().clone());
+                        if list_type == current_list_type.unwrap() {
+                            self.move_list_item_content_to_list_parent(
+                                list_item_handle,
+                            )
+                        } else {
+                            self.update_list_type(list_node_handle, list_type)
+                        }
+                    } else {
+                        panic!("List item is not in a list")
+                    }
+                } else {
+                    self.create_list(list_type)
+                }
+            }
+            Range::NoNode => self.create_list(list_type),
+            _ => {
+                panic!("Can't toggle list in complex object models yet")
+            }
+        }
+    }
+
+    fn move_list_item_content_to_list_parent(
+        &mut self,
+        list_item_handle: DomHandle,
+    ) -> ComposerUpdate<S> {
+        let list_item_node =
+            self.state.dom.lookup_node(list_item_handle.clone());
+        if let DomNode::Container(list_item) = list_item_node {
+            let list_item_children = list_item.children().clone();
+            let list_handle = list_item_handle.parent_handle();
+            let list_index_in_parent = list_handle.index_in_parent();
+            let list_parent_handle = list_handle.parent_handle();
+            let list_parent_node =
+                self.state.dom.lookup_node_mut(list_parent_handle);
+            if let DomNode::Container(list_parent) = list_parent_node {
+                for child in list_item_children.iter().rev() {
+                    list_parent
+                        .insert_child(list_index_in_parent + 1, child.clone());
+                }
+            } else {
+                panic!("List parent node is not a container")
+            }
+
+            let list_item_index_in_parent = list_item_handle.index_in_parent();
+            let list_node = self.state.dom.lookup_node_mut(list_handle);
+            if let DomNode::Container(list) = list_node {
+                list.remove_child(list_item_index_in_parent);
+            } else {
+                panic!("List node is not a container")
+            }
+        } else {
+            panic!("List item is not a container")
+        }
+
+        return self.create_update_replace_all();
+    }
+
+    fn update_list_type(
+        &mut self,
+        list_handle: DomHandle,
+        list_type: ListType,
+    ) -> ComposerUpdate<S> {
+        let list_node = self.state.dom.lookup_node_mut(list_handle);
+        if let DomNode::Container(list) = list_node {
+            list.set_list_type(list_type);
+        }
+        return self.create_update_replace_all();
+    }
+
+    fn create_list(&mut self, list_type: ListType) -> ComposerUpdate<S> {
         // Store current Dom
         self.push_state_to_history();
-        let list_tag = if ordered { "ol" } else { "ul" };
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
         match range {
@@ -102,14 +187,47 @@ where
                     self.state.dom.lookup_node(range.node_handle.clone());
                 if let DomNode::Text(t) = node {
                     let text = t.data();
-                    let list_node = DomNode::new_list(
-                        S::from_str(list_tag),
-                        vec![DomNode::Container(ContainerNode::new_list_item(
+                    let index_in_parent = range.node_handle.index_in_parent();
+                    let list_item =
+                        DomNode::Container(ContainerNode::new_list_item(
                             S::from_str("li"),
                             vec![DomNode::Text(TextNode::from(text.clone()))],
-                        ))],
+                        ));
+                    if index_in_parent > 0 {
+                        let previous_handle = range.node_handle.prev_sibling();
+                        let previous_node =
+                            self.state.dom.lookup_node_mut(previous_handle);
+                        if let DomNode::Container(previous) = previous_node {
+                            if previous.kind().clone()
+                                == ContainerNodeKind::List
+                            {
+                                previous.append_child(list_item);
+                                previous.set_list_type(list_type);
+                                let parent_node_handle =
+                                    range.node_handle.parent_handle();
+                                let parent_node = self
+                                    .state
+                                    .dom
+                                    .lookup_node_mut(parent_node_handle);
+                                if let DomNode::Container(parent) = parent_node
+                                {
+                                    parent.remove_child(index_in_parent);
+                                } else {
+                                    panic!(
+                                        "Unexpected missing parent container"
+                                    )
+                                }
+
+                                return self.create_update_replace_all();
+                            }
+                        }
+                    }
+
+                    self.replace_node_with_new_list(
+                        range.node_handle.clone(),
+                        list_type,
+                        list_item,
                     );
-                    self.state.dom.replace(range.node_handle, vec![list_node]);
                     return self.create_update_replace_all();
                 } else {
                     panic!("Can't create a list from a non-text node")
@@ -118,7 +236,7 @@ where
 
             Range::NoNode => {
                 self.state.dom.append_child(DomNode::new_list(
-                    S::from_str(list_tag),
+                    list_type,
                     vec![DomNode::Container(ContainerNode::new_list_item(
                         S::from_str("li"),
                         vec![DomNode::Text(TextNode::from(S::from_str("")))],
@@ -131,6 +249,16 @@ where
                 panic!("Can't create ordered list in complex object models yet")
             }
         }
+    }
+
+    fn replace_node_with_new_list(
+        &mut self,
+        handle: DomHandle,
+        list_type: ListType,
+        list_item: DomNode<S>,
+    ) {
+        let list_node = DomNode::new_list(list_type, vec![list_item]);
+        self.state.dom.replace(handle, vec![list_node]);
     }
 
     fn slice_list_item(

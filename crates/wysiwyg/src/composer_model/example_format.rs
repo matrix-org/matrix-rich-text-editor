@@ -114,6 +114,7 @@ impl ComposerModel<Utf16String> {
             state: ComposerState::new(),
             previous_states: Vec::new(),
             next_states: Vec::new(),
+            active_buttons: Vec::new(),
         };
         model.state.dom = parse(&text).unwrap();
 
@@ -539,6 +540,7 @@ mod test {
             },
             previous_states: Vec::new(),
             next_states: Vec::new(),
+            active_buttons: Vec::new(),
         };
         assert_eq!(tx(&model), "AAA<b>B{BB</b>C}|CC");
     }
@@ -553,6 +555,7 @@ mod test {
             },
             previous_states: Vec::new(),
             next_states: Vec::new(),
+            active_buttons: Vec::new(),
         };
         assert_eq!(tx(&model), "AAA<b>B|{BB</b>C}CC");
     }
@@ -567,6 +570,7 @@ mod test {
             },
             previous_states: Vec::new(),
             next_states: Vec::new(),
+            active_buttons: Vec::new(),
         };
         assert_eq!(tx(&model), "");
     }

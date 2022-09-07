@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{ComposerModel, Location, UnicodeString};
+use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
 
 impl<S> ComposerModel<S>
 where
@@ -20,9 +20,16 @@ where
 {
     /// Select the text at the supplied code unit positions.
     /// The cursor is at end.
-    pub fn select(&mut self, start: Location, end: Location) {
+    pub fn select(
+        &mut self,
+        start: Location,
+        end: Location,
+    ) -> ComposerUpdate<S> {
         self.state.start = start;
         self.state.end = end;
+
+        let menu_state = self.compute_menu_state();
+        ComposerUpdate::update_menu(menu_state)
     }
 
     /// Return the start and end of the selection, ensuring the first number

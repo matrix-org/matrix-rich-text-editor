@@ -51,7 +51,7 @@ class InputProcessor(
             is EditorInputAction.Undo -> composer.undo()
             is EditorInputAction.Redo -> composer.redo()
             is EditorInputAction.ToggleList -> {
-                if (action.ordered) composer.createOrderedList() else composer.createUnorderedList()
+                if (action.ordered) composer.orderedList() else composer.unorderedList()
             }
         }?.textUpdate().also {
             composer.log()

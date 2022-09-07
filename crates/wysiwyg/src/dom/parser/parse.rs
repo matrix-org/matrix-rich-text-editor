@@ -15,6 +15,7 @@
 use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
 use crate::dom::parser::PaNodeContainer;
 use crate::dom::{Dom, DomCreationError, UnicodeString};
+use crate::ListType;
 
 use super::padom_node::PaDomNode;
 use super::{PaDom, PaDomCreationError, PaDomCreator};
@@ -90,7 +91,7 @@ where
         S: UnicodeString,
     {
         DomNode::Container(ContainerNode::new_list(
-            S::from_str(tag),
+            ListType::try_from(S::from_str(tag)).unwrap(),
             Vec::new(),
         ))
     }

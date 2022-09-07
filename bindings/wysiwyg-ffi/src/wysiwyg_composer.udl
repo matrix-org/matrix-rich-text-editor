@@ -17,7 +17,7 @@ namespace wysiwyg_composer {
 };
 
 interface ComposerModel {
-    void select(u32 start_utf16_codeunit, u32 end_utf16_codeunit);
+    ComposerUpdate select(u32 start_utf16_codeunit, u32 end_utf16_codeunit);
     ComposerUpdate replace_text(string new_text);
     ComposerUpdate replace_text_in(string new_text, u32 start, u32 end);
     ComposerUpdate backspace();
@@ -25,8 +25,8 @@ interface ComposerModel {
     ComposerUpdate delete_in(u32 start, u32 end);
     ComposerUpdate enter();
     ComposerUpdate format(InlineFormatType type);
-    ComposerUpdate create_ordered_list();
-    ComposerUpdate create_unordered_list();
+    ComposerUpdate ordered_list();
+    ComposerUpdate unordered_list();
     ComposerUpdate undo();
     ComposerUpdate redo();
     ComposerUpdate set_link(string new_text);
@@ -58,8 +58,17 @@ interface TextUpdate {
 };
 
 [Enum]
+interface ToolbarButton {
+    OrderedList();
+    UnorderedList();
+};
+
+[Enum]
 interface MenuState {
-    None();
+    Keep();
+    Update(
+        sequence<ToolbarButton> active_buttons
+    );
 };
 
 interface ComposerAction {

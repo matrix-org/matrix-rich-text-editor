@@ -19,6 +19,7 @@ pub mod format;
 pub mod hyperlinks;
 pub mod join_nodes;
 pub mod lists;
+pub mod menu_state;
 pub mod replace_text;
 pub mod selection;
 pub mod undo_redo;

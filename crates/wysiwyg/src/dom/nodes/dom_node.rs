@@ -20,7 +20,7 @@ use crate::dom::to_html::ToHtml;
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
 use crate::dom::UnicodeString;
-use crate::InlineFormatType;
+use crate::{InlineFormatType, ListType};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum DomNode<S>
@@ -52,7 +52,10 @@ where
         )
     }
 
-    pub fn new_list(list_type: S, children: Vec<DomNode<S>>) -> DomNode<S> {
+    pub fn new_list(
+        list_type: ListType,
+        children: Vec<DomNode<S>>,
+    ) -> DomNode<S> {
         DomNode::Container(ContainerNode::new_list(list_type, children))
     }
 

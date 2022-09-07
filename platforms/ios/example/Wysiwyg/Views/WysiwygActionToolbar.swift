@@ -18,6 +18,7 @@ import SwiftUI
 import WysiwygComposer
 
 struct WysiwygActionToolbar: View {
+    @EnvironmentObject private var viewModel: WysiwygComposerViewModel
     var toolbarAction: (WysiwygAction) -> ()
 
     var body: some View {
@@ -27,6 +28,8 @@ struct WysiwygActionToolbar: View {
                     toolbarAction(action)
                 } label: {
                     Image(systemName: action.iconName)
+                        .renderingMode(.template)
+                        .foregroundColor(action.color(viewModel))
                 }
                 .buttonStyle(.automatic)
                 .accessibilityIdentifier(action.accessibilityIdentifier)

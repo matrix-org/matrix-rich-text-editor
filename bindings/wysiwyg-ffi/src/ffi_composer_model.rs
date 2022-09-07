@@ -22,7 +22,7 @@ impl ComposerModel {
         self: &Arc<Self>,
         start_utf16_codeunit: u32,
         end_utf16_codeunit: u32,
-    ) {
+    ) -> Arc<ComposerUpdate> {
         let start = wysiwyg::Location::from(
             usize::try_from(start_utf16_codeunit).unwrap(),
         );
@@ -30,7 +30,9 @@ impl ComposerModel {
             usize::try_from(end_utf16_codeunit).unwrap(),
         );
 
-        self.inner.lock().unwrap().select(start, end);
+        Arc::new(ComposerUpdate::from(
+            self.inner.lock().unwrap().select(start, end),
+        ))
     }
 
     pub fn replace_text(
@@ -108,15 +110,15 @@ impl ComposerModel {
         ))
     }
 
-    pub fn create_ordered_list(self: &Arc<Self>) -> Arc<ComposerUpdate> {
+    pub fn ordered_list(self: &Arc<Self>) -> Arc<ComposerUpdate> {
         Arc::new(ComposerUpdate::from(
-            self.inner.lock().unwrap().create_ordered_list(),
+            self.inner.lock().unwrap().ordered_list(),
         ))
     }
 
-    pub fn create_unordered_list(self: &Arc<Self>) -> Arc<ComposerUpdate> {
+    pub fn unordered_list(self: &Arc<Self>) -> Arc<ComposerUpdate> {
         Arc::new(ComposerUpdate::from(
-            self.inner.lock().unwrap().create_unordered_list(),
+            self.inner.lock().unwrap().unordered_list(),
         ))
     }
 

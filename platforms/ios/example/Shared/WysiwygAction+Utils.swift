@@ -15,6 +15,7 @@
 //
 
 import WysiwygComposer
+import SwiftUI
 
 extension WysiwygAction: CaseIterable, Identifiable {
     public static var allCases: [WysiwygAction] = [
@@ -24,6 +25,17 @@ extension WysiwygAction: CaseIterable, Identifiable {
 
     public var id: String {
         accessibilityIdentifier.rawValue
+    }
+
+    public func color(_ viewModel: WysiwygComposerViewModel) -> Color {
+        switch self {
+        case .orderedList:
+            return viewModel.activeButtons.contains(.orderedList) ? .blue : .black
+        case .unorderedList:
+            return viewModel.activeButtons.contains(.unorderedList) ? .blue : .black
+        default:
+            return .black
+        }
     }
 
     var accessibilityIdentifier: WysiwygSharedAccessibilityIdentifier {
