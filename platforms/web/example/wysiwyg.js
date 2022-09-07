@@ -545,8 +545,8 @@ function process_input(e) {
         }
         case "insertOrderedList":
             return action(
-                composer_model.create_ordered_list(),
-                "create_ordered_list"
+                composer_model.ordered_list(),
+                "ordered_list"
             );
         case "insertParagraph":
             return action(composer_model.enter(), "enter");
@@ -558,8 +558,8 @@ function process_input(e) {
             );
         case "insertUnorderedList":
             return action(
-                composer_model.create_unordered_list(),
-                "create_unordered_list"
+                composer_model.unordered_list(),
+                "unordered_list"
             );
         default:
             // We should cover all of

@@ -45,8 +45,7 @@ final class WysiwygComposerTests: XCTestCase {
         let composer = newComposerModel()
         _ = composer.replaceText(newText: TestConstants.testStringWithEmojis)
 
-        // FIXME: are we smart enough to detect emoji length from Rust?
-        composer.select(startUtf16Codeunit: 7, endUtf16Codeunit: 14)
+        _ = composer.select(startUtf16Codeunit: 7, endUtf16Codeunit: 14)
 
         let update = composer.backspace()
         switch update.textUpdate() {
@@ -66,7 +65,7 @@ final class WysiwygComposerTests: XCTestCase {
     func testFormatBold() throws {
         let composer = newComposerModel()
         _ = composer.replaceText(newText: "This is bold text")
-        composer.select(startUtf16Codeunit: 8, endUtf16Codeunit: 12)
+        _ = composer.select(startUtf16Codeunit: 8, endUtf16Codeunit: 12)
         let update = composer.format(type: .bold)
         switch update.textUpdate() {
         case .keep:
@@ -105,7 +104,7 @@ final class WysiwygComposerTests: XCTestCase {
     // swiftlint:disable:next function_body_length
     func testLists() {
         let composer = newComposerModel()
-        _ = composer.createOrderedList()
+        _ = composer.orderedList()
         _ = composer.replaceText(newText: "Item 1")
         _ = composer.enter()
         _ = composer.replaceText(newText: "Item 2")

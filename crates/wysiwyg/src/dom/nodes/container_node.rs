@@ -19,7 +19,7 @@ use crate::dom::to_html::ToHtml;
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
 use crate::dom::{HtmlChar, UnicodeString};
-use crate::InlineFormatType;
+use crate::{InlineFormatType, ListType};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ContainerNode<S>
@@ -96,9 +96,9 @@ where
         }
     }
 
-    pub fn new_list(list_type: S, children: Vec<DomNode<S>>) -> Self {
+    pub fn new_list(list_type: ListType, children: Vec<DomNode<S>>) -> Self {
         Self {
-            name: list_type.clone(),
+            name: S::from_str(list_type.tag()),
             kind: ContainerNodeKind::List,
             attrs: None,
             children,
@@ -256,6 +256,17 @@ where
                 return raw_text == "" || raw_text == "\u{200B}";
             }
             _ => false,
+        }
+    }
+
+    pub(crate) fn set_list_type(&mut self, list_type: ListType) {
+        match self.kind {
+            ContainerNodeKind::List => {
+                self.name = S::from_str(list_type.tag());
+            }
+            _ => panic!(
+                "Setting list type to a non-list container is not allowed"
+            ),
         }
     }
 }

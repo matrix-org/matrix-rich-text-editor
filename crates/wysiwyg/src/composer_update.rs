@@ -32,7 +32,15 @@ where
     pub fn keep() -> Self {
         Self {
             text_update: TextUpdate::<S>::Keep,
-            menu_state: MenuState::None,
+            menu_state: MenuState::Keep,
+            actions: Vec::new(),
+        }
+    }
+
+    pub fn update_menu(menu_state: MenuState) -> Self {
+        Self {
+            text_update: TextUpdate::<S>::Keep,
+            menu_state: menu_state,
             actions: Vec::new(),
         }
     }
@@ -41,6 +49,7 @@ where
         replacement_html: S,
         start: Location,
         end: Location,
+        menu_state: MenuState,
     ) -> Self {
         Self {
             text_update: TextUpdate::ReplaceAll(ReplaceAll {
@@ -48,7 +57,7 @@ where
                 start,
                 end,
             }),
-            menu_state: MenuState::None,
+            menu_state: menu_state,
             actions: Vec::new(),
         }
     }

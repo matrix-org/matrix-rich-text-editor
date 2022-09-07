@@ -28,6 +28,8 @@ public class WysiwygComposerViewModel: ObservableObject {
     @Published public var isContentEmpty: Bool = true
     /// Published value for the composer required height to fit entirely without scrolling.
     @Published public var idealHeight: CGFloat = .zero
+    /// Published value for the composer current expected active buttons.
+    @Published public var activeButtons: [ToolbarButton] = []
 
     // MARK: - Private
     private var model: ComposerModel
@@ -62,9 +64,9 @@ public class WysiwygComposerViewModel: ObservableObject {
         case .redo:
             update = self.model.redo()
         case .orderedList:
-            update = self.model.createOrderedList()
+            update = self.model.orderedList()
         case .unorderedList:
-            update = self.model.createUnorderedList()
+            update = self.model.unorderedList()
         }
         self.applyUpdate(update)
     }
@@ -118,8 +120,10 @@ extension WysiwygComposerViewModel {
                                   New selection: Attributed {\(range.location),\(range.upperBound)} \
                                   HTML {\(htmlSelection.location),\(htmlSelection.upperBound)}
                                   """)
-            self.model.select(startUtf16Codeunit: UInt32(htmlSelection.location),
+            let update = self.model.select(startUtf16Codeunit: UInt32(htmlSelection.location),
                               endUtf16Codeunit: UInt32(htmlSelection.upperBound))
+
+            self.applyUpdate(update)
         } catch {
             Logger.composer.error("Unable to select range: \(error.localizedDescription)")
         }
@@ -162,6 +166,13 @@ private extension WysiwygComposerViewModel {
             } catch {
                 Logger.composer.error("Unable to update composer display: \(error.localizedDescription)")
             }
+        default:
+            break
+        }
+
+        switch update.menuState() {
+        case .update(activeButtons: let activeButtons):
+            self.activeButtons = activeButtons
         default:
             break
         }

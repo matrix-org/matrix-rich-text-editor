@@ -12,16 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod test_characters;
-pub mod test_deleting;
-pub mod test_formatting;
-pub mod test_links;
-pub mod test_lists;
-pub mod test_menu_state;
-pub mod test_selection;
-pub mod test_to_raw_text;
-pub mod test_to_tree;
-pub mod test_undo_redo;
-pub mod testutils_composer_model;
-pub mod testutils_conversion;
-pub mod testutils_dom;
+#![cfg(test)]
+
+use crate::tests::testutils_composer_model::cm;
+
+use crate::ToolbarButton;
+
+#[test]
+fn creating_and_deleting_lists_updates_active_buttons() {
+    let mut model = cm("|");
+    model.ordered_list();
+    assert_eq!(model.active_buttons, vec![ToolbarButton::OrderedList]);
+    model.unordered_list();
+    assert_eq!(model.active_buttons, vec![ToolbarButton::UnorderedList]);
+    model.backspace();
+    assert_eq!(model.active_buttons, vec![]);
+}

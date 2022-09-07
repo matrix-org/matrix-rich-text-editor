@@ -12,7 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::ToolbarButton;
+
 #[derive(Debug, Clone)]
 pub enum MenuState {
-    None,
+    Keep,
+    Update(MenuStateUpdate),
+}
+
+#[derive(Debug, Clone)]
+pub struct MenuStateUpdate {
+    pub active_buttons: Vec<ToolbarButton>,
 }

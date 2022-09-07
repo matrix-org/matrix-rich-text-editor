@@ -35,7 +35,7 @@ struct ContentView: View {
                    alignment: .center)
         WysiwygActionToolbar { action in
             viewModel.apply(action)
-        }
+        }.environmentObject(viewModel)
         Button("Send") {
             sentMessage = viewModel.content
             viewModel.clearContent()

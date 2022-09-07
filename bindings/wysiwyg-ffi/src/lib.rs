@@ -23,6 +23,7 @@ mod ffi_composer_update;
 mod ffi_format_type;
 mod ffi_menu_state;
 mod ffi_text_update;
+mod ffi_toolbar_button;
 
 use std::sync::Arc;
 
@@ -35,6 +36,7 @@ pub use crate::ffi_composer_update::ComposerUpdate;
 pub use crate::ffi_format_type::InlineFormatType;
 pub use crate::ffi_menu_state::MenuState;
 pub use crate::ffi_text_update::TextUpdate;
+pub use crate::ffi_toolbar_button::ToolbarButton;
 
 pub fn new_composer_model() -> Arc<ComposerModel> {
     Arc::new(ComposerModel::new())

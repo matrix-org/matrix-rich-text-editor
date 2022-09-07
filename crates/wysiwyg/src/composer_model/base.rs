@@ -15,7 +15,9 @@
 use crate::composer_state::ComposerState;
 use crate::dom::parser::parse;
 use crate::dom::{DomHandle, UnicodeString};
-use crate::{ActionResponse, ComposerUpdate, Location, ToHtml, ToTree};
+use crate::{
+    ActionResponse, ComposerUpdate, Location, ToHtml, ToTree, ToolbarButton,
+};
 
 #[derive(Clone)]
 pub struct ComposerModel<S>
@@ -25,6 +27,7 @@ where
     pub state: ComposerState<S>,
     pub previous_states: Vec<ComposerState<S>>,
     pub next_states: Vec<ComposerState<S>>,
+    pub active_buttons: Vec<ToolbarButton>,
 }
 
 impl<S> ComposerModel<S>
@@ -36,6 +39,7 @@ where
             state: ComposerState::new(),
             previous_states: Vec::new(),
             next_states: Vec::new(),
+            active_buttons: Vec::new(),
         }
     }
 
@@ -46,7 +50,7 @@ where
         start_codeunit: usize,
         end_codeunit: usize,
     ) -> Self {
-        Self {
+        let mut model = Self {
             state: ComposerState {
                 dom: parse(html).expect("HTML parsing failed"),
                 start: Location::from(start_codeunit),
@@ -54,7 +58,10 @@ where
             },
             previous_states: Vec::new(),
             next_states: Vec::new(),
-        }
+            active_buttons: Vec::new(),
+        };
+        model.compute_menu_state();
+        return model;
     }
 
     pub fn replace_all_html(&mut self, html: &S) -> ComposerUpdate<S> {
@@ -83,11 +90,12 @@ where
         ComposerUpdate::keep()
     }
 
-    pub(crate) fn create_update_replace_all(&self) -> ComposerUpdate<S> {
+    pub(crate) fn create_update_replace_all(&mut self) -> ComposerUpdate<S> {
         ComposerUpdate::replace_all(
             self.state.dom.to_html(),
             self.state.start,
             self.state.end,
+            self.compute_menu_state(),
         )
     }
 

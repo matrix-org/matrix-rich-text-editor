@@ -98,7 +98,7 @@ where
     }
 
     pub fn find_parent_list_item(
-        &mut self,
+        &self,
         child_handle: DomHandle,
     ) -> Option<DomHandle> {
         fn find_list_item<S>(

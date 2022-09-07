@@ -24,7 +24,7 @@ use crate::ComposerModel;
 #[test]
 fn creating_ordered_list_and_writing() {
     let mut model = cm("|");
-    model.create_ordered_list();
+    model.ordered_list();
     assert_eq!(tx(&model), "<ol><li>|</li></ol>");
     replace_text(&mut model, "abcd");
     assert_eq!(tx(&model), "<ol><li>abcd|</li></ol>");
@@ -37,7 +37,7 @@ fn creating_ordered_list_and_writing() {
 #[test]
 fn creating_unordered_list() {
     let mut model = cm("|");
-    model.create_unordered_list();
+    model.unordered_list();
     assert_eq!(tx(&model), "<ul><li>|</li></ul>");
 }
 
@@ -112,9 +112,32 @@ fn entering_mid_text_node_with_selection() {
 #[test]
 fn removing_list() {
     let mut model = cm("|");
-    model.create_ordered_list();
+    model.ordered_list();
     model.enter();
     assert_eq!(tx(&model), "|");
+}
+
+#[test]
+fn updating_list_type() {
+    let mut model = cm("<ol><li>ab</li><li>cd|</li></ol>");
+    model.unordered_list();
+    assert_eq!(tx(&model), "<ul><li>ab</li><li>cd|</li></ul>");
+    model.ordered_list();
+    assert_eq!(tx(&model), "<ol><li>ab</li><li>cd|</li></ol>");
+}
+
+#[test]
+fn moving_list_item_content_out() {
+    let mut model = cm("<ol><li>ab</li><li>cd|</li></ol>");
+    model.ordered_list();
+    assert_eq!(tx(&model), "<ol><li>ab</li></ol>cd|");
+}
+
+#[test]
+fn appending_new_list_to_previous() {
+    let mut model = cm("<ol><li>ab</li></ol>cd|");
+    model.ordered_list();
+    assert_eq!(tx(&model), "<ol><li>ab</li><li>cd|</li></ol>");
 }
 
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
