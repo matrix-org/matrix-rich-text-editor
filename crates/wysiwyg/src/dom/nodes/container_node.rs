@@ -224,7 +224,8 @@ where
     pub(crate) fn is_list_of_type(&self, list_type: ListType) -> bool {
         match self.kind {
             ContainerNodeKind::List => {
-                return ListType::try_from(self.name().clone()).unwrap() == list_type;
+                return ListType::try_from(self.name().clone()).unwrap()
+                    == list_type;
             }
             _ => false,
         }
