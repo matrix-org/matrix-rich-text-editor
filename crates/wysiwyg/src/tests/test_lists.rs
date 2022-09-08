@@ -29,9 +29,9 @@ fn creating_ordered_list_and_writing() {
     replace_text(&mut model, "abcd");
     assert_eq!(tx(&model), "<ol><li>abcd|</li></ol>");
     model.enter();
-    assert_eq!(tx(&model), "<ol><li>abcd</li><li>\u{200b}|</li></ol>");
+    assert_eq!(tx(&model), "<ol><li>abcd</li><li>~|</li></ol>");
     replace_text(&mut model, "efgh");
-    assert_eq!(tx(&model), "<ol><li>abcd</li><li>\u{200b}efgh|</li></ol>");
+    assert_eq!(tx(&model), "<ol><li>abcd</li><li>~efgh|</li></ol>");
 }
 
 #[test]
@@ -43,11 +43,11 @@ fn creating_unordered_list() {
 
 #[test]
 fn removing_list_item() {
-    let mut model = cm("<ol><li>abcd</li><li>\u{200b}|</li></ol>");
+    let mut model = cm("<ol><li>abcd</li><li>~|</li></ol>");
     model.enter();
-    assert_eq!(tx(&model), "<ol><li>abcd</li></ol>\u{200b}|");
+    assert_eq!(tx(&model), "<ol><li>abcd</li></ol>~|");
 
-    let mut model = cm("<ol><li>abcd</li><li>\u{200b}|</li></ol>");
+    let mut model = cm("<ol><li>abcd</li><li>~|</li></ol>");
     model.backspace();
     assert_eq!(tx(&model), "<ol><li>abcd|</li></ol>");
 
@@ -62,15 +62,15 @@ fn removing_list_item() {
 
 #[test]
 fn backspacing_in_list() {
-    let mut model = cm("<ol><li>abcd</li><li>\u{200b}ef{gh}|</li></ol>");
+    let mut model = cm("<ol><li>abcd</li><li>~ef{gh}|</li></ol>");
     model.backspace();
-    assert_eq!(tx(&model), "<ol><li>abcd</li><li>\u{200b}ef|</li></ol>");
+    assert_eq!(tx(&model), "<ol><li>abcd</li><li>~ef|</li></ol>");
 
-    let mut model = cm("<ol><li>ab{cd</li><li>\u{200b}efgh}|</li></ol>");
+    let mut model = cm("<ol><li>ab{cd</li><li>~efgh}|</li></ol>");
     model.backspace();
     assert_eq!(tx(&model), "<ol><li>ab|</li></ol>");
 
-    let mut model = cm("<ol><li>{abcd</li><li>\u{200b}}|</li></ol>");
+    let mut model = cm("<ol><li>{abcd</li><li>~}|</li></ol>");
     model.backspace();
     assert_eq!(tx(&model), "<ol><li>|</li></ol>");
 }
@@ -81,7 +81,7 @@ fn entering_with_entire_selection() {
     model.enter();
     assert_eq!(tx(&model), "|");
 
-    let mut model = cm("<ol><li>{abcd</li><li>\u{200b}}|</li></ol>");
+    let mut model = cm("<ol><li>{abcd</li><li>~}|</li></ol>");
     model.enter();
     assert_eq!(tx(&model), "|");
 }

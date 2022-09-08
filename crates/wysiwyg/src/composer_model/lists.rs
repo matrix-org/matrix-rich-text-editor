@@ -275,7 +275,7 @@ where
                 list.append_child(DomNode::new_list_item(
                     S::from_str("li"),
                     vec![DomNode::Text(TextNode::from(if add_zwsp {
-                        S::from_str("\u{200B}")
+                        S::from_str("\u{200b}")
                     } else {
                         new_li_text
                     }))],
@@ -325,7 +325,7 @@ where
                     if let DomNode::Container(parent) = parent_node {
                         // TODO: should probably append a paragraph instead
                         parent.append_child(DomNode::Text(TextNode::from(
-                            S::from_str("\u{200B}"),
+                            S::from_str("\u{200b}"),
                         )));
                         let new_location =
                             Location::from(location - li_len + 1);

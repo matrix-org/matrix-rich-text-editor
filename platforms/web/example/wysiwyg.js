@@ -104,7 +104,7 @@ function refresh_dom() {
     function t(parent, name, text, attrs) {
         const tag = document.createElement(name);
         if (text) {
-            tag.innerHTML = text;
+            tag.innerHTML = text.replace("\u200b", "~");
         }
         if (attrs) {
             for (const [name, value] of attrs.entries()) {
