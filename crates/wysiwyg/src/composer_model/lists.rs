@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::composer_model::base::{slice_from, slice_to};
-use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode, TextNode};
+use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::{DomHandle, Range, SameNodeRange};
 use crate::{ComposerModel, ComposerUpdate, ListType, Location, UnicodeString};
@@ -105,9 +105,7 @@ where
                     let list_node =
                         self.state.dom.lookup_node(list_node_handle.clone());
                     if let DomNode::Container(list) = list_node {
-                        let current_list_type =
-                            ListType::try_from(list.name().clone());
-                        if list_type == current_list_type.unwrap() {
+                        if list.is_list_of_type(list_type.clone()) {
                             self.move_list_item_content_to_list_parent(
                                 list_item_handle,
                             )
@@ -198,11 +196,8 @@ where
                         let previous_node =
                             self.state.dom.lookup_node_mut(previous_handle);
                         if let DomNode::Container(previous) = previous_node {
-                            if previous.kind().clone()
-                                == ContainerNodeKind::List
-                            {
+                            if previous.is_list_of_type(list_type.clone()) {
                                 previous.append_child(list_item);
-                                previous.set_list_type(list_type);
                                 let parent_node_handle =
                                     range.node_handle.parent_handle();
                                 let parent_node = self

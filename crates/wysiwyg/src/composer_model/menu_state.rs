@@ -33,7 +33,7 @@ where
             }
             Range::MultipleNodes(range) => {
                 return self.compute_active_buttons(
-                    // TODO: lookup all locations and output union instead
+                    // TODO: lookup all locations and output intersection instead
                     range.locations.first().unwrap().node_handle.clone(),
                 );
             }
