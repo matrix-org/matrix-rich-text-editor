@@ -140,6 +140,13 @@ fn appending_new_list_to_previous() {
     assert_eq!(tx(&model), "<ol><li>ab</li><li>cd|</li></ol>");
 }
 
+#[test]
+fn creating_list_of_different_type_doesnt_merge() {
+    let mut model = cm("<ul><li>foo</li></ul>bar|");
+    model.ordered_list();
+    assert_eq!(tx(&model), "<ul><li>foo</li></ul><ol><li>bar|</li></ol>");
+}
+
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
     model.replace_text(utf16(new_text));
 }
