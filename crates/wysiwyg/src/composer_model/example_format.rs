@@ -48,6 +48,14 @@ impl ComposerModel<Utf16String> {
     /// The characters `{`, `}` or `|` must not appear anywhere else in the
     /// text.
     ///
+    /// Any occurrence of the `~` character is replaced with the Unicode
+    /// code point U+200B ZERO WIDTH SPACE inside from_example_format.
+    /// Similarly, when converting back using [to_example_format], any
+    /// ZERO WIDTH SPACE is replaced by `~`. This allows test cases to use
+    /// zero-width spaces without being very confusing. (Zero-width spaces
+    /// are used in various places in the model to allow the selection cursor
+    /// to be positioned e.g. inside an empty tag.)
+    ///
     /// HTML works, so `AA<b>B|B</b>CC` means a text node containing `AA`,
     /// followed by a bold node containing a text node containing `BB`,
     /// followed by a text node containing `CC`, with a selection starting and
@@ -66,7 +74,8 @@ impl ComposerModel<Utf16String> {
     /// assert_eq!(model.to_example_format(), "a{abbc}|c");
     /// ```
     pub fn from_example_format(text: &str) -> Self {
-        let text_u16 = Utf16String::from_str(text).into_vec();
+        let text = text.replace("~", "\u{200b}");
+        let text_u16 = Utf16String::from_str(&text).into_vec();
 
         /// Return the UTF-16 code unit for a character
         /// Panics if s is more than one code unit long.
@@ -187,7 +196,7 @@ impl ComposerModel<Utf16String> {
             ),
         }
 
-        dom.to_string()
+        dom.to_string().replace("\u{200b}", "~")
     }
 }
 
@@ -397,7 +406,7 @@ mod test {
     use crate::dom::{parser, Dom};
     use crate::tests::testutils_composer_model::{cm, tx};
     use crate::tests::testutils_conversion::utf16;
-    use crate::{ComposerModel, ComposerState, Location};
+    use crate::{ComposerModel, ComposerState, DomNode, Location};
 
     // These tests use cm and tx for brevity, but those call directly through
     // to the code above.
@@ -577,10 +586,23 @@ mod test {
 
     #[test]
     fn cm_creates_correct_model_selection_multi_code_units_and_tags() {
-        let t8 = cm("a<i>bc|{d<b>ef}\u{1F4A9}g</b>hi</i>");
-        assert_eq!(t8.state.start, 6);
-        assert_eq!(t8.state.end, 3);
-        assert_eq!(t8.get_html(), utf16("a<i>bcd<b>ef\u{1F4A9}g</b>hi</i>"));
+        let model = cm("a<i>bc|{d<b>ef}\u{1F4A9}g</b>hi</i>");
+        assert_eq!(model.state.start, 6);
+        assert_eq!(model.state.end, 3);
+        assert_eq!(model.get_html(), utf16("a<i>bcd<b>ef\u{1F4A9}g</b>hi</i>"));
+    }
+
+    #[test]
+    fn cm_converts_underscore_to_zero_width_space() {
+        let model = cm("~|");
+        assert_eq!(model.state.start, 1);
+        assert_eq!(model.state.end, 1);
+
+        if let DomNode::Text(node) = &model.state.dom.document().children()[0] {
+            assert_eq!(node.data(), "\u{200b}");
+        } else {
+            panic!("Expected a text node!");
+        }
     }
 
     #[test]
@@ -623,6 +645,7 @@ mod test {
         assert_that!("A|{AA<b>B}BB</b>CCC").roundtrips();
         assert_that!("AAA<b>B{BB</b>C}|CC").roundtrips();
         assert_that!("AAA<b>B|{BB</b>C}CC").roundtrips();
+        assert_that!("<ul><li>~|</li></ul>").roundtrips();
     }
 
     trait Roundtrips<T> {
