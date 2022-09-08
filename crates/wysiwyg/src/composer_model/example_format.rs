@@ -593,7 +593,7 @@ mod test {
     }
 
     #[test]
-    fn cm_converts_underscore_to_zero_width_space() {
+    fn cm_converts_tilda_to_zero_width_space() {
         let model = cm("~|");
         assert_eq!(model.state.start, 1);
         assert_eq!(model.state.end, 1);
