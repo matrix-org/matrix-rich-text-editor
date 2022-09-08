@@ -7,4 +7,5 @@
 /bindings/wysiwyg-ffi/.generated/
 /bindings/wysiwyg-wasm/pkg/
 /bindings/wysiwyg-wasm/node_modules/
+/platforms/android/example/.idea/
 /platforms/android/out/
