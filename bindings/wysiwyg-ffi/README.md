@@ -8,11 +8,20 @@ wysiwyg-rust.
 ### Android
 
 * [Install Rust](https://www.rust-lang.org/tools/install)
+* [Install the Android SDK](https://android-doc.github.io/sdk/installing/index.html?pkg=studio)
+  - find the installation path, and set the ANDROID_HOME environment variable
+  in your `~/.bashrc` or similar:
+
+```bash
+export ANDROID_HOME=/home/andy/AndroidSdk
+
+```
+
 * [Install Android NDK](https://developer.android.com/ndk/downloads) - download
   android-ndk-r22b-linux-x86_64.zip and unzip it e.g.:
 
 ```bash
-cd $ANDROID_SDK_HOME
+cd $ANDROID_HOME
 mkdir ndk
 cd ndk
 unzip ~/Downloads/android-ndk-r22b-linux-x86_64.zip
@@ -79,7 +88,8 @@ Make sure you install same version of uniffi_bindgen that is mentioned in
 * Build the library using Gradle:
 
 ```bash
-ANDROID_SDK_ROOT=/home/andy/AndroidSdk make android
+# Ensure ANDROID_HOME is set correctly!
+make android
 ```
 
 * To just build the shared object:
