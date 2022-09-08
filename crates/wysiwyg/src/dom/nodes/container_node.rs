@@ -263,7 +263,7 @@ where
         match self.kind {
             ContainerNodeKind::ListItem => {
                 let raw_text = self.to_raw_text().to_utf8();
-                return raw_text == "" || raw_text == "\u{200B}";
+                return raw_text == "" || raw_text == "\u{200b}";
             }
             _ => false,
         }
