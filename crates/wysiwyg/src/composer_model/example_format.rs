@@ -646,6 +646,7 @@ mod test {
         assert_that!("AAA<b>B{BB</b>C}|CC").roundtrips();
         assert_that!("AAA<b>B|{BB</b>C}CC").roundtrips();
         assert_that!("<ul><li>~|</li></ul>").roundtrips();
+        assert_that!("~<br />~|").roundtrips();
     }
 
     trait Roundtrips<T> {

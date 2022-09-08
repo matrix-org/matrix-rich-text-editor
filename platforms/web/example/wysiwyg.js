@@ -232,7 +232,6 @@ function get_current_selection() {
 function selection_according_to_actions(actions) {
     for (let i = actions.length - 1; i >= 0; i--) {
         const action = actions[i];
-        console.log(action);
         if (action[0] === "select") {
             return [action[1], action[2]];
         }

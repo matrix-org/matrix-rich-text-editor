@@ -66,6 +66,23 @@ where
         }
     }
 
+    /// Delete a node from the tree. Invalidates any handles that you hold.
+    /// May delete more than one node, since it will merge any now-adjacent
+    /// nodes that match in type.
+    pub fn delete_node(&mut self, handle: DomHandle) {
+        let parent_handle = handle.parent_handle();
+        if let DomNode::Container(parent) =
+            self.lookup_node_mut(parent_handle.clone())
+        {
+            let idx = handle.index_in_parent();
+            parent.remove_child(idx);
+
+            self.merge_neighbours_if_matching(parent_handle, idx);
+        } else {
+            panic!("Parent was not a container!");
+        }
+    }
+
     pub fn children(&self) -> &Vec<DomNode<S>> {
         self.document().children()
     }
@@ -206,6 +223,72 @@ where
     pub fn text_len(&self) -> usize {
         self.document.text_len()
     }
+
+    fn merge_neighbours_if_matching(
+        &mut self,
+        parent_handle: DomHandle,
+        idx: usize,
+    ) {
+        let idx_to_delete = if let DomNode::Container(parent) =
+            self.lookup_node_mut(parent_handle.clone())
+        {
+            if idx > 0 && idx < parent.children().len() {
+                let before_idx = idx - 1;
+                let after_idx = idx;
+
+                let before_is_text = is_text(parent.get_child_mut(before_idx));
+                let after_is_text = is_text(parent.get_child_mut(after_idx));
+
+                // TODO: merge non-text nodes of same tag
+                // TODO: is this the same as NodeJoiner?
+                if before_is_text && after_is_text {
+                    let after_data = if let Some(DomNode::Text(after)) =
+                        parent.get_child_mut(after_idx)
+                    {
+                        after.data().clone()
+                    } else {
+                        panic!("after_is_text, but after is not text!");
+                    };
+
+                    if let Some(DomNode::Text(before)) =
+                        parent.get_child_mut(before_idx)
+                    {
+                        let mut new_data = before.data().clone();
+                        new_data.push_string(&after_data);
+                        before.set_data(new_data);
+                    } else {
+                        panic!("before_is_text, but before is not text!");
+                    }
+
+                    // We want to delete the after node
+                    Some(after_idx)
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        } else {
+            panic!("Parent was not a container!");
+        };
+
+        if let Some(idx_to_delete) = idx_to_delete {
+            // Call delete_node recursively to do any other merging that
+            // might be needed.
+            self.delete_node(parent_handle.child_handle(idx_to_delete))
+        }
+    }
+}
+
+fn is_text<S>(node: Option<&mut DomNode<S>>) -> bool
+where
+    S: UnicodeString,
+{
+    if let Some(DomNode::Text(_)) = node {
+        true
+    } else {
+        false
+    }
 }
 
 impl<S> ToHtml<S> for Dom<S>
@@ -263,7 +346,7 @@ mod test {
     use crate::dom::nodes::TextNode;
     use crate::tests::testutils_composer_model::cm;
     use crate::tests::testutils_conversion::utf16;
-    use crate::tests::testutils_dom::{a, b, dom, i, i_c, tn};
+    use crate::tests::testutils_dom::{a, b, br, dom, i, i_c, tn};
 
     // Creation and handles
 
@@ -346,6 +429,32 @@ mod test {
 
         // Node is replaced by new insertion
         assert_eq!(dom.to_string(), "<b>f<i>o</i>o</b>");
+    }
+
+    #[test]
+    fn can_delete_a_node_by_handle() {
+        // Delete the first one
+        let mut dom1 = dom(&[b(&[i(&[tn("foo")]), tn("bar")])]);
+        let handle = DomHandle::from_raw(vec![0, 1]);
+        dom1.delete_node(handle);
+        assert_eq!(dom1.to_string(), "<b><i>foo</i></b>");
+
+        // Delete the second one
+        let mut dom2 = dom(&[b(&[i(&[tn("foo")]), tn("bar")])]);
+        let handle = DomHandle::from_raw(vec![0, 0]);
+        dom2.delete_node(handle);
+        assert_eq!(dom2.to_string(), "<b>bar</b>");
+    }
+
+    #[test]
+    fn deleting_a_node_merges_its_neighbours() {
+        // Delete a br between two texts
+        let mut dom1 = dom(&[tn("a"), br(), tn("b")]);
+        dom1.delete_node(DomHandle::from_raw(vec![1]));
+        assert_eq!(dom1.to_string(), "ab");
+
+        // The texts should have been joined
+        assert_eq!(dom1.document().children().len(), 1);
     }
 
     // Serialisation

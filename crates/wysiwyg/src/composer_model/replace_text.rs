@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::composer_model::base::{slice_from, slice_to};
-use crate::dom::nodes::DomNode;
+use crate::composer_model::base::{slice, slice_from, slice_to};
+use crate::dom::nodes::{ContainerNodeKind, DomNode};
 use crate::dom::{DomHandle, MultipleNodesRange, Range, SameNodeRange};
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
 
@@ -55,7 +55,10 @@ where
                     if let Some(parent_handle) = parent_list_item_handle {
                         self.do_enter_in_list(parent_handle, e, range)
                     } else {
-                        self.replace_text(S::from_str("\n"))
+                        self.do_enter_in_text(
+                            range.node_handle,
+                            range.start_offset,
+                        )
                     }
                 }
                 Range::MultipleNodes(_) => {
@@ -68,6 +71,48 @@ where
             self.delete();
             self.enter()
         }
+    }
+
+    fn do_enter_in_text(
+        &mut self,
+        handle: DomHandle,
+        start: usize,
+    ) -> ComposerUpdate<S> {
+        let mut added_characters = 0;
+
+        let node = self.state.dom.lookup_node_mut(handle.clone());
+        let remaining_text = match node {
+            DomNode::Container(_) => panic!("Enter within a non-text node!"),
+            DomNode::Text(node) => {
+                let before = if start == 0 {
+                    added_characters += 1;
+                    S::from_str("\u{200b}")
+                } else {
+                    slice_to(node.data(), ..start)
+                };
+                let after = slice_from(node.data(), start..);
+                node.set_data(before);
+                after
+            }
+        };
+
+        let parent_handle = handle.parent_handle();
+        let parent = self.state.dom.lookup_node_mut(parent_handle);
+        match parent {
+            DomNode::Container(parent) => {
+                added_characters += 1;
+                // TODO: simpler function for zero-width text
+                let mut new_text = S::from_str("\u{200b}");
+                new_text.push_string(&remaining_text);
+                parent.append_child(DomNode::new_line_break());
+                parent.append_child(DomNode::new_text(new_text));
+            }
+            DomNode::Text(_) => panic!("Parent node was a text node!"),
+        }
+
+        self.state.start += added_characters;
+        self.state.end = self.state.start;
+        self.create_update_replace_all()
     }
 
     /// Internal: replace some text without modifying the undo/redo state.
@@ -101,18 +146,57 @@ where
         self.create_update_replace_all()
     }
 
+    /// Decide whether we need to deleted the previous sibling, and delete it
+    /// if so.
+    /// Logic: if the text we are replacing starts with a zero-width space, and
+    /// this text node is preceded by a br tag, then delete the br tag.
+    fn maybe_delete_previous_sibling(
+        &mut self,
+        text: &S,
+        range: &SameNodeRange,
+    ) {
+        // Check for whether we need to delete a <br /> before us
+        if range.start_offset == 0 && range.end_offset > 0 {
+            let deleted_text =
+                slice(text, range.start_offset..(range.start_offset + 1));
+            if deleted_text == S::from_str("\u{200b}") {
+                // Delete the node before us
+                if range.node_handle.index_in_parent() > 0 {
+                    let handle = range.node_handle.prev_sibling();
+                    if let DomNode::Container(node) =
+                        self.state.dom.lookup_node(handle.clone())
+                    {
+                        if *node.kind() == ContainerNodeKind::LineBreak {
+                            self.state.dom.delete_node(handle);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     fn replace_same_node(&mut self, range: SameNodeRange, new_text: S) {
         // TODO: remove SameNode and NoNode?
-        let node = self.state.dom.lookup_node_mut(range.node_handle);
-        if let DomNode::Text(ref mut t) = node {
-            let text = t.data();
-            let mut n = slice_to(text, ..range.start_offset);
-            n.push_string(&new_text);
-            n.push_string(&slice_from(&text, range.end_offset..));
-            t.set_data(n);
-        } else {
-            panic!("Can't deal with ranges containing non-text nodes (yet?)")
-        }
+
+        let old_text = {
+            let node =
+                self.state.dom.lookup_node_mut(range.node_handle.clone());
+            if let DomNode::Text(ref mut t) = node {
+                let text = t.data().clone();
+
+                let mut n = slice_to(&text, ..range.start_offset);
+                n.push_string(&new_text);
+                n.push_string(&slice_from(&text, range.end_offset..));
+                t.set_data(n);
+                text
+            } else {
+                panic!(
+                    "Can't deal with ranges containing non-text nodes (yet?)"
+                )
+            }
+        };
+
+        self.maybe_delete_previous_sibling(&old_text, &range)
     }
 
     fn replace_multiple_nodes(

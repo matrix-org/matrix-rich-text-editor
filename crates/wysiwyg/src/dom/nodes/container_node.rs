@@ -31,6 +31,7 @@ where
     attrs: Option<Vec<(S, S)>>,
     children: Vec<DomNode<S>>,
     handle: DomHandle,
+    empty: bool,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -43,6 +44,7 @@ where
     Link(S),
     List,
     ListItem,
+    LineBreak,
 }
 
 impl<S> ContainerNode<S>
@@ -59,12 +61,14 @@ where
         attrs: Option<Vec<(S, S)>>,
         children: Vec<DomNode<S>>,
     ) -> Self {
+        let empty = Self::is_empty_tag_name(&name);
         Self {
             name,
             kind,
             attrs,
             children,
             handle: DomHandle::new_unset(),
+            empty,
         }
     }
 
@@ -73,12 +77,13 @@ where
         children: Vec<DomNode<S>>,
     ) -> Option<Self> {
         InlineFormatType::try_from(format.clone())
-            .map(|f| Self {
-                name: format,
-                kind: ContainerNodeKind::Formatting(f),
-                attrs: None,
-                children,
-                handle: DomHandle::new_unset(),
+            .map(|f| {
+                Self::new(
+                    format,
+                    ContainerNodeKind::Formatting(f),
+                    None,
+                    children,
+                )
             })
             .ok()
     }
@@ -87,33 +92,34 @@ where
         format: InlineFormatType,
         children: Vec<DomNode<S>>,
     ) -> Self {
-        Self {
-            name: UnicodeString::from_str(format.tag().clone()),
-            kind: ContainerNodeKind::Formatting(format),
-            attrs: None,
+        Self::new(
+            UnicodeString::from_str(format.tag().clone()),
+            ContainerNodeKind::Formatting(format),
+            None,
             children,
-            handle: DomHandle::new_unset(),
-        }
+        )
     }
 
     pub fn new_list(list_type: ListType, children: Vec<DomNode<S>>) -> Self {
-        Self {
-            name: S::from_str(list_type.tag()),
-            kind: ContainerNodeKind::List,
-            attrs: None,
+        Self::new(
+            S::from_str(list_type.tag()),
+            ContainerNodeKind::List,
+            None,
             children,
-            handle: DomHandle::new_unset(),
-        }
+        )
     }
 
     pub fn new_list_item(item_name: S, children: Vec<DomNode<S>>) -> Self {
-        Self {
-            name: item_name,
-            kind: ContainerNodeKind::ListItem,
-            attrs: None,
-            children,
-            handle: DomHandle::new_unset(),
-        }
+        Self::new(item_name, ContainerNodeKind::ListItem, None, children)
+    }
+
+    pub(crate) fn new_line_break() -> ContainerNode<S> {
+        Self::new(
+            UnicodeString::from_str("br"),
+            ContainerNodeKind::LineBreak,
+            None,
+            Vec::new(),
+        )
     }
 
     pub fn append_child(&mut self, mut child: DomNode<S>) -> DomHandle {
@@ -250,13 +256,12 @@ where
     }
 
     pub fn new_link(url: S, children: Vec<DomNode<S>>) -> Self {
-        Self {
-            name: S::from_str("a"),
-            kind: ContainerNodeKind::Link(url.clone()),
-            attrs: Some(vec![(S::from_str("href"), url)]),
+        Self::new(
+            S::from_str("a"),
+            ContainerNodeKind::Link(url.clone()),
+            Some(vec![(S::from_str("href"), url)]),
             children,
-            handle: DomHandle::new_unset(),
-        }
+        )
     }
 
     pub fn is_empty_list_item(&self) -> bool {
@@ -279,28 +284,31 @@ where
             ),
         }
     }
-}
 
-impl<S> ToHtml<S> for ContainerNode<S>
-where
-    S: UnicodeString,
-{
-    fn fmt_html(&self, f: &mut HtmlFormatter<S>) {
+    fn is_empty_tag(&self) -> bool {
+        self.empty
+    }
+
+    fn fmt_attrs(&self, f: &mut HtmlFormatter<S>) {
+        if let Some(attrs) = &self.attrs {
+            for attr in attrs {
+                f.write_char(HtmlChar::Space);
+                let (attr_name, value) = attr;
+                f.write(attr_name.as_slice());
+                f.write_char(HtmlChar::Equal);
+                f.write_char(HtmlChar::Quote);
+                f.write(value.as_slice());
+                f.write_char(HtmlChar::Quote);
+            }
+        }
+    }
+
+    fn fmt_html_nonempty(&self, f: &mut HtmlFormatter<S>) {
         let name = self.name();
         if !name.is_empty() {
             f.write_char(HtmlChar::Lt);
             f.write(name.as_slice());
-            if let Some(attrs) = &self.attrs {
-                for attr in attrs {
-                    f.write_char(HtmlChar::Space);
-                    let (attr_name, value) = attr;
-                    f.write(attr_name.as_slice());
-                    f.write_char(HtmlChar::Equal);
-                    f.write_char(HtmlChar::Quote);
-                    f.write(value.as_slice());
-                    f.write_char(HtmlChar::Quote);
-                }
-            }
+            self.fmt_attrs(f);
             f.write_char(HtmlChar::Gt);
         }
 
@@ -313,6 +321,44 @@ where
             f.write_char(HtmlChar::ForwardSlash);
             f.write(name.as_slice());
             f.write_char(HtmlChar::Gt);
+        }
+    }
+
+    fn fmt_html_empty(&self, f: &mut HtmlFormatter<S>) {
+        let name = self.name();
+        if !name.is_empty() {
+            f.write_char(HtmlChar::Lt);
+            f.write(name.as_slice());
+            self.fmt_attrs(f);
+            f.write_char(HtmlChar::Space);
+            f.write_char(HtmlChar::ForwardSlash);
+            f.write_char(HtmlChar::Gt);
+        }
+
+        assert!(
+            self.children.is_empty(),
+            "Found an empty tag that has children!"
+        );
+    }
+
+    fn is_empty_tag_name(name: &S) -> bool {
+        match name.to_utf8().as_str() {
+            "br" => true,
+            // Others may come later e.g. img, hr
+            _ => false,
+        }
+    }
+}
+
+impl<S> ToHtml<S> for ContainerNode<S>
+where
+    S: UnicodeString,
+{
+    fn fmt_html(&self, f: &mut HtmlFormatter<S>) {
+        if self.is_empty_tag() {
+            self.fmt_html_empty(f);
+        } else {
+            self.fmt_html_nonempty(f);
         }
     }
 }

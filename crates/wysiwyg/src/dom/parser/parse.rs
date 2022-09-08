@@ -74,6 +74,14 @@ where
         )
     }
 
+    /// Create a br node
+    fn new_line_break<S>() -> DomNode<S>
+    where
+        S: UnicodeString,
+    {
+        DomNode::Container(ContainerNode::new_line_break())
+    }
+
     /// Create a link node
     fn new_link<S>(child: &PaNodeContainer) -> DomNode<S>
     where
@@ -120,6 +128,9 @@ where
             "b" | "code" | "del" | "em" | "i" | "strong" | "u" => {
                 node.append_child(new_formatting(tag));
                 convert_children(padom, child, node.last_child_mut());
+            }
+            "br" => {
+                node.append_child(new_line_break());
             }
             "ol" | "ul" => {
                 node.append_child(new_list(tag));
@@ -252,5 +263,10 @@ mod test {
     fn parse_tags_with_attributes() {
         assert_that!(r#"<b><a href="http://example.com">ZZ</a></b>"#)
             .roundtrips();
+    }
+
+    #[test]
+    fn parse_br_tag() {
+        assert_that!("<br />").roundtrips();
     }
 }

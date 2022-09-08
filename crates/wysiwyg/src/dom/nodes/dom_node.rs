@@ -70,6 +70,10 @@ where
         DomNode::Container(ContainerNode::new_list_item(item_name, children))
     }
 
+    pub fn new_line_break() -> DomNode<S> {
+        DomNode::Container(ContainerNode::new_line_break())
+    }
+
     pub fn handle(&self) -> DomHandle {
         match self {
             DomNode::Container(n) => n.handle(),

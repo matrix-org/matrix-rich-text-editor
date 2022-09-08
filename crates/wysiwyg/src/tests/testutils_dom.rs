@@ -39,6 +39,10 @@ pub fn b<'a>(
     DomNode::new_formatting_from_tag(utf16("b"), clone_children(children))
 }
 
+pub fn br<'a>() -> DomNode<Utf16String> {
+    DomNode::new_line_break()
+}
+
 pub fn i<'a>(
     children: impl IntoIterator<Item = &'a DomNode<Utf16String>>,
 ) -> DomNode<Utf16String> {
