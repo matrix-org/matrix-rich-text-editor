@@ -295,15 +295,6 @@ class InterceptInputConnection(
         endBatchEdit()
     }
 
-    private fun updateSelectionInternal(newCursorPosition: Int) {
-        val (start, end) = getCurrentComposition()
-        val content = editable
-        var cursorPosition = if (newCursorPosition < 0) 0 else newCursorPosition
-        cursorPosition += if (newCursorPosition > 0) end - 1 else start
-        cursorPosition = cursorPosition.coerceIn(0, content.length)
-        setSelectionOnEditable(content, cursorPosition)
-    }
-
     private fun copyImeHighlightSpans(from: Spannable, to: Spannable, offset: Int) {
         val highlightSpans = from.getSpans(0, from.count(), BackgroundColorSpan::class.java)
             .orEmpty()

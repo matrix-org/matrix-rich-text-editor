@@ -5,6 +5,7 @@ import android.view.inputmethod.EditorInfo
 import androidx.test.espresso.UiController
 import androidx.test.espresso.ViewAction
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.InterceptInputConnection
 import org.hamcrest.Matcher
 
@@ -115,6 +116,22 @@ object Ime {
             inputConnection.deleteSurroundingText(before, after)
         }
     }
+
+    object Enter : ViewAction {
+        override fun getConstraints(): Matcher<View> = isDisplayed()
+
+        override fun getDescription(): String = "Simulates pressing the Enter key"
+
+        override fun perform(uiController: UiController?, view: View?) {
+            if (view == null) return
+            val editorInfo = EditorInfo()
+            val inputConnection = view.onCreateInputConnection(editorInfo) as? InterceptInputConnection ?: return
+            val end = inputConnection.getCurrentComposition().second
+            inputConnection.setComposingRegion(end, end)
+            inputConnection.commitText("\n", 1)
+        }
+
+    }
 }
 
 object ImeActions {
@@ -125,4 +142,5 @@ object ImeActions {
     fun backspace() = Ime.BackSpace()
     fun setSelection(start: Int, end: Int = start) = Ime.SetSelection(start, end)
     fun deleteSurrounding(before: Int = 0, after: Int = 0) = Ime.DeleteSurroundingText(before, after)
+    fun enter() = Ime.Enter
 }

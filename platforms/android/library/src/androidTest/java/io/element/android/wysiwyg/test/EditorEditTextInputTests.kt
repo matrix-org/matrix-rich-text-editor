@@ -1,19 +1,29 @@
 package io.element.android.wysiwyg.test
 
+import android.text.style.BulletSpan
+import android.text.style.UnderlineSpan
 import android.view.KeyEvent
+import android.view.View
+import android.widget.TextView
+import androidx.core.text.getSpans
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.accessibility.AccessibilityChecks
 import androidx.test.espresso.action.ViewActions.*
 import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.BoundedDiagnosingMatcher
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.FlakyTest
+import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.R
+import io.element.android.wysiwyg.spans.OrderedListSpan
+import io.element.android.wysiwyg.test.utils.EditorActions
 import io.element.android.wysiwyg.test.utils.ImeActions
 import io.element.android.wysiwyg.test.utils.TestActivity
 import io.element.android.wysiwyg.test.utils.selectionIsAt
+import org.hamcrest.Description
 import org.junit.After
 import org.junit.Ignore
 import org.junit.Rule
@@ -42,14 +52,14 @@ class EditorEditTextInputTests {
     fun testHardwareKeyboardTyping() {
         onView(withId(R.id.editText))
             .perform(typeText(ipsum))
-            .check(matches(withText(ipsum.asHtml())))
+            .check(matches(withText(ipsum)))
     }
 
     @Test
     fun testReplace() {
         onView(withId(R.id.editText))
             .perform(replaceText(ipsum))
-            .check(matches(withText(ipsum.asHtml())))
+            .check(matches(withText(ipsum)))
     }
 
     @Test
@@ -138,6 +148,66 @@ class EditorEditTextInputTests {
             .check(matches(withText("밥")))
     }
 
+    @Test
+    fun testAddingLink() {
+        onView(withId(R.id.editText))
+            .perform(ImeActions.setComposingText("a link to set"))
+            .perform(ImeActions.setSelection(2, 6))
+            .perform(EditorActions.setLink("https://element.io"))
+            .check(matches(TextViewMatcher {
+                // TODO: once we decide a Span for links, replace `UnderlineSpan`
+                it.editableText.getSpans<UnderlineSpan>(start = 2, end = 6).isNotEmpty()
+            }))
+    }
+
+    @Test
+    fun testAddingOrderedList() {
+        onView(withId(R.id.editText))
+            .perform(EditorActions.toggleList(true))
+            .perform(ImeActions.setComposingText("A list item"))
+            .perform(ImeActions.enter())
+            .perform(ImeActions.setComposingText("Another list item"))
+            .check(matches(withText("\u200bA list item\n\u200bAnother list item")))
+            .check(matches(TextViewMatcher {
+                // Has 2 OrderedListSpans (prefixes, 1 per line)
+                it.editableText.getSpans<OrderedListSpan>().count() == 2
+            }))
+    }
+
+    @Test
+    fun testAddingUnorderedList() {
+        onView(withId(R.id.editText))
+            .perform(EditorActions.toggleList(false))
+            .perform(ImeActions.setComposingText("A list item"))
+            .perform(ImeActions.enter())
+            .perform(ImeActions.setComposingText("Another list item"))
+            .check(matches(withText("\u200bA list item\n\u200bAnother list item")))
+            .check(matches(TextViewMatcher {
+                // Has 2 OrderedListSpans (prefixes, 1 per line)
+                it.editableText.getSpans<BulletSpan>().count() == 2
+            }))
+    }
+
+    @Test
+    fun testUndo() {
+        onView(withId(R.id.editText))
+            .perform(ImeActions.setComposingText("Some text to undo"))
+            .check(matches(withText("Some text to undo")))
+            .perform(EditorActions.undo())
+            .check(matches(withText("")))
+    }
+
+    @Test
+    fun testRedo() {
+        onView(withId(R.id.editText))
+            .perform(ImeActions.setComposingText("Some text to undo"))
+            .check(matches(withText("Some text to undo")))
+            .perform(EditorActions.undo())
+            .check(matches(withText("")))
+            .perform(EditorActions.redo())
+            .check(matches(withText("Some text to undo")))
+    }
+
     // About IME backspace on Korean, that's handled by the IME, which automatically seems to either
     // remove the last code unit from the code point, or 'undo' the last action and send the last
     // compositing text.
@@ -162,7 +232,20 @@ class EditorEditTextInputTests {
 
 }
 
-private fun String.asHtml(): String {
-    // Replace regular whitespace (0x20) with HTML's '&nsbp;' (0xa0)
-    return this.replace(Char(0x20), Char(0xa0))
+class TextViewMatcher(
+    private val check: (TextView) -> Boolean
+) : BoundedDiagnosingMatcher<View, EditorEditText>(EditorEditText::class.java) {
+    override fun matchesSafely(item: EditorEditText?, mismatchDescription: Description?): Boolean {
+        return if (item != null && check(item)) {
+            true
+        } else {
+            mismatchDescription?.appendText("Did not match TextViewMatcher")
+            false
+        }
+    }
+
+    override fun describeMoreTo(description: Description?) {
+        description?.appendText("Matches TextViewMatcher")
+    }
+
 }

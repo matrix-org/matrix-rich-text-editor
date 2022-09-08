@@ -125,7 +125,7 @@ class HtmlToSpansParser(
                     val zeroWidthSpan = SpannableString("\u200b").apply {
                         setSpan(ZeroWidthLineBreak(), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                     }
-                    text.append(zeroWidthSpan)
+                    text.insert(0, zeroWidthSpan)
                 } else if (start > 0 && start <= text.length && text[start-1] != '\n') {
                     // We add a line break and an zero width character to actually display the list item
                     val zeroWidthLineBreakSpan = SpannableString("\n").apply {
