@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::composer_model::base::{slice, slice_from, slice_to};
-use crate::dom::nodes::{DomNode, TextNode};
+use crate::dom::nodes::DomNode;
 use crate::dom::{Range, SameNodeRange};
 use crate::{ComposerModel, ComposerUpdate, UnicodeString};
 
@@ -56,12 +56,9 @@ where
             let during = slice(text, range.start_offset..range.end_offset);
             let after = slice_from(text, range.end_offset..);
             let new_nodes = vec![
-                DomNode::Text(TextNode::from(before)),
-                DomNode::new_link(
-                    link,
-                    vec![DomNode::Text(TextNode::from(during))],
-                ),
-                DomNode::Text(TextNode::from(after)),
+                DomNode::new_text(before),
+                DomNode::new_link(link, vec![DomNode::new_text(during)]),
+                DomNode::new_text(after),
             ];
             self.state.dom.replace(range.node_handle, new_nodes);
         } else {

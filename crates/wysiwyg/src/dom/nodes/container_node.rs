@@ -356,8 +356,6 @@ where
 mod test {
     use widestring::Utf16String;
 
-    use crate::dom::nodes::TextNode;
-
     use crate::tests::testutils_conversion::utf16;
 
     use super::*;
@@ -467,6 +465,6 @@ mod test {
     where
         S: UnicodeString,
     {
-        DomNode::Text(TextNode::from(S::from_str(content)))
+        DomNode::new_text(S::from_str(content))
     }
 }

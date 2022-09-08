@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::composer_model::base::{slice_from, slice_to};
-use crate::dom::nodes::{DomNode, TextNode};
+use crate::dom::nodes::DomNode;
 use crate::dom::{DomHandle, MultipleNodesRange, Range, SameNodeRange};
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
 
@@ -87,9 +87,7 @@ where
                 self.replace_multiple_nodes(range, new_text)
             }
             Range::NoNode => {
-                self.state
-                    .dom
-                    .append_child(DomNode::Text(TextNode::from(new_text)));
+                self.state.dom.append_child(DomNode::new_text(new_text));
 
                 start = 0;
             }

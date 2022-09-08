@@ -35,6 +35,10 @@ impl<S> DomNode<S>
 where
     S: UnicodeString,
 {
+    pub fn new_text(text: S) -> DomNode<S> {
+        DomNode::Text(TextNode::from(text))
+    }
+
     pub fn new_formatting(
         format: InlineFormatType,
         children: Vec<DomNode<S>>,
