@@ -16,7 +16,7 @@
 
 use widestring::Utf16String;
 
-use crate::dom::nodes::{DomNode, TextNode};
+use crate::dom::nodes::DomNode;
 use crate::dom::Dom;
 
 use crate::tests::testutils_conversion::utf16;
@@ -58,5 +58,5 @@ fn clone_children<'a>(
 }
 
 pub fn tn(data: &str) -> DomNode<Utf16String> {
-    DomNode::Text(TextNode::from(utf16(data)))
+    DomNode::new_text(utf16(data))
 }

@@ -45,7 +45,7 @@ where
             Range::NoNode => {
                 self.state.dom.append_child(DomNode::new_formatting(
                     format,
-                    vec![DomNode::Text(TextNode::from(S::from_str("")))],
+                    vec![DomNode::new_text(S::from_str(""))],
                 ));
                 ComposerUpdate::keep()
             }
@@ -70,12 +70,12 @@ where
             let during = slice(text, range.start_offset..range.end_offset);
             let after = slice_from(text, range.end_offset..);
             let new_nodes = vec![
-                DomNode::Text(TextNode::from(before)),
+                DomNode::new_text(before),
                 DomNode::new_formatting(
                     format,
-                    vec![DomNode::Text(TextNode::from(during))],
+                    vec![DomNode::new_text(during)],
                 ),
-                DomNode::Text(TextNode::from(after)),
+                DomNode::new_text(after),
             ];
             self.state.dom.replace(range.node_handle, new_nodes);
         } else {

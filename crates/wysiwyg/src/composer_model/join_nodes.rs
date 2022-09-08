@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::dom::nodes::{ContainerNodeKind, DomNode, TextNode};
+use crate::dom::nodes::{ContainerNodeKind, DomNode};
 use crate::dom::{DomHandle, DomLocation, MultipleNodesRange, Range};
 use crate::{ComposerModel, UnicodeString};
 
@@ -200,7 +200,7 @@ where
                 (DomNode::Text(start_i), DomNode::Text(next_i)) => {
                     let mut new_data = start_i.data().clone();
                     new_data.push_string(&next_i.data());
-                    let text_node = DomNode::Text(TextNode::from(new_data));
+                    let text_node = DomNode::new_text(new_data);
                     if let DomNode::Container(old_parent) =
                         dom.lookup_node_mut(next_handle.parent_handle())
                     {

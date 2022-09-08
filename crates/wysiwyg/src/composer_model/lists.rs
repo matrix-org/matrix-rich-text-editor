@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::composer_model::base::{slice_from, slice_to};
-use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
+use crate::dom::nodes::{ContainerNode, DomNode};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::{DomHandle, Range, SameNodeRange};
 use crate::{ComposerModel, ComposerUpdate, ListType, Location, UnicodeString};
@@ -189,7 +189,7 @@ where
                     let list_item =
                         DomNode::Container(ContainerNode::new_list_item(
                             S::from_str("li"),
-                            vec![DomNode::Text(TextNode::from(text.clone()))],
+                            vec![DomNode::new_text(text.clone())],
                         ));
                     if index_in_parent > 0 {
                         let previous_handle = range.node_handle.prev_sibling();
@@ -234,7 +234,7 @@ where
                     list_type,
                     vec![DomNode::Container(ContainerNode::new_list_item(
                         S::from_str("li"),
-                        vec![DomNode::Text(TextNode::from(S::from_str("")))],
+                        vec![DomNode::new_text(S::from_str(""))],
                     ))],
                 ));
                 return self.create_update_replace_all();
@@ -274,11 +274,11 @@ where
                 let add_zwsp = new_li_text.len() == 0;
                 list.append_child(DomNode::new_list_item(
                     S::from_str("li"),
-                    vec![DomNode::Text(TextNode::from(if add_zwsp {
+                    vec![DomNode::new_text(if add_zwsp {
                         S::from_str("\u{200b}")
                     } else {
                         new_li_text
-                    }))],
+                    })],
                 ));
                 if add_zwsp {
                     self.state.start = Location::from(location + 1);
@@ -305,9 +305,7 @@ where
                 if let DomNode::Container(parent) = parent_node {
                     parent.remove_child(list_handle.index_in_parent());
                     if parent.children().len() == 0 {
-                        parent.append_child(DomNode::Text(TextNode::from(
-                            S::from_str(""),
-                        )));
+                        parent.append_child(DomNode::new_text(S::from_str("")));
                     }
                     let new_location = Location::from(location - list_len);
                     self.state.start = new_location;
@@ -324,8 +322,8 @@ where
                         self.state.dom.lookup_node_mut(parent_handle);
                     if let DomNode::Container(parent) = parent_node {
                         // TODO: should probably append a paragraph instead
-                        parent.append_child(DomNode::Text(TextNode::from(
-                            S::from_str("\u{200b}"),
+                        parent.append_child(DomNode::new_text(S::from_str(
+                            "\u{200b}",
                         )));
                         let new_location =
                             Location::from(location - li_len + 1);

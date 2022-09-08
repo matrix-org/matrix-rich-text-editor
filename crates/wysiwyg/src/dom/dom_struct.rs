@@ -274,7 +274,7 @@ mod test {
             DomNode::Text(TextNode::from(utf16("a"))),
             DomNode::new_formatting_from_tag(
                 utf16("b"),
-                vec![DomNode::Text(TextNode::from(utf16("b")))],
+                vec![DomNode::new_text(utf16("b"))],
             ),
         ]);
 
@@ -286,10 +286,10 @@ mod test {
     fn can_find_toplevel_nodes_via_handles() {
         // Create a simple DOM
         let dom = Dom::new(vec![
-            DomNode::Text(TextNode::from(utf16("a"))),
+            DomNode::new_text(utf16("a")),
             DomNode::new_formatting_from_tag(
                 utf16("b"),
-                vec![DomNode::Text(TextNode::from(utf16("b")))],
+                vec![DomNode::new_text(utf16("b"))],
             ),
         ]);
 

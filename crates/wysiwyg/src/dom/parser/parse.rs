@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
+use crate::dom::nodes::{ContainerNode, DomNode};
 use crate::dom::parser::PaNodeContainer;
 use crate::dom::{Dom, DomCreationError, UnicodeString};
 use crate::ListType;
@@ -163,8 +163,8 @@ where
                     panic!("Found a document inside a document!")
                 }
                 PaDomNode::Text(text) => {
-                    node.append_child(DomNode::Text(TextNode::from(
-                        S::from_str(&text.content),
+                    node.append_child(DomNode::new_text(S::from_str(
+                        &text.content,
                     )));
                 }
             }
