@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use crate::ToolbarButton;
+use std::collections::HashSet;
 
 #[derive(Debug, Clone)]
 pub enum MenuState {
@@ -22,5 +23,5 @@ pub enum MenuState {
 
 #[derive(Debug, Clone)]
 pub struct MenuStateUpdate {
-    pub active_buttons: Vec<ToolbarButton>,
+    pub active_buttons: HashSet<ToolbarButton>,
 }

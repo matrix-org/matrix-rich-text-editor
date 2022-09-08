@@ -14,17 +14,81 @@
 
 #![cfg(test)]
 
+use std::collections::HashSet;
+
 use crate::tests::testutils_composer_model::cm;
 
-use crate::ToolbarButton;
+use crate::{InlineFormatType, Location, ToolbarButton};
 
 #[test]
 fn creating_and_deleting_lists_updates_active_buttons() {
     let mut model = cm("|");
     model.ordered_list();
-    assert_eq!(model.active_buttons, vec![ToolbarButton::OrderedList]);
+    assert_eq!(
+        model.active_buttons,
+        HashSet::from([ToolbarButton::OrderedList])
+    );
     model.unordered_list();
-    assert_eq!(model.active_buttons, vec![ToolbarButton::UnorderedList]);
+    assert_eq!(
+        model.active_buttons,
+        HashSet::from([ToolbarButton::UnorderedList])
+    );
     model.backspace();
-    assert_eq!(model.active_buttons, vec![]);
+    assert_eq!(model.active_buttons, HashSet::new());
+}
+
+#[test]
+fn selecting_nested_nodes_updates_active_buttons() {
+    let model = cm("<ul><li><b><i>{ab}|</i></b></li></ul>");
+    assert_eq!(
+        model.active_buttons,
+        HashSet::from([
+            ToolbarButton::UnorderedList,
+            ToolbarButton::Bold,
+            ToolbarButton::Italic,
+        ]),
+    );
+}
+
+#[test]
+fn selecting_multiple_nodes_updates_active_buttons() {
+    let model = cm("<ol><li>{ab</li><li><b>cd</b>}|</li></ol>");
+    assert_eq!(
+        model.active_buttons,
+        HashSet::from([ToolbarButton::OrderedList])
+    );
+    let model = cm("<ol><li>{ab</li></ol>cd}|");
+    assert_eq!(model.active_buttons, HashSet::new());
+
+    let mut model = cm("<a href=\"https://matrix.org\">{link}|</a>ab");
+    assert_eq!(model.active_buttons, HashSet::from([ToolbarButton::Link]));
+    model.select(Location::from(2), Location::from(6));
+    assert_eq!(model.active_buttons, HashSet::new());
+
+    let mut model = cm("<del>{ab<em>cd}|</em></del>");
+    assert_eq!(
+        model.active_buttons,
+        HashSet::from([ToolbarButton::StrikeThrough]),
+    );
+    model.select(Location::from(2), Location::from(4));
+    assert_eq!(
+        model.active_buttons,
+        HashSet::from([ToolbarButton::Italic, ToolbarButton::StrikeThrough,]),
+    )
+}
+
+#[test]
+fn formatting_updates_active_buttons() {
+    let mut model = cm("a{bc}|d");
+    model.format(InlineFormatType::Bold);
+    model.format(InlineFormatType::Italic);
+    model.format(InlineFormatType::Underline);
+    assert_eq!(
+        model.active_buttons,
+        HashSet::from([
+            ToolbarButton::Bold,
+            ToolbarButton::Italic,
+            ToolbarButton::Underline,
+        ]),
+    )
 }

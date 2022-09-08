@@ -12,8 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Eq, Hash, PartialEq)]
 pub enum ToolbarButton {
+    Bold,
+    Italic,
+    StrikeThrough,
+    Underline,
+    InlineCode,
+    Link,
+    Undo,
+    Redo,
     OrderedList,
     UnorderedList,
 }

@@ -18,6 +18,7 @@ use crate::dom::{DomHandle, UnicodeString};
 use crate::{
     ActionResponse, ComposerUpdate, Location, ToHtml, ToTree, ToolbarButton,
 };
+use std::collections::HashSet;
 
 #[derive(Clone)]
 pub struct ComposerModel<S>
@@ -27,7 +28,7 @@ where
     pub state: ComposerState<S>,
     pub previous_states: Vec<ComposerState<S>>,
     pub next_states: Vec<ComposerState<S>>,
-    pub active_buttons: Vec<ToolbarButton>,
+    pub active_buttons: HashSet<ToolbarButton>,
 }
 
 impl<S> ComposerModel<S>
@@ -39,7 +40,7 @@ where
             state: ComposerState::new(),
             previous_states: Vec::new(),
             next_states: Vec::new(),
-            active_buttons: Vec::new(),
+            active_buttons: HashSet::new(),
         }
     }
 
@@ -58,7 +59,7 @@ where
             },
             previous_states: Vec::new(),
             next_states: Vec::new(),
-            active_buttons: Vec::new(),
+            active_buttons: HashSet::new(),
         };
         model.compute_menu_state();
         return model;

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::collections::HashSet;
 use widestring::Utf16String;
 
 use crate::dom::nodes::TextNode;
@@ -123,7 +124,7 @@ impl ComposerModel<Utf16String> {
             state: ComposerState::new(),
             previous_states: Vec::new(),
             next_states: Vec::new(),
-            active_buttons: Vec::new(),
+            active_buttons: HashSet::new(),
         };
         model.state.dom = parse(&text).unwrap();
 
@@ -162,6 +163,7 @@ impl ComposerModel<Utf16String> {
             model.state.start = Location::from(curs);
             model.state.end = Location::from(curs);
         }
+        model.compute_menu_state();
 
         model
     }
@@ -401,6 +403,7 @@ fn write_selection_multi(
 #[cfg(test)]
 mod test {
     use speculoos::{prelude::*, AssertionFailure, Spec};
+    use std::collections::HashSet;
     use widestring::Utf16String;
 
     use crate::dom::{parser, Dom};
@@ -549,7 +552,7 @@ mod test {
             },
             previous_states: Vec::new(),
             next_states: Vec::new(),
-            active_buttons: Vec::new(),
+            active_buttons: HashSet::new(),
         };
         assert_eq!(tx(&model), "AAA<b>B{BB</b>C}|CC");
     }
@@ -564,7 +567,7 @@ mod test {
             },
             previous_states: Vec::new(),
             next_states: Vec::new(),
-            active_buttons: Vec::new(),
+            active_buttons: HashSet::new(),
         };
         assert_eq!(tx(&model), "AAA<b>B|{BB</b>C}CC");
     }
@@ -579,7 +582,7 @@ mod test {
             },
             previous_states: Vec::new(),
             next_states: Vec::new(),
-            active_buttons: Vec::new(),
+            active_buttons: HashSet::new(),
         };
         assert_eq!(tx(&model), "");
     }
