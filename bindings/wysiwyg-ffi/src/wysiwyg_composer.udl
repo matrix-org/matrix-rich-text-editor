@@ -59,6 +59,14 @@ interface TextUpdate {
 
 [Enum]
 interface ToolbarButton {
+    Bold();
+    Italic();
+    StrikeThrough();
+    Underline();
+    InlineCode();
+    Link();
+    Undo();
+    Redo();
     OrderedList();
     UnorderedList();
 };

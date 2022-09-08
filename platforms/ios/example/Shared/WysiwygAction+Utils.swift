@@ -28,14 +28,7 @@ extension WysiwygAction: CaseIterable, Identifiable {
     }
 
     public func color(_ viewModel: WysiwygComposerViewModel) -> Color {
-        switch self {
-        case .orderedList:
-            return viewModel.activeButtons.contains(.orderedList) ? .blue : .black
-        case .unorderedList:
-            return viewModel.activeButtons.contains(.unorderedList) ? .blue : .black
-        default:
-            return .black
-        }
+        return viewModel.activeButtons.contains(self.toolbarButton) ? .blue : .black
     }
 
     var accessibilityIdentifier: WysiwygSharedAccessibilityIdentifier {
@@ -77,6 +70,29 @@ extension WysiwygAction: CaseIterable, Identifiable {
             return "list.number"
         case .unorderedList:
             return "list.bullet"
+        }
+    }
+}
+
+private extension WysiwygAction {
+    private var toolbarButton: ToolbarButton {
+        switch self {
+        case .bold:
+            return .bold
+        case .italic:
+            return .italic
+        case .strikethrough:
+            return .strikeThrough
+        case .underline:
+            return .underline
+        case .undo:
+            return .undo
+        case .redo:
+            return .redo
+        case .orderedList:
+            return .orderedList
+        case .unorderedList:
+            return .unorderedList
         }
     }
 }
