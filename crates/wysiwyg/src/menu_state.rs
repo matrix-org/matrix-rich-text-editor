@@ -24,4 +24,5 @@ pub enum MenuState {
 #[derive(Debug, Clone)]
 pub struct MenuStateUpdate {
     pub active_buttons: HashSet<ToolbarButton>,
+    pub disabled_buttons: HashSet<ToolbarButton>,
 }

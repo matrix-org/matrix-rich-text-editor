@@ -28,35 +28,39 @@ where
     pub(crate) fn compute_menu_state(&mut self) -> MenuState {
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
+        let active_buttons: HashSet<ToolbarButton>;
         match range {
             Range::SameNode(range) => {
-                return self.menu_state_from_handle(range.node_handle);
+                active_buttons = self.compute_active_buttons(range.node_handle);
             }
             Range::MultipleNodes(range) => {
-                return self.menu_state_from_locations(&range.locations);
+                active_buttons = self
+                    .compute_active_buttons_from_locations(&range.locations);
             }
             _ => {
-                return MenuState::Keep;
+                active_buttons = HashSet::new();
             }
         }
-    }
+        let disabled_buttons = self.compute_disabled_buttons();
 
-    fn menu_state_from_handle(&mut self, handle: DomHandle) -> MenuState {
-        let active_buttons = self.active_buttons(handle);
-        if active_buttons == self.active_buttons {
+        if active_buttons == self.active_buttons
+            && disabled_buttons == self.disabled_buttons
+        {
             return MenuState::Keep;
         } else {
             self.active_buttons = active_buttons;
+            self.disabled_buttons = disabled_buttons;
             return MenuState::Update(MenuStateUpdate {
                 active_buttons: self.active_buttons.clone(),
+                disabled_buttons: self.disabled_buttons.clone(),
             });
         }
     }
 
-    fn menu_state_from_locations(
+    fn compute_active_buttons_from_locations(
         &mut self,
         locations: &Vec<DomLocation>,
-    ) -> MenuState {
+    ) -> HashSet<ToolbarButton> {
         let mut text_locations: Vec<&DomLocation> = locations
             .iter()
             .filter(|l| {
@@ -66,9 +70,10 @@ where
             .collect();
         let first_location = text_locations.remove(0);
         let mut active_buttons =
-            self.active_buttons(first_location.node_handle.clone());
+            self.compute_active_buttons(first_location.node_handle.clone());
         for location in text_locations {
-            let buttons = self.active_buttons(location.node_handle.clone());
+            let buttons =
+                self.compute_active_buttons(location.node_handle.clone());
             let intersection: HashSet<_> = active_buttons
                 .intersection(&buttons)
                 .into_iter()
@@ -77,21 +82,17 @@ where
             active_buttons = intersection;
         }
 
-        if active_buttons == self.active_buttons {
-            return MenuState::Keep;
-        } else {
-            self.active_buttons = active_buttons;
-            return MenuState::Update(MenuStateUpdate {
-                active_buttons: self.active_buttons.clone(),
-            });
-        }
+        active_buttons
     }
 
-    fn active_buttons(&self, handle: DomHandle) -> HashSet<ToolbarButton> {
+    fn compute_active_buttons(
+        &self,
+        handle: DomHandle,
+    ) -> HashSet<ToolbarButton> {
         let mut active_buttons = HashSet::new();
         let node = self.state.dom.lookup_node(handle.clone());
         if let DomNode::Container(container) = node {
-            let active_button = Self::active_button(container);
+            let active_button = Self::active_button_for_container(container);
             if let Some(button) = active_button {
                 active_buttons.insert(button);
             }
@@ -99,7 +100,7 @@ where
 
         if handle.has_parent() {
             active_buttons = active_buttons
-                .union(&self.active_buttons(handle.parent_handle()))
+                .union(&self.compute_active_buttons(handle.parent_handle()))
                 .into_iter()
                 .map(|b| b.clone())
                 .collect();
@@ -108,7 +109,9 @@ where
         active_buttons
     }
 
-    fn active_button(container: &ContainerNode<S>) -> Option<ToolbarButton> {
+    fn active_button_for_container(
+        container: &ContainerNode<S>,
+    ) -> Option<ToolbarButton> {
         match container.kind() {
             ContainerNodeKind::Formatting(format) => match format {
                 InlineFormatType::Bold => Some(ToolbarButton::Bold),
@@ -130,5 +133,17 @@ where
             }
             _ => None,
         }
+    }
+
+    fn compute_disabled_buttons(&self) -> HashSet<ToolbarButton> {
+        let mut disabled_buttons = HashSet::new();
+        if self.previous_states.is_empty() {
+            disabled_buttons.insert(ToolbarButton::Undo);
+        }
+        if self.next_states.is_empty() {
+            disabled_buttons.insert(ToolbarButton::Redo);
+        }
+
+        disabled_buttons
     }
 }

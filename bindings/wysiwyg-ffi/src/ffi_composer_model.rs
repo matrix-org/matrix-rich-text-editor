@@ -18,6 +18,13 @@ impl ComposerModel {
         }
     }
 
+    pub fn set_html(self: &Arc<Self>, html: String) -> Arc<ComposerUpdate> {
+        let html = Utf16String::from_str(&html);
+        Arc::new(ComposerUpdate::from(
+            self.inner.lock().unwrap().replace_all_html(&html),
+        ))
+    }
+
     pub fn select(
         self: &Arc<Self>,
         start_utf16_codeunit: u32,

@@ -30,6 +30,8 @@ public class WysiwygComposerViewModel: ObservableObject {
     @Published public var idealHeight: CGFloat = .zero
     /// Published value for the composer current expected active buttons.
     @Published public var activeButtons: [ToolbarButton] = []
+    /// Published value for the composer current expected disabled buttons.
+    @Published public var disabledButtons: [ToolbarButton] = []
 
     // MARK: - Private
     private var model: ComposerModel
@@ -42,6 +44,12 @@ public class WysiwygComposerViewModel: ObservableObject {
         cancellable = $content.sink(receiveValue: { [unowned self] content in
             self.isContentEmpty = content.plainText.isEmpty
         })
+    }
+
+    /// Apply any additional setup required.
+    /// Should be called when the view appears.
+    public func setup() {
+        self.applyUpdate(self.model.setHtml(html: ""))
     }
 
     /// Apply given action to the composer.
@@ -171,8 +179,10 @@ private extension WysiwygComposerViewModel {
         }
 
         switch update.menuState() {
-        case .update(activeButtons: let activeButtons):
+        case .update(activeButtons: let activeButtons,
+                     disabledButtons: let disabledButtons):
             self.activeButtons = activeButtons
+            self.disabledButtons = disabledButtons
         default:
             break
         }

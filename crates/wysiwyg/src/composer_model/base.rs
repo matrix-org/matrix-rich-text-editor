@@ -29,6 +29,7 @@ where
     pub previous_states: Vec<ComposerState<S>>,
     pub next_states: Vec<ComposerState<S>>,
     pub active_buttons: HashSet<ToolbarButton>,
+    pub disabled_buttons: HashSet<ToolbarButton>,
 }
 
 impl<S> ComposerModel<S>
@@ -41,6 +42,7 @@ where
             previous_states: Vec::new(),
             next_states: Vec::new(),
             active_buttons: HashSet::new(),
+            disabled_buttons: HashSet::new(),
         }
     }
 
@@ -60,6 +62,7 @@ where
             previous_states: Vec::new(),
             next_states: Vec::new(),
             active_buttons: HashSet::new(),
+            disabled_buttons: HashSet::new(),
         };
         model.compute_menu_state();
         return model;
