@@ -41,3 +41,14 @@ fn bolding_ascii_adds_strong_tags() {
     model.format(InlineFormatType::Bold);
     assert_eq!(tx(&model), "aa<strong>|{bb}</strong>cc");
 }
+
+#[test]
+fn format_several_nodes_with_empty_text_nodes() {
+    let mut model = cm("{some}| different nodes");
+    model.format(InlineFormatType::Bold);
+    model.select(Location::from(5), Location::from(14));
+    model.format(InlineFormatType::Italic);
+    model.select(Location::from(2), Location::from(17));
+    model.format(InlineFormatType::StrikeThrough);
+    assert_eq!(tx(&model), "<strong>so<del>{me</del></strong><del> </del><em><del>different</del></em><del> no}|</del>des")
+}

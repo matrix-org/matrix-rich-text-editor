@@ -204,9 +204,6 @@ where
                         }
                     }
                     // Clean up by removing any empty text nodes and merging formatting nodes
-                    self.remove_empty_text_nodes(
-                        loc.node_handle.parent_handle(),
-                    );
                     self.merge_formatting_node_with_siblings(
                         loc.node_handle.clone(),
                     );
@@ -261,25 +258,6 @@ where
             Some((orig, new))
         } else {
             None
-        }
-    }
-
-    fn remove_empty_text_nodes(&mut self, handle: DomHandle) {
-        if let DomNode::Container(parent) =
-            self.state.dom.lookup_node_mut(handle.clone())
-        {
-            let mut indexes_to_remove = Vec::new();
-            let children = parent.children();
-            for child in children.iter().rev() {
-                if let DomNode::Text(n) = child {
-                    if n.data().is_empty() {
-                        indexes_to_remove.push(n.handle().index_in_parent());
-                    }
-                }
-            }
-            for i in indexes_to_remove {
-                parent.remove_child(i);
-            }
         }
     }
 

@@ -316,7 +316,7 @@ impl SelectionWritingState {
 
         // If we just passed last or we're at the end, write out }
         let do_last = !self.done_last
-            && (self.last < self.current_pos
+            && (self.last <= self.current_pos
                 || self.current_pos == self.length);
 
         // Remember that we have passed them, so we don't repeat
