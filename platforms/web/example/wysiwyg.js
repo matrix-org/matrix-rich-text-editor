@@ -241,6 +241,13 @@ function selection_according_to_actions(actions) {
 }
 
 function selectionchange() {
+    const isInEditor = document.activeElement === editor
+
+    // Skip the selection behavior when the focus is not in the editor
+    if (!isInEditor) {
+        return
+    }
+
     const [start, end] = get_current_selection();
 
     const prev_start = composer_model.selection_start();
