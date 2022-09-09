@@ -16,9 +16,12 @@
 
 use std::collections::HashSet;
 
-use crate::tests::testutils_composer_model::cm;
+use widestring::Utf16String;
 
-use crate::{InlineFormatType, Location, ToolbarButton};
+use crate::tests::testutils_composer_model::cm;
+use crate::tests::testutils_conversion::utf16;
+
+use crate::{ComposerModel, InlineFormatType, Location, ToolbarButton};
 
 #[test]
 fn creating_and_deleting_lists_updates_active_buttons() {
@@ -91,4 +94,28 @@ fn formatting_updates_active_buttons() {
             ToolbarButton::Underline,
         ]),
     )
+}
+
+#[test]
+fn updating_model_updates_disabled_buttons() {
+    let mut model = cm("|");
+    assert_eq!(
+        model.disabled_buttons,
+        HashSet::from([ToolbarButton::Undo, ToolbarButton::Redo]),
+    );
+    replace_text(&mut model, "a");
+    model.select(Location::from(0), Location::from(1));
+    model.format(InlineFormatType::Bold);
+    assert_eq!(model.disabled_buttons, HashSet::from([ToolbarButton::Redo]));
+    model.undo();
+    assert_eq!(model.disabled_buttons, HashSet::new());
+    model.redo();
+    assert_eq!(model.disabled_buttons, HashSet::from([ToolbarButton::Redo]));
+    model.undo();
+    model.undo();
+    assert_eq!(model.disabled_buttons, HashSet::from([ToolbarButton::Undo]));
+}
+
+fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
+    model.replace_text(utf16(new_text));
 }

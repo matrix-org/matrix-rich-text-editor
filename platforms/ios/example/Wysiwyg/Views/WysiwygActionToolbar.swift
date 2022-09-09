@@ -31,6 +31,7 @@ struct WysiwygActionToolbar: View {
                         .renderingMode(.template)
                         .foregroundColor(action.color(viewModel))
                 }
+                .disabled(action.isDisabled(viewModel))
                 .buttonStyle(.automatic)
                 .accessibilityIdentifier(action.accessibilityIdentifier)
             }

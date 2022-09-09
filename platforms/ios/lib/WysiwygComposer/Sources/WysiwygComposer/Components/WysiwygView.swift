@@ -29,6 +29,9 @@ public struct WysiwygView: View {
             .padding(.all, 8)
             .padding([.leading, .trailing], 8)
             .padding([.top, .bottom], 4)
+            .onAppear {
+                viewModel.setup()
+            }
         }
     }
 

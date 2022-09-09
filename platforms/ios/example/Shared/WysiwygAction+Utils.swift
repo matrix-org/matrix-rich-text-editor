@@ -28,7 +28,20 @@ extension WysiwygAction: CaseIterable, Identifiable {
     }
 
     public func color(_ viewModel: WysiwygComposerViewModel) -> Color {
-        return viewModel.activeButtons.contains(self.toolbarButton) ? .blue : .black
+        let isDisabled = viewModel.disabledButtons.contains(self.toolbarButton)
+        let isActive = viewModel.activeButtons.contains(self.toolbarButton)
+        switch (isDisabled, isActive) {
+        case (true, _):
+            return .black.opacity(0.3)
+        case (false, true):
+            return .blue
+        case (false, false):
+            return .black
+        }
+    }
+
+    public func isDisabled(_ viewModel: WysiwygComposerViewModel) -> Bool {
+        return viewModel.disabledButtons.contains(self.toolbarButton)
     }
 
     var accessibilityIdentifier: WysiwygSharedAccessibilityIdentifier {
