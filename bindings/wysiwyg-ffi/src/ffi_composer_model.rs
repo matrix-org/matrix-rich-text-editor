@@ -18,7 +18,7 @@ impl ComposerModel {
         }
     }
 
-    pub fn set_html(self: &Arc<Self>, html: String) -> Arc<ComposerUpdate> {
+    pub fn replace_all_html(self: &Arc<Self>, html: String) -> Arc<ComposerUpdate> {
         let html = Utf16String::from_str(&html);
         Arc::new(ComposerUpdate::from(
             self.inner.lock().unwrap().replace_all_html(&html),

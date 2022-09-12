@@ -17,7 +17,7 @@ namespace wysiwyg_composer {
 };
 
 interface ComposerModel {
-    ComposerUpdate set_html(string html);
+    ComposerUpdate replace_all_html(string html);
     ComposerUpdate select(u32 start_utf16_codeunit, u32 end_utf16_codeunit);
     ComposerUpdate replace_text(string new_text);
     ComposerUpdate replace_text_in(string new_text, u32 start, u32 end);
