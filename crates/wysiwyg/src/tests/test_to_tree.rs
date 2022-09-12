@@ -49,3 +49,18 @@ fn computing_tree() {
 ",
     );
 }
+
+#[test]
+fn tree_display_converts_zwsp() {
+    let model = cm("<ol><li>ab</li><li>\u{200b}cd|</li></ol>");
+    assert_eq!(
+        model.state.dom.to_tree(),
+        "
+└>ol
+  ├>li
+  │ └>\"ab\"
+  └>li
+    └>\"~cd\"
+",
+    );
+}
