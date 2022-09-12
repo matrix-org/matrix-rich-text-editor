@@ -147,6 +147,17 @@ fn creating_list_of_different_type_doesnt_merge() {
     assert_eq!(tx(&model), "<ul><li>foo</li></ul><ol><li>bar|</li></ol>");
 }
 
+#[test]
+fn creating_a_new_list_immediately_after_an_old_one_joins_them() {
+    let mut model = cm("abc|");
+    model.unordered_list();
+    model.enter();
+    model.enter();
+    model.replace_text(Utf16String::from_str("def"));
+    model.unordered_list();
+    assert_eq!(tx(&model), "<ul><li>abc</li><li>~def|</li></ul>");
+}
+
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
     model.replace_text(utf16(new_text));
 }
