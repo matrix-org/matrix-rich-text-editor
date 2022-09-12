@@ -68,17 +68,24 @@ where
         return model;
     }
 
+    /// Replace the entire content of the model with given HTML string.
+    /// This will remove all previous and next states, effectively disabling
+    /// undo and redo until further updates.
     pub fn replace_all_html(&mut self, html: &S) -> ComposerUpdate<S> {
         let dom = parse(&html.to_utf8());
 
         match dom {
             Ok(dom) => {
                 self.state.dom = dom;
+                self.previous_states.clear();
+                self.next_states.clear();
                 self.create_update_replace_all()
             }
             Err(e) => {
                 // We should log here - internal task PSU-741
                 self.state.dom = e.dom;
+                self.previous_states.clear();
+                self.next_states.clear();
                 self.create_update_replace_all()
             }
         }

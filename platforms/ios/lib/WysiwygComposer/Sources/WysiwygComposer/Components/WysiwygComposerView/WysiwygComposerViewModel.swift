@@ -49,7 +49,7 @@ public class WysiwygComposerViewModel: ObservableObject {
     /// Apply any additional setup required.
     /// Should be called when the view appears.
     public func setup() {
-        self.applyUpdate(self.model.setHtml(html: ""))
+        self.applyUpdate(self.model.replaceAllHtml(html: ""))
     }
 
     /// Apply given action to the composer.
