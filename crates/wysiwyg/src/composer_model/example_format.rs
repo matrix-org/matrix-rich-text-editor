@@ -78,47 +78,14 @@ impl ComposerModel<Utf16String> {
         let text = text.replace("~", "\u{200b}");
         let text_u16 = Utf16String::from_str(&text).into_vec();
 
-        /// Return the UTF-16 code unit for a character
-        /// Panics if s is more than one code unit long.
-        fn utf16_code_unit(s: &str) -> u16 {
-            let mut ret = Utf16String::new();
-            ret.push_str(s);
-            assert_eq!(ret.len(), 1);
-            ret.into_vec()[0]
-        }
-
-        fn find(haystack: &[u16], needle: &str) -> Option<usize> {
-            let mut skip_count = 0; // How many tag characters we have seen
-            let mut in_tag = false; // Are we in a tag now?
-
-            let needle = utf16_code_unit(needle);
-            let open = utf16_code_unit("<");
-            let close = utf16_code_unit(">");
-
-            for (i, &ch) in haystack.iter().enumerate() {
-                if ch == needle {
-                    return Some(i - skip_count);
-                } else if ch == open {
-                    in_tag = true;
-                } else if ch == close {
-                    skip_count += 1;
-                    in_tag = false;
-                }
-                if in_tag {
-                    skip_count += 1;
-                }
-            }
-            None
-        }
-
-        let curs = find(&text_u16, "|").expect(&format!(
+        let curs = find_char(&text_u16, "|").expect(&format!(
             "ComposerModel text did not contain a '|' symbol: '{}'",
             String::from_utf16(&text_u16)
                 .expect("ComposerModel text was not UTF-16"),
         ));
 
-        let s = find(&text_u16, "{");
-        let e = find(&text_u16, "}");
+        let s = find_char(&text_u16, "{");
+        let e = find_char(&text_u16, "}");
 
         let mut model = ComposerModel {
             state: ComposerState::new(),
@@ -201,6 +168,39 @@ impl ComposerModel<Utf16String> {
 
         dom.to_string().replace("\u{200b}", "~")
     }
+}
+
+/// Return the UTF-16 code unit for a character
+/// Panics if s is more than one code unit long.
+fn utf16_code_unit(s: &str) -> u16 {
+    let mut ret = Utf16String::new();
+    ret.push_str(s);
+    assert_eq!(ret.len(), 1);
+    ret.into_vec()[0]
+}
+
+fn find_char(haystack: &[u16], needle: &str) -> Option<usize> {
+    let mut skip_count = 0; // How many tag characters we have seen
+    let mut in_tag = false; // Are we in a tag now?
+
+    let needle = utf16_code_unit(needle);
+    let open = utf16_code_unit("<");
+    let close = utf16_code_unit(">");
+
+    for (i, &ch) in haystack.iter().enumerate() {
+        if ch == needle {
+            return Some(i - skip_count);
+        } else if ch == open {
+            in_tag = true;
+        } else if ch == close {
+            skip_count += 1;
+            in_tag = false;
+        }
+        if in_tag {
+            skip_count += 1;
+        }
+    }
+    None
 }
 
 fn update_text_node_with_cursor(
