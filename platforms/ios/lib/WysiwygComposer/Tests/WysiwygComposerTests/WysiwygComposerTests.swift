@@ -66,7 +66,7 @@ final class WysiwygComposerTests: XCTestCase {
         let composer = newComposerModel()
         _ = composer.replaceText(newText: "This is bold text")
         _ = composer.select(startUtf16Codeunit: 8, endUtf16Codeunit: 12)
-        let update = composer.format(type: .bold)
+        let update = composer.bold()
         switch update.textUpdate() {
         case .keep:
             XCTFail("Expected replace all HTML update")

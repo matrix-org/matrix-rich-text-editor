@@ -4,7 +4,6 @@ use widestring::Utf16String;
 
 use crate::ffi_composer_state::ComposerState;
 use crate::ffi_composer_update::ComposerUpdate;
-use crate::ffi_format_type::InlineFormatType;
 
 pub struct ComposerModel {
     inner: Mutex<wysiwyg::ComposerModel<Utf16String>>,
@@ -97,12 +96,27 @@ impl ComposerModel {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().enter()))
     }
 
-    pub fn format(
-        self: &Arc<Self>,
-        format: InlineFormatType,
-    ) -> Arc<ComposerUpdate> {
+    pub fn bold(self: &Arc<Self>) -> Arc<ComposerUpdate> {
+        Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().bold()))
+    }
+
+    pub fn italic(self: &Arc<Self>) -> Arc<ComposerUpdate> {
+        Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().italic()))
+    }
+
+    pub fn strike_through(self: &Arc<Self>) -> Arc<ComposerUpdate> {
         Arc::new(ComposerUpdate::from(
-            self.inner.lock().unwrap().format(format.into()),
+            self.inner.lock().unwrap().strike_through(),
+        ))
+    }
+
+    pub fn underline(self: &Arc<Self>) -> Arc<ComposerUpdate> {
+        Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().underline()))
+    }
+
+    pub fn inline_code(self: &Arc<Self>) -> Arc<ComposerUpdate> {
+        Arc::new(ComposerUpdate::from(
+            self.inner.lock().unwrap().inline_code(),
         ))
     }
 

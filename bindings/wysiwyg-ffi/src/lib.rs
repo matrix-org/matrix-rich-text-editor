@@ -18,7 +18,6 @@ mod ffi_composer_action;
 mod ffi_composer_model;
 mod ffi_composer_state;
 mod ffi_composer_update;
-mod ffi_format_type;
 mod ffi_menu_state;
 mod ffi_text_update;
 
@@ -28,7 +27,6 @@ pub use crate::ffi_composer_action::ComposerAction;
 pub use crate::ffi_composer_model::ComposerModel;
 pub use crate::ffi_composer_state::ComposerState;
 pub use crate::ffi_composer_update::ComposerUpdate;
-pub use crate::ffi_format_type::InlineFormatType;
 pub use crate::ffi_menu_state::MenuState;
 pub use crate::ffi_text_update::TextUpdate;
 

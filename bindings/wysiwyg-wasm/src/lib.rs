@@ -117,33 +117,31 @@ impl ComposerModel {
     }
 
     pub fn bold(&mut self) -> ComposerUpdate {
-        ComposerUpdate::from(self.inner.format(wysiwyg::InlineFormatType::Bold))
+        ComposerUpdate::from(self.inner.bold())
     }
 
     pub fn italic(&mut self) -> ComposerUpdate {
-        ComposerUpdate::from(
-            self.inner.format(wysiwyg::InlineFormatType::Italic),
-        )
-    }
-
-    pub fn redo(&mut self) -> ComposerUpdate {
-        ComposerUpdate::from(self.inner.redo())
+        ComposerUpdate::from(self.inner.italic())
     }
 
     pub fn strike_through(&mut self) -> ComposerUpdate {
-        ComposerUpdate::from(
-            self.inner.format(wysiwyg::InlineFormatType::StrikeThrough),
-        )
+        ComposerUpdate::from(self.inner.strike_through())
     }
 
     pub fn underline(&mut self) -> ComposerUpdate {
-        ComposerUpdate::from(
-            self.inner.format(wysiwyg::InlineFormatType::Underline),
-        )
+        ComposerUpdate::from(self.inner.underline())
+    }
+
+    pub fn inline_code(&mut self) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.inline_code())
     }
 
     pub fn undo(&mut self) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.undo())
+    }
+
+    pub fn redo(&mut self) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.redo())
     }
 
     pub fn ordered_list(&mut self) -> ComposerUpdate {
