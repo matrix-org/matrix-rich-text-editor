@@ -18,35 +18,39 @@ use crate::tests::testutils_composer_model::cm;
 use crate::ToTree;
 
 #[test]
-fn computing_tree() {
+fn single_nested_tag_produces_tree() {
     let model = cm("<b>abc<i>def</i></b>|");
     assert_eq!(
         model.state.dom.to_tree(),
-        "
+        r#"
 ├>b
-│ ├>\"abc\"
+│ ├>"abc"
 │ └>i
-│   └>\"def\"
-└>\"\"
-",
+│   └>"def"
+└>""
+"#,
     );
+    // TODO: trailing "" needs fixing in parse
+}
 
+#[test]
+fn multiple_tags_nested_inside_one_produce_tree() {
     let model =
         cm("<ul><li>ab</li><li><b>cd</b></li><li><i><b>ef|</b></i></li></ul>");
     assert_eq!(
         model.state.dom.to_tree(),
-        "
+        r#"
 └>ul
   ├>li
-  │ └>\"ab\"
+  │ └>"ab"
   ├>li
   │ └>b
-  │   └>\"cd\"
+  │   └>"cd"
   └>li
     └>i
       └>b
-        └>\"ef\"
-",
+        └>"ef"
+"#,
     );
 }
 
