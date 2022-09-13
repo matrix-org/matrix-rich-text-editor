@@ -55,7 +55,10 @@ where
                     if let Some(parent_handle) = parent_list_item_handle {
                         self.do_enter_in_list(parent_handle, e, range)
                     } else {
-                        self.replace_text(S::from_str("\n"))
+                        self.do_enter_in_text(
+                            &range.node_handle,
+                            range.start_offset,
+                        )
                     }
                 }
                 Range::MultipleNodes(_) => {
@@ -103,15 +106,61 @@ where
 
     fn replace_same_node(&mut self, range: SameNodeRange, new_text: S) {
         // TODO: remove SameNode and NoNode?
-        let node = self.state.dom.lookup_node_mut(range.node_handle);
-        if let DomNode::Text(ref mut t) = node {
-            let text = t.data();
-            let mut n = slice_to(text, ..range.start_offset);
-            n.push_string(&new_text);
-            n.push_string(&slice_from(&text, range.end_offset..));
-            t.set_data(n);
-        } else {
-            panic!("Can't deal with ranges containing non-text nodes (yet?)")
+        let mut delete_this_node = false;
+        let mut add_node_after_this = false;
+        let handle = range.node_handle;
+        let node = self.state.dom.lookup_node_mut(handle.clone());
+        match node {
+            DomNode::Text(ref mut t) => {
+                let text = t.data();
+                let mut n = slice_to(text, ..range.start_offset);
+                n.push_string(&new_text);
+                n.push_string(&slice_from(&text, range.end_offset..));
+                t.set_data(n);
+            }
+            DomNode::LineBreak(_) => {
+                match (range.start_offset, range.end_offset) {
+                    (0, 1) => {
+                        // Whole line break is selected, delete it
+                        delete_this_node = true;
+                    }
+                    (1, 1) => {
+                        // Cursor is after line break, no need to delete
+                    }
+                    _ => panic!(
+                        "Should not get SameNode range for start of \
+                        line break!"
+                    ),
+                }
+
+                add_node_after_this = true;
+                // TODO: create a new text node after this one to contain
+                // the contents of new_text
+            }
+            DomNode::Container(_) => {
+                panic!(
+                    "Can't deal with ranges containing non-text nodes (yet?)"
+                )
+            }
+        }
+
+        if add_node_after_this {
+            match self.state.dom.lookup_node_mut(handle.parent_handle()) {
+                DomNode::Container(parent) => parent.insert_child(
+                    handle.index_in_parent() + 1,
+                    DomNode::new_text(new_text),
+                ),
+                _ => panic!("Parent node is not a container!"),
+            }
+        }
+
+        if delete_this_node {
+            match self.state.dom.lookup_node_mut(handle.parent_handle()) {
+                DomNode::Container(parent) => {
+                    parent.remove_child(handle.index_in_parent());
+                }
+                _ => panic!("Parent node is not a container!"),
+            }
         }
     }
 
@@ -145,6 +194,9 @@ where
             match &mut node {
                 DomNode::Container(_) => {
                     // Nothing to do for container nodes
+                }
+                DomNode::LineBreak(_) => {
+                    todo!("Replacing across a line break not done yet!");
                 }
                 DomNode::Text(node) => {
                     let old_data = node.data();

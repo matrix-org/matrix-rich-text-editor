@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
+use crate::dom::nodes::{ContainerNode, DomNode, LineBreakNode, TextNode};
 use crate::dom::range::{DomLocation, MultipleNodesRange, SameNodeRange};
 use crate::dom::{Dom, DomHandle, FindResult, Range};
 use crate::UnicodeString;
@@ -121,6 +121,13 @@ where
                 locations.push(location);
             }
         }
+        DomNode::LineBreak(n) => {
+            if let Some(location) =
+                process_line_break_node(&n, start, end, offset)
+            {
+                locations.push(location);
+            }
+        }
         DomNode::Container(n) => {
             locations
                 .extend(process_container_node(dom, &n, start, end, offset));
@@ -177,7 +184,29 @@ fn process_text_node<S>(
 where
     S: UnicodeString,
 {
-    let node_len = node.data().len();
+    process_textlike_node(node.handle(), node.data().len(), start, end, offset)
+}
+
+fn process_line_break_node<S>(
+    node: &LineBreakNode<S>,
+    start: usize,
+    end: usize,
+    offset: &mut usize,
+) -> Option<DomLocation>
+where
+    S: UnicodeString,
+{
+    // Line breaks are like 1-character text nodes
+    process_textlike_node(node.handle(), 1, start, end, offset)
+}
+
+fn process_textlike_node(
+    handle: DomHandle,
+    node_len: usize,
+    start: usize,
+    end: usize,
+    offset: &mut usize,
+) -> Option<DomLocation> {
     let node_start = *offset;
     let node_end = node_start + node_len;
 
@@ -202,7 +231,7 @@ where
         let end_offset = min(end, node_end) - node_start;
 
         Some(DomLocation {
-            node_handle: node.handle(),
+            node_handle: handle,
             position: node_start,
             start_offset,
             end_offset,

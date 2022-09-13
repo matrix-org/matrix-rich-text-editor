@@ -14,8 +14,7 @@
 
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::html_formatter::HtmlFormatter;
-use crate::dom::nodes::container_node::ContainerNode;
-use crate::dom::nodes::text_node::TextNode;
+use crate::dom::nodes::{ContainerNode, LineBreakNode, TextNode};
 use crate::dom::to_html::ToHtml;
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
@@ -29,6 +28,7 @@ where
 {
     Container(ContainerNode<S>), // E.g. html, div
     Text(TextNode<S>),
+    LineBreak(LineBreakNode<S>),
 }
 
 impl<S> DomNode<S>
@@ -37,6 +37,10 @@ where
 {
     pub fn new_text(text: S) -> DomNode<S> {
         DomNode::Text(TextNode::from(text))
+    }
+
+    pub fn new_line_break() -> DomNode<S> {
+        DomNode::LineBreak(LineBreakNode::new())
     }
 
     pub fn new_formatting(
@@ -73,6 +77,7 @@ where
     pub fn handle(&self) -> DomHandle {
         match self {
             DomNode::Container(n) => n.handle(),
+            DomNode::LineBreak(n) => n.handle(),
             DomNode::Text(n) => n.handle(),
         }
     }
@@ -80,6 +85,7 @@ where
     pub fn set_handle(&mut self, handle: DomHandle) {
         match self {
             DomNode::Container(n) => n.set_handle(handle),
+            DomNode::LineBreak(n) => n.set_handle(handle),
             DomNode::Text(n) => n.set_handle(handle),
         }
     }
@@ -87,6 +93,7 @@ where
     pub fn text_len(&self) -> usize {
         match self {
             DomNode::Text(n) => n.data().len(),
+            DomNode::LineBreak(n) => n.text_len(),
             DomNode::Container(n) => n.text_len(),
         }
     }
@@ -125,6 +132,7 @@ where
     fn fmt_html(&self, f: &mut HtmlFormatter<S>) {
         match self {
             DomNode::Container(s) => s.fmt_html(f),
+            DomNode::LineBreak(s) => s.fmt_html(f),
             DomNode::Text(s) => s.fmt_html(f),
         }
     }
@@ -137,6 +145,7 @@ where
     fn to_raw_text(&self) -> S {
         match self {
             DomNode::Container(n) => n.to_raw_text(),
+            DomNode::LineBreak(n) => n.to_raw_text(),
             DomNode::Text(n) => n.to_raw_text(),
         }
     }
@@ -149,6 +158,7 @@ where
     fn to_tree_display(&self, continuous_positions: Vec<usize>) -> S {
         match self {
             DomNode::Container(n) => n.to_tree_display(continuous_positions),
+            DomNode::LineBreak(n) => n.to_tree_display(continuous_positions),
             DomNode::Text(n) => n.to_tree_display(continuous_positions),
         }
     }

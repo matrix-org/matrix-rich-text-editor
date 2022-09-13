@@ -98,6 +98,45 @@ run_tests([
         assert_eq(offset, 1);
     }},
 
+    { name: "node_and_offset finds before br", test: () => {
+        editor.innerHTML = "a<br />b";
+        let { node, offset } = node_and_offset(editor, 0);
+        assert_same(node, editor.childNodes[0]);
+        assert_eq(offset, 0);
+    }},
+
+    { name: "node_and_offset finds br start", test: () => {
+        editor.innerHTML = "a<br />b";
+        let { node, offset } = node_and_offset(editor, 1);
+        assert_same(node, editor.childNodes[0]);
+        assert_eq(offset, 1);
+    }},
+
+    { name: "node_and_offset finds br end", test: () => {
+        // We never actually return the br as the node that
+        // was selected, unless there are two in a row.
+
+        editor.innerHTML = "a<br />b";
+        let { node, offset } = node_and_offset(editor, 2);
+        assert_same(node, editor.childNodes[2]);
+        assert_eq(offset, 0);
+    }},
+
+    { name: "node_and_offset finds between brs", test: () => {
+        // Selection falls between the two brs
+        editor.innerHTML = "a<br /><br />b";
+        let { node, offset } = node_and_offset(editor, 2);
+        assert_same(node, editor.childNodes[2]);
+        assert_eq(offset, 0);
+    }},
+
+    { name: "node_and_offset finds after br", test: () => {
+        editor.innerHTML = "a<br />b";
+        let { node, offset } = node_and_offset(editor, 3);
+        assert_same(node, editor.childNodes[2]);
+        assert_eq(offset, 1);
+    }},
+
     { name: "codeunit_count ASCII", test: () => {
         editor.innerHTML = "abcdefgh";
         let textNode = editor.childNodes[0];
@@ -138,6 +177,17 @@ run_tests([
         assert_eq(codeunit_count(editor, firstTextNode, 0), 0);
         assert_eq(codeunit_count(editor, boldTextNode, 0), 1);
         assert_eq(codeunit_count(editor, thirdTextNode, 0), 2);
+    }},
+
+    { name: "codeunit_count treats br as a character", test: () => {
+        editor.innerHTML = "a<br />b";
+        let firstTextNode = editor.childNodes[0];
+        let brNode = editor.childNodes[1];
+        let secondTextNode = editor.childNodes[2];
+        assert_eq(codeunit_count(editor, firstTextNode, 0), 0);
+        assert_eq(codeunit_count(editor, brNode, 0), 1);
+        assert_eq(codeunit_count(editor, brNode, 1), 2);
+        assert_eq(codeunit_count(editor, secondTextNode, 1), 3);
     }},
 
     { name: "codeunit_count deeply nested", test: () => {

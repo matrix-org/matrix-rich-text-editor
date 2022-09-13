@@ -68,3 +68,16 @@ fn tree_display_converts_zwsp() {
 ",
     );
 }
+
+#[test]
+fn br_within_text_shows_up_in_tree() {
+    let model = cm("a<br />|b");
+    assert_eq!(
+        model.state.dom.to_tree(),
+        r#"
+├>"a"
+├>br
+└>"b"
+"#,
+    );
+}

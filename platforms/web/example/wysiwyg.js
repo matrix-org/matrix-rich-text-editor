@@ -125,7 +125,8 @@ function refresh_dom() {
         const children = node.children(composer_model);
         let child;
         while (child = children.next()) {
-            if (child.node_type(composer_model) === "container") {
+            const node_type = child.node_type(composer_model);
+            if (node_type === "container") {
                 let id = `dom_${idcounter}`;
                 idcounter++;
                 const li = t(list, "li");
@@ -142,8 +143,12 @@ function refresh_dom() {
                 t(li, "label", child.tag(composer_model), new Map([["for", id]]));
                 id++;
                 write_children(child, li);
-            } else {
+            } else if (node_type === "line_break") {
+                t(list, "li", "br");
+            } else if (node_type === "text" ) {
                 t(list, "li", `"${child.text(composer_model)}"`);
+            } else {
+                console.error(`Unknown node type: ${node_type}`);
             }
         }
     }
@@ -232,7 +237,6 @@ function get_current_selection() {
 function selection_according_to_actions(actions) {
     for (let i = actions.length - 1; i >= 0; i--) {
         const action = actions[i];
-        console.log(action);
         if (action[0] === "select") {
             return [action[1], action[2]];
         }
@@ -313,6 +317,9 @@ function codeunit_count(editor, node, offset) {
                     found: false,
                     offset: current_node.textContent.length
                 };
+            } else if (current_node.nodeName === "BR") {
+                // Treat br tags as being 1 character long
+                return { found: false, offset: 1 };
             } else {
                 // Add up all the amounts we need progress by skipping
                 // nodes inside this one.
@@ -365,6 +372,20 @@ function node_and_offset(current_node, codeunits) {
                 offset: codeunits - current_node.textContent.length
             };
         }
+    } else if (current_node.nodeName === "BR") {
+        // br tag acts like a text node of length 1, except if we're at
+        // the end of it, we don't return it - instead we move on to
+        // the next node, which will be returned with an offset of 0.
+        // This is because we are not allowed to make a Range which points
+        // to a br node with offset 1.
+        if (codeunits === 0) {
+            return { node: current_node, offset: 0 };
+        } else {
+            return {
+                node: null,
+                offset: codeunits - 1
+            };
+        }
     } else {
         for (const ch of current_node.childNodes) {
             const ret = node_and_offset(ch, codeunits);
@@ -385,7 +406,7 @@ function replace_editor(html, start_utf16_codeunit, end_utf16_codeunit) {
         start_utf16_codeunit,
         end_utf16_codeunit
     );
-    editor.innerHTML = html;
+    editor.innerHTML = html + "<br />";
 
     const sr = () => {
 
@@ -415,12 +436,16 @@ function replace_editor(html, start_utf16_codeunit, end_utf16_codeunit) {
 
             range.setStart(start.node, start.offset);
             range.setEnd(end.node, end.offset);
-            var sel = document.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(range);
         } else {
-            console.error("Failed to find offsets", start, end);
+            // Nothing found in selection: select the end of editor
+            range.selectNodeContents(editor);
+            range.collapse()
         }
+
+        const sel = document.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+
     };
 
     sr();
