@@ -17,7 +17,10 @@ use crate::dom::nodes::{ContainerNodeKind, DomNode, TextNode};
 use crate::dom::{
     Dom, DomHandle, DomLocation, MultipleNodesRange, Range, SameNodeRange,
 };
-use crate::{ComposerModel, ComposerUpdate, InlineFormatType, UnicodeString};
+use crate::{
+    ComposerAction, ComposerModel, ComposerUpdate, InlineFormatType,
+    UnicodeString,
+};
 
 #[derive(Eq, PartialEq, Debug)]
 enum FormatSelectionType {
@@ -29,6 +32,49 @@ impl<S> ComposerModel<S>
 where
     S: UnicodeString,
 {
+    pub fn bold(&mut self) -> ComposerUpdate<S> {
+        if self.reversed_actions.contains(&ComposerAction::Bold) {
+            self.unformat(InlineFormatType::Bold)
+        } else {
+            self.format(InlineFormatType::Bold)
+        }
+    }
+
+    pub fn italic(&mut self) -> ComposerUpdate<S> {
+        if self.reversed_actions.contains(&ComposerAction::Italic) {
+            self.unformat(InlineFormatType::Italic)
+        } else {
+            self.format(InlineFormatType::Italic)
+        }
+    }
+
+    pub fn strike_through(&mut self) -> ComposerUpdate<S> {
+        if self
+            .reversed_actions
+            .contains(&ComposerAction::StrikeThrough)
+        {
+            self.unformat(InlineFormatType::StrikeThrough)
+        } else {
+            self.format(InlineFormatType::StrikeThrough)
+        }
+    }
+
+    pub fn underline(&mut self) -> ComposerUpdate<S> {
+        if self.reversed_actions.contains(&ComposerAction::Underline) {
+            self.unformat(InlineFormatType::Underline)
+        } else {
+            self.format(InlineFormatType::Underline)
+        }
+    }
+
+    pub fn inline_code(&mut self) -> ComposerUpdate<S> {
+        if self.reversed_actions.contains(&ComposerAction::InlineCode) {
+            self.unformat(InlineFormatType::InlineCode)
+        } else {
+            self.format(InlineFormatType::InlineCode)
+        }
+    }
+
     pub fn format(&mut self, format: InlineFormatType) -> ComposerUpdate<S> {
         // Store current Dom
         self.push_state_to_history();
@@ -55,6 +101,10 @@ where
                 self.create_update_replace_all()
             }
         }
+    }
+
+    pub fn unformat(&mut self, _format: InlineFormatType) -> ComposerUpdate<S> {
+        panic!("Unable to unformat yet")
     }
 
     fn format_same_node(

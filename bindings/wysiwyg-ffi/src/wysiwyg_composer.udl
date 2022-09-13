@@ -25,7 +25,11 @@ interface ComposerModel {
     ComposerUpdate delete();
     ComposerUpdate delete_in(u32 start, u32 end);
     ComposerUpdate enter();
-    ComposerUpdate format(InlineFormatType type);
+    ComposerUpdate bold();
+    ComposerUpdate italic();
+    ComposerUpdate strike_through();
+    ComposerUpdate underline();
+    ComposerUpdate inline_code();
     ComposerUpdate ordered_list();
     ComposerUpdate unordered_list();
     ComposerUpdate undo();
@@ -77,13 +81,4 @@ interface MenuState {
         sequence<ComposerAction> reversed_actions,
         sequence<ComposerAction> disabled_actions
     );
-};
-
-[Enum]
-interface InlineFormatType {
-    Bold();
-    Italic();
-    StrikeThrough();
-    Underline();
-    InlineCode();
 };

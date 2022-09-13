@@ -60,13 +60,13 @@ public class WysiwygComposerViewModel: ObservableObject {
         let update: ComposerUpdate
         switch action {
         case .bold:
-            update = self.model.format(type: .bold)
+            update = self.model.bold()
         case .italic:
-            update = self.model.format(type: .italic)
+            update = self.model.italic()
         case .strikethrough:
-            update = self.model.format(type: .strikeThrough)
+            update = self.model.strikeThrough()
         case .underline:
-            update = self.model.format(type: .underline)
+            update = self.model.underline()
         case .undo:
             update = self.model.undo()
         case .redo:

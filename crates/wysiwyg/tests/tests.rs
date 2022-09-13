@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use widestring::Utf16String;
-use wysiwyg::{ComposerModel, InlineFormatType, Location, TextUpdate};
+use wysiwyg::{ComposerModel, Location, TextUpdate};
 
 #[test]
 fn can_instantiate_a_model_and_call_methods() {
@@ -21,7 +21,7 @@ fn can_instantiate_a_model_and_call_methods() {
     model.replace_text(Utf16String::from_str("foo"));
     model.select(Location::from(1), Location::from(2));
 
-    let update = model.format(InlineFormatType::Bold);
+    let update = model.bold();
 
     if let TextUpdate::ReplaceAll(r) = update.text_update {
         assert_eq!(r.replacement_html.to_string(), "f<strong>o</strong>o");
