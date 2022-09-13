@@ -36,10 +36,18 @@ where
     /// returned is <= the second, and they are both between 0 and the number
     /// of code units in the string representation of the Dom.
     pub(crate) fn safe_selection(&self) -> (usize, usize) {
+        self.safe_locations_from(self.state.start, self.state.end)
+    }
+
+    pub(crate) fn safe_locations_from(
+        &self,
+        start: Location,
+        end: Location,
+    ) -> (usize, usize) {
         let len = self.state.dom.text_len();
 
-        let mut s: usize = self.state.start.into();
-        let mut e: usize = self.state.end.into();
+        let mut s: usize = start.into();
+        let mut e: usize = end.into();
         s = s.clamp(0, len);
         e = e.clamp(0, len);
         if s > e {
