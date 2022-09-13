@@ -12,18 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#[derive(Debug, Clone)]
-pub struct ComposerAction {
-    pub action_id: String,
-    pub action: ActionRequest,
-}
-
-#[derive(Debug, Clone)]
-pub enum ActionRequest {
-    Dummy,
-}
-
-#[derive(Debug, Clone)]
-pub enum ActionResponse {
-    Dummy,
+#[derive(Debug, Clone, Eq, Hash, PartialEq)]
+pub enum ComposerAction {
+    Bold,
+    Italic,
+    StrikeThrough,
+    Underline,
+    InlineCode,
+    Link,
+    Undo,
+    Redo,
+    OrderedList,
+    UnorderedList,
 }

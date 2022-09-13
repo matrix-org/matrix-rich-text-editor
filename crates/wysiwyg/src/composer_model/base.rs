@@ -15,9 +15,7 @@
 use crate::composer_state::ComposerState;
 use crate::dom::parser::parse;
 use crate::dom::{DomHandle, UnicodeString};
-use crate::{
-    ActionResponse, ComposerUpdate, Location, ToHtml, ToTree, ToolbarButton,
-};
+use crate::{ComposerAction, ComposerUpdate, Location, ToHtml, ToTree};
 use std::collections::HashSet;
 
 #[derive(Clone)]
@@ -28,8 +26,8 @@ where
     pub state: ComposerState<S>,
     pub previous_states: Vec<ComposerState<S>>,
     pub next_states: Vec<ComposerState<S>>,
-    pub active_buttons: HashSet<ToolbarButton>,
-    pub disabled_buttons: HashSet<ToolbarButton>,
+    pub reversed_actions: HashSet<ComposerAction>,
+    pub disabled_actions: HashSet<ComposerAction>,
 }
 
 impl<S> ComposerModel<S>
@@ -41,8 +39,8 @@ where
             state: ComposerState::new(),
             previous_states: Vec::new(),
             next_states: Vec::new(),
-            active_buttons: HashSet::new(),
-            disabled_buttons: HashSet::new(),
+            reversed_actions: HashSet::new(),
+            disabled_actions: HashSet::new(),
         }
     }
 
@@ -61,8 +59,8 @@ where
             },
             previous_states: Vec::new(),
             next_states: Vec::new(),
-            active_buttons: HashSet::new(),
-            disabled_buttons: HashSet::new(),
+            reversed_actions: HashSet::new(),
+            disabled_actions: HashSet::new(),
         };
         model.compute_menu_state();
         return model;
@@ -89,16 +87,6 @@ where
                 self.create_update_replace_all()
             }
         }
-    }
-
-    pub fn action_response(
-        &mut self,
-        action_id: String,
-        response: ActionResponse,
-    ) -> ComposerUpdate<S> {
-        drop(action_id);
-        drop(response);
-        ComposerUpdate::keep()
     }
 
     pub(crate) fn create_update_replace_all(&mut self) -> ComposerUpdate<S> {

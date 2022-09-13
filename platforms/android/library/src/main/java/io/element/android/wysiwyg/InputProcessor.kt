@@ -7,7 +7,6 @@ import io.element.android.wysiwyg.extensions.log
 import io.element.android.wysiwyg.extensions.string
 import io.element.android.wysiwyg.spans.HtmlToSpansParser
 import uniffi.wysiwyg_composer.ComposerModel
-import uniffi.wysiwyg_composer.InlineFormatType
 import uniffi.wysiwyg_composer.TextUpdate
 import kotlin.math.absoluteValue
 
@@ -41,7 +40,13 @@ class InputProcessor(
                 composer.backspace()
             }
             is EditorInputAction.ApplyInlineFormat -> {
-                composer.format(action.format.toBindings())
+                when (action.format) {
+                    InlineFormat.Bold -> composer.bold()
+                    InlineFormat.Italic -> composer.italic()
+                    InlineFormat.Underline -> composer.underline()
+                    InlineFormat.StrikeThrough -> composer.strikeThrough()
+                    InlineFormat.InlineCode -> composer.inlineCode()
+                }
             }
             is EditorInputAction.Delete -> {
                 composer.deleteIn(action.start.toUInt(), action.end.toUInt())
@@ -94,14 +99,6 @@ sealed interface InlineFormat {
     object Underline: InlineFormat
     object StrikeThrough: InlineFormat
     object InlineCode: InlineFormat
-
-    fun toBindings(): InlineFormatType = when (this) {
-        Bold -> InlineFormatType.Bold
-        Italic -> InlineFormatType.Italic
-        Underline -> InlineFormatType.Underline
-        StrikeThrough -> InlineFormatType.StrikeThrough
-        InlineCode -> InlineFormatType.InlineCode
-    }
 }
 
 data class ReplaceTextResult(

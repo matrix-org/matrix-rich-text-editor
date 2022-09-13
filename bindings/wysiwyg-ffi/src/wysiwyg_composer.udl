@@ -25,7 +25,11 @@ interface ComposerModel {
     ComposerUpdate delete();
     ComposerUpdate delete_in(u32 start, u32 end);
     ComposerUpdate enter();
-    ComposerUpdate format(InlineFormatType type);
+    ComposerUpdate bold();
+    ComposerUpdate italic();
+    ComposerUpdate strike_through();
+    ComposerUpdate underline();
+    ComposerUpdate inline_code();
     ComposerUpdate ordered_list();
     ComposerUpdate unordered_list();
     ComposerUpdate undo();
@@ -33,13 +37,11 @@ interface ComposerModel {
     ComposerUpdate set_link(string new_text);
     string to_tree();
     ComposerState dump_state();
-    ComposerUpdate action_response(string action_id, ActionResponse response);
 };
 
 interface ComposerUpdate {
     TextUpdate text_update();
     MenuState menu_state();
-    sequence<ComposerAction> actions();
 };
 
 dictionary ComposerState {
@@ -59,7 +61,7 @@ interface TextUpdate {
 };
 
 [Enum]
-interface ToolbarButton {
+interface ComposerAction {
     Bold();
     Italic();
     StrikeThrough();
@@ -76,31 +78,7 @@ interface ToolbarButton {
 interface MenuState {
     Keep();
     Update(
-        sequence<ToolbarButton> active_buttons,
-        sequence<ToolbarButton> disabled_buttons
+        sequence<ComposerAction> reversed_actions,
+        sequence<ComposerAction> disabled_actions
     );
-};
-
-interface ComposerAction {
-    string action_id();
-    ActionRequest action();
-};
-
-[Enum]
-interface ActionRequest {
-    Dummy();
-};
-
-[Enum]
-interface ActionResponse {
-    Dummy();
-};
-
-[Enum]
-interface InlineFormatType {
-    Bold();
-    Italic();
-    StrikeThrough();
-    Underline();
-    InlineCode();
 };

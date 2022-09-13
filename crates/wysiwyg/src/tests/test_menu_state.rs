@@ -21,99 +21,111 @@ use widestring::Utf16String;
 use crate::tests::testutils_composer_model::cm;
 use crate::tests::testutils_conversion::utf16;
 
-use crate::{ComposerModel, InlineFormatType, Location, ToolbarButton};
+use crate::{ComposerAction, ComposerModel, InlineFormatType, Location};
 
 #[test]
-fn creating_and_deleting_lists_updates_active_buttons() {
+fn creating_and_deleting_lists_updates_reversed_actions() {
     let mut model = cm("|");
     model.ordered_list();
     assert_eq!(
-        model.active_buttons,
-        HashSet::from([ToolbarButton::OrderedList])
+        model.reversed_actions,
+        HashSet::from([ComposerAction::OrderedList])
     );
     model.unordered_list();
     assert_eq!(
-        model.active_buttons,
-        HashSet::from([ToolbarButton::UnorderedList])
+        model.reversed_actions,
+        HashSet::from([ComposerAction::UnorderedList])
     );
     model.backspace();
-    assert_eq!(model.active_buttons, HashSet::new());
+    assert_eq!(model.reversed_actions, HashSet::new());
 }
 
 #[test]
-fn selecting_nested_nodes_updates_active_buttons() {
+fn selecting_nested_nodes_updates_reversed_actions() {
     let model = cm("<ul><li><b><i>{ab}|</i></b></li></ul>");
     assert_eq!(
-        model.active_buttons,
+        model.reversed_actions,
         HashSet::from([
-            ToolbarButton::UnorderedList,
-            ToolbarButton::Bold,
-            ToolbarButton::Italic,
+            ComposerAction::UnorderedList,
+            ComposerAction::Bold,
+            ComposerAction::Italic,
         ]),
     );
 }
 
 #[test]
-fn selecting_multiple_nodes_updates_active_buttons() {
+fn selecting_multiple_nodes_updates_reversed_actions() {
     let model = cm("<ol><li>{ab</li><li><b>cd</b>}|</li></ol>");
     assert_eq!(
-        model.active_buttons,
-        HashSet::from([ToolbarButton::OrderedList])
+        model.reversed_actions,
+        HashSet::from([ComposerAction::OrderedList])
     );
     let model = cm("<ol><li>{ab</li></ol>cd}|");
-    assert_eq!(model.active_buttons, HashSet::new());
+    assert_eq!(model.reversed_actions, HashSet::new());
 
     let mut model = cm("<a href=\"https://matrix.org\">{link}|</a>ab");
-    assert_eq!(model.active_buttons, HashSet::from([ToolbarButton::Link]));
+    assert_eq!(
+        model.reversed_actions,
+        HashSet::from([ComposerAction::Link])
+    );
     model.select(Location::from(2), Location::from(6));
-    assert_eq!(model.active_buttons, HashSet::new());
+    assert_eq!(model.reversed_actions, HashSet::new());
 
     let mut model = cm("<del>{ab<em>cd}|</em></del>");
     assert_eq!(
-        model.active_buttons,
-        HashSet::from([ToolbarButton::StrikeThrough]),
+        model.reversed_actions,
+        HashSet::from([ComposerAction::StrikeThrough]),
     );
     model.select(Location::from(2), Location::from(4));
     assert_eq!(
-        model.active_buttons,
-        HashSet::from([ToolbarButton::Italic, ToolbarButton::StrikeThrough,]),
+        model.reversed_actions,
+        HashSet::from([ComposerAction::Italic, ComposerAction::StrikeThrough,]),
     )
 }
 
 #[test]
-fn formatting_updates_active_buttons() {
+fn formatting_updates_reversed_actions() {
     let mut model = cm("a{bc}|d");
     model.format(InlineFormatType::Bold);
     model.format(InlineFormatType::Italic);
     model.format(InlineFormatType::Underline);
     assert_eq!(
-        model.active_buttons,
+        model.reversed_actions,
         HashSet::from([
-            ToolbarButton::Bold,
-            ToolbarButton::Italic,
-            ToolbarButton::Underline,
+            ComposerAction::Bold,
+            ComposerAction::Italic,
+            ComposerAction::Underline,
         ]),
     )
 }
 
 #[test]
-fn updating_model_updates_disabled_buttons() {
+fn updating_model_updates_disabled_actions() {
     let mut model = cm("|");
     assert_eq!(
-        model.disabled_buttons,
-        HashSet::from([ToolbarButton::Undo, ToolbarButton::Redo]),
+        model.disabled_actions,
+        HashSet::from([ComposerAction::Undo, ComposerAction::Redo]),
     );
     replace_text(&mut model, "a");
     model.select(Location::from(0), Location::from(1));
     model.format(InlineFormatType::Bold);
-    assert_eq!(model.disabled_buttons, HashSet::from([ToolbarButton::Redo]));
+    assert_eq!(
+        model.disabled_actions,
+        HashSet::from([ComposerAction::Redo])
+    );
     model.undo();
-    assert_eq!(model.disabled_buttons, HashSet::new());
+    assert_eq!(model.disabled_actions, HashSet::new());
     model.redo();
-    assert_eq!(model.disabled_buttons, HashSet::from([ToolbarButton::Redo]));
+    assert_eq!(
+        model.disabled_actions,
+        HashSet::from([ComposerAction::Redo])
+    );
     model.undo();
     model.undo();
-    assert_eq!(model.disabled_buttons, HashSet::from([ToolbarButton::Undo]));
+    assert_eq!(
+        model.disabled_actions,
+        HashSet::from([ComposerAction::Undo])
+    );
 }
 
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {

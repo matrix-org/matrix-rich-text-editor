@@ -80,7 +80,7 @@ where
         node_handle: DomHandle,
         nodes: Vec<DomNode<S>>,
     ) -> Vec<DomHandle> {
-        let parent_node = self.lookup_node_mut(node_handle.parent_handle());
+        let parent_node = self.lookup_node_mut(&node_handle.parent_handle());
         let index = node_handle.index_in_parent();
         match parent_node {
             DomNode::Text(_n) => panic!("Text nodes can't have children"),
@@ -172,7 +172,7 @@ where
     /// Panics if the handle is invalid or unset
     pub fn lookup_node_mut(
         &mut self,
-        node_handle: DomHandle,
+        node_handle: &DomHandle,
     ) -> &mut DomNode<S> {
         fn nth_child<S>(
             element: &mut ContainerNode<S>,
@@ -264,7 +264,7 @@ where
             }
             Where::During => {
                 // Splice new_node in between this text node and a new one
-                let old_node = self.lookup_node_mut(handle.clone());
+                let old_node = self.lookup_node_mut(handle);
                 if let DomNode::Text(old_text_node) = old_node {
                     let data = old_text_node.data();
                     let before_text = slice_to(data, ..offset);
@@ -289,7 +289,7 @@ where
     }
 
     fn parent(&mut self, handle: &DomHandle) -> &mut ContainerNode<S> {
-        let parent = self.lookup_node_mut(handle.parent_handle());
+        let parent = self.lookup_node_mut(&handle.parent_handle());
         if let DomNode::Container(parent) = parent {
             parent
         } else {

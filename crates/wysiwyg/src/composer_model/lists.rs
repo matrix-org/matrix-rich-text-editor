@@ -155,7 +155,7 @@ where
             let list_index_in_parent = list_handle.index_in_parent();
             let list_parent_handle = list_handle.parent_handle();
             let list_parent_node =
-                self.state.dom.lookup_node_mut(list_parent_handle);
+                self.state.dom.lookup_node_mut(&list_parent_handle);
             if let DomNode::Container(list_parent) = list_parent_node {
                 for child in list_item_children.iter().rev() {
                     list_parent
@@ -166,7 +166,7 @@ where
             }
 
             let list_item_index_in_parent = list_item_handle.index_in_parent();
-            let list_node = self.state.dom.lookup_node_mut(list_handle);
+            let list_node = self.state.dom.lookup_node_mut(&list_handle);
             if let DomNode::Container(list) = list_node {
                 list.remove_child(list_item_index_in_parent);
             } else {
@@ -184,7 +184,7 @@ where
         list_handle: DomHandle,
         list_type: ListType,
     ) -> ComposerUpdate<S> {
-        let list_node = self.state.dom.lookup_node_mut(list_handle);
+        let list_node = self.state.dom.lookup_node_mut(&list_handle);
         if let DomNode::Container(list) = list_node {
             list.set_list_type(list_type);
         }
@@ -210,7 +210,7 @@ where
                     if index_in_parent > 0 {
                         let previous_handle = range.node_handle.prev_sibling();
                         let previous_node =
-                            self.state.dom.lookup_node_mut(previous_handle);
+                            self.state.dom.lookup_node_mut(&previous_handle);
                         if let DomNode::Container(previous) = previous_node {
                             if previous.is_list_of_type(list_type.clone()) {
                                 previous.append_child(list_item);
@@ -219,7 +219,7 @@ where
                                 let parent_node = self
                                     .state
                                     .dom
-                                    .lookup_node_mut(parent_node_handle);
+                                    .lookup_node_mut(&parent_node_handle);
                                 if let DomNode::Container(parent) = parent_node
                                 {
                                     parent.remove_child(index_in_parent);
@@ -278,14 +278,14 @@ where
         location: usize,
         range: SameNodeRange,
     ) {
-        let text_node = self.state.dom.lookup_node_mut(range.node_handle);
+        let text_node = self.state.dom.lookup_node_mut(&range.node_handle);
         if let DomNode::Text(ref mut t) = text_node {
             let text = t.data();
             // TODO: should slice container nodes between li and text node as well
             let new_text = slice_to(text, ..range.start_offset);
             let new_li_text = slice_from(text, range.end_offset..);
             t.set_data(new_text);
-            let list_node = self.state.dom.lookup_node_mut(handle);
+            let list_node = self.state.dom.lookup_node_mut(&handle);
             if let DomNode::Container(list) = list_node {
                 let add_zwsp = new_li_text.len() == 0;
                 list.append_child(DomNode::new_list_item(
@@ -311,13 +311,14 @@ where
         li_index: usize,
         insert_trailing_text_node: bool,
     ) {
-        let list_node = self.state.dom.lookup_node_mut(list_handle.clone());
+        let list_node = self.state.dom.lookup_node_mut(&list_handle);
         if let DomNode::Container(list) = list_node {
             let list_len = list.to_raw_text().len();
             let li_len = list.children()[li_index].to_raw_text().len();
             if list.children().len() == 1 {
                 let parent_handle = list_handle.parent_handle();
-                let parent_node = self.state.dom.lookup_node_mut(parent_handle);
+                let parent_node =
+                    self.state.dom.lookup_node_mut(&parent_handle);
                 if let DomNode::Container(parent) = parent_node {
                     parent.remove_child(list_handle.index_in_parent());
                     if parent.children().len() == 0 {
@@ -335,7 +336,7 @@ where
                 if insert_trailing_text_node {
                     let parent_handle = list_handle.parent_handle();
                     let parent_node =
-                        self.state.dom.lookup_node_mut(parent_handle);
+                        self.state.dom.lookup_node_mut(&parent_handle);
                     if let DomNode::Container(parent) = parent_node {
                         // TODO: should probably append a paragraph instead
                         parent.append_child(DomNode::new_text(S::from_str(

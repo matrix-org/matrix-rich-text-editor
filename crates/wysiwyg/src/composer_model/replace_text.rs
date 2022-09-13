@@ -109,7 +109,7 @@ where
         let mut delete_this_node = false;
         let mut add_node_after_this = false;
         let handle = range.node_handle;
-        let node = self.state.dom.lookup_node_mut(handle.clone());
+        let node = self.state.dom.lookup_node_mut(&handle);
         match node {
             DomNode::Text(ref mut t) => {
                 let text = t.data();
@@ -145,7 +145,7 @@ where
         }
 
         if add_node_after_this {
-            match self.state.dom.lookup_node_mut(handle.parent_handle()) {
+            match self.state.dom.lookup_node_mut(&handle.parent_handle()) {
                 DomNode::Container(parent) => parent.insert_child(
                     handle.index_in_parent() + 1,
                     DomNode::new_text(new_text),
@@ -155,7 +155,7 @@ where
         }
 
         if delete_this_node {
-            match self.state.dom.lookup_node_mut(handle.parent_handle()) {
+            match self.state.dom.lookup_node_mut(&handle.parent_handle()) {
                 DomNode::Container(parent) => {
                     parent.remove_child(handle.index_in_parent());
                 }
@@ -189,8 +189,7 @@ where
         let mut to_delete = Vec::new();
         let mut first_text_node = true;
         for loc in range.into_iter() {
-            let mut node =
-                self.state.dom.lookup_node_mut(loc.node_handle.clone());
+            let mut node = self.state.dom.lookup_node_mut(&loc.node_handle);
             match &mut node {
                 DomNode::Container(_) => {
                     // Nothing to do for container nodes

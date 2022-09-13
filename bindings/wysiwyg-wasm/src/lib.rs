@@ -117,33 +117,31 @@ impl ComposerModel {
     }
 
     pub fn bold(&mut self) -> ComposerUpdate {
-        ComposerUpdate::from(self.inner.format(wysiwyg::InlineFormatType::Bold))
+        ComposerUpdate::from(self.inner.bold())
     }
 
     pub fn italic(&mut self) -> ComposerUpdate {
-        ComposerUpdate::from(
-            self.inner.format(wysiwyg::InlineFormatType::Italic),
-        )
-    }
-
-    pub fn redo(&mut self) -> ComposerUpdate {
-        ComposerUpdate::from(self.inner.redo())
+        ComposerUpdate::from(self.inner.italic())
     }
 
     pub fn strike_through(&mut self) -> ComposerUpdate {
-        ComposerUpdate::from(
-            self.inner.format(wysiwyg::InlineFormatType::StrikeThrough),
-        )
+        ComposerUpdate::from(self.inner.strike_through())
     }
 
     pub fn underline(&mut self) -> ComposerUpdate {
-        ComposerUpdate::from(
-            self.inner.format(wysiwyg::InlineFormatType::Underline),
-        )
+        ComposerUpdate::from(self.inner.underline())
+    }
+
+    pub fn inline_code(&mut self) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.inline_code())
     }
 
     pub fn undo(&mut self) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.undo())
+    }
+
+    pub fn redo(&mut self) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.redo())
     }
 
     pub fn ordered_list(&mut self) -> ComposerUpdate {
@@ -264,53 +262,6 @@ impl MenuState {
 
 #[wasm_bindgen]
 pub struct NoneMenuState;
-
-#[wasm_bindgen]
-pub struct ComposerAction {
-    inner: wysiwyg::ComposerAction,
-}
-
-#[wasm_bindgen]
-impl ComposerAction {
-    pub fn action_id(&self) -> String {
-        self.inner.action_id.clone()
-    }
-
-    pub fn action(&self) -> ActionRequest {
-        ActionRequest::from(self.inner.action.clone())
-    }
-}
-
-#[wasm_bindgen]
-pub struct ActionRequest {
-    _dummy: Option<Dummy>,
-}
-
-impl ActionRequest {
-    pub fn from(inner: wysiwyg::ActionRequest) -> Self {
-        match inner {
-            wysiwyg::ActionRequest::Dummy => Self {
-                _dummy: Some(Dummy),
-            },
-        }
-    }
-}
-
-#[wasm_bindgen]
-pub struct ActionResponse {
-    _dummy: Option<Dummy>,
-}
-
-impl ActionResponse {
-    /*
-    fn into(self) -> wysiwyg::ActionResponse {
-        if let Some(_dummy) = self._dummy {
-            wysiwyg::ActionResponse::Dummy
-        } else {
-            panic!("Unknown ActionResponse type");
-        }
-    }*/
-}
 
 pub struct Dummy;
 

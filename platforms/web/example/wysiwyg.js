@@ -2,6 +2,8 @@
 
 import init, { new_composer_model, new_composer_model_from_html } from './generated/wysiwyg.js';
 
+import {computeSelectionOffset} from './dom.js'
+
 let composer_model;
 let editor;
 let button_bold;
@@ -229,7 +231,7 @@ function get_current_selection() {
     // This should be done when we convert to React
     // Internal task for changing to React: PSU-721
     const start = codeunit_count(editor, s.anchorNode, s.anchorOffset);
-    const end = codeunit_count(editor, s.focusNode, s.focusOffset);
+    const end = codeunit_count(editor, s.focusNode, computeSelectionOffset(s.focusNode, s.focusOffset));
 
     return [start, end];
 }

@@ -91,8 +91,8 @@ impl ComposerModel<Utf16String> {
             state: ComposerState::new(),
             previous_states: Vec::new(),
             next_states: Vec::new(),
-            active_buttons: HashSet::new(),
-            disabled_buttons: HashSet::new(),
+            reversed_actions: HashSet::new(),
+            disabled_actions: HashSet::new(),
         };
         model.state.dom = parse(&text).unwrap();
 
@@ -151,14 +151,14 @@ impl ComposerModel<Utf16String> {
         // Modify the text nodes to a {, } and |
         match range {
             Range::SameNode(range) => {
-                let mut handle = range.node_handle.clone();
+                let mut handle = range.node_handle;
                 let mut start = range.start_offset.into();
                 let mut end = range.end_offset.into();
 
                 if let DomNode::LineBreak(_) = dom.lookup_node(&handle) {
                     // If we found a line break, add a text node after it so
                     // we can add the {, } or | to it.
-                    let parent = dom.lookup_node_mut(handle.parent_handle());
+                    let parent = dom.lookup_node_mut(&handle.parent_handle());
                     match parent {
                         DomNode::Container(n) => {
                             // Add a text node before or after this one
@@ -180,7 +180,7 @@ impl ComposerModel<Utf16String> {
                     }
                 }
 
-                let mut node = dom.lookup_node_mut(handle);
+                let mut node = dom.lookup_node_mut(&handle);
                 match &mut node {
                     DomNode::Container(_) => (), // Ignore - model is empty
                     DomNode::LineBreak(_) => {
@@ -440,7 +440,7 @@ fn write_selection_multi(
         SelectionWritingState::new(start, end, dom.document().text_len());
 
     for location in range.locations {
-        let mut node = dom.lookup_node_mut(location.node_handle.clone());
+        let mut node = dom.lookup_node_mut(&location.node_handle);
         match &mut node {
             DomNode::Container(_) => {}
             DomNode::LineBreak(_) => {}
@@ -609,8 +609,8 @@ mod test {
             },
             previous_states: Vec::new(),
             next_states: Vec::new(),
-            active_buttons: HashSet::new(),
-            disabled_buttons: HashSet::new(),
+            reversed_actions: HashSet::new(),
+            disabled_actions: HashSet::new(),
         };
         assert_eq!(tx(&model), "AAA<b>B{BB</b>C}|CC");
     }
@@ -625,8 +625,8 @@ mod test {
             },
             previous_states: Vec::new(),
             next_states: Vec::new(),
-            active_buttons: HashSet::new(),
-            disabled_buttons: HashSet::new(),
+            reversed_actions: HashSet::new(),
+            disabled_actions: HashSet::new(),
         };
         assert_eq!(tx(&model), "AAA<b>B|{BB</b>C}CC");
     }
@@ -641,8 +641,8 @@ mod test {
             },
             previous_states: Vec::new(),
             next_states: Vec::new(),
-            active_buttons: HashSet::new(),
-            disabled_buttons: HashSet::new(),
+            reversed_actions: HashSet::new(),
+            disabled_actions: HashSet::new(),
         };
         assert_eq!(tx(&model), "");
     }
