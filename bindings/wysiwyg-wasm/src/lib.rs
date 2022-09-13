@@ -356,7 +356,7 @@ impl DomHandle {
     /// since we were created, or because you passed in a different model
     /// from the one that created us.)
     pub fn node_type(&self, model: &ComposerModel) -> String {
-        let node = model.inner.state.dom.lookup_node(self.inner.clone());
+        let node = model.inner.state.dom.lookup_node(&self.inner);
         String::from(match node {
             wysiwyg::DomNode::Container(_) => "container",
             wysiwyg::DomNode::Text(_) => "text",
@@ -369,7 +369,7 @@ impl DomHandle {
     /// since we were created, or because you passed in a different model
     /// from the one that created us.)
     pub fn children(&self, model: &ComposerModel) -> DomChildren {
-        let node = model.inner.state.dom.lookup_node(self.inner.clone());
+        let node = model.inner.state.dom.lookup_node(&self.inner);
         match node {
             wysiwyg::DomNode::Container(node) => node
                 .children()
@@ -387,7 +387,7 @@ impl DomHandle {
     /// since we were created, or because you passed in a different model
     /// from the one that created us.)
     pub fn text(&self, model: &ComposerModel) -> String {
-        let node = model.inner.state.dom.lookup_node(self.inner.clone());
+        let node = model.inner.state.dom.lookup_node(&self.inner);
         match node {
             wysiwyg::DomNode::Container(_) => String::from(""),
             wysiwyg::DomNode::Text(node) => node.data().to_utf8(),
@@ -399,7 +399,7 @@ impl DomHandle {
     /// since we were created, or because you passed in a different model
     /// from the one that created us.)
     pub fn tag(&self, model: &ComposerModel) -> String {
-        let node = model.inner.state.dom.lookup_node(self.inner.clone());
+        let node = model.inner.state.dom.lookup_node(&self.inner);
         match node {
             wysiwyg::DomNode::Container(node) => node.name().to_utf8(),
             wysiwyg::DomNode::Text(_) => String::from("-text-"),

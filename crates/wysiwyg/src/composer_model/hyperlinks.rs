@@ -49,7 +49,7 @@ where
 
     fn set_link_same_node(&mut self, range: SameNodeRange, link: S) {
         // TODO: set link should be able to wrap container nodes, unlike formatting
-        let node = self.state.dom.lookup_node(range.node_handle.clone());
+        let node = self.state.dom.lookup_node(&range.node_handle);
         if let DomNode::Text(t) = node {
             let text = t.data();
             let before = slice_to(text, ..range.start_offset);

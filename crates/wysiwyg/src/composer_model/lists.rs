@@ -39,7 +39,7 @@ where
         // do_backspace_in_list should only be called on a single location
         // as selection can be handled in standard do_backspace.
         assert_eq!(range.start_offset, range.end_offset);
-        let parent_node = self.state.dom.lookup_node(parent_handle.clone());
+        let parent_node = self.state.dom.lookup_node(&parent_handle);
         let list_node_handle = parent_node.handle().parent_handle();
         if let DomNode::Container(parent) = parent_node {
             if parent.is_empty_list_item() {
@@ -71,7 +71,7 @@ where
         assert_eq!(range.start_offset, range.end_offset);
         // Store current Dom
         self.push_state_to_history();
-        let parent_node = self.state.dom.lookup_node(parent_handle.clone());
+        let parent_node = self.state.dom.lookup_node(&parent_handle);
         let list_node_handle = parent_node.handle().parent_handle();
         if let DomNode::Container(parent) = parent_node {
             if parent.is_empty_list_item() {
@@ -103,7 +103,7 @@ where
                 if let Some(list_item_handle) = parent_list_item_handle {
                     let list_node_handle = list_item_handle.parent_handle();
                     let list_node =
-                        self.state.dom.lookup_node(list_node_handle.clone());
+                        self.state.dom.lookup_node(&list_node_handle);
                     if let DomNode::Container(list) = list_node {
                         if list.is_list_of_type(list_type.clone()) {
                             self.move_list_item_content_to_list_parent(
@@ -130,8 +130,7 @@ where
         &mut self,
         list_item_handle: DomHandle,
     ) -> ComposerUpdate<S> {
-        let list_item_node =
-            self.state.dom.lookup_node(list_item_handle.clone());
+        let list_item_node = self.state.dom.lookup_node(&list_item_handle);
         if let DomNode::Container(list_item) = list_item_node {
             let list_item_children = list_item.children().clone();
             let list_handle = list_item_handle.parent_handle();
@@ -181,8 +180,7 @@ where
         let range = self.state.dom.find_range(s, e);
         match range {
             Range::SameNode(range) => {
-                let node =
-                    self.state.dom.lookup_node(range.node_handle.clone());
+                let node = self.state.dom.lookup_node(&range.node_handle);
                 if let DomNode::Text(t) = node {
                     let text = t.data();
                     let index_in_parent = range.node_handle.index_in_parent();

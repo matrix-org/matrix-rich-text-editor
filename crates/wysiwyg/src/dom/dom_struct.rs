@@ -112,7 +112,7 @@ where
                 return None;
             }
             let parent_handle = node.handle().parent_handle();
-            let parent_node = dom.lookup_node(parent_handle.clone());
+            let parent_node = dom.lookup_node(&parent_handle);
 
             match parent_node {
                 DomNode::Text(_) => find_list_item(dom, parent_node),
@@ -126,12 +126,12 @@ where
             }
         }
 
-        find_list_item(self, self.lookup_node(child_handle))
+        find_list_item(self, self.lookup_node(&child_handle))
     }
 
     /// Find the node based on its handle.
     /// Panics if the handle is unset or invalid
-    pub fn lookup_node(&self, node_handle: DomHandle) -> &DomNode<S> {
+    pub fn lookup_node(&self, node_handle: &DomHandle) -> &DomNode<S> {
         // TODO: consider taking a reference to handle to avoid clones
         fn nth_child<S>(element: &ContainerNode<S>, idx: usize) -> &DomNode<S>
         where
@@ -297,8 +297,8 @@ mod test {
         let child1 = &dom.children()[1];
 
         // The handles point to the right nodes
-        assert_eq!(dom.lookup_node(child0.handle()), child0);
-        assert_eq!(dom.lookup_node(child1.handle()), child1);
+        assert_eq!(dom.lookup_node(&child0.handle()), child0);
+        assert_eq!(dom.lookup_node(&child1.handle()), child1);
     }
 
     #[test]
@@ -316,7 +316,7 @@ mod test {
         let handle = nested_node.handle();
 
         // Then we can look it up and find the same node
-        assert_eq!(dom.lookup_node(handle), nested_node);
+        assert_eq!(dom.lookup_node(&handle), nested_node);
     }
 
     #[test]
