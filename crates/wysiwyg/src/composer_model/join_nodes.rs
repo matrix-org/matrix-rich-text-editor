@@ -127,7 +127,7 @@ where
     ) -> bool {
         let dom = &self.state.dom;
         if let (DomNode::Container(prev_node), DomNode::Container(next_node)) =
-            (dom.lookup_node(prev.clone()), dom.lookup_node(next.clone()))
+            (dom.lookup_node(&prev), dom.lookup_node(&next))
         {
             if let (
                 ContainerNodeKind::Formatting(prev_format),
@@ -160,8 +160,8 @@ where
                 continue;
             }
 
-            let start_i = dom.lookup_node(start_handle.clone());
-            let next_i = dom.lookup_node(next_handle.clone());
+            let start_i = dom.lookup_node(&start_handle);
+            let next_i = dom.lookup_node(&next_handle);
 
             match (start_i, next_i) {
                 (DomNode::Container(start_i), DomNode::Container(next_i)) => {
@@ -255,7 +255,7 @@ where
 
     fn find_struct_parent(&self, handle: &DomHandle) -> Option<DomHandle> {
         let parent_handle = handle.parent_handle();
-        let parent = self.state.dom.lookup_node(parent_handle.clone());
+        let parent = self.state.dom.lookup_node(&parent_handle);
         if parent.is_structure_node() && parent_handle.has_parent() {
             if let Some(parent_result) = self.find_struct_parent(&parent_handle)
             {
@@ -278,7 +278,7 @@ where
         let dom = &mut self.state.dom;
         let ret;
         let children = if let DomNode::Container(from_node) =
-            dom.lookup_node(from_handle.clone())
+            dom.lookup_node(&from_handle)
         {
             from_node.children().clone()
         } else {
@@ -329,7 +329,7 @@ where
     ) -> Option<DomHandle> {
         locations.find_map(|loc| {
             if let DomNode::Text(_) =
-                self.state.dom.lookup_node(loc.node_handle.clone())
+                self.state.dom.lookup_node(&loc.node_handle)
             {
                 Some(loc.node_handle.clone())
             } else {

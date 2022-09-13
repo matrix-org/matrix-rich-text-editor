@@ -64,7 +64,7 @@ where
         let mut text_locations: Vec<&DomLocation> = locations
             .iter()
             .filter(|l| {
-                let node = self.state.dom.lookup_node(l.node_handle.clone());
+                let node = self.state.dom.lookup_node(&l.node_handle);
                 node.is_text_node()
             })
             .collect();
@@ -90,7 +90,7 @@ where
         handle: DomHandle,
     ) -> HashSet<ToolbarButton> {
         let mut active_buttons = HashSet::new();
-        let node = self.state.dom.lookup_node(handle.clone());
+        let node = self.state.dom.lookup_node(&handle);
         if let DomNode::Container(container) = node {
             let active_button = Self::active_button_for_container(container);
             if let Some(button) = active_button {

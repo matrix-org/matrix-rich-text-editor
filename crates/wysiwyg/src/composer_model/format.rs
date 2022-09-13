@@ -62,7 +62,7 @@ where
         range: SameNodeRange,
         format: InlineFormatType,
     ) {
-        let node = self.state.dom.lookup_node(range.node_handle.clone());
+        let node = self.state.dom.lookup_node(&range.node_handle);
         if let DomNode::Text(t) = node {
             let text = t.data();
             // TODO: can we be globally smart about not leaving empty text nodes ?
@@ -92,7 +92,7 @@ where
         let found_format_locations: Vec<&DomLocation> = locations
             .iter()
             .filter(|l| {
-                let node = self.state.dom.lookup_node(l.node_handle.clone());
+                let node = self.state.dom.lookup_node(&l.node_handle);
                 Self::is_format_node(node, format)
             })
             .collect();
@@ -217,14 +217,11 @@ where
         handle: DomHandle,
         format: &InlineFormatType,
     ) -> Option<DomHandle> {
-        if Self::is_format_node(dom.lookup_node(handle.clone()), format) {
+        if Self::is_format_node(dom.lookup_node(&handle), format) {
             Some(handle)
         } else if handle.has_parent() {
             let parent_handle = handle.parent_handle();
-            if Self::is_format_node(
-                dom.lookup_node(parent_handle.clone()),
-                format,
-            ) {
+            if Self::is_format_node(dom.lookup_node(&parent_handle), format) {
                 Some(parent_handle)
             } else {
                 Self::path_contains_format_node(dom, parent_handle, format)
@@ -264,7 +261,7 @@ where
     fn merge_formatting_node_with_siblings(&mut self, handle: DomHandle) {
         // If has next sibling, try to join it with the current node
         if let DomNode::Container(parent) =
-            self.state.dom.lookup_node(handle.parent_handle())
+            self.state.dom.lookup_node(&handle.parent_handle())
         {
             if parent.children().len() - handle.index_in_parent() > 1 {
                 self.join_format_node_with_prev(handle.next_sibling());

@@ -110,7 +110,7 @@ fn do_find_pos<S>(
 where
     S: UnicodeString,
 {
-    let node = dom.lookup_node(node_handle.clone());
+    let node = dom.lookup_node(&node_handle);
     let mut locations = Vec::new();
     if *offset > end {
         return locations;
@@ -248,9 +248,7 @@ mod test {
         range
             .locations
             .iter()
-            .map(|location| {
-                dom.lookup_node(location.node_handle.clone()).to_html()
-            })
+            .map(|location| dom.lookup_node(&location.node_handle).to_html())
             .collect()
     }
 
@@ -336,7 +334,7 @@ mod test {
             assert_eq!(range.start_offset, 4);
             assert_eq!(range.end_offset, 7);
 
-            if let DomNode::Text(t) = d.lookup_node(range.node_handle.clone()) {
+            if let DomNode::Text(t) = d.lookup_node(&range.node_handle) {
                 assert_eq!(*t.data(), utf16("foo bar baz"));
             } else {
                 panic!("Should have been a text node!")
@@ -357,7 +355,7 @@ mod test {
             assert_eq!(range.start_offset, 4);
             assert_eq!(range.end_offset, 11);
 
-            if let DomNode::Text(t) = d.lookup_node(range.node_handle.clone()) {
+            if let DomNode::Text(t) = d.lookup_node(&range.node_handle) {
                 assert_eq!(*t.data(), utf16("foo bar baz"));
             } else {
                 panic!("Should have been a text node!")
@@ -378,7 +376,7 @@ mod test {
             assert_eq!(range.start_offset, 1);
             assert_eq!(range.end_offset, 2);
 
-            if let DomNode::Text(t) = d.lookup_node(range.node_handle.clone()) {
+            if let DomNode::Text(t) = d.lookup_node(&range.node_handle) {
                 assert_eq!(*t.data(), utf16("bar"));
             } else {
                 panic!("Should have been a text node!")
