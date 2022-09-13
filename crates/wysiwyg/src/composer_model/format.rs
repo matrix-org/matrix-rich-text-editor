@@ -18,7 +18,7 @@ use crate::dom::{
     Dom, DomHandle, DomLocation, MultipleNodesRange, Range, SameNodeRange,
 };
 use crate::{
-    ComposerAction, ComposerModel, ComposerUpdate, InlineFormatType,
+    ComposerAction, ComposerModel, ComposerUpdate, InlineFormatType, Location,
     UnicodeString,
 };
 
@@ -79,13 +79,20 @@ where
         // Store current Dom
         self.push_state_to_history();
         let (s, e) = self.safe_selection();
-        let range = self.state.dom.find_range(s, e);
+        self.format_range(s, e, format);
+        self.create_update_replace_all()
+    }
+
+    fn format_range(
+        &mut self,
+        start: usize,
+        end: usize,
+        format: InlineFormatType,
+    ) {
+        let range = self.state.dom.find_range(start, end);
         match range {
             Range::SameNode(range) => {
                 self.format_same_node(range, format);
-                // TODO: for now, we replace every time, to check ourselves, but
-                // at least some of the time we should not
-                self.create_update_replace_all()
             }
 
             Range::NoNode => {
@@ -93,18 +100,34 @@ where
                     format,
                     vec![DomNode::new_text(S::from_str(""))],
                 ));
-                ComposerUpdate::keep()
             }
 
             Range::MultipleNodes(range) => {
                 self.format_several_nodes(&range, format);
-                self.create_update_replace_all()
             }
         }
     }
 
-    pub fn unformat(&mut self, _format: InlineFormatType) -> ComposerUpdate<S> {
-        panic!("Unable to unformat yet")
+    pub fn unformat(&mut self, format: InlineFormatType) -> ComposerUpdate<S> {
+        // Store current Dom
+        self.push_state_to_history();
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        match range {
+            Range::SameNode(range) => {
+                self.unformat_same_node(s, e, range, format);
+                self.create_update_replace_all()
+            }
+
+            Range::MultipleNodes(range) => {
+                self.unformat_several_nodes(s, e, &range, format);
+                self.create_update_replace_all()
+            }
+
+            Range::NoNode => {
+                panic!("Trying to unformat with no selected node")
+            }
+        }
     }
 
     fn format_same_node(
@@ -119,17 +142,71 @@ where
             let before = slice_to(text, ..range.start_offset);
             let during = slice(text, range.start_offset..range.end_offset);
             let after = slice_from(text, range.end_offset..);
-            let new_nodes = vec![
-                DomNode::new_text(before),
-                DomNode::new_formatting(
-                    format,
-                    vec![DomNode::new_text(during)],
-                ),
-                DomNode::new_text(after),
-            ];
+            let mut new_nodes = Vec::new();
+            if before.len() > 0 {
+                new_nodes.push(DomNode::new_text(before));
+            }
+            new_nodes.push(DomNode::new_formatting(
+                format,
+                vec![DomNode::new_text(during)],
+            ));
+            if after.len() > 0 {
+                new_nodes.push(DomNode::new_text(after));
+            }
             self.state.dom.replace(&range.node_handle, new_nodes);
         } else {
             panic!("Trying to bold a non-text node")
+        }
+    }
+
+    fn unformat_same_node(
+        &mut self,
+        start: usize,
+        end: usize,
+        range: SameNodeRange,
+        format: InlineFormatType,
+    ) {
+        let text_node = self.state.dom.lookup_node(&range.node_handle);
+        if let DomNode::Text(t) = text_node {
+            let text_length = t.data().len().clone();
+            let formatting_handle = self.find_parent_formatting_node(
+                range.node_handle.clone(),
+                format.clone(),
+            );
+            let formatting_node =
+                self.state.dom.lookup_node(&formatting_handle);
+            if formatting_node.is_container_node() {
+                let parent_handle = formatting_handle.parent_handle();
+                let index_in_parent = formatting_handle.index_in_parent();
+                let parent_node =
+                    self.state.dom.lookup_node_mut(&parent_handle);
+                if let DomNode::Container(parent) = parent_node {
+                    parent.remove_child_and_own_hierarchy(index_in_parent);
+                } else {
+                    panic!("Formatting container parent is not a container")
+                }
+            } else {
+                panic!("Mismatched type for formatting container")
+            }
+
+            let (sb, eb) = self.safe_locations_from(
+                Location::from(start - range.start_offset),
+                Location::from(start),
+            );
+            let (sa, ea) = self.safe_locations_from(
+                Location::from(end),
+                Location::from(end + text_length - range.end_offset),
+            );
+
+            // Re-apply formatting to slices before and after the selection if needed
+            if eb > sb {
+                self.format_range(sb, eb, format.clone());
+            }
+            if ea > sa {
+                self.format_range(sa, ea, format);
+            }
+        } else {
+            panic!("Mismatched type for text node")
         }
     }
 
@@ -187,6 +264,98 @@ where
                     range.locations.clone(),
                     &format,
                 ),
+        }
+    }
+
+    fn unformat_several_nodes(
+        &mut self,
+        start: usize,
+        end: usize,
+        range: &MultipleNodesRange,
+        format: InlineFormatType,
+    ) {
+        for location in range.locations.iter() {
+            let node = self.state.dom.lookup_node(&location.node_handle);
+            if let DomNode::Container(node) = node {
+                match node.kind() {
+                    ContainerNodeKind::Formatting(f) => {
+                        if f.clone() == format.clone() {
+                            let index_in_parent =
+                                location.node_handle.index_in_parent();
+                            let parent_node = self.state.dom.lookup_node_mut(
+                                &location.node_handle.parent_handle(),
+                            );
+                            if let DomNode::Container(parent_node) = parent_node
+                            {
+                                parent_node.remove_child_and_own_hierarchy(
+                                    index_in_parent,
+                                );
+                            }
+
+                            // Re-apply formatting to slices before and after the selection if needed
+                            let (before_start, before_end) = self
+                                .safe_locations_from(
+                                    Location::from(
+                                        start - location.start_offset,
+                                    ),
+                                    Location::from(start),
+                                );
+                            let (after_start, after_end) = self
+                                .safe_locations_from(
+                                    Location::from(end),
+                                    Location::from(
+                                        end + location.length
+                                            - location.end_offset,
+                                    ),
+                                );
+
+                            if before_end > before_start {
+                                self.format_range(
+                                    before_start,
+                                    before_end,
+                                    format.clone(),
+                                );
+                            }
+                            if after_end > after_start {
+                                self.format_range(
+                                    after_start,
+                                    after_end,
+                                    format.clone(),
+                                );
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    fn find_parent_formatting_node(
+        &self,
+        handle: DomHandle,
+        format: InlineFormatType,
+    ) -> DomHandle {
+        let node = self.state.dom.lookup_node(&handle);
+        if let DomNode::Container(container) = node {
+            match container.kind() {
+                ContainerNodeKind::Formatting(f) => {
+                    if f.clone() == format {
+                        handle
+                    } else {
+                        self.find_parent_formatting_node(
+                            handle.parent_handle(),
+                            format,
+                        )
+                    }
+                }
+                _ => self.find_parent_formatting_node(
+                    handle.parent_handle(),
+                    format,
+                ),
+            }
+        } else {
+            self.find_parent_formatting_node(handle.parent_handle(), format)
         }
     }
 
@@ -448,5 +617,19 @@ mod test {
         let mut model = cm("|{hello <b>wor}ld</b>");
         model.format(InlineFormatType::Bold);
         assert_eq!(model.state.dom.to_string(), "<strong>hello world</strong>");
+    }
+
+    #[test]
+    fn unformatting_several_nodes() {
+        let mut model = cm("<strong><em>{abc</em>def<em>ghi}|</em></strong>");
+        model.unformat(InlineFormatType::Bold);
+        assert_eq!(model.state.dom.to_string(), "<em>abc</em>def<em>ghi</em>");
+
+        let mut model = cm("<strong><em>a{bc</em>def<em>gh}|i</em></strong>");
+        model.unformat(InlineFormatType::Bold);
+        assert_eq!(
+            model.state.dom.to_string(),
+            "<em><strong>a</strong>bc</em>def<em>gh<strong>i</strong></em>"
+        );
     }
 }

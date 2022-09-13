@@ -140,6 +140,20 @@ where
         ret
     }
 
+    pub fn remove_child_and_own_hierarchy(
+        &mut self,
+        index: usize,
+    ) -> DomNode<S> {
+        let removed_child = self.remove_child(index);
+        if let DomNode::Container(ref removed_child) = removed_child {
+            for child in removed_child.children().iter().rev() {
+                self.insert_child(index, child.clone());
+            }
+        }
+
+        removed_child
+    }
+
     pub fn replace_child(
         &mut self,
         index: usize,
