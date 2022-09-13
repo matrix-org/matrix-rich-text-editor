@@ -202,12 +202,12 @@ where
                     new_data.push_string(&next_i.data());
                     let text_node = DomNode::new_text(new_data);
                     if let DomNode::Container(old_parent) =
-                        dom.lookup_node_mut(next_handle.parent_handle())
+                        dom.lookup_node_mut(&next_handle.parent_handle())
                     {
                         old_parent.remove_child(next_handle.index_in_parent());
                     }
                     if let DomNode::Container(parent) =
-                        dom.lookup_node_mut(start_handle.parent_handle())
+                        dom.lookup_node_mut(&start_handle.parent_handle())
                     {
                         parent.replace_child(
                             start_handle.index_in_parent(),
@@ -285,9 +285,7 @@ where
             panic!("Source node must be a ContainerNode");
         };
 
-        if let DomNode::Container(to_node) =
-            dom.lookup_node_mut(to_handle.clone())
-        {
+        if let DomNode::Container(to_node) = dom.lookup_node_mut(&to_handle) {
             ret = to_node.children().len();
             for c in children {
                 to_node.append_child(c);
@@ -297,7 +295,7 @@ where
         }
 
         if let DomNode::Container(parent) =
-            dom.lookup_node_mut(from_handle.parent_handle())
+            dom.lookup_node_mut(&from_handle.parent_handle())
         {
             parent.remove_child(from_handle.index_in_parent());
         } else {

@@ -75,8 +75,7 @@ where
                 let child_index =
                     handle.raw().last().expect("Text node can't be root!");
                 let parent_handle = handle.parent_handle();
-                let mut parent =
-                    self.state.dom.lookup_node_mut(parent_handle.clone());
+                let mut parent = self.state.dom.lookup_node_mut(&parent_handle);
                 match &mut parent {
                     DomNode::Container(parent) => {
                         parent.remove_child(*child_index);

@@ -103,7 +103,7 @@ where
 
     fn replace_same_node(&mut self, range: SameNodeRange, new_text: S) {
         // TODO: remove SameNode and NoNode?
-        let node = self.state.dom.lookup_node_mut(range.node_handle);
+        let node = self.state.dom.lookup_node_mut(&range.node_handle);
         if let DomNode::Text(ref mut t) = node {
             let text = t.data();
             let mut n = slice_to(text, ..range.start_offset);
@@ -140,8 +140,7 @@ where
         let mut to_delete = Vec::new();
         let mut first_text_node = true;
         for loc in range.into_iter() {
-            let mut node =
-                self.state.dom.lookup_node_mut(loc.node_handle.clone());
+            let mut node = self.state.dom.lookup_node_mut(&loc.node_handle);
             match &mut node {
                 DomNode::Container(_) => {
                     // Nothing to do for container nodes

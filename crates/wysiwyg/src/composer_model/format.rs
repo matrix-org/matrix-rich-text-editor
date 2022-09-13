@@ -161,7 +161,7 @@ where
                 if let DomNode::Container(parent) = self
                     .state
                     .dom
-                    .lookup_node_mut(loc.node_handle.parent_handle())
+                    .lookup_node_mut(&loc.node_handle.parent_handle())
                 {
                     let index = loc.node_handle.index_in_parent();
                     let node = parent.remove_child(index);

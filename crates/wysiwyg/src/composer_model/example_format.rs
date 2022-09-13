@@ -184,7 +184,7 @@ impl ComposerModel<Utf16String> {
         // Modify the text nodes to a {, } and |
         match range {
             Range::SameNode(range) => {
-                let mut node = dom.lookup_node_mut(range.node_handle.clone());
+                let mut node = dom.lookup_node_mut(&range.node_handle);
                 match &mut node {
                     DomNode::Container(_) => (), // Ignore - model is empty
                     DomNode::Text(n) => update_text_node_with_cursor(n, range),
@@ -385,7 +385,7 @@ fn write_selection_multi(
         SelectionWritingState::new(start, end, dom.document().text_len());
 
     for location in range.locations {
-        let mut node = dom.lookup_node_mut(location.node_handle.clone());
+        let mut node = dom.lookup_node_mut(&location.node_handle);
         match &mut node {
             DomNode::Container(_) => {}
             DomNode::Text(n) => {
