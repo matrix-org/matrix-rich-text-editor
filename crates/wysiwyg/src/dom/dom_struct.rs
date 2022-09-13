@@ -79,7 +79,7 @@ where
         node_handle: DomHandle,
         nodes: Vec<DomNode<S>>,
     ) -> Vec<DomHandle> {
-        let parent_node = self.lookup_node_mut(node_handle.parent_handle());
+        let parent_node = self.lookup_node_mut(&node_handle.parent_handle());
         let index = node_handle.index_in_parent();
         match parent_node {
             DomNode::Text(_n) => panic!("Text nodes can't have children"),
@@ -166,7 +166,7 @@ where
     /// Panics if the handle is invalid or unset
     pub fn lookup_node_mut(
         &mut self,
-        node_handle: DomHandle,
+        node_handle: &DomHandle,
     ) -> &mut DomNode<S> {
         fn nth_child<S>(
             element: &mut ContainerNode<S>,
