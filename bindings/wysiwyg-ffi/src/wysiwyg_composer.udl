@@ -57,7 +57,7 @@ interface TextUpdate {
 };
 
 [Enum]
-interface ToolbarButton {
+interface ComposerAction {
     Bold();
     Italic();
     StrikeThrough();
@@ -74,8 +74,8 @@ interface ToolbarButton {
 interface MenuState {
     Keep();
     Update(
-        sequence<ToolbarButton> active_buttons,
-        sequence<ToolbarButton> disabled_buttons
+        sequence<ComposerAction> reversed_actions,
+        sequence<ComposerAction> disabled_actions
     );
 };
 
