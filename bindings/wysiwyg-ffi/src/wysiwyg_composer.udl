@@ -33,13 +33,11 @@ interface ComposerModel {
     ComposerUpdate set_link(string new_text);
     string to_tree();
     ComposerState dump_state();
-    ComposerUpdate action_response(string action_id, ActionResponse response);
 };
 
 interface ComposerUpdate {
     TextUpdate text_update();
     MenuState menu_state();
-    sequence<ComposerAction> actions();
 };
 
 dictionary ComposerState {
@@ -79,21 +77,6 @@ interface MenuState {
         sequence<ToolbarButton> active_buttons,
         sequence<ToolbarButton> disabled_buttons
     );
-};
-
-interface ComposerAction {
-    string action_id();
-    ActionRequest action();
-};
-
-[Enum]
-interface ActionRequest {
-    Dummy();
-};
-
-[Enum]
-interface ActionResponse {
-    Dummy();
 };
 
 [Enum]

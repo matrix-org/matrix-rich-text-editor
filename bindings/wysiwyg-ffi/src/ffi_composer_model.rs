@@ -2,7 +2,6 @@ use std::sync::{Arc, Mutex};
 
 use widestring::Utf16String;
 
-use crate::ffi_action_response::ActionResponse;
 use crate::ffi_composer_state::ComposerState;
 use crate::ffi_composer_update::ComposerUpdate;
 use crate::ffi_format_type::InlineFormatType;
@@ -91,19 +90,6 @@ impl ComposerModel {
         let end = usize::try_from(end).unwrap();
         Arc::new(ComposerUpdate::from(
             self.inner.lock().unwrap().delete_in(start, end),
-        ))
-    }
-
-    pub fn action_response(
-        self: &Arc<Self>,
-        action_id: String,
-        response: ActionResponse,
-    ) -> Arc<ComposerUpdate> {
-        Arc::new(ComposerUpdate::from(
-            self.inner
-                .lock()
-                .unwrap()
-                .action_response(action_id, response.into()),
         ))
     }
 

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::dom::UnicodeString;
-use crate::{ComposerAction, Location, MenuState, ReplaceAll, TextUpdate};
+use crate::{Location, MenuState, ReplaceAll, TextUpdate};
 
 #[derive(Debug, Clone)]
 pub struct ComposerUpdate<S>
@@ -22,7 +22,6 @@ where
 {
     pub text_update: TextUpdate<S>,
     pub menu_state: MenuState,
-    pub actions: Vec<ComposerAction>,
 }
 
 impl<S> ComposerUpdate<S>
@@ -33,7 +32,6 @@ where
         Self {
             text_update: TextUpdate::<S>::Keep,
             menu_state: MenuState::Keep,
-            actions: Vec::new(),
         }
     }
 
@@ -41,7 +39,6 @@ where
         Self {
             text_update: TextUpdate::<S>::Keep,
             menu_state: menu_state,
-            actions: Vec::new(),
         }
     }
 
@@ -58,7 +55,6 @@ where
                 end,
             }),
             menu_state: menu_state,
-            actions: Vec::new(),
         }
     }
 }
