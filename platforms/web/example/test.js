@@ -6,6 +6,8 @@ import {
     selection_according_to_actions
 } from "./wysiwyg.js";
 
+import {computeSelectionOffset} from './dom.js'
+
 const editor = document.getElementById('editor');
 
 run_tests([
@@ -163,6 +165,38 @@ run_tests([
         assert_eq(codeunit_count(editor, thirdTextNode, 0), 9);
         assert_eq(codeunit_count(editor, thirdTextNode, 1), 10);
         assert_eq(codeunit_count(editor, thirdTextNode, 2), 11);
+    }},
+
+    { name: "The offset should contains all the characters when the editor node is selected", test: () => {
+        // When
+        editor.innerHTML = "abc<b>def</b>gh";
+        // Use the editor node and a offset as 1 to simulate the FF behavior 
+        let offset = computeSelectionOffset(editor, 1);
+
+        // Then
+        assert_eq(offset, 8);
+
+         // When
+        editor.innerHTML = "abc<b>def</b>gh<ul><li>alice</li><li>bob</li>";
+        offset = computeSelectionOffset(editor, 1);
+ 
+         // Then
+         assert_eq(offset, 16);
+    }},
+
+    { name: "The offset should contains the selected characters", test: () => {
+        // When
+        editor.innerHTML = "abc<b>def</b>gh<ul><li>alice</li><li>bob</li>";
+        let offset = computeSelectionOffset(editor.childNodes[0], 1);
+
+        // Then
+        assert_eq(offset, 1);
+
+        // When
+        offset = computeSelectionOffset(editor.childNodes[0], 20);
+
+        // Then
+        assert_eq(offset, 20);
     }},
 
     { name: "Selection according to no actions is -1, 1", test: () => {
