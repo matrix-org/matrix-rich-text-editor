@@ -265,53 +265,6 @@ impl MenuState {
 #[wasm_bindgen]
 pub struct NoneMenuState;
 
-#[wasm_bindgen]
-pub struct ComposerAction {
-    inner: wysiwyg::ComposerAction,
-}
-
-#[wasm_bindgen]
-impl ComposerAction {
-    pub fn action_id(&self) -> String {
-        self.inner.action_id.clone()
-    }
-
-    pub fn action(&self) -> ActionRequest {
-        ActionRequest::from(self.inner.action.clone())
-    }
-}
-
-#[wasm_bindgen]
-pub struct ActionRequest {
-    _dummy: Option<Dummy>,
-}
-
-impl ActionRequest {
-    pub fn from(inner: wysiwyg::ActionRequest) -> Self {
-        match inner {
-            wysiwyg::ActionRequest::Dummy => Self {
-                _dummy: Some(Dummy),
-            },
-        }
-    }
-}
-
-#[wasm_bindgen]
-pub struct ActionResponse {
-    _dummy: Option<Dummy>,
-}
-
-impl ActionResponse {
-    /*
-    fn into(self) -> wysiwyg::ActionResponse {
-        if let Some(_dummy) = self._dummy {
-            wysiwyg::ActionResponse::Dummy
-        } else {
-            panic!("Unknown ActionResponse type");
-        }
-    }*/
-}
-
 pub struct Dummy;
 
 /// An iterator-like view of a DomHandle's children, written to work around
