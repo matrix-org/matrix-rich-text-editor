@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+mod composer_action;
 mod composer_model;
 mod composer_state;
-mod composer_toolbar_button;
 mod composer_update;
 mod dom;
 mod format_type;
@@ -24,9 +24,9 @@ mod menu_state;
 mod tests;
 mod text_update;
 
+pub use crate::composer_action::ComposerAction;
 pub use crate::composer_model::ComposerModel;
 pub use crate::composer_state::ComposerState;
-pub use crate::composer_toolbar_button::ToolbarButton;
 pub use crate::composer_update::ComposerUpdate;
 pub use crate::dom::nodes::DomNode;
 pub use crate::dom::parser::parse;

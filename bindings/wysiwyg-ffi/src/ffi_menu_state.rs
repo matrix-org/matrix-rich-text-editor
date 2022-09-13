@@ -1,10 +1,10 @@
-use crate::ToolbarButton;
+use crate::ComposerAction;
 
 pub enum MenuState {
     Keep,
     Update {
-        active_buttons: Vec<ToolbarButton>,
-        disabled_buttons: Vec<ToolbarButton>,
+        reversed_actions: Vec<ComposerAction>,
+        disabled_actions: Vec<ComposerAction>,
     },
 }
 
@@ -13,15 +13,15 @@ impl MenuState {
         match inner {
             wysiwyg::MenuState::Keep => Self::Keep,
             wysiwyg::MenuState::Update(menu_update) => Self::Update {
-                active_buttons: menu_update
-                    .active_buttons
+                reversed_actions: menu_update
+                    .reversed_actions
                     .iter()
-                    .map(|button| ToolbarButton::from(button.clone()))
+                    .map(|button| ComposerAction::from(button.clone()))
                     .collect(),
-                disabled_buttons: menu_update
-                    .disabled_buttons
+                disabled_actions: menu_update
+                    .disabled_actions
                     .iter()
-                    .map(|button| ToolbarButton::from(button.clone()))
+                    .map(|button| ComposerAction::from(button.clone()))
                     .collect(),
             },
         }

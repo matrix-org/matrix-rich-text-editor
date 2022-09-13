@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::ToolbarButton;
+use crate::ComposerAction;
 use std::collections::HashSet;
 
 #[derive(Debug, Clone)]
@@ -23,6 +23,6 @@ pub enum MenuState {
 
 #[derive(Debug, Clone)]
 pub struct MenuStateUpdate {
-    pub active_buttons: HashSet<ToolbarButton>,
-    pub disabled_buttons: HashSet<ToolbarButton>,
+    pub reversed_actions: HashSet<ComposerAction>,
+    pub disabled_actions: HashSet<ComposerAction>,
 }

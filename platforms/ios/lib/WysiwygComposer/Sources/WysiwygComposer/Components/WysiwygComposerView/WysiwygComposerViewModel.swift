@@ -28,10 +28,10 @@ public class WysiwygComposerViewModel: ObservableObject {
     @Published public var isContentEmpty: Bool = true
     /// Published value for the composer required height to fit entirely without scrolling.
     @Published public var idealHeight: CGFloat = .zero
-    /// Published value for the composer current expected active buttons.
-    @Published public var activeButtons: [ToolbarButton] = []
-    /// Published value for the composer current expected disabled buttons.
-    @Published public var disabledButtons: [ToolbarButton] = []
+    /// Published value for the composer current expected reversed actions (e.g. calling `bold` will effectively un-bold the current selection).
+    @Published public var reversedActions: [ComposerAction] = []
+    /// Published value for the composer current expected disabled actions.
+    @Published public var disabledActions: [ComposerAction] = []
 
     // MARK: - Private
     private var model: ComposerModel
@@ -179,10 +179,10 @@ private extension WysiwygComposerViewModel {
         }
 
         switch update.menuState() {
-        case .update(activeButtons: let activeButtons,
-                     disabledButtons: let disabledButtons):
-            self.activeButtons = activeButtons
-            self.disabledButtons = disabledButtons
+        case .update(reversedActions: let reversedActions,
+                     disabledActions: let disabledActions):
+            self.reversedActions = reversedActions
+            self.disabledActions = disabledActions
         default:
             break
         }

@@ -28,8 +28,9 @@ extension WysiwygAction: CaseIterable, Identifiable {
     }
 
     public func color(_ viewModel: WysiwygComposerViewModel) -> Color {
-        let isDisabled = viewModel.disabledButtons.contains(self.toolbarButton)
-        let isActive = viewModel.activeButtons.contains(self.toolbarButton)
+        let isDisabled = viewModel.disabledActions.contains(self.composerAction)
+        // Buttons for reversed actions should be highlighted with a specific colour.
+        let isActive = viewModel.reversedActions.contains(self.composerAction)
         switch (isDisabled, isActive) {
         case (true, _):
             return .black.opacity(0.3)
@@ -41,7 +42,7 @@ extension WysiwygAction: CaseIterable, Identifiable {
     }
 
     public func isDisabled(_ viewModel: WysiwygComposerViewModel) -> Bool {
-        return viewModel.disabledButtons.contains(self.toolbarButton)
+        return viewModel.disabledActions.contains(self.composerAction)
     }
 
     var accessibilityIdentifier: WysiwygSharedAccessibilityIdentifier {
@@ -88,7 +89,7 @@ extension WysiwygAction: CaseIterable, Identifiable {
 }
 
 private extension WysiwygAction {
-    private var toolbarButton: ToolbarButton {
+    private var composerAction: ComposerAction {
         switch self {
         case .bold:
             return .bold

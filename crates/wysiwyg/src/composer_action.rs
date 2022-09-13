@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #[derive(Debug, Clone, Eq, Hash, PartialEq)]
-pub enum ToolbarButton {
+pub enum ComposerAction {
     Bold,
     Italic,
     StrikeThrough,
