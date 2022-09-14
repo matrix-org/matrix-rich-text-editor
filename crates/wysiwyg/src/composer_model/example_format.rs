@@ -17,7 +17,7 @@ use widestring::Utf16String;
 
 use crate::dom::nodes::TextNode;
 use crate::dom::parser::parse;
-use crate::dom::{Dom, DomLocation, MultipleNodesRange, Range, SameNodeRange};
+use crate::dom::{Dom, DomLocation, MultipleNodesRange, Range};
 use crate::{ComposerModel, ComposerState, DomNode, Location};
 
 impl ComposerModel<Utf16String> {
@@ -78,47 +78,14 @@ impl ComposerModel<Utf16String> {
         let text = text.replace("~", "\u{200b}");
         let text_u16 = Utf16String::from_str(&text).into_vec();
 
-        /// Return the UTF-16 code unit for a character
-        /// Panics if s is more than one code unit long.
-        fn utf16_code_unit(s: &str) -> u16 {
-            let mut ret = Utf16String::new();
-            ret.push_str(s);
-            assert_eq!(ret.len(), 1);
-            ret.into_vec()[0]
-        }
-
-        fn find(haystack: &[u16], needle: &str) -> Option<usize> {
-            let mut skip_count = 0; // How many tag characters we have seen
-            let mut in_tag = false; // Are we in a tag now?
-
-            let needle = utf16_code_unit(needle);
-            let open = utf16_code_unit("<");
-            let close = utf16_code_unit(">");
-
-            for (i, &ch) in haystack.iter().enumerate() {
-                if ch == needle {
-                    return Some(i - skip_count);
-                } else if ch == open {
-                    in_tag = true;
-                } else if ch == close {
-                    skip_count += 1;
-                    in_tag = false;
-                }
-                if in_tag {
-                    skip_count += 1;
-                }
-            }
-            None
-        }
-
-        let curs = find(&text_u16, "|").expect(&format!(
+        let curs = find_char(&text_u16, "|").expect(&format!(
             "ComposerModel text did not contain a '|' symbol: '{}'",
             String::from_utf16(&text_u16)
                 .expect("ComposerModel text was not UTF-16"),
         ));
 
-        let s = find(&text_u16, "{");
-        let e = find(&text_u16, "}");
+        let s = find_char(&text_u16, "{");
+        let e = find_char(&text_u16, "}");
 
         let mut model = ComposerModel {
             state: ComposerState::new(),
@@ -184,10 +151,46 @@ impl ComposerModel<Utf16String> {
         // Modify the text nodes to a {, } and |
         match range {
             Range::SameNode(range) => {
-                let mut node = dom.lookup_node_mut(&range.node_handle);
+                let mut handle = range.node_handle;
+                let mut start = range.start_offset.into();
+                let mut end = range.end_offset.into();
+
+                if let DomNode::LineBreak(_) = dom.lookup_node(&handle) {
+                    // If we found a line break, add a text node after it so
+                    // we can add the {, } or | to it.
+                    let parent = dom.lookup_node_mut(&handle.parent_handle());
+                    match parent {
+                        DomNode::Container(n) => {
+                            // Add a text node before or after this one
+                            let i;
+                            if start == 0 {
+                                i = handle.index_in_parent();
+                            } else {
+                                i = handle.index_in_parent() + 1;
+                                handle = handle.next_sibling();
+                                start -= 1;
+                                end -= 1;
+                            };
+                            n.insert_child(
+                                i,
+                                DomNode::new_text(Utf16String::from_str("")),
+                            );
+                        }
+                        _ => panic!("Parent was not a container!"),
+                    }
+                }
+
+                let mut node = dom.lookup_node_mut(&handle);
                 match &mut node {
                     DomNode::Container(_) => (), // Ignore - model is empty
-                    DomNode::Text(n) => update_text_node_with_cursor(n, range),
+                    DomNode::LineBreak(_) => {
+                        // We handled the case of a line break above - should
+                        // not get here.
+                        panic!("Handle should point to a text node!")
+                    }
+                    DomNode::Text(n) => {
+                        update_text_node_with_cursor(n, start, end)
+                    }
                 };
             }
             Range::NoNode => (), // No selection, so insert no text
@@ -203,16 +206,68 @@ impl ComposerModel<Utf16String> {
     }
 }
 
+/// Return the UTF-16 code unit for a character
+/// Panics if s is more than one code unit long.
+fn utf16_code_unit(s: &str) -> u16 {
+    let mut ret = Utf16String::new();
+    ret.push_str(s);
+    assert_eq!(ret.len(), 1);
+    ret.into_vec()[0]
+}
+
+/// Find a single utf16 code unit (needle) in haystack
+fn find_char(haystack: &[u16], needle: &str) -> Option<usize> {
+    let mut skip_count = 0; // How many tag characters we have seen
+    let mut in_tag = false; // Are we in a tag now?
+
+    // Track the contents of the tag we are inside, so we know whether we've
+    // seen a br tag.
+    let mut tag_contents: Vec<u16> = Vec::new();
+
+    let needle = utf16_code_unit(needle);
+    let open = utf16_code_unit("<");
+    let close = utf16_code_unit(">");
+    let space = utf16_code_unit(" ");
+    let forward_slash = utf16_code_unit("/");
+
+    let br_tag = Utf16String::from_str("br").into_vec();
+
+    for (i, &ch) in haystack.iter().enumerate() {
+        if ch == needle {
+            return Some(i - skip_count);
+        } else if ch == open {
+            in_tag = true;
+        } else if ch == close {
+            // Skip this character (>), unless we've found a br tag, in which
+            // case the whole tag will be worth 1 code unit, so we don't
+            // increase skip count.
+            if tag_contents != br_tag {
+                skip_count += 1;
+            }
+            in_tag = false;
+            tag_contents.clear();
+        }
+        if in_tag {
+            skip_count += 1;
+
+            // Track what's inside this tag, but ignore spaces and slashes
+            if !(ch == open || ch == space || ch == forward_slash) {
+                tag_contents.push(ch);
+            }
+        }
+    }
+    None
+}
+
 fn update_text_node_with_cursor(
     text_node: &mut TextNode<Utf16String>,
-    range: SameNodeRange,
+    start: usize,
+    end: usize,
 ) {
-    let orig_s: usize = range.start_offset.into();
-    let orig_e: usize = range.end_offset.into();
-    let (s, e) = if orig_s < orig_e {
-        (orig_s, orig_e)
+    let (s, e) = if start < end {
+        (start, end)
     } else {
-        (orig_e, orig_s)
+        (end, start)
     };
 
     let data = text_node.data();
@@ -223,13 +278,13 @@ fn update_text_node_with_cursor(
         new_data += data[s..].to_string().as_str();
     } else {
         new_data = data[..s].to_string();
-        if orig_s < orig_e {
+        if start < end {
             new_data.push('{');
         } else {
             new_data += "|{";
         }
         new_data += data[s..e].to_string().as_str();
-        if orig_s < orig_e {
+        if start < end {
             new_data += "}|";
         } else {
             new_data.push('}');
@@ -388,6 +443,7 @@ fn write_selection_multi(
         let mut node = dom.lookup_node_mut(&location.node_handle);
         match &mut node {
             DomNode::Container(_) => {}
+            DomNode::LineBreak(_) => {}
             DomNode::Text(n) => {
                 let strings_to_add = state.advance(&location, n.data().len());
                 for (s, offset) in strings_to_add {
@@ -653,6 +709,23 @@ mod test {
         assert_that!("AAA<b>B{BB</b>C}|CC").roundtrips();
         assert_that!("AAA<b>B|{BB</b>C}CC").roundtrips();
         assert_that!("<ul><li>~|</li></ul>").roundtrips();
+        assert_that!("<br />|").roundtrips();
+        assert_that!("<br /><br />|").roundtrips();
+        assert_that!("<br />|<br />").roundtrips();
+        assert_that!("<br />|<br />").roundtrips();
+        assert_that!("a<br />|<br />b").roundtrips();
+        assert_that!("a<br />b|<br />c").roundtrips();
+        assert_that!("a<br />|b<br />c").roundtrips();
+        assert_that!("<b>a<br />|b<br />c</b>").roundtrips();
+        // TODO assert_that!("|<br />").roundtrips();
+        assert_that!("aaa<br />|bbb").roundtrips();
+        assert_that!("aaa|<br />bbb").roundtrips();
+        assert_that!("aa{a<br />b}|bb").roundtrips();
+        assert_that!("aa|{a<br />b}bb").roundtrips();
+        // TODO assert_that!("aa{<br />b}|bb").roundtrips();
+        assert_that!("aa{a<br />b}|bb").roundtrips();
+        // TODO assert_that!("aa|{a<br />}bb").roundtrips();
+        // TODO assert_that!("aa|{br />}bb").roundtrips();
     }
 
     trait Roundtrips<T> {

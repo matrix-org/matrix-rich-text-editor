@@ -222,6 +222,37 @@ fn replacing_across_lists_joins_them() {
     );
 }
 
+#[ignore] // TODO: replacing_a_selection_containing_br_with_a_character
+#[test]
+fn replacing_a_selection_containing_br_with_a_character() {
+    let mut model = cm("abc{de<br />f}|ghi");
+    replace_text(&mut model, "Z");
+    assert_eq!(tx(&model), "abcZ|ghi");
+}
+
+#[test]
+fn replacing_a_selection_containing_only_br_with_a_character() {
+    let mut model = cm("abc{<br />}|ghi");
+    replace_text(&mut model, "Z");
+    assert_eq!(tx(&model), "abcZ|ghi");
+}
+
+#[ignore] // TODO: replacing_a_selection_starting_br_with_a_character
+#[test]
+fn replacing_a_selection_starting_br_with_a_character() {
+    let mut model = cm("abc{<br />def}|ghi");
+    replace_text(&mut model, "Z");
+    assert_eq!(tx(&model), "abcZ|ghi");
+}
+
+#[ignore] // TODO: replacing_a_selection_ending_br_with_a_character
+#[test]
+fn replacing_a_selection_ending_br_with_a_character() {
+    let mut model = cm("abc{def<br />}|ghi");
+    replace_text(&mut model, "Z");
+    assert_eq!(tx(&model), "abcZ|ghi");
+}
+
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
     model.replace_text(utf16(new_text));
 }

@@ -14,41 +14,48 @@
 
 #![cfg(test)]
 
+use widestring::Utf16String;
+
 use crate::tests::testutils_composer_model::cm;
 use crate::ToRawText;
 
 #[test]
-fn computing_raw_text() {
-    assert_eq!(cm("|").state.dom.to_raw_text(), "",);
-    assert_eq!(cm("abcdef|").state.dom.to_raw_text(), "abcdef",);
+fn empty_text_converts_to_empty_raw_string() {
+    assert_eq!(raw("|"), "");
+}
+
+#[test]
+fn simple_text_converts_directly_to_raw_version() {
+    assert_eq!(raw("abcdef|"), "abcdef");
+}
+
+#[test]
+fn multi_code_unit_characters_convert_to_raw_text_unchanged() {
     assert_eq!(
-        cm("\u{1F469}\u{1F3FF}\u{200D}\u{1F680}|")
-            .state
-            .dom
-            .to_raw_text(),
+        raw("\u{1F469}\u{1F3FF}\u{200D}\u{1F680}|"),
         "\u{1F469}\u{1F3FF}\u{200D}\u{1F680}"
     );
-    assert_eq!(cm("t<b>a</b>g|").state.dom.to_raw_text(), "tag",);
+}
+
+#[test]
+fn tags_are_stripped_from_raw_text() {
+    assert_eq!(raw("t<b>a</b>g|"), "tag",);
+
+    assert_eq!(raw("nes<b>ted<i>tag</i></b>s|"), "nestedtags",);
+
     assert_eq!(
-        cm("nes<b>ted<i>tag</i></b>s|").state.dom.to_raw_text(),
-        "nestedtags",
-    );
-    assert_eq!(
-        cm("some <a href=\"https://matrix.org\">link</a>|")
-            .state
-            .dom
-            .to_raw_text(),
+        raw("some <a href=\"https://matrix.org\">link</a>|"),
         "some link",
     );
+
     assert_eq!(
-        cm("list: <ol><li>ab</li><li>cd</li><li><b>e<i>f</i></b></li></ol>|")
-            .state
-            .dom
-            .to_raw_text(),
+        raw("list: <ol><li>ab</li><li>cd</li><li><b>e<i>f</i></b></li></ol>|"),
         "list: abcdef",
     );
-    assert_eq!(
-        cm("|emptynodes<b><i></i></b>").state.dom.to_raw_text(),
-        "emptynodes",
-    );
+
+    assert_eq!(raw("|emptynodes<b><i></i></b>"), "emptynodes");
+}
+
+fn raw(s: &str) -> Utf16String {
+    cm(s).state.dom.to_raw_text()
 }

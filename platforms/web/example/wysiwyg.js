@@ -14,6 +14,7 @@ let button_redo;
 let button_strike_through;
 let button_underline;
 let button_undo;
+let button_inline_code;
 let dom;
 let testcase;
 let reset_testcase;
@@ -30,6 +31,7 @@ async function wysiwyg_run() {
     editor = document.getElementsByClassName('editor')[0];
     editor.addEventListener('input', editor_input);
     editor.addEventListener("keydown", editor_keydown);
+    editor.addEventListener('formatBlock', editor_formatBlock);
 
     button_bold = document.getElementById('button_bold');
     button_bold.addEventListener('click', button_bold_click);
@@ -61,6 +63,9 @@ async function wysiwyg_run() {
 
     button_undo = document.getElementById('button_undo');
     button_undo.addEventListener('click', button_undo_click);
+
+    button_inline_code = document.getElementById('button_inline_code')
+    button_inline_code.addEventListener('click', button_inline_code_click)
 
     reset_testcase = document.getElementById('reset_testcase');
     reset_testcase.addEventListener('click', resetTestcase);
@@ -98,6 +103,10 @@ function editor_input(e) {
     }
 }
 
+function editor_formatBlock(e) {
+    editor_input({inputType: e.detail.blockType})
+}
+
 function refresh_dom() {
     dom.innerHTML = "";
     const doc = composer_model.document();
@@ -127,7 +136,8 @@ function refresh_dom() {
         const children = node.children(composer_model);
         let child;
         while (child = children.next()) {
-            if (child.node_type(composer_model) === "container") {
+            const node_type = child.node_type(composer_model);
+            if (node_type === "container") {
                 let id = `dom_${idcounter}`;
                 idcounter++;
                 const li = t(list, "li");
@@ -144,8 +154,12 @@ function refresh_dom() {
                 t(li, "label", child.tag(composer_model), new Map([["for", id]]));
                 id++;
                 write_children(child, li);
-            } else {
+            } else if (node_type === "line_break") {
+                t(list, "li", "br");
+            } else if (node_type === "text" ) {
                 t(list, "li", `"${child.text(composer_model)}"`);
+            } else {
+                console.error(`Unknown node type: ${node_type}`);
             }
         }
     }
@@ -218,6 +232,15 @@ function button_undo_click(e) {
     send_input(e, "historyUndo");
 }
 
+function button_inline_code_click(e) {
+    sendFormatBlockEvent(e, 'formatInlineCode')
+}
+
+function sendFormatBlockEvent(e, blockType) {
+    e.preventDefault();
+    editor.dispatchEvent(new CustomEvent('formatBlock', {detail: {blockType}}))
+}
+
 function get_current_selection() {
     const s = document.getSelection();
     // We should check that the selection is happening within the editor!
@@ -234,7 +257,6 @@ function get_current_selection() {
 function selection_according_to_actions(actions) {
     for (let i = actions.length - 1; i >= 0; i--) {
         const action = actions[i];
-        console.log(action);
         if (action[0] === "select") {
             return [action[1], action[2]];
         }
@@ -315,6 +337,9 @@ function codeunit_count(editor, node, offset) {
                     found: false,
                     offset: current_node.textContent.length
                 };
+            } else if (current_node.nodeName === "BR") {
+                // Treat br tags as being 1 character long
+                return { found: false, offset: 1 };
             } else {
                 // Add up all the amounts we need progress by skipping
                 // nodes inside this one.
@@ -368,6 +393,20 @@ function node_and_offset(current_node, codeunits) {
                 offset: codeunits - current_node.textContent.length
             };
         }
+    } else if (current_node.nodeName === "BR") {
+        // br tag acts like a text node of length 1, except if we're at
+        // the end of it, we don't return it - instead we move on to
+        // the next node, which will be returned with an offset of 0.
+        // This is because we are not allowed to make a Range which points
+        // to a br node with offset 1.
+        if (codeunits === 0) {
+            return { node: current_node, offset: 0 };
+        } else {
+            return {
+                node: null,
+                offset: codeunits - 1
+            };
+        }
     } else {
         for (const ch of current_node.childNodes) {
             const ret = node_and_offset(ch, codeunits);
@@ -388,7 +427,7 @@ function replace_editor(html, start_utf16_codeunit, end_utf16_codeunit) {
         start_utf16_codeunit,
         end_utf16_codeunit
     );
-    editor.innerHTML = html;
+    editor.innerHTML = html + "<br />";
 
     const sr = () => {
 
@@ -418,12 +457,16 @@ function replace_editor(html, start_utf16_codeunit, end_utf16_codeunit) {
 
             range.setStart(start.node, start.offset);
             range.setEnd(end.node, end.offset);
-            var sel = document.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(range);
         } else {
-            console.error("Failed to find offsets", start, end);
+            // Nothing found in selection: select the end of editor
+            range.selectNodeContents(editor);
+            range.collapse()
         }
+
+        const sel = document.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+
     };
 
     sr();
@@ -540,6 +583,8 @@ function process_input(e) {
             return action(composer_model.strike_through(), "strike_through");
         case "formatUnderline":
             return action(composer_model.underline(), "underline");
+        case "formatInlineCode":
+            return action(composer_model.inline_code(), "inline_code");
         case "historyRedo":
             return action(composer_model.redo(), "redo");
         case "historyUndo":

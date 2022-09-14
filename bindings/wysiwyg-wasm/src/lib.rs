@@ -301,7 +301,7 @@ pub struct DomHandle {
 
 #[wasm_bindgen]
 impl DomHandle {
-    /// Returns either "container" or "text" depending on the type of
+    /// Returns "container", "line_break" or "text" depending on the type of
     /// node we refer to.
     /// Panics if we are not a valid reference (because the model has changed
     /// since we were created, or because you passed in a different model
@@ -310,12 +310,13 @@ impl DomHandle {
         let node = model.inner.state.dom.lookup_node(&self.inner);
         String::from(match node {
             wysiwyg::DomNode::Container(_) => "container",
+            wysiwyg::DomNode::LineBreak(_) => "line_break",
             wysiwyg::DomNode::Text(_) => "text",
         })
     }
 
     /// Returns a list of our children nodes, or an empty list if we refer
-    /// to a text node.
+    /// to a text or line break node.
     /// Panics if we are not a valid reference (because the model has changed
     /// since we were created, or because you passed in a different model
     /// from the one that created us.)
@@ -329,11 +330,12 @@ impl DomHandle {
                     inner: child.handle(),
                 })
                 .collect(),
-            wysiwyg::DomNode::Text(_) => DomChildren::new(),
+            _ => DomChildren::new(),
         }
     }
 
-    /// Returns the text of this node, or an empty string if this is a container.
+    /// Returns the text of this node, or an empty string if this is a
+    /// container or line break.
     /// Panics if we are not a valid reference (because the model has changed
     /// since we were created, or because you passed in a different model
     /// from the one that created us.)
@@ -341,6 +343,7 @@ impl DomHandle {
         let node = model.inner.state.dom.lookup_node(&self.inner);
         match node {
             wysiwyg::DomNode::Container(_) => String::from(""),
+            wysiwyg::DomNode::LineBreak(_) => String::from(""),
             wysiwyg::DomNode::Text(node) => node.data().to_utf8(),
         }
     }
@@ -353,6 +356,7 @@ impl DomHandle {
         let node = model.inner.state.dom.lookup_node(&self.inner);
         match node {
             wysiwyg::DomNode::Container(node) => node.name().to_utf8(),
+            wysiwyg::DomNode::LineBreak(node) => node.name().to_utf8(),
             wysiwyg::DomNode::Text(_) => String::from("-text-"),
         }
     }
