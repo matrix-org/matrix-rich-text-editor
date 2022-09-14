@@ -32,7 +32,7 @@ where
 
     pub(crate) fn do_backspace_in_list(
         &mut self,
-        parent_handle: DomHandle,
+        parent_handle: &DomHandle,
         location: usize,
         range: SameNodeRange,
     ) -> ComposerUpdate<S> {
@@ -46,7 +46,7 @@ where
                 // Store current Dom
                 self.push_state_to_history();
                 self.remove_list_item(
-                    list_node_handle,
+                    &list_node_handle,
                     location,
                     parent_handle.index_in_parent(),
                     false,
@@ -80,7 +80,7 @@ where
 
     pub(crate) fn do_enter_in_list(
         &mut self,
-        parent_handle: DomHandle,
+        parent_handle: &DomHandle,
         location: usize,
         range: SameNodeRange,
     ) -> ComposerUpdate<S> {
@@ -94,13 +94,13 @@ where
         if let DomNode::Container(parent) = parent_node {
             if parent.is_empty_list_item() {
                 self.remove_list_item(
-                    list_node_handle,
+                    &list_node_handle,
                     location,
                     parent_handle.index_in_parent(),
                     true,
                 );
             } else {
-                self.slice_list_item(list_node_handle, location, range);
+                self.slice_list_item(&list_node_handle, location, range);
             }
             self.create_update_replace_all()
         } else {
@@ -117,7 +117,7 @@ where
                 let parent_list_item_handle = self
                     .state
                     .dom
-                    .find_parent_list_item(range.node_handle.clone());
+                    .find_parent_list_item(&range.node_handle.clone());
                 if let Some(list_item_handle) = parent_list_item_handle {
                     let list_node_handle = list_item_handle.parent_handle();
                     let list_node =
@@ -125,10 +125,10 @@ where
                     if let DomNode::Container(list) = list_node {
                         if list.is_list_of_type(list_type.clone()) {
                             self.move_list_item_content_to_list_parent(
-                                list_item_handle,
+                                &list_item_handle,
                             )
                         } else {
-                            self.update_list_type(list_node_handle, list_type)
+                            self.update_list_type(&list_node_handle, list_type)
                         }
                     } else {
                         panic!("List item is not in a list")
@@ -146,7 +146,7 @@ where
 
     fn move_list_item_content_to_list_parent(
         &mut self,
-        list_item_handle: DomHandle,
+        list_item_handle: &DomHandle,
     ) -> ComposerUpdate<S> {
         let list_item_node = self.state.dom.lookup_node(&list_item_handle);
         if let DomNode::Container(list_item) = list_item_node {
@@ -181,7 +181,7 @@ where
 
     fn update_list_type(
         &mut self,
-        list_handle: DomHandle,
+        list_handle: &DomHandle,
         list_type: ListType,
     ) -> ComposerUpdate<S> {
         let list_node = self.state.dom.lookup_node_mut(&list_handle);
@@ -235,7 +235,7 @@ where
                     }
 
                     self.replace_node_with_new_list(
-                        range.node_handle.clone(),
+                        &range.node_handle,
                         list_type,
                         list_item,
                     );
@@ -264,17 +264,17 @@ where
 
     fn replace_node_with_new_list(
         &mut self,
-        handle: DomHandle,
+        handle: &DomHandle,
         list_type: ListType,
         list_item: DomNode<S>,
     ) {
         let list_node = DomNode::new_list(list_type, vec![list_item]);
-        self.state.dom.replace(handle, vec![list_node]);
+        self.state.dom.replace(&handle, vec![list_node]);
     }
 
     fn slice_list_item(
         &mut self,
-        handle: DomHandle,
+        handle: &DomHandle,
         location: usize,
         range: SameNodeRange,
     ) {
@@ -306,7 +306,7 @@ where
 
     fn remove_list_item(
         &mut self,
-        list_handle: DomHandle,
+        list_handle: &DomHandle,
         location: usize,
         li_index: usize,
         insert_trailing_text_node: bool,

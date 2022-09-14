@@ -127,7 +127,7 @@ where
                 ),
                 DomNode::new_text(after),
             ];
-            self.state.dom.replace(range.node_handle, new_nodes);
+            self.state.dom.replace(&range.node_handle, new_nodes);
         } else {
             panic!("Trying to bold a non-text node")
         }
@@ -156,7 +156,7 @@ where
                 l.is_leaf
                     && Self::path_contains_format_node(
                         &self.state.dom,
-                        l.node_handle.clone(),
+                        &l.node_handle,
                         &format,
                     )
                     .is_none()
@@ -195,9 +195,9 @@ where
         loc: &DomLocation,
         format: &InlineFormatType,
     ) -> bool {
-        let handle = loc.node_handle.clone();
         loc.is_leaf
-            && Self::path_contains_format_node(dom, handle, format).is_none()
+            && Self::path_contains_format_node(dom, &loc.node_handle, format)
+                .is_none()
     }
 
     fn extend_format_in_multiple_nodes(
@@ -254,9 +254,7 @@ where
                         }
                     }
                     // Clean up by removing any empty text nodes and merging formatting nodes
-                    self.merge_formatting_node_with_siblings(
-                        loc.node_handle.clone(),
-                    );
+                    self.merge_formatting_node_with_siblings(&loc.node_handle);
                 }
             }
         }
@@ -264,17 +262,17 @@ where
 
     fn path_contains_format_node(
         dom: &Dom<S>,
-        handle: DomHandle,
+        handle: &DomHandle,
         format: &InlineFormatType,
     ) -> Option<DomHandle> {
         if Self::is_format_node(dom.lookup_node(&handle), format) {
-            Some(handle)
+            Some(handle.clone())
         } else if handle.has_parent() {
             let parent_handle = handle.parent_handle();
             if Self::is_format_node(dom.lookup_node(&parent_handle), format) {
                 Some(parent_handle)
             } else {
-                Self::path_contains_format_node(dom, parent_handle, format)
+                Self::path_contains_format_node(dom, &parent_handle, format)
             }
         } else {
             None
@@ -308,13 +306,13 @@ where
         }
     }
 
-    fn merge_formatting_node_with_siblings(&mut self, handle: DomHandle) {
+    fn merge_formatting_node_with_siblings(&mut self, handle: &DomHandle) {
         // If has next sibling, try to join it with the current node
         if let DomNode::Container(parent) =
             self.state.dom.lookup_node(&handle.parent_handle())
         {
             if parent.children().len() - handle.index_in_parent() > 1 {
-                self.join_format_node_with_prev(handle.next_sibling());
+                self.join_format_node_with_prev(&handle.next_sibling());
             }
         }
         // Merge current node with previous if possible

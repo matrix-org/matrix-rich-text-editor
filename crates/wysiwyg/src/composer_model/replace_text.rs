@@ -51,9 +51,9 @@ where
                     let parent_list_item_handle = self
                         .state
                         .dom
-                        .find_parent_list_item(range.node_handle.clone());
+                        .find_parent_list_item(&range.node_handle);
                     if let Some(parent_handle) = parent_list_item_handle {
-                        self.do_enter_in_list(parent_handle, e, range)
+                        self.do_enter_in_list(&parent_handle, e, range)
                     } else {
                         self.do_enter_in_text(
                             &range.node_handle,
