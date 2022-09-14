@@ -12,15 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::collections::HashMap;
+
 use crate::composer_model::base::{slice_from, slice_to};
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::{DomHandle, DomLocation, Range, SameNodeRange};
-use crate::{
-    ComposerModel, ComposerUpdate, ListType, Location, ToHtml, UnicodeString,
-};
-use std::cmp::{min, Ordering};
-use std::collections::{HashMap, HashSet};
+use crate::{ComposerModel, ComposerUpdate, ListType, Location, UnicodeString};
 
 impl<S> ComposerModel<S>
 where
@@ -362,16 +360,16 @@ where
         }
     }
 
-    fn can_indent_locations(&self, locations: Vec<DomLocation>) -> bool {
+    pub fn can_indent(&self, locations: Vec<DomLocation>) -> bool {
         for loc in locations {
-            if loc.is_leaf && !self.can_indent(loc.node_handle) {
+            if loc.is_leaf && !self.can_indent_handle(&loc.node_handle) {
                 return false;
             }
         }
         true
     }
 
-    fn can_indent(&self, handle: DomHandle) -> bool {
+    fn can_indent_handle(&self, handle: &DomHandle) -> bool {
         if let DomNode::Container(parent) =
             self.state.dom.lookup_node(handle.parent_handle())
         {
@@ -385,6 +383,46 @@ where
             panic!("Parent node must be a ContainerNode");
         }
         false
+    }
+
+    pub fn can_unindent(&self, locations: Vec<DomLocation>) -> bool {
+        for loc in locations {
+            if loc.is_leaf && !self.can_unindent_handle(&loc.node_handle) {
+                return false;
+            }
+        }
+        true
+    }
+
+    fn can_unindent_handle(&self, handle: &DomHandle) -> bool {
+        // Check that there are at least 2 ancestor lists
+        if let Some(closest_list_handle) =
+            self.find_closest_list_ancestor(&handle)
+        {
+            self.find_closest_list_ancestor(&closest_list_handle)
+                .is_some()
+        } else {
+            false
+        }
+    }
+
+    fn find_closest_list_ancestor(
+        &self,
+        handle: &DomHandle,
+    ) -> Option<DomHandle> {
+        if handle.has_parent() {
+            let parent_handle = handle.parent_handle();
+            if let DomNode::Container(parent) =
+                self.state.dom.lookup_node(parent_handle.clone())
+            {
+                if *parent.kind() == ContainerNodeKind::List {
+                    return Some(parent_handle.clone());
+                } else if parent_handle.has_parent() {
+                    return self.find_closest_list_ancestor(&parent_handle);
+                }
+            }
+        }
+        None
     }
 
     pub fn indent(&mut self, locations: Vec<DomLocation>) {
@@ -543,33 +581,40 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::tests::testutils_composer_model::{cm, tx};
+
+    use super::*;
 
     #[test]
     fn cannot_indent_first_item() {
         let model = cm("<ul><li>{Test}|</li></ul>");
-        assert_eq!(false, model.can_indent(DomHandle::from_raw(vec![0, 0, 0])));
+        assert_eq!(
+            false,
+            model.can_indent_handle(&DomHandle::from_raw(vec![0, 0, 0]))
+        );
     }
 
     #[test]
     fn can_indent_second_item() {
         let model = cm("<ul><li>First item</li><li>{Second item}|</li></ul>");
-        assert_eq!(true, model.can_indent(DomHandle::from_raw(vec![0, 1, 0])));
+        assert_eq!(
+            true,
+            model.can_indent_handle(&DomHandle::from_raw(vec![0, 1, 0]))
+        );
     }
 
     #[test]
     fn can_indent_several_items_if_first_is_not_included() {
         let model = cm("<ul><li>First item</li><li>{Second item</li><li>Third item}|</li></ul>");
         let locations = get_range_locations(&model);
-        assert_eq!(true, model.can_indent_locations(locations));
+        assert_eq!(true, model.can_indent(locations));
     }
 
     #[test]
     fn cannot_indent_several_items_if_first_is_included() {
         let model = cm("<ul><li>{First item</li><li>Second item</li><li>Third item}|</li></ul>");
         let locations = get_range_locations(&model);
-        assert_eq!(false, model.can_indent_locations(locations));
+        assert_eq!(false, model.can_indent(locations));
     }
 
     #[test]
@@ -614,6 +659,34 @@ mod tests {
         let locations = get_range_locations(&model);
         model.indent(locations);
         assert_eq!(tx(&model), "<ul><li>First item<ul><li>Second item<ul><li>Third item<ul><li>{Fourth item</li></ul></li><li>Fifth item}|</li></ul></li></ul></li></ul>");
+    }
+
+    #[test]
+    fn can_unindent_handle_simple_case_works() {
+        let model = cm("<ul><li>First item<ul><li>{Second item</li><li>Third item}|</li></ul></li></ul>");
+        let handle = DomHandle::from_raw(vec![0, 0, 1, 0, 0]);
+        assert_eq!(true, model.can_unindent_handle(&handle));
+    }
+
+    #[test]
+    fn cannot_unindent_handle_with_only_one_list_level_fails() {
+        let model = cm("<ul><li>First item</li><li>{Second item</li><li>Third item}|</li></ul>");
+        let handle = DomHandle::from_raw(vec![0, 1, 0]);
+        assert_eq!(false, model.can_unindent_handle(&handle));
+    }
+
+    #[test]
+    fn can_unindent_simple_case_works() {
+        let model = cm("<ul><li>First item<ul><li>{Second item</li><li>Third item}|</li></ul></li></ul>");
+        let locations = get_range_locations(&model);
+        assert_eq!(true, model.can_unindent(locations));
+    }
+
+    #[test]
+    fn can_unindent_with_only_one_list_level_fails() {
+        let model = cm("<ul><li>First item</li><li>{Second item</li><li>Third item}|</li></ul>");
+        let locations = get_range_locations(&model);
+        assert_eq!(false, model.can_unindent(locations));
     }
 
     fn get_range_locations<S: UnicodeString>(
