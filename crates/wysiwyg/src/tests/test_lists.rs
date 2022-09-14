@@ -20,7 +20,7 @@ use crate::tests::testutils_composer_model::{cm, tx};
 use crate::tests::testutils_conversion::utf16;
 
 use crate::dom::{DomLocation, Range};
-use crate::{ComposerModel, DomHandle, UnicodeString};
+use crate::{ComposerModel, UnicodeString};
 
 #[test]
 fn creating_ordered_list_and_writing() {

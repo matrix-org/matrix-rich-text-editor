@@ -371,7 +371,7 @@ where
 
     fn can_indent_handle(&self, handle: &DomHandle) -> bool {
         if let DomNode::Container(parent) =
-            self.state.dom.lookup_node(handle.parent_handle())
+            self.state.dom.lookup_node(&handle.parent_handle())
         {
             let parent = parent;
 
@@ -413,7 +413,7 @@ where
         if handle.has_parent() {
             let parent_handle = handle.parent_handle();
             if let DomNode::Container(parent) =
-                self.state.dom.lookup_node(parent_handle.clone())
+                self.state.dom.lookup_node(&parent_handle)
             {
                 if *parent.kind() == ContainerNodeKind::List {
                     return Some(parent_handle.clone());
@@ -437,7 +437,7 @@ where
             sorted_handles.sort();
 
             let parent_list_type = if let DomNode::Container(list) =
-                self.state.dom.lookup_node(parent_handle.clone())
+                self.state.dom.lookup_node(&parent_handle)
             {
                 if list.is_list_of_type(ListType::Ordered) {
                     ListType::Ordered
@@ -460,7 +460,7 @@ where
             };
 
             let at_index = if let DomNode::Container(into_node) =
-                self.state.dom.lookup_node(into_handle.clone())
+                self.state.dom.lookup_node(&into_handle)
             {
                 into_node.children().len()
             } else {
@@ -490,7 +490,7 @@ where
             panic!("Can't indent first list item node");
         }
         let removed_list_item = if let DomNode::Container(list_item) =
-            self.state.dom.lookup_node(list_item_handle.clone())
+            self.state.dom.lookup_node(&list_item_handle)
         {
             if !list_item.is_list_item() {
                 panic!("Parent node must be a list item");
@@ -498,7 +498,7 @@ where
             if let DomNode::Container(list) = self
                 .state
                 .dom
-                .lookup_node_mut(list_item_handle.parent_handle())
+                .lookup_node_mut(&list_item_handle.parent_handle())
             {
                 list.remove_child(list_item_handle.index_in_parent())
             } else {
@@ -509,7 +509,7 @@ where
         };
 
         if let DomNode::Container(into_node) =
-            self.state.dom.lookup_node_mut(into_handle.clone())
+            self.state.dom.lookup_node_mut(&into_handle)
         {
             // New list node added here, insert it into that container at index 0
             if at_index < into_node.children().len() {
@@ -536,7 +536,7 @@ where
         list_type: &ListType,
     ) -> Option<&mut ContainerNode<S>> {
         if let DomNode::Container(prev_sibling) =
-            self.state.dom.lookup_node_mut(handle.clone())
+            self.state.dom.lookup_node_mut(&handle)
         {
             if !prev_sibling.children().is_empty() {
                 if let DomNode::Container(prev_sibling_last_item) = prev_sibling
@@ -592,7 +592,7 @@ where
         let removed_list_item = if let DomNode::Container(current_parent) = self
             .state
             .dom
-            .lookup_node_mut(list_item_handle.parent_handle())
+            .lookup_node_mut(&list_item_handle.parent_handle())
         {
             if current_parent.children().len() > 1 {
                 let mut to_add = Vec::new();
@@ -621,7 +621,7 @@ where
         };
 
         if let DomNode::Container(new_list_parent) =
-            self.state.dom.lookup_node_mut(into_handle.clone())
+            self.state.dom.lookup_node_mut(&into_handle)
         {
             new_list_parent.insert_child(at_index, removed_list_item);
 
