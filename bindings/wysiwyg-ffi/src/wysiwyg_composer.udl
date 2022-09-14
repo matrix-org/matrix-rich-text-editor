@@ -34,6 +34,8 @@ interface ComposerModel {
     ComposerUpdate unordered_list();
     ComposerUpdate undo();
     ComposerUpdate redo();
+    ComposerUpdate indent();
+    ComposerUpdate un_indent();
     ComposerUpdate set_link(string new_text);
     string to_tree();
     ComposerState dump_state();

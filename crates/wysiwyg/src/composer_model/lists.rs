@@ -385,7 +385,7 @@ where
         false
     }
 
-    pub fn can_unindent(&self, locations: Vec<DomLocation>) -> bool {
+    pub fn can_un_indent(&self, locations: Vec<DomLocation>) -> bool {
         for loc in locations {
             if loc.is_leaf && !self.can_un_indent_handle(&loc.node_handle) {
                 return false;
@@ -425,7 +425,55 @@ where
         None
     }
 
-    pub fn indent(&mut self, locations: Vec<DomLocation>) {
+    pub fn indent(&mut self) -> ComposerUpdate<S> {
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        match range {
+            Range::SameNode(r) => {
+                if self.can_indent_handle(&r.node_handle) {
+                    self.indent_handles(vec![r.node_handle]);
+                    self.create_update_replace_all()
+                } else {
+                    ComposerUpdate::keep()
+                }
+            }
+            Range::MultipleNodes(r) => {
+                if self.can_indent(r.locations.clone()) {
+                    self.indent_locations(r.locations);
+                    self.create_update_replace_all()
+                } else {
+                    ComposerUpdate::keep()
+                }
+            }
+            _ => ComposerUpdate::keep(),
+        }
+    }
+
+    pub fn un_indent(&mut self) -> ComposerUpdate<S> {
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        match range {
+            Range::SameNode(r) => {
+                if self.can_un_indent_handle(&r.node_handle) {
+                    self.un_indent_handles(vec![r.node_handle]);
+                    self.create_update_replace_all()
+                } else {
+                    ComposerUpdate::keep()
+                }
+            }
+            Range::MultipleNodes(r) => {
+                if self.can_un_indent(r.locations.clone()) {
+                    self.un_indent_locations(r.locations);
+                    self.create_update_replace_all()
+                } else {
+                    ComposerUpdate::keep()
+                }
+            }
+            _ => ComposerUpdate::keep(),
+        }
+    }
+
+    fn indent_locations(&mut self, locations: Vec<DomLocation>) {
         self.indent_handles(Self::leaf_handles_from_locations(locations));
     }
 
@@ -553,7 +601,7 @@ where
         None
     }
 
-    pub fn un_indent(&mut self, locations: Vec<DomLocation>) {
+    pub fn un_indent_locations(&mut self, locations: Vec<DomLocation>) {
         self.un_indent_handles(Self::leaf_handles_from_locations(locations));
     }
 
@@ -745,14 +793,14 @@ mod tests {
     fn can_un_indent_simple_case_works() {
         let model = cm("<ul><li>First item<ul><li>{Second item</li><li>Third item}|</li></ul></li></ul>");
         let locations = get_range_locations(&model);
-        assert_eq!(true, model.can_unindent(locations));
+        assert_eq!(true, model.can_un_indent(locations));
     }
 
     #[test]
     fn can_un_indent_with_only_one_list_level_fails() {
         let model = cm("<ul><li>First item</li><li>{Second item</li><li>Third item}|</li></ul>");
         let locations = get_range_locations(&model);
-        assert_eq!(false, model.can_unindent(locations));
+        assert_eq!(false, model.can_un_indent(locations));
     }
 
     #[test]
