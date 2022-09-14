@@ -222,7 +222,6 @@ fn replacing_across_lists_joins_them() {
     );
 }
 
-#[ignore] // TODO: replacing_a_selection_containing_br_with_a_character
 #[test]
 fn replacing_a_selection_containing_br_with_a_character() {
     let mut model = cm("abc{de<br />f}|ghi");
@@ -237,7 +236,6 @@ fn replacing_a_selection_containing_only_br_with_a_character() {
     assert_eq!(tx(&model), "abcZ|ghi");
 }
 
-#[ignore] // TODO: replacing_a_selection_starting_br_with_a_character
 #[test]
 fn replacing_a_selection_starting_br_with_a_character() {
     let mut model = cm("abc{<br />def}|ghi");
@@ -245,7 +243,6 @@ fn replacing_a_selection_starting_br_with_a_character() {
     assert_eq!(tx(&model), "abcZ|ghi");
 }
 
-#[ignore] // TODO: replacing_a_selection_ending_br_with_a_character
 #[test]
 fn replacing_a_selection_ending_br_with_a_character() {
     let mut model = cm("abc{def<br />}|ghi");

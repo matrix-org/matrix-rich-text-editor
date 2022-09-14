@@ -195,7 +195,7 @@ where
                     // Nothing to do for container nodes
                 }
                 DomNode::LineBreak(_) => {
-                    todo!("Replacing across a line break not done yet!");
+                    to_delete.push(loc.node_handle);
                 }
                 DomNode::Text(node) => {
                     let old_data = node.data();
