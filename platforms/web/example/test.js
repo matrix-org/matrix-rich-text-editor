@@ -100,6 +100,20 @@ run_tests([
         assert_eq(offset, 1);
     }},
 
+    { name: "node_and_offset finds inside an empty list", test: () => {
+        editor.innerHTML = "<ul><li><li></ul>";
+        let { node, offset } = node_and_offset(editor, 0);
+        assert_same(node, editor.childNodes[0].childNodes[0]);
+        assert_eq(offset, 0);
+    }},
+
+    { name: "node_and_offset finds inside an list", test: () => {
+        editor.innerHTML = "<ul><li>foo<li></ul>";
+        let { node, offset } = node_and_offset(editor, 1);
+        assert_same(node, editor.childNodes[0].childNodes[0].childNodes[0]);
+        assert_eq(offset, 1);
+    }},
+
     { name: "codeunit_count ASCII", test: () => {
         editor.innerHTML = "abcdefgh";
         let textNode = editor.childNodes[0];

@@ -358,7 +358,8 @@ function codeunit_count(editor, node, offset) {
  * A "codeunit" here means a UTF-16 code unit.
  */
 function node_and_offset(current_node, codeunits) {
-    if (current_node.nodeType === Node.TEXT_NODE) {
+    const isEmptyList = current_node.nodeName === 'LI' && !current_node.hasChildNodes()
+    if (current_node.nodeType === Node.TEXT_NODE || isEmptyList) {
         if (codeunits <= current_node.textContent.length) {
             return { node: current_node, offset: codeunits };
         } else {
