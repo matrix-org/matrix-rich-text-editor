@@ -14,6 +14,7 @@ let button_redo;
 let button_strike_through;
 let button_underline;
 let button_undo;
+let button_inline_code;
 let dom;
 let testcase;
 let reset_testcase;
@@ -30,6 +31,7 @@ async function wysiwyg_run() {
     editor = document.getElementsByClassName('editor')[0];
     editor.addEventListener('input', editor_input);
     editor.addEventListener("keydown", editor_keydown);
+    editor.addEventListener('formatBlock', editor_formatBlock);
 
     button_bold = document.getElementById('button_bold');
     button_bold.addEventListener('click', button_bold_click);
@@ -61,6 +63,9 @@ async function wysiwyg_run() {
 
     button_undo = document.getElementById('button_undo');
     button_undo.addEventListener('click', button_undo_click);
+
+    button_inline_code = document.getElementById('button_inline_code')
+    button_inline_code.addEventListener('click', button_inline_code_click)
 
     reset_testcase = document.getElementById('reset_testcase');
     reset_testcase.addEventListener('click', resetTestcase);
@@ -96,6 +101,10 @@ function editor_input(e) {
         }
         refresh_dom();
     }
+}
+
+function editor_formatBlock(e) {
+    editor_input({inputType: e.detail.blockType})
 }
 
 function refresh_dom() {
@@ -221,6 +230,15 @@ function button_underline_click(e) {
 
 function button_undo_click(e) {
     send_input(e, "historyUndo");
+}
+
+function button_inline_code_click(e) {
+    sendFormatBlockEvent(e, 'formatInlineCode')
+}
+
+function sendFormatBlockEvent(e, blockType) {
+    e.preventDefault();
+    editor.dispatchEvent(new CustomEvent('formatBlock', {detail: {blockType}}))
 }
 
 function get_current_selection() {
@@ -564,6 +582,8 @@ function process_input(e) {
             return action(composer_model.strike_through(), "strike_through");
         case "formatUnderline":
             return action(composer_model.underline(), "underline");
+        case "formatInlineCode":
+            return action(composer_model.inline_code(), "inline_code");
         case "historyRedo":
             return action(composer_model.redo(), "redo");
         case "historyUndo":
