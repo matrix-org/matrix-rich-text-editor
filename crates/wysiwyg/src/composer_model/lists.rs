@@ -783,13 +783,6 @@ mod tests {
     }
 
     #[test]
-    fn cannot_un_indent_handle_with_only_one_list_level_fails() {
-        let model = cm("<ul><li>First item</li><li>{Second item</li><li>Third item}|</li></ul>");
-        let handle = DomHandle::from_raw(vec![0, 1, 0]);
-        assert_eq!(false, model.can_un_indent_handle(&handle));
-    }
-
-    #[test]
     fn can_un_indent_simple_case_works() {
         let model = cm("<ul><li>First item<ul><li>{Second item</li><li>Third item}|</li></ul></li></ul>");
         let locations = get_range_locations(&model);
