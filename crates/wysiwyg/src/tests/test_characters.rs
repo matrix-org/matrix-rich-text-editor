@@ -230,7 +230,6 @@ fn replacing_a_selection_containing_br_with_a_character() {
     assert_eq!(tx(&model), "abcZ|ghi");
 }
 
-#[ignore] // TODO: replacing_a_selection_containing_only_br_with_a_character
 #[test]
 fn replacing_a_selection_containing_only_br_with_a_character() {
     let mut model = cm("abc{<br />}|ghi");

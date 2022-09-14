@@ -260,7 +260,8 @@ where
 
         match wh {
             Where::Before => {
-                self.parent(handle).insert_child(0, new_node);
+                self.parent(handle)
+                    .insert_child(handle.index_in_parent(), new_node);
             }
             Where::During => {
                 // Splice new_node in between this text node and a new one
