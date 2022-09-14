@@ -60,7 +60,7 @@ where
                 DomNode::new_link(link, vec![DomNode::new_text(during)]),
                 DomNode::new_text(after),
             ];
-            self.state.dom.replace(range.node_handle, new_nodes);
+            self.state.dom.replace(&range.node_handle, new_nodes);
         } else {
             panic!("Trying to bold a non-text node")
         }

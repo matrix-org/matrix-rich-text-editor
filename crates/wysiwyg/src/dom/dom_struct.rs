@@ -77,7 +77,7 @@ where
 
     pub fn replace(
         &mut self,
-        node_handle: DomHandle,
+        node_handle: &DomHandle,
         nodes: Vec<DomNode<S>>,
     ) -> Vec<DomHandle> {
         let parent_node = self.lookup_node_mut(&node_handle.parent_handle());
@@ -101,7 +101,7 @@ where
 
     pub fn find_parent_list_item(
         &self,
-        child_handle: DomHandle,
+        child_handle: &DomHandle,
     ) -> Option<DomHandle> {
         fn find_list_item<S>(
             dom: &Dom<S>,
@@ -134,7 +134,6 @@ where
     /// Find the node based on its handle.
     /// Panics if the handle is unset or invalid
     pub fn lookup_node(&self, node_handle: &DomHandle) -> &DomNode<S> {
-        // TODO: consider taking a reference to handle to avoid clones
         fn nth_child<S>(element: &ContainerNode<S>, idx: usize) -> &DomNode<S>
         where
             S: UnicodeString,
@@ -419,7 +418,7 @@ mod test {
         let node_handle = dom.children()[0].handle();
         let inserted_nodes = vec![tn("ab"), b(&[tn("cd")]), tn("ef")];
 
-        dom.replace(node_handle, inserted_nodes);
+        dom.replace(&node_handle, inserted_nodes);
 
         // Node is replaced by new insertion
         assert_eq!(dom.to_string(), "ab<b>cd</b>efbar");
@@ -435,7 +434,7 @@ mod test {
         let node_handle = kids(&dom.children()[0])[0].handle();
         let inserted_nodes = vec![tn("f"), i(&[tn("o")]), tn("o")];
 
-        dom.replace(node_handle, inserted_nodes);
+        dom.replace(&node_handle, inserted_nodes);
 
         // Node is replaced by new insertion
         assert_eq!(dom.to_string(), "<b>f<i>o</i>o</b>");

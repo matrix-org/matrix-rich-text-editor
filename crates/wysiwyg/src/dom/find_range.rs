@@ -34,7 +34,7 @@ where
         (start, end)
     };
 
-    let result = find_pos(dom, dom.document_handle(), start, end);
+    let result = find_pos(dom, &dom.document_handle(), start, end);
     match result {
         FindResult::Found(locations) => {
             let leaf_locations: Vec<&DomLocation> =
@@ -80,7 +80,7 @@ where
 /// should ask for RangeLocation::End.
 pub fn find_pos<S>(
     dom: &Dom<S>,
-    node_handle: DomHandle,
+    node_handle: &DomHandle,
     start: usize,
     end: usize,
 ) -> FindResult
@@ -102,7 +102,7 @@ where
 
 fn do_find_pos<S>(
     dom: &Dom<S>,
-    node_handle: DomHandle,
+    node_handle: &DomHandle,
     start: usize,
     end: usize,
     offset: &mut usize,
@@ -151,7 +151,7 @@ where
     for child in node.children() {
         let child_handle = child.handle();
         assert!(!child_handle.is_root(), "Incorrect child handle!");
-        let locations = do_find_pos(dom, child_handle, start, end, offset);
+        let locations = do_find_pos(dom, &child_handle, start, end, offset);
         if !locations.is_empty() {
             results.extend(locations);
         }
@@ -285,7 +285,7 @@ mod test {
     fn finding_a_node_within_an_empty_dom_returns_not_found() {
         let d = dom(&[]);
         assert_eq!(
-            find_pos(&d, d.document_handle(), 0, 0),
+            find_pos(&d, &d.document_handle(), 0, 0),
             FindResult::NotFound
         );
     }
@@ -294,7 +294,7 @@ mod test {
     fn finding_a_node_within_a_single_text_node_is_found() {
         let d = dom(&[tn("foo")]);
         assert_eq!(
-            find_pos(&d, d.document_handle(), 1, 1),
+            find_pos(&d, &d.document_handle(), 1, 1),
             found_single_node(DomHandle::from_raw(vec![0]), 0, 1, 1, 3)
         );
     }
@@ -303,44 +303,44 @@ mod test {
     fn finding_a_node_within_flat_text_nodes_is_found() {
         let d = dom(&[tn("foo"), tn("bar")]);
         assert_eq!(
-            find_pos(&d, d.document_handle(), 0, 0),
+            find_pos(&d, &d.document_handle(), 0, 0),
             found_single_node(DomHandle::from_raw(vec![0]), 0, 0, 0, 3)
         );
         assert_eq!(
-            find_pos(&d, d.document_handle(), 1, 1),
+            find_pos(&d, &d.document_handle(), 1, 1),
             found_single_node(DomHandle::from_raw(vec![0]), 0, 1, 1, 3)
         );
         assert_eq!(
-            find_pos(&d, d.document_handle(), 2, 2),
+            find_pos(&d, &d.document_handle(), 2, 2),
             found_single_node(DomHandle::from_raw(vec![0]), 0, 2, 2, 3)
         );
         assert_eq!(
-            find_pos(&d, d.document_handle(), 3, 3),
+            find_pos(&d, &d.document_handle(), 3, 3),
             found_single_node(DomHandle::from_raw(vec![0]), 0, 3, 3, 3)
         );
         assert_eq!(
-            find_pos(&d, d.document_handle(), 3, 4),
+            find_pos(&d, &d.document_handle(), 3, 4),
             found_single_node(DomHandle::from_raw(vec![1]), 3, 0, 1, 3)
         );
         // TODO: break up this test and name parts!
         assert_eq!(
-            find_pos(&d, d.document_handle(), 4, 4),
+            find_pos(&d, &d.document_handle(), 4, 4),
             found_single_node(DomHandle::from_raw(vec![1]), 3, 1, 1, 3)
         );
         assert_eq!(
-            find_pos(&d, d.document_handle(), 4, 4),
+            find_pos(&d, &d.document_handle(), 4, 4),
             found_single_node(DomHandle::from_raw(vec![1]), 3, 1, 1, 3)
         );
         assert_eq!(
-            find_pos(&d, d.document_handle(), 5, 5),
+            find_pos(&d, &d.document_handle(), 5, 5),
             found_single_node(DomHandle::from_raw(vec![1]), 3, 2, 2, 3)
         );
         assert_eq!(
-            find_pos(&d, d.document_handle(), 5, 5),
+            find_pos(&d, &d.document_handle(), 5, 5),
             found_single_node(DomHandle::from_raw(vec![1]), 3, 2, 2, 3)
         );
         assert_eq!(
-            find_pos(&d, d.document_handle(), 6, 6),
+            find_pos(&d, &d.document_handle(), 6, 6),
             found_single_node(DomHandle::from_raw(vec![1]), 3, 3, 3, 3)
         );
     }

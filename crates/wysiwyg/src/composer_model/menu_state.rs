@@ -32,7 +32,7 @@ where
         match range {
             Range::SameNode(range) => {
                 reversed_actions =
-                    self.compute_reversed_actions(range.node_handle);
+                    self.compute_reversed_actions(&range.node_handle);
             }
             Range::MultipleNodes(range) => {
                 reversed_actions = self
@@ -71,10 +71,9 @@ where
             .collect();
         let first_location = text_locations.remove(0);
         let mut reversed_actions =
-            self.compute_reversed_actions(first_location.node_handle.clone());
+            self.compute_reversed_actions(&first_location.node_handle);
         for location in text_locations {
-            let buttons =
-                self.compute_reversed_actions(location.node_handle.clone());
+            let buttons = self.compute_reversed_actions(&location.node_handle);
             let intersection: HashSet<_> = reversed_actions
                 .intersection(&buttons)
                 .into_iter()
@@ -88,7 +87,7 @@ where
 
     fn compute_reversed_actions(
         &self,
-        handle: DomHandle,
+        handle: &DomHandle,
     ) -> HashSet<ComposerAction> {
         let mut reversed_actions = HashSet::new();
         let node = self.state.dom.lookup_node(&handle);
@@ -101,7 +100,7 @@ where
 
         if handle.has_parent() {
             reversed_actions = reversed_actions
-                .union(&self.compute_reversed_actions(handle.parent_handle()))
+                .union(&self.compute_reversed_actions(&handle.parent_handle()))
                 .into_iter()
                 .map(|b| b.clone())
                 .collect();

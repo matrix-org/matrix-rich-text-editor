@@ -35,17 +35,17 @@ where
         let start_handle = self
             .first_text_handle(range)
             .expect("No start text node found");
-        self.join_structure_nodes(start_handle, new_pos);
+        self.join_structure_nodes(&start_handle, new_pos);
         self.join_format_nodes_at_index(new_pos);
     }
 
-    pub(crate) fn join_format_node_with_prev(&mut self, handle: DomHandle) {
+    pub(crate) fn join_format_node_with_prev(&mut self, handle: &DomHandle) {
         self.join_format_nodes_at_level(handle, 0);
     }
 
     fn join_structure_nodes(
         &mut self,
-        start_handle: DomHandle,
+        start_handle: &DomHandle,
         new_pos: usize,
     ) {
         // Find next node
@@ -76,11 +76,11 @@ where
 
     fn join_format_nodes_at_index(&mut self, index: usize) {
         if let Some(next_node_handle) = self.find_next_node(index) {
-            self.join_format_node_with_prev(next_node_handle);
+            self.join_format_node_with_prev(&next_node_handle);
         }
     }
 
-    fn join_format_nodes_at_level(&mut self, handle: DomHandle, level: usize) {
+    fn join_format_nodes_at_level(&mut self, handle: &DomHandle, level: usize) {
         // Out of bounds
         if level >= handle.raw().len() {
             return;
@@ -109,7 +109,7 @@ where
                 }
                 let new_handle = DomHandle::from_raw(cur_path);
 
-                self.join_format_nodes_at_level(new_handle, level + 1);
+                self.join_format_nodes_at_level(&new_handle, level + 1);
             } else {
                 // If both nodes couldn't be merged, try at the next level
                 self.join_format_nodes_at_level(handle, level + 1);
