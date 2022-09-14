@@ -14,6 +14,7 @@
 
 use std::fmt::Display;
 
+use crate::composer_model::base::{slice_from, slice_to};
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode};
 use crate::dom::{
     find_range, to_raw_text::ToRawText, DomHandle, Range, ToTree, UnicodeString,
@@ -83,6 +84,7 @@ where
         let index = node_handle.index_in_parent();
         match parent_node {
             DomNode::Text(_n) => panic!("Text nodes can't have children"),
+            DomNode::LineBreak(_n) => panic!("Line breaks can't have children"),
             DomNode::Container(n) => n.replace_child(index, nodes),
         }
     }
@@ -115,7 +117,6 @@ where
             let parent_node = dom.lookup_node(&parent_handle);
 
             match parent_node {
-                DomNode::Text(_) => find_list_item(dom, parent_node),
                 DomNode::Container(n) => {
                     if n.is_list_item() {
                         Some(parent_handle)
@@ -123,6 +124,7 @@ where
                         find_list_item(dom, parent_node)
                     }
                 }
+                _ => find_list_item(dom, parent_node),
             }
         }
 
@@ -153,6 +155,10 @@ where
         for idx in node_handle.raw() {
             node = match node {
                 DomNode::Container(n) => nth_child(n, *idx),
+                DomNode::LineBreak(_) => panic!(
+                    "Handle is invalid: refers to the child of a line break, \
+                    but line breaks cannot have children."
+                ),
                 DomNode::Text(_) => panic!(
                     "Handle is invalid: refers to the child of a text node, \
                     but text nodes cannot have children."
@@ -191,6 +197,10 @@ where
         for idx in node_handle.raw() {
             node = match node {
                 DomNode::Container(n) => nth_child(n, *idx),
+                DomNode::LineBreak(_) => panic!(
+                    "Handle is invalid: refers to the child of a line break, \
+                    but line breaks cannot have children."
+                ),
                 DomNode::Text(_) => panic!(
                     "Handle is invalid: refers to the child of a text node, \
                     but text nodes cannot have children."
@@ -201,10 +211,91 @@ where
         node
     }
 
-    // Return the number of code points in the string representation of this
-    // Dom.
+    /// Return the number of code points in the string representation of this
+    /// Dom.
     pub fn text_len(&self) -> usize {
         self.document.text_len()
+    }
+
+    /// Add the supplied new_node into the text of the supplied handle, at
+    /// the offset supplied.
+    ///
+    /// If handle points to a text node, this text node may be split if needed.
+    /// If handle points to a line break node, offset should definitely be 1,
+    /// and the new node will be inserted after it.
+    pub fn insert_into_text(
+        &mut self,
+        handle: &DomHandle,
+        offset: usize,
+        new_node: DomNode<S>,
+    ) {
+        enum Where {
+            Before,
+            During,
+            After,
+        }
+
+        let wh = match self.lookup_node(&handle) {
+            DomNode::Container(_) => {
+                panic!("Can't insert into a non-text node!")
+            }
+            DomNode::LineBreak(_) => {
+                assert!(
+                    offset == 1,
+                    "Attempting to insert after a line break, but the offset \
+                    into it was not 1."
+                );
+                Where::After
+            }
+            DomNode::Text(n) => {
+                if offset == 0 {
+                    Where::Before
+                } else if offset == n.data().len() {
+                    Where::After
+                } else {
+                    Where::During
+                }
+            }
+        };
+
+        match wh {
+            Where::Before => {
+                self.parent(handle)
+                    .insert_child(handle.index_in_parent(), new_node);
+            }
+            Where::During => {
+                // Splice new_node in between this text node and a new one
+                let old_node = self.lookup_node_mut(handle);
+                if let DomNode::Text(old_text_node) = old_node {
+                    let data = old_text_node.data();
+                    let before_text = slice_to(data, ..offset);
+                    let after_text = slice_from(data, offset..);
+                    old_text_node.set_data(before_text);
+                    let new_text_node = DomNode::new_text(after_text);
+                    let parent = self.parent(handle);
+                    parent.insert_child(handle.index_in_parent() + 1, new_node);
+                    parent.insert_child(
+                        handle.index_in_parent() + 2,
+                        new_text_node,
+                    );
+                } else {
+                    panic!("Can't insert in the middle of non-text node!");
+                }
+            }
+            Where::After => {
+                self.parent(handle)
+                    .insert_child(handle.index_in_parent() + 1, new_node);
+            }
+        }
+    }
+
+    fn parent(&mut self, handle: &DomHandle) -> &mut ContainerNode<S> {
+        let parent = self.lookup_node_mut(&handle.parent_handle());
+        if let DomNode::Container(parent) = parent {
+            parent
+        } else {
+            panic!("Parent node was not a container!");
+        }
     }
 }
 
@@ -257,6 +348,8 @@ impl Display for ItemNode {
 
 #[cfg(test)]
 mod test {
+    use widestring::Utf16String;
+
     use super::*;
 
     use crate::dom::nodes::dom_node::DomNode;
@@ -440,13 +533,27 @@ mod test {
         assert_eq!(2, cm("<del><i>a</i><b>a|</b></del>").state.dom.text_len());
     }
 
+    #[test]
+    fn text_len_counts_brs_as_1() {
+        // fails because we don't replace the "|" character in replace_text.
+        // SameNode is not helping us here, because we're not really inside
+        // the br tag - we want to be in the immediately following text node.
+        // But we must allow ourselves to be here, because there might not be
+        // a text node after us - there could be another br or something else.
+
+        // Maybe the problem is that we mis-counted and didn't give the br tag
+        // a width in the cm code....that would be easier.
+        assert_eq!(1, cm("<br />|").state.dom.text_len());
+        assert_eq!(3, cm("a|<br />b").state.dom.text_len());
+    }
+
+    const NO_CHILDREN: &Vec<DomNode<Utf16String>> = &Vec::new();
+
     /// If this node is an element, return its children - otherwise panic
-    fn kids<S>(node: &DomNode<S>) -> &Vec<DomNode<S>>
-    where
-        S: UnicodeString,
-    {
+    fn kids(node: &DomNode<Utf16String>) -> &Vec<DomNode<Utf16String>> {
         match node {
             DomNode::Container(n) => n.children(),
+            DomNode::LineBreak(_) => NO_CHILDREN,
             DomNode::Text(_) => {
                 panic!("We expected an Element, but found Text")
             }

@@ -84,7 +84,7 @@ where
                             new_to_delete.push(parent_handle);
                         }
                     }
-                    DomNode::Text(_) => {
+                    _ => {
                         panic!("Parent must be a container!");
                     }
                 }

@@ -60,6 +60,24 @@ where
         }
     }
 
+    /// Insert a newline in some text.
+    /// handle is a DomHandle to a text node
+    /// offset is the number of code units into the text to insert a newline
+    pub(crate) fn do_enter_in_text(
+        &mut self,
+        handle: &DomHandle,
+        offset: usize,
+    ) -> ComposerUpdate<S> {
+        self.state.dom.insert_into_text(
+            handle,
+            offset,
+            DomNode::new_line_break(),
+        );
+        self.state.start += 1;
+        self.state.end = self.state.start;
+        self.create_update_replace_all()
+    }
+
     pub(crate) fn do_enter_in_list(
         &mut self,
         parent_handle: DomHandle,
