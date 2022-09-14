@@ -146,7 +146,14 @@ run_tests([
         assert_eq(offset, 0);
     }},
 
-    { name: "node_and_offset finds inside an list", test: () => {
+    { name: "node_and_offset finds inside two  empty list", test: () => {
+        editor.innerHTML = "<ul><li><li></ul><li><li></ul>";
+        let { node, offset } = node_and_offset(editor, 0);
+        assert_same(node, editor.childNodes[0].childNodes[0]);
+        assert_eq(offset, 0);
+    }},
+
+    { name: "node_and_offset finds inside a list", test: () => {
         editor.innerHTML = "<ul><li>foo<li></ul>";
         let { node, offset } = node_and_offset(editor, 1);
         assert_same(node, editor.childNodes[0].childNodes[0].childNodes[0]);
