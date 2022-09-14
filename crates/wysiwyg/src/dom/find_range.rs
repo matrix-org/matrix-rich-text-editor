@@ -87,9 +87,6 @@ pub fn find_pos<S>(
 where
     S: UnicodeString,
 {
-    // TODO: consider whether cloning DomHandles is damaging performance,
-    // and look for ways to pass around references, maybe.
-
     let mut offset = 0;
     let locations = do_find_pos(dom, node_handle, start, end, &mut offset);
 
