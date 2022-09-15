@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Hash, Eq, PartialOrd, Ord)]
 pub struct DomHandle {
     // The location of a node in the tree, or None if we don't know yet
     path: Option<Vec<usize>>,

@@ -104,27 +104,74 @@ fn updating_model_updates_disabled_actions() {
     let mut model = cm("|");
     assert_eq!(
         model.disabled_actions,
-        HashSet::from([ComposerAction::Undo, ComposerAction::Redo]),
+        HashSet::from([
+            ComposerAction::Undo,
+            ComposerAction::Redo,
+            ComposerAction::Indent,
+            ComposerAction::UnIndent
+        ]),
     );
     replace_text(&mut model, "a");
     model.select(Location::from(0), Location::from(1));
     model.format(InlineFormatType::Bold);
     assert_eq!(
         model.disabled_actions,
-        HashSet::from([ComposerAction::Redo])
+        HashSet::from([
+            ComposerAction::Redo,
+            ComposerAction::Indent,
+            ComposerAction::UnIndent
+        ])
     );
     model.undo();
-    assert_eq!(model.disabled_actions, HashSet::new());
+    assert_eq!(
+        model.disabled_actions,
+        HashSet::from([ComposerAction::Indent, ComposerAction::UnIndent])
+    );
     model.redo();
     assert_eq!(
         model.disabled_actions,
-        HashSet::from([ComposerAction::Redo])
+        HashSet::from([
+            ComposerAction::Redo,
+            ComposerAction::Indent,
+            ComposerAction::UnIndent
+        ])
     );
     model.undo();
     model.undo();
     assert_eq!(
         model.disabled_actions,
-        HashSet::from([ComposerAction::Undo])
+        HashSet::from([
+            ComposerAction::Undo,
+            ComposerAction::Indent,
+            ComposerAction::UnIndent
+        ])
+    );
+}
+
+#[test]
+fn test_menu_updates_indent() {
+    let model = cm("<ul><li>First item</li><li>{Second item}|</li></ul>");
+    assert_eq!(
+        model.disabled_actions,
+        HashSet::from([
+            ComposerAction::UnIndent,
+            ComposerAction::Undo,
+            ComposerAction::Redo
+        ])
+    );
+}
+
+#[test]
+fn test_menu_updates_unindent() {
+    let model =
+        cm("<ul><li>First item<ul><li>{Second item}|</li></ul></li></ul>");
+    assert_eq!(
+        model.disabled_actions,
+        HashSet::from([
+            ComposerAction::Indent,
+            ComposerAction::Undo,
+            ComposerAction::Redo
+        ])
     );
 }
 

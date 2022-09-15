@@ -15,6 +15,7 @@
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind};
 use crate::dom::{DomLocation, Range};
 use crate::menu_state::MenuStateUpdate;
+use crate::ComposerAction::{Indent, UnIndent};
 use crate::{
     ComposerAction, ComposerModel, DomHandle, DomNode, InlineFormatType,
     ListType, MenuState, UnicodeString,
@@ -146,6 +147,46 @@ where
             disabled_actions.insert(ComposerAction::Redo);
         }
 
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        let computed_disabled_actions = match range {
+            Range::SameNode(range) => {
+                self.compute_disabled_actions_for_handle(&range.node_handle)
+            }
+            Range::MultipleNodes(range) => {
+                self.compute_disabled_actions_for_locations(range.locations)
+            }
+            _ => HashSet::new(),
+        };
+        disabled_actions.extend(computed_disabled_actions);
+        disabled_actions
+    }
+
+    fn compute_disabled_actions_for_handle(
+        &self,
+        handle: &DomHandle,
+    ) -> HashSet<ComposerAction> {
+        let mut disabled_actions = HashSet::new();
+        if !self.can_indent_handle(handle) {
+            disabled_actions.insert(Indent);
+        }
+        if !self.can_unindent_handle(handle) {
+            disabled_actions.insert(UnIndent);
+        }
+        disabled_actions
+    }
+
+    fn compute_disabled_actions_for_locations(
+        &self,
+        locations: Vec<DomLocation>,
+    ) -> HashSet<ComposerAction> {
+        let mut disabled_actions = HashSet::new();
+        if !self.can_indent(locations.clone()) {
+            disabled_actions.insert(Indent);
+        }
+        if !self.can_unindent(locations) {
+            disabled_actions.insert(UnIndent);
+        }
         disabled_actions
     }
 }

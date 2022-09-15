@@ -9,6 +9,8 @@ pub enum ComposerAction {
     Redo,
     OrderedList,
     UnorderedList,
+    Indent,
+    UnIndent,
 }
 
 impl ComposerAction {
@@ -24,6 +26,8 @@ impl ComposerAction {
             wysiwyg::ComposerAction::Redo => Self::Redo,
             wysiwyg::ComposerAction::OrderedList => Self::OrderedList,
             wysiwyg::ComposerAction::UnorderedList => Self::UnorderedList,
+            wysiwyg::ComposerAction::Indent => Self::Indent,
+            wysiwyg::ComposerAction::UnIndent => Self::UnIndent,
         }
     }
 }

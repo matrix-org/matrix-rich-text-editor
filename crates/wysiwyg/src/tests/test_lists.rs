@@ -158,6 +158,66 @@ fn creating_a_new_list_immediately_after_an_old_one_joins_them() {
     assert_eq!(tx(&model), "<ul><li>abc</li><li>~def|</li></ul>");
 }
 
+#[test]
+fn indent_several_list_items_simple_case_works() {
+    let mut model = cm(
+        "<ul><li>First item</li><li>{Second item</li><li>Third item}|</li></ul>",
+    );
+    model.indent();
+    assert_eq!(tx(&model), "<ul><li>First item<ul><li>{Second item</li><li>Third item}|</li></ul></li></ul>");
+}
+
+#[test]
+fn indent_several_list_items_complex_case_works() {
+    let mut model = cm(
+        "<ul><li>First item</li><li>{Second item</li><li>Third item</li><li>Fourth item}|</li></ul>",
+    );
+    model.indent();
+    assert_eq!(tx(&model), "<ul><li>First item<ul><li>{Second item</li><li>Third item</li><li>Fourth item}|</li></ul></li></ul>");
+}
+
+#[test]
+fn indent_several_list_items_with_sub_levels_works() {
+    let mut model = cm(
+        "<ul><li>First item<ul><li>Second item<ul><li>Third item</li><li>{Fourth item</li></ul></li><li>Fifth item}|</li></ul></li></ul>",
+    );
+    model.indent();
+    assert_eq!(tx(&model), "<ul><li>First item<ul><li>Second item<ul><li>Third item<ul><li>{Fourth item</li></ul></li><li>Fifth item}|</li></ul></li></ul></li></ul>");
+}
+
+#[test]
+fn un_indent_several_items_works() {
+    let mut model =
+        cm("<ul><li>First item<ul><li>{Second item</li><li>Third item}|</li></ul></li></ul>");
+    model.unindent();
+    assert_eq!(
+        tx(&model),
+        "<ul><li>First item</li><li>{Second item</li><li>Third item}|</li></ul>"
+    )
+}
+
+#[test]
+fn un_indent_nested_lists_works() {
+    let mut model =
+        cm("<ul><li>First item<ul><li>{Second item<ul><li>Third item}|</li></ul></li></ul></li></ul>");
+    model.unindent();
+    assert_eq!(
+        tx(&model),
+        "<ul><li>First item</li><li>{Second item<ul><li>Third item}|</li></ul></li></ul>"
+    )
+}
+
+#[test]
+fn un_indent_nested_lists_with_remnants_works() {
+    let mut model =
+        cm("<ul><li>First item<ul><li>{Second item<ul><li>Third item</li><li>Fourth item}|</li><li>Fifth item</li></ul></li></ul></li></ul>");
+    model.unindent();
+    assert_eq!(
+        tx(&model),
+        "<ul><li>First item</li><li>{Second item<ul><li>Third item</li><li>Fourth item}|<ul><li>Fifth item</li></ul></li></ul></li></ul>"
+    )
+}
+
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
     model.replace_text(utf16(new_text));
 }

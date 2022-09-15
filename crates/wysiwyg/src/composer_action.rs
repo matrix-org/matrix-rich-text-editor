@@ -24,4 +24,6 @@ pub enum ComposerAction {
     Redo,
     OrderedList,
     UnorderedList,
+    Indent,
+    UnIndent,
 }

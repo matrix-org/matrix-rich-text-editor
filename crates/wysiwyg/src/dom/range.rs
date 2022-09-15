@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use crate::dom::dom_handle::DomHandle;
+use std::cmp::Ordering;
 
 #[derive(Debug, PartialEq)]
 pub enum Range {
@@ -40,7 +41,7 @@ pub struct SameNodeRange {
     pub end_offset: usize,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DomLocation {
     pub node_handle: DomHandle,
     pub position: usize,
@@ -99,6 +100,18 @@ impl DomLocation {
     /// Whether the selection completely covers this location
     pub fn is_covered(&self) -> bool {
         self.is_start() && self.is_end()
+    }
+}
+
+impl PartialOrd<Self> for DomLocation {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for DomLocation {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.node_handle.cmp(&other.node_handle)
     }
 }
 

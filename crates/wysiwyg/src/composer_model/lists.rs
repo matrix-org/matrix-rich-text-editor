@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::collections::HashMap;
+
 use crate::composer_model::base::{slice_from, slice_to};
 use crate::dom::nodes::{ContainerNode, DomNode};
 use crate::dom::to_raw_text::ToRawText;
-use crate::dom::{DomHandle, Range, SameNodeRange};
+use crate::dom::{DomHandle, DomLocation, Range, SameNodeRange};
 use crate::{ComposerModel, ComposerUpdate, ListType, Location, UnicodeString};
 
 impl<S> ComposerModel<S>
@@ -355,6 +357,445 @@ where
                     self.state.end = new_location;
                 }
             }
+        }
+    }
+
+    pub fn can_indent(&self, locations: Vec<DomLocation>) -> bool {
+        for loc in locations {
+            if loc.is_leaf && !self.can_indent_handle(&loc.node_handle) {
+                return false;
+            }
+        }
+        true
+    }
+
+    pub(crate) fn can_indent_handle(&self, handle: &DomHandle) -> bool {
+        if let DomNode::Container(parent) =
+            self.state.dom.lookup_node(&handle.parent_handle())
+        {
+            let parent = parent;
+
+            // Parent must be a ListItem
+            if parent.is_list_item() {
+                return handle.parent_handle().index_in_parent() > 0;
+            }
+        } else {
+            panic!("Parent node must be a ContainerNode");
+        }
+        false
+    }
+
+    pub fn can_unindent(&self, locations: Vec<DomLocation>) -> bool {
+        for loc in locations {
+            if loc.is_leaf && !self.can_unindent_handle(&loc.node_handle) {
+                return false;
+            }
+        }
+        true
+    }
+
+    pub(crate) fn can_unindent_handle(&self, handle: &DomHandle) -> bool {
+        // Check that there are at least 2 ancestor lists
+        if let Some(closest_list_handle) =
+            self.state.dom.find_closest_list_ancestor(&handle)
+        {
+            self.state
+                .dom
+                .find_closest_list_ancestor(&closest_list_handle)
+                .is_some()
+        } else {
+            false
+        }
+    }
+
+    pub fn indent(&mut self) -> ComposerUpdate<S> {
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        match range {
+            Range::SameNode(r) => {
+                if self.can_indent_handle(&r.node_handle) {
+                    self.indent_handles(vec![r.node_handle]);
+                    self.create_update_replace_all()
+                } else {
+                    ComposerUpdate::keep()
+                }
+            }
+            Range::MultipleNodes(r) => {
+                if self.can_indent(r.locations.clone()) {
+                    self.indent_locations(r.locations);
+                    self.create_update_replace_all()
+                } else {
+                    ComposerUpdate::keep()
+                }
+            }
+            _ => ComposerUpdate::keep(),
+        }
+    }
+
+    pub fn unindent(&mut self) -> ComposerUpdate<S> {
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        match range {
+            Range::SameNode(r) => {
+                if self.can_unindent_handle(&r.node_handle) {
+                    self.unindent_handles(vec![r.node_handle]);
+                    self.create_update_replace_all()
+                } else {
+                    ComposerUpdate::keep()
+                }
+            }
+            Range::MultipleNodes(r) => {
+                if self.can_unindent(r.locations.clone()) {
+                    self.unindent_locations(r.locations);
+                    self.create_update_replace_all()
+                } else {
+                    ComposerUpdate::keep()
+                }
+            }
+            _ => ComposerUpdate::keep(),
+        }
+    }
+
+    fn indent_locations(&mut self, locations: Vec<DomLocation>) {
+        self.indent_handles(Self::leaf_handles_from_locations(locations));
+    }
+
+    fn indent_handles(&mut self, handles: Vec<DomHandle>) {
+        let by_list_sorted = Self::group_sorted_handles_by_list_parent(handles);
+
+        for (parent_handle, handles) in by_list_sorted.iter().rev() {
+            let mut sorted_handles = handles.clone();
+            sorted_handles.sort();
+
+            let parent_list_type = if let DomNode::Container(list) =
+                self.state.dom.lookup_node(&parent_handle)
+            {
+                if list.is_list_of_type(ListType::Ordered) {
+                    ListType::Ordered
+                } else {
+                    ListType::Unordered
+                }
+            } else {
+                panic!("ListItem parent must be a ContainerNode");
+            };
+
+            let first_handle = sorted_handles.first().unwrap();
+            let into_handle = if let Some(h) = self
+                .get_last_list_node_in_list_item(
+                    &first_handle.parent_handle().prev_sibling(),
+                    &parent_list_type,
+                ) {
+                h.handle()
+            } else {
+                first_handle.parent_handle().prev_sibling()
+            };
+
+            let at_index = if let DomNode::Container(into_node) =
+                self.state.dom.lookup_node(&into_handle)
+            {
+                into_node.children().len()
+            } else {
+                0
+            };
+
+            for handle in handles.iter().rev() {
+                self.indent_single_handle(
+                    &handle,
+                    &into_handle,
+                    at_index,
+                    &parent_list_type,
+                );
+            }
+        }
+    }
+
+    fn indent_single_handle(
+        &mut self,
+        handle: &DomHandle,
+        into_handle: &DomHandle,
+        at_index: usize,
+        parent_list_type: &ListType,
+    ) {
+        let list_item_handle = handle.parent_handle();
+        if list_item_handle.index_in_parent() == 0 {
+            panic!("Can't indent first list item node");
+        }
+        let removed_list_item = if let DomNode::Container(list_item) =
+            self.state.dom.lookup_node(&list_item_handle)
+        {
+            if !list_item.is_list_item() {
+                panic!("Parent node must be a list item");
+            }
+            if let DomNode::Container(list) = self
+                .state
+                .dom
+                .lookup_node_mut(&list_item_handle.parent_handle())
+            {
+                list.remove_child(list_item_handle.index_in_parent())
+            } else {
+                panic!("ListItem mus have a parent");
+            }
+        } else {
+            panic!("Parent must be a ContainerNode");
+        };
+
+        if let DomNode::Container(into_node) =
+            self.state.dom.lookup_node_mut(&into_handle)
+        {
+            // New list node added here, insert it into that container at index 0
+            if at_index < into_node.children().len() {
+                if let Some(DomNode::Container(sub_node)) =
+                    into_node.get_child_mut(at_index)
+                {
+                    sub_node.insert_child(0, removed_list_item);
+                }
+            } else if into_node.is_list_of_type(parent_list_type.clone()) {
+                into_node.insert_child(at_index, removed_list_item);
+            } else {
+                let new_list = DomNode::new_list(
+                    parent_list_type.clone(),
+                    vec![removed_list_item],
+                );
+                into_node.insert_child(at_index, new_list);
+            }
+        }
+    }
+
+    fn get_last_list_node_in_list_item(
+        &mut self,
+        handle: &DomHandle,
+        list_type: &ListType,
+    ) -> Option<&mut ContainerNode<S>> {
+        if let DomNode::Container(prev_sibling) =
+            self.state.dom.lookup_node_mut(&handle)
+        {
+            if !prev_sibling.children().is_empty() {
+                if let DomNode::Container(prev_sibling_last_item) = prev_sibling
+                    .get_child_mut(prev_sibling.children().len() - 1)
+                    .unwrap()
+                {
+                    if prev_sibling_last_item.is_list_of_type(list_type.clone())
+                    {
+                        return Some(prev_sibling_last_item);
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    pub fn unindent_locations(&mut self, locations: Vec<DomLocation>) {
+        self.unindent_handles(Self::leaf_handles_from_locations(locations));
+    }
+
+    fn unindent_handles(&mut self, handles: Vec<DomHandle>) {
+        let by_list_sorted = Self::group_sorted_handles_by_list_parent(handles);
+
+        for (list_handle, handles) in by_list_sorted.iter().rev() {
+            let mut sorted_handles = handles.clone();
+            sorted_handles.sort();
+
+            let at_index = list_handle.parent_handle().index_in_parent() + 1;
+            if let Some(into_handle) =
+                self.state.dom.find_closest_list_ancestor(list_handle)
+            {
+                for handle in handles.iter().rev() {
+                    self.unindent_single_handle(handle, &into_handle, at_index);
+                }
+            } else {
+                panic!("Current list should have another list ancestor");
+            }
+        }
+    }
+
+    fn unindent_single_handle(
+        &mut self,
+        handle: &DomHandle,
+        into_handle: &DomHandle,
+        at_index: usize,
+    ) {
+        let list_item_handle = handle.parent_handle();
+        let mut list_node_to_insert = None;
+        let removed_list_item = if let DomNode::Container(current_parent) = self
+            .state
+            .dom
+            .lookup_node_mut(&list_item_handle.parent_handle())
+        {
+            if current_parent.children().len() > 1 {
+                let mut to_add = Vec::new();
+                let from = list_item_handle.index_in_parent() + 1;
+                for i in (from..current_parent.children().len()).rev() {
+                    to_add.insert(0, current_parent.remove_child(i));
+                }
+                if !to_add.is_empty() {
+                    let list_type =
+                        ListType::from(current_parent.name().clone());
+                    list_node_to_insert =
+                        Some(DomNode::new_list(list_type, to_add));
+                }
+            }
+            let ret =
+                current_parent.remove_child(list_item_handle.index_in_parent());
+            if current_parent.children().is_empty() {
+                // List is empty, remove list node
+                self.state
+                    .dom
+                    .replace(&list_item_handle.parent_handle(), Vec::new());
+            }
+            ret
+        } else {
+            panic!("Handle {:?} has no parent", handle);
+        };
+
+        if let DomNode::Container(new_list_parent) =
+            self.state.dom.lookup_node_mut(&into_handle)
+        {
+            new_list_parent.insert_child(at_index, removed_list_item);
+
+            if let Some(list_with_remnants) = list_node_to_insert {
+                if let Some(DomNode::Container(inserted_list_item)) =
+                    new_list_parent.get_child_mut(at_index)
+                {
+                    inserted_list_item.append_child(list_with_remnants);
+                }
+            }
+        } else {
+            panic!("New list parent must be a ContainerNode");
+        }
+    }
+
+    fn leaf_handles_from_locations(
+        locations: Vec<DomLocation>,
+    ) -> Vec<DomHandle> {
+        locations
+            .iter()
+            .filter_map(|l| {
+                if l.is_leaf {
+                    Some(l.node_handle.clone())
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+
+    fn group_sorted_handles_by_list_parent(
+        handles: Vec<DomHandle>,
+    ) -> Vec<(DomHandle, Vec<DomHandle>)> {
+        let mut by_list: HashMap<DomHandle, Vec<DomHandle>> = HashMap::new();
+        for handle in handles.iter() {
+            // If it's a leaf node, it should be Text > ListItem > List
+            let list_handle = handle.parent_handle().parent_handle();
+            if let Some(list) = by_list.get_mut(&list_handle) {
+                list.push(handle.clone());
+            } else {
+                by_list.insert(list_handle, vec![handle.clone()]);
+            }
+        }
+
+        let mut by_list_sorted: Vec<(DomHandle, Vec<DomHandle>)> = by_list
+            .iter()
+            .map(|(h, l)| (h.clone(), l.clone()))
+            .collect();
+        by_list_sorted.sort();
+        by_list_sorted
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::tests::testutils_composer_model::{cm, tx};
+
+    use super::*;
+
+    #[test]
+    fn cannot_indent_first_item() {
+        let model = cm("<ul><li>{Test}|</li></ul>");
+        assert_eq!(
+            false,
+            model.can_indent_handle(&DomHandle::from_raw(vec![0, 0, 0]))
+        );
+    }
+
+    #[test]
+    fn can_indent_second_item() {
+        let model = cm("<ul><li>First item</li><li>{Second item}|</li></ul>");
+        assert_eq!(
+            true,
+            model.can_indent_handle(&DomHandle::from_raw(vec![0, 1, 0]))
+        );
+    }
+
+    #[test]
+    fn can_indent_several_items_if_first_is_not_included() {
+        let model = cm("<ul><li>First item</li><li>{Second item</li><li>Third item}|</li></ul>");
+        let locations = get_range_locations(&model);
+        assert_eq!(true, model.can_indent(locations));
+    }
+
+    #[test]
+    fn cannot_indent_several_items_if_first_is_included() {
+        let model = cm("<ul><li>{First item</li><li>Second item</li><li>Third item}|</li></ul>");
+        let locations = get_range_locations(&model);
+        assert_eq!(false, model.can_indent(locations));
+    }
+
+    #[test]
+    fn indent_list_item_works() {
+        let mut model = cm("<ul><li>First item</li><li>Second item</li><li>Third item|</li></ul>");
+        model.indent_handles(vec![DomHandle::from_raw(vec![0, 1, 0])]);
+        assert_eq!(tx(&model), "<ul><li>First item<ul><li>Second item</li></ul></li><li>Third item|</li></ul>");
+    }
+
+    #[test]
+    fn indent_list_item_to_previous_works() {
+        let mut model = cm("<ul><li>First item<ul><li>Second item</li></ul></li><li>Third item|</li></ul>");
+        model.indent_handles(vec![DomHandle::from_raw(vec![0, 1, 0])]);
+        assert_eq!(tx(&model), "<ul><li>First item<ul><li>Second item</li><li>Third item|</li></ul></li></ul>");
+    }
+
+    #[test]
+    fn can_unindent_handle_simple_case_works() {
+        let model = cm("<ul><li>First item<ul><li>{Second item</li><li>Third item}|</li></ul></li></ul>");
+        let handle = DomHandle::from_raw(vec![0, 0, 1, 0, 0]);
+        assert_eq!(true, model.can_unindent_handle(&handle));
+    }
+
+    #[test]
+    fn can_unindent_simple_case_works() {
+        let model = cm("<ul><li>First item<ul><li>{Second item</li><li>Third item}|</li></ul></li></ul>");
+        let locations = get_range_locations(&model);
+        assert_eq!(true, model.can_unindent(locations));
+    }
+
+    #[test]
+    fn can_unindent_with_only_one_list_level_fails() {
+        let model = cm("<ul><li>First item</li><li>{Second item</li><li>Third item}|</li></ul>");
+        let locations = get_range_locations(&model);
+        assert_eq!(false, model.can_unindent(locations));
+    }
+
+    #[test]
+    fn unindent_handles_simple_case_works() {
+        let mut model =
+            cm("<ul><li>First item<ul><li>{Second item}|</li></ul></li></ul>");
+        let handles = vec![DomHandle::from_raw(vec![0, 0, 1, 0, 0])];
+        model.unindent_handles(handles);
+        assert_eq!(
+            tx(&model),
+            "<ul><li>First item</li><li>{Second item}|</li></ul>"
+        )
+    }
+
+    fn get_range_locations<S: UnicodeString>(
+        model: &ComposerModel<S>,
+    ) -> Vec<DomLocation> {
+        let (start, end) = model.safe_selection();
+        let range = model.state.dom.find_range(start, end);
+        if let Range::MultipleNodes(r) = range {
+            r.locations
+        } else {
+            panic!("No multiple node range found");
         }
     }
 }
