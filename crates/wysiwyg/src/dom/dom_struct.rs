@@ -97,9 +97,10 @@ where
             DomNode::Container(parent) => {
                 let index = node_handle.index_in_parent();
                 let node = parent.remove_child(index);
-                if let DomNode::Container(node) = node {
-                    for child in node.children().iter().rev() {
-                        parent.insert_child(index, child.clone());
+                if let DomNode::Container(mut node) = node {
+                    for i in (0..node.children().len()).rev() {
+                        let child = node.remove_child(i);
+                        parent.insert_child(index, child);
                     }
                 }
             }
