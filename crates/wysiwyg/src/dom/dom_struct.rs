@@ -89,6 +89,25 @@ where
         }
     }
 
+    /// Removes node at given handle from the dom, and if it has children
+    /// moves them to its parent container children.
+    pub fn remove_and_keep_children(&mut self, node_handle: &DomHandle) {
+        let parent_node = self.lookup_node_mut(&node_handle.parent_handle());
+        match parent_node {
+            DomNode::Container(parent) => {
+                let index = node_handle.index_in_parent();
+                let node = parent.remove_child(index);
+                if let DomNode::Container(node) = node {
+                    for child in node.children().iter().rev() {
+                        parent.insert_child(index, child.clone());
+                    }
+                }
+            }
+            DomNode::Text(_) => panic!("Text nodes can't have children"),
+            DomNode::LineBreak(_) => panic!("Line breaks can't have children"),
+        }
+    }
+
     /// Given the start and end code units, find which nodes of this Dom are
     /// selected. The returned range lists all the Dom nodes involved.
     pub fn find_range(&self, start: usize, end: usize) -> Range {

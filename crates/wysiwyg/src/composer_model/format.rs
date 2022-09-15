@@ -176,15 +176,7 @@ where
             let formatting_node =
                 self.state.dom.lookup_node(&formatting_handle);
             if formatting_node.is_container_node() {
-                let parent_handle = formatting_handle.parent_handle();
-                let index_in_parent = formatting_handle.index_in_parent();
-                let parent_node =
-                    self.state.dom.lookup_node_mut(&parent_handle);
-                if let DomNode::Container(parent) = parent_node {
-                    parent.remove_child_and_own_hierarchy(index_in_parent);
-                } else {
-                    panic!("Formatting container parent is not a container")
-                }
+                self.state.dom.remove_and_keep_children(&formatting_handle);
             } else {
                 panic!("Mismatched type for formatting container")
             }
@@ -277,57 +269,41 @@ where
         for location in range.locations.iter() {
             let node = self.state.dom.lookup_node(&location.node_handle);
             if let DomNode::Container(node) = node {
-                match node.kind() {
-                    ContainerNodeKind::Formatting(f) => {
-                        if *f == format {
-                            let index_in_parent =
-                                location.node_handle.index_in_parent();
-                            let parent_node = self.state.dom.lookup_node_mut(
-                                &location.node_handle.parent_handle(),
+                if let ContainerNodeKind::Formatting(f) = node.kind() {
+                    if *f == format {
+                        self.state
+                            .dom
+                            .remove_and_keep_children(&location.node_handle);
+
+                        // Re-apply formatting to slices before and after the selection if needed
+                        let (before_start, before_end) = self
+                            .safe_locations_from(
+                                Location::from(start - location.start_offset),
+                                Location::from(start),
                             );
-                            if let DomNode::Container(parent_node) = parent_node
-                            {
-                                parent_node.remove_child_and_own_hierarchy(
-                                    index_in_parent,
-                                );
-                            } else {
-                                panic!("Parent node is not a container")
-                            }
+                        let (after_start, after_end) = self
+                            .safe_locations_from(
+                                Location::from(end),
+                                Location::from(
+                                    end + location.length - location.end_offset,
+                                ),
+                            );
 
-                            // Re-apply formatting to slices before and after the selection if needed
-                            let (before_start, before_end) = self
-                                .safe_locations_from(
-                                    Location::from(
-                                        start - location.start_offset,
-                                    ),
-                                    Location::from(start),
-                                );
-                            let (after_start, after_end) = self
-                                .safe_locations_from(
-                                    Location::from(end),
-                                    Location::from(
-                                        end + location.length
-                                            - location.end_offset,
-                                    ),
-                                );
-
-                            if before_end > before_start {
-                                self.format_range(
-                                    before_start,
-                                    before_end,
-                                    format.clone(),
-                                );
-                            }
-                            if after_end > after_start {
-                                self.format_range(
-                                    after_start,
-                                    after_end,
-                                    format.clone(),
-                                );
-                            }
+                        if before_end > before_start {
+                            self.format_range(
+                                before_start,
+                                before_end,
+                                format.clone(),
+                            );
+                        }
+                        if after_end > after_start {
+                            self.format_range(
+                                after_start,
+                                after_end,
+                                format.clone(),
+                            );
                         }
                     }
-                    _ => {}
                 }
             }
         }
