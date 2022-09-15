@@ -4,8 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import io.element.android.wysiwyg.OnSetLinkListener
-import io.element.android.wysiwyg.databinding.DialogSetLinkBinding
+import io.element.android.wysiwyg.poc.databinding.DialogSetLinkBinding
 import io.element.android.wysiwyg.poc.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
