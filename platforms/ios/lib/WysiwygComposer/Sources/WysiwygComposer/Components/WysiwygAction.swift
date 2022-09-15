@@ -23,6 +23,8 @@ public enum WysiwygAction {
     case strikethrough
     /// Apply underline formatting to the current selection.
     case underline
+    /// Apply inline code formatting to the current selection
+    case inlineCode
     /// Undo last model operation.
     case undo
     /// Redo latest undone operation.

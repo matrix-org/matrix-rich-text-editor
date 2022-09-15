@@ -67,6 +67,8 @@ public class WysiwygComposerViewModel: ObservableObject {
             update = self.model.strikeThrough()
         case .underline:
             update = self.model.underline()
+        case .inlineCode:
+            update = self.model.inlineCode()
         case .undo:
             update = self.model.undo()
         case .redo:
