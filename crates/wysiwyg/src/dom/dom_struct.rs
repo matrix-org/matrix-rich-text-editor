@@ -123,32 +123,17 @@ where
         &self,
         child_handle: &DomHandle,
     ) -> Option<DomHandle> {
-        fn find_list_item<S>(
-            dom: &Dom<S>,
-            node: &DomNode<S>,
-        ) -> Option<DomHandle>
-        where
-            S: UnicodeString,
-        {
-            if !node.handle().has_parent() {
-                return None;
-            }
-            let parent_handle = node.handle().parent_handle();
-            let parent_node = dom.lookup_node(&parent_handle);
-
-            match parent_node {
-                DomNode::Container(n) => {
-                    if n.is_list_item() {
-                        Some(parent_handle)
-                    } else {
-                        find_list_item(dom, parent_node)
-                    }
-                }
-                _ => find_list_item(dom, parent_node),
+        if let DomNode::Container(n) = self.lookup_node(child_handle) {
+            if n.is_list_item() {
+                return Some(child_handle.clone());
             }
         }
 
-        find_list_item(self, self.lookup_node(&child_handle))
+        if child_handle.has_parent() {
+            self.find_parent_list_item(&child_handle.parent_handle())
+        } else {
+            None
+        }
     }
 
     pub(crate) fn find_closest_list_ancestor(
@@ -592,6 +577,39 @@ mod test {
         // a width in the cm code....that would be easier.
         assert_eq!(1, cm("<br />|").state.dom.text_len());
         assert_eq!(3, cm("a|<br />b").state.dom.text_len());
+    }
+
+    #[test]
+    fn find_parent_list_item_finds_our_parent() {
+        let d = cm("|a<ul><li>b</li></ul>").state.dom;
+        let res = d.find_parent_list_item(&DomHandle::from_raw(vec![1, 0, 0]));
+        let res = res.expect("Should have found a list parent!");
+        assert_eq!(res.into_raw(), vec![1, 0]);
+    }
+
+    #[test]
+    fn find_parent_list_item_finds_ourself() {
+        let d = cm("|a<ul><li>b</li></ul>").state.dom;
+        let res = d.find_parent_list_item(&DomHandle::from_raw(vec![1, 0]));
+        let res = res.expect("Should have found a list parent!");
+        assert_eq!(res.into_raw(), vec![1, 0]);
+    }
+
+    #[test]
+    fn find_parent_list_item_finds_our_grandparent() {
+        let d = cm("|<ul><li>b<strong>c</strong></li></ul>d").state.dom;
+        // TODO: assumes model will have a leading empty text node!
+        let res =
+            d.find_parent_list_item(&DomHandle::from_raw(vec![1, 0, 1, 0]));
+        let res = res.expect("Should have found a list parent!");
+        assert_eq!(res.into_raw(), vec![1, 0]);
+    }
+
+    #[test]
+    fn find_parent_list_item_returns_none_when_not_in_a_list() {
+        let d = cm("|<ul><li>b<strong>c</strong></li></ul>d").state.dom;
+        let res = d.find_parent_list_item(&DomHandle::from_raw(vec![1]));
+        assert!(res.is_none(), "Should not have found a list parent!")
     }
 
     const NO_CHILDREN: &Vec<DomNode<Utf16String>> = &Vec::new();
