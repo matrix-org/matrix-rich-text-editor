@@ -19,7 +19,7 @@ import SwiftUI
 
 extension WysiwygAction: CaseIterable, Identifiable {
     public static var allCases: [WysiwygAction] = [
-        .bold, .italic, .strikethrough, .underline,
+        .bold, .italic, .strikethrough, .underline, .inlineCode,
         .undo, .redo, .orderedList, .unorderedList
     ]
 
@@ -55,6 +55,8 @@ extension WysiwygAction: CaseIterable, Identifiable {
             return .strikeThroughButton
         case .underline:
             return .underlineButton
+        case .inlineCode:
+            return .inlineCode
         case .undo:
             return .undoButton
         case .redo:
@@ -76,6 +78,8 @@ extension WysiwygAction: CaseIterable, Identifiable {
             return "strikethrough"
         case .underline:
             return "underline"
+        case .inlineCode:
+            return "chevron.left.forwardslash.chevron.right"
         case .undo:
             return "arrow.uturn.backward"
         case .redo:
@@ -99,6 +103,8 @@ private extension WysiwygAction {
             return .strikeThrough
         case .underline:
             return .underline
+        case .inlineCode:
+            return .inlineCode
         case .undo:
             return .undo
         case .redo:

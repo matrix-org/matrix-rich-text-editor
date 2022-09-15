@@ -23,6 +23,7 @@ public enum WysiwygSharedAccessibilityIdentifier: String {
     case italicButton = "WysiwygItalicButton"
     case strikeThroughButton = "WysiwygStrikeThroughButton"
     case underlineButton = "WysiwygUnderlineButton"
+    case inlineCodeButton = "WysiwygInlineCodeButton"
     case undoButton = "WysiwygUndoButton"
     case redoButton = "WysiwygRedoButton"
     case orderedListButton = "WysiwygOrderedListButton"
