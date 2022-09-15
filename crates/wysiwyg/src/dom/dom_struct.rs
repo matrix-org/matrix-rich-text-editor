@@ -477,6 +477,16 @@ mod test {
         assert_eq!(dom.to_string(), "<b>f<i>o</i>o</b>");
     }
 
+    #[test]
+    fn can_remove_node_and_keep_children() {
+        let mut dom = dom(&[b(&[tn("foo"), i(&[tn("bar")])])]);
+        let node_handle = &dom.children()[0].handle();
+
+        dom.remove_and_keep_children(node_handle);
+        // Node is removed and replaced by its children
+        assert_eq!(dom.to_string(), "foo<i>bar</i>");
+    }
+
     // Serialisation
 
     #[test]
