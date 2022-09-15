@@ -74,6 +74,8 @@ interface ComposerAction {
     Redo();
     OrderedList();
     UnorderedList();
+    Indent();
+    UnIndent();
 };
 
 [Enum]

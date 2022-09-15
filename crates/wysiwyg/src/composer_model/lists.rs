@@ -369,7 +369,7 @@ where
         true
     }
 
-    fn can_indent_handle(&self, handle: &DomHandle) -> bool {
+    pub(crate) fn can_indent_handle(&self, handle: &DomHandle) -> bool {
         if let DomNode::Container(parent) =
             self.state.dom.lookup_node(&handle.parent_handle())
         {
@@ -394,7 +394,7 @@ where
         true
     }
 
-    fn can_un_indent_handle(&self, handle: &DomHandle) -> bool {
+    pub(crate) fn can_un_indent_handle(&self, handle: &DomHandle) -> bool {
         // Check that there are at least 2 ancestor lists
         if let Some(closest_list_handle) =
             self.find_closest_list_ancestor(&handle)
