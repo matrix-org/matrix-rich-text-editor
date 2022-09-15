@@ -131,6 +131,24 @@ where
         find_list_item(self, self.lookup_node(&child_handle))
     }
 
+    pub(crate) fn find_closest_list_ancestor(
+        &self,
+        handle: &DomHandle,
+    ) -> Option<DomHandle> {
+        if handle.has_parent() {
+            let parent_handle = handle.parent_handle();
+            if let DomNode::Container(parent) = self.lookup_node(&parent_handle)
+            {
+                if *parent.kind() == ContainerNodeKind::List {
+                    return Some(parent_handle.clone());
+                } else if parent_handle.has_parent() {
+                    return self.find_closest_list_ancestor(&parent_handle);
+                }
+            }
+        }
+        None
+    }
+
     /// Find the node based on its handle.
     /// Panics if the handle is unset or invalid
     pub fn lookup_node(&self, node_handle: &DomHandle) -> &DomNode<S> {

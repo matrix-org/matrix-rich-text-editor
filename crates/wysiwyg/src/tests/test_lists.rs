@@ -189,7 +189,7 @@ fn indent_several_list_items_with_sub_levels_works() {
 fn un_indent_several_items_works() {
     let mut model =
         cm("<ul><li>First item<ul><li>{Second item</li><li>Third item}|</li></ul></li></ul>");
-    model.un_indent();
+    model.unindent();
     assert_eq!(
         tx(&model),
         "<ul><li>First item</li><li>{Second item</li><li>Third item}|</li></ul>"
@@ -200,7 +200,7 @@ fn un_indent_several_items_works() {
 fn un_indent_nested_lists_works() {
     let mut model =
         cm("<ul><li>First item<ul><li>{Second item<ul><li>Third item}|</li></ul></li></ul></li></ul>");
-    model.un_indent();
+    model.unindent();
     assert_eq!(
         tx(&model),
         "<ul><li>First item</li><li>{Second item<ul><li>Third item}|</li></ul></li></ul>"
@@ -211,7 +211,7 @@ fn un_indent_nested_lists_works() {
 fn un_indent_nested_lists_with_remnants_works() {
     let mut model =
         cm("<ul><li>First item<ul><li>{Second item<ul><li>Third item</li><li>Fourth item}|</li><li>Fifth item</li></ul></li></ul></li></ul>");
-    model.un_indent();
+    model.unindent();
     assert_eq!(
         tx(&model),
         "<ul><li>First item</li><li>{Second item<ul><li>Third item</li><li>Fourth item}|<ul><li>Fifth item</li></ul></li></ul></li></ul>"

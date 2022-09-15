@@ -162,7 +162,7 @@ fn test_menu_updates_indent() {
 }
 
 #[test]
-fn test_menu_updates_un_indent() {
+fn test_menu_updates_unindent() {
     let model =
         cm("<ul><li>First item<ul><li>{Second item}|</li></ul></li></ul>");
     assert_eq!(

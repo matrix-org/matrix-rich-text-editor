@@ -170,7 +170,7 @@ where
         if !self.can_indent_handle(handle) {
             disabled_actions.insert(Indent);
         }
-        if !self.can_un_indent_handle(handle) {
+        if !self.can_unindent_handle(handle) {
             disabled_actions.insert(UnIndent);
         }
         disabled_actions
@@ -184,7 +184,7 @@ where
         if !self.can_indent(locations.clone()) {
             disabled_actions.insert(Indent);
         }
-        if !self.can_un_indent(locations) {
+        if !self.can_unindent(locations) {
             disabled_actions.insert(UnIndent);
         }
         disabled_actions

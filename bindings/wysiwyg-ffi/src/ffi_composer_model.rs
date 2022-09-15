@@ -152,7 +152,7 @@ impl ComposerModel {
     }
 
     pub fn un_indent(self: &Arc<Self>) -> Arc<ComposerUpdate> {
-        Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().un_indent()))
+        Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().unindent()))
     }
 
     pub fn to_tree(self: &Arc<Self>) -> String {

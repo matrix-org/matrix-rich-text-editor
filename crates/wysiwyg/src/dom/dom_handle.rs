@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::cmp::{min, Ordering};
-
-#[derive(Clone, Debug, PartialEq, Hash, Eq)]
+#[derive(Clone, Debug, PartialEq, Hash, Eq, PartialOrd, Ord)]
 pub struct DomHandle {
     // The location of a node in the tree, or None if we don't know yet
     path: Option<Vec<usize>>,
@@ -112,35 +110,5 @@ impl DomHandle {
         let mut path = self.parent_handle().into_raw();
         path.push(index_in_parent - 1);
         Self::from_raw(path)
-    }
-}
-
-impl PartialOrd<Self> for DomHandle {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for DomHandle {
-    fn cmp(&self, other: &Self) -> Ordering {
-        let a_path = self.raw();
-        let b_path = other.raw();
-        let common_levels = min(a_path.len(), b_path.len());
-        if common_levels != 0 {
-            for i in 0..common_levels {
-                if a_path[i] < b_path[i] {
-                    return Ordering::Less;
-                } else if a_path[i] > b_path[i] {
-                    return Ordering::Greater;
-                }
-            }
-        }
-        if a_path.len() < b_path.len() {
-            Ordering::Less
-        } else if a_path.len() > b_path.len() {
-            Ordering::Greater
-        } else {
-            Ordering::Equal
-        }
     }
 }
