@@ -155,7 +155,7 @@ where
             }
             self.state.dom.replace(&range.node_handle, new_nodes);
         } else {
-            panic!("Trying to bold a non-text node")
+            panic!("Trying to format a non-text node")
         }
     }
 
@@ -279,7 +279,7 @@ where
             if let DomNode::Container(node) = node {
                 match node.kind() {
                     ContainerNodeKind::Formatting(f) => {
-                        if f.clone() == format.clone() {
+                        if *f == format {
                             let index_in_parent =
                                 location.node_handle.index_in_parent();
                             let parent_node = self.state.dom.lookup_node_mut(
@@ -290,6 +290,8 @@ where
                                 parent_node.remove_child_and_own_hierarchy(
                                     index_in_parent,
                                 );
+                            } else {
+                                panic!("Parent node is not a container")
                             }
 
                             // Re-apply formatting to slices before and after the selection if needed
@@ -340,7 +342,7 @@ where
         if let DomNode::Container(container) = node {
             match container.kind() {
                 ContainerNodeKind::Formatting(f) => {
-                    if f.clone() == format {
+                    if *f == format {
                         handle
                     } else {
                         self.find_parent_formatting_node(
@@ -620,16 +622,54 @@ mod test {
     }
 
     #[test]
-    fn unformatting_several_nodes() {
+    fn unformat_across_overlapping_nodes_removes_tag() {
         let mut model = cm("<strong><em>{abc</em>def<em>ghi}|</em></strong>");
         model.unformat(InlineFormatType::Bold);
         assert_eq!(model.state.dom.to_string(), "<em>abc</em>def<em>ghi</em>");
+    }
 
+    #[test]
+    fn unformat_partial_node_creates_new_formatting_nodes() {
         let mut model = cm("<strong><em>a{bc</em>def<em>gh}|i</em></strong>");
         model.unformat(InlineFormatType::Bold);
         assert_eq!(
             model.state.dom.to_string(),
-            "<em><strong>a</strong>bc</em>def<em>gh<strong>i</strong></em>"
+            "<em><strong>a</strong>bc</em>def<em>gh<strong>i</strong></em>",
         );
+    }
+
+    #[test]
+    fn unformat_on_edge_creates_new_formatting_node_on_single_side() {
+        let mut model = cm("<em>{abc}|def</em>");
+        model.unformat(InlineFormatType::Italic);
+        assert_eq!(model.state.dom.to_string(), "abc<em>def</em>");
+
+        let mut model = cm("<em>abcd{ef}|</em>");
+        model.unformat(InlineFormatType::Italic);
+        assert_eq!(model.state.dom.to_string(), "<em>abcd</em>ef");
+    }
+
+    #[test]
+    fn unformat_across_list_items_removes_tag() {
+        let mut model = cm("<ol><li><strong>{abc</strong></li><li><strong>~def}|</strong></li></ol>");
+        model.unformat(InlineFormatType::Bold);
+        assert_eq!(
+            model.state.dom.to_string(),
+            "<ol><li>abc</li><li>\u{200b}def</li></ol>"
+        );
+    }
+
+    #[test]
+    fn partially_formatted_selection_triggers_format() {
+        let mut model = cm("<em>a{bc</em>de}|f");
+        model.italic();
+        assert_eq!(model.state.dom.to_string(), "<em>abcde</em>f");
+    }
+
+    #[test]
+    fn completely_formatted_selection_triggers_unformat() {
+        let mut model = cm("<del>a{bcd}|ef</del>");
+        model.strike_through();
+        assert_eq!(model.state.dom.to_string(), "<del>a</del>bcd<del>ef</del>");
     }
 }
