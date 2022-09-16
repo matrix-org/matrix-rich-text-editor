@@ -456,21 +456,20 @@ fn write_selection_multi(
     let mut state =
         SelectionWritingState::new(start, end, dom.document().text_len());
 
+    let mut nodes_to_add = Vec::new();
     for location in range.locations {
-        let mut nodes_to_add = Vec::new();
-        let mut node = dom.lookup_node_mut(&location.node_handle);
+        let handle = &location.node_handle;
+        let mut node = dom.lookup_node_mut(handle);
         match &mut node {
             DomNode::Container(_) => {}
             DomNode::LineBreak(_) => {
                 let strings_to_add = state.advance(&location, 1);
                 for (s, offset) in strings_to_add {
-                    assert!(
-                        offset == 0,
-                        "Can't insert anywhere in a line break except \
-                        the beginning!"
-                    );
-                    nodes_to_add
-                        .push(DomNode::new_text(Utf16String::from_str(s)));
+                    nodes_to_add.push((
+                        handle.clone(),
+                        handle.index_in_parent() + offset,
+                        DomNode::new_text(Utf16String::from_str(s)),
+                    ));
                 }
             }
             DomNode::Text(n) => {
@@ -480,13 +479,12 @@ fn write_selection_multi(
                 }
             }
         }
-        if !nodes_to_add.is_empty() {
-            let parent =
-                dom.lookup_node_mut(&location.node_handle.parent_handle());
+    }
+    if !nodes_to_add.is_empty() {
+        for (handle, idx, node) in nodes_to_add.into_iter().rev() {
+            let parent = dom.lookup_node_mut(&handle.parent_handle());
             if let DomNode::Container(parent) = parent {
-                for node in nodes_to_add.into_iter().rev() {
-                    parent.insert_child(0, node);
-                }
+                parent.insert_child(idx, node);
             } else {
                 panic!("Parent node was not a container!");
             }
@@ -784,10 +782,12 @@ mod test {
         assert_that!("aaa|<br />bbb").roundtrips();
         assert_that!("aa{a<br />b}|bb").roundtrips();
         assert_that!("aa|{a<br />b}bb").roundtrips();
-        // TODO assert_that!("aa{<br />b}|bb").roundtrips();
+        assert_that!("aa{<br />b}|bb").roundtrips();
+        assert_that!("aa|{<br />b}bb").roundtrips();
         assert_that!("aa{a<br />b}|bb").roundtrips();
-        // TODO assert_that!("aa|{a<br />}bb").roundtrips();
-        // TODO assert_that!("aa|{<br />}bb").roundtrips();
+        assert_that!("aa|{a<br />}bb").roundtrips();
+        // TODO: easier after refactor assert_that!("aa{<br />}|bb").rou
+        // TODO: assert_that!("aa|{<br />}bb").roundtrips();
         assert_that!("<ol><li>|</li></ol>").roundtrips();
     }
 
