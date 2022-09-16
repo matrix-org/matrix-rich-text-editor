@@ -29,13 +29,13 @@ where
     // If end < start, we swap start & end to make calculations easier, then
     // reverse the returned ranges
     let is_reversed = end < start;
-    let (start, end) = if is_reversed {
+    let (s, e) = if is_reversed {
         (end, start)
     } else {
         (start, end)
     };
 
-    let result = find_pos(dom, &dom.document_handle(), start, end);
+    let result = find_pos(dom, &dom.document_handle(), s, e);
     match result {
         FindResult::Found(locations) => {
             let leaf_locations: Vec<&DomLocation> =
@@ -52,6 +52,8 @@ where
                     node_handle: location.node_handle.clone(),
                     start_offset: location.start_offset,
                     end_offset: location.end_offset,
+                    original_start: start,
+                    original_end: end,
                 })
             } else {
                 let locations: Vec<DomLocation> = if is_reversed {
@@ -458,6 +460,8 @@ mod test {
                     node_handle: DomHandle::from_raw(vec![1, 1, 0]),
                     start_offset: 1,
                     end_offset: 2,
+                    original_start: 9,
+                    original_end: 10
                 }
             );
         } else {
