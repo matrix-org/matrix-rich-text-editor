@@ -161,10 +161,13 @@ where
         where
             S: UnicodeString,
         {
-            element.children().get(idx).expect(
-                "Handle is invalid: it refers to a child index which is too \
-                large for the number of children in this node.",
-            )
+            element.children().get(idx).unwrap_or_else(|| {
+                panic!(
+                    "Handle is invalid: it refers to a child index ({}) which \
+                is too large for the number of children in this node ({:?}).",
+                    idx, element
+                )
+            })
         }
 
         let mut node = &self.document;
