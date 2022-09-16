@@ -119,7 +119,7 @@ where
                 let parent_list_item_handle = self
                     .state
                     .dom
-                    .find_parent_list_item(&range.node_handle.clone());
+                    .find_parent_list_item_or_self(&range.node_handle.clone());
                 if let Some(list_item_handle) = parent_list_item_handle {
                     let list_node_handle = list_item_handle.parent_handle();
                     let list_node =

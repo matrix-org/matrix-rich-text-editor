@@ -31,7 +31,7 @@ where
                     let parent_list_item_handle = self
                         .state
                         .dom
-                        .find_parent_list_item(&range.node_handle);
+                        .find_parent_list_item_or_self(&range.node_handle);
                     if let Some(parent_handle) = parent_list_item_handle {
                         self.do_backspace_in_list(&parent_handle, e, range)
                     } else {
