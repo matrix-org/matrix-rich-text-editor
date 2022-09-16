@@ -56,7 +56,7 @@ extension WysiwygAction: CaseIterable, Identifiable {
         case .underline:
             return .underlineButton
         case .inlineCode:
-            return .inlineCode
+            return .inlineCodeButton
         case .undo:
             return .undoButton
         case .redo:
