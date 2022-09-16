@@ -592,14 +592,6 @@ mod test {
 
     #[test]
     fn text_len_counts_brs_as_1() {
-        // fails because we don't replace the "|" character in replace_text.
-        // SameNode is not helping us here, because we're not really inside
-        // the br tag - we want to be in the immediately following text node.
-        // But we must allow ourselves to be here, because there might not be
-        // a text node after us - there could be another br or something else.
-
-        // Maybe the problem is that we mis-counted and didn't give the br tag
-        // a width in the cm code....that would be easier.
         assert_eq!(1, cm("<br />|").state.dom.text_len());
         assert_eq!(3, cm("a|<br />b").state.dom.text_len());
     }
