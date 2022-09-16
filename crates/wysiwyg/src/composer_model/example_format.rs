@@ -148,7 +148,7 @@ impl ComposerModel<Utf16String> {
         // Find out which nodes are involved in the selection
         let range = dom.find_range(state.start.into(), state.end.into());
 
-        // Modify the text nodes to a {, } and |
+        // Modify the text nodes to add {, } and |
         match range {
             Range::SameNode(range) => {
                 let mut handle = range.node_handle;
