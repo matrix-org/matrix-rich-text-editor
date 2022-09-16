@@ -18,7 +18,12 @@ use crate::dom::{Dom, DomHandle, FindResult, Range};
 use crate::UnicodeString;
 use std::cmp::{max, min};
 
-pub fn find_range<S>(dom: &Dom<S>, start: usize, end: usize) -> Range
+pub fn find_range<S>(
+    dom: &Dom<S>,
+    start: usize,
+    end: usize,
+    same_node_allowed: bool,
+) -> Range
 where
     S: UnicodeString,
 {
@@ -40,7 +45,7 @@ where
         FindResult::Found(locations) => {
             let leaf_locations: Vec<&DomLocation> =
                 locations.iter().filter(|l| l.is_leaf).collect();
-            if leaf_locations.len() == 1 {
+            if leaf_locations.len() == 1 && same_node_allowed {
                 // TODO: check offsets
                 let location = leaf_locations.first().unwrap().clone();
                 let location = if is_reversed {
@@ -485,6 +490,53 @@ mod test {
             assert_eq!(utf16("new feature"), html_of_ranges[3]);
         } else {
             panic!("Should have been a MultipleNodesRange {:?}", range);
+        }
+    }
+
+    #[test]
+    fn finding_a_same_node_range_but_asking_for_multi_returns_multi() {
+        let d = dom(&[tn("foo "), b(&[tn("bar")]), tn(" baz")]);
+        let range = d.find_range_multi(5, 6);
+
+        if let Range::MultipleNodes(range) = range {
+            assert_eq!(
+                range.locations,
+                vec![
+                    DomLocation::new(
+                        DomHandle::from_raw(vec![1, 0]),
+                        4,
+                        1,
+                        2,
+                        3,
+                        true
+                    ),
+                    DomLocation::new(
+                        DomHandle::from_raw(vec![1]),
+                        4,
+                        1,
+                        2,
+                        3,
+                        false
+                    )
+                ]
+            );
+        } else {
+            panic!("Should have been a MultipleNodesRange: {:?}", range)
+        }
+    }
+
+    #[test]
+    fn converting_a_same_node_range_to_multi_works() {
+        let d = dom(&[tn("foo "), b(&[tn("bar")]), tn(" baz")]);
+        let same_range = d.find_range(5, 7);
+        if let Range::SameNode(same_range) = same_range {
+            let converted = d.convert_same_node_range_to_multi(same_range);
+
+            let multi_range = d.find_range_multi(5, 7);
+
+            assert_eq!(Range::MultipleNodes(converted), multi_range);
+        } else {
+            panic!("Expected the supplied range to be SameNodeRange");
         }
     }
 }
