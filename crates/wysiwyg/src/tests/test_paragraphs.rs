@@ -109,7 +109,6 @@ fn type_after_pressing_enter() {
     assert_eq!(tx(&model), "a<br />b|");
 }
 
-#[ignore] // TODO: can_backspace_to_beginning_after_making_a_line
 #[test]
 fn can_backspace_to_beginning_after_making_a_line() {
     let mut model = cm("a|");
