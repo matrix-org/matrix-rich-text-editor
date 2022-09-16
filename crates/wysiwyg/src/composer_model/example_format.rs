@@ -503,6 +503,28 @@ mod test {
     }
 
     #[test]
+    fn cm_creates_correct_component_model_newlines() {
+        let t0 = cm("|<br />");
+        assert_eq!(t0.state.start, 0);
+        assert_eq!(t0.state.end, 0);
+        assert_eq!(t0.get_html(), utf16("<br />"));
+        // TODO: There should only be one node for the br tag
+        //assert_eq!(t0.state.dom.children().len(), 1);
+
+        let t1 = cm("<br />|<br />");
+        assert_eq!(t1.state.start, 1);
+        assert_eq!(t1.state.end, 1);
+        assert_eq!(t1.get_html(), utf16("<br /><br />"));
+        // TODO: assert_eq!(t1.state.dom.children().len(), 2);
+
+        let t2 = cm("<br /><br />|");
+        assert_eq!(t2.state.start, 2);
+        assert_eq!(t2.state.end, 2);
+        assert_eq!(t2.get_html(), utf16("<br /><br />"));
+        // TODO: assert_eq!(t1.state.dom.children().len(), 2);
+    }
+
+    #[test]
     fn cm_creates_correct_component_model_multi_code_unit_characters() {
         let t1 = cm("foo|\u{1F4A9}bar");
         assert_eq!(t1.state.start, 3);
