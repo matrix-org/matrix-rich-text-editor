@@ -61,26 +61,35 @@ fn removing_list_item() {
 }
 
 #[test]
-fn backspacing_in_list() {
+fn backspacing_in_list_leaving_some_text_keeps_items_unchanged() {
     let mut model = cm("<ol><li>abcd</li><li>~ef{gh}|</li></ol>");
     model.backspace();
     assert_eq!(tx(&model), "<ol><li>abcd</li><li>~ef|</li></ol>");
+}
 
+#[test]
+fn backspacing_whole_of_second_item_list_into_part_of_first_leaves_one_item() {
     let mut model = cm("<ol><li>ab{cd</li><li>~efgh}|</li></ol>");
     model.backspace();
     assert_eq!(tx(&model), "<ol><li>ab|</li></ol>");
+}
 
+#[test]
+fn backspacing_empty_second_list_item_into_whole_of_first_leaves_empty_item() {
     let mut model = cm("<ol><li>{abcd</li><li>~}|</li></ol>");
     model.backspace();
     assert_eq!(tx(&model), "<ol><li>|</li></ol>");
 }
 
 #[test]
-fn entering_with_entire_selection() {
+fn entering_with_entire_selection_in_one_node_deletes_list() {
     let mut model = cm("<ol><li>{abcd}|</li></ol>");
     model.enter();
     assert_eq!(tx(&model), "|");
+}
 
+#[test]
+fn entering_with_entire_selection_across_multiple_nodes_deletes_list() {
     let mut model = cm("<ol><li>{abcd</li><li>~}|</li></ol>");
     model.enter();
     assert_eq!(tx(&model), "|");
