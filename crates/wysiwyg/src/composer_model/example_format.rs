@@ -368,12 +368,18 @@ impl SelectionWritingState {
         self.current_pos += code_units;
 
         // If we just passed first, write out {
-        let do_first = !self.done_first && self.first < self.current_pos;
+        let mut do_first = !self.done_first && self.first < self.current_pos;
 
         // If we just passed last or we're at the end, write out }
         let do_last = !self.done_last
             && (self.last <= self.current_pos
                 || self.current_pos == self.length);
+
+        // In some weird circumstances with empty text nodes, we might
+        // do_last when we haven't done_first, so make sure we do_first too.
+        if do_last && !self.done_first {
+            do_first = true
+        }
 
         // Remember that we have passed them, so we don't repeat
         self.done_first = self.done_first || do_first;
@@ -382,27 +388,38 @@ impl SelectionWritingState {
         let mut ret = Vec::new();
 
         // Add the markers we want to write
-        if do_first {
+        if do_first && do_last {
             ret.push((
-                self.first_marker(),
+                "|",
                 if self.reversed {
                     location.end_offset
                 } else {
                     location.start_offset
                 },
             ));
-        };
+        } else {
+            if do_first {
+                ret.push((
+                    self.first_marker(),
+                    if self.reversed {
+                        location.end_offset
+                    } else {
+                        location.start_offset
+                    },
+                ));
+            }
 
-        if do_last {
-            ret.push((
-                self.last_marker(),
-                if self.reversed {
-                    location.start_offset
-                } else {
-                    location.end_offset
-                },
-            ));
-        };
+            if do_last {
+                ret.push((
+                    self.last_marker(),
+                    if self.reversed {
+                        location.start_offset
+                    } else {
+                        location.end_offset
+                    },
+                ));
+            }
+        }
 
         // Return a list of markers to write and their locations
         ret
@@ -440,15 +457,38 @@ fn write_selection_multi(
         SelectionWritingState::new(start, end, dom.document().text_len());
 
     for location in range.locations {
+        let mut nodes_to_add = Vec::new();
         let mut node = dom.lookup_node_mut(&location.node_handle);
         match &mut node {
             DomNode::Container(_) => {}
-            DomNode::LineBreak(_) => {}
+            DomNode::LineBreak(_) => {
+                let strings_to_add = state.advance(&location, 1);
+                for (s, offset) in strings_to_add {
+                    assert!(
+                        offset == 0,
+                        "Can't insert anywhere in a line break except \
+                        the beginning!"
+                    );
+                    nodes_to_add
+                        .push(DomNode::new_text(Utf16String::from_str(s)));
+                }
+            }
             DomNode::Text(n) => {
                 let strings_to_add = state.advance(&location, n.data().len());
                 for (s, offset) in strings_to_add {
                     update_text_node(n, offset, s);
                 }
+            }
+        }
+        if !nodes_to_add.is_empty() {
+            let parent =
+                dom.lookup_node_mut(&location.node_handle.parent_handle());
+            if let DomNode::Container(parent) = parent {
+                for node in nodes_to_add.into_iter().rev() {
+                    parent.insert_child(0, node);
+                }
+            } else {
+                panic!("Parent node was not a container!");
             }
         }
     }
@@ -739,7 +779,7 @@ mod test {
         assert_that!("a<br />b|<br />c").roundtrips();
         assert_that!("a<br />|b<br />c").roundtrips();
         assert_that!("<b>a<br />|b<br />c</b>").roundtrips();
-        // TODO assert_that!("|<br />").roundtrips();
+        assert_that!("|<br />").roundtrips();
         assert_that!("aaa<br />|bbb").roundtrips();
         assert_that!("aaa|<br />bbb").roundtrips();
         assert_that!("aa{a<br />b}|bb").roundtrips();
@@ -747,7 +787,8 @@ mod test {
         // TODO assert_that!("aa{<br />b}|bb").roundtrips();
         assert_that!("aa{a<br />b}|bb").roundtrips();
         // TODO assert_that!("aa|{a<br />}bb").roundtrips();
-        // TODO assert_that!("aa|{br />}bb").roundtrips();
+        // TODO assert_that!("aa|{<br />}bb").roundtrips();
+        assert_that!("<ol><li>|</li></ol>").roundtrips();
     }
 
     trait Roundtrips<T> {
