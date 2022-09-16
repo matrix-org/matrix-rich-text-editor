@@ -26,7 +26,8 @@ where
         return Range::NoNode;
     }
 
-    // If end < start, we swap start & end to make calculations easier, then reverse the returned ranges
+    // If end < start, we swap start & end to make calculations easier, then
+    // reverse the returned ranges
     let is_reversed = end < start;
     let (start, end) = if is_reversed {
         (end, start)
@@ -68,16 +69,7 @@ where
     }
 }
 
-/// Find a particular character position in the DOM
-///
-/// location controls whether we are looking for the start or the end
-/// of a range. When we are on the border of a tag, if we are looking for
-/// the start, we return the character at the beginning of the next tag,
-/// whereas if we are looking for the end of a range, we return the
-/// position after the last character of the previous tag.
-///
-/// When searching for an individual character (rather than a range), you
-/// should ask for RangeLocation::End.
+/// Find a particular character range in the DOM
 pub fn find_pos<S>(
     dom: &Dom<S>,
     node_handle: &DomHandle,
