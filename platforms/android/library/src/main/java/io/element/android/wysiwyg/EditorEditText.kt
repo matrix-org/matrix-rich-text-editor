@@ -141,7 +141,7 @@ class EditorEditText : TextInputEditText {
         if (result != null) {
             editableText.clear()
             editableText.replace(0, editableText.length, result.text)
-            setSelectionFromComposerUpdate(result.selection.last)
+            setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
         }
         return result != null
     }

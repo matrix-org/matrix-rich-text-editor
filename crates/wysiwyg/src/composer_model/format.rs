@@ -140,11 +140,17 @@ where
             let text = t.data();
             // TODO: can we be globally smart about not leaving empty text nodes ?
             let before = slice_to(text, ..range.start_offset);
-            let during = slice(text, range.start_offset..range.end_offset);
+            let mut during = slice(text, range.start_offset..range.end_offset);
             let after = slice_from(text, range.end_offset..);
             let mut new_nodes = Vec::new();
             if before.len() > 0 {
                 new_nodes.push(DomNode::new_text(before));
+            }
+            if during.len() == 0 {
+                // TODO: Find a more generic way to do this.
+                // TextNodes should probably never be created empty
+                during = UnicodeString::from_str("\u{200B}");
+                self.state.end += 1;
             }
             new_nodes.push(DomNode::new_formatting(
                 format,
@@ -176,7 +182,12 @@ where
             let formatting_node =
                 self.state.dom.lookup_node(&formatting_handle);
             if formatting_node.is_container_node() {
-                self.state.dom.remove_and_keep_children(&formatting_handle);
+                if formatting_node.has_only_placeholder_text_child() {
+                    self.state.end -= 1;
+                    self.state.dom.replace(&formatting_handle, vec![]);
+                } else {
+                    self.state.dom.remove_and_keep_children(&formatting_handle);
+                }
             } else {
                 panic!("Mismatched type for formatting container")
             }
@@ -268,12 +279,19 @@ where
     ) {
         for location in range.locations.iter() {
             let node = self.state.dom.lookup_node(&location.node_handle);
-            if let DomNode::Container(node) = node {
-                if let ContainerNodeKind::Formatting(f) = node.kind() {
+            if let DomNode::Container(n) = node {
+                if let ContainerNodeKind::Formatting(f) = n.kind() {
                     if *f == format {
-                        self.state
-                            .dom
-                            .remove_and_keep_children(&location.node_handle);
+                        if node.has_only_placeholder_text_child() {
+                            self.state.end = self.state.start;
+                            self.state
+                                .dom
+                                .replace(&location.node_handle, vec![]);
+                        } else {
+                            self.state.dom.remove_and_keep_children(
+                                &location.node_handle,
+                            );
+                        }
 
                         // Re-apply formatting to slices before and after the selection if needed
                         let (before_start, before_end) = self
@@ -469,7 +487,7 @@ where
 
 #[cfg(test)]
 mod test {
-    use crate::tests::testutils_composer_model::cm;
+    use crate::tests::testutils_composer_model::{cm, tx};
 
     use super::*;
 
@@ -647,5 +665,14 @@ mod test {
         let mut model = cm("<del>a{bcd}|ef</del>");
         model.strike_through();
         assert_eq!(model.state.dom.to_string(), "<del>a</del>bcd<del>ef</del>");
+    }
+
+    #[test]
+    fn format_and_unformat_empty_selection() {
+        let mut model = cm("AAA |");
+        model.bold();
+        assert_eq!(tx(&model), "AAA <strong>{~}|</strong>");
+        model.bold();
+        assert_eq!(tx(&model), "AAA |");
     }
 }

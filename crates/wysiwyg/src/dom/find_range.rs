@@ -149,7 +149,10 @@ where
     let container_end = *offset;
     let container_node_len = container_end - container_start;
     // We never want to return the root node
-    if !node.handle().is_root() {
+    if container_end >= start
+        && container_start <= end
+        && !node.handle().is_root()
+    {
         let start_offset = max(start, container_start) - container_start;
         let end_offset = min(end, container_end) - container_start;
         results.push(DomLocation {
