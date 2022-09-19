@@ -6,6 +6,14 @@ import init, { ComposerModel, new_composer_model } from '../../generated/wysiwyg
 import { isInputEvent } from "./assert.js";
 import { handleInput, handleSelectionChange } from "./listeners.js";
 
+function useEditorFocus(editorRef: RefObject<HTMLElement | null>, composerModel: ComposerModel | null) {
+    useEffect(() => {
+        if (editorRef.current && composerModel) {
+            editorRef.current.focus();
+        }
+    }, [editorRef, composerModel]);
+}
+
 function useActions(editorRef: RefObject<HTMLElement | null>) {
     const actions = useMemo(() => {
         const sendInputEvent = (inputType: InputEvent['inputType']) =>
@@ -39,7 +47,6 @@ function useListeners(
         document.addEventListener('selectionchange', onSelectionChange);
 
         return () => {
-            console.log('clean');
             editorNode.removeEventListener('input', onInput);
             document.removeEventListener('selectionchange', onSelectionChange);
         };
@@ -62,6 +69,7 @@ export function useWysiwyg() {
     const composerModel = useComposerModel();
     useListeners(ref, modelRef, composerModel);
     const actions = useActions(ref);
+    useEditorFocus(ref, composerModel);
 
     return { ref, modelRef, isWysiwygReady: Boolean(composerModel), wysiwyg: actions };
 }

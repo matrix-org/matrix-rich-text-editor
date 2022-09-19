@@ -44,10 +44,6 @@ export function handleSelectionChange(editor: HTMLElement, composeModel: Compose
 
     const [actStart, actEnd] = getSelectionAccordingToActions();
 
-    console.log(start, end);
-    console.log(prevStart, prevEnd);
-    console.log(actStart, actEnd);
-
     // Ignore selection changes that do nothing
     if (
         start === prevStart &&
