@@ -1,0 +1,48 @@
+{
+    "name": "matrix-wysiwyg",
+    "version": "0.0.1",
+    "description": "Wysiwyg for matrix.org using React",
+    "author": "matrix.org",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/matrix-org/matrix-wysiwyg"
+    },
+    "license": "Apache-2.0",
+    "files": [
+      "src",
+      "README.md",
+      "package.json"
+    ],
+    "scripts": {
+      "prepublishOnly": "yarn build",
+       "build": "yarn clean && git rev-parse HEAD > git-revision.txt && yarn build:compile && yarn build:types",
+      "build:compile": "babel -d lib --verbose --extensions \".ts,.js,.tsx\" src",
+      "build:types": "tsc --emitDeclarationOnly --jsx react",
+      "start": "echo THIS IS FOR LEGACY PURPOSES ONLY. && yarn start:all",
+      "start:all": "echo THIS IS FOR LEGACY PURPOSES ONLY. && yarn start:build",
+      "start:build": "babel src -w -s -d lib --verbose --extensions \".ts,.js\"",
+      "lint": "yarn lint:types && yarn lint:js && yarn lint:style",
+      "lint:js": "eslint --max-warnings 0 src test cypress",
+      "lint:js-fix": "eslint --fix src test cypress",
+      "lint:types": "tsc --noEmit --jsx react && tsc --noEmit --jsx react -p cypress",
+    },
+    "dependencies": {
+      "react": "17.0.2"
+
+    },
+    "devDependencies": { 
+      "eslint": "8.9.0",
+      "eslint-config-google": "^0.14.0",
+      "eslint-plugin-deprecate": "^0.7.0",
+      "eslint-plugin-import": "^2.25.4",
+      "eslint-plugin-jsx-a11y": "^6.5.1",
+      "eslint-plugin-matrix-org": "^0.6.1",
+      "eslint-plugin-react": "^7.28.0",
+      "eslint-plugin-react-hooks": "^4.3.0",
+      "typescript": "^4.7.4"
+    },
+    "resolutions": {
+      "@types/react": "17.0.14"
+    }
+  }
+  
