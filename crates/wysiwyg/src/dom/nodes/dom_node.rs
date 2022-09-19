@@ -123,6 +123,25 @@ where
             _ => false,
         }
     }
+
+    pub(crate) fn is_placeholder_text_node(&self) -> bool {
+        match self {
+            DomNode::Text(n) => {
+                n.data().len() == 1 && n.data().to_utf8() == "\u{200b}"
+            }
+            _ => false,
+        }
+    }
+
+    pub(crate) fn has_only_placeholder_text_child(&self) -> bool {
+        match self {
+            DomNode::Container(n) => {
+                n.children().len() == 1
+                    && n.children().first().unwrap().is_placeholder_text_node()
+            }
+            _ => false,
+        }
+    }
 }
 
 impl<S> ToHtml<S> for DomNode<S>
