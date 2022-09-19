@@ -1,7 +1,7 @@
 import { useWysiwyg } from "./lib/useWysiwyg";
 
 function App() {
-    const { ref, modelRef, testRef, isWysiwygReady, wysiwyg, test: { resetTestCase } } = useWysiwyg();
+    const { ref, isWysiwygReady, wysiwyg, debug } = useWysiwyg();
 
     return (
         <div className="wrapper">
@@ -15,9 +15,9 @@ function App() {
                 </div>
             </div>
             <h2>Model:</h2>
-            <div className="dom" ref={modelRef} />
-            <h2>Test case: <button type="button" onClick={() => resetTestCase()}>Start from here</button></h2>
-            <div className="testCase" ref={testRef}>
+            <div className="dom" ref={debug.modelRef} />
+            <h2>Test case: <button type="button" onClick={() => debug.resetTestCase()}>Start from here</button></h2>
+            <div className="testCase" ref={debug.testRef}>
                 let mut model = cm("");<br />
                 assert_eq!(tx(&amp;model), "");
             </div>

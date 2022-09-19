@@ -44,12 +44,17 @@ export function useWysiwyg() {
     const modelRef = useRef<HTMLDivElement>(null);
 
     const composerModel = useComposerModel();
-    const { testRef, utilities } = useTestCases(ref, composerModel);
-    useListeners(ref, modelRef, composerModel, utilities);
+    const { testRef, utilities: testUtilities } = useTestCases(ref, composerModel);
+    useListeners(ref, modelRef, composerModel, testUtilities);
     const formattingActions = useFormattingActions(ref);
     useEditorFocus(ref);
 
     console.log('rerender');
 
-    return { ref, modelRef, testRef, isWysiwygReady: Boolean(composerModel), wysiwyg: formattingActions, test: { resetTestCase: utilities.onResetTestCase } };
+    return {
+        ref,
+        isWysiwygReady: Boolean(composerModel),
+        wysiwyg: formattingActions,
+        debug: { modelRef, testRef, resetTestCase: testUtilities.onResetTestCase },
+    };
 }
