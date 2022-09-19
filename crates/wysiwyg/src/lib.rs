@@ -40,4 +40,5 @@ pub use crate::list_type::ListType;
 pub use crate::location::Location;
 pub use crate::menu_state::MenuState;
 pub use crate::text_update::ReplaceAll;
+pub use crate::text_update::Selection;
 pub use crate::text_update::TextUpdate;

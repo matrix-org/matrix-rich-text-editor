@@ -82,6 +82,7 @@ class InputProcessor(
                     selection = update.startUtf16Codeunit.toInt()..update.endUtf16Codeunit.toInt(),
                 )
             }
+            is TextUpdate.Select -> null
         }
     }
 
