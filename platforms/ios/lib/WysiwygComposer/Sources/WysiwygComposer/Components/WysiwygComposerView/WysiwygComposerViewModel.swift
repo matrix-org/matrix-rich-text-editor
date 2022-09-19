@@ -176,7 +176,19 @@ private extension WysiwygComposerViewModel {
             } catch {
                 Logger.composer.error("Unable to update composer display: \(error.localizedDescription)")
             }
-        default:
+        case .select(startUtf16Codeunit: let start,
+                     endUtf16Codeunit: let end):
+            do {
+                let htmlSelection = NSRange(location: Int(start), length: Int(end-start))
+                // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
+                let textSelection = try self.content.attributed.attributedRange(from: htmlSelection,
+                                                                                shouldIgnoreTrailingNewline: false)
+                self.content.attributedSelection = textSelection
+                Logger.composer.debug("Update selection: rustSelection: \(htmlSelection) selection: \(textSelection)")
+            } catch {
+                Logger.composer.error("Unable to update composer display: \(error.localizedDescription)")
+            }
+        case .keep:
             break
         }
 

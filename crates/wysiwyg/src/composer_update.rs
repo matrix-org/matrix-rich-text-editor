@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::dom::UnicodeString;
-use crate::{Location, MenuState, ReplaceAll, TextUpdate};
+use crate::{Location, MenuState, ReplaceAll, Selection, TextUpdate};
 
 #[derive(Debug, Clone)]
 pub struct ComposerUpdate<S>
@@ -35,9 +35,13 @@ where
         }
     }
 
-    pub fn update_menu(menu_state: MenuState) -> Self {
+    pub fn update_selection(
+        start: Location,
+        end: Location,
+        menu_state: MenuState,
+    ) -> Self {
         Self {
-            text_update: TextUpdate::<S>::Keep,
+            text_update: TextUpdate::<S>::Select(Selection { start, end }),
             menu_state: menu_state,
         }
     }

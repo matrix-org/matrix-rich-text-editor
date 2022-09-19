@@ -29,7 +29,7 @@ where
         self.state.end = end;
 
         let menu_state = self.compute_menu_state();
-        ComposerUpdate::update_menu(menu_state)
+        ComposerUpdate::update_selection(start, end, menu_state)
     }
 
     /// Return the start and end of the selection, ensuring the first number
