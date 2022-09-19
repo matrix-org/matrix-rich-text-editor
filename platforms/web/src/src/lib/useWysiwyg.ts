@@ -1,20 +1,22 @@
 import { RefObject, useEffect, useMemo, useRef, useState } from "react";
 
-// rust bindings generated
+// rust generated bindings
 // eslint-disable-next-line camelcase
 import init, { ComposerModel, new_composer_model } from '../../generated/wysiwyg.js';
-import { isInputEvent } from "./assert.js";
-import { handleInput, handleSelectionChange } from "./listeners.js";
+import { useListeners } from "./useListeners.js";
+import { useTestCases } from "./useTestCases.js";
 
-function useEditorFocus(editorRef: RefObject<HTMLElement | null>, composerModel: ComposerModel | null) {
+function useEditorFocus(editorRef: RefObject<HTMLElement | null>) {
     useEffect(() => {
-        if (editorRef.current && composerModel) {
+        console.log('call', editorRef);
+        if (editorRef.current) {
+            console.log('focus');
             editorRef.current.focus();
         }
-    }, [editorRef, composerModel]);
+    }, [editorRef]);
 }
 
-function useActions(editorRef: RefObject<HTMLElement | null>) {
+function useFormattingActions(editorRef: RefObject<HTMLElement | null>) {
     const actions = useMemo(() => {
         const sendInputEvent = (inputType: InputEvent['inputType']) =>
             editorRef.current?.dispatchEvent(new InputEvent('input', { inputType }));
@@ -25,32 +27,6 @@ function useActions(editorRef: RefObject<HTMLElement | null>) {
     }, [editorRef]);
 
     return actions;
-}
-
-function useListeners(
-    editorRef: RefObject<HTMLElement | null>,
-    modelRef: RefObject<HTMLElement | null>,
-    composerModel: ComposerModel | null,
-) {
-    useEffect(() => {
-        const editorNode = editorRef.current;
-        if (!composerModel || !editorNode) {
-            return;
-        }
-
-        // React uses SyntheticEvent (https://reactjs.org/docs/events.html) and doesn't catch manually fired event (myNode.dispatchEvent)
-        const onInput = (e: Event) =>
-            isInputEvent(e) && handleInput(e, editorNode, composerModel, modelRef.current);
-        editorNode.addEventListener('input', onInput);
-
-        const onSelectionChange = () => handleSelectionChange(editorNode, composerModel);
-        document.addEventListener('selectionchange', onSelectionChange);
-
-        return () => {
-            editorNode.removeEventListener('input', onInput);
-            document.removeEventListener('selectionchange', onSelectionChange);
-        };
-    }, [editorRef, composerModel, modelRef]);
 }
 
 function useComposerModel() {
@@ -66,10 +42,14 @@ function useComposerModel() {
 export function useWysiwyg() {
     const ref = useRef<HTMLDivElement>(null);
     const modelRef = useRef<HTMLDivElement>(null);
-    const composerModel = useComposerModel();
-    useListeners(ref, modelRef, composerModel);
-    const actions = useActions(ref);
-    useEditorFocus(ref, composerModel);
 
-    return { ref, modelRef, isWysiwygReady: Boolean(composerModel), wysiwyg: actions };
+    const composerModel = useComposerModel();
+    const { testRef, utilities } = useTestCases(ref, composerModel);
+    useListeners(ref, modelRef, composerModel, utilities);
+    const formattingActions = useFormattingActions(ref);
+    useEditorFocus(ref);
+
+    console.log('rerender');
+
+    return { ref, modelRef, testRef, isWysiwygReady: Boolean(composerModel), wysiwyg: formattingActions, test: { resetTestCase: utilities.onResetTestCase } };
 }

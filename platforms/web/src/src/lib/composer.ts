@@ -1,7 +1,7 @@
 import { ComposerModel } from "../../generated/wysiwyg";
-import { action } from "./testCase";
+import { TestUtilities } from './useTestCases';
 
-export function processInput(e: InputEvent, composerModel: ComposerModel) {
+export function processInput(e: InputEvent, composerModel: ComposerModel, action: TestUtilities['traceAction']) {
     switch (e.inputType) {
         case "deleteContentBackward":
             return action(composerModel.backspace(), "backspace");
