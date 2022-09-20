@@ -62,16 +62,18 @@ public class WysiwygComposerViewModel: ObservableObject {
             // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
             let htmlSelection = try text.htmlRange(from: range,
                                                    shouldIgnoreTrailingNewline: false)
-            Logger.composer.debug("""
-                                  New selection: Attributed {\(range.location),\(range.length)} \
-                                  HTML {\(htmlSelection.location),\(htmlSelection.length)}
-                                  """)
+            Logger.viewModel.logDebug(["Sel(att): \(range)",
+                                       "Sel: \(htmlSelection)",
+                                       "Text: \"\(text.string)\""],
+                                       functionName: #function)
             let update = self.model.select(startUtf16Codeunit: UInt32(htmlSelection.location),
                               endUtf16Codeunit: UInt32(htmlSelection.upperBound))
 
             self.applyUpdate(update)
         } catch {
-            Logger.composer.error("Unable to select range: \(error.localizedDescription)")
+            Logger.viewModel.logError(["Sel(att): \(range)",
+                                       "Error: \(error.localizedDescription)"],
+                                      functionName: #function)
         }
     }
 
@@ -174,9 +176,16 @@ private extension WysiwygComposerViewModel {
                     html: html,
                     attributed: attributed,
                     attributedSelection: textSelection)
-                Logger.composer.debug("HTML from Rust: \(html), rustSelection: \(htmlSelection) selection: \(textSelection)")
+                Logger.viewModel.logDebug(["Sel(att): \(textSelection)",
+                                           "Sel: \(htmlSelection)",
+                                           "HTML: \"\(html)\"",
+                                           "replaceAll"],
+                                          functionName: #function)
             } catch {
-                Logger.composer.error("Unable to update composer display: \(error.localizedDescription)")
+                Logger.viewModel.logError(["Sel: {\(start), \(end-start)}",
+                                           "Error: \(error.localizedDescription)",
+                                           "replaceAll"],
+                                          functionName: #function)
             }
         case .select(startUtf16Codeunit: let start,
                      endUtf16Codeunit: let end):
@@ -186,9 +195,13 @@ private extension WysiwygComposerViewModel {
                 let textSelection = try self.content.attributed.attributedRange(from: htmlSelection,
                                                                                 shouldIgnoreTrailingNewline: false)
                 self.content.attributedSelection = textSelection
-                Logger.composer.debug("Update selection: rustSelection: \(htmlSelection) selection: \(textSelection)")
+                Logger.viewModel.logDebug(["Sel(att): \(textSelection)",
+                                           "Sel: \(htmlSelection)"],
+                                          functionName: #function)
             } catch {
-                Logger.composer.error("Unable to update composer display: \(error.localizedDescription)")
+                Logger.viewModel.logError(["Sel: {\(start), \(end-start)}",
+                                           "Error: \(error.localizedDescription)"],
+                                          functionName: #function)
             }
         case .keep:
             break
@@ -217,4 +230,9 @@ private extension WysiwygComposerViewModel {
             .height
         self.idealHeight = idealHeight
     }
+}
+
+// MARK: - Logger
+private extension Logger {
+    static let viewModel = Logger(subsystem: subsystem, category: "ViewModel")
 }

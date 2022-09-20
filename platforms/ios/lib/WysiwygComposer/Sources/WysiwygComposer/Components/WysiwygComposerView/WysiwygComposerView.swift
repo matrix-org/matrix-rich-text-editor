@@ -39,7 +39,9 @@ struct WysiwygComposerView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: UITextView, context: Context) {
-        Logger.composer.debug("New text: \(content.plainText)")
+        Logger.textView.logDebug([content.logAttributedSelection,
+                                  content.logText],
+                                 functionName: #function)
         uiView.attributedText = content.attributed
         uiView.selectedRange = content.attributedSelection
         context.coordinator.didUpdateText(uiView)
@@ -64,17 +66,30 @@ struct WysiwygComposerView: UIViewRepresentable {
         }
 
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+            Logger.textView.logDebug(["Sel(att): \(range)",
+                                      textView.logText,
+                                      "Replacement: \"\(text)\""],
+                                     functionName: #function)
             self.replaceText(textView.attributedText, range, text)
             return false
         }
 
-        // FIXME: Never called yet, will be called when we "trust" some user inputs.
         func textViewDidChange(_ textView: UITextView) {
+            Logger.textView.logDebug([textView.logSelection,
+                                      textView.logText],
+                                     functionName: #function)
             self.didUpdateText(textView)
         }
 
         func textViewDidChangeSelection(_ textView: UITextView) {
+            Logger.textView.logDebug([textView.logSelection],
+                                     functionName: #function)
             self.select(textView.attributedText, textView.selectedRange)
         }
     }
+}
+
+// MARK: - Logger
+private extension Logger {
+    static let textView = Logger(subsystem: subsystem, category: "TextView")
 }
