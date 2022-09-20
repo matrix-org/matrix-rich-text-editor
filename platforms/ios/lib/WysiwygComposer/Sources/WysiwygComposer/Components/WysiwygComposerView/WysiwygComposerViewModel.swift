@@ -86,7 +86,7 @@ public class WysiwygComposerViewModel: ObservableObject {
             update = self.model.bold()
         case .italic:
             update = self.model.italic()
-        case .strikethrough:
+        case .strikeThrough:
             update = self.model.strikeThrough()
         case .underline:
             update = self.model.underline()
@@ -112,6 +112,7 @@ public class WysiwygComposerViewModel: ObservableObject {
         self.content = WysiwygComposerContent()
     }
 
+    /// Returns a textual representation of the composer model as a tree.
     public func treeRepresentation() -> String {
         return self.model.toTree()
     }

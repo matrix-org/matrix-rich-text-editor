@@ -40,7 +40,7 @@ public class WysiwygComposerContent: NSObject {
     init(plainText: String = "",
          html: String = "",
          attributed: NSAttributedString = .init(string: ""),
-         attributedSelection: NSRange = .init(location: 0, length: 0)) {
+         attributedSelection: NSRange = .zero) {
         self.plainText = plainText
         self.html = html
         self.attributed = attributed
