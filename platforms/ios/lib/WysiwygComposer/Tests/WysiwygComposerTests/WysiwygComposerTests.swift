@@ -27,7 +27,7 @@ final class WysiwygComposerTests: XCTestCase {
         let composer = newComposerModel()
         let update = composer.replaceText(newText: TestConstants.testStringWithEmojis)
         switch update.textUpdate() {
-        case .keep:
+        case .keep, .select:
             XCTFail("Expected replace all HTML update")
         case .replaceAll(replacementHtml: let codeUnits,
                          startUtf16Codeunit: let start,
@@ -49,7 +49,7 @@ final class WysiwygComposerTests: XCTestCase {
 
         let update = composer.backspace()
         switch update.textUpdate() {
-        case .keep:
+        case .keep, .select:
             XCTFail("Expected replace all HTML update")
         case .replaceAll(replacementHtml: let codeUnits,
                          startUtf16Codeunit: let start,
@@ -68,7 +68,7 @@ final class WysiwygComposerTests: XCTestCase {
         _ = composer.select(startUtf16Codeunit: 8, endUtf16Codeunit: 12)
         let update = composer.bold()
         switch update.textUpdate() {
-        case .keep:
+        case .keep, .select:
             XCTFail("Expected replace all HTML update")
         case .replaceAll(replacementHtml: let codeUnits,
                          startUtf16Codeunit: let start,
@@ -111,7 +111,7 @@ final class WysiwygComposerTests: XCTestCase {
         // Add a third list item
         let update = composer.enter()
         switch update.textUpdate() {
-        case .keep:
+        case .keep, .select:
             XCTFail("Expected replace all HTML update")
         case .replaceAll(replacementHtml: let codeUnits,
                          startUtf16Codeunit: let start,
@@ -129,7 +129,7 @@ final class WysiwygComposerTests: XCTestCase {
         // Remove it
         let update2 = composer.enter()
         switch update2.textUpdate() {
-        case .keep:
+        case .keep, .select:
             XCTFail("Expected replace all HTML update")
         case .replaceAll(replacementHtml: let codeUnits,
                          startUtf16Codeunit: let start,
@@ -146,7 +146,7 @@ final class WysiwygComposerTests: XCTestCase {
         // Insert some text afterwards
         let update3 = composer.replaceText(newText: "Some text")
         switch update3.textUpdate() {
-        case .keep:
+        case .keep, .select:
             XCTFail("Expected replace all HTML update")
         case .replaceAll(replacementHtml: let codeUnits,
                          startUtf16Codeunit: let start,
