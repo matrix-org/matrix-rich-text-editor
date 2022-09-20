@@ -84,7 +84,6 @@ fn unformat_toplevel_node_moves_nested_nodes() {
     assert_eq!(tx(&model), "aa{b<strong>bc}|</strong>c");
 }
 
-#[ignore] // TODO: partial_unformat_toplevel_node_reconstructs_expected_model
 #[test]
 fn partial_unformat_toplevel_node_reconstructs_expected_model() {
     let mut model = cm("aa<em>b<strong>b{c}|</strong></em>c");
