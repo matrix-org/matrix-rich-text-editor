@@ -151,47 +151,13 @@ impl ComposerModel<Utf16String> {
         // Modify the text nodes to add {, } and |
         match range {
             Range::SameNode(range) => {
-                let mut handle = range.node_handle;
-                let mut start = range.start_offset.into();
-                let mut end = range.end_offset.into();
-
-                if let DomNode::LineBreak(_) = dom.lookup_node(&handle) {
-                    // If we found a line break, add a text node after it so
-                    // we can add the {, } or | to it.
-                    let parent = dom.lookup_node_mut(&handle.parent_handle());
-                    match parent {
-                        DomNode::Container(n) => {
-                            // Add a text node before or after this one
-                            let i;
-                            if start == 0 {
-                                i = handle.index_in_parent();
-                            } else {
-                                i = handle.index_in_parent() + 1;
-                                handle = handle.next_sibling();
-                                start -= 1;
-                                end -= 1;
-                            };
-                            n.insert_child(
-                                i,
-                                DomNode::new_text(Utf16String::from_str("")),
-                            );
-                        }
-                        _ => panic!("Parent was not a container!"),
-                    }
-                }
-
-                let mut node = dom.lookup_node_mut(&handle);
-                match &mut node {
-                    DomNode::Container(_) => (), // Ignore - model is empty
-                    DomNode::LineBreak(_) => {
-                        // We handled the case of a line break above - should
-                        // not get here.
-                        panic!("Handle should point to a text node!")
-                    }
-                    DomNode::Text(n) => {
-                        update_text_node_with_cursor(n, start, end)
-                    }
-                };
+                let mrange = dom.convert_same_node_range_to_multi(range);
+                write_selection_multi(
+                    &mut dom,
+                    mrange,
+                    state.start.into(),
+                    state.end.into(),
+                )
             }
             Range::NoNode => (), // No selection, so insert no text
             Range::MultipleNodes(range) => write_selection_multi(
@@ -259,41 +225,6 @@ fn find_char(haystack: &[u16], needle: &str) -> Option<usize> {
     None
 }
 
-fn update_text_node_with_cursor(
-    text_node: &mut TextNode<Utf16String>,
-    start: usize,
-    end: usize,
-) {
-    let (s, e) = if start < end {
-        (start, end)
-    } else {
-        (end, start)
-    };
-
-    let data = text_node.data();
-    let mut new_data;
-    if s == e {
-        new_data = data[..s].to_string();
-        new_data.push('|');
-        new_data += data[s..].to_string().as_str();
-    } else {
-        new_data = data[..s].to_string();
-        if start < end {
-            new_data.push('{');
-        } else {
-            new_data += "|{";
-        }
-        new_data += data[s..e].to_string().as_str();
-        if start < end {
-            new_data += "}|";
-        } else {
-            new_data.push('}');
-        }
-        new_data += data[e..].to_string().as_str();
-    }
-    text_node.set_data(Utf16String::from_str(&new_data));
-}
-
 fn update_text_node(
     node: &mut TextNode<Utf16String>,
     offset: usize,
@@ -306,6 +237,7 @@ fn update_text_node(
     node.set_data(Utf16String::from_str(&new_start_data));
 }
 
+#[derive(Debug)]
 struct SelectionWritingState {
     // Counts how far through the whole document we have got (code units)
     current_pos: usize,
@@ -354,7 +286,10 @@ impl SelectionWritingState {
     /// to the current node.
     ///
     /// Returns a Vec of (marker, offset) pairs. Each marker should be
-    /// added within its node at the supplied offset.
+    /// added within its node at the supplied offset. These markers are
+    /// returned in order of where they should be inserted, so may be
+    /// inserted in reverse order to avoid invalidating other handles and
+    /// offsets.
     fn advance(
         &mut self,
         location: &DomLocation,
@@ -388,15 +323,8 @@ impl SelectionWritingState {
         let mut ret = Vec::new();
 
         // Add the markers we want to write
-        if do_first && do_last {
-            ret.push((
-                "|",
-                if self.reversed {
-                    location.end_offset
-                } else {
-                    location.start_offset
-                },
-            ));
+        if do_first && do_last && location.start_offset == location.end_offset {
+            ret.push(("|", location.start_offset));
         } else {
             if do_first {
                 ret.push((
@@ -464,7 +392,7 @@ fn write_selection_multi(
             DomNode::Container(_) => {}
             DomNode::LineBreak(_) => {
                 let strings_to_add = state.advance(&location, 1);
-                for (s, offset) in strings_to_add {
+                for (s, offset) in strings_to_add.iter().rev() {
                     nodes_to_add.push((
                         handle.clone(),
                         handle.index_in_parent() + offset,
@@ -474,8 +402,8 @@ fn write_selection_multi(
             }
             DomNode::Text(n) => {
                 let strings_to_add = state.advance(&location, n.data().len());
-                for (s, offset) in strings_to_add {
-                    update_text_node(n, offset, s);
+                for (s, offset) in strings_to_add.iter().rev() {
+                    update_text_node(n, *offset, s);
                 }
             }
         }
@@ -501,10 +429,26 @@ mod test {
     use std::collections::HashSet;
     use widestring::Utf16String;
 
-    use crate::dom::{parser, Dom};
+    use crate::dom::{parser, Dom, DomLocation};
     use crate::tests::testutils_composer_model::{cm, tx};
     use crate::tests::testutils_conversion::utf16;
-    use crate::{ComposerModel, ComposerState, DomNode, Location};
+    use crate::{ComposerModel, ComposerState, DomHandle, DomNode, Location};
+
+    use super::SelectionWritingState;
+
+    #[test]
+    fn selection_writing_with_one_character() {
+        // We have one text node with one character
+        let mut state = SelectionWritingState::new(0, 1, 1);
+        let handle = DomHandle::from_raw(vec![0]);
+        let location = DomLocation::new(handle, 0, 0, 1, 1, true);
+
+        // When we advance
+        let strings_to_add = state.advance(&location, 1);
+
+        // The character should be selected
+        assert_eq!(strings_to_add, vec![("{", 0), ("}|", 1),]);
+    }
 
     // These tests use cm and tx for brevity, but those call directly through
     // to the code above.
