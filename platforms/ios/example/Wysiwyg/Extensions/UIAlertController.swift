@@ -20,7 +20,6 @@ extension UIAlertController {
     convenience init(alert: AlertConfig) {
         self.init(title: alert.title, message: nil, preferredStyle: .alert)
         addTextField()
-        //addTextField { $0.placeholder = alert.placeholder }
         addAction(UIAlertAction(title: alert.cancel, style: .cancel) { _ in
             alert.action(nil)
         })

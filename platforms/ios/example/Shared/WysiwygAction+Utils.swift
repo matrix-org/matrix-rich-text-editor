@@ -45,7 +45,6 @@ extension WysiwygAction: CaseIterable, Identifiable {
         }
     }
 
-
     /// Compute disabled status for action.
     ///
     /// - Parameter viewModel: Composer's view model.
