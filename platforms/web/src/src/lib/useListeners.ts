@@ -2,82 +2,9 @@ import { RefObject, useEffect } from "react";
 
 import { ComposerModel } from "../../generated/wysiwyg";
 import { isInputEvent } from "./assert";
-import { processInput } from "./composer";
-import { getCurrentSelection, refreshComposerView, replaceEditor } from "./dom";
+import { handleInput, handleKeyDown, handleSelectionChange } from "./event";
 import { WysiwygInputEvent } from "./types";
 import { TestUtilities } from "./useTestCases";
-
-function handleInput(
-    e: WysiwygInputEvent,
-    editor: HTMLElement,
-    composerModel: ComposerModel,
-    modelNode: HTMLElement | null,
-    testUtilities: TestUtilities,
-) {
-    const update = processInput(e, composerModel, testUtilities.traceAction);
-    if (update) {
-        const repl = update.text_update().replace_all;
-        if (repl) {
-            replaceEditor(editor,
-                repl.replacement_html,
-                repl.start_utf16_codeunit,
-                repl.end_utf16_codeunit,
-            );
-            // todo test case
-            testUtilities.setEditorHtml(repl.replacement_html);
-            // last_update_html = repl.replacement_html;
-        }
-
-        // Only when
-        if (modelNode) {
-            refreshComposerView(modelNode, composerModel);
-        }
-    }
-}
-
-function handleSelectionChange(
-    editor: HTMLElement,
-    composeModel: ComposerModel,
-    { traceAction, getSelectionAccordingToActions }: TestUtilities,
-) {
-    const isInEditor = document.activeElement === editor;
-
-    // Skip the selection behavior when the focus is not in the editor
-    if (!isInEditor) {
-        return;
-    }
-
-    const [start, end] = getCurrentSelection(editor);
-
-    const prevStart = composeModel.selection_start();
-    const prevEnd = composeModel.selection_end();
-
-    const [actStart, actEnd] = getSelectionAccordingToActions();
-
-    // Ignore selection changes that do nothing
-    if (
-        start === prevStart &&
-        start === actStart &&
-        end === prevEnd &&
-        end === actEnd
-    ) {
-        return;
-    }
-
-    // Ignore selection changes that just reverse the selection - all
-    // backwards selections actually do this, because the browser can't
-    // support backwards selections.
-    if (
-        start === prevEnd &&
-        start === actEnd &&
-        end === prevStart &&
-        end === actStart
-    ) {
-        return;
-    }
-    composeModel.select(start, end);
-    traceAction(null, "select", start, end);
-}
 
 export function useListeners(
     editorRef: RefObject<HTMLElement | null>,
@@ -113,12 +40,18 @@ export function useListeners(
         };
         editorNode.addEventListener('formatBlock', onFormatBlock);
 
+        const onKeyDown = (e: KeyboardEvent) => {
+            handleKeyDown(e, editorNode);
+        };
+        editorNode.addEventListener('keydown', onKeyDown);
+
         const onSelectionChange = () => handleSelectionChange(editorNode, composerModel, testUtilities);
         document.addEventListener('selectionchange', onSelectionChange);
 
         return () => {
             editorNode.removeEventListener('input', onInput);
             editorNode.removeEventListener('formatBlock', onFormatBlock);
+            editorNode.removeEventListener('keydown', onKeyDown);
             document.removeEventListener('selectionchange', onSelectionChange);
         };
     }, [editorRef, composerModel, modelRef, testUtilities]);
