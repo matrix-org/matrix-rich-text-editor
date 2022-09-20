@@ -39,7 +39,7 @@ function App() {
                         <Button onClick={wysiwyg.strikeThrough} alt="strike through" imagePath={strikeTroughImage} />
                         <Button onClick={wysiwyg.unorderedList} alt="list unordered" imagePath={listUnorderedImage} />
                         <Button onClick={wysiwyg.orderedList} alt="list ordered" imagePath={listOrderedImage} />
-                        <button type="button">&lt;/&gt;</button>
+                        <Button onClick={wysiwyg.inlineCode} alt="inline code" imagePath={listOrderedImage} />
                     </div>
                     <div className="editor" ref={ref} contentEditable={isWysiwygReady} />
                 </div>

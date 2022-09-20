@@ -1,8 +1,9 @@
-import { MouseEvent as ReactMouseEvent, RefObject, useEffect, useMemo, useRef, useState } from "react";
+import { RefObject, useEffect, useRef, useState } from "react";
 
 // rust generated bindings
 // eslint-disable-next-line camelcase
 import init, { ComposerModel, new_composer_model } from '../../generated/wysiwyg.js';
+import { useFormattingActions } from "./useFormattingActions.js";
 import { useListeners } from "./useListeners.js";
 import { useTestCases } from "./useTestCases.js";
 
@@ -14,44 +15,6 @@ function useEditorFocus(editorRef: RefObject<HTMLElement | null>, isAutoFocusEna
             return () => clearInterval(id);
         }
     }, [editorRef, isAutoFocusEnabled]);
-}
-/*
-const actions= {
-    bold: 'formatBold',
-    italic: 'formatItalic',
-    undo: 'historyUndo',
-    redo: 'historyRedo',
-
-};
-
-type FormattingActions = Record<keyof typeof actions, MouseEventHandler<HTMLElement>>;*/
-
-function useFormattingActions(editorRef: RefObject<HTMLElement | null>) {
-    const formattingActions = useMemo(() => {
-        const sendInputEvent = (e: ReactMouseEvent<HTMLElement, MouseEvent>, inputType: InputEvent['inputType']) => {
-            e.preventDefault();
-            e.stopPropagation();
-            editorRef.current?.dispatchEvent(new InputEvent('input', { inputType }));
-        };
-
-        /*return Object.keys(actions).reduce<FormattingActions>((acc, action) => {
-            acc[action] = (e: MouseEvent) => sendInputEvent(e, actions[action]);
-            return acc;
-        }, {} as FormattingActions);*/
-
-        return {
-            bold: (e: ReactMouseEvent<HTMLElement, MouseEvent>) => sendInputEvent(e, 'formatBold'),
-            italic: (e: ReactMouseEvent<HTMLElement, MouseEvent>) => sendInputEvent(e, 'formatItalic'),
-            strikeThrough: (e: ReactMouseEvent<HTMLElement, MouseEvent>) => sendInputEvent(e, 'formatStrikeThrough'),
-            underline: (e: ReactMouseEvent<HTMLElement, MouseEvent>) => sendInputEvent(e, 'formatUnderline'),
-            undo: (e: ReactMouseEvent<HTMLElement, MouseEvent>) => sendInputEvent(e, 'historyUndo'),
-            redo: (e: ReactMouseEvent<HTMLElement, MouseEvent>) => sendInputEvent(e, 'historyRedo'),
-            orderedList: (e: ReactMouseEvent<HTMLElement, MouseEvent>) => sendInputEvent(e, 'insertOrderedList'),
-            unorderedList: (e: ReactMouseEvent<HTMLElement, MouseEvent>) => sendInputEvent(e, 'insertUnorderedList'),
-        };
-    }, [editorRef]);
-
-    return formattingActions;
 }
 
 function useComposerModel() {

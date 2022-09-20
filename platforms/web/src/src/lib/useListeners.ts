@@ -4,10 +4,11 @@ import { ComposerModel } from "../../generated/wysiwyg";
 import { isInputEvent } from "./assert";
 import { processInput } from "./composer";
 import { getCurrentSelection, refreshComposerView, replaceEditor } from "./dom";
+import { WysiwygInputEvent } from "./types";
 import { TestUtilities } from "./useTestCases";
 
 function handleInput(
-    e: InputEvent,
+    e: WysiwygInputEvent,
     editor: HTMLElement,
     composerModel: ComposerModel,
     modelNode: HTMLElement | null,
@@ -101,11 +102,23 @@ export function useListeners(
             );
         editorNode.addEventListener('input', onInput);
 
+        const onFormatBlock = () => {
+            handleInput(
+                { inputType: 'formatInlineCode' } as WysiwygInputEvent,
+                editorNode,
+                composerModel,
+                modelRef.current,
+                testUtilities,
+            );
+        };
+        editorNode.addEventListener('formatBlock', onFormatBlock);
+
         const onSelectionChange = () => handleSelectionChange(editorNode, composerModel, testUtilities);
         document.addEventListener('selectionchange', onSelectionChange);
 
         return () => {
             editorNode.removeEventListener('input', onInput);
+            editorNode.removeEventListener('formatBlock', onFormatBlock);
             document.removeEventListener('selectionchange', onSelectionChange);
         };
     }, [editorRef, composerModel, modelRef, testUtilities]);

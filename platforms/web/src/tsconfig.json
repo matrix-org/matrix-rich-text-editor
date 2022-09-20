@@ -22,6 +22,12 @@
     "sourceMap": false,
     "outDir": "./lib",
     "declaration": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
