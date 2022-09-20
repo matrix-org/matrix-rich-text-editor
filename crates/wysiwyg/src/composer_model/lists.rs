@@ -413,8 +413,9 @@ where
         let range = self.state.dom.find_range(s, e);
         match range {
             Range::SameNode(r) => {
-                if self.can_indent_handle(&r.node_handle) {
-                    self.indent_handles(vec![r.node_handle]);
+                let mrange = self.state.dom.convert_same_node_range_to_multi(r);
+                if self.can_indent(mrange.locations.clone()) {
+                    self.indent_locations(mrange.locations);
                     self.create_update_replace_all()
                 } else {
                     ComposerUpdate::keep()
@@ -437,8 +438,9 @@ where
         let range = self.state.dom.find_range(s, e);
         match range {
             Range::SameNode(r) => {
-                if self.can_unindent_handle(&r.node_handle) {
-                    self.unindent_handles(vec![r.node_handle]);
+                let mrange = self.state.dom.convert_same_node_range_to_multi(r);
+                if self.can_unindent(mrange.locations.clone()) {
+                    self.unindent_locations(mrange.locations);
                     self.create_update_replace_all()
                 } else {
                     ComposerUpdate::keep()
