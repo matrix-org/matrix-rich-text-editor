@@ -14,10 +14,19 @@
 // limitations under the License.
 //
 
-import SwiftUI
+import UIKit
 
-extension View {
-    public func alert(isPresented: Binding<Bool>, _ alert: AlertConfig) -> some View {
-        AlertHelper(isPresented: isPresented, alert: alert, content: self)
+extension UIAlertController {
+    convenience init(alert: AlertConfig) {
+        self.init(title: alert.title, message: nil, preferredStyle: .alert)
+        addTextField()
+        //addTextField { $0.placeholder = alert.placeholder }
+        addAction(UIAlertAction(title: alert.cancel, style: .cancel) { _ in
+            alert.action(nil)
+        })
+        let textField = self.textFields?.first
+        addAction(UIAlertAction(title: alert.accept, style: .default) { _ in
+            alert.action(textField?.text)
+        })
     }
 }

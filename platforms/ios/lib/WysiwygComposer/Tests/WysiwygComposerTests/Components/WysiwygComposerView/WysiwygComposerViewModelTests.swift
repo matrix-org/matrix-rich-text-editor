@@ -35,7 +35,7 @@ final class WysiwygComposerViewModelTests: XCTestCase {
             })
 
         viewModel.replaceText(NSAttributedString(string: ""),
-                              range: .init(location: 0, length: 0),
+                              range: .zero,
                               replacementText: "Test")
 
         wait(for: [expectFalse], timeout: 2.0)

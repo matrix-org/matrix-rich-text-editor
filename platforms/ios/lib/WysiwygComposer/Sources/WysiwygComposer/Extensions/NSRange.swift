@@ -14,10 +14,9 @@
 // limitations under the License.
 //
 
-import SwiftUI
+import Foundation
 
-extension View {
-    public func alert(isPresented: Binding<Bool>, _ alert: AlertConfig) -> some View {
-        AlertHelper(isPresented: isPresented, alert: alert, content: self)
-    }
+extension NSRange {
+    /// Returns a range at starting location, i.e. {0, 0}.
+    public static let zero = Self.init(location: 0, length: 0)
 }
