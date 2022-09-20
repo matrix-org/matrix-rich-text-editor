@@ -17,6 +17,7 @@ use std::ops::Not;
 
 use widestring::Utf16String;
 
+use crate::dom::nodes::text_node::ZWSP;
 use crate::dom::nodes::{LineBreakNode, TextNode};
 use crate::dom::parser::parse;
 use crate::dom::unicode_string::UnicodeStringExt;
@@ -80,7 +81,7 @@ impl ComposerModel<Utf16String> {
     /// assert_eq!(model.to_example_format(), "a{abbc}|c");
     /// ```
     pub fn from_example_format(text: &str) -> Self {
-        let text = text.replace('~', "\u{200b}");
+        let text = text.replace('~', ZWSP);
         let text_u16 = Utf16String::from_str(&text).into_vec();
 
         let curs = find_char(&text_u16, "|").unwrap_or_else(|| {
@@ -656,13 +657,28 @@ mod test {
     }
 
     #[test]
-    fn cm_converts_tilda_to_zero_width_space() {
+    fn cm_removes_single_zero_width_space() {
         let model = cm("~|");
         assert_eq!(model.state.start, 1);
         assert_eq!(model.state.end, 1);
 
         if let DomNode::Text(node) = &model.state.dom.document().children()[0] {
-            assert_eq!(node.data(), "\u{200b}");
+            assert_eq!(node.data(), "");
+        } else {
+            panic!("Expected a text node!");
+        }
+    }
+
+    #[test]
+    fn cm_converts_tilda_to_zero_width_space() {
+        // We need to add something else besides the ZWSP, otherwise it will be automatically
+        // removed by replace_text.
+        let model = cm("a~|");
+        assert_eq!(model.state.start, 2);
+        assert_eq!(model.state.end, 2);
+
+        if let DomNode::Text(node) = &model.state.dom.document().children()[0] {
+            assert_eq!(node.data(), "a\u{200b}");
         } else {
             panic!("Expected a text node!");
         }

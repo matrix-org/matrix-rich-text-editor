@@ -213,11 +213,15 @@ where
         let range = self.state.dom.find_range(s, e);
 
         if range.is_empty() {
+            // Update selection to include the ZWSP
+            self.state.start += 1;
+            self.state.end = self.state.start;
+
             self.state.dom.append_child(DomNode::new_list(
                 list_type,
                 vec![DomNode::Container(ContainerNode::new_list_item(
                     "li".into(),
-                    vec![DomNode::new_text(S::default())],
+                    vec![DomNode::new_empty_text()],
                 ))],
             ));
             self.create_update_replace_all()
@@ -236,12 +240,18 @@ where
             let handle = &leaves[0].node_handle;
             let node = self.state.dom.lookup_node(handle);
             if let DomNode::Text(t) = node {
-                let text = t.data();
+                let mut text = S::new_zwsp();
+                text.push(t.data().clone());
+
+                // We added a new character so we need to update the selection
+                self.state.start += 1;
+                self.state.end += 1;
+
                 let index_in_parent = handle.index_in_parent();
                 let list_item =
                     DomNode::Container(ContainerNode::new_list_item(
                         "li".into(),
-                        vec![DomNode::new_text(text.clone())],
+                        vec![DomNode::new_text(text)],
                     ));
                 if index_in_parent > 0 {
                     let previous_handle = handle.prev_sibling();
@@ -307,14 +317,15 @@ where
                 list.append_child(DomNode::new_list_item(
                     "li".into(),
                     vec![DomNode::new_text(if add_zwsp {
-                        "\u{200b}".into()
+                        S::new_zwsp()
                     } else {
                         new_li_text
                     })],
                 ));
                 if add_zwsp {
-                    self.state.start = Location::from(location + 1);
-                    self.state.end = Location::from(location + 1);
+                    let to_add = 1; //if location == text.len() { 1 } else { 2 };
+                    self.state.start = Location::from(location + to_add);
+                    self.state.end = Location::from(location + to_add);
                 }
             }
         }
@@ -338,7 +349,7 @@ where
                 if let DomNode::Container(parent) = parent_node {
                     parent.remove_child(list_handle.index_in_parent());
                     if parent.children().is_empty() {
-                        parent.append_child(DomNode::new_text("".into()));
+                        parent.append_child(DomNode::new_text(S::new_zwsp()));
                     }
                     let new_location = Location::from(
                         current_cursor_global_location - list_len,
@@ -357,8 +368,7 @@ where
                         self.state.dom.lookup_node_mut(&parent_handle);
                     if let DomNode::Container(parent) = parent_node {
                         // TODO: should probably append a paragraph instead
-                        parent
-                            .append_child(DomNode::new_text("\u{200b}".into()));
+                        parent.append_child(DomNode::new_text(S::new_zwsp()));
                         let new_location = Location::from(
                             current_cursor_global_location - li_len + 1,
                         );

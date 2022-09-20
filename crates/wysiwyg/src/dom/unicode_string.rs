@@ -17,6 +17,8 @@ use std::ops::{Deref, Index, Range, RangeFrom, RangeTo};
 
 use widestring::{Utf16Str, Utf16String, Utf32Str, Utf32String};
 
+use crate::dom::nodes::text_node::ZWSP;
+
 /// The type of string being used inside a [Dom] instance. Must
 /// contain valid Unicode, and allow slicing by code unit positions.
 /// We implement this for String, Utf16String and Utf32String (from the
@@ -42,6 +44,8 @@ pub trait UnicodeString:
     type CodeUnit: Copy + From<u8> + PartialEq;
     type Slice: ToOwned<Owned = Self> + ?Sized;
 
+    fn new_zwsp() -> Self;
+
     fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String>;
 
     /// Convert this character to a code unit.
@@ -52,6 +56,10 @@ pub trait UnicodeString:
 impl UnicodeString for String {
     type CodeUnit = u8;
     type Slice = str;
+
+    fn new_zwsp() -> Self {
+        String::from(ZWSP)
+    }
 
     fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String> {
         String::from_utf8(v.into()).map_err(|e| e.to_string())
@@ -69,6 +77,10 @@ impl UnicodeString for Utf16String {
     type CodeUnit = u16;
     type Slice = Utf16Str;
 
+    fn new_zwsp() -> Self {
+        Utf16String::from_str(ZWSP)
+    }
+
     fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String> {
         Utf16String::from_vec(v.into()).map_err(|e| e.to_string())
     }
@@ -85,6 +97,10 @@ impl UnicodeString for Utf32String {
     type CodeUnit = u32;
     type Slice = Utf32Str;
 
+    fn new_zwsp() -> Self {
+        Utf32String::from_str(ZWSP)
+    }
+
     fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String> {
         Utf32String::from_vec(v.into()).map_err(|e| e.to_string())
     }
@@ -92,7 +108,7 @@ impl UnicodeString for Utf32String {
     fn c_from_char(ch: char) -> Self::CodeUnit {
         let mut ret = Utf32String::new();
         ret.push(ch);
-        assert!(ret.len() == 1);
+        assert_eq!(ret.len(), 1);
         ret.into_vec()[0]
     }
 }

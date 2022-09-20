@@ -23,6 +23,8 @@ use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
 use crate::dom::UnicodeString;
 
+pub const ZWSP: &str = "\u{200B}";
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct TextNode<S>
 where
@@ -43,6 +45,13 @@ where
     pub fn from(data: S) -> Self {
         Self {
             data,
+            handle: DomHandle::new_unset(),
+        }
+    }
+
+    pub fn new_zwsp() -> Self {
+        Self {
+            data: ZWSP.into(),
             handle: DomHandle::new_unset(),
         }
     }
@@ -144,7 +153,7 @@ where
 {
     fn to_tree_display(&self, continuous_positions: Vec<usize>) -> S {
         let mut description = S::from("\"");
-        let text = &self.data.to_string().replace('\u{200b}', "~");
+        let text = &self.data.to_string().replace(ZWSP, "~");
         description.push(text.as_str());
         description.push('"');
         return self.tree_line(

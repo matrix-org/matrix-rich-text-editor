@@ -16,6 +16,7 @@ use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::html_formatter::HtmlFormatter;
 use crate::dom::nodes::dom_node::DomNode;
+use crate::dom::nodes::text_node::ZWSP;
 use crate::dom::to_html::ToHtml;
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
@@ -259,7 +260,7 @@ where
         match self.kind {
             ContainerNodeKind::ListItem => {
                 let raw_text = self.to_raw_text().to_string();
-                raw_text.is_empty() || raw_text == "\u{200b}"
+                raw_text.is_empty() || raw_text == ZWSP
             }
             _ => false,
         }

@@ -15,6 +15,7 @@
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::html_formatter::HtmlFormatter;
+use crate::dom::nodes::text_node::ZWSP;
 use crate::dom::nodes::{ContainerNode, LineBreakNode, TextNode};
 use crate::dom::to_html::ToHtml;
 use crate::dom::to_raw_text::ToRawText;
@@ -37,6 +38,9 @@ impl<S> DomNode<S>
 where
     S: UnicodeString,
 {
+    pub fn new_empty_text() -> DomNode<S> {
+        DomNode::Text(TextNode::new_zwsp())
+    }
     pub fn new_text(text: S) -> DomNode<S> {
         DomNode::Text(TextNode::from(text))
     }
@@ -131,7 +135,7 @@ where
     pub(crate) fn is_placeholder_text_node(&self) -> bool {
         match self {
             DomNode::Text(n) => {
-                n.data().len() == 1 && n.data().to_string() == "\u{200b}"
+                n.data().len() == 1 && n.data().to_string() == ZWSP
             }
             _ => false,
         }

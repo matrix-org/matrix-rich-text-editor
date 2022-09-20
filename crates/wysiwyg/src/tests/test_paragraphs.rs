@@ -23,7 +23,7 @@ use crate::{
 
 #[test]
 fn pressing_enter_with_a_brand_new_model() {
-    let mut model = ComposerModel::new();
+    let mut model: ComposerModel<Utf16String> = ComposerModel::new();
     model.enter();
     assert_eq!(tx(&model), "<br />|");
 }
@@ -143,7 +143,7 @@ fn can_backspace_to_beginning_after_making_a_line() {
     model.enter();
     model.backspace();
     model.backspace();
-    assert_eq!(tx(&model), "|");
+    assert_eq!(tx(&model), "|~");
 }
 
 #[ignore] // TODO: backspace_merges_empty_text_nodes

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::dom::nodes::text_node::ZWSP;
 use crate::dom::nodes::DomNode;
 use crate::dom::unicode_string::UnicodeStringExt;
 use crate::dom::{DomHandle, DomLocation, Range};
@@ -97,10 +98,13 @@ where
 
         let range = self.state.dom.find_range(start, end);
         if range.is_empty() {
-            self.state.dom.append_child(DomNode::new_text(new_text));
-            start = 0;
+            if !new_text.is_empty() {
+                self.state.dom.append_child(DomNode::new_text(new_text));
+                start = 0;
+            }
         } else {
-            self.replace_multiple_nodes(range, new_text)
+            let start_offset = self.replace_multiple_nodes(range, new_text);
+            start -= start_offset;
         }
 
         self.state.start = Location::from(start + len);
@@ -111,9 +115,9 @@ where
         self.create_update_replace_all()
     }
 
-    fn replace_multiple_nodes(&mut self, range: Range, new_text: S) {
+    fn replace_multiple_nodes(&mut self, range: Range, new_text: S) -> usize {
         let len = new_text.len();
-        let (to_add, to_delete) =
+        let (to_add, to_delete, start_offset) =
             self.replace_in_text_nodes(range.clone(), new_text);
 
         // We only add nodes in one special case: when the selection ends at
@@ -145,6 +149,8 @@ where
             // invalidated, because it should not have been deleted.
             self.join_nodes(&range, new_pos);
         }
+
+        start_offset
     }
 
     /// Given a range to replace and some new text, modify the nodes in the
@@ -153,6 +159,7 @@ where
     /// * a list of nodes to create (parent_handle, index, node), and
     /// * a list of (handles to) nodes that have become empty and should
     ///   be deleted.
+    /// * an offset to be removed from the start selection
     /// NOTE: all nodes to be created are later in the Dom than all nodes to
     /// be deleted, so you can safely add them before performing the
     /// deletions, and the handles of the deletions will remain valid.
@@ -160,7 +167,8 @@ where
         &mut self,
         range: Range,
         new_text: S,
-    ) -> (Vec<(DomHandle, usize, DomNode<S>)>, Vec<DomHandle>) {
+    ) -> (Vec<(DomHandle, usize, DomNode<S>)>, Vec<DomHandle>, usize) {
+        let mut start_offset = 0;
         let mut to_delete = Vec::new();
         let mut to_add = Vec::new();
         let mut first_text_node = true;
@@ -169,6 +177,23 @@ where
         let end = range.end();
 
         for loc in range.into_iter() {
+            let parent_handle = loc.node_handle.parent_handle();
+            let parent_is_list_item = if let DomNode::Container(n) =
+                self.state.dom.lookup_node(&parent_handle)
+            {
+                n.is_list_item()
+            } else {
+                false
+            };
+
+            let is_last_item_in_parent = if let DomNode::Container(n) =
+                self.state.dom.lookup_node(&parent_handle)
+            {
+                loc.node_handle.index_in_parent() + 1 == n.children().len()
+            } else {
+                false
+            };
+
             let mut node = self.state.dom.lookup_node_mut(&loc.node_handle);
             match &mut node {
                 DomNode::Container(_) => {
@@ -195,10 +220,21 @@ where
                         // deleted nodes. (That is true in this case, because
                         // we are checking that the selection ends inside this
                         // line break.)
+
+                        // No need to add an empty TextNode as there is already some other node
+                        if new_text.is_empty() && !is_last_item_in_parent {
+                            break;
+                        }
+
+                        let node = if new_text.is_empty() {
+                            DomNode::new_empty_text()
+                        } else {
+                            DomNode::new_text(new_text.clone())
+                        };
                         to_add.push((
                             loc.node_handle.parent_handle(),
                             loc.node_handle.index_in_parent() + 1,
-                            DomNode::new_text(new_text.clone()),
+                            node,
                         ));
                     }
                 }
@@ -217,6 +253,12 @@ where
                         let mut new_data =
                             old_data[..loc.start_offset].to_owned();
 
+                        if new_data == ZWSP.into() && !parent_is_list_item {
+                            new_data = S::default();
+                            // TODO: check if this can be avoided
+                            start_offset += 1;
+                        }
+
                         // and replace with the new content
                         if first_text_node {
                             new_data.push(new_text.deref());
@@ -230,6 +272,6 @@ where
                 }
             }
         }
-        (to_add, to_delete)
+        (to_add, to_delete, start_offset)
     }
 }

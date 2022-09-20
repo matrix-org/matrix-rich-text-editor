@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::dom::nodes::text_node::ZWSP;
 use crate::dom::nodes::{ContainerNodeKind, DomNode};
 use crate::dom::unicode_string::UnicodeStringExt;
 use crate::dom::{Dom, DomHandle, DomLocation, Range};
@@ -252,7 +253,7 @@ where
                             parent.insert_child(index, after);
                         }
                         self.state.end +=
-                            Self::insert_zwspace_if_needed(&mut middle);
+                            Self::modify_selection_if_needed(&mut middle);
                         let middle = DomNode::new_formatting(
                             format.clone(),
                             vec![middle],
@@ -309,31 +310,40 @@ where
         if loc.is_start() {
             let (before, middle) =
                 Self::split_text_node(node, loc.start_offset);
-            (Some(before), middle, None)
+            (before, middle.unwrap_or(DomNode::new_empty_text()), None)
         } else if loc.is_end() {
             let (middle, after) = Self::split_text_node(node, loc.end_offset);
-            (None, middle, Some(after))
+            (None, middle.unwrap_or(DomNode::new_empty_text()), after)
         } else {
             let (before, middle) =
                 Self::split_text_node(node, loc.start_offset);
             let (middle, after) = Self::split_text_node(
-                middle,
+                middle.unwrap(),
                 loc.end_offset - loc.start_offset,
             );
-            (Some(before), middle, Some(after))
+            (before, middle.unwrap_or(DomNode::new_empty_text()), after)
         }
     }
 
     fn split_text_node(
         node: DomNode<S>,
         position: usize,
-    ) -> (DomNode<S>, DomNode<S>) {
+    ) -> (Option<DomNode<S>>, Option<DomNode<S>>) {
         if let DomNode::Text(text_node) = node {
             let split_data_orig = text_node.data()[..position].to_owned();
             let split_data_new = text_node.data()[position..].to_owned();
-            let mut before = DomNode::new_text(split_data_orig);
-            before.set_handle(text_node.handle());
-            let after = DomNode::new_text(split_data_new);
+            let before = if split_data_orig.is_empty() {
+                None
+            } else {
+                let mut node = DomNode::new_text(split_data_orig);
+                node.set_handle(text_node.handle());
+                Some(node)
+            };
+            let after = if split_data_new.is_empty() {
+                None
+            } else {
+                Some(DomNode::new_text(split_data_new))
+            };
             (before, after)
         } else {
             panic!("Node was not a text node so can't be split!");
@@ -341,16 +351,14 @@ where
     }
 
     /**
-     * If the supplied node is a text node with zero length, modify it to
-     * contain a zero width space and return 1.
-     * Otherwise, return 0 and don't modify anything.
+     * If the supplied node is a text node with zero width white space return 1.
+     * Otherwise, return 0.
      *
      * Returns the number of characters added, which will either be 0 or 1.
      */
-    fn insert_zwspace_if_needed(node: &mut DomNode<S>) -> isize {
+    fn modify_selection_if_needed(node: &mut DomNode<S>) -> isize {
         if let DomNode::Text(text) = node {
-            if text.data().is_empty() {
-                text.set_data("\u{200B}".into());
+            if text.data().to_string() == ZWSP {
                 1
             } else {
                 0
