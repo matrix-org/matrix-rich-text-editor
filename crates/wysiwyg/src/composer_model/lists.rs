@@ -36,11 +36,7 @@ where
         &mut self,
         parent_handle: &DomHandle,
         location: usize,
-        range: SameNodeRange,
     ) -> ComposerUpdate<S> {
-        // do_backspace_in_list should only be called on a single location
-        // as selection can be handled in standard do_backspace.
-        assert_eq!(range.start_offset, range.end_offset);
         let parent_node = self.state.dom.lookup_node(&parent_handle);
         let list_node_handle = parent_node.handle().parent_handle();
         if let DomNode::Container(parent) = parent_node {
