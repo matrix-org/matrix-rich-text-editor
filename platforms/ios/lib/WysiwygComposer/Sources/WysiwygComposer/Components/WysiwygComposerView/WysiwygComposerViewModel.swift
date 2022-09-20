@@ -163,7 +163,6 @@ private extension WysiwygComposerViewModel {
                          endUtf16Codeunit: let end):
             let html = String(utf16CodeUnits: codeUnits,
                               count: codeUnits.count)
-                .replacingOccurrences(of: "\n", with: "<br>")
             do {
                 let attributed = try NSAttributedString(html: html)
                 // FIXME: handle error for out of bounds index
