@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::composer_model::base::{slice, slice_from, slice_to};
-use crate::dom::nodes::{ContainerNodeKind, DomNode, TextNode};
+use crate::composer_model::base::{slice_from, slice_to};
+use crate::dom::nodes::{ContainerNodeKind, DomNode};
 use crate::dom::{
     Dom, DomHandle, DomLocation, MultipleNodesRange, Range, SameNodeRange,
 };
@@ -92,7 +92,9 @@ where
         let range = self.state.dom.find_range(start, end);
         match range {
             Range::SameNode(range) => {
-                self.format_same_node(range, format);
+                let mrange =
+                    self.state.dom.convert_same_node_range_to_multi(range);
+                self.format_several_nodes(&mrange, format);
             }
 
             Range::NoNode => {
@@ -127,41 +129,6 @@ where
             Range::NoNode => {
                 panic!("Trying to unformat with no selected node")
             }
-        }
-    }
-
-    fn format_same_node(
-        &mut self,
-        range: SameNodeRange,
-        format: InlineFormatType,
-    ) {
-        let node = self.state.dom.lookup_node(&range.node_handle);
-        if let DomNode::Text(t) = node {
-            let text = t.data();
-            // TODO: can we be globally smart about not leaving empty text nodes ?
-            let before = slice_to(text, ..range.start_offset);
-            let mut during = slice(text, range.start_offset..range.end_offset);
-            let after = slice_from(text, range.end_offset..);
-            let mut new_nodes = Vec::new();
-            if before.len() > 0 {
-                new_nodes.push(DomNode::new_text(before));
-            }
-            if during.len() == 0 {
-                // TODO: Find a more generic way to do this.
-                // TextNodes should probably never be created empty
-                during = UnicodeString::from_str("\u{200B}");
-                self.state.end += 1;
-            }
-            new_nodes.push(DomNode::new_formatting(
-                format,
-                vec![DomNode::new_text(during)],
-            ));
-            if after.len() > 0 {
-                new_nodes.push(DomNode::new_text(after));
-            }
-            self.state.dom.replace(&range.node_handle, new_nodes);
-        } else {
-            panic!("Trying to format a non-text node")
         }
     }
 
@@ -387,39 +354,31 @@ where
                             DomNode::new_formatting(format.clone(), vec![node]);
                         parent.insert_child(index, format_node);
                     } else {
-                        // Node only partially covered by selection, we need to split the text node,
-                        // add one part to a new formatting node, then replace the original text
-                        // node with both the new formatting node and the other half of the text
-                        // node to their original parent.
-                        let position = if loc.is_start() {
-                            loc.start_offset
-                        } else {
-                            loc.end_offset
-                        };
-                        if let Some((orig, new)) =
-                            Self::split_text_node(node, position)
-                        {
-                            if loc.is_start() {
-                                let new = DomNode::new_formatting(
-                                    format.clone(),
-                                    vec![DomNode::Text(new)],
-                                );
-                                parent.insert_child(index, new);
-                                parent.insert_child(index, DomNode::Text(orig));
-                            } else {
-                                let orig = DomNode::new_formatting(
-                                    format.clone(),
-                                    vec![DomNode::Text(orig)],
-                                );
-                                parent.insert_child(index, DomNode::Text(new));
-                                parent.insert_child(index, orig);
-                            }
-                        } else {
-                            panic!("Node was not a text node so it cannot be split.");
+                        // Node only partially covered by selection, we need
+                        // to split into 2 or 3 nodes and add them to the
+                        // parent.
+                        let (before, mut middle, after) =
+                            Self::split_text_node_by_offsets(loc, node);
+
+                        if let Some(after) = after {
+                            parent.insert_child(index, after);
+                        }
+                        self.state.end +=
+                            Self::insert_zwspace_if_needed(&mut middle);
+                        let middle = DomNode::new_formatting(
+                            format.clone(),
+                            vec![middle],
+                        );
+                        parent.insert_child(index, middle);
+
+                        if let Some(before) = before {
+                            parent.insert_child(index, before);
                         }
                     }
                     // Clean up by removing any empty text nodes and merging formatting nodes
                     self.merge_formatting_node_with_siblings(&loc.node_handle);
+                } else {
+                    panic!("Parent is not a container!");
                 }
             }
         }
@@ -455,19 +414,61 @@ where
         false
     }
 
+    fn split_text_node_by_offsets(
+        loc: &DomLocation,
+        node: DomNode<S>,
+    ) -> (Option<DomNode<S>>, DomNode<S>, Option<DomNode<S>>) {
+        if loc.is_start() {
+            let (before, middle) =
+                Self::split_text_node(node, loc.start_offset);
+            (Some(before), middle, None)
+        } else if loc.is_end() {
+            let (middle, after) = Self::split_text_node(node, loc.end_offset);
+            (None, middle, Some(after))
+        } else {
+            let (before, middle) =
+                Self::split_text_node(node, loc.start_offset);
+            let (middle, after) = Self::split_text_node(
+                middle,
+                loc.end_offset - loc.start_offset,
+            );
+            (Some(before), middle, Some(after))
+        }
+    }
+
     fn split_text_node(
         node: DomNode<S>,
         position: usize,
-    ) -> Option<(TextNode<S>, TextNode<S>)> {
+    ) -> (DomNode<S>, DomNode<S>) {
         if let DomNode::Text(text_node) = node {
             let split_data_orig = slice_to(text_node.data(), ..position);
             let split_data_new = slice_from(text_node.data(), position..);
-            let mut orig = TextNode::from(split_data_orig);
-            orig.set_handle(text_node.handle());
-            let new = TextNode::from(split_data_new);
-            Some((orig, new))
+            let mut before = DomNode::new_text(split_data_orig);
+            before.set_handle(text_node.handle());
+            let after = DomNode::new_text(split_data_new);
+            (before, after)
         } else {
-            None
+            panic!("Node was not a text node so can't be split!");
+        }
+    }
+
+    /**
+     * If the supplied node is a text node with zero length, modify it to
+     * contain a zero width space and return 1.
+     * Otherwise, return 0 and don't modify anything.
+     *
+     * Returns the number of characters added, which will either be 0 or 1.
+     */
+    fn insert_zwspace_if_needed(node: &mut DomNode<S>) -> isize {
+        if let DomNode::Text(text) = node {
+            if text.data().is_empty() {
+                text.set_data(UnicodeString::from_str("\u{200B}"));
+                1
+            } else {
+                0
+            }
+        } else {
+            0
         }
     }
 
