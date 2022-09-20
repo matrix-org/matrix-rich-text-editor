@@ -1,7 +1,7 @@
 import { useWysiwyg } from "./lib/useWysiwyg";
 
 function App() {
-    const { ref, isWysiwygReady, wysiwyg, debug } = useWysiwyg();
+    const { ref, isWysiwygReady, wysiwyg, debug } = useWysiwyg({ isAutoFocusEnabled: true });
 
     return (
         <div className="wrapper">

@@ -6,14 +6,14 @@ import init, { ComposerModel, new_composer_model } from '../../generated/wysiwyg
 import { useListeners } from "./useListeners.js";
 import { useTestCases } from "./useTestCases.js";
 
-function useEditorFocus(editorRef: RefObject<HTMLElement | null>) {
+function useEditorFocus(editorRef: RefObject<HTMLElement | null>, isAutoFocusEnabled = false) {
     useEffect(() => {
-        console.log('call', editorRef);
-        if (editorRef.current) {
-            console.log('focus');
-            editorRef.current.focus();
+        if (isAutoFocusEnabled) {
+        // TODO remove this workaround
+            const id = setTimeout(() => editorRef.current?.focus(), 200);
+            return () => clearInterval(id);
         }
-    }, [editorRef]);
+    }, [editorRef, isAutoFocusEnabled]);
 }
 
 function useFormattingActions(editorRef: RefObject<HTMLElement | null>) {
@@ -39,7 +39,11 @@ function useComposerModel() {
     return composerModel;
 }
 
-export function useWysiwyg() {
+type WysiwygProps = {
+    isAutoFocusEnabled?: boolean;
+};
+
+export function useWysiwyg(wysiwygProps?: WysiwygProps) {
     const ref = useRef<HTMLDivElement>(null);
     const modelRef = useRef<HTMLDivElement>(null);
 
@@ -47,9 +51,7 @@ export function useWysiwyg() {
     const { testRef, utilities: testUtilities } = useTestCases(ref, composerModel);
     useListeners(ref, modelRef, composerModel, testUtilities);
     const formattingActions = useFormattingActions(ref);
-    useEditorFocus(ref);
-
-    console.log('rerender');
+    useEditorFocus(ref, wysiwygProps?.isAutoFocusEnabled);
 
     return {
         ref,

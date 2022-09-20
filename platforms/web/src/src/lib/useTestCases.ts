@@ -151,8 +151,6 @@ export function useTestCases(editorRef: RefObject<HTMLElement | null>, composerM
 
     const [editorHtml, setEditorHtml] = useState<string>('');
 
-    console.log('composerModel', composerModel);
-
     const memorizedTraceAction = useMemo(
         () => traceAction(testRef.current, actions, composerModel), [testRef, actions, composerModel],
     );
