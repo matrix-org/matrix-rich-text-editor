@@ -134,20 +134,20 @@ function resetTestCase(
     editor: HTMLElement,
     testNode: HTMLElement,
     composerModel: ComposerModel,
-    actions: Actions,
     html: string,
 ) {
     const [start, end] = getCurrentSelection(editor);
-    actions = [
+    const actions: Array<[string, any, any?]> = [
         ["replace_text", html],
         ["select", start, end],
     ];
     updateTestCase(testNode, composerModel, null, actions);
+    return actions;
 }
 
 export function useTestCases(editorRef: RefObject<HTMLElement | null>, composerModel: ComposerModel | null) {
     const testRef = useRef<HTMLDivElement>(null);
-    const actions = useRef<Array<[string, any, any]>>([]).current;
+    const [actions, setActions] = useState<Array<[string, any, any?]>>([]);
 
     const [editorHtml, setEditorHtml] = useState<string>('');
 
@@ -158,14 +158,13 @@ export function useTestCases(editorRef: RefObject<HTMLElement | null>, composerM
     const memorizedGetSelection = useMemo(() => getSelectionAccordingToActions(actions), [actions]);
 
     const onResetTestCase = useCallback(() => editorRef.current && testRef.current && composerModel &&
-        resetTestCase(
+        setActions(resetTestCase(
             editorRef.current,
             testRef.current,
             composerModel,
-            actions,
             editorHtml,
-        ),
-    [editorRef, testRef, composerModel, actions, editorHtml],
+        )),
+    [editorRef, testRef, composerModel, editorHtml],
     );
 
     return {
