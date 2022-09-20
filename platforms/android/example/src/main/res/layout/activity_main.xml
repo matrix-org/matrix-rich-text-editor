@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     tools:context="io.element.android.wysiwyg.poc.MainActivity">
 
-    <io.element.android.wysiwyg.RichTextEditor
+    <io.element.android.wysiwyg.poc.RichTextEditor
         android:id="@+id/editor"
         android:layout_width="0dp"
         android:layout_height="0dp"

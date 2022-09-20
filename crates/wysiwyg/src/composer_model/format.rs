@@ -12,13 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::composer_model::base::{slice, slice_from, slice_to};
-use crate::dom::nodes::{ContainerNodeKind, DomNode, TextNode};
-use crate::dom::{
-    Dom, DomHandle, DomLocation, MultipleNodesRange, Range, SameNodeRange,
-};
+use crate::composer_model::base::{slice_from, slice_to};
+use crate::dom::nodes::{ContainerNodeKind, DomNode};
+use crate::dom::{Dom, DomHandle, DomLocation, MultipleNodesRange, Range};
 use crate::{
-    ComposerAction, ComposerModel, ComposerUpdate, InlineFormatType,
+    ComposerAction, ComposerModel, ComposerUpdate, InlineFormatType, Location,
     UnicodeString,
 };
 
@@ -79,13 +77,22 @@ where
         // Store current Dom
         self.push_state_to_history();
         let (s, e) = self.safe_selection();
-        let range = self.state.dom.find_range(s, e);
+        self.format_range(s, e, format);
+        self.create_update_replace_all()
+    }
+
+    fn format_range(
+        &mut self,
+        start: usize,
+        end: usize,
+        format: InlineFormatType,
+    ) {
+        let range = self.state.dom.find_range(start, end);
         match range {
             Range::SameNode(range) => {
-                self.format_same_node(range, format);
-                // TODO: for now, we replace every time, to check ourselves, but
-                // at least some of the time we should not
-                self.create_update_replace_all()
+                let mrange =
+                    self.state.dom.convert_same_node_range_to_multi(range);
+                self.format_several_nodes(&mrange, format);
             }
 
             Range::NoNode => {
@@ -93,43 +100,35 @@ where
                     format,
                     vec![DomNode::new_text(S::from_str(""))],
                 ));
-                ComposerUpdate::keep()
             }
 
             Range::MultipleNodes(range) => {
                 self.format_several_nodes(&range, format);
-                self.create_update_replace_all()
             }
         }
     }
 
-    pub fn unformat(&mut self, _format: InlineFormatType) -> ComposerUpdate<S> {
-        panic!("Unable to unformat yet")
-    }
+    pub fn unformat(&mut self, format: InlineFormatType) -> ComposerUpdate<S> {
+        // Store current Dom
+        self.push_state_to_history();
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        match range {
+            Range::SameNode(range) => {
+                let mrange =
+                    self.state.dom.convert_same_node_range_to_multi(range);
+                self.unformat_several_nodes(s, e, &mrange, format);
+                self.create_update_replace_all()
+            }
 
-    fn format_same_node(
-        &mut self,
-        range: SameNodeRange,
-        format: InlineFormatType,
-    ) {
-        let node = self.state.dom.lookup_node(&range.node_handle);
-        if let DomNode::Text(t) = node {
-            let text = t.data();
-            // TODO: can we be globally smart about not leaving empty text nodes ?
-            let before = slice_to(text, ..range.start_offset);
-            let during = slice(text, range.start_offset..range.end_offset);
-            let after = slice_from(text, range.end_offset..);
-            let new_nodes = vec![
-                DomNode::new_text(before),
-                DomNode::new_formatting(
-                    format,
-                    vec![DomNode::new_text(during)],
-                ),
-                DomNode::new_text(after),
-            ];
-            self.state.dom.replace(&range.node_handle, new_nodes);
-        } else {
-            panic!("Trying to bold a non-text node")
+            Range::MultipleNodes(range) => {
+                self.unformat_several_nodes(s, e, &range, format);
+                self.create_update_replace_all()
+            }
+
+            Range::NoNode => {
+                panic!("Trying to unformat with no selected node")
+            }
         }
     }
 
@@ -190,6 +189,63 @@ where
         }
     }
 
+    fn unformat_several_nodes(
+        &mut self,
+        start: usize,
+        end: usize,
+        range: &MultipleNodesRange,
+        format: InlineFormatType,
+    ) {
+        for location in range.locations.iter() {
+            let node = self.state.dom.lookup_node(&location.node_handle);
+            if let DomNode::Container(n) = node {
+                if let ContainerNodeKind::Formatting(f) = n.kind() {
+                    if *f == format {
+                        if node.has_only_placeholder_text_child() {
+                            self.state.end = self.state.start;
+                            self.state
+                                .dom
+                                .replace(&location.node_handle, vec![]);
+                        } else {
+                            self.state.dom.remove_and_keep_children(
+                                &location.node_handle,
+                            );
+                        }
+
+                        // Re-apply formatting to slices before and after the selection if needed
+                        let (before_start, before_end) = self
+                            .safe_locations_from(
+                                Location::from(start - location.start_offset),
+                                Location::from(start),
+                            );
+                        let (after_start, after_end) = self
+                            .safe_locations_from(
+                                Location::from(end),
+                                Location::from(
+                                    end + location.length - location.end_offset,
+                                ),
+                            );
+
+                        if before_end > before_start {
+                            self.format_range(
+                                before_start,
+                                before_end,
+                                format.clone(),
+                            );
+                        }
+                        if after_end > after_start {
+                            self.format_range(
+                                after_start,
+                                after_end,
+                                format.clone(),
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     fn needs_format(
         dom: &Dom<S>,
         loc: &DomLocation,
@@ -222,39 +278,31 @@ where
                             DomNode::new_formatting(format.clone(), vec![node]);
                         parent.insert_child(index, format_node);
                     } else {
-                        // Node only partially covered by selection, we need to split the text node,
-                        // add one part to a new formatting node, then replace the original text
-                        // node with both the new formatting node and the other half of the text
-                        // node to their original parent.
-                        let position = if loc.is_start() {
-                            loc.start_offset
-                        } else {
-                            loc.end_offset
-                        };
-                        if let Some((orig, new)) =
-                            Self::split_text_node(node, position)
-                        {
-                            if loc.is_start() {
-                                let new = DomNode::new_formatting(
-                                    format.clone(),
-                                    vec![DomNode::Text(new)],
-                                );
-                                parent.insert_child(index, new);
-                                parent.insert_child(index, DomNode::Text(orig));
-                            } else {
-                                let orig = DomNode::new_formatting(
-                                    format.clone(),
-                                    vec![DomNode::Text(orig)],
-                                );
-                                parent.insert_child(index, DomNode::Text(new));
-                                parent.insert_child(index, orig);
-                            }
-                        } else {
-                            panic!("Node was not a text node so it cannot be split.");
+                        // Node only partially covered by selection, we need
+                        // to split into 2 or 3 nodes and add them to the
+                        // parent.
+                        let (before, mut middle, after) =
+                            Self::split_text_node_by_offsets(loc, node);
+
+                        if let Some(after) = after {
+                            parent.insert_child(index, after);
+                        }
+                        self.state.end +=
+                            Self::insert_zwspace_if_needed(&mut middle);
+                        let middle = DomNode::new_formatting(
+                            format.clone(),
+                            vec![middle],
+                        );
+                        parent.insert_child(index, middle);
+
+                        if let Some(before) = before {
+                            parent.insert_child(index, before);
                         }
                     }
                     // Clean up by removing any empty text nodes and merging formatting nodes
                     self.merge_formatting_node_with_siblings(&loc.node_handle);
+                } else {
+                    panic!("Parent is not a container!");
                 }
             }
         }
@@ -290,19 +338,61 @@ where
         false
     }
 
+    fn split_text_node_by_offsets(
+        loc: &DomLocation,
+        node: DomNode<S>,
+    ) -> (Option<DomNode<S>>, DomNode<S>, Option<DomNode<S>>) {
+        if loc.is_start() {
+            let (before, middle) =
+                Self::split_text_node(node, loc.start_offset);
+            (Some(before), middle, None)
+        } else if loc.is_end() {
+            let (middle, after) = Self::split_text_node(node, loc.end_offset);
+            (None, middle, Some(after))
+        } else {
+            let (before, middle) =
+                Self::split_text_node(node, loc.start_offset);
+            let (middle, after) = Self::split_text_node(
+                middle,
+                loc.end_offset - loc.start_offset,
+            );
+            (Some(before), middle, Some(after))
+        }
+    }
+
     fn split_text_node(
         node: DomNode<S>,
         position: usize,
-    ) -> Option<(TextNode<S>, TextNode<S>)> {
+    ) -> (DomNode<S>, DomNode<S>) {
         if let DomNode::Text(text_node) = node {
             let split_data_orig = slice_to(text_node.data(), ..position);
             let split_data_new = slice_from(text_node.data(), position..);
-            let mut orig = TextNode::from(split_data_orig);
-            orig.set_handle(text_node.handle());
-            let new = TextNode::from(split_data_new);
-            Some((orig, new))
+            let mut before = DomNode::new_text(split_data_orig);
+            before.set_handle(text_node.handle());
+            let after = DomNode::new_text(split_data_new);
+            (before, after)
         } else {
-            None
+            panic!("Node was not a text node so can't be split!");
+        }
+    }
+
+    /**
+     * If the supplied node is a text node with zero length, modify it to
+     * contain a zero width space and return 1.
+     * Otherwise, return 0 and don't modify anything.
+     *
+     * Returns the number of characters added, which will either be 0 or 1.
+     */
+    fn insert_zwspace_if_needed(node: &mut DomNode<S>) -> isize {
+        if let DomNode::Text(text) = node {
+            if text.data().is_empty() {
+                text.set_data(UnicodeString::from_str("\u{200B}"));
+                1
+            } else {
+                0
+            }
+        } else {
+            0
         }
     }
 
@@ -322,7 +412,7 @@ where
 
 #[cfg(test)]
 mod test {
-    use crate::tests::testutils_composer_model::cm;
+    use crate::tests::testutils_composer_model::{cm, tx};
 
     use super::*;
 
@@ -448,5 +538,66 @@ mod test {
         let mut model = cm("|{hello <b>wor}ld</b>");
         model.format(InlineFormatType::Bold);
         assert_eq!(model.state.dom.to_string(), "<strong>hello world</strong>");
+    }
+
+    #[test]
+    fn unformat_across_overlapping_nodes_removes_tag() {
+        let mut model = cm("<strong><em>{abc</em>def<em>ghi}|</em></strong>");
+        model.unformat(InlineFormatType::Bold);
+        assert_eq!(model.state.dom.to_string(), "<em>abc</em>def<em>ghi</em>");
+    }
+
+    #[test]
+    fn unformat_partial_node_creates_new_formatting_nodes() {
+        let mut model = cm("<strong><em>a{bc</em>def<em>gh}|i</em></strong>");
+        model.unformat(InlineFormatType::Bold);
+        assert_eq!(
+            model.state.dom.to_string(),
+            "<em><strong>a</strong>bc</em>def<em>gh<strong>i</strong></em>",
+        );
+    }
+
+    #[test]
+    fn unformat_on_edge_creates_new_formatting_node_on_single_side() {
+        let mut model = cm("<em>{abc}|def</em>");
+        model.unformat(InlineFormatType::Italic);
+        assert_eq!(model.state.dom.to_string(), "abc<em>def</em>");
+
+        let mut model = cm("<em>abcd{ef}|</em>");
+        model.unformat(InlineFormatType::Italic);
+        assert_eq!(model.state.dom.to_string(), "<em>abcd</em>ef");
+    }
+
+    #[test]
+    fn unformat_across_list_items_removes_tag() {
+        let mut model = cm("<ol><li><strong>{abc</strong></li><li><strong>~def}|</strong></li></ol>");
+        model.unformat(InlineFormatType::Bold);
+        assert_eq!(
+            model.state.dom.to_string(),
+            "<ol><li>abc</li><li>\u{200b}def</li></ol>"
+        );
+    }
+
+    #[test]
+    fn partially_formatted_selection_triggers_format() {
+        let mut model = cm("<em>a{bc</em>de}|f");
+        model.italic();
+        assert_eq!(model.state.dom.to_string(), "<em>abcde</em>f");
+    }
+
+    #[test]
+    fn completely_formatted_selection_triggers_unformat() {
+        let mut model = cm("<del>a{bcd}|ef</del>");
+        model.strike_through();
+        assert_eq!(model.state.dom.to_string(), "<del>a</del>bcd<del>ef</del>");
+    }
+
+    #[test]
+    fn format_and_unformat_empty_selection() {
+        let mut model = cm("AAA |");
+        model.bold();
+        assert_eq!(tx(&model), "AAA <strong>{~}|</strong>");
+        model.bold();
+        assert_eq!(tx(&model), "AAA |");
     }
 }

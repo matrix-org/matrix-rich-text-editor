@@ -21,6 +21,7 @@ where
 {
     Keep,
     ReplaceAll(ReplaceAll<S>),
+    Select(Selection),
 }
 
 #[derive(Debug, Clone)]
@@ -29,6 +30,12 @@ where
     S: UnicodeString,
 {
     pub replacement_html: S,
+    pub start: Location,
+    pub end: Location,
+}
+
+#[derive(Debug, Clone)]
+pub struct Selection {
     pub start: Location,
     pub end: Location,
 }

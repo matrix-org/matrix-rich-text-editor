@@ -51,7 +51,7 @@ where
                     let parent_list_item_handle = self
                         .state
                         .dom
-                        .find_parent_list_item(&range.node_handle);
+                        .find_parent_list_item_or_self(&range.node_handle);
                     if let Some(parent_handle) = parent_list_item_handle {
                         self.do_enter_in_list(&parent_handle, e, range)
                     } else {
@@ -132,10 +132,7 @@ where
                         line break!"
                     ),
                 }
-
                 add_node_after_this = true;
-                // TODO: create a new text node after this one to contain
-                // the contents of new_text
             }
             DomNode::Container(_) => {
                 panic!(
@@ -174,6 +171,9 @@ where
         self.delete_nodes(to_delete);
 
         let pos: usize = self.state.start.into();
+        // Note: the handles in range may have been made invalid by deleting
+        // nodes above, but the first text node in it should not have been
+        // invalidated, because it should not have been deleted.
         self.join_nodes(&range, pos + len + 1);
     }
 
@@ -188,6 +188,7 @@ where
     ) -> Vec<DomHandle> {
         let mut to_delete = Vec::new();
         let mut first_text_node = true;
+
         for loc in range.into_iter() {
             let mut node = self.state.dom.lookup_node_mut(&loc.node_handle);
             match &mut node {

@@ -7,12 +7,14 @@ import io.element.android.wysiwyg.extensions.log
 import io.element.android.wysiwyg.extensions.string
 import io.element.android.wysiwyg.spans.HtmlToSpansParser
 import uniffi.wysiwyg_composer.ComposerModel
+import uniffi.wysiwyg_composer.MenuState
 import uniffi.wysiwyg_composer.TextUpdate
 import kotlin.math.absoluteValue
 
 class InputProcessor(
     private val context: Context,
     private val composer: ComposerModel,
+    private val menuStateCallback: (MenuState) -> Unit,
 ) {
 
     fun updateSelection(editable: Editable, start: Int, end: Int) {
@@ -23,12 +25,16 @@ class InputProcessor(
         val newStart = (start - zeroWidthLineBreaksBefore).toUInt()
         val newEnd = (end - zeroWidthLineBreaksBefore).toUInt()
 
-        composer.select(newStart, newEnd)
+        val update = composer.select(newStart, newEnd)
+        val menuState = update.menuState()
+        if (menuState is MenuState.Update) {
+            menuStateCallback(menuState)
+        }
         composer.log()
     }
 
     fun processInput(action: EditorInputAction): TextUpdate? {
-        return when (action) {
+        val update = when (action) {
             is EditorInputAction.InsertText -> {
                 // This conversion to a plain String might be too simple
                 composer.replaceText(action.value.toString())
@@ -58,7 +64,11 @@ class InputProcessor(
             is EditorInputAction.ToggleList -> {
                 if (action.ordered) composer.orderedList() else composer.unorderedList()
             }
-        }?.textUpdate().also {
+        }
+
+        update?.menuState()?.let { menuStateCallback(it) }
+
+        return update?.textUpdate().also {
             composer.log()
         }
     }
@@ -72,6 +82,7 @@ class InputProcessor(
                     selection = update.startUtf16Codeunit.toInt()..update.endUtf16Codeunit.toInt(),
                 )
             }
+            is TextUpdate.Select -> null
         }
     }
 

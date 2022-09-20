@@ -36,11 +36,7 @@ where
         &mut self,
         parent_handle: &DomHandle,
         location: usize,
-        range: SameNodeRange,
     ) -> ComposerUpdate<S> {
-        // do_backspace_in_list should only be called on a single location
-        // as selection can be handled in standard do_backspace.
-        assert_eq!(range.start_offset, range.end_offset);
         let parent_node = self.state.dom.lookup_node(&parent_handle);
         let list_node_handle = parent_node.handle().parent_handle();
         if let DomNode::Container(parent) = parent_node {
@@ -119,7 +115,7 @@ where
                 let parent_list_item_handle = self
                     .state
                     .dom
-                    .find_parent_list_item(&range.node_handle.clone());
+                    .find_parent_list_item_or_self(&range.node_handle.clone());
                 if let Some(list_item_handle) = parent_list_item_handle {
                     let list_node_handle = list_item_handle.parent_handle();
                     let list_node =
@@ -413,8 +409,9 @@ where
         let range = self.state.dom.find_range(s, e);
         match range {
             Range::SameNode(r) => {
-                if self.can_indent_handle(&r.node_handle) {
-                    self.indent_handles(vec![r.node_handle]);
+                let mrange = self.state.dom.convert_same_node_range_to_multi(r);
+                if self.can_indent(mrange.locations.clone()) {
+                    self.indent_locations(mrange.locations);
                     self.create_update_replace_all()
                 } else {
                     ComposerUpdate::keep()
@@ -437,8 +434,9 @@ where
         let range = self.state.dom.find_range(s, e);
         match range {
             Range::SameNode(r) => {
-                if self.can_unindent_handle(&r.node_handle) {
-                    self.unindent_handles(vec![r.node_handle]);
+                let mrange = self.state.dom.convert_same_node_range_to_multi(r);
+                if self.can_unindent(mrange.locations.clone()) {
+                    self.unindent_locations(mrange.locations);
                     self.create_update_replace_all()
                 } else {
                     ComposerUpdate::keep()

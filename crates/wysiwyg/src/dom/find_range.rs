@@ -18,7 +18,12 @@ use crate::dom::{Dom, DomHandle, FindResult, Range};
 use crate::UnicodeString;
 use std::cmp::{max, min};
 
-pub fn find_range<S>(dom: &Dom<S>, start: usize, end: usize) -> Range
+pub fn find_range<S>(
+    dom: &Dom<S>,
+    start: usize,
+    end: usize,
+    same_node_allowed: bool,
+) -> Range
 where
     S: UnicodeString,
 {
@@ -26,20 +31,21 @@ where
         return Range::NoNode;
     }
 
-    // If end < start, we swap start & end to make calculations easier, then reverse the returned ranges
+    // If end < start, we swap start & end to make calculations easier, then
+    // reverse the returned ranges
     let is_reversed = end < start;
-    let (start, end) = if is_reversed {
+    let (s, e) = if is_reversed {
         (end, start)
     } else {
         (start, end)
     };
 
-    let result = find_pos(dom, &dom.document_handle(), start, end);
+    let result = find_pos(dom, &dom.document_handle(), s, e);
     match result {
         FindResult::Found(locations) => {
             let leaf_locations: Vec<&DomLocation> =
                 locations.iter().filter(|l| l.is_leaf).collect();
-            if leaf_locations.len() == 1 {
+            if leaf_locations.len() == 1 && same_node_allowed {
                 // TODO: check offsets
                 let location = leaf_locations.first().unwrap().clone();
                 let location = if is_reversed {
@@ -51,6 +57,8 @@ where
                     node_handle: location.node_handle.clone(),
                     start_offset: location.start_offset,
                     end_offset: location.end_offset,
+                    original_start: start,
+                    original_end: end,
                 })
             } else {
                 let locations: Vec<DomLocation> = if is_reversed {
@@ -68,16 +76,7 @@ where
     }
 }
 
-/// Find a particular character position in the DOM
-///
-/// location controls whether we are looking for the start or the end
-/// of a range. When we are on the border of a tag, if we are looking for
-/// the start, we return the character at the beginning of the next tag,
-/// whereas if we are looking for the end of a range, we return the
-/// position after the last character of the previous tag.
-///
-/// When searching for an individual character (rather than a range), you
-/// should ask for RangeLocation::End.
+/// Find a particular character range in the DOM
 pub fn find_pos<S>(
     dom: &Dom<S>,
     node_handle: &DomHandle,
@@ -157,7 +156,10 @@ where
     let container_end = *offset;
     let container_node_len = container_end - container_start;
     // We never want to return the root node
-    if !node.handle().is_root() {
+    if container_end >= start
+        && container_start <= end
+        && !node.handle().is_root()
+    {
         let start_offset = max(start, container_start) - container_start;
         let end_offset = min(end, container_end) - container_start;
         results.push(DomLocation {
@@ -463,6 +465,8 @@ mod test {
                     node_handle: DomHandle::from_raw(vec![1, 1, 0]),
                     start_offset: 1,
                     end_offset: 2,
+                    original_start: 9,
+                    original_end: 10
                 }
             );
         } else {
@@ -486,6 +490,53 @@ mod test {
             assert_eq!(utf16("new feature"), html_of_ranges[3]);
         } else {
             panic!("Should have been a MultipleNodesRange {:?}", range);
+        }
+    }
+
+    #[test]
+    fn finding_a_same_node_range_but_asking_for_multi_returns_multi() {
+        let d = dom(&[tn("foo "), b(&[tn("bar")]), tn(" baz")]);
+        let range = d.find_range_multi(5, 6);
+
+        if let Range::MultipleNodes(range) = range {
+            assert_eq!(
+                range.locations,
+                vec![
+                    DomLocation::new(
+                        DomHandle::from_raw(vec![1, 0]),
+                        4,
+                        1,
+                        2,
+                        3,
+                        true
+                    ),
+                    DomLocation::new(
+                        DomHandle::from_raw(vec![1]),
+                        4,
+                        1,
+                        2,
+                        3,
+                        false
+                    )
+                ]
+            );
+        } else {
+            panic!("Should have been a MultipleNodesRange: {:?}", range)
+        }
+    }
+
+    #[test]
+    fn converting_a_same_node_range_to_multi_works() {
+        let d = dom(&[tn("foo "), b(&[tn("bar")]), tn(" baz")]);
+        let same_range = d.find_range(5, 7);
+        if let Range::SameNode(same_range) = same_range {
+            let converted = d.convert_same_node_range_to_multi(same_range);
+
+            let multi_range = d.find_range_multi(5, 7);
+
+            assert_eq!(Range::MultipleNodes(converted), multi_range);
+        } else {
+            panic!("Expected the supplied range to be SameNodeRange");
         }
     }
 }

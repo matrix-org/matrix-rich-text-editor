@@ -19,8 +19,8 @@ import SwiftUI
 
 extension WysiwygAction: CaseIterable, Identifiable {
     public static var allCases: [WysiwygAction] = [
-        .bold, .italic, .strikethrough, .underline,
-        .undo, .redo, .orderedList, .unorderedList
+        .bold, .italic, .strikethrough, .underline, .inlineCode,
+        .link(url: "unset"), .undo, .redo, .orderedList, .unorderedList
     ]
 
     public var id: String {
@@ -55,6 +55,10 @@ extension WysiwygAction: CaseIterable, Identifiable {
             return .strikeThroughButton
         case .underline:
             return .underlineButton
+        case .inlineCode:
+            return .inlineCodeButton
+        case .link:
+            return .linkButton
         case .undo:
             return .undoButton
         case .redo:
@@ -76,6 +80,10 @@ extension WysiwygAction: CaseIterable, Identifiable {
             return "strikethrough"
         case .underline:
             return "underline"
+        case .inlineCode:
+            return "chevron.left.forwardslash.chevron.right"
+        case .link:
+            return "link"
         case .undo:
             return "arrow.uturn.backward"
         case .redo:
@@ -84,6 +92,17 @@ extension WysiwygAction: CaseIterable, Identifiable {
             return "list.number"
         case .unorderedList:
             return "list.bullet"
+        }
+    }
+}
+
+extension WysiwygAction: Equatable {
+    public static func == (lhs: WysiwygAction, rhs: WysiwygAction) -> Bool {
+        switch (lhs, rhs) {
+        case (.link(url: let lhsUrl), (.link(url: let rhsUrl))):
+            return lhsUrl == rhsUrl
+        default:
+            return lhs.id == rhs.id
         }
     }
 }
@@ -99,6 +118,10 @@ private extension WysiwygAction {
             return .strikeThrough
         case .underline:
             return .underline
+        case .inlineCode:
+            return .inlineCode
+        case .link:
+            return .link
         case .undo:
             return .undo
         case .redo:

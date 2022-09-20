@@ -16,7 +16,7 @@
 
 use crate::tests::testutils_composer_model::{cm, tx};
 
-use crate::{InlineFormatType, Location};
+use crate::{InlineFormatType, Location, TextUpdate};
 
 #[test]
 fn selecting_ascii_characters() {
@@ -100,4 +100,16 @@ fn selecting_within_a_tag() {
     model.format(InlineFormatType::Bold);
     model.select(Location::from(3), Location::from(7));
     assert_eq!(tx(&model), "ad<strong>a{sda</strong>s}|f");
+}
+
+#[test]
+fn selecting_creates_a_selection_update() {
+    let mut model = cm("abcdef|");
+    let update = model.select(Location::from(2), Location::from(6));
+    if let TextUpdate::Select(s) = update.text_update {
+        assert_eq!(s.start, Location::from(2));
+        assert_eq!(s.end, Location::from(6));
+    } else {
+        panic!("TextUpdate should be a selection")
+    }
 }

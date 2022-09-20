@@ -62,7 +62,7 @@ where
             ];
             self.state.dom.replace(&range.node_handle, new_nodes);
         } else {
-            panic!("Trying to bold a non-text node")
+            panic!("Trying to linkify a non-text node")
         }
     }
 }

@@ -52,6 +52,29 @@ public class WysiwygComposerViewModel: ObservableObject {
         self.applyUpdate(self.model.replaceAllHtml(html: ""))
     }
 
+    /// Select given range of text within the model.
+    ///
+    /// - Parameters:
+    ///   - text: Text currently displayed in the composer.
+    ///   - range: Range to select.
+    public func select(text: NSAttributedString, range: NSRange) {
+        do {
+            // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
+            let htmlSelection = try text.htmlRange(from: range,
+                                                   shouldIgnoreTrailingNewline: false)
+            Logger.composer.debug("""
+                                  New selection: Attributed {\(range.location),\(range.length)} \
+                                  HTML {\(htmlSelection.location),\(htmlSelection.length)}
+                                  """)
+            let update = self.model.select(startUtf16Codeunit: UInt32(htmlSelection.location),
+                              endUtf16Codeunit: UInt32(htmlSelection.upperBound))
+
+            self.applyUpdate(update)
+        } catch {
+            Logger.composer.error("Unable to select range: \(error.localizedDescription)")
+        }
+    }
+
     /// Apply given action to the composer.
     ///
     /// - Parameters:
@@ -67,6 +90,10 @@ public class WysiwygComposerViewModel: ObservableObject {
             update = self.model.strikeThrough()
         case .underline:
             update = self.model.underline()
+        case .inlineCode:
+            update = self.model.inlineCode()
+        case .link(url: let url):
+            update = self.model.setLink(newText: url)
         case .undo:
             update = self.model.undo()
         case .redo:
@@ -114,29 +141,6 @@ extension WysiwygComposerViewModel {
         self.applyUpdate(update)
     }
 
-    /// Select given range of text within the model.
-    ///
-    /// - Parameters:
-    ///   - text: Text currently displayed in the composer.
-    ///   - range: Range to select.
-    func select(text: NSAttributedString, range: NSRange) {
-        do {
-            // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
-            let htmlSelection = try text.htmlRange(from: range,
-                                                   shouldIgnoreTrailingNewline: false)
-            Logger.composer.debug("""
-                                  New selection: Attributed {\(range.location),\(range.upperBound)} \
-                                  HTML {\(htmlSelection.location),\(htmlSelection.upperBound)}
-                                  """)
-            let update = self.model.select(startUtf16Codeunit: UInt32(htmlSelection.location),
-                              endUtf16Codeunit: UInt32(htmlSelection.upperBound))
-
-            self.applyUpdate(update)
-        } catch {
-            Logger.composer.error("Unable to select range: \(error.localizedDescription)")
-        }
-    }
-
     /// Notify that the text view content has changed.
     ///
     /// - Parameter textView: The composer's text view.
@@ -174,7 +178,19 @@ private extension WysiwygComposerViewModel {
             } catch {
                 Logger.composer.error("Unable to update composer display: \(error.localizedDescription)")
             }
-        default:
+        case .select(startUtf16Codeunit: let start,
+                     endUtf16Codeunit: let end):
+            do {
+                let htmlSelection = NSRange(location: Int(start), length: Int(end-start))
+                // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
+                let textSelection = try self.content.attributed.attributedRange(from: htmlSelection,
+                                                                                shouldIgnoreTrailingNewline: false)
+                self.content.attributedSelection = textSelection
+                Logger.composer.debug("Update selection: rustSelection: \(htmlSelection) selection: \(textSelection)")
+            } catch {
+                Logger.composer.error("Unable to update composer display: \(error.localizedDescription)")
+            }
+        case .keep:
             break
         }
 

@@ -16,10 +16,13 @@ use std::fmt::Display;
 
 use crate::composer_model::base::{slice_from, slice_to};
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode};
+use crate::dom::SameNodeRange;
 use crate::dom::{
     find_range, to_raw_text::ToRawText, DomHandle, Range, ToTree, UnicodeString,
 };
 use crate::ToHtml;
+
+use super::MultipleNodesRange;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Dom<S>
@@ -89,46 +92,70 @@ where
         }
     }
 
+    /// Removes node at given handle from the dom, and if it has children
+    /// moves them to its parent container children.
+    pub fn remove_and_keep_children(&mut self, node_handle: &DomHandle) {
+        let parent_node = self.lookup_node_mut(&node_handle.parent_handle());
+        match parent_node {
+            DomNode::Container(parent) => {
+                let index = node_handle.index_in_parent();
+                let node = parent.remove_child(index);
+                if let DomNode::Container(mut node) = node {
+                    for i in (0..node.children().len()).rev() {
+                        let child = node.remove_child(i);
+                        parent.insert_child(index, child);
+                    }
+                }
+            }
+            DomNode::Text(_) => panic!("Text nodes can't have children"),
+            DomNode::LineBreak(_) => panic!("Line breaks can't have children"),
+        }
+    }
+
     /// Given the start and end code units, find which nodes of this Dom are
     /// selected. The returned range lists all the Dom nodes involved.
     pub fn find_range(&self, start: usize, end: usize) -> Range {
-        find_range::find_range(self, start, end)
+        find_range::find_range(self, start, end, true)
+    }
+
+    /// Special transitional version of find_range that explicitly asks for
+    /// a MultiNodesRange type, not a SameNodeTange.
+    pub(crate) fn find_range_multi(&self, start: usize, end: usize) -> Range {
+        find_range::find_range(self, start, end, false)
+    }
+
+    pub(crate) fn convert_same_node_range_to_multi(
+        &self,
+        range: SameNodeRange,
+    ) -> MultipleNodesRange {
+        if let Range::MultipleNodes(r) =
+            self.find_range_multi(range.original_start, range.original_end)
+        {
+            r
+        } else {
+            panic!("find_range_multi didn't return a multi range!");
+        }
     }
 
     pub(crate) fn document_handle(&self) -> DomHandle {
         self.document.handle()
     }
 
-    pub fn find_parent_list_item(
+    pub fn find_parent_list_item_or_self(
         &self,
         child_handle: &DomHandle,
     ) -> Option<DomHandle> {
-        fn find_list_item<S>(
-            dom: &Dom<S>,
-            node: &DomNode<S>,
-        ) -> Option<DomHandle>
-        where
-            S: UnicodeString,
-        {
-            if !node.handle().has_parent() {
-                return None;
-            }
-            let parent_handle = node.handle().parent_handle();
-            let parent_node = dom.lookup_node(&parent_handle);
-
-            match parent_node {
-                DomNode::Container(n) => {
-                    if n.is_list_item() {
-                        Some(parent_handle)
-                    } else {
-                        find_list_item(dom, parent_node)
-                    }
-                }
-                _ => find_list_item(dom, parent_node),
+        if let DomNode::Container(n) = self.lookup_node(child_handle) {
+            if n.is_list_item() {
+                return Some(child_handle.clone());
             }
         }
 
-        find_list_item(self, self.lookup_node(&child_handle))
+        if child_handle.has_parent() {
+            self.find_parent_list_item_or_self(&child_handle.parent_handle())
+        } else {
+            None
+        }
     }
 
     pub(crate) fn find_closest_list_ancestor(
@@ -156,10 +183,13 @@ where
         where
             S: UnicodeString,
         {
-            element.children().get(idx).expect(
-                "Handle is invalid: it refers to a child index which is too \
-                large for the number of children in this node.",
-            )
+            element.children().get(idx).unwrap_or_else(|| {
+                panic!(
+                    "Handle is invalid: it refers to a child index ({}) which \
+                is too large for the number of children in this node ({:?}).",
+                    idx, element
+                )
+            })
         }
 
         let mut node = &self.document;
@@ -458,6 +488,16 @@ mod test {
         assert_eq!(dom.to_string(), "<b>f<i>o</i>o</b>");
     }
 
+    #[test]
+    fn can_remove_node_and_keep_children() {
+        let mut dom = dom(&[b(&[tn("foo"), i(&[tn("bar")])])]);
+        let node_handle = &dom.children()[0].handle();
+
+        dom.remove_and_keep_children(node_handle);
+        // Node is removed and replaced by its children
+        assert_eq!(dom.to_string(), "foo<i>bar</i>");
+    }
+
     // Serialisation
 
     #[test]
@@ -552,16 +592,45 @@ mod test {
 
     #[test]
     fn text_len_counts_brs_as_1() {
-        // fails because we don't replace the "|" character in replace_text.
-        // SameNode is not helping us here, because we're not really inside
-        // the br tag - we want to be in the immediately following text node.
-        // But we must allow ourselves to be here, because there might not be
-        // a text node after us - there could be another br or something else.
-
-        // Maybe the problem is that we mis-counted and didn't give the br tag
-        // a width in the cm code....that would be easier.
         assert_eq!(1, cm("<br />|").state.dom.text_len());
         assert_eq!(3, cm("a|<br />b").state.dom.text_len());
+    }
+
+    #[test]
+    fn find_parent_list_item_or_self_finds_our_parent() {
+        let d = cm("|a<ul><li>b</li></ul>").state.dom;
+        let res = d
+            .find_parent_list_item_or_self(&DomHandle::from_raw(vec![1, 0, 0]));
+        let res = res.expect("Should have found a list parent!");
+        assert_eq!(res.into_raw(), vec![1, 0]);
+    }
+
+    #[test]
+    fn find_parent_list_item_or_self_finds_ourself() {
+        let d = cm("|a<ul><li>b</li></ul>").state.dom;
+        let res =
+            d.find_parent_list_item_or_self(&DomHandle::from_raw(vec![1, 0]));
+        let res = res.expect("Should have found a list parent!");
+        assert_eq!(res.into_raw(), vec![1, 0]);
+    }
+
+    #[test]
+    fn find_parent_list_item_or_self_finds_our_grandparent() {
+        let d = cm("|<ul><li>b<strong>c</strong></li></ul>d").state.dom;
+        // TODO: assumes model will have a leading empty text node!
+        let res = d.find_parent_list_item_or_self(&DomHandle::from_raw(vec![
+            1, 0, 1, 0,
+        ]));
+        let res = res.expect("Should have found a list parent!");
+        assert_eq!(res.into_raw(), vec![1, 0]);
+    }
+
+    #[test]
+    fn find_parent_list_item_or_self_returns_none_when_not_in_a_list() {
+        let d = cm("|<ul><li>b<strong>c</strong></li></ul>d").state.dom;
+        let res =
+            d.find_parent_list_item_or_self(&DomHandle::from_raw(vec![1]));
+        assert!(res.is_none(), "Should not have found a list parent!")
     }
 
     const NO_CHILDREN: &Vec<DomNode<Utf16String>> = &Vec::new();

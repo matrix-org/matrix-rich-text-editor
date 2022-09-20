@@ -12,13 +12,19 @@ import android.view.inputmethod.InputConnection
 import androidx.core.text.getSpans
 import com.google.android.material.textfield.TextInputEditText
 import io.element.android.wysiwyg.spans.HtmlToSpansParser
+import uniffi.wysiwyg_composer.MenuState
+import uniffi.wysiwyg_composer.newComposerModel
 import kotlin.math.absoluteValue
 import kotlin.math.min
 
 class EditorEditText : TextInputEditText {
 
     lateinit var inputConnection: InterceptInputConnection
-    private val inputProcessor = InputProcessor(context, uniffi.wysiwyg_composer.newComposerModel())
+    private val inputProcessor = InputProcessor(
+        context,
+        composer = newComposerModel(),
+        menuStateCallback = { menuStateChangedListener?.menuStateChanged(it) }
+    )
 
     private val spannableFactory = object : Spannable.Factory() {
         override fun newSpannable(source: CharSequence?): Spannable {
@@ -43,7 +49,12 @@ class EditorEditText : TextInputEditText {
         fun selectionChanged(start: Int, end: Int)
     }
 
+    fun interface OnMenuStateChangedListener {
+        fun menuStateChanged(menuState: MenuState)
+    }
+
     var selectionChangeListener: OnSelectionChangeListener? = null
+    var menuStateChangedListener: OnMenuStateChangedListener? = null
 
     override fun onSelectionChanged(selStart: Int, selEnd: Int) {
         super.onSelectionChanged(selStart, selEnd)
@@ -130,7 +141,7 @@ class EditorEditText : TextInputEditText {
         if (result != null) {
             editableText.clear()
             editableText.replace(0, editableText.length, result.text)
-            setSelectionFromComposerUpdate(result.selection.last)
+            setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
         }
         return result != null
     }

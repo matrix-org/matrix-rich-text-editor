@@ -5,6 +5,7 @@ import androidx.test.espresso.UiController
 import androidx.test.espresso.ViewAction
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import io.element.android.wysiwyg.EditorEditText
+import io.element.android.wysiwyg.InlineFormat
 import org.hamcrest.Matcher
 
 object Editor {
@@ -60,6 +61,20 @@ object Editor {
         }
     }
 
+    class ToggleFormat(
+        private val format: InlineFormat
+    ) : ViewAction {
+        override fun getConstraints(): Matcher<View> = isDisplayed()
+
+        override fun getDescription(): String = "Toggle format to $format"
+
+        override fun perform(uiController: UiController?, view: View?) {
+            val editor = view as? EditorEditText ?: return
+            editor.toggleInlineFormat(format)
+        }
+
+    }
+
 }
 
 object EditorActions {
@@ -67,4 +82,5 @@ object EditorActions {
     fun toggleList(ordered: Boolean) = Editor.ToggleList(ordered)
     fun undo() = Editor.Undo
     fun redo() = Editor.Redo
+    fun toggleFormat(format: InlineFormat) = Editor.ToggleFormat(format)
 }

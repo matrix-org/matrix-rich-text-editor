@@ -39,6 +39,12 @@ pub struct SameNodeRange {
 
     /// The position within this node that corresponds to the end of the range
     pub end_offset: usize,
+
+    /// Remember the values passed in when were were created, so we can
+    /// recreate this SameNodeRange as a MultipleNodesRange. This will help
+    /// with our transition to only using MultipleNodesRange.
+    pub original_start: usize,
+    pub original_end: usize,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

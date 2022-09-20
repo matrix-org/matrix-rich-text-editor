@@ -60,6 +60,10 @@ interface TextUpdate {
         u32 start_utf16_codeunit,
         u32 end_utf16_codeunit
     );
+    Select(
+        u32 start_utf16_codeunit,
+        u32 end_utf16_codeunit 
+    );
 };
 
 [Enum]

@@ -200,6 +200,7 @@ impl ComposerUpdate {
 pub struct TextUpdate {
     pub keep: Option<Keep>,
     pub replace_all: Option<ReplaceAll>,
+    pub select: Option<Selection>,
 }
 
 impl TextUpdate {
@@ -208,6 +209,7 @@ impl TextUpdate {
             wysiwyg::TextUpdate::Keep => Self {
                 keep: Some(Keep),
                 replace_all: None,
+                select: None,
             },
             wysiwyg::TextUpdate::ReplaceAll(r) => {
                 let start_utf16_codeunit: usize = r.start.into();
@@ -216,6 +218,23 @@ impl TextUpdate {
                     keep: None,
                     replace_all: Some(ReplaceAll {
                         replacement_html: r.replacement_html.to_utf8(),
+                        start_utf16_codeunit: u32::try_from(
+                            start_utf16_codeunit,
+                        )
+                        .unwrap(),
+                        end_utf16_codeunit: u32::try_from(end_utf16_codeunit)
+                            .unwrap(),
+                    }),
+                    select: None,
+                }
+            }
+            wysiwyg::TextUpdate::Select(s) => {
+                let start_utf16_codeunit: usize = s.start.into();
+                let end_utf16_codeunit: usize = s.end.into();
+                Self {
+                    keep: None,
+                    replace_all: None,
+                    select: Some(Selection {
                         start_utf16_codeunit: u32::try_from(
                             start_utf16_codeunit,
                         )
@@ -237,6 +256,13 @@ pub struct Keep;
 #[wasm_bindgen(getter_with_clone)]
 pub struct ReplaceAll {
     pub replacement_html: String,
+    pub start_utf16_codeunit: u32,
+    pub end_utf16_codeunit: u32,
+}
+
+#[derive(Clone)]
+#[wasm_bindgen(getter_with_clone)]
+pub struct Selection {
     pub start_utf16_codeunit: u32,
     pub end_utf16_codeunit: u32,
 }

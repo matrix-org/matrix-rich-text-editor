@@ -20,12 +20,19 @@ import WysiwygComposer
 struct WysiwygActionToolbar: View {
     @EnvironmentObject private var viewModel: WysiwygComposerViewModel
     var toolbarAction: (WysiwygAction) -> ()
+    @State private var isShowingUrlAlert = false
+    @State private var linkAttributedRange = NSRange(location: 0, length: 0)
 
     var body: some View {
         HStack {
             ForEach(WysiwygAction.allCases) { action in
                 Button {
-                    toolbarAction(action)
+                    if action == .link(url: "unset") {
+                        linkAttributedRange = viewModel.content.attributedSelection
+                        isShowingUrlAlert = true
+                    } else {
+                        toolbarAction(action)
+                    }
                 } label: {
                     Image(systemName: action.iconName)
                         .renderingMode(.template)
@@ -37,6 +44,14 @@ struct WysiwygActionToolbar: View {
             }
 
         }
+        .alert(isPresented: $isShowingUrlAlert, AlertConfig(title: "Enter URL", action: { url in
+            guard let url = url else { return }
+            // Note: the selection needs to be restored because of an issue with SwiftUI
+            // integrating multiple UITextField/UITextView breaking selection.
+            viewModel.select(text: viewModel.content.attributed, range: linkAttributedRange)
+            let action: WysiwygAction = .link(url: url)
+            toolbarAction(action)
+        }))
         .frame(width: nil, height: 50, alignment: .center)
     }
 }

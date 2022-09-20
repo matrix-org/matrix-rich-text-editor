@@ -23,6 +23,10 @@ public enum WysiwygAction {
     case strikethrough
     /// Apply underline formatting to the current selection.
     case underline
+    /// Apply inline code formatting to the current selection
+    case inlineCode
+    /// Create a link at current selection
+    case link(url: String)
     /// Undo last model operation.
     case undo
     /// Redo latest undone operation.

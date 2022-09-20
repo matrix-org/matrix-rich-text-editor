@@ -51,10 +51,6 @@ android {
         animationsDisabled = true
     }
 
-    viewBinding {
-        enabled = true
-    }
-
     ndkVersion = "22.1.7171670"
 }
 

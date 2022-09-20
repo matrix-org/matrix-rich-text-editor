@@ -25,20 +25,37 @@ where
         let (s, e) = self.safe_selection();
 
         if s == e {
+            // We have no selection - check for special list behaviour
+            // TODO: should probably also get inside here if our selection
+            // only contains a zero-wdith space.
             let range = self.state.dom.find_range(s, e);
             match range {
                 Range::SameNode(range) => {
-                    let parent_list_item_handle = self
-                        .state
-                        .dom
-                        .find_parent_list_item(&range.node_handle);
-                    if let Some(parent_handle) = parent_list_item_handle {
-                        self.do_backspace_in_list(&parent_handle, e, range)
+                    let mrange =
+                        self.state.dom.convert_same_node_range_to_multi(range);
+                    // Find the first leaf node in this selection - note there
+                    // should only be one because s == e, so we don't have a
+                    // selection that spans multiple leaves.
+                    let first_leaf =
+                        mrange.locations.iter().find(|loc| loc.is_leaf);
+                    if let Some(leaf) = first_leaf {
+                        // We are backspacing inside a text node with no
+                        // selection - we might need special behaviour, if
+                        // we are at the start of a list item.
+                        let parent_list_item_handle = self
+                            .state
+                            .dom
+                            .find_parent_list_item_or_self(&leaf.node_handle);
+                        if let Some(parent_handle) = parent_list_item_handle {
+                            self.do_backspace_in_list(&parent_handle, e)
+                        } else {
+                            self.do_backspace()
+                        }
                     } else {
                         self.do_backspace()
                     }
                 }
-                _ => self.do_backspace(),
+                _ => panic!("s == e, so this will always be SameNode!"),
             }
         } else {
             self.do_backspace()

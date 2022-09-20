@@ -28,6 +28,8 @@
 		A6C2157C28C0FAAD00C8E727 /* WysiwygAction+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157B28C0FAAD00C8E727 /* WysiwygAction+Utils.swift */; };
 		A6C2157D28C0FAAE00C8E727 /* WysiwygAction+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157B28C0FAAD00C8E727 /* WysiwygAction+Utils.swift */; };
 		A6E6B26F2886D9AA009596F2 /* WysiwygComposer in Frameworks */ = {isa = PBXBuildFile; productRef = A6E6B26E2886D9AA009596F2 /* WysiwygComposer */; };
+		A6F3FC0128D4658000C170E8 /* TextFieldAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6F3FC0028D4658000C170E8 /* TextFieldAlert.swift */; };
+		A6F3FC0428D465AF00C170E8 /* View.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6F3FC0328D465AF00C170E8 /* View.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -69,6 +71,8 @@
 		A6C2157828C0F62000C8E727 /* WysiwygActionToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygActionToolbar.swift; sourceTree = "<group>"; };
 		A6C2157B28C0FAAD00C8E727 /* WysiwygAction+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WysiwygAction+Utils.swift"; sourceTree = "<group>"; };
 		A6E6B2712886DA6E009596F2 /* WysiwygComposer */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = WysiwygComposer; path = ../lib/WysiwygComposer; sourceTree = "<group>"; };
+		A6F3FC0028D4658000C170E8 /* TextFieldAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextFieldAlert.swift; sourceTree = "<group>"; };
+		A6F3FC0328D465AF00C170E8 /* View.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = View.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -140,6 +144,7 @@
 			children = (
 				A6472CAA2886CF830021A0E8 /* WysiwygApp.swift */,
 				A6472CAE2886CF840021A0E8 /* Assets.xcassets */,
+				A6F3FC0228D4659E00C170E8 /* Extensions */,
 				A6472CB02886CF840021A0E8 /* Preview Content */,
 				A6C2157A28C0F63400C8E727 /* Views */,
 			);
@@ -178,6 +183,7 @@
 			children = (
 				A6472CAC2886CF830021A0E8 /* ContentView.swift */,
 				A6C2157828C0F62000C8E727 /* WysiwygActionToolbar.swift */,
+				A6F3FC0028D4658000C170E8 /* TextFieldAlert.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -195,6 +201,14 @@
 				A6E6B2712886DA6E009596F2 /* WysiwygComposer */,
 			);
 			name = Packages;
+			sourceTree = "<group>";
+		};
+		A6F3FC0228D4659E00C170E8 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				A6F3FC0328D465AF00C170E8 /* View.swift */,
+			);
+			path = Extensions;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -353,6 +367,8 @@
 				A6472CAD2886CF830021A0E8 /* ContentView.swift in Sources */,
 				A6472CAB2886CF830021A0E8 /* WysiwygApp.swift in Sources */,
 				A6C2157928C0F62000C8E727 /* WysiwygActionToolbar.swift in Sources */,
+				A6F3FC0128D4658000C170E8 /* TextFieldAlert.swift in Sources */,
+				A6F3FC0428D465AF00C170E8 /* View.swift in Sources */,
 				A6C2157C28C0FAAD00C8E727 /* WysiwygAction+Utils.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
