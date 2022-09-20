@@ -37,7 +37,6 @@ struct AlertHelper<Content: View>: UIViewControllerRepresentable {
         return Coordinator()
     }
 
-
     func updateUIViewController(_ uiViewController: UIHostingController<Content>, context: UIViewControllerRepresentableContext<AlertHelper>) {
         uiViewController.rootView = content
         if isPresented && uiViewController.presentedViewController == nil {
@@ -57,7 +56,6 @@ struct AlertHelper<Content: View>: UIViewControllerRepresentable {
 
 public struct AlertConfig {
     public var title: String
-    public var placeholder: String = ""
     public var accept: String = "OK"
     public var cancel: String = "Cancel"
     public var action: (String?) -> ()
