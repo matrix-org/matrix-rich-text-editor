@@ -14,9 +14,7 @@
 
 use crate::composer_model::base::{slice_from, slice_to};
 use crate::dom::nodes::{ContainerNodeKind, DomNode};
-use crate::dom::{
-    Dom, DomHandle, DomLocation, MultipleNodesRange, Range, SameNodeRange,
-};
+use crate::dom::{Dom, DomHandle, DomLocation, MultipleNodesRange, Range};
 use crate::{
     ComposerAction, ComposerModel, ComposerUpdate, InlineFormatType, Location,
     UnicodeString,
@@ -117,7 +115,9 @@ where
         let range = self.state.dom.find_range(s, e);
         match range {
             Range::SameNode(range) => {
-                self.unformat_same_node(s, e, range, format);
+                let mrange =
+                    self.state.dom.convert_same_node_range_to_multi(range);
+                self.unformat_several_nodes(s, e, &mrange, format);
                 self.create_update_replace_all()
             }
 
@@ -129,54 +129,6 @@ where
             Range::NoNode => {
                 panic!("Trying to unformat with no selected node")
             }
-        }
-    }
-
-    fn unformat_same_node(
-        &mut self,
-        start: usize,
-        end: usize,
-        range: SameNodeRange,
-        format: InlineFormatType,
-    ) {
-        let text_node = self.state.dom.lookup_node(&range.node_handle);
-        if let DomNode::Text(t) = text_node {
-            let text_length = t.data().len().clone();
-            let formatting_handle = self.find_parent_formatting_node(
-                range.node_handle.clone(),
-                format.clone(),
-            );
-            let formatting_node =
-                self.state.dom.lookup_node(&formatting_handle);
-            if formatting_node.is_container_node() {
-                if formatting_node.has_only_placeholder_text_child() {
-                    self.state.end -= 1;
-                    self.state.dom.replace(&formatting_handle, vec![]);
-                } else {
-                    self.state.dom.remove_and_keep_children(&formatting_handle);
-                }
-            } else {
-                panic!("Mismatched type for formatting container")
-            }
-
-            let (sb, eb) = self.safe_locations_from(
-                Location::from(start - range.start_offset),
-                Location::from(start),
-            );
-            let (sa, ea) = self.safe_locations_from(
-                Location::from(end),
-                Location::from(end + text_length - range.end_offset),
-            );
-
-            // Re-apply formatting to slices before and after the selection if needed
-            if eb > sb {
-                self.format_range(sb, eb, format.clone());
-            }
-            if ea > sa {
-                self.format_range(sa, ea, format);
-            }
-        } else {
-            panic!("Mismatched type for text node")
         }
     }
 
@@ -291,34 +243,6 @@ where
                     }
                 }
             }
-        }
-    }
-
-    fn find_parent_formatting_node(
-        &self,
-        handle: DomHandle,
-        format: InlineFormatType,
-    ) -> DomHandle {
-        let node = self.state.dom.lookup_node(&handle);
-        if let DomNode::Container(container) = node {
-            match container.kind() {
-                ContainerNodeKind::Formatting(f) => {
-                    if *f == format {
-                        handle
-                    } else {
-                        self.find_parent_formatting_node(
-                            handle.parent_handle(),
-                            format,
-                        )
-                    }
-                }
-                _ => self.find_parent_formatting_node(
-                    handle.parent_handle(),
-                    format,
-                ),
-            }
-        } else {
-            self.find_parent_formatting_node(handle.parent_handle(), format)
         }
     }
 
