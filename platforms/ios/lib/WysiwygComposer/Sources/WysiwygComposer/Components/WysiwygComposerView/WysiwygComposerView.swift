@@ -42,8 +42,10 @@ struct WysiwygComposerView: UIViewRepresentable {
         Logger.textView.logDebug([content.logAttributedSelection,
                                   content.logText],
                                  functionName: #function)
-        uiView.attributedText = content.attributed
-        uiView.selectedRange = content.attributedSelection
+        uiView.performWithoutDelegate {
+            uiView.attributedText = content.attributed
+            uiView.selectedRange = content.attributedSelection
+        }
         context.coordinator.didUpdateText(uiView)
     }
 
