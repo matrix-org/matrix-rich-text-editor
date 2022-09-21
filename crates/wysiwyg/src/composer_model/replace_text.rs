@@ -170,11 +170,15 @@ where
         let to_delete = self.replace_in_text_nodes(range.clone(), new_text);
         self.delete_nodes(to_delete);
 
-        let pos: usize = self.state.start.into();
+        // Calculate the position 1 code unit after the end of the range,
+        // after the in-between characters have been deleted, and the new
+        // characters have been inserted.
+        let new_pos = range.start() + len + 1;
+
         // Note: the handles in range may have been made invalid by deleting
         // nodes above, but the first text node in it should not have been
         // invalidated, because it should not have been deleted.
-        self.join_nodes(&range, pos + len + 1);
+        self.join_nodes(&range, new_pos);
     }
 
     /// Given a range to replace and some new text, modify the nodes in the
