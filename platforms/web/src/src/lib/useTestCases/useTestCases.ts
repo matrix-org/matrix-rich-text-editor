@@ -17,12 +17,7 @@ export function useTestCases(editorRef: RefObject<HTMLElement | null>, composerM
     const memorizedGetSelection = useMemo(() => getSelectionAccordingToActions(actions), [actions]);
 
     const onResetTestCase = useCallback(() => editorRef.current && testRef.current && composerModel &&
-        setActions(resetTestCase(
-            editorRef.current,
-            testRef.current,
-            composerModel,
-            editorHtml,
-        )),
+        setActions(resetTestCase(editorRef.current, testRef.current, composerModel, editorHtml)),
     [editorRef, testRef, composerModel, editorHtml],
     );
 

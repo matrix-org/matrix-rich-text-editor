@@ -2,8 +2,8 @@ module.exports = {
     'plugins': ['matrix-org'],
     'extends': ['plugin:matrix-org/typescript', 'plugin:matrix-org/react', 'plugin:matrix-org/a11y'],
     'env': {
-        browser: true,
-        node: true,
+        'browser': true,
+        'node': true,
     },
     'settings': {
         'react': {
