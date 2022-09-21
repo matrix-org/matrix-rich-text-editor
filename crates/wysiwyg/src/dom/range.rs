@@ -134,6 +134,27 @@ impl MultipleNodesRange {
             locations: locations.into_iter().cloned().collect(),
         }
     }
+
+    /// Return the position of the first character in this range.
+    /// The position is measured in code units.
+    /// If the range starts at the beginning of the Dom, the return value is 0.
+    /// If this range has zero length, the position returned is the position
+    /// of both the beginning and the end.
+    pub fn start(&self) -> usize {
+        // Assumes leaf locations are in order, so the first leaf we hit will
+        // be the earliest in the Dom.
+
+        self.locations
+            .iter()
+            .find_map(|loc| {
+                if loc.is_leaf {
+                    Some(loc.position + loc.start_offset)
+                } else {
+                    None
+                }
+            })
+            .unwrap_or(0)
+    }
 }
 
 impl IntoIterator for MultipleNodesRange {
@@ -142,5 +163,97 @@ impl IntoIterator for MultipleNodesRange {
 
     fn into_iter(self) -> Self::IntoIter {
         self.locations.into_iter()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::tests::testutils_composer_model::cm;
+
+    use super::{MultipleNodesRange, Range};
+
+    #[test]
+    fn range_start_for_cursor_at_beginning() {
+        assert_eq!(range_of("|abc<b>def</b>").start(), 0);
+    }
+
+    #[test]
+    fn range_start_for_selection_at_beginning() {
+        assert_eq!(range_of("{abc<b>d}|ef</b>").start(), 0);
+    }
+
+    #[test]
+    fn range_start_for_cursor_in_middle_of_plain_text() {
+        assert_eq!(range_of("abc|def").start(), 3);
+    }
+
+    #[test]
+    fn range_start_for_selection_in_middle_of_plain_text() {
+        assert_eq!(range_of("abc{def}|ghi").start(), 3);
+    }
+
+    #[test]
+    fn range_start_for_cursor_in_nested_tags() {
+        assert_eq!(
+            range_of(
+                "\
+                <ul><li>a</li><li>b</li></ul>\
+                <ul><li>c</li><li>d|</li><li>e</li></ul>"
+            )
+            .start(),
+            4
+        );
+    }
+
+    #[test]
+    fn range_start_for_selection_in_nested_tags() {
+        assert_eq!(
+            range_of(
+                "\
+                <ul><li>a</li><li>b</li></ul>\
+                <ul><li>c</li><li>{d</li><li>e}|</li></ul>"
+            )
+            .start(),
+            3
+        );
+    }
+
+    #[test]
+    fn range_start_for_end_of_complex_tags() {
+        assert_eq!(
+            range_of(
+                "\
+                <ul><li>a</li><li>b</li></ul>\
+                <ul><li>c</li><li>d</li><li>e|</li></ul>"
+            )
+            .start(),
+            5
+        );
+    }
+
+    #[test]
+    fn range_start_for_end_of_text() {
+        assert_eq!(
+            range_of(
+                "\
+                <ul><li>a</li><li>b</li></ul>\
+                <ul><li>c</li><li>d</li><li>e</li></ul>fgh|"
+            )
+            .start(),
+            8
+        );
+    }
+
+    fn range_of(model: &str) -> MultipleNodesRange {
+        let model = cm(model);
+        let (s, e) = model.safe_selection();
+        let range = model.state.dom.find_range(s, e);
+        match range {
+            Range::SameNode(range) => {
+                model.state.dom.convert_same_node_range_to_multi(range)
+            }
+            Range::MultipleNodes(mrange) => mrange,
+            Range::NoNode => panic!("Wasn't expecting NoNode!"),
+        }
     }
 }
