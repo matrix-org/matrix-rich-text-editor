@@ -1,8 +1,8 @@
 // rust generated bindings
 // eslint-disable-next-line camelcase
-import { ComposerModel, ComposerUpdate, new_composer_model_from_html } from "../../../generated/wysiwyg";
-import { getCurrentSelection } from "../dom";
-import { Actions } from "./types";
+import { ComposerModel, ComposerUpdate, new_composer_model_from_html } from '../../../generated/wysiwyg';
+import { getCurrentSelection } from '../dom';
+import { Actions } from './types';
 
 export function traceAction(testNode: HTMLElement | null, actions: Actions, composerModel: ComposerModel | null) {
     return (update: ComposerUpdate | null, name: string, value1?: any, value2?: any) => {
@@ -27,10 +27,10 @@ export function traceAction(testNode: HTMLElement | null, actions: Actions, comp
 }
 
 export function getSelectionAccordingToActions(actions: Actions) {
-    return () => {
+    return (): [number, number] => {
         for (let i = actions.length - 1; i >= 0; i--) {
             const action = actions[i];
-            if (action[0] === "select") {
+            if (action[0] === 'select') {
                 return [action[1], action[2]];
             }
         }
@@ -60,21 +60,21 @@ function updateTestCase(
 }
 
 export function generateTestCase(actions: Actions, html: string) {
-    let ret = "";
+    let ret = '';
 
     function add(name: string, value1: any, value2: any) {
-        if (name === "select") {
+        if (name === 'select') {
             ret += (
-                "model.select("
+                'model.select('
                 + `Location::from(${value1}), `
                 + `Location::from(${value2}));\n`
             );
         } else if (value2 !== undefined) {
-            ret += `model.${name}(${value1 ?? ""}, ${value2});\n`;
-        } else if (name === "replace_text") {
-            ret += `model.${name}("${value1 ?? ""}");\n`;
+            ret += `model.${name}(${value1 ?? ''}, ${value2});\n`;
+        } else if (name === 'replace_text') {
+            ret += `model.${name}("${value1 ?? ''}");\n`;
         } else {
-            ret += `model.${name}(${value1 ?? ""});\n`;
+            ret += `model.${name}(${value1 ?? ''});\n`;
         }
     }
 
@@ -85,23 +85,23 @@ export function generateTestCase(actions: Actions, html: string) {
 
     let lastName: string | null = null;
     let isCollectingMode = true;
-    let collected = "";
+    let collected = '';
     let selection = [0, 0];
     for (const [name, value1, value2] of actions) {
         if (isCollectingMode) {
-            if (name === "replace_text") {
+            if (name === 'replace_text') {
                 collected += value1;
-            } else if (name === "select") {
+            } else if (name === 'select') {
                 selection = [value1, value2];
             } else {
                 isCollectingMode = false;
                 start();
                 add(name, value1, value2);
             }
-        } else if (lastName === "select" && name === "select") {
-            const nl = ret.lastIndexOf("\n", ret.length - 2);
+        } else if (lastName === 'select' && name === 'select') {
+            const nl = ret.lastIndexOf('\n', ret.length - 2);
             if (nl > -1) {
-                ret = ret.substring(0, nl) + "\n";
+                ret = ret.substring(0, nl) + '\n';
                 add(name, value1, value2);
             }
         } else {
@@ -135,8 +135,8 @@ export function resetTestCase(
 ) {
     const [start, end] = getCurrentSelection(editor);
     const actions: Array<[string, any, any?]> = [
-        ["replace_text", html],
-        ["select", start, end],
+        ['replace_text', html],
+        ['select', start, end],
     ];
     updateTestCase(testNode, composerModel, null, actions);
     return actions;

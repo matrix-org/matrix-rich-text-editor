@@ -1,6 +1,6 @@
-import { MouseEventHandler } from "react";
+import { MouseEventHandler } from 'react';
 
-import { useWysiwyg } from "./lib/useWysiwyg";
+import { useWysiwyg } from './lib/useWysiwyg';
 import boldImage from './images/bold.svg';
 import undoImage from './images/undo.svg';
 import redoImage from './images/redo.svg';
@@ -46,7 +46,7 @@ function App() {
             </div>
             <h2>Model:</h2>
             <div className="dom" ref={debug.modelRef} />
-            <h2>Test case: <button type="button" onClick={() => debug.resetTestCase()}>Start from here</button></h2>
+            <h2>Test case: <button type="button" onClick={debug.resetTestCase}>Start from here</button></h2>
             <div className="testCase" ref={debug.testRef}>
                 let mut model = cm("");<br />
                 assert_eq!(tx(&amp;model), "");

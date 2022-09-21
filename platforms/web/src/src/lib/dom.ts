@@ -1,4 +1,4 @@
-import { ComposerModel, DomHandle } from "../../generated/wysiwyg";
+import { ComposerModel, DomHandle } from '../../generated/wysiwyg';
 
 export function computeSelectionOffset(node: Node, offset = 0): number {
     if (node && node.nodeType === Node.TEXT_NODE) {
@@ -13,7 +13,7 @@ export function computeSelectionOffset(node: Node, offset = 0): number {
 }
 
 export function refreshComposerView(node: HTMLElement, composerModel: ComposerModel) {
-    node.innerHTML = "";
+    node.innerHTML = '';
     const doc = composerModel.document();
     let idCounter = 0;
 
@@ -24,7 +24,7 @@ export function refreshComposerView(node: HTMLElement, composerModel: ComposerMo
         attrs?: Map<string, string | null>) {
         const tag = document.createElement(name);
         if (text) {
-            tag.innerHTML = text.replace("\u200b", "~");
+            tag.innerHTML = text.replace('\u200b', '~');
         }
         if (attrs) {
             for (const [name, value] of attrs.entries()) {
@@ -40,35 +40,35 @@ export function refreshComposerView(node: HTMLElement, composerModel: ComposerMo
     }
 
     function writeChildren(node: DomHandle, html: HTMLElement) {
-        const list = createNode(html, "ul");
+        const list = createNode(html, 'ul');
         list.className = `group_${idCounter % 10}`;
         const children = node.children(composerModel);
         let child: DomHandle | undefined;
         while (child = children.next()) {
             const nodeType: string = child.node_type(composerModel);
-            if (nodeType === "container") {
+            if (nodeType === 'container') {
                 // TODO I'm a bit septic about this id :p
                 let id = idCounter;
                 const domId = `dom_${id}`;
                 idCounter++;
-                const li = createNode(list, "li");
+                const li = createNode(list, 'li');
                 createNode(
                     li,
-                    "input",
+                    'input',
                     null,
                     new Map([
-                        ["type", "checkbox"],
-                        ["id", domId],
-                        ["checked", null],
+                        ['type', 'checkbox'],
+                        ['id', domId],
+                        ['checked', null],
                     ]),
                 );
-                createNode(li, "label", child.tag(composerModel), new Map([["for", domId]]));
+                createNode(li, 'label', child.tag(composerModel), new Map([['for', domId]]));
                 id++;
                 writeChildren(child, li);
-            } else if (nodeType === "line_break") {
-                createNode(list, "li", "br");
-            } else if (nodeType === "text") {
-                createNode(list, "li", `"${child.text(composerModel)}"`);
+            } else if (nodeType === 'line_break') {
+                createNode(list, 'li', 'br');
+            } else if (nodeType === 'text') {
+                createNode(list, 'li', `"${child.text(composerModel)}"`);
             } else {
                 console.error(`Unknown node type: ${nodeType}`);
             }
@@ -84,12 +84,12 @@ export function replaceEditor(editor: HTMLElement,
     endUtf16Codeunit: number,
 ) {
     console.log(
-        "replace_editor",
+        'replace_editor',
         htmlContent,
         startUtf16Codeunit,
         endUtf16Codeunit,
     );
-    editor.innerHTML = htmlContent + "<br />";
+    editor.innerHTML = htmlContent + '<br />';
 
     const sr = () => {
         const range = document.createRange();
@@ -159,7 +159,7 @@ function computeNodeAndOffset(currentNode: Node, codeunits: number) {
                 offset: codeunits - (currentNode.textContent?.length || 0),
             };
         }
-    } else if (currentNode.nodeName === "BR") {
+    } else if (currentNode.nodeName === 'BR') {
         // br tag acts like a text node of length 1, except if we're at
         // the end of it, we don't return it - instead we move on to
         // the next node, which will be returned with an offset of 0.
@@ -241,7 +241,7 @@ function countCodeunit(editor: HTMLElement, node: Node, offset: number) {
                     found: false,
                     offset: currentNode.textContent?.length || 0,
                 };
-            } else if (currentNode.nodeName === "BR") {
+            } else if (currentNode.nodeName === 'BR') {
                 // Treat br tags as being 1 character long
                 return { found: false, offset: 1 };
             } else {

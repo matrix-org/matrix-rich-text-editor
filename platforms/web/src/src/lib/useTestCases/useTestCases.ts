@@ -1,8 +1,8 @@
-import { RefObject, useCallback, useMemo, useRef, useState } from "react";
+import { RefObject, useCallback, useMemo, useRef, useState } from 'react';
 
-import { ComposerModel } from "../../../generated/wysiwyg";
-import { Actions } from "./types";
-import { getSelectionAccordingToActions, resetTestCase, traceAction } from "./utils";
+import { ComposerModel } from '../../../generated/wysiwyg';
+import { Actions } from './types';
+import { getSelectionAccordingToActions, resetTestCase, traceAction } from './utils';
 
 export function useTestCases(editorRef: RefObject<HTMLElement | null>, composerModel: ComposerModel | null) {
     const testRef = useRef<HTMLDivElement>(null);
