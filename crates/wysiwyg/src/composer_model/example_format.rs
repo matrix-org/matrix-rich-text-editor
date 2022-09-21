@@ -717,6 +717,7 @@ mod test {
         assert_that!("<br /><br />|").roundtrips();
         assert_that!("<br />|<br />").roundtrips();
         assert_that!("<br />|<br />").roundtrips();
+        assert_that!("a<br />b|").roundtrips();
         assert_that!("a<br />|<br />b").roundtrips();
         assert_that!("a<br />b|<br />c").roundtrips();
         assert_that!("a<br />|b<br />c").roundtrips();
@@ -733,6 +734,46 @@ mod test {
         // TODO: easier after refactor assert_that!("aa{<br />}|bb").rou
         // TODO: assert_that!("aa|{<br />}bb").roundtrips();
         assert_that!("<ol><li>|</li></ol>").roundtrips();
+    }
+
+    #[test]
+    fn selection_across_lists_roundtrips() {
+        assert_that!(
+            "<ol><li>1{1</li><li>22</li></ol><ol><li>33</li><li>4}|4</li></ol>"
+        )
+        .roundtrips();
+    }
+
+    #[test]
+    fn selection_across_lists_with_whitespace_roundtrips() {
+        assert_that!(
+            "<ol>
+                <li>1{1</li>
+                <li>22</li>
+            </ol>
+            <ol>
+                <li>33</li>
+                <li>4}|4</li>
+            </ol>"
+        )
+        .roundtrips();
+    }
+
+    #[test]
+    fn selection_ending_at_end_of_list_item_roundtrips() {
+        assert_that!(
+            "\
+            <ul>\
+                <li>First item<ul>\
+                    <li>{Second item<ul>\
+                        <li>Third item</li>\
+                        <li>Fourth item}|</li>\
+                        <li>Fifth item</li>\
+                    </ul></li>\
+                </ul></li>\
+            </ul>"
+        )
+        .roundtrips();
     }
 
     trait Roundtrips<T> {
