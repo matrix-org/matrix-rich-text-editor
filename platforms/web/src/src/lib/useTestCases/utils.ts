@@ -1,13 +1,10 @@
-import { RefObject, useCallback, useMemo, useRef, useState } from "react";
-
 // rust generated bindings
 // eslint-disable-next-line camelcase
-import { ComposerModel, ComposerUpdate, new_composer_model_from_html } from "../../generated/wysiwyg";
-import { getCurrentSelection } from "./dom";
+import { ComposerModel, ComposerUpdate, new_composer_model_from_html } from "../../../generated/wysiwyg";
+import { getCurrentSelection } from "../dom";
+import { Actions } from "./types";
 
-type Actions = Array<[string, any, any?]>;
-
-function traceAction(testNode: HTMLElement | null, actions: Actions, composerModel: ComposerModel | null) {
+export function traceAction(testNode: HTMLElement | null, actions: Actions, composerModel: ComposerModel | null) {
     return (update: ComposerUpdate | null, name: string, value1?: any, value2?: any) => {
         if (!testNode || !composerModel) {
             return update;
@@ -29,7 +26,7 @@ function traceAction(testNode: HTMLElement | null, actions: Actions, composerMod
     };
 }
 
-function getSelectionAccordingToActions(actions: Actions) {
+export function getSelectionAccordingToActions(actions: Actions) {
     return () => {
         for (let i = actions.length - 1; i >= 0; i--) {
             const action = actions[i];
@@ -62,7 +59,7 @@ function updateTestCase(
     testNode.scrollTo(0, testNode.scrollHeight - testNode.clientHeight);
 }
 
-function generateTestCase(actions: Actions, html: string) {
+export function generateTestCase(actions: Actions, html: string) {
     let ret = "";
 
     function add(name: string, value1: any, value2: any) {
@@ -130,7 +127,7 @@ function addSelection(text: string, start: number, end: number) {
     return model.to_example_format();
 }
 
-function resetTestCase(
+export function resetTestCase(
     editor: HTMLElement,
     testNode: HTMLElement,
     composerModel: ComposerModel,
@@ -144,38 +141,3 @@ function resetTestCase(
     updateTestCase(testNode, composerModel, null, actions);
     return actions;
 }
-
-export function useTestCases(editorRef: RefObject<HTMLElement | null>, composerModel: ComposerModel | null) {
-    const testRef = useRef<HTMLDivElement>(null);
-    const [actions, setActions] = useState<Array<[string, any, any?]>>([]);
-
-    const [editorHtml, setEditorHtml] = useState<string>('');
-
-    const memorizedTraceAction = useMemo(
-        () => traceAction(testRef.current, actions, composerModel), [testRef, actions, composerModel],
-    );
-
-    const memorizedGetSelection = useMemo(() => getSelectionAccordingToActions(actions), [actions]);
-
-    const onResetTestCase = useCallback(() => editorRef.current && testRef.current && composerModel &&
-        setActions(resetTestCase(
-            editorRef.current,
-            testRef.current,
-            composerModel,
-            editorHtml,
-        )),
-    [editorRef, testRef, composerModel, editorHtml],
-    );
-
-    return {
-        testRef,
-        utilities: {
-            traceAction: memorizedTraceAction,
-            getSelectionAccordingToActions: memorizedGetSelection,
-            onResetTestCase,
-            setEditorHtml,
-        },
-    };
-}
-
-export type TestUtilities = ReturnType<typeof useTestCases>['utilities'];

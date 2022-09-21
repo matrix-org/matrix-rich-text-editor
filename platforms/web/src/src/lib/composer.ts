@@ -1,6 +1,6 @@
 import { ComposerModel } from "../../generated/wysiwyg";
 import { WysiwygInputEvent } from "./types";
-import { TestUtilities } from './useTestCases';
+import { TestUtilities } from './useTestCases/types';
 
 export function processInput(e: WysiwygInputEvent, composerModel: ComposerModel, action: TestUtilities['traceAction']) {
     switch (e.inputType) {

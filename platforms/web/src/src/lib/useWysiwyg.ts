@@ -3,9 +3,9 @@ import { RefObject, useEffect, useRef, useState } from "react";
 // rust generated bindings
 // eslint-disable-next-line camelcase
 import init, { ComposerModel, new_composer_model } from '../../generated/wysiwyg.js';
-import { useFormattingActions } from "./useFormattingActions.js";
-import { useListeners } from "./useListeners.js";
-import { useTestCases } from "./useTestCases.js";
+import { useFormattingActions } from "./useFormattingActions";
+import { useListeners } from "./useListeners";
+import { useTestCases } from "./useTestCases";
 
 function useEditorFocus(editorRef: RefObject<HTMLElement | null>, isAutoFocusEnabled = false) {
     useEffect(() => {
