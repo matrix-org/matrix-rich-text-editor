@@ -1,7 +1,7 @@
 {
   "name": "matrix-wysiwsyg",
   "version": "0.0.0",
-  "type": "commonjs",
+  "type": "module",
   "author": "matrix.org",
   "repository": {
     "type": "git",
