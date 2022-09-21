@@ -5,7 +5,7 @@ import { getCurrentSelection } from '../dom';
 import { Actions } from './types';
 
 export function traceAction(testNode: HTMLElement | null, actions: Actions, composerModel: ComposerModel | null) {
-    return (update: ComposerUpdate | null, name: string, value1?: any, value2?: any) => {
+    return (update: ComposerUpdate | null, name: string, value1?: string | number, value2?: string | number) => {
         if (!testNode || !composerModel) {
             return update;
         }
@@ -62,7 +62,7 @@ function updateTestCase(
 export function generateTestCase(actions: Actions, html: string) {
     let ret = '';
 
-    function add(name: string, value1: any, value2: any) {
+    function add(name: string, value1: string | number, value2: string | number) {
         if (name === 'select') {
             ret += (
                 'model.select('
@@ -134,7 +134,7 @@ export function resetTestCase(
     html: string,
 ) {
     const [start, end] = getCurrentSelection(editor);
-    const actions: Array<[string, any, any?]> = [
+    const actions: Actions = [
         ['replace_text', html],
         ['select', start, end],
     ];
