@@ -155,6 +155,24 @@ impl MultipleNodesRange {
             })
             .unwrap_or(0)
     }
+
+    pub fn end(&self) -> usize {
+        self.locations
+            .iter()
+            .rev()
+            .find_map(|loc| {
+                if loc.is_leaf {
+                    Some(loc.position + loc.end_offset)
+                } else {
+                    None
+                }
+            })
+            .unwrap_or(0)
+    }
+
+    pub fn leaves(&self) -> impl Iterator<Item = &DomLocation> {
+        self.locations.iter().filter(|loc| loc.is_leaf)
+    }
 }
 
 impl IntoIterator for MultipleNodesRange {
@@ -168,79 +186,131 @@ impl IntoIterator for MultipleNodesRange {
 
 #[cfg(test)]
 mod test {
-    use crate::tests::testutils_composer_model::cm;
+    use crate::{
+        dom::DomLocation, tests::testutils_composer_model::cm, DomHandle,
+    };
 
     use super::{MultipleNodesRange, Range};
 
     #[test]
-    fn range_start_for_cursor_at_beginning() {
-        assert_eq!(range_of("|abc<b>def</b>").start(), 0);
+    fn range_start_and_end_for_cursor_at_beginning() {
+        let r = range_of("|abc<b>def</b>");
+        assert_eq!(r.start(), 0);
+        assert_eq!(r.end(), 0);
     }
 
     #[test]
-    fn range_start_for_selection_at_beginning() {
-        assert_eq!(range_of("{abc<b>d}|ef</b>").start(), 0);
+    fn range_start_and_end_for_selection_at_beginning() {
+        let r = range_of("{abc<b>d}|ef</b>");
+        assert_eq!(r.start(), 0);
+        assert_eq!(r.end(), 4);
     }
 
     #[test]
-    fn range_start_for_cursor_in_middle_of_plain_text() {
-        assert_eq!(range_of("abc|def").start(), 3);
+    fn range_start_and_end_for_cursor_after_brs() {
+        let r = range_of("a<br />b<br /><br />c|<br />d");
+        assert_eq!(r.start(), 6);
+        assert_eq!(r.end(), 6);
     }
 
     #[test]
-    fn range_start_for_selection_in_middle_of_plain_text() {
-        assert_eq!(range_of("abc{def}|ghi").start(), 3);
+    fn range_start_and_end_for_selection_containing_brs_in_tags() {
+        let r = range_of("<i>a</i><b><br />{b<br /><br />c}|<br /></b>d");
+        assert_eq!(r.start(), 2);
+        assert_eq!(r.end(), 6);
     }
 
     #[test]
-    fn range_start_for_cursor_in_nested_tags() {
+    fn range_start_and_end_for_cursor_in_middle_of_plain_text() {
+        let r = range_of("abc|def");
+        assert_eq!(r.start(), 3);
+        assert_eq!(r.end(), 3);
+    }
+
+    #[test]
+    fn range_leaves_contains_text_node() {
+        let r = range_of("abc|def");
         assert_eq!(
-            range_of(
-                "\
-                <ul><li>a</li><li>b</li></ul>\
-                <ul><li>c</li><li>d|</li><li>e</li></ul>"
-            )
-            .start(),
-            4
+            r.leaves().collect::<Vec<&DomLocation>>(),
+            vec![&r.locations[0]]
         );
     }
 
     #[test]
-    fn range_start_for_selection_in_nested_tags() {
-        assert_eq!(
-            range_of(
-                "\
-                <ul><li>a</li><li>b</li></ul>\
-                <ul><li>c</li><li>{d</li><li>e}|</li></ul>"
-            )
-            .start(),
-            3
-        );
+    fn range_start_and_end_for_selection_in_middle_of_plain_text() {
+        let r = range_of("abc{def}|ghi");
+        assert_eq!(r.start(), 3);
+        assert_eq!(r.end(), 6);
     }
 
     #[test]
-    fn range_start_for_end_of_complex_tags() {
-        assert_eq!(
-            range_of(
-                "\
-                <ul><li>a</li><li>b</li></ul>\
-                <ul><li>c</li><li>d</li><li>e|</li></ul>"
-            )
-            .start(),
-            5
+    fn range_start_and_end_for_cursor_in_nested_tags() {
+        let r = range_of(
+            "\
+            <ul><li>a</li><li>b</li></ul>\
+            <ul><li>c</li><li>d|</li><li>e</li></ul>",
         );
+        assert_eq!(r.start(), 4);
+        assert_eq!(r.end(), 4);
     }
 
     #[test]
-    fn range_start_for_end_of_text() {
+    fn range_start_and_end_for_selection_in_nested_tags() {
+        let r = range_of(
+            "\
+            <ul><li>a</li><li>b</li></ul>\
+            <ul><li>c</li><li>{d</li><li>e}|</li></ul>",
+        );
+
+        assert_eq!(r.start(), 3);
+        assert_eq!(r.end(), 5);
+    }
+
+    #[test]
+    fn range_start_and_end_for_end_of_complex_tags() {
+        let r = range_of(
+            "\
+            <ul><li>a</li><li>b</li></ul>\
+            <ul><li>c</li><li>d</li><li>e|</li></ul>",
+        );
+
+        assert_eq!(r.start(), 5);
+        assert_eq!(r.end(), 5);
+    }
+
+    #[test]
+    fn range_start_and_end_for_end_of_text() {
+        let r = range_of(
+            "\
+            <ul><li>a</li><li>b</li></ul>\
+            <ul><li>c</li><li>d</li><li>e</li></ul>fgh|",
+        );
+
+        assert_eq!(r.start(), 8);
+        assert_eq!(r.end(), 8);
+    }
+
+    #[test]
+    fn range_leaves_contains_all_text_nodes() {
+        let r = range_of(
+            "\
+            <ul><li>{a</li><li>b</li></ul>\
+            <ul><li>c</li><li>d</li><li>e</li></ul>fgh}|",
+        );
+
         assert_eq!(
-            range_of(
-                "\
-                <ul><li>a</li><li>b</li></ul>\
-                <ul><li>c</li><li>d</li><li>e</li></ul>fgh|"
-            )
-            .start(),
-            8
+            r.leaves()
+                .map(|loc| &loc.node_handle)
+                .cloned()
+                .collect::<Vec<DomHandle>>(),
+            vec![
+                DomHandle::from_raw(vec![0, 0, 0]), // a
+                DomHandle::from_raw(vec![0, 1, 0]), // b
+                DomHandle::from_raw(vec![1, 0, 0]), // c
+                DomHandle::from_raw(vec![1, 1, 0]), // d
+                DomHandle::from_raw(vec![1, 2, 0]), // e
+                DomHandle::from_raw(vec![2]),       // fgh
+            ]
         );
     }
 
