@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::composer_model::example_format::SelectionWriter;
 use std::marker::PhantomData;
 
 use crate::dom::dom_handle::DomHandle;
@@ -67,7 +68,11 @@ impl<S> ToHtml<S> for LineBreakNode<S>
 where
     S: UnicodeString,
 {
-    fn fmt_html(&self, f: &mut HtmlFormatter<S>) {
+    fn fmt_html(
+        &self,
+        f: &mut HtmlFormatter<S>,
+        _: Option<&mut SelectionWriter>,
+    ) {
         f.write_char(HtmlChar::Lt);
         f.write(self.name().as_slice());
         f.write_char(HtmlChar::Space);

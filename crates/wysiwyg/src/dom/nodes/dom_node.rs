@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::html_formatter::HtmlFormatter;
 use crate::dom::nodes::{ContainerNode, LineBreakNode, TextNode};
@@ -148,11 +149,15 @@ impl<S> ToHtml<S> for DomNode<S>
 where
     S: UnicodeString,
 {
-    fn fmt_html(&self, f: &mut HtmlFormatter<S>) {
+    fn fmt_html(
+        &self,
+        f: &mut HtmlFormatter<S>,
+        selection_writer: Option<&mut SelectionWriter>,
+    ) {
         match self {
-            DomNode::Container(s) => s.fmt_html(f),
-            DomNode::LineBreak(s) => s.fmt_html(f),
-            DomNode::Text(s) => s.fmt_html(f),
+            DomNode::Container(s) => s.fmt_html(f, selection_writer),
+            DomNode::LineBreak(s) => s.fmt_html(f, selection_writer),
+            DomNode::Text(s) => s.fmt_html(f, selection_writer),
         }
     }
 }

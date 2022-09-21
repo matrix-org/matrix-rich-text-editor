@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::html_formatter::HtmlFormatter;
 use crate::dom::nodes::dom_node::DomNode;
@@ -285,7 +286,11 @@ impl<S> ToHtml<S> for ContainerNode<S>
 where
     S: UnicodeString,
 {
-    fn fmt_html(&self, f: &mut HtmlFormatter<S>) {
+    fn fmt_html(
+        &self,
+        f: &mut HtmlFormatter<S>,
+        selection_writer: Option<&mut SelectionWriter>,
+    ) {
         let name = self.name();
         if !name.is_empty() {
             f.write_char(HtmlChar::Lt);
@@ -304,8 +309,16 @@ where
             f.write_char(HtmlChar::Gt);
         }
 
-        for child in &self.children {
-            child.fmt_html(f);
+        if let Some(w) = selection_writer {
+            for (i, child) in self.children.iter().enumerate() {
+                let is_last = self.children().len() == i + 1;
+                f.write_node(child, is_last, Some(w));
+            }
+        } else {
+            for (i, child) in self.children.iter().enumerate() {
+                let is_last = self.children().len() == i + 1;
+                f.write_node(child, is_last, None);
+            }
         }
 
         if !name.is_empty() {

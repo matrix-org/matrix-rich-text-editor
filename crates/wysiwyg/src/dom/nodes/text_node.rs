@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::composer_model::example_format::SelectionWriter;
+use html_escape;
+
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::html_formatter::HtmlFormatter;
 use crate::dom::to_html::ToHtml;
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
 use crate::dom::UnicodeString;
-
-use html_escape;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct TextNode<S>
@@ -66,7 +67,11 @@ impl<S> ToHtml<S> for TextNode<S>
 where
     S: UnicodeString,
 {
-    fn fmt_html(&self, f: &mut HtmlFormatter<S>) {
+    fn fmt_html(
+        &self,
+        f: &mut HtmlFormatter<S>,
+        _: Option<&mut SelectionWriter>,
+    ) {
         let string = self.data.to_utf8();
         let mut escaped = String::new();
         html_escape::encode_text_to_string(&string, &mut escaped);

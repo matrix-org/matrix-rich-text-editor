@@ -16,7 +16,7 @@
 
 use widestring::Utf16String;
 
-use crate::ComposerModel;
+use crate::{ComposerModel, UnicodeString};
 
 /// Short wrapper around [ComposerModel::from_example_format].
 pub fn cm(text: &str) -> ComposerModel<Utf16String> {
@@ -26,4 +26,12 @@ pub fn cm(text: &str) -> ComposerModel<Utf16String> {
 /// Short wrapper around [ComposerModel::to_example_format].
 pub fn tx(model: &ComposerModel<Utf16String>) -> String {
     model.to_example_format()
+}
+
+pub(crate) fn restore_whitespace(text: &String) -> String {
+    text.replace("&nbsp;", " ").replace("\u{A0}", " ")
+}
+
+pub(crate) fn restore_whitespace_u16(text: &Utf16String) -> Utf16String {
+    Utf16String::from(restore_whitespace(&text.to_utf8()))
 }

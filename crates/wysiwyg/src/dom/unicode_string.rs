@@ -19,7 +19,7 @@ use widestring::{Utf16String, Utf32String};
 /// We implement this for String, Utf16String and Utf32String (from the
 /// widestring crate).
 pub trait UnicodeString: Clone + std::fmt::Debug + PartialEq {
-    type CodeUnit: Clone;
+    type CodeUnit: Clone + PartialEq;
 
     fn new() -> Self;
 

@@ -15,10 +15,9 @@
 use std::collections::HashSet;
 use widestring::Utf16String;
 
-use crate::dom::nodes::TextNode;
 use crate::dom::parser::parse;
-use crate::dom::{Dom, DomLocation, Range};
-use crate::{ComposerModel, ComposerState, DomHandle, DomNode, Location};
+use crate::dom::{DomLocation, HtmlFormatter, Range};
+use crate::{ComposerModel, ComposerState, DomNode, Location, UnicodeString};
 
 impl ComposerModel<Utf16String> {
     /// Convenience function to allow working with ComposerModel instances
@@ -143,20 +142,85 @@ impl ComposerModel<Utf16String> {
     pub fn to_example_format(&self) -> String {
         // Clone the model because we will modify it to add selection markers
         let state = self.state.clone();
-        let mut dom = state.dom;
+        let dom = state.dom;
+
+        let mut formatter = HtmlFormatter::new();
 
         // Find out which nodes are involved in the selection
         let range = dom.find_range(state.start.into(), state.end.into());
 
         // Modify the text nodes to add {, } and |
-        write_selection_multi(
-            &mut dom,
-            range,
-            state.start.into(),
-            state.end.into(),
+        let selection_start = self.state.start.into();
+        let selection_end = self.state.end.into();
+        let doc_length = self.state.dom.document().text_len();
+        let root = dom.lookup_node(&dom.document_handle());
+        let state = SelectionWritingState::new(
+            selection_start,
+            selection_end,
+            doc_length,
         );
+        let mut writer = SelectionWriter {
+            state,
+            locations: range.locations,
+        };
+        formatter.write_node(root, false, Some(&mut writer));
+        let ret = formatter.finish();
+        let html = ret.to_utf8();
+        html.replace("\u{200b}", "~").replace("\u{A0}", "&nbsp;")
+    }
+}
 
-        dom.to_string().replace("\u{200b}", "~")
+pub struct SelectionWriter {
+    state: SelectionWritingState,
+    locations: Vec<DomLocation>,
+}
+
+impl SelectionWriter {
+    pub fn write_node<S: UnicodeString>(
+        &mut self,
+        f: &mut HtmlFormatter<S>,
+        pos: usize,
+        node: &DomNode<S>,
+    ) {
+        if let Some(loc) = self
+            .locations
+            .iter()
+            .find(|l| l.is_leaf && l.node_handle == node.handle())
+        {
+            Self::apply_selection(&mut self.state, f, pos, node, loc);
+        }
+    }
+
+    fn apply_selection<S: UnicodeString>(
+        state: &mut SelectionWritingState,
+        formatter: &mut HtmlFormatter<S>,
+        cur_pos: usize,
+        node: &DomNode<S>,
+        location: &DomLocation,
+    ) {
+        match node {
+            DomNode::Text(n) => {
+                let strings_to_add = state.advance(&location, n.data().len());
+                for (str, i) in strings_to_add.into_iter().rev() {
+                    let pos = cur_pos + i;
+                    let code_units = S::from_str(str);
+                    formatter.write_at(pos, code_units.as_slice());
+                }
+            }
+            DomNode::LineBreak(_) => {
+                let strings_to_add = state.advance(&location, 1);
+                for (str, i) in strings_to_add.into_iter().rev() {
+                    let code_units = S::from_str(str);
+                    // Index 1 in line breaks is actually at the end of the '<br />'
+                    let i = if i == 0 { 0 } else { 6 };
+                    formatter.write_at(cur_pos + i, code_units.as_slice());
+                }
+            }
+            DomNode::Container(_) => (),
+        }
+        // we should always have written at least the start of the selection
+        // ({ or |) by now.
+        assert!(state.done_first);
     }
 }
 
@@ -211,18 +275,6 @@ fn find_char(haystack: &[u16], needle: &str) -> Option<usize> {
         }
     }
     None
-}
-
-fn update_text_node(
-    node: &mut TextNode<Utf16String>,
-    offset: usize,
-    s: &'static str,
-) {
-    let data = node.data();
-    let mut new_start_data = data[..offset].to_string();
-    new_start_data.push_str(s);
-    new_start_data += &data[offset..].to_string();
-    node.set_data(Utf16String::from_str(&new_start_data));
 }
 
 #[derive(Debug)]
@@ -358,69 +410,6 @@ impl SelectionWritingState {
             "}|"
         }
     }
-}
-
-/// Insert {, } and | to mark the start and end of a range
-/// start is the absolute position of the start of the range
-/// end is the absolute position of the end of the range
-fn write_selection_multi(
-    dom: &mut Dom<Utf16String>,
-    range: Range,
-    start: usize,
-    end: usize,
-) {
-    let mut state =
-        SelectionWritingState::new(start, end, dom.document().text_len());
-
-    let mut nodes_to_add = Vec::new();
-
-    if range.is_empty() {
-        // TODO: weirdly we don't add "|" here
-        nodes_to_add.push((
-            DomHandle::from_raw(vec![1]),
-            0,
-            DomNode::new_text(Utf16String::from_str("")),
-        ));
-        state.done_first = true;
-    }
-
-    for location in range.locations {
-        let handle = &location.node_handle;
-        let mut node = dom.lookup_node_mut(handle);
-        match &mut node {
-            DomNode::Container(_) => {}
-            DomNode::LineBreak(_) => {
-                let strings_to_add = state.advance(&location, 1);
-                for (s, offset) in strings_to_add.iter().rev() {
-                    nodes_to_add.push((
-                        handle.clone(),
-                        handle.index_in_parent() + offset,
-                        DomNode::new_text(Utf16String::from_str(s)),
-                    ));
-                }
-            }
-            DomNode::Text(n) => {
-                let strings_to_add = state.advance(&location, n.data().len());
-                for (s, offset) in strings_to_add.iter().rev() {
-                    update_text_node(n, *offset, s);
-                }
-            }
-        }
-    }
-    if !nodes_to_add.is_empty() {
-        for (handle, idx, node) in nodes_to_add.into_iter().rev() {
-            let parent = dom.lookup_node_mut(&handle.parent_handle());
-            if let DomNode::Container(parent) = parent {
-                parent.insert_child(idx, node);
-            } else {
-                panic!("Parent node was not a container!");
-            }
-        }
-    }
-
-    // we should always have written at least the start of the selection
-    // ({ or |) by now.
-    assert!(state.done_first);
 }
 
 #[cfg(test)]

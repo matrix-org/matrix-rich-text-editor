@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::HtmlFormatter;
 
 use super::UnicodeString;
@@ -20,11 +21,15 @@ pub trait ToHtml<S>
 where
     S: UnicodeString,
 {
-    fn fmt_html(&self, f: &mut HtmlFormatter<S>);
+    fn fmt_html(
+        &self,
+        f: &mut HtmlFormatter<S>,
+        selection_writer: Option<&mut SelectionWriter>,
+    );
 
     fn to_html(&self) -> S {
         let mut f = HtmlFormatter::new();
-        self.fmt_html(&mut f);
+        self.fmt_html(&mut f, None);
         f.finish()
     }
 }

@@ -245,6 +245,7 @@ class InterceptInputConnection(
             if (result != null) {
                 replaceAll(result.text, 0, editable.length, 1)
                 setSelectionOnEditable(editable, result.selection.first, result.selection.last)
+                setComposingRegion(result.selection.first, result.selection.last)
             }
             // TODO: handle result == null
             handled = true
@@ -258,6 +259,7 @@ class InterceptInputConnection(
             if (result != null) {
                 replaceAll(result.text, 0, editable.length, 1)
                 setSelectionOnEditable(editable, result.selection.first, result.selection.last)
+                setComposingRegion(result.selection.first, result.selection.last)
             }
             // TODO: handle result == null
             handled = true

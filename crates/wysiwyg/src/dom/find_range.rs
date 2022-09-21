@@ -224,7 +224,7 @@ mod test {
     use widestring::Utf16String;
 
     use super::*;
-    use crate::tests::testutils_composer_model::cm;
+    use crate::tests::testutils_composer_model::{cm, restore_whitespace_u16};
     use crate::tests::testutils_conversion::utf16;
     use crate::tests::testutils_dom::{b, dom, tn};
     use crate::ToHtml;
@@ -253,7 +253,11 @@ mod test {
         range
             .locations
             .iter()
-            .map(|location| dom.lookup_node(&location.node_handle).to_html())
+            .map(|location| {
+                restore_whitespace_u16(
+                    &dom.lookup_node(&location.node_handle).to_html(),
+                )
+            })
             .collect()
     }
 
