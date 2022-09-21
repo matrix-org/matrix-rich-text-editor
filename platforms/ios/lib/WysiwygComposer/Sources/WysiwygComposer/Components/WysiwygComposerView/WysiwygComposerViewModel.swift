@@ -58,23 +58,7 @@ public class WysiwygComposerViewModel: ObservableObject {
     ///   - text: Text currently displayed in the composer.
     ///   - range: Range to select.
     public func select(text: NSAttributedString, range: NSRange) {
-        do {
-            // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
-            let htmlSelection = try text.htmlRange(from: range,
-                                                   shouldIgnoreTrailingNewline: false)
-            Logger.viewModel.logDebug(["Sel(att): \(range)",
-                                       "Sel: \(htmlSelection)",
-                                       "Text: \"\(text.string)\""],
-                                       functionName: #function)
-            let update = self.model.select(startUtf16Codeunit: UInt32(htmlSelection.location),
-                              endUtf16Codeunit: UInt32(htmlSelection.upperBound))
-
-            self.applyUpdate(update)
-        } catch {
-            Logger.viewModel.logError(["Sel(att): \(range)",
-                                       "Error: \(error.localizedDescription)"],
-                                      functionName: #function)
-        }
+        self.select(text: text, range: range, clearMissSelection: false)
     }
 
     /// Apply given action to the composer.
@@ -122,26 +106,62 @@ public class WysiwygComposerViewModel: ObservableObject {
 
 // MARK: - Internal
 extension WysiwygComposerViewModel {
+    /// Select given range of text within the model.
+    ///
+    /// - Parameters:
+    ///   - text: Text currently displayed in the composer.
+    ///   - range: Range to select.
+    ///   - clearMissSelection: Whether expected miss selection should be cleared regardless of input.
+    func select(text: NSAttributedString, range: NSRange, clearMissSelection: Bool) {
+        do {
+            // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
+            let htmlSelection = try text.htmlRange(from: range,
+                                                   shouldIgnoreTrailingNewline: false)
+            Logger.viewModel.logDebug(["Sel(att): \(range)",
+                                       "Sel: \(htmlSelection)",
+                                       "Text: \"\(text.string)\""],
+                                       functionName: #function)
+            let update = self.model.select(startUtf16Codeunit: UInt32(htmlSelection.location),
+                              endUtf16Codeunit: UInt32(htmlSelection.upperBound))
+
+            self.applyUpdate(update)
+        } catch {
+            Logger.viewModel.logError(["Sel(att): \(range)",
+                                       "Error: \(error.localizedDescription)"],
+                                      functionName: #function)
+        }
+    }
+
     /// Replace text in the model.
     ///
     /// - Parameters:
     ///   - text: Text currently displayed in the composer.
     ///   - range: Range to replace.
     ///   - replacementText: Replacement text to apply.
-    func replaceText(_ text: NSAttributedString, range: NSRange, replacementText: String) {
+    func replaceText(_ text: NSAttributedString, range: NSRange, replacementText: String) -> Bool {
         let update: ComposerUpdate
-        if replacementText == "" {
-            // When trying to backspace more than one UTF16 code unit, selection is required.
-            if range.length > 1 {
-                self.select(text: text, range: range)
-            }
-            update = self.model.backspace()
-        } else if replacementText == "\n" {
+        let shouldAcceptChange: Bool
+
+        if range != self.content.attributedSelection {
+            select(text: text, range: range, clearMissSelection: true)
+        }
+
+        if self.content.attributedSelection.length == 0 && replacementText == "" {
+            Logger.viewModel.logDebug(["Ignored an empty replacement"],
+                                      functionName: #function)
+            return false
+        }
+
+        if replacementText.count == 1 && replacementText[String.Index(utf16Offset: 0, in: replacementText)].isNewline {
             update = self.model.enter()
+            shouldAcceptChange = false
         } else {
             update = self.model.replaceText(newText: replacementText)
+            shouldAcceptChange = true
         }
+
         self.applyUpdate(update)
+        return shouldAcceptChange
     }
 
     /// Notify that the text view content has changed.
@@ -149,6 +169,13 @@ extension WysiwygComposerViewModel {
     /// - Parameter textView: The composer's text view.
     func didUpdateText(textView: UITextView) {
         self.updateIdealHeightIfNeeded(textView)
+
+        // Reconciliate
+        if textView.attributedText != self.content.attributed {
+            Logger.viewModel.logDebug(["Reconciliate from \"\(textView.text ?? "")\" to \"\(self.content.plainText)\""],
+                                      functionName: #function)
+            textView.apply(self.content)
+        }
     }
 }
 

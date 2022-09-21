@@ -26,7 +26,7 @@ final class WysiwygComposerViewModelTests: XCTestCase {
 
         let expectFalse = self.expectation(description: "Await isContentEmpty false")
         let cancellableFalse = viewModel.$isContentEmpty
-            // Ignore on subscribe publish.
+        // Ignore on subscribe publish.
             .dropFirst()
             .removeDuplicates()
             .sink(receiveValue: { isEmpty in
@@ -34,16 +34,16 @@ final class WysiwygComposerViewModelTests: XCTestCase {
                 expectFalse.fulfill()
             })
 
-        viewModel.replaceText(NSAttributedString(string: ""),
-                              range: .zero,
-                              replacementText: "Test")
+        _ = viewModel.replaceText(NSAttributedString(string: ""),
+                                  range: .zero,
+                                  replacementText: "Test")
 
         wait(for: [expectFalse], timeout: 2.0)
         cancellableFalse.cancel()
 
         let expectTrue = self.expectation(description: "Await isContentEmpty true")
         let cancellableTrue = viewModel.$isContentEmpty
-            // Ignore on subscribe publish.
+        // Ignore on subscribe publish.
             .dropFirst()
             .removeDuplicates()
             .sink(receiveValue: { isEmpty in
@@ -51,9 +51,9 @@ final class WysiwygComposerViewModelTests: XCTestCase {
                 expectTrue.fulfill()
             })
 
-        viewModel.replaceText(viewModel.content.attributed,
-                              range: .init(location: 0, length: viewModel.content.attributed.length),
-                              replacementText: "")
+        _ = viewModel.replaceText(viewModel.content.attributed,
+                                  range: .init(location: 0, length: viewModel.content.attributed.length),
+                                  replacementText: "")
 
         wait(for: [expectTrue], timeout: 2.0)
         cancellableTrue.cancel()

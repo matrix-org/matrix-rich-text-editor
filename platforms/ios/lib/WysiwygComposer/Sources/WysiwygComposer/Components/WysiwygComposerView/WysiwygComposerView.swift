@@ -21,7 +21,7 @@ import OSLog
 struct WysiwygComposerView: UIViewRepresentable {
     // MARK: - Internal
     var content: WysiwygComposerContent
-    var replaceText: (NSAttributedString, NSRange, String) -> Void
+    var replaceText: (NSAttributedString, NSRange, String) -> Bool
     var select: (NSAttributedString, NSRange) -> Void
     var didUpdateText: (UITextView) -> Void
 
@@ -42,8 +42,7 @@ struct WysiwygComposerView: UIViewRepresentable {
         Logger.textView.logDebug([content.logAttributedSelection,
                                   content.logText],
                                  functionName: #function)
-        uiView.attributedText = content.attributed
-        uiView.selectedRange = content.attributedSelection
+        uiView.apply(self.content)
         context.coordinator.didUpdateText(uiView)
     }
 
@@ -53,11 +52,11 @@ struct WysiwygComposerView: UIViewRepresentable {
 
     /// Coordinates UIKit communication.
     class Coordinator: NSObject, UITextViewDelegate, NSTextStorageDelegate {
-        var replaceText: (NSAttributedString, NSRange, String) -> Void
+        var replaceText: (NSAttributedString, NSRange, String) -> Bool
         var select: (NSAttributedString, NSRange) -> Void
         var didUpdateText: (UITextView) -> Void
 
-        init(_ replaceText: @escaping (NSAttributedString, NSRange, String) -> Void,
+        init(_ replaceText: @escaping (NSAttributedString, NSRange, String) -> Bool,
              _ select: @escaping (NSAttributedString, NSRange) -> Void,
              _ didUpdateText: @escaping (UITextView) -> Void) {
             self.replaceText = replaceText
@@ -70,8 +69,7 @@ struct WysiwygComposerView: UIViewRepresentable {
                                       textView.logText,
                                       "Replacement: \"\(text)\""],
                                      functionName: #function)
-            self.replaceText(textView.attributedText, range, text)
-            return false
+            return self.replaceText(textView.attributedText, range, text)
         }
 
         func textViewDidChange(_ textView: UITextView) {
