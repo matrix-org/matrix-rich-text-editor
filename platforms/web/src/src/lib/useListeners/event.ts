@@ -1,10 +1,10 @@
 import { MouseEvent as ReactMouseEvent } from 'react';
 
-import { ComposerModel } from '../../generated/wysiwyg';
-import { processInput } from './composer';
-import { getCurrentSelection, refreshComposerView, replaceEditor } from './dom';
-import { WysiwygInputEvent } from './types';
-import { TestUtilities } from './useTestCases/types';
+import { ComposerModel } from '../../../generated/wysiwyg';
+import { processInput } from '../composer';
+import { getCurrentSelection, refreshComposerView, replaceEditor } from '../dom';
+import { WysiwygInputEvent } from '../types';
+import { TestUtilities } from '../useTestCases/types';
 
 export function sendInputEvent(
     e: ReactMouseEvent<HTMLElement, MouseEvent> | KeyboardEvent,

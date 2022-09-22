@@ -1,7 +1,7 @@
 import { RefObject, MouseEvent as ReactMouseEvent, useMemo } from 'react';
 
 import { BlockType } from './types';
-import { sendInputEvent } from './event';
+import { sendInputEvent } from './useListeners';
 
 /*
 const actions= {

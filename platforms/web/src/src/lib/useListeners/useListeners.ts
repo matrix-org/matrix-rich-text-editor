@@ -1,10 +1,10 @@
 import { RefObject, useEffect } from 'react';
 
-import { ComposerModel } from '../../generated/wysiwyg';
-import { isInputEvent } from './assert';
+import { ComposerModel } from '../../../generated/wysiwyg';
+import { isInputEvent } from '../assert';
 import { handleInput, handleKeyDown, handleSelectionChange } from './event';
-import { WysiwygInputEvent } from './types';
-import { TestUtilities } from './useTestCases/types';
+import { WysiwygInputEvent } from '../types';
+import { TestUtilities } from '../useTestCases/types';
 
 export function useListeners(
     editorRef: RefObject<HTMLElement | null>,
