@@ -15,38 +15,6 @@
 use crate::dom::dom_handle::DomHandle;
 use std::cmp::Ordering;
 
-#[derive(Debug, PartialEq)]
-pub enum Range {
-    // The range is within a single node
-    SameNode(SameNodeRange),
-
-    // The range covers several nodes
-    MultipleNodes(MultipleNodesRange),
-
-    // The DOM contains no nodes at all!
-    NoNode,
-}
-
-/// The answer supplied when you ask where a range is in the DOM, and the start
-/// and end are both inside the same node.
-#[derive(Debug, PartialEq)]
-pub struct SameNodeRange {
-    /// The node containing the range
-    pub node_handle: DomHandle,
-
-    /// The position within this node that corresponds to the start of the range
-    pub start_offset: usize,
-
-    /// The position within this node that corresponds to the end of the range
-    pub end_offset: usize,
-
-    /// Remember the values passed in when were were created, so we can
-    /// recreate this SameNodeRange as a MultipleNodesRange. This will help
-    /// with our transition to only using MultipleNodesRange.
-    pub original_start: usize,
-    pub original_end: usize,
-}
-
 /// Represents a part of a Range.
 /// This is made up of a node (we hold a handle to it), and which part of
 /// that node is within the range.
@@ -151,11 +119,11 @@ impl Ord for DomLocation {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct MultipleNodesRange {
+pub struct Range {
     pub locations: Vec<DomLocation>,
 }
 
-impl MultipleNodesRange {
+impl Range {
     pub fn new<'a>(
         locations: impl IntoIterator<Item = &'a DomLocation>,
     ) -> Self {
@@ -202,9 +170,14 @@ impl MultipleNodesRange {
     pub fn leaves(&self) -> impl Iterator<Item = &DomLocation> {
         self.locations.iter().filter(|loc| loc.is_leaf)
     }
+
+    // TODO: remove all uses of this when we guarantee that Dom is never empty
+    pub fn is_empty(&self) -> bool {
+        self.locations.is_empty()
+    }
 }
 
-impl IntoIterator for MultipleNodesRange {
+impl IntoIterator for Range {
     type Item = DomLocation;
     type IntoIter = std::vec::IntoIter<DomLocation>;
 
@@ -219,7 +192,7 @@ mod test {
         dom::DomLocation, tests::testutils_composer_model::cm, DomHandle,
     };
 
-    use super::{MultipleNodesRange, Range};
+    use super::Range;
 
     #[test]
     fn range_start_and_end_for_cursor_at_beginning() {
@@ -343,16 +316,9 @@ mod test {
         );
     }
 
-    fn range_of(model: &str) -> MultipleNodesRange {
+    fn range_of(model: &str) -> Range {
         let model = cm(model);
         let (s, e) = model.safe_selection();
-        let range = model.state.dom.find_range(s, e);
-        match range {
-            Range::SameNode(range) => {
-                model.state.dom.convert_same_node_range_to_multi(range)
-            }
-            Range::MultipleNodes(mrange) => mrange,
-            Range::NoNode => panic!("Wasn't expecting NoNode!"),
-        }
+        model.state.dom.find_range(s, e)
     }
 }

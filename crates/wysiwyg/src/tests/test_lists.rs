@@ -42,6 +42,13 @@ fn creating_unordered_list() {
 }
 
 #[test]
+fn can_create_list_in_empty_model() {
+    let mut model = ComposerModel::new();
+    model.unordered_list();
+    assert_eq!(tx(&model), "<ul><li>|</li></ul>");
+}
+
+#[test]
 fn removing_list_item() {
     let mut model = cm("<ol><li>abcd</li><li>~|</li></ol>");
     model.enter();

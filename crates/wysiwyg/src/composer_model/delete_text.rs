@@ -14,7 +14,7 @@
 
 use crate::composer_model::base::adjust_handles_for_delete;
 use crate::dom::nodes::DomNode;
-use crate::dom::{DomHandle, MultipleNodesRange, Range};
+use crate::dom::{DomHandle, Range};
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
 
 impl<S> ComposerModel<S>
@@ -29,17 +29,7 @@ where
             // TODO: should probably also get inside here if our selection
             // only contains a zero-wdith space.
             let range = self.state.dom.find_range(s, e);
-            match range {
-                Range::SameNode(range) => {
-                    let mrange =
-                        self.state.dom.convert_same_node_range_to_multi(range);
-                    self.backspace_single_cursor(mrange, e)
-                }
-                Range::MultipleNodes(range) => {
-                    self.backspace_single_cursor(range, e)
-                }
-                Range::NoNode => panic!("Backspace with no nodes!"),
-            }
+            self.backspace_single_cursor(range, e)
         } else {
             self.do_backspace()
         }
@@ -47,7 +37,7 @@ where
 
     fn backspace_single_cursor(
         &mut self,
-        range: MultipleNodesRange,
+        range: Range,
         end_position: usize,
     ) -> ComposerUpdate<S> {
         // Find the first leaf node in this selection - note there

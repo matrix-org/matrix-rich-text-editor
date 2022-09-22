@@ -14,7 +14,7 @@
 
 use crate::composer_model::base::{slice, slice_from, slice_to};
 use crate::dom::nodes::DomNode;
-use crate::dom::{DomLocation, MultipleNodesRange, Range};
+use crate::dom::{DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, UnicodeString};
 
 impl<S> ComposerModel<S>
@@ -31,26 +31,10 @@ where
         self.push_state_to_history();
 
         let range = self.state.dom.find_range(s, e);
-        match range {
-            Range::SameNode(range) => {
-                let mrange =
-                    self.state.dom.convert_same_node_range_to_multi(range);
-                self.set_link_range(mrange, link)
-            }
-
-            Range::NoNode => {
-                panic!("Can't add link to empty range")
-            }
-
-            Range::MultipleNodes(range) => self.set_link_range(range, link),
-        }
+        self.set_link_range(range, link)
     }
 
-    fn set_link_range(
-        &mut self,
-        range: MultipleNodesRange,
-        link: S,
-    ) -> ComposerUpdate<S> {
+    fn set_link_range(&mut self, range: Range, link: S) -> ComposerUpdate<S> {
         let leaves: Vec<&DomLocation> = range.leaves().collect();
         if leaves.len() == 1 {
             let location = leaves[0];

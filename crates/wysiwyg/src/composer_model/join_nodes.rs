@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::dom::nodes::{ContainerNodeKind, DomNode};
-use crate::dom::{DomHandle, DomLocation, MultipleNodesRange, Range};
+use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, UnicodeString};
 
 /// Handles joining together nodes after an edit event.
@@ -27,11 +27,7 @@ where
 {
     /// After the selection range we were given in from_range has been deleted,
     /// join any nodes that match up across the selection.
-    pub(crate) fn join_nodes(
-        &mut self,
-        range: &MultipleNodesRange,
-        new_pos: usize,
-    ) {
+    pub(crate) fn join_nodes(&mut self, range: &Range, new_pos: usize) {
         if let Some(start_handle) = self.first_text_handle(range) {
             self.join_structure_nodes(&start_handle, new_pos);
             self.join_format_nodes_at_index(new_pos);
@@ -235,23 +231,11 @@ where
 
     /// Given a position, find the text or line break node containing it
     fn find_leaf_containing(&self, pos: usize) -> Option<DomHandle> {
-        let new_range = self.state.dom.find_range(pos, pos);
-        match new_range {
-            Range::SameNode(range) => {
-                let mrange =
-                    self.state.dom.convert_same_node_range_to_multi(range);
-
-                self.find_next_node_range(mrange)
-            }
-            Range::MultipleNodes(range) => self.find_next_node_range(range),
-            Range::NoNode => None,
-        }
+        let range = self.state.dom.find_range(pos, pos);
+        self.find_next_node_range(range)
     }
 
-    fn find_next_node_range(
-        &self,
-        range: MultipleNodesRange,
-    ) -> Option<DomHandle> {
+    fn find_next_node_range(&self, range: Range) -> Option<DomHandle> {
         range.leaves().next().map(|loc| loc.node_handle.clone())
     }
 
@@ -348,10 +332,7 @@ where
         })
     }
 
-    fn first_text_handle(
-        &self,
-        range: &MultipleNodesRange,
-    ) -> Option<DomHandle> {
+    fn first_text_handle(&self, range: &Range) -> Option<DomHandle> {
         self.find_text_handle(range.locations.iter())
     }
 }
