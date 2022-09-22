@@ -14,7 +14,7 @@
 
 use crate::composer_model::base::{slice, slice_from, slice_to};
 use crate::dom::nodes::DomNode;
-use crate::dom::{Range, SameNodeRange};
+use crate::dom::{DomLocation, MultipleNodesRange, Range};
 use crate::{ComposerModel, ComposerUpdate, UnicodeString};
 
 impl<S> ComposerModel<S>
@@ -33,36 +33,49 @@ where
         let range = self.state.dom.find_range(s, e);
         match range {
             Range::SameNode(range) => {
-                self.set_link_same_node(range, link);
-                // TODO: for now, we replace every time, to check ourselves, but
-                // at least some of the time we should not
-                return self.create_update_replace_all();
+                let mrange =
+                    self.state.dom.convert_same_node_range_to_multi(range);
+                self.set_link_range(mrange, link)
             }
 
             Range::NoNode => {
-                panic!("Can't add link to empty range");
+                panic!("Can't add link to empty range")
             }
 
-            _ => panic!("Can't add link in complex object models yet"),
+            Range::MultipleNodes(range) => self.set_link_range(range, link),
         }
     }
 
-    fn set_link_same_node(&mut self, range: SameNodeRange, link: S) {
-        // TODO: set link should be able to wrap container nodes, unlike formatting
-        let node = self.state.dom.lookup_node(&range.node_handle);
-        if let DomNode::Text(t) = node {
-            let text = t.data();
-            let before = slice_to(text, ..range.start_offset);
-            let during = slice(text, range.start_offset..range.end_offset);
-            let after = slice_from(text, range.end_offset..);
-            let new_nodes = vec![
-                DomNode::new_text(before),
-                DomNode::new_link(link, vec![DomNode::new_text(during)]),
-                DomNode::new_text(after),
-            ];
-            self.state.dom.replace(&range.node_handle, new_nodes);
+    fn set_link_range(
+        &mut self,
+        range: MultipleNodesRange,
+        link: S,
+    ) -> ComposerUpdate<S> {
+        let leaves: Vec<&DomLocation> = range.leaves().collect();
+        if leaves.len() == 1 {
+            let location = leaves[0];
+            let handle = &location.node_handle;
+
+            // TODO: set link should be able to wrap container nodes, unlike formatting
+            let node = self.state.dom.lookup_node(handle);
+            if let DomNode::Text(t) = node {
+                let text = t.data();
+                let before = slice_to(text, ..location.start_offset);
+                let during =
+                    slice(text, location.start_offset..location.end_offset);
+                let after = slice_from(text, location.end_offset..);
+                let new_nodes = vec![
+                    DomNode::new_text(before),
+                    DomNode::new_link(link, vec![DomNode::new_text(during)]),
+                    DomNode::new_text(after),
+                ];
+                self.state.dom.replace(handle, new_nodes);
+                self.create_update_replace_all()
+            } else {
+                panic!("Trying to linkify a non-text node")
+            }
         } else {
-            panic!("Trying to linkify a non-text node")
+            panic!("Can't add link in complex object models yet")
         }
     }
 }
