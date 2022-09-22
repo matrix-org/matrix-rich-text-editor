@@ -1,4 +1,4 @@
-import { computeNodeAndOffset } from './dom';
+import { computeNodeAndOffset, computeSelectionOffset } from './dom';
 
 describe('computeNodeAndOffset', () => {
     let editor: HTMLDivElement;
@@ -166,5 +166,46 @@ describe('computeNodeAndOffset', () => {
         // Then
         expect(node).toBe(editor.childNodes[0].childNodes[0].childNodes[0]);
         expect(offset).toBe(1);
+    });
+});
+
+describe('computeSelectionOffset', () => {
+    let editor: HTMLDivElement;
+
+    beforeAll(() => {
+        editor = document.createElement('div');
+        editor.setAttribute('contentEditable', 'true');
+    });
+
+    test('Should contain all the characters when the editor node is selected', () => {
+        // When
+        editor.innerHTML = 'abc<b>def</b>gh';
+        // Use the editor node and a offset as 1 to simulate the FF behavior
+        let offset = computeSelectionOffset(editor, 1);
+
+        // Then
+        expect(offset).toBe(8);
+
+        // When
+        editor.innerHTML = 'abc<b>def</b>gh<ul><li>alice</li><li>bob</li>';
+        offset = computeSelectionOffset(editor, 1);
+
+        // Then
+        expect(offset).toBe(16);
+    });
+
+    test('Should contains the selected characters', () => {
+        // When
+        editor.innerHTML = 'abc<b>def</b>gh<ul><li>alice</li><li>bob</li>';
+        let offset = computeSelectionOffset(editor.childNodes[0], 1);
+
+        // Then
+        expect(offset).toBe(1);
+
+        // When
+        offset = computeSelectionOffset(editor.childNodes[0], 20);
+
+        // Then
+        expect(offset).toBe(20);
     });
 });
