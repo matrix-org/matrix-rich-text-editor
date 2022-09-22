@@ -6,7 +6,7 @@ beforeAll(async () => {
     await init();
 });
 
-describe('Selection', () => {
+describe('getSelectionAccordingToActions', () => {
     test('Should select according to no actions is -1, 1', () => {
         // When
         const actions = [];
@@ -32,7 +32,7 @@ describe('Selection', () => {
     });
 });
 
-describe('Generate test case', () => {
+describe('generateTestCase', () => {
     test('Should generate test case of 1 character and selection', () => {
         // When
         const actions: Actions = [
