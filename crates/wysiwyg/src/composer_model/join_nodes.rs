@@ -48,7 +48,7 @@ where
         new_pos: usize,
     ) {
         // Find next node
-        if let Some(mut next_handle) = self.find_next_node(new_pos) {
+        if let Some(mut next_handle) = self.find_leaf_containing(new_pos) {
             // Find struct parents
             if let (Some(struct_parent_start), Some(struct_parent_next)) =
                 self.find_struct_parents(&start_handle, &next_handle)
@@ -74,7 +74,7 @@ where
     }
 
     fn join_format_nodes_at_index(&mut self, index: usize) {
-        if let Some(next_node_handle) = self.find_next_node(index) {
+        if let Some(next_node_handle) = self.find_leaf_containing(index) {
             self.join_format_node_with_prev(&next_node_handle);
         }
     }
@@ -233,7 +233,8 @@ where
         Self::find_ancestor_list(&new_next_handle)
     }
 
-    fn find_next_node(&self, pos: usize) -> Option<DomHandle> {
+    /// Given a position, find the text or line break node containing it
+    fn find_leaf_containing(&self, pos: usize) -> Option<DomHandle> {
         let new_range = self.state.dom.find_range(pos, pos);
         match new_range {
             Range::SameNode(range) => {
@@ -251,14 +252,7 @@ where
         &self,
         range: MultipleNodesRange,
     ) -> Option<DomHandle> {
-        let leaves: Vec<&DomLocation> = range.leaves().collect();
-        if leaves.len() == 1 {
-            Some(leaves[0].node_handle.clone())
-        } else if leaves.len() == 0 {
-            None
-        } else {
-            panic!("Range for single position contained several leaves!");
-        }
+        range.leaves().next().map(|loc| loc.node_handle.clone())
     }
 
     fn find_struct_parents(
