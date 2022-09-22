@@ -119,7 +119,7 @@ where
     }
 
     /// Special transitional version of find_range that explicitly asks for
-    /// a MultiNodesRange type, not a SameNodeTange.
+    /// a MultiNodesRange type, not a SameNodeRange.
     pub(crate) fn find_range_multi(&self, start: usize, end: usize) -> Range {
         find_range::find_range(self, start, end, false)
     }
