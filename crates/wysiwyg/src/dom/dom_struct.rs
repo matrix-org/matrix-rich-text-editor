@@ -115,26 +115,14 @@ where
     /// Given the start and end code units, find which nodes of this Dom are
     /// selected. The returned range lists all the Dom nodes involved.
     pub fn find_range(&self, start: usize, end: usize) -> Range {
-        find_range::find_range(self, start, end, true)
-    }
-
-    /// Special transitional version of find_range that explicitly asks for
-    /// a MultiNodesRange type, not a SameNodeRange.
-    pub(crate) fn find_range_multi(&self, start: usize, end: usize) -> Range {
-        find_range::find_range(self, start, end, false)
+        find_range::find_range(self, start, end)
     }
 
     pub(crate) fn convert_same_node_range_to_multi(
         &self,
-        range: SameNodeRange,
+        _range: SameNodeRange,
     ) -> MultipleNodesRange {
-        if let Range::MultipleNodes(r) =
-            self.find_range_multi(range.original_start, range.original_end)
-        {
-            r
-        } else {
-            panic!("find_range_multi didn't return a multi range!");
-        }
+        panic!("We should not get any SameNodeRanges any more!");
     }
 
     pub(crate) fn document_handle(&self) -> DomHandle {
