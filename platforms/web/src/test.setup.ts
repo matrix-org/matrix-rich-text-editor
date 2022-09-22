@@ -2,7 +2,7 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 
-import fs from 'fs';
+import fs from 'node:fs/promises';
 import path from 'path';
 
 globalThis.fetch = (url) => {
@@ -10,7 +10,7 @@ globalThis.fetch = (url) => {
     // we return manually here the wasm file
     if (url instanceof URL && url.href.includes('wysiwyg_bg.wasm')) {
         const wasmPath = path.resolve(__dirname, 'generated/wysiwyg_bg.wasm');
-        return fs.readFileSync(wasmPath);
+        return fs.readFile(wasmPath);
     } else {
         throw new Error('fetch is not defined');
     }
