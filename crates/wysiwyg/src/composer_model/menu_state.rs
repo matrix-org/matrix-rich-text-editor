@@ -158,7 +158,9 @@ where
         let range = self.state.dom.find_range(s, e);
         let computed_disabled_actions = match range {
             Range::SameNode(range) => {
-                self.compute_disabled_actions_for_handle(&range.node_handle)
+                let mrange =
+                    self.state.dom.convert_same_node_range_to_multi(range);
+                self.compute_disabled_actions_for_locations(mrange.locations)
             }
             Range::MultipleNodes(range) => {
                 self.compute_disabled_actions_for_locations(range.locations)
@@ -166,20 +168,6 @@ where
             _ => HashSet::new(),
         };
         disabled_actions.extend(computed_disabled_actions);
-        disabled_actions
-    }
-
-    fn compute_disabled_actions_for_handle(
-        &self,
-        handle: &DomHandle,
-    ) -> HashSet<ComposerAction> {
-        let mut disabled_actions = HashSet::new();
-        if !self.can_indent_handle(handle) {
-            disabled_actions.insert(Indent);
-        }
-        if !self.can_unindent_handle(handle) {
-            disabled_actions.insert(UnIndent);
-        }
         disabled_actions
     }
 
