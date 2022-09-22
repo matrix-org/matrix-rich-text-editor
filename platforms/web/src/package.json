@@ -14,7 +14,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint ./src",
-    "test": "vitest",
+    "test": "vitest --run",
+    "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "coverage": "vitest run --coverage"
   },

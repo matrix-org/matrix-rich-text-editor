@@ -218,7 +218,7 @@ export function getCurrentSelection(editor: HTMLElement) {
  *
  * A "codeunit" here means a UTF-16 code unit.
  */
-function countCodeunit(editor: HTMLElement, node: Node, offset: number) {
+export function countCodeunit(editor: HTMLElement, node: Node, offset: number) {
     function impl(currentNode: Node, offset: number): { found: boolean, offset: number} {
         if (currentNode === node) {
             // We've found the right node

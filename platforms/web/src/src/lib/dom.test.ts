@@ -1,13 +1,13 @@
-import { computeNodeAndOffset, computeSelectionOffset } from './dom';
+import { computeNodeAndOffset, computeSelectionOffset, countCodeunit } from './dom';
+
+let editor: HTMLDivElement;
+
+beforeAll(() => {
+    editor = document.createElement('div');
+    editor.setAttribute('contentEditable', 'true');
+});
 
 describe('computeNodeAndOffset', () => {
-    let editor: HTMLDivElement;
-
-    beforeAll(() => {
-        editor = document.createElement('div');
-        editor.setAttribute('contentEditable', 'true');
-    });
-
     test('Should find at the start of simple text', () => {
         // When
         editor.innerHTML = 'abcdefgh';
@@ -170,13 +170,6 @@ describe('computeNodeAndOffset', () => {
 });
 
 describe('computeSelectionOffset', () => {
-    let editor: HTMLDivElement;
-
-    beforeAll(() => {
-        editor = document.createElement('div');
-        editor.setAttribute('contentEditable', 'true');
-    });
-
     test('Should contain all the characters when the editor node is selected', () => {
         // When
         editor.innerHTML = 'abc<b>def</b>gh';
@@ -207,5 +200,103 @@ describe('computeSelectionOffset', () => {
 
         // Then
         expect(offset).toBe(20);
+    });
+});
+
+describe('countCodeunit', () => {
+    test('Should count ASCII', () => {
+        // When
+        editor.innerHTML = 'abcdefgh';
+        const textNode = editor.childNodes[0];
+
+        // Then
+        expect(countCodeunit(editor, textNode, 0)).toBe(0);
+        expect(countCodeunit(editor, textNode, 3)).toBe(3);
+        expect(countCodeunit(editor, textNode, 7)).toBe(7);
+        // Just past the end is allowed
+        expect(countCodeunit(editor, textNode, 8)).toBe(8);
+        // But not past that
+        expect(countCodeunit(editor, textNode, 9)).toBe(-1);
+    });
+
+    test('Should count UCS-2', () => {
+        // When
+        editor.innerHTML = 'a\u{03A9}b\u{03A9}c';
+        const textNode = editor.childNodes[0];
+
+        // Then
+        expect(countCodeunit(editor, textNode, 0)).toBe(0);
+        expect(countCodeunit(editor, textNode, 1)).toBe(1);
+        expect(countCodeunit(editor, textNode, 4)).toBe(4);
+        expect(countCodeunit(editor, textNode, 5)).toBe(5);
+        expect(countCodeunit(editor, textNode, 6)).toBe(-1);
+    });
+
+    test('Should count complex', () => {
+        // When
+        editor.innerHTML = 'a\u{1F469}\u{1F3FF}\u{200D}\u{1F680}b';
+        const textNode = editor.childNodes[0];
+
+        // Then
+        expect(countCodeunit(editor, textNode, 0)).toBe(0);
+        expect(countCodeunit(editor, textNode, 7)).toBe(7);
+        expect(countCodeunit(editor, textNode, 8)).toBe(8);
+        expect(countCodeunit(editor, textNode, 9)).toBe(9);
+        expect(countCodeunit(editor, textNode, 10)).toBe(-1);
+    });
+
+    test('Should count nested', () => {
+        // When
+        editor.innerHTML = 'a<b>b</b>c';
+        const firstTextNode = editor.childNodes[0];
+        const boldTextNode = editor.childNodes[1].childNodes[0];
+        const thirdTextNode = editor.childNodes[2];
+
+        // Then
+        expect(countCodeunit(editor, firstTextNode, 0)).toBe(0);
+        expect(countCodeunit(editor, boldTextNode, 0)).toBe(1);
+        expect(countCodeunit(editor, thirdTextNode, 0)).toBe(2);
+    });
+
+    test('Should treats br as a character', () => {
+        // When
+        editor.innerHTML = 'a<br />b';
+        const firstTextNode = editor.childNodes[0];
+        const brNode = editor.childNodes[1];
+        const secondTextNode = editor.childNodes[2];
+
+        // Then
+        expect(countCodeunit(editor, firstTextNode, 0)).toBe(0);
+        expect(countCodeunit(editor, brNode, 0)).toBe(1);
+        expect(countCodeunit(editor, brNode, 1)).toBe(2);
+        expect(countCodeunit(editor, secondTextNode, 1)).toBe(3);
+    });
+
+    test('Should works with deeply nested', () => {
+        // When
+        editor.innerHTML = 'aaa<b><i>bbb</i>ccc</b>ddd';
+        const firstTextNode = editor.childNodes[0];
+        const boldItalicNode = editor.childNodes[1].childNodes[0];
+        const boldItalicTextNode = editor.childNodes[1].childNodes[0].childNodes[0];
+        const boldOnlyNode = editor.childNodes[1].childNodes[1];
+        const thirdTextNode = editor.childNodes[2];
+
+        // Then
+        expect(countCodeunit(editor, firstTextNode, 1)).toBe(1);
+        expect(countCodeunit(editor, firstTextNode, 2)).toBe(2);
+        expect(countCodeunit(editor, firstTextNode, 3)).toBe(3);
+        expect(countCodeunit(editor, boldItalicNode, 0)).toBe(3);
+        expect(countCodeunit(editor, boldItalicNode, 1)).toBe(4);
+        expect(countCodeunit(editor, boldItalicNode, 2)).toBe(5);
+        // We can supply the text node or its parent
+        expect(countCodeunit(editor, boldItalicTextNode, 0)).toBe(3);
+        expect(countCodeunit(editor, boldItalicTextNode, 1)).toBe(4);
+        expect(countCodeunit(editor, boldItalicTextNode, 2)).toBe(5);
+        expect(countCodeunit(editor, boldOnlyNode, 0)).toBe(6);
+        expect(countCodeunit(editor, boldOnlyNode, 1)).toBe(7);
+        expect(countCodeunit(editor, boldOnlyNode, 2)).toBe(8);
+        expect(countCodeunit(editor, thirdTextNode, 0)).toBe(9);
+        expect(countCodeunit(editor, thirdTextNode, 1)).toBe(10);
+        expect(countCodeunit(editor, thirdTextNode, 2)).toBe(11);
     });
 });
