@@ -1,4 +1,4 @@
-// 
+//
 // Copyright 2022 The Matrix.org Foundation C.I.C
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-import XCTest
 @testable import WysiwygComposer
+import XCTest
 
 /// Defines tests that can be shared between the SwiftUI and the UIKit example implementations.
 final class WysiwygSharedTests {
@@ -55,7 +55,7 @@ final class WysiwygSharedTests {
         // Double tap results in selecting the last word.
         textView.doubleTap()
         deleteKey.tap()
-        XCTAssertEqual(textView.value as? String, "abcde 🥳 ")
+        XCTAssertEqual(textView.value as? String, "abcde 🥳 ")
 
         // Triple tap selects the entire line.
         textView.tap(withNumberOfTaps: 3, numberOfTouches: 1)

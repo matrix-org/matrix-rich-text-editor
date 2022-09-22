@@ -241,6 +241,8 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = A6472CCB2886CF840021A0E8 /* Build configuration list for PBXNativeTarget "Wysiwyg" */;
 			buildPhases = (
+				A6F3FC0828DCAF8400C170E8 /* 🧹 SwiftFormat */,
+				A6F3FC0728DCADB300C170E8 /* ⚠️ SwiftLint */,
 				A6472CA32886CF830021A0E8 /* Sources */,
 				A6472CA42886CF830021A0E8 /* Frameworks */,
 				A6472CA52886CF830021A0E8 /* Resources */,
@@ -348,6 +350,45 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		A6F3FC0728DCADB300C170E8 /* ⚠️ SwiftLint */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "⚠️ SwiftLint";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "export PATH=\"$PATH:/opt/homebrew/bin\"\nif which swiftlint >/dev/null; then\n    swiftlint $PROJECT_DIR\n    swiftlint ../lib/WysiwygComposer --config \"../lib/WysiwygComposer/.swiftlint.yml\"\nelse\n    echo \"warning: SwiftFormat not installed, download from https://github.com/nicklockwood/SwiftFormat\"\nfi\n";
+		};
+		A6F3FC0828DCAF8400C170E8 /* 🧹 SwiftFormat */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "🧹 SwiftFormat";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "export PATH=\"$PATH:/opt/homebrew/bin\"\nif which swiftformat >/dev/null; then\n    swiftformat $PROJECT_DIR\n    swiftformat ../lib/WysiwygComposer\nelse\n    echo \"warning: SwiftFormat not installed, download from https://github.com/nicklockwood/SwiftFormat\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		A643691A2899175400ECCF8A /* Sources */ = {

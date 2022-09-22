@@ -1,0 +1,12 @@
+--swiftversion 5.6
+
+--disable wrapMultiLineStatementBraces
+--disable hoistPatternLet
+
+--ifdef no-indent
+--nospaceoperators ...,..<
+--stripunusedargs closure-only
+--trimwhitespace nonblank-lines
+--wrapparameters after-first
+--redundanttype inferred
+--emptybraces spaced

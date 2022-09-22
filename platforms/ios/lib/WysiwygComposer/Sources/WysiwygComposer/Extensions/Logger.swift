@@ -18,8 +18,10 @@ import OSLog
 import UIKit
 
 // MARK: - Logger
+
 extension Logger {
     // MARK: Internal
+
     static var subsystem = "org.matrix.WysiwygComposer"
 
     /// Creates a customized log for debug.
@@ -28,7 +30,7 @@ extension Logger {
     ///   - elements: Elements to log.
     ///   - functionName: Name from the function where it is called.
     func logDebug(_ elements: [String], functionName: String) {
-        self.debug("\(customLog(elements, functionName: functionName))")
+        debug("\(customLog(elements, functionName: functionName))")
     }
 
     /// Creates a customized error log.
@@ -37,7 +39,7 @@ extension Logger {
     ///   - elements: Elements to log.
     ///   - functionName: Name from the function where it is called.
     func logError(_ elements: [String], functionName: String) {
-        self.error("\(customLog(elements, functionName: functionName))")
+        error("\(customLog(elements, functionName: functionName))")
     }
 
     /// Creates a customized warning log.
@@ -46,10 +48,11 @@ extension Logger {
     ///   - elements: Elements to log.
     ///   - functionName: Name from the function where it is called.
     func logWarning(_ elements: [String], functionName: String) {
-        self.warning("\(customLog(elements, functionName: functionName))")
+        warning("\(customLog(elements, functionName: functionName))")
     }
 
     // MARK: Private
+
     private func customLog(_ elements: [String], functionName: String) -> String {
         var logMessage = elements.map { $0 + " | " }.joined()
         logMessage.append(contentsOf: functionName)
@@ -58,27 +61,29 @@ extension Logger {
 }
 
 // MARK: - UITextView + Logger
+
 extension UITextView {
     /// Returns a log ready description of the current selection.
     var logSelection: String {
-        return "Sel(att): \(self.selectedRange)"
+        "Sel(att): \(selectedRange)"
     }
 
     /// Returns a log ready description of the current text..
     var logText: String {
-        return "Text: \"\(self.text ?? "")\""
+        "Text: \"\(text ?? "")\""
     }
 }
 
 // MARK: - WysiwygComposerContent + Logger
+
 extension WysiwygComposerContent {
     /// Returns a log ready description of the attributed selection.
     var logAttributedSelection: String {
-        return "Sel(att): \(self.attributedSelection)"
+        "Sel(att): \(attributedSelection)"
     }
 
     /// Returns a log ready description of the text.
     var logText: String {
-        return "Text: \"\(self.plainText)\""
+        "Text: \"\(plainText)\""
     }
 }

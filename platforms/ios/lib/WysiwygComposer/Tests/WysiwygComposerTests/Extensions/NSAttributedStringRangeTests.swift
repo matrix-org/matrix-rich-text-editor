@@ -1,4 +1,4 @@
-// 
+//
 // Copyright 2022 The Matrix.org Foundation C.I.C
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-import XCTest
 @testable import WysiwygComposer
+import XCTest
 
 final class NSAttributedStringRangeTests: XCTestCase {
     func testAttributedNumberedLists() throws {
@@ -27,8 +27,7 @@ final class NSAttributedStringRangeTests: XCTestCase {
         // Ranges that are not part of the raw HTML text (excluding tags) are detected
         XCTAssertEqual(attributed.listPrefixesRanges(),
                        [NSRange(location: 0, length: 4),
-                        NSRange(location: 10, length: 5),
-                       ])
+                        NSRange(location: 10, length: 5)])
         // Converting back and forth from HTML to attributed postions
         XCTAssertEqual(try attributed.attributedPosition(at: 0), 4)
         XCTAssertEqual(try attributed.attributedPosition(at: 7), 16)
@@ -70,8 +69,7 @@ final class NSAttributedStringRangeTests: XCTestCase {
                        "\t•\tItem 1\n\t•\tItem 2\nSome Text")
         XCTAssertEqual(attributed.listPrefixesRanges(),
                        [NSRange(location: 0, length: 3),
-                        NSRange(location: 9, length: 4),
-                       ])
+                        NSRange(location: 9, length: 4)])
         XCTAssertEqual(try attributed.attributedPosition(at: 0), 3)
         XCTAssertEqual(try attributed.attributedPosition(at: 7), 14)
         XCTAssertEqual(try attributed.htmlPosition(at: 14), 7)
@@ -87,8 +85,7 @@ final class NSAttributedStringRangeTests: XCTestCase {
                        [NSRange(location: 0, length: 4),
                         NSRange(location: 10, length: 5),
                         NSRange(location: 21, length: 4),
-                        NSRange(location: 31, length: 4),
-                       ])
+                        NSRange(location: 31, length: 4)])
         XCTAssertEqual(try attributed.attributedPosition(at: 14), 27)
         XCTAssertEqual(try attributed.htmlPosition(at: 27), 14)
         XCTAssertEqual(try attributed.attributedRange(from: .init(location: 0, length: 12)),

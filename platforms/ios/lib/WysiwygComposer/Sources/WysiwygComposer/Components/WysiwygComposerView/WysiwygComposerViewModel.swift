@@ -14,32 +14,36 @@
 // limitations under the License.
 //
 
+import Combine
 import Foundation
 import OSLog
 import UIKit
-import Combine
 
 /// Main view model for the composer. Forwards actions to the Rust model and publishes resulting states.
 public class WysiwygComposerViewModel: ObservableObject {
     // MARK: - Public
+
     /// Published object for the composer content.
     @Published public var content: WysiwygComposerContent = .init()
     /// Published boolean for the composer empty content state.
-    @Published public var isContentEmpty: Bool = true
+    @Published public var isContentEmpty = true
     /// Published value for the composer required height to fit entirely without scrolling.
     @Published public var idealHeight: CGFloat = .zero
-    /// Published value for the composer current expected reversed actions (e.g. calling `bold` will effectively un-bold the current selection).
+    /// Published value for the composer current expected reversed actions
+    /// (e.g. calling `bold` will effectively un-bold the current selection).
     @Published public var reversedActions: [ComposerAction] = []
     /// Published value for the composer current expected disabled actions.
     @Published public var disabledActions: [ComposerAction] = []
 
     // MARK: - Private
+
     private var model: ComposerModel
     private var cancellable: AnyCancellable?
 
     // MARK: - Public
+
     public init() {
-        self.model = newComposerModel()
+        model = newComposerModel()
         // Publish composer empty state.
         cancellable = $content.sink(receiveValue: { [unowned self] content in
             self.isContentEmpty = content.plainText.isEmpty
@@ -49,7 +53,7 @@ public class WysiwygComposerViewModel: ObservableObject {
     /// Apply any additional setup required.
     /// Should be called when the view appears.
     public func setup() {
-        self.applyUpdate(self.model.replaceAllHtml(html: ""))
+        applyUpdate(model.replaceAllHtml(html: ""))
     }
 
     /// Select given range of text within the model.
@@ -65,11 +69,11 @@ public class WysiwygComposerViewModel: ObservableObject {
             Logger.viewModel.logDebug(["Sel(att): \(range)",
                                        "Sel: \(htmlSelection)",
                                        "Text: \"\(text.string)\""],
-                                       functionName: #function)
-            let update = self.model.select(startUtf16Codeunit: UInt32(htmlSelection.location),
-                              endUtf16Codeunit: UInt32(htmlSelection.upperBound))
+                                      functionName: #function)
+            let update = model.select(startUtf16Codeunit: UInt32(htmlSelection.location),
+                                      endUtf16Codeunit: UInt32(htmlSelection.upperBound))
 
-            self.applyUpdate(update)
+            applyUpdate(update)
         } catch {
             Logger.viewModel.logError(["Sel(att): \(range)",
                                        "Error: \(error.localizedDescription)"],
@@ -85,42 +89,43 @@ public class WysiwygComposerViewModel: ObservableObject {
         let update: ComposerUpdate
         switch action {
         case .bold:
-            update = self.model.bold()
+            update = model.bold()
         case .italic:
-            update = self.model.italic()
+            update = model.italic()
         case .strikeThrough:
-            update = self.model.strikeThrough()
+            update = model.strikeThrough()
         case .underline:
-            update = self.model.underline()
+            update = model.underline()
         case .inlineCode:
-            update = self.model.inlineCode()
-        case .link(url: let url):
-            update = self.model.setLink(newText: url)
+            update = model.inlineCode()
+        case let .link(url: url):
+            update = model.setLink(newText: url)
         case .undo:
-            update = self.model.undo()
+            update = model.undo()
         case .redo:
-            update = self.model.redo()
+            update = model.redo()
         case .orderedList:
-            update = self.model.orderedList()
+            update = model.orderedList()
         case .unorderedList:
-            update = self.model.unorderedList()
+            update = model.unorderedList()
         }
-        self.applyUpdate(update)
+        applyUpdate(update)
     }
 
     /// Clear the content of the composer.
     public func clearContent() {
-        self.model = newComposerModel()
-        self.content = WysiwygComposerContent()
+        model = newComposerModel()
+        content = WysiwygComposerContent()
     }
 
     /// Returns a textual representation of the composer model as a tree.
     public func treeRepresentation() -> String {
-        return self.model.toTree()
+        model.toTree()
     }
 }
 
 // MARK: - Internal
+
 extension WysiwygComposerViewModel {
     /// Replace text in the model.
     ///
@@ -132,25 +137,25 @@ extension WysiwygComposerViewModel {
         let update: ComposerUpdate
         let shouldAcceptChange: Bool
 
-        if range != self.content.attributedSelection {
+        if range != content.attributedSelection {
             select(text: text, range: range)
         }
 
-        if self.content.attributedSelection.length == 0 && replacementText == "" {
+        if content.attributedSelection.length == 0, replacementText == "" {
             Logger.viewModel.logDebug(["Ignored an empty replacement"],
                                       functionName: #function)
             return false
         }
 
-        if replacementText.count == 1 && replacementText[String.Index(utf16Offset: 0, in: replacementText)].isNewline {
-            update = self.model.enter()
+        if replacementText.count == 1, replacementText[String.Index(utf16Offset: 0, in: replacementText)].isNewline {
+            update = model.enter()
             shouldAcceptChange = false
         } else {
-            update = self.model.replaceText(newText: replacementText)
+            update = model.replaceText(newText: replacementText)
             shouldAcceptChange = true
         }
 
-        self.applyUpdate(update)
+        applyUpdate(update)
         return shouldAcceptChange
     }
 
@@ -158,79 +163,100 @@ extension WysiwygComposerViewModel {
     ///
     /// - Parameter textView: The composer's text view.
     func didUpdateText(textView: UITextView) {
-        self.updateIdealHeightIfNeeded(textView)
+        updateIdealHeightIfNeeded(textView)
 
         // Reconciliate
-        if textView.attributedText != self.content.attributed {
-            Logger.viewModel.logDebug(["Reconciliate from \"\(textView.text ?? "")\" to \"\(self.content.plainText)\""],
+        if textView.attributedText != content.attributed {
+            Logger.viewModel.logDebug(["Reconciliate from \"\(textView.text ?? "")\" to \"\(content.plainText)\""],
                                       functionName: #function)
-            textView.apply(self.content)
+            textView.apply(content)
         }
     }
 }
 
 // MARK: - Private
+
 private extension WysiwygComposerViewModel {
     /// Apply given composer update to the composer.
     ///
     /// - Parameter update: ComposerUpdate to apply.
     func applyUpdate(_ update: ComposerUpdate) {
         switch update.textUpdate() {
-        case .replaceAll(replacementHtml: let codeUnits,
-                         startUtf16Codeunit: let start,
-                         endUtf16Codeunit: let end):
-            let html = String(utf16CodeUnits: codeUnits,
-                              count: codeUnits.count)
-            do {
-                let attributed = try NSAttributedString(html: html)
-                // FIXME: handle error for out of bounds index
-                let htmlSelection = NSRange(location: Int(start), length: Int(end-start))
-                // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
-                let textSelection = try attributed.attributedRange(from: htmlSelection,
-                                                                   shouldIgnoreTrailingNewline: false)
-                self.content = WysiwygComposerContent(
-                    plainText: attributed.string,
-                    html: html,
-                    attributed: attributed,
-                    attributedSelection: textSelection)
-                Logger.viewModel.logDebug(["Sel(att): \(textSelection)",
-                                           "Sel: \(htmlSelection)",
-                                           "HTML: \"\(html)\"",
-                                           "replaceAll"],
-                                          functionName: #function)
-            } catch {
-                Logger.viewModel.logError(["Sel: {\(start), \(end-start)}",
-                                           "Error: \(error.localizedDescription)",
-                                           "replaceAll"],
-                                          functionName: #function)
-            }
-        case .select(startUtf16Codeunit: let start,
-                     endUtf16Codeunit: let end):
-            do {
-                let htmlSelection = NSRange(location: Int(start), length: Int(end-start))
-                // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
-                let textSelection = try self.content.attributed.attributedRange(from: htmlSelection,
-                                                                                shouldIgnoreTrailingNewline: false)
-                self.content.attributedSelection = textSelection
-                Logger.viewModel.logDebug(["Sel(att): \(textSelection)",
-                                           "Sel: \(htmlSelection)"],
-                                          functionName: #function)
-            } catch {
-                Logger.viewModel.logError(["Sel: {\(start), \(end-start)}",
-                                           "Error: \(error.localizedDescription)"],
-                                          functionName: #function)
-            }
+        case let .replaceAll(replacementHtml: codeUnits,
+                             startUtf16Codeunit: start,
+                             endUtf16Codeunit: end):
+            applyReplaceAll(codeUnits: codeUnits, start: start, end: end)
+        case let .select(startUtf16Codeunit: start,
+                         endUtf16Codeunit: end):
+            applySelect(start: start, end: end)
         case .keep:
             break
         }
 
         switch update.menuState() {
-        case .update(reversedActions: let reversedActions,
-                     disabledActions: let disabledActions):
+        case let .update(reversedActions: reversedActions,
+                         disabledActions: disabledActions):
             self.reversedActions = reversedActions
             self.disabledActions = disabledActions
         default:
             break
+        }
+    }
+
+    /// Apply a replaceAll update to the composer
+    ///
+    /// - Parameters:
+    ///   - codeUnits: Array of UTF16 code units representing the current HTML.
+    ///   - start: Start location for the selection.
+    ///   - end: End location for the selection.
+    func applyReplaceAll(codeUnits: [UInt16], start: UInt32, end: UInt32) {
+        do {
+            let html = String(utf16CodeUnits: codeUnits,
+                              count: codeUnits.count)
+            let attributed = try NSAttributedString(html: html)
+            // FIXME: handle error for out of bounds index
+            let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
+            // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
+            let textSelection = try attributed.attributedRange(from: htmlSelection,
+                                                               shouldIgnoreTrailingNewline: false)
+            content = WysiwygComposerContent(
+                plainText: attributed.string,
+                html: html,
+                attributed: attributed,
+                attributedSelection: textSelection
+            )
+            Logger.viewModel.logDebug(["Sel(att): \(textSelection)",
+                                       "Sel: \(htmlSelection)",
+                                       "HTML: \"\(html)\"",
+                                       "replaceAll"],
+                                      functionName: #function)
+        } catch {
+            Logger.viewModel.logError(["Sel: {\(start), \(end - start)}",
+                                       "Error: \(error.localizedDescription)",
+                                       "replaceAll"],
+                                      functionName: #function)
+        }
+    }
+
+    /// Apply a select update to the composer
+    ///
+    /// - Parameters:
+    ///   - start: Start location for the selection.
+    ///   - end: End location for the selection.
+    func applySelect(start: UInt32, end: UInt32) {
+        do {
+            let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
+            // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
+            let textSelection = try content.attributed.attributedRange(from: htmlSelection,
+                                                                       shouldIgnoreTrailingNewline: false)
+            content.attributedSelection = textSelection
+            Logger.viewModel.logDebug(["Sel(att): \(textSelection)",
+                                       "Sel: \(htmlSelection)"],
+                                      functionName: #function)
+        } catch {
+            Logger.viewModel.logError(["Sel: {\(start), \(end - start)}",
+                                       "Error: \(error.localizedDescription)"],
+                                      functionName: #function)
         }
     }
 
@@ -250,6 +276,7 @@ private extension WysiwygComposerViewModel {
 }
 
 // MARK: - Logger
+
 private extension Logger {
     static let viewModel = Logger(subsystem: subsystem, category: "ViewModel")
 }

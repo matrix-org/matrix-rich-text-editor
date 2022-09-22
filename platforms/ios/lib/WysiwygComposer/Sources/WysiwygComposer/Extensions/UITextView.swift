@@ -1,4 +1,4 @@
-// 
+//
 // Copyright 2022 The Matrix.org Foundation C.I.C
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,7 +25,7 @@ extension UITextView {
     /// - Parameters:
     ///   - content: Content to apply.
     func apply(_ content: WysiwygComposerContent) {
-        self.performWithoutDelegate {
+        performWithoutDelegate {
             self.attributedText = content.attributed
             // Set selection to {0, 0} then to expected position
             // avoids an issue with autocapitalization.
@@ -41,9 +41,9 @@ private extension UITextView {
     /// - Parameters:
     ///   - block: Code block to perform.
     func performWithoutDelegate(block: () -> Void) {
-        let myDelegate = self.delegate
-        self.delegate = nil
+        let myDelegate = delegate
+        delegate = nil
         block()
-        self.delegate = myDelegate
+        delegate = myDelegate
     }
 }

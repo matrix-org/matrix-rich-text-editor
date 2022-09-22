@@ -1,4 +1,4 @@
-// 
+//
 // Copyright 2022 The Matrix.org Foundation C.I.C
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,9 +14,9 @@
 // limitations under the License.
 //
 
-import XCTest
 import Combine
 @testable import WysiwygComposer
+import XCTest
 
 final class WysiwygComposerViewModelTests: XCTestCase {
     private let viewModel = WysiwygComposerViewModel()
@@ -28,9 +28,9 @@ final class WysiwygComposerViewModelTests: XCTestCase {
     func testIsContentEmpty() throws {
         XCTAssertTrue(viewModel.isContentEmpty)
 
-        let expectFalse = self.expectation(description: "Await isContentEmpty false")
+        let expectFalse = expectation(description: "Await isContentEmpty false")
         let cancellableFalse = viewModel.$isContentEmpty
-        // Ignore on subscribe publish.
+            // Ignore on subscribe publish.
             .dropFirst()
             .removeDuplicates()
             .sink(receiveValue: { isEmpty in
@@ -45,9 +45,9 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         wait(for: [expectFalse], timeout: 2.0)
         cancellableFalse.cancel()
 
-        let expectTrue = self.expectation(description: "Await isContentEmpty true")
+        let expectTrue = expectation(description: "Await isContentEmpty true")
         let cancellableTrue = viewModel.$isContentEmpty
-        // Ignore on subscribe publish.
+            // Ignore on subscribe publish.
             .dropFirst()
             .removeDuplicates()
             .sink(receiveValue: { isEmpty in

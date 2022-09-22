@@ -1,4 +1,4 @@
-// 
+//
 // Copyright 2022 The Matrix.org Foundation C.I.C
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,10 +14,10 @@
 // limitations under the License.
 //
 
-import UIKit
-import SwiftUI
 import Combine
 import OSLog
+import SwiftUI
+import UIKit
 
 /// Declares methods that should be adopted by an object that aim to react on the Wysiwyg composer actions.
 @objc public protocol WysiwygHostingViewDelegate: AnyObject {
@@ -37,18 +37,21 @@ import OSLog
 @objcMembers
 public final class WysiwygHostingView: UIView {
     // MARK: - Public
+
     /// The delegate of the `WysiwygHostingView`.
     public weak var delegate: WysiwygHostingViewDelegate?
     /// The content currently displayed in the composer.
     public var content: WysiwygComposerContent {
-        return viewModel.content
+        viewModel.content
     }
 
     // MARK: - Private
+
     @ObservedObject private var viewModel = WysiwygComposerViewModel()
     private var cancellables: Set<AnyCancellable>?
 
     // MARK: - Public
+
     /// Apply given action to the composer.
     ///
     /// - Parameters:
@@ -63,7 +66,8 @@ public final class WysiwygHostingView: UIView {
     }
 
     // MARK: - Override
-    public override func awakeFromNib() {
+
+    override public func awakeFromNib() {
         super.awakeFromNib()
 
         let wysiwygView = WysiwygView()

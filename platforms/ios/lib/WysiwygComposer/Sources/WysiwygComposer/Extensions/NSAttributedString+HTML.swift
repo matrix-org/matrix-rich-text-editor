@@ -1,4 +1,4 @@
-// 
+//
 // Copyright 2022 The Matrix.org Foundation C.I.C
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +23,7 @@ enum BuildHtmlAttributedError: LocalizedError, Equatable {
 
     var errorDescription: String? {
         switch self {
-        case .dataError(encoding: let encoding):
+        case let .dataError(encoding: encoding):
             return "Unable to encode string with: \(encoding.description) rawValue: \(encoding.rawValue)"
         }
     }
