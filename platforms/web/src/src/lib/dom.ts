@@ -148,7 +148,7 @@ export function replaceEditor(editor: HTMLElement,
  *
  * A "codeunit" here means a UTF-16 code unit.
  */
-function computeNodeAndOffset(currentNode: Node, codeunits: number) {
+export function computeNodeAndOffset(currentNode: Node, codeunits: number) {
     const isEmptyList = currentNode.nodeName === 'LI' && !currentNode.hasChildNodes();
     if (currentNode.nodeType === Node.TEXT_NODE || isEmptyList) {
         if (codeunits <= (currentNode.textContent?.length || 0)) {
