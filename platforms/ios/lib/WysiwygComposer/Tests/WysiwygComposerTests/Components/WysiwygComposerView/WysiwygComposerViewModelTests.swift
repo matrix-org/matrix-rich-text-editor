@@ -21,6 +21,10 @@ import Combine
 final class WysiwygComposerViewModelTests: XCTestCase {
     private let viewModel = WysiwygComposerViewModel()
 
+    override func setUpWithError() throws {
+        viewModel.clearContent()
+    }
+
     func testIsContentEmpty() throws {
         XCTAssertTrue(viewModel.isContentEmpty)
 
@@ -57,5 +61,34 @@ final class WysiwygComposerViewModelTests: XCTestCase {
 
         wait(for: [expectTrue], timeout: 2.0)
         cancellableTrue.cancel()
+    }
+
+    func testSimpleTextInputIsAccepted() throws {
+        let shouldChange = viewModel.replaceText(NSAttributedString(string: ""),
+                                                 range: .zero,
+                                                 replacementText: "A")
+        XCTAssertTrue(shouldChange)
+    }
+
+    func testNewlineIsNotAccepted() throws {
+        let shouldChange = viewModel.replaceText(NSAttributedString(string: ""),
+                                                 range: .zero,
+                                                 replacementText: "\n")
+        XCTAssertFalse(shouldChange)
+    }
+
+    func testReconciliateTextView() {
+        let textView = UITextView()
+        let initialText = NSAttributedString(string: "")
+        textView.attributedText = initialText
+        _ = viewModel.replaceText(initialText,
+                                  range: .zero,
+                                  replacementText: "A")
+        textView.attributedText = NSAttributedString(string: "AA")
+        XCTAssertEqual(textView.text, "AA")
+        XCTAssertEqual(textView.selectedRange, NSRange(location: 2, length: 0))
+        viewModel.didUpdateText(textView: textView)
+        XCTAssertEqual(textView.text, "A")
+        XCTAssertEqual(textView.selectedRange, NSRange(location: 1, length: 0))
     }
 }
