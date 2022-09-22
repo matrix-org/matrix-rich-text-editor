@@ -20,7 +20,7 @@ public enum WysiwygAction {
     /// Apply italic formatting to the current selection.
     case italic
     /// Apply strike through formatting to the current selection.
-    case strikethrough
+    case strikeThrough
     /// Apply underline formatting to the current selection.
     case underline
     /// Apply inline code formatting to the current selection

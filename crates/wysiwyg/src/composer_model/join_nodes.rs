@@ -32,11 +32,10 @@ where
         range: &MultipleNodesRange,
         new_pos: usize,
     ) {
-        let start_handle = self
-            .first_text_handle(range)
-            .expect("No start text node found");
-        self.join_structure_nodes(&start_handle, new_pos);
-        self.join_format_nodes_at_index(new_pos);
+        if let Some(start_handle) = self.first_text_handle(range) {
+            self.join_structure_nodes(&start_handle, new_pos);
+            self.join_format_nodes_at_index(new_pos);
+        }
     }
 
     pub(crate) fn join_format_node_with_prev(&mut self, handle: &DomHandle) {

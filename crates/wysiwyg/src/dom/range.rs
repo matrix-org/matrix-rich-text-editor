@@ -134,6 +134,45 @@ impl MultipleNodesRange {
             locations: locations.into_iter().cloned().collect(),
         }
     }
+
+    /// Return the position of the first character in this range.
+    /// The position is measured in code units.
+    /// If the range starts at the beginning of the Dom, the return value is 0.
+    /// If this range has zero length, the position returned is the position
+    /// of both the beginning and the end.
+    pub fn start(&self) -> usize {
+        // Assumes leaf locations are in order, so the first leaf we hit will
+        // be the earliest in the Dom.
+
+        self.locations
+            .iter()
+            .find_map(|loc| {
+                if loc.is_leaf {
+                    Some(loc.position + loc.start_offset)
+                } else {
+                    None
+                }
+            })
+            .unwrap_or(0)
+    }
+
+    pub fn end(&self) -> usize {
+        self.locations
+            .iter()
+            .rev()
+            .find_map(|loc| {
+                if loc.is_leaf {
+                    Some(loc.position + loc.end_offset)
+                } else {
+                    None
+                }
+            })
+            .unwrap_or(0)
+    }
+
+    pub fn leaves(&self) -> impl Iterator<Item = &DomLocation> {
+        self.locations.iter().filter(|loc| loc.is_leaf)
+    }
 }
 
 impl IntoIterator for MultipleNodesRange {
@@ -142,5 +181,149 @@ impl IntoIterator for MultipleNodesRange {
 
     fn into_iter(self) -> Self::IntoIter {
         self.locations.into_iter()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::{
+        dom::DomLocation, tests::testutils_composer_model::cm, DomHandle,
+    };
+
+    use super::{MultipleNodesRange, Range};
+
+    #[test]
+    fn range_start_and_end_for_cursor_at_beginning() {
+        let r = range_of("|abc<b>def</b>");
+        assert_eq!(r.start(), 0);
+        assert_eq!(r.end(), 0);
+    }
+
+    #[test]
+    fn range_start_and_end_for_selection_at_beginning() {
+        let r = range_of("{abc<b>d}|ef</b>");
+        assert_eq!(r.start(), 0);
+        assert_eq!(r.end(), 4);
+    }
+
+    #[test]
+    fn range_start_and_end_for_cursor_after_brs() {
+        let r = range_of("a<br />b<br /><br />c|<br />d");
+        assert_eq!(r.start(), 6);
+        assert_eq!(r.end(), 6);
+    }
+
+    #[test]
+    fn range_start_and_end_for_selection_containing_brs_in_tags() {
+        let r = range_of("<i>a</i><b><br />{b<br /><br />c}|<br /></b>d");
+        assert_eq!(r.start(), 2);
+        assert_eq!(r.end(), 6);
+    }
+
+    #[test]
+    fn range_start_and_end_for_cursor_in_middle_of_plain_text() {
+        let r = range_of("abc|def");
+        assert_eq!(r.start(), 3);
+        assert_eq!(r.end(), 3);
+    }
+
+    #[test]
+    fn range_leaves_contains_text_node() {
+        let r = range_of("abc|def");
+        assert_eq!(
+            r.leaves().collect::<Vec<&DomLocation>>(),
+            vec![&r.locations[0]]
+        );
+    }
+
+    #[test]
+    fn range_start_and_end_for_selection_in_middle_of_plain_text() {
+        let r = range_of("abc{def}|ghi");
+        assert_eq!(r.start(), 3);
+        assert_eq!(r.end(), 6);
+    }
+
+    #[test]
+    fn range_start_and_end_for_cursor_in_nested_tags() {
+        let r = range_of(
+            "\
+            <ul><li>a</li><li>b</li></ul>\
+            <ul><li>c</li><li>d|</li><li>e</li></ul>",
+        );
+        assert_eq!(r.start(), 4);
+        assert_eq!(r.end(), 4);
+    }
+
+    #[test]
+    fn range_start_and_end_for_selection_in_nested_tags() {
+        let r = range_of(
+            "\
+            <ul><li>a</li><li>b</li></ul>\
+            <ul><li>c</li><li>{d</li><li>e}|</li></ul>",
+        );
+
+        assert_eq!(r.start(), 3);
+        assert_eq!(r.end(), 5);
+    }
+
+    #[test]
+    fn range_start_and_end_for_end_of_complex_tags() {
+        let r = range_of(
+            "\
+            <ul><li>a</li><li>b</li></ul>\
+            <ul><li>c</li><li>d</li><li>e|</li></ul>",
+        );
+
+        assert_eq!(r.start(), 5);
+        assert_eq!(r.end(), 5);
+    }
+
+    #[test]
+    fn range_start_and_end_for_end_of_text() {
+        let r = range_of(
+            "\
+            <ul><li>a</li><li>b</li></ul>\
+            <ul><li>c</li><li>d</li><li>e</li></ul>fgh|",
+        );
+
+        assert_eq!(r.start(), 8);
+        assert_eq!(r.end(), 8);
+    }
+
+    #[test]
+    fn range_leaves_contains_all_text_nodes() {
+        let r = range_of(
+            "\
+            <ul><li>{a</li><li>b</li></ul>\
+            <ul><li>c</li><li>d</li><li>e</li></ul>fgh}|",
+        );
+
+        assert_eq!(
+            r.leaves()
+                .map(|loc| &loc.node_handle)
+                .cloned()
+                .collect::<Vec<DomHandle>>(),
+            vec![
+                DomHandle::from_raw(vec![0, 0, 0]), // a
+                DomHandle::from_raw(vec![0, 1, 0]), // b
+                DomHandle::from_raw(vec![1, 0, 0]), // c
+                DomHandle::from_raw(vec![1, 1, 0]), // d
+                DomHandle::from_raw(vec![1, 2, 0]), // e
+                DomHandle::from_raw(vec![2]),       // fgh
+            ]
+        );
+    }
+
+    fn range_of(model: &str) -> MultipleNodesRange {
+        let model = cm(model);
+        let (s, e) = model.safe_selection();
+        let range = model.state.dom.find_range(s, e);
+        match range {
+            Range::SameNode(range) => {
+                model.state.dom.convert_same_node_range_to_multi(range)
+            }
+            Range::MultipleNodes(mrange) => mrange,
+            Range::NoNode => panic!("Wasn't expecting NoNode!"),
+        }
     }
 }

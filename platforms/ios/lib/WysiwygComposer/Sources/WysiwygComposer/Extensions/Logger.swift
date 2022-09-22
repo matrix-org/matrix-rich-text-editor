@@ -15,9 +15,70 @@
 //
 
 import OSLog
+import UIKit
 
+// MARK: - Logger
 extension Logger {
-    private static var subsystem = "org.matrix.WysiwygComposer"
+    // MARK: Internal
+    static var subsystem = "org.matrix.WysiwygComposer"
 
-    static let composer = Logger(subsystem: subsystem, category: "composer")
+    /// Creates a customized log for debug.
+    ///
+    /// - Parameters:
+    ///   - elements: Elements to log.
+    ///   - functionName: Name from the function where it is called.
+    func logDebug(_ elements: [String], functionName: String) {
+        self.debug("\(customLog(elements, functionName: functionName))")
+    }
+
+    /// Creates a customized error log.
+    ///
+    /// - Parameters:
+    ///   - elements: Elements to log.
+    ///   - functionName: Name from the function where it is called.
+    func logError(_ elements: [String], functionName: String) {
+        self.error("\(customLog(elements, functionName: functionName))")
+    }
+
+    /// Creates a customized warning log.
+    ///
+    /// - Parameters:
+    ///   - elements: Elements to log.
+    ///   - functionName: Name from the function where it is called.
+    func logWarning(_ elements: [String], functionName: String) {
+        self.warning("\(customLog(elements, functionName: functionName))")
+    }
+
+    // MARK: Private
+    private func customLog(_ elements: [String], functionName: String) -> String {
+        var logMessage = elements.map { $0 + " | " }.joined()
+        logMessage.append(contentsOf: functionName)
+        return logMessage
+    }
+}
+
+// MARK: - UITextView + Logger
+extension UITextView {
+    /// Returns a log ready description of the current selection.
+    var logSelection: String {
+        return "Sel(att): \(self.selectedRange)"
+    }
+
+    /// Returns a log ready description of the current text..
+    var logText: String {
+        return "Text: \"\(self.text ?? "")\""
+    }
+}
+
+// MARK: - WysiwygComposerContent + Logger
+extension WysiwygComposerContent {
+    /// Returns a log ready description of the attributed selection.
+    var logAttributedSelection: String {
+        return "Sel(att): \(self.attributedSelection)"
+    }
+
+    /// Returns a log ready description of the text.
+    var logText: String {
+        return "Text: \"\(self.plainText)\""
+    }
 }

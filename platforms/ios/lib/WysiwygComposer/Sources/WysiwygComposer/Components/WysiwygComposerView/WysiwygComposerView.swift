@@ -21,7 +21,7 @@ import OSLog
 struct WysiwygComposerView: UIViewRepresentable {
     // MARK: - Internal
     var content: WysiwygComposerContent
-    var replaceText: (NSAttributedString, NSRange, String) -> Void
+    var replaceText: (NSAttributedString, NSRange, String) -> Bool
     var select: (NSAttributedString, NSRange) -> Void
     var didUpdateText: (UITextView) -> Void
 
@@ -39,9 +39,10 @@ struct WysiwygComposerView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: UITextView, context: Context) {
-        Logger.composer.debug("New text: \(content.plainText)")
-        uiView.attributedText = content.attributed
-        uiView.selectedRange = content.attributedSelection
+        Logger.textView.logDebug([content.logAttributedSelection,
+                                  content.logText],
+                                 functionName: #function)
+        uiView.apply(self.content)
         context.coordinator.didUpdateText(uiView)
     }
 
@@ -51,11 +52,11 @@ struct WysiwygComposerView: UIViewRepresentable {
 
     /// Coordinates UIKit communication.
     class Coordinator: NSObject, UITextViewDelegate, NSTextStorageDelegate {
-        var replaceText: (NSAttributedString, NSRange, String) -> Void
+        var replaceText: (NSAttributedString, NSRange, String) -> Bool
         var select: (NSAttributedString, NSRange) -> Void
         var didUpdateText: (UITextView) -> Void
 
-        init(_ replaceText: @escaping (NSAttributedString, NSRange, String) -> Void,
+        init(_ replaceText: @escaping (NSAttributedString, NSRange, String) -> Bool,
              _ select: @escaping (NSAttributedString, NSRange) -> Void,
              _ didUpdateText: @escaping (UITextView) -> Void) {
             self.replaceText = replaceText
@@ -64,17 +65,29 @@ struct WysiwygComposerView: UIViewRepresentable {
         }
 
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-            self.replaceText(textView.attributedText, range, text)
-            return false
+            Logger.textView.logDebug(["Sel(att): \(range)",
+                                      textView.logText,
+                                      "Replacement: \"\(text)\""],
+                                     functionName: #function)
+            return self.replaceText(textView.attributedText, range, text)
         }
 
-        // FIXME: Never called yet, will be called when we "trust" some user inputs.
         func textViewDidChange(_ textView: UITextView) {
+            Logger.textView.logDebug([textView.logSelection,
+                                      textView.logText],
+                                     functionName: #function)
             self.didUpdateText(textView)
         }
 
         func textViewDidChangeSelection(_ textView: UITextView) {
+            Logger.textView.logDebug([textView.logSelection],
+                                     functionName: #function)
             self.select(textView.attributedText, textView.selectedRange)
         }
     }
+}
+
+// MARK: - Logger
+private extension Logger {
+    static let textView = Logger(subsystem: subsystem, category: "TextView")
 }

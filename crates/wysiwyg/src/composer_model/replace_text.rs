@@ -14,7 +14,7 @@
 
 use crate::composer_model::base::{slice_from, slice_to};
 use crate::dom::nodes::DomNode;
-use crate::dom::{DomHandle, MultipleNodesRange, Range, SameNodeRange};
+use crate::dom::{DomHandle, DomLocation, MultipleNodesRange, Range};
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
 
 impl<S> ComposerModel<S>
@@ -48,28 +48,46 @@ where
             let range = self.state.dom.find_range(s, e);
             match range {
                 Range::SameNode(range) => {
-                    let parent_list_item_handle = self
-                        .state
-                        .dom
-                        .find_parent_list_item_or_self(&range.node_handle);
-                    if let Some(parent_handle) = parent_list_item_handle {
-                        self.do_enter_in_list(&parent_handle, e, range)
-                    } else {
-                        self.do_enter_in_text(
-                            &range.node_handle,
-                            range.start_offset,
-                        )
-                    }
+                    let mrange =
+                        self.state.dom.convert_same_node_range_to_multi(range);
+                    self.enter_with_zero_length_selection(mrange)
                 }
-                Range::MultipleNodes(_) => {
-                    panic!("Unexpected multiple nodes on a 0 length selection")
+                Range::MultipleNodes(range) => {
+                    self.enter_with_zero_length_selection(range)
                 }
-                Range::NoNode => self.replace_text(S::from_str("\n")),
+                Range::NoNode => panic!("Pressing enter with no range!"),
             }
         } else {
             // Clear selection then enter.
+            // TODO: adds an extra entry to the undo log, I think.
             self.delete();
             self.enter()
+        }
+    }
+
+    fn enter_with_zero_length_selection(
+        &mut self,
+        range: MultipleNodesRange,
+    ) -> ComposerUpdate<S> {
+        let leaves: Vec<&DomLocation> = range.leaves().collect();
+        if leaves.len() == 1 {
+            let location = leaves[0];
+            let handle = &location.node_handle;
+            let parent_list_item_handle =
+                self.state.dom.find_parent_list_item_or_self(handle);
+            if let Some(parent_list_item_handle) = parent_list_item_handle {
+                self.do_enter_in_list(
+                    &parent_list_item_handle,
+                    location.position + location.start_offset,
+                    handle,
+                    location.start_offset,
+                    location.end_offset,
+                )
+            } else {
+                self.do_enter_in_text(handle, location.start_offset)
+            }
+        } else {
+            panic!("Unexpected multiple nodes on a 0 length selection")
         }
     }
 
@@ -84,7 +102,9 @@ where
 
         match self.state.dom.find_range(start, end) {
             Range::SameNode(range) => {
-                self.replace_same_node(range, new_text);
+                let mrange =
+                    self.state.dom.convert_same_node_range_to_multi(range);
+                self.replace_multiple_nodes(mrange, new_text);
             }
             Range::MultipleNodes(range) => {
                 self.replace_multiple_nodes(range, new_text)
@@ -104,90 +124,66 @@ where
         self.create_update_replace_all()
     }
 
-    fn replace_same_node(&mut self, range: SameNodeRange, new_text: S) {
-        // TODO: remove SameNode and NoNode?
-        let mut delete_this_node = false;
-        let mut add_node_after_this = false;
-        let handle = range.node_handle;
-        let node = self.state.dom.lookup_node_mut(&handle);
-        match node {
-            DomNode::Text(ref mut t) => {
-                let text = t.data();
-                let mut n = slice_to(text, ..range.start_offset);
-                n.push_string(&new_text);
-                n.push_string(&slice_from(&text, range.end_offset..));
-                t.set_data(n);
-            }
-            DomNode::LineBreak(_) => {
-                match (range.start_offset, range.end_offset) {
-                    (0, 1) => {
-                        // Whole line break is selected, delete it
-                        delete_this_node = true;
-                    }
-                    (1, 1) => {
-                        // Cursor is after line break, no need to delete
-                    }
-                    _ => panic!(
-                        "Should not get SameNode range for start of \
-                        line break!"
-                    ),
-                }
-                add_node_after_this = true;
-            }
-            DomNode::Container(_) => {
-                panic!(
-                    "Can't deal with ranges containing non-text nodes (yet?)"
-                )
-            }
-        }
-
-        if add_node_after_this {
-            match self.state.dom.lookup_node_mut(&handle.parent_handle()) {
-                DomNode::Container(parent) => parent.insert_child(
-                    handle.index_in_parent() + 1,
-                    DomNode::new_text(new_text),
-                ),
-                _ => panic!("Parent node is not a container!"),
-            }
-        }
-
-        if delete_this_node {
-            match self.state.dom.lookup_node_mut(&handle.parent_handle()) {
-                DomNode::Container(parent) => {
-                    parent.remove_child(handle.index_in_parent());
-                }
-                _ => panic!("Parent node is not a container!"),
-            }
-        }
-    }
-
     fn replace_multiple_nodes(
         &mut self,
         range: MultipleNodesRange,
         new_text: S,
     ) {
         let len = new_text.len();
-        let to_delete = self.replace_in_text_nodes(range.clone(), new_text);
+        let (to_add, to_delete) =
+            self.replace_in_text_nodes(range.clone(), new_text);
+
+        // We only add nodes in one special case: when the selection ends at
+        // a BR tag. In that case, the only nodes that might be deleted are
+        // going to be before the one we add here, so their handles won't be
+        // invalidated by the add we do here.
+        for (parent_handle, idx, node) in to_add.into_iter().rev() {
+            let parent = self.state.dom.lookup_node_mut(&parent_handle);
+            if let DomNode::Container(parent) = parent {
+                parent.insert_child(idx, node);
+            } else {
+                panic!("Parent was not a container!");
+            }
+        }
+
+        // Delete the nodes marked for deletion
         self.delete_nodes(to_delete);
 
-        let pos: usize = self.state.start.into();
-        // Note: the handles in range may have been made invalid by deleting
-        // nodes above, but the first text node in it should not have been
-        // invalidated, because it should not have been deleted.
-        self.join_nodes(&range, pos + len + 1);
+        // If our range covered multiple text-like nodes, join together
+        // the two sides of the range.
+        if range.leaves().count() > 1 {
+            // Calculate the position 1 code unit after the end of the range,
+            // after the in-between characters have been deleted, and the new
+            // characters have been inserted.
+            let new_pos = range.start() + len + 1;
+
+            // Note: the handles in range may have been made invalid by deleting
+            // nodes above, but the first text node in it should not have been
+            // invalidated, because it should not have been deleted.
+            self.join_nodes(&range, new_pos);
+        }
     }
 
     /// Given a range to replace and some new text, modify the nodes in the
     /// range to replace the text with the supplied text.
-    /// Returns a list of (handles to) nodes that have become empty and should
-    /// be deleted.
+    /// Returns:
+    /// * a list of nodes to create (parent_handle, index, node), and
+    /// * a list of (handles to) nodes that have become empty and should
+    ///   be deleted.
+    /// NOTE: all nodes to be created are later in the Dom than all nodes to
+    /// be deleted, so you can safely add them before performing the
+    /// deletions, and the handles of the deletions will remain valid.
     fn replace_in_text_nodes(
         &mut self,
         range: MultipleNodesRange,
         new_text: S,
-    ) -> Vec<DomHandle> {
+    ) -> (Vec<(DomHandle, usize, DomNode<S>)>, Vec<DomHandle>) {
         let mut to_delete = Vec::new();
+        let mut to_add = Vec::new();
         let mut first_text_node = true;
+
+        let start = range.start();
+        let end = range.end();
 
         for loc in range.into_iter() {
             let mut node = self.state.dom.lookup_node_mut(&loc.node_handle);
@@ -196,7 +192,33 @@ where
                     // Nothing to do for container nodes
                 }
                 DomNode::LineBreak(_) => {
-                    to_delete.push(loc.node_handle);
+                    match (loc.start_offset, loc.end_offset) {
+                        (0, 1) => {
+                            // Whole line break is selected, delete it
+                            to_delete.push(loc.node_handle.clone());
+                        }
+                        (1, 1) => {
+                            // Cursor is after line break, no need to delete
+                        }
+                        _ => panic!(
+                            "Should not get SameNode range for start of \
+                        line break!"
+                        ),
+                    }
+                    if start >= loc.position && end == loc.position + 1 {
+                        // NOTE: if you add something else to `to_add` you will
+                        // probably break our assumptions in the method that
+                        // calls this one!
+                        // We are assuming we only add nodes AFTER all the
+                        // deleted nodes. (That is true in this case, because
+                        // we are checking that the selection ends inside this
+                        // line break.)
+                        to_add.push((
+                            loc.node_handle.parent_handle(),
+                            loc.node_handle.index_in_parent() + 1,
+                            DomNode::new_text(new_text.clone()),
+                        ));
+                    }
                 }
                 DomNode::Text(node) => {
                     let old_data = node.data();
@@ -229,6 +251,6 @@ where
                 }
             }
         }
-        to_delete
+        (to_add, to_delete)
     }
 }

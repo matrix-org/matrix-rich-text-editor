@@ -19,7 +19,7 @@ import SwiftUI
 
 extension WysiwygAction: CaseIterable, Identifiable {
     public static var allCases: [WysiwygAction] = [
-        .bold, .italic, .strikethrough, .underline, .inlineCode,
+        .bold, .italic, .strikeThrough, .underline, .inlineCode,
         .link(url: "unset"), .undo, .redo, .orderedList, .unorderedList
     ]
 
@@ -27,8 +27,12 @@ extension WysiwygAction: CaseIterable, Identifiable {
         accessibilityIdentifier.rawValue
     }
 
+    /// Compute color for action button.
+    ///
+    /// - Parameter viewModel: Composer's view model.
+    /// - Returns: Tint color that the button should use.
     public func color(_ viewModel: WysiwygComposerViewModel) -> Color {
-        let isDisabled = viewModel.disabledActions.contains(self.composerAction)
+        let isDisabled = self.isDisabled(viewModel)
         // Buttons for reversed actions should be highlighted with a specific colour.
         let isActive = viewModel.reversedActions.contains(self.composerAction)
         switch (isDisabled, isActive) {
@@ -41,6 +45,10 @@ extension WysiwygAction: CaseIterable, Identifiable {
         }
     }
 
+    /// Compute disabled status for action.
+    ///
+    /// - Parameter viewModel: Composer's view model.
+    /// - Returns: True if the action is disabled, false otherwise.
     public func isDisabled(_ viewModel: WysiwygComposerViewModel) -> Bool {
         return viewModel.disabledActions.contains(self.composerAction)
     }
@@ -51,7 +59,7 @@ extension WysiwygAction: CaseIterable, Identifiable {
             return .boldButton
         case .italic:
             return .italicButton
-        case .strikethrough:
+        case .strikeThrough:
             return .strikeThroughButton
         case .underline:
             return .underlineButton
@@ -70,13 +78,14 @@ extension WysiwygAction: CaseIterable, Identifiable {
         }
     }
 
+    /// Returns the name of the system icon that should be used for button display.
     var iconName: String {
         switch self {
         case .bold:
             return "bold"
         case .italic:
             return "italic"
-        case .strikethrough:
+        case .strikeThrough:
             return "strikethrough"
         case .underline:
             return "underline"
@@ -114,7 +123,7 @@ private extension WysiwygAction {
             return .bold
         case .italic:
             return .italic
-        case .strikethrough:
+        case .strikeThrough:
             return .strikeThrough
         case .underline:
             return .underline

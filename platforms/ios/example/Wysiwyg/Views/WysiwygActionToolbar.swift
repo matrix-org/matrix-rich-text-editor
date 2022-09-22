@@ -21,7 +21,7 @@ struct WysiwygActionToolbar: View {
     @EnvironmentObject private var viewModel: WysiwygComposerViewModel
     var toolbarAction: (WysiwygAction) -> ()
     @State private var isShowingUrlAlert = false
-    @State private var linkAttributedRange = NSRange(location: 0, length: 0)
+    @State private var linkAttributedRange = NSRange.zero
 
     var body: some View {
         HStack {

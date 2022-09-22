@@ -14,10 +14,11 @@
 // limitations under the License.
 //
 
-import SwiftUI
+import Foundation
 
-extension View {
-    public func alert(isPresented: Binding<Bool>, _ alert: AlertConfig) -> some View {
-        AlertHelper(isPresented: isPresented, alert: alert, content: self)
+extension String {
+    /// Returns length of the string in UTF16 code units.
+    var utf16Length: Int {
+        return (self as NSString).length
     }
 }
