@@ -17,7 +17,7 @@ use std::collections::HashMap;
 use crate::composer_model::base::{slice_from, slice_to};
 use crate::dom::nodes::{ContainerNode, DomNode};
 use crate::dom::to_raw_text::ToRawText;
-use crate::dom::{DomHandle, DomLocation, Range};
+use crate::dom::{DomHandle, DomLocation, MultipleNodesRange, Range};
 use crate::{ComposerModel, ComposerUpdate, ListType, Location, UnicodeString};
 
 impl<S> ComposerModel<S>
@@ -121,33 +121,47 @@ where
 
         match range {
             Range::SameNode(range) => {
-                let parent_list_item_handle = self
-                    .state
-                    .dom
-                    .find_parent_list_item_or_self(&range.node_handle.clone());
-                if let Some(list_item_handle) = parent_list_item_handle {
-                    let list_node_handle = list_item_handle.parent_handle();
-                    let list_node =
-                        self.state.dom.lookup_node(&list_node_handle);
-                    if let DomNode::Container(list) = list_node {
-                        if list.is_list_of_type(list_type.clone()) {
-                            self.move_list_item_content_to_list_parent(
-                                &list_item_handle,
-                            )
-                        } else {
-                            self.update_list_type(&list_node_handle, list_type)
-                        }
-                    } else {
-                        panic!("List item is not in a list")
-                    }
-                } else {
-                    self.create_list(list_type)
-                }
+                let mrange =
+                    self.state.dom.convert_same_node_range_to_multi(range);
+                self.toggle_list_range(list_type, mrange)
             }
             Range::NoNode => self.create_list(list_type),
-            _ => {
-                panic!("Can't toggle list in complex object models yet")
+            Range::MultipleNodes(range) => {
+                self.toggle_list_range(list_type, range)
             }
+        }
+    }
+
+    fn toggle_list_range(
+        &mut self,
+        list_type: ListType,
+        range: MultipleNodesRange,
+    ) -> ComposerUpdate<S> {
+        let leaves: Vec<&DomLocation> = range.leaves().collect();
+        if leaves.len() == 1 {
+            let handle = &leaves[0].node_handle;
+
+            let parent_list_item_handle =
+                self.state.dom.find_parent_list_item_or_self(handle);
+            if let Some(list_item_handle) = parent_list_item_handle {
+                let list_node_handle = list_item_handle.parent_handle();
+                let list_node = self.state.dom.lookup_node(&list_node_handle);
+                if let DomNode::Container(list) = list_node {
+                    if list.is_list_of_type(list_type.clone()) {
+                        self.move_list_item_content_to_list_parent(
+                            &list_item_handle,
+                        )
+                    } else {
+                        self.update_list_type(&list_node_handle, list_type)
+                    }
+                } else {
+                    panic!("List item is not in a list")
+                }
+            } else {
+                self.create_list(list_type)
+            }
+        } else {
+            panic!("Can't toggle list in complex object models yet")
         }
     }
 
