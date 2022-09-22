@@ -10,6 +10,12 @@ All that is required is to run `make ios` in the repository main folder
 in order to build uniffi bindings for Swift, then the app will build
 directly from XCode.
 
+# Enable SwiftLint & SwiftFormat
+
+SwiftLint and SwiftFormat can be enabled on both the library and the
+example application from this project. The only requirement is to run `brew bundle` inside this folder, then both tools will run anytime the
+example app is built.
+
 # Gather global code coverage for WysiwygComposer.
 
 The main scheme `Wysiwyg` provides an associated test suite that run both

@@ -1,4 +1,4 @@
-// 
+//
 // Copyright 2022 The Matrix.org Foundation C.I.C
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,8 @@
 //
 
 import UIKit
-import XCTest
 @testable import WysiwygComposer
+import XCTest
 
 final class UITextViewTests: XCTestCase {
     func testTextViewUTF16Encoding() throws {

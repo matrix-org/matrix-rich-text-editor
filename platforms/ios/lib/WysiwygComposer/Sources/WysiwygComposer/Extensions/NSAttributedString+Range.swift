@@ -1,4 +1,4 @@
-// 
+//
 // Copyright 2022 The Matrix.org Foundation C.I.C
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,9 +25,9 @@ enum AttributedRangeError: LocalizedError, Equatable {
 
     var errorDescription: String? {
         switch self {
-        case .outOfBoundsHtmlIndex(index: let index):
+        case let .outOfBoundsHtmlIndex(index: index):
             return "Provided HTML index is out of expected bounds (\(index))"
-        case .outOfBoundsAttributedIndex(index: let index):
+        case let .outOfBoundsAttributedIndex(index: index):
             return "Provided attributed index is out of bounds (\(index))"
         }
     }
@@ -35,6 +35,7 @@ enum AttributedRangeError: LocalizedError, Equatable {
 
 extension NSAttributedString {
     // MARK: - List prefixes detection
+
     /// Compute an array of all detected occurences of bulleted lists and
     /// numbered lists prefixes. ("1.", "•", ... with included tabulations and newline
     /// that are not represented in the HTML raw text).
@@ -70,7 +71,7 @@ extension NSAttributedString {
         let regex = try! NSRegularExpression(pattern: pattern)
         return regex
             .matches(in: string, range: actualRange)
-            .compactMap { $0.range }
+            .map(\.range)
     }
 
     /// Compute an array of all detected occurences of numbered lists
@@ -89,10 +90,11 @@ extension NSAttributedString {
         let regex = try! NSRegularExpression(pattern: pattern)
         return regex
             .matches(in: string, range: actualRange)
-            .compactMap { $0.range }
+            .map(\.range)
     }
 
     // MARK: - Indexes computation
+
     /// Computes index inside the HTML raw text from the index
     /// inside the attributed representation.
     ///
@@ -113,7 +115,8 @@ extension NSAttributedString {
         for listPrefix in prefixes {
             if listPrefix.upperBound <= attributedIndex {
                 actualIndex -= listPrefix.length
-            } else if listPrefix.contains(attributedIndex) && !character(at: attributedIndex).isNewline {
+            } else if listPrefix.contains(attributedIndex),
+                      character(at: attributedIndex)?.isNewline == false {
                 actualIndex -= (attributedIndex - listPrefix.location)
             }
         }
@@ -163,11 +166,11 @@ extension NSAttributedString {
     /// - Returns: the range inside the HTML raw text
     func htmlRange(from attributedRange: NSRange,
                    shouldIgnoreTrailingNewline: Bool = true) throws -> NSRange {
-        let start = try self.htmlPosition(at: attributedRange.location,
-                                          shouldIgnoreTrailingNewline: shouldIgnoreTrailingNewline)
-        let end = try self.htmlPosition(at: attributedRange.upperBound,
-                                        shouldIgnoreTrailingNewline: shouldIgnoreTrailingNewline)
-        return NSRange(location: start, length: end-start)
+        let start = try htmlPosition(at: attributedRange.location,
+                                     shouldIgnoreTrailingNewline: shouldIgnoreTrailingNewline)
+        let end = try htmlPosition(at: attributedRange.upperBound,
+                                   shouldIgnoreTrailingNewline: shouldIgnoreTrailingNewline)
+        return NSRange(location: start, length: end - start)
     }
 
     /// Computes a range inside the attributed representation from
@@ -179,16 +182,16 @@ extension NSAttributedString {
     /// - Returns: the range inside the attributed representation
     func attributedRange(from htmlRange: NSRange,
                          shouldIgnoreTrailingNewline: Bool = true) throws -> NSRange {
-        let start = try self.attributedPosition(at: htmlRange.location,
-                                                shouldIgnoreTrailingNewline: shouldIgnoreTrailingNewline)
-        let end = try self.attributedPosition(at: htmlRange.upperBound,
-                                              shouldIgnoreTrailingNewline: shouldIgnoreTrailingNewline)
-        return NSRange(location: start, length: end-start)
+        let start = try attributedPosition(at: htmlRange.location,
+                                           shouldIgnoreTrailingNewline: shouldIgnoreTrailingNewline)
+        let end = try attributedPosition(at: htmlRange.upperBound,
+                                         shouldIgnoreTrailingNewline: shouldIgnoreTrailingNewline)
+        return NSRange(location: start, length: end - start)
     }
 }
 
 private extension Array where Element == NSRange {
     func containsIndex(_ index: Int) -> Bool {
-        return self.contains { $0.location <= index && $0.upperBound >= index }
+        contains { $0.location <= index && $0.upperBound >= index }
     }
 }

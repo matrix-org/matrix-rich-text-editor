@@ -33,7 +33,7 @@ class WysiwygUITests: XCTestCase {
 
     func testTypingAndBolding() throws {
         let attachment = try WysiwygSharedTests.testTypingAndBolding(app)
-        self.add(attachment)
+        add(attachment)
     }
 
     func testTypingAndSending() throws {

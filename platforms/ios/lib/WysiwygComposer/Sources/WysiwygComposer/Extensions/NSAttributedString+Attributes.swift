@@ -22,9 +22,9 @@ extension NSAttributedString {
     /// - Parameters:
     ///   - index: the attributed string index to lookup
     /// - Returns: the character at given location
-    func character(at index: Int) -> Character {
-        let substring = self.attributedSubstring(from: .init(location: index, length: 1))
-        return substring.string.first!
+    func character(at index: Int) -> Character? {
+        let substring = attributedSubstring(from: .init(location: index, length: 1))
+        return substring.string.first
     }
 
     /// Enumerate attribute for given key and conveniently ignore any attribute that doesn't match given generic type.
@@ -38,9 +38,9 @@ extension NSAttributedString {
                                     in enumerationRange: NSRange? = nil,
                                     options opts: NSAttributedString.EnumerationOptions = [],
                                     using block: (T, NSRange, UnsafeMutablePointer<ObjCBool>) -> Void) {
-        self.enumerateAttribute(attrName,
-                                in: enumerationRange ?? .init(location: 0, length: length),
-                                options: opts) { (attr: Any?, range: NSRange, stop: UnsafeMutablePointer<ObjCBool>) in
+        enumerateAttribute(attrName,
+                           in: enumerationRange ?? .init(location: 0, length: length),
+                           options: opts) { (attr: Any?, range: NSRange, stop: UnsafeMutablePointer<ObjCBool>) in
             guard let typedAttr = attr as? T else { return }
 
             block(typedAttr, range, stop)
@@ -53,7 +53,7 @@ extension NSAttributedString {
     ///   - index: the attributed string index to lookup
     /// - Returns: the symbolic traits at givem location, empty if no font is defined
     func fontSymbolicTraits(at index: Int) -> UIFontDescriptor.SymbolicTraits {
-        let font = self.attribute(.font, at: index, effectiveRange: nil) as? UIFont
+        let font = attribute(.font, at: index, effectiveRange: nil) as? UIFont
         return font?.fontDescriptor.symbolicTraits ?? []
     }
 }

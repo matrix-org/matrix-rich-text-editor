@@ -1,4 +1,4 @@
-// 
+//
 // Copyright 2022 The Matrix.org Foundation C.I.C
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +16,8 @@
 
 import SwiftUI
 
-extension View {
-    public func alert(isPresented: Binding<Bool>, _ alert: AlertConfig) -> some View {
+public extension View {
+    func alert(isPresented: Binding<Bool>, _ alert: AlertConfig) -> some View {
         AlertHelper(isPresented: isPresented, alert: alert, content: self)
     }
 }

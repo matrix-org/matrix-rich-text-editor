@@ -1,4 +1,4 @@
-// 
+//
 // Copyright 2022 The Matrix.org Foundation C.I.C
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,33 +22,35 @@ struct AlertHelper<Content: View>: UIViewControllerRepresentable {
     let alert: AlertConfig
     let content: Content
 
-    func makeUIViewController(context: UIViewControllerRepresentableContext<AlertHelper>) -> UIHostingController<Content> {
+    func makeUIViewController(context _: UIViewControllerRepresentableContext<AlertHelper>) -> UIHostingController<Content> {
         UIHostingController(rootView: content)
     }
 
     final class Coordinator {
         var alertController: UIAlertController?
         init(_ controller: UIAlertController? = nil) {
-            self.alertController = controller
+            alertController = controller
         }
     }
 
     func makeCoordinator() -> Coordinator {
-        return Coordinator()
+        Coordinator()
     }
 
-    func updateUIViewController(_ uiViewController: UIHostingController<Content>, context: UIViewControllerRepresentableContext<AlertHelper>) {
+    func updateUIViewController(_ uiViewController: UIHostingController<Content>,
+                                context: UIViewControllerRepresentableContext<AlertHelper>) {
         uiViewController.rootView = content
-        if isPresented && uiViewController.presentedViewController == nil {
-            var alert = self.alert
+        if isPresented, uiViewController.presentedViewController == nil {
+            var alert = alert
             alert.action = {
                 self.isPresented = false
                 self.alert.action($0)
             }
             context.coordinator.alertController = UIAlertController(alert: alert)
-            uiViewController.present(context.coordinator.alertController!, animated: true)
+            guard let controller = context.coordinator.alertController else { return }
+            uiViewController.present(controller, animated: true)
         }
-        if !isPresented && uiViewController.presentedViewController == context.coordinator.alertController {
+        if !isPresented, uiViewController.presentedViewController == context.coordinator.alertController {
             uiViewController.dismiss(animated: true)
         }
     }
@@ -56,7 +58,7 @@ struct AlertHelper<Content: View>: UIViewControllerRepresentable {
 
 public struct AlertConfig {
     public var title: String
-    public var accept: String = "OK"
-    public var cancel: String = "Cancel"
-    public var action: (String?) -> ()
+    public var accept = "OK"
+    public var cancel = "Cancel"
+    public var action: (String?) -> Void
 }

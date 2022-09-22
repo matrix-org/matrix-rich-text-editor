@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-import XCTest
 @testable import WysiwygComposer
+import XCTest
 
 // FIXME: replace ZWSP with another solution
 private enum Constants {
@@ -29,9 +29,9 @@ final class WysiwygComposerTests: XCTestCase {
         switch update.textUpdate() {
         case .keep, .select:
             XCTFail("Expected replace all HTML update")
-        case .replaceAll(replacementHtml: let codeUnits,
-                         startUtf16Codeunit: let start,
-                         endUtf16Codeunit: let end):
+        case let .replaceAll(replacementHtml: codeUnits,
+                             startUtf16Codeunit: start,
+                             endUtf16Codeunit: end):
             // Text is preserved, including emojis.
             XCTAssertEqual(String(utf16CodeUnits: codeUnits, count: codeUnits.count),
                            TestConstants.testStringWithEmojis)
@@ -51,9 +51,9 @@ final class WysiwygComposerTests: XCTestCase {
         switch update.textUpdate() {
         case .keep, .select:
             XCTFail("Expected replace all HTML update")
-        case .replaceAll(replacementHtml: let codeUnits,
-                         startUtf16Codeunit: let start,
-                         endUtf16Codeunit: let end):
+        case let .replaceAll(replacementHtml: codeUnits,
+                             startUtf16Codeunit: start,
+                             endUtf16Codeunit: end):
             // Text should remove exactly the last emoji.
             XCTAssertEqual(String(utf16CodeUnits: codeUnits, count: codeUnits.count),
                            TestConstants.testStringAfterBackspace)
@@ -70,9 +70,9 @@ final class WysiwygComposerTests: XCTestCase {
         switch update.textUpdate() {
         case .keep, .select:
             XCTFail("Expected replace all HTML update")
-        case .replaceAll(replacementHtml: let codeUnits,
-                         startUtf16Codeunit: let start,
-                         endUtf16Codeunit: let end):
+        case let .replaceAll(replacementHtml: codeUnits,
+                             startUtf16Codeunit: start,
+                             endUtf16Codeunit: end):
             let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count)
             XCTAssertEqual(html,
                            "This is <strong>bold</strong> text")
@@ -113,16 +113,16 @@ final class WysiwygComposerTests: XCTestCase {
         switch update.textUpdate() {
         case .keep, .select:
             XCTFail("Expected replace all HTML update")
-        case .replaceAll(replacementHtml: let codeUnits,
-                         startUtf16Codeunit: let start,
-                         endUtf16Codeunit: let end):
+        case let .replaceAll(replacementHtml: codeUnits,
+                             startUtf16Codeunit: start,
+                             endUtf16Codeunit: end):
             let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count)
             XCTAssertEqual(html,
                            "<ol><li>Item 1</li><li>"
-                           + Constants.zwsp
-                           + "Item 2</li><li>"
-                           + Constants.zwsp
-                           + "</li></ol>")
+                               + Constants.zwsp
+                               + "Item 2</li><li>"
+                               + Constants.zwsp
+                               + "</li></ol>")
             XCTAssertEqual(start, end)
             XCTAssertEqual(start, 14)
         }
@@ -131,15 +131,15 @@ final class WysiwygComposerTests: XCTestCase {
         switch update2.textUpdate() {
         case .keep, .select:
             XCTFail("Expected replace all HTML update")
-        case .replaceAll(replacementHtml: let codeUnits,
-                         startUtf16Codeunit: let start,
-                         endUtf16Codeunit: let end):
+        case let .replaceAll(replacementHtml: codeUnits,
+                             startUtf16Codeunit: start,
+                             endUtf16Codeunit: end):
             let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count)
             XCTAssertEqual(html,
                            "<ol><li>Item 1</li><li>"
-                           + Constants.zwsp
-                           + "Item 2</li></ol>"
-                           + Constants.zwsp)
+                               + Constants.zwsp
+                               + "Item 2</li></ol>"
+                               + Constants.zwsp)
             XCTAssertEqual(start, end)
             XCTAssertEqual(start, 14)
         }
@@ -148,16 +148,16 @@ final class WysiwygComposerTests: XCTestCase {
         switch update3.textUpdate() {
         case .keep, .select:
             XCTFail("Expected replace all HTML update")
-        case .replaceAll(replacementHtml: let codeUnits,
-                         startUtf16Codeunit: let start,
-                         endUtf16Codeunit: let end):
+        case let .replaceAll(replacementHtml: codeUnits,
+                             startUtf16Codeunit: start,
+                             endUtf16Codeunit: end):
             let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count)
             XCTAssertEqual(html,
                            "<ol><li>Item 1</li><li>"
-                           + Constants.zwsp
-                           + "Item 2</li></ol>"
-                           + Constants.zwsp
-                           + "Some text")
+                               + Constants.zwsp
+                               + "Item 2</li></ol>"
+                               + Constants.zwsp
+                               + "Some text")
             XCTAssertEqual(start, end)
             XCTAssertEqual(start, 23)
         }

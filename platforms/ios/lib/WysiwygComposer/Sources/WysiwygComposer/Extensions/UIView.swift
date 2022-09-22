@@ -1,4 +1,4 @@
-// 
+//
 // Copyright 2022 The Matrix.org Foundation C.I.C
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,7 @@ import UIKit
 extension UIView {
     /// Add a subview matching parent view using autolayout
     func addSubViewMatchingParent(_ subView: UIView) {
-        self.addSubview(subView)
+        addSubview(subView)
         subView.translatesAutoresizingMaskIntoConstraints = false
         let views = ["view": subView]
         ["H:|[view]|", "V:|[view]|"].forEach { vfl in

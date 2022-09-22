@@ -1,4 +1,4 @@
-// 
+//
 // Copyright 2022 The Matrix.org Foundation C.I.C
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,12 +24,12 @@ private enum Constants {
 /// Example UIKit view that adds a WysiwygComposer as well as a button that
 /// displays the message (+ HTML representation) the composer would send.
 final class ViewController: UIViewController {
-    @IBOutlet private weak var wysiwygHostingView: WysiwygHostingView!
-    @IBOutlet private weak var wysiwygActionsStackView: UIStackView!
-    @IBOutlet private weak var sendButton: UIButton!
-    @IBOutlet private weak var contentLabel: UILabel!
-    @IBOutlet private weak var htmlContentLabel: UILabel!
-    @IBOutlet private weak var wysiwygHostingViewHeightConstraint: NSLayoutConstraint!
+    @IBOutlet private var wysiwygHostingView: WysiwygHostingView!
+    @IBOutlet private var wysiwygActionsStackView: UIStackView!
+    @IBOutlet private var sendButton: UIButton!
+    @IBOutlet private var contentLabel: UILabel!
+    @IBOutlet private var htmlContentLabel: UILabel!
+    @IBOutlet private var wysiwygHostingViewHeightConstraint: NSLayoutConstraint!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -56,7 +56,7 @@ private extension ViewController {
         wysiwygHostingView.apply(action)
     }
 
-    @IBAction func sendButtonTouchedUpInside(_ sender: UIButton) {
+    @IBAction func sendButtonTouchedUpInside(_: UIButton) {
         // Get the current content of the composer.
         contentLabel.text = wysiwygHostingView.content.plainText
         htmlContentLabel.text = wysiwygHostingView.content.html
@@ -81,8 +81,8 @@ private final class WysiwygActionButton: UIButton {
 
     func setAction(_ wysiwygAction: WysiwygAction) {
         self.wysiwygAction = wysiwygAction
-        self.accessibilityIdentifier = wysiwygAction.accessibilityIdentifier.rawValue
-        self.setImage(UIImage(systemName: wysiwygAction.iconName),
-                      for: .normal)
+        accessibilityIdentifier = wysiwygAction.accessibilityIdentifier.rawValue
+        setImage(UIImage(systemName: wysiwygAction.iconName),
+                 for: .normal)
     }
 }

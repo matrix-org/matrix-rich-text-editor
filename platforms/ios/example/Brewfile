@@ -1,0 +1,2 @@
+brew "swiftformat"
+brew "swiftlint"

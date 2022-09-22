@@ -13,10 +13,6 @@ opt_in_rules:
   - private_action
   - explicit_init
 
-# paths to ignore during linting. Takes precedence over `included`.
-excluded:
-  - Sources/WysiwygComposer/WysiwygComposer.swift
-
 line_length:
   warning: 140
   error: 200

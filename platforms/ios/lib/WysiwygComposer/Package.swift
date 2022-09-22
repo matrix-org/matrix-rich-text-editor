@@ -27,6 +27,7 @@ let package = Package(
         ),
         .testTarget(
             name: "WysiwygComposerTests",
-            dependencies: ["WysiwygComposer"]),
+            dependencies: ["WysiwygComposer"]
+        ),
     ]
 )

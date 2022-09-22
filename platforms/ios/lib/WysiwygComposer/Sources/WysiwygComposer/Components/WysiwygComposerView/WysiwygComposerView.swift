@@ -14,12 +14,13 @@
 // limitations under the License.
 //
 
-import SwiftUI
 import OSLog
+import SwiftUI
 
 /// Provides a SwiftUI displayable view for the composer UITextView component.
 struct WysiwygComposerView: UIViewRepresentable {
     // MARK: - Internal
+
     var content: WysiwygComposerContent
     var replaceText: (NSAttributedString, NSRange, String) -> Bool
     var select: (NSAttributedString, NSRange) -> Void
@@ -42,7 +43,7 @@ struct WysiwygComposerView: UIViewRepresentable {
         Logger.textView.logDebug([content.logAttributedSelection,
                                   content.logText],
                                  functionName: #function)
-        uiView.apply(self.content)
+        uiView.apply(content)
         context.coordinator.didUpdateText(uiView)
     }
 
@@ -69,25 +70,26 @@ struct WysiwygComposerView: UIViewRepresentable {
                                       textView.logText,
                                       "Replacement: \"\(text)\""],
                                      functionName: #function)
-            return self.replaceText(textView.attributedText, range, text)
+            return replaceText(textView.attributedText, range, text)
         }
 
         func textViewDidChange(_ textView: UITextView) {
             Logger.textView.logDebug([textView.logSelection,
                                       textView.logText],
                                      functionName: #function)
-            self.didUpdateText(textView)
+            didUpdateText(textView)
         }
 
         func textViewDidChangeSelection(_ textView: UITextView) {
             Logger.textView.logDebug([textView.logSelection],
                                      functionName: #function)
-            self.select(textView.attributedText, textView.selectedRange)
+            select(textView.attributedText, textView.selectedRange)
         }
     }
 }
 
 // MARK: - Logger
+
 private extension Logger {
     static let textView = Logger(subsystem: subsystem, category: "TextView")
 }

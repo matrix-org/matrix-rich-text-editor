@@ -1,4 +1,4 @@
-// 
+//
 // Copyright 2022 The Matrix.org Foundation C.I.C
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +23,7 @@ extension UIAlertController {
         addAction(UIAlertAction(title: alert.cancel, style: .cancel) { _ in
             alert.action(nil)
         })
-        let textField = self.textFields?.first
+        let textField = textFields?.first
         addAction(UIAlertAction(title: alert.accept, style: .default) { _ in
             alert.action(textField?.text)
         })
