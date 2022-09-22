@@ -58,7 +58,23 @@ public class WysiwygComposerViewModel: ObservableObject {
     ///   - text: Text currently displayed in the composer.
     ///   - range: Range to select.
     public func select(text: NSAttributedString, range: NSRange) {
-        self.select(text: text, range: range, clearMissSelection: false)
+        do {
+            // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
+            let htmlSelection = try text.htmlRange(from: range,
+                                                   shouldIgnoreTrailingNewline: false)
+            Logger.viewModel.logDebug(["Sel(att): \(range)",
+                                       "Sel: \(htmlSelection)",
+                                       "Text: \"\(text.string)\""],
+                                       functionName: #function)
+            let update = self.model.select(startUtf16Codeunit: UInt32(htmlSelection.location),
+                              endUtf16Codeunit: UInt32(htmlSelection.upperBound))
+
+            self.applyUpdate(update)
+        } catch {
+            Logger.viewModel.logError(["Sel(att): \(range)",
+                                       "Error: \(error.localizedDescription)"],
+                                      functionName: #function)
+        }
     }
 
     /// Apply given action to the composer.
@@ -106,32 +122,6 @@ public class WysiwygComposerViewModel: ObservableObject {
 
 // MARK: - Internal
 extension WysiwygComposerViewModel {
-    /// Select given range of text within the model.
-    ///
-    /// - Parameters:
-    ///   - text: Text currently displayed in the composer.
-    ///   - range: Range to select.
-    ///   - clearMissSelection: Whether expected miss selection should be cleared regardless of input.
-    func select(text: NSAttributedString, range: NSRange, clearMissSelection: Bool) {
-        do {
-            // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
-            let htmlSelection = try text.htmlRange(from: range,
-                                                   shouldIgnoreTrailingNewline: false)
-            Logger.viewModel.logDebug(["Sel(att): \(range)",
-                                       "Sel: \(htmlSelection)",
-                                       "Text: \"\(text.string)\""],
-                                       functionName: #function)
-            let update = self.model.select(startUtf16Codeunit: UInt32(htmlSelection.location),
-                              endUtf16Codeunit: UInt32(htmlSelection.upperBound))
-
-            self.applyUpdate(update)
-        } catch {
-            Logger.viewModel.logError(["Sel(att): \(range)",
-                                       "Error: \(error.localizedDescription)"],
-                                      functionName: #function)
-        }
-    }
-
     /// Replace text in the model.
     ///
     /// - Parameters:
@@ -143,7 +133,7 @@ extension WysiwygComposerViewModel {
         let shouldAcceptChange: Bool
 
         if range != self.content.attributedSelection {
-            select(text: text, range: range, clearMissSelection: true)
+            select(text: text, range: range)
         }
 
         if self.content.attributedSelection.length == 0 && replacementText == "" {
