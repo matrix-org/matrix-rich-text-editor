@@ -16,7 +16,7 @@ const Editor = forwardRef<HTMLDivElement>(function Editor(props, forwardRef) {
 });
 
 describe('useWysiwyg', () => {
-    describe('Playing with characters', () => {
+    describe('Rendering characters', () => {
         let editor: HTMLDivElement;
 
         function deleteRange(start: number, end: number) {
