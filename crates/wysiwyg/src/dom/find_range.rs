@@ -48,7 +48,9 @@ where
             };
             Range::MultipleNodes(MultipleNodesRange::new(&locations))
         }
-        FindResult::NotFound => Range::NoNode,
+        FindResult::NotFound => {
+            Range::MultipleNodes(MultipleNodesRange::new(Vec::new()))
+        }
     }
 }
 

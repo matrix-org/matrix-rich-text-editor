@@ -254,6 +254,8 @@ where
         let leaves: Vec<&DomLocation> = range.leaves().collect();
         if leaves.len() == 1 {
             Some(leaves[0].node_handle.clone())
+        } else if leaves.len() == 0 {
+            None
         } else {
             panic!("Range for single position contained several leaves!");
         }
