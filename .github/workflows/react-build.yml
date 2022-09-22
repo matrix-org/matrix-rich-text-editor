@@ -32,6 +32,12 @@ jobs:
     - name: Build
       working-directory: platforms/web/src
       run: yarn install
+    - name: Typescript check
+      working-directory: platforms/web/src
+      run: yarn tsc
+    - name: Lint check
+      working-directory: platforms/web/src
+      run: yarn lint
     - name: Test
       working-directory: platforms/web/src
       run: yarn test
