@@ -219,51 +219,9 @@ where
         let range = self.state.dom.find_range(s, e);
         match range {
             Range::SameNode(range) => {
-                let node = self.state.dom.lookup_node(&range.node_handle);
-                if let DomNode::Text(t) = node {
-                    let text = t.data();
-                    let index_in_parent = range.node_handle.index_in_parent();
-                    let list_item =
-                        DomNode::Container(ContainerNode::new_list_item(
-                            S::from_str("li"),
-                            vec![DomNode::new_text(text.clone())],
-                        ));
-                    if index_in_parent > 0 {
-                        let previous_handle = range.node_handle.prev_sibling();
-                        let previous_node =
-                            self.state.dom.lookup_node_mut(&previous_handle);
-                        if let DomNode::Container(previous) = previous_node {
-                            if previous.is_list_of_type(list_type.clone()) {
-                                previous.append_child(list_item);
-                                let parent_node_handle =
-                                    range.node_handle.parent_handle();
-                                let parent_node = self
-                                    .state
-                                    .dom
-                                    .lookup_node_mut(&parent_node_handle);
-                                if let DomNode::Container(parent) = parent_node
-                                {
-                                    parent.remove_child(index_in_parent);
-                                } else {
-                                    panic!(
-                                        "Unexpected missing parent container"
-                                    )
-                                }
-
-                                return self.create_update_replace_all();
-                            }
-                        }
-                    }
-
-                    self.replace_node_with_new_list(
-                        &range.node_handle,
-                        list_type,
-                        list_item,
-                    );
-                    return self.create_update_replace_all();
-                } else {
-                    panic!("Can't create a list from a non-text node")
-                }
+                let mrange =
+                    self.state.dom.convert_same_node_range_to_multi(range);
+                self.create_list_range(list_type, mrange)
             }
 
             Range::NoNode => {
@@ -277,9 +235,59 @@ where
                 return self.create_update_replace_all();
             }
 
-            _ => {
-                panic!("Can't create ordered list in complex object models yet")
+            Range::MultipleNodes(range) => {
+                self.create_list_range(list_type, range)
             }
+        }
+    }
+
+    fn create_list_range(
+        &mut self,
+        list_type: ListType,
+        range: MultipleNodesRange,
+    ) -> ComposerUpdate<S> {
+        let leaves: Vec<&DomLocation> = range.leaves().collect();
+        if leaves.len() == 1 {
+            let handle = &leaves[0].node_handle;
+            let node = self.state.dom.lookup_node(handle);
+            if let DomNode::Text(t) = node {
+                let text = t.data();
+                let index_in_parent = handle.index_in_parent();
+                let list_item =
+                    DomNode::Container(ContainerNode::new_list_item(
+                        S::from_str("li"),
+                        vec![DomNode::new_text(text.clone())],
+                    ));
+                if index_in_parent > 0 {
+                    let previous_handle = handle.prev_sibling();
+                    let previous_node =
+                        self.state.dom.lookup_node_mut(&previous_handle);
+                    if let DomNode::Container(previous) = previous_node {
+                        if previous.is_list_of_type(list_type.clone()) {
+                            previous.append_child(list_item);
+                            let parent_node_handle = handle.parent_handle();
+                            let parent_node = self
+                                .state
+                                .dom
+                                .lookup_node_mut(&parent_node_handle);
+                            if let DomNode::Container(parent) = parent_node {
+                                parent.remove_child(index_in_parent);
+                            } else {
+                                panic!("Unexpected missing parent container")
+                            }
+
+                            return self.create_update_replace_all();
+                        }
+                    }
+                }
+
+                self.replace_node_with_new_list(handle, list_type, list_item);
+                return self.create_update_replace_all();
+            } else {
+                panic!("Can't create a list from a non-text node")
+            }
+        } else {
+            panic!("Can't create ordered list in complex object models yet")
         }
     }
 
