@@ -11,5 +11,7 @@ globalThis.fetch = (url) => {
     if (url instanceof URL && url.href.includes('wysiwyg_bg.wasm')) {
         const wasmPath = path.resolve(__dirname, 'generated/wysiwyg_bg.wasm');
         return fs.readFileSync(wasmPath);
+    } else {
+        throw new Error('fetch is not defined');
     }
 };
