@@ -47,13 +47,41 @@ pub struct SameNodeRange {
     pub original_end: usize,
 }
 
+/// Represents a part of a Range.
+/// This is made up of a node (we hold a handle to it), and which part of
+/// that node is within the range.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DomLocation {
+    /// The handle of the node we are talking about
     pub node_handle: DomHandle,
-    pub position: usize,
+
+    /// The position inside this node of the start of the range. In a text
+    /// node this will be the number of code points through the text to
+    /// get to the start of the range. In a container node this will be how
+    /// far through children nodes you need to count to get to the start.
+    /// In a text-like node like a line break, this will be 0 or 1.
+    /// Measured in code units.
     pub start_offset: usize,
+
+    /// The position inside this node of the end of the range. In a text
+    /// node this will be the number of code points through the text to
+    /// get to the end of the range. In a container node this will be how
+    /// far through children nodes you need to count to get to the end.
+    /// In a text-like node like a line break, this will be 0 or 1.
+    /// Measured in code units.
     pub end_offset: usize,
+
+    /// Where within the whole Dom is this node? Measured in code units.
+    pub position: usize,
+
+    /// How many code units are inside this node? In a text node this will
+    /// be the length of the text, and in a container node this will be the
+    /// sum of the lengths of the contained nodes. In a text-like node like
+    /// a line break, this will be 1.
     pub length: usize,
+
+    /// True if this is a node which is not a container i.e. a text node or
+    /// a text-like node like a line break.
     pub is_leaf: bool,
 }
 
@@ -76,7 +104,8 @@ impl DomLocation {
         }
     }
 
-    /// Calculated index in the Dom based on the [position] and [start_offset] values.
+    /// Calculated index in the Dom based on the [position] and [start_offset]
+    /// values.
     pub fn index_in_dom(&self) -> usize {
         self.position + self.start_offset
     }
