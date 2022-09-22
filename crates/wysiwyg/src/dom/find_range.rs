@@ -13,17 +13,12 @@
 // limitations under the License.
 
 use crate::dom::nodes::{ContainerNode, DomNode, LineBreakNode, TextNode};
-use crate::dom::range::{DomLocation, MultipleNodesRange, SameNodeRange};
+use crate::dom::range::{DomLocation, MultipleNodesRange};
 use crate::dom::{Dom, DomHandle, FindResult, Range};
 use crate::UnicodeString;
 use std::cmp::{max, min};
 
-pub fn find_range<S>(
-    dom: &Dom<S>,
-    start: usize,
-    end: usize,
-    same_node_allowed: bool,
-) -> Range
+pub fn find_range<S>(dom: &Dom<S>, start: usize, end: usize) -> Range
 where
     S: UnicodeString,
 {
@@ -43,34 +38,15 @@ where
     let result = find_pos(dom, &dom.document_handle(), s, e);
     match result {
         FindResult::Found(locations) => {
-            let leaf_locations: Vec<&DomLocation> =
-                locations.iter().filter(|l| l.is_leaf).collect();
-            if leaf_locations.len() == 1 && same_node_allowed {
-                // TODO: check offsets
-                let location = leaf_locations.first().unwrap().clone();
-                let location = if is_reversed {
-                    location.reversed()
-                } else {
-                    location.clone()
-                };
-                Range::SameNode(SameNodeRange {
-                    node_handle: location.node_handle.clone(),
-                    start_offset: location.start_offset,
-                    end_offset: location.end_offset,
-                    original_start: start,
-                    original_end: end,
-                })
+            let locations: Vec<DomLocation> = if is_reversed {
+                locations
+                    .iter()
+                    .map(|location| location.reversed())
+                    .collect()
             } else {
-                let locations: Vec<DomLocation> = if is_reversed {
-                    locations
-                        .iter()
-                        .map(|location| location.reversed())
-                        .collect()
-                } else {
-                    locations
-                };
-                Range::MultipleNodes(MultipleNodesRange::new(&locations))
-            }
+                locations
+            };
+            Range::MultipleNodes(MultipleNodesRange::new(&locations))
         }
         FindResult::NotFound => Range::NoNode,
     }
@@ -358,19 +334,23 @@ mod test {
         let d = dom(&[tn("foo bar baz")]);
         let range = d.find_range(4, 7);
 
-        if let Range::SameNode(range) = range {
-            assert_eq!(range.start_offset, 4);
-            assert_eq!(range.end_offset, 7);
+        if let Range::MultipleNodes(range) = range {
+            let leaves: Vec<&DomLocation> = range.leaves().collect();
+            assert_eq!(leaves.len(), 1);
 
-            if let DomNode::Text(t) = d.lookup_node(&range.node_handle) {
+            let loc = leaves[0];
+            assert_eq!(loc.start_offset, 4);
+            assert_eq!(loc.end_offset, 7);
+
+            if let DomNode::Text(t) = d.lookup_node(&loc.node_handle) {
                 assert_eq!(*t.data(), utf16("foo bar baz"));
             } else {
                 panic!("Should have been a text node!")
             }
 
-            assert_eq!(range.node_handle.raw(), &vec![0]);
+            assert_eq!(loc.node_handle.raw(), &vec![0]);
         } else {
-            panic!("Should have been a SameNodeRange: {:?}", range)
+            panic!("Should have been a MultipleNodesRange: {:?}", range)
         }
     }
 
@@ -379,19 +359,23 @@ mod test {
         let d = dom(&[tn("foo bar baz")]);
         let range = d.find_range(4, 11);
 
-        if let Range::SameNode(range) = range {
-            assert_eq!(range.start_offset, 4);
-            assert_eq!(range.end_offset, 11);
+        if let Range::MultipleNodes(range) = range {
+            let leaves: Vec<&DomLocation> = range.leaves().collect();
+            assert_eq!(leaves.len(), 1);
 
-            if let DomNode::Text(t) = d.lookup_node(&range.node_handle) {
+            let loc = leaves[0];
+            assert_eq!(loc.start_offset, 4);
+            assert_eq!(loc.end_offset, 11);
+
+            if let DomNode::Text(t) = d.lookup_node(&loc.node_handle) {
                 assert_eq!(*t.data(), utf16("foo bar baz"));
             } else {
                 panic!("Should have been a text node!")
             }
 
-            assert_eq!(range.node_handle.raw(), &vec![0]);
+            assert_eq!(loc.node_handle.raw(), &vec![0]);
         } else {
-            panic!("Should have been a SameNodeRange: {:?}", range)
+            panic!("Should have been a MultipleNodesRange: {:?}", range)
         }
     }
 
@@ -400,19 +384,23 @@ mod test {
         let d = dom(&[tn("foo "), b(&[tn("bar")]), tn(" baz")]);
         let range = d.find_range(5, 6);
 
-        if let Range::SameNode(range) = range {
-            assert_eq!(range.start_offset, 1);
-            assert_eq!(range.end_offset, 2);
+        if let Range::MultipleNodes(range) = range {
+            let leaves: Vec<&DomLocation> = range.leaves().collect();
+            assert_eq!(leaves.len(), 1);
 
-            if let DomNode::Text(t) = d.lookup_node(&range.node_handle) {
+            let loc = leaves[0];
+            assert_eq!(loc.start_offset, 1);
+            assert_eq!(loc.end_offset, 2);
+
+            if let DomNode::Text(t) = d.lookup_node(&loc.node_handle) {
                 assert_eq!(*t.data(), utf16("bar"));
             } else {
                 panic!("Should have been a text node!")
             }
 
-            assert_eq!(range.node_handle.raw(), &vec![1, 0]);
+            assert_eq!(loc.node_handle.raw(), &vec![1, 0]);
         } else {
-            panic!("Should have been a SameNodeRange: {:?}", range)
+            panic!("Should have been a MultipleNodesRange: {:?}", range)
         }
     }
 
@@ -453,24 +441,45 @@ mod test {
     }
 
     #[test]
-    fn finding_a_range_inside_several_nested_nodes_returns_only_text_node() {
+    fn finding_a_range_inside_several_nested_nodes_returns_text_node() {
         let d = cm("test<b>ing <i>a </i></b>new feature|").state.dom;
         let range = d.find_range(9, 10);
-        if let Range::SameNode(r) = range {
+        if let Range::MultipleNodes(r) = range {
             // Selected the 'a' character inside the <i> tag, but as it only covers it partially,
             // only the text node is selected
             assert_eq!(
                 r,
-                SameNodeRange {
-                    node_handle: DomHandle::from_raw(vec![1, 1, 0]),
-                    start_offset: 1,
-                    end_offset: 2,
-                    original_start: 9,
-                    original_end: 10
+                MultipleNodesRange {
+                    locations: vec![
+                        DomLocation {
+                            node_handle: DomHandle::from_raw(vec![1, 1, 0]),
+                            start_offset: 1,
+                            end_offset: 2,
+                            position: 8,
+                            length: 2,
+                            is_leaf: true
+                        },
+                        DomLocation {
+                            node_handle: DomHandle::from_raw(vec![1, 1]),
+                            start_offset: 1,
+                            end_offset: 2,
+                            position: 8,
+                            length: 2,
+                            is_leaf: false
+                        },
+                        DomLocation {
+                            node_handle: DomHandle::from_raw(vec![1]),
+                            start_offset: 5,
+                            end_offset: 6,
+                            position: 4,
+                            length: 6,
+                            is_leaf: false
+                        }
+                    ]
                 }
             );
         } else {
-            panic!("Should have been a SameNodeRange {:?}", range);
+            panic!("Should have been a MultipleNodesRange {:?}", range);
         }
     }
 
@@ -490,53 +499,6 @@ mod test {
             assert_eq!(utf16("new feature"), html_of_ranges[3]);
         } else {
             panic!("Should have been a MultipleNodesRange {:?}", range);
-        }
-    }
-
-    #[test]
-    fn finding_a_same_node_range_but_asking_for_multi_returns_multi() {
-        let d = dom(&[tn("foo "), b(&[tn("bar")]), tn(" baz")]);
-        let range = d.find_range_multi(5, 6);
-
-        if let Range::MultipleNodes(range) = range {
-            assert_eq!(
-                range.locations,
-                vec![
-                    DomLocation::new(
-                        DomHandle::from_raw(vec![1, 0]),
-                        4,
-                        1,
-                        2,
-                        3,
-                        true
-                    ),
-                    DomLocation::new(
-                        DomHandle::from_raw(vec![1]),
-                        4,
-                        1,
-                        2,
-                        3,
-                        false
-                    )
-                ]
-            );
-        } else {
-            panic!("Should have been a MultipleNodesRange: {:?}", range)
-        }
-    }
-
-    #[test]
-    fn converting_a_same_node_range_to_multi_works() {
-        let d = dom(&[tn("foo "), b(&[tn("bar")]), tn(" baz")]);
-        let same_range = d.find_range(5, 7);
-        if let Range::SameNode(same_range) = same_range {
-            let converted = d.convert_same_node_range_to_multi(same_range);
-
-            let multi_range = d.find_range_multi(5, 7);
-
-            assert_eq!(Range::MultipleNodes(converted), multi_range);
-        } else {
-            panic!("Expected the supplied range to be SameNodeRange");
         }
     }
 }
