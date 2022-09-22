@@ -47,18 +47,15 @@ where
                 } else {
                     tree_part.push_string(&TreeSymbols::up_right_and_gt());
                 }
+            } else if continuous_positions.contains(&i) {
+                tree_part.push_string(&TreeSymbols::vertical_and_whitespace());
             } else {
-                if continuous_positions.contains(&i) {
-                    tree_part
-                        .push_string(&TreeSymbols::vertical_and_whitespace());
-                } else {
-                    tree_part.push_string(&TreeSymbols::double_whitespace());
-                }
+                tree_part.push_string(&TreeSymbols::double_whitespace());
             }
         }
         tree_part.push_string(&description);
         tree_part.push_string(&S::from_str("\n"));
-        return tree_part;
+        tree_part
     }
 }
 

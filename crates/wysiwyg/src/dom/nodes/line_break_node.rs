@@ -103,7 +103,7 @@ where
         self.tree_line(
             self.name(),
             self.handle.raw().len(),
-            continuous_positions.clone(),
+            continuous_positions,
         )
     }
 }

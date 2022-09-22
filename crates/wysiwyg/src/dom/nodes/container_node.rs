@@ -89,7 +89,7 @@ where
         children: Vec<DomNode<S>>,
     ) -> Self {
         Self {
-            name: UnicodeString::from_str(format.tag().clone()),
+            name: UnicodeString::from_str(format.tag()),
             kind: ContainerNodeKind::Formatting(format),
             attrs: None,
             children,
@@ -216,10 +216,7 @@ where
     }
 
     pub fn is_list_item(&self) -> bool {
-        match self.kind {
-            ContainerNodeKind::ListItem => true,
-            _ => false,
-        }
+        matches!(self.kind, ContainerNodeKind::ListItem)
     }
 
     pub(crate) fn is_list_of_type(&self, list_type: ListType) -> bool {
@@ -233,17 +230,14 @@ where
     }
 
     pub(crate) fn is_structure_node(&self) -> bool {
-        match self.kind {
-            ContainerNodeKind::List | ContainerNodeKind::ListItem => true,
-            _ => false,
-        }
+        matches!(
+            self.kind,
+            ContainerNodeKind::List | ContainerNodeKind::ListItem
+        )
     }
 
     pub(crate) fn is_formatting_node(&self) -> bool {
-        match self.kind {
-            ContainerNodeKind::Formatting(_) => true,
-            _ => false,
-        }
+        matches!(self.kind, ContainerNodeKind::Formatting(_))
     }
 
     pub fn text_len(&self) -> usize {
@@ -264,7 +258,7 @@ where
         match self.kind {
             ContainerNodeKind::ListItem => {
                 let raw_text = self.to_raw_text().to_utf8();
-                return raw_text == "" || raw_text == "\u{200b}";
+                raw_text.is_empty() || raw_text == "\u{200b}"
             }
             _ => false,
         }
@@ -340,7 +334,7 @@ where
         for child in &self.children {
             text.push_string(&child.to_raw_text());
         }
-        return text;
+        text
     }
 }
 
@@ -362,7 +356,7 @@ where
             }
             tree_part.push_string(&child.to_tree_display(new_positions));
         }
-        return tree_part;
+        tree_part
     }
 }
 

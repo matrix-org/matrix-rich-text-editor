@@ -29,28 +29,27 @@ where
     pub(crate) fn compute_menu_state(&mut self) -> MenuState {
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
-        let reversed_actions: HashSet<ComposerAction>;
-        reversed_actions =
+        let reversed_actions: HashSet<ComposerAction> =
             self.compute_reversed_actions_from_locations(&range.locations);
         let disabled_actions = self.compute_disabled_actions();
 
         if reversed_actions == self.reversed_actions
             && disabled_actions == self.disabled_actions
         {
-            return MenuState::Keep;
+            MenuState::Keep
         } else {
             self.reversed_actions = reversed_actions;
             self.disabled_actions = disabled_actions;
-            return MenuState::Update(MenuStateUpdate {
+            MenuState::Update(MenuStateUpdate {
                 reversed_actions: self.reversed_actions.clone(),
                 disabled_actions: self.disabled_actions.clone(),
-            });
+            })
         }
     }
 
     fn compute_reversed_actions_from_locations(
         &mut self,
-        locations: &Vec<DomLocation>,
+        locations: &[DomLocation],
     ) -> HashSet<ComposerAction> {
         let mut text_locations: Vec<&DomLocation> = locations
             .iter()
@@ -72,7 +71,7 @@ where
                 let intersection: HashSet<_> = reversed_actions
                     .intersection(&buttons)
                     .into_iter()
-                    .map(|b| b.clone())
+                    .cloned()
                     .collect();
                 reversed_actions = intersection;
             }
@@ -85,7 +84,7 @@ where
         handle: &DomHandle,
     ) -> HashSet<ComposerAction> {
         let mut reversed_actions = HashSet::new();
-        let node = self.state.dom.lookup_node(&handle);
+        let node = self.state.dom.lookup_node(handle);
         if let DomNode::Container(container) = node {
             let active_button = Self::active_button_for_container(container);
             if let Some(button) = active_button {
@@ -97,7 +96,7 @@ where
             reversed_actions = reversed_actions
                 .union(&self.compute_reversed_actions(&handle.parent_handle()))
                 .into_iter()
-                .map(|b| b.clone())
+                .cloned()
                 .collect();
         }
 

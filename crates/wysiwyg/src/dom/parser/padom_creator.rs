@@ -326,7 +326,7 @@ mod test {
         ) -> PaDomHandle {
             let child = ret.add_node(test_node.dom_node);
 
-            let parent = ret.get_mut_node(&parent);
+            let parent = ret.get_mut_node(parent);
             match parent {
                 PaDomNode::Container(p) => {
                     p.children.push(child.clone());

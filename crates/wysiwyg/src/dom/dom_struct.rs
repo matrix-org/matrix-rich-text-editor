@@ -262,7 +262,7 @@ where
             After,
         }
 
-        let wh = match self.lookup_node(&handle) {
+        let wh = match self.lookup_node(handle) {
             DomNode::Container(_) => {
                 panic!("Can't insert into a non-text node!")
             }

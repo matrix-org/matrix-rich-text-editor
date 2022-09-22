@@ -144,7 +144,7 @@ where
 {
     fn to_tree_display(&self, continuous_positions: Vec<usize>) -> S {
         let mut description = S::from_str("\"");
-        let text = &self.data.to_utf8().replace("\u{200b}", "~");
+        let text = &self.data.to_utf8().replace('\u{200b}', "~");
         description.push_string(&S::from_str(text));
         description.push_string(&S::from_str("\""));
         return self.tree_line(

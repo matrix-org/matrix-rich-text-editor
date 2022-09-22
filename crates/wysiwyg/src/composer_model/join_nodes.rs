@@ -47,7 +47,7 @@ where
         if let Some(mut next_handle) = self.find_leaf_containing(new_pos) {
             // Find struct parents
             if let (Some(struct_parent_start), Some(struct_parent_next)) =
-                self.find_struct_parents(&start_handle, &next_handle)
+                self.find_struct_parents(start_handle, &next_handle)
             {
                 if struct_parent_start != struct_parent_next {
                     // Move children
@@ -60,7 +60,7 @@ where
                 }
 
                 // Find ancestor lists
-                let ancestors_start = Self::find_ancestor_list(&start_handle);
+                let ancestors_start = Self::find_ancestor_list(start_handle);
                 let ancestors_next = Self::find_ancestor_list(&next_handle);
 
                 // Merge nodes based on ancestors
@@ -122,7 +122,7 @@ where
     ) -> bool {
         let dom = &self.state.dom;
         if let (DomNode::Container(prev_node), DomNode::Container(next_node)) =
-            (dom.lookup_node(&prev), dom.lookup_node(&next))
+            (dom.lookup_node(prev), dom.lookup_node(next))
         {
             if let (
                 ContainerNodeKind::Formatting(prev_format),
@@ -155,8 +155,8 @@ where
                 continue;
             }
 
-            let start_i = dom.lookup_node(&start_handle);
-            let next_i = dom.lookup_node(&next_handle);
+            let start_i = dom.lookup_node(start_handle);
+            let next_i = dom.lookup_node(next_handle);
 
             match (start_i, next_i) {
                 (DomNode::Container(start_i), DomNode::Container(next_i)) => {
@@ -194,7 +194,7 @@ where
                 }
                 (DomNode::Text(start_i), DomNode::Text(next_i)) => {
                     let mut new_data = start_i.data().clone();
-                    new_data.push_string(&next_i.data());
+                    new_data.push_string(next_i.data());
                     let text_node = DomNode::new_text(new_data);
                     if let DomNode::Container(old_parent) =
                         dom.lookup_node_mut(&next_handle.parent_handle())
@@ -274,14 +274,14 @@ where
         let dom = &mut self.state.dom;
         let ret;
         let children = if let DomNode::Container(from_node) =
-            dom.lookup_node(&from_handle)
+            dom.lookup_node(from_handle)
         {
             from_node.children().clone()
         } else {
             panic!("Source node must be a ContainerNode");
         };
 
-        if let DomNode::Container(to_node) = dom.lookup_node_mut(&to_handle) {
+        if let DomNode::Container(to_node) = dom.lookup_node_mut(to_handle) {
             ret = to_node.children().len();
             for c in children {
                 to_node.append_child(c);

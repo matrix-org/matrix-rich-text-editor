@@ -83,27 +83,27 @@ fn do_find_pos<S>(
 where
     S: UnicodeString,
 {
-    let node = dom.lookup_node(&node_handle);
+    let node = dom.lookup_node(node_handle);
     let mut locations = Vec::new();
     if *offset > end {
         return locations;
     }
     match node {
         DomNode::Text(n) => {
-            if let Some(location) = process_text_node(&n, start, end, offset) {
+            if let Some(location) = process_text_node(n, start, end, offset) {
                 locations.push(location);
             }
         }
         DomNode::LineBreak(n) => {
             if let Some(location) =
-                process_line_break_node(&n, start, end, offset)
+                process_line_break_node(n, start, end, offset)
             {
                 locations.push(location);
             }
         }
         DomNode::Container(n) => {
             locations
-                .extend(process_container_node(dom, &n, start, end, offset));
+                .extend(process_container_node(dom, n, start, end, offset));
         }
     }
     locations

@@ -57,7 +57,9 @@ where
     ) -> DomNode<S> {
         DomNode::Container(
             ContainerNode::new_formatting_from_tag(format.clone(), children)
-                .expect(&format!("Unknown format tag {}", format.to_utf8())),
+                .unwrap_or_else(|| {
+                    panic!("Unknown format tag {}", format.to_utf8())
+                }),
         )
     }
 
