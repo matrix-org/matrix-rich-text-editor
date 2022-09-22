@@ -32,7 +32,7 @@ type WysiwygProps = {
 };
 
 export function useWysiwyg(wysiwygProps?: WysiwygProps) {
-    const ref = useRef<HTMLDivElement>(null);
+    const ref = useRef<HTMLDivElement | null>(null);
     const modelRef = useRef<HTMLDivElement>(null);
 
     const composerModel = useComposerModel();
