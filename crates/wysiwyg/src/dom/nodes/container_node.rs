@@ -288,44 +288,45 @@ where
 {
     fn fmt_html(
         &self,
-        f: &mut HtmlFormatter<S>,
+        formatter: &mut HtmlFormatter<S>,
         selection_writer: Option<&mut SelectionWriter>,
+        _: bool,
     ) {
         let name = self.name();
         if !name.is_empty() {
-            f.write_char(HtmlChar::Lt);
-            f.write(name.as_slice());
+            formatter.write_char(HtmlChar::Lt);
+            formatter.write(name.as_slice());
             if let Some(attrs) = &self.attrs {
                 for attr in attrs {
-                    f.write_char(HtmlChar::Space);
+                    formatter.write_char(HtmlChar::Space);
                     let (attr_name, value) = attr;
-                    f.write(attr_name.as_slice());
-                    f.write_char(HtmlChar::Equal);
-                    f.write_char(HtmlChar::Quote);
-                    f.write(value.as_slice());
-                    f.write_char(HtmlChar::Quote);
+                    formatter.write(attr_name.as_slice());
+                    formatter.write_char(HtmlChar::Equal);
+                    formatter.write_char(HtmlChar::Quote);
+                    formatter.write(value.as_slice());
+                    formatter.write_char(HtmlChar::Quote);
                 }
             }
-            f.write_char(HtmlChar::Gt);
+            formatter.write_char(HtmlChar::Gt);
         }
 
         if let Some(w) = selection_writer {
             for (i, child) in self.children.iter().enumerate() {
                 let is_last = self.children().len() == i + 1;
-                f.write_node(child, is_last, Some(w));
+                child.fmt_html(formatter, Some(w), is_last);
             }
         } else {
             for (i, child) in self.children.iter().enumerate() {
                 let is_last = self.children().len() == i + 1;
-                f.write_node(child, is_last, None);
+                child.fmt_html(formatter, None, is_last);
             }
         }
 
         if !name.is_empty() {
-            f.write_char(HtmlChar::Lt);
-            f.write_char(HtmlChar::ForwardSlash);
-            f.write(name.as_slice());
-            f.write_char(HtmlChar::Gt);
+            formatter.write_char(HtmlChar::Lt);
+            formatter.write_char(HtmlChar::ForwardSlash);
+            formatter.write(name.as_slice());
+            formatter.write_char(HtmlChar::Gt);
         }
     }
 }

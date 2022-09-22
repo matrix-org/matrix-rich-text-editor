@@ -23,13 +23,14 @@ where
 {
     fn fmt_html(
         &self,
-        f: &mut HtmlFormatter<S>,
+        formatter: &mut HtmlFormatter<S>,
         selection_writer: Option<&mut SelectionWriter>,
+        is_last_node_in_parent: bool,
     );
 
     fn to_html(&self) -> S {
         let mut f = HtmlFormatter::new();
-        self.fmt_html(&mut f, None);
+        self.fmt_html(&mut f, None, false);
         f.finish()
     }
 }

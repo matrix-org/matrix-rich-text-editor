@@ -334,8 +334,10 @@ where
         &self,
         f: &mut HtmlFormatter<S>,
         selection_writer: Option<&mut SelectionWriter>,
+        is_last_node_in_parent: bool,
     ) {
-        self.document.fmt_html(f, selection_writer)
+        self.document
+            .fmt_html(f, selection_writer, is_last_node_in_parent)
     }
 }
 

@@ -12,12 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
+use std::ops::Not;
+
 use widestring::Utf16String;
 
+use crate::dom::nodes::{LineBreakNode, TextNode};
 use crate::dom::parser::parse;
-use crate::dom::{DomLocation, HtmlFormatter, Range};
-use crate::{ComposerModel, ComposerState, DomNode, Location, UnicodeString};
+use crate::dom::{DomLocation, HtmlFormatter};
+use crate::{
+    ComposerModel, ComposerState, DomHandle, Location, ToHtml, UnicodeString,
+};
 
 impl ComposerModel<Utf16String> {
     /// Convenience function to allow working with ComposerModel instances
@@ -159,68 +164,66 @@ impl ComposerModel<Utf16String> {
             selection_end,
             doc_length,
         );
-        let mut writer = SelectionWriter {
-            state,
-            locations: range.locations,
-        };
-        formatter.write_node(root, false, Some(&mut writer));
+        let locations = range
+            .leaves()
+            .into_iter()
+            .map(|l| (l.node_handle.clone(), l.clone()))
+            .collect();
+        let mut selection_writer = SelectionWriter { state, locations };
+        root.fmt_html(&mut formatter, Some(&mut selection_writer), false);
+        if range.is_empty().not() {
+            // we should always have written at least the start of the selection
+            // ({ or |) by now.
+            assert!(selection_writer.is_selection_written());
+        }
         let ret = formatter.finish();
         let html = ret.to_utf8();
+
+        // Replace characters with visible ones
         html.replace("\u{200b}", "~").replace("\u{A0}", "&nbsp;")
     }
 }
 
 pub struct SelectionWriter {
     state: SelectionWritingState,
-    locations: Vec<DomLocation>,
+    locations: HashMap<DomHandle, DomLocation>,
 }
 
 impl SelectionWriter {
-    pub fn write_node<S: UnicodeString>(
+    pub fn write_selection_text_node<S: UnicodeString>(
         &mut self,
         f: &mut HtmlFormatter<S>,
         pos: usize,
-        node: &DomNode<S>,
+        node: &TextNode<S>,
     ) {
-        if let Some(loc) = self
-            .locations
-            .iter()
-            .find(|l| l.is_leaf && l.node_handle == node.handle())
-        {
-            Self::apply_selection(&mut self.state, f, pos, node, loc);
+        if let Some(loc) = self.locations.get(&node.handle()) {
+            let strings_to_add = self.state.advance(&loc, node.data().len());
+            for (str, i) in strings_to_add.into_iter().rev() {
+                let code_units = S::from_str(str);
+                f.write_at(pos + i, code_units.as_slice());
+            }
         }
     }
 
-    fn apply_selection<S: UnicodeString>(
-        state: &mut SelectionWritingState,
-        formatter: &mut HtmlFormatter<S>,
-        cur_pos: usize,
-        node: &DomNode<S>,
-        location: &DomLocation,
+    pub fn write_selection_line_break_node<S: UnicodeString>(
+        &mut self,
+        f: &mut HtmlFormatter<S>,
+        pos: usize,
+        node: &LineBreakNode<S>,
     ) {
-        match node {
-            DomNode::Text(n) => {
-                let strings_to_add = state.advance(&location, n.data().len());
-                for (str, i) in strings_to_add.into_iter().rev() {
-                    let pos = cur_pos + i;
-                    let code_units = S::from_str(str);
-                    formatter.write_at(pos, code_units.as_slice());
-                }
+        if let Some(loc) = self.locations.get(&node.handle()) {
+            let strings_to_add = self.state.advance(&loc, 1);
+            for (str, i) in strings_to_add.into_iter().rev() {
+                let code_units = S::from_str(str);
+                // Index 1 in line breaks is actually at the end of the '<br />'
+                let i = if i == 0 { 0 } else { 6 };
+                f.write_at(pos + i, code_units.as_slice());
             }
-            DomNode::LineBreak(_) => {
-                let strings_to_add = state.advance(&location, 1);
-                for (str, i) in strings_to_add.into_iter().rev() {
-                    let code_units = S::from_str(str);
-                    // Index 1 in line breaks is actually at the end of the '<br />'
-                    let i = if i == 0 { 0 } else { 6 };
-                    formatter.write_at(cur_pos + i, code_units.as_slice());
-                }
-            }
-            DomNode::Container(_) => (),
         }
-        // we should always have written at least the start of the selection
-        // ({ or |) by now.
-        assert!(state.done_first);
+    }
+
+    pub fn is_selection_written(&self) -> bool {
+        self.state.done_first
     }
 }
 
@@ -414,12 +417,13 @@ impl SelectionWritingState {
 
 #[cfg(test)]
 mod test {
-    use speculoos::{prelude::*, AssertionFailure, Spec};
     use std::collections::HashSet;
+
+    use speculoos::{prelude::*, AssertionFailure, Spec};
     use widestring::Utf16String;
 
     use crate::dom::{parser, Dom, DomLocation};
-    use crate::tests::testutils_composer_model::{cm, tx};
+    use crate::tests::testutils_composer_model::{cm, restore_whitespace, tx};
     use crate::tests::testutils_conversion::utf16;
     use crate::{ComposerModel, ComposerState, DomHandle, DomNode, Location};
 
@@ -775,7 +779,7 @@ mod test {
     {
         fn roundtrips(&self) {
             let subject = self.subject.as_ref();
-            let output = tx(&cm(subject));
+            let output = restore_whitespace(&tx(&cm(subject)));
             if output != subject {
                 AssertionFailure::from_spec(self)
                     .with_expected(String::from(subject))

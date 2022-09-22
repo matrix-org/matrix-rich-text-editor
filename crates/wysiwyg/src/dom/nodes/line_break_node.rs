@@ -71,13 +71,18 @@ where
     fn fmt_html(
         &self,
         f: &mut HtmlFormatter<S>,
-        _: Option<&mut SelectionWriter>,
+        selection_writer: Option<&mut SelectionWriter>,
+        _: bool,
     ) {
+        let cur_pos = f.len();
         f.write_char(HtmlChar::Lt);
         f.write(self.name().as_slice());
         f.write_char(HtmlChar::Space);
         f.write_char(HtmlChar::ForwardSlash);
         f.write_char(HtmlChar::Gt);
+        if let Some(sel_writer) = selection_writer {
+            sel_writer.write_selection_line_break_node(f, cur_pos, self);
+        }
     }
 }
 

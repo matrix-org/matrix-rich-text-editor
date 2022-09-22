@@ -61,6 +61,50 @@ where
     pub fn set_handle(&mut self, handle: DomHandle) {
         self.handle = handle;
     }
+
+    fn handle_several_whitespaces(
+        formatter: &mut HtmlFormatter<S>,
+        pos: usize,
+        is_last_node_in_parent: bool,
+    ) {
+        let mut ranges_to_replace = Vec::new();
+        let mut current_range = usize::MAX..usize::MAX;
+        let mut whitespaces: usize = 0;
+        let mut needs_to_replace = false;
+        let w = S::c_from_char(' ');
+        let nbsp = S::c_from_char('\u{A0}');
+        for (i, c) in formatter.chars_from(pos..).iter().enumerate() {
+            if *c == w || *c == nbsp {
+                if *c == w {
+                    needs_to_replace = true;
+                }
+                if current_range.start == usize::MAX {
+                    whitespaces = 1;
+                    current_range.start = i + pos;
+                } else {
+                    whitespaces += 1;
+                }
+            } else {
+                if needs_to_replace && whitespaces > 1 {
+                    current_range.end = i + pos;
+                    ranges_to_replace
+                        .push((current_range.clone(), whitespaces));
+                }
+                needs_to_replace = false;
+                current_range = usize::MAX..usize::MAX;
+            }
+        }
+        if is_last_node_in_parent && needs_to_replace {
+            current_range.end = formatter.len();
+            ranges_to_replace.push((current_range.clone(), whitespaces));
+        }
+
+        for (range, whitespaces) in ranges_to_replace.iter().rev() {
+            let replacement: Vec<S::CodeUnit> =
+                (0..*whitespaces).map(|_| nbsp.clone()).collect();
+            formatter.write_at_range(range.clone(), &replacement);
+        }
+    }
 }
 
 impl<S> ToHtml<S> for TextNode<S>
@@ -70,12 +114,18 @@ where
     fn fmt_html(
         &self,
         f: &mut HtmlFormatter<S>,
-        _: Option<&mut SelectionWriter>,
+        selection_writer: Option<&mut SelectionWriter>,
+        is_last_node_in_parent: bool,
     ) {
+        let cur_pos = f.len();
         let string = self.data.to_utf8();
         let mut escaped = String::new();
         html_escape::encode_text_to_string(&string, &mut escaped);
         f.write(S::from_str(&escaped).as_slice());
+        Self::handle_several_whitespaces(f, cur_pos, is_last_node_in_parent);
+        if let Some(selection_writer) = selection_writer {
+            selection_writer.write_selection_text_node(f, cur_pos, self);
+        }
     }
 }
 

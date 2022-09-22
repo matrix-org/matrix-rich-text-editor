@@ -153,11 +153,18 @@ where
         &self,
         f: &mut HtmlFormatter<S>,
         selection_writer: Option<&mut SelectionWriter>,
+        is_last_node_in_parent: bool,
     ) {
         match self {
-            DomNode::Container(s) => s.fmt_html(f, selection_writer),
-            DomNode::LineBreak(s) => s.fmt_html(f, selection_writer),
-            DomNode::Text(s) => s.fmt_html(f, selection_writer),
+            DomNode::Container(s) => {
+                s.fmt_html(f, selection_writer, is_last_node_in_parent)
+            }
+            DomNode::LineBreak(s) => {
+                s.fmt_html(f, selection_writer, is_last_node_in_parent)
+            }
+            DomNode::Text(s) => {
+                s.fmt_html(f, selection_writer, is_last_node_in_parent)
+            }
         }
     }
 }
