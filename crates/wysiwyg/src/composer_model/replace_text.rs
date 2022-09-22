@@ -201,8 +201,7 @@ where
                             // Cursor is after line break, no need to delete
                         }
                         _ => panic!(
-                            "Should not get SameNode range for start of \
-                        line break!"
+                            "Should not get a range at start of a line break!"
                         ),
                     }
                     if start >= loc.position && end == loc.position + 1 {
