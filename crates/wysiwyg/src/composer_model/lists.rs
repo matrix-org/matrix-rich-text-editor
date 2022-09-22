@@ -17,7 +17,7 @@ use std::collections::HashMap;
 use crate::composer_model::base::{slice_from, slice_to};
 use crate::dom::nodes::{ContainerNode, DomNode};
 use crate::dom::to_raw_text::ToRawText;
-use crate::dom::{DomHandle, DomLocation, MultipleNodesRange, Range};
+use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, ListType, Location, UnicodeString};
 
 impl<S> ComposerModel<S>
@@ -119,23 +119,17 @@ where
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
 
-        match range {
-            Range::SameNode(range) => {
-                let mrange =
-                    self.state.dom.convert_same_node_range_to_multi(range);
-                self.toggle_list_range(list_type, mrange)
-            }
-            Range::NoNode => self.create_list(list_type),
-            Range::MultipleNodes(range) => {
-                self.toggle_list_range(list_type, range)
-            }
+        if range.is_empty() {
+            self.create_list(list_type)
+        } else {
+            self.toggle_list_range(list_type, range)
         }
     }
 
     fn toggle_list_range(
         &mut self,
         list_type: ListType,
-        range: MultipleNodesRange,
+        range: Range,
     ) -> ComposerUpdate<S> {
         let leaves: Vec<&DomLocation> = range.leaves().collect();
         if leaves.len() == 1 {
@@ -217,34 +211,25 @@ where
         self.push_state_to_history();
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
-        match range {
-            Range::SameNode(range) => {
-                let mrange =
-                    self.state.dom.convert_same_node_range_to_multi(range);
-                self.create_list_range(list_type, mrange)
-            }
 
-            Range::NoNode => {
-                self.state.dom.append_child(DomNode::new_list(
-                    list_type,
-                    vec![DomNode::Container(ContainerNode::new_list_item(
-                        S::from_str("li"),
-                        vec![DomNode::new_text(S::from_str(""))],
-                    ))],
-                ));
-                return self.create_update_replace_all();
-            }
-
-            Range::MultipleNodes(range) => {
-                self.create_list_range(list_type, range)
-            }
+        if range.is_empty() {
+            self.state.dom.append_child(DomNode::new_list(
+                list_type,
+                vec![DomNode::Container(ContainerNode::new_list_item(
+                    S::from_str("li"),
+                    vec![DomNode::new_text(S::from_str(""))],
+                ))],
+            ));
+            self.create_update_replace_all()
+        } else {
+            self.create_list_range(list_type, range)
         }
     }
 
     fn create_list_range(
         &mut self,
         list_type: ListType,
-        range: MultipleNodesRange,
+        range: Range,
     ) -> ComposerUpdate<S> {
         let leaves: Vec<&DomLocation> = range.leaves().collect();
         if leaves.len() == 1 {
@@ -393,7 +378,7 @@ where
         }
     }
 
-    pub fn can_indent(&self, locations: Vec<DomLocation>) -> bool {
+    pub fn can_indent(&self, locations: &Vec<DomLocation>) -> bool {
         for loc in locations {
             if loc.is_leaf && !self.can_indent_handle(&loc.node_handle) {
                 return false;
@@ -418,7 +403,7 @@ where
         false
     }
 
-    pub fn can_unindent(&self, locations: Vec<DomLocation>) -> bool {
+    pub fn can_unindent(&self, locations: &Vec<DomLocation>) -> bool {
         for loc in locations {
             if loc.is_leaf && !self.can_unindent_handle(&loc.node_handle) {
                 return false;
@@ -444,58 +429,30 @@ where
     pub fn indent(&mut self) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
-        match range {
-            Range::SameNode(r) => {
-                let mrange = self.state.dom.convert_same_node_range_to_multi(r);
-                if self.can_indent(mrange.locations.clone()) {
-                    self.indent_locations(mrange.locations);
-                    self.create_update_replace_all()
-                } else {
-                    ComposerUpdate::keep()
-                }
-            }
-            Range::MultipleNodes(r) => {
-                if self.can_indent(r.locations.clone()) {
-                    self.indent_locations(r.locations);
-                    self.create_update_replace_all()
-                } else {
-                    ComposerUpdate::keep()
-                }
-            }
-            _ => ComposerUpdate::keep(),
+        if !range.locations.is_empty() && self.can_indent(&range.locations) {
+            self.indent_locations(&range.locations);
+            self.create_update_replace_all()
+        } else {
+            ComposerUpdate::keep()
         }
     }
 
     pub fn unindent(&mut self) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
-        match range {
-            Range::SameNode(r) => {
-                let mrange = self.state.dom.convert_same_node_range_to_multi(r);
-                if self.can_unindent(mrange.locations.clone()) {
-                    self.unindent_locations(mrange.locations);
-                    self.create_update_replace_all()
-                } else {
-                    ComposerUpdate::keep()
-                }
-            }
-            Range::MultipleNodes(r) => {
-                if self.can_unindent(r.locations.clone()) {
-                    self.unindent_locations(r.locations);
-                    self.create_update_replace_all()
-                } else {
-                    ComposerUpdate::keep()
-                }
-            }
-            _ => ComposerUpdate::keep(),
+        if self.can_unindent(&range.locations) {
+            self.unindent_locations(&range.locations);
+            self.create_update_replace_all()
+        } else {
+            ComposerUpdate::keep()
         }
     }
 
-    fn indent_locations(&mut self, locations: Vec<DomLocation>) {
-        self.indent_handles(Self::leaf_handles_from_locations(locations));
+    fn indent_locations(&mut self, locations: &Vec<DomLocation>) {
+        self.indent_handles(&Self::leaf_handles_from_locations(locations));
     }
 
-    fn indent_handles(&mut self, handles: Vec<DomHandle>) {
+    fn indent_handles(&mut self, handles: &Vec<DomHandle>) {
         let by_list_sorted = Self::group_sorted_handles_by_list_parent(handles);
 
         for (parent_handle, handles) in by_list_sorted.iter().rev() {
@@ -619,11 +576,11 @@ where
         None
     }
 
-    pub fn unindent_locations(&mut self, locations: Vec<DomLocation>) {
-        self.unindent_handles(Self::leaf_handles_from_locations(locations));
+    pub fn unindent_locations(&mut self, locations: &Vec<DomLocation>) {
+        self.unindent_handles(&Self::leaf_handles_from_locations(locations));
     }
 
-    fn unindent_handles(&mut self, handles: Vec<DomHandle>) {
+    fn unindent_handles(&mut self, handles: &Vec<DomHandle>) {
         let by_list_sorted = Self::group_sorted_handles_by_list_parent(handles);
 
         for (list_handle, handles) in by_list_sorted.iter().rev() {
@@ -700,7 +657,7 @@ where
     }
 
     fn leaf_handles_from_locations(
-        locations: Vec<DomLocation>,
+        locations: &Vec<DomLocation>,
     ) -> Vec<DomHandle> {
         locations
             .iter()
@@ -715,7 +672,7 @@ where
     }
 
     fn group_sorted_handles_by_list_parent(
-        handles: Vec<DomHandle>,
+        handles: &Vec<DomHandle>,
     ) -> Vec<(DomHandle, Vec<DomHandle>)> {
         let mut by_list: HashMap<DomHandle, Vec<DomHandle>> = HashMap::new();
         for handle in handles.iter() {
@@ -765,27 +722,27 @@ mod tests {
     fn can_indent_several_items_if_first_is_not_included() {
         let model = cm("<ul><li>First item</li><li>{Second item</li><li>Third item}|</li></ul>");
         let locations = get_range_locations(&model);
-        assert_eq!(true, model.can_indent(locations));
+        assert_eq!(true, model.can_indent(&locations));
     }
 
     #[test]
     fn cannot_indent_several_items_if_first_is_included() {
         let model = cm("<ul><li>{First item</li><li>Second item</li><li>Third item}|</li></ul>");
         let locations = get_range_locations(&model);
-        assert_eq!(false, model.can_indent(locations));
+        assert_eq!(false, model.can_indent(&locations));
     }
 
     #[test]
     fn indent_list_item_works() {
         let mut model = cm("<ul><li>First item</li><li>Second item</li><li>Third item|</li></ul>");
-        model.indent_handles(vec![DomHandle::from_raw(vec![0, 1, 0])]);
+        model.indent_handles(&vec![DomHandle::from_raw(vec![0, 1, 0])]);
         assert_eq!(tx(&model), "<ul><li>First item<ul><li>Second item</li></ul></li><li>Third item|</li></ul>");
     }
 
     #[test]
     fn indent_list_item_to_previous_works() {
         let mut model = cm("<ul><li>First item<ul><li>Second item</li></ul></li><li>Third item|</li></ul>");
-        model.indent_handles(vec![DomHandle::from_raw(vec![0, 1, 0])]);
+        model.indent_handles(&vec![DomHandle::from_raw(vec![0, 1, 0])]);
         assert_eq!(tx(&model), "<ul><li>First item<ul><li>Second item</li><li>Third item|</li></ul></li></ul>");
     }
 
@@ -800,14 +757,14 @@ mod tests {
     fn can_unindent_simple_case_works() {
         let model = cm("<ul><li>First item<ul><li>{Second item</li><li>Third item}|</li></ul></li></ul>");
         let locations = get_range_locations(&model);
-        assert_eq!(true, model.can_unindent(locations));
+        assert_eq!(true, model.can_unindent(&locations));
     }
 
     #[test]
     fn can_unindent_with_only_one_list_level_fails() {
         let model = cm("<ul><li>First item</li><li>{Second item</li><li>Third item}|</li></ul>");
         let locations = get_range_locations(&model);
-        assert_eq!(false, model.can_unindent(locations));
+        assert_eq!(false, model.can_unindent(&locations));
     }
 
     #[test]
@@ -815,7 +772,7 @@ mod tests {
         let mut model =
             cm("<ul><li>First item<ul><li>{Second item}|</li></ul></li></ul>");
         let handles = vec![DomHandle::from_raw(vec![0, 0, 1, 0, 0])];
-        model.unindent_handles(handles);
+        model.unindent_handles(&handles);
         assert_eq!(
             tx(&model),
             "<ul><li>First item</li><li>{Second item}|</li></ul>"
@@ -827,10 +784,6 @@ mod tests {
     ) -> Vec<DomLocation> {
         let (start, end) = model.safe_selection();
         let range = model.state.dom.find_range(start, end);
-        if let Range::MultipleNodes(r) = range {
-            r.locations
-        } else {
-            panic!("No multiple node range found");
-        }
+        range.locations
     }
 }

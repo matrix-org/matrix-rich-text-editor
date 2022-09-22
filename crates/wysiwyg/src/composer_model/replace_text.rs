@@ -14,7 +14,7 @@
 
 use crate::composer_model::base::{slice_from, slice_to};
 use crate::dom::nodes::DomNode;
-use crate::dom::{DomHandle, DomLocation, MultipleNodesRange, Range};
+use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
 
 impl<S> ComposerModel<S>
@@ -46,17 +46,7 @@ where
 
         if s == e {
             let range = self.state.dom.find_range(s, e);
-            match range {
-                Range::SameNode(range) => {
-                    let mrange =
-                        self.state.dom.convert_same_node_range_to_multi(range);
-                    self.enter_with_zero_length_selection(mrange)
-                }
-                Range::MultipleNodes(range) => {
-                    self.enter_with_zero_length_selection(range)
-                }
-                Range::NoNode => panic!("Pressing enter with no range!"),
-            }
+            self.enter_with_zero_length_selection(range)
         } else {
             // Clear selection then enter.
             // TODO: adds an extra entry to the undo log, I think.
@@ -67,7 +57,7 @@ where
 
     fn enter_with_zero_length_selection(
         &mut self,
-        range: MultipleNodesRange,
+        range: Range,
     ) -> ComposerUpdate<S> {
         let leaves: Vec<&DomLocation> = range.leaves().collect();
         if leaves.len() == 1 {
@@ -100,20 +90,12 @@ where
     ) -> ComposerUpdate<S> {
         let len = new_text.len();
 
-        match self.state.dom.find_range(start, end) {
-            Range::SameNode(range) => {
-                let mrange =
-                    self.state.dom.convert_same_node_range_to_multi(range);
-                self.replace_multiple_nodes(mrange, new_text);
-            }
-            Range::MultipleNodes(range) => {
-                self.replace_multiple_nodes(range, new_text)
-            }
-            Range::NoNode => {
-                self.state.dom.append_child(DomNode::new_text(new_text));
-
-                start = 0;
-            }
+        let range = self.state.dom.find_range(start, end);
+        if range.is_empty() {
+            self.state.dom.append_child(DomNode::new_text(new_text));
+            start = 0;
+        } else {
+            self.replace_multiple_nodes(range, new_text)
         }
 
         self.state.start = Location::from(start + len);
@@ -124,11 +106,7 @@ where
         self.create_update_replace_all()
     }
 
-    fn replace_multiple_nodes(
-        &mut self,
-        range: MultipleNodesRange,
-        new_text: S,
-    ) {
+    fn replace_multiple_nodes(&mut self, range: Range, new_text: S) {
         let len = new_text.len();
         let (to_add, to_delete) =
             self.replace_in_text_nodes(range.clone(), new_text);
@@ -175,7 +153,7 @@ where
     /// deletions, and the handles of the deletions will remain valid.
     fn replace_in_text_nodes(
         &mut self,
-        range: MultipleNodesRange,
+        range: Range,
         new_text: S,
     ) -> (Vec<(DomHandle, usize, DomNode<S>)>, Vec<DomHandle>) {
         let mut to_delete = Vec::new();

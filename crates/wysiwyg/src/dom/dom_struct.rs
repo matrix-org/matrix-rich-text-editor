@@ -16,13 +16,10 @@ use std::fmt::Display;
 
 use crate::composer_model::base::{slice_from, slice_to};
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode};
-use crate::dom::SameNodeRange;
 use crate::dom::{
     find_range, to_raw_text::ToRawText, DomHandle, Range, ToTree, UnicodeString,
 };
 use crate::ToHtml;
-
-use super::MultipleNodesRange;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Dom<S>
@@ -116,13 +113,6 @@ where
     /// selected. The returned range lists all the Dom nodes involved.
     pub fn find_range(&self, start: usize, end: usize) -> Range {
         find_range::find_range(self, start, end)
-    }
-
-    pub(crate) fn convert_same_node_range_to_multi(
-        &self,
-        _range: SameNodeRange,
-    ) -> MultipleNodesRange {
-        panic!("We should not get any SameNodeRanges any more!");
     }
 
     pub(crate) fn document_handle(&self) -> DomHandle {

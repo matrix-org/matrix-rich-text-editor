@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind};
-use crate::dom::{DomLocation, Range};
+use crate::dom::DomLocation;
 use crate::menu_state::MenuStateUpdate;
 use crate::ComposerAction::{Indent, UnIndent};
 use crate::{
@@ -30,21 +30,8 @@ where
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
         let reversed_actions: HashSet<ComposerAction>;
-        match range {
-            Range::SameNode(range) => {
-                let mrange =
-                    self.state.dom.convert_same_node_range_to_multi(range);
-                reversed_actions = self
-                    .compute_reversed_actions_from_locations(&mrange.locations);
-            }
-            Range::MultipleNodes(range) => {
-                reversed_actions = self
-                    .compute_reversed_actions_from_locations(&range.locations);
-            }
-            _ => {
-                reversed_actions = HashSet::new();
-            }
-        }
+        reversed_actions =
+            self.compute_reversed_actions_from_locations(&range.locations);
         let disabled_actions = self.compute_disabled_actions();
 
         if reversed_actions == self.reversed_actions
@@ -156,27 +143,18 @@ where
 
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
-        let computed_disabled_actions = match range {
-            Range::SameNode(range) => {
-                let mrange =
-                    self.state.dom.convert_same_node_range_to_multi(range);
-                self.compute_disabled_actions_for_locations(mrange.locations)
-            }
-            Range::MultipleNodes(range) => {
-                self.compute_disabled_actions_for_locations(range.locations)
-            }
-            _ => HashSet::new(),
-        };
-        disabled_actions.extend(computed_disabled_actions);
+        disabled_actions.extend(
+            self.compute_disabled_actions_for_locations(&range.locations),
+        );
         disabled_actions
     }
 
     fn compute_disabled_actions_for_locations(
         &self,
-        locations: Vec<DomLocation>,
+        locations: &Vec<DomLocation>,
     ) -> HashSet<ComposerAction> {
         let mut disabled_actions = HashSet::new();
-        if !self.can_indent(locations.clone()) {
+        if !self.can_indent(locations) {
             disabled_actions.insert(Indent);
         }
         if !self.can_unindent(locations) {

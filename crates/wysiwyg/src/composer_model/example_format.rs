@@ -17,8 +17,8 @@ use widestring::Utf16String;
 
 use crate::dom::nodes::TextNode;
 use crate::dom::parser::parse;
-use crate::dom::{Dom, DomLocation, MultipleNodesRange, Range};
-use crate::{ComposerModel, ComposerState, DomNode, Location};
+use crate::dom::{Dom, DomLocation, Range};
+use crate::{ComposerModel, ComposerState, DomHandle, DomNode, Location};
 
 impl ComposerModel<Utf16String> {
     /// Convenience function to allow working with ComposerModel instances
@@ -149,24 +149,12 @@ impl ComposerModel<Utf16String> {
         let range = dom.find_range(state.start.into(), state.end.into());
 
         // Modify the text nodes to add {, } and |
-        match range {
-            Range::SameNode(range) => {
-                let mrange = dom.convert_same_node_range_to_multi(range);
-                write_selection_multi(
-                    &mut dom,
-                    mrange,
-                    state.start.into(),
-                    state.end.into(),
-                )
-            }
-            Range::NoNode => (), // No selection, so insert no text
-            Range::MultipleNodes(range) => write_selection_multi(
-                &mut dom,
-                range,
-                state.start.into(),
-                state.end.into(),
-            ),
-        }
+        write_selection_multi(
+            &mut dom,
+            range,
+            state.start.into(),
+            state.end.into(),
+        );
 
         dom.to_string().replace("\u{200b}", "~")
     }
@@ -377,7 +365,7 @@ impl SelectionWritingState {
 /// end is the absolute position of the end of the range
 fn write_selection_multi(
     dom: &mut Dom<Utf16String>,
-    range: MultipleNodesRange,
+    range: Range,
     start: usize,
     end: usize,
 ) {
@@ -385,6 +373,17 @@ fn write_selection_multi(
         SelectionWritingState::new(start, end, dom.document().text_len());
 
     let mut nodes_to_add = Vec::new();
+
+    if range.is_empty() {
+        // TODO: weirdly we don't add "|" here
+        nodes_to_add.push((
+            DomHandle::from_raw(vec![1]),
+            0,
+            DomNode::new_text(Utf16String::from_str("")),
+        ));
+        state.done_first = true;
+    }
+
     for location in range.locations {
         let handle = &location.node_handle;
         let mut node = dom.lookup_node_mut(handle);
@@ -419,7 +418,8 @@ fn write_selection_multi(
         }
     }
 
-    // Since we are in a multi-node selection, we should always write {
+    // we should always have written at least the start of the selection
+    // ({ or |) by now.
     assert!(state.done_first);
 }
 

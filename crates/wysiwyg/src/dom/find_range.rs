@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::dom::nodes::{ContainerNode, DomNode, LineBreakNode, TextNode};
-use crate::dom::range::{DomLocation, MultipleNodesRange};
+use crate::dom::range::DomLocation;
 use crate::dom::{Dom, DomHandle, FindResult, Range};
 use crate::UnicodeString;
 use std::cmp::{max, min};
@@ -23,7 +23,7 @@ where
     S: UnicodeString,
 {
     if dom.children().is_empty() {
-        return Range::NoNode;
+        return Range::new(Vec::new());
     }
 
     // If end < start, we swap start & end to make calculations easier, then
@@ -35,6 +35,7 @@ where
         (start, end)
     };
 
+    // TODO: is there really a difference between find_pos and find_range?
     let result = find_pos(dom, &dom.document_handle(), s, e);
     match result {
         FindResult::Found(locations) => {
@@ -46,11 +47,9 @@ where
             } else {
                 locations
             };
-            Range::MultipleNodes(MultipleNodesRange::new(&locations))
+            Range::new(&locations)
         }
-        FindResult::NotFound => {
-            Range::MultipleNodes(MultipleNodesRange::new(Vec::new()))
-        }
+        FindResult::NotFound => Range::new(Vec::new()),
     }
 }
 
@@ -249,7 +248,7 @@ mod test {
 
     fn ranges_to_html(
         dom: &Dom<Utf16String>,
-        range: &MultipleNodesRange,
+        range: &Range,
     ) -> Vec<Utf16String> {
         range
             .locations
@@ -325,10 +324,10 @@ mod test {
     // TODO: comprehensive test like above for non-flat nodes
 
     #[test]
-    fn finding_a_range_within_an_empty_dom_returns_no_node() {
+    fn finding_a_range_within_an_empty_dom_returns_no_nodes() {
         let d = dom(&[]);
         let range = d.find_range(0, 0);
-        assert_eq!(range, Range::NoNode);
+        assert_eq!(range, Range::new(Vec::new()));
     }
 
     #[test]
@@ -336,24 +335,20 @@ mod test {
         let d = dom(&[tn("foo bar baz")]);
         let range = d.find_range(4, 7);
 
-        if let Range::MultipleNodes(range) = range {
-            let leaves: Vec<&DomLocation> = range.leaves().collect();
-            assert_eq!(leaves.len(), 1);
+        let leaves: Vec<&DomLocation> = range.leaves().collect();
+        assert_eq!(leaves.len(), 1);
 
-            let loc = leaves[0];
-            assert_eq!(loc.start_offset, 4);
-            assert_eq!(loc.end_offset, 7);
+        let loc = leaves[0];
+        assert_eq!(loc.start_offset, 4);
+        assert_eq!(loc.end_offset, 7);
 
-            if let DomNode::Text(t) = d.lookup_node(&loc.node_handle) {
-                assert_eq!(*t.data(), utf16("foo bar baz"));
-            } else {
-                panic!("Should have been a text node!")
-            }
-
-            assert_eq!(loc.node_handle.raw(), &vec![0]);
+        if let DomNode::Text(t) = d.lookup_node(&loc.node_handle) {
+            assert_eq!(*t.data(), utf16("foo bar baz"));
         } else {
-            panic!("Should have been a MultipleNodesRange: {:?}", range)
+            panic!("Should have been a text node!")
         }
+
+        assert_eq!(loc.node_handle.raw(), &vec![0]);
     }
 
     #[test]
@@ -361,24 +356,20 @@ mod test {
         let d = dom(&[tn("foo bar baz")]);
         let range = d.find_range(4, 11);
 
-        if let Range::MultipleNodes(range) = range {
-            let leaves: Vec<&DomLocation> = range.leaves().collect();
-            assert_eq!(leaves.len(), 1);
+        let leaves: Vec<&DomLocation> = range.leaves().collect();
+        assert_eq!(leaves.len(), 1);
 
-            let loc = leaves[0];
-            assert_eq!(loc.start_offset, 4);
-            assert_eq!(loc.end_offset, 11);
+        let loc = leaves[0];
+        assert_eq!(loc.start_offset, 4);
+        assert_eq!(loc.end_offset, 11);
 
-            if let DomNode::Text(t) = d.lookup_node(&loc.node_handle) {
-                assert_eq!(*t.data(), utf16("foo bar baz"));
-            } else {
-                panic!("Should have been a text node!")
-            }
-
-            assert_eq!(loc.node_handle.raw(), &vec![0]);
+        if let DomNode::Text(t) = d.lookup_node(&loc.node_handle) {
+            assert_eq!(*t.data(), utf16("foo bar baz"));
         } else {
-            panic!("Should have been a MultipleNodesRange: {:?}", range)
+            panic!("Should have been a text node!")
         }
+
+        assert_eq!(loc.node_handle.raw(), &vec![0]);
     }
 
     #[test]
@@ -386,121 +377,101 @@ mod test {
         let d = dom(&[tn("foo "), b(&[tn("bar")]), tn(" baz")]);
         let range = d.find_range(5, 6);
 
-        if let Range::MultipleNodes(range) = range {
-            let leaves: Vec<&DomLocation> = range.leaves().collect();
-            assert_eq!(leaves.len(), 1);
+        let leaves: Vec<&DomLocation> = range.leaves().collect();
+        assert_eq!(leaves.len(), 1);
 
-            let loc = leaves[0];
-            assert_eq!(loc.start_offset, 1);
-            assert_eq!(loc.end_offset, 2);
+        let loc = leaves[0];
+        assert_eq!(loc.start_offset, 1);
+        assert_eq!(loc.end_offset, 2);
 
-            if let DomNode::Text(t) = d.lookup_node(&loc.node_handle) {
-                assert_eq!(*t.data(), utf16("bar"));
-            } else {
-                panic!("Should have been a text node!")
-            }
-
-            assert_eq!(loc.node_handle.raw(), &vec![1, 0]);
+        if let DomNode::Text(t) = d.lookup_node(&loc.node_handle) {
+            assert_eq!(*t.data(), utf16("bar"));
         } else {
-            panic!("Should have been a MultipleNodesRange: {:?}", range)
+            panic!("Should have been a text node!")
         }
+
+        assert_eq!(loc.node_handle.raw(), &vec![1, 0]);
     }
 
     #[test]
     fn finding_a_range_across_several_nodes_works() {
         let d = cm("test<b>ing a </b>new feature|").state.dom;
         let range = d.find_range(2, 12);
-        if let Range::MultipleNodes(r) = range {
-            // 3 text nodes + bold node
-            assert_eq!(4, r.locations.len());
-            let html_of_ranges = ranges_to_html(&d, &r);
-            assert_eq!(utf16("test"), html_of_ranges[0]);
-            assert_eq!(utf16("ing a "), html_of_ranges[1]);
-            assert_eq!(utf16("<b>ing a </b>"), html_of_ranges[2]);
-            assert_eq!(utf16("new feature"), html_of_ranges[3]);
-        } else {
-            panic!("Should have been a MultipleNodesRange {:?}", range);
-        }
+
+        // 3 text nodes + bold node
+        assert_eq!(4, range.locations.len());
+        let html_of_ranges = ranges_to_html(&d, &range);
+        assert_eq!(utf16("test"), html_of_ranges[0]);
+        assert_eq!(utf16("ing a "), html_of_ranges[1]);
+        assert_eq!(utf16("<b>ing a </b>"), html_of_ranges[2]);
+        assert_eq!(utf16("new feature"), html_of_ranges[3]);
     }
 
     #[test]
     fn finding_a_range_across_several_nested_nodes_works() {
         let d = cm("test<b>ing <i>a </i></b>new feature|").state.dom;
         let range = d.find_range(2, 12);
-        if let Range::MultipleNodes(r) = range {
-            // 4 text nodes + bold node + italic node
-            assert_eq!(6, r.locations.len());
-            let html_of_ranges = ranges_to_html(&d, &r);
-            assert_eq!(utf16("test"), html_of_ranges[0]);
-            assert_eq!(utf16("ing "), html_of_ranges[1]);
-            assert_eq!(utf16("a "), html_of_ranges[2]);
-            assert_eq!(utf16("<i>a </i>"), html_of_ranges[3]);
-            assert_eq!(utf16("<b>ing <i>a </i></b>"), html_of_ranges[4]);
-            assert_eq!(utf16("new feature"), html_of_ranges[5]);
-        } else {
-            panic!("Should have been a MultipleNodesRange {:?}", range);
-        }
+        // 4 text nodes + bold node + italic node
+        assert_eq!(6, range.locations.len());
+        let html_of_ranges = ranges_to_html(&d, &range);
+        assert_eq!(utf16("test"), html_of_ranges[0]);
+        assert_eq!(utf16("ing "), html_of_ranges[1]);
+        assert_eq!(utf16("a "), html_of_ranges[2]);
+        assert_eq!(utf16("<i>a </i>"), html_of_ranges[3]);
+        assert_eq!(utf16("<b>ing <i>a </i></b>"), html_of_ranges[4]);
+        assert_eq!(utf16("new feature"), html_of_ranges[5]);
     }
 
     #[test]
     fn finding_a_range_inside_several_nested_nodes_returns_text_node() {
         let d = cm("test<b>ing <i>a </i></b>new feature|").state.dom;
         let range = d.find_range(9, 10);
-        if let Range::MultipleNodes(r) = range {
-            // Selected the 'a' character inside the <i> tag, but as it only covers it partially,
-            // only the text node is selected
-            assert_eq!(
-                r,
-                MultipleNodesRange {
-                    locations: vec![
-                        DomLocation {
-                            node_handle: DomHandle::from_raw(vec![1, 1, 0]),
-                            start_offset: 1,
-                            end_offset: 2,
-                            position: 8,
-                            length: 2,
-                            is_leaf: true
-                        },
-                        DomLocation {
-                            node_handle: DomHandle::from_raw(vec![1, 1]),
-                            start_offset: 1,
-                            end_offset: 2,
-                            position: 8,
-                            length: 2,
-                            is_leaf: false
-                        },
-                        DomLocation {
-                            node_handle: DomHandle::from_raw(vec![1]),
-                            start_offset: 5,
-                            end_offset: 6,
-                            position: 4,
-                            length: 6,
-                            is_leaf: false
-                        }
-                    ]
-                }
-            );
-        } else {
-            panic!("Should have been a MultipleNodesRange {:?}", range);
-        }
+        // Selected the 'a' character inside the <i> tag, but as it only
+        // covers it partially, only the text node is selected
+        assert_eq!(
+            range,
+            Range {
+                locations: vec![
+                    DomLocation {
+                        node_handle: DomHandle::from_raw(vec![1, 1, 0]),
+                        start_offset: 1,
+                        end_offset: 2,
+                        position: 8,
+                        length: 2,
+                        is_leaf: true
+                    },
+                    DomLocation {
+                        node_handle: DomHandle::from_raw(vec![1, 1]),
+                        start_offset: 1,
+                        end_offset: 2,
+                        position: 8,
+                        length: 2,
+                        is_leaf: false
+                    },
+                    DomLocation {
+                        node_handle: DomHandle::from_raw(vec![1]),
+                        start_offset: 5,
+                        end_offset: 6,
+                        position: 4,
+                        length: 6,
+                        is_leaf: false
+                    }
+                ]
+            }
+        );
     }
 
     #[test]
-    fn finding_a_range_wrapping_several_nested_nodes_selects_text_node_and_parent(
-    ) {
+    fn finding_a_range_spanning_nested_nodes_selects_text_node_and_parent() {
         let d = cm("test<b>ing <i>a </i></b>new feature|").state.dom;
         // The range of the whole <i> tag
         let range = d.find_range(8, 11);
-        if let Range::MultipleNodes(r) = range {
-            // 2 text nodes + italic node
-            assert_eq!(4, r.locations.len());
-            let html_of_ranges = ranges_to_html(&d, &r);
-            assert_eq!(utf16("a "), html_of_ranges[0]);
-            assert_eq!(utf16("<i>a </i>"), html_of_ranges[1]);
-            assert_eq!(utf16("<b>ing <i>a </i></b>"), html_of_ranges[2]);
-            assert_eq!(utf16("new feature"), html_of_ranges[3]);
-        } else {
-            panic!("Should have been a MultipleNodesRange {:?}", range);
-        }
+        // 2 text nodes + italic node
+        assert_eq!(4, range.locations.len());
+        let html_of_ranges = ranges_to_html(&d, &range);
+        assert_eq!(utf16("a "), html_of_ranges[0]);
+        assert_eq!(utf16("<i>a </i>"), html_of_ranges[1]);
+        assert_eq!(utf16("<b>ing <i>a </i></b>"), html_of_ranges[2]);
+        assert_eq!(utf16("new feature"), html_of_ranges[3]);
     }
 }

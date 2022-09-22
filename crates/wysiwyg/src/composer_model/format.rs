@@ -14,7 +14,7 @@
 
 use crate::composer_model::base::{slice_from, slice_to};
 use crate::dom::nodes::{ContainerNodeKind, DomNode};
-use crate::dom::{Dom, DomHandle, DomLocation, MultipleNodesRange, Range};
+use crate::dom::{Dom, DomHandle, DomLocation, Range};
 use crate::{
     ComposerAction, ComposerModel, ComposerUpdate, InlineFormatType, Location,
     UnicodeString,
@@ -88,24 +88,7 @@ where
         format: InlineFormatType,
     ) {
         let range = self.state.dom.find_range(start, end);
-        match range {
-            Range::SameNode(range) => {
-                let mrange =
-                    self.state.dom.convert_same_node_range_to_multi(range);
-                self.format_several_nodes(&mrange, format);
-            }
-
-            Range::NoNode => {
-                self.state.dom.append_child(DomNode::new_formatting(
-                    format,
-                    vec![DomNode::new_text(S::from_str(""))],
-                ));
-            }
-
-            Range::MultipleNodes(range) => {
-                self.format_several_nodes(&range, format);
-            }
-        }
+        self.format_several_nodes(&range, format);
     }
 
     pub fn unformat(&mut self, format: InlineFormatType) -> ComposerUpdate<S> {
@@ -113,23 +96,8 @@ where
         self.push_state_to_history();
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
-        match range {
-            Range::SameNode(range) => {
-                let mrange =
-                    self.state.dom.convert_same_node_range_to_multi(range);
-                self.unformat_several_nodes(s, e, &mrange, format);
-                self.create_update_replace_all()
-            }
-
-            Range::MultipleNodes(range) => {
-                self.unformat_several_nodes(s, e, &range, format);
-                self.create_update_replace_all()
-            }
-
-            Range::NoNode => {
-                panic!("Trying to unformat with no selected node")
-            }
-        }
+        self.unformat_several_nodes(s, e, &range, format);
+        self.create_update_replace_all()
     }
 
     fn check_format_selection_type(
@@ -174,7 +142,7 @@ where
 
     fn format_several_nodes(
         &mut self,
-        range: &MultipleNodesRange,
+        range: &Range,
         format: InlineFormatType,
     ) {
         let selection_type =
@@ -193,7 +161,7 @@ where
         &mut self,
         start: usize,
         end: usize,
-        range: &MultipleNodesRange,
+        range: &Range,
         format: InlineFormatType,
     ) {
         for location in range.locations.iter() {
@@ -421,21 +389,10 @@ mod test {
         model.state.dom.find_range(start.into(), end.into())
     }
 
-    fn find_multiple_range<S: UnicodeString>(
-        model: &ComposerModel<S>,
-    ) -> MultipleNodesRange {
-        let range = find_range(&model);
-        if let Range::MultipleNodes(r) = range {
-            r
-        } else {
-            panic!("Should have been a multiple nodes range, {:?}", range);
-        }
-    }
-
     #[test]
     fn selection_type_extend_if_different_type() {
         let model = cm("{hello <b>wor}|ld</b>");
-        let range = find_multiple_range(&model);
+        let range = find_range(&model);
         let selection_type = model.check_format_selection_type(
             &range.locations,
             &InlineFormatType::Italic,
@@ -446,7 +403,7 @@ mod test {
     #[test]
     fn selection_type_extending_start() {
         let model = cm("hell{o <b>w}|orld</b>");
-        let range = find_multiple_range(&model);
+        let range = find_range(&model);
         let selection_type = model.check_format_selection_type(
             &range.locations,
             &InlineFormatType::Bold,
@@ -457,7 +414,7 @@ mod test {
     #[test]
     fn selection_type_extending_end() {
         let model = cm("<b>hell{o </b>wor}|ld");
-        let range = find_multiple_range(&model);
+        let range = find_range(&model);
         let selection_type = model.check_format_selection_type(
             &range.locations,
             &InlineFormatType::Bold,
@@ -468,7 +425,7 @@ mod test {
     #[test]
     fn selection_type_extending_middle() {
         let model = cm("<b>h{el</b>lo <b>wor}|ld</b>");
-        let range = find_multiple_range(&model);
+        let range = find_range(&model);
         let selection_type = model.check_format_selection_type(
             &range.locations,
             &InlineFormatType::Bold,
@@ -479,7 +436,7 @@ mod test {
     #[test]
     fn selection_type_remove() {
         let model = cm("<b>hel{lo</b><i><b>wor}|ld</b></i>");
-        let range = find_multiple_range(&model);
+        let range = find_range(&model);
         let selection_type = model.check_format_selection_type(
             &range.locations,
             &InlineFormatType::Bold,
@@ -490,7 +447,7 @@ mod test {
     #[test]
     fn selection_type_remove_on_start_edge() {
         let model = cm("{<b>hello </b><i><b>wor}|ld</b></i>");
-        let range = find_multiple_range(&model);
+        let range = find_range(&model);
         let selection_type = model.check_format_selection_type(
             &range.locations,
             &InlineFormatType::Bold,
@@ -501,7 +458,7 @@ mod test {
     #[test]
     fn selection_type_remove_on_ending_edge() {
         let model = cm("<b>hel{lo </b><i><b>world}|</b></i>");
-        let range = find_multiple_range(&model);
+        let range = find_range(&model);
         let selection_type = model.check_format_selection_type(
             &range.locations,
             &InlineFormatType::Bold,
