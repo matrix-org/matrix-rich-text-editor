@@ -235,10 +235,27 @@ where
 
     fn find_next_node(&self, pos: usize) -> Option<DomHandle> {
         let new_range = self.state.dom.find_range(pos, pos);
-        if let Range::SameNode(r) = new_range {
-            Some(r.node_handle)
+        match new_range {
+            Range::SameNode(range) => {
+                let mrange =
+                    self.state.dom.convert_same_node_range_to_multi(range);
+
+                self.find_next_node_range(mrange)
+            }
+            Range::MultipleNodes(range) => self.find_next_node_range(range),
+            Range::NoNode => None,
+        }
+    }
+
+    fn find_next_node_range(
+        &self,
+        range: MultipleNodesRange,
+    ) -> Option<DomHandle> {
+        let leaves: Vec<&DomLocation> = range.leaves().collect();
+        if leaves.len() == 1 {
+            Some(leaves[0].node_handle.clone())
         } else {
-            None
+            panic!("Range for single position contained several leaves!");
         }
     }
 
