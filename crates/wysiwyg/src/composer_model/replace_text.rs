@@ -14,7 +14,7 @@
 
 use crate::composer_model::base::{slice_from, slice_to};
 use crate::dom::nodes::DomNode;
-use crate::dom::{DomHandle, MultipleNodesRange, Range};
+use crate::dom::{DomHandle, DomLocation, MultipleNodesRange, Range};
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
 
 impl<S> ComposerModel<S>
@@ -48,28 +48,46 @@ where
             let range = self.state.dom.find_range(s, e);
             match range {
                 Range::SameNode(range) => {
-                    let parent_list_item_handle = self
-                        .state
-                        .dom
-                        .find_parent_list_item_or_self(&range.node_handle);
-                    if let Some(parent_handle) = parent_list_item_handle {
-                        self.do_enter_in_list(&parent_handle, e, range)
-                    } else {
-                        self.do_enter_in_text(
-                            &range.node_handle,
-                            range.start_offset,
-                        )
-                    }
+                    let mrange =
+                        self.state.dom.convert_same_node_range_to_multi(range);
+                    self.enter_with_zero_length_selection(mrange)
                 }
-                Range::MultipleNodes(_) => {
-                    panic!("Unexpected multiple nodes on a 0 length selection")
+                Range::MultipleNodes(range) => {
+                    self.enter_with_zero_length_selection(range)
                 }
-                Range::NoNode => self.replace_text(S::from_str("\n")),
+                Range::NoNode => panic!("Pressing enter with no range!"),
             }
         } else {
             // Clear selection then enter.
+            // TODO: adds an extra entry to the undo log, I think.
             self.delete();
             self.enter()
+        }
+    }
+
+    fn enter_with_zero_length_selection(
+        &mut self,
+        range: MultipleNodesRange,
+    ) -> ComposerUpdate<S> {
+        let leaves: Vec<&DomLocation> = range.leaves().collect();
+        if leaves.len() == 1 {
+            let location = leaves[0];
+            let handle = &location.node_handle;
+            let parent_list_item_handle =
+                self.state.dom.find_parent_list_item_or_self(handle);
+            if let Some(parent_list_item_handle) = parent_list_item_handle {
+                self.do_enter_in_list(
+                    &parent_list_item_handle,
+                    location.position + location.start_offset,
+                    handle,
+                    location.start_offset,
+                    location.end_offset,
+                )
+            } else {
+                self.do_enter_in_text(handle, location.start_offset)
+            }
+        } else {
+            panic!("Unexpected multiple nodes on a 0 length selection")
         }
     }
 

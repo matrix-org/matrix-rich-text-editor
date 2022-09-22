@@ -17,7 +17,7 @@ use std::collections::HashMap;
 use crate::composer_model::base::{slice_from, slice_to};
 use crate::dom::nodes::{ContainerNode, DomNode};
 use crate::dom::to_raw_text::ToRawText;
-use crate::dom::{DomHandle, DomLocation, Range, SameNodeRange};
+use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, ListType, Location, UnicodeString};
 
 impl<S> ComposerModel<S>
@@ -78,27 +78,36 @@ where
 
     pub(crate) fn do_enter_in_list(
         &mut self,
-        parent_handle: &DomHandle,
-        location: usize,
-        range: SameNodeRange,
+        list_item_handle: &DomHandle,
+        current_cursor_global_location: usize,
+        text_node_handle: &DomHandle,
+        start_offset: usize,
+        end_offset: usize,
     ) -> ComposerUpdate<S> {
-        // do_enter_in_list should only be called on a single location
-        // as selection can be deleted beforehand.
-        assert_eq!(range.start_offset, range.end_offset);
         // Store current Dom
         self.push_state_to_history();
-        let parent_node = self.state.dom.lookup_node(&parent_handle);
-        let list_node_handle = parent_node.handle().parent_handle();
-        if let DomNode::Container(parent) = parent_node {
-            if parent.is_empty_list_item() {
+        let list_item_node = self.state.dom.lookup_node(&list_item_handle);
+        let list_handle = list_item_node.handle().parent_handle();
+        if let DomNode::Container(list_item_node) = list_item_node {
+            if list_item_node.is_empty_list_item() {
+                // Pressing enter in an empty list item means you want to
+                // end the list.
                 self.remove_list_item(
-                    &list_node_handle,
-                    location,
-                    parent_handle.index_in_parent(),
+                    &list_handle,
+                    current_cursor_global_location,
+                    list_item_handle.index_in_parent(),
                     true,
                 );
             } else {
-                self.slice_list_item(&list_node_handle, location, range);
+                // Pressing enter in a non-empty list item splits this item
+                // into two.
+                self.slice_list_item(
+                    &list_handle,
+                    current_cursor_global_location,
+                    text_node_handle,
+                    start_offset,
+                    end_offset,
+                );
             }
             self.create_update_replace_all()
         } else {
@@ -272,18 +281,20 @@ where
 
     fn slice_list_item(
         &mut self,
-        handle: &DomHandle,
+        list_handle: &DomHandle,
         location: usize,
-        range: SameNodeRange,
+        text_node_handle: &DomHandle,
+        start_offset: usize,
+        end_offset: usize,
     ) {
-        let text_node = self.state.dom.lookup_node_mut(&range.node_handle);
+        let text_node = self.state.dom.lookup_node_mut(text_node_handle);
         if let DomNode::Text(ref mut t) = text_node {
             let text = t.data();
             // TODO: should slice container nodes between li and text node as well
-            let new_text = slice_to(text, ..range.start_offset);
-            let new_li_text = slice_from(text, range.end_offset..);
+            let new_text = slice_to(text, ..start_offset);
+            let new_li_text = slice_from(text, end_offset..);
             t.set_data(new_text);
-            let list_node = self.state.dom.lookup_node_mut(&handle);
+            let list_node = self.state.dom.lookup_node_mut(&list_handle);
             if let DomNode::Container(list) = list_node {
                 let add_zwsp = new_li_text.len() == 0;
                 list.append_child(DomNode::new_list_item(
@@ -305,7 +316,7 @@ where
     fn remove_list_item(
         &mut self,
         list_handle: &DomHandle,
-        location: usize,
+        current_cursor_global_location: usize,
         li_index: usize,
         insert_trailing_text_node: bool,
     ) {
@@ -322,7 +333,9 @@ where
                     if parent.children().len() == 0 {
                         parent.append_child(DomNode::new_text(S::from_str("")));
                     }
-                    let new_location = Location::from(location - list_len);
+                    let new_location = Location::from(
+                        current_cursor_global_location - list_len,
+                    );
                     self.state.start = new_location;
                     self.state.end = new_location;
                 } else {
@@ -340,15 +353,17 @@ where
                         parent.append_child(DomNode::new_text(S::from_str(
                             "\u{200b}",
                         )));
-                        let new_location =
-                            Location::from(location - li_len + 1);
+                        let new_location = Location::from(
+                            current_cursor_global_location - li_len + 1,
+                        );
                         self.state.start = new_location;
                         self.state.end = new_location;
                     } else {
                         panic!("Parent node is not a container")
                     }
                 } else {
-                    let new_location = Location::from(location - li_len);
+                    let new_location =
+                        Location::from(current_cursor_global_location - li_len);
                     self.state.start = new_location;
                     self.state.end = new_location;
                 }
