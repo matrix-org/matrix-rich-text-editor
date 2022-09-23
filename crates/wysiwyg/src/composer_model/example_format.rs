@@ -146,8 +146,8 @@ impl ComposerModel<Utf16String> {
     /// See [ComposerModel::from_example_format] for the format used.
     pub fn to_example_format(&self) -> String {
         // Clone the model because we will modify it to add selection markers
-        let state = self.state.clone();
-        let dom = state.dom;
+        let state = &self.state;
+        let dom = &state.dom;
 
         let mut formatter = HtmlFormatter::new();
 
@@ -155,9 +155,9 @@ impl ComposerModel<Utf16String> {
         let range = dom.find_range(state.start.into(), state.end.into());
 
         // Modify the text nodes to add {, } and |
-        let selection_start = self.state.start.into();
-        let selection_end = self.state.end.into();
-        let doc_length = self.state.dom.document().text_len();
+        let selection_start = state.start.into();
+        let selection_end = state.end.into();
+        let doc_length = dom.document().text_len();
         let root = dom.lookup_node(&dom.document_handle());
         let state = SelectionWritingState::new(
             selection_start,
