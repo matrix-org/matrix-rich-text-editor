@@ -21,6 +21,7 @@ use widestring::{Utf16String, Utf32String};
 pub trait UnicodeString:
     Clone
     + std::fmt::Debug
+    + std::fmt::Display
     + Default
     + PartialEq
     + AsRef<[Self::CodeUnit]>
@@ -33,8 +34,6 @@ pub trait UnicodeString:
     /// Convert this character to a code unit.
     /// Panics if this character requires more than one code unit
     fn c_from_char(ch: char) -> Self::CodeUnit;
-
-    fn to_utf8(&self) -> String;
 
     fn push_string(&mut self, s: &Self);
 }
@@ -51,10 +50,6 @@ impl UnicodeString for String {
         let mut buf = [0; 1];
         ch.encode_utf8(&mut buf);
         buf[0]
-    }
-
-    fn to_utf8(&self) -> String {
-        self.clone()
     }
 
     fn push_string(&mut self, s: &Self) {
@@ -76,11 +71,6 @@ impl UnicodeString for Utf16String {
         ret.into_vec()[0]
     }
 
-    fn to_utf8(&self) -> String {
-        // Unwrap can't fail since we encode as UTF-8.
-        String::from_utf8(self.encode_utf8().collect()).unwrap()
-    }
-
     fn push_string(&mut self, s: &Self) {
         self.push_utfstr(s.as_utfstr())
     }
@@ -98,11 +88,6 @@ impl UnicodeString for Utf32String {
         ret.push(ch);
         assert!(ret.len() == 1);
         ret.into_vec()[0]
-    }
-
-    fn to_utf8(&self) -> String {
-        // Unwrap can't fail since we encode as UTF-8.
-        String::from_utf8(self.encode_utf8().collect()).unwrap()
     }
 
     fn push_string(&mut self, s: &Self) {

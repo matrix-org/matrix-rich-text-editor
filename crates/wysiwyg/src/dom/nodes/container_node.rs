@@ -258,7 +258,7 @@ where
     pub fn is_empty_list_item(&self) -> bool {
         match self.kind {
             ContainerNodeKind::ListItem => {
-                let raw_text = self.to_raw_text().to_utf8();
+                let raw_text = self.to_raw_text().to_string();
                 raw_text.is_empty() || raw_text == "\u{200b}"
             }
             _ => false,

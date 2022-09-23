@@ -71,7 +71,7 @@ where
     /// This will remove all previous and next states, effectively disabling
     /// undo and redo until further updates.
     pub fn replace_all_html(&mut self, html: &S) -> ComposerUpdate<S> {
-        let dom = parse(&html.to_utf8());
+        let dom = parse(&html.to_string());
 
         match dom {
             Ok(dom) => {

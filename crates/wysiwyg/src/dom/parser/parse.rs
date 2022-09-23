@@ -221,7 +221,7 @@ mod test {
         fn roundtrips(&self) {
             let subject = self.subject.as_ref();
             let dom = parse::<Utf16String>(subject).unwrap();
-            let output = restore_whitespace(&dom.to_html().to_utf8());
+            let output = restore_whitespace(&dom.to_html().to_string());
             if output != subject {
                 AssertionFailure::from_spec(self)
                     .with_expected(String::from(subject))

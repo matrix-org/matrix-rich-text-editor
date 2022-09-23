@@ -37,14 +37,14 @@ impl InlineFormatType {
 
 impl<S: UnicodeString> From<S> for InlineFormatType {
     fn from(value: S) -> Self {
-        match value.to_utf8().as_str() {
+        match value.to_string().as_str() {
             "b" | "strong" => InlineFormatType::Bold,
             "i" | "em" => InlineFormatType::Italic,
             "del" => InlineFormatType::StrikeThrough,
             "u" => InlineFormatType::Underline,
             "code" => InlineFormatType::InlineCode,
             _ => {
-                panic!("Unknown format type {}", value.to_utf8().as_str());
+                panic!("Unknown format type {}", value.to_string().as_str());
             }
         }
     }
