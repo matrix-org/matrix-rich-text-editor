@@ -71,7 +71,7 @@ where
         let mut current_range = usize::MAX..usize::MAX;
         let mut whitespaces: usize = 0;
         let mut needs_to_replace = false;
-        let w = S::c_from_char(' ');
+        let w = S::CodeUnit::from(b' ');
         let nbsp = S::c_from_char('\u{A0}');
         for (i, c) in formatter.chars_from(pos..).iter().enumerate() {
             if *c == w || *c == nbsp {
