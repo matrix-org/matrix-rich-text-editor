@@ -19,6 +19,7 @@ use crate::dom::nodes::{ContainerNode, LineBreakNode, TextNode};
 use crate::dom::to_html::ToHtml;
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
+use crate::dom::unicode_string::UnicodeStringExt;
 use crate::dom::UnicodeString;
 use crate::{InlineFormatType, ListType};
 
