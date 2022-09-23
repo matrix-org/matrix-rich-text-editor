@@ -42,7 +42,7 @@ where
     ) -> Self {
         Self {
             text_update: TextUpdate::<S>::Select(Selection { start, end }),
-            menu_state: menu_state,
+            menu_state,
         }
     }
 
@@ -58,7 +58,7 @@ where
                 start,
                 end,
             }),
-            menu_state: menu_state,
+            menu_state,
         }
     }
 }

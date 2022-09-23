@@ -79,14 +79,16 @@ impl ComposerModel<Utf16String> {
     /// assert_eq!(model.to_example_format(), "a{abbc}|c");
     /// ```
     pub fn from_example_format(text: &str) -> Self {
-        let text = text.replace("~", "\u{200b}");
+        let text = text.replace('~', "\u{200b}");
         let text_u16 = Utf16String::from_str(&text).into_vec();
 
-        let curs = find_char(&text_u16, "|").expect(&format!(
-            "ComposerModel text did not contain a '|' symbol: '{}'",
-            String::from_utf16(&text_u16)
-                .expect("ComposerModel text was not UTF-16"),
-        ));
+        let curs = find_char(&text_u16, "|").unwrap_or_else(|| {
+            panic!(
+                "ComposerModel text did not contain a '|' symbol: '{}'",
+                String::from_utf16(&text_u16)
+                    .expect("ComposerModel text was not UTF-16")
+            )
+        });
 
         let s = find_char(&text_u16, "{");
         let e = find_char(&text_u16, "}");
@@ -180,7 +182,7 @@ impl ComposerModel<Utf16String> {
         let html = ret.to_utf8();
 
         // Replace characters with visible ones
-        html.replace("\u{200b}", "~").replace("\u{A0}", "&nbsp;")
+        html.replace('\u{200b}', "~").replace('\u{A0}', "&nbsp;")
     }
 }
 
@@ -197,7 +199,7 @@ impl SelectionWriter {
         node: &TextNode<S>,
     ) {
         if let Some(loc) = self.locations.get(&node.handle()) {
-            let strings_to_add = self.state.advance(&loc, node.data().len());
+            let strings_to_add = self.state.advance(loc, node.data().len());
             for (str, i) in strings_to_add.into_iter().rev() {
                 let code_units = S::from_str(str);
                 f.write_at(pos + i, code_units.as_slice());
@@ -212,7 +214,7 @@ impl SelectionWriter {
         node: &LineBreakNode<S>,
     ) {
         if let Some(loc) = self.locations.get(&node.handle()) {
-            let strings_to_add = self.state.advance(&loc, 1);
+            let strings_to_add = self.state.advance(loc, 1);
             for (str, i) in strings_to_add.into_iter().rev() {
                 let code_units = S::from_str(str);
                 // Index 1 in line breaks is actually at the end of the '<br />'

@@ -23,9 +23,9 @@ impl From<usize> for Location {
     }
 }
 
-impl Into<usize> for Location {
-    fn into(self) -> usize {
-        self.0
+impl From<Location> for usize {
+    fn from(val: Location) -> Self {
+        val.0
     }
 }
 

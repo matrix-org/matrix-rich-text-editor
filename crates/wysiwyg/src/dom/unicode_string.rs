@@ -77,7 +77,7 @@ impl UnicodeString for String {
     }
 
     fn push_string(&mut self, s: &Self) {
-        self.push_str(&s)
+        self.push_str(s)
     }
 
     fn len(&self) -> usize {

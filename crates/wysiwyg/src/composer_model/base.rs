@@ -63,7 +63,7 @@ where
             disabled_actions: HashSet::new(),
         };
         model.compute_menu_state();
-        return model;
+        model
     }
 
     /// Replace the entire content of the model with given HTML string.

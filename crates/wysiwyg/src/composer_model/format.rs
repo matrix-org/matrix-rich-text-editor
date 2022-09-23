@@ -102,20 +102,16 @@ where
 
     fn check_format_selection_type(
         &self,
-        locations: &Vec<DomLocation>,
+        locations: &[DomLocation],
         format: &InlineFormatType,
     ) -> FormatSelectionType {
-        // First sweep to understand what the underlying DOM looks like
-        let found_format_locations: Vec<&DomLocation> = locations
-            .iter()
-            .filter(|l| {
-                let node = self.state.dom.lookup_node(&l.node_handle);
-                Self::is_format_node(node, format)
-            })
-            .collect();
+        let any_format_node = locations.iter().any(|l| {
+            let node = self.state.dom.lookup_node(&l.node_handle);
+            Self::is_format_node(node, format)
+        });
 
-        // No format nodes found, so it can we can only create new formatting nodes by Extend
-        if found_format_locations.is_empty() {
+        // If there are no format nodes, we can only create new formatting nodes by Extend
+        if !any_format_node {
             FormatSelectionType::Extend
         } else {
             // Find text nodes inside the selection that are not formatted with this format
@@ -124,7 +120,7 @@ where
                     && Self::path_contains_format_node(
                         &self.state.dom,
                         &l.node_handle,
-                        &format,
+                        format,
                     )
                     .is_none()
             });
@@ -231,7 +227,7 @@ where
     ) {
         // Go through the locations in reverse order to prevent Dom modification issues
         for loc in locations.iter().rev() {
-            if Self::needs_format(&self.state.dom, loc, &format) {
+            if Self::needs_format(&self.state.dom, loc, format) {
                 if let DomNode::Container(parent) = self
                     .state
                     .dom
@@ -281,7 +277,7 @@ where
         handle: &DomHandle,
         format: &InlineFormatType,
     ) -> Option<DomHandle> {
-        if Self::is_format_node(dom.lookup_node(&handle), format) {
+        if Self::is_format_node(dom.lookup_node(handle), format) {
             Some(handle.clone())
         } else if handle.has_parent() {
             let parent_handle = handle.parent_handle();

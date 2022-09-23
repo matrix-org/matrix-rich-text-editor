@@ -37,7 +37,7 @@ where
         parent_handle: &DomHandle,
         location: usize,
     ) -> ComposerUpdate<S> {
-        let parent_node = self.state.dom.lookup_node(&parent_handle);
+        let parent_node = self.state.dom.lookup_node(parent_handle);
         let list_node_handle = parent_node.handle().parent_handle();
         if let DomNode::Container(parent) = parent_node {
             if parent.is_empty_list_item() {
@@ -86,7 +86,7 @@ where
     ) -> ComposerUpdate<S> {
         // Store current Dom
         self.push_state_to_history();
-        let list_item_node = self.state.dom.lookup_node(&list_item_handle);
+        let list_item_node = self.state.dom.lookup_node(list_item_handle);
         let list_handle = list_item_node.handle().parent_handle();
         if let DomNode::Container(list_item_node) = list_item_node {
             if list_item_node.is_empty_list_item() {
@@ -163,7 +163,7 @@ where
         &mut self,
         list_item_handle: &DomHandle,
     ) -> ComposerUpdate<S> {
-        let list_item_node = self.state.dom.lookup_node(&list_item_handle);
+        let list_item_node = self.state.dom.lookup_node(list_item_handle);
         if let DomNode::Container(list_item) = list_item_node {
             let list_item_children = list_item.children().clone();
             let list_handle = list_item_handle.parent_handle();
@@ -191,7 +191,7 @@ where
             panic!("List item is not a container")
         }
 
-        return self.create_update_replace_all();
+        self.create_update_replace_all()
     }
 
     fn update_list_type(
@@ -199,11 +199,11 @@ where
         list_handle: &DomHandle,
         list_type: ListType,
     ) -> ComposerUpdate<S> {
-        let list_node = self.state.dom.lookup_node_mut(&list_handle);
+        let list_node = self.state.dom.lookup_node_mut(list_handle);
         if let DomNode::Container(list) = list_node {
             list.set_list_type(list_type);
         }
-        return self.create_update_replace_all();
+        self.create_update_replace_all()
     }
 
     fn create_list(&mut self, list_type: ListType) -> ComposerUpdate<S> {
@@ -267,7 +267,7 @@ where
                 }
 
                 self.replace_node_with_new_list(handle, list_type, list_item);
-                return self.create_update_replace_all();
+                self.create_update_replace_all()
             } else {
                 panic!("Can't create a list from a non-text node")
             }
@@ -283,7 +283,7 @@ where
         list_item: DomNode<S>,
     ) {
         let list_node = DomNode::new_list(list_type, vec![list_item]);
-        self.state.dom.replace(&handle, vec![list_node]);
+        self.state.dom.replace(handle, vec![list_node]);
     }
 
     fn slice_list_item(
@@ -301,7 +301,7 @@ where
             let new_text = slice_to(text, ..start_offset);
             let new_li_text = slice_from(text, end_offset..);
             t.set_data(new_text);
-            let list_node = self.state.dom.lookup_node_mut(&list_handle);
+            let list_node = self.state.dom.lookup_node_mut(list_handle);
             if let DomNode::Container(list) = list_node {
                 let add_zwsp = new_li_text.len() == 0;
                 list.append_child(DomNode::new_list_item(
@@ -327,7 +327,7 @@ where
         li_index: usize,
         insert_trailing_text_node: bool,
     ) {
-        let list_node = self.state.dom.lookup_node_mut(&list_handle);
+        let list_node = self.state.dom.lookup_node_mut(list_handle);
         if let DomNode::Container(list) = list_node {
             let list_len = list.to_raw_text().len();
             let li_len = list.children()[li_index].to_raw_text().len();
@@ -337,7 +337,7 @@ where
                     self.state.dom.lookup_node_mut(&parent_handle);
                 if let DomNode::Container(parent) = parent_node {
                     parent.remove_child(list_handle.index_in_parent());
-                    if parent.children().len() == 0 {
+                    if parent.children().is_empty() {
                         parent.append_child(DomNode::new_text(S::from_str("")));
                     }
                     let new_location = Location::from(
@@ -415,7 +415,7 @@ where
     pub(crate) fn can_unindent_handle(&self, handle: &DomHandle) -> bool {
         // Check that there are at least 2 ancestor lists
         if let Some(closest_list_handle) =
-            self.state.dom.find_closest_list_ancestor(&handle)
+            self.state.dom.find_closest_list_ancestor(handle)
         {
             self.state
                 .dom
@@ -448,11 +448,11 @@ where
         }
     }
 
-    fn indent_locations(&mut self, locations: &Vec<DomLocation>) {
+    fn indent_locations(&mut self, locations: &[DomLocation]) {
         self.indent_handles(&Self::leaf_handles_from_locations(locations));
     }
 
-    fn indent_handles(&mut self, handles: &Vec<DomHandle>) {
+    fn indent_handles(&mut self, handles: &[DomHandle]) {
         let by_list_sorted = Self::group_sorted_handles_by_list_parent(handles);
 
         for (parent_handle, handles) in by_list_sorted.iter().rev() {
@@ -460,7 +460,7 @@ where
             sorted_handles.sort();
 
             let parent_list_type = if let DomNode::Container(list) =
-                self.state.dom.lookup_node(&parent_handle)
+                self.state.dom.lookup_node(parent_handle)
             {
                 if list.is_list_of_type(ListType::Ordered) {
                     ListType::Ordered
@@ -492,7 +492,7 @@ where
 
             for handle in handles.iter().rev() {
                 self.indent_single_handle(
-                    &handle,
+                    handle,
                     &into_handle,
                     at_index,
                     &parent_list_type,
@@ -532,7 +532,7 @@ where
         };
 
         if let DomNode::Container(into_node) =
-            self.state.dom.lookup_node_mut(&into_handle)
+            self.state.dom.lookup_node_mut(into_handle)
         {
             // New list node added here, insert it into that container at index 0
             if at_index < into_node.children().len() {
@@ -559,7 +559,7 @@ where
         list_type: &ListType,
     ) -> Option<&mut ContainerNode<S>> {
         if let DomNode::Container(prev_sibling) =
-            self.state.dom.lookup_node_mut(&handle)
+            self.state.dom.lookup_node_mut(handle)
         {
             if !prev_sibling.children().is_empty() {
                 if let DomNode::Container(prev_sibling_last_item) = prev_sibling
@@ -576,11 +576,11 @@ where
         None
     }
 
-    pub fn unindent_locations(&mut self, locations: &Vec<DomLocation>) {
+    pub fn unindent_locations(&mut self, locations: &[DomLocation]) {
         self.unindent_handles(&Self::leaf_handles_from_locations(locations));
     }
 
-    fn unindent_handles(&mut self, handles: &Vec<DomHandle>) {
+    fn unindent_handles(&mut self, handles: &[DomHandle]) {
         let by_list_sorted = Self::group_sorted_handles_by_list_parent(handles);
 
         for (list_handle, handles) in by_list_sorted.iter().rev() {
@@ -640,7 +640,7 @@ where
         };
 
         if let DomNode::Container(new_list_parent) =
-            self.state.dom.lookup_node_mut(&into_handle)
+            self.state.dom.lookup_node_mut(into_handle)
         {
             new_list_parent.insert_child(at_index, removed_list_item);
 
@@ -657,7 +657,7 @@ where
     }
 
     fn leaf_handles_from_locations(
-        locations: &Vec<DomLocation>,
+        locations: &[DomLocation],
     ) -> Vec<DomHandle> {
         locations
             .iter()
@@ -672,7 +672,7 @@ where
     }
 
     fn group_sorted_handles_by_list_parent(
-        handles: &Vec<DomHandle>,
+        handles: &[DomHandle],
     ) -> Vec<(DomHandle, Vec<DomHandle>)> {
         let mut by_list: HashMap<DomHandle, Vec<DomHandle>> = HashMap::new();
         for handle in handles.iter() {
@@ -703,46 +703,40 @@ mod tests {
     #[test]
     fn cannot_indent_first_item() {
         let model = cm("<ul><li>{Test}|</li></ul>");
-        assert_eq!(
-            false,
-            model.can_indent_handle(&DomHandle::from_raw(vec![0, 0, 0]))
-        );
+        assert!(!model.can_indent_handle(&DomHandle::from_raw(vec![0, 0, 0])));
     }
 
     #[test]
     fn can_indent_second_item() {
         let model = cm("<ul><li>First item</li><li>{Second item}|</li></ul>");
-        assert_eq!(
-            true,
-            model.can_indent_handle(&DomHandle::from_raw(vec![0, 1, 0]))
-        );
+        assert!(model.can_indent_handle(&DomHandle::from_raw(vec![0, 1, 0])));
     }
 
     #[test]
     fn can_indent_several_items_if_first_is_not_included() {
         let model = cm("<ul><li>First item</li><li>{Second item</li><li>Third item}|</li></ul>");
         let locations = get_range_locations(&model);
-        assert_eq!(true, model.can_indent(&locations));
+        assert!(model.can_indent(&locations));
     }
 
     #[test]
     fn cannot_indent_several_items_if_first_is_included() {
         let model = cm("<ul><li>{First item</li><li>Second item</li><li>Third item}|</li></ul>");
         let locations = get_range_locations(&model);
-        assert_eq!(false, model.can_indent(&locations));
+        assert!(!model.can_indent(&locations));
     }
 
     #[test]
     fn indent_list_item_works() {
         let mut model = cm("<ul><li>First item</li><li>Second item</li><li>Third item|</li></ul>");
-        model.indent_handles(&vec![DomHandle::from_raw(vec![0, 1, 0])]);
+        model.indent_handles(&[DomHandle::from_raw(vec![0, 1, 0])]);
         assert_eq!(tx(&model), "<ul><li>First item<ul><li>Second item</li></ul></li><li>Third item|</li></ul>");
     }
 
     #[test]
     fn indent_list_item_to_previous_works() {
         let mut model = cm("<ul><li>First item<ul><li>Second item</li></ul></li><li>Third item|</li></ul>");
-        model.indent_handles(&vec![DomHandle::from_raw(vec![0, 1, 0])]);
+        model.indent_handles(&[DomHandle::from_raw(vec![0, 1, 0])]);
         assert_eq!(tx(&model), "<ul><li>First item<ul><li>Second item</li><li>Third item|</li></ul></li></ul>");
     }
 
@@ -750,21 +744,21 @@ mod tests {
     fn can_unindent_handle_simple_case_works() {
         let model = cm("<ul><li>First item<ul><li>{Second item</li><li>Third item}|</li></ul></li></ul>");
         let handle = DomHandle::from_raw(vec![0, 0, 1, 0, 0]);
-        assert_eq!(true, model.can_unindent_handle(&handle));
+        assert!(model.can_unindent_handle(&handle));
     }
 
     #[test]
     fn can_unindent_simple_case_works() {
         let model = cm("<ul><li>First item<ul><li>{Second item</li><li>Third item}|</li></ul></li></ul>");
         let locations = get_range_locations(&model);
-        assert_eq!(true, model.can_unindent(&locations));
+        assert!(model.can_unindent(&locations));
     }
 
     #[test]
     fn can_unindent_with_only_one_list_level_fails() {
         let model = cm("<ul><li>First item</li><li>{Second item</li><li>Third item}|</li></ul>");
         let locations = get_range_locations(&model);
-        assert_eq!(false, model.can_unindent(&locations));
+        assert!(!model.can_unindent(&locations));
     }
 
     #[test]

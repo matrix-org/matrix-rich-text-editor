@@ -35,7 +35,7 @@ impl DomHandle {
 
     /// Returns true if this handle has been set to a value
     pub fn is_set(&self) -> bool {
-        !self.path.is_none()
+        self.path.is_some()
     }
 
     /// Returns true if this handle refers to a root node
@@ -72,17 +72,14 @@ impl DomHandle {
     /// parent_handle().
     /// Panics if this handle is unset
     pub fn has_parent(&self) -> bool {
-        self.raw().len() > 0
+        !self.raw().is_empty()
     }
 
     /// Return this handle's position within its parent.
     /// Panics if this handle is unset
     /// Panics if we have no parent (i.e. this handle is the root)
     pub fn index_in_parent(&self) -> usize {
-        self.raw()
-            .last()
-            .expect("Root handle has no parent!")
-            .clone()
+        *self.raw().last().expect("Root handle has no parent!")
     }
 
     /// Return the underlying path used to represent this handle.

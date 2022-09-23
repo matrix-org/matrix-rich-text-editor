@@ -70,7 +70,7 @@ where
                 S::from_str(tag),
                 Vec::new(),
             )
-            .expect(&format!("Unknown format tag {}", tag)),
+            .unwrap_or_else(|| panic!("Unknown format tag {}", tag)),
         )
     }
 
