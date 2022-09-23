@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use crate::dom::nodes::{ContainerNodeKind, DomNode};
+use crate::dom::unicode_string::UnicodeStringExt;
 use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, UnicodeString};
 

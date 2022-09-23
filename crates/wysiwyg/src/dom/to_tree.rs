@@ -14,6 +14,7 @@
 
 use std::marker::PhantomData;
 
+use super::unicode_string::UnicodeStringExt;
 use super::UnicodeString;
 
 pub trait ToTree<S>
