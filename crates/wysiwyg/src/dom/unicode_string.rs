@@ -18,10 +18,8 @@ use widestring::{Utf16String, Utf32String};
 /// contain valid Unicode, and allow slicing by code unit positions.
 /// We implement this for String, Utf16String and Utf32String (from the
 /// widestring crate).
-pub trait UnicodeString: Clone + std::fmt::Debug + PartialEq {
+pub trait UnicodeString: Clone + std::fmt::Debug + Default + PartialEq {
     type CodeUnit: Copy + PartialEq;
-
-    fn new() -> Self;
 
     fn from_str<T: AsRef<str> + ?Sized>(s: &T) -> Self;
 
@@ -44,10 +42,6 @@ pub trait UnicodeString: Clone + std::fmt::Debug + PartialEq {
 
 impl UnicodeString for String {
     type CodeUnit = u8;
-
-    fn new() -> Self {
-        String::new()
-    }
 
     fn from_str<T: AsRef<str> + ?Sized>(s: &T) -> Self {
         String::from(s.as_ref())
@@ -88,10 +82,6 @@ impl UnicodeString for String {
 impl UnicodeString for Utf16String {
     type CodeUnit = u16;
 
-    fn new() -> Self {
-        Utf16String::new()
-    }
-
     fn from_str<T: AsRef<str> + ?Sized>(s: &T) -> Self {
         Utf16String::from_str(s)
     }
@@ -131,10 +121,6 @@ impl UnicodeString for Utf16String {
 
 impl UnicodeString for Utf32String {
     type CodeUnit = u32;
-
-    fn new() -> Self {
-        Utf32String::new()
-    }
 
     fn from_str<T: AsRef<str> + ?Sized>(s: &T) -> Self {
         Utf32String::from_str(s)

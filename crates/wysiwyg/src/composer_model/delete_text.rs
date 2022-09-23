@@ -65,7 +65,7 @@ where
     /// Deletes text in an arbitrary start..end range.
     pub fn delete_in(&mut self, start: usize, end: usize) -> ComposerUpdate<S> {
         self.state.end = Location::from(start);
-        self.replace_text_in(S::new(), start, end)
+        self.replace_text_in(S::default(), start, end)
     }
 
     /// Deletes the character after the current cursor position.
@@ -75,7 +75,7 @@ where
             self.state.end += 1;
         }
 
-        self.replace_text(S::new())
+        self.replace_text(S::default())
     }
 
     pub(crate) fn delete_nodes(&mut self, mut to_delete: Vec<DomHandle>) {
@@ -117,6 +117,6 @@ where
             self.state.start -= 1;
         }
 
-        self.replace_text(S::new())
+        self.replace_text(S::default())
     }
 }

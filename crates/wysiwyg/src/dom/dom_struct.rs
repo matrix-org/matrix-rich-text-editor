@@ -37,7 +37,7 @@ where
 {
     pub fn new(top_level_items: Vec<DomNode<S>>) -> Self {
         let mut document = ContainerNode::new(
-            S::new(),
+            S::default(),
             ContainerNodeKind::Generic,
             None,
             top_level_items,
