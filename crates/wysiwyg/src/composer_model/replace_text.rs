@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::composer_model::base::{slice_from, slice_to};
 use crate::dom::nodes::DomNode;
 use crate::dom::unicode_string::UnicodeStringExt;
 use crate::dom::{DomHandle, DomLocation, Range};
@@ -211,14 +210,14 @@ where
                     } else {
                         // Otherwise, delete the selected text
                         let mut new_data =
-                            slice_to(old_data, ..loc.start_offset);
+                            old_data[..loc.start_offset].to_owned();
 
                         // and replace with the new content
                         if first_text_node {
-                            new_data.push(&*new_text);
+                            new_data.push(new_text.deref());
                         }
 
-                        new_data.push(slice_from(old_data, loc.end_offset..));
+                        new_data.push(&old_data[loc.end_offset..]);
                         node.set_data(new_data);
                     }
 

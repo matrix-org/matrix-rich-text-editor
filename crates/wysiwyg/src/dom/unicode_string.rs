@@ -13,9 +13,9 @@
 // limitations under the License.
 
 use std::iter;
-use std::ops::Deref;
+use std::ops::{Deref, Index, Range, RangeFrom, RangeTo};
 
-use widestring::{Utf16String, Utf32String};
+use widestring::{Utf16Str, Utf16String, Utf32Str, Utf32String};
 
 /// The type of string being used inside a [Dom] instance. Must
 /// contain valid Unicode, and allow slicing by code unit positions.
@@ -29,13 +29,18 @@ pub trait UnicodeString:
     + PartialEq
     + AsRef<[Self::CodeUnit]>
     + for<'a> From<&'a str>
-    + Deref
-    + for<'a> Extend<&'a <Self as Deref>::Target>
+    + Deref<Target = Self::Slice>
+    + for<'a> Extend<&'a Self::Slice>
     + Extend<Self>
     + Extend<char>
     + for<'a> Extend<&'a str>
+    + for<'a> Extend<&'a Self::Slice>
+    + Index<Range<usize>, Output = Self::Slice>
+    + Index<RangeFrom<usize>, Output = Self::Slice>
+    + Index<RangeTo<usize>, Output = Self::Slice>
 {
     type CodeUnit: Copy + From<u8> + PartialEq;
+    type Slice: ToOwned<Owned = Self> + ?Sized;
 
     fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String>;
 
@@ -46,6 +51,7 @@ pub trait UnicodeString:
 
 impl UnicodeString for String {
     type CodeUnit = u8;
+    type Slice = str;
 
     fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String> {
         String::from_utf8(v.into()).map_err(|e| e.to_string())
@@ -61,6 +67,7 @@ impl UnicodeString for String {
 
 impl UnicodeString for Utf16String {
     type CodeUnit = u16;
+    type Slice = Utf16Str;
 
     fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String> {
         Utf16String::from_vec(v.into()).map_err(|e| e.to_string())
@@ -76,6 +83,7 @@ impl UnicodeString for Utf16String {
 
 impl UnicodeString for Utf32String {
     type CodeUnit = u32;
+    type Slice = Utf32Str;
 
     fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String> {
         Utf32String::from_vec(v.into()).map_err(|e| e.to_string())
