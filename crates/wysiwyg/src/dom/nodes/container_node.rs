@@ -289,15 +289,15 @@ where
         let name = self.name();
         if !name.is_empty() {
             formatter.write_char(HtmlChar::Lt);
-            formatter.write(name.as_slice());
+            formatter.write(name.as_ref());
             if let Some(attrs) = &self.attrs {
                 for attr in attrs {
                     formatter.write_char(HtmlChar::Space);
                     let (attr_name, value) = attr;
-                    formatter.write(attr_name.as_slice());
+                    formatter.write(attr_name.as_ref());
                     formatter.write_char(HtmlChar::Equal);
                     formatter.write_char(HtmlChar::Quote);
-                    formatter.write(value.as_slice());
+                    formatter.write(value.as_ref());
                     formatter.write_char(HtmlChar::Quote);
                 }
             }
@@ -319,7 +319,7 @@ where
         if !name.is_empty() {
             formatter.write_char(HtmlChar::Lt);
             formatter.write_char(HtmlChar::ForwardSlash);
-            formatter.write(name.as_slice());
+            formatter.write(name.as_ref());
             formatter.write_char(HtmlChar::Gt);
         }
     }
