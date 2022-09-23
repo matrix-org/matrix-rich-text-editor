@@ -1,6 +1,6 @@
 # React Matrix WYSIWYG Composer
 
-[![react-build](https://github.com/matrix-org/matrix-wysiwyg/actions/workflows/react-build.yml/badge.svg?branch=tech%2Freact-wysiwsyg)](https://github.com/matrix-org/matrix-wysiwyg/actions/workflows/react-build.yml)
+[![react-build](https://github.com/matrix-org/matrix-wysiwyg/actions/workflows/react-build.yml/badge.svg?branch=main)](https://github.com/matrix-org/matrix-wysiwyg/actions/workflows/react-build.yml)
 
 The Matrix WYSIWYG composer is a React library.
 
