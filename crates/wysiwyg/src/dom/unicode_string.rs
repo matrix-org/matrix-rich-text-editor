@@ -18,7 +18,9 @@ use widestring::{Utf16String, Utf32String};
 /// contain valid Unicode, and allow slicing by code unit positions.
 /// We implement this for String, Utf16String and Utf32String (from the
 /// widestring crate).
-pub trait UnicodeString: Clone + std::fmt::Debug + Default + PartialEq {
+pub trait UnicodeString:
+    Clone + std::fmt::Debug + Default + PartialEq + AsRef<[Self::CodeUnit]>
+{
     type CodeUnit: Copy + PartialEq;
 
     fn from_str<T: AsRef<str> + ?Sized>(s: &T) -> Self;
@@ -30,8 +32,6 @@ pub trait UnicodeString: Clone + std::fmt::Debug + Default + PartialEq {
     /// Convert this character to a code unit.
     /// Panics if this character requires more than one code unit
     fn c_from_char(ch: char) -> Self::CodeUnit;
-
-    fn as_slice(&self) -> &[Self::CodeUnit];
 
     fn to_utf8(&self) -> String;
 
@@ -60,10 +60,6 @@ impl UnicodeString for String {
         let mut buf = [0; 1];
         ch.encode_utf8(&mut buf);
         buf[0]
-    }
-
-    fn as_slice(&self) -> &[Self::CodeUnit] {
-        self.as_bytes()
     }
 
     fn to_utf8(&self) -> String {
@@ -101,10 +97,6 @@ impl UnicodeString for Utf16String {
         ret.into_vec()[0]
     }
 
-    fn as_slice(&self) -> &[Self::CodeUnit] {
-        self.as_slice()
-    }
-
     fn to_utf8(&self) -> String {
         // Unwrap can't fail since we encode as UTF-8.
         String::from_utf8(self.encode_utf8().collect()).unwrap()
@@ -139,10 +131,6 @@ impl UnicodeString for Utf32String {
         ret.push(ch);
         assert!(ret.len() == 1);
         ret.into_vec()[0]
-    }
-
-    fn as_slice(&self) -> &[Self::CodeUnit] {
-        self.as_slice()
     }
 
     fn to_utf8(&self) -> String {

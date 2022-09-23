@@ -135,7 +135,7 @@ pub(crate) fn slice<S>(s: &S, range: std::ops::Range<usize>) -> S
 where
     S: UnicodeString,
 {
-    S::from_vec(s.as_slice()[range].to_vec()).expect("Invalid slice!")
+    S::from_vec(s.as_ref()[range].to_vec()).expect("Invalid slice!")
 }
 
 pub(crate) fn starts_with(subject: &DomHandle, object: &DomHandle) -> bool {

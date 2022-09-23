@@ -76,7 +76,7 @@ where
     ) {
         let cur_pos = f.len();
         f.write_char(HtmlChar::Lt);
-        f.write(self.name().as_slice());
+        f.write(self.name().as_ref());
         f.write_char(HtmlChar::Space);
         f.write_char(HtmlChar::ForwardSlash);
         f.write_char(HtmlChar::Gt);

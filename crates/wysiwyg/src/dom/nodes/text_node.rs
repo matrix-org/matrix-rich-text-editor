@@ -120,7 +120,7 @@ where
         let cur_pos = f.len();
         let string = self.data.to_utf8();
         let escaped = html_escape::encode_text(&string);
-        f.write(S::from_str(&escaped).as_slice());
+        f.write(S::from_str(&escaped).as_ref());
         Self::handle_several_whitespaces(f, cur_pos, is_last_node_in_parent);
         if let Some(selection_writer) = selection_writer {
             selection_writer.write_selection_text_node(f, cur_pos, self);
