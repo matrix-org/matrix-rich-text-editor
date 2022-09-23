@@ -31,6 +31,9 @@ pub trait UnicodeString:
     + for<'a> From<&'a str>
     + Deref
     + for<'a> Extend<&'a <Self as Deref>::Target>
+    + Extend<Self>
+    + Extend<char>
+    + for<'a> Extend<&'a str>
 {
     type CodeUnit: Copy + From<u8> + PartialEq;
 
@@ -87,14 +90,19 @@ impl UnicodeString for Utf32String {
 }
 
 pub trait UnicodeStringExt: UnicodeString {
-    fn push_string(&mut self, s: &Self);
+    fn push<T>(&mut self, s: T)
+    where
+        Self: Extend<T>;
     fn is_empty(&self) -> bool;
     fn len(&self) -> usize;
 }
 
 impl<S: UnicodeString> UnicodeStringExt for S {
-    fn push_string(&mut self, s: &Self) {
-        self.extend(iter::once(s.deref()));
+    fn push<T>(&mut self, s: T)
+    where
+        Self: Extend<T>,
+    {
+        self.extend(iter::once(s))
     }
 
     fn is_empty(&self) -> bool {
