@@ -8,7 +8,7 @@ beforeAll(() => {
 });
 
 describe('computeNodeAndOffset', () => {
-    test('Should find at the start of simple text', () => {
+    it('Should find at the start of simple text', () => {
         // When
         editor.innerHTML = 'abcdefgh';
         const { node, offset } = computeNodeAndOffset(editor, 0);
@@ -18,7 +18,7 @@ describe('computeNodeAndOffset', () => {
         expect(offset).toBe(0);
     });
 
-    test('Should find in the middle of simple text', () => {
+    it('Should find in the middle of simple text', () => {
         // When
         editor.innerHTML = 'abcdefgh';
         const { node, offset } = computeNodeAndOffset(editor, 4);
@@ -28,7 +28,7 @@ describe('computeNodeAndOffset', () => {
         expect(offset).toBe(4);
     });
 
-    test('Should find at the end of simple text', () => {
+    it('Should find at the end of simple text', () => {
         // When
         editor.innerHTML = 'abcdefgh';
         const { node, offset } = computeNodeAndOffset(editor, 8);
@@ -38,7 +38,7 @@ describe('computeNodeAndOffset', () => {
         expect(offset).toBe(8);
     });
 
-    test('Should returns null if off the end', () => {
+    it('Should returns null if off the end', () => {
         // When
         editor.innerHTML = 'abcdefgh';
         const { node, offset } = computeNodeAndOffset(editor, 9);
@@ -48,7 +48,7 @@ describe('computeNodeAndOffset', () => {
         expect(offset).toBe(1);
     });
 
-    test('Should find before subnode', () => {
+    it('Should find before subnode', () => {
         // When
         editor.innerHTML = 'abc<b>def</b>gh';
         const { node, offset } = computeNodeAndOffset(editor, 2);
@@ -58,7 +58,7 @@ describe('computeNodeAndOffset', () => {
         expect(offset).toBe(2);
     });
 
-    test('Should find after subnode', () => {
+    it('Should find after subnode', () => {
         // When
         editor.innerHTML = 'abc<b>def</b>gh';
         const { node, offset } = computeNodeAndOffset(editor, 4);
@@ -68,7 +68,7 @@ describe('computeNodeAndOffset', () => {
         expect(offset).toBe(1);
     });
 
-    test('Should find inside subnode', () => {
+    it('Should find inside subnode', () => {
         // When
         editor.innerHTML = 'abc<b>def</b>gh';
         const { node, offset } = computeNodeAndOffset(editor, 7);
@@ -78,7 +78,7 @@ describe('computeNodeAndOffset', () => {
         expect(offset).toBe(1);
     });
 
-    test('Should find after subnode', () => {
+    it('Should find after subnode', () => {
         // When
         editor.innerHTML = 'abc<b>def</b>gh';
         const { node, offset } = computeNodeAndOffset(editor, 7);
@@ -88,7 +88,7 @@ describe('computeNodeAndOffset', () => {
         expect(offset).toBe(1);
     });
 
-    test('Should find before br', () => {
+    it('Should find before br', () => {
         // When
         editor.innerHTML = 'a<br />b';
         const { node, offset } = computeNodeAndOffset(editor, 0);
@@ -98,7 +98,7 @@ describe('computeNodeAndOffset', () => {
         expect(offset).toBe(0);
     });
 
-    test('Should find br start', () => {
+    it('Should find br start', () => {
         // When
         editor.innerHTML = 'a<br />b';
         const { node, offset } = computeNodeAndOffset(editor, 1);
@@ -108,7 +108,7 @@ describe('computeNodeAndOffset', () => {
         expect(offset).toBe(1);
     });
 
-    test('Should find br end', () => {
+    it('Should find br end', () => {
         // When
         editor.innerHTML = 'a<br />b';
         const { node, offset } = computeNodeAndOffset(editor, 2);
@@ -118,7 +118,7 @@ describe('computeNodeAndOffset', () => {
         expect(offset).toBe(0);
     });
 
-    test('Should find between br', () => {
+    it('Should find between br', () => {
         // When
         editor.innerHTML = 'a<br /><br />b';
         const { node, offset } = computeNodeAndOffset(editor, 2);
@@ -128,7 +128,7 @@ describe('computeNodeAndOffset', () => {
         expect(offset).toBe(0);
     });
 
-    test('Should find after br', () => {
+    it('Should find after br', () => {
         // When
         editor.innerHTML = 'a<br />b';
         const { node, offset } = computeNodeAndOffset(editor, 3);
@@ -138,7 +138,7 @@ describe('computeNodeAndOffset', () => {
         expect(offset).toBe(1);
     });
 
-    test('Should find inside an empty list', () => {
+    it('Should find inside an empty list', () => {
         // When
         editor.innerHTML = '<ul><li><li></ul>';
         const { node, offset } = computeNodeAndOffset(editor, 0);
@@ -148,7 +148,7 @@ describe('computeNodeAndOffset', () => {
         expect(offset).toBe(0);
     });
 
-    test('Should find inside two empty list', () => {
+    it('Should find inside two empty list', () => {
         // When
         editor.innerHTML = '<ul><li><li></ul><li><li></ul>';
         const { node, offset } = computeNodeAndOffset(editor, 0);
@@ -158,7 +158,7 @@ describe('computeNodeAndOffset', () => {
         expect(offset).toBe(0);
     });
 
-    test('Should find inside a list', () => {
+    it('Should find inside a list', () => {
         // When
         editor.innerHTML = '<ul><li>foo<li></ul>';
         const { node, offset } = computeNodeAndOffset(editor, 1);
@@ -170,7 +170,7 @@ describe('computeNodeAndOffset', () => {
 });
 
 describe('computeSelectionOffset', () => {
-    test('Should contain all the characters when the editor node is selected', () => {
+    it('Should contain all the characters when the editor node is selected', () => {
         // When
         editor.innerHTML = 'abc<b>def</b>gh';
         // Use the editor node and a offset as 1 to simulate the FF behavior
@@ -187,7 +187,7 @@ describe('computeSelectionOffset', () => {
         expect(offset).toBe(16);
     });
 
-    test('Should contains the selected characters', () => {
+    it('Should contains the selected characters', () => {
         // When
         editor.innerHTML = 'abc<b>def</b>gh<ul><li>alice</li><li>bob</li>';
         let offset = computeSelectionOffset(editor.childNodes[0], 1);
@@ -204,7 +204,7 @@ describe('computeSelectionOffset', () => {
 });
 
 describe('countCodeunit', () => {
-    test('Should count ASCII', () => {
+    it('Should count ASCII', () => {
         // When
         editor.innerHTML = 'abcdefgh';
         const textNode = editor.childNodes[0];
@@ -219,7 +219,7 @@ describe('countCodeunit', () => {
         expect(countCodeunit(editor, textNode, 9)).toBe(-1);
     });
 
-    test('Should count UCS-2', () => {
+    it('Should count UCS-2', () => {
         // When
         editor.innerHTML = 'a\u{03A9}b\u{03A9}c';
         const textNode = editor.childNodes[0];
@@ -232,7 +232,7 @@ describe('countCodeunit', () => {
         expect(countCodeunit(editor, textNode, 6)).toBe(-1);
     });
 
-    test('Should count complex', () => {
+    it('Should count complex', () => {
         // When
         editor.innerHTML = 'a\u{1F469}\u{1F3FF}\u{200D}\u{1F680}b';
         const textNode = editor.childNodes[0];
@@ -245,7 +245,7 @@ describe('countCodeunit', () => {
         expect(countCodeunit(editor, textNode, 10)).toBe(-1);
     });
 
-    test('Should count nested', () => {
+    it('Should count nested', () => {
         // When
         editor.innerHTML = 'a<b>b</b>c';
         const firstTextNode = editor.childNodes[0];
@@ -258,7 +258,7 @@ describe('countCodeunit', () => {
         expect(countCodeunit(editor, thirdTextNode, 0)).toBe(2);
     });
 
-    test('Should treats br as a character', () => {
+    it('Should treat br as a character', () => {
         // When
         editor.innerHTML = 'a<br />b';
         const firstTextNode = editor.childNodes[0];
@@ -272,7 +272,7 @@ describe('countCodeunit', () => {
         expect(countCodeunit(editor, secondTextNode, 1)).toBe(3);
     });
 
-    test('Should works with deeply nested', () => {
+    it('Should work with deeply nested', () => {
         // When
         editor.innerHTML = 'aaa<b><i>bbb</i>ccc</b>ddd';
         const firstTextNode = editor.childNodes[0];

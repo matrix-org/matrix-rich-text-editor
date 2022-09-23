@@ -60,9 +60,7 @@ export function handleInput(
                 repl.start_utf16_codeunit,
                 repl.end_utf16_codeunit,
             );
-            // todo test case
             testUtilities.setEditorHtml(repl.replacement_html);
-            // last_update_html = repl.replacement_html;
         }
 
         // Only when

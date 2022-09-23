@@ -40,7 +40,7 @@ describe('useWysiwyg', () => {
             }} />);
         });
 
-        test('Should render ASCII characters with width 1', () => {
+        it('Should render ASCII characters with width 1', () => {
             // When
             editor.innerHTML = 'abcd';
             deleteRange(0, 1);
@@ -56,7 +56,7 @@ describe('useWysiwyg', () => {
             expect(editor.innerHTML).toBe('cd');
         });
 
-        test.skip('Should render UCS-2 characters with width 1', () => {
+        it.skip('Should render UCS-2 characters with width 1', () => {
             // When
             editor.innerHTML = '\u{03A9}bcd';
             deleteRange(0, 1);
@@ -72,7 +72,7 @@ describe('useWysiwyg', () => {
             expect(editor.innerHTML).toBe('cd');
         });
 
-        test.skip('Should render Multi-code unit UTF-16 characters with width 2', () => {
+        it.skip('Should render Multi-code unit UTF-16 characters with width 2', () => {
             // When
             editor.innerHTML = '\u{1F4A9}bcd';
             deleteRange(0, 2);
@@ -88,7 +88,7 @@ describe('useWysiwyg', () => {
             expect(editor.innerHTML).toBe('cd');
         });
 
-        test.skip('Should render complex characters with width = num UTF-16 code units', () => {
+        it.skip('Should render complex characters with width = num UTF-16 code units', () => {
             // When
             editor.innerHTML = '\u{1F469}\u{1F3FF}\u{200D}\u{1F680}bcd';
             deleteRange(0, 7);

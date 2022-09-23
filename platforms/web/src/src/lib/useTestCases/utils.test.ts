@@ -7,7 +7,7 @@ beforeAll(async () => {
 });
 
 describe('getSelectionAccordingToActions', () => {
-    test('Should select according to no actions is -1, 1', () => {
+    it('Should return -1, -1 for selection when there are no actions', () => {
         // When
         const actions = [];
         const selection = getSelectionAccordingToActions(actions)();
@@ -16,7 +16,7 @@ describe('getSelectionAccordingToActions', () => {
         expect(selection).toStrictEqual([-1, -1]);
     });
 
-    test('Should found selection from the last action', () => {
+    it('Should find selection from the last action', () => {
         // When
         const actions: Actions = [
             ['foo', 'bar', 'baz'],
@@ -33,7 +33,7 @@ describe('getSelectionAccordingToActions', () => {
 });
 
 describe('generateTestCase', () => {
-    test('Should generate test case of 1 character and selection', () => {
+    it('Should generate test case of 1 character and selection', () => {
         // When
         const actions: Actions = [
             ['replace_text', 'a', undefined],
@@ -51,7 +51,7 @@ describe('generateTestCase', () => {
         expect(testCase).toBe(expected);
     });
 
-    test('Should Generate test case with cursor at the beginning', () => {
+    it('Should Generate test case with cursor at the beginning', () => {
         // When
         const actions: Actions = [
             ['replace_text', 'a', undefined],
@@ -69,7 +69,7 @@ describe('generateTestCase', () => {
         expect(testCase).toBe(expected);
     });
 
-    test('Should generate test case from multiple typed characters', () => {
+    it('Should generate test case from multiple typed characters', () => {
         // When
         const actions: Actions = [
             ['replace_text', 'a', undefined],
@@ -90,7 +90,7 @@ describe('generateTestCase', () => {
         expect(testCase).toBe(expected);
     });
 
-    test('Should generate test case collecting initial selections', () => {
+    it('Should generate test case collecting initial selections', () => {
         // When
         const actions: Actions = [
             ['replace_text', 'a', undefined],
@@ -114,7 +114,7 @@ describe('generateTestCase', () => {
         expect(testCase).toBe(expected);
     });
 
-    test('Should generate test case with pasted start', () => {
+    it('Should generate test case with pasted start', () => {
         // When
         const actions: Actions = [
             ['replace_text', 'abcd', undefined],
@@ -132,7 +132,7 @@ describe('generateTestCase', () => {
         expect(testCase).toBe(expected);
     });
 
-    test('Should generate test case by typing and bolding', () => {
+    it('Should generate test case by typing and bolding', () => {
         // When
         const actions: Actions = [
             ['replace_text', 'a', undefined],
@@ -155,7 +155,7 @@ describe('generateTestCase', () => {
         expect(testCase).toBe(expected);
     });
 
-    test('Should generate test case with backward selection', () => {
+    it('Should generate test case with backward selection', () => {
         // When
         const actions: Actions = [
             ['replace_text', 'a', undefined],
@@ -178,7 +178,7 @@ describe('generateTestCase', () => {
         expect(testCase).toBe(expected);
     });
 
-    test('Should generate test case with backward to beginning', () => {
+    it('Should generate test case with backward to beginning', () => {
         // When
         const actions: Actions = [
             ['replace_text', 'a', undefined],
@@ -201,7 +201,7 @@ describe('generateTestCase', () => {
         expect(testCase).toBe(expected);
     });
 
-    test('Should generate test case with backward from end', () => {
+    it('Should generate test case with backward from end', () => {
         // When
         const actions: Actions = [
             ['replace_text', 'abc', undefined],
@@ -219,7 +219,7 @@ describe('generateTestCase', () => {
         expect(testCase).toBe(expected);
     });
 
-    test('Should generate test case with tags on selection boundary', () => {
+    it('Should generate test case with tags on selection boundary', () => {
         // When
         const actions: Actions = [
             ['replace_text', 'aa<strong>bbbb</strong>cc', undefined],
@@ -237,7 +237,7 @@ describe('generateTestCase', () => {
         expect(testCase).toBe(expected);
     });
 
-    test('Should generate test case with multiple later selections', () => {
+    it('Should generate test case with multiple later selections', () => {
         // When
         const actions: Actions = [
             ['replace_text', 'aa<strong>bbbb</strong>cc', undefined],
@@ -262,7 +262,7 @@ describe('generateTestCase', () => {
         expect(testCase).toBe(expected);
     });
 
-    test('Should generate test case later selections to beginning', () => {
+    it('Should generate test case later selections to beginning', () => {
         // When
         const actions: Actions = [
             ['replace_text', 'aa<strong>bbbb</strong>cc', undefined],
@@ -284,7 +284,7 @@ describe('generateTestCase', () => {
         expect(testCase).toBe(expected);
     });
 
-    test('Should generate test case later selections to beginning', () => {
+    it('Should generate test case later selections to beginning', () => {
         // When
         const actions: Actions = [
             ['replace_text', 'aa<strong>bbbb</strong>cc', undefined],

@@ -12,13 +12,13 @@ The Matrix WYSIWYG composer is a React library.
 
 #### Generate WASM bindings
 
-The composer uses a cross-platform rust library. In order to work as intended, the WASM bindings must be generate according to the [Matrix Wysisyg README.md](../../../README.md)
+The composer uses a cross-platform rust library. In order to work as intended, the WASM bindings must be generated according to the [Matrix Wysisyg README.md](../../../README.md)
 
 #### Yarn install
 
 Requirements:
-    - node
-    - yarn
+    - node >= 8.X
+    - yarn 1.X
 
 
 ```sh

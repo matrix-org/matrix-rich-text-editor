@@ -3,17 +3,6 @@ import { RefObject, MouseEvent as ReactMouseEvent, useMemo } from 'react';
 import { BlockType } from './types';
 import { sendInputEvent } from './useListeners';
 
-/*
-const actions= {
-    bold: 'formatBold',
-    italic: 'formatItalic',
-    undo: 'historyUndo',
-    redo: 'historyRedo',
-
-};
-
-type FormattingActions = Record<keyof typeof actions, MouseEventHandler<HTMLElement>>;*/
-
 export function useFormattingActions(editorRef: RefObject<HTMLElement | null>) {
     const formattingActions = useMemo(() => {
         const sendEvent = (e: ReactMouseEvent<HTMLElement, MouseEvent> | KeyboardEvent,
@@ -26,11 +15,6 @@ export function useFormattingActions(editorRef: RefObject<HTMLElement | null>) {
             e.stopPropagation();
             editorRef.current?.dispatchEvent(new CustomEvent('formatBlock', { detail: { blockType } }));
         };
-
-        /*return Object.keys(actions).reduce<FormattingActions>((acc, action) => {
-            acc[action] = (e: MouseEvent) => sendInputEvent(e, actions[action]);
-            return acc;
-        }, {} as FormattingActions);*/
 
         return {
             bold: (e: ReactMouseEvent<HTMLElement, MouseEvent>) => sendEvent(e, 'formatBold'),
