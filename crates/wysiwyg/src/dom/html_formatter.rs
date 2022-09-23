@@ -94,7 +94,7 @@ where
     pub fn finish(self) -> S {
         let ret =
             S::from_vec(self.chars).expect("Unable to convert to unicode!");
-        S::from_str(&ret.to_utf8().replace("\u{A0}", "&nbsp;"))
+        S::from(&ret.to_utf8().replace("\u{A0}", "&nbsp;"))
     }
 
     pub fn len(&self) -> usize {

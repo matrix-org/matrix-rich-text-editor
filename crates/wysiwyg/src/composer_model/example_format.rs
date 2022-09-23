@@ -201,7 +201,7 @@ impl SelectionWriter {
         if let Some(loc) = self.locations.get(&node.handle()) {
             let strings_to_add = self.state.advance(loc, node.data().len());
             for (str, i) in strings_to_add.into_iter().rev() {
-                let code_units = S::from_str(str);
+                let code_units = S::from(str);
                 f.write_at(pos + i, code_units.as_ref());
             }
         }
@@ -216,7 +216,7 @@ impl SelectionWriter {
         if let Some(loc) = self.locations.get(&node.handle()) {
             let strings_to_add = self.state.advance(loc, 1);
             for (str, i) in strings_to_add.into_iter().rev() {
-                let code_units = S::from_str(str);
+                let code_units = S::from(str);
                 // Index 1 in line breaks is actually at the end of the '<br />'
                 let i = if i == 0 { 0 } else { 6 };
                 f.write_at(pos + i, code_units.as_ref());

@@ -216,8 +216,8 @@ where
             self.state.dom.append_child(DomNode::new_list(
                 list_type,
                 vec![DomNode::Container(ContainerNode::new_list_item(
-                    S::from_str("li"),
-                    vec![DomNode::new_text(S::from_str(""))],
+                    "li".into(),
+                    vec![DomNode::new_text(S::default())],
                 ))],
             ));
             self.create_update_replace_all()
@@ -240,7 +240,7 @@ where
                 let index_in_parent = handle.index_in_parent();
                 let list_item =
                     DomNode::Container(ContainerNode::new_list_item(
-                        S::from_str("li"),
+                        "li".into(),
                         vec![DomNode::new_text(text.clone())],
                     ));
                 if index_in_parent > 0 {
@@ -305,9 +305,9 @@ where
             if let DomNode::Container(list) = list_node {
                 let add_zwsp = new_li_text.len() == 0;
                 list.append_child(DomNode::new_list_item(
-                    S::from_str("li"),
+                    "li".into(),
                     vec![DomNode::new_text(if add_zwsp {
-                        S::from_str("\u{200b}")
+                        "\u{200b}".into()
                     } else {
                         new_li_text
                     })],
@@ -338,7 +338,7 @@ where
                 if let DomNode::Container(parent) = parent_node {
                     parent.remove_child(list_handle.index_in_parent());
                     if parent.children().is_empty() {
-                        parent.append_child(DomNode::new_text(S::from_str("")));
+                        parent.append_child(DomNode::new_text("".into()));
                     }
                     let new_location = Location::from(
                         current_cursor_global_location - list_len,
@@ -357,9 +357,8 @@ where
                         self.state.dom.lookup_node_mut(&parent_handle);
                     if let DomNode::Container(parent) = parent_node {
                         // TODO: should probably append a paragraph instead
-                        parent.append_child(DomNode::new_text(S::from_str(
-                            "\u{200b}",
-                        )));
+                        parent
+                            .append_child(DomNode::new_text("\u{200b}".into()));
                         let new_location = Location::from(
                             current_cursor_global_location - li_len + 1,
                         );

@@ -120,7 +120,7 @@ where
         let cur_pos = f.len();
         let string = self.data.to_utf8();
         let escaped = html_escape::encode_text(&string);
-        f.write(S::from_str(&escaped).as_ref());
+        f.write(S::from(&escaped).as_ref());
         Self::handle_several_whitespaces(f, cur_pos, is_last_node_in_parent);
         if let Some(selection_writer) = selection_writer {
             selection_writer.write_selection_text_node(f, cur_pos, self);
@@ -142,10 +142,10 @@ where
     S: UnicodeString,
 {
     fn to_tree_display(&self, continuous_positions: Vec<usize>) -> S {
-        let mut description = S::from_str("\"");
+        let mut description = S::from("\"");
         let text = &self.data.to_utf8().replace('\u{200b}', "~");
-        description.push_string(&S::from_str(text));
-        description.push_string(&S::from_str("\""));
+        description.push_string(&text.as_str().into());
+        description.push_string(&"\"".into());
         return self.tree_line(
             description,
             self.handle.raw().len(),

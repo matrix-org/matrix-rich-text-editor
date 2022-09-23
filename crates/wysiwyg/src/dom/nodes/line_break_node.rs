@@ -47,7 +47,7 @@ where
     }
 
     pub fn name(&self) -> S {
-        S::from_str("br")
+        "br".into()
     }
 
     pub fn handle(&self) -> DomHandle {
@@ -91,7 +91,7 @@ where
     S: UnicodeString,
 {
     fn to_raw_text(&self) -> S {
-        S::from_str("\\n")
+        "\\n".into()
     }
 }
 
