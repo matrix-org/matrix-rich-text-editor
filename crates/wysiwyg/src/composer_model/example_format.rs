@@ -12,13 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
+use std::ops::Not;
+
 use widestring::Utf16String;
 
-use crate::dom::nodes::TextNode;
+use crate::dom::nodes::{LineBreakNode, TextNode};
 use crate::dom::parser::parse;
-use crate::dom::{Dom, DomLocation, Range};
-use crate::{ComposerModel, ComposerState, DomHandle, DomNode, Location};
+use crate::dom::{DomLocation, HtmlFormatter};
+use crate::{
+    ComposerModel, ComposerState, DomHandle, Location, ToHtml, UnicodeString,
+};
 
 impl ComposerModel<Utf16String> {
     /// Convenience function to allow working with ComposerModel instances
@@ -142,21 +146,84 @@ impl ComposerModel<Utf16String> {
     /// See [ComposerModel::from_example_format] for the format used.
     pub fn to_example_format(&self) -> String {
         // Clone the model because we will modify it to add selection markers
-        let state = self.state.clone();
-        let mut dom = state.dom;
+        let state = &self.state;
+        let dom = &state.dom;
+
+        let mut formatter = HtmlFormatter::new();
 
         // Find out which nodes are involved in the selection
         let range = dom.find_range(state.start.into(), state.end.into());
 
         // Modify the text nodes to add {, } and |
-        write_selection_multi(
-            &mut dom,
-            range,
-            state.start.into(),
-            state.end.into(),
+        let selection_start = state.start.into();
+        let selection_end = state.end.into();
+        let doc_length = dom.document().text_len();
+        let root = dom.lookup_node(&dom.document_handle());
+        let state = SelectionWritingState::new(
+            selection_start,
+            selection_end,
+            doc_length,
         );
+        let locations = range
+            .leaves()
+            .into_iter()
+            .map(|l| (l.node_handle.clone(), l.clone()))
+            .collect();
+        let mut selection_writer = SelectionWriter { state, locations };
+        root.fmt_html(&mut formatter, Some(&mut selection_writer), false);
+        if range.is_empty().not() {
+            // we should always have written at least the start of the selection
+            // ({ or |) by now.
+            assert!(selection_writer.is_selection_written());
+        }
+        let ret = formatter.finish();
+        let html = ret.to_utf8();
 
-        dom.to_string().replace("\u{200b}", "~")
+        // Replace characters with visible ones
+        html.replace("\u{200b}", "~").replace("\u{A0}", "&nbsp;")
+    }
+}
+
+pub struct SelectionWriter {
+    state: SelectionWritingState,
+    locations: HashMap<DomHandle, DomLocation>,
+}
+
+impl SelectionWriter {
+    pub fn write_selection_text_node<S: UnicodeString>(
+        &mut self,
+        f: &mut HtmlFormatter<S>,
+        pos: usize,
+        node: &TextNode<S>,
+    ) {
+        if let Some(loc) = self.locations.get(&node.handle()) {
+            let strings_to_add = self.state.advance(&loc, node.data().len());
+            for (str, i) in strings_to_add.into_iter().rev() {
+                let code_units = S::from_str(str);
+                f.write_at(pos + i, code_units.as_slice());
+            }
+        }
+    }
+
+    pub fn write_selection_line_break_node<S: UnicodeString>(
+        &mut self,
+        f: &mut HtmlFormatter<S>,
+        pos: usize,
+        node: &LineBreakNode<S>,
+    ) {
+        if let Some(loc) = self.locations.get(&node.handle()) {
+            let strings_to_add = self.state.advance(&loc, 1);
+            for (str, i) in strings_to_add.into_iter().rev() {
+                let code_units = S::from_str(str);
+                // Index 1 in line breaks is actually at the end of the '<br />'
+                let i = if i == 0 { 0 } else { 6 };
+                f.write_at(pos + i, code_units.as_slice());
+            }
+        }
+    }
+
+    pub fn is_selection_written(&self) -> bool {
+        self.state.done_first
     }
 }
 
@@ -211,18 +278,6 @@ fn find_char(haystack: &[u16], needle: &str) -> Option<usize> {
         }
     }
     None
-}
-
-fn update_text_node(
-    node: &mut TextNode<Utf16String>,
-    offset: usize,
-    s: &'static str,
-) {
-    let data = node.data();
-    let mut new_start_data = data[..offset].to_string();
-    new_start_data.push_str(s);
-    new_start_data += &data[offset..].to_string();
-    node.set_data(Utf16String::from_str(&new_start_data));
 }
 
 #[derive(Debug)]
@@ -360,77 +415,15 @@ impl SelectionWritingState {
     }
 }
 
-/// Insert {, } and | to mark the start and end of a range
-/// start is the absolute position of the start of the range
-/// end is the absolute position of the end of the range
-fn write_selection_multi(
-    dom: &mut Dom<Utf16String>,
-    range: Range,
-    start: usize,
-    end: usize,
-) {
-    let mut state =
-        SelectionWritingState::new(start, end, dom.document().text_len());
-
-    let mut nodes_to_add = Vec::new();
-
-    if range.is_empty() {
-        // TODO: weirdly we don't add "|" here
-        nodes_to_add.push((
-            DomHandle::from_raw(vec![1]),
-            0,
-            DomNode::new_text(Utf16String::from_str("")),
-        ));
-        state.done_first = true;
-    }
-
-    for location in range.locations {
-        let handle = &location.node_handle;
-        let mut node = dom.lookup_node_mut(handle);
-        match &mut node {
-            DomNode::Container(_) => {}
-            DomNode::LineBreak(_) => {
-                let strings_to_add = state.advance(&location, 1);
-                for (s, offset) in strings_to_add.iter().rev() {
-                    nodes_to_add.push((
-                        handle.clone(),
-                        handle.index_in_parent() + offset,
-                        DomNode::new_text(Utf16String::from_str(s)),
-                    ));
-                }
-            }
-            DomNode::Text(n) => {
-                let strings_to_add = state.advance(&location, n.data().len());
-                for (s, offset) in strings_to_add.iter().rev() {
-                    update_text_node(n, *offset, s);
-                }
-            }
-        }
-    }
-    if !nodes_to_add.is_empty() {
-        for (handle, idx, node) in nodes_to_add.into_iter().rev() {
-            let parent = dom.lookup_node_mut(&handle.parent_handle());
-            if let DomNode::Container(parent) = parent {
-                parent.insert_child(idx, node);
-            } else {
-                panic!("Parent node was not a container!");
-            }
-        }
-    }
-
-    // we should always have written at least the start of the selection
-    // ({ or |) by now.
-    assert!(state.done_first);
-}
-
 #[cfg(test)]
 mod test {
-    use speculoos::{prelude::*, AssertionFailure, Spec};
     use std::collections::HashSet;
+
+    use speculoos::{prelude::*, AssertionFailure, Spec};
     use widestring::Utf16String;
 
     use crate::dom::{parser, Dom, DomLocation};
-    use crate::tests::testutils_composer_model::{cm, tx};
+    use crate::tests::testutils_composer_model::{cm, restore_whitespace, tx};
     use crate::tests::testutils_conversion::utf16;
     use crate::{ComposerModel, ComposerState, DomHandle, DomNode, Location};
 
@@ -786,7 +779,7 @@ mod test {
     {
         fn roundtrips(&self) {
             let subject = self.subject.as_ref();
-            let output = tx(&cm(subject));
+            let output = restore_whitespace(&tx(&cm(subject)));
             if output != subject {
                 AssertionFailure::from_spec(self)
                     .with_expected(String::from(subject))

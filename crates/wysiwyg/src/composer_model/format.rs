@@ -472,7 +472,7 @@ mod test {
         model.format(InlineFormatType::Bold);
         assert_eq!(
             model.state.dom.to_string(),
-            "<strong>hello </strong><i><strong>wor</strong>ld</i>"
+            "<strong>hello&nbsp;</strong><i><strong>wor</strong>ld</i>"
         );
     }
 
@@ -555,6 +555,6 @@ mod test {
         model.bold();
         assert_eq!(tx(&model), "AAA <strong>{~}|</strong>");
         model.bold();
-        assert_eq!(tx(&model), "AAA |");
+        assert_eq!(tx(&model), "AAA&nbsp;|");
     }
 }

@@ -15,7 +15,9 @@
 use std::fmt::Display;
 
 use crate::composer_model::base::{slice_from, slice_to};
+use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode};
+use crate::dom::HtmlFormatter;
 use crate::dom::{
     find_range, to_raw_text::ToRawText, DomHandle, Range, ToTree, UnicodeString,
 };
@@ -328,8 +330,14 @@ impl<S> ToHtml<S> for Dom<S>
 where
     S: UnicodeString,
 {
-    fn fmt_html(&self, f: &mut super::HtmlFormatter<S>) {
-        self.document.fmt_html(f)
+    fn fmt_html(
+        &self,
+        f: &mut HtmlFormatter<S>,
+        selection_writer: Option<&mut SelectionWriter>,
+        is_last_node_in_parent: bool,
+    ) {
+        self.document
+            .fmt_html(f, selection_writer, is_last_node_in_parent)
     }
 }
 

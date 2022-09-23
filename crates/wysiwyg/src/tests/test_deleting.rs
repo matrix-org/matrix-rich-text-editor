@@ -14,7 +14,7 @@
 
 #![cfg(test)]
 
-use crate::tests::testutils_composer_model::{cm, tx};
+use crate::tests::testutils_composer_model::{cm, restore_whitespace, tx};
 
 #[test]
 fn backspacing_a_character_at_the_end_deletes_it() {
@@ -110,7 +110,7 @@ fn deleting_across_list_items_joins_them() {
         </ol>");
     model.delete();
     assert_eq!(
-        tx(&model),
+        restore_whitespace(&tx(&model)),
         "<ol>
             <li>1|4</li>
         </ol>"
@@ -129,7 +129,7 @@ fn deleting_across_lists_joins_them() {
         </ol>");
     model.delete();
     assert_eq!(
-        tx(&model),
+        restore_whitespace(&tx(&model)),
         "<ol>
             <li>1|4</li>
         </ol>"
@@ -151,7 +151,7 @@ fn deleting_across_lists_joins_them_nested() {
         </ol>");
     model.delete();
     assert_eq!(
-        tx(&model),
+        restore_whitespace(&tx(&model)),
         "<ol>
             <li>1|4</li>
         </ol>"
@@ -162,14 +162,14 @@ fn deleting_across_lists_joins_them_nested() {
 fn deleting_across_formatting_different_types() {
     let mut model = cm("<b><i>some {italic</i></b> and}| <b>bold</b> text");
     model.delete();
-    assert_eq!(tx(&model), "<b><i>some |</i></b> <b>bold</b> text");
+    assert_eq!(tx(&model), "<b><i>some&nbsp;|</i></b> <b>bold</b> text");
 }
 
 #[test]
 fn deleting_across_formatting_different_types_on_node_boundary() {
     let mut model = cm("<b><i>some {italic</i></b> and }|<b>bold</b> text");
     model.delete();
-    assert_eq!(tx(&model), "<b><i>some |</i>bold</b> text");
+    assert_eq!(tx(&model), "<b><i>some&nbsp;|</i>bold</b> text");
 }
 
 #[test]

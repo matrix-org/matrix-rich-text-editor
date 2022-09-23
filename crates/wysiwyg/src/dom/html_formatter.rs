@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::ops::{Range, RangeFrom};
+
 use super::UnicodeString;
 
 pub struct HtmlFormatter<S>
@@ -42,6 +44,14 @@ where
         }
     }
 
+    pub fn chars_at(&self, range: Range<usize>) -> &[S::CodeUnit] {
+        &self.chars[range]
+    }
+
+    pub fn chars_from(&self, range: RangeFrom<usize>) -> &[S::CodeUnit] {
+        &self.chars[range]
+    }
+
     pub fn write_char(&mut self, c: HtmlChar) {
         self.chars.push(match c {
             HtmlChar::Equal => self.known_char_data.equal.clone(),
@@ -59,6 +69,22 @@ where
         self.chars.extend_from_slice(slice);
     }
 
+    pub fn write_char_at(&mut self, pos: usize, char: S::CodeUnit) {
+        self.chars.insert(pos, char);
+    }
+
+    pub fn write_at(&mut self, pos: usize, slice: &[S::CodeUnit]) {
+        self.write_at_range(pos..pos, slice);
+    }
+
+    pub fn write_at_range(
+        &mut self,
+        range: Range<usize>,
+        slice: &[S::CodeUnit],
+    ) {
+        self.chars.splice(range, slice.to_vec());
+    }
+
     pub fn write_iter(&mut self, chars: impl Iterator<Item = S::CodeUnit>) {
         self.chars.extend(chars)
     }
@@ -68,7 +94,13 @@ where
     }
 
     pub fn finish(self) -> S {
-        S::from_vec(self.chars).expect("Unable to convert to unicode!")
+        let ret =
+            S::from_vec(self.chars).expect("Unable to convert to unicode!");
+        S::from_str(&ret.to_utf8().replace("\u{A0}", "&nbsp;"))
+    }
+
+    pub fn len(&self) -> usize {
+        self.chars.len()
     }
 }
 

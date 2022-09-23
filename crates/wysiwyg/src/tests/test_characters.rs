@@ -16,7 +16,7 @@
 
 use widestring::Utf16String;
 
-use crate::tests::testutils_composer_model::{cm, tx};
+use crate::tests::testutils_composer_model::{cm, restore_whitespace, tx};
 use crate::tests::testutils_conversion::utf16;
 use crate::{ComposerModel, Location};
 
@@ -195,7 +195,7 @@ fn replacing_across_list_items_deletes_intervening_ones() {
         </ol>");
     replace_text(&mut model, "Z");
     assert_eq!(
-        tx(&model),
+        restore_whitespace(&tx(&model)),
         "<ol>
             <li>1Z|3</li>
             <li>44</li>
@@ -215,7 +215,7 @@ fn replacing_across_lists_joins_them() {
         </ol>");
     replace_text(&mut model, "Z");
     assert_eq!(
-        tx(&model),
+        restore_whitespace(&tx(&model)),
         "<ol>
             <li>1Z|4</li>
         </ol>"
@@ -248,6 +248,23 @@ fn replacing_a_selection_ending_br_with_a_character() {
     let mut model = cm("abc{def<br />}|ghi");
     replace_text(&mut model, "Z");
     assert_eq!(tx(&model), "abcZ|ghi");
+}
+
+#[test]
+fn multiple_spaces_translates_into_non_breakable_whitespaces() {
+    let mut model = cm("abc|");
+    replace_text(&mut model, " ");
+    assert_eq!(tx(&model), "abc&nbsp;|");
+    replace_text(&mut model, " ");
+    assert_eq!(tx(&model), "abc&nbsp;&nbsp;|");
+    replace_text(&mut model, " ");
+    assert_eq!(tx(&model), "abc&nbsp;&nbsp;&nbsp;|");
+}
+
+#[test]
+fn multiple_spaces_between_text() {
+    let model = cm("abc  def ghi   jkl|");
+    assert_eq!(tx(&model), "abc&nbsp;&nbsp;def ghi&nbsp;&nbsp;&nbsp;jkl|");
 }
 
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {

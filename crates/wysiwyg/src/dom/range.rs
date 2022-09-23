@@ -92,12 +92,22 @@ impl DomLocation {
 
     /// Whether the selection starts at this location or not
     pub fn is_start(&self) -> bool {
-        self.end_offset == self.length
+        let end_offset = if self.start_offset < self.end_offset {
+            self.end_offset
+        } else {
+            self.start_offset
+        };
+        end_offset == self.length
     }
 
     /// Whether the selection ends at this location or not
     pub fn is_end(&self) -> bool {
-        self.start_offset == 0
+        let start_offset = if self.start_offset < self.end_offset {
+            self.start_offset
+        } else {
+            self.end_offset
+        };
+        start_offset == 0
     }
 
     /// Whether the selection completely covers this location
