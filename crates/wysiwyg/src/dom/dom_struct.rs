@@ -365,7 +365,7 @@ where
     S: UnicodeString,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.to_html().to_utf8())
+        f.write_str(&self.to_html().to_string())
     }
 }
 
@@ -529,7 +529,7 @@ mod test {
         let d = dom(&[a(&[tn("foo")])]);
         assert_eq!(
             "<a href=\"https://element.io\">foo</a>",
-            d.to_html().to_utf8()
+            d.to_html().to_string()
         );
     }
 
@@ -538,20 +538,20 @@ mod test {
         let d = dom(&[a(&[b(&[tn("foo")]), tn(" "), i(&[tn("bar")])])]);
         assert_eq!(
             "<a href=\"https://element.io\"><b>foo</b> <i>bar</i></a>",
-            d.to_html().to_utf8()
+            d.to_html().to_string()
         );
     }
 
     #[test]
     fn inline_code_gets_formatted() {
         let d = dom(&[i_c(&[tn("some_code")])]);
-        assert_eq!("<code>some_code</code>", d.to_html().to_utf8());
+        assert_eq!("<code>some_code</code>", d.to_html().to_string());
     }
 
     #[test]
     fn html_symbols_inside_text_tags_get_escaped() {
         let d = dom(&[tn("<p>Foo & bar</p>")]);
-        assert_eq!("&lt;p&gt;Foo &amp; bar&lt;/p&gt;", d.to_html().to_utf8());
+        assert_eq!("&lt;p&gt;Foo &amp; bar&lt;/p&gt;", d.to_html().to_string());
     }
 
     #[test]
@@ -559,14 +559,14 @@ mod test {
         let d = dom(&[i_c(&[tn("<b>some</b> code")])]);
         assert_eq!(
             "<code>&lt;b&gt;some&lt;/b&gt; code</code>",
-            d.to_html().to_utf8()
+            d.to_html().to_string()
         );
     }
 
     #[test]
     fn inline_code_node_contents_do_not_get_escaped() {
         let d = dom(&[i_c(&[b(&[tn("some")]), tn(" code")])]);
-        assert_eq!("<code><b>some</b> code</code>", d.to_html().to_utf8());
+        assert_eq!("<code><b>some</b> code</code>", d.to_html().to_string());
     }
 
     #[test]

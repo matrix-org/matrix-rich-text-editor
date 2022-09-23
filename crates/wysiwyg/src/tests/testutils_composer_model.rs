@@ -33,5 +33,5 @@ pub(crate) fn restore_whitespace(text: &String) -> String {
 }
 
 pub(crate) fn restore_whitespace_u16(text: &Utf16String) -> Utf16String {
-    Utf16String::from(restore_whitespace(&text.to_utf8()))
+    Utf16String::from(restore_whitespace(&text.to_string()))
 }

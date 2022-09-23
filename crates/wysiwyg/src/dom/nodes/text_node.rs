@@ -118,7 +118,7 @@ where
         is_last_node_in_parent: bool,
     ) {
         let cur_pos = f.len();
-        let string = self.data.to_utf8();
+        let string = self.data.to_string();
         let escaped = html_escape::encode_text(&string);
         f.write(S::from(&escaped).as_ref());
         Self::handle_several_whitespaces(f, cur_pos, is_last_node_in_parent);
@@ -143,7 +143,7 @@ where
 {
     fn to_tree_display(&self, continuous_positions: Vec<usize>) -> S {
         let mut description = S::from("\"");
-        let text = &self.data.to_utf8().replace('\u{200b}', "~");
+        let text = &self.data.to_string().replace('\u{200b}', "~");
         description.push_string(&text.as_str().into());
         description.push_string(&"\"".into());
         return self.tree_line(

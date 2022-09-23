@@ -217,7 +217,7 @@ impl TextUpdate {
                 Self {
                     keep: None,
                     replace_all: Some(ReplaceAll {
-                        replacement_html: r.replacement_html.to_utf8(),
+                        replacement_html: r.replacement_html.to_string(),
                         start_utf16_codeunit: u32::try_from(
                             start_utf16_codeunit,
                         )
@@ -370,7 +370,7 @@ impl DomHandle {
         match node {
             wysiwyg::DomNode::Container(_) => String::from(""),
             wysiwyg::DomNode::LineBreak(_) => String::from(""),
-            wysiwyg::DomNode::Text(node) => node.data().to_utf8(),
+            wysiwyg::DomNode::Text(node) => node.data().to_string(),
         }
     }
 
@@ -381,8 +381,8 @@ impl DomHandle {
     pub fn tag(&self, model: &ComposerModel) -> String {
         let node = model.inner.state.dom.lookup_node(&self.inner);
         match node {
-            wysiwyg::DomNode::Container(node) => node.name().to_utf8(),
-            wysiwyg::DomNode::LineBreak(node) => node.name().to_utf8(),
+            wysiwyg::DomNode::Container(node) => node.name().to_string(),
+            wysiwyg::DomNode::LineBreak(node) => node.name().to_string(),
             wysiwyg::DomNode::Text(_) => String::from("-text-"),
         }
     }

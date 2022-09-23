@@ -59,7 +59,7 @@ where
         DomNode::Container(
             ContainerNode::new_formatting_from_tag(format.clone(), children)
                 .unwrap_or_else(|| {
-                    panic!("Unknown format tag {}", format.to_utf8())
+                    panic!("Unknown format tag {}", format.to_string())
                 }),
         )
     }
@@ -131,7 +131,7 @@ where
     pub(crate) fn is_placeholder_text_node(&self) -> bool {
         match self {
             DomNode::Text(n) => {
-                n.data().len() == 1 && n.data().to_utf8() == "\u{200b}"
+                n.data().len() == 1 && n.data().to_string() == "\u{200b}"
             }
             _ => false,
         }

@@ -31,11 +31,11 @@ impl ListType {
 
 impl<S: UnicodeString> From<S> for ListType {
     fn from(value: S) -> Self {
-        match value.to_utf8().as_str() {
+        match value.to_string().as_str() {
             "ol" => ListType::Ordered,
             "ul" => ListType::Unordered,
             _ => {
-                panic!("Unknown list type {}", value.to_utf8().as_str());
+                panic!("Unknown list type {}", value.to_string().as_str());
             }
         }
     }

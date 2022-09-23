@@ -73,7 +73,7 @@ impl ComposerModel<Utf16String> {
     /// use wysiwyg::{ComposerModel, Location, ToHtml, UnicodeString};
     ///
     /// let mut model = ComposerModel::from_example_format("aa{bb}|cc");
-    /// assert_eq!(model.state.dom.to_html().to_utf8(), "aabbcc");
+    /// assert_eq!(model.state.dom.to_html().to_string(), "aabbcc");
     /// assert_eq!(model.state.start, 2);
     /// assert_eq!(model.state.end, 4);
     /// model.select(Location::from(1), Location::from(5));
@@ -180,7 +180,7 @@ impl ComposerModel<Utf16String> {
             assert!(selection_writer.is_selection_written());
         }
         let ret = formatter.finish();
-        let html = ret.to_utf8();
+        let html = ret.to_string();
 
         // Replace characters with visible ones
         html.replace('\u{200b}', "~").replace('\u{A0}', "&nbsp;")
