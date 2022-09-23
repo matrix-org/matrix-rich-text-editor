@@ -26,7 +26,7 @@ pub trait UnicodeString:
     + AsRef<[Self::CodeUnit]>
     + for<'a> From<&'a str>
 {
-    type CodeUnit: Copy + PartialEq;
+    type CodeUnit: Copy + From<u8> + PartialEq;
 
     fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String>;
 

@@ -21,7 +21,6 @@ where
     S: UnicodeString,
 {
     chars: Vec<S::CodeUnit>,
-    known_char_data: KnownCharData<S>,
 }
 
 pub enum HtmlChar {
@@ -38,10 +37,7 @@ where
     S: UnicodeString,
 {
     pub fn new() -> Self {
-        Self {
-            chars: Vec::new(),
-            known_char_data: KnownCharData::new(),
-        }
+        Self { chars: Vec::new() }
     }
 
     pub fn chars_at(&self, range: Range<usize>) -> &[S::CodeUnit] {
@@ -54,12 +50,12 @@ where
 
     pub fn write_char(&mut self, c: HtmlChar) {
         self.chars.push(match c {
-            HtmlChar::Equal => self.known_char_data.equal,
-            HtmlChar::ForwardSlash => self.known_char_data.forward_slash,
-            HtmlChar::Gt => self.known_char_data.gt,
-            HtmlChar::Lt => self.known_char_data.lt,
-            HtmlChar::Quote => self.known_char_data.quote,
-            HtmlChar::Space => self.known_char_data.space,
+            HtmlChar::Equal => b'='.into(),
+            HtmlChar::ForwardSlash => b'/'.into(),
+            HtmlChar::Gt => b'>'.into(),
+            HtmlChar::Lt => b'<'.into(),
+            HtmlChar::Quote => b'"'.into(),
+            HtmlChar::Space => b' '.into(),
         });
     }
 
@@ -99,33 +95,5 @@ where
 
     pub fn len(&self) -> usize {
         self.chars.len()
-    }
-}
-
-struct KnownCharData<S>
-where
-    S: UnicodeString,
-{
-    equal: S::CodeUnit,
-    forward_slash: S::CodeUnit,
-    gt: S::CodeUnit,
-    lt: S::CodeUnit,
-    quote: S::CodeUnit,
-    space: S::CodeUnit,
-}
-
-impl<S> KnownCharData<S>
-where
-    S: UnicodeString,
-{
-    fn new() -> Self {
-        Self {
-            equal: S::c_from_char('='),
-            forward_slash: S::c_from_char('/'),
-            gt: S::c_from_char('>'),
-            lt: S::c_from_char('<'),
-            quote: S::c_from_char('"'),
-            space: S::c_from_char(' '),
-        }
     }
 }
