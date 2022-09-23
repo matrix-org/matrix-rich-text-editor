@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::marker::PhantomData;
-
 use super::unicode_string::UnicodeStringExt;
 use super::UnicodeString;
+
+const DOUBLE_WHITESPACE: &str = "\u{0020}\u{0020}";
+const UP_RIGHT_AND_GT: &str = "\u{2514}\u{003E}";
+const VERTICAL_RIGHT_AND_GT: &str = "\u{251C}\u{003E}";
+const VERTICAL_AND_WHITESPACE: &str = "\u{2502}\u{0020}";
 
 pub trait ToTree<S>
 where
@@ -43,47 +46,18 @@ where
         for i in 0..depth {
             if i == depth - 1 {
                 if continuous_positions.contains(&i) {
-                    tree_part
-                        .push_string(&TreeSymbols::vertical_right_and_gt());
+                    tree_part.push(VERTICAL_RIGHT_AND_GT);
                 } else {
-                    tree_part.push_string(&TreeSymbols::up_right_and_gt());
+                    tree_part.push(UP_RIGHT_AND_GT);
                 }
             } else if continuous_positions.contains(&i) {
-                tree_part.push_string(&TreeSymbols::vertical_and_whitespace());
+                tree_part.push(VERTICAL_AND_WHITESPACE);
             } else {
-                tree_part.push_string(&TreeSymbols::double_whitespace());
+                tree_part.push(DOUBLE_WHITESPACE);
             }
         }
-        tree_part.push_string(&description);
-        tree_part.push_string(&"\n".into());
+        tree_part.push(description);
+        tree_part.push('\n');
         tree_part
-    }
-}
-
-struct TreeSymbols<S>
-where
-    S: UnicodeString,
-{
-    phantom_data: PhantomData<S>,
-}
-
-impl<S> TreeSymbols<S>
-where
-    S: UnicodeString,
-{
-    fn double_whitespace() -> S {
-        "\u{0020}\u{0020}".into()
-    }
-
-    fn up_right_and_gt() -> S {
-        "\u{2514}\u{003E}".into()
-    }
-
-    fn vertical_right_and_gt() -> S {
-        "\u{251C}\u{003E}".into()
-    }
-
-    fn vertical_and_whitespace() -> S {
-        "\u{2502}\u{0020}".into()
     }
 }

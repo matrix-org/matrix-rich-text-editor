@@ -195,7 +195,7 @@ where
                 }
                 (DomNode::Text(start_i), DomNode::Text(next_i)) => {
                     let mut new_data = start_i.data().clone();
-                    new_data.push_string(next_i.data());
+                    new_data.push(&**next_i.data());
                     let text_node = DomNode::new_text(new_data);
                     if let DomNode::Container(old_parent) =
                         dom.lookup_node_mut(&next_handle.parent_handle())

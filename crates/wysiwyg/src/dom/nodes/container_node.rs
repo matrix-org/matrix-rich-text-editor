@@ -333,7 +333,7 @@ where
     fn to_raw_text(&self) -> S {
         let mut text = S::default();
         for child in &self.children {
-            text.push_string(&child.to_raw_text());
+            text.push(child.to_raw_text());
         }
         text
     }
@@ -355,7 +355,7 @@ where
             if i < self.children.len() - 1 {
                 new_positions.push(self.handle.raw().len());
             }
-            tree_part.push_string(&child.to_tree_display(new_positions));
+            tree_part.push(child.to_tree_display(new_positions));
         }
         tree_part
     }

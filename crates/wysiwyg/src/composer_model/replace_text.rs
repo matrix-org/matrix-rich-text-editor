@@ -215,13 +215,10 @@ where
 
                         // and replace with the new content
                         if first_text_node {
-                            new_data.push_string(&new_text);
+                            new_data.push(&*new_text);
                         }
 
-                        new_data.push_string(&slice_from(
-                            old_data,
-                            loc.end_offset..,
-                        ));
+                        new_data.push(slice_from(old_data, loc.end_offset..));
                         node.set_data(new_data);
                     }
 
