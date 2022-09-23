@@ -54,14 +54,12 @@ where
 
     pub fn write_char(&mut self, c: HtmlChar) {
         self.chars.push(match c {
-            HtmlChar::Equal => self.known_char_data.equal.clone(),
-            HtmlChar::ForwardSlash => {
-                self.known_char_data.forward_slash.clone()
-            }
-            HtmlChar::Gt => self.known_char_data.gt.clone(),
-            HtmlChar::Lt => self.known_char_data.lt.clone(),
-            HtmlChar::Quote => self.known_char_data.quote.clone(),
-            HtmlChar::Space => self.known_char_data.space.clone(),
+            HtmlChar::Equal => self.known_char_data.equal,
+            HtmlChar::ForwardSlash => self.known_char_data.forward_slash,
+            HtmlChar::Gt => self.known_char_data.gt,
+            HtmlChar::Lt => self.known_char_data.lt,
+            HtmlChar::Quote => self.known_char_data.quote,
+            HtmlChar::Space => self.known_char_data.space,
         });
     }
 
