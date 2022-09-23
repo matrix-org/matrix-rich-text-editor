@@ -61,12 +61,19 @@ web:
 	npm install && \
 	npm run build && \
 	mkdir -p ../../platforms/web/example/generated && \
+	mkdir -p ../../platforms/web/src/generated && \
 	cp \
 		pkg/wysiwyg_bg.wasm \
 		pkg/wysiwyg_bg.wasm.d.ts \
 		pkg/wysiwyg.d.ts \
 		pkg/wysiwyg.js \
-		../../platforms/web/example/generated/
+		../../platforms/web/example/generated/ && \
+	cp \
+		pkg/wysiwyg_bg.wasm \
+		pkg/wysiwyg_bg.wasm.d.ts \
+		pkg/wysiwyg.d.ts \
+		pkg/wysiwyg.js \
+		../../platforms/web/src/generated/ 
 
 clean:
 	cargo clean
@@ -84,3 +91,4 @@ coverage:
 	@echo "Requires `rustup component add llvm-tools-preview`"
 	@echo "Requires `cargo install cargo-llvm-cov`"
 	cargo llvm-cov --open
+	

@@ -1,6 +1,7 @@
 # ENV
 **/.python-version
 **/.vscode
+**/.DS_Store
 # Generated
 /target/
 /bindings/wysiwyg-ffi/.cargo/
@@ -9,3 +10,4 @@
 /bindings/wysiwyg-wasm/node_modules/
 /platforms/android/example/.idea/
 /platforms/android/out/
+
