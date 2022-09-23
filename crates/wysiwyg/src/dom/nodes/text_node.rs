@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use crate::composer_model::example_format::SelectionWriter;
+use crate::dom::unicode_string::UnicodeStringExt;
 use html_escape;
 
 use crate::dom::dom_handle::DomHandle;

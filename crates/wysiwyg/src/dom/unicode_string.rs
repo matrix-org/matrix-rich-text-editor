@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::iter;
+use std::ops::Deref;
+
 use widestring::{Utf16String, Utf32String};
 
 /// The type of string being used inside a [Dom] instance. Must
@@ -26,6 +29,8 @@ pub trait UnicodeString:
     + PartialEq
     + AsRef<[Self::CodeUnit]>
     + for<'a> From<&'a str>
+    + Deref
+    + for<'a> Extend<&'a <Self as Deref>::Target>
 {
     type CodeUnit: Copy + From<u8> + PartialEq;
 
@@ -34,8 +39,6 @@ pub trait UnicodeString:
     /// Convert this character to a code unit.
     /// Panics if this character requires more than one code unit
     fn c_from_char(ch: char) -> Self::CodeUnit;
-
-    fn push_string(&mut self, s: &Self);
 }
 
 impl UnicodeString for String {
@@ -50,10 +53,6 @@ impl UnicodeString for String {
         let mut buf = [0; 1];
         ch.encode_utf8(&mut buf);
         buf[0]
-    }
-
-    fn push_string(&mut self, s: &Self) {
-        self.push_str(s)
     }
 }
 
@@ -70,10 +69,6 @@ impl UnicodeString for Utf16String {
         assert!(ret.len() == 1);
         ret.into_vec()[0]
     }
-
-    fn push_string(&mut self, s: &Self) {
-        self.push_utfstr(s.as_utfstr())
-    }
 }
 
 impl UnicodeString for Utf32String {
@@ -89,18 +84,19 @@ impl UnicodeString for Utf32String {
         assert!(ret.len() == 1);
         ret.into_vec()[0]
     }
-
-    fn push_string(&mut self, s: &Self) {
-        self.push_utfstr(s.as_utfstr())
-    }
 }
 
 pub trait UnicodeStringExt: UnicodeString {
+    fn push_string(&mut self, s: &Self);
     fn is_empty(&self) -> bool;
     fn len(&self) -> usize;
 }
 
 impl<S: UnicodeString> UnicodeStringExt for S {
+    fn push_string(&mut self, s: &Self) {
+        self.extend(iter::once(s.deref()));
+    }
+
     fn is_empty(&self) -> bool {
         self.as_ref().is_empty()
     }
