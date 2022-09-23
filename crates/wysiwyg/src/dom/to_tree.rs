@@ -38,7 +38,7 @@ where
         depth: usize,
         continuous_positions: Vec<usize>,
     ) -> S {
-        let mut tree_part = S::from_str("");
+        let mut tree_part = S::default();
         for i in 0..depth {
             if i == depth - 1 {
                 if continuous_positions.contains(&i) {
@@ -54,7 +54,7 @@ where
             }
         }
         tree_part.push_string(&description);
-        tree_part.push_string(&S::from_str("\n"));
+        tree_part.push_string(&"\n".into());
         tree_part
     }
 }
@@ -71,18 +71,18 @@ where
     S: UnicodeString,
 {
     fn double_whitespace() -> S {
-        S::from_str("\u{0020}\u{0020}")
+        "\u{0020}\u{0020}".into()
     }
 
     fn up_right_and_gt() -> S {
-        S::from_str("\u{2514}\u{003E}")
+        "\u{2514}\u{003E}".into()
     }
 
     fn vertical_right_and_gt() -> S {
-        S::from_str("\u{251C}\u{003E}")
+        "\u{251C}\u{003E}".into()
     }
 
     fn vertical_and_whitespace() -> S {
-        S::from_str("\u{2502}\u{0020}")
+        "\u{2502}\u{0020}".into()
     }
 }

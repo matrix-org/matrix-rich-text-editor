@@ -89,7 +89,7 @@ where
         children: Vec<DomNode<S>>,
     ) -> Self {
         Self {
-            name: UnicodeString::from_str(format.tag()),
+            name: format.tag().into(),
             kind: ContainerNodeKind::Formatting(format),
             attrs: None,
             children,
@@ -99,7 +99,7 @@ where
 
     pub fn new_list(list_type: ListType, children: Vec<DomNode<S>>) -> Self {
         Self {
-            name: S::from_str(list_type.tag()),
+            name: list_type.tag().into(),
             kind: ContainerNodeKind::List,
             attrs: None,
             children,
@@ -246,9 +246,9 @@ where
 
     pub fn new_link(url: S, children: Vec<DomNode<S>>) -> Self {
         Self {
-            name: S::from_str("a"),
+            name: "a".into(),
             kind: ContainerNodeKind::Link(url.clone()),
-            attrs: Some(vec![(S::from_str("href"), url)]),
+            attrs: Some(vec![("href".into(), url)]),
             children,
             handle: DomHandle::new_unset(),
         }
@@ -267,7 +267,7 @@ where
     pub(crate) fn set_list_type(&mut self, list_type: ListType) {
         match self.kind {
             ContainerNodeKind::List => {
-                self.name = S::from_str(list_type.tag());
+                self.name = list_type.tag().into();
             }
             _ => panic!(
                 "Setting list type to a non-list container is not allowed"
@@ -330,7 +330,7 @@ where
     S: UnicodeString,
 {
     fn to_raw_text(&self) -> S {
-        let mut text = S::from_str("");
+        let mut text = S::default();
         for child in &self.children {
             text.push_string(&child.to_raw_text());
         }
@@ -473,6 +473,6 @@ mod test {
     where
         S: UnicodeString,
     {
-        DomNode::new_text(S::from_str(content))
+        DomNode::new_text(content.into())
     }
 }

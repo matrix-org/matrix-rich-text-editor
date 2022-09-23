@@ -19,11 +19,14 @@ use widestring::{Utf16String, Utf32String};
 /// We implement this for String, Utf16String and Utf32String (from the
 /// widestring crate).
 pub trait UnicodeString:
-    Clone + std::fmt::Debug + Default + PartialEq + AsRef<[Self::CodeUnit]>
+    Clone
+    + std::fmt::Debug
+    + Default
+    + PartialEq
+    + AsRef<[Self::CodeUnit]>
+    + for<'a> From<&'a str>
 {
     type CodeUnit: Copy + PartialEq;
-
-    fn from_str<T: AsRef<str> + ?Sized>(s: &T) -> Self;
 
     fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String>;
 
@@ -42,10 +45,6 @@ pub trait UnicodeString:
 
 impl UnicodeString for String {
     type CodeUnit = u8;
-
-    fn from_str<T: AsRef<str> + ?Sized>(s: &T) -> Self {
-        String::from(s.as_ref())
-    }
 
     fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String> {
         String::from_utf8(v.into()).map_err(|e| e.to_string())
@@ -78,10 +77,6 @@ impl UnicodeString for String {
 impl UnicodeString for Utf16String {
     type CodeUnit = u16;
 
-    fn from_str<T: AsRef<str> + ?Sized>(s: &T) -> Self {
-        Utf16String::from_str(s)
-    }
-
     fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String> {
         Utf16String::from_vec(v.into()).map_err(|e| e.to_string())
     }
@@ -113,10 +108,6 @@ impl UnicodeString for Utf16String {
 
 impl UnicodeString for Utf32String {
     type CodeUnit = u32;
-
-    fn from_str<T: AsRef<str> + ?Sized>(s: &T) -> Self {
-        Utf32String::from_str(s)
-    }
 
     fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String> {
         Utf32String::from_vec(v.into()).map_err(|e| e.to_string())

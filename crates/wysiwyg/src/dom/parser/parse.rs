@@ -66,11 +66,8 @@ where
         S: UnicodeString,
     {
         DomNode::Container(
-            ContainerNode::new_formatting_from_tag(
-                S::from_str(tag),
-                Vec::new(),
-            )
-            .unwrap_or_else(|| panic!("Unknown format tag {}", tag)),
+            ContainerNode::new_formatting_from_tag(tag.into(), Vec::new())
+                .unwrap_or_else(|| panic!("Unknown format tag {}", tag)),
         )
     }
 
@@ -88,7 +85,7 @@ where
         S: UnicodeString,
     {
         DomNode::Container(ContainerNode::new_link(
-            S::from_str(child.get_attr("href").unwrap_or("")),
+            child.get_attr("href").unwrap_or("").into(),
             Vec::new(),
         ))
     }
@@ -99,7 +96,7 @@ where
         S: UnicodeString,
     {
         DomNode::Container(ContainerNode::new_list(
-            ListType::try_from(S::from_str(tag)).unwrap(),
+            ListType::try_from(S::from(tag)).unwrap(),
             Vec::new(),
         ))
     }
@@ -109,10 +106,7 @@ where
     where
         S: UnicodeString,
     {
-        DomNode::Container(ContainerNode::new_list_item(
-            S::from_str(tag),
-            Vec::new(),
-        ))
+        DomNode::Container(ContainerNode::new_list_item(tag.into(), Vec::new()))
     }
 
     /// Copy all panode's information into node (now we know it's a container).
@@ -174,9 +168,9 @@ where
                     panic!("Found a document inside a document!")
                 }
                 PaDomNode::Text(text) => {
-                    node.append_child(DomNode::new_text(S::from_str(
-                        &text.content,
-                    )));
+                    node.append_child(DomNode::new_text(
+                        text.content.as_str().into(),
+                    ));
                 }
             }
         }
