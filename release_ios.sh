@@ -9,12 +9,12 @@ else
   exit 1
 fi
 
-# if [ -z "$(git status --porcelain)" ]; then 
-#   echo "Working directory is clean."
-# else 
-#   echo "Working directory is not clean. Exiting..."
-#   exit 1
-# fi
+if [ -z "$(git status --porcelain)" ]; then 
+  echo "Working directory is clean."
+else 
+  echo "Working directory is not clean. Exiting..."
+  exit 1
+fi
 
 # Complete any prerequisates as defined in /bindings/wysiwyg-ffi/README.md#ios
 make ios
