@@ -14,7 +14,6 @@
 
 use std::fmt::Display;
 
-use crate::composer_model::base::{slice_from, slice_to};
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode};
 use crate::dom::unicode_string::UnicodeStringExt;
@@ -296,8 +295,8 @@ where
                 let old_node = self.lookup_node_mut(handle);
                 if let DomNode::Text(old_text_node) = old_node {
                     let data = old_text_node.data();
-                    let before_text = slice_to(data, ..offset);
-                    let after_text = slice_from(data, offset..);
+                    let before_text = data[..offset].to_owned();
+                    let after_text = data[offset..].to_owned();
                     old_text_node.set_data(before_text);
                     let new_text_node = DomNode::new_text(after_text);
                     let parent = self.parent(handle);

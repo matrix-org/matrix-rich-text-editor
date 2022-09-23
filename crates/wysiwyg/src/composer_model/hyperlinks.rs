@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::composer_model::base::{slice, slice_from, slice_to};
 use crate::dom::nodes::DomNode;
 use crate::dom::{DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, UnicodeString};
@@ -44,10 +43,10 @@ where
             let node = self.state.dom.lookup_node(handle);
             if let DomNode::Text(t) = node {
                 let text = t.data();
-                let before = slice_to(text, ..location.start_offset);
+                let before = text[..location.start_offset].to_owned();
                 let during =
-                    slice(text, location.start_offset..location.end_offset);
-                let after = slice_from(text, location.end_offset..);
+                    text[location.start_offset..location.end_offset].to_owned();
+                let after = text[location.end_offset..].to_owned();
                 let new_nodes = vec![
                     DomNode::new_text(before),
                     DomNode::new_link(link, vec![DomNode::new_text(during)]),

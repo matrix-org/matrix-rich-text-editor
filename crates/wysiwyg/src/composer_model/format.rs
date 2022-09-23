@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::composer_model::base::{slice_from, slice_to};
 use crate::dom::nodes::{ContainerNodeKind, DomNode};
 use crate::dom::unicode_string::UnicodeStringExt;
 use crate::dom::{Dom, DomHandle, DomLocation, Range};
@@ -330,8 +329,8 @@ where
         position: usize,
     ) -> (DomNode<S>, DomNode<S>) {
         if let DomNode::Text(text_node) = node {
-            let split_data_orig = slice_to(text_node.data(), ..position);
-            let split_data_new = slice_from(text_node.data(), position..);
+            let split_data_orig = text_node.data()[..position].to_owned();
+            let split_data_new = text_node.data()[position..].to_owned();
             let mut before = DomNode::new_text(split_data_orig);
             before.set_handle(text_node.handle());
             let after = DomNode::new_text(split_data_new);

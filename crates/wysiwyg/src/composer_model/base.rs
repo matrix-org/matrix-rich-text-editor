@@ -14,7 +14,6 @@
 
 use crate::composer_state::ComposerState;
 use crate::dom::parser::parse;
-use crate::dom::unicode_string::UnicodeStringExt;
 use crate::dom::{DomHandle, UnicodeString};
 use crate::{ComposerAction, ComposerUpdate, Location, ToHtml, ToTree};
 use std::collections::HashSet;
@@ -114,29 +113,6 @@ where
     pub fn to_tree(&self) -> S {
         self.state.dom.to_tree()
     }
-}
-
-pub(crate) fn slice_to<S>(s: &S, range: std::ops::RangeTo<usize>) -> S
-where
-    S: UnicodeString,
-{
-    slice(s, 0..range.end)
-}
-
-pub(crate) fn slice_from<S>(s: &S, range: std::ops::RangeFrom<usize>) -> S
-where
-    S: UnicodeString,
-{
-    slice(s, range.start..s.len())
-}
-
-/// Panics when given start or end not on boundaries of a code point
-/// TODO: don't panic but do something sensible in that case
-pub(crate) fn slice<S>(s: &S, range: std::ops::Range<usize>) -> S
-where
-    S: UnicodeString,
-{
-    S::from_vec(s.as_ref()[range].to_vec()).expect("Invalid slice!")
 }
 
 pub(crate) fn starts_with(subject: &DomHandle, object: &DomHandle) -> bool {

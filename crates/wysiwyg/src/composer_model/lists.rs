@@ -14,7 +14,6 @@
 
 use std::collections::HashMap;
 
-use crate::composer_model::base::{slice_from, slice_to};
 use crate::dom::nodes::{ContainerNode, DomNode};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::unicode_string::UnicodeStringExt;
@@ -299,8 +298,8 @@ where
         if let DomNode::Text(ref mut t) = text_node {
             let text = t.data();
             // TODO: should slice container nodes between li and text node as well
-            let new_text = slice_to(text, ..start_offset);
-            let new_li_text = slice_from(text, end_offset..);
+            let new_text = text[..start_offset].to_owned();
+            let new_li_text = text[end_offset..].to_owned();
             t.set_data(new_text);
             let list_node = self.state.dom.lookup_node_mut(list_handle);
             if let DomNode::Container(list) = list_node {
