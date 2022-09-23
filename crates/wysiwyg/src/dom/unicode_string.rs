@@ -30,8 +30,6 @@ pub trait UnicodeString:
 
     fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String>;
 
-    fn is_empty(&self) -> bool;
-
     /// Convert this character to a code unit.
     /// Panics if this character requires more than one code unit
     fn c_from_char(ch: char) -> Self::CodeUnit;
@@ -39,8 +37,6 @@ pub trait UnicodeString:
     fn to_utf8(&self) -> String;
 
     fn push_string(&mut self, s: &Self);
-
-    fn len(&self) -> usize;
 }
 
 impl UnicodeString for String {
@@ -48,10 +44,6 @@ impl UnicodeString for String {
 
     fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String> {
         String::from_utf8(v.into()).map_err(|e| e.to_string())
-    }
-
-    fn is_empty(&self) -> bool {
-        self.is_empty()
     }
 
     fn c_from_char(ch: char) -> Self::CodeUnit {
@@ -68,10 +60,6 @@ impl UnicodeString for String {
     fn push_string(&mut self, s: &Self) {
         self.push_str(s)
     }
-
-    fn len(&self) -> usize {
-        self.len()
-    }
 }
 
 impl UnicodeString for Utf16String {
@@ -79,10 +67,6 @@ impl UnicodeString for Utf16String {
 
     fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String> {
         Utf16String::from_vec(v.into()).map_err(|e| e.to_string())
-    }
-
-    fn is_empty(&self) -> bool {
-        self.is_empty()
     }
 
     fn c_from_char(ch: char) -> Self::CodeUnit {
@@ -100,10 +84,6 @@ impl UnicodeString for Utf16String {
     fn push_string(&mut self, s: &Self) {
         self.push_utfstr(s.as_utfstr())
     }
-
-    fn len(&self) -> usize {
-        self.len()
-    }
 }
 
 impl UnicodeString for Utf32String {
@@ -111,10 +91,6 @@ impl UnicodeString for Utf32String {
 
     fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String> {
         Utf32String::from_vec(v.into()).map_err(|e| e.to_string())
-    }
-
-    fn is_empty(&self) -> bool {
-        self.is_empty()
     }
 
     fn c_from_char(ch: char) -> Self::CodeUnit {
@@ -132,8 +108,19 @@ impl UnicodeString for Utf32String {
     fn push_string(&mut self, s: &Self) {
         self.push_utfstr(s.as_utfstr())
     }
+}
+
+pub trait UnicodeStringExt: UnicodeString {
+    fn is_empty(&self) -> bool;
+    fn len(&self) -> usize;
+}
+
+impl<S: UnicodeString> UnicodeStringExt for S {
+    fn is_empty(&self) -> bool {
+        self.as_ref().is_empty()
+    }
 
     fn len(&self) -> usize {
-        self.len()
+        self.as_ref().len()
     }
 }

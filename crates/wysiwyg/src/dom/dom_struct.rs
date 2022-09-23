@@ -17,6 +17,7 @@ use std::fmt::Display;
 use crate::composer_model::base::{slice_from, slice_to};
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode};
+use crate::dom::unicode_string::UnicodeStringExt;
 use crate::dom::HtmlFormatter;
 use crate::dom::{
     find_range, to_raw_text::ToRawText, DomHandle, Range, ToTree, UnicodeString,

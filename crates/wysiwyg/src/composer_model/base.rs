@@ -14,6 +14,7 @@
 
 use crate::composer_state::ComposerState;
 use crate::dom::parser::parse;
+use crate::dom::unicode_string::UnicodeStringExt;
 use crate::dom::{DomHandle, UnicodeString};
 use crate::{ComposerAction, ComposerUpdate, Location, ToHtml, ToTree};
 use std::collections::HashSet;
