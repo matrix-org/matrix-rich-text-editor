@@ -119,8 +119,7 @@ where
     ) {
         let cur_pos = f.len();
         let string = self.data.to_utf8();
-        let mut escaped = String::new();
-        html_escape::encode_text_to_string(&string, &mut escaped);
+        let escaped = html_escape::encode_text(&string);
         f.write(S::from_str(&escaped).as_slice());
         Self::handle_several_whitespaces(f, cur_pos, is_last_node_in_parent);
         if let Some(selection_writer) = selection_writer {
