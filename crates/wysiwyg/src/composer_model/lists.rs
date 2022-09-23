@@ -303,7 +303,7 @@ where
             t.set_data(new_text);
             let list_node = self.state.dom.lookup_node_mut(list_handle);
             if let DomNode::Container(list) = list_node {
-                let add_zwsp = new_li_text.len() == 0;
+                let add_zwsp = new_li_text.is_empty();
                 list.append_child(DomNode::new_list_item(
                     "li".into(),
                     vec![DomNode::new_text(if add_zwsp {
