@@ -10,4 +10,7 @@
 /bindings/wysiwyg-wasm/node_modules/
 /platforms/android/example/.idea/
 /platforms/android/out/
-
+/platforms/ios/lib/WysiwygComposer/Sources/WysiwygComposer/WysiwygComposer.swift
+/platforms/ios/lib/WysiwygComposer/WysiwygComposerFFI.xcframework
+/build/
+.DS_Store
