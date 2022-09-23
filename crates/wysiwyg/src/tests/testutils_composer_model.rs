@@ -29,7 +29,7 @@ pub fn tx(model: &ComposerModel<Utf16String>) -> String {
 }
 
 pub(crate) fn restore_whitespace(text: &String) -> String {
-    text.replace("&nbsp;", " ").replace("\u{A0}", " ")
+    text.replace("&nbsp;", " ").replace('\u{A0}', " ")
 }
 
 pub(crate) fn restore_whitespace_u16(text: &Utf16String) -> Utf16String {

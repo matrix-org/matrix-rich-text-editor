@@ -96,12 +96,12 @@ where
         }
         if is_last_node_in_parent && needs_to_replace {
             current_range.end = formatter.len();
-            ranges_to_replace.push((current_range.clone(), whitespaces));
+            ranges_to_replace.push((current_range, whitespaces));
         }
 
         for (range, whitespaces) in ranges_to_replace.iter().rev() {
             let replacement: Vec<S::CodeUnit> =
-                (0..*whitespaces).map(|_| nbsp.clone()).collect();
+                (0..*whitespaces).map(|_| nbsp).collect();
             formatter.write_at_range(range.clone(), &replacement);
         }
     }
