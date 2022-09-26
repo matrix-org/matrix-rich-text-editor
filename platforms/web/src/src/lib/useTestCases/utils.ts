@@ -2,6 +2,7 @@
 // eslint-disable-next-line camelcase
 import { ComposerModel, ComposerUpdate, new_composer_model_from_html } from '../../../generated/wysiwyg';
 import { getCurrentSelection } from '../dom';
+import { isSelectTuple } from './assert';
 import { Actions } from './types';
 
 export function traceAction(testNode: HTMLElement | null, actions: Actions, composerModel: ComposerModel | null) {
@@ -30,7 +31,7 @@ export function getSelectionAccordingToActions(actions: Actions) {
     return (): [number, number] => {
         for (let i = actions.length - 1; i >= 0; i--) {
             const action = actions[i];
-            if (action[0] === 'select') {
+            if (isSelectTuple(action)) {
                 return [action[1], action[2]];
             }
         }
@@ -62,7 +63,7 @@ function updateTestCase(
 export function generateTestCase(actions: Actions, html: string) {
     let ret = '';
 
-    function add(name: string, value1: string | number, value2: string | number) {
+    function add(name: string, value1?: string | number, value2?: string | number) {
         if (name === 'select') {
             ret += (
                 'model.select('
@@ -87,12 +88,13 @@ export function generateTestCase(actions: Actions, html: string) {
     let isCollectingMode = true;
     let collected = '';
     let selection = [0, 0];
-    for (const [name, value1, value2] of actions) {
+    for (const action of actions) {
+        const [name, value1, value2] = action;
         if (isCollectingMode) {
             if (name === 'replace_text') {
                 collected += value1;
-            } else if (name === 'select') {
-                selection = [value1, value2];
+            } else if (isSelectTuple(action)) {
+                selection = [action[1], action[2]];
             } else {
                 isCollectingMode = false;
                 start();
