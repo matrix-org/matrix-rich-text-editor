@@ -194,8 +194,8 @@ where
                     i += 1;
                 }
                 (DomNode::Text(start_i), DomNode::Text(next_i)) => {
-                    let mut new_data = start_i.data().clone();
-                    new_data.push(&**next_i.data());
+                    let mut new_data = start_i.data().to_owned();
+                    new_data.push(next_i.data());
                     let text_node = DomNode::new_text(new_data);
                     if let DomNode::Container(old_parent) =
                         dom.lookup_node_mut(&next_handle.parent_handle())

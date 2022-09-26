@@ -47,7 +47,7 @@ where
         }
     }
 
-    pub fn data(&self) -> &S {
+    pub fn data(&self) -> &S::Str {
         &self.data
     }
 

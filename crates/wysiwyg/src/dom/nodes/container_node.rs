@@ -19,7 +19,7 @@ use crate::dom::nodes::dom_node::DomNode;
 use crate::dom::to_html::ToHtml;
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
-use crate::dom::unicode_string::UnicodeStringExt;
+use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use crate::dom::{HtmlChar, UnicodeString};
 use crate::{InlineFormatType, ListType};
 
@@ -200,7 +200,7 @@ where
         }
     }
 
-    pub fn name(&self) -> &S {
+    pub fn name(&self) -> &S::Str {
         &self.name
     }
 
@@ -223,7 +223,7 @@ where
     pub(crate) fn is_list_of_type(&self, list_type: ListType) -> bool {
         match self.kind {
             ContainerNodeKind::List => {
-                return ListType::try_from(self.name().clone()).unwrap()
+                return ListType::try_from(self.name().to_owned()).unwrap()
                     == list_type;
             }
             _ => false,
