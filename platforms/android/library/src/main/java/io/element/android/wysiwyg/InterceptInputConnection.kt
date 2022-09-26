@@ -36,7 +36,7 @@ class InterceptInputConnection(
     init {
         keyEventJob = processKeyEvents()
         // TODO: remove this once we have an initial menu state update
-        inputProcessor.processInput(EditorInputAction.InsertText(""))
+        inputProcessor.updateSelection(editable, 0, 0)
     }
 
     override fun getEditable(): Editable {
