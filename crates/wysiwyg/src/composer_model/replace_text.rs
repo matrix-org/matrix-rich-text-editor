@@ -76,6 +76,11 @@ where
             } else {
                 self.do_enter_in_text(handle, location.start_offset)
             }
+        } else if leaves.len() == 0 {
+            // Selection doesn't contain any text node.
+            // Create a new empty text node first.
+            self.do_replace_text_in(S::default(), range.start(), range.end());
+            self.enter()
         } else {
             panic!("Unexpected multiple nodes on a 0 length selection")
         }

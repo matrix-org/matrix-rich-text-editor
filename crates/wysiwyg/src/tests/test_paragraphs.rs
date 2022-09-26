@@ -16,7 +16,35 @@
 
 use widestring::Utf16String;
 
-use crate::tests::testutils_composer_model::{cm, tx};
+use crate::{
+    tests::testutils_composer_model::{cm, tx},
+    ComposerModel,
+};
+
+#[test]
+fn pressing_enter_with_a_brand_new_model() {
+    let mut model = ComposerModel::new();
+    model.enter();
+    assert_eq!(tx(&model), "<br />|");
+}
+
+#[test]
+fn pressing_enter_after_replacing_with_empty_html() {
+    let mut model = ComposerModel::new();
+    model.replace_all_html(&Utf16String::new());
+    model.enter();
+    assert_eq!(tx(&model), "<br />|");
+}
+
+#[test]
+#[ignore] // TODO: crashes on double empty text node, should be fixed by backspace_merges_text_nodes
+fn pressing_enter_after_backspacing_a_line_break() {
+    let mut model = cm("|");
+    model.enter();
+    model.backspace();
+    model.enter();
+    assert_eq!(tx(&model), "<br />|");
+}
 
 #[test]
 fn pressing_enter_with_an_empty_model_inserts_a_line_break() {
