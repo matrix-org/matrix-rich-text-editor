@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::dom::nodes::DomNode;
-use crate::dom::unicode_string::UnicodeStringExt;
+use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
 
@@ -167,7 +167,6 @@ where
         };
 
         if child_count > 0 {
-            let zwsp: S = "\u{200B}".into();
             for i in (0..child_count - 1).rev() {
                 let handle = parent_handle.child_handle(i);
                 let next_handle = parent_handle.child_handle(i + 1);
@@ -175,10 +174,10 @@ where
                     self.state.dom.lookup_node(&handle),
                     self.state.dom.lookup_node(&next_handle),
                 ) {
-                    let mut text_data = cur_text.data().clone();
+                    let mut text_data = cur_text.data().to_owned();
                     let next_data = next_text.data();
-                    if !next_data.is_empty() && *next_data != zwsp {
-                        text_data.push(next_text.data().clone());
+                    if !next_data.is_empty() && next_data != "\u{200B}" {
+                        text_data.push(next_text.data().to_owned());
                     }
 
                     self.state.dom.remove(&next_handle);

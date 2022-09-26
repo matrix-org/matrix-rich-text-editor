@@ -19,7 +19,7 @@ use widestring::Utf16String;
 
 use crate::dom::nodes::{LineBreakNode, TextNode};
 use crate::dom::parser::parse;
-use crate::dom::unicode_string::UnicodeStringExt;
+use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{DomLocation, HtmlFormatter};
 use crate::{
     ComposerModel, ComposerState, DomHandle, Location, ToHtml, UnicodeString,

@@ -29,18 +29,18 @@ pub trait UnicodeString:
     + PartialEq
     + AsRef<[Self::CodeUnit]>
     + for<'a> From<&'a str>
-    + Deref<Target = Self::Slice>
-    + for<'a> Extend<&'a Self::Slice>
+    + Deref<Target = Self::Str>
+    + for<'a> Extend<&'a Self::Str>
     + Extend<Self>
     + Extend<char>
     + for<'a> Extend<&'a str>
-    + for<'a> Extend<&'a Self::Slice>
-    + Index<Range<usize>, Output = Self::Slice>
-    + Index<RangeFrom<usize>, Output = Self::Slice>
-    + Index<RangeTo<usize>, Output = Self::Slice>
+    + for<'a> Extend<&'a Self::Str>
+    + Index<Range<usize>, Output = Self::Str>
+    + Index<RangeFrom<usize>, Output = Self::Str>
+    + Index<RangeTo<usize>, Output = Self::Str>
 {
     type CodeUnit: Copy + From<u8> + PartialEq;
-    type Slice: ToOwned<Owned = Self> + ?Sized;
+    type Str: UnicodeStr<CodeUnit = Self::CodeUnit, Owned = Self> + ?Sized;
 
     fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String>;
 
@@ -49,9 +49,22 @@ pub trait UnicodeString:
     fn c_from_char(ch: char) -> Self::CodeUnit;
 }
 
+pub trait UnicodeStr:
+    std::fmt::Display
+    + PartialEq
+    + PartialEq<str>
+    + AsRef<[Self::CodeUnit]>
+    + ToOwned
+    + Index<Range<usize>, Output = Self>
+    + Index<RangeFrom<usize>, Output = Self>
+    + Index<RangeTo<usize>, Output = Self>
+{
+    type CodeUnit: Copy + From<u8> + PartialEq;
+}
+
 impl UnicodeString for String {
     type CodeUnit = u8;
-    type Slice = str;
+    type Str = str;
 
     fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String> {
         String::from_utf8(v.into()).map_err(|e| e.to_string())
@@ -65,9 +78,13 @@ impl UnicodeString for String {
     }
 }
 
+impl UnicodeStr for str {
+    type CodeUnit = u8;
+}
+
 impl UnicodeString for Utf16String {
     type CodeUnit = u16;
-    type Slice = Utf16Str;
+    type Str = Utf16Str;
 
     fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String> {
         Utf16String::from_vec(v.into()).map_err(|e| e.to_string())
@@ -81,9 +98,13 @@ impl UnicodeString for Utf16String {
     }
 }
 
+impl UnicodeStr for Utf16Str {
+    type CodeUnit = u16;
+}
+
 impl UnicodeString for Utf32String {
     type CodeUnit = u32;
-    type Slice = Utf32Str;
+    type Str = Utf32Str;
 
     fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String> {
         Utf32String::from_vec(v.into()).map_err(|e| e.to_string())
@@ -97,12 +118,14 @@ impl UnicodeString for Utf32String {
     }
 }
 
+impl UnicodeStr for Utf32Str {
+    type CodeUnit = u32;
+}
+
 pub trait UnicodeStringExt: UnicodeString {
     fn push<T>(&mut self, s: T)
     where
         Self: Extend<T>;
-    fn is_empty(&self) -> bool;
-    fn len(&self) -> usize;
 }
 
 impl<S: UnicodeString> UnicodeStringExt for S {
@@ -112,7 +135,14 @@ impl<S: UnicodeString> UnicodeStringExt for S {
     {
         self.extend(iter::once(s))
     }
+}
 
+pub trait UnicodeStrExt: UnicodeStr {
+    fn is_empty(&self) -> bool;
+    fn len(&self) -> usize;
+}
+
+impl<S: UnicodeStr + ?Sized> UnicodeStrExt for S {
     fn is_empty(&self) -> bool {
         self.as_ref().is_empty()
     }
