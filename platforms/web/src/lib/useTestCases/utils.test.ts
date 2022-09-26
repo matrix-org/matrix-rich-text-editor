@@ -1,4 +1,4 @@
-import init from '../../../generated/wysiwyg';
+import init from '../../generated/wysiwyg';
 import { Actions } from './types';
 import { generateTestCase, getSelectionAccordingToActions } from './utils';
 

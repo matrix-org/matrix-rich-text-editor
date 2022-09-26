@@ -20,7 +20,7 @@
     "noImplicitAny": false,
     "noUnusedLocals": true,
     "sourceMap": false,
-    "outDir": "./lib",
+    "outDir": "./dist",
     "declaration": true,
     "strictNullChecks": true,
     "strictFunctionTypes": true,
@@ -30,6 +30,6 @@
     "alwaysStrict": true,
     "types": ["vitest/globals"]
   },
-  "include": ["src"],
+  "include": ["src", "lib"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

@@ -2,7 +2,7 @@ import { RefObject, useEffect, useRef, useState } from 'react';
 
 // rust generated bindings
 // eslint-disable-next-line camelcase
-import init, { ComposerModel, new_composer_model } from '../../generated/wysiwyg.js';
+import init, { ComposerModel, new_composer_model } from '../generated/wysiwyg.js';
 import { useFormattingActions } from './useFormattingActions';
 import { useListeners } from './useListeners';
 import { useTestCases } from './useTestCases';

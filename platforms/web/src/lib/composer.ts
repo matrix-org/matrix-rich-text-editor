@@ -1,4 +1,4 @@
-import { ComposerModel } from '../../generated/wysiwyg';
+import { ComposerModel } from '../generated/wysiwyg';
 import { WysiwygInputEvent } from './types';
 import { TestUtilities } from './useTestCases/types';
 

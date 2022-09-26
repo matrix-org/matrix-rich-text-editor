@@ -1,6 +1,6 @@
 import { RefObject, useEffect } from 'react';
 
-import { ComposerModel } from '../../../generated/wysiwyg';
+import { ComposerModel } from '../../generated/wysiwyg';
 import { isInputEvent } from '../assert';
 import { handleInput, handleKeyDown, handleSelectionChange } from './event';
 import { WysiwygInputEvent } from '../types';

@@ -1,4 +1,4 @@
-import { ComposerModel, DomHandle } from '../../generated/wysiwyg';
+import { ComposerModel, DomHandle } from '../generated/wysiwyg';
 
 export function computeSelectionOffset(node: Node, offset = 0): number {
     if (node && node.nodeType === Node.TEXT_NODE) {

@@ -1,6 +1,6 @@
 // rust generated bindings
 // eslint-disable-next-line camelcase
-import { ComposerModel, ComposerUpdate, new_composer_model_from_html } from '../../../generated/wysiwyg';
+import { ComposerModel, ComposerUpdate, new_composer_model_from_html } from '../../generated/wysiwyg';
 import { getCurrentSelection } from '../dom';
 import { isSelectTuple } from './assert';
 import { Actions } from './types';

@@ -1,6 +1,6 @@
 import { MouseEvent as ReactMouseEvent } from 'react';
 
-import { ComposerModel } from '../../../generated/wysiwyg';
+import { ComposerModel } from '../../generated/wysiwyg';
 import { processInput } from '../composer';
 import { getCurrentSelection, refreshComposerView, replaceEditor } from '../dom';
 import { WysiwygInputEvent } from '../types';
