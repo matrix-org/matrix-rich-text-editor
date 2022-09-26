@@ -206,7 +206,7 @@ mod test {
     use widestring::Utf16String;
 
     use crate::tests::testutils_composer_model::restore_whitespace;
-    use crate::{dom::UnicodeString, ToHtml};
+    use crate::ToHtml;
 
     use super::parse;
 
