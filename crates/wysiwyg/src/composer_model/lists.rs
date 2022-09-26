@@ -338,7 +338,7 @@ where
                 if let DomNode::Container(parent) = parent_node {
                     parent.remove_child(list_handle.index_in_parent());
                     if parent.children().is_empty() {
-                        parent.append_child(DomNode::new_text("".into()));
+                        parent.append_child(DomNode::new_text(S::default()));
                     }
                     let new_location = Location::from(
                         current_cursor_global_location - list_len,
