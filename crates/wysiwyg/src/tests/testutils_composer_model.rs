@@ -28,7 +28,7 @@ pub fn tx(model: &ComposerModel<Utf16String>) -> String {
     model.to_example_format()
 }
 
-pub(crate) fn restore_whitespace(text: &String) -> String {
+pub(crate) fn restore_whitespace(text: &str) -> String {
     text.replace("&nbsp;", " ").replace('\u{A0}', " ")
 }
 
