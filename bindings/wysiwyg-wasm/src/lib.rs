@@ -16,7 +16,6 @@ use std::collections::VecDeque;
 
 use wasm_bindgen::prelude::*;
 use widestring::Utf16String;
-use wysiwyg::UnicodeString;
 
 #[wasm_bindgen]
 pub fn new_composer_model() -> ComposerModel {

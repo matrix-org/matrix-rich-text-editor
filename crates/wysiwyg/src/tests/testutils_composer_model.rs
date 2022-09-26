@@ -16,7 +16,7 @@
 
 use widestring::Utf16String;
 
-use crate::{ComposerModel, UnicodeString};
+use crate::ComposerModel;
 
 /// Short wrapper around [ComposerModel::from_example_format].
 pub fn cm(text: &str) -> ComposerModel<Utf16String> {
