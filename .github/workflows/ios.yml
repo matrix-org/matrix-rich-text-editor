@@ -1,0 +1,48 @@
+name: iOS
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: macos-12
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+
+    - name: Install targets
+      run: |
+        rustup target add aarch64-apple-ios
+        rustup target add aarch64-apple-ios-sim
+        rustup target add x86_64-apple-ios
+
+    - name: Install Uniffi
+      uses: actions-rs/cargo@v1
+      with:
+        command: install
+        # keep in sync with uniffi dependency in Cargo.toml's
+        args: uniffi_bindgen --version 0.19.2
+
+    - name: Set XCode 13.4.1
+      run: sudo xcode-select -switch /Applications/Xcode_13.4.1.app
+
+    - name: Build framework & bindings
+      run: make ios
+
+    - name: Tests
+      working-directory: platforms/ios/example
+      run: exec ./ios-tests.sh
