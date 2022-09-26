@@ -76,7 +76,7 @@ where
             } else {
                 self.do_enter_in_text(handle, location.start_offset)
             }
-        } else if leaves.len() == 0 {
+        } else if leaves.is_empty() {
             // Selection doesn't contain any text node. We can assume it's an empty Dom.
             self.state
                 .dom

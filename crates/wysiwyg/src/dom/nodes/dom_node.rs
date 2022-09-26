@@ -62,9 +62,7 @@ where
     ) -> DomNode<S> {
         DomNode::Container(
             ContainerNode::new_formatting_from_tag(format.clone(), children)
-                .unwrap_or_else(|| {
-                    panic!("Unknown format tag {}", format.to_string())
-                }),
+                .unwrap_or_else(|| panic!("Unknown format tag {format}")),
         )
     }
 
