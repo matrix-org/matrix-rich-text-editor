@@ -221,7 +221,7 @@ where
                 list_type,
                 vec![DomNode::Container(ContainerNode::new_list_item(
                     "li".into(),
-                    vec![DomNode::new_empty_text()],
+                    vec![DomNode::new_zwsp()],
                 ))],
             ));
             self.create_update_replace_all()
@@ -323,9 +323,8 @@ where
                     })],
                 ));
                 if add_zwsp {
-                    let to_add = 1; //if location == text.len() { 1 } else { 2 };
-                    self.state.start = Location::from(location + to_add);
-                    self.state.end = Location::from(location + to_add);
+                    self.state.start = Location::from(location + 1);
+                    self.state.end = self.state.start.clone();
                 }
             }
         }
@@ -352,7 +351,7 @@ where
                         parent.append_child(DomNode::new_text(S::new_zwsp()));
                     }
                     let new_location = Location::from(
-                        current_cursor_global_location - list_len,
+                        current_cursor_global_location - list_len + 1,
                     );
                     self.state.start = new_location;
                     self.state.end = new_location;

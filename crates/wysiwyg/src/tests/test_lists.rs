@@ -60,11 +60,11 @@ fn removing_list_item() {
 
     let mut model = cm("<ol><li>|</li></ol>");
     model.enter();
-    assert_eq!(tx(&model), "|~");
+    assert_eq!(tx(&model), "~|");
 
     let mut model = cm("<ol><li>|</li></ol>");
     model.backspace();
-    assert_eq!(tx(&model), "|~");
+    assert_eq!(tx(&model), "~|");
 }
 
 #[test]
@@ -92,21 +92,21 @@ fn backspacing_empty_second_list_item_into_whole_of_first_leaves_empty_item() {
 fn entering_with_entire_selection_in_one_node_deletes_list() {
     let mut model = cm("<ol><li>{abcd}|</li></ol>");
     model.enter();
-    assert_eq!(tx(&model), "|~");
+    assert_eq!(tx(&model), "~|");
 }
 
 #[test]
 fn entering_with_entire_selection_across_multiple_nodes_deletes_list() {
     let mut model = cm("<ol><li>{abcd</li><li>~}|</li></ol>");
     model.enter();
-    assert_eq!(tx(&model), "|~");
+    assert_eq!(tx(&model), "~|");
 }
 
 #[test]
 fn entering_with_entire_selection_with_formatting() {
     let mut model = cm("<ol><li><b>{abcd}|</b></li></ol>");
     model.enter();
-    assert_eq!(tx(&model), "|~");
+    assert_eq!(tx(&model), "~|");
 }
 
 #[test]
@@ -130,7 +130,17 @@ fn removing_list() {
     let mut model = cm("|");
     model.ordered_list();
     model.enter();
-    assert_eq!(tx(&model), "|~");
+    assert_eq!(tx(&model), "~|");
+}
+
+#[test]
+fn removing_list_then_typing() {
+    let mut model = cm("|");
+    model.ordered_list();
+    model.enter();
+    assert_eq!(tx(&model), "~|");
+    model.replace_text(utf16("Some text"));
+    assert_eq!(tx(&model), "Some text|");
 }
 
 #[test]

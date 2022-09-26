@@ -310,10 +310,10 @@ where
         if loc.is_start() {
             let (before, middle) =
                 Self::split_text_node(node, loc.start_offset);
-            (before, middle.unwrap_or(DomNode::new_empty_text()), None)
+            (before, middle.unwrap_or(DomNode::new_zwsp()), None)
         } else if loc.is_end() {
             let (middle, after) = Self::split_text_node(node, loc.end_offset);
-            (None, middle.unwrap_or(DomNode::new_empty_text()), after)
+            (None, middle.unwrap_or(DomNode::new_zwsp()), after)
         } else {
             let (before, middle) =
                 Self::split_text_node(node, loc.start_offset);
@@ -321,7 +321,7 @@ where
                 middle.unwrap(),
                 loc.end_offset - loc.start_offset,
             );
-            (before, middle.unwrap_or(DomNode::new_empty_text()), after)
+            (before, middle.unwrap_or(DomNode::new_zwsp()), after)
         }
     }
 

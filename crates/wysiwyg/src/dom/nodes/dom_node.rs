@@ -38,7 +38,7 @@ impl<S> DomNode<S>
 where
     S: UnicodeString,
 {
-    pub fn new_empty_text() -> DomNode<S> {
+    pub fn new_zwsp() -> DomNode<S> {
         DomNode::Text(TextNode::new_zwsp())
     }
     pub fn new_text(text: S) -> DomNode<S> {

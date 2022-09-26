@@ -43,6 +43,10 @@ where
     /// NOTE: Its handle() will be unset until you call set_handle() or
     /// append() it to another node.
     pub fn from(data: S) -> Self {
+        assert!(
+            !data.is_empty(),
+            "Can't create a TextNode with empty content"
+        );
         Self {
             data,
             handle: DomHandle::new_unset(),

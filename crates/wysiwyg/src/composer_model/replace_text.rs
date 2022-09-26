@@ -78,10 +78,14 @@ where
                 self.do_enter_in_text(handle, location.start_offset)
             }
         } else if leaves.len() == 0 {
-            // Selection doesn't contain any text node.
-            // Create a new empty text node first.
-            self.do_replace_text_in(S::default(), range.start(), range.end());
-            self.enter()
+            // Selection doesn't contain any text node. We can assume it's an empty Dom.
+            self.state
+                .dom
+                .document_mut()
+                .append_child(DomNode::new_line_break());
+            self.state.start += 1;
+            self.state.end = self.state.start;
+            self.create_update_replace_all()
         } else {
             panic!("Unexpected multiple nodes on a 0 length selection")
         }
@@ -98,13 +102,11 @@ where
 
         let range = self.state.dom.find_range(start, end);
         if range.is_empty() {
-            if !new_text.is_empty() {
-                self.state.dom.append_child(DomNode::new_text(new_text));
-                start = 0;
-            }
+            start = 0;
+            self.state.dom.append_child(DomNode::new_text(new_text));
         } else {
             let start_offset = self.replace_multiple_nodes(range, new_text);
-            start -= start_offset;
+            start -= start_offset
         }
 
         self.state.start = Location::from(start + len);
@@ -227,7 +229,7 @@ where
                         }
 
                         let node = if new_text.is_empty() {
-                            DomNode::new_empty_text()
+                            DomNode::new_zwsp()
                         } else {
                             DomNode::new_text(new_text.clone())
                         };
