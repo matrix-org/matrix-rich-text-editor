@@ -106,7 +106,7 @@ where
             self.state.dom.append_child(DomNode::new_text(new_text));
         } else {
             let start_offset = self.replace_multiple_nodes(range, new_text);
-            start -= start_offset
+            start -= start_offset;
         }
 
         self.state.start = Location::from(start + len);
@@ -150,9 +150,41 @@ where
             // nodes above, but the first text node in it should not have been
             // invalidated, because it should not have been deleted.
             self.join_nodes(&range, new_pos);
+        } else if let Some(first_leave) = range.leaves().next() {
+            self.join_text_nodes(&first_leave.node_handle.parent_handle())
         }
 
         start_offset
+    }
+
+    fn join_text_nodes(&mut self, parent_handle: &DomHandle) {
+        let child_count = if let DomNode::Container(parent) =
+            self.state.dom.lookup_node(parent_handle)
+        {
+            parent.children().len()
+        } else {
+            panic!("Parent node should be a container");
+        };
+
+        if child_count > 0 {
+            for i in (0..child_count - 1).rev() {
+                let handle = parent_handle.child_handle(i);
+                let next_handle = parent_handle.child_handle(i + 1);
+                if let (DomNode::Text(cur_text), DomNode::Text(next_text)) = (
+                    self.state.dom.lookup_node(&handle),
+                    self.state.dom.lookup_node(&next_handle),
+                ) {
+                    let mut text_data = cur_text.data().clone();
+                    if next_text.data().to_string() != ZWSP {
+                        text_data.push(next_text.data().clone());
+                    }
+
+                    self.state.dom.remove(&next_handle);
+                    let new_text_node = DomNode::new_text(text_data);
+                    self.state.dom.replace(&handle, vec![new_text_node]);
+                }
+            }
+        }
     }
 
     /// Given a range to replace and some new text, modify the nodes in the
@@ -188,14 +220,6 @@ where
                 false
             };
 
-            let is_last_item_in_parent = if let DomNode::Container(n) =
-                self.state.dom.lookup_node(&parent_handle)
-            {
-                loc.node_handle.index_in_parent() + 1 == n.children().len()
-            } else {
-                false
-            };
-
             let mut node = self.state.dom.lookup_node_mut(&loc.node_handle);
             match &mut node {
                 DomNode::Container(_) => {
@@ -224,15 +248,11 @@ where
                         // line break.)
 
                         // No need to add an empty TextNode as there is already some other node
-                        if new_text.is_empty() && !is_last_item_in_parent {
+                        if new_text.is_empty() {
                             break;
                         }
 
-                        let node = if new_text.is_empty() {
-                            DomNode::new_zwsp()
-                        } else {
-                            DomNode::new_text(new_text.clone())
-                        };
+                        let node = DomNode::new_text(new_text.clone());
                         to_add.push((
                             loc.node_handle.parent_handle(),
                             loc.node_handle.index_in_parent() + 1,

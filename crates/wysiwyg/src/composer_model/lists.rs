@@ -51,7 +51,7 @@ where
                 );
                 self.create_update_replace_all()
             } else {
-                self.do_backspace()
+                self.do_backspace(true)
             }
         } else {
             panic!("No list item found")

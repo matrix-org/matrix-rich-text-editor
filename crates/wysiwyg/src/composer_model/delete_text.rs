@@ -27,11 +27,11 @@ where
         if s == e {
             // We have no selection - check for special list behaviour
             // TODO: should probably also get inside here if our selection
-            // only contains a zero-wdith space.
+            // only contains a zero-width space.
             let range = self.state.dom.find_range(s, e);
             self.backspace_single_cursor(range, e)
         } else {
-            self.do_backspace()
+            self.do_backspace(true)
         }
     }
 
@@ -43,7 +43,7 @@ where
         // Find the first leaf node in this selection - note there
         // should only be one because s == e, so we don't have a
         // selection that spans multiple leaves.
-        let first_leaf = range.locations.iter().find(|loc| loc.is_leaf);
+        let first_leaf = range.leaves().next();
         if let Some(leaf) = first_leaf {
             // We are backspacing inside a text node with no
             // selection - we might need special behaviour, if
@@ -55,10 +55,15 @@ where
             if let Some(parent_handle) = parent_list_item_handle {
                 self.do_backspace_in_list(&parent_handle, end_position)
             } else {
-                self.do_backspace()
+                let needs_cursor_update = !self
+                    .state
+                    .dom
+                    .lookup_node(&leaf.node_handle)
+                    .is_placeholder_text_node();
+                self.do_backspace(needs_cursor_update)
             }
         } else {
-            self.do_backspace()
+            self.do_backspace(true)
         }
     }
 
@@ -111,8 +116,11 @@ where
         }
     }
 
-    pub(crate) fn do_backspace(&mut self) -> ComposerUpdate<S> {
-        if self.state.start == self.state.end {
+    pub(crate) fn do_backspace(
+        &mut self,
+        needs_cursor_update: bool,
+    ) -> ComposerUpdate<S> {
+        if needs_cursor_update && self.state.start == self.state.end {
             // Go back 1 from the current location
             self.state.start -= 1;
         }
