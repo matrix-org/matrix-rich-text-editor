@@ -25,6 +25,11 @@ make
 To build for a single platform, or to learn more, see the individual README
 files above.
 
+## Release the code
+
+* Swift/iOS:
+Run `release_ios.sh` which will open a PR against [the swift package repo](https://github.com/matrix-org/matrix-wysiwyg-composer-swift) with the latest from main(in future will handle tags/releases).
+
 ## More info
 
 For more detailed explanations and examples of platform-specific code to use

@@ -16,7 +16,7 @@ else
   exit 1
 fi
 
-# Complete any prerequisates as defined in /bindings/wysiwyg-ffi/README.md#ios
+# Complete any prerequisites as defined in /bindings/wysiwyg-ffi/README.md#ios
 make ios
 
 BUILD_DIR=build
