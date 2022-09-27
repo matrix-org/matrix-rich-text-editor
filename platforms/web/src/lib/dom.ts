@@ -83,12 +83,6 @@ export function replaceEditor(editor: HTMLElement,
     startUtf16Codeunit: number,
     endUtf16Codeunit: number,
 ) {
-    console.log(
-        'replace_editor',
-        htmlContent,
-        startUtf16Codeunit,
-        endUtf16Codeunit,
-    );
     editor.innerHTML = htmlContent + '<br />';
 
     const sr = () => {
