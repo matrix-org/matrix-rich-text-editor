@@ -77,10 +77,14 @@ where
                 self.do_enter_in_text(handle, location.start_offset)
             }
         } else if leaves.len() == 0 {
-            // Selection doesn't contain any text node.
-            // Create a new empty text node first.
-            self.do_replace_text_in(S::default(), range.start(), range.end());
-            self.enter()
+            // Selection doesn't contain any text node. We can assume it's an empty Dom.
+            self.state
+                .dom
+                .document_mut()
+                .append_child(DomNode::new_line_break());
+            self.state.start += 1;
+            self.state.end = self.state.start;
+            self.create_update_replace_all()
         } else {
             panic!("Unexpected multiple nodes on a 0 length selection")
         }
@@ -97,7 +101,9 @@ where
 
         let range = self.state.dom.find_range(start, end);
         if range.is_empty() {
-            self.state.dom.append_child(DomNode::new_text(new_text));
+            if !new_text.is_empty() {
+                self.state.dom.append_child(DomNode::new_text(new_text));
+            }
             start = 0;
         } else {
             self.replace_multiple_nodes(range, new_text)
@@ -144,6 +150,42 @@ where
             // nodes above, but the first text node in it should not have been
             // invalidated, because it should not have been deleted.
             self.join_nodes(&range, new_pos);
+        } else if let Some(first_leave) = range.leaves().next() {
+            self.join_text_nodes_in_parent(
+                &first_leave.node_handle.parent_handle(),
+            )
+        }
+    }
+
+    fn join_text_nodes_in_parent(&mut self, parent_handle: &DomHandle) {
+        let child_count = if let DomNode::Container(parent) =
+            self.state.dom.lookup_node(parent_handle)
+        {
+            parent.children().len()
+        } else {
+            panic!("Parent node should be a container");
+        };
+
+        if child_count > 0 {
+            let zwsp: S = "\u{200B}".into();
+            for i in (0..child_count - 1).rev() {
+                let handle = parent_handle.child_handle(i);
+                let next_handle = parent_handle.child_handle(i + 1);
+                if let (DomNode::Text(cur_text), DomNode::Text(next_text)) = (
+                    self.state.dom.lookup_node(&handle),
+                    self.state.dom.lookup_node(&next_handle),
+                ) {
+                    let mut text_data = cur_text.data().clone();
+                    let next_data = next_text.data();
+                    if !next_data.is_empty() && *next_data != zwsp {
+                        text_data.push(next_text.data().clone());
+                    }
+
+                    self.state.dom.remove(&next_handle);
+                    let new_text_node = DomNode::new_text(text_data);
+                    self.state.dom.replace(&handle, vec![new_text_node]);
+                }
+            }
         }
     }
 

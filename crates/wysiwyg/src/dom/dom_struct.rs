@@ -91,6 +91,18 @@ where
         }
     }
 
+    pub fn remove(&mut self, node_handle: &DomHandle) {
+        let parent_node = self.lookup_node_mut(&node_handle.parent_handle());
+        match parent_node {
+            DomNode::Container(parent) => {
+                let index = node_handle.index_in_parent();
+                parent.remove_child(index);
+            }
+            DomNode::Text(_) => panic!("Text nodes can't have children"),
+            DomNode::LineBreak(_) => panic!("Line breaks can't have children"),
+        }
+    }
+
     /// Removes node at given handle from the dom, and if it has children
     /// moves them to its parent container children.
     pub fn remove_and_keep_children(&mut self, node_handle: &DomHandle) {

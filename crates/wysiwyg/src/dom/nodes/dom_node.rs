@@ -41,6 +41,10 @@ where
         DomNode::Text(TextNode::from(text))
     }
 
+    pub fn new_empty_text() -> DomNode<S> {
+        DomNode::Text(TextNode::from(S::default()))
+    }
+
     pub fn new_line_break() -> DomNode<S> {
         DomNode::LineBreak(LineBreakNode::new())
     }
