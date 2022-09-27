@@ -38,7 +38,7 @@ describe('computeNodeAndOffset', () => {
         expect(offset).toBe(8);
     });
 
-    it('Should returns null if off the end', () => {
+    it('Should return null if off the end', () => {
         // When
         editor.innerHTML = 'abcdefgh';
         const { node, offset } = computeNodeAndOffset(editor, 9);
@@ -187,7 +187,7 @@ describe('computeSelectionOffset', () => {
         expect(offset).toBe(16);
     });
 
-    it('Should contains the selected characters', () => {
+    it('Should contain the selected characters', () => {
         // When
         editor.innerHTML = 'abc<b>def</b>gh<ul><li>alice</li><li>bob</li>';
         let offset = computeSelectionOffset(editor.childNodes[0], 1);
@@ -200,6 +200,15 @@ describe('computeSelectionOffset', () => {
 
         // Then
         expect(offset).toBe(20);
+    });
+
+    it('Should return 0 for the beginning of the line', () => {
+        // When
+        editor.innerHTML = 'abc';
+        let offset = computeSelectionOffset(editor.childNodes[0], 0);
+
+        // Then
+        expect(offset).toBe(0);
     });
 });
 

@@ -1,8 +1,8 @@
 import { ComposerModel, DomHandle } from '../../generated/wysiwyg';
 
-export function computeSelectionOffset(node: Node, offset = 0): number {
+export function computeSelectionOffset(node: Node, offset?: number): number {
     if (node && node.nodeType === Node.TEXT_NODE) {
-        return offset || node.textContent?.length || 0;
+        return offset ?? node.textContent?.length ?? 0;
     } else if (node.hasChildNodes()) {
         return Array.from(node.childNodes)
             .map(childNode => computeSelectionOffset(childNode))
