@@ -205,7 +205,7 @@ describe('computeSelectionOffset', () => {
     it('Should return 0 for the beginning of the line', () => {
         // When
         editor.innerHTML = 'abc';
-        let offset = computeSelectionOffset(editor.childNodes[0], 0);
+        const offset = computeSelectionOffset(editor.childNodes[0], 0);
 
         // Then
         expect(offset).toBe(0);
