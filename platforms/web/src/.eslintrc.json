@@ -20,6 +20,7 @@
                 "format": ["camelCase"],
                 "leadingUnderscore": "allow"
             }
-        ]
+        ],
+        "matrix-org/require-copyright-header": "error"
     }
 }

@@ -23,7 +23,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint",
+    "lint": "eslint .",
     "test": "vitest --run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
