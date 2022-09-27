@@ -14,7 +14,6 @@
 
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
-use crate::dom::html_formatter::HtmlFormatter;
 use crate::dom::nodes::{ContainerNode, LineBreakNode, TextNode};
 use crate::dom::to_html::ToHtml;
 use crate::dom::to_raw_text::ToRawText;
@@ -156,19 +155,19 @@ where
 {
     fn fmt_html(
         &self,
-        f: &mut HtmlFormatter<S>,
+        buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
         is_last_node_in_parent: bool,
     ) {
         match self {
             DomNode::Container(s) => {
-                s.fmt_html(f, selection_writer, is_last_node_in_parent)
+                s.fmt_html(buf, selection_writer, is_last_node_in_parent)
             }
             DomNode::LineBreak(s) => {
-                s.fmt_html(f, selection_writer, is_last_node_in_parent)
+                s.fmt_html(buf, selection_writer, is_last_node_in_parent)
             }
             DomNode::Text(s) => {
-                s.fmt_html(f, selection_writer, is_last_node_in_parent)
+                s.fmt_html(buf, selection_writer, is_last_node_in_parent)
             }
         }
     }

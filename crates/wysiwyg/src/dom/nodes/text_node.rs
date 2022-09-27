@@ -13,11 +13,10 @@
 // limitations under the License.
 
 use crate::composer_model::example_format::SelectionWriter;
-use crate::dom::unicode_string::UnicodeStringExt;
+use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use html_escape;
 
 use crate::dom::dom_handle::DomHandle;
-use crate::dom::html_formatter::HtmlFormatter;
 use crate::dom::to_html::ToHtml;
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
@@ -62,50 +61,6 @@ where
     pub fn set_handle(&mut self, handle: DomHandle) {
         self.handle = handle;
     }
-
-    fn handle_several_whitespaces(
-        formatter: &mut HtmlFormatter<S>,
-        pos: usize,
-        is_last_node_in_parent: bool,
-    ) {
-        let mut ranges_to_replace = Vec::new();
-        let mut current_range = usize::MAX..usize::MAX;
-        let mut whitespaces: usize = 0;
-        let mut needs_to_replace = false;
-        let w = S::CodeUnit::from(b' ');
-        let nbsp = S::c_from_char('\u{A0}');
-        for (i, c) in formatter.chars_from(pos..).iter().enumerate() {
-            if *c == w || *c == nbsp {
-                if *c == w {
-                    needs_to_replace = true;
-                }
-                if current_range.start == usize::MAX {
-                    whitespaces = 1;
-                    current_range.start = i + pos;
-                } else {
-                    whitespaces += 1;
-                }
-            } else {
-                if needs_to_replace && whitespaces > 1 {
-                    current_range.end = i + pos;
-                    ranges_to_replace
-                        .push((current_range.clone(), whitespaces));
-                }
-                needs_to_replace = false;
-                current_range = usize::MAX..usize::MAX;
-            }
-        }
-        if is_last_node_in_parent && needs_to_replace {
-            current_range.end = formatter.len();
-            ranges_to_replace.push((current_range, whitespaces));
-        }
-
-        for (range, whitespaces) in ranges_to_replace.iter().rev() {
-            let replacement: Vec<S::CodeUnit> =
-                (0..*whitespaces).map(|_| nbsp).collect();
-            formatter.write_at_range(range.clone(), &replacement);
-        }
-    }
 }
 
 impl<S> ToHtml<S> for TextNode<S>
@@ -114,17 +69,29 @@ where
 {
     fn fmt_html(
         &self,
-        f: &mut HtmlFormatter<S>,
+        buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
         is_last_node_in_parent: bool,
     ) {
-        let cur_pos = f.len();
+        let cur_pos = buf.len();
         let string = self.data.to_string();
-        let escaped = html_escape::encode_text(&string);
-        f.write(S::from(&escaped).as_ref());
-        Self::handle_several_whitespaces(f, cur_pos, is_last_node_in_parent);
+
+        let mut escaped = html_escape::encode_text(&string)
+            // Replace all pairs of spaces with non-breaking ones. Transforms
+            // `a     b` to `a\u{A0}\u{A0}\u{A0}\u{A0} b`, which will render
+            // exactly as five spaces like in the input.
+            .replace("  ", "\u{A0}\u{A0}");
+        if is_last_node_in_parent
+            && escaped.chars().next_back().map_or(false, |c| c == ' ')
+        {
+            // If this is the last node and it ends in a space, replace that
+            // space with a non-breaking one.
+            escaped.replace_range(escaped.len() - 1.., "\u{A0}");
+        }
+        buf.push(escaped.as_str());
+
         if let Some(selection_writer) = selection_writer {
-            selection_writer.write_selection_text_node(f, cur_pos, self);
+            selection_writer.write_selection_text_node(buf, cur_pos, self);
         }
     }
 }

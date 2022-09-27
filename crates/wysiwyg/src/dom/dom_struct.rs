@@ -17,7 +17,6 @@ use std::fmt::Display;
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode};
 use crate::dom::unicode_string::UnicodeStrExt;
-use crate::dom::HtmlFormatter;
 use crate::dom::{
     find_range, to_raw_text::ToRawText, DomHandle, Range, ToTree, UnicodeString,
 };
@@ -344,12 +343,12 @@ where
 {
     fn fmt_html(
         &self,
-        f: &mut HtmlFormatter<S>,
+        buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
         is_last_node_in_parent: bool,
     ) {
         self.document
-            .fmt_html(f, selection_writer, is_last_node_in_parent)
+            .fmt_html(buf, selection_writer, is_last_node_in_parent)
     }
 }
 
