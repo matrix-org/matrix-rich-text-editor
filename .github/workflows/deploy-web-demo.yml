@@ -1,8 +1,13 @@
 name: Deploy Web demo
 
 on:
-  push:
-    branches: [ "main" ]
+  workflow_run:
+    workflows: 
+      - React build
+    types:
+      - completed
+    branches: 
+      - main
   workflow_dispatch:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
@@ -24,6 +29,8 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
 
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
     strategy:
       matrix:
         node-version: [18.x]
@@ -36,9 +43,9 @@ jobs:
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'yarn'
-        cache-dependency-path: platforms/web/src/yarn.lock
+          node-version: ${{ matrix.node-version }}
+          cache: 'yarn'
+          cache-dependency-path: platforms/web/src/yarn.lock
       - name: Build
         working-directory: platforms/web/src
         run: yarn install && yarn build:demo
@@ -46,12 +53,14 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: dist-demo
-          path: dist-demo
-        working-directory: platforms/web/src
+          path: platforms/web/src/dist-demo
 
   deploy:
     name: Deploy
     needs: build
+
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -60,18 +69,17 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-    - name: Download a single artifact
+    - name: Download demo artifacts
       uses: actions/download-artifact@v3
       with:
-        name: "dist-demo"
-      working-directory: platforms/web/src
+        name: dist-demo
+        path: platforms/web/src/dist-demo
     - name: Setup Pages
       uses: actions/configure-pages@v2
     - name: Upload github-pages
       uses: actions/upload-pages-artifact@v1
       with:
-        path: dist-demo
-      working-directory: platforms/web/src
+        path: platforms/web/src/dist-demo
     - name: Deploy github-pages
       id: deployment
       uses: actions/deploy-pages@v1

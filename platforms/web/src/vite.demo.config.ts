@@ -19,6 +19,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
     plugins: [react()],
+    base: '',
     build: {
         rollupOptions: {
             output: {
