@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use crate::dom::nodes::DomNode;
+use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, UnicodeString};
 
@@ -47,11 +48,17 @@ where
                 let during =
                     text[location.start_offset..location.end_offset].to_owned();
                 let after = text[location.end_offset..].to_owned();
-                let new_nodes = vec![
-                    DomNode::new_text(before),
-                    DomNode::new_link(link, vec![DomNode::new_text(during)]),
-                    DomNode::new_text(after),
-                ];
+                let mut new_nodes = Vec::new();
+                if !before.is_empty() {
+                    new_nodes.push(DomNode::new_text(before));
+                }
+                new_nodes.push(DomNode::new_link(
+                    link,
+                    vec![DomNode::new_text(during)],
+                ));
+                if !after.is_empty() {
+                    new_nodes.push(DomNode::new_text(after));
+                }
                 self.state.dom.replace(handle, new_nodes);
                 self.create_update_replace_all()
             } else {

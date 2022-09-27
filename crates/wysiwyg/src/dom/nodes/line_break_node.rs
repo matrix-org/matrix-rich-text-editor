@@ -13,14 +13,14 @@
 // limitations under the License.
 
 use crate::composer_model::example_format::SelectionWriter;
+use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use std::marker::PhantomData;
 
 use crate::dom::dom_handle::DomHandle;
-use crate::dom::html_formatter::HtmlFormatter;
 use crate::dom::to_html::ToHtml;
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
-use crate::dom::{HtmlChar, UnicodeString};
+use crate::dom::UnicodeString;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct LineBreakNode<S>
@@ -70,18 +70,18 @@ where
 {
     fn fmt_html(
         &self,
-        f: &mut HtmlFormatter<S>,
+        buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
         _: bool,
     ) {
-        let cur_pos = f.len();
-        f.write_char(HtmlChar::Lt);
-        f.write(self.name().as_ref());
-        f.write_char(HtmlChar::Space);
-        f.write_char(HtmlChar::ForwardSlash);
-        f.write_char(HtmlChar::Gt);
+        let cur_pos = buf.len();
+        buf.push('<');
+        buf.push(self.name());
+        buf.push(' ');
+        buf.push('/');
+        buf.push('>');
         if let Some(sel_writer) = selection_writer {
-            sel_writer.write_selection_line_break_node(f, cur_pos, self);
+            sel_writer.write_selection_line_break_node(buf, cur_pos, self);
         }
     }
 }

@@ -1,6 +1,6 @@
-export function computeSelectionOffset(node, offset = 0) {
+export function computeSelectionOffset(node, offset) {
     if (node && node.nodeType === Node.TEXT_NODE) {
-        return offset || node.textContent.length
+        return offset !== undefined ? offset : node.textContent.length
     } else if (node.hasChildNodes()) {
         return Array.from(node.childNodes).map(childNode => computeSelectionOffset(childNode)).reduce((prev, curr) => prev + curr, 0)
     } else {

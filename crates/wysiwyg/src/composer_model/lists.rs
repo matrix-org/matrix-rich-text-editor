@@ -16,7 +16,7 @@ use std::collections::HashMap;
 
 use crate::dom::nodes::{ContainerNode, DomNode};
 use crate::dom::to_raw_text::ToRawText;
-use crate::dom::unicode_string::UnicodeStringExt;
+use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, ListType, Location, UnicodeString};
 
@@ -241,7 +241,7 @@ where
                 let list_item =
                     DomNode::Container(ContainerNode::new_list_item(
                         "li".into(),
-                        vec![DomNode::new_text(text.clone())],
+                        vec![DomNode::new_text(text.to_owned())],
                     ));
                 if index_in_parent > 0 {
                     let previous_handle = handle.prev_sibling();
@@ -338,7 +338,7 @@ where
                 if let DomNode::Container(parent) = parent_node {
                     parent.remove_child(list_handle.index_in_parent());
                     if parent.children().is_empty() {
-                        parent.append_child(DomNode::new_text("".into()));
+                        parent.append_child(DomNode::new_text(S::default()));
                     }
                     let new_location = Location::from(
                         current_cursor_global_location - list_len,
@@ -620,7 +620,7 @@ where
                 }
                 if !to_add.is_empty() {
                     let list_type =
-                        ListType::from(current_parent.name().clone());
+                        ListType::from(current_parent.name().to_owned());
                     list_node_to_insert =
                         Some(DomNode::new_list(list_type, to_add));
                 }

@@ -14,12 +14,11 @@
 
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
-use crate::dom::html_formatter::HtmlFormatter;
 use crate::dom::nodes::{ContainerNode, LineBreakNode, TextNode};
 use crate::dom::to_html::ToHtml;
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
-use crate::dom::unicode_string::UnicodeStringExt;
+use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::UnicodeString;
 use crate::{InlineFormatType, ListType};
 
@@ -41,6 +40,10 @@ where
         DomNode::Text(TextNode::from(text))
     }
 
+    pub fn new_empty_text() -> DomNode<S> {
+        DomNode::Text(TextNode::from(S::default()))
+    }
+
     pub fn new_line_break() -> DomNode<S> {
         DomNode::LineBreak(LineBreakNode::new())
     }
@@ -58,9 +61,7 @@ where
     ) -> DomNode<S> {
         DomNode::Container(
             ContainerNode::new_formatting_from_tag(format.clone(), children)
-                .unwrap_or_else(|| {
-                    panic!("Unknown format tag {}", format.to_string())
-                }),
+                .unwrap_or_else(|| panic!("Unknown format tag {format}")),
         )
     }
 
@@ -154,19 +155,19 @@ where
 {
     fn fmt_html(
         &self,
-        f: &mut HtmlFormatter<S>,
+        buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
         is_last_node_in_parent: bool,
     ) {
         match self {
             DomNode::Container(s) => {
-                s.fmt_html(f, selection_writer, is_last_node_in_parent)
+                s.fmt_html(buf, selection_writer, is_last_node_in_parent)
             }
             DomNode::LineBreak(s) => {
-                s.fmt_html(f, selection_writer, is_last_node_in_parent)
+                s.fmt_html(buf, selection_writer, is_last_node_in_parent)
             }
             DomNode::Text(s) => {
-                s.fmt_html(f, selection_writer, is_last_node_in_parent)
+                s.fmt_html(buf, selection_writer, is_last_node_in_parent)
             }
         }
     }

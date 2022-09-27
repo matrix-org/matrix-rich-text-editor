@@ -238,10 +238,10 @@ run_tests([
         assert_eq(codeunit_count(editor, thirdTextNode, 2), 11);
     }},
 
-    { name: "The offset should contains all the characters when the editor node is selected", test: () => {
+    { name: "The offset should contain all the characters when the editor node is selected", test: () => {
         // When
         editor.innerHTML = "abc<b>def</b>gh";
-        // Use the editor node and a offset as 1 to simulate the FF behavior 
+        // Use the editor node and a offset as 1 to simulate the FF behavior
         let offset = computeSelectionOffset(editor, 1);
 
         // Then
@@ -250,12 +250,12 @@ run_tests([
          // When
         editor.innerHTML = "abc<b>def</b>gh<ul><li>alice</li><li>bob</li>";
         offset = computeSelectionOffset(editor, 1);
- 
+
          // Then
          assert_eq(offset, 16);
     }},
 
-    { name: "The offset should contains the selected characters", test: () => {
+    { name: "The offset should contain the selected characters", test: () => {
         // When
         editor.innerHTML = "abc<b>def</b>gh<ul><li>alice</li><li>bob</li>";
         let offset = computeSelectionOffset(editor.childNodes[0], 1);
@@ -268,6 +268,15 @@ run_tests([
 
         // Then
         assert_eq(offset, 20);
+    }},
+
+    { name: "Selecting back to the beginning of the line works", test: () => {
+        // When
+        editor.innerHTML = "abc";
+        let offset = computeSelectionOffset(editor.childNodes[0], 0);
+
+        // Then
+        assert_eq(offset, 0);
     }},
 
     { name: "Selection according to no actions is -1, 1", test: () => {

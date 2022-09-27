@@ -48,49 +48,56 @@
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
                     android:src="@drawable/ic_format_italic"
-                    android:contentDescription="Italic" />
+                    android:contentDescription="Italic"
+                    app:tint="@drawable/editor_menu_selector" />
 
                 <ImageButton android:id="@+id/formatUnderlineButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
                     android:src="@drawable/ic_format_underline"
-                    android:contentDescription="Underline" />
+                    android:contentDescription="Underline"
+                    app:tint="@drawable/editor_menu_selector" />
 
                 <ImageButton android:id="@+id/formatStrikeThroughButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
                     android:src="@drawable/ic_format_strikethrough"
-                    android:contentDescription="Strike" />
+                    android:contentDescription="Strike"
+                    app:tint="@drawable/editor_menu_selector" />
 
                 <ImageButton android:id="@+id/formatInlineCodeButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
                     android:src="@drawable/ic_code"
-                    android:contentDescription="Inline code" />
+                    android:contentDescription="Inline code"
+                    app:tint="@drawable/editor_menu_selector" />
 
                 <ImageButton android:id="@+id/addLinkButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
                     android:src="@drawable/ic_link"
-                    android:contentDescription="Hyperlink" />
+                    android:contentDescription="Hyperlink"
+                    app:tint="@drawable/editor_menu_selector" />
 
                 <ImageButton android:id="@+id/orderedListButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
                     android:src="@drawable/ic_ordered_list"
-                    android:contentDescription="Ordered list" />
+                    android:contentDescription="Ordered list"
+                    app:tint="@drawable/editor_menu_selector" />
 
                 <ImageButton android:id="@+id/unorderedListButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
                     android:src="@drawable/ic_unordered_list"
-                    android:contentDescription="Unordered list" />
+                    android:contentDescription="Unordered list"
+                    app:tint="@drawable/editor_menu_selector" />
 
 
             </LinearLayout>
@@ -113,7 +120,7 @@
                 android:layout_marginEnd="4dp"
                 android:src="@drawable/ic_undo"
                 android:contentDescription="Undo"
-                android:tint="@drawable/editor_menu_selector" />
+                app:tint="@drawable/editor_menu_selector" />
 
             <ImageButton android:id="@+id/redoButton"
                 android:layout_width="wrap_content"
@@ -121,7 +128,7 @@
                 android:layout_marginEnd="4dp"
                 android:src="@drawable/ic_redo"
                 android:contentDescription="Redo"
-                android:tint="@drawable/editor_menu_selector" />
+                app:tint="@drawable/editor_menu_selector" />
 
         </LinearLayout>
 

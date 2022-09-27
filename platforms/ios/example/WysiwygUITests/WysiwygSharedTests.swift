@@ -36,7 +36,7 @@ final class WysiwygSharedTests {
     static func testTypingAndDeleting(_ app: XCUIApplication) throws {
         let textView = app.textViews["WysiwygComposer"]
         // Type something into composer.
-        textView.typeText("abc🎉🎉👩🏿‍🚀")
+        textView.typeTextCharByChar("abc🎉🎉👩🏿‍🚀")
         XCTAssertEqual(textView.value as? String, "abc🎉🎉👩🏿‍🚀")
 
         // Test deleting parts of the text.
@@ -45,11 +45,11 @@ final class WysiwygSharedTests {
         XCTAssertEqual(textView.value as? String, "abc🎉🎉")
 
         let delete3CharString = String(repeating: XCUIKeyboardKey.delete.rawValue, count: 3)
-        textView.typeText(delete3CharString)
+        textView.typeTextCharByChar(delete3CharString)
         XCTAssertEqual(textView.value as? String, "ab")
 
         // Rewrite some content.
-        textView.typeText("cde 🥳 fgh")
+        textView.typeTextCharByChar("cde 🥳 fgh")
         XCTAssertEqual(textView.value as? String, "abcde 🥳 fgh")
 
         // Double tap results in selecting the last word.
@@ -68,7 +68,7 @@ final class WysiwygSharedTests {
     static func testTypingAndBolding(_ app: XCUIApplication) throws -> XCTAttachment {
         let textView = app.textViews["WysiwygComposer"]
         // Type something into composer.
-        textView.typeText("Some bold text")
+        textView.typeTextCharByChar("Some bold text")
 
         textView.doubleTap()
         // We can't detect data being properly reported back to the model but
@@ -94,7 +94,7 @@ final class WysiwygSharedTests {
     static func typeAndSendMessage(_ app: XCUIApplication) throws {
         let textView = app.textViews["WysiwygComposer"]
         // Type something into composer.
-        textView.typeText("Some bold text")
+        textView.typeTextCharByChar("Some bold text")
 
         textView.doubleTap()
         // 1s is more than enough for the Rust side to get notified for the selection.
@@ -121,5 +121,17 @@ final class WysiwygSharedTests {
 private extension WysiwygSharedTests {
     static func rawIdentifier(_ id: WysiwygSharedAccessibilityIdentifier) -> String {
         id.rawValue
+    }
+}
+
+private extension XCUIElement {
+    /// Types a text inside the UI element character by character.
+    /// This is especially useful to avoid missing some characters on
+    /// UI tests running on a rather slow CI.
+    ///
+    /// - Parameters:
+    ///   - text: Text to type in the UI element.
+    func typeTextCharByChar(_ text: String) {
+        text.forEach { self.typeText(String($0)) }
     }
 }

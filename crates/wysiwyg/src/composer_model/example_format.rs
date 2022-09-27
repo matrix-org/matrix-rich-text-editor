@@ -19,8 +19,8 @@ use widestring::Utf16String;
 
 use crate::dom::nodes::{LineBreakNode, TextNode};
 use crate::dom::parser::parse;
-use crate::dom::unicode_string::UnicodeStringExt;
-use crate::dom::{DomLocation, HtmlFormatter};
+use crate::dom::unicode_string::UnicodeStrExt;
+use crate::dom::DomLocation;
 use crate::{
     ComposerModel, ComposerState, DomHandle, Location, ToHtml, UnicodeString,
 };
@@ -152,7 +152,7 @@ impl ComposerModel<Utf16String> {
         let state = &self.state;
         let dom = &state.dom;
 
-        let mut formatter = HtmlFormatter::new();
+        let mut buf = Utf16String::new();
 
         // Find out which nodes are involved in the selection
         let range = dom.find_range(state.start.into(), state.end.into());
@@ -173,14 +173,13 @@ impl ComposerModel<Utf16String> {
             .map(|l| (l.node_handle.clone(), l.clone()))
             .collect();
         let mut selection_writer = SelectionWriter { state, locations };
-        root.fmt_html(&mut formatter, Some(&mut selection_writer), false);
+        root.fmt_html(&mut buf, Some(&mut selection_writer), false);
         if range.is_empty().not() {
             // we should always have written at least the start of the selection
             // ({ or |) by now.
             assert!(selection_writer.is_selection_written());
         }
-        let ret = formatter.finish();
-        let html = ret.to_string();
+        let html = buf.to_string();
 
         // Replace characters with visible ones
         html.replace('\u{200b}', "~").replace('\u{A0}', "&nbsp;")
@@ -195,32 +194,30 @@ pub struct SelectionWriter {
 impl SelectionWriter {
     pub fn write_selection_text_node<S: UnicodeString>(
         &mut self,
-        f: &mut HtmlFormatter<S>,
+        buf: &mut S,
         pos: usize,
         node: &TextNode<S>,
     ) {
         if let Some(loc) = self.locations.get(&node.handle()) {
             let strings_to_add = self.state.advance(loc, node.data().len());
             for (str, i) in strings_to_add.into_iter().rev() {
-                let code_units = S::from(str);
-                f.write_at(pos + i, code_units.as_ref());
+                buf.insert(pos + i, &S::from(str));
             }
         }
     }
 
     pub fn write_selection_line_break_node<S: UnicodeString>(
         &mut self,
-        f: &mut HtmlFormatter<S>,
+        buf: &mut S,
         pos: usize,
         node: &LineBreakNode<S>,
     ) {
         if let Some(loc) = self.locations.get(&node.handle()) {
             let strings_to_add = self.state.advance(loc, 1);
             for (str, i) in strings_to_add.into_iter().rev() {
-                let code_units = S::from(str);
                 // Index 1 in line breaks is actually at the end of the '<br />'
                 let i = if i == 0 { 0 } else { 6 };
-                f.write_at(pos + i, code_units.as_ref());
+                buf.insert(pos + i, &S::from(str));
             }
         }
     }

@@ -14,7 +14,7 @@
 
 use crate::dom::nodes::{ContainerNode, DomNode, LineBreakNode, TextNode};
 use crate::dom::range::DomLocation;
-use crate::dom::unicode_string::UnicodeStringExt;
+use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{Dom, DomHandle, FindResult, Range};
 use crate::UnicodeString;
 use std::cmp::{max, min};

@@ -16,8 +16,7 @@ use std::fmt::Display;
 
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode};
-use crate::dom::unicode_string::UnicodeStringExt;
-use crate::dom::HtmlFormatter;
+use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{
     find_range, to_raw_text::ToRawText, DomHandle, Range, ToTree, UnicodeString,
 };
@@ -88,6 +87,18 @@ where
             DomNode::Text(_n) => panic!("Text nodes can't have children"),
             DomNode::LineBreak(_n) => panic!("Line breaks can't have children"),
             DomNode::Container(n) => n.replace_child(index, nodes),
+        }
+    }
+
+    pub fn remove(&mut self, node_handle: &DomHandle) {
+        let parent_node = self.lookup_node_mut(&node_handle.parent_handle());
+        match parent_node {
+            DomNode::Container(parent) => {
+                let index = node_handle.index_in_parent();
+                parent.remove_child(index);
+            }
+            DomNode::Text(_) => panic!("Text nodes can't have children"),
+            DomNode::LineBreak(_) => panic!("Line breaks can't have children"),
         }
     }
 
@@ -332,12 +343,12 @@ where
 {
     fn fmt_html(
         &self,
-        f: &mut HtmlFormatter<S>,
+        buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
         is_last_node_in_parent: bool,
     ) {
         self.document
-            .fmt_html(f, selection_writer, is_last_node_in_parent)
+            .fmt_html(buf, selection_writer, is_last_node_in_parent)
     }
 }
 
