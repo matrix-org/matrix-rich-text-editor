@@ -42,11 +42,7 @@ pub trait UnicodeString:
     type CodeUnit: Copy + From<u8> + PartialEq;
     type Str: UnicodeStr<CodeUnit = Self::CodeUnit, Owned = Self> + ?Sized;
 
-    fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String>;
-
-    /// Convert this character to a code unit.
-    /// Panics if this character requires more than one code unit
-    fn c_from_char(ch: char) -> Self::CodeUnit;
+    fn insert(&mut self, idx: usize, s: &Self::Str);
 }
 
 pub trait UnicodeStr:
@@ -60,66 +56,60 @@ pub trait UnicodeStr:
     + Index<RangeTo<usize>, Output = Self>
 {
     type CodeUnit: Copy + From<u8> + PartialEq;
+
+    // Should really be `-> Self::Chars<'a>`, but that requires GATs
+    fn chars(&self) -> Box<dyn Iterator<Item = char> + '_>;
 }
 
 impl UnicodeString for String {
     type CodeUnit = u8;
     type Str = str;
 
-    fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String> {
-        String::from_utf8(v.into()).map_err(|e| e.to_string())
-    }
-
-    fn c_from_char(ch: char) -> Self::CodeUnit {
-        assert!(ch.len_utf8() == 1);
-        let mut buf = [0; 1];
-        ch.encode_utf8(&mut buf);
-        buf[0]
+    fn insert(&mut self, idx: usize, s: &Self::Str) {
+        self.insert_str(idx, s);
     }
 }
 
 impl UnicodeStr for str {
     type CodeUnit = u8;
+
+    fn chars(&self) -> Box<dyn Iterator<Item = char> + '_> {
+        Box::new(self.chars())
+    }
 }
 
 impl UnicodeString for Utf16String {
     type CodeUnit = u16;
     type Str = Utf16Str;
 
-    fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String> {
-        Utf16String::from_vec(v.into()).map_err(|e| e.to_string())
-    }
-
-    fn c_from_char(ch: char) -> Self::CodeUnit {
-        let mut ret = Utf16String::new();
-        ret.push(ch);
-        assert!(ret.len() == 1);
-        ret.into_vec()[0]
+    fn insert(&mut self, idx: usize, s: &Self::Str) {
+        self.insert_utfstr(idx, s);
     }
 }
 
 impl UnicodeStr for Utf16Str {
     type CodeUnit = u16;
+
+    fn chars(&self) -> Box<dyn Iterator<Item = char> + '_> {
+        Box::new(self.chars())
+    }
 }
 
 impl UnicodeString for Utf32String {
     type CodeUnit = u32;
     type Str = Utf32Str;
 
-    fn from_vec(v: impl Into<Vec<Self::CodeUnit>>) -> Result<Self, String> {
-        Utf32String::from_vec(v.into()).map_err(|e| e.to_string())
-    }
-
-    fn c_from_char(ch: char) -> Self::CodeUnit {
-        let mut ret = Utf32String::new();
-        ret.push(ch);
-        assert!(ret.len() == 1);
-        ret.into_vec()[0]
+    fn insert(&mut self, idx: usize, s: &Self::Str) {
+        self.insert_utfstr(idx, s);
     }
 }
 
 impl UnicodeStr for Utf32Str {
     type CodeUnit = u32;
+
+    fn chars(&self) -> Box<dyn Iterator<Item = char> + '_> {
+        Box::new(self.chars())
+    }
 }
 
 pub trait UnicodeStringExt: UnicodeString {

@@ -14,13 +14,12 @@
 
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
-use crate::dom::html_formatter::HtmlFormatter;
 use crate::dom::nodes::dom_node::DomNode;
 use crate::dom::to_html::ToHtml;
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
 use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
-use crate::dom::{HtmlChar, UnicodeString};
+use crate::dom::UnicodeString;
 use crate::{InlineFormatType, ListType};
 
 #[derive(Clone, Debug, PartialEq)]
@@ -283,26 +282,26 @@ where
 {
     fn fmt_html(
         &self,
-        formatter: &mut HtmlFormatter<S>,
+        formatter: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
         _: bool,
     ) {
         let name = self.name();
         if !name.is_empty() {
-            formatter.write_char(HtmlChar::Lt);
-            formatter.write(name.as_ref());
+            formatter.push('<');
+            formatter.push(name);
             if let Some(attrs) = &self.attrs {
                 for attr in attrs {
-                    formatter.write_char(HtmlChar::Space);
+                    formatter.push(' ');
                     let (attr_name, value) = attr;
-                    formatter.write(attr_name.as_ref());
-                    formatter.write_char(HtmlChar::Equal);
-                    formatter.write_char(HtmlChar::Quote);
-                    formatter.write(value.as_ref());
-                    formatter.write_char(HtmlChar::Quote);
+                    formatter.push(&**attr_name);
+                    formatter.push('=');
+                    formatter.push('"');
+                    formatter.push(&**value);
+                    formatter.push('"');
                 }
             }
-            formatter.write_char(HtmlChar::Gt);
+            formatter.push('>');
         }
 
         if let Some(w) = selection_writer {
@@ -318,10 +317,10 @@ where
         }
 
         if !name.is_empty() {
-            formatter.write_char(HtmlChar::Lt);
-            formatter.write_char(HtmlChar::ForwardSlash);
-            formatter.write(name.as_ref());
-            formatter.write_char(HtmlChar::Gt);
+            formatter.push('<');
+            formatter.push('/');
+            formatter.push(name);
+            formatter.push('>');
         }
     }
 }

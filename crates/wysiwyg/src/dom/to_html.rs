@@ -13,7 +13,6 @@
 // limitations under the License.
 
 use crate::composer_model::example_format::SelectionWriter;
-use crate::dom::HtmlFormatter;
 
 use super::UnicodeString;
 
@@ -23,14 +22,14 @@ where
 {
     fn fmt_html(
         &self,
-        formatter: &mut HtmlFormatter<S>,
+        buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
         is_last_node_in_parent: bool,
     );
 
     fn to_html(&self) -> S {
-        let mut f = HtmlFormatter::new();
-        self.fmt_html(&mut f, None, false);
-        f.finish()
+        let mut buf = S::default();
+        self.fmt_html(&mut buf, None, false);
+        buf
     }
 }
