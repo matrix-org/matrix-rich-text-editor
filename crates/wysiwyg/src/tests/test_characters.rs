@@ -264,7 +264,7 @@ fn multiple_spaces_translates_into_non_breakable_whitespaces() {
 #[test]
 fn multiple_spaces_between_text() {
     let model = cm("abc  def ghi   jkl|");
-    assert_eq!(tx(&model), "abc&nbsp;&nbsp;def ghi&nbsp;&nbsp;&nbsp;jkl|");
+    assert_eq!(tx(&model), "abc&nbsp;&nbsp;def ghi&nbsp;&nbsp; jkl|");
 }
 
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
