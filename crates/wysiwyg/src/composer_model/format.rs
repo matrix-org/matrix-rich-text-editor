@@ -492,7 +492,7 @@ mod test {
         model.format(InlineFormatType::Bold);
         assert_eq!(
             model.state.dom.to_string(),
-            "<strong>hello&nbsp;</strong><i><strong>wor</strong>ld</i>"
+            "<strong>hello\u{A0}</strong><i><strong>wor</strong>ld</i>"
         );
     }
 
