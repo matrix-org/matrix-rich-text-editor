@@ -75,6 +75,19 @@ where
                     .collect();
                 reversed_actions = intersection;
             }
+
+            let toggled_format_actions = self
+                .toggled_format_types
+                .iter()
+                .map(|format| format.action())
+                .collect();
+
+            reversed_actions = reversed_actions
+                .symmetric_difference(&toggled_format_actions)
+                .into_iter()
+                .cloned()
+                .collect();
+
             reversed_actions
         }
     }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::ops::Not;
 
 use widestring::Utf16String;
@@ -21,9 +21,7 @@ use crate::dom::nodes::{LineBreakNode, TextNode};
 use crate::dom::parser::parse;
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::DomLocation;
-use crate::{
-    ComposerModel, ComposerState, DomHandle, Location, ToHtml, UnicodeString,
-};
+use crate::{ComposerModel, DomHandle, Location, ToHtml, UnicodeString};
 
 impl ComposerModel<Utf16String> {
     /// Convenience function to allow working with ComposerModel instances
@@ -94,13 +92,7 @@ impl ComposerModel<Utf16String> {
         let s = find_char(&text_u16, "{");
         let e = find_char(&text_u16, "}");
 
-        let mut model = ComposerModel {
-            state: ComposerState::new(),
-            previous_states: Vec::new(),
-            next_states: Vec::new(),
-            reversed_actions: HashSet::new(),
-            disabled_actions: HashSet::new(),
-        };
+        let mut model = ComposerModel::new();
         model.state.dom = parse(&text).unwrap();
 
         fn delete_range(
@@ -417,8 +409,6 @@ impl SelectionWritingState {
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashSet;
-
     use speculoos::{prelude::*, AssertionFailure, Spec};
     use widestring::Utf16String;
 
@@ -598,49 +588,34 @@ mod test {
 
     #[test]
     fn tx_formats_selection_spanning_outwards_from_tag_forwards() {
-        let model: ComposerModel<Utf16String> = ComposerModel {
-            state: ComposerState {
+        let model: ComposerModel<Utf16String> =
+            ComposerModel::from_state(ComposerState {
                 dom: parser::parse("AAA<b>BBB</b>CCC").unwrap(),
                 start: Location::from(4),
                 end: Location::from(7),
-            },
-            previous_states: Vec::new(),
-            next_states: Vec::new(),
-            reversed_actions: HashSet::new(),
-            disabled_actions: HashSet::new(),
-        };
+            });
         assert_eq!(tx(&model), "AAA<b>B{BB</b>C}|CC");
     }
 
     #[test]
     fn tx_formats_selection_spanning_outwards_from_tag_backwards() {
-        let model: ComposerModel<Utf16String> = ComposerModel {
-            state: ComposerState {
+        let model: ComposerModel<Utf16String> =
+            ComposerModel::from_state(ComposerState {
                 dom: parser::parse("AAA<b>BBB</b>CCC").unwrap(),
                 start: Location::from(7),
                 end: Location::from(4),
-            },
-            previous_states: Vec::new(),
-            next_states: Vec::new(),
-            reversed_actions: HashSet::new(),
-            disabled_actions: HashSet::new(),
-        };
+            });
         assert_eq!(tx(&model), "AAA<b>B|{BB</b>C}CC");
     }
 
     #[test]
     fn tx_formats_empty_model() {
-        let model: ComposerModel<Utf16String> = ComposerModel {
-            state: ComposerState {
+        let model: ComposerModel<Utf16String> =
+            ComposerModel::from_state(ComposerState {
                 dom: Dom::new(Vec::new()),
                 start: Location::from(1),
                 end: Location::from(1),
-            },
-            previous_states: Vec::new(),
-            next_states: Vec::new(),
-            reversed_actions: HashSet::new(),
-            disabled_actions: HashSet::new(),
-        };
+            });
         assert_eq!(tx(&model), "");
     }
 

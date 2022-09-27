@@ -15,7 +15,9 @@
 use crate::composer_state::ComposerState;
 use crate::dom::parser::parse;
 use crate::dom::{DomHandle, UnicodeString};
-use crate::{ComposerAction, ComposerUpdate, Location, ToHtml, ToTree};
+use crate::{
+    ComposerAction, ComposerUpdate, InlineFormatType, Location, ToHtml, ToTree,
+};
 use std::collections::HashSet;
 
 #[derive(Clone)]
@@ -28,6 +30,7 @@ where
     pub next_states: Vec<ComposerState<S>>,
     pub reversed_actions: HashSet<ComposerAction>,
     pub disabled_actions: HashSet<ComposerAction>,
+    pub toggled_format_types: Vec<InlineFormatType>,
 }
 
 impl<S> ComposerModel<S>
@@ -41,6 +44,18 @@ where
             next_states: Vec::new(),
             reversed_actions: HashSet::new(),
             disabled_actions: HashSet::new(),
+            toggled_format_types: Vec::new(),
+        }
+    }
+
+    pub fn from_state(state: ComposerState<S>) -> Self {
+        Self {
+            state: state,
+            previous_states: Vec::new(),
+            next_states: Vec::new(),
+            reversed_actions: HashSet::new(),
+            disabled_actions: HashSet::new(),
+            toggled_format_types: Vec::new(),
         }
     }
 
@@ -61,6 +76,7 @@ where
             next_states: Vec::new(),
             reversed_actions: HashSet::new(),
             disabled_actions: HashSet::new(),
+            toggled_format_types: Vec::new(),
         };
         model.compute_menu_state();
         model
