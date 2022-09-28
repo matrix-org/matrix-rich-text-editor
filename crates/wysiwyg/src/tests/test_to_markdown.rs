@@ -127,6 +127,11 @@ fn text_with_inline_code() {
     );
 }
 
+#[test]
+fn link() {
+    assert_eq!(md(r#"<a href="url">abc</a>|"#), "[abc](url)");
+}
+
 fn md(html: &str) -> Utf16String {
     cm(html).state.dom.to_markdown().unwrap()
 }
