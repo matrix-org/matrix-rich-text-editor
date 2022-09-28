@@ -77,6 +77,7 @@ where
             }
 
             let toggled_format_actions = self
+                .state
                 .toggled_format_types
                 .iter()
                 .map(|format| format.action())

@@ -74,14 +74,14 @@ where
     }
 
     pub(crate) fn apply_pending_formats(&mut self, start: usize, end: usize) {
-        self.toggled_format_types.clone().iter().for_each(|format| {
+        self.state.toggled_format_types.clone().iter().for_each(|format| {
             if self.reversed_actions.contains(&format.action()) {
                 self.format_range(start, end, format.clone());
             } else {
                 self.unformat_range(start, end, format.clone());
             }
         });
-        self.toggled_format_types.clear();
+        self.state.toggled_format_types.clear();
     }
 
     fn format(&mut self, format: InlineFormatType) -> ComposerUpdate<S> {
@@ -132,12 +132,12 @@ where
     }
 
     fn toggle_zero_length_format(&mut self, format: InlineFormatType) {
-        if self.toggled_format_types.contains(&format) {
-            self.toggled_format_types
+        if self.state.toggled_format_types.contains(&format) {
+            self.state.toggled_format_types
                 .iter()
                 .position(|f| f.clone() == format);
         } else {
-            self.toggled_format_types.push(format);
+            self.state.toggled_format_types.push(format);
         }
     }
 

@@ -593,6 +593,7 @@ mod test {
                 dom: parser::parse("AAA<b>BBB</b>CCC").unwrap(),
                 start: Location::from(4),
                 end: Location::from(7),
+                toggled_format_types: Vec::new(),
             });
         assert_eq!(tx(&model), "AAA<b>B{BB</b>C}|CC");
     }
@@ -604,6 +605,7 @@ mod test {
                 dom: parser::parse("AAA<b>BBB</b>CCC").unwrap(),
                 start: Location::from(7),
                 end: Location::from(4),
+                toggled_format_types: Vec::new(),
             });
         assert_eq!(tx(&model), "AAA<b>B|{BB</b>C}CC");
     }
@@ -615,6 +617,7 @@ mod test {
                 dom: Dom::new(Vec::new()),
                 start: Location::from(1),
                 end: Location::from(1),
+                toggled_format_types: Vec::new(),
             });
         assert_eq!(tx(&model), "");
     }

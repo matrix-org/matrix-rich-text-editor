@@ -126,7 +126,7 @@ fn formatting_with_zero_length_selection_apply_on_replace_text() {
     model.underline();
     assert_eq!(tx(&model), "aaa|bbb");
     assert_eq!(
-        model.toggled_format_types,
+        model.state.toggled_format_types,
         Vec::from([
             InlineFormatType::Bold,
             InlineFormatType::Italic,
@@ -142,7 +142,7 @@ fn unformatting_with_zero_length_selection_removes_on_replace_text() {
     let mut model = cm("<strong>aaa|bbb</strong>");
     model.bold();
     assert_eq!(
-        model.toggled_format_types,
+        model.state.toggled_format_types,
         Vec::from([InlineFormatType::Bold]),
     );
     model.replace_text(utf16("ccc"));
@@ -163,9 +163,9 @@ fn selecting_removes_toggled_format_types() {
     let mut model = cm("aaa|");
     model.bold();
     assert_eq!(
-        model.toggled_format_types,
+        model.state.toggled_format_types,
         Vec::from([InlineFormatType::Bold]),
     );
     model.select(Location::from(2), Location::from(2));
-    assert_eq!(model.toggled_format_types, Vec::new(),);
+    assert_eq!(model.state.toggled_format_types, Vec::new(),);
 }

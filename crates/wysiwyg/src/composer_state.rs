@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::dom::{Dom, UnicodeString};
-use crate::Location;
+use crate::{ InlineFormatType, Location };
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ComposerState<S>
@@ -23,6 +23,7 @@ where
     pub dom: Dom<S>,
     pub start: Location,
     pub end: Location,
+    pub toggled_format_types: Vec<InlineFormatType>,
 }
 
 impl<S> ComposerState<S>
@@ -34,6 +35,7 @@ where
             dom: Dom::new(Vec::new()),
             start: Location::from(0),
             end: Location::from(0),
+            toggled_format_types: Vec::new(),
         }
     }
 }

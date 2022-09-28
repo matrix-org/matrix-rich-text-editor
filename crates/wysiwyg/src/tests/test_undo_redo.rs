@@ -17,6 +17,7 @@
 use crate::tests::testutils_composer_model::cm;
 
 use crate::dom::nodes::{DomNode, TextNode};
+use crate::InlineFormatType;
 
 use crate::tests::testutils_conversion::utf16;
 
@@ -107,4 +108,31 @@ fn redoing_action_adds_popped_state_to_previous_states() {
     model.redo();
 
     assert_eq!(model.previous_states[0], model.state);
+}
+
+#[test]
+fn undoing_restores_toggled_format_types() {
+    let mut model = cm("|");
+    model.bold();
+    model.italic();
+    assert_eq!(
+        model.state.toggled_format_types,
+        Vec::from([
+            InlineFormatType::Bold,
+            InlineFormatType::Italic,
+        ])
+    );
+    model.replace_text(utf16("a"));
+    assert_eq!(
+        model.state.toggled_format_types,
+        Vec::new()
+    );
+    model.undo();
+    assert_eq!(
+        model.state.toggled_format_types,
+        Vec::from([
+            InlineFormatType::Bold,
+            InlineFormatType::Italic,
+        ])
+    );
 }
