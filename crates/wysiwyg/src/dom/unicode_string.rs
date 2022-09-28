@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
+use std::fmt;
 use std::iter;
 use std::ops::{Deref, Index, Range, RangeFrom, RangeTo};
 
@@ -23,8 +23,8 @@ use widestring::{Utf16Str, Utf16String, Utf32Str, Utf32String};
 /// widestring crate).
 pub trait UnicodeString:
     Clone
-    + std::fmt::Debug
-    + std::fmt::Display
+    + fmt::Debug
+    + fmt::Display
     + Default
     + PartialEq
     + AsRef<[Self::CodeUnit]>
@@ -46,7 +46,8 @@ pub trait UnicodeString:
 }
 
 pub trait UnicodeStr:
-    std::fmt::Display
+    fmt::Display
+    + fmt::Debug
     + PartialEq
     + PartialEq<str>
     + AsRef<[Self::CodeUnit]>
