@@ -51,16 +51,19 @@ where
         &mut self,
         range: &Range,
     ) -> HashSet<ComposerAction> {
-        let mut reversed_actions_sets = range
-            .leaves()
-            .map(|l| self.compute_reversed_actions(&l.node_handle));
-        let intersection = reversed_actions_sets.next().map(|set| {
-            reversed_actions_sets.fold(set, |set1, set2| {
-                set1.intersection(&set2).into_iter().cloned().collect()
-            })
-        });
-
-        if let Some(intersection) = intersection {
+        if let Some(intersection) = range.leaves().next().map(|l| {
+            range.leaves().fold(
+                self.compute_reversed_actions(&l.node_handle),
+                |set, leave| {
+                    set.intersection(
+                        &self.compute_reversed_actions(&leave.node_handle),
+                    )
+                    .into_iter()
+                    .cloned()
+                    .collect()
+                },
+            )
+        }) {
             intersection
         } else {
             HashSet::new()
