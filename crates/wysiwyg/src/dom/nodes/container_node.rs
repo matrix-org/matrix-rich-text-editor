@@ -392,7 +392,28 @@ where
                 }
             }
 
+            // Simple emphasis.
+            Formatting(Italic) => {
+                buf.push("_");
+
+                for child in self.children.iter() {
+                    child.fmt_markdown(buf)?;
+                }
+
+                buf.push("_");
+            }
+
+            // Strong emphasis.
             Formatting(Bold) => {
+                // `Formatting(Italic)` already uses `_` to represent
+                // a simple emphasis.
+                //
+                // We reckon it is better to use `*` to represent a
+                // strong emphasis instead of `_` so that
+                // `<em><strong>…</strong></em>` does _not_ produce
+                // `***…` or `___` which can be ambigiously
+                // interpreted by various Markdown compilers out
+                // there. Instead, it will produce `_**…**_`.
                 buf.push("**");
 
                 for child in self.children.iter() {
