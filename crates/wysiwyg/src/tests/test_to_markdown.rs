@@ -83,6 +83,21 @@ line2__ def*"#,
     );
 }
 
+#[test]
+fn test_with_strikethrough() {
+    assert_eq!(md("<del>abc</del>|"), "~~abc~~");
+    assert_eq!(md("abc<del>def</del>ghi|"), "abc~~def~~ghi");
+    assert_eq!(md("abc <del>def</del> ghi|"), "abc ~~def~~ ghi");
+    assert_eq!(md("abc<del> def </del>ghi|"), "abc~~ def ~~ghi");
+    assert_eq!(
+        md("abc <del>line1<br />line2<br /><br />line3</del> def|"),
+        r#"abc ~~line1\
+line2\
+\
+line3~~ def"#,
+    );
+}
+
 fn md(html: &str) -> Utf16String {
     cm(html).state.dom.to_markdown().unwrap()
 }

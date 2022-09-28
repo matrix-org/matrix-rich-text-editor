@@ -417,9 +417,10 @@ where
                 // We reckon it is better to use `_` to represent a
                 // strong emphasis instead of `*` so that
                 // `<em><strong>…</strong></em>` does _not_ produce
-                // `***…` or `___` which can be ambigiously
+                // `***…***` or `___…___` which can be ambigiously
                 // interpreted by various Markdown compilers out
                 // there. Instead, it will produce `*__…__*`.
+
                 buf.push("__");
 
                 for child in self.children.iter() {
@@ -429,7 +430,21 @@ where
                 buf.push("__");
             }
 
-            Formatting(StrikeThrough) => {}
+            Formatting(StrikeThrough) => {
+                // Strikethrough is represented by a pair of one or
+                // two `~`. We reckon using two `~` will avoid
+                // ambiguous behaviours for users that manipulate
+                // filesystem paths, or with Markdown compilers that
+                // do not support this format extension.
+
+                buf.push("~~");
+
+                for child in self.children.iter() {
+                    child.fmt_markdown(buf)?;
+                }
+
+                buf.push("~~");
+            }
 
             _ => {
                 return Err(MarkdownError::UnknownContainerName(
