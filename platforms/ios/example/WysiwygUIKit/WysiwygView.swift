@@ -16,6 +16,7 @@
 
 import OSLog
 import SwiftUI
+import WysiwygComposer
 
 /// Composer's main view. Displays a text view and a toolbar for advanced edition capabilities.
 public struct WysiwygView: View {

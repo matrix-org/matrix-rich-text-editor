@@ -17,7 +17,7 @@
 import SwiftUI
 import WysiwygComposer
 
-/// Example SwiftUI that embers the WysiwygComposerView in a bordered container
+/// Example SwiftUI that embeds the WysiwygComposerView in a bordered container
 /// that grows to a max height.
 struct Composer: View {
     @ObservedObject var viewModel: WysiwygComposerViewModel
