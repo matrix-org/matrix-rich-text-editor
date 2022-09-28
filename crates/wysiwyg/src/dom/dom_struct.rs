@@ -17,7 +17,7 @@ use std::fmt::Display;
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode};
 #[cfg(feature = "to-markdown")]
-use crate::dom::to_markdown::{Error as MarkdownError, ToMarkdown};
+use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{
     find_range, to_raw_text::ToRawText, DomHandle, Range, ToTree, UnicodeString,
@@ -382,8 +382,12 @@ impl<S> ToMarkdown<S> for Dom<S>
 where
     S: UnicodeString,
 {
-    fn fmt_markdown(&self, buf: &mut S) -> Result<(), MarkdownError<S>> {
-        self.document.fmt_markdown(buf)
+    fn fmt_markdown(
+        &self,
+        buffer: &mut S,
+        options: &MarkdownOptions,
+    ) -> Result<(), MarkdownError<S>> {
+        self.document.fmt_markdown(buffer, options)
     }
 }
 

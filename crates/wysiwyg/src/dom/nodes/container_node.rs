@@ -17,7 +17,7 @@ use crate::dom::dom_handle::DomHandle;
 use crate::dom::nodes::dom_node::DomNode;
 use crate::dom::to_html::ToHtml;
 #[cfg(feature = "to-markdown")]
-use crate::dom::to_markdown::{Error as MarkdownError, ToMarkdown};
+use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
 use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
@@ -381,14 +381,18 @@ impl<S> ToMarkdown<S> for ContainerNode<S>
 where
     S: UnicodeString,
 {
-    fn fmt_markdown(&self, buf: &mut S) -> Result<(), MarkdownError<S>> {
+    fn fmt_markdown(
+        &self,
+        buffer: &mut S,
+        options: &MarkdownOptions,
+    ) -> Result<(), MarkdownError<S>> {
         use ContainerNodeKind::*;
         use InlineFormatType::*;
 
         match self.kind() {
             Generic => {
                 for child in self.children.iter() {
-                    child.fmt_markdown(buf)?;
+                    child.fmt_markdown(buffer, options)?;
                 }
             }
 
@@ -400,13 +404,13 @@ where
                 // `foo_bar_baz`. We reckon it's good to follow this
                 // trend to avoid unexpected behaviours for our users.
 
-                buf.push("*");
+                buffer.push("*");
 
                 for child in self.children.iter() {
-                    child.fmt_markdown(buf)?;
+                    child.fmt_markdown(buffer, options)?;
                 }
 
-                buf.push("*");
+                buffer.push("*");
             }
 
             // Strong emphasis.
@@ -421,13 +425,13 @@ where
                 // interpreted by various Markdown compilers out
                 // there. Instead, it will produce `*__…__*`.
 
-                buf.push("__");
+                buffer.push("__");
 
                 for child in self.children.iter() {
-                    child.fmt_markdown(buf)?;
+                    child.fmt_markdown(buffer, options)?;
                 }
 
-                buf.push("__");
+                buffer.push("__");
             }
 
             Formatting(StrikeThrough) => {
@@ -437,13 +441,13 @@ where
                 // filesystem paths, or with Markdown compilers that
                 // do not support this format extension.
 
-                buf.push("~~");
+                buffer.push("~~");
 
                 for child in self.children.iter() {
-                    child.fmt_markdown(buf)?;
+                    child.fmt_markdown(buffer, options)?;
                 }
 
-                buf.push("~~");
+                buffer.push("~~");
             }
 
             Formatting(Underline) => {
@@ -451,8 +455,21 @@ where
                 // ignore it!
 
                 for child in self.children.iter() {
-                    child.fmt_markdown(buf)?;
+                    child.fmt_markdown(buffer, options)?;
                 }
+            }
+
+            Formatting(InlineCode) => {
+                buffer.push('`');
+
+                let mut options = *options;
+                options.insert(MarkdownOptions::IGNORE_LINE_BREAK);
+
+                for child in self.children.iter() {
+                    child.fmt_markdown(buffer, &options)?;
+                }
+
+                buffer.push('`');
             }
 
             _ => {
