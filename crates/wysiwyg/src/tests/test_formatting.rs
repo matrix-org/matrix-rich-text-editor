@@ -168,4 +168,18 @@ fn selecting_removes_toggled_format_types() {
     );
     model.select(Location::from(2), Location::from(2));
     assert_eq!(model.state.toggled_format_types, Vec::new(),);
+    model.replace_text(utf16("ccc"));
+    assert_eq!(tx(&model), "aaccc|a");
+}
+
+#[test]
+fn formatting_again_removes_toggled_format_type() {
+    let mut model = cm("aaa|");
+    model.bold();
+    assert_eq!(
+        model.state.toggled_format_types,
+        Vec::from([InlineFormatType::Bold]),
+    );
+    model.bold();
+    assert_eq!(model.state.toggled_format_types, Vec::new(),);
 }
