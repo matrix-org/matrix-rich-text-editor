@@ -198,8 +198,8 @@ where
                     but line breaks cannot have children."
                 ),
                 DomNode::Text(_) => panic!(
-                    "Handle is invalid: refers to the child of a text node, \
-                    but text nodes cannot have children."
+                    "Handle {:?} is invalid: refers to the child of a text node, \
+                    but text nodes cannot have children.", node_handle
                 ),
             }
         }
