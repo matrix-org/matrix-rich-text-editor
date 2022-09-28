@@ -16,7 +16,7 @@
 
 use crate::tests::testutils_composer_model::{cm, tx};
 
-use crate::{InlineFormatType, Location, TextUpdate};
+use crate::{Location, TextUpdate};
 
 #[test]
 fn selecting_ascii_characters() {
@@ -97,7 +97,7 @@ fn selecting_complex_characters() {
 #[test]
 fn selecting_within_a_tag() {
     let mut model = cm("ad|{asda}sf");
-    model.format(InlineFormatType::Bold);
+    model.bold();
     model.select(Location::from(3), Location::from(7));
     assert_eq!(tx(&model), "ad<strong>a{sda</strong>s}|f");
 }

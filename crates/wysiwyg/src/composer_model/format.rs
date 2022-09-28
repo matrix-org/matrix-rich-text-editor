@@ -73,12 +73,29 @@ where
         }
     }
 
-    pub fn format(&mut self, format: InlineFormatType) -> ComposerUpdate<S> {
+    pub(crate) fn apply_pending_formats(&mut self, start: usize, end: usize) {
+        self.toggled_format_types.clone().iter().for_each(|format| {
+            if self.reversed_actions.contains(&format.action()) {
+                self.format_range(start, end, format.clone());
+            } else {
+                self.unformat_range(start, end, format.clone());
+            }
+        });
+        self.toggled_format_types.clear();
+    }
+
+    fn format(&mut self, format: InlineFormatType) -> ComposerUpdate<S> {
         // Store current Dom
         self.push_state_to_history();
         let (s, e) = self.safe_selection();
-        self.format_range(s, e, format);
-        self.create_update_replace_all()
+
+        if s == e {
+            self.toggle_zero_length_format(format);
+            ComposerUpdate::update_menu_state(self.compute_menu_state())
+        } else {
+            self.format_range(s, e, format);
+            self.create_update_replace_all()
+        }
     }
 
     fn format_range(
@@ -87,17 +104,41 @@ where
         end: usize,
         format: InlineFormatType,
     ) {
+        assert!(start != end);
         let range = self.state.dom.find_range(start, end);
         self.format_several_nodes(&range, format);
     }
 
-    pub fn unformat(&mut self, format: InlineFormatType) -> ComposerUpdate<S> {
-        // Store current Dom
-        self.push_state_to_history();
+    fn unformat(&mut self, format: InlineFormatType) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
-        let range = self.state.dom.find_range(s, e);
-        self.unformat_several_nodes(s, e, &range, format);
-        self.create_update_replace_all()
+
+        if s == e {
+            self.toggle_zero_length_format(format);
+            ComposerUpdate::update_menu_state(self.compute_menu_state())
+        } else {
+            self.unformat_range(s, e, format);
+            self.create_update_replace_all()
+        }
+    }
+
+    fn unformat_range(
+        &mut self,
+        start: usize,
+        end: usize,
+        format: InlineFormatType,
+    ) {
+        let range = self.state.dom.find_range(start, end);
+        self.unformat_several_nodes(start, end, &range, format);
+    }
+
+    fn toggle_zero_length_format(&mut self, format: InlineFormatType) {
+        if self.toggled_format_types.contains(&format) {
+            self.toggled_format_types
+                .iter()
+                .position(|f| f.clone() == format);
+        } else {
+            self.toggled_format_types.push(format);
+        }
     }
 
     fn check_format_selection_type(

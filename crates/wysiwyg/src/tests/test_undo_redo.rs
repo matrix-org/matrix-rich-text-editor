@@ -17,7 +17,6 @@
 use crate::tests::testutils_composer_model::cm;
 
 use crate::dom::nodes::{DomNode, TextNode};
-use crate::InlineFormatType;
 
 use crate::tests::testutils_conversion::utf16;
 
@@ -66,7 +65,7 @@ fn formatting_text_creates_previous_state() {
     let mut model = cm("hello {world}|!");
     assert!(model.previous_states.is_empty());
 
-    model.format(InlineFormatType::Bold);
+    model.bold();
     assert!(!model.previous_states.is_empty());
 }
 

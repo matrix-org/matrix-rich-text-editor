@@ -25,6 +25,7 @@ where
         start: Location,
         end: Location,
     ) -> ComposerUpdate<S> {
+        self.toggled_format_types.clear();
         self.state.start = start;
         self.state.end = end;
 
