@@ -117,22 +117,13 @@ fn undoing_restores_toggled_format_types() {
     model.italic();
     assert_eq!(
         model.state.toggled_format_types,
-        Vec::from([
-            InlineFormatType::Bold,
-            InlineFormatType::Italic,
-        ])
+        Vec::from([InlineFormatType::Bold, InlineFormatType::Italic,])
     );
     model.replace_text(utf16("a"));
-    assert_eq!(
-        model.state.toggled_format_types,
-        Vec::new()
-    );
+    assert_eq!(model.state.toggled_format_types, Vec::new());
     model.undo();
     assert_eq!(
         model.state.toggled_format_types,
-        Vec::from([
-            InlineFormatType::Bold,
-            InlineFormatType::Italic,
-        ])
+        Vec::from([InlineFormatType::Bold, InlineFormatType::Italic,])
     );
 }

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::dom::{Dom, UnicodeString};
-use crate::{ InlineFormatType, Location };
+use crate::{InlineFormatType, Location};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ComposerState<S>
