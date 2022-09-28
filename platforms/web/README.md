@@ -6,6 +6,19 @@ The Matrix WYSIWYG composer is a React library.
 
 ## TODO NPM / Usage documentation
 
+The wysiwyg composer API is a react hook. 
+
+```tsx
+const {ref, isWysiwygReady, wysiwyg} = useWysiwyg()
+
+return (
+    <div>
+        <button type="button" onClick={wysiwyg.bold}>bold</button>
+        <div ref={ref} contentEditable={isWysiwygReady} />
+    </div>
+)
+```
+
 ## Contribute 
 
 ### Install
