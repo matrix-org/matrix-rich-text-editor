@@ -19,6 +19,7 @@ use widestring::Utf16String;
 fn text() {
     assert_eq!(md("abc|"), "abc");
     assert_eq!(md("abc def|"), "abc def");
+    // Internal spaces are preserved.
     assert_eq!(md("abc   def|"), "abc   def");
 }
 
@@ -107,14 +108,22 @@ fn text_with_underline() {
 
 #[test]
 fn text_with_inline_code() {
-    assert_eq!(md("<code>abc</code>|"), "`abc`");
-    assert_eq!(md("abc <code>def</code> ghi|"), "abc `def` ghi");
-    assert_eq!(md("abc <code>def</code> ghi|"), "abc `def` ghi");
-    assert_eq!(md("abc<code> def </code>ghi|"), "abc` def `ghi");
+    assert_eq!(md("<code>abc</code>|"), "`` abc ``");
+    // Inline code with a backtick inside.
+    assert_eq!(md("<code>abc ` def</code>|"), "`` abc ` def ``");
+    // Inline code with a backtick at the start.
+    assert_eq!(md("<code>`abc</code>|"), "`` `abc ``");
+    assert_eq!(md("abc <code>def</code> ghi|"), "abc `` def `` ghi");
+    assert_eq!(md("abc <code>def</code> ghi|"), "abc `` def `` ghi");
+    assert_eq!(md("abc<code> def </code>ghi|"), "abc``  def  ``ghi");
     // It's impossible to get a line break inside a inline code with Markdown.
     assert_eq!(
         md("abc <code>line1<br />line2<br /><br />line3</code> def|"),
-        "abc `line1 line2  line3` def",
+        "abc `` line1 line2  line3 `` def",
+    );
+    assert_eq!(
+        md("abc <code>def <strong>ghi</strong> jkl</code> mno|"),
+        "abc `` def __ghi__ jkl `` mno",
     );
 }
 

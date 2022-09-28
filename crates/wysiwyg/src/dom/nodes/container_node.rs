@@ -460,7 +460,19 @@ where
             }
 
             Formatting(InlineCode) => {
-                buffer.push('`');
+                // An inline code usually is usually delimited by an
+                // opening and a closing single backtick. However, if
+                // the inline code string contains a backtick, it is
+                // preferable to use an opening and a closing double
+                // backticks to delimit the inline code string.
+                //
+                // In addition to this subtlety, we add a space after
+                // and before the opening and closing double backticks
+                // to allow an inline code string to start by a
+                // backtick. Those spaces are removed during
+                // normalization.
+
+                buffer.push("`` ");
 
                 let mut options = *options;
                 options.insert(MarkdownOptions::IGNORE_LINE_BREAK);
@@ -469,7 +481,7 @@ where
                     child.fmt_markdown(buffer, &options)?;
                 }
 
-                buffer.push('`');
+                buffer.push(" ``");
             }
 
             _ => {
