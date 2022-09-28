@@ -16,14 +16,14 @@ use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::to_html::ToHtml;
 #[cfg(feature = "to-markdown")]
-use crate::dom::to_markdown::{Error as MarkdownError, ToMarkdown};
+use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
 use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use crate::dom::UnicodeString;
 use std::marker::PhantomData;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LineBreakNode<S>
 where
     S: UnicodeString,
@@ -114,28 +114,37 @@ impl<S> ToMarkdown<S> for LineBreakNode<S>
 where
     S: UnicodeString,
 {
-    fn fmt_markdown(&self, buf: &mut S) -> Result<(), MarkdownError<S>> {
-        // A line break is a `\n` in Markdown. Two or more line breaks
-        // usually generate a new block (i.e. a new paragraph). To
-        // avoid that, we can prefix `\n` by a backslash. Thus:
-        //
-        // ```html
-        // abc<br />def
-        //
-        // ghi<br /><br />jkl
-        // ```
-        //
-        // maps to:
-        //
-        // ```md
-        // abc\
-        // def
-        //
-        // ghi\
-        // \
-        // jkl
-        // ```
-        buf.push("\\\n");
+    fn fmt_markdown(
+        &self,
+        buffer: &mut S,
+        options: &MarkdownOptions,
+    ) -> Result<(), MarkdownError<S>> {
+        if options.contains(MarkdownOptions::IGNORE_LINE_BREAK) {
+            // Replace the line break by a single space.
+            buffer.push(' ');
+        } else {
+            // A line break is a `\n` in Markdown. Two or more line breaks
+            // usually generate a new block (i.e. a new paragraph). To
+            // avoid that, we can prefix `\n` by a backslash. Thus:
+            //
+            // ```html
+            // abc<br />def
+            //
+            // ghi<br /><br />jkl
+            // ```
+            //
+            // maps to:
+            //
+            // ```md
+            // abc\
+            // def
+            //
+            // ghi\
+            // \
+            // jkl
+            // ```
+            buffer.push("\\\n");
+        }
 
         Ok(())
     }

@@ -39,7 +39,7 @@ def"#,
 }
 
 #[test]
-fn test_with_italic() {
+fn text_with_italic() {
     assert_eq!(md("<em>abc</em>|"), "*abc*");
     // Internal emphasis.
     assert_eq!(md("abc<em>def</em>ghi|"), "abc*def*ghi");
@@ -55,7 +55,7 @@ line3* def"#,
 }
 
 #[test]
-fn test_with_bold() {
+fn text_with_bold() {
     assert_eq!(md("<strong>abc</strong>|"), "__abc__");
     assert_eq!(md("abc<strong>def</strong>ghi|"), "abc__def__ghi");
     assert_eq!(md("abc <strong>def</strong> ghi|"), "abc __def__ ghi");
@@ -70,7 +70,7 @@ line3__ def"#,
 }
 
 #[test]
-fn test_with_italic_and_bold() {
+fn text_with_italic_and_bold() {
     assert_eq!(md("<em><strong>abc</strong></em>|"), "*__abc__*");
     assert_eq!(
         md("<em>abc <strong>def</strong></em> ghi|"),
@@ -84,7 +84,7 @@ line2__ def*"#,
 }
 
 #[test]
-fn test_with_strikethrough() {
+fn text_with_strikethrough() {
     assert_eq!(md("<del>abc</del>|"), "~~abc~~");
     assert_eq!(md("abc<del>def</del>ghi|"), "abc~~def~~ghi");
     assert_eq!(md("abc <del>def</del> ghi|"), "abc ~~def~~ ghi");
@@ -99,8 +99,21 @@ line3~~ def"#,
 }
 
 #[test]
-fn test_with_underline() {
+fn text_with_underline() {
     assert_eq!(md("<u>abc</u>|"), "abc");
+}
+
+#[test]
+fn text_with_inline_code() {
+    assert_eq!(md("<code>abc</code>|"), "`abc`");
+    assert_eq!(md("abc <code>def</code> ghi|"), "abc `def` ghi");
+    assert_eq!(md("abc <code>def</code> ghi|"), "abc `def` ghi");
+    assert_eq!(md("abc<code> def </code>ghi|"), "abc` def `ghi");
+    // It's impossible to get line break in inline code with Markdown.
+    assert_eq!(
+        md("abc <code>line1<br />line2<br /><br />line3</code> def|"),
+        "abc `line1 line2  line3` def",
+    );
 }
 
 fn md(html: &str) -> Utf16String {

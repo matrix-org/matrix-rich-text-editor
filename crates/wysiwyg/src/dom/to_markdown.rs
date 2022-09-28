@@ -13,17 +13,20 @@
 // limitations under the License.
 
 use super::UnicodeString;
-use std::fmt;
+use bitflags::bitflags;
+use std::{error::Error, fmt};
 
 #[derive(Debug)]
-pub enum Error<S>
+pub enum MarkdownError<S>
 where
     S: UnicodeString,
 {
     UnknownContainerName(<S::Str as ToOwned>::Owned),
 }
 
-impl<S> fmt::Display for Error<S>
+impl<S> Error for MarkdownError<S> where S: UnicodeString {}
+
+impl<S> fmt::Display for MarkdownError<S>
 where
     S: UnicodeString,
 {
@@ -40,12 +43,22 @@ pub trait ToMarkdown<S>
 where
     S: UnicodeString,
 {
-    fn fmt_markdown(&self, buf: &mut S) -> Result<(), Error<S>>;
+    fn fmt_markdown(
+        &self,
+        buffer: &mut S,
+        options: &MarkdownOptions,
+    ) -> Result<(), MarkdownError<S>>;
 
-    fn to_markdown(&self) -> Result<S, Error<S>> {
+    fn to_markdown(&self) -> Result<S, MarkdownError<S>> {
         let mut buf = S::default();
-        self.fmt_markdown(&mut buf)?;
+        self.fmt_markdown(&mut buf, &MarkdownOptions::empty())?;
 
         Ok(buf)
+    }
+}
+
+bitflags! {
+    pub struct MarkdownOptions: u8 {
+        const IGNORE_LINE_BREAK = 0b0001;
     }
 }

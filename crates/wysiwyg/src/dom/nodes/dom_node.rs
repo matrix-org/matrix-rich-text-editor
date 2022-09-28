@@ -17,7 +17,7 @@ use crate::dom::dom_handle::DomHandle;
 use crate::dom::nodes::{ContainerNode, LineBreakNode, TextNode};
 use crate::dom::to_html::ToHtml;
 #[cfg(feature = "to-markdown")]
-use crate::dom::to_markdown::{Error as MarkdownError, ToMarkdown};
+use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
 use crate::dom::unicode_string::UnicodeStrExt;
@@ -202,11 +202,17 @@ impl<S> ToMarkdown<S> for DomNode<S>
 where
     S: UnicodeString,
 {
-    fn fmt_markdown(&self, buf: &mut S) -> Result<(), MarkdownError<S>> {
+    fn fmt_markdown(
+        &self,
+        buffer: &mut S,
+        options: &MarkdownOptions,
+    ) -> Result<(), MarkdownError<S>> {
         match self {
-            DomNode::Container(container) => container.fmt_markdown(buf),
-            DomNode::Text(text) => text.fmt_markdown(buf),
-            DomNode::LineBreak(node) => node.fmt_markdown(buf),
+            DomNode::Container(container) => {
+                container.fmt_markdown(buffer, options)
+            }
+            DomNode::Text(text) => text.fmt_markdown(buffer, options),
+            DomNode::LineBreak(node) => node.fmt_markdown(buffer, options),
         }
     }
 }

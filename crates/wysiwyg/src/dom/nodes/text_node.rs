@@ -16,7 +16,7 @@ use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::to_html::ToHtml;
 #[cfg(feature = "to-markdown")]
-use crate::dom::to_markdown::{Error as MarkdownError, ToMarkdown};
+use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
 use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
@@ -128,8 +128,12 @@ impl<S> ToMarkdown<S> for TextNode<S>
 where
     S: UnicodeString,
 {
-    fn fmt_markdown(&self, buf: &mut S) -> Result<(), MarkdownError<S>> {
-        buf.push(self.data.to_owned());
+    fn fmt_markdown(
+        &self,
+        buffer: &mut S,
+        _options: &MarkdownOptions,
+    ) -> Result<(), MarkdownError<S>> {
+        buffer.push(self.data.to_owned());
 
         Ok(())
     }
