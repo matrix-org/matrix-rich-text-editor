@@ -21,7 +21,7 @@ pub enum MarkdownError<S>
 where
     S: UnicodeString,
 {
-    UnknownContainerName(<S::Str as ToOwned>::Owned),
+    UnknownContainerNodeName(<S::Str as ToOwned>::Owned),
 }
 
 impl<S> Error for MarkdownError<S> where S: UnicodeString {}
@@ -32,8 +32,8 @@ where
 {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::UnknownContainerName(name) => {
-                write!(formatter, "Unknown container name: `{:?}`", name)
+            Self::UnknownContainerNodeName(name) => {
+                write!(formatter, "Unknown container node name: `{:?}`", name)
             }
         }
     }

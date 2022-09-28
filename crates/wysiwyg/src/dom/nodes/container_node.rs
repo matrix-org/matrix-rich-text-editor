@@ -484,8 +484,19 @@ where
                 buffer.push(" ``");
             }
 
+            Link(url) => {
+                buffer.push('[');
+
+                for child in self.children.iter() {
+                    child.fmt_markdown(buffer, &options)?;
+                }
+
+                buffer.push("](");
+                buffer.push(url.clone());
+                buffer.push(')');
+            }
             _ => {
-                return Err(MarkdownError::UnknownContainerName(
+                return Err(MarkdownError::UnknownContainerNodeName(
                     self.name().to_owned(),
                 ))
             }
