@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#![cfg(test)]
-
 use crate::tests::testutils_composer_model::cm;
 use crate::tests::testutils_conversion::utf16;
 
