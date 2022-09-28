@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#![cfg(test)]
+
 pub mod test_characters;
 pub mod test_deleting;
 pub mod test_formatting;

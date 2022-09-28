@@ -55,7 +55,7 @@ public class WysiwygComposerViewModel: ObservableObject {
     public func setup() {
         applyUpdate(model.replaceAllHtml(html: ""))
     }
-
+    
     /// Select given range of text within the model.
     ///
     /// - Parameters:
@@ -126,7 +126,7 @@ public class WysiwygComposerViewModel: ObservableObject {
 
 // MARK: - Internal
 
-extension WysiwygComposerViewModel {
+public extension WysiwygComposerViewModel {
     /// Replace text in the model.
     ///
     /// - Parameters:
@@ -212,8 +212,9 @@ private extension WysiwygComposerViewModel {
     func applyReplaceAll(codeUnits: [UInt16], start: UInt32, end: UInt32) {
         do {
             let html = String(utf16CodeUnits: codeUnits,
-                              count: codeUnits.count)
-            let attributed = try NSAttributedString(html: html)
+                                      count: codeUnits.count)
+            let htmlWithStyle = generateHtmlBodyWithStyle(htmlFragment: html)
+            let attributed = try NSAttributedString(html: htmlWithStyle)
             // FIXME: handle error for out of bounds index
             let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
             // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
@@ -265,13 +266,16 @@ private extension WysiwygComposerViewModel {
     /// - Parameters:
     ///   - textView: The composer's text view.
     func updateIdealHeightIfNeeded(_ textView: UITextView) {
-        // TODO: remove magic numbers
-        let idealHeight = 50 + 16 + 8 + textView
+        let idealHeight = textView
             .sizeThatFits(CGSize(width: textView.bounds.size.width,
                                  height: CGFloat.greatestFiniteMagnitude)
             )
             .height
         self.idealHeight = idealHeight
+    }
+    
+    func generateHtmlBodyWithStyle(htmlFragment: String) -> String {
+        "<html><head><style>body {font-family:-apple-system;font:-apple-system-body;}</style></head><body>\(htmlFragment)</body></html>"
     }
 }
 

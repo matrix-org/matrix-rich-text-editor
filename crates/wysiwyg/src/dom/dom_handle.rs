@@ -108,4 +108,10 @@ impl DomHandle {
         path.push(index_in_parent - 1);
         Self::from_raw(path)
     }
+
+    pub fn is_parent_of(&self, other: &DomHandle) -> bool {
+        let own_path = self.raw();
+        let other_path = other.raw();
+        other_path.starts_with(own_path.as_slice())
+    }
 }

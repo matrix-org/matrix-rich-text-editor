@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6631998928E45F1200EF8166 /* WysiwygView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6631998828E45F1200EF8166 /* WysiwygView.swift */; };
+		6631998A28E45F1200EF8166 /* WysiwygHostingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6631998728E45F1200EF8166 /* WysiwygHostingView.swift */; };
+		6631998C28E45F9B00EF8166 /* UIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6631998B28E45F9B00EF8166 /* UIView.swift */; };
+		66F8D0C928E34D4E00CFA145 /* Composer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66F8D0C828E34D4E00CFA145 /* Composer.swift */; };
 		A623EBE3289AA69E00067E57 /* WysiwygUIKitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A623EBE2289AA69E00067E57 /* WysiwygUIKitTests.swift */; };
 		A623EBE5289AA6DE00067E57 /* WysiwygSharedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A623EBE4289AA6DE00067E57 /* WysiwygSharedTests.swift */; };
 		A64369212899175400ECCF8A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A64369202899175400ECCF8A /* AppDelegate.swift */; };
@@ -51,6 +55,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		6631998728E45F1200EF8166 /* WysiwygHostingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygHostingView.swift; sourceTree = "<group>"; };
+		6631998828E45F1200EF8166 /* WysiwygView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygView.swift; sourceTree = "<group>"; };
+		6631998B28E45F9B00EF8166 /* UIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIView.swift; sourceTree = "<group>"; };
+		66F8D0C828E34D4E00CFA145 /* Composer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Composer.swift; sourceTree = "<group>"; };
 		A623EBE2289AA69E00067E57 /* WysiwygUIKitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygUIKitTests.swift; sourceTree = "<group>"; };
 		A623EBE4289AA6DE00067E57 /* WysiwygSharedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygSharedTests.swift; sourceTree = "<group>"; };
 		A643691E2899175400ECCF8A /* WysiwygUIKit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WysiwygUIKit.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -108,9 +116,12 @@
 			isa = PBXGroup;
 			children = (
 				A643692E2899175500ECCF8A /* Info.plist */,
+				6631998B28E45F9B00EF8166 /* UIView.swift */,
 				A64369202899175400ECCF8A /* AppDelegate.swift */,
 				A64369222899175400ECCF8A /* SceneDelegate.swift */,
 				A64369242899175400ECCF8A /* ViewController.swift */,
+				6631998728E45F1200EF8166 /* WysiwygHostingView.swift */,
+				6631998828E45F1200EF8166 /* WysiwygView.swift */,
 				A64369292899175500ECCF8A /* Assets.xcassets */,
 				A643692B2899175500ECCF8A /* LaunchScreen.storyboard */,
 				A64369262899175400ECCF8A /* Main.storyboard */,
@@ -185,6 +196,7 @@
 			children = (
 				A6F3FC0028D4658000C170E8 /* AlertHelper.swift */,
 				A6472CAC2886CF830021A0E8 /* ContentView.swift */,
+				66F8D0C828E34D4E00CFA145 /* Composer.swift */,
 				A6C2157828C0F62000C8E727 /* WysiwygActionToolbar.swift */,
 			);
 			path = Views;
@@ -395,10 +407,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6631998C28E45F9B00EF8166 /* UIView.swift in Sources */,
+				6631998928E45F1200EF8166 /* WysiwygView.swift in Sources */,
 				A64369252899175400ECCF8A /* ViewController.swift in Sources */,
 				A6C2157628C0E95C00C8E727 /* View+Accessibility.swift in Sources */,
 				A64369212899175400ECCF8A /* AppDelegate.swift in Sources */,
 				A64369232899175400ECCF8A /* SceneDelegate.swift in Sources */,
+				6631998A28E45F1200EF8166 /* WysiwygHostingView.swift in Sources */,
 				A6C2157D28C0FAAE00C8E727 /* WysiwygAction+Utils.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -415,6 +430,7 @@
 				A6F3FC0128D4658000C170E8 /* AlertHelper.swift in Sources */,
 				A6F3FC0428D465AF00C170E8 /* View.swift in Sources */,
 				A6C2157C28C0FAAD00C8E727 /* WysiwygAction+Utils.swift in Sources */,
+				66F8D0C928E34D4E00CFA145 /* Composer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

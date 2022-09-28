@@ -18,28 +18,41 @@ import OSLog
 import SwiftUI
 
 /// Provides a SwiftUI displayable view for the composer UITextView component.
-struct WysiwygComposerView: UIViewRepresentable {
+public struct WysiwygComposerView: UIViewRepresentable {
     // MARK: - Internal
 
-    var content: WysiwygComposerContent
-    var replaceText: (NSAttributedString, NSRange, String) -> Bool
-    var select: (NSAttributedString, NSRange) -> Void
-    var didUpdateText: (UITextView) -> Void
+    public var content: WysiwygComposerContent
+    public var replaceText: (NSAttributedString, NSRange, String) -> Bool
+    public var select: (NSAttributedString, NSRange) -> Void
+    public var didUpdateText: (UITextView) -> Void
 
-    func makeUIView(context: Context) -> UITextView {
+    public init(content: WysiwygComposerContent,
+                replaceText: @escaping (NSAttributedString, NSRange, String) -> Bool,
+                select: @escaping (NSAttributedString, NSRange) -> Void,
+                didUpdateText: @escaping (UITextView) -> Void) {
+        self.content = content
+        self.replaceText = replaceText
+        self.select = select
+        self.didUpdateText = didUpdateText
+    }
+    
+    public func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
 
         textView.accessibilityIdentifier = "WysiwygComposer"
-        textView.font = UIFont(name: "Times New Roman", size: 12.0)
+        textView.font = UIFont.preferredFont(forTextStyle: .body)
         textView.autocapitalizationType = .sentences
         textView.isSelectable = true
         textView.isUserInteractionEnabled = true
         textView.delegate = context.coordinator
         textView.textStorage.delegate = context.coordinator
+        textView.textContainerInset = .zero
+        textView.textContainer.lineFragmentPadding = 0
+        textView.adjustsFontForContentSizeCategory = true
         return textView
     }
 
-    func updateUIView(_ uiView: UITextView, context: Context) {
+    public func updateUIView(_ uiView: UITextView, context: Context) {
         Logger.textView.logDebug([content.logAttributedSelection,
                                   content.logText],
                                  functionName: #function)
@@ -47,12 +60,12 @@ struct WysiwygComposerView: UIViewRepresentable {
         context.coordinator.didUpdateText(uiView)
     }
 
-    func makeCoordinator() -> Coordinator {
+    public func makeCoordinator() -> Coordinator {
         Coordinator(replaceText, select, didUpdateText)
     }
 
     /// Coordinates UIKit communication.
-    class Coordinator: NSObject, UITextViewDelegate, NSTextStorageDelegate {
+    public class Coordinator: NSObject, UITextViewDelegate, NSTextStorageDelegate {
         var replaceText: (NSAttributedString, NSRange, String) -> Bool
         var select: (NSAttributedString, NSRange) -> Void
         var didUpdateText: (UITextView) -> Void
@@ -65,7 +78,7 @@ struct WysiwygComposerView: UIViewRepresentable {
             self.didUpdateText = didUpdateText
         }
 
-        func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        public func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
             Logger.textView.logDebug(["Sel(att): \(range)",
                                       textView.logText,
                                       "Replacement: \"\(text)\""],
@@ -73,14 +86,14 @@ struct WysiwygComposerView: UIViewRepresentable {
             return replaceText(textView.attributedText, range, text)
         }
 
-        func textViewDidChange(_ textView: UITextView) {
+        public func textViewDidChange(_ textView: UITextView) {
             Logger.textView.logDebug([textView.logSelection,
                                       textView.logText],
                                      functionName: #function)
             didUpdateText(textView)
         }
 
-        func textViewDidChangeSelection(_ textView: UITextView) {
+        public func textViewDidChangeSelection(_ textView: UITextView) {
             Logger.textView.logDebug([textView.logSelection],
                                      functionName: #function)
             select(textView.attributedText, textView.selectedRange)

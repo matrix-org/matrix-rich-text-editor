@@ -72,6 +72,17 @@ impl DomLocation {
         }
     }
 
+    pub fn with_new_handle(&self, handle: DomHandle) -> Self {
+        Self {
+            node_handle: handle,
+            position: usize::MAX, // Position is no longer valid
+            start_offset: self.start_offset,
+            end_offset: self.end_offset,
+            length: self.length,
+            is_leaf: self.is_leaf,
+        }
+    }
+
     /// Calculated index in the Dom based on the [position] and [start_offset]
     /// values.
     pub fn index_in_dom(&self) -> usize {

@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#![cfg(test)]
-
 use crate::tests::testutils_composer_model::{cm, tx};
 use crate::tests::testutils_conversion::utf16;
 
@@ -116,6 +114,28 @@ fn formatting_twice_adds_no_formatting() {
         model.underline();
     }
     assert_eq!(tx(&model), input);
+}
+
+#[test]
+fn formatting_nested_format_nodes_and_line_breaks() {
+    let mut model =
+        cm("aa<strong>a</strong><strong><br />{bbb<br />}|cc</strong>c");
+    model.italic();
+    assert_eq!(
+        tx(&model),
+        "aa<strong>a<br /><em>{bbb<br />}|</em>cc</strong>c"
+    );
+}
+
+#[test]
+fn formatting_deeper_nested_format_nodes_and_nested_line_breaks() {
+    let mut model =
+        cm("aa<strong>a</strong><strong><u><br />{b</u>bb<br />}|cc</strong>c");
+    model.italic();
+    assert_eq!(
+        tx(&model),
+        "aa<strong>a<u><br /><em>{b</em></u><em>bb<br />}|</em>cc</strong>c"
+    );
 }
 
 #[test]
