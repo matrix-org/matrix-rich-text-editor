@@ -211,10 +211,10 @@ private extension WysiwygComposerViewModel {
     ///   - end: End location for the selection.
     func applyReplaceAll(codeUnits: [UInt16], start: UInt32, end: UInt32) {
         do {
-            let htmlFragment = String(utf16CodeUnits: codeUnits,
+            let html = String(utf16CodeUnits: codeUnits,
                                       count: codeUnits.count)
-            let html = generateHtmlBodyWithStyle(htmlFragment: htmlFragment)
-            let attributed = try NSAttributedString(html: html)
+            let htmlWithStyle = generateHtmlBodyWithStyle(htmlFragment: html)
+            let attributed = try NSAttributedString(html: htmlWithStyle)
             // FIXME: handle error for out of bounds index
             let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
             // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
@@ -266,15 +266,11 @@ private extension WysiwygComposerViewModel {
     /// - Parameters:
     ///   - textView: The composer's text view.
     func updateIdealHeightIfNeeded(_ textView: UITextView) {
-        // TODO: remove magic numbers
         let idealHeight = textView
             .sizeThatFits(CGSize(width: textView.bounds.size.width,
                                  height: CGFloat.greatestFiniteMagnitude)
             )
             .height
-        
-        Logger.viewModel.logDebug(["idealHeight \(idealHeight)"], functionName: #function)
-        print("idealHeight", idealHeight)
         self.idealHeight = idealHeight
     }
     
