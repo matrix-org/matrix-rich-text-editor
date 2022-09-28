@@ -446,6 +446,15 @@ where
                 buf.push("~~");
             }
 
+            Formatting(Underline) => {
+                // Underline format is absent from Markdown. Let's
+                // ignore it!
+
+                for child in self.children.iter() {
+                    child.fmt_markdown(buf)?;
+                }
+            }
+
             _ => {
                 return Err(MarkdownError::UnknownContainerName(
                     self.name().to_owned(),
