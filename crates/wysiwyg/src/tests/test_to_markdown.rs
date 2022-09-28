@@ -18,6 +18,8 @@ use widestring::Utf16String;
 #[test]
 fn text() {
     assert_eq!(md("abc|"), "abc");
+    assert_eq!(md("abc def|"), "abc def");
+    assert_eq!(md("abc   def|"), "abc   def");
 }
 
 #[test]
@@ -109,7 +111,7 @@ fn text_with_inline_code() {
     assert_eq!(md("abc <code>def</code> ghi|"), "abc `def` ghi");
     assert_eq!(md("abc <code>def</code> ghi|"), "abc `def` ghi");
     assert_eq!(md("abc<code> def </code>ghi|"), "abc` def `ghi");
-    // It's impossible to get line break in inline code with Markdown.
+    // It's impossible to get a line break inside a inline code with Markdown.
     assert_eq!(
         md("abc <code>line1<br />line2<br /><br />line3</code> def|"),
         "abc `line1 line2  line3` def",
