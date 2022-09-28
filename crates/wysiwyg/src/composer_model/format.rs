@@ -148,7 +148,7 @@ where
             FormatSelectionType::Remove => {} // TODO: actually implement this
             FormatSelectionType::Extend => self
                 .extend_format_in_multiple_nodes(
-                    range.locations.clone(),
+                    range.leaves().collect(),
                     &format,
                 ),
         }
@@ -216,24 +216,31 @@ where
         loc: &DomLocation,
         format: &InlineFormatType,
     ) -> bool {
-        loc.is_leaf
-            && Self::path_contains_format_node(dom, &loc.node_handle, format)
-                .is_none()
+        Self::path_contains_format_node(dom, &loc.node_handle, format).is_none()
     }
 
     fn extend_format_in_multiple_nodes(
         &mut self,
-        locations: Vec<DomLocation>,
+        locations: Vec<&DomLocation>,
         format: &InlineFormatType,
     ) {
-        let mut moved_handles = HashMap::<DomHandle, DomHandle>::new();
+        let mut moved_handles = Vec::<(DomHandle, DomHandle)>::new();
+        let mut sorted_locations = locations;
+        sorted_locations.sort();
         // Go through the locations in reverse order to prevent Dom modification issues
-        for loc in locations.iter().rev() {
+        for loc in sorted_locations.into_iter().rev() {
             let mut loc = loc.clone();
-            let moved_parent_handle = moved_handles.get(&loc.node_handle);
-            if let Some(new_handle) = moved_parent_handle {
+            let moved_handle = moved_handles
+                .iter()
+                .find(|(old, _)| old.is_parent_of(&loc.node_handle));
+            if let Some((old_handle, new_handle)) = moved_handle {
                 // Careful here, the location's position is no longer valid
-                loc = loc.with_new_handle(new_handle.clone());
+                let mut new_path = loc.node_handle.clone().into_raw();
+                new_path.splice(
+                    0..old_handle.raw().len(),
+                    new_handle.clone().into_raw(),
+                );
+                loc = loc.with_new_handle(DomHandle::from_raw(new_path));
             }
             if Self::needs_format(&self.state.dom, &loc, format) {
                 if let DomNode::Container(parent) = self

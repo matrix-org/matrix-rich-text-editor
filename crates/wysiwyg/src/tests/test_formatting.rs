@@ -124,3 +124,14 @@ fn formatting_nested_format_nodes_and_line_breaks() {
         "aa<strong>a<br /><em>{bbb<br />}|</em>cc</strong>c"
     );
 }
+
+#[test]
+fn formatting_deeper_nested_format_nodes_and_nested_line_breaks() {
+    let mut model =
+        cm("aa<strong>a</strong><strong><u><br />{b</u>bb<br />}|cc</strong>c");
+    model.italic();
+    assert_eq!(
+        tx(&model),
+        "aa<strong>a<u><br /><em>{b</em></u><em>bb<br />}|</em>cc</strong>c"
+    );
+}

@@ -96,7 +96,7 @@ where
         }
         // Get the node handle at the current depth level
         let cur_handle = DomHandle::from_raw(handle.raw()[..=level].to_vec());
-        // If the handle was moved, used updated value
+        // If the handle was moved, use updated value instead
         let cur_handle = if let Some(h) = moved_handles.get(&cur_handle) {
             h.clone()
         } else {
@@ -295,6 +295,9 @@ where
         }
     }
 
+    /// Deletes [from_handle] node appending its children nodes to [to_handle].
+    /// Returns a tuple of the index where the children where inserted inside [to_handle] and a
+    /// HashMap mapping the old handle of each moved children to its new one.
     fn move_children_and_delete_parent(
         &mut self,
         from_handle: &DomHandle,
