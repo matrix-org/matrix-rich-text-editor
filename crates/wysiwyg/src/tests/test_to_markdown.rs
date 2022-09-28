@@ -98,6 +98,11 @@ line3~~ def"#,
     );
 }
 
+#[test]
+fn test_with_underline() {
+    assert_eq!(md("<u>abc</u>|"), "abc");
+}
+
 fn md(html: &str) -> Utf16String {
     cm(html).state.dom.to_markdown().unwrap()
 }
