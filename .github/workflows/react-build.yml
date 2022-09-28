@@ -28,16 +28,16 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'yarn'
-        cache-dependency-path: platforms/web/src/yarn.lock
+        cache-dependency-path: platforms/web/yarn.lock
     - name: Build
-      working-directory: platforms/web/src
+      working-directory: platforms/web
       run: yarn install
     - name: Typescript check
-      working-directory: platforms/web/src
+      working-directory: platforms/web
       run: yarn tsc
     - name: Lint check
-      working-directory: platforms/web/src
+      working-directory: platforms/web
       run: yarn lint
     - name: Test
-      working-directory: platforms/web/src
+      working-directory: platforms/web
       run: yarn test

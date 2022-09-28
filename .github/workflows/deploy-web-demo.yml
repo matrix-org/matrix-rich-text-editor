@@ -45,15 +45,15 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'yarn'
-          cache-dependency-path: platforms/web/src/yarn.lock
+          cache-dependency-path: platforms/webyarn.lock
       - name: Build
-        working-directory: platforms/web/src
+        working-directory: platforms/web
         run: yarn install && yarn build:demo
       - name: Archive demo artifacts
         uses: actions/upload-artifact@v3
         with:
           name: dist-demo
-          path: platforms/web/src/dist-demo
+          path: platforms/web/dist-demo
 
   deploy:
     name: Deploy
@@ -73,13 +73,13 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: dist-demo
-        path: platforms/web/src/dist-demo
+        path: platforms/web/dist-demo
     - name: Setup Pages
       uses: actions/configure-pages@v2
     - name: Upload github-pages
       uses: actions/upload-pages-artifact@v1
       with:
-        path: platforms/web/src/dist-demo
+        path: platforms/web/dist-demo
     - name: Deploy github-pages
       id: deployment
       uses: actions/deploy-pages@v1
