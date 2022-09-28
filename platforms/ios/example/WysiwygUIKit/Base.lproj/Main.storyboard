@@ -17,12 +17,17 @@
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="L1t-Ht-FhO" customClass="WysiwygHostingView" customModule="WysiwygUIKit">
-                                <rect key="frame" x="0.0" y="104" width="414" height="104"/>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="L1t-Ht-FhO" customClass="WysiwygHostingView" customModule="WysiwygUIKit" customModuleProvider="target">
+                                <rect key="frame" x="12" y="104" width="390" height="104"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="104" id="67a-on-ZWE"/>
                                 </constraints>
+                                <userDefinedRuntimeAttributes>
+                                    <userDefinedRuntimeAttribute type="number" keyPath="layer.borderWidth">
+                                        <integer key="value" value="2"/>
+                                    </userDefinedRuntimeAttribute>
+                                </userDefinedRuntimeAttributes>
                             </view>
                             <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="Hef-f2-9dB">
                                 <rect key="frame" x="0.0" y="208" width="414" height="654"/>
@@ -100,13 +105,13 @@
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
-                            <constraint firstItem="L1t-Ht-FhO" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="0ne-of-Czh"/>
+                            <constraint firstItem="L1t-Ht-FhO" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="12" id="0ne-of-Czh"/>
                             <constraint firstItem="Hef-f2-9dB" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="Epb-ZZ-R6Q"/>
                             <constraint firstItem="L1t-Ht-FhO" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="60" id="PBy-N6-QYb"/>
                             <constraint firstItem="Hef-f2-9dB" firstAttribute="top" secondItem="L1t-Ht-FhO" secondAttribute="bottom" id="S4K-QD-GaK"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="Hef-f2-9dB" secondAttribute="bottom" id="iaf-uM-da3"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="Hef-f2-9dB" secondAttribute="trailing" id="sZG-ie-TdG"/>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="L1t-Ht-FhO" secondAttribute="trailing" id="tly-z2-aut"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="L1t-Ht-FhO" secondAttribute="trailing" constant="12" id="tly-z2-aut"/>
                         </constraints>
                     </view>
                     <connections>

@@ -28,9 +28,6 @@ public struct WysiwygView: View {
                                 replaceText: viewModel.replaceText,
                                 select: viewModel.select,
                                 didUpdateText: viewModel.didUpdateText)
-                .padding(.all, 8)
-                .padding([.leading, .trailing], 8)
-                .padding([.top, .bottom], 4)
                 .onAppear {
                     viewModel.setup()
                 }
