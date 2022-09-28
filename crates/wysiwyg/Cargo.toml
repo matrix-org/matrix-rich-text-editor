@@ -10,8 +10,6 @@ name = "wysiwyg"
 version = "0.1.0"
 rust-version = "1.60"
 
-[features]
-
 [dependencies]
 html-escape = "0.2.11"
 html5ever = "0.25.2"
@@ -20,3 +18,7 @@ widestring = "1.0.2"
 
 [dev-dependencies]
 speculoos = "0.9"
+
+[features]
+default = ["to-markdown"]
+to-markdown = []
