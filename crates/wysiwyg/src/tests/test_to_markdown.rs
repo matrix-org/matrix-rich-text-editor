@@ -40,43 +40,46 @@ def"#,
 
 #[test]
 fn test_with_italic() {
-    assert_eq!(md("<em>abc</em>|"), "_abc_");
-    assert_eq!(md("abc <em>def</em> ghi|"), "abc _def_ ghi");
-    assert_eq!(md("abc<em> def </em>ghi|"), "abc_ def _ghi");
+    assert_eq!(md("<em>abc</em>|"), "*abc*");
+    // Internal emphasis.
+    assert_eq!(md("abc<em>def</em>ghi|"), "abc*def*ghi");
+    assert_eq!(md("abc <em>def</em> ghi|"), "abc *def* ghi");
+    assert_eq!(md("abc<em> def </em>ghi|"), "abc* def *ghi");
     assert_eq!(
         md("abc <em>line1<br />line2<br /><br />line3</em> def|"),
-        r#"abc _line1\
+        r#"abc *line1\
 line2\
 \
-line3_ def"#,
+line3* def"#,
     );
 }
 
 #[test]
 fn test_with_bold() {
-    assert_eq!(md("<strong>abc</strong>|"), "**abc**");
-    assert_eq!(md("abc <strong>def</strong> ghi|"), "abc **def** ghi");
-    assert_eq!(md("abc<strong> def </strong>ghi|"), "abc** def **ghi");
+    assert_eq!(md("<strong>abc</strong>|"), "__abc__");
+    assert_eq!(md("abc<strong>def</strong>ghi|"), "abc__def__ghi");
+    assert_eq!(md("abc <strong>def</strong> ghi|"), "abc __def__ ghi");
+    assert_eq!(md("abc<strong> def </strong>ghi|"), "abc__ def __ghi");
     assert_eq!(
         md("abc <strong>line1<br />line2<br /><br />line3</strong> def|"),
-        r#"abc **line1\
+        r#"abc __line1\
 line2\
 \
-line3** def"#,
+line3__ def"#,
     );
 }
 
 #[test]
 fn test_with_italic_and_bold() {
-    assert_eq!(md("<em><strong>abc</strong></em>|"), "_**abc**_");
+    assert_eq!(md("<em><strong>abc</strong></em>|"), "*__abc__*");
     assert_eq!(
         md("<em>abc <strong>def</strong></em> ghi|"),
-        "_abc **def**_ ghi"
+        "*abc __def__* ghi"
     );
     assert_eq!(
         md("abc <em><strong>line1<br />line2</strong> def</em>|"),
-        r#"abc _**line1\
-line2** def_"#,
+        r#"abc *__line1\
+line2__ def*"#,
     );
 }
 

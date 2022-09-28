@@ -394,34 +394,42 @@ where
 
             // Simple emphasis.
             Formatting(Italic) => {
-                buf.push("_");
+                // Many implementations have restricted intrawords
+                // simple emphasis to `*` to avoid unwanted emphasis
+                // in words containing internal underscores, like
+                // `foo_bar_baz`. We reckon it's good to follow this
+                // trend to avoid unexpected behaviours for our users.
+
+                buf.push("*");
 
                 for child in self.children.iter() {
                     child.fmt_markdown(buf)?;
                 }
 
-                buf.push("_");
+                buf.push("*");
             }
 
             // Strong emphasis.
             Formatting(Bold) => {
-                // `Formatting(Italic)` already uses `_` to represent
+                // `Formatting(Italic)` already uses `*` to represent
                 // a simple emphasis.
                 //
-                // We reckon it is better to use `*` to represent a
-                // strong emphasis instead of `_` so that
+                // We reckon it is better to use `_` to represent a
+                // strong emphasis instead of `*` so that
                 // `<em><strong>…</strong></em>` does _not_ produce
                 // `***…` or `___` which can be ambigiously
                 // interpreted by various Markdown compilers out
-                // there. Instead, it will produce `_**…**_`.
-                buf.push("**");
+                // there. Instead, it will produce `*__…__*`.
+                buf.push("__");
 
                 for child in self.children.iter() {
                     child.fmt_markdown(buf)?;
                 }
 
-                buf.push("**");
+                buf.push("__");
             }
+
+            Formatting(StrikeThrough) => {}
 
             _ => {
                 return Err(MarkdownError::UnknownContainerName(
