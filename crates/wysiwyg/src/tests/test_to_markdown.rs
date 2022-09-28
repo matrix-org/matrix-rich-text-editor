@@ -34,7 +34,21 @@ def"#
         md("abc<br /><br />def|"),
         r#"abc\
 \
-def"#
+def"#,
+    );
+}
+
+#[test]
+fn test_with_bold() {
+    assert_eq!(md("<strong>abc</strong>|"), "**abc**");
+    assert_eq!(md("abc <strong>def</strong> ghi|"), "abc **def** ghi");
+    assert_eq!(md("abc<strong> def </strong>ghi|"), "abc** def **ghi");
+    assert_eq!(
+        md("abc <strong>line1<br />line2<br /><br />line3</strong> def|"),
+        r#"abc **line1\
+line2\
+\
+line3** def"#,
     );
 }
 

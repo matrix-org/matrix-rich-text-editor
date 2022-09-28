@@ -382,11 +382,24 @@ where
     S: UnicodeString,
 {
     fn fmt_markdown(&self, buf: &mut S) -> Result<(), MarkdownError<S>> {
+        use ContainerNodeKind::*;
+        use InlineFormatType::*;
+
         match self.kind() {
-            ContainerNodeKind::Generic => {
+            Generic => {
                 for child in self.children.iter() {
                     child.fmt_markdown(buf)?;
                 }
+            }
+
+            Formatting(Bold) => {
+                buf.push("**");
+
+                for child in self.children.iter() {
+                    child.fmt_markdown(buf)?;
+                }
+
+                buf.push("**");
             }
 
             _ => {
