@@ -39,6 +39,20 @@ def"#,
 }
 
 #[test]
+fn test_with_italic() {
+    assert_eq!(md("<em>abc</em>|"), "_abc_");
+    assert_eq!(md("abc <em>def</em> ghi|"), "abc _def_ ghi");
+    assert_eq!(md("abc<em> def </em>ghi|"), "abc_ def _ghi");
+    assert_eq!(
+        md("abc <em>line1<br />line2<br /><br />line3</em> def|"),
+        r#"abc _line1\
+line2\
+\
+line3_ def"#,
+    );
+}
+
+#[test]
 fn test_with_bold() {
     assert_eq!(md("<strong>abc</strong>|"), "**abc**");
     assert_eq!(md("abc <strong>def</strong> ghi|"), "abc **def** ghi");
@@ -49,6 +63,20 @@ fn test_with_bold() {
 line2\
 \
 line3** def"#,
+    );
+}
+
+#[test]
+fn test_with_italic_and_bold() {
+    assert_eq!(md("<em><strong>abc</strong></em>|"), "_**abc**_");
+    assert_eq!(
+        md("<em>abc <strong>def</strong></em> ghi|"),
+        "_abc **def**_ ghi"
+    );
+    assert_eq!(
+        md("abc <em><strong>line1<br />line2</strong> def</em>|"),
+        r#"abc _**line1\
+line2** def_"#,
     );
 }
 
