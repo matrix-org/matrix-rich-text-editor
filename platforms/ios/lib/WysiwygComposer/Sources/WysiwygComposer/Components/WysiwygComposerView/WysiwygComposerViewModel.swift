@@ -55,7 +55,7 @@ public class WysiwygComposerViewModel: ObservableObject {
     public func setup() {
         applyUpdate(model.replaceAllHtml(html: ""))
     }
-
+    
     /// Select given range of text within the model.
     ///
     /// - Parameters:
@@ -126,7 +126,7 @@ public class WysiwygComposerViewModel: ObservableObject {
 
 // MARK: - Internal
 
-extension WysiwygComposerViewModel {
+public extension WysiwygComposerViewModel {
     /// Replace text in the model.
     ///
     /// - Parameters:
@@ -211,8 +211,9 @@ private extension WysiwygComposerViewModel {
     ///   - end: End location for the selection.
     func applyReplaceAll(codeUnits: [UInt16], start: UInt32, end: UInt32) {
         do {
-            let html = String(utf16CodeUnits: codeUnits,
-                              count: codeUnits.count)
+            let htmlFragment = String(utf16CodeUnits: codeUnits,
+                                      count: codeUnits.count)
+            let html = generateHtmlBodyWithStyle(htmlFragment: htmlFragment)
             let attributed = try NSAttributedString(html: html)
             // FIXME: handle error for out of bounds index
             let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
@@ -266,12 +267,19 @@ private extension WysiwygComposerViewModel {
     ///   - textView: The composer's text view.
     func updateIdealHeightIfNeeded(_ textView: UITextView) {
         // TODO: remove magic numbers
-        let idealHeight = 50 + 16 + 8 + textView
+        let idealHeight = textView
             .sizeThatFits(CGSize(width: textView.bounds.size.width,
                                  height: CGFloat.greatestFiniteMagnitude)
             )
             .height
+        
+        Logger.viewModel.logDebug(["idealHeight \(idealHeight)"], functionName: #function)
+        print("idealHeight", idealHeight)
         self.idealHeight = idealHeight
+    }
+    
+    func generateHtmlBodyWithStyle(htmlFragment: String) -> String {
+        "<html><head><style>body {font-family:-apple-system;font:-apple-system-body;}</style></head><body>\(htmlFragment)</body></html>"
     }
 }
 
