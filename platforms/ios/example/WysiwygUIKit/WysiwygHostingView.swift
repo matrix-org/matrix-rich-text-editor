@@ -18,6 +18,7 @@ import Combine
 import OSLog
 import SwiftUI
 import UIKit
+import WysiwygComposer
 
 /// Declares methods that should be adopted by an object that aim to react on the Wysiwyg composer actions.
 @objc public protocol WysiwygHostingViewDelegate: AnyObject {

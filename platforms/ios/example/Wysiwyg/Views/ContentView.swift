@@ -29,14 +29,7 @@ struct ContentView: View {
     var body: some View {
         Spacer()
             .frame(width: nil, height: 50, alignment: .center)
-        WysiwygView()
-            .environmentObject(viewModel)
-            .frame(maxHeight: min(viewModel.idealHeight, 250),
-                   alignment: .center)
-        WysiwygActionToolbar { action in
-            viewModel.apply(action)
-        }
-        .environmentObject(viewModel)
+        Composer(viewModel: viewModel)
         Button("Send") {
             sentMessage = viewModel.content
             viewModel.clearContent()
