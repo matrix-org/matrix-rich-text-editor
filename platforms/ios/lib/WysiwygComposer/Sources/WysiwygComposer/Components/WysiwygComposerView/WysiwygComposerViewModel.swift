@@ -211,8 +211,7 @@ private extension WysiwygComposerViewModel {
     ///   - end: End location for the selection.
     func applyReplaceAll(codeUnits: [UInt16], start: UInt32, end: UInt32) {
         do {
-            let html = String(utf16CodeUnits: codeUnits,
-                              count: codeUnits.count)
+            let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count)
             let htmlWithStyle = generateHtmlBodyWithStyle(htmlFragment: html)
             let attributed = try NSAttributedString(html: htmlWithStyle)
             // FIXME: handle error for out of bounds index
