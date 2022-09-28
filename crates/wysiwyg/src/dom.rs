@@ -22,6 +22,7 @@ pub mod nodes;
 pub mod parser;
 pub mod range;
 pub mod to_html;
+pub mod to_markdown;
 pub mod to_raw_text;
 pub mod to_tree;
 pub mod unicode_string;
@@ -33,6 +34,8 @@ pub use find_result::FindResult;
 pub use range::DomLocation;
 pub use range::Range;
 pub use to_html::ToHtml;
+#[cfg(feature = "to-markdown")]
+pub use to_markdown::{Error as MarkdownError, ToMarkdown};
 pub use to_raw_text::ToRawText;
 pub use to_tree::ToTree;
 pub use unicode_string::UnicodeString;

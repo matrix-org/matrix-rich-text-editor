@@ -16,6 +16,8 @@ use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::nodes::{ContainerNode, LineBreakNode, TextNode};
 use crate::dom::to_html::ToHtml;
+#[cfg(feature = "to-markdown")]
+use crate::dom::to_markdown::{Error as MarkdownError, ToMarkdown};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
 use crate::dom::unicode_string::UnicodeStrExt;
@@ -191,6 +193,20 @@ where
             DomNode::Container(n) => n.to_tree_display(continuous_positions),
             DomNode::LineBreak(n) => n.to_tree_display(continuous_positions),
             DomNode::Text(n) => n.to_tree_display(continuous_positions),
+        }
+    }
+}
+
+#[cfg(feature = "to-markdown")]
+impl<S> ToMarkdown<S> for DomNode<S>
+where
+    S: UnicodeString,
+{
+    fn fmt_markdown(&self, buf: &mut S) -> Result<(), MarkdownError<S>> {
+        match self {
+            DomNode::Container(container) => container.fmt_markdown(buf),
+            DomNode::Text(text) => text.fmt_markdown(buf),
+            DomNode::LineBreak(node) => node.fmt_markdown(buf),
         }
     }
 }

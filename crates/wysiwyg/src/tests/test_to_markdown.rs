@@ -12,22 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#![cfg(test)]
+use crate::{tests::testutils_composer_model::cm, ToMarkdown};
+use widestring::Utf16String;
 
-pub mod test_characters;
-pub mod test_deleting;
-pub mod test_formatting;
-pub mod test_links;
-pub mod test_lists;
-pub mod test_menu_state;
-pub mod test_paragraphs;
-pub mod test_replace_all_html;
-pub mod test_selection;
-#[cfg(feature = "to-markdown")]
-pub mod test_to_markdown;
-pub mod test_to_raw_text;
-pub mod test_to_tree;
-pub mod test_undo_redo;
-pub mod testutils_composer_model;
-pub mod testutils_conversion;
-pub mod testutils_dom;
+#[test]
+fn text() {
+    assert_eq!(md("abc|"), "abc");
+}
+
+#[test]
+fn text_with_linebreaks() {
+    // One new line.
+    assert_eq!(
+        md("abc<br />def|"),
+        r#"abc\
+def"#
+    );
+
+    // Two new lines (isn't transformed into a new block).
+    assert_eq!(
+        md("abc<br /><br />def|"),
+        r#"abc\
+\
+def"#
+    );
+}
+
+fn md(html: &str) -> Utf16String {
+    cm(html).state.dom.to_markdown().unwrap()
+}

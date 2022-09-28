@@ -16,6 +16,8 @@ use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::nodes::dom_node::DomNode;
 use crate::dom::to_html::ToHtml;
+#[cfg(feature = "to-markdown")]
+use crate::dom::to_markdown::{Error as MarkdownError, ToMarkdown};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
 use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
@@ -371,6 +373,30 @@ where
             tree_part.push(child.to_tree_display(new_positions));
         }
         tree_part
+    }
+}
+
+#[cfg(feature = "to-markdown")]
+impl<S> ToMarkdown<S> for ContainerNode<S>
+where
+    S: UnicodeString,
+{
+    fn fmt_markdown(&self, buf: &mut S) -> Result<(), MarkdownError<S>> {
+        match self.kind() {
+            ContainerNodeKind::Generic => {
+                for child in self.children.iter() {
+                    child.fmt_markdown(buf)?;
+                }
+            }
+
+            _ => {
+                return Err(MarkdownError::UnknownContainerName(
+                    self.name().to_owned(),
+                ))
+            }
+        };
+
+        Ok(())
     }
 }
 

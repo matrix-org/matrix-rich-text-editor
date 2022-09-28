@@ -13,14 +13,15 @@
 // limitations under the License.
 
 use crate::composer_model::example_format::SelectionWriter;
-use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
-use std::marker::PhantomData;
-
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::to_html::ToHtml;
+#[cfg(feature = "to-markdown")]
+use crate::dom::to_markdown::{Error as MarkdownError, ToMarkdown};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
+use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use crate::dom::UnicodeString;
+use std::marker::PhantomData;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct LineBreakNode<S>
@@ -105,5 +106,37 @@ where
             self.handle.raw().len(),
             continuous_positions,
         )
+    }
+}
+
+#[cfg(feature = "to-markdown")]
+impl<S> ToMarkdown<S> for LineBreakNode<S>
+where
+    S: UnicodeString,
+{
+    fn fmt_markdown(&self, buf: &mut S) -> Result<(), MarkdownError<S>> {
+        // A line break is a `\n` in Markdown. Two or more line breaks
+        // usually generate a new block (i.e. a new paragraph). To
+        // avoid that, we can prefix `\n` by a backslash. Thus:
+        //
+        // ```html
+        // abc<br />def
+        //
+        // ghi<br /><br />jkl
+        // ```
+        //
+        // maps to:
+        //
+        // ```md
+        // abc\
+        // def
+        //
+        // ghi\
+        // \
+        // jkl
+        // ```
+        buf.push("\\\n");
+
+        Ok(())
     }
 }

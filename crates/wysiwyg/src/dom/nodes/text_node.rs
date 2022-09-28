@@ -13,14 +13,15 @@
 // limitations under the License.
 
 use crate::composer_model::example_format::SelectionWriter;
-use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
-use html_escape;
-
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::to_html::ToHtml;
+#[cfg(feature = "to-markdown")]
+use crate::dom::to_markdown::{Error as MarkdownError, ToMarkdown};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
+use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use crate::dom::UnicodeString;
+use html_escape;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct TextNode<S>
@@ -119,5 +120,17 @@ where
             self.handle.raw().len(),
             continuous_positions,
         );
+    }
+}
+
+#[cfg(feature = "to-markdown")]
+impl<S> ToMarkdown<S> for TextNode<S>
+where
+    S: UnicodeString,
+{
+    fn fmt_markdown(&self, buf: &mut S) -> Result<(), MarkdownError<S>> {
+        buf.push(self.data.to_owned());
+
+        Ok(())
     }
 }
