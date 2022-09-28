@@ -16,6 +16,7 @@ use crate::dom::nodes::{ContainerNodeKind, DomNode};
 use crate::dom::unicode_string::UnicodeStringExt;
 use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, UnicodeString};
+use std::collections::HashMap;
 
 /// Handles joining together nodes after an edit event.
 ///
@@ -35,8 +36,12 @@ where
         }
     }
 
-    pub(crate) fn join_format_node_with_prev(&mut self, handle: &DomHandle) {
-        self.join_format_nodes_at_level(handle, 0);
+    pub(crate) fn join_format_node_with_prev(
+        &mut self,
+        handle: &DomHandle,
+        moved_handles: &mut HashMap<DomHandle, DomHandle>,
+    ) {
+        self.join_format_nodes_at_level(handle, 0, moved_handles);
     }
 
     fn join_structure_nodes(
@@ -52,7 +57,7 @@ where
             {
                 if struct_parent_start != struct_parent_next {
                     // Move children
-                    let new_index = self.move_children_and_delete_parent(
+                    let (new_index, _) = self.move_children_and_delete_parent(
                         &struct_parent_next,
                         &struct_parent_start,
                     );
@@ -72,17 +77,31 @@ where
 
     fn join_format_nodes_at_index(&mut self, index: usize) {
         if let Some(next_node_handle) = self.find_leaf_containing(index) {
-            self.join_format_node_with_prev(&next_node_handle);
+            self.join_format_node_with_prev(
+                &next_node_handle,
+                &mut HashMap::new(),
+            );
         }
     }
 
-    fn join_format_nodes_at_level(&mut self, handle: &DomHandle, level: usize) {
+    fn join_format_nodes_at_level(
+        &mut self,
+        handle: &DomHandle,
+        level: usize,
+        moved_handles: &mut HashMap<DomHandle, DomHandle>,
+    ) {
         // Out of bounds
         if level >= handle.raw().len() {
             return;
         }
         // Get the node handle at the current depth level
         let cur_handle = DomHandle::from_raw(handle.raw()[..=level].to_vec());
+        // If the handle was moved, used updated value
+        let cur_handle = if let Some(h) = moved_handles.get(&cur_handle) {
+            h.clone()
+        } else {
+            cur_handle
+        };
         let index_in_parent = if cur_handle.is_root() {
             0
         } else {
@@ -94,7 +113,7 @@ where
             // Found a matching sibling node with the same format
             if self.can_merge_format_nodes(&prev_handle, &cur_handle) {
                 // Move the contents from the current node to the previous one
-                let new_index = self
+                let (new_index, moved) = self
                     .move_children_and_delete_parent(&cur_handle, &prev_handle);
                 // Next iteration
                 let mut cur_path = handle.raw().clone();
@@ -105,14 +124,23 @@ where
                 }
                 let new_handle = DomHandle::from_raw(cur_path);
 
-                self.join_format_nodes_at_level(&new_handle, level + 1);
+                moved_handles.extend(moved);
+                self.join_format_nodes_at_level(
+                    &new_handle,
+                    level + 1,
+                    moved_handles,
+                );
             } else {
                 // If both nodes couldn't be merged, try at the next level
-                self.join_format_nodes_at_level(handle, level + 1);
+                self.join_format_nodes_at_level(
+                    handle,
+                    level + 1,
+                    moved_handles,
+                );
             }
         } else {
             // If there's no previous node, try at the next level
-            self.join_format_nodes_at_level(handle, level + 1);
+            self.join_format_nodes_at_level(handle, level + 1, moved_handles);
         }
     }
 
@@ -168,7 +196,7 @@ where
                     {
                         // Both containers with the same tag.
                         // Move children from next to start node, remove next node.
-                        let new_index_in_parent = self
+                        let (new_index_in_parent, _) = self
                             .move_children_and_delete_parent(
                                 next_handle,
                                 start_handle,
@@ -271,7 +299,8 @@ where
         &mut self,
         from_handle: &DomHandle,
         to_handle: &DomHandle,
-    ) -> usize {
+    ) -> (usize, HashMap<DomHandle, DomHandle>) {
+        let mut moved_handles = HashMap::new();
         let dom = &mut self.state.dom;
         let ret;
         let children = if let DomNode::Container(from_node) =
@@ -285,7 +314,9 @@ where
         if let DomNode::Container(to_node) = dom.lookup_node_mut(to_handle) {
             ret = to_node.children().len();
             for c in children {
-                to_node.append_child(c);
+                let old_handle = c.handle();
+                let new_handle = to_node.append_child(c);
+                moved_handles.insert(old_handle, new_handle);
             }
         } else {
             panic!("Destination node must be a ContainerNode");
@@ -299,7 +330,7 @@ where
             panic!("Previous parent of source node must be a ContainerNode");
         }
 
-        ret
+        (ret, moved_handles)
     }
 
     fn find_ancestor_list(handle: &DomHandle) -> Vec<DomHandle> {
