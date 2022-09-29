@@ -79,9 +79,9 @@ where
         self.state.toggled_format_types.reverse();
         while let Some(format) = self.state.toggled_format_types.pop() {
             if self.reversed_actions.contains(&format.action()) {
-                self.format_range(start, end, &format.clone());
+                self.format_range(start, end, &format);
             } else {
-                self.unformat_range(start, end, &format.clone());
+                self.unformat_range(start, end, &format);
             }
         }
     }
