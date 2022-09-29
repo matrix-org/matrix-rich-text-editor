@@ -131,9 +131,7 @@ where
 
     pub(crate) fn is_placeholder_text_node(&self) -> bool {
         match self {
-            DomNode::Text(n) => {
-                n.data().len() == 1 && n.data().to_string() == "\u{200b}"
-            }
+            DomNode::Text(n) => n.data().len() == 1 && n.data() == "\u{200b}",
             _ => false,
         }
     }
