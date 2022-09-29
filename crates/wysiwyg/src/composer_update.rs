@@ -35,6 +35,13 @@ where
         }
     }
 
+    pub fn update_menu_state(menu_state: MenuState) -> Self {
+        Self {
+            text_update: TextUpdate::<S>::Keep,
+            menu_state: menu_state,
+        }
+    }
+
     pub fn update_selection(
         start: Location,
         end: Location,

@@ -64,7 +64,7 @@ fn formatting_text_creates_previous_state() {
     let mut model = cm("hello {world}|!");
     assert!(model.previous_states.is_empty());
 
-    model.format(InlineFormatType::Bold);
+    model.bold();
     assert!(!model.previous_states.is_empty());
 }
 
@@ -106,4 +106,22 @@ fn redoing_action_adds_popped_state_to_previous_states() {
     model.redo();
 
     assert_eq!(model.previous_states[0], model.state);
+}
+
+#[test]
+fn undoing_restores_toggled_format_types() {
+    let mut model = cm("|");
+    model.bold();
+    model.italic();
+    assert_eq!(
+        model.state.toggled_format_types,
+        Vec::from([InlineFormatType::Bold, InlineFormatType::Italic,])
+    );
+    model.replace_text(utf16("a"));
+    assert_eq!(model.state.toggled_format_types, Vec::new());
+    model.undo();
+    assert_eq!(
+        model.state.toggled_format_types,
+        Vec::from([InlineFormatType::Bold, InlineFormatType::Italic,])
+    );
 }

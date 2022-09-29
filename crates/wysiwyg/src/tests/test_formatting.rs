@@ -13,7 +13,9 @@
 // limitations under the License.
 
 use crate::tests::testutils_composer_model::{cm, tx};
+use crate::tests::testutils_conversion::utf16;
 
+use crate::InlineFormatType;
 use crate::Location;
 
 #[test]
@@ -134,4 +136,70 @@ fn formatting_deeper_nested_format_nodes_and_nested_line_breaks() {
         tx(&model),
         "aa<strong>a<u><br /><em>{b</em></u><em>bb<br />}|</em>cc</strong>c"
     );
+}
+
+#[test]
+fn formatting_with_zero_length_selection_apply_on_replace_text() {
+    let mut model = cm("aaa|bbb");
+    model.bold();
+    model.italic();
+    model.underline();
+    assert_eq!(tx(&model), "aaa|bbb");
+    assert_eq!(
+        model.state.toggled_format_types,
+        Vec::from([
+            InlineFormatType::Bold,
+            InlineFormatType::Italic,
+            InlineFormatType::Underline
+        ])
+    );
+    model.replace_text(utf16("ccc"));
+    assert_eq!(tx(&model), "aaa<strong><em><u>ccc|</u></em></strong>bbb");
+}
+
+#[test]
+fn unformatting_with_zero_length_selection_removes_on_replace_text() {
+    let mut model = cm("<strong>aaa|bbb</strong>");
+    model.bold();
+    assert_eq!(
+        model.state.toggled_format_types,
+        Vec::from([InlineFormatType::Bold]),
+    );
+    model.replace_text(utf16("ccc"));
+    assert_eq!(tx(&model), "<strong>aaa</strong>ccc|<strong>bbb</strong>");
+}
+
+#[test]
+fn formatting_and_unformatting_with_zero_length_selection() {
+    let mut model = cm("<em>aaa|bbb</em>");
+    model.bold();
+    model.italic();
+    model.replace_text(utf16("ccc"));
+    assert_eq!(tx(&model), "<em>aaa</em><strong>ccc|</strong><em>bbb</em>");
+}
+
+#[test]
+fn selecting_removes_toggled_format_types() {
+    let mut model = cm("aaa|");
+    model.bold();
+    assert_eq!(
+        model.state.toggled_format_types,
+        Vec::from([InlineFormatType::Bold]),
+    );
+    model.select(Location::from(2), Location::from(2));
+    assert_eq!(model.state.toggled_format_types, Vec::new(),);
+    model.replace_text(utf16("ccc"));
+    assert_eq!(tx(&model), "aaccc|a");
+}
+
+#[test]
+fn formatting_again_removes_toggled_format_type() {
+    let mut model = cm("aaa|");
+    model.bold();
+    assert_eq!(
+        model.state.toggled_format_types,
+        Vec::from([InlineFormatType::Bold]),
+    );
+    model.bold();
+    assert_eq!(model.state.toggled_format_types, Vec::new(),);
 }

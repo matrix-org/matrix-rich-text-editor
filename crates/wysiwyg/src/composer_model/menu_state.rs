@@ -51,19 +51,31 @@ where
         &mut self,
         range: &Range,
     ) -> HashSet<ComposerAction> {
+        let toggled_format_actions = self
+            .state
+            .toggled_format_types
+            .iter()
+            .map(|format| format.action())
+            .collect();
+
         if let Some(intersection) = range.leaves().next().map(|l| {
-            range.leaves().fold(
-                // Init with reversed_actions from the first leave.
-                self.compute_reversed_actions(&l.node_handle),
-                // And intersect with the reversed_actions of all subsequent leaves.
-                |set, leave| {
-                    set.intersection(
-                        &self.compute_reversed_actions(&leave.node_handle),
-                    )
-                    .cloned()
-                    .collect()
-                },
-            )
+            range
+                .leaves()
+                .fold(
+                    // Init with reversed_actions from the first leave.
+                    self.compute_reversed_actions(&l.node_handle),
+                    // And intersect with the reversed_actions of all subsequent leaves.
+                    |set, leave| {
+                        set.intersection(
+                            &self.compute_reversed_actions(&leave.node_handle),
+                        )
+                        .cloned()
+                        .collect()
+                    },
+                )
+                .symmetric_difference(&toggled_format_actions)
+                .cloned()
+                .collect()
         }) {
             intersection
         } else {

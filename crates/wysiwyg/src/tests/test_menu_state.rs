@@ -19,7 +19,7 @@ use widestring::Utf16String;
 use crate::tests::testutils_composer_model::cm;
 use crate::tests::testutils_conversion::utf16;
 
-use crate::{ComposerAction, ComposerModel, InlineFormatType, Location};
+use crate::{ComposerAction, ComposerModel, Location};
 
 #[test]
 fn creating_and_deleting_lists_updates_reversed_actions() {
@@ -84,9 +84,9 @@ fn selecting_multiple_nodes_updates_reversed_actions() {
 #[test]
 fn formatting_updates_reversed_actions() {
     let mut model = cm("a{bc}|d");
-    model.format(InlineFormatType::Bold);
-    model.format(InlineFormatType::Italic);
-    model.format(InlineFormatType::Underline);
+    model.bold();
+    model.italic();
+    model.underline();
     assert_eq!(
         model.reversed_actions,
         HashSet::from([
@@ -111,7 +111,7 @@ fn updating_model_updates_disabled_actions() {
     );
     replace_text(&mut model, "a");
     model.select(Location::from(0), Location::from(1));
-    model.format(InlineFormatType::Bold);
+    model.bold();
     assert_eq!(
         model.disabled_actions,
         HashSet::from([
@@ -143,6 +143,29 @@ fn updating_model_updates_disabled_actions() {
             ComposerAction::Indent,
             ComposerAction::UnIndent
         ])
+    );
+}
+
+#[test]
+fn formatting_zero_length_selection_updates_reversed_actions() {
+    let mut model = cm("<strong><em>aaa|bbb</em></strong>");
+    model.bold();
+    model.underline();
+    assert_eq!(
+        model.reversed_actions,
+        HashSet::from([ComposerAction::Italic, ComposerAction::Underline,]),
+    );
+}
+
+#[test]
+fn selecting_restores_reversed_actions() {
+    let mut model = cm("<strong><em>aaa|bbb</em></strong>");
+    model.bold();
+    model.underline();
+    model.select(Location::from(2), Location::from(2));
+    assert_eq!(
+        model.reversed_actions,
+        HashSet::from([ComposerAction::Bold, ComposerAction::Italic,]),
     );
 }
 

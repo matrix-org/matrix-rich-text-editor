@@ -109,6 +109,8 @@ where
             self.replace_multiple_nodes(range, new_text)
         }
 
+        self.apply_pending_formats(start, start + len);
+
         self.state.start = Location::from(start + len);
         self.state.end = self.state.start;
 

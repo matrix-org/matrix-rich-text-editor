@@ -74,31 +74,76 @@ where
         }
     }
 
-    pub fn format(&mut self, format: InlineFormatType) -> ComposerUpdate<S> {
+    pub(crate) fn apply_pending_formats(&mut self, start: usize, end: usize) {
+        // Reverse to pop and apply in expected order.
+        self.state.toggled_format_types.reverse();
+        while let Some(format) = self.state.toggled_format_types.pop() {
+            if self.reversed_actions.contains(&format.action()) {
+                self.format_range(start, end, &format);
+            } else {
+                self.unformat_range(start, end, &format);
+            }
+        }
+    }
+
+    fn format(&mut self, format: InlineFormatType) -> ComposerUpdate<S> {
         // Store current Dom
         self.push_state_to_history();
         let (s, e) = self.safe_selection();
-        self.format_range(s, e, format);
-        self.create_update_replace_all()
+
+        if s == e {
+            self.toggle_zero_length_format(&format);
+            ComposerUpdate::update_menu_state(self.compute_menu_state())
+        } else {
+            self.format_range(s, e, &format);
+            self.create_update_replace_all()
+        }
     }
 
     fn format_range(
         &mut self,
         start: usize,
         end: usize,
-        format: InlineFormatType,
+        format: &InlineFormatType,
     ) {
+        assert!(start != end);
         let range = self.state.dom.find_range(start, end);
         self.format_several_nodes(&range, format);
     }
 
-    pub fn unformat(&mut self, format: InlineFormatType) -> ComposerUpdate<S> {
-        // Store current Dom
-        self.push_state_to_history();
+    fn unformat(&mut self, format: InlineFormatType) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
-        let range = self.state.dom.find_range(s, e);
-        self.unformat_several_nodes(s, e, &range, format);
-        self.create_update_replace_all()
+
+        if s == e {
+            self.toggle_zero_length_format(&format);
+            ComposerUpdate::update_menu_state(self.compute_menu_state())
+        } else {
+            self.unformat_range(s, e, &format);
+            self.create_update_replace_all()
+        }
+    }
+
+    fn unformat_range(
+        &mut self,
+        start: usize,
+        end: usize,
+        format: &InlineFormatType,
+    ) {
+        let range = self.state.dom.find_range(start, end);
+        self.unformat_several_nodes(start, end, &range, format);
+    }
+
+    fn toggle_zero_length_format(&mut self, format: &InlineFormatType) {
+        let index = self
+            .state
+            .toggled_format_types
+            .iter()
+            .position(|f| f == format);
+        if let Some(index) = index {
+            self.state.toggled_format_types.remove(index);
+        } else {
+            self.state.toggled_format_types.push(format.clone());
+        }
     }
 
     fn check_format_selection_type(
@@ -140,7 +185,7 @@ where
     fn format_several_nodes(
         &mut self,
         range: &Range,
-        format: InlineFormatType,
+        format: &InlineFormatType,
     ) {
         let selection_type =
             self.check_format_selection_type(&range.locations, &format);
@@ -149,7 +194,7 @@ where
             FormatSelectionType::Extend => self
                 .extend_format_in_multiple_nodes(
                     range.leaves().collect(),
-                    &format,
+                    format,
                 ),
         }
     }
@@ -159,13 +204,13 @@ where
         start: usize,
         end: usize,
         range: &Range,
-        format: InlineFormatType,
+        format: &InlineFormatType,
     ) {
         for location in range.locations.iter() {
             let node = self.state.dom.lookup_node(&location.node_handle);
             if let DomNode::Container(n) = node {
                 if let ContainerNodeKind::Formatting(f) = n.kind() {
-                    if *f == format {
+                    if f == format {
                         if node.has_only_placeholder_text_child() {
                             self.state.end = self.state.start;
                             self.state
@@ -192,18 +237,10 @@ where
                             );
 
                         if before_end > before_start {
-                            self.format_range(
-                                before_start,
-                                before_end,
-                                format.clone(),
-                            );
+                            self.format_range(before_start, before_end, format);
                         }
                         if after_end > after_start {
-                            self.format_range(
-                                after_start,
-                                after_end,
-                                format.clone(),
-                            );
+                            self.format_range(after_start, after_end, format);
                         }
                     }
                 }

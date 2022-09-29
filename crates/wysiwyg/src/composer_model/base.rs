@@ -44,6 +44,16 @@ where
         }
     }
 
+    pub fn from_state(state: ComposerState<S>) -> Self {
+        Self {
+            state: state,
+            previous_states: Vec::new(),
+            next_states: Vec::new(),
+            reversed_actions: HashSet::new(),
+            disabled_actions: HashSet::new(),
+        }
+    }
+
     /// Create a UTF-16 model from an HTML string, or panic if HTML parsing
     /// fails.
     pub fn from_html(
@@ -56,6 +66,7 @@ where
                 dom: parse(html).expect("HTML parsing failed"),
                 start: Location::from(start_codeunit),
                 end: Location::from(end_codeunit),
+                toggled_format_types: Vec::new(),
             },
             previous_states: Vec::new(),
             next_states: Vec::new(),

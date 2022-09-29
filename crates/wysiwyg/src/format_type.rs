@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::UnicodeString;
+use crate::{ComposerAction, UnicodeString};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum InlineFormatType {
@@ -31,6 +31,16 @@ impl InlineFormatType {
             InlineFormatType::StrikeThrough => "del",
             InlineFormatType::Underline => "u",
             InlineFormatType::InlineCode => "code",
+        }
+    }
+
+    pub fn action(&self) -> ComposerAction {
+        match self {
+            InlineFormatType::Bold => ComposerAction::Bold,
+            InlineFormatType::Italic => ComposerAction::Italic,
+            InlineFormatType::StrikeThrough => ComposerAction::StrikeThrough,
+            InlineFormatType::Underline => ComposerAction::Underline,
+            InlineFormatType::InlineCode => ComposerAction::InlineCode,
         }
     }
 }
