@@ -75,7 +75,7 @@ where
     }
 
     pub(crate) fn apply_pending_formats(&mut self, start: usize, end: usize) {
-        // Reverse to remove and apply in expected order.
+        // Reverse to pop and apply in expected order.
         self.state.toggled_format_types.reverse();
         while let Some(format) = self.state.toggled_format_types.pop() {
             if self.reversed_actions.contains(&format.action()) {
