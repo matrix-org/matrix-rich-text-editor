@@ -73,14 +73,17 @@ pub struct DomActionList<S: UnicodeString> {
 }
 
 impl<S: UnicodeString> DomActionList<S> {
+    #[allow(dead_code)]
     pub fn new(actions: Vec<DomAction<S>>) -> Self {
         Self { actions }
     }
 
+    #[allow(dead_code)]
     pub fn actions(&self) -> &Vec<DomAction<S>> {
         &self.actions
     }
 
+    #[allow(dead_code)]
     pub fn additions(&self) -> Vec<&AddNodeAction<S>> {
         self.actions
             .iter()
@@ -91,6 +94,7 @@ impl<S: UnicodeString> DomActionList<S> {
             .collect()
     }
 
+    #[allow(dead_code)]
     pub fn removals(&self) -> Vec<&RemoveNodeAction> {
         self.actions
             .iter()
@@ -101,6 +105,7 @@ impl<S: UnicodeString> DomActionList<S> {
             .collect()
     }
 
+    #[allow(dead_code)]
     pub fn moves(&self) -> Vec<&MoveNodeAction> {
         self.actions
             .iter()
@@ -138,6 +143,7 @@ impl<S: UnicodeString> DomActionList<S> {
         self.actions.push(action);
     }
 
+    #[allow(dead_code)]
     pub fn replace_actions(&mut self, new_actions: Vec<DomAction<S>>) {
         self.actions = new_actions;
     }

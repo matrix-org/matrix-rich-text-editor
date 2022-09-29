@@ -98,17 +98,14 @@ where
         if level >= handle.raw().len() {
             return;
         }
-        // Get the node handle at the current depth level
-        let cur_handle = DomHandle::from_raw(handle.raw()[..=level].to_vec());
+        let mut handle = handle.clone();
         // If the handle was moved, use updated value instead
         let moved_handle = action_list.find_moved_parent_or_self(&handle);
-        let cur_handle = if let Some((from_handle, to_handle)) = moved_handle {
-            let mut new_path = handle.clone().into_raw();
-            new_path.splice(0..from_handle.raw().len(), to_handle.into_raw());
-            DomHandle::from_raw(new_path)
-        } else {
-            cur_handle
-        };
+        if let Some((from_handle, to_handle)) = moved_handle {
+            handle.replace_ancestor(from_handle, to_handle);
+        }
+        // Get the node handle at the current depth level
+        let cur_handle = DomHandle::from_raw(handle.raw()[..=level].to_vec());
         let index_in_parent = if cur_handle.is_root() {
             0
         } else {
@@ -143,11 +140,15 @@ where
                 );
             } else {
                 // If both nodes couldn't be merged, try at the next level
-                self.join_format_nodes_at_level(handle, level + 1, action_list);
+                self.join_format_nodes_at_level(
+                    &handle,
+                    level + 1,
+                    action_list,
+                );
             }
         } else {
             // If there's no previous node, try at the next level
-            self.join_format_nodes_at_level(handle, level + 1, action_list);
+            self.join_format_nodes_at_level(&handle, level + 1, action_list);
         }
     }
 

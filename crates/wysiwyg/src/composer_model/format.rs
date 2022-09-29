@@ -234,12 +234,7 @@ where
                 action_list.find_moved_parent_or_self(&loc.node_handle);
             if let Some((from_handle, to_handle)) = moved_handle {
                 // Careful here, the location's position is no longer valid
-                let mut new_path = loc.node_handle.clone().into_raw();
-                new_path.splice(
-                    0..from_handle.raw().len(),
-                    to_handle.clone().into_raw(),
-                );
-                loc = loc.with_new_handle(DomHandle::from_raw(new_path));
+                loc.node_handle.replace_ancestor(from_handle, to_handle);
             }
             if Self::needs_format(&self.state.dom, &loc, format) {
                 if let DomNode::Container(parent) = self

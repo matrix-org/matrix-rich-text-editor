@@ -116,4 +116,13 @@ impl DomHandle {
         let other_path = other.raw();
         other_path.starts_with(own_path.as_slice()) && other_path != own_path
     }
+
+    /// Replaces the sub-path shared with [old] handle with the same sub-path in [new].
+    pub fn replace_ancestor(&mut self, old: DomHandle, new: DomHandle) {
+        assert!(old.is_parent_of(self) || old == *self);
+        assert!(self.is_set());
+        let mut new_path = self.path.as_ref().unwrap().clone();
+        new_path.splice(0..old.raw().len(), new.into_raw());
+        self.path = Some(new_path.clone());
+    }
 }
