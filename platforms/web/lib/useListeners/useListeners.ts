@@ -1,4 +1,3 @@
-
 /*
 Copyright 2022 The Matrix.org Foundation C.I.C.
 
@@ -18,10 +17,11 @@ limitations under the License.
 import { RefObject, useEffect } from 'react';
 
 import { ComposerModel } from '../../generated/wysiwyg';
-import { isInputEvent } from '../assert';
+import { isInputEvent } from './assert';
 import { handleInput, handleKeyDown, handleSelectionChange } from './event';
 import { WysiwygInputEvent } from '../types';
 import { TestUtilities } from '../useTestCases/types';
+import { FormatBlockEvent } from './types';
 
 export function useListeners(
     editorRef: RefObject<HTMLElement | null>,
@@ -46,16 +46,16 @@ export function useListeners(
             );
         editorNode.addEventListener('input', onInput);
 
-        const onFormatBlock = () => {
+        const onWysiwygInput = ((e: FormatBlockEvent) => {
             handleInput(
-                { inputType: 'formatInlineCode' } as WysiwygInputEvent,
+                { inputType: e.detail.blockType } as WysiwygInputEvent,
                 editorNode,
                 composerModel,
                 modelRef.current,
                 testUtilities,
             );
-        };
-        editorNode.addEventListener('formatBlock', onFormatBlock);
+        }) as EventListener;
+        editorNode.addEventListener('wysiwygInput', onWysiwygInput);
 
         const onKeyDown = (e: KeyboardEvent) => {
             handleKeyDown(e, editorNode);
@@ -67,7 +67,7 @@ export function useListeners(
 
         return () => {
             editorNode.removeEventListener('input', onInput);
-            editorNode.removeEventListener('formatBlock', onFormatBlock);
+            editorNode.removeEventListener('wysiwygInput', onWysiwygInput);
             editorNode.removeEventListener('keydown', onKeyDown);
             document.removeEventListener('selectionchange', onSelectionChange);
         };

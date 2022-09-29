@@ -14,5 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-export { useListeners } from './useListeners';
-export { sendWysiwygInputEvent } from './event';
+import { BlockType } from '../types';
+
+export type FormatBlockEvent = CustomEvent<{
+    blockType: BlockType;
+}>;
