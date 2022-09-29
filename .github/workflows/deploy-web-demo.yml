@@ -1,0 +1,85 @@
+name: Deploy Web demo
+
+on:
+  workflow_run:
+    workflows: 
+      - React build
+    types:
+      - completed
+    branches: 
+      - main
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build WASM bindings
+        run: make web
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'yarn'
+          cache-dependency-path: platforms/web/yarn.lock
+      - name: Build
+        working-directory: platforms/web
+        run: yarn install && yarn build:demo
+      - name: Archive demo artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist-demo
+          path: platforms/web/dist-demo
+
+  deploy:
+    name: Deploy
+    needs: build
+
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Download demo artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: dist-demo
+        path: platforms/web/dist-demo
+    - name: Setup Pages
+      uses: actions/configure-pages@v2
+    - name: Upload github-pages
+      uses: actions/upload-pages-artifact@v1
+      with:
+        path: platforms/web/dist-demo
+    - name: Deploy github-pages
+      id: deployment
+      uses: actions/deploy-pages@v1

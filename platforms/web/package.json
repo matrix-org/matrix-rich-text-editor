@@ -1,0 +1,61 @@
+{
+  "name": "matrix-wysiwyg",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Wysiwyg composer for matrix.org using React",
+  "author": "matrix.org",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/matrix-org/matrix-wysiwyg"
+  },
+  "license": "Apache-2.0",
+  "main": "./dist/matrix-wysiwyg.umd.cjs",
+  "module": "./dist/matrix-wysiwyg.js",
+  "exports": {
+    ".": {
+      "import": "./dist/matrix-wysiwyg.js",
+      "require": "./dist/matrix-wysiwyg.umd.cjs"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:demo": "vite build -c vite.demo.config.ts",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^13.4.0",
+    "@types/react": "^18.0.17",
+    "@types/react-dom": "^18.0.6",
+    "@typescript-eslint/eslint-plugin": "^5.35.1",
+    "@typescript-eslint/parser": "^5.6.0",
+    "@vitejs/plugin-react": "^2.1.0",
+    "@vitest/coverage-c8": "^0.23.4",
+    "@vitest/ui": "^0.23.4",
+    "eslint": "^8.23.1",
+    "eslint-config-google": "^0.14.0",
+    "eslint-plugin-deprecate": "^0.7.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-jsx-a11y": "^6.6.1",
+    "eslint-plugin-matrix-org": "^0.6.1",
+    "eslint-plugin-react": "^7.31.8",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "jest-environment-jsdom": "^29.0.3",
+    "react-testing-library": "^8.0.1",
+    "typescript": "^4.7.4",
+    "vite": "^3.1.0",
+    "vite-plugin-dts": "^1.5.0",
+    "vitest": "^0.23.4"
+  }
+}
