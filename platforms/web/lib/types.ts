@@ -14,5 +14,5 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-export type BlockType = 'formatInlineCode';
-export type WysiwygInputEvent = InputEvent & { inputType: InputEvent['inputType'] | BlockType };
+export type BlockType = InputEvent['inputType'] | 'formatInlineCode';
+export type WysiwygInputEvent = InputEvent & { inputType: BlockType };

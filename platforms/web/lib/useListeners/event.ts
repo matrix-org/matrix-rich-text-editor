@@ -19,17 +19,17 @@ import { MouseEvent as ReactMouseEvent } from 'react';
 import { ComposerModel } from '../../generated/wysiwyg';
 import { processInput } from '../composer';
 import { getCurrentSelection, refreshComposerView, replaceEditor } from '../dom';
-import { WysiwygInputEvent } from '../types';
+import { BlockType, WysiwygInputEvent } from '../types';
 import { TestUtilities } from '../useTestCases/types';
 
-export function sendInputEvent(
+export function sendFormatBlockEvent(
     e: ReactMouseEvent<HTMLElement, MouseEvent> | KeyboardEvent,
     editor: HTMLElement,
-    inputType: InputEvent['inputType'],
+    blockType: BlockType,
 ) {
     e.preventDefault();
     e.stopPropagation();
-    editor.dispatchEvent(new InputEvent('input', { inputType }));
+    editor.dispatchEvent(new CustomEvent('formatBlock', { detail: { blockType } }));
 }
 
 function getInputFromKeyDown(e: KeyboardEvent) {
@@ -56,7 +56,7 @@ function getInputFromKeyDown(e: KeyboardEvent) {
 export function handleKeyDown(e: KeyboardEvent, editor: HTMLElement) {
     const inputType = getInputFromKeyDown(e);
     if (inputType) {
-        sendInputEvent(e, editor, inputType);
+        sendFormatBlockEvent(e, editor, inputType);
     }
 }
 
