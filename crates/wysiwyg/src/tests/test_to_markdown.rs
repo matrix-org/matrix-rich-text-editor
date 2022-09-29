@@ -129,7 +129,16 @@ fn text_with_inline_code() {
 
 #[test]
 fn link() {
-    assert_eq!(md(r#"<a href="url">abc</a>|"#), "[abc](url)");
+    assert_eq!(md(r#"<a href="url">abc</a>|"#), "[abc](<url>)");
+    assert_eq!(md(r#"<a href="u<rl">abc</a>|"#), r#"[abc](<u\<rl>)"#);
+    // Empty link.
+    assert_eq!(md(r#"<a href="">abc</a>|"#), r#"[abc](<>)"#);
+    // Formatting inside link.
+    assert_eq!(
+        md(r#"<a href="url">abc <strong>def</strong> ghi</a>|"#),
+        r#"[abc __def__ ghi](<url>)"#
+    );
+    assert_eq!(md(r#"<a href="(url)">abc</a>|"#), r#"[abc](<\(url\)>)"#);
 }
 
 fn md(html: &str) -> Utf16String {
