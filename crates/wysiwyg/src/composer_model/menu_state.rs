@@ -53,12 +53,13 @@ where
     ) -> HashSet<ComposerAction> {
         if let Some(intersection) = range.leaves().next().map(|l| {
             range.leaves().fold(
+                // Init with reversed_actions from the first leave.
                 self.compute_reversed_actions(&l.node_handle),
+                // And intersect with the reversed_actions of all subsequent leaves.
                 |set, leave| {
                     set.intersection(
                         &self.compute_reversed_actions(&leave.node_handle),
                     )
-                    .into_iter()
                     .cloned()
                     .collect()
                 },
