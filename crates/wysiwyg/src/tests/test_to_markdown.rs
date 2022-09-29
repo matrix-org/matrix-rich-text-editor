@@ -116,7 +116,7 @@ fn text_with_inline_code() {
     assert_eq!(md("abc <code>def</code> ghi|"), "abc `` def `` ghi");
     assert_eq!(md("abc <code>def</code> ghi|"), "abc `` def `` ghi");
     assert_eq!(md("abc<code> def </code>ghi|"), "abc``  def  ``ghi");
-    // It's impossible to get a line break inside a inline code with Markdown.
+    // It's impossible to get a line break inside an inline code with Markdown.
     assert_eq!(
         md("abc <code>line1<br />line2<br /><br />line3</code> def|"),
         "abc `` line1 line2  line3 `` def",
@@ -139,6 +139,34 @@ fn link() {
         r#"[abc __def__ ghi](<url>)"#
     );
     assert_eq!(md(r#"<a href="(url)">abc</a>|"#), r#"[abc](<\(url\)>)"#);
+}
+
+#[test]
+fn list_unordered() {
+    assert_eq!(
+        md(r#"<ul><li>item1</li><li>item2</li></ul>|"#),
+        r#"* item1
+* item2"#
+    );
+
+    assert_eq!(
+        md(
+            r#"<ul><li>item1<ul><li>subitem1</li><li>subitem2</li></ul></li><li>item2</li></ul>|"#,
+        ),
+        r#"* item1
+  * subitem1
+  * subitem2
+* item2"#,
+    );
+}
+
+#[test]
+fn list_ordered() {
+    assert_eq!(
+        md(r#"<ol><li>item1</li><li>item2</li></ol>|"#),
+        r#"1. item1
+2. item2"#
+    );
 }
 
 fn md(html: &str) -> Utf16String {

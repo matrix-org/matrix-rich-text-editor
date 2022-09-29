@@ -510,10 +510,119 @@ where
                 );
                 buffer.push(">)");
             }
-            _ => {
-                return Err(MarkdownError::UnknownContainerNodeName(
-                    self.name().to_owned(),
-                ))
+
+            List => {
+                let list_type = self.name();
+                let ordered_list_name = "ol";
+                let expected_list_item_name = &S::from("li");
+                let number_of_children = self.children.len();
+                let mut ordered_list_counter = 0i32;
+
+                for (nth, child) in self.children.iter().enumerate() {
+                    // Verify the list item is correct.
+                    let child = match child {
+                        // Valid item.
+                        DomNode::Container(
+                            child @ Self {
+                                name,
+                                kind: ListItem,
+                                ..
+                            },
+                        ) if name == expected_list_item_name => child,
+
+                        // All the following are invalid items.
+                        DomNode::Container(Self {
+                            name: child_name, ..
+                        }) => {
+                            return Err(MarkdownError::InvalidListItem(Some(
+                                child_name.to_owned(),
+                            )))
+                        }
+
+                        DomNode::LineBreak(line_break) => {
+                            return Err(MarkdownError::InvalidListItem(Some(
+                                line_break.name(),
+                            )))
+                        }
+
+                        DomNode::Text(_) => {
+                            return Err(MarkdownError::InvalidListItem(None))
+                        }
+                    };
+
+                    // What's the current indentation, for this specific list only.
+                    let mut indentation = 0;
+
+                    // It's an ordered list.
+                    if list_type == ordered_list_name {
+                        // Update the counter.
+                        ordered_list_counter += 1;
+
+                        // Generate something like `1.` (arabic numbers only,
+                        // as requested by the specification).
+                        let counter = ordered_list_counter.to_string();
+
+                        buffer.push(counter.as_str());
+                        buffer.push('.');
+
+                        // Indentation will match the counter size.
+                        indentation += counter.len() + 1 /* `.` */;
+                    }
+                    // It's an unordered list.
+                    else {
+                        // Generate something like `*`.
+                        buffer.push('*');
+
+                        // Indentation will match the counter size.
+                        indentation += 1;
+                    }
+
+                    // Insert a space between the counter and the item's content.
+                    buffer.push(' ');
+
+                    // And update the indentation.
+                    indentation += 1;
+
+                    {
+                        // Let's create a new buffer for the child formatting.
+                        let mut child_buffer = S::default();
+                        child.fmt_markdown(&mut child_buffer, options)?;
+
+                        // Generate the indentation of form `\n` followed by
+                        // $x$ spaces where $x$ is `indentation`.
+                        let indentation = {
+                            let spaces = " ".repeat(indentation);
+                            let mut indentation = String::with_capacity(
+                                1 /* `\n` */ + indentation,
+                            );
+                            indentation.push('\n');
+                            indentation.push_str(&spaces);
+
+                            indentation
+                        };
+
+                        // Insert the child's buffer after `\n`s have been
+                        // replaced by `\n` followed by spaces for indentation.
+                        buffer.push(
+                            child_buffer
+                                .to_string()
+                                .replace('\n', &indentation)
+                                .as_str(),
+                        );
+                    }
+
+                    let is_last = nth == number_of_children - 1;
+
+                    if !is_last {
+                        buffer.push('\n');
+                    }
+                }
+            }
+
+            ListItem => {
+                for child in self.children.iter() {
+                    child.fmt_markdown(buffer, options)?;
+                }
             }
         };
 

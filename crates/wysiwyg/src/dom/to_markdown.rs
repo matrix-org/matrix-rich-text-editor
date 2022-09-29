@@ -21,7 +21,7 @@ pub enum MarkdownError<S>
 where
     S: UnicodeString,
 {
-    UnknownContainerNodeName(<S::Str as ToOwned>::Owned),
+    InvalidListItem(Option<<S::Str as ToOwned>::Owned>),
 }
 
 impl<S> Error for MarkdownError<S> where S: UnicodeString {}
@@ -32,9 +32,9 @@ where
 {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::UnknownContainerNodeName(name) => {
-                write!(formatter, "Unknown container node name: `{:?}`", name)
-            }
+            Self::InvalidListItem(Some(node_name)) => write!(formatter, "A list expects a list item as immediate child, received `{node_name}`"),
+
+            Self::InvalidListItem(None) => write!(formatter, "A list node expects a list item node as immediate child")
         }
     }
 }
