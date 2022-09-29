@@ -14,7 +14,10 @@ const {ref, isWysiwygReady, wysiwyg} = useWysiwyg()
 return (
     <div>
         <button type="button" onClick={wysiwyg.bold}>bold</button>
-        <div ref={ref} contentEditable={isWysiwygReady} />
+        <div ref={ref} contentEditable={isWysiwygReady}>
+            {/* TODO explain br tag */}
+            <br />
+        </div>
     </div>
 )
 ```
@@ -38,13 +41,32 @@ Requirements:
 yarn install
 ```
 
+### Dev
+
+#### Folder structure
+
+- Inside the `lib` folder, the wysiwyg composer library files are located with `useWysiwyg` as en entrypoint
+- Inside the `src` folder, the demo page of the composer is located.
+
+### Dev mode
+
+Launch:
+
+```sh
+yarn dev
+```
+
+A dev server with hot reload is launched on `http://localhost:5173/` by default.
+
+For more information, see [Vite](https://vitejs.dev/guide/features.html#hot-module-replacement) for more information.
+
 ### Build
 
 [Vite](https://vitejs.dev/) is the Wysiwyg Composer builder.
 
 To build:
 
-```
+```sh
 yarn build
 ```
 

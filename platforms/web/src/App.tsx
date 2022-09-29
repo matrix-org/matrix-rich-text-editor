@@ -57,7 +57,9 @@ function App() {
                         <Button onClick={wysiwyg.orderedList} alt="list ordered" imagePath={listOrderedImage} />
                         <Button onClick={wysiwyg.inlineCode} alt="inline code" imagePath={listOrderedImage} />
                     </div>
-                    <div className="editor" ref={ref} contentEditable={isWysiwygReady} />
+                    <div className="editor" ref={ref} contentEditable={isWysiwygReady}>
+                        <br />
+                    </div>
                 </div>
             </div>
             <h2>Model:</h2>
