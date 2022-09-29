@@ -15,4 +15,4 @@ limitations under the License.
 */
 
 export { useListeners } from './useListeners';
-export { sendFormatBlockEvent } from './event';
+export { sendWysiwygInputEvent } from './event';

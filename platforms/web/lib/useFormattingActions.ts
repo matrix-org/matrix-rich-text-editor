@@ -17,7 +17,7 @@ limitations under the License.
 import { RefObject, MouseEvent as ReactMouseEvent, useMemo } from 'react';
 
 import { BlockType } from './types';
-import { sendFormatBlockEvent } from './useListeners';
+import { sendWysiwygInputEvent } from './useListeners';
 
 export function useFormattingActions(editorRef: RefObject<HTMLElement | null>) {
     const formattingActions = useMemo(() => {
@@ -25,7 +25,7 @@ export function useFormattingActions(editorRef: RefObject<HTMLElement | null>) {
         // Safari does not keep the inputType in an input event when the input event is fired manually
         // So we send a custom event and we do not use the browser input event handling
         const sendEvent = (e: ReactMouseEvent<HTMLElement, MouseEvent> | KeyboardEvent,
-            blockType: BlockType) => editorRef.current && sendFormatBlockEvent(e, editorRef.current, blockType);
+            blockType: BlockType) => editorRef.current && sendWysiwygInputEvent(e, editorRef.current, blockType);
 
         return {
             bold: (e: ReactMouseEvent<HTMLElement, MouseEvent>) => sendEvent(e, 'formatBold'),

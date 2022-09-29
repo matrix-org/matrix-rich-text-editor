@@ -46,7 +46,7 @@ export function useListeners(
             );
         editorNode.addEventListener('input', onInput);
 
-        const onFormatBlock = ((e: FormatBlockEvent) => {
+        const onWysiwygInput = ((e: FormatBlockEvent) => {
             handleInput(
                 { inputType: e.detail.blockType } as WysiwygInputEvent,
                 editorNode,
@@ -55,7 +55,7 @@ export function useListeners(
                 testUtilities,
             );
         }) as EventListener;
-        editorNode.addEventListener('formatBlock', onFormatBlock);
+        editorNode.addEventListener('wysiwygInput', onWysiwygInput);
 
         const onKeyDown = (e: KeyboardEvent) => {
             handleKeyDown(e, editorNode);
@@ -67,7 +67,7 @@ export function useListeners(
 
         return () => {
             editorNode.removeEventListener('input', onInput);
-            editorNode.removeEventListener('formatBlock', onFormatBlock);
+            editorNode.removeEventListener('wysiwygInput', onWysiwygInput);
             editorNode.removeEventListener('keydown', onKeyDown);
             document.removeEventListener('selectionchange', onSelectionChange);
         };
