@@ -488,12 +488,27 @@ where
                 buffer.push('[');
 
                 for child in self.children.iter() {
-                    child.fmt_markdown(buffer, &options)?;
+                    child.fmt_markdown(buffer, options)?;
                 }
 
-                buffer.push("](");
-                buffer.push(url.clone());
-                buffer.push(')');
+                // A link destination can be delimited by `<` and
+                // `>`.
+                //
+                // The link URL can contain `<`, `>`, `(` and `)` if
+                // they are escaped. Parenthesis, if unbalanced, can
+                // not be escaped, but we are playing safety and
+                // simplicity.
+
+                buffer.push("](<");
+                buffer.push(
+                    url.to_string()
+                        .replace('<', "\\<")
+                        .replace('>', "\\>")
+                        .replace('(', "\\(")
+                        .replace(')', "\\)")
+                        .as_str(),
+                );
+                buffer.push(">)");
             }
             _ => {
                 return Err(MarkdownError::UnknownContainerNodeName(
