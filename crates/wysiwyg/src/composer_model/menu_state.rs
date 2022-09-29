@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind};
-use crate::dom::DomLocation;
+use crate::dom::{DomLocation, Range};
 use crate::menu_state::MenuStateUpdate;
 use crate::ComposerAction::{Indent, UnIndent};
 use crate::{
@@ -30,7 +30,7 @@ where
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
         let reversed_actions: HashSet<ComposerAction> =
-            self.compute_reversed_actions_from_locations(&range.locations);
+            self.compute_reversed_actions_from_range(&range);
         let disabled_actions = self.compute_disabled_actions();
 
         if reversed_actions == self.reversed_actions
@@ -47,49 +47,39 @@ where
         }
     }
 
-    fn compute_reversed_actions_from_locations(
+    fn compute_reversed_actions_from_range(
         &mut self,
-        locations: &[DomLocation],
+        range: &Range,
     ) -> HashSet<ComposerAction> {
-        let mut text_locations: Vec<&DomLocation> = locations
+        let toggled_format_actions = self
+            .state
+            .toggled_format_types
             .iter()
-            .filter(|l| {
-                let node = self.state.dom.lookup_node(&l.node_handle);
-                node.is_text_node()
-            })
+            .map(|format| format.action())
             .collect();
 
-        if text_locations.is_empty() {
-            HashSet::new()
-        } else {
-            let first_location = text_locations.remove(0);
-            let mut reversed_actions =
-                self.compute_reversed_actions(&first_location.node_handle);
-            for location in text_locations {
-                let buttons =
-                    self.compute_reversed_actions(&location.node_handle);
-                let intersection: HashSet<_> = reversed_actions
-                    .intersection(&buttons)
-                    .into_iter()
-                    .cloned()
-                    .collect();
-                reversed_actions = intersection;
-            }
-
-            let toggled_format_actions = self
-                .state
-                .toggled_format_types
-                .iter()
-                .map(|format| format.action())
-                .collect();
-
-            reversed_actions = reversed_actions
+        if let Some(intersection) = range.leaves().next().map(|l| {
+            range
+                .leaves()
+                .fold(
+                    // Init with reversed_actions from the first leave.
+                    self.compute_reversed_actions(&l.node_handle),
+                    // And intersect with the reversed_actions of all subsequent leaves.
+                    |set, leave| {
+                        set.intersection(
+                            &self.compute_reversed_actions(&leave.node_handle),
+                        )
+                        .cloned()
+                        .collect()
+                    },
+                )
                 .symmetric_difference(&toggled_format_actions)
-                .into_iter()
                 .cloned()
-                .collect();
-
-            reversed_actions
+                .collect()
+        }) {
+            intersection
+        } else {
+            HashSet::new()
         }
     }
 

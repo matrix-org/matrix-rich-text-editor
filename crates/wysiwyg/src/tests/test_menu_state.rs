@@ -196,6 +196,24 @@ fn test_menu_updates_unindent() {
     );
 }
 
+#[test]
+fn selecting_line_break_inside_formatting_node_reversed_actions() {
+    let model = cm("<strong><em>aaa<br />{<br />}|bbb</em></strong>");
+    assert_eq!(
+        model.reversed_actions,
+        HashSet::from([ComposerAction::Bold, ComposerAction::Italic,])
+    );
+}
+
+#[test]
+fn selecting_after_a_line_break_inside_formatting_nodes_reversed_actions() {
+    let model = cm("<strong><em>aaa<br /><br />|bbb</em></strong>");
+    assert_eq!(
+        model.reversed_actions,
+        HashSet::from([ComposerAction::Bold, ComposerAction::Italic,])
+    );
+}
+
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
     model.replace_text(utf16(new_text));
 }
