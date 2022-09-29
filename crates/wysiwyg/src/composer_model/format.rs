@@ -75,12 +75,13 @@ where
     }
 
     pub(crate) fn apply_pending_formats(&mut self, start: usize, end: usize) {
-        while self.state.toggled_format_types.len() > 0 {
-            let format = self.state.toggled_format_types.remove(0);
+        // Reverse to remove and apply in expected order.
+        self.state.toggled_format_types.reverse();
+        while let Some(format) = self.state.toggled_format_types.pop() {
             if self.reversed_actions.contains(&format.action()) {
-                self.format_range(start, end, &format);
+                self.format_range(start, end, &format.clone());
             } else {
-                self.unformat_range(start, end, &format);
+                self.unformat_range(start, end, &format.clone());
             }
         }
     }
