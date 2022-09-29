@@ -21,7 +21,7 @@ pub enum MarkdownError<S>
 where
     S: UnicodeString,
 {
-    InvalidListItem(Option<<S::Str as ToOwned>::Owned>),
+    InvalidListItem(Option<S>),
 }
 
 impl<S> Error for MarkdownError<S> where S: UnicodeString {}
@@ -50,15 +50,16 @@ where
     ) -> Result<(), MarkdownError<S>>;
 
     fn to_markdown(&self) -> Result<S, MarkdownError<S>> {
-        let mut buf = S::default();
-        self.fmt_markdown(&mut buf, &MarkdownOptions::empty())?;
+        let mut buffer = S::default();
+        self.fmt_markdown(&mut buffer, &MarkdownOptions::empty())?;
 
-        Ok(buf)
+        Ok(buffer)
     }
 }
 
 bitflags! {
     pub struct MarkdownOptions: u8 {
         const IGNORE_LINE_BREAK = 0b0001;
+        const IN_A_CONTAINER = 0b0010;
     }
 }

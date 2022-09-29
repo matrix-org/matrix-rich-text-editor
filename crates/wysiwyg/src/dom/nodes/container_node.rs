@@ -232,10 +232,9 @@ where
     }
 
     pub(crate) fn is_structure_node(&self) -> bool {
-        matches!(
-            self.kind,
-            ContainerNodeKind::List | ContainerNodeKind::ListItem
-        )
+        use ContainerNodeKind::*;
+
+        matches!(self.kind, List | ListItem)
     }
 
     pub(crate) fn is_formatting_node(&self) -> bool {
@@ -247,6 +246,12 @@ where
         format_type: &InlineFormatType,
     ) -> bool {
         matches!(&self.kind, ContainerNodeKind::Formatting(f) if f == format_type)
+    }
+
+    pub(crate) fn is_block_node(&self) -> bool {
+        use ContainerNodeKind::*;
+
+        matches!(self.kind, Generic | List)
     }
 
     pub fn text_len(&self) -> usize {
@@ -389,11 +394,34 @@ where
         use ContainerNodeKind::*;
         use InlineFormatType::*;
 
+        // `fmt_children` is super basic loop over children to call
+        // `fmt_markdown`, except that it inserts `\n` between block
+        // nodes.
+        fn fmt_children<S>(
+            this: &ContainerNode<S>,
+            buffer: &mut S,
+            options: &MarkdownOptions,
+        ) -> Result<(), MarkdownError<S>>
+        where
+            S: UnicodeString,
+        {
+            for (nth, child) in this.children.iter().enumerate() {
+                if nth > 0 && child.is_block_node() {
+                    buffer.push("\n");
+                }
+
+                child.fmt_markdown(buffer, options)?;
+            }
+
+            Ok(())
+        }
+
+        let mut options = *options;
+        options.insert(MarkdownOptions::IN_A_CONTAINER);
+
         match self.kind() {
             Generic => {
-                for child in self.children.iter() {
-                    child.fmt_markdown(buffer, options)?;
-                }
+                fmt_children(self, buffer, &options)?;
             }
 
             // Simple emphasis.
@@ -405,11 +433,7 @@ where
                 // trend to avoid unexpected behaviours for our users.
 
                 buffer.push("*");
-
-                for child in self.children.iter() {
-                    child.fmt_markdown(buffer, options)?;
-                }
-
+                fmt_children(self, buffer, &options)?;
                 buffer.push("*");
             }
 
@@ -426,11 +450,7 @@ where
                 // there. Instead, it will produce `*__…__*`.
 
                 buffer.push("__");
-
-                for child in self.children.iter() {
-                    child.fmt_markdown(buffer, options)?;
-                }
-
+                fmt_children(self, buffer, &options)?;
                 buffer.push("__");
             }
 
@@ -442,11 +462,7 @@ where
                 // do not support this format extension.
 
                 buffer.push("~~");
-
-                for child in self.children.iter() {
-                    child.fmt_markdown(buffer, options)?;
-                }
-
+                fmt_children(self, buffer, &options)?;
                 buffer.push("~~");
             }
 
@@ -454,9 +470,7 @@ where
                 // Underline format is absent from Markdown. Let's
                 // ignore it!
 
-                for child in self.children.iter() {
-                    child.fmt_markdown(buffer, options)?;
-                }
+                fmt_children(self, buffer, &options)?;
             }
 
             Formatting(InlineCode) => {
@@ -474,12 +488,8 @@ where
 
                 buffer.push("`` ");
 
-                let mut options = *options;
                 options.insert(MarkdownOptions::IGNORE_LINE_BREAK);
-
-                for child in self.children.iter() {
-                    child.fmt_markdown(buffer, &options)?;
-                }
+                fmt_children(self, buffer, &options)?;
 
                 buffer.push(" ``");
             }
@@ -487,9 +497,7 @@ where
             Link(url) => {
                 buffer.push('[');
 
-                for child in self.children.iter() {
-                    child.fmt_markdown(buffer, options)?;
-                }
+                fmt_children(self, buffer, &options)?;
 
                 // A link destination can be delimited by `<` and
                 // `>`.
@@ -586,7 +594,7 @@ where
                     {
                         // Let's create a new buffer for the child formatting.
                         let mut child_buffer = S::default();
-                        child.fmt_markdown(&mut child_buffer, options)?;
+                        child.fmt_markdown(&mut child_buffer, &options)?;
 
                         // Generate the indentation of form `\n` followed by
                         // $x$ spaces where $x$ is `indentation`.
@@ -620,9 +628,7 @@ where
             }
 
             ListItem => {
-                for child in self.children.iter() {
-                    child.fmt_markdown(buffer, options)?;
-                }
+                fmt_children(self, buffer, &options)?;
             }
         };
 
