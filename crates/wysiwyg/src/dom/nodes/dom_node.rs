@@ -116,24 +116,15 @@ where
     }
 
     pub fn is_structure_node(&self) -> bool {
-        match self {
-            DomNode::Container(n) => n.is_structure_node(),
-            _ => false,
-        }
+        matches!(self, DomNode::Container(n) if n.is_structure_node())
     }
 
     pub fn is_formatting_node(&self) -> bool {
-        match self {
-            DomNode::Container(n) => n.is_formatting_node(),
-            _ => false,
-        }
+        matches!(self, DomNode::Container(n) if n.is_formatting_node())
     }
 
     pub(crate) fn is_placeholder_text_node(&self) -> bool {
-        match self {
-            DomNode::Text(n) => n.data().len() == 1 && n.data() == "\u{200b}",
-            _ => false,
-        }
+        matches!(self, DomNode::Text(n) if n.data().len() == 1 && n.data() == "\u{200b}")
     }
 
     pub(crate) fn has_only_placeholder_text_child(&self) -> bool {
