@@ -123,6 +123,13 @@ where
         matches!(self, DomNode::Container(n) if n.is_formatting_node())
     }
 
+    pub fn is_formatting_node_of_type(
+        &self,
+        format_type: &InlineFormatType,
+    ) -> bool {
+        matches!(self, DomNode::Container(n) if n.is_formatting_node_of_type(format_type))
+    }
+
     pub(crate) fn is_placeholder_text_node(&self) -> bool {
         matches!(self, DomNode::Text(n) if n.data().len() == 1 && n.data() == "\u{200b}")
     }

@@ -203,3 +203,24 @@ fn formatting_again_removes_toggled_format_type() {
     model.bold();
     assert_eq!(model.state.toggled_format_types, Vec::new(),);
 }
+
+#[test]
+fn unformatting_consecutive_same_formatting_nodes() {
+    let mut model = cm("{<strong>Test</strong><strong> </strong><strong>test</strong><strong> test</strong>}|");
+    model.bold();
+    assert_eq!(tx(&model), "{Test test test}|");
+}
+
+#[test]
+fn unformatting_consecutive_same_formatting_nodes_with_line_break_in_between() {
+    let mut model = cm("{<strong>Test</strong><strong> </strong><strong>te<br />st</strong><strong> test</strong>}|");
+    model.bold();
+    assert_eq!(tx(&model), "{Test te<br />st test}|");
+}
+
+#[test]
+fn unformatting_consecutive_same_formatting_nodes_with_nested_node() {
+    let mut model = cm("{<strong>Test</strong><strong> </strong><strong>t<em>es</em>t</strong><strong> test</strong>}|");
+    model.bold();
+    assert_eq!(tx(&model), "{Test t<em>es</em>t test}|");
+}

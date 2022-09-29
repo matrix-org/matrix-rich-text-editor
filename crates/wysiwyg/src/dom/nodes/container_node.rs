@@ -240,6 +240,13 @@ where
         matches!(self.kind, ContainerNodeKind::Formatting(_))
     }
 
+    pub(crate) fn is_formatting_node_of_type(
+        &self,
+        format_type: &InlineFormatType,
+    ) -> bool {
+        matches!(&self.kind, ContainerNodeKind::Formatting(f) if f == format_type)
+    }
+
     pub fn text_len(&self) -> usize {
         self.children.iter().map(|child| child.text_len()).sum()
     }

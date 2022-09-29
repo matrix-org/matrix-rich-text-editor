@@ -206,45 +206,58 @@ where
         range: &Range,
         format: &InlineFormatType,
     ) {
-        for location in range.locations.iter() {
-            let node = self.state.dom.lookup_node(&location.node_handle);
-            if let DomNode::Container(n) = node {
-                if let ContainerNodeKind::Formatting(f) = n.kind() {
-                    if f == format {
-                        if node.has_only_placeholder_text_child() {
-                            self.state.end = self.state.start;
-                            self.state
-                                .dom
-                                .replace(&location.node_handle, vec![]);
-                        } else {
-                            self.state.dom.remove_and_keep_children(
-                                &location.node_handle,
-                            );
-                        }
+        // Filter locations for formatting nodes.
+        let formatting_locations: Vec<&DomLocation> = range
+            .locations
+            .iter()
+            .filter(|l| {
+                let n = self.state.dom.lookup_node(&l.node_handle);
+                n.is_formatting_node_of_type(format)
+            })
+            .rev()
+            .collect();
 
-                        // Re-apply formatting to slices before and after the selection if needed
-                        let (before_start, before_end) = self
-                            .safe_locations_from(
-                                Location::from(start - location.start_offset),
-                                Location::from(start),
-                            );
-                        let (after_start, after_end) = self
-                            .safe_locations_from(
-                                Location::from(end),
-                                Location::from(
-                                    end + location.length - location.end_offset,
-                                ),
-                            );
-
-                        if before_end > before_start {
-                            self.format_range(before_start, before_end, format);
-                        }
-                        if after_end > after_start {
-                            self.format_range(after_start, after_end, format);
-                        }
-                    }
-                }
+        // Find slices of text before and after the selection that will require re-format.
+        let mut reformat_to: Option<usize> = None;
+        let mut reformat_from: Option<usize> = None;
+        if let Some(location) = formatting_locations.first() {
+            // Actual last node, find text to reformat after.
+            let (after_start, after_end) = self.safe_locations_from(
+                Location::from(end),
+                Location::from(end + location.length - location.end_offset),
+            );
+            if after_end > after_start {
+                reformat_to = Some(after_end);
             }
+        }
+        if let Some(location) = formatting_locations.last() {
+            // Actual first node, find text to reformat before.
+            let (before_start, before_end) = self.safe_locations_from(
+                Location::from(start - location.start_offset),
+                Location::from(start),
+            );
+            if before_end > before_start {
+                reformat_from = Some(before_start);
+            }
+        }
+
+        // Remove formatting nodes.
+        for loc in formatting_locations {
+            let node = self.state.dom.lookup_node(&loc.node_handle);
+            if node.has_only_placeholder_text_child() {
+                self.state.end = self.state.start;
+                self.state.dom.replace(&loc.node_handle, vec![]);
+            } else {
+                self.state.dom.remove_and_keep_children(&loc.node_handle);
+            }
+        }
+
+        // Reformat slices.
+        if let Some(reformat_from) = reformat_from {
+            self.format_range(reformat_from, start, format);
+        }
+        if let Some(reformat_to) = reformat_to {
+            self.format_range(end, reformat_to, format);
         }
     }
 
