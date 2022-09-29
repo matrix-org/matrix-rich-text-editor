@@ -116,8 +116,8 @@ impl<S: UnicodeString> DomActionList<S> {
             .collect()
     }
 
-    /// To avoid unnecessary copies, this function returns the [actions] and marks the DomActionList
-    /// as moved.
+    /// To avoid unnecessary copies, this function returns the [actions] and consumes
+    /// the DomActionList.
     pub fn grouped(
         self,
     ) -> (
@@ -152,22 +152,18 @@ impl<S: UnicodeString> DomActionList<S> {
         &self,
         handle: &DomHandle,
     ) -> Option<(DomHandle, DomHandle)> {
-        for action in &self.actions {
-            match action {
-                DomAction::Move(a) => {
-                    if a.from_handle.is_parent_of(handle)
-                        || a.from_handle == *handle
-                    {
-                        return Some((
-                            a.from_handle.clone(),
-                            a.to_handle.clone(),
-                        ));
-                    }
+        self.actions.iter().find_map(|action| match action {
+            DomAction::Move(a) => {
+                if a.from_handle.is_parent_of(handle)
+                    || a.from_handle == *handle
+                {
+                    Some((a.from_handle.clone(), a.to_handle.clone()))
+                } else {
+                    None
                 }
-                _ => (),
             }
-        }
-        None
+            _ => None,
+        })
     }
 }
 
@@ -224,9 +220,9 @@ mod test {
     fn actions_fn_returns_all_actions() {
         let actions = default_actions();
         let list = DAL::new(actions.clone());
-        assert_eq!(list.actions().get(0).unwrap(), actions.get(0).unwrap());
-        assert_eq!(list.actions().get(1).unwrap(), actions.get(1).unwrap());
-        assert_eq!(list.actions().get(2).unwrap(), actions.get(2).unwrap());
+        assert_eq!(list.actions()[0], actions[0]);
+        assert_eq!(list.actions()[1], actions[1]);
+        assert_eq!(list.actions()[2], actions[2]);
     }
 
     #[test]
@@ -234,10 +230,7 @@ mod test {
         let actions = default_actions();
         let list = DAL::new(actions.clone());
         assert_eq!(1, list.additions().len());
-        assert_eq!(
-            DomAction::Add(list.additions().get(0).unwrap().clone().clone()),
-            *actions.get(0).unwrap()
-        );
+        assert_eq!(DomAction::Add(list.additions()[0].clone()), actions[0]);
     }
 
     #[test]
@@ -246,8 +239,8 @@ mod test {
         let list = DAL::new(actions.clone());
         assert_eq!(1, list.removals().len());
         assert_eq!(
-            DomAction::Remove(list.removals().get(0).unwrap().clone().clone()),
-            *actions.get(2).unwrap()
+            DomAction::Remove(list.removals()[0].clone().clone()),
+            actions[2]
         );
     }
 
@@ -257,8 +250,8 @@ mod test {
         let list = DAL::new(actions.clone());
         assert_eq!(1, list.moves().len());
         assert_eq!(
-            DomAction::Move(list.moves().get(0).unwrap().clone().clone()),
-            *actions.get(1).unwrap()
+            DomAction::Move(list.moves()[0].clone().clone()),
+            actions[1]
         );
     }
 
@@ -268,7 +261,7 @@ mod test {
         let mut list = DAL::new(actions.clone());
         let new_action = DomAction::remove_node(DomHandle::new_unset());
         list.push(new_action.clone());
-        assert_eq!(list.actions.get(3).unwrap().clone(), new_action);
+        assert_eq!(list.actions[3].clone(), new_action);
     }
 
     #[test]
@@ -290,10 +283,10 @@ mod test {
         let list = DAL::new(actions);
         let found_parent =
             list.find_moved_parent_or_self(&DomHandle::from_raw(vec![1, 0, 0]));
-        assert!(found_parent.is_some());
+        assert_eq!(found_parent.unwrap().0, DomHandle::from_raw(vec![1, 0]));
         let found_self =
             list.find_moved_parent_or_self(&DomHandle::from_raw(vec![1, 0]));
-        assert!(found_self.is_some());
+        assert_eq!(found_self.unwrap().0, DomHandle::from_raw(vec![1, 0]));
         let not_found =
             list.find_moved_parent_or_self(&DomHandle::from_raw(vec![1]));
         assert!(not_found.is_none());
