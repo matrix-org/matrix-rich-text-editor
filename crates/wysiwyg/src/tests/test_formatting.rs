@@ -212,7 +212,7 @@ fn unformatting_consecutive_same_formatting_nodes() {
 }
 
 #[test]
-fn unformatting_consecutive_same_formatting_nodes_with_line_break_in_between() {
+fn unformatting_consecutive_same_formatting_nodes_with_nested_line_break() {
     let mut model = cm("{<strong>Test</strong><strong> </strong><strong>te<br />st</strong><strong> test</strong>}|");
     model.bold();
     assert_eq!(tx(&model), "{Test te<br />st test}|");
