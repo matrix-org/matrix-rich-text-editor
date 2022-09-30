@@ -86,6 +86,9 @@ public class WysiwygComposerViewModel: ObservableObject {
     /// - Parameters:
     ///   - action: Action to apply.
     public func apply(_ action: WysiwygAction) {
+        Logger.viewModel.logDebug([content.logAttributedSelection,
+                                   "Apply action: \(action)"],
+                                  functionName: #function)
         let update: ComposerUpdate
         switch action {
         case .bold:
