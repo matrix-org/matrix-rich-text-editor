@@ -21,6 +21,7 @@
                 "leadingUnderscore": "allow"
             }
         ],
+        "max-len": [ "error", { "code": 80 } ],
         "matrix-org/require-copyright-header": "error"
     }
 }
