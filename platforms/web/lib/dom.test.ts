@@ -23,10 +23,15 @@ beforeAll(() => {
     editor.setAttribute('contentEditable', 'true');
 });
 
+function setEditorHtml(html: string) {
+    // The editor always needs an extra BR after your HTML
+    editor.innerHTML = html + '<br />';
+}
+
 describe('computeNodeAndOffset', () => {
     it('Should find at the start of simple text', () => {
         // When
-        editor.innerHTML = 'abcdefgh';
+        setEditorHtml('abcdefgh');
         const { node, offset } = computeNodeAndOffset(editor, 0);
 
         // Then
@@ -36,7 +41,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find in the middle of simple text', () => {
         // When
-        editor.innerHTML = 'abcdefgh';
+        setEditorHtml('abcdefgh');
         const { node, offset } = computeNodeAndOffset(editor, 4);
 
         // Then
@@ -46,7 +51,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find at the end of simple text', () => {
         // When
-        editor.innerHTML = 'abcdefgh';
+        setEditorHtml('abcdefgh');
         const { node, offset } = computeNodeAndOffset(editor, 8);
 
         // Then
@@ -56,8 +61,9 @@ describe('computeNodeAndOffset', () => {
 
     it('Should return null if off the end', () => {
         // When
-        editor.innerHTML = 'abcdefgh';
-        const { node, offset } = computeNodeAndOffset(editor, 9);
+        setEditorHtml('abcdefgh');
+        // 8 characters, plus the br we always append = 9, so 10 is off end
+        const { node, offset } = computeNodeAndOffset(editor, 10);
 
         // Then
         expect(node).toBeNull();
@@ -66,7 +72,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find before subnode', () => {
         // When
-        editor.innerHTML = 'abc<b>def</b>gh';
+        setEditorHtml('abc<b>def</b>gh');
         const { node, offset } = computeNodeAndOffset(editor, 2);
 
         // Then
@@ -76,7 +82,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find after subnode', () => {
         // When
-        editor.innerHTML = 'abc<b>def</b>gh';
+        setEditorHtml('abc<b>def</b>gh');
         const { node, offset } = computeNodeAndOffset(editor, 4);
 
         // Then
@@ -86,7 +92,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find inside subnode', () => {
         // When
-        editor.innerHTML = 'abc<b>def</b>gh';
+        setEditorHtml('abc<b>def</b>gh');
         const { node, offset } = computeNodeAndOffset(editor, 7);
 
         // Then
@@ -96,7 +102,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find after subnode', () => {
         // When
-        editor.innerHTML = 'abc<b>def</b>gh';
+        setEditorHtml('abc<b>def</b>gh');
         const { node, offset } = computeNodeAndOffset(editor, 7);
 
         // Then
@@ -106,7 +112,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find before br', () => {
         // When
-        editor.innerHTML = 'a<br />b';
+        setEditorHtml('a<br />b');
         const { node, offset } = computeNodeAndOffset(editor, 0);
 
         // Then
@@ -116,7 +122,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find br start', () => {
         // When
-        editor.innerHTML = 'a<br />b';
+        setEditorHtml('a<br />b');
         const { node, offset } = computeNodeAndOffset(editor, 1);
 
         // Then
@@ -126,7 +132,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find br end', () => {
         // When
-        editor.innerHTML = 'a<br />b';
+        setEditorHtml('a<br />b');
         const { node, offset } = computeNodeAndOffset(editor, 2);
 
         // Then
@@ -136,7 +142,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find between br', () => {
         // When
-        editor.innerHTML = 'a<br /><br />b';
+        setEditorHtml('a<br /><br />b');
         const { node, offset } = computeNodeAndOffset(editor, 2);
 
         // Then
@@ -146,7 +152,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find after br', () => {
         // When
-        editor.innerHTML = 'a<br />b';
+        setEditorHtml('a<br />b');
         const { node, offset } = computeNodeAndOffset(editor, 3);
 
         // Then
@@ -156,7 +162,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find inside an empty list', () => {
         // When
-        editor.innerHTML = '<ul><li><li></ul>';
+        setEditorHtml('<ul><li><li></ul>');
         const { node, offset } = computeNodeAndOffset(editor, 0);
 
         // Then
@@ -166,7 +172,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find inside two empty list', () => {
         // When
-        editor.innerHTML = '<ul><li><li></ul><li><li></ul>';
+        setEditorHtml('<ul><li><li></ul><li><li></ul>');
         const { node, offset } = computeNodeAndOffset(editor, 0);
 
         // Then
@@ -176,7 +182,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find inside a list', () => {
         // When
-        editor.innerHTML = '<ul><li>foo<li></ul>';
+        setEditorHtml('<ul><li>foo<li></ul>');
         const { node, offset } = computeNodeAndOffset(editor, 1);
 
         // Then
@@ -188,7 +194,7 @@ describe('computeNodeAndOffset', () => {
 describe('computeSelectionOffset', () => {
     it('Should contain all the characters when the editor node is selected', () => {
         // When
-        editor.innerHTML = 'abc<b>def</b>gh';
+        setEditorHtml('abc<b>def</b>gh');
         // Use the editor node and a offset as 1 to simulate the FF behavior
         let offset = computeSelectionOffset(editor, 1);
 
@@ -196,7 +202,7 @@ describe('computeSelectionOffset', () => {
         expect(offset).toBe(8);
 
         // When
-        editor.innerHTML = 'abc<b>def</b>gh<ul><li>alice</li><li>bob</li>';
+        setEditorHtml('abc<b>def</b>gh<ul><li>alice</li><li>bob</li>');
         offset = computeSelectionOffset(editor, 1);
 
         // Then
@@ -205,7 +211,7 @@ describe('computeSelectionOffset', () => {
 
     it('Should contain the selected characters', () => {
         // When
-        editor.innerHTML = 'abc<b>def</b>gh<ul><li>alice</li><li>bob</li>';
+        setEditorHtml('abc<b>def</b>gh<ul><li>alice</li><li>bob</li>');
         let offset = computeSelectionOffset(editor.childNodes[0], 1);
 
         // Then
@@ -220,7 +226,7 @@ describe('computeSelectionOffset', () => {
 
     it('Should return 0 for the beginning of the line', () => {
         // When
-        editor.innerHTML = 'abc';
+        setEditorHtml('abc');
         const offset = computeSelectionOffset(editor.childNodes[0], 0);
 
         // Then
@@ -231,7 +237,7 @@ describe('computeSelectionOffset', () => {
 describe('countCodeunit', () => {
     it('Should count ASCII', () => {
         // When
-        editor.innerHTML = 'abcdefgh';
+        setEditorHtml('abcdefgh');
         const textNode = editor.childNodes[0];
 
         // Then
@@ -246,7 +252,7 @@ describe('countCodeunit', () => {
 
     it('Should count UCS-2', () => {
         // When
-        editor.innerHTML = 'a\u{03A9}b\u{03A9}c';
+        setEditorHtml('a\u{03A9}b\u{03A9}c');
         const textNode = editor.childNodes[0];
 
         // Then
@@ -259,7 +265,7 @@ describe('countCodeunit', () => {
 
     it('Should count complex', () => {
         // When
-        editor.innerHTML = 'a\u{1F469}\u{1F3FF}\u{200D}\u{1F680}b';
+        setEditorHtml('a\u{1F469}\u{1F3FF}\u{200D}\u{1F680}b');
         const textNode = editor.childNodes[0];
 
         // Then
@@ -272,7 +278,7 @@ describe('countCodeunit', () => {
 
     it('Should count nested', () => {
         // When
-        editor.innerHTML = 'a<b>b</b>c';
+        setEditorHtml('a<b>b</b>c');
         const firstTextNode = editor.childNodes[0];
         const boldTextNode = editor.childNodes[1].childNodes[0];
         const thirdTextNode = editor.childNodes[2];
@@ -285,7 +291,7 @@ describe('countCodeunit', () => {
 
     it('Should treat br as a character', () => {
         // When
-        editor.innerHTML = 'a<br />b';
+        setEditorHtml('a<br />b');
         const firstTextNode = editor.childNodes[0];
         const brNode = editor.childNodes[1];
         const secondTextNode = editor.childNodes[2];
@@ -299,7 +305,7 @@ describe('countCodeunit', () => {
 
     it('Should work with deeply nested', () => {
         // When
-        editor.innerHTML = 'aaa<b><i>bbb</i>ccc</b>ddd';
+        setEditorHtml('aaa<b><i>bbb</i>ccc</b>ddd');
         const firstTextNode = editor.childNodes[0];
         const boldItalicNode = editor.childNodes[1].childNodes[0];
         const boldItalicTextNode = editor.childNodes[1].childNodes[0].childNodes[0];
