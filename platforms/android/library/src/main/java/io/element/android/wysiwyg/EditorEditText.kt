@@ -19,11 +19,11 @@ import kotlin.math.min
 
 class EditorEditText : TextInputEditText {
 
-    lateinit var inputConnection: InterceptInputConnection
+    private var inputConnection: InterceptInputConnection? = null
     private val inputProcessor = InputProcessor(
         context,
-        composer = newComposerModel(),
-        menuStateCallback = { menuStateChangedListener?.menuStateChanged(it) }
+        menuStateCallback = { menuStateChangedListener?.menuStateChanged(it) },
+        composer = if (isInEditMode) null else newComposerModel()
     )
 
     private val spannableFactory = object : Spannable.Factory() {
@@ -70,9 +70,10 @@ class EditorEditText : TextInputEditText {
      */
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
         val baseInputConnection = requireNotNull(super.onCreateInputConnection(outAttrs))
-        this.inputConnection =
+        val inputConnection =
             InterceptInputConnection(baseInputConnection, this, inputProcessor)
-        return this.inputConnection
+        this.inputConnection = inputConnection
+        return inputConnection
     }
 
     private fun addHardwareKeyInterceptor() {
@@ -80,7 +81,7 @@ class EditorEditText : TextInputEditText {
         setOnKeyListener { v, keyCode, event ->
             if (event.keyCode == KeyEvent.KEYCODE_ENTER) {
                 if (event.action == MotionEvent.ACTION_DOWN) {
-                    inputConnection.sendHardwareKeyboardInput(event)
+                    inputConnection?.sendHardwareKeyboardInput(event)
                 }
                 true
             } else if (event.action != MotionEvent.ACTION_DOWN) {
@@ -91,7 +92,7 @@ class EditorEditText : TextInputEditText {
                 // Is a modifier key
                 false
             } else {
-                inputConnection.sendHardwareKeyboardInput(event)
+                inputConnection?.sendHardwareKeyboardInput(event)
                 true
             }
         }
@@ -104,14 +105,14 @@ class EditorEditText : TextInputEditText {
         // We have to add this here to prevent some NullPointerExceptions from being thrown.
         if (inputProcessor == null) {
             super.setText(text, type)
-        } else if (text.isNullOrEmpty().not()) {
+        } else {
             inputProcessor.updateSelection(editableText, 0, end)
             val update = inputProcessor.processInput(EditorInputAction.InsertText(text.toString()))
             val result = update?.let { inputProcessor.processUpdate(it) }
 
             if (result != null) {
                 editableText.clear()
-                editableText.replace(0, end, result.text)
+                editableText.replace(0, editableText.length, result.text)
                 setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
             } else {
                 super.setText(text, type)
@@ -133,7 +134,7 @@ class EditorEditText : TextInputEditText {
     }
 
     fun toggleInlineFormat(inlineFormat: InlineFormat): Boolean {
-        val (start, end) = inputConnection.getCurrentComposition()
+        val (start, end) = inputConnection?.getCurrentComposition() ?: (0 to 0)
         inputProcessor.updateSelection(editableText, start, end)
         val update = inputProcessor.processInput(EditorInputAction.ApplyInlineFormat(inlineFormat))
         val result = update?.let { inputProcessor.processUpdate(it) }
@@ -188,6 +189,10 @@ class EditorEditText : TextInputEditText {
             editableText.replace(0, editableText.length, result.text)
             setSelectionFromComposerUpdate(result.selection.last)
         }
+    }
+
+    fun getHtmlOutput(): String {
+        return inputProcessor.getHtml()
     }
 
     private fun setSelectionFromComposerUpdate(start: Int, end: Int = start) {

@@ -1,20 +1,21 @@
 package io.element.android.wysiwyg
 
 import android.content.Context
-import android.text.*
+import android.text.Editable
+import android.text.Spanned
 import androidx.core.text.getSpans
 import io.element.android.wysiwyg.extensions.log
 import io.element.android.wysiwyg.extensions.string
 import io.element.android.wysiwyg.spans.HtmlToSpansParser
-import uniffi.wysiwyg_composer.ComposerModel
+import uniffi.wysiwyg_composer.ComposerModelInterface
 import uniffi.wysiwyg_composer.MenuState
 import uniffi.wysiwyg_composer.TextUpdate
 import kotlin.math.absoluteValue
 
 class InputProcessor(
     private val context: Context,
-    private val composer: ComposerModel,
     private val menuStateCallback: (MenuState) -> Unit,
+    private val composer: ComposerModelInterface?,
 ) {
 
     fun updateSelection(editable: Editable, start: Int, end: Int) {
@@ -25,51 +26,51 @@ class InputProcessor(
         val newStart = (start - zeroWidthLineBreaksBefore).toUInt()
         val newEnd = (end - zeroWidthLineBreaksBefore).toUInt()
 
-        val update = composer.select(newStart, newEnd)
-        val menuState = update.menuState()
+        val update = composer?.select(newStart, newEnd)
+        val menuState = update?.menuState()
         if (menuState is MenuState.Update) {
             menuStateCallback(menuState)
         }
-        composer.log()
+        composer?.log()
     }
 
     fun processInput(action: EditorInputAction): TextUpdate? {
         val update = when (action) {
             is EditorInputAction.InsertText -> {
                 // This conversion to a plain String might be too simple
-                composer.replaceText(action.value.toString())
+                composer?.replaceText(action.value.toString())
             }
             is EditorInputAction.InsertParagraph -> {
-                composer.enter()
+                composer?.enter()
             }
             is EditorInputAction.BackPress -> {
-                composer.backspace()
+                composer?.backspace()
             }
             is EditorInputAction.ApplyInlineFormat -> {
                 when (action.format) {
-                    InlineFormat.Bold -> composer.bold()
-                    InlineFormat.Italic -> composer.italic()
-                    InlineFormat.Underline -> composer.underline()
-                    InlineFormat.StrikeThrough -> composer.strikeThrough()
-                    InlineFormat.InlineCode -> composer.inlineCode()
+                    InlineFormat.Bold -> composer?.bold()
+                    InlineFormat.Italic -> composer?.italic()
+                    InlineFormat.Underline -> composer?.underline()
+                    InlineFormat.StrikeThrough -> composer?.strikeThrough()
+                    InlineFormat.InlineCode -> composer?.inlineCode()
                 }
             }
             is EditorInputAction.Delete -> {
-                composer.deleteIn(action.start.toUInt(), action.end.toUInt())
+                composer?.deleteIn(action.start.toUInt(), action.end.toUInt())
             }
-            is EditorInputAction.SetLink -> composer.setLink(action.link)
+            is EditorInputAction.SetLink -> composer?.setLink(action.link)
             is EditorInputAction.ReplaceAll -> null
-            is EditorInputAction.Undo -> composer.undo()
-            is EditorInputAction.Redo -> composer.redo()
+            is EditorInputAction.Undo -> composer?.undo()
+            is EditorInputAction.Redo -> composer?.redo()
             is EditorInputAction.ToggleList -> {
-                if (action.ordered) composer.orderedList() else composer.unorderedList()
+                if (action.ordered) composer?.orderedList() else composer?.unorderedList()
             }
         }
 
         update?.menuState()?.let { menuStateCallback(it) }
 
         return update?.textUpdate().also {
-            composer.log()
+            composer?.log()
         }
     }
 
@@ -84,6 +85,10 @@ class InputProcessor(
             }
             is TextUpdate.Select -> null
         }
+    }
+
+    fun getHtml(): String {
+        return composer?.let { it.dumpState().html.string() }.orEmpty()
     }
 
     private fun stringToSpans(string: String): Spanned {
@@ -116,4 +121,3 @@ data class ReplaceTextResult(
     val text: CharSequence,
     val selection: IntRange,
 )
-
