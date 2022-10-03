@@ -30,6 +30,9 @@ struct ContentView: View {
         Spacer()
             .frame(width: nil, height: 50, alignment: .center)
         Composer(viewModel: viewModel)
+        Button("Max/Min") {
+            viewModel.maximised.toggle()
+        }
         Button("Send") {
             sentMessage = viewModel.content
             viewModel.clearContent()
