@@ -59,7 +59,7 @@ class InputProcessor(
                 composer?.deleteIn(action.start.toUInt(), action.end.toUInt())
             }
             is EditorInputAction.SetLink -> composer?.setLink(action.link)
-            is EditorInputAction.ReplaceAll -> null
+            is EditorInputAction.ReplaceAllHtml -> composer?.replaceAllHtml(action.html)
             is EditorInputAction.Undo -> composer?.undo()
             is EditorInputAction.Redo -> composer?.redo()
             is EditorInputAction.ToggleList -> {
@@ -98,7 +98,7 @@ class InputProcessor(
 
 sealed interface EditorInputAction {
     data class InsertText(val value: CharSequence): EditorInputAction
-    data class ReplaceAll(val value: CharSequence): EditorInputAction
+    data class ReplaceAllHtml(val html: String): EditorInputAction
     data class Delete(val start: Int, val end: Int): EditorInputAction
     object InsertParagraph: EditorInputAction
     object BackPress: EditorInputAction

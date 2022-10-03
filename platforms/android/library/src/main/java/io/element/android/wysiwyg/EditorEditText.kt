@@ -191,6 +191,17 @@ class EditorEditText : TextInputEditText {
         }
     }
 
+    fun setHtml(html: String) {
+        val update = inputProcessor.processInput(EditorInputAction.ReplaceAllHtml(html))
+        val result = update?.let { inputProcessor.processUpdate(it) }
+
+        if (result != null) {
+            editableText.clear()
+            editableText.replace(0, editableText.length, result.text)
+            setSelectionFromComposerUpdate(result.selection.last)
+        }
+    }
+
     fun getHtmlOutput(): String {
         return inputProcessor.getHtml()
     }
