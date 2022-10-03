@@ -3,9 +3,7 @@ all: android ios web
 # The gradle plugin will take care of building the bindings too
 android:
 	cd platforms/android && \
-		./gradlew :library:assembleRelease && \
-		mkdir -p out && \
-		cp library/build/outputs/aar/library-release.aar out/wysiwyg-release.aar
+		./gradlew publishToMavenLocal
 
 android-bindings: android-bindings-armv7 android-bindings-aarch64 android-bindings-x86_64
 
