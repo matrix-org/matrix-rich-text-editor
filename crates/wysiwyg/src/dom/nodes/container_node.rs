@@ -343,8 +343,15 @@ where
     S: UnicodeString,
 {
     fn to_tree_display(&self, continuous_positions: Vec<usize>) -> S {
+        let mut description = self.name.clone();
+        if let ContainerNodeKind::Link(url) = self.kind() {
+            description.push(" \"");
+            description.push(url.clone());
+            description.push("\"");
+        }
+
         let mut tree_part = self.tree_line(
-            self.name.clone(),
+            description,
             self.handle.raw().len(),
             continuous_positions.clone(),
         );

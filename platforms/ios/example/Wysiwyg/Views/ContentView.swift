@@ -42,7 +42,7 @@ struct ContentView: View {
         ScrollView {
             if let tree = tree {
                 Text(tree)
-                    .font(.system(.body, design: .monospaced))
+                    .font(.system(size: 11.0, weight: .regular, design: .monospaced))
                     .multilineTextAlignment(.leading)
             }
             if let sentMessage = sentMessage {
