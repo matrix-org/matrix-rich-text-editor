@@ -151,7 +151,7 @@ export function resetTestCase(
     composerModel: ComposerModel,
     html: string,
 ) {
-    const [start, end] = getCurrentSelection(editor);
+    const [start, end] = getCurrentSelection(editor, document.getSelection());
     const actions: Actions = [
         ['replace_text', html],
         ['select', start, end],

@@ -196,9 +196,10 @@ export function computeNodeAndOffset(currentNode: Node, codeunits: number) {
     }
 }
 
-export function getCurrentSelection(editor: HTMLElement) {
-    const selection = document.getSelection();
-
+export function getCurrentSelection(
+    editor: HTMLElement,
+    selection: Selection | null,
+) {
     if (!selection) {
         return [0, 0];
     }
@@ -209,13 +210,28 @@ export function getCurrentSelection(editor: HTMLElement) {
     // This should be done when we convert to React
     // Internal task for changing to React: PSU-721
     const start = selection.anchorNode && countCodeunit(editor, selection.anchorNode, selection.anchorOffset) || 0;
-    const end = selection.focusNode && countCodeunit(
-        editor,
-        selection.focusNode,
-        computeSelectionOffset(selection.focusNode, selection.focusOffset),
-    ) || 0;
+    const end = selection.focusNode && countCodeunit(editor, selection.focusNode, selection.focusOffset) || 0;
 
     return [start, end];
+}
+
+function textLength(node: Node, stopAtNode: Node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+        return node.textContent?.length ?? 0;
+    } else if (node.nodeName === 'BR') {
+        // Treat br tags as being 1 character long
+        return 1;
+    } else {
+        // Add up lengths until we hit the stop node.
+        let sum = 0;
+        for (const ch of node.childNodes) {
+            if (ch === stopAtNode) {
+                break;
+            }
+            sum += textLength(ch, stopAtNode);
+        }
+        return sum;
+    }
 }
 
 /**
@@ -232,24 +248,35 @@ export function countCodeunit(editor: HTMLElement, node: Node, offset: number) {
     function impl(currentNode: Node, offset: number): { found: boolean, offset: number} {
         if (currentNode === node) {
             // We've found the right node
-            if (
-                currentNode.nodeType === Node.TEXT_NODE
-                && offset > (currentNode.textContent?.length || 0)
-            ) {
-                // If the offset is wrong, we didn't find it
-                return { found: false, offset: 0 };
+            if (currentNode.nodeType === Node.TEXT_NODE) {
+                // Text node - use the offset to know where we are
+                if (offset > (currentNode.textContent?.length ?? 0)) {
+                    // If the offset is wrong, we didn't find it
+                    return { found: false, offset: 0 };
+                } else {
+                    // Otherwise, we did
+                    return { found: true, offset };
+                }
             } else {
-                // Otherwise, we did
-                return { found: true, offset };
+                // Non-text node - offset is the index of the selected node
+                // within currentNode.
+                // Add up the sizes of all the nodes before offset.
+                const ret = textLength(
+                    currentNode,
+                    currentNode.childNodes[offset],
+                );
+                return { found: true, offset: ret };
             }
         } else {
+            // TODO: the below looks awfully similar to text_length!
+
             // We have not found the right node yet
             if (currentNode.nodeType === Node.TEXT_NODE) {
                 // Return how many steps forward we progress by skipping
                 // this node.
                 return {
                     found: false,
-                    offset: currentNode.textContent?.length || 0,
+                    offset: currentNode.textContent?.length ?? 0,
                 };
             } else if (currentNode.nodeName === 'BR') {
                 // Treat br tags as being 1 character long
