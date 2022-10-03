@@ -37,8 +37,7 @@ function toContainHtml(
     this: any, /* MatcherState */
     editor: HTMLDivElement,
     html: string,
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-): any /* ExpectationResult */ {
+) {
     const { printReceived, matcherHint } = this.utils;
     const received = editor.innerHTML;
     const expected = html + '<br>';
