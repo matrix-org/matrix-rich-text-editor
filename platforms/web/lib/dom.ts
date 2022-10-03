@@ -196,6 +196,10 @@ export function computeNodeAndOffset(currentNode: Node, codeunits: number) {
     }
 }
 
+/**
+ * Find the start and end code units of the supplied selection in the supplied
+ * editor.
+ */
 export function getCurrentSelection(
     editor: HTMLElement,
     selection: Selection | null,
@@ -215,7 +219,11 @@ export function getCurrentSelection(
     return [start, end];
 }
 
-function textLength(node: Node, stopAtNode: Node) {
+/**
+ * How many codeunits are there inside node, stopping counting if you get to
+ * stopAtNode?
+ */
+function textLength(node: Node, stopAtNode: Node): number {
     if (node.nodeType === Node.TEXT_NODE) {
         return node.textContent?.length ?? 0;
     } else if (node.nodeName === 'BR') {
@@ -235,72 +243,97 @@ function textLength(node: Node, stopAtNode: Node) {
 }
 
 /**
+ * If nodeToFind is inside currentNode, return the number of codeunits you need
+ * to count through currentNode to get to nodeToFind plus how many codeunits
+ * through nodeToFind to get to offsetToFind.
+ * Or, if nodeToFind is not a text node, count how many code units through
+ * currentNode you need to count before you get to the offsetToFind-th child of
+ * nodeToFind.
+ *
+ * Returns { found: true, offset: <the answer> } if nodeToFind is inside
+ * CurrentNode and offsetToFind is within the length of nodeToFind,
+ * or { found: false, 0 } if not.
+ */
+function findCharacter(
+    currentNode: Node,
+    nodeToFind: Node,
+    offsetToFind: number,
+): { found: boolean, offset: number } {
+    if (currentNode === nodeToFind) {
+        // We've found the right node
+        if (currentNode.nodeType === Node.TEXT_NODE) {
+            // Text node - use the offset to know where we are
+            if (offsetToFind > (currentNode.textContent?.length ?? 0)) {
+                // If the offset is wrong, we didn't find it
+                return { found: false, offset: 0 };
+            } else {
+                // Otherwise, we did
+                return { found: true, offset: offsetToFind };
+            }
+        } else {
+            // Non-text node - offset is the index of the selected node
+            // within currentNode.
+            // Add up the sizes of all the nodes before offset.
+            const ret = textLength(
+                currentNode,
+                currentNode.childNodes[offsetToFind],
+            );
+            return { found: true, offset: ret };
+        }
+    } else {
+        // We have not found the right node yet
+
+        if (currentNode.nodeType === Node.TEXT_NODE) {
+            // Return how many steps forward we progress by skipping
+            // this node.
+            return {
+                found: false,
+                offset: currentNode.textContent?.length ?? 0,
+            };
+        } else if (currentNode.nodeName === 'BR') {
+            // Treat br tags as being 1 character long
+            return { found: false, offset: 1 };
+        } else {
+            // Add up all the amounts we need to progress by skipping
+            // nodes inside this one.
+            let sum = 0;
+            for (const ch of currentNode.childNodes) {
+                const cp = findCharacter(ch, nodeToFind, offsetToFind);
+                if (cp.found) {
+                    // We found it! Return how far we walked to find it
+                    return { found: true, offset: sum + cp.offset };
+                } else {
+                    // We didn't find it - remember how much to skip
+                    sum += cp.offset;
+                }
+            }
+            return { found: false, offset: sum };
+        }
+    }
+}
+
+/**
  * Given a position in the document, count how many codeunits through the
  * editor that position is, by counting from the beginning of the editor,
  * traversing subnodes, until we hit the supplied position.
  *
- * "Position" means a node and an offset, meaning the offset-th codeunit in
- * node.
+ * If node is a text node, this means count codeunits until we hit the
+ * offset-th codeunit of node.
+ *
+ * If node is not a text node, this cound codeunits until we hit the offset-th
+ * child of node.
  *
  * A "codeunit" here means a UTF-16 code unit.
+ *
+ * Returns the number of codeunits you need to count through editor to get to
+ * the supplied position, or -1 if node is not inside editor.
  */
-export function countCodeunit(editor: HTMLElement, node: Node, offset: number) {
-    function impl(currentNode: Node, offset: number): { found: boolean, offset: number} {
-        if (currentNode === node) {
-            // We've found the right node
-            if (currentNode.nodeType === Node.TEXT_NODE) {
-                // Text node - use the offset to know where we are
-                if (offset > (currentNode.textContent?.length ?? 0)) {
-                    // If the offset is wrong, we didn't find it
-                    return { found: false, offset: 0 };
-                } else {
-                    // Otherwise, we did
-                    return { found: true, offset };
-                }
-            } else {
-                // Non-text node - offset is the index of the selected node
-                // within currentNode.
-                // Add up the sizes of all the nodes before offset.
-                const ret = textLength(
-                    currentNode,
-                    currentNode.childNodes[offset],
-                );
-                return { found: true, offset: ret };
-            }
-        } else {
-            // TODO: the below looks awfully similar to text_length!
-
-            // We have not found the right node yet
-            if (currentNode.nodeType === Node.TEXT_NODE) {
-                // Return how many steps forward we progress by skipping
-                // this node.
-                return {
-                    found: false,
-                    offset: currentNode.textContent?.length ?? 0,
-                };
-            } else if (currentNode.nodeName === 'BR') {
-                // Treat br tags as being 1 character long
-                return { found: false, offset: 1 };
-            } else {
-                // Add up all the amounts we need progress by skipping
-                // nodes inside this one.
-                let sum = 0;
-                for (const ch of currentNode.childNodes) {
-                    const cp = impl(ch, offset);
-                    if (cp.found) {
-                        // We found it! Return how far we walked to find it
-                        return { found: true, offset: sum + cp.offset };
-                    } else {
-                        // We didn't find it - remember how much to skip
-                        sum += cp.offset;
-                    }
-                }
-                return { found: false, offset: sum };
-            }
-        }
-    }
-
-    const ret = impl(editor, offset);
+export function countCodeunit(
+    editor: HTMLElement,
+    node: Node,
+    offset: number,
+): number {
+    const ret = findCharacter(editor, node, offset);
     if (ret.found) {
         return ret.offset;
     } else {
