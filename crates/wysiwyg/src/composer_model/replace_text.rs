@@ -43,6 +43,11 @@ where
     }
 
     pub fn enter(&mut self) -> ComposerUpdate<S> {
+        self.push_state_to_history();
+        self.do_enter()
+    }
+
+    fn do_enter(&mut self) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
 
         if s == e {
@@ -50,9 +55,8 @@ where
             self.enter_with_zero_length_selection(range)
         } else {
             // Clear selection then enter.
-            // TODO: adds an extra entry to the undo log, I think.
-            self.delete();
-            self.enter()
+            self.do_replace_text_in("".into(), s, e);
+            self.do_enter()
         }
     }
 
