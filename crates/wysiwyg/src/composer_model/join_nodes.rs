@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::dom::action_list::{DomAction, DomActionList};
 use crate::dom::nodes::{ContainerNodeKind, DomNode};
 use crate::dom::unicode_string::UnicodeStringExt;
 use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, UnicodeString};
-use std::collections::HashMap;
 
 /// Handles joining together nodes after an edit event.
 ///
@@ -36,12 +36,16 @@ where
         }
     }
 
+    /// Join format node at [handle], if any, with its previous sibling if it's a compatible format
+    /// node.
+    /// The passed [action_list] is used in a special way here: instead of collecting actions to be
+    /// performed in the future, we're using it to keep track of moved nodes and its handles.
     pub(crate) fn join_format_node_with_prev(
         &mut self,
         handle: &DomHandle,
-        moved_handles: &mut HashMap<DomHandle, DomHandle>,
+        action_list: &mut DomActionList<S>,
     ) {
-        self.join_format_nodes_at_level(handle, 0, moved_handles);
+        self.join_format_nodes_at_level(handle, 0, action_list);
     }
 
     fn join_structure_nodes(
@@ -79,7 +83,7 @@ where
         if let Some(next_node_handle) = self.find_leaf_containing(index) {
             self.join_format_node_with_prev(
                 &next_node_handle,
-                &mut HashMap::new(),
+                &mut DomActionList::default(),
             );
         }
     }
@@ -88,20 +92,20 @@ where
         &mut self,
         handle: &DomHandle,
         level: usize,
-        moved_handles: &mut HashMap<DomHandle, DomHandle>,
+        action_list: &mut DomActionList<S>,
     ) {
         // Out of bounds
         if level >= handle.raw().len() {
             return;
         }
+        let mut handle = handle.clone();
+        // If the handle was moved, use updated value instead
+        let moved_handle = action_list.find_moved_parent_or_self(&handle);
+        if let Some((from_handle, to_handle)) = moved_handle {
+            handle.replace_ancestor(from_handle, to_handle);
+        }
         // Get the node handle at the current depth level
         let cur_handle = DomHandle::from_raw(handle.raw()[..=level].to_vec());
-        // If the handle was moved, use updated value instead
-        let cur_handle = if let Some(h) = moved_handles.get(&cur_handle) {
-            h.clone()
-        } else {
-            cur_handle
-        };
         let index_in_parent = if cur_handle.is_root() {
             0
         } else {
@@ -124,23 +128,27 @@ where
                 }
                 let new_handle = DomHandle::from_raw(cur_path);
 
-                moved_handles.extend(moved);
+                let move_actions: Vec<DomAction<S>> = moved
+                    .into_iter()
+                    .map(|(o, n)| DomAction::move_node(o, n))
+                    .collect();
+                action_list.extend(move_actions);
                 self.join_format_nodes_at_level(
                     &new_handle,
                     level + 1,
-                    moved_handles,
+                    action_list,
                 );
             } else {
                 // If both nodes couldn't be merged, try at the next level
                 self.join_format_nodes_at_level(
-                    handle,
+                    &handle,
                     level + 1,
-                    moved_handles,
+                    action_list,
                 );
             }
         } else {
             // If there's no previous node, try at the next level
-            self.join_format_nodes_at_level(handle, level + 1, moved_handles);
+            self.join_format_nodes_at_level(&handle, level + 1, action_list);
         }
     }
 
@@ -302,8 +310,8 @@ where
         &mut self,
         from_handle: &DomHandle,
         to_handle: &DomHandle,
-    ) -> (usize, HashMap<DomHandle, DomHandle>) {
-        let mut moved_handles = HashMap::new();
+    ) -> (usize, Vec<(DomHandle, DomHandle)>) {
+        let mut moved_handles = Vec::new();
         let dom = &mut self.state.dom;
         let ret;
         let children = if let DomNode::Container(from_node) =
@@ -319,7 +327,7 @@ where
             for c in children {
                 let old_handle = c.handle();
                 let new_handle = to_node.append_child(c);
-                moved_handles.insert(old_handle, new_handle);
+                moved_handles.push((old_handle, new_handle));
             }
         } else {
             panic!("Destination node must be a ContainerNode");

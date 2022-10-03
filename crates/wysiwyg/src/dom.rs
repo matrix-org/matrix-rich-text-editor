@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+pub mod action_list;
 pub mod dom_creation_error;
 pub mod dom_handle;
 pub mod dom_struct;
-mod find_range;
+pub mod find_range;
 pub mod find_result;
 pub mod nodes;
 pub mod parser;

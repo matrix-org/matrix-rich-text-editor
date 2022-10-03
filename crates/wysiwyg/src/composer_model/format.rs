@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::dom::action_list::DomActionList;
 use crate::dom::nodes::{ContainerNodeKind, DomNode};
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{Dom, DomHandle, DomLocation, Range};
@@ -19,7 +20,6 @@ use crate::{
     ComposerAction, ComposerModel, ComposerUpdate, InlineFormatType, Location,
     UnicodeString,
 };
-use std::collections::HashMap;
 
 #[derive(Eq, PartialEq, Debug)]
 enum FormatSelectionType {
@@ -261,23 +261,17 @@ where
         locations: Vec<&DomLocation>,
         format: &InlineFormatType,
     ) {
-        let mut moved_handles = Vec::<(DomHandle, DomHandle)>::new();
+        let mut action_list = DomActionList::default();
         let mut sorted_locations = locations;
         sorted_locations.sort();
         // Go through the locations in reverse order to prevent Dom modification issues
         for loc in sorted_locations.into_iter().rev() {
             let mut loc = loc.clone();
-            let moved_handle = moved_handles
-                .iter()
-                .find(|(old, _)| old.is_parent_of(&loc.node_handle));
-            if let Some((old_handle, new_handle)) = moved_handle {
+            let moved_handle =
+                action_list.find_moved_parent_or_self(&loc.node_handle);
+            if let Some((from_handle, to_handle)) = moved_handle {
                 // Careful here, the location's position is no longer valid
-                let mut new_path = loc.node_handle.clone().into_raw();
-                new_path.splice(
-                    0..old_handle.raw().len(),
-                    new_handle.clone().into_raw(),
-                );
-                loc = loc.with_new_handle(DomHandle::from_raw(new_path));
+                loc.node_handle.replace_ancestor(from_handle, to_handle);
             }
             if Self::needs_format(&self.state.dom, &loc, format) {
                 if let DomNode::Container(parent) = self
@@ -316,7 +310,7 @@ where
                         }
                     }
                     // Clean up by removing any empty text nodes and merging formatting nodes
-                    moved_handles.extend(
+                    action_list.extend(
                         self.merge_formatting_node_with_siblings(
                             &loc.node_handle,
                         ),
@@ -443,9 +437,9 @@ where
     fn merge_formatting_node_with_siblings(
         &mut self,
         handle: &DomHandle,
-    ) -> HashMap<DomHandle, DomHandle> {
+    ) -> DomActionList<S> {
         // Lists of handles that have been moved by merging nodes
-        let mut moved_handles = HashMap::new();
+        let mut action_list = DomActionList::default();
         // If has next sibling, try to join it with the current node
         if let DomNode::Container(parent) =
             self.state.dom.lookup_node(&handle.parent_handle())
@@ -453,13 +447,13 @@ where
             if parent.children().len() - handle.index_in_parent() > 1 {
                 self.join_format_node_with_prev(
                     &handle.next_sibling(),
-                    &mut moved_handles,
+                    &mut action_list,
                 );
             }
         }
         // Merge current node with previous if possible
-        self.join_format_node_with_prev(handle, &mut moved_handles);
-        moved_handles
+        self.join_format_node_with_prev(handle, &mut action_list);
+        action_list
     }
 }
 
