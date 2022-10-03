@@ -23,6 +23,8 @@ class EditorEditText : TextInputEditText {
     private val inputProcessor = InputProcessor(
         context,
         menuStateCallback = { menuStateChangedListener?.menuStateChanged(it) },
+        // Using the returned ComposerModel automatically loads the native libraries and will crash
+        // layout preview and other tools. We're making it nullable as a workaround for that.
         composer = if (isInEditMode) null else newComposerModel()
     )
 
