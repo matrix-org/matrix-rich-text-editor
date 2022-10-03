@@ -265,6 +265,14 @@ fn multiple_spaces_between_text() {
     assert_eq!(tx(&model), "abc&nbsp;&nbsp;def ghi&nbsp;&nbsp; jkl|");
 }
 
+#[test]
+fn typing_html_does_not_break_anything() {
+    let mut model = cm("|");
+    replace_text(&mut model, "<");
+    // TODO: tx should handle &lt; and similar
+    assert_eq!(tx(&model), "&|lt;");
+}
+
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
     model.replace_text(utf16(new_text));
 }
