@@ -98,7 +98,7 @@ export function handleSelectionChange(
         return;
     }
 
-    const [start, end] = getCurrentSelection(editor);
+    const [start, end] = getCurrentSelection(editor, document.getSelection());
 
     const prevStart = composeModel.selection_start();
     const prevEnd = composeModel.selection_end();
