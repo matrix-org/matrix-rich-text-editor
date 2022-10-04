@@ -64,7 +64,11 @@ web:
 		pkg/wysiwyg_bg.wasm.d.ts \
 		pkg/wysiwyg.d.ts \
 		pkg/wysiwyg.js \
-		../../platforms/web/generated/ 
+		../../platforms/web/generated/
+
+web-format:
+	cd platforms/web && \
+	yarn prettier --write .
 
 clean:
 	cargo clean
@@ -82,4 +86,4 @@ coverage:
 	@echo "Requires `rustup component add llvm-tools-preview`"
 	@echo "Requires `cargo install cargo-llvm-cov`"
 	cargo llvm-cov --open
-	
+
