@@ -17,7 +17,7 @@ use crate::dom::nodes::{ContainerNodeKind, DomNode};
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{Dom, DomHandle, DomLocation, Range};
 use crate::{
-    ComposerAction, ComposerModel, ComposerUpdate, InlineFormatType, Location,
+    ComposerAction, ComposerModel, ComposerUpdate, InlineFormatType,
     UnicodeString,
 };
 
@@ -222,22 +222,14 @@ where
         let mut reformat_from: Option<usize> = None;
         if let Some(location) = formatting_locations.first() {
             // Actual last node, find text to reformat after.
-            let (after_start, after_end) = self.safe_locations_from(
-                Location::from(end),
-                Location::from(end + location.length - location.end_offset),
-            );
-            if after_end > after_start {
-                reformat_to = Some(after_end);
+            if location.length - location.end_offset > 0 {
+                reformat_to = Some(end + location.length - location.end_offset);
             }
         }
         if let Some(location) = formatting_locations.last() {
             // Actual first node, find text to reformat before.
-            let (before_start, before_end) = self.safe_locations_from(
-                Location::from(start - location.start_offset),
-                Location::from(start),
-            );
-            if before_end > before_start {
-                reformat_from = Some(before_start);
+            if location.start_offset > 0 {
+                reformat_from = Some(start - location.start_offset);
             }
         }
 
