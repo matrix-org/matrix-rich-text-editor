@@ -45,7 +45,11 @@ export function processInput(
         case 'insertFromPaste': {
             if (e.dataTransfer) {
                 const data = e.dataTransfer.getData('text');
-                return action(composerModel.replace_text(data), 'replace_text', data);
+                return action(
+                    composerModel.replace_text(data),
+                    'replace_text',
+                    data,
+                );
             }
             break;
         }

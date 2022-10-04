@@ -21,14 +21,18 @@ import { useWysiwyg } from './useWysiwyg';
 
 const Editor = forwardRef<HTMLDivElement>(function Editor(_props, forwardRef) {
     const { ref, isWysiwygReady } = useWysiwyg();
-    return <div ref={(node) => {
-        if (node) {
-            ref.current = node;
-            if (typeof forwardRef === 'function') forwardRef(node);
-            else if (forwardRef) forwardRef.current = node;
-        }
-    }}
-    contentEditable={isWysiwygReady} />;
+    return (
+        <div
+            ref={(node) => {
+                if (node) {
+                    ref.current = node;
+                    if (typeof forwardRef === 'function') forwardRef(node);
+                    else if (forwardRef) forwardRef.current = node;
+                }
+            }}
+            contentEditable={isWysiwygReady}
+        />
+    );
 });
 
 function toContainHtml(
@@ -40,16 +44,20 @@ function toContainHtml(
     const received = editor.innerHTML;
     const expected = html + '<br>';
     const passMessage =
-      matcherHint('.not.toContainHtml', 'received', '') +
-      '\n\n' +
-      `Expected editor inner HTML to be ${printReceived(expected)} but received:\n` +
-      `${received}`;
+        matcherHint('.not.toContainHtml', 'received', '') +
+        '\n\n' +
+        `Expected editor inner HTML to be ${printReceived(
+            expected,
+        )} but received:\n` +
+        `${received}`;
 
     const failMessage =
-      matcherHint('.toContainHtml', 'received', '') +
-      '\n\n' +
-      `Expected editor inner HTML to be ${printReceived(expected)} but received:\n` +
-      `${received}`;
+        matcherHint('.toContainHtml', 'received', '') +
+        '\n\n' +
+        `Expected editor inner HTML to be ${printReceived(
+            expected,
+        )} but received:\n` +
+        `${received}`;
 
     const pass = received == expected;
 
@@ -57,15 +65,13 @@ function toContainHtml(
 }
 
 declare global {
-  // TODO: can we avoid disabling this lint?
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace jest {
-    interface Matchers<R> {
-      toContainHtml(
-        html: string
-      ): R;
+    // TODO: can we avoid disabling this lint?
+    // eslint-disable-next-line @typescript-eslint/no-namespace
+    namespace jest {
+        interface Matchers<R> {
+            toContainHtml(html: string): R;
+        }
     }
-  }
 }
 
 expect.extend({ toContainHtml });
@@ -93,11 +99,15 @@ describe('useWysiwyg', () => {
         }
 
         beforeAll(() => {
-            render(<Editor ref={(node) => {
-                if (node) {
-                    editor = node;
-                }
-            }} />);
+            render(
+                <Editor
+                    ref={(node) => {
+                        if (node) {
+                            editor = node;
+                        }
+                    }}
+                />,
+            );
         });
 
         it('Should render ASCII characters with width 1', () => {

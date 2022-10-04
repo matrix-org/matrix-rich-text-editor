@@ -56,10 +56,8 @@ describe('generateTestCase', () => {
             ['select', 1, 1],
         ];
 
-        const expected = (
-            'let mut model = cm("a|");\n'
-            + 'assert_eq!(tx(&model), "a|");\n'
-        );
+        const expected =
+            'let mut model = cm("a|");\n' + 'assert_eq!(tx(&model), "a|");\n';
 
         const testCase = generateTestCase(actions, 'a|');
 
@@ -74,10 +72,8 @@ describe('generateTestCase', () => {
             ['select', 0, 0],
         ];
 
-        const expected = (
-            'let mut model = cm("|a");\n'
-            + 'assert_eq!(tx(&model), "|a");\n'
-        );
+        const expected =
+            'let mut model = cm("|a");\n' + 'assert_eq!(tx(&model), "|a");\n';
 
         const testCase = generateTestCase(actions, '|a');
 
@@ -95,10 +91,9 @@ describe('generateTestCase', () => {
             ['select', 4, 4],
         ];
 
-        const expected = (
-            'let mut model = cm("abcd|");\n'
-            + 'assert_eq!(tx(&model), "abcd|");\n'
-        );
+        const expected =
+            'let mut model = cm("abcd|");\n' +
+            'assert_eq!(tx(&model), "abcd|");\n';
 
         const testCase = generateTestCase(actions, 'abcd|');
 
@@ -119,10 +114,9 @@ describe('generateTestCase', () => {
             ['select', 4, 4],
         ];
 
-        const expected = (
-            'let mut model = cm("abcd|");\n'
-            + 'assert_eq!(tx(&model), "abcd|");\n'
-        );
+        const expected =
+            'let mut model = cm("abcd|");\n' +
+            'assert_eq!(tx(&model), "abcd|");\n';
 
         const testCase = generateTestCase(actions, 'abcd|');
 
@@ -137,10 +131,9 @@ describe('generateTestCase', () => {
             ['select', 4, 4],
         ];
 
-        const expected = (
-            'let mut model = cm("abcd|");\n'
-            + 'assert_eq!(tx(&model), "abcd|");\n'
-        );
+        const expected =
+            'let mut model = cm("abcd|");\n' +
+            'assert_eq!(tx(&model), "abcd|");\n';
 
         const testCase = generateTestCase(actions, 'abcd|');
 
@@ -159,11 +152,10 @@ describe('generateTestCase', () => {
             ['bold'],
         ];
 
-        const expected = (
-            'let mut model = cm("a{bc}|d");\n'
-            + 'model.bold();\n'
-            + 'assert_eq!(tx(&model), "a<strong>{bc}|</strong>d");\n'
-        );
+        const expected =
+            'let mut model = cm("a{bc}|d");\n' +
+            'model.bold();\n' +
+            'assert_eq!(tx(&model), "a<strong>{bc}|</strong>d");\n';
 
         const testCase = generateTestCase(actions, 'a<strong>{bc}|</strong>d');
 
@@ -182,11 +174,10 @@ describe('generateTestCase', () => {
             ['bold'],
         ];
 
-        const expected = (
-            'let mut model = cm("a|{bc}d");\n'
-            + 'model.bold();\n'
-            + 'assert_eq!(tx(&model), "a<strong>|{bc}</strong>d");\n'
-        );
+        const expected =
+            'let mut model = cm("a|{bc}d");\n' +
+            'model.bold();\n' +
+            'assert_eq!(tx(&model), "a<strong>|{bc}</strong>d");\n';
 
         const testCase = generateTestCase(actions, 'a<strong>|{bc}</strong>d');
 
@@ -205,11 +196,10 @@ describe('generateTestCase', () => {
             ['bold'],
         ];
 
-        const expected = (
-            'let mut model = cm("|{abc}d");\n'
-            + 'model.bold();\n'
-            + 'assert_eq!(tx(&model), "<strong>|{abc}</strong>d");\n'
-        );
+        const expected =
+            'let mut model = cm("|{abc}d");\n' +
+            'model.bold();\n' +
+            'assert_eq!(tx(&model), "<strong>|{abc}</strong>d");\n';
 
         const testCase = generateTestCase(actions, '<strong>|{abc}</strong>d');
 
@@ -224,10 +214,9 @@ describe('generateTestCase', () => {
             ['select', 3, 2],
         ];
 
-        const expected = (
-            'let mut model = cm("ab|{c}");\n'
-            + 'assert_eq!(tx(&model), "<strong>ab|{c}</strong>");\n'
-        );
+        const expected =
+            'let mut model = cm("ab|{c}");\n' +
+            'assert_eq!(tx(&model), "<strong>ab|{c}</strong>");\n';
 
         const testCase = generateTestCase(actions, '<strong>ab|{c}</strong>');
 
@@ -242,12 +231,14 @@ describe('generateTestCase', () => {
             ['select', 2, 6],
         ];
 
-        const expected = (
-            'let mut model = cm("aa<strong>{bbbb}|</strong>cc");\n'
-            + 'assert_eq!(tx(&model), "aa<strong>{bbbb}|</strong>cc");\n'
-        );
+        const expected =
+            'let mut model = cm("aa<strong>{bbbb}|</strong>cc");\n' +
+            'assert_eq!(tx(&model), "aa<strong>{bbbb}|</strong>cc");\n';
 
-        const testCase = generateTestCase(actions, 'aa<strong>{bbbb}|</strong>cc');
+        const testCase = generateTestCase(
+            actions,
+            'aa<strong>{bbbb}|</strong>cc',
+        );
 
         // Then
         expect(testCase).toBe(expected);
@@ -265,14 +256,16 @@ describe('generateTestCase', () => {
             ['select', 3, 6],
         ];
 
-        const expected = (
-            'let mut model = cm("aa<strong>{bbbb}|</strong>cc");\n'
-            + 'model.bold();\n'
-            + 'model.select(Location::from(3), Location::from(6));\n'
-            + 'assert_eq!(tx(&model), "aa<strong>{bbbb}|</strong>cc");\n'
-        );
+        const expected =
+            'let mut model = cm("aa<strong>{bbbb}|</strong>cc");\n' +
+            'model.bold();\n' +
+            'model.select(Location::from(3), Location::from(6));\n' +
+            'assert_eq!(tx(&model), "aa<strong>{bbbb}|</strong>cc");\n';
 
-        const testCase = generateTestCase(actions, 'aa<strong>{bbbb}|</strong>cc');
+        const testCase = generateTestCase(
+            actions,
+            'aa<strong>{bbbb}|</strong>cc',
+        );
 
         // Then
         expect(testCase).toBe(expected);
@@ -287,14 +280,16 @@ describe('generateTestCase', () => {
             ['select', 3, 0],
         ];
 
-        const expected = (
-            'let mut model = cm("aa<strong>{bbbb}|</strong>cc");\n'
-            + 'model.bold();\n'
-            + 'model.select(Location::from(3), Location::from(0));\n'
-            + 'assert_eq!(tx(&model), "|{aa<strong>b}bbb</strong>cc");\n'
-        );
+        const expected =
+            'let mut model = cm("aa<strong>{bbbb}|</strong>cc");\n' +
+            'model.bold();\n' +
+            'model.select(Location::from(3), Location::from(0));\n' +
+            'assert_eq!(tx(&model), "|{aa<strong>b}bbb</strong>cc");\n';
 
-        const testCase = generateTestCase(actions, '|{aa<strong>b}bbb</strong>cc');
+        const testCase = generateTestCase(
+            actions,
+            '|{aa<strong>b}bbb</strong>cc',
+        );
 
         // Then
         expect(testCase).toBe(expected);
@@ -309,12 +304,11 @@ describe('generateTestCase', () => {
             ['backspace'],
         ];
 
-        const expected = (
-            'let mut model = cm("aa<strong>bbbb</strong>cc|");\n'
-            + 'model.backspace();\n'
-            + 'model.backspace();\n'
-            + 'assert_eq!(tx(&model), "aa<strong>bbbb|</strong>");\n'
-        );
+        const expected =
+            'let mut model = cm("aa<strong>bbbb</strong>cc|");\n' +
+            'model.backspace();\n' +
+            'model.backspace();\n' +
+            'assert_eq!(tx(&model), "aa<strong>bbbb|</strong>");\n';
 
         const testCase = generateTestCase(actions, 'aa<strong>bbbb|</strong>');
 
