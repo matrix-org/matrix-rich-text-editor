@@ -38,6 +38,9 @@ jobs:
     - name: Lint check
       working-directory: platforms/web
       run: yarn lint
+    - name: Formatting check (Prettier)
+      working-directory: platforms/web
+      run: yarn prettier --check .
     - name: Test
       working-directory: platforms/web
       run: yarn test
