@@ -66,6 +66,7 @@ export function handleInput(
     composerModel: ComposerModel,
     modelNode: HTMLElement | null,
     testUtilities: TestUtilities,
+    onChange?: (content: string) => void,
 ) {
     const update = processInput(e, composerModel, testUtilities.traceAction);
     if (update) {
@@ -77,6 +78,7 @@ export function handleInput(
                 repl.end_utf16_codeunit,
             );
             testUtilities.setEditorHtml(repl.replacement_html);
+            onChange?.(repl.replacement_html);
         }
 
         // Only when
