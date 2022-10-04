@@ -32,9 +32,7 @@ const Editor = forwardRef<HTMLDivElement>(function Editor(_props, forwardRef) {
 });
 
 function toContainHtml(
-    // TODO: remove lint ignores? I can't find the right import to be able to use the types.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    this: any, /* MatcherState */
+    this: jest.MatcherContext,
     editor: HTMLDivElement,
     html: string,
 ) {
