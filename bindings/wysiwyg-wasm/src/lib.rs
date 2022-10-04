@@ -18,7 +18,14 @@ use wasm_bindgen::prelude::*;
 use widestring::Utf16String;
 
 #[wasm_bindgen]
+pub fn init_panic_hook() {
+    console_error_panic_hook::set_once();
+}
+
+#[wasm_bindgen]
 pub fn new_composer_model() -> ComposerModel {
+    init_panic_hook();
+
     ComposerModel {
         inner: wysiwyg::ComposerModel::new(),
     }
@@ -30,6 +37,8 @@ pub fn new_composer_model_from_html(
     start_utf16_codeunit: u32,
     end_utf16_codeunit: u32,
 ) -> ComposerModel {
+    init_panic_hook();
+
     ComposerModel {
         inner: wysiwyg::ComposerModel::<Utf16String>::from_html(
             html,
