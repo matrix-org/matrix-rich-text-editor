@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import { MouseEventHandler } from 'react';
+
 import { useWysiwyg } from '../lib/useWysiwyg';
 import boldImage from './images/bold.svg';
 import undoImage from './images/undo.svg';
