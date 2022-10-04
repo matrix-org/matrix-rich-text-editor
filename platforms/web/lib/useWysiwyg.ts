@@ -17,9 +17,9 @@ limitations under the License.
 import { RefObject, useEffect, useRef, useState } from 'react';
 
 // rust generated bindings
-// eslint-disable-next-line camelcase
 import init, {
     ComposerModel,
+    // eslint-disable-next-line camelcase
     new_composer_model,
 } from '../generated/wysiwyg.js';
 import { useFormattingActions } from './useFormattingActions';

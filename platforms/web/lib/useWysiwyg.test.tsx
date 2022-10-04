@@ -142,7 +142,7 @@ describe('useWysiwyg', () => {
             expect(editor).toContainHtml('cd');
         });
 
-        it.skip('Should render Multi-code unit UTF-16 characters with width 2', () => {
+        it.skip('Should render Multi-code unit UTF-16 chars width 2', () => {
             // When
             setEditorHtml('\u{1F4A9}bcd');
             deleteRange(0, 2);
@@ -158,7 +158,7 @@ describe('useWysiwyg', () => {
             expect(editor).toContainHtml('cd');
         });
 
-        it.skip('Should render complex characters with width = num UTF-16 code units', () => {
+        it.skip('Should render complex chars width = UTF-16 code units', () => {
             // When
             setEditorHtml('\u{1F469}\u{1F3FF}\u{200D}\u{1F680}bcd');
             deleteRange(0, 7);

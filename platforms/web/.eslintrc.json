@@ -15,6 +15,7 @@
         }
     },
     "rules": {
+        "react/jsx-curly-spacing": "off",
         "new-cap": "off",
         "@typescript-eslint/naming-convention": [
             "error",

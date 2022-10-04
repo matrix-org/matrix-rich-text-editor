@@ -15,10 +15,10 @@ limitations under the License.
 */
 
 // rust generated bindings
-// eslint-disable-next-line camelcase
 import {
     ComposerModel,
     ComposerUpdate,
+    // eslint-disable-next-line camelcase
     new_composer_model_from_html,
 } from '../../generated/wysiwyg';
 import { getCurrentSelection } from '../dom';
@@ -155,7 +155,8 @@ export function generateTestCase(actions: Actions, html: string) {
 }
 
 function addSelection(text: string, start: number, end: number) {
-    // In the original wysiwyg js, the function is called with one parameter but the TS definition requires 3 params
+    // In the original wysiwyg js, the function is called with one parameter but
+    // the TS definition requires 3 params
     // new_composer_model_from_html(text)
     const model = new_composer_model_from_html(text, -1, -1);
     model.select(start, end);

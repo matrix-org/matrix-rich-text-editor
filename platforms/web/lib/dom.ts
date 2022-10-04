@@ -36,7 +36,7 @@ export function refreshComposerView(
     const doc = composerModel.document();
     let idCounter = 0;
 
-    // TODO use HTMLAttributes or another types to accept only valid HTML attributes
+    // TODO: use HTMLAttributes similar to accept only valid HTML attributes
     function createNode(
         parent: Node,
         name: string,
@@ -282,7 +282,10 @@ function findCharacter(
     currentNode: Node,
     nodeToFind: Node,
     offsetToFind: number,
-): { found: boolean; offset: number } {
+): {
+    found: boolean;
+    offset: number;
+} {
     if (currentNode === nodeToFind) {
         // We've found the right node
         if (currentNode.nodeType === Node.TEXT_NODE) {
