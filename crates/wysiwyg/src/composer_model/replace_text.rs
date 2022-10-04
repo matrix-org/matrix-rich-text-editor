@@ -102,22 +102,36 @@ where
         mut start: usize,
         end: usize,
     ) -> ComposerUpdate<S> {
-        let len = new_text.len();
-
-        let range = self.state.dom.find_range(start, end);
-        if range.is_empty() {
-            if !new_text.is_empty() {
-                self.state.dom.append_child(DomNode::new_text(new_text));
+        let text_string = new_text.to_string();
+        // If the inserted text contains newlines, slice it and
+        // insert each slice while simulating calls to the
+        // enter function in betweeen.
+        if text_string.contains("\n") {
+            let mut slices = text_string.split("\n").peekable();
+            while let Some(slice) = slices.next() {
+                let (s, e) = self.safe_selection();
+                self.do_replace_text_in(S::from(slice), s, e);
+                if !slices.peek().is_none() {
+                    self.do_enter();
+                }
             }
-            start = 0;
         } else {
-            self.replace_multiple_nodes(range, new_text)
+            let len = new_text.len();
+            let range = self.state.dom.find_range(start, end);
+            if range.is_empty() {
+                if !new_text.is_empty() {
+                    self.state.dom.append_child(DomNode::new_text(new_text));
+                }
+                start = 0;
+            } else {
+                self.replace_multiple_nodes(range, new_text)
+            }
+
+            self.apply_pending_formats(start, start + len);
+
+            self.state.start = Location::from(start + len);
+            self.state.end = self.state.start;
         }
-
-        self.apply_pending_formats(start, start + len);
-
-        self.state.start = Location::from(start + len);
-        self.state.end = self.state.start;
 
         // TODO: for now, we replace every time, to check ourselves, but
         // at least some of the time we should not

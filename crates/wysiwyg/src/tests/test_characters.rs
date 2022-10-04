@@ -265,6 +265,28 @@ fn multiple_spaces_between_text() {
     assert_eq!(tx(&model), "abc&nbsp;&nbsp;def ghi&nbsp;&nbsp; jkl|");
 }
 
+#[test]
+fn newline_characters_insert_br_tags() {
+    let mut model = cm("|");
+    replace_text(&mut model, "abc\ndef\nghi");
+    assert_eq!(tx(&model), "abc<br />def<br />ghi|");
+}
+
+#[test]
+fn leading_and_trailing_newline_characters_insert_br_tags() {
+    let mut model = cm("|");
+    replace_text(&mut model, "\nabc");
+    assert_eq!(tx(&model), "<br />abc|");
+
+    let mut model = cm("|");
+    replace_text(&mut model, "abc\n");
+    assert_eq!(tx(&model), "abc<br />|");
+
+    let mut model = cm("|");
+    replace_text(&mut model, "\nabc\n");
+    assert_eq!(tx(&model), "<br />abc<br />|");
+}
+
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
     model.replace_text(utf16(new_text));
 }
