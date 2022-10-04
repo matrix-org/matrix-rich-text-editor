@@ -22,8 +22,9 @@ import { sendWysiwygInputEvent } from './useListeners';
 export function useFormattingActions(editorRef: RefObject<HTMLElement | null>) {
     const formattingActions = useMemo(() => {
         // The formatting action like inline code doesn't have an input type
-        // Safari does not keep the inputType in an input event when the input event is fired manually
-        // So we send a custom event and we do not use the browser input event handling
+        // Safari does not keep the inputType in an input event when the input
+        // event is fired manually, so we send a custom event and we do not use
+        // the browser input event handling
         const sendEvent = (
             e: ReactMouseEvent<HTMLElement, MouseEvent> | KeyboardEvent,
             blockType: BlockType,

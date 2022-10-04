@@ -35,7 +35,8 @@ export function useListeners(
             return;
         }
 
-        // React uses SyntheticEvent (https://reactjs.org/docs/events.html) and doesn't catch manually fired event (myNode.dispatchEvent)
+        // React uses SyntheticEvent (https://reactjs.org/docs/events.html) and
+        // doesn't catch manually fired event (myNode.dispatchEvent)
         const onInput = (e: Event) =>
             isInputEvent(e) &&
             handleInput(
