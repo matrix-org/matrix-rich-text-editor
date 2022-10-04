@@ -79,3 +79,16 @@ fn br_within_text_shows_up_in_tree() {
 "#,
     );
 }
+
+#[test]
+fn link_href_shows_up_in_tree() {
+    let model = cm("Some <a href=\"https://matrix.org\">url|</a>");
+    assert_eq!(
+        model.state.dom.to_tree(),
+        r#"
+├>"Some "
+└>a "https://matrix.org"
+  └>"url"
+"#,
+    );
+}

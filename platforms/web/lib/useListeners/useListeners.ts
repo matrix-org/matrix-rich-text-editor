@@ -36,9 +36,11 @@ export function useListeners(
             return;
         }
 
-        // React uses SyntheticEvent (https://reactjs.org/docs/events.html) and doesn't catch manually fired event (myNode.dispatchEvent)
+        // React uses SyntheticEvent (https://reactjs.org/docs/events.html) and
+        // doesn't catch manually fired event (myNode.dispatchEvent)
         const onInput = (e: Event) =>
-            isInputEvent(e) && handleInput(
+            isInputEvent(e) &&
+            handleInput(
                 e,
                 editorNode,
                 composerModel,
@@ -65,7 +67,8 @@ export function useListeners(
         };
         editorNode.addEventListener('keydown', onKeyDown);
 
-        const onSelectionChange = () => handleSelectionChange(editorNode, composerModel, testUtilities);
+        const onSelectionChange = () =>
+            handleSelectionChange(editorNode, composerModel, testUtilities);
         document.addEventListener('selectionchange', onSelectionChange);
 
         return () => {

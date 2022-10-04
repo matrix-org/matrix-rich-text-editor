@@ -3,9 +3,7 @@ all: android ios web
 # The gradle plugin will take care of building the bindings too
 android:
 	cd platforms/android && \
-		./gradlew :library:assembleRelease && \
-		mkdir -p out && \
-		cp library/build/outputs/aar/library-release.aar out/wysiwyg-release.aar
+		./gradlew publishToMavenLocal
 
 android-bindings: android-bindings-armv7 android-bindings-aarch64 android-bindings-x86_64
 
@@ -66,7 +64,11 @@ web:
 		pkg/wysiwyg_bg.wasm.d.ts \
 		pkg/wysiwyg.d.ts \
 		pkg/wysiwyg.js \
-		../../platforms/web/generated/ 
+		../../platforms/web/generated/
+
+web-format:
+	cd platforms/web && \
+	yarn prettier --write .
 
 clean:
 	cargo clean
@@ -84,4 +86,4 @@ coverage:
 	@echo "Requires `rustup component add llvm-tools-preview`"
 	@echo "Requires `cargo install cargo-llvm-cov`"
 	cargo llvm-cov --open
-	
+

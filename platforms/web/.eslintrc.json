@@ -1,6 +1,10 @@
 {
     "plugins": ["matrix-org"],
-    "extends": ["plugin:matrix-org/typescript", "plugin:matrix-org/react", "plugin:matrix-org/a11y"],
+    "extends": [
+        "plugin:matrix-org/typescript",
+        "plugin:matrix-org/react",
+        "plugin:matrix-org/a11y"
+    ],
     "env": {
         "browser": true,
         "node": true
@@ -11,6 +15,7 @@
         }
     },
     "rules": {
+        "react/jsx-curly-spacing": "off",
         "new-cap": "off",
         "@typescript-eslint/naming-convention": [
             "error",
@@ -21,6 +26,7 @@
                 "leadingUnderscore": "allow"
             }
         ],
+        "max-len": ["error", { "code": 80 }],
         "matrix-org/require-copyright-header": "error"
     }
 }

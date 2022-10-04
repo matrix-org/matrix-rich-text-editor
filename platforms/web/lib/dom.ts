@@ -21,23 +21,28 @@ export function computeSelectionOffset(node: Node, offset?: number): number {
         return offset ?? node.textContent?.length ?? 0;
     } else if (node.hasChildNodes()) {
         return Array.from(node.childNodes)
-            .map(childNode => computeSelectionOffset(childNode))
+            .map((childNode) => computeSelectionOffset(childNode))
             .reduce((prev, curr) => prev + curr, 0);
     } else {
         return 0;
     }
 }
 
-export function refreshComposerView(node: HTMLElement, composerModel: ComposerModel) {
+export function refreshComposerView(
+    node: HTMLElement,
+    composerModel: ComposerModel,
+) {
     node.innerHTML = '';
     const doc = composerModel.document();
     let idCounter = 0;
 
-    // TODO use HTMLAttributes or another types to accept only valid HTML attributes
-    function createNode(parent: Node,
+    // TODO: use HTMLAttributes similar to accept only valid HTML attributes
+    function createNode(
+        parent: Node,
         name: string,
         text?: string | null,
-        attrs?: Map<string, string | null>) {
+        attrs?: Map<string, string | null>,
+    ) {
         const tag = document.createElement(name);
         if (text) {
             tag.innerHTML = text.replace('\u200b', '~');
@@ -60,7 +65,7 @@ export function refreshComposerView(node: HTMLElement, composerModel: ComposerMo
         list.className = `group_${idCounter % 10}`;
         const children = node.children(composerModel);
         let child: DomHandle | undefined;
-        while (child = children.next()) {
+        while ((child = children.next())) {
             const nodeType: string = child.node_type(composerModel);
             if (nodeType === 'container') {
                 // TODO I'm a bit septic about this id :p
@@ -78,7 +83,12 @@ export function refreshComposerView(node: HTMLElement, composerModel: ComposerMo
                         ['checked', null],
                     ]),
                 );
-                createNode(li, 'label', child.tag(composerModel), new Map([['for', domId]]));
+                createNode(
+                    li,
+                    'label',
+                    child.tag(composerModel),
+                    new Map([['for', domId]]),
+                );
                 id++;
                 writeChildren(child, li);
             } else if (nodeType === 'line_break') {
@@ -94,7 +104,8 @@ export function refreshComposerView(node: HTMLElement, composerModel: ComposerMo
     writeChildren(doc, node);
 }
 
-export function replaceEditor(editor: HTMLElement,
+export function replaceEditor(
+    editor: HTMLElement,
     htmlContent: string,
     startUtf16Codeunit: number,
     endUtf16Codeunit: number,
@@ -108,19 +119,17 @@ export function replaceEditor(editor: HTMLElement,
         let end = computeNodeAndOffset(editor, endUtf16Codeunit);
 
         if (start.node && end.node) {
-            const endNodeBeforeStartNode = (
-                start.node.compareDocumentPosition(end.node)
-                    & Node.DOCUMENT_POSITION_PRECEDING
-            );
+            const endNodeBeforeStartNode =
+                start.node.compareDocumentPosition(end.node) &
+                Node.DOCUMENT_POSITION_PRECEDING;
 
-            const sameNodeButEndOffsetBeforeStartOffset = (
-                start.node === end.node && end.offset < start.offset
-            );
+            const sameNodeButEndOffsetBeforeStartOffset =
+                start.node === end.node && end.offset < start.offset;
 
             // Ranges must always have start before end
             if (
-                endNodeBeforeStartNode
-                || sameNodeButEndOffsetBeforeStartOffset
+                endNodeBeforeStartNode ||
+                sameNodeButEndOffsetBeforeStartOffset
             ) {
                 [start, end] = [end, start];
             }
@@ -159,7 +168,8 @@ export function replaceEditor(editor: HTMLElement,
  * A "codeunit" here means a UTF-16 code unit.
  */
 export function computeNodeAndOffset(currentNode: Node, codeunits: number) {
-    const isEmptyList = currentNode.nodeName === 'LI' && !currentNode.hasChildNodes();
+    const isEmptyList =
+        currentNode.nodeName === 'LI' && !currentNode.hasChildNodes();
     if (currentNode.nodeType === Node.TEXT_NODE || isEmptyList) {
         if (codeunits <= (currentNode.textContent?.length || 0)) {
             return { node: currentNode, offset: codeunits };
@@ -196,9 +206,14 @@ export function computeNodeAndOffset(currentNode: Node, codeunits: number) {
     }
 }
 
-export function getCurrentSelection(editor: HTMLElement) {
-    const selection = document.getSelection();
-
+/**
+ * Find the start and end code units of the supplied selection in the supplied
+ * editor.
+ */
+export function getCurrentSelection(
+    editor: HTMLElement,
+    selection: Selection | null,
+) {
     if (!selection) {
         return [0, 0];
     }
@@ -208,14 +223,120 @@ export function getCurrentSelection(editor: HTMLElement) {
     // change the selection, cutting off at the edge.
     // This should be done when we convert to React
     // Internal task for changing to React: PSU-721
-    const start = selection.anchorNode && countCodeunit(editor, selection.anchorNode, selection.anchorOffset) || 0;
-    const end = selection.focusNode && countCodeunit(
-        editor,
-        selection.focusNode,
-        computeSelectionOffset(selection.focusNode, selection.focusOffset),
-    ) || 0;
+    const start =
+        (selection.anchorNode &&
+            countCodeunit(
+                editor,
+                selection.anchorNode,
+                selection.anchorOffset,
+            )) ||
+        0;
+    const end =
+        (selection.focusNode &&
+            countCodeunit(
+                editor,
+                selection.focusNode,
+                selection.focusOffset,
+            )) ||
+        0;
 
     return [start, end];
+}
+
+/**
+ * How many codeunits are there inside node, stopping counting if you get to
+ * stopAtNode?
+ */
+function textLength(node: Node, stopAtNode: Node): number {
+    if (node.nodeType === Node.TEXT_NODE) {
+        return node.textContent?.length ?? 0;
+    } else if (node.nodeName === 'BR') {
+        // Treat br tags as being 1 character long
+        return 1;
+    } else {
+        // Add up lengths until we hit the stop node.
+        let sum = 0;
+        for (const ch of node.childNodes) {
+            if (ch === stopAtNode) {
+                break;
+            }
+            sum += textLength(ch, stopAtNode);
+        }
+        return sum;
+    }
+}
+
+/**
+ * If nodeToFind is inside currentNode, return the number of codeunits you need
+ * to count through currentNode to get to nodeToFind plus how many codeunits
+ * through nodeToFind to get to offsetToFind.
+ * Or, if nodeToFind is not a text node, count how many code units through
+ * currentNode you need to count before you get to the offsetToFind-th child of
+ * nodeToFind.
+ *
+ * Returns { found: true, offset: <the answer> } if nodeToFind is inside
+ * CurrentNode and offsetToFind is within the length of nodeToFind,
+ * or { found: false, 0 } if not.
+ */
+function findCharacter(
+    currentNode: Node,
+    nodeToFind: Node,
+    offsetToFind: number,
+): {
+    found: boolean;
+    offset: number;
+} {
+    if (currentNode === nodeToFind) {
+        // We've found the right node
+        if (currentNode.nodeType === Node.TEXT_NODE) {
+            // Text node - use the offset to know where we are
+            if (offsetToFind > (currentNode.textContent?.length ?? 0)) {
+                // If the offset is wrong, we didn't find it
+                return { found: false, offset: 0 };
+            } else {
+                // Otherwise, we did
+                return { found: true, offset: offsetToFind };
+            }
+        } else {
+            // Non-text node - offset is the index of the selected node
+            // within currentNode.
+            // Add up the sizes of all the nodes before offset.
+            const ret = textLength(
+                currentNode,
+                currentNode.childNodes[offsetToFind],
+            );
+            return { found: true, offset: ret };
+        }
+    } else {
+        // We have not found the right node yet
+
+        if (currentNode.nodeType === Node.TEXT_NODE) {
+            // Return how many steps forward we progress by skipping
+            // this node.
+            return {
+                found: false,
+                offset: currentNode.textContent?.length ?? 0,
+            };
+        } else if (currentNode.nodeName === 'BR') {
+            // Treat br tags as being 1 character long
+            return { found: false, offset: 1 };
+        } else {
+            // Add up all the amounts we need to progress by skipping
+            // nodes inside this one.
+            let sum = 0;
+            for (const ch of currentNode.childNodes) {
+                const cp = findCharacter(ch, nodeToFind, offsetToFind);
+                if (cp.found) {
+                    // We found it! Return how far we walked to find it
+                    return { found: true, offset: sum + cp.offset };
+                } else {
+                    // We didn't find it - remember how much to skip
+                    sum += cp.offset;
+                }
+            }
+            return { found: false, offset: sum };
+        }
+    }
 }
 
 /**
@@ -223,57 +344,23 @@ export function getCurrentSelection(editor: HTMLElement) {
  * editor that position is, by counting from the beginning of the editor,
  * traversing subnodes, until we hit the supplied position.
  *
- * "Position" means a node and an offset, meaning the offset-th codeunit in
- * node.
+ * If node is a text node, this means count codeunits until we hit the
+ * offset-th codeunit of node.
+ *
+ * If node is not a text node, this cound codeunits until we hit the offset-th
+ * child of node.
  *
  * A "codeunit" here means a UTF-16 code unit.
+ *
+ * Returns the number of codeunits you need to count through editor to get to
+ * the supplied position, or -1 if node is not inside editor.
  */
-export function countCodeunit(editor: HTMLElement, node: Node, offset: number) {
-    function impl(currentNode: Node, offset: number): { found: boolean, offset: number} {
-        if (currentNode === node) {
-            // We've found the right node
-            if (
-                currentNode.nodeType === Node.TEXT_NODE
-                && offset > (currentNode.textContent?.length || 0)
-            ) {
-                // If the offset is wrong, we didn't find it
-                return { found: false, offset: 0 };
-            } else {
-                // Otherwise, we did
-                return { found: true, offset };
-            }
-        } else {
-            // We have not found the right node yet
-            if (currentNode.nodeType === Node.TEXT_NODE) {
-                // Return how many steps forward we progress by skipping
-                // this node.
-                return {
-                    found: false,
-                    offset: currentNode.textContent?.length || 0,
-                };
-            } else if (currentNode.nodeName === 'BR') {
-                // Treat br tags as being 1 character long
-                return { found: false, offset: 1 };
-            } else {
-                // Add up all the amounts we need progress by skipping
-                // nodes inside this one.
-                let sum = 0;
-                for (const ch of currentNode.childNodes) {
-                    const cp = impl(ch, offset);
-                    if (cp.found) {
-                        // We found it! Return how far we walked to find it
-                        return { found: true, offset: sum + cp.offset };
-                    } else {
-                        // We didn't find it - remember how much to skip
-                        sum += cp.offset;
-                    }
-                }
-                return { found: false, offset: sum };
-            }
-        }
-    }
-
-    const ret = impl(editor, offset);
+export function countCodeunit(
+    editor: HTMLElement,
+    node: Node,
+    offset: number,
+): number {
+    const ret = findCharacter(editor, node, offset);
     if (ret.found) {
         return ret.offset;
     } else {

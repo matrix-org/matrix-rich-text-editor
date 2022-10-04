@@ -22,7 +22,6 @@ import WysiwygComposer
 struct Composer: View {
     @ObservedObject var viewModel: WysiwygComposerViewModel
     let minTextViewHeight: CGFloat = 20
-    let maxTextViewHeight: CGFloat = 200
     let borderHeight: CGFloat = 44
     
     var verticalPadding: CGFloat {
@@ -37,11 +36,7 @@ struct Composer: View {
                                     replaceText: viewModel.replaceText,
                                     select: viewModel.select,
                                     didUpdateText: viewModel.didUpdateText)
-                    .frame(
-                        minHeight: minTextViewHeight,
-                        maxHeight: min(maxTextViewHeight, max(minTextViewHeight, viewModel.idealHeight)),
-                        alignment: .center
-                    )
+                    .frame(height: viewModel.idealHeight)
                     .padding(.horizontal, 12)
                     .onAppear {
                         viewModel.setup()

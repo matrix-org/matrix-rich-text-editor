@@ -45,7 +45,11 @@ export function processInput(
         case 'insertFromPaste': {
             if (e.dataTransfer) {
                 const data = e.dataTransfer.getData('text');
-                return action(composerModel.replace_text(data), 'replace_text', data);
+                return action(
+                    composerModel.replace_text(data),
+                    'replace_text',
+                    data,
+                );
             }
             break;
         }
@@ -66,6 +70,7 @@ export function processInput(
             return action(composerModel.unordered_list(), 'unordered_list');
         default:
             // We should cover all of
+            // eslint-disable-next-line max-len
             // https://rawgit.com/w3c/input-events/v1/index.html#interface-InputEvent-Attributes
             // Internal task to make sure we cover all inputs: PSU-740
             console.error(`Unknown input type: ${e.inputType}`);

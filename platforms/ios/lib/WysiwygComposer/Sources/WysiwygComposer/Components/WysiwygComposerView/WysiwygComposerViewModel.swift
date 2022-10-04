@@ -34,15 +34,30 @@ public class WysiwygComposerViewModel: ObservableObject {
     @Published public var reversedActions: [ComposerAction] = []
     /// Published value for the composer current expected disabled actions.
     @Published public var disabledActions: [ComposerAction] = []
+    /// Published value for the composer maximised state.
+    @Published public var maximised = false {
+        didSet {
+            updateIdealHeight()
+        }
+    }
 
     // MARK: - Private
 
     private var model: ComposerModel
     private var cancellable: AnyCancellable?
+    private let minHeight: CGFloat
+    private let maxHeight: CGFloat
+    private var compressedHeight: CGFloat = .zero {
+        didSet {
+            updateIdealHeight()
+        }
+    }
 
     // MARK: - Public
 
-    public init() {
+    public init(minHeight: CGFloat = 20, maxHeight: CGFloat = 200) {
+        self.minHeight = minHeight
+        self.maxHeight = maxHeight
         model = newComposerModel()
         // Publish composer empty state.
         cancellable = $content.sink(receiveValue: { [unowned self] content in
@@ -86,6 +101,9 @@ public class WysiwygComposerViewModel: ObservableObject {
     /// - Parameters:
     ///   - action: Action to apply.
     public func apply(_ action: WysiwygAction) {
+        Logger.viewModel.logDebug([content.logAttributedSelection,
+                                   "Apply action: \(action)"],
+                                  functionName: #function)
         let update: ComposerUpdate
         switch action {
         case .bold:
@@ -163,7 +181,7 @@ public extension WysiwygComposerViewModel {
     ///
     /// - Parameter textView: The composer's text view.
     func didUpdateText(textView: UITextView) {
-        updateIdealHeightIfNeeded(textView)
+        updateCompressedHeightIfNeeded(textView)
 
         // Reconciliate
         if textView.attributedText != content.attributed {
@@ -260,17 +278,28 @@ private extension WysiwygComposerViewModel {
         }
     }
 
-    /// Update the composer total required height if it has changed.
+    /// Update the composer compressed required height if it has changed.
     ///
     /// - Parameters:
     ///   - textView: The composer's text view.
-    func updateIdealHeightIfNeeded(_ textView: UITextView) {
-        let idealHeight = textView
+    func updateCompressedHeightIfNeeded(_ textView: UITextView) {
+        let idealTextHeight = textView
             .sizeThatFits(CGSize(width: textView.bounds.size.width,
                                  height: CGFloat.greatestFiniteMagnitude)
             )
             .height
-        self.idealHeight = idealHeight
+        
+        compressedHeight = min(maxHeight, max(minHeight, idealTextHeight))
+    }
+    
+    /// Update the composer ideal height based on the maximised state.
+    ///
+    func updateIdealHeight() {
+        if maximised {
+            idealHeight = maxHeight
+        } else {
+            idealHeight = compressedHeight
+        }
     }
     
     func generateHtmlBodyWithStyle(htmlFragment: String) -> String {

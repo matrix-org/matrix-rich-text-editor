@@ -23,10 +23,13 @@ import dts from 'vite-plugin-dts';
 export default defineConfig({
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    plugins: [react(), dts({
-        include: ['lib/useWysiwyg.ts'],
-        insertTypesEntry: true,
-    })],
+    plugins: [
+        react(),
+        dts({
+            include: ['lib/useWysiwyg.ts'],
+            insertTypesEntry: true,
+        }),
+    ],
     test: {
         globals: true,
         environment: 'jsdom',
@@ -49,8 +52,8 @@ export default defineConfig({
             // into your library
             external: ['react', 'react-dom'],
             output: {
-            // Provide global variables to use in the UMD build
-            // for externalized deps
+                // Provide global variables to use in the UMD build
+                // for externalized deps
                 globals: {
                     'react': 'React',
                     'react-dom': 'ReactDOM',

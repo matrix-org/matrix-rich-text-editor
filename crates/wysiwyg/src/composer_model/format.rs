@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::dom::action_list::DomActionList;
 use crate::dom::nodes::{ContainerNodeKind, DomNode};
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{Dom, DomHandle, DomLocation, Range};
 use crate::{
-    ComposerAction, ComposerModel, ComposerUpdate, InlineFormatType, Location,
+    ComposerAction, ComposerModel, ComposerUpdate, InlineFormatType,
     UnicodeString,
 };
-use std::collections::HashMap;
 
 #[derive(Eq, PartialEq, Debug)]
 enum FormatSelectionType {
@@ -206,45 +206,50 @@ where
         range: &Range,
         format: &InlineFormatType,
     ) {
-        for location in range.locations.iter() {
-            let node = self.state.dom.lookup_node(&location.node_handle);
-            if let DomNode::Container(n) = node {
-                if let ContainerNodeKind::Formatting(f) = n.kind() {
-                    if f == format {
-                        if node.has_only_placeholder_text_child() {
-                            self.state.end = self.state.start;
-                            self.state
-                                .dom
-                                .replace(&location.node_handle, vec![]);
-                        } else {
-                            self.state.dom.remove_and_keep_children(
-                                &location.node_handle,
-                            );
-                        }
+        // Filter locations for formatting nodes.
+        let formatting_locations: Vec<&DomLocation> = range
+            .locations
+            .iter()
+            .filter(|l| {
+                let n = self.state.dom.lookup_node(&l.node_handle);
+                n.is_formatting_node_of_type(format)
+            })
+            .rev()
+            .collect();
 
-                        // Re-apply formatting to slices before and after the selection if needed
-                        let (before_start, before_end) = self
-                            .safe_locations_from(
-                                Location::from(start - location.start_offset),
-                                Location::from(start),
-                            );
-                        let (after_start, after_end) = self
-                            .safe_locations_from(
-                                Location::from(end),
-                                Location::from(
-                                    end + location.length - location.end_offset,
-                                ),
-                            );
-
-                        if before_end > before_start {
-                            self.format_range(before_start, before_end, format);
-                        }
-                        if after_end > after_start {
-                            self.format_range(after_start, after_end, format);
-                        }
-                    }
-                }
+        // Find slices of text before and after the selection that will require re-format.
+        let mut reformat_to: Option<usize> = None;
+        let mut reformat_from: Option<usize> = None;
+        if let Some(location) = formatting_locations.first() {
+            // Actual last node, find text to reformat after.
+            if location.length - location.end_offset > 0 {
+                reformat_to = Some(end + location.length - location.end_offset);
             }
+        }
+        if let Some(location) = formatting_locations.last() {
+            // Actual first node, find text to reformat before.
+            if location.start_offset > 0 {
+                reformat_from = Some(start - location.start_offset);
+            }
+        }
+
+        // Remove formatting nodes.
+        for loc in formatting_locations {
+            let node = self.state.dom.lookup_node(&loc.node_handle);
+            if node.has_only_placeholder_text_child() {
+                self.state.end = self.state.start;
+                self.state.dom.replace(&loc.node_handle, vec![]);
+            } else {
+                self.state.dom.remove_and_keep_children(&loc.node_handle);
+            }
+        }
+
+        // Reformat slices.
+        if let Some(reformat_from) = reformat_from {
+            self.format_range(reformat_from, start, format);
+        }
+        if let Some(reformat_to) = reformat_to {
+            self.format_range(end, reformat_to, format);
         }
     }
 
@@ -261,23 +266,17 @@ where
         locations: Vec<&DomLocation>,
         format: &InlineFormatType,
     ) {
-        let mut moved_handles = Vec::<(DomHandle, DomHandle)>::new();
+        let mut action_list = DomActionList::default();
         let mut sorted_locations = locations;
         sorted_locations.sort();
         // Go through the locations in reverse order to prevent Dom modification issues
         for loc in sorted_locations.into_iter().rev() {
             let mut loc = loc.clone();
-            let moved_handle = moved_handles
-                .iter()
-                .find(|(old, _)| old.is_parent_of(&loc.node_handle));
-            if let Some((old_handle, new_handle)) = moved_handle {
+            let moved_handle =
+                action_list.find_moved_parent_or_self(&loc.node_handle);
+            if let Some((from_handle, to_handle)) = moved_handle {
                 // Careful here, the location's position is no longer valid
-                let mut new_path = loc.node_handle.clone().into_raw();
-                new_path.splice(
-                    0..old_handle.raw().len(),
-                    new_handle.clone().into_raw(),
-                );
-                loc = loc.with_new_handle(DomHandle::from_raw(new_path));
+                loc.node_handle.replace_ancestor(from_handle, to_handle);
             }
             if Self::needs_format(&self.state.dom, &loc, format) {
                 if let DomNode::Container(parent) = self
@@ -316,7 +315,7 @@ where
                         }
                     }
                     // Clean up by removing any empty text nodes and merging formatting nodes
-                    moved_handles.extend(
+                    action_list.extend(
                         self.merge_formatting_node_with_siblings(
                             &loc.node_handle,
                         ),
@@ -443,9 +442,9 @@ where
     fn merge_formatting_node_with_siblings(
         &mut self,
         handle: &DomHandle,
-    ) -> HashMap<DomHandle, DomHandle> {
+    ) -> DomActionList<S> {
         // Lists of handles that have been moved by merging nodes
-        let mut moved_handles = HashMap::new();
+        let mut action_list = DomActionList::default();
         // If has next sibling, try to join it with the current node
         if let DomNode::Container(parent) =
             self.state.dom.lookup_node(&handle.parent_handle())
@@ -453,13 +452,13 @@ where
             if parent.children().len() - handle.index_in_parent() > 1 {
                 self.join_format_node_with_prev(
                     &handle.next_sibling(),
-                    &mut moved_handles,
+                    &mut action_list,
                 );
             }
         }
         // Merge current node with previous if possible
-        self.join_format_node_with_prev(handle, &mut moved_handles);
-        moved_handles
+        self.join_format_node_with_prev(handle, &mut action_list);
+        action_list
     }
 }
 

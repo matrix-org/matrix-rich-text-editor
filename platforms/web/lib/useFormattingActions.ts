@@ -22,21 +22,35 @@ import { sendWysiwygInputEvent } from './useListeners';
 export function useFormattingActions(editorRef: RefObject<HTMLElement | null>) {
     const formattingActions = useMemo(() => {
         // The formatting action like inline code doesn't have an input type
-        // Safari does not keep the inputType in an input event when the input event is fired manually
-        // So we send a custom event and we do not use the browser input event handling
-        const sendEvent = (e: ReactMouseEvent<HTMLElement, MouseEvent> | KeyboardEvent,
-            blockType: BlockType) => editorRef.current && sendWysiwygInputEvent(e, editorRef.current, blockType);
+        // Safari does not keep the inputType in an input event when the input
+        // event is fired manually, so we send a custom event and we do not use
+        // the browser input event handling
+        const sendEvent = (
+            e: ReactMouseEvent<HTMLElement, MouseEvent> | KeyboardEvent,
+            blockType: BlockType,
+        ) =>
+            editorRef.current &&
+            sendWysiwygInputEvent(e, editorRef.current, blockType);
 
         return {
-            bold: (e: ReactMouseEvent<HTMLElement, MouseEvent>) => sendEvent(e, 'formatBold'),
-            italic: (e: ReactMouseEvent<HTMLElement, MouseEvent>) => sendEvent(e, 'formatItalic'),
-            strikeThrough: (e: ReactMouseEvent<HTMLElement, MouseEvent>) => sendEvent(e, 'formatStrikeThrough'),
-            underline: (e: ReactMouseEvent<HTMLElement, MouseEvent>) => sendEvent(e, 'formatUnderline'),
-            undo: (e: ReactMouseEvent<HTMLElement, MouseEvent>) => sendEvent(e, 'historyUndo'),
-            redo: (e: ReactMouseEvent<HTMLElement, MouseEvent>) => sendEvent(e, 'historyRedo'),
-            orderedList: (e: ReactMouseEvent<HTMLElement, MouseEvent>) => sendEvent(e, 'insertOrderedList'),
-            unorderedList: (e: ReactMouseEvent<HTMLElement, MouseEvent>) => sendEvent(e, 'insertUnorderedList'),
-            inlineCode: (e: ReactMouseEvent<HTMLElement, MouseEvent>) => sendEvent(e, 'formatInlineCode'),
+            bold: (e: ReactMouseEvent<HTMLElement, MouseEvent>) =>
+                sendEvent(e, 'formatBold'),
+            italic: (e: ReactMouseEvent<HTMLElement, MouseEvent>) =>
+                sendEvent(e, 'formatItalic'),
+            strikeThrough: (e: ReactMouseEvent<HTMLElement, MouseEvent>) =>
+                sendEvent(e, 'formatStrikeThrough'),
+            underline: (e: ReactMouseEvent<HTMLElement, MouseEvent>) =>
+                sendEvent(e, 'formatUnderline'),
+            undo: (e: ReactMouseEvent<HTMLElement, MouseEvent>) =>
+                sendEvent(e, 'historyUndo'),
+            redo: (e: ReactMouseEvent<HTMLElement, MouseEvent>) =>
+                sendEvent(e, 'historyRedo'),
+            orderedList: (e: ReactMouseEvent<HTMLElement, MouseEvent>) =>
+                sendEvent(e, 'insertOrderedList'),
+            unorderedList: (e: ReactMouseEvent<HTMLElement, MouseEvent>) =>
+                sendEvent(e, 'insertUnorderedList'),
+            inlineCode: (e: ReactMouseEvent<HTMLElement, MouseEvent>) =>
+                sendEvent(e, 'formatInlineCode'),
         };
     }, [editorRef]);
 

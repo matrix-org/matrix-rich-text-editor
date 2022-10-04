@@ -14,7 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { computeNodeAndOffset, computeSelectionOffset, countCodeunit } from './dom';
+import {
+    computeNodeAndOffset,
+    countCodeunit,
+    getCurrentSelection,
+} from './dom';
 
 let editor: HTMLDivElement;
 
@@ -23,10 +27,15 @@ beforeAll(() => {
     editor.setAttribute('contentEditable', 'true');
 });
 
+function setEditorHtml(html: string) {
+    // The editor always needs an extra BR after your HTML
+    editor.innerHTML = html + '<br />';
+}
+
 describe('computeNodeAndOffset', () => {
     it('Should find at the start of simple text', () => {
         // When
-        editor.innerHTML = 'abcdefgh';
+        setEditorHtml('abcdefgh');
         const { node, offset } = computeNodeAndOffset(editor, 0);
 
         // Then
@@ -36,7 +45,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find in the middle of simple text', () => {
         // When
-        editor.innerHTML = 'abcdefgh';
+        setEditorHtml('abcdefgh');
         const { node, offset } = computeNodeAndOffset(editor, 4);
 
         // Then
@@ -46,7 +55,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find at the end of simple text', () => {
         // When
-        editor.innerHTML = 'abcdefgh';
+        setEditorHtml('abcdefgh');
         const { node, offset } = computeNodeAndOffset(editor, 8);
 
         // Then
@@ -56,8 +65,9 @@ describe('computeNodeAndOffset', () => {
 
     it('Should return null if off the end', () => {
         // When
-        editor.innerHTML = 'abcdefgh';
-        const { node, offset } = computeNodeAndOffset(editor, 9);
+        setEditorHtml('abcdefgh');
+        // 8 characters, plus the br we always append = 9, so 10 is off end
+        const { node, offset } = computeNodeAndOffset(editor, 10);
 
         // Then
         expect(node).toBeNull();
@@ -66,7 +76,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find before subnode', () => {
         // When
-        editor.innerHTML = 'abc<b>def</b>gh';
+        setEditorHtml('abc<b>def</b>gh');
         const { node, offset } = computeNodeAndOffset(editor, 2);
 
         // Then
@@ -76,7 +86,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find after subnode', () => {
         // When
-        editor.innerHTML = 'abc<b>def</b>gh';
+        setEditorHtml('abc<b>def</b>gh');
         const { node, offset } = computeNodeAndOffset(editor, 4);
 
         // Then
@@ -86,7 +96,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find inside subnode', () => {
         // When
-        editor.innerHTML = 'abc<b>def</b>gh';
+        setEditorHtml('abc<b>def</b>gh');
         const { node, offset } = computeNodeAndOffset(editor, 7);
 
         // Then
@@ -96,7 +106,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find after subnode', () => {
         // When
-        editor.innerHTML = 'abc<b>def</b>gh';
+        setEditorHtml('abc<b>def</b>gh');
         const { node, offset } = computeNodeAndOffset(editor, 7);
 
         // Then
@@ -106,7 +116,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find before br', () => {
         // When
-        editor.innerHTML = 'a<br />b';
+        setEditorHtml('a<br />b');
         const { node, offset } = computeNodeAndOffset(editor, 0);
 
         // Then
@@ -116,7 +126,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find br start', () => {
         // When
-        editor.innerHTML = 'a<br />b';
+        setEditorHtml('a<br />b');
         const { node, offset } = computeNodeAndOffset(editor, 1);
 
         // Then
@@ -126,7 +136,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find br end', () => {
         // When
-        editor.innerHTML = 'a<br />b';
+        setEditorHtml('a<br />b');
         const { node, offset } = computeNodeAndOffset(editor, 2);
 
         // Then
@@ -136,7 +146,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find between br', () => {
         // When
-        editor.innerHTML = 'a<br /><br />b';
+        setEditorHtml('a<br /><br />b');
         const { node, offset } = computeNodeAndOffset(editor, 2);
 
         // Then
@@ -146,7 +156,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find after br', () => {
         // When
-        editor.innerHTML = 'a<br />b';
+        setEditorHtml('a<br />b');
         const { node, offset } = computeNodeAndOffset(editor, 3);
 
         // Then
@@ -156,7 +166,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find inside an empty list', () => {
         // When
-        editor.innerHTML = '<ul><li><li></ul>';
+        setEditorHtml('<ul><li><li></ul>');
         const { node, offset } = computeNodeAndOffset(editor, 0);
 
         // Then
@@ -166,7 +176,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find inside two empty list', () => {
         // When
-        editor.innerHTML = '<ul><li><li></ul><li><li></ul>';
+        setEditorHtml('<ul><li><li></ul><li><li></ul>');
         const { node, offset } = computeNodeAndOffset(editor, 0);
 
         // Then
@@ -176,7 +186,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find inside a list', () => {
         // When
-        editor.innerHTML = '<ul><li>foo<li></ul>';
+        setEditorHtml('<ul><li>foo<li></ul>');
         const { node, offset } = computeNodeAndOffset(editor, 1);
 
         // Then
@@ -185,53 +195,10 @@ describe('computeNodeAndOffset', () => {
     });
 });
 
-describe('computeSelectionOffset', () => {
-    it('Should contain all the characters when the editor node is selected', () => {
-        // When
-        editor.innerHTML = 'abc<b>def</b>gh';
-        // Use the editor node and a offset as 1 to simulate the FF behavior
-        let offset = computeSelectionOffset(editor, 1);
-
-        // Then
-        expect(offset).toBe(8);
-
-        // When
-        editor.innerHTML = 'abc<b>def</b>gh<ul><li>alice</li><li>bob</li>';
-        offset = computeSelectionOffset(editor, 1);
-
-        // Then
-        expect(offset).toBe(16);
-    });
-
-    it('Should contain the selected characters', () => {
-        // When
-        editor.innerHTML = 'abc<b>def</b>gh<ul><li>alice</li><li>bob</li>';
-        let offset = computeSelectionOffset(editor.childNodes[0], 1);
-
-        // Then
-        expect(offset).toBe(1);
-
-        // When
-        offset = computeSelectionOffset(editor.childNodes[0], 20);
-
-        // Then
-        expect(offset).toBe(20);
-    });
-
-    it('Should return 0 for the beginning of the line', () => {
-        // When
-        editor.innerHTML = 'abc';
-        const offset = computeSelectionOffset(editor.childNodes[0], 0);
-
-        // Then
-        expect(offset).toBe(0);
-    });
-});
-
 describe('countCodeunit', () => {
     it('Should count ASCII', () => {
         // When
-        editor.innerHTML = 'abcdefgh';
+        setEditorHtml('abcdefgh');
         const textNode = editor.childNodes[0];
 
         // Then
@@ -246,7 +213,7 @@ describe('countCodeunit', () => {
 
     it('Should count UCS-2', () => {
         // When
-        editor.innerHTML = 'a\u{03A9}b\u{03A9}c';
+        setEditorHtml('a\u{03A9}b\u{03A9}c');
         const textNode = editor.childNodes[0];
 
         // Then
@@ -259,7 +226,7 @@ describe('countCodeunit', () => {
 
     it('Should count complex', () => {
         // When
-        editor.innerHTML = 'a\u{1F469}\u{1F3FF}\u{200D}\u{1F680}b';
+        setEditorHtml('a\u{1F469}\u{1F3FF}\u{200D}\u{1F680}b');
         const textNode = editor.childNodes[0];
 
         // Then
@@ -272,7 +239,7 @@ describe('countCodeunit', () => {
 
     it('Should count nested', () => {
         // When
-        editor.innerHTML = 'a<b>b</b>c';
+        setEditorHtml('a<b>b</b>c');
         const firstTextNode = editor.childNodes[0];
         const boldTextNode = editor.childNodes[1].childNodes[0];
         const thirdTextNode = editor.childNodes[2];
@@ -285,43 +252,359 @@ describe('countCodeunit', () => {
 
     it('Should treat br as a character', () => {
         // When
-        editor.innerHTML = 'a<br />b';
+        setEditorHtml('a<br />b');
         const firstTextNode = editor.childNodes[0];
         const brNode = editor.childNodes[1];
         const secondTextNode = editor.childNodes[2];
 
         // Then
         expect(countCodeunit(editor, firstTextNode, 0)).toBe(0);
-        expect(countCodeunit(editor, brNode, 0)).toBe(1);
         expect(countCodeunit(editor, brNode, 1)).toBe(2);
         expect(countCodeunit(editor, secondTextNode, 1)).toBe(3);
     });
 
     it('Should work with deeply nested', () => {
         // When
-        editor.innerHTML = 'aaa<b><i>bbb</i>ccc</b>ddd';
+        setEditorHtml('aaa<b><i>bbb</i>ccc</b>ddd');
         const firstTextNode = editor.childNodes[0];
-        const boldItalicNode = editor.childNodes[1].childNodes[0];
-        const boldItalicTextNode = editor.childNodes[1].childNodes[0].childNodes[0];
-        const boldOnlyNode = editor.childNodes[1].childNodes[1];
+        const boldItalicTextNode =
+            editor.childNodes[1].childNodes[0].childNodes[0];
+        const boldOnlyTextNode = editor.childNodes[1].childNodes[1];
         const thirdTextNode = editor.childNodes[2];
 
         // Then
         expect(countCodeunit(editor, firstTextNode, 1)).toBe(1);
         expect(countCodeunit(editor, firstTextNode, 2)).toBe(2);
         expect(countCodeunit(editor, firstTextNode, 3)).toBe(3);
-        expect(countCodeunit(editor, boldItalicNode, 0)).toBe(3);
-        expect(countCodeunit(editor, boldItalicNode, 1)).toBe(4);
-        expect(countCodeunit(editor, boldItalicNode, 2)).toBe(5);
-        // We can supply the text node or its parent
         expect(countCodeunit(editor, boldItalicTextNode, 0)).toBe(3);
         expect(countCodeunit(editor, boldItalicTextNode, 1)).toBe(4);
         expect(countCodeunit(editor, boldItalicTextNode, 2)).toBe(5);
-        expect(countCodeunit(editor, boldOnlyNode, 0)).toBe(6);
-        expect(countCodeunit(editor, boldOnlyNode, 1)).toBe(7);
-        expect(countCodeunit(editor, boldOnlyNode, 2)).toBe(8);
+        expect(countCodeunit(editor, boldOnlyTextNode, 0)).toBe(6);
+        expect(countCodeunit(editor, boldOnlyTextNode, 1)).toBe(7);
+        expect(countCodeunit(editor, boldOnlyTextNode, 2)).toBe(8);
         expect(countCodeunit(editor, thirdTextNode, 0)).toBe(9);
         expect(countCodeunit(editor, thirdTextNode, 1)).toBe(10);
         expect(countCodeunit(editor, thirdTextNode, 2)).toBe(11);
+    });
+});
+
+describe('getCurrentSelection', () => {
+    class FakeSelection {
+        anchorNode: Node | null = null;
+        anchorOffset = 0;
+        focusNode: Node | null = null;
+        focusOffset = 0;
+
+        get isCollapsed(): boolean {
+            throw new Error('Not implemented!');
+        }
+        get rangeCount(): number {
+            throw new Error('Not implemented!');
+        }
+        get type(): string {
+            throw new Error('Not implemented!');
+        }
+        addRange() {
+            throw new Error('Not implemented!');
+        }
+        collapse() {
+            throw new Error('Not implemented!');
+        }
+        collapseToEnd() {
+            throw new Error('Not implemented!');
+        }
+        collapseToStart() {
+            throw new Error('Not implemented!');
+        }
+        containsNode(_: Node): boolean {
+            throw new Error('Not implemented!');
+        }
+        empty() {
+            throw new Error('Not implemented!');
+        }
+        deleteFromDocument() {
+            throw new Error('Not implemented!');
+        }
+        getRangeAt(): Range {
+            throw new Error('Not implemented!');
+        }
+        modify() {
+            throw new Error('Not implemented!');
+        }
+        removeRange() {
+            throw new Error('Not implemented!');
+        }
+        removeAllRanges() {
+            throw new Error('Not implemented!');
+        }
+        setPosition() {
+            throw new Error('Not implemented!');
+        }
+        toString(): string {
+            throw new Error('Not implemented!');
+        }
+
+        extend(focusNode: Node | null, focusOffset = 0) {
+            this.focusNode = focusNode;
+            this.focusOffset = focusOffset;
+        }
+
+        selectAllChildren(node: Node) {
+            this.anchorNode = node;
+            this.anchorOffset = 0;
+            this.focusNode = node;
+            this.focusOffset = node.childNodes.length;
+        }
+
+        setBaseAndExtent(
+            anchorNode: Node | null,
+            anchorOffset: number,
+            focusNode: Node | null,
+            focusOffset: number,
+        ) {
+            this.anchorNode = anchorNode;
+            this.anchorOffset = anchorOffset;
+            this.focusNode = focusNode;
+            this.focusOffset = focusOffset;
+        }
+    }
+
+    function lastTextNode(): Node | null {
+        for (let i = editor.childNodes.length - 1; i >= 0; i--) {
+            const n = editor.childNodes[i];
+            if (n.nodeType === Node.TEXT_NODE && n.textContent !== '\n') {
+                return n;
+            }
+        }
+        return null;
+    }
+
+    function indexOf(child: Node, parent: Node) {
+        let i = 0;
+        for (const ch of parent.childNodes) {
+            if (ch.isSameNode(child)) {
+                return i;
+            }
+            i++;
+        }
+        return -1;
+    }
+
+    /** Like clicking at the beginning */
+    function cursorToBeginning(): FakeSelection {
+        const sel = new FakeSelection();
+        const node = editor.firstChild;
+        sel.setBaseAndExtent(node, 0, node, 0);
+        return sel;
+    }
+
+    /** Click at the end then press down arrow */
+    function cursorToAfterEnd(): FakeSelection {
+        const sel = new FakeSelection();
+        const offset = editor.childNodes.length - 1;
+        sel.setBaseAndExtent(editor, offset, editor, offset);
+        return sel;
+    }
+
+    /** Click at the end */
+    function cursorToEnd(): FakeSelection {
+        const sel = new FakeSelection();
+        const textNode = lastTextNode();
+        if (textNode) {
+            const len = textNode.textContent?.length ?? 0;
+            sel.setBaseAndExtent(textNode, len, textNode, len);
+        }
+        return sel;
+    }
+
+    /** Moves to the supplied node at the supplied offset. Ignores the offset
+     * if you supply a non-text node, and places you immediately BEFORE the
+     * supplied node. */
+    function cursorToNode(node: Node, offset: number): FakeSelection {
+        const sel = new FakeSelection();
+        if (node.nodeType === Node.TEXT_NODE) {
+            // Text node - refer to it, with index at end
+            sel.setBaseAndExtent(node, offset, node, offset);
+        } else {
+            // Find parent and point to this node within the parent
+            const parent = node.parentNode;
+            if (parent) {
+                const idx = indexOf(node, parent);
+                sel?.setBaseAndExtent(parent, idx, parent, idx);
+            }
+        }
+        return sel;
+    }
+
+    function selectAll(): FakeSelection {
+        const sel = new FakeSelection();
+        sel.selectAllChildren(editor);
+        return sel;
+    }
+
+    function selectStartToEnd(): FakeSelection {
+        const sel = new FakeSelection();
+        const textNode = lastTextNode();
+        if (textNode && editor.firstChild) {
+            sel?.setBaseAndExtent(
+                editor.firstChild,
+                0,
+                textNode,
+                textNode.textContent?.length ?? 0,
+            );
+        }
+        return sel;
+    }
+
+    function selectEndToStart() {
+        const sel = cursorToEnd();
+        editor.firstChild && sel.extend(editor.firstChild);
+        return sel;
+    }
+
+    function select(
+        node1: Node,
+        offset1: number,
+        node2: Node,
+        offset2: number,
+    ): FakeSelection {
+        const sel = cursorToNode(node1, offset1);
+
+        if (!node2.parentNode) {
+            return sel;
+        }
+
+        let n2: Node;
+        let o2: number;
+        if (node2.nodeType === Node.TEXT_NODE) {
+            o2 = offset2;
+            n2 = node2;
+        } else {
+            o2 = indexOf(node2, node2.parentNode);
+            n2 = node2.parentNode;
+        }
+
+        sel.extend(n2, o2);
+        return sel;
+    }
+
+    /** Select from the end to the supplied node. If node is not a text node,
+     * offset is ignored, and the selection starts BEFORE node. */
+    function selectEndTo(node: Node, offset: number): FakeSelection {
+        const sel = cursorToEnd();
+
+        if (!node.parentNode) {
+            return sel;
+        }
+
+        let n: Node;
+        let o: number;
+        if (node.nodeType === Node.TEXT_NODE) {
+            o = offset;
+            n = node;
+        } else {
+            o = indexOf(node, node.parentNode);
+            n = node.parentNode;
+        }
+
+        sel.extend(n, o);
+        return sel;
+    }
+
+    it('correctly locates the cursor after a br tag', () => {
+        setEditorHtml('para 1<br /><br />para 2');
+        const secondBr = editor.childNodes[2];
+        assert(secondBr);
+        const sel = cursorToNode(secondBr, 0);
+
+        // Sanity: the focusNode and anchorNode are the editor object, not one
+        // of the text nodes inside it, and the offset tells you which node
+        // inside editor is immediately after the cursor.
+        expect(sel.anchorNode).toBe(editor);
+        expect(sel.anchorOffset).toBe(2);
+        expect(sel.focusNode).toBe(editor);
+        expect(sel.focusOffset).toBe(2);
+
+        // We should see ourselves as on code unit 7, because the BR
+        // counts as 1.
+        expect(getCurrentSelection(editor, sel)).toEqual([7, 7]);
+    });
+
+    it('correctly locates the cursor on a new line inside another tag', () => {
+        setEditorHtml('pa<strong>ra 1<br /><br />pa</strong>ra 2');
+        const strong = editor.childNodes[1];
+        const secondBr = strong.childNodes[2];
+        assert(secondBr);
+        const sel = cursorToNode(secondBr, 0);
+
+        // Sanity: the focusNode and anchorNode are the editor object, not one
+        // of the text nodes inside it, and the offset tells you which node
+        // inside editor is immediately after the cursor.
+        expect(sel.anchorNode).toBe(strong);
+        expect(sel.anchorOffset).toBe(2);
+        expect(sel.focusNode).toBe(strong);
+        expect(sel.focusOffset).toBe(2);
+
+        // We should see ourselves as on code unit 7, because the BR
+        // counts as 1.
+        expect(getCurrentSelection(editor, sel)).toEqual([7, 7]);
+    });
+
+    it('correctly finds backward selections ending after a BR', () => {
+        setEditorHtml('para 1<br /><br />para 2');
+        const secondBr = editor.childNodes[2];
+        assert(secondBr);
+        const sel = selectEndTo(secondBr, 0);
+
+        // Sanity
+        expect(sel.anchorNode).toBe(editor.childNodes[3]);
+        expect(sel.anchorOffset).toBe(6);
+        expect(sel.focusNode).toBe(editor);
+        expect(sel.focusOffset).toBe(2);
+
+        // We should see ourselves as on code unit 7, because the BR
+        // counts as 1.
+        expect(getCurrentSelection(editor, sel)).toEqual([14, 7]);
+    });
+
+    it('handles selecting all with ctrl-a', () => {
+        setEditorHtml('para 1<br /><br />para 2');
+        const sel = selectAll();
+
+        // Not 14 here because the last BR gets counted?
+        expect(getCurrentSelection(editor, sel)).toEqual([0, 15]);
+    });
+
+    it('handles selecting all by dragging', () => {
+        setEditorHtml('para 1<br /><br />para 2');
+        const sel = selectStartToEnd();
+        expect(getCurrentSelection(editor, sel)).toEqual([0, 14]);
+    });
+
+    it('handles selecting all by dragging backwards', () => {
+        setEditorHtml('para 1<br /><br />para 2');
+        const sel = selectEndToStart();
+        expect(getCurrentSelection(editor, sel)).toEqual([14, 0]);
+    });
+
+    it('handles selecting across multiple newlines', () => {
+        setEditorHtml('para 1<br /><br />para 2');
+        const p1 = editor.childNodes[0];
+        const p2 = editor.childNodes[3];
+        const sel = select(p1, 2, p2, 3);
+        expect(getCurrentSelection(editor, sel)).toEqual([2, 11]);
+    });
+
+    it('handles cursor after end', () => {
+        setEditorHtml('para 1<br /><br />para 2');
+        // Simulate going to end of doc and pressing down arrow
+        const sel = cursorToAfterEnd();
+        expect(getCurrentSelection(editor, sel)).toEqual([14, 14]);
+    });
+
+    it('handles cursor at start', () => {
+        setEditorHtml('para 1<br /><br />para 2');
+        const sel = cursorToBeginning();
+        expect(getCurrentSelection(editor, sel)).toEqual([0, 0]);
     });
 });

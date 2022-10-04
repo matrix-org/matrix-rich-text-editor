@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::dom::action_list::{DomAction, DomActionList};
 use crate::dom::nodes::DomNode;
 use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use crate::dom::{DomHandle, DomLocation, Range};
@@ -42,6 +43,11 @@ where
     }
 
     pub fn enter(&mut self) -> ComposerUpdate<S> {
+        self.push_state_to_history();
+        self.do_enter()
+    }
+
+    fn do_enter(&mut self) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
 
         if s == e {
@@ -49,9 +55,8 @@ where
             self.enter_with_zero_length_selection(range)
         } else {
             // Clear selection then enter.
-            // TODO: adds an extra entry to the undo log, I think.
-            self.delete();
-            self.enter()
+            self.do_replace_text_in("".into(), s, e);
+            self.do_enter()
         }
     }
 
@@ -97,22 +102,36 @@ where
         mut start: usize,
         end: usize,
     ) -> ComposerUpdate<S> {
-        let len = new_text.len();
-
-        let range = self.state.dom.find_range(start, end);
-        if range.is_empty() {
-            if !new_text.is_empty() {
-                self.state.dom.append_child(DomNode::new_text(new_text));
+        let text_string = new_text.to_string();
+        // If the inserted text contains newlines, slice it and
+        // insert each slice while simulating calls to the
+        // enter function in betweeen.
+        if text_string.contains("\n") {
+            let mut slices = text_string.split("\n").peekable();
+            while let Some(slice) = slices.next() {
+                let (s, e) = self.safe_selection();
+                self.do_replace_text_in(S::from(slice), s, e);
+                if !slices.peek().is_none() {
+                    self.do_enter();
+                }
             }
-            start = 0;
         } else {
-            self.replace_multiple_nodes(range, new_text)
+            let len = new_text.len();
+            let range = self.state.dom.find_range(start, end);
+            if range.is_empty() {
+                if !new_text.is_empty() {
+                    self.state.dom.append_child(DomNode::new_text(new_text));
+                }
+                start = 0;
+            } else {
+                self.replace_multiple_nodes(range, new_text)
+            }
+
+            self.apply_pending_formats(start, start + len);
+
+            self.state.start = Location::from(start + len);
+            self.state.end = self.state.start;
         }
-
-        self.apply_pending_formats(start, start + len);
-
-        self.state.start = Location::from(start + len);
-        self.state.end = self.state.start;
 
         // TODO: for now, we replace every time, to check ourselves, but
         // at least some of the time we should not
@@ -121,17 +140,20 @@ where
 
     fn replace_multiple_nodes(&mut self, range: Range, new_text: S) {
         let len = new_text.len();
-        let (to_add, to_delete) =
-            self.replace_in_text_nodes(range.clone(), new_text);
+        let action_list = self.replace_in_text_nodes(range.clone(), new_text);
+
+        let (to_add, to_delete, _) = action_list.grouped();
+        let to_delete = to_delete.into_iter().map(|a| a.handle).collect();
 
         // We only add nodes in one special case: when the selection ends at
         // a BR tag. In that case, the only nodes that might be deleted are
         // going to be before the one we add here, so their handles won't be
         // invalidated by the add we do here.
-        for (parent_handle, idx, node) in to_add.into_iter().rev() {
-            let parent = self.state.dom.lookup_node_mut(&parent_handle);
+        for add_action in to_add.into_iter().rev() {
+            let parent_handle = &add_action.parent_handle;
+            let parent = self.state.dom.lookup_node_mut(parent_handle);
             if let DomNode::Container(parent) = parent {
-                parent.insert_child(idx, node);
+                parent.insert_child(add_action.index, add_action.node);
             } else {
                 panic!("Parent was not a container!");
             }
@@ -192,10 +214,7 @@ where
 
     /// Given a range to replace and some new text, modify the nodes in the
     /// range to replace the text with the supplied text.
-    /// Returns:
-    /// * a list of nodes to create (parent_handle, index, node), and
-    /// * a list of (handles to) nodes that have become empty and should
-    ///   be deleted.
+    /// Returns a list of actions to be done to the Dom (add or remove nodes).
     /// NOTE: all nodes to be created are later in the Dom than all nodes to
     /// be deleted, so you can safely add them before performing the
     /// deletions, and the handles of the deletions will remain valid.
@@ -203,9 +222,8 @@ where
         &mut self,
         range: Range,
         new_text: S,
-    ) -> (Vec<(DomHandle, usize, DomNode<S>)>, Vec<DomHandle>) {
-        let mut to_delete = Vec::new();
-        let mut to_add = Vec::new();
+    ) -> DomActionList<S> {
+        let mut action_list = DomActionList::default();
         let mut first_text_node = true;
 
         let start = range.start();
@@ -221,7 +239,9 @@ where
                     match (loc.start_offset, loc.end_offset) {
                         (0, 1) => {
                             // Whole line break is selected, delete it
-                            to_delete.push(loc.node_handle.clone());
+                            action_list.push(DomAction::remove_node(
+                                loc.node_handle.clone(),
+                            ));
                         }
                         (1, 1) => {
                             // Cursor is after line break, no need to delete
@@ -231,14 +251,14 @@ where
                         ),
                     }
                     if start >= loc.position && end == loc.position + 1 {
-                        // NOTE: if you add something else to `to_add` you will
+                        // NOTE: if you add something else to `action_list` you will
                         // probably break our assumptions in the method that
                         // calls this one!
                         // We are assuming we only add nodes AFTER all the
                         // deleted nodes. (That is true in this case, because
                         // we are checking that the selection ends inside this
                         // line break.)
-                        to_add.push((
+                        action_list.push(DomAction::add_node(
                             loc.node_handle.parent_handle(),
                             loc.node_handle.index_in_parent() + 1,
                             DomNode::new_text(new_text.clone()),
@@ -254,7 +274,8 @@ where
                         && loc.end_offset == old_data.len()
                         && !first_text_node
                     {
-                        to_delete.push(loc.node_handle);
+                        action_list
+                            .push(DomAction::remove_node(loc.node_handle));
                     } else {
                         // Otherwise, delete the selected text
                         let mut new_data =
@@ -273,6 +294,6 @@ where
                 }
             }
         }
-        (to_add, to_delete)
+        action_list
     }
 }

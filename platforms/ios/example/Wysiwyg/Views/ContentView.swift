@@ -30,6 +30,9 @@ struct ContentView: View {
         Spacer()
             .frame(width: nil, height: 50, alignment: .center)
         Composer(viewModel: viewModel)
+        Button("Max/Min") {
+            viewModel.maximised.toggle()
+        }
         Button("Send") {
             sentMessage = viewModel.content
             viewModel.clearContent()
@@ -42,7 +45,7 @@ struct ContentView: View {
         ScrollView {
             if let tree = tree {
                 Text(tree)
-                    .font(.system(.body, design: .monospaced))
+                    .font(.system(size: 11.0, weight: .regular, design: .monospaced))
                     .multilineTextAlignment(.leading)
             }
             if let sentMessage = sentMessage {
