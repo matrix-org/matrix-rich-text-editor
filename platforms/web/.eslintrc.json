@@ -1,6 +1,10 @@
 {
     "plugins": ["matrix-org"],
-    "extends": ["plugin:matrix-org/typescript", "plugin:matrix-org/react", "plugin:matrix-org/a11y"],
+    "extends": [
+        "plugin:matrix-org/typescript",
+        "plugin:matrix-org/react",
+        "plugin:matrix-org/a11y"
+    ],
     "env": {
         "browser": true,
         "node": true
@@ -21,7 +25,7 @@
                 "leadingUnderscore": "allow"
             }
         ],
-        "max-len": [ "error", { "code": 80 } ],
+        "max-len": ["error", { "code": 80 }],
         "matrix-org/require-copyright-header": "error"
     }
 }

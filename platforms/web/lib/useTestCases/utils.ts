@@ -16,13 +16,26 @@ limitations under the License.
 
 // rust generated bindings
 // eslint-disable-next-line camelcase
-import { ComposerModel, ComposerUpdate, new_composer_model_from_html } from '../../generated/wysiwyg';
+import {
+    ComposerModel,
+    ComposerUpdate,
+    new_composer_model_from_html,
+} from '../../generated/wysiwyg';
 import { getCurrentSelection } from '../dom';
 import { isSelectTuple } from './assert';
 import { Actions } from './types';
 
-export function traceAction(testNode: HTMLElement | null, actions: Actions, composerModel: ComposerModel | null) {
-    return (update: ComposerUpdate | null, name: string, value1?: string | number, value2?: string | number) => {
+export function traceAction(
+    testNode: HTMLElement | null,
+    actions: Actions,
+    composerModel: ComposerModel | null,
+) {
+    return (
+        update: ComposerUpdate | null,
+        name: string,
+        value1?: string | number,
+        value2?: string | number,
+    ) => {
         if (!testNode || !composerModel) {
             return update;
         }
@@ -70,7 +83,8 @@ function updateTestCase(
     }
 
     testNode.innerText = generateTestCase(
-        actions, composerModel.to_example_format(),
+        actions,
+        composerModel.to_example_format(),
     );
 
     testNode.scrollTo(0, testNode.scrollHeight - testNode.clientHeight);
@@ -79,13 +93,16 @@ function updateTestCase(
 export function generateTestCase(actions: Actions, html: string) {
     let ret = '';
 
-    function add(name: string, value1?: string | number, value2?: string | number) {
+    function add(
+        name: string,
+        value1?: string | number,
+        value2?: string | number,
+    ) {
         if (name === 'select') {
-            ret += (
-                'model.select('
-                + `Location::from(${value1}), `
-                + `Location::from(${value2}));\n`
-            );
+            ret +=
+                'model.select(' +
+                `Location::from(${value1}), ` +
+                `Location::from(${value2}));\n`;
         } else if (value2 !== undefined) {
             ret += `model.${name}(${value1 ?? ''}, ${value2});\n`;
         } else if (name === 'replace_text') {

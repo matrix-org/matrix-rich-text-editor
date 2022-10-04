@@ -18,15 +18,21 @@ import { RefObject, useEffect, useRef, useState } from 'react';
 
 // rust generated bindings
 // eslint-disable-next-line camelcase
-import init, { ComposerModel, new_composer_model } from '../generated/wysiwyg.js';
+import init, {
+    ComposerModel,
+    new_composer_model,
+} from '../generated/wysiwyg.js';
 import { useFormattingActions } from './useFormattingActions';
 import { useListeners } from './useListeners';
 import { useTestCases } from './useTestCases';
 
-function useEditorFocus(editorRef: RefObject<HTMLElement | null>, isAutoFocusEnabled = false) {
+function useEditorFocus(
+    editorRef: RefObject<HTMLElement | null>,
+    isAutoFocusEnabled = false,
+) {
     useEffect(() => {
         if (isAutoFocusEnabled) {
-        // TODO remove this workaround
+            // TODO remove this workaround
             const id = setTimeout(() => editorRef.current?.focus(), 200);
             return () => clearInterval(id);
         }
@@ -34,7 +40,9 @@ function useEditorFocus(editorRef: RefObject<HTMLElement | null>, isAutoFocusEna
 }
 
 function useComposerModel() {
-    const [composerModel, setComposerModel] = useState<ComposerModel | null>(null);
+    const [composerModel, setComposerModel] = useState<ComposerModel | null>(
+        null,
+    );
 
     useEffect(() => {
         init().then(() => setComposerModel(new_composer_model()));
@@ -52,7 +60,10 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
     const modelRef = useRef<HTMLDivElement>(null);
 
     const composerModel = useComposerModel();
-    const { testRef, utilities: testUtilities } = useTestCases(ref, composerModel);
+    const { testRef, utilities: testUtilities } = useTestCases(
+        ref,
+        composerModel,
+    );
     useListeners(ref, modelRef, composerModel, testUtilities);
     const formattingActions = useFormattingActions(ref);
     useEditorFocus(ref, wysiwygProps?.isAutoFocusEnabled);
@@ -61,6 +72,10 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
         ref,
         isWysiwygReady: Boolean(composerModel),
         wysiwyg: formattingActions,
-        debug: { modelRef, testRef, resetTestCase: testUtilities.onResetTestCase },
+        debug: {
+            modelRef,
+            testRef,
+            resetTestCase: testUtilities.onResetTestCase,
+        },
     };
 }

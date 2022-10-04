@@ -6,23 +6,25 @@ The Matrix WYSIWYG composer is a React library.
 
 ## TODO NPM / Usage documentation
 
-The wysiwyg composer API is a react hook. 
+The wysiwyg composer API is a react hook.
 
 ```tsx
-const {ref, isWysiwygReady, wysiwyg} = useWysiwyg()
+const { ref, isWysiwygReady, wysiwyg } = useWysiwyg();
 
 return (
     <div>
-        <button type="button" onClick={wysiwyg.bold}>bold</button>
+        <button type="button" onClick={wysiwyg.bold}>
+            bold
+        </button>
         <div ref={ref} contentEditable={isWysiwygReady}>
             {/* TODO explain br tag */}
             <br />
         </div>
     </div>
-)
+);
 ```
 
-## Contribute 
+## Contribute
 
 ### Install
 
@@ -33,9 +35,9 @@ The composer uses a cross-platform rust library. In order to work as intended, t
 #### Yarn install
 
 Requirements:
-    - node >= 8.X
-    - yarn 1.X
 
+-   node >= 8.X
+-   yarn 1.X
 
 ```sh
 yarn install
@@ -45,8 +47,8 @@ yarn install
 
 #### Folder structure
 
-- Inside the `lib` folder, the wysiwyg composer library files are located with `useWysiwyg` as en entrypoint
-- Inside the `src` folder, the demo page of the composer is located.
+-   Inside the `lib` folder, the wysiwyg composer library files are located with `useWysiwyg` as en entrypoint
+-   Inside the `src` folder, the demo page of the composer is located.
 
 ### Dev mode
 
@@ -78,19 +80,19 @@ The tests are powered by [Vitest](https://vitest.dev/).
 
 To run them, different options are available:
 
-- Classic run
+-   Classic run
 
 ```sh
 yarn test
 ```
 
-- Watch mode
+-   Watch mode
 
 ```sh
 yarn test:watch
 ```
 
-- Code coverage
+-   Code coverage
 
 ```sh
 yarn coverage

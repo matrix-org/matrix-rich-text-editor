@@ -18,7 +18,11 @@ import { MouseEvent as ReactMouseEvent } from 'react';
 
 import { ComposerModel } from '../../generated/wysiwyg';
 import { processInput } from '../composer';
-import { getCurrentSelection, refreshComposerView, replaceEditor } from '../dom';
+import {
+    getCurrentSelection,
+    refreshComposerView,
+    replaceEditor,
+} from '../dom';
 import { BlockType, WysiwygInputEvent } from '../types';
 import { TestUtilities } from '../useTestCases/types';
 
@@ -29,24 +33,33 @@ export function sendWysiwygInputEvent(
 ) {
     e.preventDefault();
     e.stopPropagation();
-    editor.dispatchEvent(new CustomEvent('wysiwygInput', { detail: { blockType } }));
+    editor.dispatchEvent(
+        new CustomEvent('wysiwygInput', { detail: { blockType } }),
+    );
 }
 
 function getInputFromKeyDown(e: KeyboardEvent) {
     if (e.shiftKey && e.altKey) {
         switch (e.key) {
-            case '5': return 'formatStrikeThrough';
+            case '5':
+                return 'formatStrikeThrough';
         }
     }
 
-    if ((e.ctrlKey || e.metaKey)) {
+    if (e.ctrlKey || e.metaKey) {
         switch (e.key) {
-            case 'b': return 'formatBold';
-            case 'i': return 'formatItalic';
-            case 'u': return 'formatUnderline';
-            case 'y': return 'historyRedo';
-            case 'z': return 'historyUndo';
-            case 'Z': return 'historyRedo';
+            case 'b':
+                return 'formatBold';
+            case 'i':
+                return 'formatItalic';
+            case 'u':
+                return 'formatUnderline';
+            case 'y':
+                return 'historyRedo';
+            case 'z':
+                return 'historyUndo';
+            case 'Z':
+                return 'historyRedo';
         }
     }
 
@@ -71,7 +84,8 @@ export function handleInput(
     if (update) {
         const repl = update.text_update().replace_all;
         if (repl) {
-            replaceEditor(editor,
+            replaceEditor(
+                editor,
                 repl.replacement_html,
                 repl.start_utf16_codeunit,
                 repl.end_utf16_codeunit,
@@ -129,4 +143,3 @@ export function handleSelectionChange(
     composeModel.select(start, end);
     traceAction(null, 'select', start, end);
 }
-

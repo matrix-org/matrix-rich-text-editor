@@ -14,7 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { computeNodeAndOffset, countCodeunit, getCurrentSelection } from './dom';
+import {
+    computeNodeAndOffset,
+    countCodeunit,
+    getCurrentSelection,
+} from './dom';
 
 let editor: HTMLDivElement;
 
@@ -263,7 +267,8 @@ describe('countCodeunit', () => {
         // When
         setEditorHtml('aaa<b><i>bbb</i>ccc</b>ddd');
         const firstTextNode = editor.childNodes[0];
-        const boldItalicTextNode = editor.childNodes[1].childNodes[0].childNodes[0];
+        const boldItalicTextNode =
+            editor.childNodes[1].childNodes[0].childNodes[0];
         const boldOnlyTextNode = editor.childNodes[1].childNodes[1];
         const thirdTextNode = editor.childNodes[2];
 
@@ -290,27 +295,56 @@ describe('getCurrentSelection', () => {
         focusNode: Node | null = null;
         focusOffset = 0;
 
-        get isCollapsed(): boolean { throw new Error('Not implemented!'); }
-        get rangeCount(): number { throw new Error('Not implemented!'); }
-        get type(): string { throw new Error('Not implemented!'); }
-        addRange() { throw new Error('Not implemented!'); }
-        collapse() { throw new Error('Not implemented!'); }
-        collapseToEnd() { throw new Error('Not implemented!'); }
-        collapseToStart() { throw new Error('Not implemented!'); }
-        containsNode(_: Node): boolean { throw new Error('Not implemented!'); }
-        empty() { throw new Error('Not implemented!'); }
-        deleteFromDocument() { throw new Error('Not implemented!'); }
-        getRangeAt(): Range { throw new Error('Not implemented!'); }
-        modify() { throw new Error('Not implemented!'); }
-        removeRange() { throw new Error('Not implemented!'); }
-        removeAllRanges() { throw new Error('Not implemented!'); }
-        setPosition() { throw new Error('Not implemented!'); }
-        toString(): string { throw new Error('Not implemented!'); }
+        get isCollapsed(): boolean {
+            throw new Error('Not implemented!');
+        }
+        get rangeCount(): number {
+            throw new Error('Not implemented!');
+        }
+        get type(): string {
+            throw new Error('Not implemented!');
+        }
+        addRange() {
+            throw new Error('Not implemented!');
+        }
+        collapse() {
+            throw new Error('Not implemented!');
+        }
+        collapseToEnd() {
+            throw new Error('Not implemented!');
+        }
+        collapseToStart() {
+            throw new Error('Not implemented!');
+        }
+        containsNode(_: Node): boolean {
+            throw new Error('Not implemented!');
+        }
+        empty() {
+            throw new Error('Not implemented!');
+        }
+        deleteFromDocument() {
+            throw new Error('Not implemented!');
+        }
+        getRangeAt(): Range {
+            throw new Error('Not implemented!');
+        }
+        modify() {
+            throw new Error('Not implemented!');
+        }
+        removeRange() {
+            throw new Error('Not implemented!');
+        }
+        removeAllRanges() {
+            throw new Error('Not implemented!');
+        }
+        setPosition() {
+            throw new Error('Not implemented!');
+        }
+        toString(): string {
+            throw new Error('Not implemented!');
+        }
 
-        extend(
-            focusNode: Node | null,
-            focusOffset = 0,
-        ) {
+        extend(focusNode: Node | null, focusOffset = 0) {
             this.focusNode = focusNode;
             this.focusOffset = focusOffset;
         }

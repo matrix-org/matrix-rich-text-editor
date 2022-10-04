@@ -21,23 +21,28 @@ export function computeSelectionOffset(node: Node, offset?: number): number {
         return offset ?? node.textContent?.length ?? 0;
     } else if (node.hasChildNodes()) {
         return Array.from(node.childNodes)
-            .map(childNode => computeSelectionOffset(childNode))
+            .map((childNode) => computeSelectionOffset(childNode))
             .reduce((prev, curr) => prev + curr, 0);
     } else {
         return 0;
     }
 }
 
-export function refreshComposerView(node: HTMLElement, composerModel: ComposerModel) {
+export function refreshComposerView(
+    node: HTMLElement,
+    composerModel: ComposerModel,
+) {
     node.innerHTML = '';
     const doc = composerModel.document();
     let idCounter = 0;
 
     // TODO use HTMLAttributes or another types to accept only valid HTML attributes
-    function createNode(parent: Node,
+    function createNode(
+        parent: Node,
         name: string,
         text?: string | null,
-        attrs?: Map<string, string | null>) {
+        attrs?: Map<string, string | null>,
+    ) {
         const tag = document.createElement(name);
         if (text) {
             tag.innerHTML = text.replace('\u200b', '~');
@@ -60,7 +65,7 @@ export function refreshComposerView(node: HTMLElement, composerModel: ComposerMo
         list.className = `group_${idCounter % 10}`;
         const children = node.children(composerModel);
         let child: DomHandle | undefined;
-        while (child = children.next()) {
+        while ((child = children.next())) {
             const nodeType: string = child.node_type(composerModel);
             if (nodeType === 'container') {
                 // TODO I'm a bit septic about this id :p
@@ -78,7 +83,12 @@ export function refreshComposerView(node: HTMLElement, composerModel: ComposerMo
                         ['checked', null],
                     ]),
                 );
-                createNode(li, 'label', child.tag(composerModel), new Map([['for', domId]]));
+                createNode(
+                    li,
+                    'label',
+                    child.tag(composerModel),
+                    new Map([['for', domId]]),
+                );
                 id++;
                 writeChildren(child, li);
             } else if (nodeType === 'line_break') {
@@ -94,7 +104,8 @@ export function refreshComposerView(node: HTMLElement, composerModel: ComposerMo
     writeChildren(doc, node);
 }
 
-export function replaceEditor(editor: HTMLElement,
+export function replaceEditor(
+    editor: HTMLElement,
     htmlContent: string,
     startUtf16Codeunit: number,
     endUtf16Codeunit: number,
@@ -108,19 +119,17 @@ export function replaceEditor(editor: HTMLElement,
         let end = computeNodeAndOffset(editor, endUtf16Codeunit);
 
         if (start.node && end.node) {
-            const endNodeBeforeStartNode = (
-                start.node.compareDocumentPosition(end.node)
-                    & Node.DOCUMENT_POSITION_PRECEDING
-            );
+            const endNodeBeforeStartNode =
+                start.node.compareDocumentPosition(end.node) &
+                Node.DOCUMENT_POSITION_PRECEDING;
 
-            const sameNodeButEndOffsetBeforeStartOffset = (
-                start.node === end.node && end.offset < start.offset
-            );
+            const sameNodeButEndOffsetBeforeStartOffset =
+                start.node === end.node && end.offset < start.offset;
 
             // Ranges must always have start before end
             if (
-                endNodeBeforeStartNode
-                || sameNodeButEndOffsetBeforeStartOffset
+                endNodeBeforeStartNode ||
+                sameNodeButEndOffsetBeforeStartOffset
             ) {
                 [start, end] = [end, start];
             }
@@ -159,7 +168,8 @@ export function replaceEditor(editor: HTMLElement,
  * A "codeunit" here means a UTF-16 code unit.
  */
 export function computeNodeAndOffset(currentNode: Node, codeunits: number) {
-    const isEmptyList = currentNode.nodeName === 'LI' && !currentNode.hasChildNodes();
+    const isEmptyList =
+        currentNode.nodeName === 'LI' && !currentNode.hasChildNodes();
     if (currentNode.nodeType === Node.TEXT_NODE || isEmptyList) {
         if (codeunits <= (currentNode.textContent?.length || 0)) {
             return { node: currentNode, offset: codeunits };
@@ -213,8 +223,22 @@ export function getCurrentSelection(
     // change the selection, cutting off at the edge.
     // This should be done when we convert to React
     // Internal task for changing to React: PSU-721
-    const start = selection.anchorNode && countCodeunit(editor, selection.anchorNode, selection.anchorOffset) || 0;
-    const end = selection.focusNode && countCodeunit(editor, selection.focusNode, selection.focusOffset) || 0;
+    const start =
+        (selection.anchorNode &&
+            countCodeunit(
+                editor,
+                selection.anchorNode,
+                selection.anchorOffset,
+            )) ||
+        0;
+    const end =
+        (selection.focusNode &&
+            countCodeunit(
+                editor,
+                selection.focusNode,
+                selection.focusOffset,
+            )) ||
+        0;
 
     return [start, end];
 }
@@ -258,7 +282,7 @@ function findCharacter(
     currentNode: Node,
     nodeToFind: Node,
     offsetToFind: number,
-): { found: boolean, offset: number } {
+): { found: boolean; offset: number } {
     if (currentNode === nodeToFind) {
         // We've found the right node
         if (currentNode.nodeType === Node.TEXT_NODE) {
