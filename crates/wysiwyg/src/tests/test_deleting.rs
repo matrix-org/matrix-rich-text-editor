@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::tests::testutils_composer_model::{cm, restore_whitespace, tx};
+use crate::{
+    tests::testutils_composer_model::{cm, restore_whitespace, tx},
+    ComposerModel,
+};
 
 #[test]
 fn backspacing_a_character_at_the_end_deletes_it() {
@@ -47,6 +50,23 @@ fn backspacing_a_backwards_selection_deletes_it() {
     let mut model = cm("a|{bc}");
     model.backspace();
     assert_eq!(tx(&model), "a|");
+}
+
+#[test]
+fn backspacing_a_lone_newline_deletes_it() {
+    let mut model = ComposerModel::new();
+    model.enter();
+    model.backspace();
+    assert_eq!(tx(&model), "|");
+}
+
+#[test]
+fn backspacing_a_newline_deletes_it() {
+    let mut model = cm("abc|");
+    model.enter();
+    model.backspace();
+    model.backspace();
+    assert_eq!(tx(&model), "ab|");
 }
 
 #[test]
@@ -183,4 +203,12 @@ fn deleting_empty_list_item() {
     let mut model = cm("<ul><li>A{</li><li>~}|</li></ul>");
     model.backspace();
     assert_eq!(tx(&model), "<ul><li>A|</li></ul>");
+}
+
+#[test]
+fn deleting_a_newline_deletes_it() {
+    let mut model = cm("abc|<br />def");
+    model.delete();
+    model.delete();
+    assert_eq!(tx(&model), "abc|ef");
 }
