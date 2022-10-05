@@ -109,7 +109,7 @@ class EditorEditTextInputTests {
     }
 
     @Test
-    @FlakyTest(detail = "Sometimes the pressKey event doesn't reach the view.")
+    @Ignore("For some reason, keyboard movement doesn't match what would happen with a real device")
     fun testHardwareKeyMovementNotIntercepted() {
         onView(withId(R.id.rich_text_edit_text))
             .perform(ImeActions.setComposingText("Test"))
