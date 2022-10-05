@@ -125,7 +125,7 @@ export function generateTestCase(actions: Actions, html: string) {
         const [name, value1, value2] = action;
         if (isCollectingMode) {
             if (name === 'replace_text') {
-                collected += value1;
+                collected += escapeHtml(value1);
             } else if (isSelectTuple(action)) {
                 selection = [action[1], action[2]];
             } else {
@@ -176,4 +176,13 @@ export function resetTestCase(
     ];
     updateTestCase(testNode, composerModel, null, actions);
     return actions;
+}
+
+export function escapeHtml(html: string | number | undefined): string {
+    if (!html) {
+        return '';
+    }
+    const p = document.createElement('p');
+    p.appendChild(document.createTextNode(html.toString()));
+    return p.innerHTML;
 }
