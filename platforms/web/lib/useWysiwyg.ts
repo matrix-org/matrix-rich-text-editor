@@ -51,12 +51,24 @@ function useComposerModel() {
     return composerModel;
 }
 
+function useEditor() {
+    const ref = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        if (!ref.current?.childElementCount) {
+            ref.current?.appendChild(document.createElement('br'));
+        }
+    }, [ref]);
+
+    return ref;
+}
+
 type WysiwygProps = {
     isAutoFocusEnabled?: boolean;
 };
 
 export function useWysiwyg(wysiwygProps?: WysiwygProps) {
-    const ref = useRef<HTMLDivElement | null>(null);
+    const ref = useEditor();
     const modelRef = useRef<HTMLDivElement>(null);
 
     const composerModel = useComposerModel();

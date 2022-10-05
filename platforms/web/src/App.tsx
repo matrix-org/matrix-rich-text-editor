@@ -100,9 +100,7 @@ function App() {
                         className="editor"
                         ref={ref}
                         contentEditable={isWysiwygReady}
-                    >
-                        <br />
-                    </div>
+                    />
                 </div>
             </div>
             <h2>Model:</h2>
