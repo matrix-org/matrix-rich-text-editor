@@ -161,6 +161,16 @@ describe('computeNodeAndOffset', () => {
         expect(offset).toBe(0);
     });
 
+    it('Should find br at end', () => {
+        // When
+        setEditorHtml('abc<br />');
+        const { node, offset } = computeNodeAndOffset(editor, 4);
+
+        // Then
+        expect(node).toBe(editor.childNodes[2]);
+        expect(offset).toBe(0);
+    });
+
     it('Should find after br', () => {
         // When
         setEditorHtml('a<br />b');
@@ -457,6 +467,15 @@ describe('getCurrentSelection', () => {
         return sel;
     }
 
+    /** An alternative way of selecting a node - this is not possible
+     * to do by clicking, but it is the way we select nodes when we
+     * get a selection back from the ComposerModel sometimes. */
+    function cursorToNodeDirectly(node: Node, offset: number): FakeSelection {
+        const sel = new FakeSelection();
+        sel.setBaseAndExtent(node, offset, node, offset);
+        return sel;
+    }
+
     function selectAll(): FakeSelection {
         const sel = new FakeSelection();
         sel.selectAllChildren(editor);
@@ -545,6 +564,23 @@ describe('getCurrentSelection', () => {
         expect(sel.anchorOffset).toBe(2);
         expect(sel.focusNode).toBe(editor);
         expect(sel.focusOffset).toBe(2);
+
+        // We should see ourselves as on code unit 7, because the BR
+        // counts as 1.
+        expect(getCurrentSelection(editor, sel)).toEqual([7, 7]);
+    });
+
+    it('correctly locates the cursor after a br tag selected directly', () => {
+        setEditorHtml('para 1<br /><br />para 2');
+        const secondBr = editor.childNodes[2];
+        assert(secondBr);
+        const sel = cursorToNodeDirectly(secondBr, 0);
+
+        // Sanity: the focusNode and anchorNode are the BR itself
+        expect(sel.anchorNode).toBe(secondBr);
+        expect(sel.anchorOffset).toBe(0);
+        expect(sel.focusNode).toBe(secondBr);
+        expect(sel.focusOffset).toBe(0);
 
         // We should see ourselves as on code unit 7, because the BR
         // counts as 1.
