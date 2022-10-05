@@ -25,15 +25,18 @@ public struct WysiwygComposerView: UIViewRepresentable {
     public var replaceText: (NSAttributedString, NSRange, String) -> Bool
     public var select: (NSAttributedString, NSRange) -> Void
     public var didUpdateText: (UITextView) -> Void
+    public var textColor: UIColor
 
     public init(content: WysiwygComposerContent,
                 replaceText: @escaping (NSAttributedString, NSRange, String) -> Bool,
                 select: @escaping (NSAttributedString, NSRange) -> Void,
-                didUpdateText: @escaping (UITextView) -> Void) {
+                didUpdateText: @escaping (UITextView) -> Void,
+                textColor: UIColor = .label) {
         self.content = content
         self.replaceText = replaceText
         self.select = select
         self.didUpdateText = didUpdateText
+        self.textColor = textColor
     }
     
     public func makeUIView(context: Context) -> UITextView {
@@ -58,6 +61,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
                                  functionName: #function)
         uiView.apply(content)
         context.coordinator.didUpdateText(uiView)
+        uiView.textColor = textColor
     }
 
     public func makeCoordinator() -> Coordinator {
@@ -98,6 +102,18 @@ public struct WysiwygComposerView: UIViewRepresentable {
                                      functionName: #function)
             select(textView.attributedText, textView.selectedRange)
         }
+    }
+}
+
+public extension WysiwygComposerView {
+    func textColor(_ textColor: UIColor) -> Self {
+        Self(
+            content: content,
+            replaceText: replaceText,
+            select: select,
+            didUpdateText: didUpdateText,
+            textColor: textColor
+        )
     }
 }
 

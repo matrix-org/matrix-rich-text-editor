@@ -298,7 +298,10 @@ private extension WysiwygComposerViewModel {
         if maximised {
             idealHeight = maxHeight
         } else {
-            idealHeight = compressedHeight
+            // This solves the slowdown caused by the "Publishing changes from within view updates" purple warning
+            DispatchQueue.main.async {
+                self.idealHeight = self.compressedHeight
+            }
         }
     }
     
