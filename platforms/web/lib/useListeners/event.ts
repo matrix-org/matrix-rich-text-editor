@@ -92,6 +92,7 @@ export function handleInput(
             );
             testUtilities.setEditorHtml(repl.replacement_html);
         }
+        editor.focus();
 
         // Only when
         if (modelNode) {
@@ -105,13 +106,6 @@ export function handleSelectionChange(
     composeModel: ComposerModel,
     { traceAction, getSelectionAccordingToActions }: TestUtilities,
 ) {
-    const isInEditor = document.activeElement === editor;
-
-    // Skip the selection behavior when the focus is not in the editor
-    if (!isInEditor) {
-        return;
-    }
-
     const [start, end] = getCurrentSelection(editor, document.getSelection());
 
     const prevStart = composeModel.selection_start();

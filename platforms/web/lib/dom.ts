@@ -219,11 +219,6 @@ export function getCurrentSelection(
         return [0, 0];
     }
 
-    // We should check that the selection is happening within the editor!
-    // If anchor or focus are outside editor but not both, we should
-    // change the selection, cutting off at the edge.
-    // This should be done when we convert to React
-    // Internal task for changing to React: PSU-721
     const start =
         (selection.anchorNode &&
             countCodeunit(
@@ -361,6 +356,16 @@ export function countCodeunit(
     node: Node,
     offset: number,
 ): number {
+    const editorRange = new Range();
+    editorRange.setStart(editor, 0);
+    editorRange.setEnd(editor, editor.childNodes.length);
+    const cmp = editorRange.comparePoint(node, 0);
+    if (cmp === -1) {
+        return 0;
+    } else if (cmp === 1) {
+        return textLength(editor, node);
+    }
+
     const ret = findCharacter(editor, node, offset);
     if (ret.found) {
         return ret.offset;
