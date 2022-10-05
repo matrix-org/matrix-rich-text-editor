@@ -94,7 +94,9 @@ export function refreshComposerView(
                 createNode(list, 'li', 'br');
             } else if (nodeType === 'text') {
                 const li = createNode(list, 'li');
-                createNode(li, 'span', `"${child.text(composerModel)}"`);
+                createNode(li, 'span', '"', new Map([['class', 'quote']]));
+                createNode(li, 'span', `${child.text(composerModel)}`);
+                createNode(li, 'span', '"', new Map([['class', 'quote']]));
             } else {
                 console.error(`Unknown node type: ${nodeType}`);
             }
