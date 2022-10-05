@@ -273,7 +273,6 @@ fn typing_html_does_not_break_anything() {
     assert_eq!(tx(&model), "&|lt;");
 }
 
-
 #[test]
 fn newline_characters_insert_br_tags() {
     let mut model = cm("|");
