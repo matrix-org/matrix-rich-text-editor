@@ -42,9 +42,8 @@ jobs:
 
       - name: Install targets
         run: |
-          rustup target add aarch64-apple-ios
-          rustup target add aarch64-apple-ios-sim
-          rustup target add x86_64-apple-ios
+          rustup target add i686-linux-android
+          rustup target add armv7-linux-androideabi
 
       - name: Install Uniffi
         uses: actions-rs/cargo@v1
