@@ -16,10 +16,7 @@ return (
         <button type="button" onClick={wysiwyg.bold}>
             bold
         </button>
-        <div ref={ref} contentEditable={isWysiwygReady}>
-            {/* TODO explain br tag */}
-            <br />
-        </div>
+        <div ref={ref} contentEditable={isWysiwygReady} />
     </div>
 );
 ```

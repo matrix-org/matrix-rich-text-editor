@@ -16,7 +16,11 @@ limitations under the License.
 
 import init from '../../generated/wysiwyg';
 import { Actions } from './types';
-import { generateTestCase, getSelectionAccordingToActions } from './utils';
+import {
+    escapeHtml,
+    generateTestCase,
+    getSelectionAccordingToActions,
+} from './utils';
 
 beforeAll(async () => {
     await init();
@@ -216,9 +220,9 @@ describe('generateTestCase', () => {
 
         const expected =
             'let mut model = cm("ab|{c}");\n' +
-            'assert_eq!(tx(&model), "<strong>ab|{c}</strong>");\n';
+            'assert_eq!(tx(&model), "ab|{c}");\n';
 
-        const testCase = generateTestCase(actions, '<strong>ab|{c}</strong>');
+        const testCase = generateTestCase(actions, 'ab|{c}');
 
         // Then
         expect(testCase).toBe(expected);
@@ -231,13 +235,16 @@ describe('generateTestCase', () => {
             ['select', 2, 6],
         ];
 
+        // TODO: There is a bug in to_example_format in selections with entities
         const expected =
-            'let mut model = cm("aa<strong>{bbbb}|</strong>cc");\n' +
-            'assert_eq!(tx(&model), "aa<strong>{bbbb}|</strong>cc");\n';
+            'let mut model = ' +
+            'cm("aa{&lt;str}|ong&gt;bbbb&lt;/strong&gt;cc");\n' +
+            'assert_eq!(tx(&model), ' +
+            '"aa&lt;strong&gt;{bbbb}|&lt;/strong&gt;cc");\n';
 
         const testCase = generateTestCase(
             actions,
-            'aa<strong>{bbbb}|</strong>cc',
+            'aa&lt;strong&gt;{bbbb}|&lt;/strong&gt;cc',
         );
 
         // Then
@@ -256,16 +263,16 @@ describe('generateTestCase', () => {
             ['select', 3, 6],
         ];
 
+        // TODO: There is a bug in to_example_format in selections with entities
         const expected =
-            'let mut model = cm("aa<strong>{bbbb}|</strong>cc");\n' +
+            'let mut model = ' +
+            'cm("aa{&lt;str}|ong&gt;bbbb&lt;/strong&gt;cc");\n' +
             'model.bold();\n' +
             'model.select(Location::from(3), Location::from(6));\n' +
-            'assert_eq!(tx(&model), "aa<strong>{bbbb}|</strong>cc");\n';
+            'assert_eq!(tx(&model), ' +
+            '"aa{bbbb}|cc");\n';
 
-        const testCase = generateTestCase(
-            actions,
-            'aa<strong>{bbbb}|</strong>cc',
-        );
+        const testCase = generateTestCase(actions, 'aa{bbbb}|cc');
 
         // Then
         expect(testCase).toBe(expected);
@@ -280,22 +287,23 @@ describe('generateTestCase', () => {
             ['select', 3, 0],
         ];
 
+        // TODO: There is a bug in to_example_format meaning the cursor
+        // is in the wrong place here.
         const expected =
-            'let mut model = cm("aa<strong>{bbbb}|</strong>cc");\n' +
+            'let mut model = ' +
+            'cm("aa{&lt;str}|ong&gt;bbbb&lt;/strong&gt;cc");\n' +
             'model.bold();\n' +
             'model.select(Location::from(3), Location::from(0));\n' +
-            'assert_eq!(tx(&model), "|{aa<strong>b}bbb</strong>cc");\n';
+            'assert_eq!(tx(&model), ' +
+            '"|{aab}bbbcc");\n';
 
-        const testCase = generateTestCase(
-            actions,
-            '|{aa<strong>b}bbb</strong>cc',
-        );
+        const testCase = generateTestCase(actions, '|{aab}bbbcc');
 
         // Then
         expect(testCase).toBe(expected);
     });
 
-    it('Should generate test case later selections to beginning', () => {
+    it('Should generate test with cursor after backspace', () => {
         // When
         const actions: Actions = [
             ['replace_text', 'aa<strong>bbbb</strong>cc', undefined],
@@ -304,15 +312,34 @@ describe('generateTestCase', () => {
             ['backspace'],
         ];
 
+        // TODO: There is a bug in to_example_format meaning the cursor
+        // is in the wrong place here. Internal id: PSU-839
         const expected =
-            'let mut model = cm("aa<strong>bbbb</strong>cc|");\n' +
+            'let mut model = cm("aa&lt;stron|g&gt;bbbb&lt;/strong&gt;cc");\n' +
             'model.backspace();\n' +
             'model.backspace();\n' +
-            'assert_eq!(tx(&model), "aa<strong>bbbb|</strong>");\n';
+            'assert_eq!(tx(&model), "aa&lt;stron|g&gt;bbbb&lt;/strong&gt;");\n';
 
-        const testCase = generateTestCase(actions, 'aa<strong>bbbb|</strong>');
+        const testCase = generateTestCase(
+            actions,
+            'aa&lt;stron|g&gt;bbbb&lt;/strong&gt;',
+        );
 
         // Then
         expect(testCase).toBe(expected);
+    });
+});
+
+describe('escapeHtml', () => {
+    it('should return empty string for undefined input', () => {
+        expect(escapeHtml(undefined)).toBe('');
+    });
+
+    it('should leave plain strings unmodified', () => {
+        expect(escapeHtml('foo bar\nbaz')).toBe('foo bar\nbaz');
+    });
+
+    it('should escape HTML tags', () => {
+        expect(escapeHtml('a <b>B</b> c')).toBe('a &lt;b&gt;B&lt;/b&gt; c');
     });
 });

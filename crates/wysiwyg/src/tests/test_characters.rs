@@ -266,6 +266,14 @@ fn multiple_spaces_between_text() {
 }
 
 #[test]
+fn typing_html_does_not_break_anything() {
+    let mut model = cm("|");
+    replace_text(&mut model, "<");
+    // TODO: tx should handle &lt; and similar
+    assert_eq!(tx(&model), "&|lt;");
+}
+
+#[test]
 fn newline_characters_insert_br_tags() {
     let mut model = cm("|");
     replace_text(&mut model, "abc\ndef\nghi");
