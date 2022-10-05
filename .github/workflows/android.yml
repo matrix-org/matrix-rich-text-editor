@@ -21,7 +21,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        api-level: [32]
+        api-level: [28]
     steps:
       - uses: actions/checkout@v3
         with:
@@ -59,12 +59,13 @@ jobs:
       - name: Build and run all the tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
+          working-directory: platforms/android
           api-level: ${{ matrix.api-level }}
-          arch: x86_64
+          arch: x86
           profile: Nexus 5X
           target: playstore
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            platforms/android/gradlew :library:connectedDebugAndroidTest
+            ./gradlew :library:connectedDebugAndroidTest
