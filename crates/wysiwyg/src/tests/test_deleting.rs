@@ -14,7 +14,7 @@
 
 use crate::{
     tests::testutils_composer_model::{cm, restore_whitespace, tx},
-    ComposerModel,
+    ComposerModel, TextUpdate,
 };
 
 #[test]
@@ -63,7 +63,17 @@ fn backspacing_a_lone_newline_deletes_it() {
 #[test]
 fn backspacing_a_newline_deletes_it() {
     let mut model = cm("abc|");
-    model.enter();
+    let update = model.enter();
+
+    let replace_all = match update.text_update {
+        TextUpdate::Keep => panic!("expected ReplaceAll"),
+        TextUpdate::ReplaceAll(replace_all) => replace_all,
+        TextUpdate::Select(_) => panic!("expected ReplaceAll"),
+    };
+
+    assert_eq!(replace_all.start, 4);
+    assert_eq!(replace_all.end, 4);
+
     model.backspace();
     model.backspace();
     assert_eq!(tx(&model), "ab|");
