@@ -68,7 +68,6 @@ export function refreshComposerView(
         while ((child = children.next())) {
             const nodeType: string = child.node_type(composerModel);
             if (nodeType === 'container') {
-                // TODO: I'm a bit sceptical about this id :p (Florian)
                 const id = idCounter;
                 const domId = `dom_${id}`;
                 idCounter++;
