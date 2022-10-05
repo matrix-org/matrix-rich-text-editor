@@ -20,11 +20,18 @@ import {
     getCurrentSelection,
 } from './dom';
 
+let beforeEditor: HTMLDivElement;
 let editor: HTMLDivElement;
+let afterEditor: HTMLDivElement;
 
 beforeAll(() => {
+    beforeEditor = document.createElement('div');
     editor = document.createElement('div');
     editor.setAttribute('contentEditable', 'true');
+    afterEditor = document.createElement('div');
+    document.body.appendChild(beforeEditor);
+    document.body.appendChild(editor);
+    document.body.appendChild(afterEditor);
 });
 
 function setEditorHtml(html: string) {
@@ -390,6 +397,20 @@ describe('getCurrentSelection', () => {
         return -1;
     }
 
+    /** Like selecting something before the editor */
+    function selectionBeforeEditor(): FakeSelection {
+        const sel = new FakeSelection();
+        sel.setBaseAndExtent(beforeEditor, 0, beforeEditor, 0);
+        return sel;
+    }
+
+    /** Like selecting something before the editor */
+    function selectionAfterEditor(): FakeSelection {
+        const sel = new FakeSelection();
+        sel.setBaseAndExtent(afterEditor, 0, afterEditor, 0);
+        return sel;
+    }
+
     /** Like clicking at the beginning */
     function cursorToBeginning(): FakeSelection {
         const sel = new FakeSelection();
@@ -606,5 +627,17 @@ describe('getCurrentSelection', () => {
         setEditorHtml('para 1<br /><br />para 2');
         const sel = cursorToBeginning();
         expect(getCurrentSelection(editor, sel)).toEqual([0, 0]);
+    });
+
+    it('handles selection before the start by returning 0, 0', () => {
+        setEditorHtml('para 1<br /><br />para 2');
+        const sel = selectionBeforeEditor();
+        expect(getCurrentSelection(editor, sel)).toEqual([0, 0]);
+    });
+
+    it('handles selection after the end by returning last character', () => {
+        setEditorHtml('para 1<br /><br />para 2');
+        const sel = selectionAfterEditor();
+        expect(getCurrentSelection(editor, sel)).toEqual([15, 15]);
     });
 });
