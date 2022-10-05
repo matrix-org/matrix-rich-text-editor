@@ -36,7 +36,7 @@ export function refreshComposerView(
     const doc = composerModel.document();
     let idCounter = 0;
 
-    // TODO: use HTMLAttributes similar to accept only valid HTML attributes
+    // TODO: use HTMLAttributes or similar to accept only valid HTML attributes
     function createNode(
         parent: Node,
         name: string,
@@ -45,7 +45,7 @@ export function refreshComposerView(
     ) {
         const tag = document.createElement(name);
         if (text) {
-            tag.innerHTML = text.replace('\u200b', '~');
+            tag.innerText = text.replace('\u200b', '~');
         }
         if (attrs) {
             for (const [name, value] of attrs.entries()) {
@@ -68,8 +68,8 @@ export function refreshComposerView(
         while ((child = children.next())) {
             const nodeType: string = child.node_type(composerModel);
             if (nodeType === 'container') {
-                // TODO I'm a bit septic about this id :p
-                let id = idCounter;
+                // TODO: I'm a bit sceptical about this id :p (Florian)
+                const id = idCounter;
                 const domId = `dom_${id}`;
                 idCounter++;
                 const li = createNode(list, 'li');
@@ -89,12 +89,12 @@ export function refreshComposerView(
                     child.tag(composerModel),
                     new Map([['for', domId]]),
                 );
-                id++;
                 writeChildren(child, li);
             } else if (nodeType === 'line_break') {
                 createNode(list, 'li', 'br');
             } else if (nodeType === 'text') {
-                createNode(list, 'li', `"${child.text(composerModel)}"`);
+                const li = createNode(list, 'li');
+                createNode(li, 'span', `"${child.text(composerModel)}"`);
             } else {
                 console.error(`Unknown node type: ${nodeType}`);
             }
