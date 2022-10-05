@@ -61,6 +61,7 @@ jobs:
         with:
           working-directory: platforms/android
           api-level: ${{ matrix.api-level }}
+          ndk: 22.1.7171670
           arch: x86
           profile: Nexus 5X
           target: playstore
