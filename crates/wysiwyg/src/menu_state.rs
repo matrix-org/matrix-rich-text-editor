@@ -15,13 +15,13 @@
 use crate::ComposerAction;
 use std::collections::HashSet;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum MenuState {
     Keep,
     Update(MenuStateUpdate),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct MenuStateUpdate {
     pub reversed_actions: HashSet<ComposerAction>,
     pub disabled_actions: HashSet<ComposerAction>,

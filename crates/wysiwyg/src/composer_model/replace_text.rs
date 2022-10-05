@@ -297,3 +297,38 @@ where
         action_list
     }
 }
+
+#[cfg(test)]
+mod test {
+    use std::collections::HashSet;
+
+    use widestring::Utf16String;
+
+    use crate::menu_state::MenuStateUpdate;
+    use crate::tests::testutils_composer_model::cm;
+    use crate::tests::testutils_conversion::utf16;
+    use crate::{ComposerAction, ComposerUpdate, Location, MenuState};
+
+    #[test]
+    fn composer_update_contains_escaped_html() {
+        let mut model = cm("|");
+        let update = model.replace_text(Utf16String::from_str("<"));
+        assert_eq!(
+            update,
+            ComposerUpdate::replace_all(
+                utf16("&lt;"),
+                Location::from(1),
+                Location::from(1),
+                MenuState::Update(MenuStateUpdate {
+                    reversed_actions: HashSet::new(),
+                    disabled_actions: [
+                        ComposerAction::Indent,
+                        ComposerAction::UnIndent,
+                        ComposerAction::Redo
+                    ]
+                    .into()
+                }),
+            )
+        );
+    }
+}
