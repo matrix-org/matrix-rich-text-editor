@@ -18,7 +18,8 @@
         <io.element.android.wysiwyg.EditorEditText
             android:id="@id/rich_text_edit_text"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:inputType="text|textNoSuggestions" />
 
     </com.google.android.material.textfield.TextInputLayout>
 

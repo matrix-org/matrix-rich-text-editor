@@ -109,7 +109,6 @@ class EditorEditTextInputTests {
     }
 
     @Test
-    @FlakyTest(detail = "Sometimes the pressKey event doesn't reach the view.")
     fun testHardwareKeyMovementNotIntercepted() {
         onView(withId(R.id.rich_text_edit_text))
             .perform(typeText("Test"))
