@@ -124,6 +124,10 @@ where
     pub fn to_tree(&self) -> S {
         self.state.dom.to_tree()
     }
+
+    pub fn clear(&mut self) -> ComposerUpdate<S> {
+        self.replace_all_html(&"".into())
+    }
 }
 
 pub(crate) fn starts_with(subject: &DomHandle, object: &DomHandle) -> bool {
