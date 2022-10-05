@@ -232,6 +232,21 @@ fn un_indent_nested_lists_with_remnants_works() {
     )
 }
 
+#[test]
+fn replacing_text_with_newline_characters_inserts_list_items() {
+    let mut model = cm("<ul><li>abc|</li></ul>");
+    replace_text(&mut model, "def\nghi");
+    assert_eq!(tx(&model), "<ul><li>abcdef</li><li>~ghi|</li></ul>");
+}
+
+#[test]
+#[ignore = "Should be fixed once ZWSP are always properly inserted into list items"]
+fn replacing_cross_list_item_selection_with_text_containing_newline_works() {
+    let mut model = cm("<ul><li>a{bc</li><li>~de}|f</li></ul>");
+    replace_text(&mut model, "ghi\njkl");
+    assert_eq!(tx(&model), "<ul><li>aghi</li><li>~jkl|f</li></ul>");
+}
+
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
     model.replace_text(utf16(new_text));
 }

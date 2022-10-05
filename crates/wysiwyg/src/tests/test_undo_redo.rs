@@ -167,3 +167,13 @@ fn undoing_enter_only_undoes_one() {
     model.undo();
     assert_eq!(tx(&model), "Test<br />|");
 }
+
+#[test]
+fn replacing_text_with_newlines_only_adds_one_to_undo_stack() {
+    let mut model = cm("abc|");
+    model.replace_text(utf16("def\nghi"));
+    model.replace_text(utf16("\njkl\n"));
+    model.undo();
+    model.undo();
+    assert_eq!(tx(&model), "abc|");
+}
