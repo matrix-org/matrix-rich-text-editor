@@ -50,6 +50,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
         textView.textContainerInset = .zero
         textView.textContainer.lineFragmentPadding = 0
         textView.adjustsFontForContentSizeCategory = true
+        textView.backgroundColor = .clear
         return textView
     }
 
