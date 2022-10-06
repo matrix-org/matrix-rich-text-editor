@@ -107,12 +107,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
 public extension WysiwygComposerView {
     /// Sets the textColor of the WYSIWYG textView, if not used the default value is Color.primary.
     func textColor(_ textColor: Color) -> Self {
-        var newSelf = Self(
-            content: content,
-            replaceText: replaceText,
-            select: select,
-            didUpdateText: didUpdateText
-        )
+        var newSelf = self
         newSelf.textColor = textColor
         return newSelf
     }
