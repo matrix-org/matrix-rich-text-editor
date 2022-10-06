@@ -243,20 +243,23 @@ export function getCurrentSelection(
  * How many codeunits are there inside node, stopping counting if you get to
  * stopAtNode?
  */
-function textLength(node: Node, stopAtNode: Node): number {
+function textLength(node: Node, stopChildNumber: number): number {
     if (node.nodeType === Node.TEXT_NODE) {
         return node.textContent?.length ?? 0;
     } else if (node.nodeName === 'BR') {
-        // Treat br tags as being 1 character long
-        return 1;
+        // Treat br tags as being 1 character long, unless we are
+        // looking for location 0 inside one, in which case it's 0 length
+        return stopChildNumber === 0 ? 0 : 1;
     } else {
         // Add up lengths until we hit the stop node.
         let sum = 0;
+        let i = 0;
         for (const ch of node.childNodes) {
-            if (ch === stopAtNode) {
+            if (i === stopChildNumber) {
                 break;
             }
-            sum += textLength(ch, stopAtNode);
+            sum += textLength(ch, -1);
+            i++;
         }
         return sum;
     }
@@ -297,10 +300,7 @@ function findCharacter(
             // Non-text node - offset is the index of the selected node
             // within currentNode.
             // Add up the sizes of all the nodes before offset.
-            const ret = textLength(
-                currentNode,
-                currentNode.childNodes[offsetToFind],
-            );
+            const ret = textLength(currentNode, offsetToFind);
             return { found: true, offset: ret };
         }
     } else {
@@ -363,7 +363,7 @@ export function countCodeunit(
     if (cmp === -1) {
         return 0;
     } else if (cmp === 1) {
-        return textLength(editor, node);
+        return textLength(editor, -1);
     }
 
     const ret = findCharacter(editor, node, offset);
