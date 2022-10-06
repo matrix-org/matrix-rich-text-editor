@@ -12,20 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#![cfg(test)]
+use widestring::Utf16String;
 
-pub mod test_characters;
-pub mod test_deleting;
-pub mod test_formatting;
-pub mod test_links;
-pub mod test_lists;
-pub mod test_menu_state;
-pub mod test_paragraphs;
-pub mod test_replace_all_html;
-pub mod test_selection;
-pub mod test_to_raw_text;
-pub mod test_to_tree;
-pub mod test_undo_redo;
-pub mod testutils_composer_model;
-pub mod testutils_conversion;
-pub mod testutils_dom;
+use crate::{tests::testutils_composer_model::tx, ComposerModel};
+
+#[test]
+fn replace_all_html() {
+    let mut model = ComposerModel::new();
+    model.replace_all_html(&Utf16String::from("content"));
+    assert_eq!(tx(&model), "|content");
+}
+
+#[test]
+fn clear() {
+    let mut model = ComposerModel::new();
+    model.replace_all_html(&Utf16String::from("content"));
+    model.clear();
+    assert_eq!(tx(&model), "");
+}

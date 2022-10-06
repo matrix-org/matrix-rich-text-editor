@@ -112,6 +112,16 @@ impl ComposerModel {
         )
     }
 
+    pub fn replace_all_html(&mut self, text: &str) -> ComposerUpdate {
+        ComposerUpdate::from(
+            self.inner.replace_all_html(&Utf16String::from_str(text)),
+        )
+    }
+
+    pub fn clear(&mut self) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.clear())
+    }
+
     pub fn enter(&mut self) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.enter())
     }

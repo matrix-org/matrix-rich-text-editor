@@ -26,6 +26,10 @@ impl ComposerModel {
         ))
     }
 
+    pub fn clear(self: &Arc<Self>) -> Arc<ComposerUpdate> {
+        Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().clear()))
+    }
+
     pub fn select(
         self: &Arc<Self>,
         start_utf16_codeunit: u32,

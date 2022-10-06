@@ -36,7 +36,7 @@ export function refreshComposerView(
     const doc = composerModel.document();
     let idCounter = 0;
 
-    // TODO: use HTMLAttributes similar to accept only valid HTML attributes
+    // TODO: use HTMLAttributes or similar to accept only valid HTML attributes
     function createNode(
         parent: Node,
         name: string,
@@ -45,7 +45,7 @@ export function refreshComposerView(
     ) {
         const tag = document.createElement(name);
         if (text) {
-            tag.innerHTML = text.replace('\u200b', '~');
+            tag.innerText = text.replace('\u200b', '~');
         }
         if (attrs) {
             for (const [name, value] of attrs.entries()) {
@@ -68,8 +68,7 @@ export function refreshComposerView(
         while ((child = children.next())) {
             const nodeType: string = child.node_type(composerModel);
             if (nodeType === 'container') {
-                // TODO I'm a bit septic about this id :p
-                let id = idCounter;
+                const id = idCounter;
                 const domId = `dom_${id}`;
                 idCounter++;
                 const li = createNode(list, 'li');
@@ -89,12 +88,14 @@ export function refreshComposerView(
                     child.tag(composerModel),
                     new Map([['for', domId]]),
                 );
-                id++;
                 writeChildren(child, li);
             } else if (nodeType === 'line_break') {
                 createNode(list, 'li', 'br');
             } else if (nodeType === 'text') {
-                createNode(list, 'li', `"${child.text(composerModel)}"`);
+                const li = createNode(list, 'li');
+                createNode(li, 'span', '"', new Map([['class', 'quote']]));
+                createNode(li, 'span', `${child.text(composerModel)}`);
+                createNode(li, 'span', '"', new Map([['class', 'quote']]));
             } else {
                 console.error(`Unknown node type: ${nodeType}`);
             }
@@ -218,11 +219,6 @@ export function getCurrentSelection(
         return [0, 0];
     }
 
-    // We should check that the selection is happening within the editor!
-    // If anchor or focus are outside editor but not both, we should
-    // change the selection, cutting off at the edge.
-    // This should be done when we convert to React
-    // Internal task for changing to React: PSU-721
     const start =
         (selection.anchorNode &&
             countCodeunit(
@@ -360,6 +356,16 @@ export function countCodeunit(
     node: Node,
     offset: number,
 ): number {
+    const editorRange = new Range();
+    editorRange.setStart(editor, 0);
+    editorRange.setEnd(editor, editor.childNodes.length);
+    const cmp = editorRange.comparePoint(node, 0);
+    if (cmp === -1) {
+        return 0;
+    } else if (cmp === 1) {
+        return textLength(editor, node);
+    }
+
     const ret = findCharacter(editor, node, offset);
     if (ret.found) {
         return ret.offset;
