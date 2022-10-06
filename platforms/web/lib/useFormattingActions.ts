@@ -51,6 +51,8 @@ export function useFormattingActions(editorRef: RefObject<HTMLElement | null>) {
                 sendEvent(e, 'insertUnorderedList'),
             inlineCode: (e: ReactMouseEvent<HTMLElement, MouseEvent>) =>
                 sendEvent(e, 'formatInlineCode'),
+            clear: (e: ReactMouseEvent<HTMLElement, MouseEvent>) =>
+                sendEvent(e, 'clear'),
         };
     }, [editorRef]);
 
