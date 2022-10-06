@@ -68,6 +68,8 @@ export function processInput(
             break;
         case 'insertUnorderedList':
             return action(composerModel.unordered_list(), 'unordered_list');
+        case 'clear':
+            return action(composerModel.clear(), 'clear');
         default:
             // We should cover all of
             // eslint-disable-next-line max-len
