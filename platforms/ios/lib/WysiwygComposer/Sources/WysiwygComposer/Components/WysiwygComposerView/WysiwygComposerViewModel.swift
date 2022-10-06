@@ -181,14 +181,14 @@ public extension WysiwygComposerViewModel {
     ///
     /// - Parameter textView: The composer's text view.
     func didUpdateText(textView: UITextView) {
-        updateCompressedHeightIfNeeded(textView)
-
         // Reconciliate
         if textView.attributedText != content.attributed {
             Logger.viewModel.logDebug(["Reconciliate from \"\(textView.text ?? "")\" to \"\(content.plainText)\""],
                                       functionName: #function)
             textView.apply(content)
         }
+
+        updateCompressedHeightIfNeeded(textView)
     }
 }
 
