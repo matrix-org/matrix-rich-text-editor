@@ -104,6 +104,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
 }
 
 public extension WysiwygComposerView {
+    /// Sets the textColor of the WYSIWYG textView, if not used the default label UIColor is used.
     func textColor(_ textColor: Color) -> Self {
         var newSelf = Self(
             content: content,
