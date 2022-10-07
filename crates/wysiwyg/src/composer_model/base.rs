@@ -86,6 +86,8 @@ where
         match dom {
             Ok(dom) => {
                 self.state.dom = dom;
+                self.state.start = Location::from(self.state.dom.text_len());
+                self.state.end = self.state.start;
                 self.previous_states.clear();
                 self.next_states.clear();
                 self.create_update_replace_all()

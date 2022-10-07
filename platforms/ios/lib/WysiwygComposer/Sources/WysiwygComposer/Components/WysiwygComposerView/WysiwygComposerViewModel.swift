@@ -130,10 +130,18 @@ public class WysiwygComposerViewModel: ObservableObject {
         applyUpdate(update)
     }
 
+    /// Sets given HTML as the current content of the composer.
+    ///
+    /// - Parameters:
+    ///   - html: HTML content to apply
+    public func setHtmlContent(_ html: String) {
+        let update = model.replaceAllHtml(html: html)
+        applyUpdate(update)
+    }
+
     /// Clear the content of the composer.
     public func clearContent() {
-        model = newComposerModel()
-        content = WysiwygComposerContent()
+        applyUpdate(model.clear())
     }
 
     /// Returns a textual representation of the composer model as a tree.
