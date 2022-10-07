@@ -95,7 +95,7 @@ function App() {
                             alt="inline code"
                             imagePath={listOrderedImage}
                         />
-                        <button type="button" onClick={(e) => wysiwyg.clear(e)}>
+                        <button type="button" onClick={(e) => wysiwyg.clear()}>
                             clear
                         </button>
                     </div>
