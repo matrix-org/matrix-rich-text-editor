@@ -17,7 +17,7 @@ limitations under the License.
 import { RefObject, useEffect } from 'react';
 
 import { ComposerModel } from '../../generated/wysiwyg';
-import { isInputEvent } from './assert';
+import { isClipboardEvent, isInputEvent } from './assert';
 import { handleInput, handleKeyDown, handleSelectionChange } from './event';
 import { WysiwygInputEvent } from '../types';
 import { TestUtilities } from '../useTestCases/types';
@@ -50,6 +50,26 @@ export function useListeners(
             );
         editorNode.addEventListener('input', onInput);
 
+        const onPaste = (e: Event) => {
+            console.log(e);
+            if (!isClipboardEvent(e)) {
+                return;
+            }
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            handleInput(
+                e,
+                editorNode,
+                composerModel,
+                modelRef.current,
+                testUtilities,
+                onChange,
+            );
+        };
+        editorNode.addEventListener('paste', onPaste);
+
         const onWysiwygInput = ((e: FormatBlockEvent) => {
             handleInput(
                 { inputType: e.detail.blockType } as WysiwygInputEvent,
@@ -73,6 +93,7 @@ export function useListeners(
 
         return () => {
             editorNode.removeEventListener('input', onInput);
+            editorNode.removeEventListener('paste', onPaste);
             editorNode.removeEventListener('wysiwygInput', onWysiwygInput);
             editorNode.removeEventListener('keydown', onKeyDown);
             document.removeEventListener('selectionchange', onSelectionChange);

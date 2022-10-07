@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-export type BlockType = InputEvent['inputType'] | 'formatInlineCode' | 'clear';
+/// <reference types="cypress" />
 
-export type WysiwygInputEvent =
-    | ClipboardEvent
-    | (InputEvent & { inputType: BlockType });
+import './commands';

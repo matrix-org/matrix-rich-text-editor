@@ -14,8 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-export type BlockType = InputEvent['inputType'] | 'formatInlineCode' | 'clear';
+import { defineConfig } from 'cypress';
 
-export type WysiwygInputEvent =
-    | ClipboardEvent
-    | (InputEvent & { inputType: BlockType });
+export default defineConfig({
+    videoUploadOnPasses: false,
+    //projectId: 'ppvnzg',
+    experimentalInteractiveRunEvents: true,
+    defaultCommandTimeout: 10000,
+    chromeWebSecurity: false,
+    e2e: {
+        baseUrl: 'http://localhost:5173',
+        specPattern: 'cypress/e2e/**/*.{ts,tsx}',
+    },
+});

@@ -26,3 +26,5 @@ dist-demo
 
 /generated/
 /coverage/
+/cypress/screenshots/
+/cypress/videos/
