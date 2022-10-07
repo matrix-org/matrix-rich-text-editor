@@ -23,10 +23,18 @@ export function processInput(
     composerModel: ComposerModel,
     action: TestUtilities['traceAction'],
 ) {
+    if (e instanceof ClipboardEvent) {
+        const data = e.clipboardData?.getData('text/plain') ?? '';
+        console.log(data);
+        return action(composerModel.replace_text(data), 'paste');
+    }
+
     switch (e.inputType) {
         case 'deleteContentBackward':
             return action(composerModel.backspace(), 'backspace');
         case 'deleteContentForward':
+            return action(composerModel.delete(), 'delete');
+        case 'deleteByCut':
             return action(composerModel.delete(), 'delete');
         case 'formatBold':
             return action(composerModel.bold(), 'bold');
@@ -42,17 +50,12 @@ export function processInput(
             return action(composerModel.redo(), 'redo');
         case 'historyUndo':
             return action(composerModel.undo(), 'undo');
-        case 'insertFromPaste': {
-            if (e.dataTransfer) {
-                const data = e.dataTransfer.getData('text');
-                return action(
-                    composerModel.replace_text(data),
-                    'replace_text',
-                    data,
-                );
-            }
-            break;
-        }
+        case 'insertFromPaste':
+            // Paste is already handled by catching the 'paste' event, which
+            // results in a ClipboardEvent, handled above. Ideally, we would
+            // do it here, but Chrome does not provide data inside this
+            // InputEvent, only in the original ClipboardEvent.
+            return;
         case 'insertOrderedList':
             return action(composerModel.ordered_list(), 'ordered_list');
         case 'insertParagraph':

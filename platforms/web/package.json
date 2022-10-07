@@ -32,6 +32,8 @@
         "typecheck": "tsc --noEmit",
         "lint": "eslint .",
         "test": "vitest --run",
+        "test:cypress": "cypress run",
+        "test:cypress:open": "cypress open",
         "test:watch": "vitest",
         "test:ui": "vitest --ui",
         "coverage": "vitest run --coverage"
@@ -49,6 +51,7 @@
         "@vitejs/plugin-react": "^2.1.0",
         "@vitest/coverage-c8": "^0.23.4",
         "@vitest/ui": "^0.23.4",
+        "cypress": "^10.9.0",
         "eslint": "^8.23.1",
         "eslint-config-google": "^0.14.0",
         "eslint-plugin-deprecate": "^0.7.0",

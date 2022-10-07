@@ -17,3 +17,7 @@ limitations under the License.
 export function isInputEvent(e: Event): e is InputEvent {
     return 'inputType' in e;
 }
+
+export function isClipboardEvent(e: Event): e is ClipboardEvent {
+    return 'clipboardData' in e;
+}
