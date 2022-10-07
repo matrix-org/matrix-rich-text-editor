@@ -37,9 +37,9 @@ interpreted as WASM.
  * actually fetching anything.
  */
 
-import replace from "replace";
+import replace from 'replace';
 
-console.log("[hack_myfetch] Hacking generated files to avoid using fetch()");
+console.log('[hack_myfetch] Hacking generated files to avoid using fetch()');
 
 const code = `(function(){
     function myfetch(dataurl) {
@@ -78,11 +78,16 @@ const code = `(function(){
         let nOutIdx = 0;
         for (let nInIdx = 0; nInIdx < nInLen; nInIdx++) {
             nMod4 = nInIdx & 3;
-            nUint24 |= b64ToUint6(sB64Enc.charCodeAt(nInIdx)) << (6 * (3 - nMod4));
+            nUint24 |= (
+                b64ToUint6(sB64Enc.charCodeAt(nInIdx)) <<
+                (6 * (3 - nMod4))
+            );
             if (nMod4 === 3 || nInLen - nInIdx === 1) {
                 nMod3 = 0;
                 while (nMod3 < 3 && nOutIdx < nOutLen) {
-                    taBytes[nOutIdx] = (nUint24 >>> ((16 >>> nMod3) & 24)) & 255;
+                    taBytes[nOutIdx] = (
+                        nUint24 >>> ((16 >>> nMod3) & 24)
+                    ) & 255;
                     nMod3++;
                     nOutIdx++;
                 }
@@ -100,9 +105,9 @@ const code = `(function(){
 // fetch calls, they will be messed up.
 
 replace({
-  regex: /fetch\((\w+)\)/,
-  replacement: code.replace(/\n\s*/g, ''),
-  paths: ['./dist/matrix-wysiwyg.umd.cjs'],
-  recursive: false,
-  silent: false,
+    regex: /fetch\((\w+)\)/,
+    replacement: code.replace(/\n\s*/g, ''),
+    paths: ['./dist/matrix-wysiwyg.umd.cjs', './dist/matrix-wysiwyg.js'],
+    recursive: false,
+    silent: false,
 });
