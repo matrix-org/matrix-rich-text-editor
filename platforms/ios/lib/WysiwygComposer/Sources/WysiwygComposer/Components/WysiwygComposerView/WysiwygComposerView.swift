@@ -25,6 +25,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
     public var replaceText: (NSAttributedString, NSRange, String) -> Bool
     public var select: (NSAttributedString, NSRange) -> Void
     public var didUpdateText: (UITextView) -> Void
+    private var textColor = Color.primary
 
     public init(content: WysiwygComposerContent,
                 replaceText: @escaping (NSAttributedString, NSRange, String) -> Bool,
@@ -49,6 +50,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
         textView.textContainerInset = .zero
         textView.textContainer.lineFragmentPadding = 0
         textView.adjustsFontForContentSizeCategory = true
+        textView.backgroundColor = .clear
         return textView
     }
 
@@ -58,6 +60,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
                                  functionName: #function)
         uiView.apply(content)
         context.coordinator.didUpdateText(uiView)
+        uiView.textColor = UIColor(textColor)
     }
 
     public func makeCoordinator() -> Coordinator {
@@ -98,6 +101,15 @@ public struct WysiwygComposerView: UIViewRepresentable {
                                      functionName: #function)
             select(textView.attributedText, textView.selectedRange)
         }
+    }
+}
+
+public extension WysiwygComposerView {
+    /// Sets the textColor of the WYSIWYG textView, if not used the default value is Color.primary.
+    func textColor(_ textColor: Color) -> Self {
+        var newSelf = self
+        newSelf.textColor = textColor
+        return newSelf
     }
 }
 

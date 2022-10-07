@@ -130,10 +130,18 @@ public class WysiwygComposerViewModel: ObservableObject {
         applyUpdate(update)
     }
 
+    /// Sets given HTML as the current content of the composer.
+    ///
+    /// - Parameters:
+    ///   - html: HTML content to apply
+    public func setHtmlContent(_ html: String) {
+        let update = model.replaceAllHtml(html: html)
+        applyUpdate(update)
+    }
+
     /// Clear the content of the composer.
     public func clearContent() {
-        model = newComposerModel()
-        content = WysiwygComposerContent()
+        applyUpdate(model.clear())
     }
 
     /// Returns a textual representation of the composer model as a tree.
@@ -181,14 +189,14 @@ public extension WysiwygComposerViewModel {
     ///
     /// - Parameter textView: The composer's text view.
     func didUpdateText(textView: UITextView) {
-        updateCompressedHeightIfNeeded(textView)
-
         // Reconciliate
         if textView.attributedText != content.attributed {
             Logger.viewModel.logDebug(["Reconciliate from \"\(textView.text ?? "")\" to \"\(content.plainText)\""],
                                       functionName: #function)
             textView.apply(content)
         }
+
+        updateCompressedHeightIfNeeded(textView)
     }
 }
 
@@ -298,7 +306,10 @@ private extension WysiwygComposerViewModel {
         if maximised {
             idealHeight = maxHeight
         } else {
-            idealHeight = compressedHeight
+            // This solves the slowdown caused by the "Publishing changes from within view updates" purple warning
+            DispatchQueue.main.async {
+                self.idealHeight = self.compressedHeight
+            }
         }
     }
     
