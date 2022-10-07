@@ -16,11 +16,20 @@ use widestring::Utf16String;
 
 use crate::{tests::testutils_composer_model::tx, ComposerModel};
 
+use super::testutils_composer_model::cm;
+
 #[test]
 fn replace_all_html() {
     let mut model = ComposerModel::new();
     model.replace_all_html(&Utf16String::from("content"));
-    assert_eq!(tx(&model), "|content");
+    assert_eq!(tx(&model), "content|");
+}
+
+#[test]
+fn replace_all_html_moves_cursor_to_the_end() {
+    let mut model = cm("abc|");
+    model.replace_all_html(&"content".into());
+    assert_eq!(tx(&model), "content|");
 }
 
 #[test]
