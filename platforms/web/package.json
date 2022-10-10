@@ -1,6 +1,6 @@
 {
-    "name": "matrix-wysiwyg",
-    "version": "0.0.0",
+    "name": "@matrix-org/matrix-wysiwyg",
+    "version": "0.0.1",
     "type": "module",
     "description": "Wysiwyg composer for matrix.org using React",
     "author": "matrix.org",
@@ -17,6 +17,12 @@
             "require": "./dist/matrix-wysiwyg.umd.cjs"
         }
     },
+    "files": [
+        "CHANGELOG.md",
+        "README.md",
+        "dist",
+        "package.json"
+    ],
     "types": "./dist/index.d.ts",
     "scripts": {
         "dev": "vite",
@@ -28,7 +34,8 @@
         "test": "vitest --run",
         "test:watch": "vitest",
         "test:ui": "vitest --ui",
-        "coverage": "vitest run --coverage"
+        "coverage": "vitest run --coverage",
+        "publish": "npm publish --access public"
     },
     "peerDependencies": {
         "react": "^18.2.0"
