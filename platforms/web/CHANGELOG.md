@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.0.2] - 2022-10-10
+
+### Added
+
+-   Improve React integration
+
 ## [0.0.1] - 2022-10-10
 
 ### Added
