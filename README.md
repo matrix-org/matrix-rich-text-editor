@@ -32,8 +32,7 @@ files above.
 
 ## Release the code
 
-* Swift/iOS:
-Run `release_ios.sh` which will open a PR against [the swift package repo](https://github.com/matrix-org/matrix-wysiwyg-composer-swift) with the latest from main(in future will handle tags/releases).
+See [RELEASE.md](RELEASE.md).
 
 ## More info
 
