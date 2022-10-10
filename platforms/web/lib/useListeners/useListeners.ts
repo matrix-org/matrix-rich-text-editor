@@ -28,6 +28,7 @@ export function useListeners(
     modelRef: RefObject<HTMLElement | null>,
     composerModel: ComposerModel | null,
     testUtilities: TestUtilities,
+    onChange?: (content: string) => void,
 ) {
     useEffect(() => {
         const editorNode = editorRef.current;
@@ -45,6 +46,7 @@ export function useListeners(
                 composerModel,
                 modelRef.current,
                 testUtilities,
+                onChange,
             );
         editorNode.addEventListener('input', onInput);
 
@@ -55,6 +57,7 @@ export function useListeners(
                 composerModel,
                 modelRef.current,
                 testUtilities,
+                onChange,
             );
         }) as EventListener;
         editorNode.addEventListener('wysiwygInput', onWysiwygInput);
@@ -74,5 +77,5 @@ export function useListeners(
             editorNode.removeEventListener('keydown', onKeyDown);
             document.removeEventListener('selectionchange', onSelectionChange);
         };
-    }, [editorRef, composerModel, modelRef, testUtilities]);
+    }, [editorRef, composerModel, modelRef, testUtilities, onChange]);
 }

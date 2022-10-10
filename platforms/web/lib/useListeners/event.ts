@@ -27,12 +27,12 @@ import { BlockType, WysiwygInputEvent } from '../types';
 import { TestUtilities } from '../useTestCases/types';
 
 export function sendWysiwygInputEvent(
-    e: ReactMouseEvent<HTMLElement, MouseEvent> | KeyboardEvent,
     editor: HTMLElement,
     blockType: BlockType,
+    e?: ReactMouseEvent<HTMLElement, MouseEvent> | KeyboardEvent,
 ) {
-    e.preventDefault();
-    e.stopPropagation();
+    e?.preventDefault();
+    e?.stopPropagation();
     editor.dispatchEvent(
         new CustomEvent('wysiwygInput', { detail: { blockType } }),
     );
@@ -69,7 +69,7 @@ function getInputFromKeyDown(e: KeyboardEvent) {
 export function handleKeyDown(e: KeyboardEvent, editor: HTMLElement) {
     const inputType = getInputFromKeyDown(e);
     if (inputType) {
-        sendWysiwygInputEvent(e, editor, inputType);
+        sendWysiwygInputEvent(editor, inputType, e);
     }
 }
 
@@ -79,6 +79,7 @@ export function handleInput(
     composerModel: ComposerModel,
     modelNode: HTMLElement | null,
     testUtilities: TestUtilities,
+    onChange?: (content: string) => void,
 ) {
     const update = processInput(e, composerModel, testUtilities.traceAction);
     if (update) {
@@ -91,6 +92,7 @@ export function handleInput(
                 repl.end_utf16_codeunit,
             );
             testUtilities.setEditorHtml(repl.replacement_html);
+            onChange?.(repl.replacement_html);
         }
         editor.focus();
 

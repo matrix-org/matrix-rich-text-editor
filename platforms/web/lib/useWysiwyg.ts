@@ -65,6 +65,7 @@ function useEditor() {
 
 type WysiwygProps = {
     isAutoFocusEnabled?: boolean;
+    onChange?: (content: string) => void;
 };
 
 export function useWysiwyg(wysiwygProps?: WysiwygProps) {
@@ -76,7 +77,13 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
         ref,
         composerModel,
     );
-    useListeners(ref, modelRef, composerModel, testUtilities);
+    useListeners(
+        ref,
+        modelRef,
+        composerModel,
+        testUtilities,
+        wysiwygProps?.onChange,
+    );
     const formattingActions = useFormattingActions(ref);
     useEditorFocus(ref, wysiwygProps?.isAutoFocusEnabled);
 
