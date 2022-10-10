@@ -4,17 +4,20 @@ Normally this would be done by the project owners.
 
 Here are the steps we take:
 
-1. Update the changelog
+1. Choose a version number
+
+We use semantic versioning.
+
+It can't be anything that has been pushed to any package repo before.
+
+2. Add a changelog entry
 
 Currently this is stored in platforms/web/CHANGELOG.md.
 
 TODO: store the canonical version in the project root, and copy it to there
 so the NPM packaging can find it.
 
-2. Set the version number
-
-* Decide what version number to use - it can't be anything that has been pushed
-  to any package repo before.
+3. Set the version number
 
 Currently this is manual:
 
@@ -27,7 +30,7 @@ Currently this is manual:
 TODO: make a script that sets the git tag and pushes it, and updates the
 various files containing the version number.
 
-3. Create the packages
+4. Create the packages
 
 * Web: manually launch the
   [github action](https://github.com/matrix-org/matrix-wysiwyg/actions/workflows/publish.yml)
