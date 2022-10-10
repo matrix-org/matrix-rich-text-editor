@@ -22,5 +22,7 @@ and open the URL that is printed on the console.
     ```
 * Edit example-wysiwyg/src/App.tsx to look how it looks in this repo.
 * Edit example-wysiwyg/index.html to set the page title and remove favicon.
-* Delete example-wysiwyg/public/vite.svg and example-wysiwyg/src/assets/react.svg
+* Delete example-wysiwyg/public/vite.svg and
+  example-wysiwyg/src/assets/react.svg.
+* Disable eslint for a couple of files.
 * Follow the instructions in "Set up and run".
