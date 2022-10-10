@@ -31,7 +31,16 @@ various files containing the version number.
 
 4. Create the packages
 
-* Web: manually launch the
+* Web:
+
+    ```bash
+    make web
+    cd platforms/web
+    yarn build
+    npm publish --access public
+    ```
+
+* TODO: Web: manually launch the
   [github action](https://github.com/matrix-org/matrix-wysiwyg/actions/workflows/publish.yml)
   which will package the code and upload it to NPM. It uses the version number
   it finds in package.json, which you updated above.

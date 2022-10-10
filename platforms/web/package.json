@@ -34,8 +34,7 @@
         "test": "vitest --run",
         "test:watch": "vitest",
         "test:ui": "vitest --ui",
-        "coverage": "vitest run --coverage",
-        "publish": "npm publish --access public"
+        "coverage": "vitest run --coverage"
     },
     "peerDependencies": {
         "react": "^18.2.0"
