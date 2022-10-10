@@ -12,16 +12,19 @@ jobs:
 
       - name: 🔧 Yarn cache
         uses: actions/setup-node@v3
+        working-directory: platforms/web
         with:
           cache: "yarn"
           registry-url: "https://registry.npmjs.org"
 
       - name: 🔨 Install dependencies
         run: "yarn install --pure-lockfile"
+        working-directory: platforms/web
 
       - name: 🚀 Publish to npm
         id: npm-publish
         uses: JS-DevTools/npm-publish@v1
+        working-directory: platforms/web
         with:
           token: ${{ secrets.NPM_TOKEN }}
           access: public
@@ -31,6 +34,7 @@ jobs:
 #        run: |
 #          package=$(cat package.json | jq -er .name)
 #          npm dist-tag add "$package@$release" latest
+#        working-directory: platforms/web
 #        env:
 #          # JS-DevTools/npm-publish overrides `NODE_AUTH_TOKEN` with `INPUT_TOKEN` in .npmrc
 #          INPUT_TOKEN: ${{ secrets.NPM_TOKEN }}
