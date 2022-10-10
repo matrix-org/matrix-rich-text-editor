@@ -21,11 +21,10 @@ so the NPM packaging can find it.
 
 Currently this is manual:
 
-* `git tag 0.1.0 && git push --tags`
-
 * Edit platforms/web/package.json
 * Edit a similar file for Android
 * Edit a similar file for iOS
+* `git tag 0.1.0 && git push --tags`
 
 TODO: make a script that sets the git tag and pushes it, and updates the
 various files containing the version number.
