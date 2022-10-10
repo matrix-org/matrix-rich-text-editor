@@ -12,9 +12,9 @@ jobs:
 
       - name: 🔧 Yarn cache
         uses: actions/setup-node@v3
-        cache-dependency-path: platforms/web/yarn.lock
         with:
           cache: "yarn"
+          cache-dependency-path: platforms/web/yarn.lock
           registry-url: "https://registry.npmjs.org"
 
       - name: 🔨 Install dependencies
