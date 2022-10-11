@@ -81,15 +81,15 @@ impl ComposerModel {
         &mut self,
         start_utf16_codeunit: u32,
         end_utf16_codeunit: u32,
-    ) {
-        self.inner.select(
+    ) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.select(
             wysiwyg::Location::from(
                 usize::try_from(start_utf16_codeunit).unwrap(),
             ),
             wysiwyg::Location::from(
                 usize::try_from(end_utf16_codeunit).unwrap(),
             ),
-        );
+        ))
     }
 
     pub fn selection_start(&self) -> u32 {
