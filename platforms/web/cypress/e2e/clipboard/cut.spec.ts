@@ -19,7 +19,7 @@ limitations under the License.
 describe('Cut', () => {
     const editor = '.editor:not([disabled])[contenteditable="true"]';
 
-    it('remove text that is cut to clipboard', () => {
+    it('remove text that is cut to clipboard', { browser: 'electron' }, () => {
         cy.visit('/');
         cy.get(editor).type('firstREMOVEME');
         cy.setSelection(editor, 5, 13);

@@ -19,24 +19,36 @@ limitations under the License.
 describe('Paste', () => {
     const editor = '.editor:not([disabled])[contenteditable="true"]';
 
-    it('should display pasted text after we type', () => {
-        cy.visit('/');
-        cy.get(editor).type('BEFORE');
-        cy.window().its('navigator.clipboard').invoke('writeText', 'pasted');
-        cy.get(editor).focus();
-        cy.document().invoke('execCommand', 'paste');
-        cy.get(editor).type('AFTER');
-        cy.get(editor).contains(/^BEFOREpastedAFTER/);
-    });
+    it(
+        'should display pasted text after we type',
+        { browser: 'electron' },
+        () => {
+            cy.visit('/');
+            cy.get(editor).type('BEFORE');
+            cy.window()
+                .its('navigator.clipboard')
+                .invoke('writeText', 'pasted');
+            cy.get(editor).focus();
+            cy.document().invoke('execCommand', 'paste');
+            cy.get(editor).type('AFTER');
+            cy.get(editor).contains(/^BEFOREpastedAFTER/);
+        },
+    );
 
-    it('should convert pasted newlines into BRs', () => {
-        cy.visit('/');
-        cy.window().its('navigator.clipboard').invoke('writeText', 'aa\nbb');
-        cy.get(editor).focus();
-        cy.document().invoke('execCommand', 'paste');
-        cy.get(editor)
-            .invoke('html')
-            .then((html) => expect(html).to.equal('aa<br>bb<br>'));
-        // (Note the extra BR is always added at the end)
-    });
+    it(
+        'should convert pasted newlines into BRs',
+        { browser: 'electron' },
+        () => {
+            cy.visit('/');
+            cy.window()
+                .its('navigator.clipboard')
+                .invoke('writeText', 'aa\nbb');
+            cy.get(editor).focus();
+            cy.document().invoke('execCommand', 'paste');
+            cy.get(editor)
+                .invoke('html')
+                .then((html) => expect(html).to.equal('aa<br>bb<br>'));
+            // (Note the extra BR is always added at the end)
+        },
+    );
 });
