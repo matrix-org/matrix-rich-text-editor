@@ -49,4 +49,3 @@ jobs:
       with:
         working-directory: platforms/web
         start: yarn dev
-        wait-on: 'http://localhost:5173'
