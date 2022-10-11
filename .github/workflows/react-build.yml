@@ -44,3 +44,6 @@ jobs:
     - name: Test
       working-directory: platforms/web
       run: yarn test
+    - name: Browser Test
+      working-directory: platforms/web
+      run: yarn test:cypress
