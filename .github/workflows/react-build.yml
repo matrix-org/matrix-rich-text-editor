@@ -47,5 +47,6 @@ jobs:
     - name: Browser Test
       uses: cypress-io/github-action@v4
       with:
+        browser: electron
         working-directory: platforms/web
         start: yarn dev
