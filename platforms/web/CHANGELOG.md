@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.0] - 2022-10-11
+
+### Added
+
+-   Web: support cut and paste
+-   Document release process
+-   NPM releases via a manual github workflow
+
 ## [0.0.2] - 2022-10-10
 
 ### Added
