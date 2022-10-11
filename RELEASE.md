@@ -27,10 +27,11 @@ Currently this is manual:
 * Edit crates/wysiwyg/Cargo.toml
 * Edit bindings/wysiwyg-wasm/package.json
 * Edit platforms/android/gradle.properties
+* (For iOS the release script uses the git tag, so nothing to do I think.)
 * `git checkout -b version-0.1.0`
 * `git commit -a -m "Version 0.1.0"`
 * `git tag 0.1.0 && git push --tags`
-* (For iOS the release script uses the git tag, so nothing to do I think.)
+* Now push your branch and make a PR, and get it merged.
 
 TODO: make a script that sets the git tag and pushes it, and updates the
 various files containing the version number. And checks that the changelog
@@ -38,16 +39,7 @@ entry has been created.
 
 4. Create the packages
 
-* Web:
-
-    ```bash
-    make web
-    cd platforms/web
-    yarn build
-    npm publish --access public
-    ```
-
-* TODO: Web: manually launch the
+* Web: manually launch the
   [github action](https://github.com/matrix-org/matrix-wysiwyg/actions/workflows/publish.yml)
   which will package the code and upload it to NPM. It uses the version number
   it finds in package.json, which you updated above.
@@ -59,7 +51,7 @@ entry has been created.
   [the swift package repo](https://github.com/matrix-org/matrix-wysiwyg-composer-swift)
   with the latest from main
 
-TODO: automate all of this using a github workflow that triggers when we
+TODO: automate all of this using a single github workflow that triggers when we
 create a github release.
 
 TODO: update release_io.sh to handle tags/releases
