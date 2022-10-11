@@ -45,5 +45,8 @@ jobs:
       working-directory: platforms/web
       run: yarn test
     - name: Browser Test
-      working-directory: platforms/web
-      run: yarn test:cypress
+      uses: cypress-io/github-action@v4
+      with:
+        working-directory: platforms/web
+        start: yarn dev
+        wait-on: 'http://localhost:5173'
