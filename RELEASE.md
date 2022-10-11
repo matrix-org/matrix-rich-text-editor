@@ -22,12 +22,18 @@ so the NPM packaging can find it.
 Currently this is manual:
 
 * Edit platforms/web/package.json
-* Edit a similar file for Android
-* Edit a similar file for iOS
+* Edit bindings/wysiwyg-ffi/Cargo.toml
+* Edit bindings/wysiwyg-wasm/Cargo.toml
+* Edit crates/wysiwyg/Cargo.toml
+* Edit bindings/wysiwyg-wasm/package.json
+* Edit platforms/android/gradle.properties
+* `git commit`
 * `git tag 0.1.0 && git push --tags`
+* (For iOS the release script uses the git tag, so nothing to do I think.)
 
 TODO: make a script that sets the git tag and pushes it, and updates the
-various files containing the version number.
+various files containing the version number. And checks that the changelog
+entry has been created.
 
 4. Create the packages
 
