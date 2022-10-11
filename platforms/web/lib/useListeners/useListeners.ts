@@ -51,7 +51,6 @@ export function useListeners(
         editorNode.addEventListener('input', onInput);
 
         const onPaste = (e: Event) => {
-            console.log(e);
             if (!isClipboardEvent(e)) {
                 return;
             }
