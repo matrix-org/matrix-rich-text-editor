@@ -78,12 +78,12 @@ checked in to Git.)
 
 * Install uniffi-bindgen:
 
-```bash
-cargo install uniffi_bindgen
-```
+⚠️ Check `bindings/wysiwyg-ffi/Cargo.toml` for the version of uniffi. You MUST
+use the same version here!
 
-Make sure you install same version of uniffi_bindgen that is mentioned in
-`bindings/wysiwyg-ffi/Cargo.toml`, otherwise you will get weird errors.
+```bash
+cargo install uniffi_bindgen --version 0.19.2
+```
 
 * Build the library using Gradle:
 
