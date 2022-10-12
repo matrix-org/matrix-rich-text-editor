@@ -35,20 +35,7 @@ describe('Paste', () => {
         },
     );
 
-    it(
-        'should convert pasted newlines into BRs',
-        { browser: 'electron' },
-        () => {
-            cy.visit('/');
-            cy.window()
-                .its('navigator.clipboard')
-                .invoke('writeText', 'aa\nbb');
-            cy.get(editor).focus();
-            cy.document().invoke('execCommand', 'paste');
-            cy.get(editor)
-                .invoke('html')
-                .then((html) => expect(html).to.equal('aa<br>bb<br>'));
-            // (Note the extra BR is always added at the end)
-        },
-    );
+    // Note: we used to test it 'should convert pasted newlines into BRs' but
+    // the test was flakey, sometimes correctly showing text containing br tags,
+    // and sometimes mysteriously showing converted into two divs.
 });
