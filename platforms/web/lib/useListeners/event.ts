@@ -16,7 +16,7 @@ limitations under the License.
 
 import { MouseEvent as ReactMouseEvent } from 'react';
 
-import { ComposerModel } from '../../generated/wysiwyg';
+import { ComposerAction, ComposerModel } from '../../generated/wysiwyg';
 import { processInput } from '../composer';
 import {
     getCurrentSelection,
@@ -83,6 +83,29 @@ export function handleInput(
 ) {
     const update = processInput(e, composerModel, testUtilities.traceAction);
     if (update) {
+        const menuStateUpdate = update.menu_state().update();
+        if (menuStateUpdate) {
+            const reversedActions = menuStateUpdate.reversed_actions;
+            const disabledActions = menuStateUpdate.disabled_actions;
+            let act: ComposerAction | undefined;
+            while ((act = reversedActions.next()) !== undefined) {
+                switch (act) {
+                    case ComposerAction.Bold:
+                        console.log('bold is reversed');
+                        break;
+                    case ComposerAction.Italic:
+                        console.log('italic is reversed');
+                        break;
+                    default:
+                        console.log('something else is reversed');
+                        break;
+                }
+            }
+            while ((act = disabledActions.next()) !== undefined) {
+                console.log(`disabled: ${act}`);
+            }
+        }
+
         const repl = update.text_update().replace_all;
         if (repl) {
             replaceEditor(
