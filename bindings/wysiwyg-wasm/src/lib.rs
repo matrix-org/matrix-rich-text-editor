@@ -204,14 +204,6 @@ impl ComposerUpdate {
     pub fn menu_state(&self) -> MenuState {
         MenuState::from(self.inner.menu_state.clone())
     }
-
-    /*pub fn actions(&self) -> Vec<ComposerAction> {
-        self.inner
-            .actions
-            .iter()
-            .map(|action| ComposerAction::from(action.clone()))
-            .collect()
-    }*/
 }
 
 #[wasm_bindgen(getter_with_clone)]
@@ -287,27 +279,115 @@ pub struct Selection {
 
 #[wasm_bindgen]
 pub struct MenuState {
-    _none: Option<NoneMenuState>,
+    inner: wysiwyg::MenuState,
 }
 
 impl MenuState {
     pub fn from(inner: wysiwyg::MenuState) -> Self {
-        match inner {
-            // TODO: implement interface for MenuState
-            wysiwyg::MenuState::Keep => Self {
-                _none: Some(NoneMenuState),
-            },
-            _ => Self {
-                _none: Some(NoneMenuState),
-            },
+        Self { inner }
+    }
+}
+
+#[wasm_bindgen]
+impl MenuState {
+    pub fn keep(&self) -> bool {
+        match self.inner {
+            wysiwyg::MenuState::Keep => true,
+            _ => false,
+        }
+    }
+
+    pub fn update(&self) -> Option<MenuStateUpdate> {
+        match &self.inner {
+            wysiwyg::MenuState::Update(update) => {
+                Some(MenuStateUpdate::from(update))
+            }
+            _ => None,
+        }
+    }
+}
+
+#[wasm_bindgen(getter_with_clone)]
+pub struct MenuStateUpdate {
+    pub reversed_actions: ComposerActions,
+    pub disabled_actions: ComposerActions,
+}
+
+impl MenuStateUpdate {
+    pub fn from(inner: &wysiwyg::MenuStateUpdate) -> Self {
+        Self {
+            reversed_actions: inner
+                .reversed_actions
+                .iter()
+                .map(ComposerAction::from)
+                .collect(),
+            disabled_actions: inner
+                .disabled_actions
+                .iter()
+                .map(ComposerAction::from)
+                .collect(),
         }
     }
 }
 
 #[wasm_bindgen]
-pub struct NoneMenuState;
+#[derive(Clone)]
+pub enum ComposerAction {
+    Bold,
+    Italic,
+    StrikeThrough,
+    Underline,
+    InlineCode,
+    Link,
+    Undo,
+    Redo,
+    OrderedList,
+    UnorderedList,
+    Indent,
+    UnIndent,
+}
 
-pub struct Dummy;
+impl ComposerAction {
+    pub fn from(inner: &wysiwyg::ComposerAction) -> Self {
+        match inner {
+            wysiwyg::ComposerAction::Bold => Self::Bold,
+            wysiwyg::ComposerAction::Italic => Self::Italic,
+            wysiwyg::ComposerAction::StrikeThrough => Self::StrikeThrough,
+            wysiwyg::ComposerAction::Underline => Self::Underline,
+            wysiwyg::ComposerAction::InlineCode => Self::InlineCode,
+            wysiwyg::ComposerAction::Link => Self::Link,
+            wysiwyg::ComposerAction::Undo => Self::Undo,
+            wysiwyg::ComposerAction::Redo => Self::Redo,
+            wysiwyg::ComposerAction::OrderedList => Self::OrderedList,
+            wysiwyg::ComposerAction::UnorderedList => Self::UnorderedList,
+            wysiwyg::ComposerAction::Indent => Self::Indent,
+            wysiwyg::ComposerAction::UnIndent => Self::UnIndent,
+        }
+    }
+}
+
+/// An iterator-like view of a DomHandle's children, written to work around
+/// the lack of support for returning Vec<T> in wasm_bindgen.
+#[wasm_bindgen]
+#[derive(Clone)]
+pub struct ComposerActions {
+    inner: VecDeque<ComposerAction>,
+}
+
+#[wasm_bindgen]
+impl ComposerActions {
+    pub fn next(&mut self) -> Option<ComposerAction> {
+        self.inner.pop_front()
+    }
+}
+
+impl FromIterator<ComposerAction> for ComposerActions {
+    fn from_iter<T: IntoIterator<Item = ComposerAction>>(iter: T) -> Self {
+        Self {
+            inner: VecDeque::from_iter(iter),
+        }
+    }
+}
 
 /// An iterator-like view of a DomHandle's children, written to work around
 /// the lack of support for returning Vec<T> in wasm_bindgen.
