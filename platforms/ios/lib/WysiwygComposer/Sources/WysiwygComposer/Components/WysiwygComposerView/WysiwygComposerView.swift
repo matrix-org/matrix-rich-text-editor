@@ -25,8 +25,10 @@ public struct WysiwygComposerView: UIViewRepresentable {
     public var replaceText: (NSAttributedString, NSRange, String) -> Bool
     public var select: (NSAttributedString, NSRange) -> Void
     public var didUpdateText: (UITextView) -> Void
+    
     private var textColor = Color.primary
-
+    private var tintColor = Color.accentColor
+    
     public init(content: WysiwygComposerContent,
                 replaceText: @escaping (NSAttributedString, NSRange, String) -> Bool,
                 select: @escaping (NSAttributedString, NSRange) -> Void,
@@ -51,6 +53,8 @@ public struct WysiwygComposerView: UIViewRepresentable {
         textView.textContainer.lineFragmentPadding = 0
         textView.adjustsFontForContentSizeCategory = true
         textView.backgroundColor = .clear
+        textView.tintColor = UIColor(tintColor)
+        textView.textColor = UIColor(textColor)
         return textView
     }
 
@@ -61,6 +65,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
         uiView.apply(content)
         context.coordinator.didUpdateText(uiView)
         uiView.textColor = UIColor(textColor)
+        uiView.tintColor = UIColor(tintColor)
     }
 
     public func makeCoordinator() -> Coordinator {
@@ -109,6 +114,13 @@ public extension WysiwygComposerView {
     func textColor(_ textColor: Color) -> Self {
         var newSelf = self
         newSelf.textColor = textColor
+        return newSelf
+    }
+    
+    /// Sets the tintColor of the WYSIWYG textView, if not used the default value is Color.accent.
+    func tintColor(_ tintColor: Color) -> Self {
+        var newSelf = self
+        newSelf.tintColor = tintColor
         return newSelf
     }
 }
