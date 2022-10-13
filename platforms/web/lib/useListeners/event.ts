@@ -28,7 +28,7 @@ import {
     refreshComposerView,
     replaceEditor,
 } from '../dom';
-import { FormattingStates, BlockType, WysiwygInputEvent } from '../types';
+import { BlockType, WysiwygInputEvent } from '../types';
 import { TestUtilities } from '../useTestCases/types';
 import { getDefaultFormattingStates } from './utils';
 
@@ -82,7 +82,7 @@ export function handleKeyDown(e: KeyboardEvent, editor: HTMLElement) {
 function getFormattingState(menuStateUpdate: MenuStateUpdate) {
     const reversedActions = menuStateUpdate.reversed_actions;
     const disabledActions = menuStateUpdate.disabled_actions;
-    const states: FormattingStates = getDefaultFormattingStates();
+    const states = getDefaultFormattingStates();
 
     const computeActions = (
         actions: ComposerActions,
@@ -115,6 +115,9 @@ function getFormattingState(menuStateUpdate: MenuStateUpdate) {
                     break;
                 case ComposerAction.UnorderedList:
                     states.unorderedList = value;
+                    break;
+                case ComposerAction.InlineCode:
+                    states.inlineCode = value;
                     break;
                 default:
                     break;
