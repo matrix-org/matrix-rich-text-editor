@@ -245,7 +245,7 @@ private extension WysiwygComposerViewModel {
             var attributed = try NSAttributedString(html: htmlWithStyle)
             let mutableAttributed = NSMutableAttributedString(attributedString: attributed)
             mutableAttributed.addAttributes(
-                [.foregroundColor : textColor], range: NSRange(location: 0, length: mutableAttributed.length)
+                [.foregroundColor: textColor], range: NSRange(location: 0, length: mutableAttributed.length)
             )
             attributed = NSAttributedString(attributedString: mutableAttributed)
             // FIXME: handle error for out of bounds index
