@@ -41,7 +41,12 @@ public class WysiwygComposerViewModel: ObservableObject {
         }
     }
     
-    private var textColor: UIColor
+    public var textColor: UIColor {
+        didSet {
+            let update = model.replaceAllHtml(html: content.html)
+            applyUpdate(update)
+        }
+    }
 
     // MARK: - Private
 
