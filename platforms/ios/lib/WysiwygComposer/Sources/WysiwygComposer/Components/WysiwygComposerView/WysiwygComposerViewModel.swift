@@ -44,6 +44,7 @@ public class WysiwygComposerViewModel: ObservableObject {
     /// The current textColor of the attributed string
     public var textColor: UIColor {
         didSet {
+            // In case of a color change, this will trigger an update of the whole attributed text
             let update = model.replaceAllHtml(html: content.html)
             applyUpdate(update)
         }
