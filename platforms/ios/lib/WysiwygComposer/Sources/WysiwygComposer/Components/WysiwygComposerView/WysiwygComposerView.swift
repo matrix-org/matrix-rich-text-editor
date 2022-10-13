@@ -26,7 +26,6 @@ public struct WysiwygComposerView: UIViewRepresentable {
     public var select: (NSAttributedString, NSRange) -> Void
     public var didUpdateText: (UITextView) -> Void
     
-    private var textColor = Color.primary
     private var tintColor = Color.accentColor
     
     public init(content: WysiwygComposerContent,
@@ -54,7 +53,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
         textView.adjustsFontForContentSizeCategory = true
         textView.backgroundColor = .clear
         textView.tintColor = UIColor(tintColor)
-        textView.textColor = UIColor(textColor)
+//        textView.textColor = UIColor(textColor)
         return textView
     }
 
@@ -64,7 +63,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
                                  functionName: #function)
         uiView.apply(content)
         context.coordinator.didUpdateText(uiView)
-        uiView.textColor = UIColor(textColor)
+//        uiView.textColor = UIColor(textColor)
         uiView.tintColor = UIColor(tintColor)
     }
 
@@ -110,13 +109,6 @@ public struct WysiwygComposerView: UIViewRepresentable {
 }
 
 public extension WysiwygComposerView {
-    /// Sets the textColor of the WYSIWYG textView, if not used the default value is Color.primary.
-    func textColor(_ textColor: Color) -> Self {
-        var newSelf = self
-        newSelf.textColor = textColor
-        return newSelf
-    }
-    
     /// Sets the tintColor of the WYSIWYG textView, if not used the default value is Color.accent.
     func tintColor(_ tintColor: Color) -> Self {
         var newSelf = self

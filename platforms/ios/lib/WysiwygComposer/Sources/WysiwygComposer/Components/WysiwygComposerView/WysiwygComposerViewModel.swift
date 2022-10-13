@@ -40,6 +40,8 @@ public class WysiwygComposerViewModel: ObservableObject {
             updateIdealHeight()
         }
     }
+    
+    private var textColor: UIColor
 
     // MARK: - Private
 
@@ -55,9 +57,10 @@ public class WysiwygComposerViewModel: ObservableObject {
 
     // MARK: - Public
 
-    public init(minHeight: CGFloat = 20, maxHeight: CGFloat = 200) {
+    public init(minHeight: CGFloat = 20, maxHeight: CGFloat = 200, textColor: UIColor = .label) {
         self.minHeight = minHeight
         self.maxHeight = maxHeight
+        self.textColor = textColor
         model = newComposerModel()
         // Publish composer empty state.
         cancellable = $content.sink(receiveValue: { [unowned self] content in
@@ -239,7 +242,12 @@ private extension WysiwygComposerViewModel {
         do {
             let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count)
             let htmlWithStyle = generateHtmlBodyWithStyle(htmlFragment: html)
-            let attributed = try NSAttributedString(html: htmlWithStyle)
+            var attributed = try NSAttributedString(html: htmlWithStyle)
+            let mutableAttributed = NSMutableAttributedString(attributedString: attributed)
+            mutableAttributed.addAttributes(
+                [.foregroundColor : textColor], range: NSRange(location: 0, length: mutableAttributed.length)
+            )
+            attributed = NSAttributedString(attributedString: mutableAttributed)
             // FIXME: handle error for out of bounds index
             let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
             // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
