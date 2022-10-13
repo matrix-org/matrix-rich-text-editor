@@ -53,7 +53,6 @@ public struct WysiwygComposerView: UIViewRepresentable {
         textView.adjustsFontForContentSizeCategory = true
         textView.backgroundColor = .clear
         textView.tintColor = UIColor(tintColor)
-//        textView.textColor = UIColor(textColor)
         return textView
     }
 
@@ -63,7 +62,6 @@ public struct WysiwygComposerView: UIViewRepresentable {
                                  functionName: #function)
         uiView.apply(content)
         context.coordinator.didUpdateText(uiView)
-//        uiView.textColor = UIColor(textColor)
         uiView.tintColor = UIColor(tintColor)
     }
 
