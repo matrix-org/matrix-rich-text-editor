@@ -25,6 +25,9 @@ where
         start: Location,
         end: Location,
     ) -> ComposerUpdate<S> {
+        if self.state.start == start && self.state.end == end {
+            return ComposerUpdate::keep();
+        }
         self.state.toggled_format_types.clear();
         self.state.start = start;
         self.state.end = end;

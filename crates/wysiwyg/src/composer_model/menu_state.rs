@@ -78,6 +78,8 @@ where
                 .collect()
         }) {
             intersection
+        } else if self.state.dom.document().children().is_empty() {
+            HashSet::from_iter(toggled_format_actions.into_iter())
         } else {
             HashSet::new()
         }
