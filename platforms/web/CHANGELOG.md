@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0] - 2022-10-13
+
+### Added
+
+-   Web: Add formatting states
+-   Web: Remove onChange handler and return the content instead
+
 ## [0.1.0] - 2022-10-11
 
 ### Added
