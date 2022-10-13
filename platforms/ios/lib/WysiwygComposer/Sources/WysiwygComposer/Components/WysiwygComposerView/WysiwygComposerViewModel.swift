@@ -41,6 +41,7 @@ public class WysiwygComposerViewModel: ObservableObject {
         }
     }
     
+    /// The current textColor of the attributed string
     public var textColor: UIColor {
         didSet {
             let update = model.replaceAllHtml(html: content.html)
