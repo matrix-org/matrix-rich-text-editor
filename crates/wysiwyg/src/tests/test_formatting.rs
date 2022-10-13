@@ -14,9 +14,11 @@
 
 use crate::tests::testutils_composer_model::{cm, tx};
 use crate::tests::testutils_conversion::utf16;
+use widestring::Utf16String;
 
-use crate::InlineFormatType;
+use crate::InlineFormatType::Bold;
 use crate::Location;
+use crate::{ComposerModel, InlineFormatType};
 
 #[test]
 fn selecting_and_bolding_multiple_times() {
@@ -223,4 +225,19 @@ fn unformatting_consecutive_same_formatting_nodes_with_nested_node() {
     let mut model = cm("{<strong>Test</strong><strong> </strong><strong>t<em>es</em>t</strong><strong> test</strong>}|");
     model.bold();
     assert_eq!(tx(&model), "{Test t<em>es</em>t test}|");
+}
+
+#[test]
+fn format_empty_model_applies_formatting() {
+    let mut model = ComposerModel::<Utf16String>::new();
+    model.bold();
+    assert!(model.state.toggled_format_types.contains(&Bold));
+}
+
+#[test]
+fn changing_selection_to_same_doesnt_removes_formatting_state() {
+    let mut model = cm("AAA | BBB");
+    model.bold();
+    model.select(Location::from(4), Location::from(4));
+    assert!(model.state.toggled_format_types.contains(&Bold));
 }

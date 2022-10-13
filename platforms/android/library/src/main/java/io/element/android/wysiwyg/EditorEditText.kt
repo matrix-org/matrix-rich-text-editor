@@ -113,8 +113,7 @@ class EditorEditText : TextInputEditText {
             val result = update?.let { inputProcessor.processUpdate(it) }
 
             if (result != null) {
-                editableText.clear()
-                editableText.replace(0, editableText.length, result.text)
+                setTextInternal(result.text)
                 setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
             } else {
                 super.setText(text, type)
@@ -122,13 +121,19 @@ class EditorEditText : TextInputEditText {
         }
     }
 
+    private fun setTextInternal(text: CharSequence?) {
+        beginBatchEdit()
+        editableText.clear()
+        editableText.replace(0, editableText.length, text)
+        endBatchEdit()
+    }
+
     override fun append(text: CharSequence?, start: Int, end: Int) {
         val update = inputProcessor.processInput(EditorInputAction.InsertText(text.toString()))
         val result = update?.let { inputProcessor.processUpdate(it) }
 
         if (result != null) {
-            editableText.clear()
-            editableText.replace(0, end, result.text)
+            setTextInternal(result.text)
             setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
         } else {
             super.append(text, start, end)
@@ -136,14 +141,11 @@ class EditorEditText : TextInputEditText {
     }
 
     fun toggleInlineFormat(inlineFormat: InlineFormat): Boolean {
-        val (start, end) = inputConnection?.getCurrentComposition() ?: (0 to 0)
-        inputProcessor.updateSelection(editableText, start, end)
         val update = inputProcessor.processInput(EditorInputAction.ApplyInlineFormat(inlineFormat))
         val result = update?.let { inputProcessor.processUpdate(it) }
 
         if (result != null) {
-            editableText.clear()
-            editableText.replace(0, editableText.length, result.text)
+            setTextInternal(result.text)
             setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
         }
         return result != null
@@ -154,8 +156,7 @@ class EditorEditText : TextInputEditText {
         val result = update?.let { inputProcessor.processUpdate(it) }
 
         if (result != null) {
-            editableText.clear()
-            editableText.replace(0, editableText.length, result.text)
+            setTextInternal(result.text)
             setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
         }
     }
@@ -165,8 +166,7 @@ class EditorEditText : TextInputEditText {
         val result = update?.let { inputProcessor.processUpdate(it) }
 
         if (result != null) {
-            editableText.clear()
-            editableText.replace(0, editableText.length, result.text)
+            setTextInternal(result.text)
             setSelectionFromComposerUpdate(result.selection.last)
         }
     }
@@ -176,8 +176,7 @@ class EditorEditText : TextInputEditText {
         val result = update?.let { inputProcessor.processUpdate(it) }
 
         if (result != null) {
-            editableText.clear()
-            editableText.replace(0, editableText.length, result.text)
+            setTextInternal(result.text)
             setSelectionFromComposerUpdate(result.selection.last)
         }
     }
@@ -187,8 +186,7 @@ class EditorEditText : TextInputEditText {
         val result = update?.let { inputProcessor.processUpdate(it) }
 
         if (result != null) {
-            editableText.clear()
-            editableText.replace(0, editableText.length, result.text)
+            setTextInternal(result.text)
             setSelectionFromComposerUpdate(result.selection.last)
         }
     }
@@ -198,8 +196,7 @@ class EditorEditText : TextInputEditText {
         val result = update?.let { inputProcessor.processUpdate(it) }
 
         if (result != null) {
-            editableText.clear()
-            editableText.replace(0, editableText.length, result.text)
+            setTextInternal(result.text)
             setSelectionFromComposerUpdate(result.selection.last)
         }
     }
