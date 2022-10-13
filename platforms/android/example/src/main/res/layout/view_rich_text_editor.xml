@@ -1,33 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.textfield.TextInputLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.textfield.TextInputLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:hint="Rich text editor"
-    style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox">
+    android:orientation="vertical">
 
     <io.element.android.wysiwyg.EditorEditText
         android:id="@+id/editText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:minHeight="48dp"
-        android:inputType="textMultiLine"
         android:gravity="top"
+        android:inputType="textMultiLine"
+        android:minHeight="48dp"
+        android:background="?colorSurface"
         android:singleLine="false" />
 
-    <LinearLayout android:id="@+id/menu"
+    <LinearLayout
+        android:id="@+id/menu"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:background="#eee">
+        android:background="?colorSurface"
+        android:orientation="vertical">
 
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:paddingHorizontal="10dp"
-            android:clipToPadding="false">
+            android:clipToPadding="false"
+            android:paddingHorizontal="10dp">
 
             <LinearLayout
                 android:id="@+id/formatContainer"
@@ -35,69 +36,85 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
 
-                <ImageButton android:id="@+id/formatBoldButton"
+                <ImageButton
+                    android:id="@+id/formatBoldButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
-                    android:src="@drawable/ic_format_bold"
+                    android:backgroundTint="@drawable/editor_menu_bg_selector"
                     android:contentDescription="Bold"
-                    app:tint="@drawable/editor_menu_selector" />
+                    android:src="@drawable/ic_format_bold"
+                    app:tint="@drawable/editor_menu_text_selector" />
 
-                <ImageButton android:id="@+id/formatItalicButton"
+                <ImageButton
+                    android:id="@+id/formatItalicButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
-                    android:src="@drawable/ic_format_italic"
+                    android:backgroundTint="@drawable/editor_menu_bg_selector"
                     android:contentDescription="Italic"
-                    app:tint="@drawable/editor_menu_selector" />
+                    android:src="@drawable/ic_format_italic"
+                    app:tint="@drawable/editor_menu_text_selector" />
 
-                <ImageButton android:id="@+id/formatUnderlineButton"
+                <ImageButton
+                    android:id="@+id/formatUnderlineButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
-                    android:src="@drawable/ic_format_underline"
+                    android:backgroundTint="@drawable/editor_menu_bg_selector"
                     android:contentDescription="Underline"
-                    app:tint="@drawable/editor_menu_selector" />
+                    android:src="@drawable/ic_format_underline"
+                    app:tint="@drawable/editor_menu_text_selector" />
 
-                <ImageButton android:id="@+id/formatStrikeThroughButton"
+                <ImageButton
+                    android:id="@+id/formatStrikeThroughButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
-                    android:src="@drawable/ic_format_strikethrough"
+                    android:backgroundTint="@drawable/editor_menu_bg_selector"
                     android:contentDescription="Strike"
-                    app:tint="@drawable/editor_menu_selector" />
+                    android:src="@drawable/ic_format_strikethrough"
+                    app:tint="@drawable/editor_menu_text_selector" />
 
-                <ImageButton android:id="@+id/formatInlineCodeButton"
+                <ImageButton
+                    android:id="@+id/formatInlineCodeButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
-                    android:src="@drawable/ic_code"
+                    android:backgroundTint="@drawable/editor_menu_bg_selector"
                     android:contentDescription="Inline code"
-                    app:tint="@drawable/editor_menu_selector" />
+                    android:src="@drawable/ic_code"
+                    app:tint="@drawable/editor_menu_text_selector" />
 
-                <ImageButton android:id="@+id/addLinkButton"
+                <ImageButton
+                    android:id="@+id/addLinkButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
-                    android:src="@drawable/ic_link"
+                    android:backgroundTint="@drawable/editor_menu_bg_selector"
                     android:contentDescription="Hyperlink"
-                    app:tint="@drawable/editor_menu_selector" />
+                    android:src="@drawable/ic_link"
+                    app:tint="@drawable/editor_menu_text_selector" />
 
-                <ImageButton android:id="@+id/orderedListButton"
+                <ImageButton
+                    android:id="@+id/orderedListButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
-                    android:src="@drawable/ic_ordered_list"
+                    android:backgroundTint="@drawable/editor_menu_bg_selector"
                     android:contentDescription="Ordered list"
-                    app:tint="@drawable/editor_menu_selector" />
+                    android:src="@drawable/ic_ordered_list"
+                    app:tint="@drawable/editor_menu_text_selector" />
 
-                <ImageButton android:id="@+id/unorderedListButton"
+                <ImageButton
+                    android:id="@+id/unorderedListButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="4dp"
-                    android:src="@drawable/ic_unordered_list"
+                    android:backgroundTint="@drawable/editor_menu_bg_selector"
                     android:contentDescription="Unordered list"
-                    app:tint="@drawable/editor_menu_selector" />
+                    android:src="@drawable/ic_unordered_list"
+                    app:tint="@drawable/editor_menu_text_selector" />
 
 
             </LinearLayout>
@@ -106,7 +123,7 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="#ccc" />
+            android:background="?android:attr/listDivider" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -114,21 +131,25 @@
             android:orientation="horizontal"
             android:paddingHorizontal="10dp">
 
-            <ImageButton android:id="@+id/undoButton"
+            <ImageButton
+                android:id="@+id/undoButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="4dp"
-                android:src="@drawable/ic_undo"
+                android:backgroundTint="@drawable/editor_menu_bg_selector"
                 android:contentDescription="Undo"
-                app:tint="@drawable/editor_menu_selector" />
+                android:src="@drawable/ic_undo"
+                app:tint="@drawable/editor_menu_text_selector" />
 
-            <ImageButton android:id="@+id/redoButton"
+            <ImageButton
+                android:id="@+id/redoButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="4dp"
-                android:src="@drawable/ic_redo"
+                android:backgroundTint="@drawable/editor_menu_bg_selector"
                 android:contentDescription="Redo"
-                app:tint="@drawable/editor_menu_selector" />
+                android:src="@drawable/ic_redo"
+                app:tint="@drawable/editor_menu_text_selector" />
 
         </LinearLayout>
 
