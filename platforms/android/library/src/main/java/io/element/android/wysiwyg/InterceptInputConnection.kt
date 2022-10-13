@@ -144,6 +144,7 @@ class InterceptInputConnection(
                         beginBatchEdit()
                         if (result != null) {
                             editable.replace(0, editable.length, result.text)
+                            setSelectionOnEditable(editable, result.selection.last)
                         } else {
                             editable.replace(start, end, "\n")
                         }
