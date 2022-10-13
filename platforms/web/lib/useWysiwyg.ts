@@ -34,7 +34,7 @@ function useEditorFocus(
         if (isAutoFocusEnabled) {
             // TODO remove this workaround
             const id = setTimeout(() => editorRef.current?.focus(), 200);
-            return () => clearInterval(id);
+            return () => clearTimeout(id);
         }
     }, [editorRef, isAutoFocusEnabled]);
 }
@@ -65,7 +65,6 @@ function useEditor() {
 
 type WysiwygProps = {
     isAutoFocusEnabled?: boolean;
-    onChange?: (content: string) => void;
 };
 
 export function useWysiwyg(wysiwygProps?: WysiwygProps) {
@@ -77,13 +76,14 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
         ref,
         composerModel,
     );
-    useListeners(
+
+    const { content, formattingStates } = useListeners(
         ref,
         modelRef,
         composerModel,
         testUtilities,
-        wysiwygProps?.onChange,
     );
+
     const formattingActions = useFormattingActions(ref);
     useEditorFocus(ref, wysiwygProps?.isAutoFocusEnabled);
 
@@ -91,6 +91,8 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
         ref,
         isWysiwygReady: Boolean(composerModel),
         wysiwyg: formattingActions,
+        content,
+        formattingStates,
         debug: {
             modelRef,
             testRef,

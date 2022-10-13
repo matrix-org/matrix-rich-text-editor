@@ -30,20 +30,31 @@ type ButtonProps = {
     onClick: MouseEventHandler<HTMLButtonElement>;
     imagePath: string;
     alt: string;
+    state: 'enabled' | 'disabled' | 'reversed';
 };
 
-function Button({ onClick, imagePath, alt }: ButtonProps) {
+function Button({ onClick, imagePath, alt, state }: ButtonProps) {
+    const isReversed = state === 'reversed';
+    const isDisabled = state === 'disabled';
     return (
-        <button type="button" onClick={onClick}>
+        <button
+            type="button"
+            onClick={onClick}
+            style={{
+                ...(isReversed && { backgroundColor: 'lightgray' }),
+                ...(isDisabled && { backgroundColor: 'firebrick' }),
+            }}
+        >
             <img alt={alt} src={imagePath} />
         </button>
     );
 }
 
 function App() {
-    const { ref, isWysiwygReady, wysiwyg, debug } = useWysiwyg({
-        isAutoFocusEnabled: true,
-    });
+    const { ref, isWysiwygReady, wysiwyg, formattingStates, debug } =
+        useWysiwyg({
+            isAutoFocusEnabled: true,
+        });
 
     return (
         <div className="wrapper">
@@ -54,46 +65,55 @@ function App() {
                             onClick={wysiwyg.undo}
                             alt="undo"
                             imagePath={undoImage}
+                            state={formattingStates.undo}
                         />
                         <Button
                             onClick={wysiwyg.redo}
                             alt="redo"
                             imagePath={redoImage}
+                            state={formattingStates.redo}
                         />
                         <Button
                             onClick={wysiwyg.bold}
                             alt="bold"
                             imagePath={boldImage}
+                            state={formattingStates.bold}
                         />
                         <Button
                             onClick={wysiwyg.italic}
                             alt="italic"
                             imagePath={italicImage}
+                            state={formattingStates.italic}
                         />
                         <Button
                             onClick={wysiwyg.underline}
                             alt="underline"
                             imagePath={underlineImage}
+                            state={formattingStates.underline}
                         />
                         <Button
                             onClick={wysiwyg.strikeThrough}
                             alt="strike through"
                             imagePath={strikeTroughImage}
+                            state={formattingStates.strikeThrough}
                         />
                         <Button
                             onClick={wysiwyg.unorderedList}
                             alt="list unordered"
                             imagePath={listUnorderedImage}
+                            state={formattingStates.unorderedList}
                         />
                         <Button
                             onClick={wysiwyg.orderedList}
                             alt="list ordered"
                             imagePath={listOrderedImage}
+                            state={formattingStates.orderedList}
                         />
                         <Button
                             onClick={wysiwyg.inlineCode}
                             alt="inline code"
                             imagePath={listOrderedImage}
+                            state={formattingStates.inlineCode}
                         />
                         <button type="button" onClick={(e) => wysiwyg.clear()}>
                             clear

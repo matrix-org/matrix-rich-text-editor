@@ -21,13 +21,15 @@ import dts from 'vite-plugin-dts';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     plugins: [
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
         react(),
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
         dts({
-            include: ['lib/useWysiwyg.ts'],
-            insertTypesEntry: true,
+            include: ['lib/useWysiwyg.ts', 'lib/types.ts', 'lib/constants.ts'],
+            rollupTypes: true,
         }),
     ],
     test: {

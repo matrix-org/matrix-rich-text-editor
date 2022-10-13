@@ -14,40 +14,66 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { RefObject, useEffect } from 'react';
+import { RefObject, useEffect, useState } from 'react';
 
 import { ComposerModel } from '../../generated/wysiwyg';
 import { isClipboardEvent, isInputEvent } from './assert';
 import { handleInput, handleKeyDown, handleSelectionChange } from './event';
-import { WysiwygInputEvent } from '../types';
+import { FormattingStates, WysiwygInputEvent } from '../types';
 import { TestUtilities } from '../useTestCases/types';
 import { FormatBlockEvent } from './types';
+import { getDefaultFormattingStates } from './utils';
+
+type State = {
+    content: string | null;
+    formattingStates: FormattingStates;
+};
 
 export function useListeners(
     editorRef: RefObject<HTMLElement | null>,
     modelRef: RefObject<HTMLElement | null>,
     composerModel: ComposerModel | null,
     testUtilities: TestUtilities,
-    onChange?: (content: string) => void,
 ) {
+    const [state, setState] = useState<State>({
+        content: null,
+        formattingStates: getDefaultFormattingStates(),
+    });
+
     useEffect(() => {
         const editorNode = editorRef.current;
         if (!composerModel || !editorNode) {
             return;
         }
 
-        // React uses SyntheticEvent (https://reactjs.org/docs/events.html) and
-        // doesn't catch manually fired event (myNode.dispatchEvent)
-        const onInput = (e: Event) =>
-            isInputEvent(e) &&
-            handleInput(
+        const _handleInput = (e: WysiwygInputEvent) => {
+            const res = handleInput(
                 e,
                 editorNode,
                 composerModel,
                 modelRef.current,
                 testUtilities,
-                onChange,
             );
+
+            if (res) {
+                setState(({ content, formattingStates }) => {
+                    const newState: State = {
+                        content,
+                        formattingStates:
+                            res.formattingStates || formattingStates,
+                    };
+                    if (res.content !== undefined) {
+                        newState.content = res.content;
+                    }
+
+                    return newState;
+                });
+            }
+        };
+
+        // React uses SyntheticEvent (https://reactjs.org/docs/events.html) and
+        // doesn't catch manually fired event (myNode.dispatchEvent)
+        const onInput = (e: Event) => isInputEvent(e) && _handleInput(e);
         editorNode.addEventListener('input', onInput);
 
         const onPaste = (e: Event) => {
@@ -58,26 +84,14 @@ export function useListeners(
             e.preventDefault();
             e.stopPropagation();
 
-            handleInput(
-                e,
-                editorNode,
-                composerModel,
-                modelRef.current,
-                testUtilities,
-                onChange,
-            );
+            _handleInput(e);
         };
         editorNode.addEventListener('paste', onPaste);
 
         const onWysiwygInput = ((e: FormatBlockEvent) => {
-            handleInput(
-                { inputType: e.detail.blockType } as WysiwygInputEvent,
-                editorNode,
-                composerModel,
-                modelRef.current,
-                testUtilities,
-                onChange,
-            );
+            _handleInput({
+                inputType: e.detail.blockType,
+            } as WysiwygInputEvent);
         }) as EventListener;
         editorNode.addEventListener('wysiwygInput', onWysiwygInput);
 
@@ -86,8 +100,17 @@ export function useListeners(
         };
         editorNode.addEventListener('keydown', onKeyDown);
 
-        const onSelectionChange = () =>
-            handleSelectionChange(editorNode, composerModel, testUtilities);
+        const onSelectionChange = () => {
+            const formattingStates = handleSelectionChange(
+                editorNode,
+                composerModel,
+                testUtilities,
+            );
+
+            if (formattingStates) {
+                setState(({ content }) => ({ content, formattingStates }));
+            }
+        };
         document.addEventListener('selectionchange', onSelectionChange);
 
         return () => {
@@ -97,5 +120,7 @@ export function useListeners(
             editorNode.removeEventListener('keydown', onKeyDown);
             document.removeEventListener('selectionchange', onSelectionChange);
         };
-    }, [editorRef, composerModel, modelRef, testUtilities, onChange]);
+    }, [editorRef, composerModel, modelRef, testUtilities, setState]);
+
+    return state;
 }
