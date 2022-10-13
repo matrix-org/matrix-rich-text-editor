@@ -25,7 +25,6 @@ export function processInput(
 ) {
     if (e instanceof ClipboardEvent) {
         const data = e.clipboardData?.getData('text/plain') ?? '';
-        console.log(data);
         return action(composerModel.replace_text(data), 'paste');
     }
 

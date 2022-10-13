@@ -14,16 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { FORMATTING_ACTIONS } from './constants';
+import { FORMATTING_ACTIONS } from '../constants';
+import { FormattingState, FormattingActions } from '../types';
 
-export type BlockType = InputEvent['inputType'] | 'formatInlineCode' | 'clear';
-
-export type WysiwygInputEvent =
-    | ClipboardEvent
-    | (InputEvent & { inputType: BlockType });
-
-export type FormattingActions = typeof FORMATTING_ACTIONS[number];
-
-export type FormattingState = 'enabled' | 'reversed' | 'disabled';
-
-export type FormattingStates = Record<FormattingActions, FormattingState>;
+export function getDefaultFormattingStates() {
+    return FORMATTING_ACTIONS.reduce<
+        Record<FormattingActions, FormattingState>
+    >((acc, action) => {
+        acc[action] = 'enabled';
+        return acc;
+    }, {} as Record<FormattingActions, FormattingState>);
+}

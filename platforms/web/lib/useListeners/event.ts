@@ -16,15 +16,21 @@ limitations under the License.
 
 import { MouseEvent as ReactMouseEvent } from 'react';
 
-import { ComposerAction, ComposerModel } from '../../generated/wysiwyg';
+import {
+    ComposerAction,
+    ComposerActions,
+    ComposerModel,
+    MenuStateUpdate,
+} from '../../generated/wysiwyg';
 import { processInput } from '../composer';
 import {
     getCurrentSelection,
     refreshComposerView,
     replaceEditor,
 } from '../dom';
-import { BlockType, WysiwygInputEvent } from '../types';
+import { FormattingStates, BlockType, WysiwygInputEvent } from '../types';
 import { TestUtilities } from '../useTestCases/types';
+import { getDefaultFormattingStates } from './utils';
 
 export function sendWysiwygInputEvent(
     editor: HTMLElement,
@@ -73,39 +79,64 @@ export function handleKeyDown(e: KeyboardEvent, editor: HTMLElement) {
     }
 }
 
+function getFormattingState(menuStateUpdate: MenuStateUpdate) {
+    const reversedActions = menuStateUpdate.reversed_actions;
+    const disabledActions = menuStateUpdate.disabled_actions;
+    const states: FormattingStates = getDefaultFormattingStates();
+
+    const computeActions = (
+        actions: ComposerActions,
+        value: 'reversed' | 'disabled',
+    ) => {
+        let act: ComposerAction | undefined;
+
+        while ((act = actions.next()) !== undefined) {
+            switch (act) {
+                case ComposerAction.Bold:
+                    states.bold = value;
+                    break;
+                case ComposerAction.Italic:
+                    states.italic = value;
+                    break;
+                case ComposerAction.Underline:
+                    states.underline = value;
+                    break;
+                case ComposerAction.StrikeThrough:
+                    states.strikeThrough = value;
+                    break;
+                case ComposerAction.Undo:
+                    states.undo = value;
+                    break;
+                case ComposerAction.Redo:
+                    states.redo = value;
+                    break;
+                case ComposerAction.OrderedList:
+                    states.orderedList = value;
+                    break;
+                case ComposerAction.UnorderedList:
+                    states.unorderedList = value;
+                    break;
+                default:
+                    break;
+            }
+        }
+    };
+
+    computeActions(reversedActions, 'reversed');
+    computeActions(disabledActions, 'disabled');
+
+    return states;
+}
+
 export function handleInput(
     e: WysiwygInputEvent,
     editor: HTMLElement,
     composerModel: ComposerModel,
     modelNode: HTMLElement | null,
     testUtilities: TestUtilities,
-    onChange?: (content: string) => void,
 ) {
     const update = processInput(e, composerModel, testUtilities.traceAction);
     if (update) {
-        const menuStateUpdate = update.menu_state().update();
-        if (menuStateUpdate) {
-            const reversedActions = menuStateUpdate.reversed_actions;
-            const disabledActions = menuStateUpdate.disabled_actions;
-            let act: ComposerAction | undefined;
-            while ((act = reversedActions.next()) !== undefined) {
-                switch (act) {
-                    case ComposerAction.Bold:
-                        console.log('bold is reversed');
-                        break;
-                    case ComposerAction.Italic:
-                        console.log('italic is reversed');
-                        break;
-                    default:
-                        console.log('something else is reversed');
-                        break;
-                }
-            }
-            while ((act = disabledActions.next()) !== undefined) {
-                console.log(`disabled: ${act}`);
-            }
-        }
-
         const repl = update.text_update().replace_all;
         if (repl) {
             replaceEditor(
@@ -115,7 +146,6 @@ export function handleInput(
                 repl.end_utf16_codeunit,
             );
             testUtilities.setEditorHtml(repl.replacement_html);
-            onChange?.(repl.replacement_html);
         }
         editor.focus();
 
@@ -123,6 +153,16 @@ export function handleInput(
         if (modelNode) {
             refreshComposerView(modelNode, composerModel);
         }
+
+        const menuStateUpdate = update.menu_state().update();
+        const res = {
+            content: repl?.replacement_html,
+            formattingStates: menuStateUpdate
+                ? getFormattingState(menuStateUpdate)
+                : null,
+        };
+
+        return res;
     }
 }
 
@@ -159,6 +199,12 @@ export function handleSelectionChange(
     ) {
         return;
     }
-    composeModel.select(start, end);
+    const update = composeModel.select(start, end);
     traceAction(null, 'select', start, end);
+
+    const menuStateUpdate = update.menu_state().update();
+
+    if (menuStateUpdate) {
+        return getFormattingState(menuStateUpdate);
+    }
 }
