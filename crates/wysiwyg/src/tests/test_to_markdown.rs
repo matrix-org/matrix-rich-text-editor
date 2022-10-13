@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use crate::{tests::testutils_composer_model::cm, ToMarkdown};
+use pulldown_cmark as md_parser;
 use widestring::Utf16String;
 
 #[test]
@@ -169,6 +170,39 @@ fn list_ordered() {
     );
 }
 
+#[test]
+fn round_trip() {
+    assert_roundtrip(r#"hello <strong>world</strong>!"#, "hello __world__!");
+}
+
 fn md(html: &str) -> Utf16String {
     cm(html).state.dom.to_markdown().unwrap()
+}
+
+fn assert_roundtrip(html: &str, expected_markdown: &str) {
+    let markdown = cm(&format!("{html}|")).state.dom.to_markdown();
+    assert!(markdown.is_ok());
+    let markdown = markdown.unwrap();
+
+    assert_eq!(markdown, expected_markdown);
+
+    let expected_html = html;
+    let html = {
+        let mut options = md_parser::Options::empty();
+        options.insert(md_parser::Options::ENABLE_STRIKETHROUGH);
+
+        let markdown = markdown.as_ustr().to_string_lossy();
+
+        let parser = md_parser::Parser::new_ext(&markdown, options);
+
+        let mut html = String::new();
+        md_parser::html::push_html(&mut html, parser);
+
+        html
+    };
+
+    let p = "<p>".len();
+    let ppnl = "</p>\n".len();
+
+    assert_eq!(&html[p..html.len() - ppnl], expected_html);
 }
