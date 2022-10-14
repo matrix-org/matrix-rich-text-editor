@@ -13,7 +13,6 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.core.text.getSpans
 import com.google.android.material.textfield.TextInputEditText
 import io.element.android.wysiwyg.spans.HtmlToSpansParser
@@ -83,6 +82,9 @@ class EditorEditText : TextInputEditText {
         return inputConnection
     }
 
+    /**
+     * Override cut & paste events so output is redirected to the [inputProcessor].
+     */
     override fun onTextContextMenuItem(id: Int): Boolean {
         when (id) {
             R.id.cut -> {
@@ -94,30 +96,27 @@ class EditorEditText : TextInputEditText {
                 val result = update?.let { inputProcessor.processUpdate(it) }
 
                 if (result != null) {
-                    this.editableText.clear()
-                    this.editableText.replace(0, this.editableText.length, result.text)
-                    this.setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
+                    setTextInternal(result.text)
+                    setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
                 }
 
                 return false
             }
             R.id.paste, R.id.pasteAsPlainText -> {
                 val clipBoardManager = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-                val copiedString = clipBoardManager.primaryClip?.getItemAt(0)?.text?.toString()
-                val update = inputProcessor.processInput(EditorInputAction.InsertText(copiedString as CharSequence))
+                val copiedString = clipBoardManager.primaryClip?.getItemAt(0)?.text ?: return false
+                val update = inputProcessor.processInput(EditorInputAction.InsertText(copiedString))
                 val result = update?.let { inputProcessor.processUpdate(it) }
 
                 if (result != null) {
-                    this.editableText.clear()
-                    this.editableText.replace(0, this.editableText.length, result.text)
-                    this.setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
+                    setTextInternal(result.text)
+                    setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
                 }
 
                 return false
             }
             else -> { return super.onTextContextMenuItem(id) }
         }
-
     }
 
     private fun addHardwareKeyInterceptor() {
