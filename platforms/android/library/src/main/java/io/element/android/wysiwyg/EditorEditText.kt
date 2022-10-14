@@ -5,6 +5,9 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Context.CLIPBOARD_SERVICE
 import android.os.Build
+import android.os.Bundle
+import android.os.Parcelable
+import android.text.Selection
 import android.text.Spannable
 import android.text.SpannableStringBuilder
 import android.util.AttributeSet
@@ -12,6 +15,7 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
+import androidx.core.os.bundleOf
 import com.google.android.material.textfield.TextInputEditText
 import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
@@ -70,15 +74,21 @@ class EditorEditText : TextInputEditText {
     }
 
     /**
+     * Override this as we'll do our own text restoration.
+     */
+    override fun getFreezesText(): Boolean {
+        return false
+    }
+
+    /**
      * We wrap the internal `com.android.internal.widget.EditableInputConnection` as it's not
      * public, but its internal behavior is needed to work properly with the EditText.
      */
-    override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
+    override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection? {
         val baseInputConnection = requireNotNull(super.onCreateInputConnection(outAttrs))
-        val inputConnection =
-            InterceptInputConnection(baseInputConnection, this, inputProcessor)
-        this.inputConnection = inputConnection
-        return inputConnection
+        val connection = InterceptInputConnection(baseInputConnection, this, inputProcessor)
+        this.inputConnection = connection
+        return connection
     }
 
     /**
@@ -249,6 +259,30 @@ class EditorEditText : TextInputEditText {
     private fun setSelectionFromComposerUpdate(start: Int, end: Int = start) {
         val (newStart, newEnd) = EditorIndexMapper.fromComposerToEditor(start, end, editableText)
         setSelection(newStart, newEnd)
+    }
+
+    override fun onSaveInstanceState(): Parcelable {
+        val parcelable = super.onSaveInstanceState()
+        return bundleOf("html" to getHtmlOutput(), "super_state" to parcelable)
+    }
+
+    override fun onRestoreInstanceState(state: Parcelable?) {
+        if (state is Bundle) {
+            val html = state.getString("html").orEmpty()
+            val update = inputProcessor.processInput(EditorInputAction.ReplaceAllHtml(html))
+            val result = update?.let { inputProcessor.processUpdate(it) }
+            val superState = state.getParcelable<SavedState>("super_state")
+            if (result != null) {
+                setTextInternal(result.text)
+            }
+            // This will restore the previous selection
+            super.onRestoreInstanceState(superState)
+
+            val start = Selection.getSelectionStart(editableText)
+            val end = Selection.getSelectionEnd(editableText)
+            inputProcessor.updateSelection(editableText, start, end)
+        }
+
     }
 }
 
