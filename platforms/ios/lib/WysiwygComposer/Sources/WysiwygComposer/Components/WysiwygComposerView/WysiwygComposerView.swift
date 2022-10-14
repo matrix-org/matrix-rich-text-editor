@@ -25,10 +25,11 @@ public struct WysiwygComposerView: UIViewRepresentable {
     public var replaceText: (NSAttributedString, NSRange, String) -> Bool
     public var select: (NSAttributedString, NSRange) -> Void
     public var didUpdateText: (UITextView) -> Void
-    
     private var tintColor = Color.accentColor
-    
-    public init(content: WysiwygComposerContent,
+    @Binding public var focused: Bool
+
+    public init(focused: Binding<Bool>,
+                content: WysiwygComposerContent,
                 replaceText: @escaping (NSAttributedString, NSRange, String) -> Bool,
                 select: @escaping (NSAttributedString, NSRange) -> Void,
                 didUpdateText: @escaping (UITextView) -> Void) {
@@ -36,6 +37,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
         self.replaceText = replaceText
         self.select = select
         self.didUpdateText = didUpdateText
+        _focused = focused
     }
     
     public func makeUIView(context: Context) -> UITextView {
@@ -63,21 +65,29 @@ public struct WysiwygComposerView: UIViewRepresentable {
         uiView.apply(content)
         context.coordinator.didUpdateText(uiView)
         uiView.tintColor = UIColor(tintColor)
+        
+        switch (focused, uiView.isFirstResponder) {
+        case (true, false): uiView.becomeFirstResponder()
+        case (false, true): uiView.resignFirstResponder()
+        default: break
+        }
     }
 
     public func makeCoordinator() -> Coordinator {
-        Coordinator(replaceText, select, didUpdateText)
+        Coordinator($focused, replaceText, select, didUpdateText)
     }
 
     /// Coordinates UIKit communication.
     public class Coordinator: NSObject, UITextViewDelegate, NSTextStorageDelegate {
+        var focused: Binding<Bool>
         var replaceText: (NSAttributedString, NSRange, String) -> Bool
         var select: (NSAttributedString, NSRange) -> Void
         var didUpdateText: (UITextView) -> Void
-
-        init(_ replaceText: @escaping (NSAttributedString, NSRange, String) -> Bool,
+        init(_ focused: Binding<Bool>,
+             _ replaceText: @escaping (NSAttributedString, NSRange, String) -> Bool,
              _ select: @escaping (NSAttributedString, NSRange) -> Void,
              _ didUpdateText: @escaping (UITextView) -> Void) {
+            self.focused = focused
             self.replaceText = replaceText
             self.select = select
             self.didUpdateText = didUpdateText
@@ -102,6 +112,14 @@ public struct WysiwygComposerView: UIViewRepresentable {
             Logger.textView.logDebug([textView.logSelection],
                                      functionName: #function)
             select(textView.attributedText, textView.selectedRange)
+        }
+        
+        public func textViewDidBeginEditing(_ textView: UITextView) {
+            focused.wrappedValue = true
+        }
+        
+        public func textViewDidEndEditing(_ textView: UITextView) {
+            focused.wrappedValue = false
         }
     }
 }
