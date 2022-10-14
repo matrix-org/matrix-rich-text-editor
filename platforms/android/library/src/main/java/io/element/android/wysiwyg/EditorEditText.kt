@@ -6,7 +6,6 @@ import android.text.Spannable
 import android.text.SpannableStringBuilder
 import android.util.AttributeSet
 import android.view.KeyEvent
-import android.view.MotionEvent
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import androidx.core.text.getSpans
@@ -44,7 +43,6 @@ class EditorEditText : TextInputEditText {
 
     init {
         setSpannableFactory(spannableFactory)
-        addHardwareKeyInterceptor()
     }
 
     fun interface OnSelectionChangeListener {
@@ -66,10 +64,6 @@ class EditorEditText : TextInputEditText {
         selectionChangeListener?.selectionChanged(selStart, selEnd)
     }
 
-    /**
-     * We wrap the internal [EditableInputConnection] as it's not public, but its internal behavior
-     * is probably needed to work properly with the EditText.
-     */
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
         val baseInputConnection = requireNotNull(super.onCreateInputConnection(outAttrs))
         val inputConnection =
@@ -78,27 +72,20 @@ class EditorEditText : TextInputEditText {
         return inputConnection
     }
 
-    private fun addHardwareKeyInterceptor() {
-        // This seems to be the only way to prevent EditText from automatically handling key strokes
-        setOnKeyListener { v, keyCode, event ->
-            if (event.keyCode == KeyEvent.KEYCODE_ENTER) {
-                if (event.action == MotionEvent.ACTION_DOWN) {
-                    inputConnection?.sendHardwareKeyboardInput(event)
-                }
-                true
-            } else if (event.action != MotionEvent.ACTION_DOWN) {
-                false
-            } else if (event.isMovementKey()) {
-                false
-            } else if (event.metaState != 0 && event.unicodeChar == 0) {
-                // Is a modifier key
-                false
-            } else {
-                inputConnection?.sendHardwareKeyboardInput(event)
-                true
-            }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean =
+        if (event.keyCode == KeyEvent.KEYCODE_ENTER) {
+            inputConnection?.processKeyEvent(event)
+            true
+        } else if (event.isMovementKey()) {
+            false
+        } else if (event.metaState != 0 && event.unicodeChar == 0) {
+            // Is a modifier key
+            false
+        } else {
+            inputConnection?.processKeyEvent(event)
+            true
         }
-    }
 
     override fun setText(text: CharSequence?, type: BufferType?) {
         val currentText = this.text

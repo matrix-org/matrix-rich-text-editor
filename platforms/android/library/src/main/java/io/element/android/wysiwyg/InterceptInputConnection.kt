@@ -13,12 +13,6 @@ import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import androidx.core.text.getSpans
 import io.element.android.wysiwyg.spans.HtmlToSpansParser
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.consumeEach
-import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -29,12 +23,7 @@ class InterceptInputConnection(
     private val inputProcessor: InputProcessor,
 ) : BaseInputConnection(editorEditText, true) {
 
-    private val keyboardEventQueue = Channel<KeyEvent>(capacity = Channel.UNLIMITED)
-
-    private var keyEventJob: Job? = null
-
     init {
-        keyEventJob = processKeyEvents()
         // TODO: remove this once we have an initial menu state update
         inputProcessor.processInput(EditorInputAction.InsertText(""))
     }
@@ -55,9 +44,6 @@ class InterceptInputConnection(
     override fun closeConnection() {
         super.closeConnection()
         baseInputConnection.closeConnection()
-
-        keyEventJob?.cancel()
-        keyEventJob = null
     }
 
     override fun clearMetaKeyStates(states: Int): Boolean {
@@ -97,67 +83,58 @@ class InterceptInputConnection(
         return super.setImeConsumesInput(imeConsumesInput)
     }
 
-    /**
-     * Hack to have keyboard input events work as IME ones.
-     */
-    fun sendHardwareKeyboardInput(keyEvent: KeyEvent) {
-        keyboardEventQueue.trySend(keyEvent)
-    }
 
-    private fun processKeyEvents() =
-        CoroutineScope(Dispatchers.Main).launch {
-            keyboardEventQueue.consumeEach { keyEvent ->
-                val content = editable
-                val start = Selection.getSelectionStart(content)
-                val end = Selection.getSelectionEnd(content)
-                val (cStart, cEnd) = getCurrentComposition()
-                when {
-                    keyEvent.isPrintingKey || keyEvent.keyCode == KeyEvent.KEYCODE_SPACE -> {
-                        withProcessor {
-                            updateSelection(editable, start, end)
-                            val newText = if (keyEvent.keyCode == KeyEvent.KEYCODE_SPACE) {
-                                " "
-                            } else {
-                                Char(keyEvent.unicodeChar).toString()
-                            }
-                            val result = processInput(EditorInputAction.InsertText(newText))?.let {
-                                processUpdate(it)
-                            }
-                            val selectionLength = end-start
-                            beginBatchEdit()
-                            if (result != null) {
-                                editable.clear()
-                                editable.replace(0, editable.length, result.text)
-                            } else {
-                                editable.replace(start, end, newText)
-                            }
-                            setComposingRegion(cStart, cEnd - selectionLength)
-                            setSelectionOnEditable(editable, start+1)
-                            endBatchEdit()
-                        }
+    fun processKeyEvent(keyEvent: KeyEvent) {
+        val content = editable
+        val start = Selection.getSelectionStart(content)
+        val end = Selection.getSelectionEnd(content)
+        val (cStart, cEnd) = getCurrentComposition()
+        when {
+            keyEvent.isPrintingKey || keyEvent.keyCode == KeyEvent.KEYCODE_SPACE -> {
+                withProcessor {
+                    updateSelection(editable, start, end)
+                    val newText = if (keyEvent.keyCode == KeyEvent.KEYCODE_SPACE) {
+                        " "
+                    } else {
+                        Char(keyEvent.unicodeChar).toString()
                     }
-                    keyEvent.keyCode == KeyEvent.KEYCODE_ENTER -> {
-                        val result = withProcessor {
-                            processInput(EditorInputAction.InsertParagraph)?.let {
-                                processUpdate(it)
-                            }
-                        }
-                        beginBatchEdit()
-                        if (result != null) {
-                            editable.replace(0, editable.length, result.text)
-                            setSelectionOnEditable(editable, result.selection.last)
-                        } else {
-                            editable.replace(start, end, "\n")
-                        }
-                        endBatchEdit()
+                    val result = processInput(EditorInputAction.InsertText(newText))?.let {
+                        processUpdate(it)
                     }
-                    keyEvent.keyCode == KeyEvent.KEYCODE_DEL -> {
-                        inputProcessor.updateSelection(editable, start, end)
-                        backspace()
+                    val selectionLength = end - start
+                    beginBatchEdit()
+                    if (result != null) {
+                        editable.clear()
+                        editable.replace(0, editable.length, result.text)
+                    } else {
+                        editable.replace(start, end, newText)
                     }
+                    setComposingRegion(cStart, cEnd - selectionLength)
+                    setSelectionOnEditable(editable, start + 1)
+                    endBatchEdit()
                 }
             }
+            keyEvent.keyCode == KeyEvent.KEYCODE_ENTER -> {
+                val result = withProcessor {
+                    processInput(EditorInputAction.InsertParagraph)?.let {
+                        processUpdate(it)
+                    }
+                }
+                beginBatchEdit()
+                if (result != null) {
+                    editable.replace(0, editable.length, result.text)
+                    setSelectionOnEditable(editable, result.selection.last)
+                } else {
+                    editable.replace(start, end, "\n")
+                }
+                endBatchEdit()
+            }
+            keyEvent.keyCode == KeyEvent.KEYCODE_DEL -> {
+                inputProcessor.updateSelection(editable, start, end)
+                backspace()
+            }
         }
+    }
 
     // Called when started typing
     override fun setComposingText(text: CharSequence?, newCursorPosition: Int): Boolean {
