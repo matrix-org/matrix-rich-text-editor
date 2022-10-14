@@ -126,6 +126,7 @@ class InterceptInputConnection(
                             val selectionLength = end-start
                             beginBatchEdit()
                             if (result != null) {
+                                editable.clear()
                                 editable.replace(0, editable.length, result.text)
                             } else {
                                 editable.replace(start, end, newText)
