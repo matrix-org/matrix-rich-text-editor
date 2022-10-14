@@ -144,6 +144,13 @@ fn can_backspace_to_beginning_after_making_a_line() {
     assert_eq!(tx(&model), "|");
 }
 
+#[test]
+fn test_replace_text_in_first_line_with_line_break() {
+    let mut model = cm("{AAA}|<br />BBB");
+    model.enter();
+    assert_eq!(tx(&model), "<br />|<br />BBB");
+}
+
 #[ignore] // TODO: backspace_merges_empty_text_nodes
 #[test]
 fn backspace_merges_empty_text_nodes() {

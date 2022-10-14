@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::{ComposerModel, Location};
 use widestring::Utf16String;
 
 use crate::tests::testutils_composer_model::{cm, restore_whitespace, tx};
 use crate::tests::testutils_conversion::utf16;
-use crate::{ComposerModel, Location};
 
 #[test]
 fn typing_a_character_into_an_empty_box_appends_it() {

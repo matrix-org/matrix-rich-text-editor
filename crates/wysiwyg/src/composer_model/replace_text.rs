@@ -16,7 +16,7 @@ use crate::dom::action_list::{DomAction, DomActionList};
 use crate::dom::nodes::DomNode;
 use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use crate::dom::{DomHandle, DomLocation, Range};
-use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
+use crate::{ComposerModel, ComposerUpdate, Location, ToTree, UnicodeString};
 
 impl<S> ComposerModel<S>
 where
@@ -49,6 +49,8 @@ where
 
     fn do_enter(&mut self) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
+
+        let tree = self.state.dom.to_tree().to_string();
 
         if s == e {
             let range = self.state.dom.find_range(s, e);
@@ -91,7 +93,32 @@ where
             self.state.end = self.state.start;
             self.create_update_replace_all()
         } else {
-            panic!("Unexpected multiple nodes on a 0 length selection")
+            // Special case, there might be one or several empty text nodes at the cursor position
+            let empty_text_leaves: Vec<&DomLocation> = leaves
+                .into_iter()
+                .filter(|l| {
+                    if let DomNode::Text(t) =
+                        self.state.dom.lookup_node(&l.node_handle)
+                    {
+                        t.data().is_empty()
+                    } else {
+                        false
+                    }
+                })
+                .collect();
+            for (i, leaf) in empty_text_leaves.iter().enumerate().rev() {
+                if i == 0 {
+                    self.state.dom.replace(
+                        &leaf.node_handle,
+                        vec![DomNode::new_line_break()],
+                    );
+                } else {
+                    self.state.dom.remove(&leaf.node_handle);
+                }
+            }
+            self.state.start += 1;
+            self.state.end = self.state.start;
+            self.create_update_replace_all()
         }
     }
 
