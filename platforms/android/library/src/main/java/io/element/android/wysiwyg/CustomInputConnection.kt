@@ -1,7 +1,5 @@
 package io.element.android.wysiwyg
 
-import android.os.Build
-import android.os.Bundle
 import android.text.Editable
 import android.text.Selection
 import android.text.Spannable
@@ -9,7 +7,6 @@ import android.text.style.BackgroundColorSpan
 import android.view.KeyEvent
 import android.view.inputmethod.*
 import android.widget.TextView
-import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import androidx.core.text.getSpans
 import io.element.android.wysiwyg.spans.HtmlToSpansParser
@@ -17,8 +14,7 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
-class InterceptInputConnection(
-    private val baseInputConnection: InputConnection,
+class CustomInputConnection(
     private val editorEditText: TextView,
     private val inputProcessor: InputProcessor,
 ) : BaseInputConnection(editorEditText, true) {
@@ -31,58 +27,6 @@ class InterceptInputConnection(
     override fun getEditable(): Editable {
         return editorEditText.editableText
     }
-
-    override fun beginBatchEdit(): Boolean {
-        return baseInputConnection.beginBatchEdit()
-    }
-
-    override fun endBatchEdit(): Boolean {
-        return baseInputConnection.endBatchEdit()
-    }
-
-    @RequiresApi(Build.VERSION_CODES.N)
-    override fun closeConnection() {
-        super.closeConnection()
-        baseInputConnection.closeConnection()
-    }
-
-    override fun clearMetaKeyStates(states: Int): Boolean {
-        return baseInputConnection.clearMetaKeyStates(states)
-    }
-
-    override fun sendKeyEvent(event: KeyEvent?): Boolean {
-        return super.sendKeyEvent(event)
-    }
-
-    override fun commitCompletion(text: CompletionInfo?): Boolean {
-        return baseInputConnection.commitCompletion(text)
-    }
-
-    override fun commitCorrection(correctionInfo: CorrectionInfo?): Boolean {
-        return baseInputConnection.commitCorrection(correctionInfo)
-    }
-
-    override fun performEditorAction(actionCode: Int): Boolean {
-        return baseInputConnection.performEditorAction(actionCode)
-    }
-
-    override fun performContextMenuAction(id: Int): Boolean {
-        return baseInputConnection.performContextMenuAction(id)
-    }
-
-    override fun getExtractedText(request: ExtractedTextRequest?, flags: Int): ExtractedText {
-        return baseInputConnection.getExtractedText(request, flags)
-    }
-
-    override fun performPrivateCommand(action: String?, data: Bundle?): Boolean {
-        return baseInputConnection.performPrivateCommand(action, data)
-    }
-
-    override fun setImeConsumesInput(imeConsumesInput: Boolean): Boolean {
-        baseInputConnection.setImeConsumesInput(imeConsumesInput)
-        return super.setImeConsumesInput(imeConsumesInput)
-    }
-
 
     fun processKeyEvent(keyEvent: KeyEvent) {
         val content = editable
@@ -246,10 +190,6 @@ class InterceptInputConnection(
         endBatchEdit()
 
         return handled
-    }
-
-    override fun requestCursorUpdates(cursorUpdateMode: Int): Boolean {
-        return baseInputConnection.requestCursorUpdates(cursorUpdateMode)
     }
 
     fun getCurrentComposition(): Pair<Int, Int> {

@@ -18,7 +18,7 @@ import kotlin.math.min
 
 class EditorEditText : TextInputEditText {
 
-    private var inputConnection: InterceptInputConnection? = null
+    private var inputConnection: CustomInputConnection? = null
     private val inputProcessor = InputProcessor(
         context,
         menuStateCallback = { menuStateChangedListener?.menuStateChanged(it) },
@@ -65,9 +65,8 @@ class EditorEditText : TextInputEditText {
     }
 
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
-        val baseInputConnection = requireNotNull(super.onCreateInputConnection(outAttrs))
         val inputConnection =
-            InterceptInputConnection(baseInputConnection, this, inputProcessor)
+            CustomInputConnection(this, inputProcessor)
         this.inputConnection = inputConnection
         return inputConnection
     }
