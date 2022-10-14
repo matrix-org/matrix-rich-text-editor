@@ -19,7 +19,6 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.FlakyTest
 import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.InlineFormat
 import io.element.android.wysiwyg.spans.OrderedListSpan
@@ -109,12 +108,15 @@ class EditorEditTextInputTests {
     }
 
     @Test
-    @FlakyTest(detail = "Sometimes the pressKey event doesn't reach the view.")
-    fun testHardwareKeyMovementNotIntercepted() {
+    fun testMovementIsIntercepted() {
         onView(withId(R.id.rich_text_edit_text))
             .perform(ImeActions.setComposingText("Test"))
             .perform(pressKey(KeyEvent.KEYCODE_DPAD_LEFT))
             .perform(pressKey(KeyEvent.KEYCODE_DPAD_LEFT))
+            .check(matches(selectionIsAt(3)))
+            .perform(pressKey(KeyEvent.KEYCODE_DPAD_LEFT))
+            .check(matches(selectionIsAt(2)))
+            .perform(pressKey(KeyEvent.KEYCODE_DPAD_RIGHT))
             .check(matches(selectionIsAt(3)))
     }
 

@@ -77,7 +77,7 @@ class EditorEditText : TextInputEditText {
             inputConnection?.processKeyEvent(event)
             true
         } else if (event.isMovementKey()) {
-            false
+            super.onKeyDown(keyCode, event)
         } else if (event.metaState != 0 && event.unicodeChar == 0) {
             // Is a modifier key
             false
