@@ -23,7 +23,7 @@ struct Composer: View {
     @ObservedObject var viewModel: WysiwygComposerViewModel
     let minTextViewHeight: CGFloat = 20
     let borderHeight: CGFloat = 44
-    
+    @State var focused = false
     var verticalPadding: CGFloat {
         (borderHeight - minTextViewHeight) / 2
     }
@@ -32,20 +32,26 @@ struct Composer: View {
         VStack(alignment: .leading, spacing: 8) {
             let rect = RoundedRectangle(cornerRadius: borderHeight / 2)
             HStack {
-                WysiwygComposerView(content: viewModel.content,
-                                    replaceText: viewModel.replaceText,
-                                    select: viewModel.select,
-                                    didUpdateText: viewModel.didUpdateText)
-                    .frame(height: viewModel.idealHeight)
-                    .padding(.horizontal, 12)
-                    .onAppear {
-                        viewModel.setup()
-                    }
+                WysiwygComposerView(
+                    focused: $focused,
+                    content: viewModel.content,
+                    replaceText: viewModel.replaceText,
+                    select: viewModel.select,
+                    didUpdateText: viewModel.didUpdateText
+                )
+                .frame(height: viewModel.idealHeight)
+                .padding(.horizontal, 12)
+                .onAppear {
+                    viewModel.setup()
+                }
             }
             .padding(.vertical, verticalPadding)
             .clipShape(rect)
             .overlay(rect.stroke(Color.gray, lineWidth: 2))
             .padding(.horizontal, 12)
+            .onTapGesture {
+                focused = true
+            }
             WysiwygActionToolbar { action in
                 viewModel.apply(action)
             }
