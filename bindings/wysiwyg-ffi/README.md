@@ -1,62 +1,65 @@
 # `wysiwyg-ffi`
 
-Rust code that can be used to generate Kotlin and Swift bindings for
-wysiwyg-rust.
+Rust code that can be used to generate Kotlin and Swift bindings for wysiwyg-rust.
 
-## Building
+## Setting up Rust
 
-### Android
+### 1. Install Rust
+See the [installation guide](https://www.rust-lang.org/tools/install).
 
-* [Install Rust](https://www.rust-lang.org/tools/install)
-* [Install the Android SDK](https://android-doc.github.io/sdk/installing/index.html?pkg=studio)
-  - find the installation path, and set the ANDROID_HOME environment variable
-  in your `~/.bashrc` or similar:
+### 2. Install `uniffi-bindgen`
+`uniffi-bindgen` is used to generate the Kotlin and Swift bindings.
 
-```bash
-export ANDROID_HOME=/home/andy/AndroidSdk
+It's important that the version of `uniffi-bindgen` that you install globally matches the version of `uniffi` declared in this project.
 
-```
-
-* [Install Android NDK](https://developer.android.com/ndk/downloads) - download
-  android-ndk-r22b-linux-x86_64.zip and unzip it e.g.:
+Find the version of `uniffi` in `bindings/wysiwyg-ffi/Cargo.toml` and install `uniffi-bindgen` using the following command:
 
 ```bash
-cd $ANDROID_HOME
-mkdir ndk
-cd ndk
-unzip ~/Downloads/android-ndk-r22b-linux-x86_64.zip
-mv android-ndk-r22b 22.1.7171670
+cargo install uniffi_bindgen --version <uniffi-version>
 ```
 
-You must use the "side-by-side" structure shown above - i.e. the ndk must be
-inside the Android SDK directory, in a path like `ndk/VERSION`. You can find
-the right version number for that directory by looking in source.properties
-inside the unzipped NDK.
-
-NOTE: at time of writing (2022-06-28) you needed to use android-ndk-r22b or
-earlier, because later versions fail with an error like
-`ld: error: unable to find library -lgcc`.  See
-[rust-lang #85806](https://github.com/rust-lang/rust/pull/85806) for more.
-
-* Configure Rust for cross compilation:
+### 3. Configure cross compilation
+Configure Rust for [cross compilation](https://rust-lang.github.io/rustup/cross-compilation.html) to any target platforms you'll need.
 
 ```bash
-rustup target add aarch64-linux-android
-rustup target add x86_64-linux-android
-rustup target add i686-linux-android
-rustup target add armv7-linux-androideabi
+# Android targets
+rustup target add aarch64-linux-android # for most physical Android devices
+rustup target add x86_64-linux-android # for Android emulator on PC
+rustup target add i686-linux-android # for 32-bit Android emulators
+rustup target add armv7-linux-androideabi # for older devices
+
+# iOS targets
+rustup target add aarch64-apple-ios
+rustup target add aarch64-apple-ios-sim
+rustup target add x86_64-apple-ios
 ```
 
-(Note: `aarch64` is for most physical Android devices, but `x86_64` is useful
-for running an Android emulator on a PC. You can also add `i686` if you use
-32-bit emulators.  `armv7` and `i686` are for older devices, but they can be
-used by default in the Android Studio build, so it's useful to have it
-available.)
 
-* Edit Cargo config `bindings/wysiwyg-ffi/.cargo/config.toml` to contain
-  something like:
+## Building for Android
+
+Ensure you have first completed the steps to [install and configure Rust](#setting-up-rust).
+
+### 1. Install the Android SDK
+The simplest way to do this is by [installing Android Studio](https://android-doc.github.io/sdk/installing/index.html?pkg=studio).
+
+### 2. Install the Android NDK
+Find the required NDK version by searching for `ndkVersion` in `platforms/android/library/build.gradle`.
+
+Now install the NDK, the simplest way being to use the Android SDK manager from within Android Studio.
+
+_Note: If you decide to install the NDK manually, you must still use the "side-by-side" structure (i.e. the NDK must be inside the Android SDK directory, in a path like `~/Android/Sdk/ndk/22.1.7171670`)._
+
+_Note: at time of writing (2022-06-28) you needed to use android-ndk-r22b or
+earlier, because later versions fail with an error like `ld: error: unable to find library -lgcc`.  See [rust-lang #85806](https://github.com/rust-lang/rust/pull/85806) for more._
+
+### 3. Point Cargo to the NDK
+Create a Cargo config at `bindings/wysiwyg-ffi/.cargo/config.toml` to tell Cargo where to look for the NDK during cross compilation (more details in the [Cargo reference](https://doc.rust-lang.org/cargo/reference/config.html)).
+
+Add any platforms that you need to target to this file, replacing instances of `NDK_HOME` with the location of your NDK (for example`/home/andy/Android/Sdk/ndk/22.1.7171670`).
 
 ```toml
+# bindings/wysiwyg-ffi/.cargo/config.toml
+
 [target.aarch64-linux-android]
 ar = "NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/ar"
 linker = "NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android30-clang"
@@ -66,33 +69,21 @@ ar = "NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/ar"
 linker = "NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android30-clang"
 ```
 
-Replacing NDK_HOME with something like `/home/andy/AndroidSdk/ndk/22.1.7171670`.
+_Note: You may need to add additional targets, for example `i686` if you use a 32-bit emulator._
 
-(Again, add the equivalent for `i686` if you use a 32-bit emulator.)
+_Note: this file is ignored in the top-level `.gitignore` file, so it won't be checked in to Git._
 
-(Note: this file is ignored in the top-level `.gitignore` file, so it won't be
-checked in to Git.)
+### 4. Building
 
-(More details in the
-[Cargo reference](https://doc.rust-lang.org/cargo/reference/config.html)).
-
-* Install uniffi-bindgen:
-
-⚠️ Check `bindings/wysiwyg-ffi/Cargo.toml` for the version of uniffi. You MUST
-use the same version here!
-
-```bash
-cargo install uniffi_bindgen --version 0.19.2
-```
-
-* Build the library using Gradle:
+#### Building the Android library
+The following command builds the whole library and deploys it to Maven local for local development.
 
 ```bash
 # Ensure ANDROID_HOME is set correctly!
 make android
 ```
 
-* To just build the shared object:
+#### Building the shared object
 
 ```bash
 cd bindings/wysiwyg-ffi
@@ -106,38 +97,16 @@ This will create:
 ../../target/x86_64-linux-android/release/libuniffi_wysiwyg_composer.so
 ```
 
-* Strip the libraries to make them smaller:
+To strip the libraries and make them smaller:
 
 ```bash
 NDK_HOME/toolchains/x86_64-4.9/prebuilt/linux-x86_64/bin/x86_64-linux-android-strip \
     ../../target/x86_64-linux-android/debug/libuniffi_wysiwyg_composer.so
 ```
 
-Replacing NDK_HOME with something like `/home/andy/AndroidSdk/ndk/22.1.7171670`.
+## Building for iOS
 
-See ../../examples/example-android for a Gradle project that runs the above
-and includes the built library in a real Android app.
-
-### iOS
-
-* [Install Rust](https://www.rust-lang.org/tools/install)
-
-* Configure Rust for cross compilation:
-
-```bash
-rustup target add aarch64-apple-ios
-rustup target add aarch64-apple-ios-sim
-rustup target add x86_64-apple-ios
-```
-
-* Install uniffi-bindgen
-
-⚠️  Check bindings/wysiwyg-ffi/Cargo.toml for the version of uniffi. You MUST
-use the same version here!
-
-```bash
-cargo install uniffi_bindgen --version 0.19.2
-```
+Ensure you have first completed the steps to [install and configure Rust](#setting-up-rust).
 
 * Build shared object:
 

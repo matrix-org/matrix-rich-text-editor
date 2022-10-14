@@ -15,11 +15,8 @@ Get the prerequisites for each platform by reading the READMEs for them:
 * WASM/JavaScript:
   [bindings/wysiwyg-wasm/README.md](bindings/wysiwyg-wasm/README.md)
 
-* Kotlin/Android:
-  [bindings/wysiwyg-ffi/README.md#android](bindings/wysiwyg-ffi/README.md#android)
-
-* Swift/iOS:
-  [bindings/wysiwyg-ffi/README.md#ios](bindings/wysiwyg-ffi/README.md#ios)
+* Android/Kotlin or iOS/Swift:
+  [bindings/wysiwyg-ffi/README.md](bindings/wysiwyg-ffi/README.md)
 
 Now, to build all the bindings, try:
 
