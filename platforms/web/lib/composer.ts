@@ -15,20 +15,51 @@ limitations under the License.
 */
 
 import { ComposerModel } from '../generated/wysiwyg';
-import { WysiwygInputEvent } from './types';
+import {
+    WysiwygInputEvent,
+    InputEventProcessor,
+    Wysiwyg,
+    FormattingFunctions,
+} from './types';
 import { TestUtilities } from './useTestCases/types';
+
+function processEvent(
+    e: WysiwygInputEvent,
+    wysiwyg: Wysiwyg,
+    inputEventProcessor?: InputEventProcessor,
+): WysiwygInputEvent | null {
+    if (inputEventProcessor) {
+        return inputEventProcessor(e, wysiwyg);
+    } else {
+        return e;
+    }
+}
 
 export function processInput(
     e: WysiwygInputEvent,
     composerModel: ComposerModel,
     action: TestUtilities['traceAction'],
+    formattingFunctions: FormattingFunctions,
+    inputEventProcessor?: InputEventProcessor,
 ) {
-    if (e instanceof ClipboardEvent) {
-        const data = e.clipboardData?.getData('text/plain') ?? '';
+    const event = processEvent(
+        e,
+        {
+            actions: formattingFunctions,
+            content: () => composerModel.get_html(),
+        },
+        inputEventProcessor,
+    );
+    if (!event) {
+        return;
+    }
+
+    if (event instanceof ClipboardEvent) {
+        const data = event.clipboardData?.getData('text/plain') ?? '';
         return action(composerModel.replace_text(data), 'paste');
     }
 
-    switch (e.inputType) {
+    switch (event.inputType) {
         case 'deleteContentBackward':
             return action(composerModel.backspace(), 'backspace');
         case 'deleteContentForward':
@@ -57,14 +88,15 @@ export function processInput(
             return;
         case 'insertOrderedList':
             return action(composerModel.ordered_list(), 'ordered_list');
+        case 'insertLineBreak':
         case 'insertParagraph':
             return action(composerModel.enter(), 'enter');
         case 'insertText':
-            if (e.data) {
+            if (event.data) {
                 return action(
-                    composerModel.replace_text(e.data),
+                    composerModel.replace_text(event.data),
                     'replace_text',
-                    e.data,
+                    event.data,
                 );
             }
             break;
@@ -77,7 +109,7 @@ export function processInput(
             // eslint-disable-next-line max-len
             // https://rawgit.com/w3c/input-events/v1/index.html#interface-InputEvent-Attributes
             // Internal task to make sure we cover all inputs: PSU-740
-            console.error(`Unknown input type: ${e.inputType}`);
+            console.error(`Unknown input type: ${event.inputType}`);
             console.error(e);
             return null;
     }

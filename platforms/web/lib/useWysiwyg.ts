@@ -22,6 +22,7 @@ import init, {
     // eslint-disable-next-line camelcase
     new_composer_model,
 } from '../generated/wysiwyg.js';
+import { InputEventProcessor } from './types.js';
 import { useFormattingActions } from './useFormattingActions';
 import { useListeners } from './useListeners';
 import { useTestCases } from './useTestCases';
@@ -65,6 +66,7 @@ function useEditor() {
 
 type WysiwygProps = {
     isAutoFocusEnabled?: boolean;
+    inputEventProcessor?: InputEventProcessor;
 };
 
 export function useWysiwyg(wysiwygProps?: WysiwygProps) {
@@ -77,20 +79,23 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
         composerModel,
     );
 
+    const formattingFunctions = useFormattingActions(ref);
+
     const { content, formattingStates } = useListeners(
         ref,
         modelRef,
         composerModel,
         testUtilities,
+        formattingFunctions,
+        wysiwygProps?.inputEventProcessor,
     );
 
-    const formattingActions = useFormattingActions(ref);
     useEditorFocus(ref, wysiwygProps?.isAutoFocusEnabled);
 
     return {
         ref,
         isWysiwygReady: Boolean(composerModel),
-        wysiwyg: formattingActions,
+        wysiwyg: formattingFunctions,
         content,
         formattingStates,
         debug: {
