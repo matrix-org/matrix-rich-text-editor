@@ -19,7 +19,7 @@ use crate::dom::to_html::ToHtml;
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
-use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
+use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt, UnicodeStringExt};
 use crate::dom::UnicodeString;
 use html_escape;
 
@@ -61,6 +61,12 @@ where
 
     pub fn set_handle(&mut self, handle: DomHandle) {
         self.handle = handle;
+    }
+
+    pub fn is_blank(&self) -> bool {
+        self.data
+            .chars()
+            .all(|c| matches!(c, ' ' | '\x09'..='\x0d'))
     }
 }
 
