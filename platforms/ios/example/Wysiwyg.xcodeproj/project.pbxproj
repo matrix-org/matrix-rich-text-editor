@@ -7,30 +7,18 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		6631998928E45F1200EF8166 /* WysiwygView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6631998828E45F1200EF8166 /* WysiwygView.swift */; };
-		6631998A28E45F1200EF8166 /* WysiwygHostingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6631998728E45F1200EF8166 /* WysiwygHostingView.swift */; };
-		6631998C28E45F9B00EF8166 /* UIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6631998B28E45F9B00EF8166 /* UIView.swift */; };
 		66F8D0C928E34D4E00CFA145 /* Composer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66F8D0C828E34D4E00CFA145 /* Composer.swift */; };
 		A623EBE3289AA69E00067E57 /* WysiwygUIKitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A623EBE2289AA69E00067E57 /* WysiwygUIKitTests.swift */; };
 		A623EBE5289AA6DE00067E57 /* WysiwygSharedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A623EBE4289AA6DE00067E57 /* WysiwygSharedTests.swift */; };
-		A64369212899175400ECCF8A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A64369202899175400ECCF8A /* AppDelegate.swift */; };
-		A64369232899175400ECCF8A /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A64369222899175400ECCF8A /* SceneDelegate.swift */; };
-		A64369252899175400ECCF8A /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A64369242899175400ECCF8A /* ViewController.swift */; };
-		A64369282899175400ECCF8A /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A64369262899175400ECCF8A /* Main.storyboard */; };
-		A643692A2899175500ECCF8A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A64369292899175500ECCF8A /* Assets.xcassets */; };
-		A643692D2899175500ECCF8A /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A643692B2899175500ECCF8A /* LaunchScreen.storyboard */; };
-		A64369332899196F00ECCF8A /* WysiwygComposer in Frameworks */ = {isa = PBXBuildFile; productRef = A64369322899196F00ECCF8A /* WysiwygComposer */; };
 		A6472CAB2886CF830021A0E8 /* WysiwygApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6472CAA2886CF830021A0E8 /* WysiwygApp.swift */; };
 		A6472CAD2886CF830021A0E8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6472CAC2886CF830021A0E8 /* ContentView.swift */; };
 		A6472CAF2886CF840021A0E8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A6472CAE2886CF840021A0E8 /* Assets.xcassets */; };
 		A6472CB22886CF840021A0E8 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A6472CB12886CF840021A0E8 /* Preview Assets.xcassets */; };
 		A6472CC62886CF840021A0E8 /* WysiwygUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6472CC52886CF840021A0E8 /* WysiwygUITests.swift */; };
 		A6C2157528C0E95C00C8E727 /* View+Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157428C0E95C00C8E727 /* View+Accessibility.swift */; };
-		A6C2157628C0E95C00C8E727 /* View+Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157428C0E95C00C8E727 /* View+Accessibility.swift */; };
 		A6C2157728C0E95C00C8E727 /* View+Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157428C0E95C00C8E727 /* View+Accessibility.swift */; };
 		A6C2157928C0F62000C8E727 /* WysiwygActionToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157828C0F62000C8E727 /* WysiwygActionToolbar.swift */; };
 		A6C2157C28C0FAAD00C8E727 /* WysiwygAction+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157B28C0FAAD00C8E727 /* WysiwygAction+Utils.swift */; };
-		A6C2157D28C0FAAE00C8E727 /* WysiwygAction+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157B28C0FAAD00C8E727 /* WysiwygAction+Utils.swift */; };
 		A6E6B26F2886D9AA009596F2 /* WysiwygComposer in Frameworks */ = {isa = PBXBuildFile; productRef = A6E6B26E2886D9AA009596F2 /* WysiwygComposer */; };
 		A6F3FC0128D4658000C170E8 /* AlertHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6F3FC0028D4658000C170E8 /* AlertHelper.swift */; };
 		A6F3FC0428D465AF00C170E8 /* View.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6F3FC0328D465AF00C170E8 /* View.swift */; };
@@ -38,13 +26,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		A623EBE0289AA59100067E57 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = A6472C9F2886CF830021A0E8 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = A643691D2899175400ECCF8A;
-			remoteInfo = WysiwygUIKit;
-		};
 		A6472CC22886CF840021A0E8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = A6472C9F2886CF830021A0E8 /* Project object */;
@@ -55,20 +36,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		6631998728E45F1200EF8166 /* WysiwygHostingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygHostingView.swift; sourceTree = "<group>"; };
-		6631998828E45F1200EF8166 /* WysiwygView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygView.swift; sourceTree = "<group>"; };
-		6631998B28E45F9B00EF8166 /* UIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIView.swift; sourceTree = "<group>"; };
 		66F8D0C828E34D4E00CFA145 /* Composer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Composer.swift; sourceTree = "<group>"; };
 		A623EBE2289AA69E00067E57 /* WysiwygUIKitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygUIKitTests.swift; sourceTree = "<group>"; };
 		A623EBE4289AA6DE00067E57 /* WysiwygSharedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygSharedTests.swift; sourceTree = "<group>"; };
-		A643691E2899175400ECCF8A /* WysiwygUIKit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WysiwygUIKit.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A64369202899175400ECCF8A /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		A64369222899175400ECCF8A /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
-		A64369242899175400ECCF8A /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
-		A64369272899175400ECCF8A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
-		A64369292899175500ECCF8A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		A643692C2899175500ECCF8A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		A643692E2899175500ECCF8A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A6472CA72886CF830021A0E8 /* Wysiwyg.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Wysiwyg.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A6472CAA2886CF830021A0E8 /* WysiwygApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygApp.swift; sourceTree = "<group>"; };
 		A6472CAC2886CF830021A0E8 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -86,14 +56,6 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		A643691B2899175400ECCF8A /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				A64369332899196F00ECCF8A /* WysiwygComposer in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		A6472CA42886CF830021A0E8 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -112,30 +74,12 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		A643691F2899175400ECCF8A /* WysiwygUIKit */ = {
-			isa = PBXGroup;
-			children = (
-				A643692E2899175500ECCF8A /* Info.plist */,
-				6631998B28E45F9B00EF8166 /* UIView.swift */,
-				A64369202899175400ECCF8A /* AppDelegate.swift */,
-				A64369222899175400ECCF8A /* SceneDelegate.swift */,
-				A64369242899175400ECCF8A /* ViewController.swift */,
-				6631998728E45F1200EF8166 /* WysiwygHostingView.swift */,
-				6631998828E45F1200EF8166 /* WysiwygView.swift */,
-				A64369292899175500ECCF8A /* Assets.xcassets */,
-				A643692B2899175500ECCF8A /* LaunchScreen.storyboard */,
-				A64369262899175400ECCF8A /* Main.storyboard */,
-			);
-			path = WysiwygUIKit;
-			sourceTree = "<group>";
-		};
 		A6472C9E2886CF830021A0E8 = {
 			isa = PBXGroup;
 			children = (
 				A6C2156F28C0E92A00C8E727 /* Shared */,
 				A6E6B2702886DA6E009596F2 /* Packages */,
 				A6472CA92886CF830021A0E8 /* Wysiwyg */,
-				A643691F2899175400ECCF8A /* WysiwygUIKit */,
 				A6472CC42886CF840021A0E8 /* WysiwygUITests */,
 				A6472CA82886CF830021A0E8 /* Products */,
 				A6E6B26D2886D9AA009596F2 /* Frameworks */,
@@ -147,7 +91,6 @@
 			children = (
 				A6472CA72886CF830021A0E8 /* Wysiwyg.app */,
 				A6472CC12886CF840021A0E8 /* WysiwygUITests.xctest */,
-				A643691E2899175400ECCF8A /* WysiwygUIKit.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -229,26 +172,6 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A643691D2899175400ECCF8A /* WysiwygUIKit */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = A64369312899175500ECCF8A /* Build configuration list for PBXNativeTarget "WysiwygUIKit" */;
-			buildPhases = (
-				A643691A2899175400ECCF8A /* Sources */,
-				A643691B2899175400ECCF8A /* Frameworks */,
-				A643691C2899175400ECCF8A /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = WysiwygUIKit;
-			packageProductDependencies = (
-				A64369322899196F00ECCF8A /* WysiwygComposer */,
-			);
-			productName = WysiwygUIKit;
-			productReference = A643691E2899175400ECCF8A /* WysiwygUIKit.app */;
-			productType = "com.apple.product-type.application";
-		};
 		A6472CA62886CF830021A0E8 /* Wysiwyg */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A6472CCB2886CF840021A0E8 /* Build configuration list for PBXNativeTarget "Wysiwyg" */;
@@ -282,7 +205,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				A623EBE1289AA59100067E57 /* PBXTargetDependency */,
 				A6472CC32886CF840021A0E8 /* PBXTargetDependency */,
 			);
 			name = WysiwygUITests;
@@ -302,9 +224,6 @@
 				LastSwiftUpdateCheck = 1340;
 				LastUpgradeCheck = 1340;
 				TargetAttributes = {
-					A643691D2899175400ECCF8A = {
-						CreatedOnToolsVersion = 13.4.1;
-					};
 					A6472CA62886CF830021A0E8 = {
 						CreatedOnToolsVersion = 13.4.1;
 					};
@@ -328,23 +247,12 @@
 			projectRoot = "";
 			targets = (
 				A6472CA62886CF830021A0E8 /* Wysiwyg */,
-				A643691D2899175400ECCF8A /* WysiwygUIKit */,
 				A6472CC02886CF840021A0E8 /* WysiwygUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		A643691C2899175400ECCF8A /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				A643692D2899175500ECCF8A /* LaunchScreen.storyboard in Resources */,
-				A643692A2899175500ECCF8A /* Assets.xcassets in Resources */,
-				A64369282899175400ECCF8A /* Main.storyboard in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		A6472CA52886CF830021A0E8 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -403,21 +311,6 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		A643691A2899175400ECCF8A /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				6631998C28E45F9B00EF8166 /* UIView.swift in Sources */,
-				6631998928E45F1200EF8166 /* WysiwygView.swift in Sources */,
-				A64369252899175400ECCF8A /* ViewController.swift in Sources */,
-				A6C2157628C0E95C00C8E727 /* View+Accessibility.swift in Sources */,
-				A64369212899175400ECCF8A /* AppDelegate.swift in Sources */,
-				A64369232899175400ECCF8A /* SceneDelegate.swift in Sources */,
-				6631998A28E45F1200EF8166 /* WysiwygHostingView.swift in Sources */,
-				A6C2157D28C0FAAE00C8E727 /* WysiwygAction+Utils.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		A6472CA32886CF830021A0E8 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -448,11 +341,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		A623EBE1289AA59100067E57 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = A643691D2899175400ECCF8A /* WysiwygUIKit */;
-			targetProxy = A623EBE0289AA59100067E57 /* PBXContainerItemProxy */;
-		};
 		A6472CC32886CF840021A0E8 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = A6472CA62886CF830021A0E8 /* Wysiwyg */;
@@ -460,86 +348,7 @@
 		};
 /* End PBXTargetDependency section */
 
-/* Begin PBXVariantGroup section */
-		A64369262899175400ECCF8A /* Main.storyboard */ = {
-			isa = PBXVariantGroup;
-			children = (
-				A64369272899175400ECCF8A /* Base */,
-			);
-			name = Main.storyboard;
-			sourceTree = "<group>";
-		};
-		A643692B2899175500ECCF8A /* LaunchScreen.storyboard */ = {
-			isa = PBXVariantGroup;
-			children = (
-				A643692C2899175500ECCF8A /* Base */,
-			);
-			name = LaunchScreen.storyboard;
-			sourceTree = "<group>";
-		};
-/* End PBXVariantGroup section */
-
 /* Begin XCBuildConfiguration section */
-		A643692F2899175500ECCF8A /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 7J4U792NQT;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = WysiwygUIKit/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = WysiwygUIKit;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UIMainStoryboardFile = Main;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.matrix.WysiwygUIKit;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		A64369302899175500ECCF8A /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 7J4U792NQT;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = WysiwygUIKit/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = WysiwygUIKit;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UIMainStoryboardFile = Main;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = org.matrix.WysiwygUIKit;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
 		A6472CC92886CF840021A0E8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -751,15 +560,6 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A64369312899175500ECCF8A /* Build configuration list for PBXNativeTarget "WysiwygUIKit" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				A643692F2899175500ECCF8A /* Debug */,
-				A64369302899175500ECCF8A /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		A6472CA22886CF830021A0E8 /* Build configuration list for PBXProject "Wysiwyg" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -790,10 +590,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		A64369322899196F00ECCF8A /* WysiwygComposer */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = WysiwygComposer;
-		};
 		A6E6B26E2886D9AA009596F2 /* WysiwygComposer */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = WysiwygComposer;
