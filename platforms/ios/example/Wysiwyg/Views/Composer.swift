@@ -22,7 +22,7 @@ import WysiwygComposer
 struct Composer: View {
     @ObservedObject var viewModel: WysiwygComposerViewModel
     let minTextViewHeight: CGFloat = 20
-    let borderHeight: CGFloat = 44
+    let borderHeight: CGFloat = 40
     @State var focused = false
     var verticalPadding: CGFloat {
         (borderHeight - minTextViewHeight) / 2
@@ -47,7 +47,7 @@ struct Composer: View {
             }
             .padding(.vertical, verticalPadding)
             .clipShape(rect)
-            .overlay(rect.stroke(Color.gray, lineWidth: 2))
+            .overlay(rect.stroke(Color.gray, lineWidth: 1))
             .padding(.horizontal, 12)
             .onTapGesture {
                 focused = true

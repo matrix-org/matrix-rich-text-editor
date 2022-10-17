@@ -329,7 +329,7 @@ private extension WysiwygComposerViewModel {
     }
     
     func generateHtmlBodyWithStyle(htmlFragment: String) -> String {
-        "<html><head><style>body {font-family:-apple-system;font:-apple-system-body;}</style></head><body>\(htmlFragment)</body></html>"
+        "<html><head><style>body {font-family:-apple-system;font:-apple-system-subheadline;}</style></head><body>\(htmlFragment)</body></html>"
     }
 }
 
