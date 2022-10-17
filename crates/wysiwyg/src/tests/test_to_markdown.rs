@@ -167,11 +167,20 @@ fn list_ordered() {
     );
 }
 
-#[test]
-fn round_trip() {
-    assert_to_md(r#"hello <strong>world</strong>!"#, "hello __world__!");
+fn assert_to_md_no_roundtrip(html: &str, expected_markdown: &str) {
+    let markdown = to_markdown(html);
+    assert_eq!(markdown, expected_markdown);
 }
 
+fn assert_to_md(html: &str, expected_markdown: &str) {
+    let markdown = to_markdown(html);
+    assert_eq!(markdown, expected_markdown);
+
+    let expected_html = html;
+    let html = to_html(&markdown);
+
+    assert_eq!(html, expected_html);
+}
 fn to_markdown(html: &str) -> Utf16String {
     let markdown = cm(&format!("{html}|")).state.dom.to_markdown();
     assert!(markdown.is_ok());
@@ -216,19 +225,4 @@ fn to_html(markdown: &Utf16String) -> String {
         .replace("<br />\n", "<br />");
 
     html
-}
-
-fn assert_to_md_no_roundtrip(html: &str, expected_markdown: &str) {
-    let markdown = to_markdown(html);
-    assert_eq!(markdown, expected_markdown);
-}
-
-fn assert_to_md(html: &str, expected_markdown: &str) {
-    let markdown = to_markdown(html);
-    assert_eq!(markdown, expected_markdown);
-
-    let expected_html = html;
-    let html = to_html(&markdown);
-
-    assert_eq!(html, expected_html);
 }
