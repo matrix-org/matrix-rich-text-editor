@@ -44,7 +44,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
         let textView = UITextView()
 
         textView.accessibilityIdentifier = "WysiwygComposer"
-        textView.font = UIFont.preferredFont(forTextStyle: .body)
+        textView.font = UIFont.preferredFont(forTextStyle: .subheadline)
         textView.autocapitalizationType = .sentences
         textView.isSelectable = true
         textView.isUserInteractionEnabled = true
