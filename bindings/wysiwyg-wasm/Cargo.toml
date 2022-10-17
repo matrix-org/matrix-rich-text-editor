@@ -10,6 +10,14 @@ name = "wysiwyg-wasm"
 version = "0.1.0"
 rust-version = "1.60"
 
+[package.metadata.wasm-pack.profile.profiling]
+wasm-opt = ['-O', '-g']
+
+[package.metadata.wasm-pack.profile.profiling.wasm-bindgen]
+debug-js-glue = false
+demangle-name-section = true
+dwarf-debug-info = true
+
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = ['-Oz']
 

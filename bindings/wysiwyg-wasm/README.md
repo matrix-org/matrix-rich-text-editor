@@ -41,3 +41,12 @@ async function run() {
 run();
 </script>
 ```
+
+## Profiling
+
+To generate a debugging/profiling Wasm module, use the following command
+instead of `npm run build`:
+
+```sh
+$ npm run dev-build
+```
