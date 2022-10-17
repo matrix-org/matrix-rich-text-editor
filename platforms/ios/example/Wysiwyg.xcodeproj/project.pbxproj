@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		66F8D0C928E34D4E00CFA145 /* Composer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66F8D0C828E34D4E00CFA145 /* Composer.swift */; };
-		A623EBE3289AA69E00067E57 /* WysiwygUIKitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A623EBE2289AA69E00067E57 /* WysiwygUIKitTests.swift */; };
 		A623EBE5289AA6DE00067E57 /* WysiwygSharedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A623EBE4289AA6DE00067E57 /* WysiwygSharedTests.swift */; };
 		A6472CAB2886CF830021A0E8 /* WysiwygApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6472CAA2886CF830021A0E8 /* WysiwygApp.swift */; };
 		A6472CAD2886CF830021A0E8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6472CAC2886CF830021A0E8 /* ContentView.swift */; };
@@ -37,7 +36,6 @@
 
 /* Begin PBXFileReference section */
 		66F8D0C828E34D4E00CFA145 /* Composer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Composer.swift; sourceTree = "<group>"; };
-		A623EBE2289AA69E00067E57 /* WysiwygUIKitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygUIKitTests.swift; sourceTree = "<group>"; };
 		A623EBE4289AA6DE00067E57 /* WysiwygSharedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygSharedTests.swift; sourceTree = "<group>"; };
 		A6472CA72886CF830021A0E8 /* Wysiwyg.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Wysiwyg.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A6472CAA2886CF830021A0E8 /* WysiwygApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygApp.swift; sourceTree = "<group>"; };
@@ -119,7 +117,6 @@
 			isa = PBXGroup;
 			children = (
 				A623EBE4289AA6DE00067E57 /* WysiwygSharedTests.swift */,
-				A623EBE2289AA69E00067E57 /* WysiwygUIKitTests.swift */,
 				A6472CC52886CF840021A0E8 /* WysiwygUITests.swift */,
 			);
 			path = WysiwygUITests;
@@ -334,7 +331,6 @@
 				A6472CC62886CF840021A0E8 /* WysiwygUITests.swift in Sources */,
 				A6C2157728C0E95C00C8E727 /* View+Accessibility.swift in Sources */,
 				A623EBE5289AA6DE00067E57 /* WysiwygSharedTests.swift in Sources */,
-				A623EBE3289AA69E00067E57 /* WysiwygUIKitTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
