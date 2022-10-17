@@ -295,6 +295,15 @@ fn leading_and_trailing_newline_characters_insert_br_tags() {
     assert_eq!(tx(&model), "<br />abc<br />|");
 }
 
+#[test]
+fn inserting_a_new_line_before_a_new_line_works() {
+    let mut model = cm("|{AAA}");
+    model.enter();
+    model.select(Location::from(0), Location::from(0));
+    model.enter();
+    assert_eq!(tx(&model), "<br />|<br />");
+}
+
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
     model.replace_text(utf16(new_text));
 }

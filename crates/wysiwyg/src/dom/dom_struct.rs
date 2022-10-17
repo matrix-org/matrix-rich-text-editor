@@ -278,12 +278,17 @@ where
                 panic!("Can't insert into a non-text node!")
             }
             DomNode::LineBreak(_) => {
-                assert!(
-                    offset == 1,
-                    "Attempting to insert after a line break, but the offset \
-                    into it was not 1."
-                );
-                Where::After
+                if offset == 0 {
+                    Where::Before
+                } else if offset == 1 {
+                    Where::After
+                } else {
+                    panic!(
+                        "Attempting to insert a new line into a new line node, but offset wasn't \
+                        either 0 or 1: {}", 
+                        offset
+                    );
+                }
             }
             DomNode::Text(n) => {
                 if offset == 0 {
@@ -394,13 +399,13 @@ impl Display for ItemNode {
 mod test {
     use widestring::Utf16String;
 
-    use super::*;
-
     use crate::dom::nodes::dom_node::DomNode;
     use crate::dom::nodes::TextNode;
     use crate::tests::testutils_composer_model::cm;
     use crate::tests::testutils_conversion::utf16;
     use crate::tests::testutils_dom::{a, b, dom, i, i_c, tn};
+
+    use super::*;
 
     // Creation and handles
 
