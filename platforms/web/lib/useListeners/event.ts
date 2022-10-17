@@ -28,7 +28,13 @@ import {
     refreshComposerView,
     replaceEditor,
 } from '../dom';
-import { BlockType, WysiwygInputEvent } from '../types';
+import {
+    BlockType,
+    FormattingActions,
+    FormattingFunctions,
+    InputEventProcessor,
+    WysiwygInputEvent,
+} from '../types';
 import { TestUtilities } from '../useTestCases/types';
 import { getDefaultFormattingStates } from './utils';
 
@@ -137,8 +143,16 @@ export function handleInput(
     composerModel: ComposerModel,
     modelNode: HTMLElement | null,
     testUtilities: TestUtilities,
+    formattingFunctions: FormattingFunctions,
+    inputEventProcessor?: InputEventProcessor,
 ) {
-    const update = processInput(e, composerModel, testUtilities.traceAction);
+    const update = processInput(
+        e,
+        composerModel,
+        testUtilities.traceAction,
+        formattingFunctions,
+        inputEventProcessor,
+    );
     if (update) {
         const repl = update.text_update().replace_all;
         if (repl) {

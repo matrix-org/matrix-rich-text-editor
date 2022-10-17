@@ -19,7 +19,12 @@ import { RefObject, useEffect, useState } from 'react';
 import { ComposerModel } from '../../generated/wysiwyg';
 import { isClipboardEvent, isInputEvent } from './assert';
 import { handleInput, handleKeyDown, handleSelectionChange } from './event';
-import { FormattingStates, WysiwygInputEvent } from '../types';
+import {
+    FormattingFunctions,
+    FormattingStates,
+    InputEventProcessor,
+    WysiwygInputEvent,
+} from '../types';
 import { TestUtilities } from '../useTestCases/types';
 import { FormatBlockEvent } from './types';
 import { getDefaultFormattingStates } from './utils';
@@ -34,6 +39,8 @@ export function useListeners(
     modelRef: RefObject<HTMLElement | null>,
     composerModel: ComposerModel | null,
     testUtilities: TestUtilities,
+    formattingFunctions: FormattingFunctions,
+    inputEventProcessor?: InputEventProcessor,
 ) {
     const [state, setState] = useState<State>({
         content: null,
@@ -53,6 +60,8 @@ export function useListeners(
                 composerModel,
                 modelRef.current,
                 testUtilities,
+                formattingFunctions,
+                inputEventProcessor,
             );
 
             if (res) {
@@ -120,7 +129,15 @@ export function useListeners(
             editorNode.removeEventListener('keydown', onKeyDown);
             document.removeEventListener('selectionchange', onSelectionChange);
         };
-    }, [editorRef, composerModel, modelRef, testUtilities, setState]);
+    }, [
+        editorRef,
+        composerModel,
+        formattingFunctions,
+        modelRef,
+        testUtilities,
+        inputEventProcessor,
+        setState,
+    ]);
 
     return state;
 }

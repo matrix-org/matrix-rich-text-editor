@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { MouseEventHandler } from 'react';
+import { MouseEventHandler, useState } from 'react';
 
 import { useWysiwyg } from '../lib/useWysiwyg';
 import boldImage from './images/bold.svg';
@@ -25,6 +25,7 @@ import underlineImage from './images/underline.svg';
 import strikeTroughImage from './images/strike_through.svg';
 import listUnorderedImage from './images/list-unordered.svg';
 import listOrderedImage from './images/list-ordered.svg';
+import { Wysiwyg, WysiwygInputEvent } from '../lib/types';
 
 type ButtonProps = {
     onClick: MouseEventHandler<HTMLButtonElement>;
@@ -51,10 +52,33 @@ function Button({ onClick, imagePath, alt, state }: ButtonProps) {
 }
 
 function App() {
-    const { ref, isWysiwygReady, wysiwyg, formattingStates, debug } =
+    const [enterToSend, setEnterToSend] = useState(true);
+
+    const inputEventProcessor = (
+        e: WysiwygInputEvent,
+        wysiwyg: Wysiwyg,
+    ): WysiwygInputEvent | null => {
+        if (e instanceof ClipboardEvent) {
+            return e;
+        } else if (enterToSend && e.inputType === 'insertParagraph') {
+            console.log(`SENDING: ${wysiwyg.content()}`);
+            e.preventDefault();
+            e.stopPropagation();
+            wysiwyg.actions.clear();
+            return null;
+        }
+        return e;
+    };
+
+    const { ref, isWysiwygReady, formattingStates, wysiwyg, debug } =
         useWysiwyg({
             isAutoFocusEnabled: true,
+            inputEventProcessor,
         });
+
+    const onEnterToSendChanged = () => {
+        setEnterToSend(!enterToSend);
+    };
 
     return (
         <div className="wrapper">
@@ -124,6 +148,15 @@ function App() {
                         ref={ref}
                         contentEditable={isWysiwygReady}
                     />
+                </div>
+                <div className="editor_options">
+                    <input
+                        type="checkbox"
+                        id="enterToSend"
+                        checked={enterToSend}
+                        onChange={onEnterToSendChanged}
+                    />
+                    <label htmlFor="enterToSend">Enter to "send"</label>
                 </div>
             </div>
             <h2>Model:</h2>

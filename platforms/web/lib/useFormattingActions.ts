@@ -16,33 +16,32 @@ limitations under the License.
 
 import { RefObject, useMemo } from 'react';
 
-import { BlockType, FormattingActions } from './types';
+import { BlockType, FormattingFunctions } from './types';
 import { sendWysiwygInputEvent } from './useListeners';
 
 export function useFormattingActions(editorRef: RefObject<HTMLElement | null>) {
-    const formattingActions: Record<FormattingActions, () => void> =
-        useMemo(() => {
-            // The formatting action like inline code doesn't have an input type
-            // Safari does not keep the inputType in an input event
-            // when the input event is fired manually, so we send a custom event
-            // and we do not use the browser input event handling
-            const sendEvent = (blockType: BlockType) =>
-                editorRef.current &&
-                sendWysiwygInputEvent(editorRef.current, blockType);
+    const formattingActions: FormattingFunctions = useMemo(() => {
+        // The formatting action like inline code doesn't have an input type
+        // Safari does not keep the inputType in an input event
+        // when the input event is fired manually, so we send a custom event
+        // and we do not use the browser input event handling
+        const sendEvent = (blockType: BlockType) =>
+            editorRef.current &&
+            sendWysiwygInputEvent(editorRef.current, blockType);
 
-            return {
-                bold: () => sendEvent('formatBold'),
-                italic: () => sendEvent('formatItalic'),
-                strikeThrough: () => sendEvent('formatStrikeThrough'),
-                underline: () => sendEvent('formatUnderline'),
-                undo: () => sendEvent('historyUndo'),
-                redo: () => sendEvent('historyRedo'),
-                orderedList: () => sendEvent('insertOrderedList'),
-                unorderedList: () => sendEvent('insertUnorderedList'),
-                inlineCode: () => sendEvent('formatInlineCode'),
-                clear: () => sendEvent('clear'),
-            };
-        }, [editorRef]);
+        return {
+            bold: () => sendEvent('formatBold'),
+            italic: () => sendEvent('formatItalic'),
+            strikeThrough: () => sendEvent('formatStrikeThrough'),
+            underline: () => sendEvent('formatUnderline'),
+            undo: () => sendEvent('historyUndo'),
+            redo: () => sendEvent('historyRedo'),
+            orderedList: () => sendEvent('insertOrderedList'),
+            unorderedList: () => sendEvent('insertUnorderedList'),
+            inlineCode: () => sendEvent('formatInlineCode'),
+            clear: () => sendEvent('clear'),
+        };
+    }, [editorRef]);
 
     return formattingActions;
 }

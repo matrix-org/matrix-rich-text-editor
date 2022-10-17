@@ -71,6 +71,10 @@ impl ComposerModel {
         self.inner.to_example_format()
     }
 
+    pub fn get_html(&self) -> String {
+        self.inner.get_html().to_string()
+    }
+
     pub fn document(&self) -> DomHandle {
         DomHandle {
             inner: self.inner.state.dom.document().handle(),

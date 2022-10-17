@@ -27,3 +27,14 @@ export type FormattingActions = typeof FORMATTING_ACTIONS[number];
 export type FormattingState = 'enabled' | 'reversed' | 'disabled';
 
 export type FormattingStates = Record<FormattingActions, FormattingState>;
+
+export type FormattingFunctions = Record<FormattingActions, () => void>;
+
+export type Wysiwyg = { actions: FormattingFunctions } & {
+    content: () => string;
+};
+
+export type InputEventProcessor = (
+    event: WysiwygInputEvent,
+    wysiwyg: Wysiwyg,
+) => WysiwygInputEvent | null;
