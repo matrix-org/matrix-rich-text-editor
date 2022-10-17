@@ -394,7 +394,7 @@ where
         use ContainerNodeKind::*;
         use InlineFormatType::*;
 
-        // `fmt_children` is super basic loop over children to call
+        // `fmt_children` is a super basic loop over children to call
         // `fmt_markdown`, except that it inserts `\n` between block
         // nodes.
         fn fmt_children<S>(
@@ -417,7 +417,6 @@ where
         }
 
         let mut options = *options;
-        options.insert(MarkdownOptions::IN_A_CONTAINER);
 
         match self.kind() {
             Generic => {
