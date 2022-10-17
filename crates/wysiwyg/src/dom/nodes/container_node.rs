@@ -538,6 +538,11 @@ where
                             },
                         ) if name == expected_list_item_name => child,
 
+                        // Item to ignore.
+                        DomNode::Text(t) if t.is_blank() => {
+                            continue;
+                        }
+
                         // All the following are invalid items.
                         DomNode::Container(Self {
                             name: child_name, ..
