@@ -4,13 +4,13 @@
 
 ### Added
 
-- iOS: use right cursor color and fix blinking issue when replacing text.
-- iOS: add support for focused state.
-- Android: fix formatting not being replaced at index 0 when using hardware keyboard.
-- Fix inserting characters or new lines before a new line at index 0.
-- iOS: remove unneeded UIKit integration code. 
-- Android: handle cut & paste events properly.
-- Android: only crash on composer exceptions when using DEBUG mode.
+-   iOS: use right cursor color and fix blinking issue when replacing text.
+-   iOS: add support for focused state.
+-   Android: fix formatting not being replaced at index 0 when using hardware keyboard.
+-   Fix inserting characters or new lines before a new line at index 0.
+-   iOS: remove unneeded UIKit integration code.
+-   Android: handle cut & paste events properly.
+-   Android: only crash on composer exceptions when using DEBUG mode.
 
 ## [0.2.0] - 2022-10-13
 
