@@ -60,6 +60,5 @@ where
 bitflags! {
     pub struct MarkdownOptions: u8 {
         const IGNORE_LINE_BREAK = 0b0001;
-        const IN_A_CONTAINER = 0b0010;
     }
 }
