@@ -278,8 +278,20 @@ where
                         (1, 1) => {
                             // Cursor is after line break, no need to delete
                         }
+                        (0, 0) => {
+                            let node =
+                                DomNode::new_text(new_text.clone().into());
+                            action_list.push(DomAction::add_node(
+                                loc.node_handle.parent_handle(),
+                                loc.node_handle.index_in_parent(),
+                                node,
+                            ));
+                        }
                         _ => panic!(
-                            "Should not get a range at start of a line break!"
+                            "Tried to insert text into a line break with offset != 0 or 1. \
+                            Start offset: {}, end offset: {}",
+                            loc.start_offset,
+                            loc.end_offset,
                         ),
                     }
                     if start >= loc.position && end == loc.position + 1 {
