@@ -1,6 +1,10 @@
 package io.element.android.wysiwyg
 
+import android.R
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
+import android.content.Context.CLIPBOARD_SERVICE
 import android.os.Build
 import android.text.Spannable
 import android.text.SpannableStringBuilder
@@ -76,6 +80,43 @@ class EditorEditText : TextInputEditText {
             InterceptInputConnection(baseInputConnection, this, inputProcessor)
         this.inputConnection = inputConnection
         return inputConnection
+    }
+
+    /**
+     * Override cut & paste events so output is redirected to the [inputProcessor].
+     */
+    override fun onTextContextMenuItem(id: Int): Boolean {
+        when (id) {
+            R.id.cut -> {
+                val clipboardManager = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                val clpData = ClipData.newPlainText("newText", this.editableText.slice(this.selectionStart until this.selectionEnd))
+                clipboardManager.setPrimaryClip(clpData)
+
+                val update = inputProcessor.processInput(EditorInputAction.Delete(this.selectionStart, this.selectionEnd))
+                val result = update?.let { inputProcessor.processUpdate(it) }
+
+                if (result != null) {
+                    setTextInternal(result.text)
+                    setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
+                }
+
+                return false
+            }
+            R.id.paste, R.id.pasteAsPlainText -> {
+                val clipBoardManager = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                val copiedString = clipBoardManager.primaryClip?.getItemAt(0)?.text ?: return false
+                val update = inputProcessor.processInput(EditorInputAction.InsertText(copiedString))
+                val result = update?.let { inputProcessor.processUpdate(it) }
+
+                if (result != null) {
+                    setTextInternal(result.text)
+                    setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
+                }
+
+                return false
+            }
+            else -> { return super.onTextContextMenuItem(id) }
+        }
     }
 
     private fun addHardwareKeyInterceptor() {
