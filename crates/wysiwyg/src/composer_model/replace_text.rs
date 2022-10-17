@@ -91,8 +91,40 @@ where
             self.state.end = self.state.start;
             self.create_update_replace_all()
         } else {
-            panic!("Unexpected multiple nodes on a 0 length selection")
+            // Special case, there might be one or several empty text nodes at the cursor position
+            self.enter_with_zero_length_selection_and_empty_text_nodes(leaves);
+            self.create_update_replace_all()
         }
+    }
+
+    fn enter_with_zero_length_selection_and_empty_text_nodes(
+        &mut self,
+        leaves: Vec<&DomLocation>,
+    ) {
+        let empty_text_leaves: Vec<&DomLocation> = leaves
+            .into_iter()
+            .filter(|l| {
+                if let DomNode::Text(t) =
+                    self.state.dom.lookup_node(&l.node_handle)
+                {
+                    t.data().is_empty()
+                } else {
+                    false
+                }
+            })
+            .collect();
+        for (i, leaf) in empty_text_leaves.iter().enumerate().rev() {
+            if i == 0 {
+                self.state.dom.replace(
+                    &leaf.node_handle,
+                    vec![DomNode::new_line_break()],
+                );
+            } else {
+                self.state.dom.remove(&leaf.node_handle);
+            }
+        }
+        self.state.start += 1;
+        self.state.end = self.state.start;
     }
 
     /// Internal: replace some text without modifying the undo/redo state.
