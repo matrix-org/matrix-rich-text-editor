@@ -107,6 +107,8 @@ export function generateTestCase(actions: Actions, html: string) {
             ret += `model.${name}(${value1 ?? ''}, ${value2});\n`;
         } else if (name === 'replace_text') {
             ret += `model.${name}("${value1 ?? ''}");\n`;
+        } else if (name === 'send') {
+            ret += `// Send: ${value1 ?? ''}\n`;
         } else {
             ret += `model.${name}(${value1 ?? ''});\n`;
         }

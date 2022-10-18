@@ -102,6 +102,7 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
             modelRef,
             testRef,
             resetTestCase: testUtilities.onResetTestCase,
+            traceAction: testUtilities.traceAction,
         },
     };
 }
