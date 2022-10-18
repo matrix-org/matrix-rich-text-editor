@@ -60,6 +60,8 @@ export function processInput(
     }
 
     switch (event.inputType) {
+        case 'clear':
+            return action(composerModel.clear(), 'clear');
         case 'deleteContentBackward':
             return action(composerModel.backspace(), 'backspace');
         case 'deleteContentForward':
@@ -102,8 +104,11 @@ export function processInput(
             break;
         case 'insertUnorderedList':
             return action(composerModel.unordered_list(), 'unordered_list');
-        case 'clear':
-            return action(composerModel.clear(), 'clear');
+        case 'sendMessage':
+            // We create this event type when the user presses Ctrl+Enter.
+            // We don't do anythign here, but the user may want to hook in
+            // using inputEventProcessor to perform behaviour here.
+            return null;
         default:
             // We should cover all of
             // eslint-disable-next-line max-len

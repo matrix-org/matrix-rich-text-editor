@@ -60,13 +60,20 @@ function App() {
     ): WysiwygInputEvent | null => {
         if (e instanceof ClipboardEvent) {
             return e;
-        } else if (enterToSend && e.inputType === 'insertParagraph') {
+        }
+
+        if (
+            (enterToSend && e.inputType === 'insertParagraph') ||
+            e.inputType === 'sendMessage'
+        ) {
+            if (debug.testRef.current) {
+                debug.traceAction(null, 'send', `${wysiwyg.content()}`);
+            }
             console.log(`SENDING: ${wysiwyg.content()}`);
-            e.preventDefault();
-            e.stopPropagation();
             wysiwyg.actions.clear();
             return null;
         }
+
         return e;
     };
 
@@ -156,7 +163,9 @@ function App() {
                         checked={enterToSend}
                         onChange={onEnterToSendChanged}
                     />
-                    <label htmlFor="enterToSend">Enter to "send"</label>
+                    <label htmlFor="enterToSend">
+                        Enter to "send" (if unchecked, use Ctrl+Enter)
+                    </label>
                 </div>
             </div>
             <h2>Model:</h2>

@@ -71,6 +71,8 @@ function getInputFromKeyDown(e: KeyboardEvent) {
                 return 'historyUndo';
             case 'Z':
                 return 'historyRedo';
+            case 'Enter':
+                return 'sendMessage';
         }
     }
 
