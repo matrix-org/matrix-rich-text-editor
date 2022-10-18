@@ -39,7 +39,7 @@ class EditorEditTextInputTests {
     @get:Rule
     val scenarioRule = ActivityScenarioRule(TestActivity::class.java)
 
-    private val ipsum = "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+    private val ipsum = "Lorem Ipsum is simply dummy text of the printing and typesetting industry."
 
     init {
         AccessibilityChecks.enable()
