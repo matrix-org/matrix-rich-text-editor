@@ -64,7 +64,7 @@ function useEditor() {
     return ref;
 }
 
-type WysiwygProps = {
+export type WysiwygProps = {
     isAutoFocusEnabled?: boolean;
     inputEventProcessor?: InputEventProcessor;
 };

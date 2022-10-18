@@ -26,7 +26,7 @@
     "types": "./dist/index.d.ts",
     "scripts": {
         "dev": "vite",
-        "build": "vite build && node scripts/hack_myfetch.js",
+        "build": "vite build && node scripts/hack_myfetch.js && node scripts/hack_exports.js",
         "build:demo": "vite build -c vite.demo.config.ts",
         "preview": "vite preview",
         "typecheck": "tsc --noEmit",
