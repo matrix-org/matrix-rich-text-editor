@@ -10,7 +10,7 @@ import io.element.android.wysiwyg.extensions.string
 import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
-import io.element.android.wysiwyg.spans.ZeroWidthLineBreak
+import io.element.android.wysiwyg.spans.ExtraCharacterSpan
 import io.element.android.wysiwyg.utils.HtmlToSpansParser
 import uniffi.wysiwyg_composer.ComposerModelInterface
 import uniffi.wysiwyg_composer.MenuState
@@ -25,7 +25,7 @@ internal class InputProcessor(
 
     fun updateSelection(editable: Editable, start: Int, end: Int) {
         if (start < 0 || end < 0) return
-        val zeroWidthLineBreaksBefore = editable.getSpans<ZeroWidthLineBreak>(0, start)
+        val zeroWidthLineBreaksBefore = editable.getSpans<ExtraCharacterSpan>(0, start)
             .sumOf { (editable.getSpanEnd(it) - editable.getSpanStart(it)).absoluteValue }
 
         val newStart = (start - zeroWidthLineBreaksBefore).toUInt()

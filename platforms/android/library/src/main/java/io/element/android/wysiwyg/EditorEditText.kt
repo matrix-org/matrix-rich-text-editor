@@ -247,7 +247,7 @@ class EditorEditText : TextInputEditText {
     }
 
     private fun setSelectionFromComposerUpdate(start: Int, end: Int = start) {
-        val (newStart, newEnd) = EditorIndexMapper.fromComposerToEditText(start, end, editableText)
+        val (newStart, newEnd) = EditorIndexMapper.fromComposerToEditor(start, end, editableText)
         setSelection(newStart, newEnd)
     }
 }

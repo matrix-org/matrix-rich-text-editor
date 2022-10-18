@@ -13,7 +13,7 @@ import androidx.core.text.getSpans
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.spans.InlineCodeSpan
 import io.element.android.wysiwyg.spans.OrderedListSpan
-import io.element.android.wysiwyg.spans.ZeroWidthLineBreak
+import io.element.android.wysiwyg.spans.ExtraCharacterSpan
 import org.ccil.cowan.tagsoup.Parser
 import org.xml.sax.Attributes
 import org.xml.sax.ContentHandler
@@ -27,7 +27,7 @@ import kotlin.math.roundToInt
  * formatted text.
  *
  * This is specially important for lists, since they not only use custom spans, but they also need
- * to create [ZeroWidthLineBreak] spans to work properly.
+ * to create [ExtraCharacterSpan] spans to work properly.
  */
 class HtmlToSpansParser(
     private val context: Context,
@@ -131,13 +131,13 @@ class HtmlToSpansParser(
                 // We only add line breaks *after* a previous <li> element if there is not already a line break
                 if (start == 0) {
                     val zeroWidthSpan = SpannableString("\u200b").apply {
-                        setSpan(ZeroWidthLineBreak(), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                        setSpan(ExtraCharacterSpan(), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                     }
                     text.insert(0, zeroWidthSpan)
                 } else if (start > 0 && start <= text.length && text[start-1] != '\n') {
                     // We add a line break and an zero width character to actually display the list item
                     val zeroWidthLineBreakSpan = SpannableString("\n").apply {
-                        setSpan(ZeroWidthLineBreak(), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                        setSpan(ExtraCharacterSpan(), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                     }
                     text.insert(start, zeroWidthLineBreakSpan)
                     lineBreakAdded = true
