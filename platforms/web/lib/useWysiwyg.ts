@@ -23,7 +23,7 @@ import init, {
     new_composer_model,
 } from '../generated/wysiwyg.js';
 import { InputEventProcessor } from './types.js';
-import { useFormattingActions } from './useFormattingActions';
+import { useFormattingFunctions } from './useFormattingFunctions';
 import { useListeners } from './useListeners';
 import { useTestCases } from './useTestCases';
 
@@ -79,7 +79,7 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
         composerModel,
     );
 
-    const formattingFunctions = useFormattingActions(ref);
+    const formattingFunctions = useFormattingFunctions(ref);
 
     const { content, formattingStates } = useListeners(
         ref,
