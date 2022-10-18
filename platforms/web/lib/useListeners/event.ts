@@ -30,7 +30,6 @@ import {
 } from '../dom';
 import {
     BlockType,
-    FormattingActions,
     FormattingFunctions,
     InputEventProcessor,
     WysiwygInputEvent,
