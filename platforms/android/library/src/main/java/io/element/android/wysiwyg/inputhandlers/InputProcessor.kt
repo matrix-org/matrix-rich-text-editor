@@ -11,6 +11,7 @@ import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
 import io.element.android.wysiwyg.spans.ExtraCharacterSpan
+import io.element.android.wysiwyg.utils.EditorIndexMapper
 import io.element.android.wysiwyg.utils.HtmlToSpansParser
 import uniffi.wysiwyg_composer.ComposerModelInterface
 import uniffi.wysiwyg_composer.MenuState
@@ -24,12 +25,7 @@ internal class InputProcessor(
 ) {
 
     fun updateSelection(editable: Editable, start: Int, end: Int) {
-        if (start < 0 || end < 0) return
-        val zeroWidthLineBreaksBefore = editable.getSpans<ExtraCharacterSpan>(0, start)
-            .sumOf { (editable.getSpanEnd(it) - editable.getSpanStart(it)).absoluteValue }
-
-        val newStart = (start - zeroWidthLineBreaksBefore).toUInt()
-        val newEnd = (end - zeroWidthLineBreaksBefore).toUInt()
+        val (newStart, newEnd) = EditorIndexMapper.fromEditorToComposer(start, end, editable) ?: return
 
         val update = composer?.select(newStart, newEnd)
         val menuState = update?.menuState()

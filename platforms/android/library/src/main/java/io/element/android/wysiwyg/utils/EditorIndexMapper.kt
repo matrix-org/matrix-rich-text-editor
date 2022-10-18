@@ -28,15 +28,8 @@ object EditorIndexMapper {
         // Invalid indexes
         if (start < 0 || end < 0) return -1 to -1
 
-        val extraCharacters = editableText.getSpans<ExtraCharacterSpan>()
-        // Extra offset to add to the start index
-        val before = extraCharacters.filter { editableText.getSpanStart(it) <= start }
-            .sumOf { editableText.getSpanLength(it) }
-        // Extra offset to add to the end index
-        val during = extraCharacters.filter { editableText.getSpanStart(it) <= end }
-            .sumOf { editableText.getSpanLength(it) }
-        val newStart = min(start + before, editableText.length)
-        val newEnd = min(end + during, editableText.length)
+        val newStart = editorIndexFromComposer(start, editableText)
+        val newEnd = editorIndexFromComposer(end, editableText)
         return newStart to newEnd
     }
 
@@ -53,18 +46,24 @@ object EditorIndexMapper {
 
         val extraCharactersBeforeStart = editableText.getSpans<ExtraCharacterSpan>(0, start)
             .sumOf { editableText.getSpanLength(it) }
+        val extraCharactersDuring = editableText.getSpans<ExtraCharacterSpan>(start, end)
+            .sumOf { editableText.getSpanLength(it) }
 
         val newStart = (start - extraCharactersBeforeStart).toUInt()
-        val newEnd = (end - extraCharactersBeforeStart).toUInt()
+        val newEnd = (end - (extraCharactersBeforeStart + extraCharactersDuring)).toUInt()
 
         return newStart to newEnd
     }
 
     /**
-     * Translates the [index] coming from the [editableText] into one that can be safely used
-     * in the [ComposerModel].
+     * Translates the [index] coming from the [ComposerModel] into one that can be safely used
+     * in the [editableText].
      */
-    fun composerIndexForEditable(index: Int, editableText: Spanned): Int {
+    fun editorIndexFromComposer(index: Int, editableText: Spanned): Int {
+        // Usually we could just use `editableText.getSpans<ExtraCharacterSpan>(0, 0)` and iterate
+        // through its contents until the desired index, but the index from the ComposerModel can be
+        // smaller than the one in the editableText and every span found means an extra character
+        // to take into account and to add to the index actual position.
         var consumed = 0
         var i = 0
         while (index > consumed) {

@@ -13,20 +13,20 @@ import org.robolectric.RobolectricTestRunner
 class EditorIndexMapperTests {
 
     private val editableText = buildSpannedString {
-        append("Plain text.\n")
+        append("Plain text.\n") // 12 characters
         inSpans(BulletSpan()) {
-            append("First item.")
+            append("First item.") // 11 characters, ends at index 23
         }
         inSpans(ExtraCharacterSpan()) {
-            append("\n")
+            append("\n") // 1 extra character, ends at index 24
         }
         inSpans(BulletSpan()) {
-            append("Second item.")
+            append("Second item.") // 12 characters, ends at index 36
         }
         inSpans(ExtraCharacterSpan()) {
-            append("\n")
+            append("\n") // 1 extra character, ends at index 37
         }
-        append("After list.")
+        append("After list.") // 11 characters, ends at index 48
     }
 
     //region Index before extra characters
@@ -139,6 +139,26 @@ class EditorIndexMapperTests {
         val (newStart, newEnd) = EditorIndexMapper.fromEditorToComposer(start, end, editableText)!!
         Assert.assertEquals(start-1, newStart.toInt())
         Assert.assertEquals(end-2, newEnd.toInt())
+    }
+    // endregion
+
+    // region Selection covers only the extra character
+    @Test
+    fun `given a selection covering only the extra character, when using fromComposerToEditor, then the indexes have an offset, but start and end won't match`() {
+        val start = 23
+        val end = 24
+        val (newStart, newEnd) = EditorIndexMapper.fromComposerToEditor(start, end, editableText)
+        Assert.assertEquals(start, newStart)
+        Assert.assertEquals(end+1, newEnd)
+    }
+
+    @Test
+    fun `given a selection covering only the extra character, when using fromEditorToComposer, then the indexes have an offset, but start and end won't match`() {
+        val start = 23
+        val end = 24
+        val (newStart, newEnd) = EditorIndexMapper.fromEditorToComposer(start, end, editableText)!!
+        Assert.assertEquals(start, newStart.toInt())
+        Assert.assertEquals(end-1, newEnd.toInt())
     }
     // endregion
 }

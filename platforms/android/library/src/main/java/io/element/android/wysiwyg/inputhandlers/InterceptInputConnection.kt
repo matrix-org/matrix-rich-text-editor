@@ -288,8 +288,8 @@ internal class InterceptInputConnection(
     }
 
     private fun setSelectionOnEditable(editable: Editable, start: Int, end: Int = start) {
-        val newStart = min(EditorIndexMapper.composerIndexForEditable(start, editable), editable.length)
-        val newEnd = min(EditorIndexMapper.composerIndexForEditable(end, editable), editable.length)
+        val newStart = min(EditorIndexMapper.editorIndexFromComposer(start, editable), editable.length)
+        val newEnd = min(EditorIndexMapper.editorIndexFromComposer(end, editable), editable.length)
         Selection.setSelection(editable, newStart, newEnd)
     }
 

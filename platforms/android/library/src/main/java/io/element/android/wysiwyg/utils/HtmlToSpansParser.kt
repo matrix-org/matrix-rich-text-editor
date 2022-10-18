@@ -130,16 +130,16 @@ class HtmlToSpansParser(
                 var lineBreakAdded = false
                 // We only add line breaks *after* a previous <li> element if there is not already a line break
                 if (start == 0) {
-                    val zeroWidthSpan = SpannableString("\u200b").apply {
+                    val extraZeroWidthSpan = SpannableString("\u200b").apply {
                         setSpan(ExtraCharacterSpan(), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                     }
-                    text.insert(0, zeroWidthSpan)
+                    text.insert(0, extraZeroWidthSpan)
                 } else if (start > 0 && start <= text.length && text[start-1] != '\n') {
                     // We add a line break and an zero width character to actually display the list item
-                    val zeroWidthLineBreakSpan = SpannableString("\n").apply {
+                    val extraLineBreakSpan = SpannableString("\n").apply {
                         setSpan(ExtraCharacterSpan(), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                     }
-                    text.insert(start, zeroWidthLineBreakSpan)
+                    text.insert(start, extraLineBreakSpan)
                     lineBreakAdded = true
                 }
                 val newStart = if (lineBreakAdded) start+1 else start
