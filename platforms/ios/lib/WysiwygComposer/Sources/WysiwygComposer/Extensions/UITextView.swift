@@ -35,6 +35,16 @@ public final class PlaceholdableTextView: UITextView {
         }
     }
     
+    override public init(frame: CGRect, textContainer: NSTextContainer?) {
+        super.init(frame: frame, textContainer: textContainer)
+        contentMode = .redraw
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        contentMode = .redraw
+    }
+    
     override public func draw(_ rect: CGRect) {
         super.draw(rect)
         
