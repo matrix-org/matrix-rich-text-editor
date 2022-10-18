@@ -30,7 +30,8 @@ export type FormattingStates = Record<FormattingActions, FormattingState>;
 
 export type FormattingFunctions = Record<FormattingActions, () => void>;
 
-export type Wysiwyg = { actions: FormattingFunctions } & {
+export type Wysiwyg = {
+    actions: FormattingFunctions;
     content: () => string;
 };
 
