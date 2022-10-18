@@ -16,53 +16,6 @@
 
 import UIKit
 
-public final class PlaceholdableTextView: UITextView {
-    var placeholder: String? {
-        didSet {
-            setNeedsDisplay()
-        }
-    }
-    
-    var placeholderColor: UIColor = .placeholderText {
-        didSet {
-            setNeedsDisplay()
-        }
-    }
-    
-    var placeholderFont = UIFont.preferredFont(forTextStyle: .subheadline) {
-        didSet {
-            setNeedsDisplay()
-        }
-    }
-    
-    override public init(frame: CGRect, textContainer: NSTextContainer?) {
-        super.init(frame: frame, textContainer: textContainer)
-        contentMode = .redraw
-    }
-    
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        contentMode = .redraw
-    }
-    
-    override public func draw(_ rect: CGRect) {
-        super.draw(rect)
-        
-        guard attributedText.length == 0, let placeholder = placeholder else {
-            return
-        }
-        
-        let attributes: [NSAttributedString.Key: Any] = [.foregroundColor: placeholderColor, .font: placeholderFont]
-        
-        let frame = rect.inset(by: .init(top: textContainerInset.top,
-                                         left: textContainerInset.left + textContainer.lineFragmentPadding,
-                                         bottom: textContainerInset.bottom,
-                                         right: textContainerInset.right))
-        
-        placeholder.draw(in: frame, withAttributes: attributes)
-    }
-}
-
 extension UITextView {
     /// Apply given content to the text view. This will temporary disrupt the text view
     /// delegate in order to avoid having multiple unnecessary selection frowarded to
