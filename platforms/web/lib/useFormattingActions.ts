@@ -20,7 +20,7 @@ import { BlockType, FormattingFunctions } from './types';
 import { sendWysiwygInputEvent } from './useListeners';
 
 export function useFormattingActions(editorRef: RefObject<HTMLElement | null>) {
-    const formattingActions: FormattingFunctions = useMemo(() => {
+    const formattingActions = useMemo<FormattingFunctions>(() => {
         // The formatting action like inline code doesn't have an input type
         // Safari does not keep the inputType in an input event
         // when the input event is fired manually, so we send a custom event
