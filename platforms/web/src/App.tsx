@@ -139,7 +139,7 @@ function App() {
                             imagePath={listOrderedImage}
                             state={formattingStates.inlineCode}
                         />
-                        <button type="button" onClick={(e) => wysiwyg.clear()}>
+                        <button type="button" onClick={(_e) => wysiwyg.clear()}>
                             clear
                         </button>
                     </div>
