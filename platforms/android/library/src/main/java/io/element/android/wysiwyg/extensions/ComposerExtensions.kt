@@ -8,9 +8,19 @@ import uniffi.wysiwyg_composer.ComposerState
 
 val LOG_ENABLED = BuildConfig.DEBUG
 
+/**
+ * Get the current HTML representation of the formatted text in the Rust code, along with its
+ * selection.
+ */
 fun ComposerState.dump() = "'${html.string()}' | Start: $start | End: $end"
-fun ComposerModelInterface.log() = if (LOG_ENABLED)
-    Log.d("COMPOSER_PROCESSOR", dumpState().dump()
+
+/**
+ * Log the current state of the editor in the Rust code.
+ */
+fun ComposerModelInterface.log() = if (LOG_ENABLED) {
+    Log.d(
+        "COMPOSER_PROCESSOR", dumpState().dump()
             // To visualize zero-width spaces easily
-        .replace("\u200b", "~"))
-else 0
+            .replace("\u200b", "~")
+    )
+} else 0

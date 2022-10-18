@@ -1,18 +1,23 @@
-package io.element.android.wysiwyg
+package io.element.android.wysiwyg.inputhandlers
 
 import android.content.Context
 import android.text.Editable
 import android.text.Spanned
 import androidx.core.text.getSpans
+import io.element.android.wysiwyg.BuildConfig
 import io.element.android.wysiwyg.extensions.log
 import io.element.android.wysiwyg.extensions.string
-import io.element.android.wysiwyg.spans.HtmlToSpansParser
+import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
+import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
+import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
+import io.element.android.wysiwyg.spans.ZeroWidthLineBreak
+import io.element.android.wysiwyg.utils.HtmlToSpansParser
 import uniffi.wysiwyg_composer.ComposerModelInterface
 import uniffi.wysiwyg_composer.MenuState
 import uniffi.wysiwyg_composer.TextUpdate
 import kotlin.math.absoluteValue
 
-class InputProcessor(
+internal class InputProcessor(
     private val context: Context,
     private val menuStateCallback: (MenuState) -> Unit,
     private val composer: ComposerModelInterface?,
@@ -20,7 +25,7 @@ class InputProcessor(
 
     fun updateSelection(editable: Editable, start: Int, end: Int) {
         if (start < 0 || end < 0) return
-        val zeroWidthLineBreaksBefore = editable.getSpans<HtmlToSpansParser.ZeroWidthLineBreak>(0, start)
+        val zeroWidthLineBreaksBefore = editable.getSpans<ZeroWidthLineBreak>(0, start)
             .sumOf { (editable.getSpanEnd(it) - editable.getSpanStart(it)).absoluteValue }
 
         val newStart = (start - zeroWidthLineBreaksBefore).toUInt()
@@ -37,7 +42,7 @@ class InputProcessor(
     fun processInput(action: EditorInputAction): TextUpdate? {
         val update = runCatching {
             when (action) {
-                is EditorInputAction.InsertText -> {
+                is EditorInputAction.ReplaceText -> {
                     // This conversion to a plain String might be too simple
                     composer?.replaceText(action.value.toString())
                 }
@@ -104,28 +109,3 @@ class InputProcessor(
     }
 }
 
-sealed interface EditorInputAction {
-    data class InsertText(val value: CharSequence): EditorInputAction
-    data class ReplaceAllHtml(val html: String): EditorInputAction
-    data class Delete(val start: Int, val end: Int): EditorInputAction
-    object InsertParagraph: EditorInputAction
-    object BackPress: EditorInputAction
-    data class ApplyInlineFormat(val format: InlineFormat): EditorInputAction
-    object Undo: EditorInputAction
-    object Redo: EditorInputAction
-    data class SetLink(val link: String): EditorInputAction
-    data class ToggleList(val ordered: Boolean): EditorInputAction
-}
-
-sealed interface InlineFormat {
-    object Bold: InlineFormat
-    object Italic: InlineFormat
-    object Underline: InlineFormat
-    object StrikeThrough: InlineFormat
-    object InlineCode: InlineFormat
-}
-
-data class ReplaceTextResult(
-    val text: CharSequence,
-    val selection: IntRange,
-)

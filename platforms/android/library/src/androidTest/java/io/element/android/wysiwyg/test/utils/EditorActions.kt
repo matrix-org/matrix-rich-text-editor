@@ -5,7 +5,7 @@ import androidx.test.espresso.UiController
 import androidx.test.espresso.ViewAction
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import io.element.android.wysiwyg.EditorEditText
-import io.element.android.wysiwyg.InlineFormat
+import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import org.hamcrest.Matcher
 
 object Editor {

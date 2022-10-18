@@ -5,7 +5,7 @@ import android.view.inputmethod.EditorInfo
 import androidx.test.espresso.UiController
 import androidx.test.espresso.ViewAction
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
-import io.element.android.wysiwyg.InterceptInputConnection
+import io.element.android.wysiwyg.inputhandlers.InterceptInputConnection
 import org.hamcrest.Matcher
 
 object Ime {
