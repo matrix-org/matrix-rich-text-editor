@@ -139,17 +139,15 @@ public extension WysiwygComposerView {
         return newSelf
     }
     
-    /// Sets the color of the WYSIWYG textView placeholder when displayed,, if not used the default value is Color implemtation of UIColor.placeholderText.
-    func placeholderColor(_ placeholderColor: Color) -> Self {
-        var newSelf = self
-        newSelf.placeholderColor = placeholderColor
-        return newSelf
-    }
-    
-    /// Sets placeholder text diplsplayed when the WYSIWYG text view is empty, the default value is nil.
-    func placeholderText(_ placeholder: String?) -> Self {
+    /// Apply a placeholder text to the composer
+    ///
+    /// - Parameters:
+    ///   - placeholder: The placeholder text to display, if nil, no placeholder is displayed.
+    ///   - color: The color of the placeholder text when displayed, default value is Color(UIColor.placeholderText).
+    func placeholder(_ placeholder: String?, color: Color = Color(UIColor.placeholderText)) -> Self {
         var newSelf = self
         newSelf.placeholder = placeholder
+        newSelf.placeholderColor = color
         return newSelf
     }
 }
