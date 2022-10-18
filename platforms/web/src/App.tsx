@@ -84,7 +84,7 @@ function App() {
         });
 
     const onEnterToSendChanged = () => {
-        setEnterToSend(!enterToSend);
+        setEnterToSend((prevValue) => !prevValue);
     };
 
     return (
