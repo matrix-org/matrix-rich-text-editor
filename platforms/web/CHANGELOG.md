@@ -1,16 +1,36 @@
 # Changelog
 
+## [0.3.0] - 2022-10-19
+
+### Added
+
+-   Web: Allow pressing Enter to send message
+
+### Fixed
+
+-   iOS: use correct fonts
+
 ## [0.2.1] - 2022-10-17
 
 ### Added
 
--   iOS: use right cursor color and fix blinking issue when replacing text.
 -   iOS: add support for focused state.
--   Android: fix formatting not being replaced at index 0 when using hardware keyboard.
--   Fix inserting characters or new lines before a new line at index 0.
--   iOS: remove unneeded UIKit integration code.
 -   Android: handle cut & paste events properly.
+
+### Changed
+
 -   Android: only crash on composer exceptions when using DEBUG mode.
+
+### Fixed
+
+-   iOS: use right cursor color and fix blinking issue when replacing text.
+-   Fix inserting characters or new lines before a new line at index 0.
+-   Android: fix formatting not being replaced at index 0 when using hardware
+    keyboard.
+
+### Removed
+
+-   iOS: remove unneeded UIKit integration code.
 
 ## [0.2.0] - 2022-10-13
 
