@@ -14,16 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { RefObject, useEffect, useRef, useState } from 'react';
+import { RefObject, useEffect, useRef } from 'react';
 
-// rust generated bindings
-import init, {
-    ComposerModel,
-    // eslint-disable-next-line camelcase
-    new_composer_model,
-} from '../generated/wysiwyg.js';
 import { InputEventProcessor } from './types.js';
 import { useFormattingFunctions } from './useFormattingFunctions';
+import { useComposerModel } from './useComposerModel';
 import { useListeners } from './useListeners';
 import { useTestCases } from './useTestCases';
 
@@ -38,18 +33,6 @@ function useEditorFocus(
             return () => clearTimeout(id);
         }
     }, [editorRef, isAutoFocusEnabled]);
-}
-
-function useComposerModel() {
-    const [composerModel, setComposerModel] = useState<ComposerModel | null>(
-        null,
-    );
-
-    useEffect(() => {
-        init().then(() => setComposerModel(new_composer_model()));
-    }, []);
-
-    return composerModel;
 }
 
 function useEditor() {
@@ -67,13 +50,14 @@ function useEditor() {
 export type WysiwygProps = {
     isAutoFocusEnabled?: boolean;
     inputEventProcessor?: InputEventProcessor;
+    initialContent?: string;
 };
 
 export function useWysiwyg(wysiwygProps?: WysiwygProps) {
     const ref = useEditor();
     const modelRef = useRef<HTMLDivElement>(null);
 
-    const composerModel = useComposerModel();
+    const composerModel = useComposerModel(ref, wysiwygProps?.initialContent);
     const { testRef, utilities: testUtilities } = useTestCases(
         ref,
         composerModel,
@@ -96,7 +80,7 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
         ref,
         isWysiwygReady: Boolean(composerModel),
         wysiwyg: formattingFunctions,
-        content,
+        content: content || wysiwygProps?.initialContent,
         formattingStates,
         debug: {
             modelRef,
