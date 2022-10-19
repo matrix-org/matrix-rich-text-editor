@@ -26,6 +26,34 @@ import init, {
 } from '../generated/wysiwyg.js';
 import { replaceEditor } from './dom';
 
+let initStarted = false;
+let initFinished = false;
+
+/**
+ * Initialise the WASM module, or do nothing if it is already initialised.
+ */
+async function initOnce() {
+    if (initFinished) {
+        return Promise.resolve();
+    }
+    if (initStarted) {
+        // Wait until the other init call has finished
+        return new Promise<void>((resolve) => {
+            function tryResolve() {
+                if (initFinished) {
+                    resolve();
+                }
+                setTimeout(tryResolve, 200);
+            }
+            tryResolve();
+        });
+    }
+
+    initStarted = true;
+    await init();
+    initFinished = true;
+}
+
 export function useComposerModel(
     editorRef: RefObject<HTMLElement | null>,
     initialContent?: string,
@@ -36,7 +64,7 @@ export function useComposerModel(
 
     useEffect(() => {
         const initModel = async () => {
-            await init();
+            await initOnce();
 
             if (initialContent) {
                 setComposerModel(

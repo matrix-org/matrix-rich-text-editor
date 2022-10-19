@@ -27,6 +27,7 @@ Currently this is manual:
 * Edit crates/wysiwyg/Cargo.toml
 * Edit bindings/wysiwyg-wasm/package.json
 * Edit platforms/android/gradle.properties
+* `make web` to update .lock files
 * (For iOS the release script uses the git tag, so nothing to do I think.)
 * `git checkout -b version-0.1.0`
 * `git commit -a -m "Version 0.1.0"`
