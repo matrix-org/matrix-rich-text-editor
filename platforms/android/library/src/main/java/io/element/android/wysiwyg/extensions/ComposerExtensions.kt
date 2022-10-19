@@ -19,7 +19,7 @@ fun ComposerState.dump() = "'${html.string()}' | Start: $start | End: $end"
  */
 fun ComposerModelInterface.log() = if (LOG_ENABLED) {
     Log.d(
-        "COMPOSER_PROCESSOR", dumpState().dump()
+        "COMPOSER_PROCESSOR", getCurrentDomState().dump()
             // To visualize zero-width spaces easily
             .replace("\u200b", "~")
     )

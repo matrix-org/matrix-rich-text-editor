@@ -24,6 +24,10 @@ internal class InputProcessor(
     private val composer: ComposerModelInterface?,
 ) {
 
+    init {
+        getMenuState()?.let { menuStateCallback(it) }
+    }
+
     fun updateSelection(editable: Editable, start: Int, end: Int) {
         val (newStart, newEnd) = EditorIndexMapper.fromEditorToComposer(start, end, editable) ?: return
 
@@ -97,7 +101,11 @@ internal class InputProcessor(
     }
 
     fun getHtml(): String {
-        return composer?.let { it.dumpState().html.string() }.orEmpty()
+        return composer?.let { it.getCurrentDomState().html.string() }.orEmpty()
+    }
+
+    fun getMenuState(): MenuState.Update? {
+        return composer?.let { it.getCurrentMenuState() as? MenuState.Update }
     }
 
     private fun stringToSpans(string: String): Spanned {

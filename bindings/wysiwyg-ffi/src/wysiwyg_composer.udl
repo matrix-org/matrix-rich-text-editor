@@ -39,7 +39,8 @@ interface ComposerModel {
     ComposerUpdate un_indent();
     ComposerUpdate set_link(string new_text);
     string to_tree();
-    ComposerState dump_state();
+    ComposerState get_current_dom_state();
+    MenuState get_current_menu_state();
 };
 
 interface ComposerUpdate {

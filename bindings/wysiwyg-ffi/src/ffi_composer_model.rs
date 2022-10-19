@@ -4,6 +4,7 @@ use widestring::Utf16String;
 
 use crate::ffi_composer_state::ComposerState;
 use crate::ffi_composer_update::ComposerUpdate;
+use crate::{ComposerAction, MenuState};
 
 pub struct ComposerModel {
     inner: Mutex<wysiwyg::ComposerModel<Utf16String>>,
@@ -163,12 +164,30 @@ impl ComposerModel {
         self.inner.lock().unwrap().to_tree().to_string()
     }
 
-    pub fn dump_state(self: &Arc<Self>) -> ComposerState {
+    pub fn get_current_dom_state(self: &Arc<Self>) -> ComposerState {
         self.inner
             .lock()
             .unwrap()
             .get_current_state()
             .clone()
             .into()
+    }
+
+    pub fn get_current_menu_state(self: &Arc<Self>) -> MenuState {
+        let inner = self.inner.lock().unwrap();
+        MenuState::Update {
+            reversed_actions: inner
+                .reversed_actions
+                .clone()
+                .into_iter()
+                .map(|a| ComposerAction::from(a))
+                .collect(),
+            disabled_actions: inner
+                .disabled_actions
+                .clone()
+                .into_iter()
+                .map(|a| ComposerAction::from(a))
+                .collect(),
+        }
     }
 }
