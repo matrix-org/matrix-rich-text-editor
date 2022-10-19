@@ -304,10 +304,11 @@ mod js {
     use super::*;
     use crate::{
         dom::nodes::{ContainerNode, DomNode},
-        InlineFormatType,
+        InlineFormatType, ListType,
     };
     use std::fmt;
-    use web_sys::{Document, DomParser, NodeList, SupportedType};
+    use wasm_bindgen::JsCast;
+    use web_sys::{Document, DomParser, Element, NodeList, SupportedType};
 
     pub(super) fn parse<S>(html: &str) -> Result<Dom<S>, DomCreationError<S>>
     where
@@ -375,6 +376,43 @@ mod js {
                         });
                     }
 
+                    "A" => {
+                        dom.append_child(DomNode::new_link(
+                            node.unchecked_ref::<Element>()
+                                .get_attribute("href")
+                                .unwrap_or_default()
+                                .into(),
+                            convert(node.child_nodes())?.take_children(),
+                        ));
+                    }
+
+                    "OL" => {
+                        dom.append_child(DomNode::Container(
+                            ContainerNode::new_list(
+                                ListType::Ordered,
+                                convert(node.child_nodes())?.take_children(),
+                            ),
+                        ));
+                    }
+
+                    "UL" => {
+                        dom.append_child(DomNode::Container(
+                            ContainerNode::new_list(
+                                ListType::Unordered,
+                                convert(node.child_nodes())?.take_children(),
+                            ),
+                        ));
+                    }
+
+                    "LI" => {
+                        dom.append_child(DomNode::Container(
+                            ContainerNode::new_list_item(
+                                "li".into(),
+                                convert(node.child_nodes())?.take_children(),
+                            ),
+                        ));
+                    }
+
                     node_name => {
                         let children_nodes =
                             convert(node.child_nodes())?.take_children();
@@ -382,8 +420,8 @@ mod js {
                         dom.append_child(DomNode::Container(
                             ContainerNode::new_formatting(
                                 match node_name {
-                                    "STRONG" => InlineFormatType::Bold,
-                                    "EM" => InlineFormatType::Italic,
+                                    "STRONG" | "B" => InlineFormatType::Bold,
+                                    "EM" | "I" => InlineFormatType::Italic,
                                     "DEL" => InlineFormatType::StrikeThrough,
                                     "U" => InlineFormatType::Underline,
                                     "CODE" => InlineFormatType::InlineCode,
@@ -465,13 +503,33 @@ mod js {
         }
 
         #[wasm_bindgen_test]
-        fn yolo() {
-            roundtrip("<strong>hello</strong>");
+        fn formatting() {
+            roundtrip("foo <strong>bar</strong> baz");
+            roundtrip("foo <em>bar</em> baz");
+            roundtrip("foo <del>bar</del> baz");
+            roundtrip("foo <u>bar</u> baz");
+            roundtrip("foo <code>bar</code> baz");
         }
 
         #[wasm_bindgen_test]
         fn br() {
             roundtrip("foo<br />bar");
+        }
+
+        #[wasm_bindgen_test]
+        fn a() {
+            roundtrip(r#"foo <a href="url">bar</a> baz"#);
+            roundtrip(r#"foo <a href="">bar</a> baz"#);
+        }
+
+        #[wasm_bindgen_test]
+        fn ul() {
+            roundtrip("foo <ul><li>item1</li><li>item2</li></ul> bar");
+        }
+
+        #[wasm_bindgen_test]
+        fn ol() {
+            roundtrip("foo <ol><li>item1</li><li>item2</li></ol> bar");
         }
     }
 }
