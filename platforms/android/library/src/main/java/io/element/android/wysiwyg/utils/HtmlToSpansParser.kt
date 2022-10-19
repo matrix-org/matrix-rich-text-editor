@@ -30,7 +30,7 @@ import kotlin.math.roundToInt
  * to create [ExtraCharacterSpan] spans to work properly.
  */
 class HtmlToSpansParser(
-    private val context: Context,
+    private val resourcesProvider: ResourcesProvider,
     private val html: String,
 ): ContentHandler {
 
@@ -144,10 +144,10 @@ class HtmlToSpansParser(
                 }
                 val newStart = if (lineBreakAdded) start+1 else start
                 // TODO: provide gap width, typeface and textSize somehow
-                val gapWidth = (10f * context.resources.displayMetrics.density).roundToInt()
+                val gapWidth = (10f * resourcesProvider.getDisplayMetrics().density).roundToInt()
                 val span = if (last.ordered) {
                     val typeface = Typeface.defaultFromStyle(Typeface.NORMAL)
-                    val textSize = 16f * context.resources.displayMetrics.scaledDensity
+                    val textSize = 16f * resourcesProvider.getDisplayMetrics().scaledDensity
                     OrderedListSpan(typeface, textSize, last.order ?: 1, gapWidth)
                 } else {
                     BulletSpan(gapWidth)
@@ -168,7 +168,8 @@ class HtmlToSpansParser(
             InlineFormat.Italic -> StyleSpan(Typeface.ITALIC)
             InlineFormat.Underline -> UnderlineSpan()
             InlineFormat.StrikeThrough -> StrikethroughSpan()
-            InlineFormat.InlineCode -> InlineCodeSpan(context)
+            InlineFormat.InlineCode ->
+                InlineCodeSpan(resourcesProvider.getColor(android.R.color.darker_gray))
         }
         setSpanFromMark(format, span)
     }
