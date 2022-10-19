@@ -166,7 +166,7 @@ class EditorEditText : TextInputEditText {
                 false
             } else {
                 inputConnection?.sendHardwareKeyboardInput(event)
-                true
+                false
             }
         }
     }
