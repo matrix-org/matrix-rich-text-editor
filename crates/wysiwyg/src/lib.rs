@@ -12,6 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#[cfg(all(feature = "sys", feature = "js"))]
+compile_error!(
+    "The `sys` and `js` features are mutually exclusive. Please pick one."
+);
+
+#[cfg(all(not(feature = "sys"), not(feature = "js")))]
+compile_error!(
+    "At least the `sys` or `js` feature must be enabled. Please pick one."
+);
+
 mod composer_action;
 mod composer_model;
 mod composer_state;

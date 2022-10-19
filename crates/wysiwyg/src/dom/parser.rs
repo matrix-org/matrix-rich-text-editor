@@ -19,22 +19,39 @@
 //! [super::Dom]. All instances of classes within this module are thrown away
 //! when parsing finishes.
 
+#[cfg(feature = "sys")]
 mod padom;
+#[cfg(feature = "sys")]
 mod padom_creation_error;
+#[cfg(feature = "sys")]
 mod padom_creator;
+#[cfg(feature = "sys")]
 mod padom_handle;
+#[cfg(feature = "sys")]
 mod padom_node;
+#[cfg(feature = "sys")]
 mod panode_container;
+#[cfg(feature = "sys")]
 mod panode_text;
+#[cfg(feature = "sys")]
 mod paqual_name;
 mod parse;
 
+#[cfg(feature = "sys")]
 use padom::PaDom;
+#[cfg(feature = "sys")]
 use padom_creation_error::PaDomCreationError;
+#[cfg(feature = "sys")]
 use padom_creator::PaDomCreator;
+#[cfg(feature = "sys")]
 use padom_handle::PaDomHandle;
+#[cfg(feature = "sys")]
 use padom_node::PaDomNode;
+#[cfg(feature = "sys")]
 use panode_container::PaNodeContainer;
+#[cfg(feature = "sys")]
 use panode_text::PaNodeText;
+#[cfg(feature = "sys")]
 use paqual_name::paqual_name;
+
 pub use parse::parse;
