@@ -1,6 +1,5 @@
 package io.element.android.wysiwyg
 
-import android.R
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -13,13 +12,14 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
-import androidx.core.text.getSpans
 import com.google.android.material.textfield.TextInputEditText
-import io.element.android.wysiwyg.spans.HtmlToSpansParser
+import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
+import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
+import io.element.android.wysiwyg.inputhandlers.InputProcessor
+import io.element.android.wysiwyg.inputhandlers.InterceptInputConnection
+import io.element.android.wysiwyg.utils.EditorIndexMapper
 import uniffi.wysiwyg_composer.MenuState
 import uniffi.wysiwyg_composer.newComposerModel
-import kotlin.math.absoluteValue
-import kotlin.math.min
 
 class EditorEditText : TextInputEditText {
 
@@ -62,17 +62,16 @@ class EditorEditText : TextInputEditText {
     var selectionChangeListener: OnSelectionChangeListener? = null
     var menuStateChangedListener: OnMenuStateChangedListener? = null
 
+    @Suppress("SAFE_CALL_WILL_CHANGE_NULLABILITY", "UNNECESSARY_SAFE_CALL")
     override fun onSelectionChanged(selStart: Int, selEnd: Int) {
         super.onSelectionChanged(selStart, selEnd)
-        if (inputProcessor != null) {
-            inputProcessor.updateSelection(editableText, selStart, selEnd)
-        }
+        inputProcessor?.updateSelection(editableText, selStart, selEnd)
         selectionChangeListener?.selectionChanged(selStart, selEnd)
     }
 
     /**
-     * We wrap the internal [EditableInputConnection] as it's not public, but its internal behavior
-     * is probably needed to work properly with the EditText.
+     * We wrap the internal `com.android.internal.widget.EditableInputConnection` as it's not
+     * public, but its internal behavior is needed to work properly with the EditText.
      */
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
         val baseInputConnection = requireNotNull(super.onCreateInputConnection(outAttrs))
@@ -87,7 +86,7 @@ class EditorEditText : TextInputEditText {
      */
     override fun onTextContextMenuItem(id: Int): Boolean {
         when (id) {
-            R.id.cut -> {
+            android.R.id.cut -> {
                 val clipboardManager = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
                 val clpData = ClipData.newPlainText("newText", this.editableText.slice(this.selectionStart until this.selectionEnd))
                 clipboardManager.setPrimaryClip(clpData)
@@ -102,10 +101,10 @@ class EditorEditText : TextInputEditText {
 
                 return false
             }
-            R.id.paste, R.id.pasteAsPlainText -> {
+            android.R.id.paste, android.R.id.pasteAsPlainText -> {
                 val clipBoardManager = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
                 val copiedString = clipBoardManager.primaryClip?.getItemAt(0)?.text ?: return false
-                val update = inputProcessor.processInput(EditorInputAction.InsertText(copiedString))
+                val update = inputProcessor.processInput(EditorInputAction.ReplaceText(copiedString))
                 val result = update?.let { inputProcessor.processUpdate(it) }
 
                 if (result != null) {
@@ -121,8 +120,8 @@ class EditorEditText : TextInputEditText {
 
     private fun addHardwareKeyInterceptor() {
         // This seems to be the only way to prevent EditText from automatically handling key strokes
-        setOnKeyListener { v, keyCode, event ->
-            if (event.keyCode == KeyEvent.KEYCODE_ENTER) {
+        setOnKeyListener { _, keyCode, event ->
+            if (keyCode == KeyEvent.KEYCODE_ENTER) {
                 if (event.action == MotionEvent.ACTION_DOWN) {
                     inputConnection?.sendHardwareKeyboardInput(event)
                 }
@@ -141,6 +140,7 @@ class EditorEditText : TextInputEditText {
         }
     }
 
+    @Suppress("SENSELESS_COMPARISON")
     override fun setText(text: CharSequence?, type: BufferType?) {
         val currentText = this.text
         val end = currentText?.length ?: 0
@@ -150,7 +150,7 @@ class EditorEditText : TextInputEditText {
             super.setText(text, type)
         } else {
             inputProcessor.updateSelection(editableText, 0, end)
-            val update = inputProcessor.processInput(EditorInputAction.InsertText(text.toString()))
+            val update = inputProcessor.processInput(EditorInputAction.ReplaceText(text.toString()))
             val result = update?.let { inputProcessor.processUpdate(it) }
 
             if (result != null) {
@@ -170,7 +170,7 @@ class EditorEditText : TextInputEditText {
     }
 
     override fun append(text: CharSequence?, start: Int, end: Int) {
-        val update = inputProcessor.processInput(EditorInputAction.InsertText(text.toString()))
+        val update = inputProcessor.processInput(EditorInputAction.ReplaceText(text.toString()))
         val result = update?.let { inputProcessor.processUpdate(it) }
 
         if (result != null) {
@@ -247,13 +247,7 @@ class EditorEditText : TextInputEditText {
     }
 
     private fun setSelectionFromComposerUpdate(start: Int, end: Int = start) {
-        val zeroWidthLineBreaks = editableText.getSpans<HtmlToSpansParser.ZeroWidthLineBreak>()
-        val before = zeroWidthLineBreaks.filter { editableText.getSpanStart(it) <= start }
-            .sumOf { (editableText.getSpanEnd(it) - editableText.getSpanStart(it)).absoluteValue }
-        val during = zeroWidthLineBreaks.filter { editableText.getSpanStart(it) <= end }
-            .sumOf { (editableText.getSpanEnd(it) - editableText.getSpanStart(it)).absoluteValue }
-        val newStart = min(start + before, editableText.length)
-        val newEnd = min(end + during, editableText.length)
+        val (newStart, newEnd) = EditorIndexMapper.fromComposerToEditor(start, end, editableText)
         setSelection(newStart, newEnd)
     }
 }

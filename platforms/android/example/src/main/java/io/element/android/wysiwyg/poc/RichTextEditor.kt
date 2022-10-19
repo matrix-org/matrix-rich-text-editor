@@ -7,7 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import com.google.android.material.textfield.TextInputLayout
 import io.element.android.wysiwyg.EditorEditText
-import io.element.android.wysiwyg.InlineFormat
+import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.poc.databinding.ViewRichTextEditorBinding
 import uniffi.wysiwyg_composer.ComposerAction
 import uniffi.wysiwyg_composer.MenuState

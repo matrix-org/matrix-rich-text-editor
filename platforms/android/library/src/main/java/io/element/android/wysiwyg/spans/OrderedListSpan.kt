@@ -7,6 +7,10 @@ import android.graphics.Typeface
 import android.text.Layout
 import android.text.style.LeadingMarginSpan
 
+/**
+ * Custom ordered list span (<ol> in HTML), prints a prefix with the current list item number and
+ * applies a margin to the item.
+ */
 class OrderedListSpan(
     typeface: Typeface,
     textSize: Float,

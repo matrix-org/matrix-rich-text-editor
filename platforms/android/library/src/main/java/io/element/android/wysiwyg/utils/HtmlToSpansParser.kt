@@ -1,8 +1,7 @@
-package io.element.android.wysiwyg.spans
+package io.element.android.wysiwyg.utils
 
 import android.content.Context
 import android.graphics.Typeface
-import android.text.NoCopySpan
 import android.text.SpannableString
 import android.text.SpannableStringBuilder
 import android.text.Spanned
@@ -11,7 +10,10 @@ import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
 import androidx.core.text.getSpans
-import io.element.android.wysiwyg.InlineFormat
+import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
+import io.element.android.wysiwyg.spans.InlineCodeSpan
+import io.element.android.wysiwyg.spans.OrderedListSpan
+import io.element.android.wysiwyg.spans.ExtraCharacterSpan
 import org.ccil.cowan.tagsoup.Parser
 import org.xml.sax.Attributes
 import org.xml.sax.ContentHandler
@@ -20,6 +22,13 @@ import org.xml.sax.Locator
 import java.io.StringReader
 import kotlin.math.roundToInt
 
+/**
+ * Custom HTML to Span parser so we can customise what each HTML tag will be represented with in the
+ * formatted text.
+ *
+ * This is specially important for lists, since they not only use custom spans, but they also need
+ * to create [ExtraCharacterSpan] spans to work properly.
+ */
 class HtmlToSpansParser(
     private val context: Context,
     private val html: String,
@@ -28,7 +37,6 @@ class HtmlToSpansParser(
     data class Hyperlink(val link: String)
     object OrderedListBlock
     object UnorderedListBlock
-    class ZeroWidthLineBreak: NoCopySpan
     data class ListItem(val ordered: Boolean, val order: Int? = null)
 
     private val parser = Parser().also { it.contentHandler = this }
@@ -82,7 +90,7 @@ class HtmlToSpansParser(
                 handleHyperlinkStart(url)
             }
             "ul", "ol" -> {
-                val mark = if (name == "ol") OrderedListBlock else UnorderedListBlock
+                val mark: Any = if (name == "ol") OrderedListBlock else UnorderedListBlock
                 text.setSpan(mark, text.length, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
             }
             "li" -> {
@@ -112,7 +120,7 @@ class HtmlToSpansParser(
             "code" -> handleFormatEndTag(InlineFormat.InlineCode)
             "a" -> handleHyperlinkEnd()
             "ul", "ol" -> {
-                val mark = if (name == "ol") OrderedListBlock else UnorderedListBlock
+                val mark: Any = if (name == "ol") OrderedListBlock else UnorderedListBlock
                 val last = getLast(mark::class.java) ?: return
                 text.removeSpan(last)
             }
@@ -122,16 +130,16 @@ class HtmlToSpansParser(
                 var lineBreakAdded = false
                 // We only add line breaks *after* a previous <li> element if there is not already a line break
                 if (start == 0) {
-                    val zeroWidthSpan = SpannableString("\u200b").apply {
-                        setSpan(ZeroWidthLineBreak(), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    val extraZeroWidthSpan = SpannableString("\u200b").apply {
+                        setSpan(ExtraCharacterSpan(), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                     }
-                    text.insert(0, zeroWidthSpan)
+                    text.insert(0, extraZeroWidthSpan)
                 } else if (start > 0 && start <= text.length && text[start-1] != '\n') {
                     // We add a line break and an zero width character to actually display the list item
-                    val zeroWidthLineBreakSpan = SpannableString("\n").apply {
-                        setSpan(ZeroWidthLineBreak(), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    val extraLineBreakSpan = SpannableString("\n").apply {
+                        setSpan(ExtraCharacterSpan(), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                     }
-                    text.insert(start, zeroWidthLineBreakSpan)
+                    text.insert(start, extraLineBreakSpan)
                     lineBreakAdded = true
                 }
                 val newStart = if (lineBreakAdded) start+1 else start

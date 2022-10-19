@@ -10,6 +10,10 @@ import android.text.style.TypefaceSpan
 import android.text.style.UpdateAppearance
 import androidx.core.content.ContextCompat
 
+/**
+ * Inline code (`some code` in Markdown, <code> in HTML) Span that applies a monospaced font style
+ * and adds a background color.
+ */
 class InlineCodeSpan : MetricAffectingSpan, UpdateAppearance, ParcelableSpan {
 
     private val monoTypefaceSpan: TypefaceSpan

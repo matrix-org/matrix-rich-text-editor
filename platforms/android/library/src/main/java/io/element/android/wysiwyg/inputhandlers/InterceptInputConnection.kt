@@ -1,4 +1,4 @@
-package io.element.android.wysiwyg
+package io.element.android.wysiwyg.inputhandlers
 
 import android.os.Build
 import android.os.Bundle
@@ -11,8 +11,8 @@ import android.view.inputmethod.*
 import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
-import androidx.core.text.getSpans
-import io.element.android.wysiwyg.spans.HtmlToSpansParser
+import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
+import io.element.android.wysiwyg.utils.EditorIndexMapper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.min
 
-class InterceptInputConnection(
+internal class InterceptInputConnection(
     private val baseInputConnection: InputConnection,
     private val editorEditText: TextView,
     private val inputProcessor: InputProcessor,
@@ -35,7 +35,7 @@ class InterceptInputConnection(
     init {
         keyEventJob = processKeyEvents()
         // TODO: remove this once we have an initial menu state update
-        inputProcessor.processInput(EditorInputAction.InsertText(""))
+        inputProcessor.processInput(EditorInputAction.ReplaceText(""))
     }
 
     override fun getEditable(): Editable {
@@ -125,7 +125,7 @@ class InterceptInputConnection(
         val (start, end) = getCurrentCompositionOrSelection()
         inputProcessor.updateSelection(editable, start, end)
         val result = withProcessor {
-            processInput(EditorInputAction.InsertText(text.toString()))?.let { processUpdate(it) }
+            processInput(EditorInputAction.ReplaceText(text.toString()))?.let { processUpdate(it) }
         }
 
         return if (result != null) {
@@ -135,7 +135,7 @@ class InterceptInputConnection(
             if (text is Spannable && result.text is Spannable) {
                 copyImeHighlightSpans(text, result.text, start)
             }
-            replaceAll(result.text, compositionStart = start, compositionEnd = compositionEnd, newCursorPosition)
+            replaceAll(result.text, compositionStart = start, compositionEnd = compositionEnd)
             setSelectionOnEditable(editable, result.selection.last, result.selection.last)
             true
         } else {
@@ -151,12 +151,12 @@ class InterceptInputConnection(
                 processInput(EditorInputAction.InsertParagraph)
             } else {
                 inputProcessor.updateSelection(editable, start, end)
-                processInput(EditorInputAction.InsertText(text.toString()))
+                processInput(EditorInputAction.ReplaceText(text.toString()))
             }?.let { processUpdate(it) }
         }
 
         return if (result != null) {
-            replaceAll(result.text, compositionStart = end, compositionEnd = end, newCursorPosition)
+            replaceAll(result.text, compositionStart = end, compositionEnd = end)
             setSelectionOnEditable(editable, result.selection.last, result.selection.last)
             true
         } else {
@@ -217,7 +217,7 @@ class InterceptInputConnection(
                 processInput(EditorInputAction.BackPress)?.let { processUpdate(it) }
             }
             if (result != null) {
-                replaceAll(result.text, 0, editable.length, 1)
+                replaceAll(result.text, 0, editable.length)
                 setSelectionOnEditable(editable, result.selection.first, result.selection.last)
                 setComposingRegion(result.selection.first, result.selection.last)
             }
@@ -231,7 +231,7 @@ class InterceptInputConnection(
                 processInput(EditorInputAction.BackPress)?.let { processUpdate(it) }
             }
             if (result != null) {
-                replaceAll(result.text, 0, editable.length, 1)
+                replaceAll(result.text, 0, editable.length)
                 setSelectionOnEditable(editable, result.selection.first, result.selection.last)
                 setComposingRegion(result.selection.first, result.selection.last)
             }
@@ -265,7 +265,11 @@ class InterceptInputConnection(
         return start to end
     }
 
-    private fun replaceAll(charSequence: CharSequence, compositionStart: Int, compositionEnd: Int, newCursorPosition: Int) {
+    private fun replaceAll(
+        charSequence: CharSequence,
+        compositionStart: Int,
+        compositionEnd: Int,
+    ) {
         beginBatchEdit()
         editable.clear()
         editable.replace(0, editable.length, charSequence)
@@ -284,25 +288,9 @@ class InterceptInputConnection(
     }
 
     private fun setSelectionOnEditable(editable: Editable, start: Int, end: Int = start) {
-        val newStart = min(composerIndexInEditable(start), editable.length)
-        val newEnd = min(composerIndexInEditable(end), editable.length)
+        val newStart = min(EditorIndexMapper.editorIndexFromComposer(start, editable), editable.length)
+        val newEnd = min(EditorIndexMapper.editorIndexFromComposer(end, editable), editable.length)
         Selection.setSelection(editable, newStart, newEnd)
-    }
-
-    private fun composerIndexInEditable(index: Int): Int {
-        val editable = this.editable
-        var consumed = 0
-        var i = 0
-        while (index > consumed) {
-            val spans = editable.getSpans<HtmlToSpansParser.ZeroWidthLineBreak>(start = i, end = i+1)
-            if (spans.isEmpty()) {
-                consumed++
-                i++
-            } else {
-                i += spans.count()
-            }
-        }
-        return i
     }
 
     private fun <T> withProcessor(block: InputProcessor.() -> T): T {
