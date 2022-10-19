@@ -72,6 +72,15 @@ where
         self.document().children()
     }
 
+    #[cfg(feature = "js")]
+    pub(crate) fn take_children(self) -> Vec<DomNode<S>> {
+        if let DomNode::Container(container) = self.document {
+            container.take_children()
+        } else {
+            panic!("Document should always be a Container!")
+        }
+    }
+
     pub fn append_child(&mut self, child: DomNode<S>) -> DomHandle {
         self.document_mut().append_child(child)
     }

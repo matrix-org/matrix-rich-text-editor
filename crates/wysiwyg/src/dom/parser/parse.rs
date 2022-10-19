@@ -40,18 +40,6 @@ where
     unreachable!("The `sys` or `js` are mutually exclusive, and one of them must be enabled.")
 }
 
-#[cfg(feature = "js")]
-mod js {
-    use super::*;
-
-    pub(super) fn parse<S>(_html: &str) -> Result<Dom<S>, DomCreationError<S>>
-    where
-        S: UnicodeString,
-    {
-        unimplemented!()
-    }
-}
-
 #[cfg(feature = "sys")]
 mod sys {
     use super::super::padom_node::PaDomNode;
@@ -82,7 +70,7 @@ mod sys {
     ///
     /// [Dom] is for general use. Parent nodes own their children, and Dom may be
     /// cloned, compared, and converted into an HTML string.
-    pub(super) fn padom_to_dom<S>(padom: PaDom) -> Dom<S>
+    fn padom_to_dom<S>(padom: PaDom) -> Dom<S>
     where
         S: UnicodeString,
     {
@@ -232,7 +220,7 @@ mod sys {
         ret
     }
 
-    pub(super) fn padom_creation_error_to_dom_creation_error<S>(
+    fn padom_creation_error_to_dom_creation_error<S>(
         e: PaDomCreationError,
     ) -> DomCreationError<S>
     where
@@ -307,6 +295,183 @@ mod sys {
         #[test]
         fn parse_br_tag() {
             assert_that!("<br />").roundtrips();
+        }
+    }
+}
+
+#[cfg(feature = "js")]
+mod js {
+    use super::*;
+    use crate::{
+        dom::nodes::{ContainerNode, DomNode},
+        InlineFormatType,
+    };
+    use std::fmt;
+    use web_sys::{Document, DomParser, NodeList, SupportedType};
+
+    pub(super) fn parse<S>(html: &str) -> Result<Dom<S>, DomCreationError<S>>
+    where
+        S: UnicodeString,
+    {
+        let parser: DomParser = DomParser::new().map_err(|_| {
+            to_dom_creation_error(
+                "Failed to create the `DOMParser` from JavaScript",
+            )
+        })?;
+
+        let document = parser
+            .parse_from_string(html, SupportedType::TextHtml)
+            .map_err(|_| {
+                to_dom_creation_error(
+                    "Failed to convert the Web `Document` to internal `Dom`",
+                )
+            })?;
+
+        webdom_to_dom(document).map_err(to_dom_creation_error)
+    }
+
+    fn webdom_to_dom<S>(webdoc: Document) -> Result<Dom<S>, Error>
+    where
+        S: UnicodeString,
+    {
+        let body = webdoc.body().ok_or_else(|| Error::NoBody)?;
+
+        fn convert<S>(nodes: NodeList) -> Result<Dom<S>, Error>
+        where
+            S: UnicodeString,
+        {
+            let number_of_nodes = nodes.length() as usize;
+            let mut dom = Dom::new(Vec::with_capacity(number_of_nodes));
+            let dom_document = dom.document_mut();
+
+            convert_container(nodes, dom_document)?;
+
+            Ok(dom)
+        }
+
+        fn convert_container<S>(
+            nodes: NodeList,
+            dom: &mut ContainerNode<S>,
+        ) -> Result<(), Error>
+        where
+            S: UnicodeString,
+        {
+            let number_of_nodes = nodes.length() as usize;
+
+            for nth in 0..number_of_nodes {
+                let node = nodes.get(nth as _).unwrap();
+
+                match node.node_name().as_str() {
+                    "BR" => {
+                        dom.append_child(DomNode::new_line_break());
+                    }
+
+                    "#text" => {
+                        dom.append_child(match node.node_value() {
+                            Some(value) => {
+                                DomNode::new_text(value.as_str().into())
+                            }
+                            None => DomNode::new_empty_text(),
+                        });
+                    }
+
+                    node_name => {
+                        let children_nodes =
+                            convert(node.child_nodes())?.take_children();
+
+                        dom.append_child(DomNode::Container(
+                            ContainerNode::new_formatting(
+                                match node_name {
+                                    "STRONG" => InlineFormatType::Bold,
+                                    "EM" => InlineFormatType::Italic,
+                                    "DEL" => InlineFormatType::StrikeThrough,
+                                    "U" => InlineFormatType::Underline,
+                                    "CODE" => InlineFormatType::InlineCode,
+                                    _ => {
+                                        return Err(Error::UnknownNode(
+                                            node_name.to_owned(),
+                                        ))
+                                    }
+                                },
+                                children_nodes,
+                            ),
+                        ));
+                    }
+                }
+            }
+
+            Ok(())
+        }
+
+        convert(body.child_nodes())
+    }
+
+    fn to_dom_creation_error<S, E>(error: E) -> DomCreationError<S>
+    where
+        S: UnicodeString,
+        E: ToString,
+    {
+        DomCreationError {
+            dom: Dom::new(vec![]),
+            parse_errors: vec![error.to_string()],
+        }
+    }
+
+    enum Error {
+        NoBody,
+        UnknownNode(String),
+    }
+
+    impl fmt::Display for Error {
+        fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+            match self {
+                Self::NoBody => {
+                    write!(
+                        formatter,
+                        "The `Document` does not have a `<body>` element"
+                    )
+                }
+
+                Self::UnknownNode(node_name) => {
+                    write!(formatter, "Node `{node_name}` is not supported")
+                }
+            }
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        use crate::{
+            tests::testutils_composer_model::restore_whitespace, ToHtml,
+        };
+        use wasm_bindgen_test::*;
+        use widestring::Utf16String;
+
+        wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
+
+        fn roundtrip(html: &str) {
+            let parse = parse::<Utf16String>(html);
+
+            assert!(
+                parse.is_ok(),
+                "Failed to parse the following HTML fragment: `{html}`"
+            );
+
+            let dom = parse.unwrap();
+            let html_again = restore_whitespace(&dom.to_html().to_string());
+
+            assert_eq!(html, html_again);
+        }
+
+        #[wasm_bindgen_test]
+        fn yolo() {
+            roundtrip("<strong>hello</strong>");
+        }
+
+        #[wasm_bindgen_test]
+        fn br() {
+            roundtrip("foo<br />bar");
         }
     }
 }

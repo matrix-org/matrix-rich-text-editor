@@ -407,7 +407,7 @@ impl SelectionWritingState {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(target_arch = "wasm32")))]
 mod test {
     use speculoos::{prelude::*, AssertionFailure, Spec};
     use widestring::Utf16String;
