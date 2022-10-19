@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.1] - 2022-10-19
+
+### Added
+
+-   iOS: Show placeholder text
+
+### Fixed
+
+-   Web: allow instantiating multiple composers
+-   Android: code improvements
+
 ## [0.3.0] - 2022-10-19
 
 ### Added
