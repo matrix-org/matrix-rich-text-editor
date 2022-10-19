@@ -20,7 +20,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.launch
 import kotlin.math.abs
-import kotlin.math.max
 import kotlin.math.min
 
 class InterceptInputConnection(
@@ -107,53 +106,15 @@ class InterceptInputConnection(
     private fun processKeyEvents() =
         CoroutineScope(Dispatchers.Main).launch {
             keyboardEventQueue.consumeEach { keyEvent ->
-                val content = editable
-                val start = Selection.getSelectionStart(content)
-                val end = Selection.getSelectionEnd(content)
-                val (cStart, cEnd) = getCurrentComposition()
                 when {
                     keyEvent.isPrintingKey || keyEvent.keyCode == KeyEvent.KEYCODE_SPACE -> {
-                        withProcessor {
-                            updateSelection(editable, start, end)
-                            val newText = if (keyEvent.keyCode == KeyEvent.KEYCODE_SPACE) {
-                                " "
-                            } else {
-                                Char(keyEvent.unicodeChar).toString()
-                            }
-                            val result = processInput(EditorInputAction.InsertText(newText))?.let {
-                                processUpdate(it)
-                            }
-                            val selectionLength = end-start
-                            beginBatchEdit()
-                            if (result != null) {
-                                editable.clear()
-                                editable.replace(0, editable.length, result.text)
-                            } else {
-                                editable.replace(start, end, newText)
-                            }
-                            setComposingRegion(cStart, cEnd - selectionLength)
-                            setSelectionOnEditable(editable, start+1)
-                            endBatchEdit()
-                        }
+                        onHardwareCharacterKey(Char(keyEvent.unicodeChar).toString())
                     }
                     keyEvent.keyCode == KeyEvent.KEYCODE_ENTER -> {
-                        val result = withProcessor {
-                            processInput(EditorInputAction.InsertParagraph)?.let {
-                                processUpdate(it)
-                            }
-                        }
-                        beginBatchEdit()
-                        if (result != null) {
-                            editable.replace(0, editable.length, result.text)
-                            setSelectionOnEditable(editable, result.selection.last)
-                        } else {
-                            editable.replace(start, end, "\n")
-                        }
-                        endBatchEdit()
+                        onHardwareEnterKey()
                     }
                     keyEvent.keyCode == KeyEvent.KEYCODE_DEL -> {
-                        inputProcessor.updateSelection(editable, start, end)
-                        backspace()
+                        onHardwareBackspaceKey()
                     }
                 }
             }
@@ -161,7 +122,7 @@ class InterceptInputConnection(
 
     // Called when started typing
     override fun setComposingText(text: CharSequence?, newCursorPosition: Int): Boolean {
-        val (start, end) = getCurrentComposition()
+        val (start, end) = getCurrentCompositionOrSelection()
         inputProcessor.updateSelection(editable, start, end)
         val result = withProcessor {
             processInput(EditorInputAction.InsertText(text.toString()))?.let { processUpdate(it) }
@@ -184,7 +145,7 @@ class InterceptInputConnection(
 
     // Called for suggestion from IME selected
     override fun commitText(text: CharSequence?, newCursorPosition: Int): Boolean {
-        val (start, end) = getCurrentComposition()
+        val (start, end) = getCurrentCompositionOrSelection()
         val result = withProcessor {
             if (text?.lastOrNull() == '\n') {
                 processInput(EditorInputAction.InsertParagraph)
@@ -204,30 +165,41 @@ class InterceptInputConnection(
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal fun backspace(): Boolean {
+    internal fun onHardwareBackspaceKey(): Boolean {
         val start = Selection.getSelectionStart(editable)
         val end = Selection.getSelectionEnd(editable)
         if (start == 0 && end == 0) return false
 
-        val result = withProcessor {
-            updateSelection(editable, start, end)
-            processInput(EditorInputAction.BackPress)?.let { processUpdate(it) }
-        }
+        val toDelete = if (start == end) 1 else abs(start - end)
 
-        return if (result != null) {
-            val newSelection = if (start == end) end-1 else min(start, end)
-            beginBatchEdit()
-            editable.replace(0, editable.length, result.text)
-            setSelectionOnEditable(editable, newSelection)
-            endBatchEdit()
-            true
-        } else {
-            // Workaround for keyboard input
-            val maxValue = max(end, start)
-            setSelectionOnEditable(editable, maxValue, maxValue)
-            val toDelete = if (start == end) 1 else abs(start - end)
-            super.deleteSurroundingText(toDelete, 0)
-        }
+        // Imitate the software key backspace which updates the selection start to match the end.
+        Selection.setSelection(editable, end, end)
+
+        return deleteSurroundingText(toDelete, 0)
+    }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal fun onHardwareEnterKey(): Boolean {
+        val selectionStart = Selection.getSelectionStart(editable)
+        val selectionEnd = Selection.getSelectionEnd(editable)
+
+        val (compositionStart, compositionEnd) = getCurrentCompositionOrSelection()
+
+        val newText = if(selectionStart == selectionEnd && selectionStart == compositionEnd) {
+            val oldText = editable.subSequence(compositionStart until compositionEnd)
+            "$oldText\n"
+        } else
+            "\n"
+
+        return commitText(newText, 1)
+    }
+
+    private fun onHardwareCharacterKey(newChars: String): Boolean {
+        // The current composition may not be up to date at this point so we do not attempt to
+        // append to the current composition with the hardware keyboard.
+        finishComposingText()
+
+        return setComposingText(newChars, 1)
     }
 
     override fun deleteSurroundingText(beforeLength: Int, afterLength: Int): Boolean {
@@ -275,7 +247,7 @@ class InterceptInputConnection(
         return baseInputConnection.requestCursorUpdates(cursorUpdateMode)
     }
 
-    fun getCurrentComposition(): Pair<Int, Int> {
+    fun getCurrentCompositionOrSelection(): Pair<Int, Int> {
         val content = editable
         var start = getComposingSpanStart(content)
         var end = getComposingSpanEnd(content)

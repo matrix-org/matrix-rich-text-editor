@@ -5,7 +5,6 @@ import android.view.inputmethod.EditorInfo
 import androidx.test.espresso.UiController
 import androidx.test.espresso.ViewAction
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
-import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.InterceptInputConnection
 import org.hamcrest.Matcher
 
@@ -68,7 +67,7 @@ object Ime {
             if (view == null) return
             val editorInfo = EditorInfo()
             val inputConnection = view.onCreateInputConnection(editorInfo)
-            (inputConnection as? InterceptInputConnection)?.backspace()
+            (inputConnection as? InterceptInputConnection)?.onHardwareBackspaceKey()
         }
     }
 
@@ -126,9 +125,7 @@ object Ime {
             if (view == null) return
             val editorInfo = EditorInfo()
             val inputConnection = view.onCreateInputConnection(editorInfo) as? InterceptInputConnection ?: return
-            val end = inputConnection.getCurrentComposition().second
-            inputConnection.setComposingRegion(end, end)
-            inputConnection.commitText("\n", 1)
+            inputConnection.onHardwareEnterKey()
         }
 
     }
