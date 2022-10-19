@@ -114,8 +114,7 @@ internal class EditorViewModel : ViewModel() {
     }
 
     fun getCurrentFormattedText(): CharSequence {
-        val html = getHtml()
-        return stringToSpans(html)
+        return stringToSpans(getHtml())
     }
 
     fun getMenuState(): MenuState? {
