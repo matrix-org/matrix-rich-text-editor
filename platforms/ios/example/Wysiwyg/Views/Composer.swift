@@ -39,6 +39,7 @@ struct Composer: View {
                     select: viewModel.select,
                     didUpdateText: viewModel.didUpdateText
                 )
+                .placeholder("Placeholder", color: .gray)
                 .frame(height: viewModel.idealHeight)
                 .padding(.horizontal, 12)
                 .onAppear {

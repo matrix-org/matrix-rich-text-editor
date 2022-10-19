@@ -26,6 +26,8 @@ public struct WysiwygComposerView: UIViewRepresentable {
     public var select: (NSAttributedString, NSRange) -> Void
     public var didUpdateText: (UITextView) -> Void
     private var tintColor = Color.accentColor
+    private var placeholderColor = Color(UIColor.placeholderText)
+    private var placeholder: String?
     @Binding public var focused: Bool
 
     public init(focused: Binding<Bool>,
@@ -40,9 +42,9 @@ public struct WysiwygComposerView: UIViewRepresentable {
         _focused = focused
     }
     
-    public func makeUIView(context: Context) -> UITextView {
-        let textView = UITextView()
-
+    public func makeUIView(context: Context) -> PlaceholdableTextView {
+        let textView = PlaceholdableTextView()
+        
         textView.accessibilityIdentifier = "WysiwygComposer"
         textView.font = UIFont.preferredFont(forTextStyle: .subheadline)
         textView.autocapitalizationType = .sentences
@@ -55,16 +57,21 @@ public struct WysiwygComposerView: UIViewRepresentable {
         textView.adjustsFontForContentSizeCategory = true
         textView.backgroundColor = .clear
         textView.tintColor = UIColor(tintColor)
+        textView.placeholderFont = UIFont.preferredFont(forTextStyle: .subheadline)
+        textView.placeholderColor = UIColor(placeholderColor)
+        textView.placeholder = placeholder
         return textView
     }
 
-    public func updateUIView(_ uiView: UITextView, context: Context) {
+    public func updateUIView(_ uiView: PlaceholdableTextView, context: Context) {
         Logger.textView.logDebug([content.logAttributedSelection,
                                   content.logText],
                                  functionName: #function)
         uiView.apply(content)
         context.coordinator.didUpdateText(uiView)
         uiView.tintColor = UIColor(tintColor)
+        uiView.placeholderColor = UIColor(placeholderColor)
+        uiView.placeholder = placeholder
         
         switch (focused, uiView.isFirstResponder) {
         case (true, false): uiView.becomeFirstResponder()
@@ -129,6 +136,18 @@ public extension WysiwygComposerView {
     func tintColor(_ tintColor: Color) -> Self {
         var newSelf = self
         newSelf.tintColor = tintColor
+        return newSelf
+    }
+    
+    /// Apply a placeholder text to the composer
+    ///
+    /// - Parameters:
+    ///   - placeholder: The placeholder text to display, if nil, no placeholder is displayed.
+    ///   - color: The color of the placeholder text when displayed, default value is Color(UIColor.placeholderText).
+    func placeholder(_ placeholder: String?, color: Color = Color(UIColor.placeholderText)) -> Self {
+        var newSelf = self
+        newSelf.placeholder = placeholder
+        newSelf.placeholderColor = color
         return newSelf
     }
 }
