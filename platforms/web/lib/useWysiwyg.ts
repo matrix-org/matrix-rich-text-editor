@@ -27,6 +27,34 @@ import { useFormattingFunctions } from './useFormattingFunctions';
 import { useListeners } from './useListeners';
 import { useTestCases } from './useTestCases';
 
+let initStarted = false;
+let initFinished = false;
+
+/**
+ * Initialise the WASM module, or do nothing if it is already initialised.
+ */
+async function initOnce() {
+    if (initFinished) {
+        return Promise.resolve();
+    }
+    if (initStarted) {
+        // Wait until the other init call has finished
+        return new Promise<void>((resolve) => {
+            function tryResolve() {
+                if (initFinished) {
+                    resolve();
+                }
+                setTimeout(tryResolve, 200);
+            }
+            tryResolve();
+        });
+    }
+
+    initStarted = true;
+    await init();
+    initFinished = true;
+}
+
 function useEditorFocus(
     editorRef: RefObject<HTMLElement | null>,
     isAutoFocusEnabled = false,
@@ -46,7 +74,9 @@ function useComposerModel() {
     );
 
     useEffect(() => {
-        init().then(() => setComposerModel(new_composer_model()));
+        initOnce().then(() => {
+            setComposerModel(new_composer_model());
+        });
     }, []);
 
     return composerModel;
