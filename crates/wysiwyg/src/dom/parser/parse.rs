@@ -18,26 +18,15 @@ pub fn parse<S>(html: &str) -> Result<Dom<S>, DomCreationError<S>>
 where
     S: UnicodeString,
 {
-    parse_inner(html)
-}
-
-#[cfg(all(feature = "sys", not(feature = "js")))]
-use sys::parse as parse_inner;
-
-#[cfg(all(feature = "js", not(feature = "sys")))]
-use js::parse as parse_inner;
-
-// This is just here to avoid an extra compilation error message when nor `sys`
-// nor `js` are enabled, or when both are enabled.
-#[cfg(any(
-    all(feature = "sys", feature = "js"),
-    all(not(feature = "sys"), not(feature = "js"))
-))]
-fn parse_inner<S>(_html: &str) -> Result<Dom<S>, DomCreationError<S>>
-where
-    S: UnicodeString,
-{
-    unreachable!("The `sys` or `js` are mutually exclusive, and one of them must be enabled.")
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "sys")] {
+            sys::parse(html)
+        } else if #[cfg(feature = "js")] {
+            js::parse(html)
+        } else {
+            unreachable!("The `sys` or `js` are mutually exclusive, and one of them must be enabled.")
+        }
+    }
 }
 
 #[cfg(feature = "sys")]

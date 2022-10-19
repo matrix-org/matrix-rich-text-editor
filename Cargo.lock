@@ -1267,6 +1267,7 @@ checksum = "c811ca4a8c853ef420abd8592ba53ddbbac90410fab6903b3e79972a631f7680"
 name = "wysiwyg"
 version = "0.3.2"
 dependencies = [
+ "cfg-if",
  "html-escape",
  "html5ever",
  "once_cell",
