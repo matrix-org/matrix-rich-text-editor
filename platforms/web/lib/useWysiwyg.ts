@@ -14,46 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { RefObject, useEffect, useRef, useState } from 'react';
+import { RefObject, useEffect, useRef } from 'react';
 
-// rust generated bindings
-import init, {
-    ComposerModel,
-    // eslint-disable-next-line camelcase
-    new_composer_model,
-} from '../generated/wysiwyg.js';
 import { InputEventProcessor } from './types.js';
 import { useFormattingFunctions } from './useFormattingFunctions';
+import { useComposerModel } from './useComposerModel';
 import { useListeners } from './useListeners';
 import { useTestCases } from './useTestCases';
-
-let initStarted = false;
-let initFinished = false;
-
-/**
- * Initialise the WASM module, or do nothing if it is already initialised.
- */
-async function initOnce() {
-    if (initFinished) {
-        return Promise.resolve();
-    }
-    if (initStarted) {
-        // Wait until the other init call has finished
-        return new Promise<void>((resolve) => {
-            function tryResolve() {
-                if (initFinished) {
-                    resolve();
-                }
-                setTimeout(tryResolve, 200);
-            }
-            tryResolve();
-        });
-    }
-
-    initStarted = true;
-    await init();
-    initFinished = true;
-}
 
 function useEditorFocus(
     editorRef: RefObject<HTMLElement | null>,
@@ -66,20 +33,6 @@ function useEditorFocus(
             return () => clearTimeout(id);
         }
     }, [editorRef, isAutoFocusEnabled]);
-}
-
-function useComposerModel() {
-    const [composerModel, setComposerModel] = useState<ComposerModel | null>(
-        null,
-    );
-
-    useEffect(() => {
-        initOnce().then(() => {
-            setComposerModel(new_composer_model());
-        });
-    }, []);
-
-    return composerModel;
 }
 
 function useEditor() {
@@ -97,13 +50,14 @@ function useEditor() {
 export type WysiwygProps = {
     isAutoFocusEnabled?: boolean;
     inputEventProcessor?: InputEventProcessor;
+    initialContent?: string;
 };
 
 export function useWysiwyg(wysiwygProps?: WysiwygProps) {
     const ref = useEditor();
     const modelRef = useRef<HTMLDivElement>(null);
 
-    const composerModel = useComposerModel();
+    const composerModel = useComposerModel(ref, wysiwygProps?.initialContent);
     const { testRef, utilities: testUtilities } = useTestCases(
         ref,
         composerModel,
@@ -117,6 +71,7 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
         composerModel,
         testUtilities,
         formattingFunctions,
+        wysiwygProps?.initialContent,
         wysiwygProps?.inputEventProcessor,
     );
 

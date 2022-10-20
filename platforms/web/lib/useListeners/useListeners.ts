@@ -40,10 +40,11 @@ export function useListeners(
     composerModel: ComposerModel | null,
     testUtilities: TestUtilities,
     formattingFunctions: FormattingFunctions,
+    initialContent?: string,
     inputEventProcessor?: InputEventProcessor,
 ) {
     const [state, setState] = useState<State>({
-        content: null,
+        content: initialContent || null,
         formattingStates: getDefaultFormattingStates(),
     });
 
