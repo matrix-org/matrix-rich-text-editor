@@ -71,6 +71,7 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
         composerModel,
         testUtilities,
         formattingFunctions,
+        wysiwygProps?.initialContent,
         wysiwygProps?.inputEventProcessor,
     );
 
@@ -80,7 +81,7 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
         ref,
         isWysiwygReady: Boolean(composerModel),
         wysiwyg: formattingFunctions,
-        content: content || wysiwygProps?.initialContent,
+        content,
         formattingStates,
         debug: {
             modelRef,
