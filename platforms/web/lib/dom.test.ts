@@ -551,6 +551,12 @@ describe('getCurrentSelection', () => {
         return sel;
     }
 
+    it('correctly locates the cursor in an empty editor', () => {
+        setEditorHtml('');
+        const sel = selectAll();
+        expect(getCurrentSelection(editor, sel)).toEqual([0, 0]);
+    });
+
     it('correctly locates the cursor after a br tag', () => {
         setEditorHtml('para 1<br /><br />para 2');
         const secondBr = editor.childNodes[2];
