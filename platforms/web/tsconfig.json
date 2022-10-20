@@ -17,7 +17,7 @@
         "jsx": "react-jsx",
         "experimentalDecorators": false,
         "emitDecoratorMetadata": false,
-        "noImplicitAny": false,
+        "noImplicitAny": true,
         "noUnusedLocals": true,
         "sourceMap": false,
         "outDir": "./dist",

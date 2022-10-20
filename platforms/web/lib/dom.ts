@@ -133,6 +133,8 @@ export function replaceEditor(
                 sameNodeButEndOffsetBeforeStartOffset
             ) {
                 [start, end] = [end, start];
+                assert(start.node); // Silence TypeScript - we checked this
+                assert(end.node); // above.
             }
 
             range.setStart(start.node, start.offset);
@@ -168,7 +170,13 @@ export function replaceEditor(
  *
  * A "codeunit" here means a UTF-16 code unit.
  */
-export function computeNodeAndOffset(currentNode: Node, codeunits: number) {
+export function computeNodeAndOffset(
+    currentNode: Node,
+    codeunits: number,
+): {
+    node: Node | null;
+    offset: number;
+} {
     const isEmptyList =
         currentNode.nodeName === 'LI' && !currentNode.hasChildNodes();
     if (currentNode.nodeType === Node.TEXT_NODE || isEmptyList) {
