@@ -364,14 +364,23 @@ export function countCodeunit(
     node: Node,
     offset: number,
 ): number {
+    // Special case - if asked for after the last node of the editor (which we
+    // get if we do select-all), return the end of the editor.
+    if (node === editor && offset === editor.childNodes.length) {
+        return textLength(editor, -1) - 1;
+    }
+
+    // Check for before or after the editor itself
     const editorRange = new Range();
     editorRange.setStart(editor, 0);
     editorRange.setEnd(editor, editor.childNodes.length);
     const cmp = editorRange.comparePoint(node, 0);
     if (cmp === -1) {
+        // Before the editor - count as at the beginning
         return 0;
     } else if (cmp === 1) {
-        return textLength(editor, -1);
+        // After the editor - count as at the end
+        return textLength(editor, -1) - 1;
     }
 
     const ret = findCharacter(editor, node, offset);

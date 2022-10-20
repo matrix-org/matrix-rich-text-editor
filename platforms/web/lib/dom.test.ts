@@ -628,8 +628,8 @@ describe('getCurrentSelection', () => {
         setEditorHtml('para 1<br /><br />para 2');
         const sel = selectAll();
 
-        // Not 14 here because the last BR gets counted?
-        expect(getCurrentSelection(editor, sel)).toEqual([0, 15]);
+        // Do not count the last BR
+        expect(getCurrentSelection(editor, sel)).toEqual([0, 14]);
     });
 
     it('handles selecting all by dragging', () => {
@@ -674,6 +674,6 @@ describe('getCurrentSelection', () => {
     it('handles selection after the end by returning last character', () => {
         setEditorHtml('para 1<br /><br />para 2');
         const sel = selectionAfterEditor();
-        expect(getCurrentSelection(editor, sel)).toEqual([15, 15]);
+        expect(getCurrentSelection(editor, sel)).toEqual([14, 14]);
     });
 });
