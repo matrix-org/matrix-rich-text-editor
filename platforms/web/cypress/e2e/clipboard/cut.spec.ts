@@ -20,8 +20,10 @@ describe('Cut', () => {
     const editor = '.editor:not([disabled])[contenteditable="true"]';
 
     it('remove text that is cut to clipboard', { browser: 'electron' }, () => {
-        cy.visit('/');
+        cy.visit('/').wait(300);
         cy.get(editor).type('firstREMOVEME');
+        cy.contains(editor, 'firstREMOVEME');
+
         cy.setSelection(editor, 5, 13);
         cy.document().invoke('execCommand', 'cut');
 
@@ -35,6 +37,7 @@ describe('Cut', () => {
         // Type something, because only when we do that do we reveal what was
         // really in the Rust model.
         cy.get(editor).type('last');
+        cy.contains(editor, 'last');
         cy.get(editor).should('not.contain', 'REMOVEME');
     });
 });
