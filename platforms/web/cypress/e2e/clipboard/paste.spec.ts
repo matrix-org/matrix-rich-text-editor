@@ -23,15 +23,19 @@ describe('Paste', () => {
         'should display pasted text after we type',
         { browser: 'electron' },
         () => {
-            cy.visit('/');
+            cy.visit('/').wait(300);
             cy.get(editor).type('BEFORE');
+            cy.contains(editor, 'BEFORE'); // Wait for the typing to finish
+
             cy.window()
                 .its('navigator.clipboard')
                 .invoke('writeText', 'pasted');
             cy.get(editor).focus();
             cy.document().invoke('execCommand', 'paste');
+            cy.contains(editor, 'BEFOREpasted');
+
             cy.get(editor).type('AFTER');
-            cy.get(editor).contains(/^BEFOREpastedAFTER/);
+            cy.contains(editor, /^BEFOREpastedAFTER/);
         },
     );
 
