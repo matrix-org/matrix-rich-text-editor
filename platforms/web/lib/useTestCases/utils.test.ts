@@ -29,7 +29,7 @@ beforeAll(async () => {
 describe('getSelectionAccordingToActions', () => {
     it('Should return -1, -1 for selection when there are no actions', () => {
         // When
-        const actions = [];
+        const actions: Actions = [];
         const selection = getSelectionAccordingToActions(actions)();
 
         // Then
