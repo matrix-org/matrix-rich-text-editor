@@ -83,9 +83,10 @@ class EditorEditText : TextInputEditText {
     }
 
     override fun onRestoreInstanceState(state: Parcelable?) {
-        super.onRestoreInstanceState(state)
+        val spannedText = viewModel.getCurrentFormattedText()
+        editableText.replace(0, editableText.length, spannedText)
 
-        this.setTextInternal(viewModel.getCurrentFormattedText())
+        super.onRestoreInstanceState(state)
 
         val start = Selection.getSelectionStart(editableText)
         val end = Selection.getSelectionEnd(editableText)
@@ -164,8 +165,12 @@ class EditorEditText : TextInputEditText {
             } else if (event.metaState != 0 && event.unicodeChar == 0) {
                 // Is a modifier key
                 false
-            } else {
+            } else if (event.isPrintableCharacter()) {
+                // Consume printable characters
                 inputConnection?.sendHardwareKeyboardInput(event)
+                true
+            } else {
+                // Don't consume other key codes (HW back button, i.e.)
                 false
             }
         }
@@ -288,4 +293,8 @@ private fun KeyEvent.isMovementKey(): Boolean {
         this.keyCode in KeyEvent.KEYCODE_DPAD_UP_LEFT..KeyEvent.KEYCODE_DPAD_DOWN_RIGHT
     } else false
     return baseIsMovement || api24IsMovement
+}
+
+private fun KeyEvent.isPrintableCharacter(): Boolean {
+    return isPrintingKey || keyCode == KeyEvent.KEYCODE_SPACE
 }

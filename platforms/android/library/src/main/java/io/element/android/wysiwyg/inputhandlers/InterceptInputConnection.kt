@@ -51,8 +51,8 @@ internal class InterceptInputConnection(
 
     @RequiresApi(Build.VERSION_CODES.N)
     override fun closeConnection() {
+        // This should be enough as it will internally call baseInputConnection methods anyway
         super.closeConnection()
-        baseInputConnection.closeConnection()
 
         keyEventJob?.cancel()
         keyEventJob = null
@@ -82,6 +82,7 @@ internal class InterceptInputConnection(
         return baseInputConnection.performContextMenuAction(id)
     }
 
+    // Used for 'Extract UI' of EditText (aka: full screen EditText in landscape)
     override fun getExtractedText(request: ExtractedTextRequest?, flags: Int): ExtractedText {
         return baseInputConnection.getExtractedText(request, flags)
     }
