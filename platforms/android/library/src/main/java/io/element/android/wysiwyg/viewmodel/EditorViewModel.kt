@@ -1,28 +1,34 @@
-package io.element.android.wysiwyg.inputhandlers
+package io.element.android.wysiwyg.viewmodel
 
-import android.content.Context
 import android.text.Editable
 import android.text.Spanned
-import androidx.core.text.getSpans
+import androidx.lifecycle.ViewModel
 import io.element.android.wysiwyg.BuildConfig
 import io.element.android.wysiwyg.extensions.log
 import io.element.android.wysiwyg.extensions.string
 import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
-import io.element.android.wysiwyg.spans.ExtraCharacterSpan
 import io.element.android.wysiwyg.utils.EditorIndexMapper
 import io.element.android.wysiwyg.utils.HtmlToSpansParser
-import uniffi.wysiwyg_composer.ComposerModelInterface
+import io.element.android.wysiwyg.utils.ResourcesProvider
+import uniffi.wysiwyg_composer.ComposerModel
 import uniffi.wysiwyg_composer.MenuState
 import uniffi.wysiwyg_composer.TextUpdate
-import kotlin.math.absoluteValue
+import uniffi.wysiwyg_composer.newComposerModel
 
-internal class InputProcessor(
-    private val context: Context,
-    private val menuStateCallback: (MenuState) -> Unit,
-    private val composer: ComposerModelInterface?,
-) {
+internal class EditorViewModel(
+    private val resourcesProvider: ResourcesProvider,
+    createComposer: Boolean,
+) : ViewModel() {
+
+    private var composer: ComposerModel? = if (createComposer) newComposerModel() else null
+    private var menuStateCallback: ((MenuState) -> Unit)? = null
+
+    fun setMenuStateCallback(callback: ((MenuState) -> Unit)?) {
+        this.menuStateCallback = callback
+        getMenuState()?.let { menuStateCallback?.invoke(it) }
+    }
 
     fun updateSelection(editable: Editable, start: Int, end: Int) {
         val (newStart, newEnd) = EditorIndexMapper.fromEditorToComposer(start, end, editable) ?: return
@@ -30,7 +36,7 @@ internal class InputProcessor(
         val update = composer?.select(newStart, newEnd)
         val menuState = update?.menuState()
         if (menuState is MenuState.Update) {
-            menuStateCallback(menuState)
+            menuStateCallback?.invoke(menuState)
         }
         composer?.log()
     }
@@ -76,7 +82,7 @@ internal class InputProcessor(
             }
         }.getOrNull()
 
-        update?.menuState()?.let { menuStateCallback(it) }
+        update?.menuState()?.let { menuStateCallback?.invoke(it) }
 
         return update?.textUpdate().also {
             composer?.log()
@@ -97,11 +103,19 @@ internal class InputProcessor(
     }
 
     fun getHtml(): String {
-        return composer?.let { it.dumpState().html.string() }.orEmpty()
+        return composer?.getCurrentDomState()?.html?.string().orEmpty()
+    }
+
+    fun getCurrentFormattedText(): CharSequence {
+        return stringToSpans(getHtml())
+    }
+
+    fun getMenuState(): MenuState? {
+        return composer?.getCurrentMenuState() as? MenuState.Update
     }
 
     private fun stringToSpans(string: String): Spanned {
-        return HtmlToSpansParser(context, string).convert()
+        return HtmlToSpansParser(resourcesProvider, string).convert()
     }
-}
 
+}

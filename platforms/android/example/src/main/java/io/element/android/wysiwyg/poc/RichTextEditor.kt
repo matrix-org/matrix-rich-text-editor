@@ -25,8 +25,8 @@ class RichTextEditor : TextInputLayout {
 
     var onSetLinkListener: OnSetLinkListener? = null
 
-    override fun onFinishInflate() {
-        super.onFinishInflate()
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
 
         with (binding) {
             formatBoldButton.setOnClickListener {

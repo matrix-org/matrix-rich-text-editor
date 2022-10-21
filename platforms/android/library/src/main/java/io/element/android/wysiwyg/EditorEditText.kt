@@ -1,10 +1,13 @@
 package io.element.android.wysiwyg
 
+import android.app.Application
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Context.CLIPBOARD_SERVICE
 import android.os.Build
+import android.os.Parcelable
+import android.text.Selection
 import android.text.Spannable
 import android.text.SpannableStringBuilder
 import android.util.AttributeSet
@@ -12,25 +15,25 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
+import androidx.lifecycle.*
 import com.google.android.material.textfield.TextInputEditText
+import io.element.android.wysiwyg.inputhandlers.InterceptInputConnection
 import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
-import io.element.android.wysiwyg.inputhandlers.InputProcessor
-import io.element.android.wysiwyg.inputhandlers.InterceptInputConnection
+import io.element.android.wysiwyg.utils.AndroidResourcesProvider
 import io.element.android.wysiwyg.utils.EditorIndexMapper
+import io.element.android.wysiwyg.utils.viewModel
+import io.element.android.wysiwyg.viewmodel.EditorViewModel
 import uniffi.wysiwyg_composer.MenuState
-import uniffi.wysiwyg_composer.newComposerModel
 
 class EditorEditText : TextInputEditText {
 
     private var inputConnection: InterceptInputConnection? = null
-    private val inputProcessor = InputProcessor(
-        context,
-        menuStateCallback = { menuStateChangedListener?.menuStateChanged(it) },
-        // Using the returned ComposerModel automatically loads the native libraries and will crash
-        // layout preview and other tools. We're making it nullable as a workaround for that.
-        composer = if (isInEditMode) null else newComposerModel()
-    )
+    private val viewModel: EditorViewModel by viewModel(viewModelInitializer = {
+        val applicationContext = context.applicationContext as Application
+        val resourcesProvider = AndroidResourcesProvider(applicationContext)
+        EditorViewModel(resourcesProvider, createComposer = !isInEditMode)
+    })
 
     private val spannableFactory = object : Spannable.Factory() {
         override fun newSpannable(source: CharSequence?): Spannable {
@@ -38,6 +41,8 @@ class EditorEditText : TextInputEditText {
             return source as? Spannable ?: SpannableStringBuilder(source)
         }
     }
+
+    private var isInitialized = false
 
     constructor(context: Context): super(context)
 
@@ -49,6 +54,8 @@ class EditorEditText : TextInputEditText {
     init {
         setSpannableFactory(spannableFactory)
         addHardwareKeyInterceptor()
+
+        isInitialized = true
     }
 
     fun interface OnSelectionChangeListener {
@@ -61,11 +68,37 @@ class EditorEditText : TextInputEditText {
 
     var selectionChangeListener: OnSelectionChangeListener? = null
     var menuStateChangedListener: OnMenuStateChangedListener? = null
+        set(value) {
+            field = value
 
-    @Suppress("SAFE_CALL_WILL_CHANGE_NULLABILITY", "UNNECESSARY_SAFE_CALL")
+            viewModel.setMenuStateCallback { state ->
+                value?.menuStateChanged(state)
+            }
+        }
+
+    /**
+     * We'll do our own text restoration.
+     */
+    override fun getFreezesText(): Boolean {
+        return false
+    }
+
+    override fun onRestoreInstanceState(state: Parcelable?) {
+        val spannedText = viewModel.getCurrentFormattedText()
+        editableText.replace(0, editableText.length, spannedText)
+
+        super.onRestoreInstanceState(state)
+
+        val start = Selection.getSelectionStart(editableText)
+        val end = Selection.getSelectionEnd(editableText)
+        viewModel.updateSelection(editableText, start, end)
+    }
+
     override fun onSelectionChanged(selStart: Int, selEnd: Int) {
         super.onSelectionChanged(selStart, selEnd)
-        inputProcessor?.updateSelection(editableText, selStart, selEnd)
+        if (this.isInitialized) {
+            this.viewModel.updateSelection(editableText, selStart, selEnd)
+        }
         selectionChangeListener?.selectionChanged(selStart, selEnd)
     }
 
@@ -76,7 +109,7 @@ class EditorEditText : TextInputEditText {
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
         val baseInputConnection = requireNotNull(super.onCreateInputConnection(outAttrs))
         val inputConnection =
-            InterceptInputConnection(baseInputConnection, this, inputProcessor)
+            InterceptInputConnection(baseInputConnection, this, viewModel)
         this.inputConnection = inputConnection
         return inputConnection
     }
@@ -91,8 +124,8 @@ class EditorEditText : TextInputEditText {
                 val clpData = ClipData.newPlainText("newText", this.editableText.slice(this.selectionStart until this.selectionEnd))
                 clipboardManager.setPrimaryClip(clpData)
 
-                val update = inputProcessor.processInput(EditorInputAction.Delete(this.selectionStart, this.selectionEnd))
-                val result = update?.let { inputProcessor.processUpdate(it) }
+                val update = viewModel.processInput(EditorInputAction.Delete(this.selectionStart, this.selectionEnd))
+                val result = update?.let { viewModel.processUpdate(it) }
 
                 if (result != null) {
                     setTextInternal(result.text)
@@ -104,8 +137,8 @@ class EditorEditText : TextInputEditText {
             android.R.id.paste, android.R.id.pasteAsPlainText -> {
                 val clipBoardManager = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
                 val copiedString = clipBoardManager.primaryClip?.getItemAt(0)?.text ?: return false
-                val update = inputProcessor.processInput(EditorInputAction.ReplaceText(copiedString))
-                val result = update?.let { inputProcessor.processUpdate(it) }
+                val update = viewModel.processInput(EditorInputAction.ReplaceText(copiedString))
+                val result = update?.let { viewModel.processUpdate(it) }
 
                 if (result != null) {
                     setTextInternal(result.text)
@@ -133,25 +166,28 @@ class EditorEditText : TextInputEditText {
             } else if (event.metaState != 0 && event.unicodeChar == 0) {
                 // Is a modifier key
                 false
-            } else {
+            } else if (event.isPrintableCharacter()) {
+                // Consume printable characters
                 inputConnection?.sendHardwareKeyboardInput(event)
                 true
+            } else {
+                // Don't consume other key codes (HW back button, i.e.)
+                false
             }
         }
     }
 
-    @Suppress("SENSELESS_COMPARISON")
     override fun setText(text: CharSequence?, type: BufferType?) {
         val currentText = this.text
         val end = currentText?.length ?: 0
         // Although inputProcessor is assured to be not null, that's not the case while inflating.
         // We have to add this here to prevent some NullPointerExceptions from being thrown.
-        if (inputProcessor == null) {
+        if (!this.isInitialized) {
             super.setText(text, type)
         } else {
-            inputProcessor.updateSelection(editableText, 0, end)
-            val update = inputProcessor.processInput(EditorInputAction.ReplaceText(text.toString()))
-            val result = update?.let { inputProcessor.processUpdate(it) }
+            viewModel.updateSelection(editableText, 0, end)
+            val update = viewModel.processInput(EditorInputAction.ReplaceText(text.toString()))
+            val result = update?.let { viewModel.processUpdate(it) }
 
             if (result != null) {
                 setTextInternal(result.text)
@@ -170,8 +206,8 @@ class EditorEditText : TextInputEditText {
     }
 
     override fun append(text: CharSequence?, start: Int, end: Int) {
-        val update = inputProcessor.processInput(EditorInputAction.ReplaceText(text.toString()))
-        val result = update?.let { inputProcessor.processUpdate(it) }
+        val update = viewModel.processInput(EditorInputAction.ReplaceText(text.toString()))
+        val result = update?.let { viewModel.processUpdate(it) }
 
         if (result != null) {
             setTextInternal(result.text)
@@ -182,8 +218,8 @@ class EditorEditText : TextInputEditText {
     }
 
     fun toggleInlineFormat(inlineFormat: InlineFormat): Boolean {
-        val update = inputProcessor.processInput(EditorInputAction.ApplyInlineFormat(inlineFormat))
-        val result = update?.let { inputProcessor.processUpdate(it) }
+        val update = viewModel.processInput(EditorInputAction.ApplyInlineFormat(inlineFormat))
+        val result = update?.let { viewModel.processUpdate(it) }
 
         if (result != null) {
             setTextInternal(result.text)
@@ -193,8 +229,8 @@ class EditorEditText : TextInputEditText {
     }
 
     fun undo() {
-        val update = inputProcessor.processInput(EditorInputAction.Undo)
-        val result = update?.let { inputProcessor.processUpdate(it) }
+        val update = viewModel.processInput(EditorInputAction.Undo)
+        val result = update?.let { viewModel.processUpdate(it) }
 
         if (result != null) {
             setTextInternal(result.text)
@@ -203,8 +239,8 @@ class EditorEditText : TextInputEditText {
     }
 
     fun redo() {
-        val update = inputProcessor.processInput(EditorInputAction.Redo)
-        val result = update?.let { inputProcessor.processUpdate(it) }
+        val update = viewModel.processInput(EditorInputAction.Redo)
+        val result = update?.let { viewModel.processUpdate(it) }
 
         if (result != null) {
             setTextInternal(result.text)
@@ -213,8 +249,8 @@ class EditorEditText : TextInputEditText {
     }
 
     fun setLink(link: String) {
-        val update = inputProcessor.processInput(EditorInputAction.SetLink(link))
-        val result = update?.let { inputProcessor.processUpdate(it) }
+        val update = viewModel.processInput(EditorInputAction.SetLink(link))
+        val result = update?.let { viewModel.processUpdate(it) }
 
         if (result != null) {
             setTextInternal(result.text)
@@ -223,8 +259,8 @@ class EditorEditText : TextInputEditText {
     }
 
     fun toggleList(ordered: Boolean) {
-        val update = inputProcessor.processInput(EditorInputAction.ToggleList(ordered))
-        val result = update?.let { inputProcessor.processUpdate(it) }
+        val update = viewModel.processInput(EditorInputAction.ToggleList(ordered))
+        val result = update?.let { viewModel.processUpdate(it) }
 
         if (result != null) {
             setTextInternal(result.text)
@@ -233,8 +269,8 @@ class EditorEditText : TextInputEditText {
     }
 
     fun setHtml(html: String) {
-        val update = inputProcessor.processInput(EditorInputAction.ReplaceAllHtml(html))
-        val result = update?.let { inputProcessor.processUpdate(it) }
+        val update = viewModel.processInput(EditorInputAction.ReplaceAllHtml(html))
+        val result = update?.let { viewModel.processUpdate(it) }
 
         if (result != null) {
             setTextInternal(result.text)
@@ -243,7 +279,7 @@ class EditorEditText : TextInputEditText {
     }
 
     fun getHtmlOutput(): String {
-        return inputProcessor.getHtml()
+        return viewModel.getHtml()
     }
 
     private fun setSelectionFromComposerUpdate(start: Int, end: Int = start) {
@@ -258,4 +294,8 @@ private fun KeyEvent.isMovementKey(): Boolean {
         this.keyCode in KeyEvent.KEYCODE_DPAD_UP_LEFT..KeyEvent.KEYCODE_DPAD_DOWN_RIGHT
     } else false
     return baseIsMovement || api24IsMovement
+}
+
+private fun KeyEvent.isPrintableCharacter(): Boolean {
+    return isPrintingKey || keyCode == KeyEvent.KEYCODE_SPACE
 }

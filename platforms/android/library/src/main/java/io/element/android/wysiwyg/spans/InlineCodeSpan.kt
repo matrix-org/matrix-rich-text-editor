@@ -19,11 +19,9 @@ class InlineCodeSpan : MetricAffectingSpan, UpdateAppearance, ParcelableSpan {
     private val monoTypefaceSpan: TypefaceSpan
     private val backgroundColorSpan: BackgroundColorSpan
 
-    constructor(context: Context): super() {
+    constructor(backgroundColor: Int): super() {
         monoTypefaceSpan = TypefaceSpan("monospace")
-        backgroundColorSpan = BackgroundColorSpan(
-            ContextCompat.getColor(context, android.R.color.darker_gray)
-        )
+        backgroundColorSpan = BackgroundColorSpan(backgroundColor)
     }
 
     constructor(parcel: Parcel): super() {

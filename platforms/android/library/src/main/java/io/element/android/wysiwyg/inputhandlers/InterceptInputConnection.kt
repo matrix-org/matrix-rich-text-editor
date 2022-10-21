@@ -13,6 +13,7 @@ import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.utils.EditorIndexMapper
+import io.element.android.wysiwyg.viewmodel.EditorViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -25,7 +26,7 @@ import kotlin.math.min
 internal class InterceptInputConnection(
     private val baseInputConnection: InputConnection,
     private val editorEditText: TextView,
-    private val inputProcessor: InputProcessor,
+    private val viewModel: EditorViewModel,
 ) : BaseInputConnection(editorEditText, true) {
 
     private val keyboardEventQueue = Channel<KeyEvent>(capacity = Channel.UNLIMITED)
@@ -34,8 +35,6 @@ internal class InterceptInputConnection(
 
     init {
         keyEventJob = processKeyEvents()
-        // TODO: remove this once we have an initial menu state update
-        inputProcessor.processInput(EditorInputAction.ReplaceText(""))
     }
 
     override fun getEditable(): Editable {
@@ -52,8 +51,8 @@ internal class InterceptInputConnection(
 
     @RequiresApi(Build.VERSION_CODES.N)
     override fun closeConnection() {
+        // This should be enough as it will internally call baseInputConnection methods anyway
         super.closeConnection()
-        baseInputConnection.closeConnection()
 
         keyEventJob?.cancel()
         keyEventJob = null
@@ -83,6 +82,7 @@ internal class InterceptInputConnection(
         return baseInputConnection.performContextMenuAction(id)
     }
 
+    // Used for 'Extract UI' of EditText (aka: full screen EditText in landscape)
     override fun getExtractedText(request: ExtractedTextRequest?, flags: Int): ExtractedText {
         return baseInputConnection.getExtractedText(request, flags)
     }
@@ -123,7 +123,7 @@ internal class InterceptInputConnection(
     // Called when started typing
     override fun setComposingText(text: CharSequence?, newCursorPosition: Int): Boolean {
         val (start, end) = getCurrentCompositionOrSelection()
-        inputProcessor.updateSelection(editable, start, end)
+        viewModel.updateSelection(editable, start, end)
         val result = withProcessor {
             processInput(EditorInputAction.ReplaceText(text.toString()))?.let { processUpdate(it) }
         }
@@ -150,7 +150,7 @@ internal class InterceptInputConnection(
             if (text?.lastOrNull() == '\n') {
                 processInput(EditorInputAction.InsertParagraph)
             } else {
-                inputProcessor.updateSelection(editable, start, end)
+                viewModel.updateSelection(editable, start, end)
                 processInput(EditorInputAction.ReplaceText(text.toString()))
             }?.let { processUpdate(it) }
         }
@@ -293,7 +293,7 @@ internal class InterceptInputConnection(
         Selection.setSelection(editable, newStart, newEnd)
     }
 
-    private fun <T> withProcessor(block: InputProcessor.() -> T): T {
-        return inputProcessor.run(block)
+    private fun <T> withProcessor(block: EditorViewModel.() -> T): T {
+        return viewModel.run(block)
     }
 }

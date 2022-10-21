@@ -35,18 +35,20 @@ where
     S: UnicodeString,
 {
     pub fn new() -> Self {
-        Self {
+        let mut instance = Self {
             state: ComposerState::new(),
             previous_states: Vec::new(),
             next_states: Vec::new(),
             reversed_actions: HashSet::new(),
             disabled_actions: HashSet::new(),
-        }
+        };
+        instance.compute_menu_state();
+        instance
     }
 
     pub fn from_state(state: ComposerState<S>) -> Self {
         Self {
-            state: state,
+            state,
             previous_states: Vec::new(),
             next_states: Vec::new(),
             reversed_actions: HashSet::new(),
