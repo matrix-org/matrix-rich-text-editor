@@ -14,25 +14,23 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.findViewTreeViewModelStoreOwner
+import androidx.lifecycle.*
 import com.google.android.material.textfield.TextInputEditText
 import io.element.android.wysiwyg.inputhandlers.InterceptInputConnection
 import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
+import io.element.android.wysiwyg.utils.AndroidResourcesProvider
 import io.element.android.wysiwyg.utils.EditorIndexMapper
+import io.element.android.wysiwyg.utils.viewModel
 import io.element.android.wysiwyg.viewmodel.EditorViewModel
 import uniffi.wysiwyg_composer.MenuState
 
 class EditorEditText : TextInputEditText {
 
     private var inputConnection: InterceptInputConnection? = null
-    private val viewModel: EditorViewModel by lazy {
-        val viewModelStoreOwner = findViewTreeViewModelStoreOwner()
-            ?: throw IllegalStateException("No ViewModelStoreOwner found for EditorEditText")
-        ViewModelProvider(viewModelStoreOwner)[EditorViewModel::class.java]
-            .also { it.initialize(context, isInEditMode) }
-    }
+    private val viewModel: EditorViewModel by viewModel(viewModelInitializer = {
+        EditorViewModel(AndroidResourcesProvider(context), createComposer = !isInEditMode)
+    })
 
     private val spannableFactory = object : Spannable.Factory() {
         override fun newSpannable(source: CharSequence?): Spannable {

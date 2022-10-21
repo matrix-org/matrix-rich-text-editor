@@ -1,6 +1,5 @@
 package io.element.android.wysiwyg.viewmodel
 
-import android.content.Context
 import android.text.Editable
 import android.text.Spanned
 import androidx.lifecycle.ViewModel
@@ -10,7 +9,6 @@ import io.element.android.wysiwyg.extensions.string
 import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
-import io.element.android.wysiwyg.utils.AndroidResourcesProvider
 import io.element.android.wysiwyg.utils.EditorIndexMapper
 import io.element.android.wysiwyg.utils.HtmlToSpansParser
 import io.element.android.wysiwyg.utils.ResourcesProvider
@@ -19,18 +17,13 @@ import uniffi.wysiwyg_composer.MenuState
 import uniffi.wysiwyg_composer.TextUpdate
 import uniffi.wysiwyg_composer.newComposerModel
 
-internal class EditorViewModel : ViewModel() {
+internal class EditorViewModel(
+    private val resourcesProvider: ResourcesProvider,
+    createComposer: Boolean,
+) : ViewModel() {
 
-    private var composer: ComposerModel? = null
+    private var composer: ComposerModel? = if (createComposer) newComposerModel() else null
     private var menuStateCallback: ((MenuState) -> Unit)? = null
-    private lateinit var resourcesProvider: ResourcesProvider
-
-    fun initialize(context: Context, isInEditMode: Boolean) {
-        resourcesProvider = AndroidResourcesProvider(context)
-        if (composer == null) {
-            composer = if (isInEditMode) null else newComposerModel()
-        }
-    }
 
     fun setMenuStateCallback(callback: ((MenuState) -> Unit)?) {
         this.menuStateCallback = callback
