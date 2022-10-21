@@ -20,7 +20,8 @@ describe('Cut', () => {
     const editor = '.editor:not([disabled])[contenteditable="true"]';
 
     it('remove text that is cut to clipboard', { browser: 'electron' }, () => {
-        cy.visit('/').wait(300);
+        cy.visit('/');
+        cy.get(editor).wait(500);
         cy.get(editor).type('firstREMOVEME');
         cy.contains(editor, 'firstREMOVEME');
 

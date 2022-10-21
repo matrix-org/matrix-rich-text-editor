@@ -23,7 +23,8 @@ describe('Paste', () => {
         'should display pasted text after we type',
         { browser: 'electron' },
         () => {
-            cy.visit('/').wait(300);
+            cy.visit('/');
+            cy.get(editor).wait(500);
             cy.get(editor).type('BEFORE');
             cy.contains(editor, 'BEFORE'); // Wait for the typing to finish
 
