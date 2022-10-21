@@ -1,5 +1,6 @@
 package io.element.android.wysiwyg
 
+import android.app.Application
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -29,7 +30,9 @@ class EditorEditText : TextInputEditText {
 
     private var inputConnection: InterceptInputConnection? = null
     private val viewModel: EditorViewModel by viewModel(viewModelInitializer = {
-        EditorViewModel(AndroidResourcesProvider(context), createComposer = !isInEditMode)
+        val applicationContext = context.applicationContext as Application
+        val resourcesProvider = AndroidResourcesProvider(applicationContext)
+        EditorViewModel(resourcesProvider, createComposer = !isInEditMode)
     })
 
     private val spannableFactory = object : Spannable.Factory() {
