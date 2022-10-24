@@ -1,42 +1,42 @@
 {
-    "name": "wysiwyg-wasm",
-    "version": "0.3.1",
-    "homepage": "https://gitlab.com/andybalaam/wysiwyg-rust",
-    "description": "WASM bindings for wysiwyg-rust",
-    "license": "Apache-2.0",
-    "collaborators": [
-        "Andy Balaam <andy.balaam@matrix.org>"
-    ],
-    "repository": {
-        "type": "git",
-        "url": "https://gitlab.com/andybalaam/wysiwyg-rust"
-    },
-    "keywords": [
-        "matrix",
-        "chat",
-        "messaging",
-        "wysiwyg"
-    ],
-    "main": "wysiwyg.js",
-    "types": "pkg/wysiwyg.d.ts",
-    "files": [
-        "pkg/wysiwyg_bg.wasm",
-        "pkg/wysiwyg_bg.wasm.d.ts",
-        "pkg/wysiwyg.js",
-        "pkg/wysiwyg.d.ts"
-    ],
-    "devDependencies": {
-        "wasm-pack": "^0.10.2",
-        "jest": "^28.1.0",
-        "typedoc": "^0.22.17"
-    },
-    "engines": {
-        "node": ">= 10"
-    },
-    "scripts": {
-        "dev-build": "wasm-pack build --profiling --target web --out-name wysiwyg --out-dir ./pkg",
-        "build": "RUSTFLAGS='-C opt-level=s' wasm-pack build --release --target web --out-name wysiwyg --out-dir ./pkg",
-        "test": "jest --verbose",
-        "doc": "typedoc --tsconfig ."
-    }
+  "name": "wysiwyg-wasm",
+  "version": "0.3.2",
+  "homepage": "https://gitlab.com/andybalaam/wysiwyg-rust",
+  "description": "WASM bindings for wysiwyg-rust",
+  "license": "Apache-2.0",
+  "collaborators": [
+    "Andy Balaam <andy.balaam@matrix.org>"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.com/andybalaam/wysiwyg-rust"
+  },
+  "keywords": [
+    "matrix",
+    "chat",
+    "messaging",
+    "wysiwyg"
+  ],
+  "main": "wysiwyg.js",
+  "types": "pkg/wysiwyg.d.ts",
+  "files": [
+    "pkg/wysiwyg_bg.wasm",
+    "pkg/wysiwyg_bg.wasm.d.ts",
+    "pkg/wysiwyg.js",
+    "pkg/wysiwyg.d.ts"
+  ],
+  "devDependencies": {
+    "wasm-pack": "^0.10.2",
+    "jest": "^28.1.0",
+    "typedoc": "^0.22.17"
+  },
+  "engines": {
+    "node": ">= 10"
+  },
+  "scripts": {
+    "dev-build": "wasm-pack build --profiling --target web --out-name wysiwyg --out-dir ./pkg",
+    "build": "RUSTFLAGS='-C opt-level=s' wasm-pack build --release --target web --out-name wysiwyg --out-dir ./pkg",
+    "test": "jest --verbose",
+    "doc": "typedoc --tsconfig ."
+  }
 }

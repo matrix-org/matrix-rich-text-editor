@@ -1,5 +1,15 @@
 # Changelog
 
+# [0.3.2] - 2022-10-24
+
+### Added
+
+-   Web: `useWysiwyg` hook can be initialized with a content
+
+### Fixed
+
+-   Web: Fix losing selection after Ctrl-a Ctrl-b
+
 ## [0.3.1] - 2022-10-19
 
 ### Added
