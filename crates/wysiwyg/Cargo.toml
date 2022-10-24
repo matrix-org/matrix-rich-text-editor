@@ -7,7 +7,7 @@ description = "Model code to power a WYSIWYG editor for Matrix"
 keywords = ["matrix", "chat", "messaging", "composer", "wysiwyg"]
 license = "Apache-2.0"
 name = "wysiwyg"
-version = "0.3.1"
+version = "0.3.2"
 rust-version = "1.60"
 
 [features]
