@@ -4,9 +4,12 @@ import androidx.core.text.HtmlCompat
 
 internal interface HtmlConverter {
     fun fromHtmlToPlainText(html: String): String
+    fun fromHtmlToSpans(html: String): CharSequence
 }
 
-internal object AndroidHtmlConverter: HtmlConverter {
+internal class AndroidHtmlConverter(
+    private val provideHtmlToSpansParser: (html: String) -> HtmlToSpansParser
+): HtmlConverter {
     /**
      * Get the content with formatting removed.
      * TODO: Return markdown formatted plaintext instead
@@ -15,4 +18,7 @@ internal object AndroidHtmlConverter: HtmlConverter {
         HtmlCompat.fromHtml(
             html, HtmlCompat.FROM_HTML_MODE_LEGACY
         ).toString()
+
+    override fun fromHtmlToSpans(html: String): CharSequence =
+        provideHtmlToSpansParser(html).convert()
 }

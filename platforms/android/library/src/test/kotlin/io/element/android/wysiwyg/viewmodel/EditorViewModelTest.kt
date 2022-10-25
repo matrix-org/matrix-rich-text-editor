@@ -12,11 +12,9 @@ import uniffi.wysiwyg_composer.ComposerModelInterface
 
 internal class EditorViewModelTest {
 
-    private val resourcesProvider = mockk<ResourcesProvider>()
     private val composer = mockk<ComposerModelInterface>()
     private val htmlConverter = BasicHtmlConverter()
     private val viewModel = EditorViewModel(
-        resourcesProvider = resourcesProvider,
         composer = composer,
         htmlConverter = htmlConverter,
     )

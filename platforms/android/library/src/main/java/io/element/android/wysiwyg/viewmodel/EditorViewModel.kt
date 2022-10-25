@@ -1,7 +1,6 @@
 package io.element.android.wysiwyg.viewmodel
 
 import android.text.Editable
-import android.text.Spanned
 import androidx.lifecycle.ViewModel
 import io.element.android.wysiwyg.BuildConfig
 import io.element.android.wysiwyg.extensions.log
@@ -16,9 +15,8 @@ import uniffi.wysiwyg_composer.MenuState
 import uniffi.wysiwyg_composer.TextUpdate
 
 internal class EditorViewModel(
-    private val resourcesProvider: ResourcesProvider,
     private val composer: ComposerModelInterface?,
-    private val htmlConverter: HtmlConverter = AndroidHtmlConverter,
+    private val htmlConverter: HtmlConverter,
 ) : ViewModel() {
 
     private var menuStateCallback: ((MenuState) -> Unit)? = null
@@ -116,8 +114,7 @@ internal class EditorViewModel(
         return composer?.getCurrentMenuState() as? MenuState.Update
     }
 
-    private fun stringToSpans(string: String): Spanned {
-        return HtmlToSpansParser(resourcesProvider, string).convert()
-    }
+    private fun stringToSpans(string: String): CharSequence =
+        htmlConverter.fromHtmlToSpans(string)
 
 }

@@ -6,4 +6,7 @@ package io.element.android.wysiwyg.utils
 class BasicHtmlConverter: HtmlConverter {
     override fun fromHtmlToPlainText(html: String): String =
         html.replace("<[^>]*>".toRegex(), "")
+
+    override fun fromHtmlToSpans(html: String): CharSequence =
+        fromHtmlToPlainText(html)
 }

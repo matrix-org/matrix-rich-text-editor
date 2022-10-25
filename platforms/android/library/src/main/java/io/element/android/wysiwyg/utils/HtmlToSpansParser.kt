@@ -1,6 +1,5 @@
 package io.element.android.wysiwyg.utils
 
-import android.content.Context
 import android.graphics.Typeface
 import android.text.SpannableString
 import android.text.SpannableStringBuilder
@@ -29,7 +28,7 @@ import kotlin.math.roundToInt
  * This is specially important for lists, since they not only use custom spans, but they also need
  * to create [ExtraCharacterSpan] spans to work properly.
  */
-class HtmlToSpansParser(
+internal class HtmlToSpansParser(
     private val resourcesProvider: ResourcesProvider,
     private val html: String,
 ): ContentHandler {

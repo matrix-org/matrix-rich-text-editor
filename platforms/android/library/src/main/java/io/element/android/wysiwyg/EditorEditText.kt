@@ -20,9 +20,9 @@ import com.google.android.material.textfield.TextInputEditText
 import io.element.android.wysiwyg.inputhandlers.InterceptInputConnection
 import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
-import io.element.android.wysiwyg.utils.AndroidResourcesProvider
-import io.element.android.wysiwyg.utils.EditorIndexMapper
-import io.element.android.wysiwyg.utils.viewModel
+import io.element.android.wysiwyg.utils.*
+import io.element.android.wysiwyg.utils.AndroidHtmlConverter
+import io.element.android.wysiwyg.utils.HtmlToSpansParser
 import io.element.android.wysiwyg.viewmodel.EditorViewModel
 import uniffi.wysiwyg_composer.MenuState
 import uniffi.wysiwyg_composer.newComposerModel
@@ -33,8 +33,11 @@ class EditorEditText : TextInputEditText {
     private val viewModel: EditorViewModel by viewModel(viewModelInitializer = {
         val applicationContext = context.applicationContext as Application
         val resourcesProvider = AndroidResourcesProvider(applicationContext)
+        val htmlConverter = AndroidHtmlConverter(
+            provideHtmlToSpansParser = { html -> HtmlToSpansParser(resourcesProvider, html) },
+        )
         val composer = if(!isInEditMode) newComposerModel() else null
-        EditorViewModel(resourcesProvider, composer)
+        EditorViewModel(composer, htmlConverter)
     })
 
     private val spannableFactory = object : Spannable.Factory() {
