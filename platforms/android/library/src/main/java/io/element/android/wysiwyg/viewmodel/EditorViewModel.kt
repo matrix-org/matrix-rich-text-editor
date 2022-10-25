@@ -9,20 +9,18 @@ import io.element.android.wysiwyg.extensions.string
 import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
-import io.element.android.wysiwyg.utils.EditorIndexMapper
-import io.element.android.wysiwyg.utils.HtmlToSpansParser
-import io.element.android.wysiwyg.utils.ResourcesProvider
-import uniffi.wysiwyg_composer.ComposerModel
+import io.element.android.wysiwyg.utils.*
+import io.element.android.wysiwyg.utils.HtmlConverter
+import uniffi.wysiwyg_composer.ComposerModelInterface
 import uniffi.wysiwyg_composer.MenuState
 import uniffi.wysiwyg_composer.TextUpdate
-import uniffi.wysiwyg_composer.newComposerModel
 
 internal class EditorViewModel(
     private val resourcesProvider: ResourcesProvider,
-    createComposer: Boolean,
+    private val composer: ComposerModelInterface?,
+    private val htmlConverter: HtmlConverter = AndroidHtmlConverter,
 ) : ViewModel() {
 
-    private var composer: ComposerModel? = if (createComposer) newComposerModel() else null
     private var menuStateCallback: ((MenuState) -> Unit)? = null
 
     fun setMenuStateCallback(callback: ((MenuState) -> Unit)?) {
@@ -31,7 +29,8 @@ internal class EditorViewModel(
     }
 
     fun updateSelection(editable: Editable, start: Int, end: Int) {
-        val (newStart, newEnd) = EditorIndexMapper.fromEditorToComposer(start, end, editable) ?: return
+        val (newStart, newEnd) = EditorIndexMapper.fromEditorToComposer(start, end, editable)
+            ?: return
 
         val update = composer?.select(newStart, newEnd)
         val menuState = update?.menuState()
@@ -105,6 +104,9 @@ internal class EditorViewModel(
     fun getHtml(): String {
         return composer?.getCurrentDomState()?.html?.string().orEmpty()
     }
+
+    fun getPlainText(): String =
+        htmlConverter.fromHtmlToPlainText(getHtml())
 
     fun getCurrentFormattedText(): CharSequence {
         return stringToSpans(getHtml())
