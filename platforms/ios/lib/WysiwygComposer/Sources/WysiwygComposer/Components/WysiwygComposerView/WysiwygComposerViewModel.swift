@@ -230,9 +230,7 @@ public extension WysiwygComposerViewModel {
                 // Force text view redraw to avoid placeholder issues.
                 textView.setNeedsDisplay()
             }
-        }
-
-        if !plainTextMode, textView.attributedText != content.attributed {
+        } else if textView.attributedText != content.attributed {
             // Reconciliate
             Logger.viewModel.logDebug(["Reconciliate from \"\(textView.text ?? "")\" to \"\(content.plainText)\""],
                                       functionName: #function)
