@@ -99,4 +99,28 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         XCTAssertEqual(textView.text, "A")
         XCTAssertEqual(textView.selectedRange, NSRange(location: 1, length: 0))
     }
+
+    func testPlainTextMode() {
+        let textView = UITextView()
+        _ = viewModel.replaceText(textView,
+                                  range: .zero,
+                                  replacementText: "Some bold text")
+        viewModel.select(text: NSAttributedString(string: "Some bold text"),
+                         range: .init(location: 10, length: 4))
+        viewModel.apply(.bold)
+
+        XCTAssertEqual(viewModel.content.html, "Some bold <strong>text</strong>")
+
+        viewModel.plainTextMode = true
+
+        XCTExpectFailure("Plain text should contain the appropriate Markdown")
+        XCTAssertEqual(viewModel.plainTextModeContent.plainText, "Some bold **text**")
+        XCTExpectFailure("HTML should be re-generated from Markdown input upon sending")
+        XCTAssertEqual(viewModel.plainTextModeContent.html, "Some bold <strong>text</strong>")
+
+        viewModel.plainTextMode = false
+
+        XCTExpectFailure("Switching back to WYSIWYG should restore the HTML")
+        XCTAssertEqual(viewModel.content.html, "Some bold <strong>text</strong>")
+    }
 }

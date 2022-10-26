@@ -390,10 +390,11 @@ private extension WysiwygComposerViewModel {
     func updatePlainTextMode(_ enabled: Bool) {
         if enabled {
             do {
-                let previousContent = content
-                let attributed = try NSAttributedString(html: generateHtmlBodyWithStyle(htmlFragment: previousContent.plainText)).changeColor(to: textColor)
+                plainText = content.plainText
                 clearContent()
                 guard let textView = textView else { return }
+                let htmlWithStyle = generateHtmlBodyWithStyle(htmlFragment: plainText)
+                let attributed = try NSAttributedString(html: htmlWithStyle).changeColor(to: textColor)
                 textView.attributedText = attributed
             } catch {
                 Logger.viewModel.logError(
