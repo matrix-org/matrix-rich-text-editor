@@ -165,6 +165,25 @@ fn list_ordered() {
         r#"1. item1
 2. item2"#,
     );
+
+    assert_to_md_no_roundtrip(
+        r#"<ol><li>item1<ol><li>subitem1</li><li>subitem2</li></ol></li><li>item2</li></ol>"#,
+        r#"1. item1
+  1. subitem1
+  2. subitem2
+2. item2"#,
+    );
+}
+
+#[test]
+fn list_ordered_and_unordered() {
+    assert_to_md_no_roundtrip(
+        r#"<ol><li>item1<ul><li>subitem1</li><li>subitem2</li></ul></li><li>item2</li></ol>"#,
+        r#"1. item1
+  * subitem1
+  * subitem2
+2. item2"#,
+    );
 }
 
 fn assert_to_md_no_roundtrip(html: &str, expected_markdown: &str) {
