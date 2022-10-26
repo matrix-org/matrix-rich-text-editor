@@ -392,9 +392,54 @@ where
         use ContainerNodeKind::*;
         use InlineFormatType::*;
 
+        let mut options = *options;
+
+        match self.kind() {
+            Generic => {
+                fmt_children(self, buffer, &options)?;
+            }
+
+            // Simple emphasis.
+            Formatting(Italic) => {
+                fmt_italic(self, buffer, &options)?;
+            }
+
+            // Strong emphasis.
+            Formatting(Bold) => {
+                fmt_bold(self, buffer, &options)?;
+            }
+
+            Formatting(StrikeThrough) => {
+                fmt_strikethrough(self, buffer, &options)?;
+            }
+
+            Formatting(Underline) => {
+                fmt_underline(self, buffer, &options)?;
+            }
+
+            Formatting(InlineCode) => {
+                fmt_inline_code(self, buffer, &mut options)?;
+            }
+
+            Link(url) => {
+                fmt_link(self, buffer, &options, url)?;
+            }
+
+            List => {
+                fmt_list(self, buffer, &options)?;
+            }
+
+            ListItem => {
+                fmt_list_item(self, buffer, &options)?;
+            }
+        };
+
+        return Ok(());
+
         // `fmt_children` is a super basic loop over children to call
         // `fmt_markdown`, except that it inserts `\n` between block
         // nodes.
+        #[inline(always)]
         fn fmt_children<S>(
             this: &ContainerNode<S>,
             buffer: &mut S,
@@ -414,227 +459,296 @@ where
             Ok(())
         }
 
-        let mut options = *options;
+        #[inline(always)]
+        fn fmt_italic<S>(
+            this: &ContainerNode<S>,
+            buffer: &mut S,
+            options: &MarkdownOptions,
+        ) -> Result<(), MarkdownError<S>>
+        where
+            S: UnicodeString,
+        {
+            // Many implementations have restricted intrawords
+            // simple emphasis to `*` to avoid unwanted emphasis
+            // in words containing internal underscores, like
+            // `foo_bar_baz`. We reckon it's good to follow this
+            // trend to avoid unexpected behaviours for our users.
 
-        match self.kind() {
-            Generic => {
-                fmt_children(self, buffer, &options)?;
-            }
+            buffer.push("*");
+            fmt_children(this, buffer, &options)?;
+            buffer.push("*");
 
-            // Simple emphasis.
-            Formatting(Italic) => {
-                // Many implementations have restricted intrawords
-                // simple emphasis to `*` to avoid unwanted emphasis
-                // in words containing internal underscores, like
-                // `foo_bar_baz`. We reckon it's good to follow this
-                // trend to avoid unexpected behaviours for our users.
+            Ok(())
+        }
 
-                buffer.push("*");
-                fmt_children(self, buffer, &options)?;
-                buffer.push("*");
-            }
+        #[inline(always)]
+        fn fmt_bold<S>(
+            this: &ContainerNode<S>,
+            buffer: &mut S,
+            options: &MarkdownOptions,
+        ) -> Result<(), MarkdownError<S>>
+        where
+            S: UnicodeString,
+        {
+            // `Formatting(Italic)` already uses `*` to represent
+            // a simple emphasis.
+            //
+            // We reckon it is better to use `_` to represent a
+            // strong emphasis instead of `*` so that
+            // `<em><strong>…</strong></em>` does _not_ produce
+            // `***…***` or `___…___` which can be ambigiously
+            // interpreted by various Markdown compilers out
+            // there. Instead, it will produce `*__…__*`.
 
-            // Strong emphasis.
-            Formatting(Bold) => {
-                // `Formatting(Italic)` already uses `*` to represent
-                // a simple emphasis.
-                //
-                // We reckon it is better to use `_` to represent a
-                // strong emphasis instead of `*` so that
-                // `<em><strong>…</strong></em>` does _not_ produce
-                // `***…***` or `___…___` which can be ambigiously
-                // interpreted by various Markdown compilers out
-                // there. Instead, it will produce `*__…__*`.
+            buffer.push("__");
+            fmt_children(this, buffer, &options)?;
+            buffer.push("__");
 
-                buffer.push("__");
-                fmt_children(self, buffer, &options)?;
-                buffer.push("__");
-            }
+            Ok(())
+        }
 
-            Formatting(StrikeThrough) => {
-                // Strikethrough is represented by a pair of one or
-                // two `~`. We reckon using two `~` will avoid
-                // ambiguous behaviours for users that manipulate
-                // filesystem paths, or with Markdown compilers that
-                // do not support this format extension.
+        #[inline(always)]
+        fn fmt_strikethrough<S>(
+            this: &ContainerNode<S>,
+            buffer: &mut S,
+            options: &MarkdownOptions,
+        ) -> Result<(), MarkdownError<S>>
+        where
+            S: UnicodeString,
+        {
+            // Strikethrough is represented by a pair of one or
+            // two `~`. We reckon using two `~` will avoid
+            // ambiguous behaviours for users that manipulate
+            // filesystem paths, or with Markdown compilers that
+            // do not support this format extension.
 
-                buffer.push("~~");
-                fmt_children(self, buffer, &options)?;
-                buffer.push("~~");
-            }
+            buffer.push("~~");
+            fmt_children(this, buffer, &options)?;
+            buffer.push("~~");
 
-            Formatting(Underline) => {
-                // Underline format is absent from Markdown. Let's
-                // ignore it!
+            Ok(())
+        }
 
-                fmt_children(self, buffer, &options)?;
-            }
+        #[inline(always)]
+        fn fmt_underline<S>(
+            this: &ContainerNode<S>,
+            buffer: &mut S,
+            options: &MarkdownOptions,
+        ) -> Result<(), MarkdownError<S>>
+        where
+            S: UnicodeString,
+        {
+            // Underline format is absent from Markdown. Let's
+            // ignore it!
 
-            Formatting(InlineCode) => {
-                // An inline code usually is usually delimited by an
-                // opening and a closing single backtick. However, if
-                // the inline code string contains a backtick, it is
-                // preferable to use an opening and a closing double
-                // backticks to delimit the inline code string.
-                //
-                // In addition to this subtlety, we add a space after
-                // and before the opening and closing double backticks
-                // to allow an inline code string to start by a
-                // backtick. Those spaces are removed during
-                // normalization.
+            fmt_children(this, buffer, &options)?;
 
-                buffer.push("`` ");
+            Ok(())
+        }
 
-                options.insert(MarkdownOptions::IGNORE_LINE_BREAK);
-                fmt_children(self, buffer, &options)?;
+        #[inline(always)]
+        fn fmt_inline_code<S>(
+            this: &ContainerNode<S>,
+            buffer: &mut S,
+            options: &mut MarkdownOptions,
+        ) -> Result<(), MarkdownError<S>>
+        where
+            S: UnicodeString,
+        {
+            // An inline code usually is usually delimited by an
+            // opening and a closing single backtick. However, if
+            // the inline code string contains a backtick, it is
+            // preferable to use an opening and a closing double
+            // backticks to delimit the inline code string.
+            //
+            // In addition to this subtlety, we add a space after
+            // and before the opening and closing double backticks
+            // to allow an inline code string to start by a
+            // backtick. Those spaces are removed during
+            // normalization.
 
-                buffer.push(" ``");
-            }
+            buffer.push("`` ");
 
-            Link(url) => {
-                buffer.push('[');
+            options.insert(MarkdownOptions::IGNORE_LINE_BREAK);
+            fmt_children(this, buffer, &options)?;
 
-                fmt_children(self, buffer, &options)?;
+            buffer.push(" ``");
 
-                // A link destination can be delimited by `<` and
-                // `>`.
-                //
-                // The link URL can contain `<`, `>`, `(` and `)` if
-                // they are escaped. Parenthesis, if unbalanced, can
-                // not be escaped, but we are playing safety and
-                // simplicity.
+            Ok(())
+        }
 
-                buffer.push("](<");
-                buffer.push(
-                    url.to_string()
-                        .replace('<', "\\<")
-                        .replace('>', "\\>")
-                        .replace('(', "\\(")
-                        .replace(')', "\\)")
-                        .as_str(),
-                );
-                buffer.push(">)");
-            }
+        #[inline(always)]
+        fn fmt_link<S>(
+            this: &ContainerNode<S>,
+            buffer: &mut S,
+            options: &MarkdownOptions,
+            url: &S,
+        ) -> Result<(), MarkdownError<S>>
+        where
+            S: UnicodeString,
+        {
+            buffer.push('[');
 
-            List => {
-                let list_type = self.name();
-                let ordered_list_name = "ol";
-                let expected_list_item_name = &S::from("li");
-                let number_of_children = self.children.len();
-                let mut ordered_list_counter = 0i32;
+            fmt_children(this, buffer, &options)?;
 
-                for (nth, child) in self.children.iter().enumerate() {
-                    // Verify the list item is correct.
-                    let child = match child {
-                        // Valid item.
-                        DomNode::Container(
-                            child @ Self {
-                                name,
-                                kind: ListItem,
-                                ..
-                            },
-                        ) if name == expected_list_item_name => child,
+            // A link destination can be delimited by `<` and
+            // `>`.
+            //
+            // The link URL can contain `<`, `>`, `(` and `)` if
+            // they are escaped. Parenthesis, if unbalanced, can
+            // not be escaped, but we are playing safety and
+            // simplicity.
 
-                        // Item to ignore.
-                        DomNode::Text(t) if t.is_blank() => {
-                            continue;
-                        }
+            buffer.push("](<");
+            buffer.push(
+                url.to_string()
+                    .replace('<', "\\<")
+                    .replace('>', "\\>")
+                    .replace('(', "\\(")
+                    .replace(')', "\\)")
+                    .as_str(),
+            );
+            buffer.push(">)");
 
-                        // All the following are invalid items.
-                        DomNode::Container(Self {
-                            name: child_name, ..
-                        }) => {
-                            return Err(MarkdownError::InvalidListItem(Some(
-                                child_name.to_owned(),
-                            )))
-                        }
+            Ok(())
+        }
 
-                        DomNode::LineBreak(line_break) => {
-                            return Err(MarkdownError::InvalidListItem(Some(
-                                line_break.name(),
-                            )))
-                        }
+        #[inline(always)]
+        fn fmt_list<S>(
+            this: &ContainerNode<S>,
+            buffer: &mut S,
+            options: &MarkdownOptions,
+        ) -> Result<(), MarkdownError<S>>
+        where
+            S: UnicodeString,
+        {
+            let list_type = this.name();
+            let ordered_list_name = "ol";
+            let expected_list_item_name = &S::from("li");
+            let number_of_children = this.children.len();
+            let mut ordered_list_counter = 0i32;
 
-                        DomNode::Text(_) => {
-                            return Err(MarkdownError::InvalidListItem(None))
-                        }
+            for (nth, child) in this.children.iter().enumerate() {
+                // Verify the list item is correct.
+                let child = match child {
+                    // Valid item.
+                    DomNode::Container(
+                        child @ ContainerNode {
+                            name,
+                            kind: ListItem,
+                            ..
+                        },
+                    ) if name == expected_list_item_name => child,
+
+                    // Item to ignore.
+                    DomNode::Text(t) if t.is_blank() => {
+                        continue;
+                    }
+
+                    // All the following are invalid items.
+                    DomNode::Container(ContainerNode {
+                        name: child_name,
+                        ..
+                    }) => {
+                        return Err(MarkdownError::InvalidListItem(Some(
+                            child_name.to_owned(),
+                        )))
+                    }
+
+                    DomNode::LineBreak(line_break) => {
+                        return Err(MarkdownError::InvalidListItem(Some(
+                            line_break.name(),
+                        )))
+                    }
+
+                    DomNode::Text(_) => {
+                        return Err(MarkdownError::InvalidListItem(None))
+                    }
+                };
+
+                // What's the current indentation, for this specific list only.
+                let mut indentation = 0;
+
+                // It's an ordered list.
+                if list_type == ordered_list_name {
+                    // Update the counter.
+                    ordered_list_counter += 1;
+
+                    // Generate something like `1.` (arabic numbers only,
+                    // as requested by the specification).
+                    let counter = ordered_list_counter.to_string();
+
+                    buffer.push(counter.as_str());
+                    buffer.push('.');
+
+                    // Indentation will match the counter size.
+                    indentation += counter.len();
+                }
+                // It's an unordered list.
+                else {
+                    // Generate something like `*`.
+                    buffer.push('*');
+
+                    // Indentation will match the counter size.
+                    indentation += 1;
+                }
+
+                // Insert a space between the counter and the item's content.
+                buffer.push(' ');
+
+                // And update the indentation.
+                indentation += 1;
+
+                {
+                    // Let's create a new buffer for the child formatting.
+                    let mut child_buffer = S::default();
+                    child.fmt_markdown(&mut child_buffer, &options)?;
+
+                    // Generate the indentation of form `\n` followed by
+                    // $x$ spaces where $x$ is `indentation`.
+                    let indentation = {
+                        let spaces = " ".repeat(indentation);
+                        let mut indentation =
+                            String::with_capacity(1 /* `\n` */ + indentation);
+                        indentation.push('\n');
+                        indentation.push_str(&spaces);
+
+                        indentation
                     };
 
-                    // What's the current indentation, for this specific list only.
-                    let mut indentation = 0;
+                    // Insert the child's buffer after `\n`s have been
+                    // replaced by `\n` followed by spaces for indentation.
+                    buffer.push(
+                        child_buffer
+                            .to_string()
+                            .replace('\n', &indentation)
+                            .as_str(),
+                    );
+                }
 
-                    // It's an ordered list.
-                    if list_type == ordered_list_name {
-                        // Update the counter.
-                        ordered_list_counter += 1;
+                let is_last = nth == number_of_children - 1;
 
-                        // Generate something like `1.` (arabic numbers only,
-                        // as requested by the specification).
-                        let counter = ordered_list_counter.to_string();
-
-                        buffer.push(counter.as_str());
-                        buffer.push('.');
-
-                        // Indentation will match the counter size.
-                        indentation += counter.len();
-                    }
-                    // It's an unordered list.
-                    else {
-                        // Generate something like `*`.
-                        buffer.push('*');
-
-                        // Indentation will match the counter size.
-                        indentation += 1;
-                    }
-
-                    // Insert a space between the counter and the item's content.
-                    buffer.push(' ');
-
-                    // And update the indentation.
-                    indentation += 1;
-
-                    {
-                        // Let's create a new buffer for the child formatting.
-                        let mut child_buffer = S::default();
-                        child.fmt_markdown(&mut child_buffer, &options)?;
-
-                        // Generate the indentation of form `\n` followed by
-                        // $x$ spaces where $x$ is `indentation`.
-                        let indentation = {
-                            let spaces = " ".repeat(indentation);
-                            let mut indentation = String::with_capacity(
-                                1 /* `\n` */ + indentation,
-                            );
-                            indentation.push('\n');
-                            indentation.push_str(&spaces);
-
-                            indentation
-                        };
-
-                        // Insert the child's buffer after `\n`s have been
-                        // replaced by `\n` followed by spaces for indentation.
-                        buffer.push(
-                            child_buffer
-                                .to_string()
-                                .replace('\n', &indentation)
-                                .as_str(),
-                        );
-                    }
-
-                    let is_last = nth == number_of_children - 1;
-
-                    if !is_last {
-                        buffer.push('\n');
-                    }
+                if !is_last {
+                    buffer.push('\n');
                 }
             }
 
-            ListItem => {
-                fmt_children(self, buffer, &options)?;
-            }
-        };
+            Ok(())
+        }
 
-        Ok(())
+        #[inline(always)]
+        fn fmt_list_item<S>(
+            this: &ContainerNode<S>,
+            buffer: &mut S,
+            options: &MarkdownOptions,
+        ) -> Result<(), MarkdownError<S>>
+        where
+            S: UnicodeString,
+        {
+            fmt_children(this, buffer, &options)?;
+
+            Ok(())
+        }
     }
 }
 
