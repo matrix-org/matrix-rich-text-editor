@@ -16,7 +16,6 @@ use std::fmt::Display;
 
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode};
-#[cfg(feature = "to-markdown")]
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{
@@ -377,7 +376,6 @@ where
     }
 }
 
-#[cfg(feature = "to-markdown")]
 impl<S> ToMarkdown<S> for Dom<S>
 where
     S: UnicodeString,
