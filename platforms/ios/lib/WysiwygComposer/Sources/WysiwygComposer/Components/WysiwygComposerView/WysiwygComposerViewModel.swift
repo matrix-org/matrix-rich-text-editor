@@ -114,20 +114,25 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
             }
             .store(in: &cancellables)
     }
+}
 
+// MARK: - Public
+
+public extension WysiwygComposerViewModel {
     /// Apply any additional setup required.
     /// Should be called when the view appears.
-    public func setup() {
+    func setup() {
+        // FIXME: multiple textViews sharing the model might unwittingly clear the composer because of this.
         applyUpdate(model.replaceAllHtml(html: ""))
         updateTextView()
     }
-    
+
     /// Select given range of text within the model.
     ///
     /// - Parameters:
     ///   - text: Text currently displayed in the composer.
     ///   - range: Range to select.
-    public func select(text: NSAttributedString, range: NSRange) {
+    func select(text: NSAttributedString, range: NSRange) {
         do {
             // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
             let htmlSelection = try text.htmlRange(from: range,
@@ -151,7 +156,7 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     ///
     /// - Parameters:
     ///   - action: Action to apply.
-    public func apply(_ action: WysiwygAction) {
+    func apply(_ action: WysiwygAction) {
         Logger.viewModel.logDebug([content.logAttributedSelection,
                                    "Apply action: \(action)"],
                                   functionName: #function)
@@ -186,27 +191,23 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     ///
     /// - Parameters:
     ///   - html: HTML content to apply
-    public func setHtmlContent(_ html: String) {
+    func setHtmlContent(_ html: String) {
         let update = model.replaceAllHtml(html: html)
         applyUpdate(update)
         updateTextView()
     }
 
     /// Clear the content of the composer.
-    public func clearContent() {
+    func clearContent() {
         applyUpdate(model.clear())
         updateTextView()
     }
 
     /// Returns a textual representation of the composer model as a tree.
-    public func treeRepresentation() -> String {
+    func treeRepresentation() -> String {
         model.toTree()
     }
-}
 
-// MARK: - Internal
-
-public extension WysiwygComposerViewModel {
     /// Replace text in the model.
     ///
     /// - Parameters:
@@ -412,7 +413,11 @@ private extension WysiwygComposerViewModel {
             updateTextView()
         }
     }
-    
+
+    /// Generate an HTML body with standard style from given fragment.
+    ///
+    /// - Parameter htmlFragment: HTML fragment
+    /// - Returns: HTML body
     func generateHtmlBodyWithStyle(htmlFragment: String) -> String {
         "<html><head><style>body {font-family:-apple-system;font:-apple-system-body;}</style></head><body>\(htmlFragment)</body></html>"
     }
