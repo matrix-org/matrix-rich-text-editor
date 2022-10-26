@@ -37,21 +37,22 @@ mod panode_text;
 mod paqual_name;
 mod parse;
 
+// Group all re-exports for `feature = "sys"`.
 #[cfg(feature = "sys")]
-use padom::PaDom;
+mod sys {
+    use super::*;
+
+    pub(super) use padom::PaDom;
+    pub(super) use padom_creation_error::PaDomCreationError;
+    pub(super) use padom_creator::PaDomCreator;
+    pub(super) use padom_handle::PaDomHandle;
+    pub(super) use padom_node::PaDomNode;
+    pub(super) use panode_container::PaNodeContainer;
+    pub(super) use panode_text::PaNodeText;
+    pub(super) use paqual_name::paqual_name;
+}
+
 #[cfg(feature = "sys")]
-use padom_creation_error::PaDomCreationError;
-#[cfg(feature = "sys")]
-use padom_creator::PaDomCreator;
-#[cfg(feature = "sys")]
-use padom_handle::PaDomHandle;
-#[cfg(feature = "sys")]
-use padom_node::PaDomNode;
-#[cfg(feature = "sys")]
-use panode_container::PaNodeContainer;
-#[cfg(feature = "sys")]
-use panode_text::PaNodeText;
-#[cfg(feature = "sys")]
-use paqual_name::paqual_name;
+use sys::*;
 
 pub use parse::parse;
