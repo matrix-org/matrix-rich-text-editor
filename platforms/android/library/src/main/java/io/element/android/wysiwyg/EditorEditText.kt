@@ -20,11 +20,12 @@ import com.google.android.material.textfield.TextInputEditText
 import io.element.android.wysiwyg.inputhandlers.InterceptInputConnection
 import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
-import io.element.android.wysiwyg.utils.AndroidResourcesProvider
-import io.element.android.wysiwyg.utils.EditorIndexMapper
-import io.element.android.wysiwyg.utils.viewModel
+import io.element.android.wysiwyg.utils.*
+import io.element.android.wysiwyg.utils.AndroidHtmlConverter
+import io.element.android.wysiwyg.utils.HtmlToSpansParser
 import io.element.android.wysiwyg.viewmodel.EditorViewModel
 import uniffi.wysiwyg_composer.MenuState
+import uniffi.wysiwyg_composer.newComposerModel
 
 class EditorEditText : TextInputEditText {
 
@@ -32,7 +33,11 @@ class EditorEditText : TextInputEditText {
     private val viewModel: EditorViewModel by viewModel(viewModelInitializer = {
         val applicationContext = context.applicationContext as Application
         val resourcesProvider = AndroidResourcesProvider(applicationContext)
-        EditorViewModel(resourcesProvider, createComposer = !isInEditMode)
+        val htmlConverter = AndroidHtmlConverter(
+            provideHtmlToSpansParser = { html -> HtmlToSpansParser(resourcesProvider, html) },
+        )
+        val composer = if(!isInEditMode) newComposerModel() else null
+        EditorViewModel(composer, htmlConverter)
     })
 
     private val spannableFactory = object : Spannable.Factory() {
@@ -281,6 +286,22 @@ class EditorEditText : TextInputEditText {
     fun getHtmlOutput(): String {
         return viewModel.getHtml()
     }
+
+    /**
+     * Get the text as plain text (without any HTML formatting).
+     * Note that markdown is not currently supported.
+     * TODO: Return markdown formatted plain text
+     */
+    fun getPlainText(): String
+        = viewModel.getPlainText()
+
+    /**
+     * Set the text as plain text, ignoring HTML formatting.
+     * Note that markdown is not currently supported.
+     * TODO: Accept markdown formatted plain text
+     */
+    fun setPlainText(plainText: String) =
+        setText(plainText)
 
     private fun setSelectionFromComposerUpdate(start: Int, end: Int = start) {
         val (newStart, newEnd) = EditorIndexMapper.fromComposerToEditor(start, end, editableText)

@@ -9,3 +9,9 @@ fun List<UShort>.string() = with(StringBuffer()) {
     }
     toString()
 }
+
+/**
+ * Translates a JVM String into a Rust [UShort] list.
+ */
+internal fun String.toUShortList(): List<UShort> = encodeToByteArray()
+    .map(Byte::toUShort)

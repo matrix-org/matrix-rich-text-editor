@@ -28,6 +28,8 @@ import io.element.android.wysiwyg.test.utils.ImeActions
 import io.element.android.wysiwyg.test.utils.TestActivity
 import io.element.android.wysiwyg.test.utils.selectionIsAt
 import org.hamcrest.Description
+import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.equalTo
 import org.junit.*
 import org.junit.runner.RunWith
 import uniffi.wysiwyg_composer.ComposerAction
@@ -271,6 +273,28 @@ class EditorEditTextInputTests {
             .perform(EditorActions.toggleFormat(InlineFormat.Italic))
 
         Assert.assertTrue(isItalicHighlighted)
+    }
+
+    @Test
+    fun testSetPlainText_ignoresHtml() {
+        scenarioRule.scenario.onActivity {
+            it.findViewById<EditorEditText>(R.id.rich_text_edit_text)
+                .setPlainText("<b>$ipsum</b>")
+        }
+        onView(withId(R.id.rich_text_edit_text))
+            .check(matches(withText("<b>$ipsum</b>")))
+    }
+
+    @Test
+    fun testGetPlainText_stripsHtml() {
+        scenarioRule.scenario.onActivity {
+            val editText = it.findViewById<EditorEditText>(R.id.rich_text_edit_text)
+            editText.setHtml("<b>$ipsum</b>")
+
+            val plainText = editText.getPlainText()
+
+            assertThat(plainText, equalTo(ipsum))
+        }
     }
 
 }
