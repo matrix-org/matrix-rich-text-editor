@@ -33,8 +33,15 @@ struct ContentView: View {
         Button("Max/Min") {
             viewModel.maximised.toggle()
         }
+        Button("Plain/Rich") {
+            viewModel.plainTextMode.toggle()
+        }
         Button("Send") {
-            sentMessage = viewModel.content
+            if viewModel.plainTextMode {
+                sentMessage = viewModel.plainTextModeContent
+            } else {
+                sentMessage = viewModel.content
+            }
             viewModel.clearContent()
         }
         .disabled(viewModel.isContentEmpty)
