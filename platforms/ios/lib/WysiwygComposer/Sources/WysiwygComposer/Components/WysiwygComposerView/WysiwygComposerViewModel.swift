@@ -40,7 +40,14 @@ public class WysiwygComposerViewModel: ObservableObject {
             updateIdealHeight()
         }
     }
-    
+
+    /// Published value for the composer plain text mode.
+    @Published public var plainTextMode = false {
+        didSet {
+            updatePlainTextMode(plainTextMode)
+        }
+    }
+
     /// The current textColor of the attributed string
     public var textColor: UIColor {
         didSet {
@@ -48,6 +55,16 @@ public class WysiwygComposerViewModel: ObservableObject {
             let update = model.replaceAllHtml(html: content.html)
             applyUpdate(update)
         }
+    }
+
+    /// The composer content for plain text mode.
+    public var plainTextModeContent: WysiwygComposerContent {
+        // TODO: convert plain text to HTML
+        WysiwygComposerContent(plainText: plainText,
+                               html: "",
+                               attributed: NSAttributedString(string: plainText),
+                               attributedSelection: .init(location: plainText.utf16Length,
+                                                          length: 0))
     }
 
     // MARK: - Private
@@ -61,6 +78,8 @@ public class WysiwygComposerViewModel: ObservableObject {
             updateIdealHeight()
         }
     }
+
+    private var plainText = ""
 
     // MARK: - Public
 
@@ -169,7 +188,12 @@ public extension WysiwygComposerViewModel {
     ///   - text: Text currently displayed in the composer.
     ///   - range: Range to replace.
     ///   - replacementText: Replacement text to apply.
+    /// - Returns: Whether the change should be accepted by the input field.
     func replaceText(_ text: NSAttributedString, range: NSRange, replacementText: String) -> Bool {
+        guard !plainTextMode else {
+            return true
+        }
+
         let update: ComposerUpdate
         let shouldAcceptChange: Bool
 
@@ -199,8 +223,17 @@ public extension WysiwygComposerViewModel {
     ///
     /// - Parameter textView: The composer's text view.
     func didUpdateText(textView: UITextView) {
-        // Reconciliate
-        if textView.attributedText != content.attributed {
+        if plainTextMode {
+            plainText = textView.text
+            if textView.text.isEmpty != isContentEmpty {
+                isContentEmpty = textView.text.isEmpty
+                // Force text view redraw to avoid placeholder issues.
+                textView.setNeedsDisplay()
+            }
+        }
+
+        if !plainTextMode, textView.attributedText != content.attributed {
+            // Reconciliate
             Logger.viewModel.logDebug(["Reconciliate from \"\(textView.text ?? "")\" to \"\(content.plainText)\""],
                                       functionName: #function)
             textView.apply(content)
@@ -325,6 +358,25 @@ private extension WysiwygComposerViewModel {
             DispatchQueue.main.async {
                 self.idealHeight = self.compressedHeight
             }
+        }
+    }
+
+    /// Updates the view model content for given plain text mode setting.
+    ///
+    /// - Parameter enabled: whether plain text mode is enabled
+    func updatePlainTextMode(_ enabled: Bool) {
+        if enabled {
+            let previousContent = content
+            let attributed = try? NSAttributedString(html: generateHtmlBodyWithStyle(htmlFragment: previousContent.plainText))
+            clearContent()
+            content = WysiwygComposerContent(plainText: previousContent.plainText,
+                                             html: "",
+                                             attributed: attributed ?? NSAttributedString(string: plainText),
+                                             attributedSelection: previousContent.attributedSelection)
+        } else {
+            // TODO: convert Markdown content to HTML
+            let update = model.replaceAllHtml(html: plainText)
+            applyUpdate(update)
         }
     }
     
