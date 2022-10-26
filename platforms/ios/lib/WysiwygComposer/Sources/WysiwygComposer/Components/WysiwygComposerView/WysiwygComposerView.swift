@@ -19,13 +19,18 @@ import SwiftUI
 
 /// Provides a SwiftUI displayable view for the composer UITextView component.
 public struct WysiwygComposerView: UIViewRepresentable {
-    // MARK: - Internal
+    // MARK: - Public
+
+    @Binding public var focused: Bool
+
+    // MARK: - Private
 
     private var viewModel: WysiwygComposerViewModelProtocol
     private var tintColor = Color.accentColor
     private var placeholderColor = Color(UIColor.placeholderText)
     private var placeholder: String?
-    @Binding public var focused: Bool
+
+    // MARK: - Public
 
     public init(focused: Binding<Bool>,
                 viewModel: WysiwygComposerViewModelProtocol) {
