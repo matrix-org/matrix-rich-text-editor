@@ -466,7 +466,7 @@ mod js {
         }
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, target_arch = "wasm32"))]
     mod tests {
         use super::*;
         use crate::{
