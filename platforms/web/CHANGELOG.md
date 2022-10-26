@@ -1,5 +1,15 @@
 # Changelog
 
+# [0.4.0] - 2022-10-26
+
+### Added
+
+-   Android: Add plain text APIs
+
+### Fixed
+
+-   Android: Fix issue with hardware backspace key
+
 # [0.3.2] - 2022-10-24
 
 ### Added
