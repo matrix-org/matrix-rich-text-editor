@@ -235,10 +235,9 @@ describe('generateTestCase', () => {
             ['select', 2, 6],
         ];
 
-        // TODO: There is a bug in to_example_format in selections with entities
         const expected =
             'let mut model = ' +
-            'cm("aa{&lt;str}|ong&gt;bbbb&lt;/strong&gt;cc");\n' +
+            'cm("aa{&lt;}|strong&gt;bbbb&lt;/strong&gt;cc");\n' +
             'assert_eq!(tx(&model), ' +
             '"aa&lt;strong&gt;{bbbb}|&lt;/strong&gt;cc");\n';
 
@@ -263,10 +262,9 @@ describe('generateTestCase', () => {
             ['select', 3, 6],
         ];
 
-        // TODO: There is a bug in to_example_format in selections with entities
         const expected =
             'let mut model = ' +
-            'cm("aa{&lt;str}|ong&gt;bbbb&lt;/strong&gt;cc");\n' +
+            'cm("aa{&lt;}|strong&gt;bbbb&lt;/strong&gt;cc");\n' +
             'model.bold();\n' +
             'model.select(Location::from(3), Location::from(6));\n' +
             'assert_eq!(tx(&model), ' +
@@ -287,11 +285,9 @@ describe('generateTestCase', () => {
             ['select', 3, 0],
         ];
 
-        // TODO: There is a bug in to_example_format meaning the cursor
-        // is in the wrong place here.
         const expected =
             'let mut model = ' +
-            'cm("aa{&lt;str}|ong&gt;bbbb&lt;/strong&gt;cc");\n' +
+            'cm("aa{&lt;}|strong&gt;bbbb&lt;/strong&gt;cc");\n' +
             'model.bold();\n' +
             'model.select(Location::from(3), Location::from(0));\n' +
             'assert_eq!(tx(&model), ' +
@@ -312,10 +308,8 @@ describe('generateTestCase', () => {
             ['backspace'],
         ];
 
-        // TODO: There is a bug in to_example_format meaning the cursor
-        // is in the wrong place here. Internal id: PSU-839
         const expected =
-            'let mut model = cm("aa&lt;stron|g&gt;bbbb&lt;/strong&gt;cc");\n' +
+            'let mut model = cm("aa&lt;st|rong&gt;bbbb&lt;/strong&gt;cc");\n' +
             'model.backspace();\n' +
             'model.backspace();\n' +
             'assert_eq!(tx(&model), "aa&lt;stron|g&gt;bbbb&lt;/strong&gt;");\n';
