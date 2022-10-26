@@ -13,7 +13,6 @@
 // limitations under the License.
 
 use super::UnicodeString;
-use bitflags::bitflags;
 use std::{error::Error, fmt};
 
 #[derive(Debug)]
@@ -57,8 +56,25 @@ where
     }
 }
 
-bitflags! {
-    pub struct MarkdownOptions: u8 {
-        const IGNORE_LINE_BREAK = 0b0001;
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct MarkdownOptions {
+    bits: u8,
+}
+
+impl MarkdownOptions {
+    pub const IGNORE_LINE_BREAK: Self = Self { bits: 0b0001 };
+
+    pub const fn empty() -> Self {
+        Self { bits: 0 }
+    }
+
+    /// Returns `true` if all of the flags in `other` are contained within `self`.
+    pub const fn contains(&self, other: Self) -> bool {
+        (self.bits & other.bits) == other.bits
+    }
+
+    /// Inserts the specified flags in-place.
+    pub fn insert(&mut self, other: Self) {
+        self.bits |= other.bits;
     }
 }
