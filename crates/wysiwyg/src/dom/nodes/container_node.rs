@@ -16,7 +16,6 @@ use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::nodes::dom_node::DomNode;
 use crate::dom::to_html::ToHtml;
-#[cfg(feature = "to-markdown")]
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
@@ -381,7 +380,6 @@ where
     }
 }
 
-#[cfg(feature = "to-markdown")]
 impl<S> ToMarkdown<S> for ContainerNode<S>
 where
     S: UnicodeString,
