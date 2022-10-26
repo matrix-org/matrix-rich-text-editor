@@ -171,7 +171,7 @@ class EditorEditText : TextInputEditText {
             } else if (event.metaState != 0 && event.unicodeChar == 0) {
                 // Is a modifier key
                 false
-            } else if (event.isPrintableCharacter()) {
+            } else if (event.isPrintableCharacter() || keyCode == KeyEvent.KEYCODE_DEL) {
                 // Consume printable characters
                 inputConnection?.sendHardwareKeyboardInput(event)
                 true
