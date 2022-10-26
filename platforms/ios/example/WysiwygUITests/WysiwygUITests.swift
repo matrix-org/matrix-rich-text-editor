@@ -39,4 +39,12 @@ class WysiwygUITests: XCTestCase {
     func testTypingAndSending() throws {
         try WysiwygSharedTests.typeAndSendMessage(app)
     }
+    
+//    func testTypingFast() throws {
+//        try WysiwygSharedTests.typingFast(app)
+//    }
+    
+    func testLongPressDelete() throws {
+        try WysiwygSharedTests.longPressDelete(app)
+    }
 }

@@ -118,7 +118,9 @@ public struct WysiwygComposerView: UIViewRepresentable {
         public func textViewDidChangeSelection(_ textView: UITextView) {
             Logger.textView.logDebug([textView.logSelection],
                                      functionName: #function)
-            select(textView.attributedText, textView.selectedRange)
+            DispatchQueue.main.async {
+                self.select(textView.attributedText, textView.selectedRange)
+            }
         }
         
         public func textViewDidBeginEditing(_ textView: UITextView) {
