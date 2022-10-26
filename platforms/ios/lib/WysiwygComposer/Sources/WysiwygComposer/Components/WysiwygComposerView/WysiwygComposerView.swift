@@ -118,6 +118,8 @@ public struct WysiwygComposerView: UIViewRepresentable {
         public func textViewDidChangeSelection(_ textView: UITextView) {
             Logger.textView.logDebug([textView.logSelection],
                                      functionName: #function)
+            // This solves the race condition happening between did update text and the select function
+            // While deleting with a long press
             DispatchQueue.main.async {
                 self.select(textView.attributedText, textView.selectedRange)
             }
