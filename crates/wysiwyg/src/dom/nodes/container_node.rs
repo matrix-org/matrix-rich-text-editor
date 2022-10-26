@@ -576,7 +576,7 @@ where
                         buffer.push('.');
 
                         // Indentation will match the counter size.
-                        indentation += counter.len() + 1 /* `.` */;
+                        indentation += counter.len();
                     }
                     // It's an unordered list.
                     else {
