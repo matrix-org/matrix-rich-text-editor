@@ -61,6 +61,17 @@ class EditorEditTextInputTests {
     }
 
     @Test
+    fun testHardwareKeyboardBackspace() {
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(typeText("Test"))
+            .perform(pressKey(KeyEvent.KEYCODE_DEL))
+            .check(matches(withText("Tes")))
+            // Type a character again to make sure the composer and the UI match
+            .perform(typeText("t"))
+            .check(matches(withText("Test")))
+    }
+
+    @Test
     fun testReplace() {
         onView(withId(R.id.rich_text_edit_text))
             .perform(replaceText(ipsum))
