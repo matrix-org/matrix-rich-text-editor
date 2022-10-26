@@ -208,7 +208,7 @@ fn to_markdown(html: &str) -> Utf16String {
 }
 
 fn to_html(markdown: &Utf16String) -> String {
-    use md_parser::{html, Options, Parser};
+    use md_parser::{html::push_html as compile_to_html, Options, Parser};
 
     let mut options = Options::empty();
     options.insert(Options::ENABLE_STRIKETHROUGH);
@@ -218,7 +218,7 @@ fn to_html(markdown: &Utf16String) -> String {
     let parser = Parser::new_ext(&markdown, options);
 
     let mut html = String::new();
-    html::push_html(&mut html, parser);
+    compile_to_html(&mut html, parser);
 
     // By default, there is a `<p>…</p>\n` around the HTML content. That's the
     // correct way to handle a text block in Markdown. But it breaks our
