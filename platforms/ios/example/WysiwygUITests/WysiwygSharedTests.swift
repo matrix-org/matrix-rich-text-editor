@@ -121,6 +121,7 @@ final class WysiwygSharedTests {
         let text = "Some long text that I am going to type very fast"
         let textView = app.textViews["WysiwygComposer"]
         textView.tap()
+        sleep(1)
         textView.typeText(text)
         let textToVerify = textView.value as? String
         XCTAssert(text == textToVerify)

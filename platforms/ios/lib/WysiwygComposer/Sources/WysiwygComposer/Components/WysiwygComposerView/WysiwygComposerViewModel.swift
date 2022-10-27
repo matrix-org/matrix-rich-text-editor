@@ -54,8 +54,10 @@ public class WysiwygComposerViewModel: ObservableObject {
     public var textColor: UIColor {
         didSet {
             // In case of a color change, this will refresh the attributed text
+            guard let textView = textView else { return }
             let update = model.replaceAllHtml(html: content.html)
             applyUpdate(update)
+            didUpdateText(textView: textView)
         }
     }
 
@@ -107,7 +109,9 @@ public class WysiwygComposerViewModel: ObservableObject {
     /// Apply any additional setup required.
     /// Should be called when the view appears.
     public func setup() {
+        guard let textView = textView else { return }
         applyUpdate(model.replaceAllHtml(html: ""))
+        didUpdateText(textView: textView)
     }
     
     /// Select given range of text within the model.
@@ -378,14 +382,23 @@ private extension WysiwygComposerViewModel {
     func updatePlainTextMode(_ enabled: Bool) {
         if enabled {
             let previousContent = content
-            let attributed = try? NSAttributedString(html: generateHtmlBodyWithStyle(htmlFragment: previousContent.plainText))
+            guard let attributed = try? NSAttributedString(html: generateHtmlBodyWithStyle(htmlFragment: previousContent.plainText)) else {
+                return
+            }
+            // setting back the textColor in plainText mode
+            let mutableAttributed = NSMutableAttributedString(attributedString: attributed)
+            mutableAttributed.addAttributes(
+                [.foregroundColor: textColor], range: NSRange(location: 0, length: mutableAttributed.length)
+            )
+            let attributedText = NSAttributedString(attributedString: mutableAttributed)
             clearContent()
             guard let textView = textView else { return }
-            textView.attributedText = attributed
+            textView.attributedText = attributedText
         } else {
             // TODO: convert Markdown content to HTML
             let update = model.replaceAllHtml(html: plainText)
             applyUpdate(update)
+            didUpdateText(textView: textView)
         }
     }
     
