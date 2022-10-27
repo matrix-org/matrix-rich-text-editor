@@ -17,7 +17,8 @@ use html5ever::tree_builder::{ElementFlags, NodeOrText, QuirksMode, TreeSink};
 use html5ever::{parse_fragment, Attribute, ExpandedName, QualName};
 
 use super::{
-    paqual_name, PaDom, PaDomCreationError, PaDomHandle, PaDomNode, PaNodeText,
+    paqual_name, PaDom, PaDomCreationError, PaDomHandle, PaDomNode,
+    PaNodeContainer, PaNodeText,
 };
 
 pub(crate) type DomCreationResult = Result<PaDom, PaDomCreationError>;
@@ -108,19 +109,41 @@ impl TreeSink for PaDomCreator {
                 }
             }
             NodeOrText::AppendText(tendril) => {
-                let mut add_node = false;
-                match self.state.dom.get_mut_node(parent) {
-                    PaDomNode::Container(_) => add_node = true,
-                    PaDomNode::Document(_) => add_node = true,
-                    PaDomNode::Text(p) => {
+                let text_handle = match self.state.dom.get_node(parent) {
+                    PaDomNode::Document(_) => None,
+                    PaDomNode::Text(_) => Some(parent.clone()),
+                    PaDomNode::Container(PaNodeContainer {
+                        children, ..
+                    }) => match children.last() {
+                        Some(last_child_handle) => {
+                            match self.state.dom.get_node(last_child_handle) {
+                                PaDomNode::Text(_) => {
+                                    Some(last_child_handle.clone())
+                                }
+                                _ => None,
+                            }
+                        }
+
+                        None => None,
+                    },
+                };
+
+                if let Some(text_handle) = text_handle {
+                    if let PaDomNode::Text(p) =
+                        self.state.dom.get_mut_node(&text_handle)
+                    {
                         p.content += tendril.as_ref();
+                    } else {
+                        unreachable!(
+                            "`text_handle` must map to a `PaDomNode::Text`"
+                        )
                     }
-                }
-                if add_node {
+                } else {
                     let new_handle =
                         self.state.dom.add_node(PaDomNode::Text(PaNodeText {
                             content: tendril.as_ref().to_owned(),
                         }));
+
                     match self.state.dom.get_mut_node(parent) {
                         PaDomNode::Container(p) => p.children.push(new_handle),
                         PaDomNode::Document(p) => p.children.push(new_handle),
@@ -449,6 +472,14 @@ mod test {
                 &[el_attr("span", &[("class", "foo")], &[tx("txt")]),]
             )]))
         );
+    }
+
+    #[test]
+    fn parsing_text_node_with_escaped_html_entities() {
+        assert_eq!(
+            d(parse("aaa&lt;strong&gt;bbb&lt;/strong&gt;ccc")),
+            d(doc(&[el("html", &[tx("aaa<strong>bbb</strong>ccc")])]))
+        )
     }
 
     // Note: more complex tests are in parse, because it's more ergonomic to
