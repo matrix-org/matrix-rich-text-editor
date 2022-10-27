@@ -48,8 +48,7 @@ public class WysiwygComposerViewModel: ObservableObject {
         }
     }
 
-
-    public var textView: UITextView?
+    public var textView: PlaceholdableTextView?
     
     /// The current textColor of the attributed string
     public var textColor: UIColor {
@@ -73,7 +72,7 @@ public class WysiwygComposerViewModel: ObservableObject {
     // MARK: - Private
 
     private var model: ComposerModel
-    private var cancellable: AnyCancellable?
+    private var cancellables = Set<AnyCancellable>()
     private let minHeight: CGFloat
     private let maxHeight: CGFloat
     private var compressedHeight: CGFloat = .zero {
@@ -92,9 +91,17 @@ public class WysiwygComposerViewModel: ObservableObject {
         self.textColor = textColor
         model = newComposerModel()
         // Publish composer empty state.
-        cancellable = $content.sink(receiveValue: { [unowned self] content in
+        $content.sink { [unowned self] content in
             self.isContentEmpty = content.plainText.isEmpty
-        })
+        }
+        .store(in: &cancellables)
+        
+        $isContentEmpty
+            .removeDuplicates()
+            .sink { [unowned self] isContentEmpty in
+                self.textView?.shouldShowPlaceholder = isContentEmpty
+            }
+            .store(in: &cancellables)
     }
 
     /// Apply any additional setup required.
@@ -206,6 +213,7 @@ public extension WysiwygComposerViewModel {
         if content.attributedSelection.length == 0, replacementText == "" {
             Logger.viewModel.logDebug(["Ignored an empty replacement"],
                                       functionName: #function)
+            didUpdateText(textView: textView)
             return false
         }
 
@@ -232,8 +240,6 @@ public extension WysiwygComposerViewModel {
             plainText = textView.text
             if textView.text.isEmpty != isContentEmpty {
                 isContentEmpty = textView.text.isEmpty
-                // Force text view redraw to avoid placeholder issues.
-                textView.setNeedsDisplay()
             }
         } else if textView.attributedText != content.attributed {
             // Reconciliate
