@@ -195,7 +195,7 @@ public extension WysiwygComposerViewModel {
     /// Replace text in the model.
     ///
     /// - Parameters:
-    ///   - text: Text currently displayed in the composer.
+    ///   - textView: TextView which currently holds the displayed text in the composer.
     ///   - range: Range to replace.
     ///   - replacementText: Replacement text to apply.
     func replaceText(_ textView: UITextView, range: NSRange, replacementText: String) -> Bool {
