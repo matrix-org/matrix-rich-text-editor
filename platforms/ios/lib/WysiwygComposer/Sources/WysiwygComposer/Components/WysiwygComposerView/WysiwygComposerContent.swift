@@ -17,7 +17,8 @@
 import Foundation
 
 /// Defines message content displayed in the composer.
-public struct WysiwygComposerContent {
+@objcMembers
+public class WysiwygComposerContent: NSObject {
     // MARK: - Public
 
     /// Displayed text, as plain text.
