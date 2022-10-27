@@ -374,10 +374,8 @@ private extension WysiwygComposerViewModel {
             let previousContent = content
             let attributed = try? NSAttributedString(html: generateHtmlBodyWithStyle(htmlFragment: previousContent.plainText))
             clearContent()
-            content = WysiwygComposerContent(plainText: previousContent.plainText,
-                                             html: "",
-                                             attributed: attributed ?? NSAttributedString(string: plainText),
-                                             attributedSelection: previousContent.attributedSelection)
+            guard let textView = textView else { return }
+            textView.attributedText = attributed
         } else {
             // TODO: convert Markdown content to HTML
             let update = model.replaceAllHtml(html: plainText)
