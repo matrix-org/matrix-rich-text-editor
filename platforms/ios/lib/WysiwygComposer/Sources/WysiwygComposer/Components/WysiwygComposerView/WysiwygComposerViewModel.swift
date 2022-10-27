@@ -171,6 +171,8 @@ public class WysiwygComposerViewModel: ObservableObject {
             update = model.unorderedList()
         }
         applyUpdate(update)
+        guard let textView = textView else { return }
+        didUpdateText(textView: textView)
     }
 
     /// Sets given HTML as the current content of the composer.
@@ -180,11 +182,15 @@ public class WysiwygComposerViewModel: ObservableObject {
     public func setHtmlContent(_ html: String) {
         let update = model.replaceAllHtml(html: html)
         applyUpdate(update)
+        guard let textView = textView else { return }
+        didUpdateText(textView: textView)
     }
 
     /// Clear the content of the composer.
     public func clearContent() {
         applyUpdate(model.clear())
+        guard let textView = textView else { return }
+        didUpdateText(textView: textView)
     }
 
     /// Returns a textual representation of the composer model as a tree.
@@ -217,7 +223,6 @@ public extension WysiwygComposerViewModel {
         if content.attributedSelection.length == 0, replacementText == "" {
             Logger.viewModel.logDebug(["Ignored an empty replacement"],
                                       functionName: #function)
-            didUpdateText(textView: textView)
             return false
         }
 
@@ -294,8 +299,6 @@ private extension WysiwygComposerViewModel {
                          disabledActions: disabledActions):
             self.reversedActions = reversedActions
             self.disabledActions = disabledActions
-            guard let textView = textView else { return }
-            didUpdateText(textView: textView)
         default:
             break
         }
