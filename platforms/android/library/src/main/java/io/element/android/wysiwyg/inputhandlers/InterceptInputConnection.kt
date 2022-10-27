@@ -125,7 +125,7 @@ internal class InterceptInputConnection(
         val (start, end) = getCurrentCompositionOrSelection()
         viewModel.updateSelection(editable, start, end)
         val result = withProcessor {
-            processInput(EditorInputAction.ReplaceText(text.toString()))?.let { processUpdate(it) }
+            processInput(EditorInputAction.ReplaceText(text.toString()))
         }
 
         return if (result != null) {
@@ -152,7 +152,7 @@ internal class InterceptInputConnection(
             } else {
                 viewModel.updateSelection(editable, start, end)
                 processInput(EditorInputAction.ReplaceText(text.toString()))
-            }?.let { processUpdate(it) }
+            }
         }
 
         return if (result != null) {
@@ -214,7 +214,7 @@ internal class InterceptInputConnection(
         if (afterLength > 0) {
             val result = withProcessor {
                 updateSelection(editable, end, deleteTo)
-                processInput(EditorInputAction.BackPress)?.let { processUpdate(it) }
+                processInput(EditorInputAction.BackPress)
             }
             if (result != null) {
                 replaceAll(result.text, 0, editable.length)
@@ -228,7 +228,7 @@ internal class InterceptInputConnection(
         if (beforeLength > 0) {
             val result = withProcessor {
                 updateSelection(editable, deleteFrom, start)
-                processInput(EditorInputAction.BackPress)?.let { processUpdate(it) }
+                processInput(EditorInputAction.BackPress)
             }
             if (result != null) {
                 replaceAll(result.text, 0, editable.length)

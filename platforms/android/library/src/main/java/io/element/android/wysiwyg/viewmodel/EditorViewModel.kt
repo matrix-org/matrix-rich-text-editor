@@ -2,14 +2,14 @@ package io.element.android.wysiwyg.viewmodel
 
 import android.text.Editable
 import androidx.lifecycle.ViewModel
-import io.element.android.wysiwyg.BuildConfig
 import io.element.android.wysiwyg.extensions.log
 import io.element.android.wysiwyg.extensions.string
 import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
-import io.element.android.wysiwyg.utils.*
+import io.element.android.wysiwyg.utils.EditorIndexMapper
 import io.element.android.wysiwyg.utils.HtmlConverter
+import io.element.android.wysiwyg.utils.throwIfDebugBuild
 import uniffi.wysiwyg_composer.ComposerModelInterface
 import uniffi.wysiwyg_composer.MenuState
 import uniffi.wysiwyg_composer.TextUpdate
@@ -38,64 +38,49 @@ internal class EditorViewModel(
         composer?.log()
     }
 
-    fun processInput(action: EditorInputAction): TextUpdate? {
+    fun processInput(action: EditorInputAction): ReplaceTextResult? {
         val update = runCatching {
             when (action) {
                 is EditorInputAction.ReplaceText -> {
                     // This conversion to a plain String might be too simple
                     composer?.replaceText(action.value.toString())
                 }
-                is EditorInputAction.InsertParagraph -> {
-                    composer?.enter()
+                is EditorInputAction.InsertParagraph -> composer?.enter()
+                is EditorInputAction.BackPress -> composer?.backspace()
+                is EditorInputAction.ApplyInlineFormat -> when (action.format) {
+                    InlineFormat.Bold -> composer?.bold()
+                    InlineFormat.Italic -> composer?.italic()
+                    InlineFormat.Underline -> composer?.underline()
+                    InlineFormat.StrikeThrough -> composer?.strikeThrough()
+                    InlineFormat.InlineCode -> composer?.inlineCode()
                 }
-                is EditorInputAction.BackPress -> {
-                    composer?.backspace()
-                }
-                is EditorInputAction.ApplyInlineFormat -> {
-                    when (action.format) {
-                        InlineFormat.Bold -> composer?.bold()
-                        InlineFormat.Italic -> composer?.italic()
-                        InlineFormat.Underline -> composer?.underline()
-                        InlineFormat.StrikeThrough -> composer?.strikeThrough()
-                        InlineFormat.InlineCode -> composer?.inlineCode()
-                    }
-                }
-                is EditorInputAction.Delete -> {
-                    composer?.deleteIn(action.start.toUInt(), action.end.toUInt())
-                }
+                is EditorInputAction.Delete -> composer?.deleteIn(
+                    action.start.toUInt(),
+                    action.end.toUInt()
+                )
                 is EditorInputAction.SetLink -> composer?.setLink(action.link)
                 is EditorInputAction.ReplaceAllHtml -> composer?.replaceAllHtml(action.html)
                 is EditorInputAction.Undo -> composer?.undo()
                 is EditorInputAction.Redo -> composer?.redo()
-                is EditorInputAction.ToggleList -> {
+                is EditorInputAction.ToggleList ->
                     if (action.ordered) composer?.orderedList() else composer?.unorderedList()
-                }
             }
         }.onFailure {
-            if (BuildConfig.DEBUG) {
-                throw it
-            } else {
-                it.printStackTrace()
-            }
+            it.throwIfDebugBuild()
         }.getOrNull()
+
+        composer?.log()
 
         update?.menuState()?.let { menuStateCallback?.invoke(it) }
 
-        return update?.textUpdate().also {
-            composer?.log()
-        }
-    }
-
-    fun processUpdate(update: TextUpdate): ReplaceTextResult? {
-        return when (update) {
-            is TextUpdate.Keep -> null
-            is TextUpdate.ReplaceAll -> {
-                ReplaceTextResult(
-                    text = stringToSpans(update.replacementHtml.string()),
-                    selection = update.startUtf16Codeunit.toInt()..update.endUtf16Codeunit.toInt(),
-                )
-            }
-            is TextUpdate.Select -> null
+        return when (val textUpdate = update?.textUpdate()) {
+            is TextUpdate.ReplaceAll -> ReplaceTextResult(
+                text = stringToSpans(textUpdate.replacementHtml.string()),
+                selection = textUpdate.startUtf16Codeunit.toInt()..textUpdate.endUtf16Codeunit.toInt(),
+            )
+            is TextUpdate.Select,
+            is TextUpdate.Keep,
+            null -> null
         }
     }
 
@@ -111,7 +96,7 @@ internal class EditorViewModel(
     }
 
     fun getMenuState(): MenuState? {
-        return composer?.getCurrentMenuState() as? MenuState.Update
+        return composer?.getCurrentMenuState()
     }
 
     private fun stringToSpans(string: String): CharSequence =
