@@ -21,10 +21,6 @@ import SwiftUI
 public struct WysiwygComposerView: UIViewRepresentable {
     // MARK: - Internal
 
-    public var replaceText: (UITextView, NSRange, String) -> Bool
-    public var select: (NSAttributedString, NSRange) -> Void
-    public var didUpdateText: (UITextView) -> Void
-    public var updateCompressedHeightIfNeeded: (UITextView) -> Void
     public var viewModel: WysiwygComposerViewModel
     
     private var tintColor = Color.accentColor
@@ -33,15 +29,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
     @Binding public var focused: Bool
 
     public init(focused: Binding<Bool>,
-                replaceText: @escaping (UITextView, NSRange, String) -> Bool,
-                select: @escaping (NSAttributedString, NSRange) -> Void,
-                didUpdateText: @escaping (UITextView) -> Void,
-                updateCompressedHeightIfNeeded: @escaping (UITextView) -> Void,
                 viewModel: WysiwygComposerViewModel) {
-        self.replaceText = replaceText
-        self.select = select
-        self.didUpdateText = didUpdateText
-        self.updateCompressedHeightIfNeeded = updateCompressedHeightIfNeeded
         _focused = focused
         self.viewModel = viewModel
     }
@@ -65,7 +53,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
         textView.placeholderColor = UIColor(placeholderColor)
         textView.placeholder = placeholder
         viewModel.textView = textView
-        updateCompressedHeightIfNeeded(textView)
+        viewModel.updateCompressedHeightIfNeeded(textView)
         return textView
     }
 
@@ -82,7 +70,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
     }
 
     public func makeCoordinator() -> Coordinator {
-        Coordinator($focused, replaceText, select, didUpdateText, updateCompressedHeightIfNeeded)
+        Coordinator($focused, viewModel.replaceText, viewModel.select, viewModel.didUpdateText)
     }
 
     /// Coordinates UIKit communication.
@@ -91,17 +79,14 @@ public struct WysiwygComposerView: UIViewRepresentable {
         var replaceText: (UITextView, NSRange, String) -> Bool
         var select: (NSAttributedString, NSRange) -> Void
         var didUpdateText: (UITextView) -> Void
-        var updateCompressedHeightIfNeeded: (UITextView) -> Void
         init(_ focused: Binding<Bool>,
              _ replaceText: @escaping (UITextView, NSRange, String) -> Bool,
              _ select: @escaping (NSAttributedString, NSRange) -> Void,
-             _ didUpdateText: @escaping (UITextView) -> Void,
-             _ updateCompressedHeightIfNeeded: @escaping (UITextView) -> Void) {
+             _ didUpdateText: @escaping (UITextView) -> Void) {
             self.focused = focused
             self.replaceText = replaceText
             self.select = select
             self.didUpdateText = didUpdateText
-            self.updateCompressedHeightIfNeeded = updateCompressedHeightIfNeeded
         }
 
         public func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
