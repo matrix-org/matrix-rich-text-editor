@@ -65,11 +65,11 @@ public struct WysiwygComposerView: UIViewRepresentable {
         textView.placeholderColor = UIColor(placeholderColor)
         textView.placeholder = placeholder
         viewModel.textView = textView
+        updateCompressedHeightIfNeeded(textView)
         return textView
     }
 
     public func updateUIView(_ uiView: PlaceholdableTextView, context: Context) {
-        updateCompressedHeightIfNeeded(uiView)
         uiView.tintColor = UIColor(tintColor)
         uiView.placeholderColor = UIColor(placeholderColor)
         uiView.placeholder = placeholder
@@ -115,7 +115,9 @@ public struct WysiwygComposerView: UIViewRepresentable {
         public func textViewDidChangeSelection(_ textView: UITextView) {
             Logger.textView.logDebug([textView.logSelection],
                                      functionName: #function)
-            select(textView.attributedText, textView.selectedRange)
+            DispatchQueue.main.async {
+                self.select(textView.attributedText, textView.selectedRange)
+            }
         }
         
         public func textViewDidBeginEditing(_ textView: UITextView) {
