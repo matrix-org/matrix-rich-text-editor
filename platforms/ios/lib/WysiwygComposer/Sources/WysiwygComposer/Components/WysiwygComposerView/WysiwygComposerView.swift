@@ -25,7 +25,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
     public var select: (NSAttributedString, NSRange) -> Void
     public var didUpdateText: (UITextView) -> Void
     public var updateCompressedHeightIfNeeded: (UITextView) -> Void
-    @ObservedObject public var viewModel: WysiwygComposerViewModel
+    public var viewModel: WysiwygComposerViewModel
     
     private var tintColor = Color.accentColor
     private var placeholderColor = Color(UIColor.placeholderText)
@@ -69,7 +69,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
     }
 
     public func updateUIView(_ uiView: PlaceholdableTextView, context: Context) {
-        didUpdateText(uiView)
+        updateCompressedHeightIfNeeded(uiView)
         uiView.tintColor = UIColor(tintColor)
         uiView.placeholderColor = UIColor(placeholderColor)
         uiView.placeholder = placeholder
@@ -124,6 +124,10 @@ public struct WysiwygComposerView: UIViewRepresentable {
         
         public func textViewDidEndEditing(_ textView: UITextView) {
             focused.wrappedValue = false
+        }
+        
+        public func textViewDidChange(_ textView: UITextView) {
+            didUpdateText(textView)
         }
     }
 }

@@ -173,6 +173,7 @@ public extension WysiwygComposerViewModel {
     ///   - replacementText: Replacement text to apply.
     func replaceText(_ textView: UITextView, range: NSRange, replacementText: String) -> Bool {
         let update: ComposerUpdate
+        let shouldAcceptChange: Bool
 
         if range != content.attributedSelection {
             select(text: textView.attributedText!, range: range)
@@ -186,12 +187,17 @@ public extension WysiwygComposerViewModel {
 
         if replacementText.count == 1, replacementText[String.Index(utf16Offset: 0, in: replacementText)].isNewline {
             update = model.enter()
+            shouldAcceptChange = false
         } else {
             update = model.replaceText(newText: replacementText)
+            shouldAcceptChange = true
         }
 
         applyUpdate(update)
-        return false
+        if !shouldAcceptChange {
+            didUpdateText(textView: textView)
+        }
+        return shouldAcceptChange
     }
 
     /// Notify that the text view content has changed.
@@ -247,6 +253,8 @@ private extension WysiwygComposerViewModel {
                          disabledActions: disabledActions):
             self.reversedActions = reversedActions
             self.disabledActions = disabledActions
+            guard let textView = textView else { return }
+            didUpdateText(textView: textView)
         default:
             break
         }
