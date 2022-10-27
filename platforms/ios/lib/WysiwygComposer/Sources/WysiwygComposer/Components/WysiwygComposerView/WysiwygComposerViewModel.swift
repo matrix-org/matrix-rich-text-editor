@@ -40,6 +40,8 @@ public class WysiwygComposerViewModel: ObservableObject {
             updateIdealHeight()
         }
     }
+
+    public var textView: UITextView?
     
     /// The current textColor of the attributed string
     public var textColor: UIColor {
@@ -171,7 +173,6 @@ public extension WysiwygComposerViewModel {
     ///   - replacementText: Replacement text to apply.
     func replaceText(_ textView: UITextView, range: NSRange, replacementText: String) -> Bool {
         let update: ComposerUpdate
-        let shouldAcceptChange: Bool
 
         if range != content.attributedSelection {
             select(text: textView.attributedText!, range: range)
@@ -185,17 +186,12 @@ public extension WysiwygComposerViewModel {
 
         if replacementText.count == 1, replacementText[String.Index(utf16Offset: 0, in: replacementText)].isNewline {
             update = model.enter()
-            shouldAcceptChange = false
         } else {
             update = model.replaceText(newText: replacementText)
-            shouldAcceptChange = true
         }
 
         applyUpdate(update)
-        if !shouldAcceptChange {
-            textView.apply(content)
-        }
-        return shouldAcceptChange
+        return false
     }
 
     /// Notify that the text view content has changed.

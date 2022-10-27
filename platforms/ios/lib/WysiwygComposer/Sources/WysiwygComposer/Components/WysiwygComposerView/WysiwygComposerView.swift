@@ -21,11 +21,11 @@ import SwiftUI
 public struct WysiwygComposerView: UIViewRepresentable {
     // MARK: - Internal
 
-    public var content: WysiwygComposerContent
     public var replaceText: (UITextView, NSRange, String) -> Bool
     public var select: (NSAttributedString, NSRange) -> Void
     public var didUpdateText: (UITextView) -> Void
     public var updateCompressedHeightIfNeeded: (UITextView) -> Void
+    @ObservedObject public var viewModel: WysiwygComposerViewModel
     
     private var tintColor = Color.accentColor
     private var placeholderColor = Color(UIColor.placeholderText)
@@ -33,17 +33,17 @@ public struct WysiwygComposerView: UIViewRepresentable {
     @Binding public var focused: Bool
 
     public init(focused: Binding<Bool>,
-                content: WysiwygComposerContent,
                 replaceText: @escaping (UITextView, NSRange, String) -> Bool,
                 select: @escaping (NSAttributedString, NSRange) -> Void,
                 didUpdateText: @escaping (UITextView) -> Void,
-                updateCompressedHeightIfNeeded: @escaping (UITextView) -> Void) {
-        self.content = content
+                updateCompressedHeightIfNeeded: @escaping (UITextView) -> Void,
+                viewModel: WysiwygComposerViewModel) {
         self.replaceText = replaceText
         self.select = select
         self.didUpdateText = didUpdateText
         self.updateCompressedHeightIfNeeded = updateCompressedHeightIfNeeded
         _focused = focused
+        self.viewModel = viewModel
     }
     
     public func makeUIView(context: Context) -> PlaceholdableTextView {
@@ -64,15 +64,12 @@ public struct WysiwygComposerView: UIViewRepresentable {
         textView.placeholderFont = UIFont.preferredFont(forTextStyle: .subheadline)
         textView.placeholderColor = UIColor(placeholderColor)
         textView.placeholder = placeholder
-        textView.apply(content)
+        viewModel.textView = textView
         return textView
     }
 
     public func updateUIView(_ uiView: PlaceholdableTextView, context: Context) {
-        Logger.textView.logDebug([content.logAttributedSelection,
-                                  content.logText],
-                                 functionName: #function)
-        context.coordinator.updateCompressedHeightIfNeeded(uiView)
+        didUpdateText(uiView)
         uiView.tintColor = UIColor(tintColor)
         uiView.placeholderColor = UIColor(placeholderColor)
         uiView.placeholder = placeholder
@@ -115,19 +112,10 @@ public struct WysiwygComposerView: UIViewRepresentable {
             return replaceText(textView, range, text)
         }
 
-        public func textViewDidChange(_ textView: UITextView) {
-            Logger.textView.logDebug([textView.logSelection,
-                                      textView.logText],
-                                     functionName: #function)
-            didUpdateText(textView)
-        }
-
         public func textViewDidChangeSelection(_ textView: UITextView) {
             Logger.textView.logDebug([textView.logSelection],
                                      functionName: #function)
-            DispatchQueue.main.async {
-                self.select(textView.attributedText, textView.selectedRange)
-            }
+            select(textView.attributedText, textView.selectedRange)
         }
         
         public func textViewDidBeginEditing(_ textView: UITextView) {
