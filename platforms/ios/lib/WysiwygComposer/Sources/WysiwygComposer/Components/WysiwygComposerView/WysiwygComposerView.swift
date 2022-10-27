@@ -100,6 +100,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
         public func textViewDidChangeSelection(_ textView: UITextView) {
             Logger.textView.logDebug([textView.logSelection],
                                      functionName: #function)
+            // Fixes long press delete issue
             DispatchQueue.main.async {
                 self.select(textView.attributedText, textView.selectedRange)
             }
