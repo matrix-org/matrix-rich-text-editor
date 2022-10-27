@@ -206,8 +206,8 @@ public extension WysiwygComposerViewModel {
         let update: ComposerUpdate
         let shouldAcceptChange: Bool
 
-        if range != content.attributedSelection {
-            select(text: textView.attributedText!, range: range)
+        if range != content.attributedSelection, let text = textView.attributedText {
+            select(text: text, range: range)
         }
 
         if content.attributedSelection.length == 0, replacementText == "" {
