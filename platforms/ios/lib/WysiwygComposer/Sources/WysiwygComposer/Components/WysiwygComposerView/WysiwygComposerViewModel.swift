@@ -169,12 +169,12 @@ public extension WysiwygComposerViewModel {
     ///   - text: Text currently displayed in the composer.
     ///   - range: Range to replace.
     ///   - replacementText: Replacement text to apply.
-    func replaceText(_ text: NSAttributedString, range: NSRange, replacementText: String) -> Bool {
+    func replaceText(_ textView: UITextView, range: NSRange, replacementText: String) -> Bool {
         let update: ComposerUpdate
         let shouldAcceptChange: Bool
 
         if range != content.attributedSelection {
-            select(text: text, range: range)
+            select(text: textView.attributedText!, range: range)
         }
 
         if content.attributedSelection.length == 0, replacementText == "" {
@@ -192,6 +192,9 @@ public extension WysiwygComposerViewModel {
         }
 
         applyUpdate(update)
+        if !shouldAcceptChange {
+            textView.apply(content)
+        }
         return shouldAcceptChange
     }
 
@@ -207,6 +210,20 @@ public extension WysiwygComposerViewModel {
         }
 
         updateCompressedHeightIfNeeded(textView)
+    }
+    
+    /// Update the composer compressed required height if it has changed.
+    ///
+    /// - Parameters:
+    ///   - textView: The composer's text view.
+    func updateCompressedHeightIfNeeded(_ textView: UITextView) {
+        let idealTextHeight = textView
+            .sizeThatFits(CGSize(width: textView.bounds.size.width,
+                                 height: CGFloat.greatestFiniteMagnitude)
+            )
+            .height
+        
+        compressedHeight = min(maxHeight, max(minHeight, idealTextHeight))
     }
 }
 
@@ -299,20 +316,6 @@ private extension WysiwygComposerViewModel {
                                        "Error: \(error.localizedDescription)"],
                                       functionName: #function)
         }
-    }
-
-    /// Update the composer compressed required height if it has changed.
-    ///
-    /// - Parameters:
-    ///   - textView: The composer's text view.
-    func updateCompressedHeightIfNeeded(_ textView: UITextView) {
-        let idealTextHeight = textView
-            .sizeThatFits(CGSize(width: textView.bounds.size.width,
-                                 height: CGFloat.greatestFiniteMagnitude)
-            )
-            .height
-        
-        compressedHeight = min(maxHeight, max(minHeight, idealTextHeight))
     }
     
     /// Update the composer ideal height based on the maximised state.

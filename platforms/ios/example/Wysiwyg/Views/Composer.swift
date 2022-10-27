@@ -37,7 +37,8 @@ struct Composer: View {
                     content: viewModel.content,
                     replaceText: viewModel.replaceText,
                     select: viewModel.select,
-                    didUpdateText: viewModel.didUpdateText
+                    didUpdateText: viewModel.didUpdateText,
+                    updateCompressedHeightIfNeeded: viewModel.updateCompressedHeightIfNeeded
                 )
                 .placeholder("Placeholder", color: .gray)
                 .frame(height: viewModel.idealHeight)

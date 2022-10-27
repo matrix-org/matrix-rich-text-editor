@@ -22,9 +22,11 @@ public struct WysiwygComposerView: UIViewRepresentable {
     // MARK: - Internal
 
     public var content: WysiwygComposerContent
-    public var replaceText: (NSAttributedString, NSRange, String) -> Bool
+    public var replaceText: (UITextView, NSRange, String) -> Bool
     public var select: (NSAttributedString, NSRange) -> Void
     public var didUpdateText: (UITextView) -> Void
+    public var updateCompressedHeightIfNeeded: (UITextView) -> Void
+    
     private var tintColor = Color.accentColor
     private var placeholderColor = Color(UIColor.placeholderText)
     private var placeholder: String?
@@ -32,13 +34,15 @@ public struct WysiwygComposerView: UIViewRepresentable {
 
     public init(focused: Binding<Bool>,
                 content: WysiwygComposerContent,
-                replaceText: @escaping (NSAttributedString, NSRange, String) -> Bool,
+                replaceText: @escaping (UITextView, NSRange, String) -> Bool,
                 select: @escaping (NSAttributedString, NSRange) -> Void,
-                didUpdateText: @escaping (UITextView) -> Void) {
+                didUpdateText: @escaping (UITextView) -> Void,
+                updateCompressedHeightIfNeeded: @escaping (UITextView) -> Void) {
         self.content = content
         self.replaceText = replaceText
         self.select = select
         self.didUpdateText = didUpdateText
+        self.updateCompressedHeightIfNeeded = updateCompressedHeightIfNeeded
         _focused = focused
     }
     
@@ -60,6 +64,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
         textView.placeholderFont = UIFont.preferredFont(forTextStyle: .subheadline)
         textView.placeholderColor = UIColor(placeholderColor)
         textView.placeholder = placeholder
+        textView.apply(content)
         return textView
     }
 
@@ -67,8 +72,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
         Logger.textView.logDebug([content.logAttributedSelection,
                                   content.logText],
                                  functionName: #function)
-        uiView.apply(content)
-        context.coordinator.didUpdateText(uiView)
+        context.coordinator.updateCompressedHeightIfNeeded(uiView)
         uiView.tintColor = UIColor(tintColor)
         uiView.placeholderColor = UIColor(placeholderColor)
         uiView.placeholder = placeholder
@@ -81,23 +85,26 @@ public struct WysiwygComposerView: UIViewRepresentable {
     }
 
     public func makeCoordinator() -> Coordinator {
-        Coordinator($focused, replaceText, select, didUpdateText)
+        Coordinator($focused, replaceText, select, didUpdateText, updateCompressedHeightIfNeeded)
     }
 
     /// Coordinates UIKit communication.
     public class Coordinator: NSObject, UITextViewDelegate, NSTextStorageDelegate {
         var focused: Binding<Bool>
-        var replaceText: (NSAttributedString, NSRange, String) -> Bool
+        var replaceText: (UITextView, NSRange, String) -> Bool
         var select: (NSAttributedString, NSRange) -> Void
         var didUpdateText: (UITextView) -> Void
+        var updateCompressedHeightIfNeeded: (UITextView) -> Void
         init(_ focused: Binding<Bool>,
-             _ replaceText: @escaping (NSAttributedString, NSRange, String) -> Bool,
+             _ replaceText: @escaping (UITextView, NSRange, String) -> Bool,
              _ select: @escaping (NSAttributedString, NSRange) -> Void,
-             _ didUpdateText: @escaping (UITextView) -> Void) {
+             _ didUpdateText: @escaping (UITextView) -> Void,
+             _ updateCompressedHeightIfNeeded: @escaping (UITextView) -> Void) {
             self.focused = focused
             self.replaceText = replaceText
             self.select = select
             self.didUpdateText = didUpdateText
+            self.updateCompressedHeightIfNeeded = updateCompressedHeightIfNeeded
         }
 
         public func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
@@ -105,7 +112,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
                                       textView.logText,
                                       "Replacement: \"\(text)\""],
                                      functionName: #function)
-            return replaceText(textView.attributedText, range, text)
+            return replaceText(textView, range, text)
         }
 
         public func textViewDidChange(_ textView: UITextView) {
@@ -118,8 +125,6 @@ public struct WysiwygComposerView: UIViewRepresentable {
         public func textViewDidChangeSelection(_ textView: UITextView) {
             Logger.textView.logDebug([textView.logSelection],
                                      functionName: #function)
-            // This solves the race condition happening between did update text and the select function
-            // While deleting with a long press
             DispatchQueue.main.async {
                 self.select(textView.attributedText, textView.selectedRange)
             }

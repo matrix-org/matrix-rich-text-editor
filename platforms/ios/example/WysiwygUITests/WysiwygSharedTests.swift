@@ -120,7 +120,7 @@ final class WysiwygSharedTests {
     static func typingFast(_ app: XCUIApplication) throws {
         let text = "Some long text that I am going to type very fast"
         let textView = app.textViews["WysiwygComposer"]
-        app.typeText(text)
+        textView.typeText(text)
         let textToVerify = textView.value as? String
         XCTAssert(text == textToVerify)
     }
