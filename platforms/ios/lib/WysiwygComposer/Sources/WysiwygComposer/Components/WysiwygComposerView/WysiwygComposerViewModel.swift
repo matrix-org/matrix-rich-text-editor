@@ -23,6 +23,8 @@ import UIKit
 public class WysiwygComposerViewModel: ObservableObject {
     // MARK: - Public
 
+    /// The textView with placeholder support that the model manages
+    public var textView: PlaceholdableTextView!
     /// Published object for the composer content.
     @Published public var content: WysiwygComposerContent = .init()
     /// Published boolean for the composer empty content state.
@@ -47,8 +49,6 @@ public class WysiwygComposerViewModel: ObservableObject {
             updatePlainTextMode(plainTextMode)
         }
     }
-
-    public var textView: PlaceholdableTextView?
     
     /// The current textColor of the attributed string
     public var textColor: UIColor {
