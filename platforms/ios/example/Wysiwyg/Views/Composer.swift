@@ -54,11 +54,13 @@ struct Composer: View {
             .onTapGesture {
                 focused = true
             }
-            WysiwygActionToolbar { action in
-                viewModel.apply(action)
+            if !viewModel.plainTextMode {
+                WysiwygActionToolbar { action in
+                    viewModel.apply(action)
+                }
+                .environmentObject(viewModel)
+                .padding(.horizontal, 16)
             }
-            .environmentObject(viewModel)
-            .padding(.horizontal, 16)
         }
     }
 }
