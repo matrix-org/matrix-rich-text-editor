@@ -271,6 +271,7 @@
 /* Begin PBXShellScriptBuildPhase section */
 		A6F3FC0728DCADB300C170E8 /* ⚠️ SwiftLint */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -289,6 +290,7 @@
 		};
 		A6F3FC0828DCAF8400C170E8 /* 🧹 SwiftFormat */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
