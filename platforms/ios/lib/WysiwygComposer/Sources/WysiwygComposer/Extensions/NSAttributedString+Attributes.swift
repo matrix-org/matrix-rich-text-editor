@@ -57,7 +57,7 @@ extension NSAttributedString {
         return font?.fontDescriptor.symbolicTraits ?? []
     }
     
-    /// Changes the attribute of foregroundColor for the whole string
+    /// Changes the attribute of foregroundColor for the whole attributed string
     ///
     /// - Parameters:
     ///   - color: the new UIColor to update the attributed string

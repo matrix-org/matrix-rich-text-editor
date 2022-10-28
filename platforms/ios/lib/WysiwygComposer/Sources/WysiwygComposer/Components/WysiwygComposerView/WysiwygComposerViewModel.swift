@@ -19,8 +19,18 @@ import Foundation
 import OSLog
 import UIKit
 
+public protocol WysiwygComposerViewModelProtocol: AnyObject {
+    var textView: PlaceholdableTextView? { get set }
+    var content: WysiwygComposerContent { get }
+    
+    func updateCompressedHeightIfNeeded(_ textView: UITextView)
+    func replaceText(_ textView: UITextView, range: NSRange, replacementText: String) -> Bool
+    func select(text: NSAttributedString, range: NSRange)
+    func didUpdateText(textView: UITextView)
+}
+
 /// Main view model for the composer. Forwards actions to the Rust model and publishes resulting states.
-public class WysiwygComposerViewModel: ObservableObject {
+public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, ObservableObject {
     // MARK: - Public
 
     /// The textView with placeholder support that the model manages

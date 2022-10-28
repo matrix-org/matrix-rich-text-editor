@@ -21,15 +21,14 @@ import SwiftUI
 public struct WysiwygComposerView: UIViewRepresentable {
     // MARK: - Internal
 
-    public var viewModel: WysiwygComposerViewModel
-    
+    private var viewModel: WysiwygComposerViewModelProtocol
     private var tintColor = Color.accentColor
     private var placeholderColor = Color(UIColor.placeholderText)
     private var placeholder: String?
     @Binding public var focused: Bool
 
     public init(focused: Binding<Bool>,
-                viewModel: WysiwygComposerViewModel) {
+                viewModel: WysiwygComposerViewModelProtocol) {
         _focused = focused
         self.viewModel = viewModel
     }
