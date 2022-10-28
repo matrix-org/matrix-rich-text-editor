@@ -83,12 +83,12 @@ where
                 {
                     next_char_len = Self::find_next_char_len(
                         s - leaf.position,
-                        text_node.data().len(), // TODO Maybe we can find some other value?
+                        text_node.data().len(),
                         &text_node.data(),
                     ) as isize;
                 }
             }
-            // Go forward 1 from the current location
+            // Go forward `next_char_len` positions from the current location
             self.state.end += next_char_len;
         }
 
