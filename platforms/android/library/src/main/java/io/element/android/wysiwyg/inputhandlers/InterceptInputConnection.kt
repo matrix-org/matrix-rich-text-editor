@@ -17,9 +17,6 @@ import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.remove
 import io.element.android.wysiwyg.viewmodel.EditorViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.min
@@ -29,14 +26,6 @@ internal class InterceptInputConnection(
     private val editorEditText: TextView,
     private val viewModel: EditorViewModel,
 ) : BaseInputConnection(editorEditText, true) {
-
-    private val keyboardEventQueue = Channel<KeyEvent>(capacity = Channel.UNLIMITED)
-
-    private var keyEventJob: Job? = null
-
-    init {
-        keyEventJob = processKeyEvents()
-    }
 
     override fun getEditable(): Editable {
         return editorEditText.editableText
@@ -54,9 +43,6 @@ internal class InterceptInputConnection(
     override fun closeConnection() {
         // This should be enough as it will internally call baseInputConnection methods anyway
         super.closeConnection()
-
-        keyEventJob?.cancel()
-        keyEventJob = null
     }
 
     override fun clearMetaKeyStates(states: Int): Boolean {
@@ -101,27 +87,20 @@ internal class InterceptInputConnection(
      * Hack to have keyboard input events work as IME ones.
      */
     fun sendHardwareKeyboardInput(keyEvent: KeyEvent) {
-        keyboardEventQueue.trySend(keyEvent)
-    }
-
-    private fun processKeyEvents() =
-        CoroutineScope(Dispatchers.Main).launch {
-            keyboardEventQueue.consumeEach { keyEvent ->
-                when {
-                    keyEvent.isPrintingKey || keyEvent.keyCode == KeyEvent.KEYCODE_SPACE -> {
-                        onHardwareCharacterKey(Char(keyEvent.unicodeChar).toString())
-                    }
-                    keyEvent.keyCode == KeyEvent.KEYCODE_ENTER -> {
-                        onHardwareEnterKey()
-                    }
-                    keyEvent.keyCode == KeyEvent.KEYCODE_DEL -> {
-                        onHardwareBackspaceKey()
-                    }
-                    keyEvent.keyCode == KeyEvent.KEYCODE_FORWARD_DEL ->
-                        onHardwareDeleteKey()
-                }
+        when {
+            keyEvent.isPrintingKey || keyEvent.keyCode == KeyEvent.KEYCODE_SPACE -> {
+                onHardwareCharacterKey(Char(keyEvent.unicodeChar).toString())
             }
+            keyEvent.keyCode == KeyEvent.KEYCODE_ENTER -> {
+                onHardwareEnterKey()
+            }
+            keyEvent.keyCode == KeyEvent.KEYCODE_DEL -> {
+                onHardwareBackspaceKey()
+            }
+            keyEvent.keyCode == KeyEvent.KEYCODE_FORWARD_DEL ->
+                onHardwareDeleteKey()
         }
+    }
 
     // Called when started typing
     override fun setComposingText(text: CharSequence?, newCursorPosition: Int): Boolean {
