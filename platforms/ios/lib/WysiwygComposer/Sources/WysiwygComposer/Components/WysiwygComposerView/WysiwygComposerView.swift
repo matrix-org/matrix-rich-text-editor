@@ -58,6 +58,13 @@ public struct WysiwygComposerView: UIViewRepresentable {
     }
 
     public func updateUIView(_ uiView: PlaceholdableTextView, context: Context) {
+        Logger.textView.logDebug(
+            [
+                viewModel.content.logAttributedSelection,
+                viewModel.content.logText
+            ],
+            functionName: #function
+        )
         uiView.tintColor = UIColor(tintColor)
         uiView.placeholderColor = UIColor(placeholderColor)
         uiView.placeholder = placeholder
@@ -96,6 +103,17 @@ public struct WysiwygComposerView: UIViewRepresentable {
                                      functionName: #function)
             return replaceText(textView, range, text)
         }
+        
+        public func textViewDidChange(_ textView: UITextView) {
+            Logger.textView.logDebug(
+                [
+                    textView.logSelection,
+                    textView.logText
+                ],
+                functionName: #function
+            )
+            didUpdateText(textView)
+        }
 
         public func textViewDidChangeSelection(_ textView: UITextView) {
             Logger.textView.logDebug([textView.logSelection],
@@ -112,10 +130,6 @@ public struct WysiwygComposerView: UIViewRepresentable {
         
         public func textViewDidEndEditing(_ textView: UITextView) {
             focused.wrappedValue = false
-        }
-        
-        public func textViewDidChange(_ textView: UITextView) {
-            didUpdateText(textView)
         }
     }
 }

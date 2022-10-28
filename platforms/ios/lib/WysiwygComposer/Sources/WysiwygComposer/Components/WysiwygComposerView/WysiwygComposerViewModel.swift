@@ -54,9 +54,9 @@ public class WysiwygComposerViewModel: ObservableObject {
     public var textColor: UIColor {
         didSet {
             // In case of a color change, this will refresh the attributed text
-            guard let textView = textView else { return }
             let update = model.replaceAllHtml(html: content.html)
             applyUpdate(update)
+            guard let textView = textView else { return }
             didUpdateText(textView: textView)
         }
     }
@@ -109,8 +109,8 @@ public class WysiwygComposerViewModel: ObservableObject {
     /// Apply any additional setup required.
     /// Should be called when the view appears.
     public func setup() {
-        guard let textView = textView else { return }
         applyUpdate(model.replaceAllHtml(html: ""))
+        guard let textView = textView else { return }
         didUpdateText(textView: textView)
     }
     
