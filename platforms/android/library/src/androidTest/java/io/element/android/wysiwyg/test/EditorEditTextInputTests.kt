@@ -3,7 +3,6 @@ package io.element.android.wysiwyg.test
 import android.graphics.Typeface
 import android.text.Editable
 import android.text.Spannable
-import android.text.TextWatcher
 import android.text.style.BulletSpan
 import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
@@ -11,7 +10,6 @@ import android.view.KeyEvent
 import android.view.View
 import android.widget.TextView
 import androidx.core.text.getSpans
-import androidx.core.widget.addTextChangedListener
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.ViewAssertion
 import androidx.test.espresso.accessibility.AccessibilityChecks
@@ -22,7 +20,6 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.FlakyTest
 import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.spans.OrderedListSpan
@@ -317,26 +314,18 @@ class EditorEditTextInputTests {
     @Test
     fun testTextWatcher() {
         val textWatcher = spyk<(text: Editable?) -> Unit>({ })
-        scenarioRule.scenario.onActivity {
-            val editText = it.findViewById<EditorEditText>(R.id.rich_text_edit_text)
-
-            editText.addTextChangedListener(
-                onTextChanged = {_,_,_,_ -> },
-                beforeTextChanged = {_,_,_,_ -> },
-                afterTextChanged = textWatcher,
-            )
-
-            editText.setText("text")
-            editText.setSelection(0, 4)
-            editText.toggleInlineFormat(InlineFormat.Bold)
-            editText.toggleInlineFormat(InlineFormat.Underline)
-            editText.toggleInlineFormat(InlineFormat.Italic)
-            editText.toggleInlineFormat(InlineFormat.StrikeThrough)
-            editText.toggleInlineFormat(InlineFormat.InlineCode)
-            editText.toggleList(ordered = true)
-            editText.toggleList(ordered = false)
-            editText.setHtml("<b>text</b>")
-        }
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(EditorActions.addTextWatcher(textWatcher))
+            .perform(EditorActions.setText("text"))
+            .perform(ImeActions.setSelection(0, 4))
+            .perform(EditorActions.toggleFormat(InlineFormat.Bold))
+            .perform(EditorActions.toggleFormat(InlineFormat.Underline))
+            .perform(EditorActions.toggleFormat(InlineFormat.Italic))
+            .perform(EditorActions.toggleFormat(InlineFormat.StrikeThrough))
+            .perform(EditorActions.toggleFormat(InlineFormat.InlineCode))
+            .perform(EditorActions.toggleList(ordered = true))
+            .perform(EditorActions.toggleList(ordered = false))
+            .perform(EditorActions.setHtml("<b>text</b>"))
 
         verify(exactly = 9) {
             textWatcher.invoke(match { it.toString() == "text" })
