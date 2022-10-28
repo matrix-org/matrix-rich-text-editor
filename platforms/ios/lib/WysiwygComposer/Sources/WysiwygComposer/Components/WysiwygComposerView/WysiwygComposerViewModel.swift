@@ -314,12 +314,7 @@ private extension WysiwygComposerViewModel {
         do {
             let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count)
             let htmlWithStyle = generateHtmlBodyWithStyle(htmlFragment: html)
-            var attributed = try NSAttributedString(html: htmlWithStyle)
-            let mutableAttributed = NSMutableAttributedString(attributedString: attributed)
-            mutableAttributed.addAttributes(
-                [.foregroundColor: textColor], range: NSRange(location: 0, length: mutableAttributed.length)
-            )
-            attributed = NSAttributedString(attributedString: mutableAttributed)
+            let attributed = try NSAttributedString(html: htmlWithStyle).changeColor(to: textColor)
             // FIXME: handle error for out of bounds index
             let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
             // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
@@ -384,18 +379,21 @@ private extension WysiwygComposerViewModel {
     /// - Parameter enabled: whether plain text mode is enabled
     func updatePlainTextMode(_ enabled: Bool) {
         if enabled {
-            let previousContent = content
-            guard let attributed = try? NSAttributedString(html: generateHtmlBodyWithStyle(htmlFragment: previousContent.plainText)) else {
-                return
+            do {
+                let previousContent = content
+                let attributed = try NSAttributedString(html: generateHtmlBodyWithStyle(htmlFragment: previousContent.plainText)).changeColor(to: textColor)
+                clearContent()
+                guard let textView = textView else { return }
+                textView.attributedText = attributed
+            } catch {
+                Logger.viewModel.logError(
+                    [
+                        "Error: \(error.localizedDescription)",
+                        "updatePlainTextMode: enabled",
+                    ],
+                    functionName: #function
+                )
             }
-            // setting back the textColor in plainText mode
-            let mutableAttributed = NSMutableAttributedString(attributedString: attributed)
-            mutableAttributed.addAttributes(
-                [.foregroundColor: textColor], range: NSRange(location: 0, length: mutableAttributed.length)
-            )
-            let attributedText = NSAttributedString(attributedString: mutableAttributed)
-            clearContent()
-            updateTextView()
         } else {
             // TODO: convert Markdown content to HTML
             let update = model.replaceAllHtml(html: plainText)
@@ -413,4 +411,17 @@ private extension WysiwygComposerViewModel {
 
 private extension Logger {
     static let viewModel = Logger(subsystem: subsystem, category: "ViewModel")
+}
+
+// MARK: - Utils
+
+private extension NSAttributedString {
+    func changeColor(to color: UIColor) -> NSAttributedString {
+        let mutableAttributed = NSMutableAttributedString(attributedString: self)
+        mutableAttributed.addAttributes(
+            [.foregroundColor: color], range: NSRange(location: 0, length: mutableAttributed.length)
+        )
+        let newSelf = NSAttributedString(attributedString: mutableAttributed)
+        return newSelf
+    }
 }
