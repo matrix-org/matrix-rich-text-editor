@@ -117,6 +117,8 @@ internal class InterceptInputConnection(
                     keyEvent.keyCode == KeyEvent.KEYCODE_DEL -> {
                         onHardwareBackspaceKey()
                     }
+                    keyEvent.keyCode == KeyEvent.KEYCODE_FORWARD_DEL ->
+                        onHardwareDeleteKey()
                 }
             }
         }
@@ -189,6 +191,20 @@ internal class InterceptInputConnection(
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal fun onHardwareDeleteKey(): Boolean {
+        val start = Selection.getSelectionStart(editable)
+        val end = Selection.getSelectionEnd(editable)
+        if (start > editable.count() || end > editable.count()) return false
+
+        val toDelete = if (start == end) 1 else abs(start - end)
+
+        // Imitate the software key backspace which updates the selection start to match the end.
+        Selection.setSelection(editable, start, start)
+
+        return deleteSurroundingText(0, toDelete)
+    }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun onHardwareEnterKey(): Boolean {
         val selectionStart = Selection.getSelectionStart(editable)
         val selectionEnd = Selection.getSelectionEnd(editable)
@@ -223,8 +239,12 @@ internal class InterceptInputConnection(
         beginBatchEdit()
         if (afterLength > 0) {
             val result = withProcessor {
-                updateSelection(editable, end, deleteTo)
-                processInput(EditorInputAction.BackPress)
+                val action = if (afterLength > 1) {
+                    EditorInputAction.DeleteIn(end, deleteTo)
+                } else {
+                    EditorInputAction.Delete
+                }
+                processInput(action)
             }
             if (result != null) {
                 replaceAll(result.text, 0, editable.length)
@@ -237,7 +257,9 @@ internal class InterceptInputConnection(
 
         if (beforeLength > 0) {
             val result = withProcessor {
-                updateSelection(editable, deleteFrom, start)
+                if (beforeLength > 1) {
+                    updateSelection(editable, deleteFrom, start)
+                }
                 processInput(EditorInputAction.BackPress)
             }
             if (result != null) {

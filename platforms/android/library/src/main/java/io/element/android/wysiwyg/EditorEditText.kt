@@ -134,7 +134,7 @@ class EditorEditText : TextInputEditText {
                 clipboardManager.setPrimaryClip(clpData)
 
                 val result = viewModel.processInput(
-                    EditorInputAction.Delete(
+                    EditorInputAction.DeleteIn(
                         this.selectionStart,
                         this.selectionEnd
                     )
@@ -167,6 +167,7 @@ class EditorEditText : TextInputEditText {
     private fun addHardwareKeyInterceptor() {
         // This seems to be the only way to prevent EditText from automatically handling key strokes
         setOnKeyListener { _, keyCode, event ->
+            println("Key Event: $event")
             if (keyCode == KeyEvent.KEYCODE_ENTER) {
                 if (event.action == MotionEvent.ACTION_DOWN) {
                     inputConnection?.sendHardwareKeyboardInput(event)
@@ -179,7 +180,9 @@ class EditorEditText : TextInputEditText {
             } else if (event.metaState != 0 && event.unicodeChar == 0) {
                 // Is a modifier key
                 false
-            } else if (event.isPrintableCharacter() || keyCode == KeyEvent.KEYCODE_DEL) {
+            } else if (event.isPrintableCharacter() ||
+                keyCode == KeyEvent.KEYCODE_DEL ||
+                keyCode == KeyEvent.KEYCODE_FORWARD_DEL) {
                 // Consume printable characters
                 inputConnection?.sendHardwareKeyboardInput(event)
                 true

@@ -54,10 +54,11 @@ internal class EditorViewModel(
                     InlineFormat.StrikeThrough -> composer?.strikeThrough()
                     InlineFormat.InlineCode -> composer?.inlineCode()
                 }
-                is EditorInputAction.Delete -> composer?.deleteIn(
+                is EditorInputAction.DeleteIn -> composer?.deleteIn(
                     action.start.toUInt(),
                     action.end.toUInt()
                 )
+                is EditorInputAction.Delete -> composer?.delete()
                 is EditorInputAction.SetLink -> composer?.setLink(action.link)
                 is EditorInputAction.ReplaceAllHtml -> composer?.replaceAllHtml(action.html)
                 is EditorInputAction.Undo -> composer?.undo()

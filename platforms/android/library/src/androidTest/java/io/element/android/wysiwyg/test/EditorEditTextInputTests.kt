@@ -7,7 +7,9 @@ import android.text.style.BulletSpan
 import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.View
+import android.widget.EditText
 import android.widget.TextView
 import androidx.core.text.getSpans
 import androidx.test.espresso.Espresso.onView
@@ -72,6 +74,43 @@ class EditorEditTextInputTests {
             // Type a character again to make sure the composer and the UI match
             .perform(typeText("t"))
             .check(matches(withText("Test")))
+    }
+
+    @Test
+    fun testHardwareKeyboardDelete() {
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(typeText("Test"))
+            .perform(ImeActions.setSelection(0))
+            .perform(pressKey(KeyEvent.KEYCODE_FORWARD_DEL))
+            .check(matches(withText("est")))
+    }
+
+    @Test
+    fun testHardwareKeyboardBackspaceEmoji() {
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(replaceText("\uD83D\uDE2E\u200D\uD83D\uDCA8"))
+            // pressKey doesn't seem to work if no `typeText` is used before
+            .check { view, _ ->
+                val editText = (view as EditText)
+                editText.setSelection(5)
+                val keyEvent = KeyEvent(10, 10, MotionEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL, 0)
+                editText.onKeyDown(keyEvent.keyCode, keyEvent)
+                Assert.assertTrue(editText.text.isEmpty())
+            }
+    }
+
+    @Test
+    fun testHardwareKeyboardDeleteEmoji() {
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(replaceText("\uD83D\uDE2E\u200D\uD83D\uDCA8"))
+            // pressKey doesn't seem to work if no `typeText` is used before
+            .check { view, _ ->
+                val editText = (view as EditText)
+                editText.setSelection(0)
+                val keyEvent = KeyEvent(10, 10, MotionEvent.ACTION_DOWN, KeyEvent.KEYCODE_FORWARD_DEL, 0)
+                editText.onKeyDown(keyEvent.keyCode, keyEvent)
+                Assert.assertTrue(editText.text.isEmpty())
+            }
     }
 
     @Test
