@@ -24,7 +24,7 @@ public class WysiwygComposerViewModel: ObservableObject {
     // MARK: - Public
 
     /// The textView with placeholder support that the model manages
-    public var textView: PlaceholdableTextView!
+    public var textView: PlaceholdableTextView?
     /// Published object for the composer content.
     @Published public var content: WysiwygComposerContent = .init()
     /// Published boolean for the composer empty content state.
@@ -56,8 +56,7 @@ public class WysiwygComposerViewModel: ObservableObject {
             // In case of a color change, this will refresh the attributed text
             let update = model.replaceAllHtml(html: content.html)
             applyUpdate(update)
-            guard let textView = textView else { return }
-            didUpdateText(textView: textView)
+            updateTextView()
         }
     }
 
@@ -110,8 +109,7 @@ public class WysiwygComposerViewModel: ObservableObject {
     /// Should be called when the view appears.
     public func setup() {
         applyUpdate(model.replaceAllHtml(html: ""))
-        guard let textView = textView else { return }
-        didUpdateText(textView: textView)
+        updateTextView()
     }
     
     /// Select given range of text within the model.
@@ -171,8 +169,7 @@ public class WysiwygComposerViewModel: ObservableObject {
             update = model.unorderedList()
         }
         applyUpdate(update)
-        guard let textView = textView else { return }
-        didUpdateText(textView: textView)
+        updateTextView()
     }
 
     /// Sets given HTML as the current content of the composer.
@@ -182,15 +179,13 @@ public class WysiwygComposerViewModel: ObservableObject {
     public func setHtmlContent(_ html: String) {
         let update = model.replaceAllHtml(html: html)
         applyUpdate(update)
-        guard let textView = textView else { return }
-        didUpdateText(textView: textView)
+        updateTextView()
     }
 
     /// Clear the content of the composer.
     public func clearContent() {
         applyUpdate(model.clear())
-        guard let textView = textView else { return }
-        didUpdateText(textView: textView)
+        updateTextView()
     }
 
     /// Returns a textual representation of the composer model as a tree.
@@ -278,6 +273,11 @@ public extension WysiwygComposerViewModel {
 // MARK: - Private
 
 private extension WysiwygComposerViewModel {
+    func updateTextView() {
+        guard let textView = textView else { return }
+        didUpdateText(textView: textView)
+    }
+    
     /// Apply given composer update to the composer.
     ///
     /// - Parameter update: ComposerUpdate to apply.
@@ -395,13 +395,12 @@ private extension WysiwygComposerViewModel {
             )
             let attributedText = NSAttributedString(attributedString: mutableAttributed)
             clearContent()
-            guard let textView = textView else { return }
-            textView.attributedText = attributedText
+            updateTextView()
         } else {
             // TODO: convert Markdown content to HTML
             let update = model.replaceAllHtml(html: plainText)
             applyUpdate(update)
-            didUpdateText(textView: textView)
+            updateTextView()
         }
     }
     

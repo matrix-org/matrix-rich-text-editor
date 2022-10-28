@@ -61,7 +61,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
         Logger.textView.logDebug(
             [
                 viewModel.content.logAttributedSelection,
-                viewModel.content.logText
+                viewModel.content.logText,
             ],
             functionName: #function
         )
@@ -108,7 +108,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
             Logger.textView.logDebug(
                 [
                     textView.logSelection,
-                    textView.logText
+                    textView.logText,
                 ],
                 functionName: #function
             )
