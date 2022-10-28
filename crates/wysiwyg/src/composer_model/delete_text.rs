@@ -14,7 +14,8 @@
 
 use crate::composer_model::base::adjust_handles_for_delete;
 use crate::dom::nodes::DomNode;
-use crate::dom::{DomHandle, Range};
+use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
+use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
 
 impl<S> ComposerModel<S>
@@ -112,11 +113,37 @@ where
     }
 
     pub(crate) fn do_backspace(&mut self) -> ComposerUpdate<S> {
+        let mut prev_char_len: isize = 1;
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        let leaves: Vec<&DomLocation> = range.leaves().collect();
+        if s == e && leaves.len() == 1 {
+            let leaf = leaves[0];
+            if let DomNode::Text(text_node) =
+                self.state.dom.lookup_node(&leaf.node_handle)
+            {
+                prev_char_len = Self::find_previous_char_len(
+                    leaf.position,
+                    e,
+                    &text_node.data(),
+                ) as isize;
+            }
+        }
+
         if self.state.start == self.state.end {
             // Go back 1 from the current location
-            self.state.start -= 1;
+            self.state.start -= prev_char_len;
         }
 
         self.replace_text(S::default())
+    }
+
+    fn find_previous_char_len(start: usize, pos: usize, str: &S::Str) -> usize {
+        let graphemes = str.graphemes(start, pos);
+        if let Some(last_grapheme) = graphemes.last() {
+            last_grapheme.len()
+        } else {
+            panic!("No graphemes in selection");
+        }
     }
 }

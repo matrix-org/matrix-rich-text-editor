@@ -61,6 +61,50 @@ pub trait UnicodeStr:
 
     // Should really be `-> Self::Chars<'a>`, but that requires GATs
     fn chars(&self) -> Box<dyn Iterator<Item = char> + '_>;
+
+    fn char_len(&self, char: &char) -> usize;
+
+    fn graphemes(&self, from: usize, to: usize) -> Vec<&Self> {
+        let mut ret = Vec::new();
+        let mut start = from;
+        let mut offset = start;
+        let mut is_joining = false;
+        let mut chars = self.chars().peekable();
+        while chars.peek().is_some() {
+            let c = chars.next().unwrap();
+            let char_len = self.char_len(&c);
+            let new_offset = offset + char_len;
+            if c == '\u{200D}' {
+                is_joining = true;
+            } else {
+                if !is_joining {
+                    start = offset;
+                    if let Some(next_char) = chars.peek() {
+                        if *next_char != '\u{200D}' {
+                            ret.push(&self[start..new_offset]);
+                        }
+                    } else {
+                        ret.push(&self[start..new_offset]);
+                    }
+                } else {
+                    is_joining = false;
+                    if let Some(next_char) = chars.peek() {
+                        if *next_char != '\u{200D}' {
+                            ret.push(&self[start..new_offset]);
+                        }
+                    } else if chars.peek().is_none() {
+                        ret.push(&self[start..new_offset]);
+                    }
+                }
+            }
+            if new_offset >= to {
+                break;
+            } else {
+                offset = new_offset;
+            }
+        }
+        ret
+    }
 }
 
 impl UnicodeString for String {
@@ -77,6 +121,10 @@ impl UnicodeStr for str {
 
     fn chars(&self) -> Box<dyn Iterator<Item = char> + '_> {
         Box::new(self.chars())
+    }
+
+    fn char_len(&self, char: &char) -> usize {
+        char.len_utf8()
     }
 }
 
@@ -95,6 +143,10 @@ impl UnicodeStr for Utf16Str {
     fn chars(&self) -> Box<dyn Iterator<Item = char> + '_> {
         Box::new(self.chars())
     }
+
+    fn char_len(&self, char: &char) -> usize {
+        char.len_utf16()
+    }
 }
 
 impl UnicodeString for Utf32String {
@@ -111,6 +163,10 @@ impl UnicodeStr for Utf32Str {
 
     fn chars(&self) -> Box<dyn Iterator<Item = char> + '_> {
         Box::new(self.chars())
+    }
+
+    fn char_len(&self, _: &char) -> usize {
+        1
     }
 }
 
