@@ -176,7 +176,7 @@ internal class EditorViewModelTest {
     fun `when process delete in action, it returns a text update`() {
         composer.givenDeleteInResult(3, 4, composerStateUpdate)
 
-        val result = viewModel.processInput(EditorInputAction.Delete(3, 4))
+        val result = viewModel.processInput(EditorInputAction.DeleteIn(3, 4))
 
         verify {
             composer.instance.deleteIn(3.toUInt(), 4.toUInt())
