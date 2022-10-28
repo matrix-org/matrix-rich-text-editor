@@ -412,16 +412,3 @@ private extension WysiwygComposerViewModel {
 private extension Logger {
     static let viewModel = Logger(subsystem: subsystem, category: "ViewModel")
 }
-
-// MARK: - Utils
-
-private extension NSAttributedString {
-    func changeColor(to color: UIColor) -> NSAttributedString {
-        let mutableAttributed = NSMutableAttributedString(attributedString: self)
-        mutableAttributed.addAttributes(
-            [.foregroundColor: color], range: NSRange(location: 0, length: mutableAttributed.length)
-        )
-        let newSelf = NSAttributedString(attributedString: mutableAttributed)
-        return newSelf
-    }
-}
