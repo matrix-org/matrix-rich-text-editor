@@ -39,4 +39,13 @@ class WysiwygUITests: XCTestCase {
     func testTypingAndSending() throws {
         try WysiwygSharedTests.typeAndSendMessage(app)
     }
+    
+    // Remember to disable hardware keyboard and use only software keyboard for this UITest
+    func testTypingFast() throws {
+        try WysiwygSharedTests.typingFast(app)
+    }
+    
+    func testLongPressDelete() throws {
+        try WysiwygSharedTests.longPressDelete(app)
+    }
 }

@@ -16,8 +16,8 @@
 
 import Foundation
 
-@objcMembers
 /// Defines message content displayed in the composer.
+@objcMembers
 public class WysiwygComposerContent: NSObject {
     // MARK: - Public
 

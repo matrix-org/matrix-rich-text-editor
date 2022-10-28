@@ -56,4 +56,18 @@ extension NSAttributedString {
         let font = attribute(.font, at: index, effectiveRange: nil) as? UIFont
         return font?.fontDescriptor.symbolicTraits ?? []
     }
+    
+    /// Changes the attribute of foregroundColor for the whole attributed string
+    ///
+    /// - Parameters:
+    ///   - color: the new UIColor to update the attributed string
+    /// - Returns: a new attributed string with the same content and attributes, but its foregroundColor is changed
+    func changeColor(to color: UIColor) -> NSAttributedString {
+        let mutableAttributed = NSMutableAttributedString(attributedString: self)
+        mutableAttributed.addAttributes(
+            [.foregroundColor: color], range: NSRange(location: 0, length: mutableAttributed.length)
+        )
+        let newSelf = NSAttributedString(attributedString: mutableAttributed)
+        return newSelf
+    }
 }

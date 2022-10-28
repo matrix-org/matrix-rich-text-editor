@@ -37,8 +37,11 @@ final class WysiwygComposerViewModelTests: XCTestCase {
                 XCTAssertFalse(isEmpty)
                 expectFalse.fulfill()
             })
+        
+        let textView = UITextView()
+        textView.attributedText = NSAttributedString(string: "")
 
-        _ = viewModel.replaceText(NSAttributedString(string: ""),
+        _ = viewModel.replaceText(textView,
                                   range: .zero,
                                   replacementText: "Test")
 
@@ -55,7 +58,8 @@ final class WysiwygComposerViewModelTests: XCTestCase {
                 expectTrue.fulfill()
             })
 
-        _ = viewModel.replaceText(viewModel.content.attributed,
+        textView.attributedText = viewModel.content.attributed
+        _ = viewModel.replaceText(textView,
                                   range: .init(location: 0, length: viewModel.content.attributed.length),
                                   replacementText: "")
 
@@ -64,14 +68,18 @@ final class WysiwygComposerViewModelTests: XCTestCase {
     }
 
     func testSimpleTextInputIsAccepted() throws {
-        let shouldChange = viewModel.replaceText(NSAttributedString(string: ""),
+        let textView = UITextView()
+        textView.attributedText = NSAttributedString(string: "")
+        let shouldChange = viewModel.replaceText(textView,
                                                  range: .zero,
                                                  replacementText: "A")
         XCTAssertTrue(shouldChange)
     }
 
     func testNewlineIsNotAccepted() throws {
-        let shouldChange = viewModel.replaceText(NSAttributedString(string: ""),
+        let textView = UITextView()
+        textView.attributedText = NSAttributedString(string: "")
+        let shouldChange = viewModel.replaceText(textView,
                                                  range: .zero,
                                                  replacementText: "\n")
         XCTAssertFalse(shouldChange)
@@ -81,7 +89,7 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         let textView = UITextView()
         let initialText = NSAttributedString(string: "")
         textView.attributedText = initialText
-        _ = viewModel.replaceText(initialText,
+        _ = viewModel.replaceText(textView,
                                   range: .zero,
                                   replacementText: "A")
         textView.attributedText = NSAttributedString(string: "AA")

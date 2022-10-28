@@ -34,10 +34,7 @@ struct Composer: View {
             HStack {
                 WysiwygComposerView(
                     focused: $focused,
-                    content: viewModel.content,
-                    replaceText: viewModel.replaceText,
-                    select: viewModel.select,
-                    didUpdateText: viewModel.didUpdateText
+                    viewModel: viewModel
                 )
                 .placeholder("Placeholder", color: .gray)
                 .frame(height: viewModel.idealHeight)

@@ -21,25 +21,16 @@ import SwiftUI
 public struct WysiwygComposerView: UIViewRepresentable {
     // MARK: - Internal
 
-    public var content: WysiwygComposerContent
-    public var replaceText: (NSAttributedString, NSRange, String) -> Bool
-    public var select: (NSAttributedString, NSRange) -> Void
-    public var didUpdateText: (UITextView) -> Void
+    private var viewModel: WysiwygComposerViewModelProtocol
     private var tintColor = Color.accentColor
     private var placeholderColor = Color(UIColor.placeholderText)
     private var placeholder: String?
     @Binding public var focused: Bool
 
     public init(focused: Binding<Bool>,
-                content: WysiwygComposerContent,
-                replaceText: @escaping (NSAttributedString, NSRange, String) -> Bool,
-                select: @escaping (NSAttributedString, NSRange) -> Void,
-                didUpdateText: @escaping (UITextView) -> Void) {
-        self.content = content
-        self.replaceText = replaceText
-        self.select = select
-        self.didUpdateText = didUpdateText
+                viewModel: WysiwygComposerViewModelProtocol) {
         _focused = focused
+        self.viewModel = viewModel
     }
     
     public func makeUIView(context: Context) -> PlaceholdableTextView {
@@ -60,15 +51,19 @@ public struct WysiwygComposerView: UIViewRepresentable {
         textView.placeholderFont = UIFont.preferredFont(forTextStyle: .subheadline)
         textView.placeholderColor = UIColor(placeholderColor)
         textView.placeholder = placeholder
+        viewModel.textView = textView
+        viewModel.updateCompressedHeightIfNeeded(textView)
         return textView
     }
 
     public func updateUIView(_ uiView: PlaceholdableTextView, context: Context) {
-        Logger.textView.logDebug([content.logAttributedSelection,
-                                  content.logText],
-                                 functionName: #function)
-        uiView.apply(content)
-        context.coordinator.didUpdateText(uiView)
+        Logger.textView.logDebug(
+            [
+                viewModel.content.logAttributedSelection,
+                viewModel.content.logText,
+            ],
+            functionName: #function
+        )
         uiView.tintColor = UIColor(tintColor)
         uiView.placeholderColor = UIColor(placeholderColor)
         uiView.placeholder = placeholder
@@ -81,17 +76,17 @@ public struct WysiwygComposerView: UIViewRepresentable {
     }
 
     public func makeCoordinator() -> Coordinator {
-        Coordinator($focused, replaceText, select, didUpdateText)
+        Coordinator($focused, viewModel.replaceText, viewModel.select, viewModel.didUpdateText)
     }
 
     /// Coordinates UIKit communication.
     public class Coordinator: NSObject, UITextViewDelegate, NSTextStorageDelegate {
         var focused: Binding<Bool>
-        var replaceText: (NSAttributedString, NSRange, String) -> Bool
+        var replaceText: (UITextView, NSRange, String) -> Bool
         var select: (NSAttributedString, NSRange) -> Void
         var didUpdateText: (UITextView) -> Void
         init(_ focused: Binding<Bool>,
-             _ replaceText: @escaping (NSAttributedString, NSRange, String) -> Bool,
+             _ replaceText: @escaping (UITextView, NSRange, String) -> Bool,
              _ select: @escaping (NSAttributedString, NSRange) -> Void,
              _ didUpdateText: @escaping (UITextView) -> Void) {
             self.focused = focused
@@ -105,20 +100,27 @@ public struct WysiwygComposerView: UIViewRepresentable {
                                       textView.logText,
                                       "Replacement: \"\(text)\""],
                                      functionName: #function)
-            return replaceText(textView.attributedText, range, text)
+            return replaceText(textView, range, text)
         }
-
+        
         public func textViewDidChange(_ textView: UITextView) {
-            Logger.textView.logDebug([textView.logSelection,
-                                      textView.logText],
-                                     functionName: #function)
+            Logger.textView.logDebug(
+                [
+                    textView.logSelection,
+                    textView.logText,
+                ],
+                functionName: #function
+            )
             didUpdateText(textView)
         }
 
         public func textViewDidChangeSelection(_ textView: UITextView) {
             Logger.textView.logDebug([textView.logSelection],
                                      functionName: #function)
-            select(textView.attributedText, textView.selectedRange)
+            // Fixes long press delete issue
+            DispatchQueue.main.async {
+                self.select(textView.attributedText, textView.selectedRange)
+            }
         }
         
         public func textViewDidBeginEditing(_ textView: UITextView) {
