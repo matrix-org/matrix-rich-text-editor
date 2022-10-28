@@ -234,4 +234,28 @@ class InterceptInputConnectionIntegrationTest {
             )
         )
     }
+
+    @Test
+    fun testComposeOrderedListLetterWithEmoji() {
+        viewModel.processInput(EditorInputAction.ToggleList(ordered = true))
+        inputConnection.setComposingText("😋", 1)
+        inputConnection.setComposingText("😋😋", 1)
+
+        assertThat(textView.text.toString(), equalTo("\u200B😋😋"))
+        assertThat(
+            textView.text.dumpSpans(), equalTo(
+                listOf(
+                    "\u200B😋😋: android.widget.TextView.ChangeWatcher (0-5) fl=#6553618",
+                    "\u200B😋😋: android.text.method.TextKeyListener (0-5) fl=#18",
+                    "\u200B😋😋: android.widget.Editor.SpanController (0-5) fl=#18",
+                    ": android.text.Selection.START (5-5) fl=#546",
+                    ": android.text.Selection.END (5-5) fl=#34",
+                    "\u200B: io.element.android.wysiwyg.spans.ExtraCharacterSpan (0-1) fl=#33",
+                    "\u200B😋😋: io.element.android.wysiwyg.spans.OrderedListSpan (0-5) fl=#33",
+                    "😋😋: android.text.style.UnderlineSpan (1-5) fl=#289",
+                    "😋😋: android.view.inputmethod.ComposingText (1-5) fl=#289",
+                )
+            )
+        )
+    }
 }
