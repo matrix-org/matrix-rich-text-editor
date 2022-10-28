@@ -345,12 +345,10 @@ where
 #[cfg(test)]
 mod test {
     use std::collections::HashSet;
+    use widestring::Utf16String;
 
-    use widestring::{Utf16String, Utf32String};
-
-    use crate::dom::unicode_string::UnicodeStr;
     use crate::menu_state::MenuStateUpdate;
-    use crate::tests::testutils_composer_model::{cm, tx};
+    use crate::tests::testutils_composer_model::cm;
     use crate::tests::testutils_conversion::utf16;
     use crate::{ComposerAction, ComposerUpdate, Location, MenuState};
 
@@ -375,50 +373,5 @@ mod test {
                 }),
             )
         );
-    }
-
-    #[test]
-    fn test_backspace_emoji() {
-        let mut model = cm("😄|😅");
-        model.backspace();
-        assert_eq!(tx(&model), "|😅");
-    }
-
-    #[test]
-    fn test_backspace_complex_emoji() {
-        let mut model = cm("Test😮‍💨|😅");
-        model.backspace();
-        assert_eq!(tx(&model), "Test|😅");
-        model.select(6.into(), 6.into());
-        model.backspace();
-        assert_eq!(tx(&model), "Test|");
-    }
-
-    #[test]
-    fn test_emoji_utf8() {
-        let str = "😄";
-        let graphemes = str.graphemes(0, str.len());
-        assert_eq!(1, graphemes.len());
-    }
-
-    #[test]
-    fn test_emoji_complex_utf8() {
-        let str = "😮‍💨";
-        let graphemes = str.graphemes(0, str.len());
-        assert_eq!(1, graphemes.len());
-    }
-
-    #[test]
-    fn test_emoji_complex_with_text_utf8() {
-        let str = "Test 😮‍💨";
-        let graphemes = str.graphemes(0, str.len());
-        assert_eq!(6, graphemes.len());
-    }
-
-    #[test]
-    fn test_emoji_complex_with_text_utf32() {
-        let str = Utf32String::from_str("Test 😮‍💨");
-        let graphemes = str.graphemes(0, str.len());
-        assert_eq!(6, graphemes.len());
     }
 }

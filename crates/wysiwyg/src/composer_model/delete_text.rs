@@ -72,8 +72,24 @@ where
     /// Deletes the character after the current cursor position.
     pub fn delete(&mut self) -> ComposerUpdate<S> {
         if self.state.start == self.state.end {
+            let mut next_char_len: isize = 1;
+            let (s, e) = self.safe_selection();
+            let range = self.state.dom.find_range(s, e);
+            let leaves: Vec<&DomLocation> = range.leaves().collect();
+            if s == e && leaves.len() == 1 {
+                let leaf = leaves[0];
+                if let DomNode::Text(text_node) =
+                    self.state.dom.lookup_node(&leaf.node_handle)
+                {
+                    next_char_len = Self::find_next_char_len(
+                        s - leaf.position,
+                        text_node.data().len(), // TODO Maybe we can find some other value?
+                        &text_node.data(),
+                    ) as isize;
+                }
+            }
             // Go forward 1 from the current location
-            self.state.end += 1;
+            self.state.end += next_char_len;
         }
 
         self.replace_text(S::default())
@@ -113,37 +129,47 @@ where
     }
 
     pub(crate) fn do_backspace(&mut self) -> ComposerUpdate<S> {
-        let mut prev_char_len: isize = 1;
-        let (s, e) = self.safe_selection();
-        let range = self.state.dom.find_range(s, e);
-        let leaves: Vec<&DomLocation> = range.leaves().collect();
-        if s == e && leaves.len() == 1 {
-            let leaf = leaves[0];
-            if let DomNode::Text(text_node) =
-                self.state.dom.lookup_node(&leaf.node_handle)
-            {
-                prev_char_len = Self::find_previous_char_len(
-                    leaf.position,
-                    e,
-                    &text_node.data(),
-                ) as isize;
-            }
-        }
-
         if self.state.start == self.state.end {
-            // Go back 1 from the current location
+            let mut prev_char_len: isize = 1;
+            let (s, e) = self.safe_selection();
+            let range = self.state.dom.find_range(s, e);
+            let leaves: Vec<&DomLocation> = range.leaves().collect();
+            if s == e && leaves.len() == 1 {
+                let leaf = leaves[0];
+                if let DomNode::Text(text_node) =
+                    self.state.dom.lookup_node(&leaf.node_handle)
+                {
+                    prev_char_len = Self::find_previous_char_len(
+                        0,
+                        e - leaf.position,
+                        &text_node.data(),
+                    ) as isize;
+                }
+            }
+            // Go back `prev_char_len` positions from the current location
             self.state.start -= prev_char_len;
         }
 
         self.replace_text(S::default())
     }
 
-    fn find_previous_char_len(start: usize, pos: usize, str: &S::Str) -> usize {
-        let graphemes = str.graphemes(start, pos);
+    fn find_next_char_len(start: usize, end: usize, str: &S::Str) -> usize {
+        let graphemes = str.graphemes(start, end);
+        if let Some(first_grapheme) = graphemes.first() {
+            first_grapheme.len()
+        } else {
+            // Default length for characters
+            1
+        }
+    }
+
+    fn find_previous_char_len(start: usize, end: usize, str: &S::Str) -> usize {
+        let graphemes = str.graphemes(start, end);
         if let Some(last_grapheme) = graphemes.last() {
             last_grapheme.len()
         } else {
-            panic!("No graphemes in selection");
+            // Default length for characters
+            1
         }
     }
 }
