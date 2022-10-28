@@ -20,7 +20,9 @@ import com.google.android.material.textfield.TextInputEditText
 import io.element.android.wysiwyg.inputhandlers.InterceptInputConnection
 import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
+import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
 import io.element.android.wysiwyg.utils.*
+import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
 import io.element.android.wysiwyg.viewmodel.EditorViewModel
 import uniffi.wysiwyg_composer.MenuState
 import uniffi.wysiwyg_composer.newComposerModel
@@ -139,7 +141,7 @@ class EditorEditText : TextInputEditText {
                 )
 
                 if (result != null) {
-                    setTextInternal(result.text)
+                    setTextFromComposerUpdate(result)
                     setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
                 }
 
@@ -152,7 +154,7 @@ class EditorEditText : TextInputEditText {
                 val result = viewModel.processInput(EditorInputAction.ReplaceText(copiedString))
 
                 if (result != null) {
-                    setTextInternal(result.text)
+                    setTextFromComposerUpdate(result)
                     setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
                 }
 
@@ -202,22 +204,15 @@ class EditorEditText : TextInputEditText {
         val result = viewModel.processInput(EditorInputAction.ReplaceText(text.toString()))
             ?: return super.setText(text, type)
 
-        setTextInternal(result.text)
+        setTextFromComposerUpdate(result)
         setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
-    }
-
-    private fun setTextInternal(text: CharSequence?) {
-        beginBatchEdit()
-        editableText.clear()
-        editableText.replace(0, editableText.length, text)
-        endBatchEdit()
     }
 
     override fun append(text: CharSequence?, start: Int, end: Int) {
         val result = viewModel.processInput(EditorInputAction.ReplaceText(text.toString()))
             ?: return super.append(text, start, end)
 
-        setTextInternal(result.text)
+        setTextFromComposerUpdate(result)
         setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
     }
 
@@ -225,7 +220,7 @@ class EditorEditText : TextInputEditText {
         val result = viewModel.processInput(EditorInputAction.ApplyInlineFormat(inlineFormat))
             ?: return false
 
-        setTextInternal(result.text)
+        setTextFromComposerUpdate(result)
         setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
         return true
     }
@@ -233,35 +228,35 @@ class EditorEditText : TextInputEditText {
     fun undo() {
         val result = viewModel.processInput(EditorInputAction.Undo) ?: return
 
-        setTextInternal(result.text)
+        setTextFromComposerUpdate(result)
         setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
     }
 
     fun redo() {
         val result = viewModel.processInput(EditorInputAction.Redo) ?: return
 
-        setTextInternal(result.text)
+        setTextFromComposerUpdate(result)
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
     fun setLink(link: String) {
         val result = viewModel.processInput(EditorInputAction.SetLink(link)) ?: return
 
-        setTextInternal(result.text)
+        setTextFromComposerUpdate(result)
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
     fun toggleList(ordered: Boolean) {
         val result = viewModel.processInput(EditorInputAction.ToggleList(ordered)) ?: return
 
-        setTextInternal(result.text)
+        setTextFromComposerUpdate(result)
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
     fun setHtml(html: String) {
         val result = viewModel.processInput(EditorInputAction.ReplaceAllHtml(html)) ?: return
 
-        setTextInternal(result.text)
+        setTextFromComposerUpdate(result)
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
@@ -283,6 +278,13 @@ class EditorEditText : TextInputEditText {
      */
     fun setPlainText(plainText: String) =
         setText(plainText)
+
+    private fun setTextFromComposerUpdate(result: ReplaceTextResult) {
+        beginBatchEdit()
+        editableText.removeFormattingSpans()
+        editableText.replace(0, editableText.length, result.text)
+        endBatchEdit()
+    }
 
     private fun setSelectionFromComposerUpdate(start: Int, end: Int = start) {
         val (newStart, newEnd) = EditorIndexMapper.fromComposerToEditor(start, end, editableText)

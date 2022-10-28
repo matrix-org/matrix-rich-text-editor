@@ -1,7 +1,9 @@
 package io.element.android.wysiwyg.test
 
 import android.graphics.Typeface
+import android.text.Editable
 import android.text.Spannable
+import android.text.TextWatcher
 import android.text.style.BulletSpan
 import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
@@ -9,6 +11,7 @@ import android.view.KeyEvent
 import android.view.View
 import android.widget.TextView
 import androidx.core.text.getSpans
+import androidx.core.widget.addTextChangedListener
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.ViewAssertion
 import androidx.test.espresso.accessibility.AccessibilityChecks
@@ -27,6 +30,9 @@ import io.element.android.wysiwyg.test.utils.EditorActions
 import io.element.android.wysiwyg.test.utils.ImeActions
 import io.element.android.wysiwyg.test.utils.TestActivity
 import io.element.android.wysiwyg.test.utils.selectionIsAt
+import io.mockk.confirmVerified
+import io.mockk.spyk
+import io.mockk.verify
 import org.hamcrest.Description
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
@@ -308,6 +314,38 @@ class EditorEditTextInputTests {
         }
     }
 
+    @Test
+    fun testTextWatcher() {
+        val textWatcher = spyk<(text: Editable?) -> Unit>({ })
+        scenarioRule.scenario.onActivity {
+            val editText = it.findViewById<EditorEditText>(R.id.rich_text_edit_text)
+
+            editText.addTextChangedListener(
+                onTextChanged = {_,_,_,_ -> },
+                beforeTextChanged = {_,_,_,_ -> },
+                afterTextChanged = textWatcher,
+            )
+
+            editText.setText("text")
+            editText.setSelection(0, 4)
+            editText.toggleInlineFormat(InlineFormat.Bold)
+            editText.toggleInlineFormat(InlineFormat.Underline)
+            editText.toggleInlineFormat(InlineFormat.Italic)
+            editText.toggleInlineFormat(InlineFormat.StrikeThrough)
+            editText.toggleInlineFormat(InlineFormat.InlineCode)
+            editText.toggleList(ordered = true)
+            editText.toggleList(ordered = false)
+            editText.setHtml("<b>text</b>")
+        }
+
+        verify(exactly = 9) {
+            textWatcher.invoke(match { it.toString() == "text" })
+        }
+        verify(inverse = true) {
+            textWatcher.invoke(match { it.toString() == "" })
+        }
+        confirmVerified(textWatcher)
+    }
 }
 
 fun containsSpan(
