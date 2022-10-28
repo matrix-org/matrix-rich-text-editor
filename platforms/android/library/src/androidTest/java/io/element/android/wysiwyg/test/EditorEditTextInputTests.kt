@@ -88,29 +88,22 @@ class EditorEditTextInputTests {
     @Test
     fun testHardwareKeyboardBackspaceEmoji() {
         onView(withId(R.id.rich_text_edit_text))
-            .perform(replaceText("\uD83D\uDE2E\u200D\uD83D\uDCA8"))
             // pressKey doesn't seem to work if no `typeText` is used before
-            .check { view, _ ->
-                val editText = (view as EditText)
-                editText.setSelection(5)
-                val keyEvent = KeyEvent(10, 10, MotionEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL, 0)
-                editText.onKeyDown(keyEvent.keyCode, keyEvent)
-                Assert.assertTrue(editText.text.isEmpty())
-            }
+            .perform(pressKey(KeyEvent.KEYCODE_A))
+            .perform(replaceText("\uD83D\uDE2E\u200D\uD83D\uDCA8"))
+            .perform(pressKey(KeyEvent.KEYCODE_DEL))
+            .check(matches(withText("")))
     }
 
     @Test
     fun testHardwareKeyboardDeleteEmoji() {
         onView(withId(R.id.rich_text_edit_text))
-            .perform(replaceText("\uD83D\uDE2E\u200D\uD83D\uDCA8"))
             // pressKey doesn't seem to work if no `typeText` is used before
-            .check { view, _ ->
-                val editText = (view as EditText)
-                editText.setSelection(0)
-                val keyEvent = KeyEvent(10, 10, MotionEvent.ACTION_DOWN, KeyEvent.KEYCODE_FORWARD_DEL, 0)
-                editText.onKeyDown(keyEvent.keyCode, keyEvent)
-                Assert.assertTrue(editText.text.isEmpty())
-            }
+            .perform(pressKey(KeyEvent.KEYCODE_A))
+            .perform(replaceText("\uD83D\uDE2E\u200D\uD83D\uDCA8"))
+            .perform(AnyAction { view -> (view as EditText).setSelection(0) })
+            .perform(pressKey(KeyEvent.KEYCODE_FORWARD_DEL))
+            .check(matches(withText("")))
     }
 
     @Test
