@@ -96,21 +96,6 @@ class HtmlToSpansParserTest {
         )
     }
 
-    private fun CharSequence.dumpSpans(): List<String> {
-        val spans = mutableListOf<String>()
-        TextUtils.dumpSpans(
-            this, { span ->
-                val spanWithoutHash = span.split(" ").filterIndexed { index, _ ->
-                    index != 1
-                }.joinToString(" ")
-
-                spans.add(spanWithoutHash)
-            }, ""
-        )
-        return spans
-    }
-
-
     private fun convertHtml(html: String) =
         HtmlToSpansParser(
             resourcesProvider = AndroidResourcesProvider(application = ApplicationProvider.getApplicationContext()),

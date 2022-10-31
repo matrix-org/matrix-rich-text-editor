@@ -13,6 +13,7 @@ import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.utils.EditorIndexMapper
+import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
 import io.element.android.wysiwyg.viewmodel.EditorViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -129,13 +130,22 @@ internal class InterceptInputConnection(
         }
 
         return if (result != null) {
-            val compositionEnd = text?.length?.let { it + start } ?: end
+            val newText = result.text.subSequence(start, start + (text?.length ?: 0))
+
+            // Calculate the new composition range.
+            // If the composer has inserted a zero width whitespace as a list delimiter,
+            // shift the composition indices so that it is not included.
+            val compositionStart = start
+                .let { if (newText.startsWith("\u200b")) it + 1 else it }
+            val compositionEnd = (text?.length?.let { it + start } ?: end)
+                .let { if (newText.startsWith("\u200b")) it + 1 else it }
+
             // Here we restore the background color spans from the IME input. This seems to be
             // important for Japanese input.
             if (text is Spannable && result.text is Spannable) {
                 copyImeHighlightSpans(text, result.text, start)
             }
-            replaceAll(result.text, compositionStart = start, compositionEnd = compositionEnd)
+            replaceAll(result.text, compositionStart = compositionStart, compositionEnd = compositionEnd)
             setSelectionOnEditable(editable, result.selection.last, result.selection.last)
             true
         } else {
@@ -271,7 +281,7 @@ internal class InterceptInputConnection(
         compositionEnd: Int,
     ) {
         beginBatchEdit()
-        editable.clear()
+        editable.removeFormattingSpans()
         editable.replace(0, editable.length, charSequence)
         setComposingRegion(compositionStart, compositionEnd)
         endBatchEdit()
