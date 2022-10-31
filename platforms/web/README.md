@@ -1,8 +1,8 @@
-# React Matrix WYSIWYG Composer
+# React Matrix Rich Text Editor
 
 [![react-build](https://github.com/matrix-org/matrix-wysiwyg/actions/workflows/react-build.yml/badge.svg?branch=main)](https://github.com/matrix-org/matrix-wysiwyg/actions/workflows/react-build.yml)
 
-The Matrix WYSIWYG composer is a React library.
+The Matrix Rich Text Editor is a React library.
 
 ## TODO NPM / Usage documentation
 
@@ -27,7 +27,7 @@ return (
 
 #### Generate WASM bindings
 
-The composer uses a cross-platform rust library. In order to work as intended, the WASM bindings must be generated according to the [Matrix Wysisyg README.md](../../../README.md)
+The composer uses a cross-platform rust library. In order to work as intended, the WASM bindings must be generated according to the [Matrix Rich Text Editor README.md](../../../README.md)
 
 #### Yarn install
 

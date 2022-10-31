@@ -1,6 +1,6 @@
 # WysiwygComposer
 
-This package contains most of the source code powering our WYSIWYG editor.
+This package contains most of the source code powering our rich text editor.
 
 It is composed of: 
 * Static libraries generated from Rust, packaged in a XCFramework.
