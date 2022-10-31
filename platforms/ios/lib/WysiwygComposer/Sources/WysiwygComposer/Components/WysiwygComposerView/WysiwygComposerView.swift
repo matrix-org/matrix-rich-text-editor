@@ -134,7 +134,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
 }
 
 public extension WysiwygComposerView {
-    /// Sets the tintColor of the WYSIWYG textView, if not used the default value is Color.accent.
+    /// Sets the tintColor of the rich text editor textView, if not used the default value is Color.accent.
     func tintColor(_ tintColor: Color) -> Self {
         var newSelf = self
         newSelf.tintColor = tintColor

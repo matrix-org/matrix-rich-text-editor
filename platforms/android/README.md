@@ -1,4 +1,4 @@
-# WYSIWYG Android Sample
+# Matrix Rich Text Editor Android Sample
 
 ## Possible issues:
 

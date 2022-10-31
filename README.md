@@ -1,7 +1,10 @@
-# WYSIWYG-rust
+# Matrix Rich Text Editor
 
-Experiments with a WYSIWYG editor for Matrix, for possible inclusion in Element
-clients.
+A cross-platform rich text editor intended for use in Matrix clients including
+the Element clients.
+
+Works on Web, Android and iOS using a cross-platform core written in Rust,
+and platform-specific wrappers.
 
 ## Live demo
 
