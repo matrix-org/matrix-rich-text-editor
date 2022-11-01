@@ -212,6 +212,11 @@ where
         &self.children
     }
 
+    #[cfg(feature = "js")]
+    pub(crate) fn take_children(self) -> Vec<DomNode<S>> {
+        self.children
+    }
+
     pub fn kind(&self) -> &ContainerNodeKind<S> {
         &self.kind
     }

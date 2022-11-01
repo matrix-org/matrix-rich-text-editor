@@ -29,6 +29,7 @@ pub trait UnicodeString:
     + PartialEq
     + AsRef<[Self::CodeUnit]>
     + for<'a> From<&'a str>
+    + From<String>
     + Deref<Target = Self::Str>
     + for<'a> Extend<&'a Self::Str>
     + Extend<Self>
