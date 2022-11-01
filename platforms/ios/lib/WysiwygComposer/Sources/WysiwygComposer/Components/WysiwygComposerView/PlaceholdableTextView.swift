@@ -17,6 +17,12 @@
 import UIKit
 
 public class PlaceholdableTextView: UITextView {
+    var shouldShowPlaceholder = true {
+        didSet {
+            setNeedsDisplay()
+        }
+    }
+    
     var placeholder: String? {
         didSet {
             setNeedsDisplay()
@@ -48,7 +54,7 @@ public class PlaceholdableTextView: UITextView {
     override public func draw(_ rect: CGRect) {
         super.draw(rect)
         
-        guard attributedText.length == 0, let placeholder = placeholder else {
+        guard shouldShowPlaceholder, let placeholder = placeholder else {
             return
         }
         

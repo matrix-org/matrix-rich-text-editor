@@ -19,10 +19,22 @@ import Foundation
 import OSLog
 import UIKit
 
+public protocol WysiwygComposerViewModelProtocol: AnyObject {
+    var textView: PlaceholdableTextView? { get set }
+    var content: WysiwygComposerContent { get }
+    
+    func updateCompressedHeightIfNeeded(_ textView: UITextView)
+    func replaceText(_ textView: UITextView, range: NSRange, replacementText: String) -> Bool
+    func select(text: NSAttributedString, range: NSRange)
+    func didUpdateText(textView: UITextView)
+}
+
 /// Main view model for the composer. Forwards actions to the Rust model and publishes resulting states.
-public class WysiwygComposerViewModel: ObservableObject {
+public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, ObservableObject {
     // MARK: - Public
 
+    /// The textView with placeholder support that the model manages
+    public var textView: PlaceholdableTextView?
     /// Published object for the composer content.
     @Published public var content: WysiwygComposerContent = .init()
     /// Published boolean for the composer empty content state.
@@ -40,6 +52,13 @@ public class WysiwygComposerViewModel: ObservableObject {
             updateIdealHeight()
         }
     }
+
+    /// Published value for the composer plain text mode.
+    @Published public var plainTextMode = false {
+        didSet {
+            updatePlainTextMode(plainTextMode)
+        }
+    }
     
     /// The current textColor of the attributed string
     public var textColor: UIColor {
@@ -47,13 +66,24 @@ public class WysiwygComposerViewModel: ObservableObject {
             // In case of a color change, this will refresh the attributed text
             let update = model.replaceAllHtml(html: content.html)
             applyUpdate(update)
+            updateTextView()
         }
+    }
+
+    /// The composer content for plain text mode.
+    public var plainTextModeContent: WysiwygComposerContent {
+        // TODO: convert plain text to HTML
+        WysiwygComposerContent(plainText: plainText,
+                               html: "",
+                               attributed: NSAttributedString(string: plainText),
+                               attributedSelection: .init(location: plainText.utf16Length,
+                                                          length: 0))
     }
 
     // MARK: - Private
 
     private var model: ComposerModel
-    private var cancellable: AnyCancellable?
+    private var cancellables = Set<AnyCancellable>()
     private let minHeight: CGFloat
     private let maxHeight: CGFloat
     private var compressedHeight: CGFloat = .zero {
@@ -61,6 +91,8 @@ public class WysiwygComposerViewModel: ObservableObject {
             updateIdealHeight()
         }
     }
+
+    private var plainText = ""
 
     // MARK: - Public
 
@@ -70,15 +102,24 @@ public class WysiwygComposerViewModel: ObservableObject {
         self.textColor = textColor
         model = newComposerModel()
         // Publish composer empty state.
-        cancellable = $content.sink(receiveValue: { [unowned self] content in
+        $content.sink { [unowned self] content in
             self.isContentEmpty = content.plainText.isEmpty
-        })
+        }
+        .store(in: &cancellables)
+        
+        $isContentEmpty
+            .removeDuplicates()
+            .sink { [unowned self] isContentEmpty in
+                self.textView?.shouldShowPlaceholder = isContentEmpty
+            }
+            .store(in: &cancellables)
     }
 
     /// Apply any additional setup required.
     /// Should be called when the view appears.
     public func setup() {
         applyUpdate(model.replaceAllHtml(html: ""))
+        updateTextView()
     }
     
     /// Select given range of text within the model.
@@ -138,6 +179,7 @@ public class WysiwygComposerViewModel: ObservableObject {
             update = model.unorderedList()
         }
         applyUpdate(update)
+        updateTextView()
     }
 
     /// Sets given HTML as the current content of the composer.
@@ -147,11 +189,13 @@ public class WysiwygComposerViewModel: ObservableObject {
     public func setHtmlContent(_ html: String) {
         let update = model.replaceAllHtml(html: html)
         applyUpdate(update)
+        updateTextView()
     }
 
     /// Clear the content of the composer.
     public func clearContent() {
         applyUpdate(model.clear())
+        updateTextView()
     }
 
     /// Returns a textual representation of the composer model as a tree.
@@ -166,14 +210,18 @@ public extension WysiwygComposerViewModel {
     /// Replace text in the model.
     ///
     /// - Parameters:
-    ///   - text: Text currently displayed in the composer.
+    ///   - textView: TextView which currently holds the displayed text in the composer.
     ///   - range: Range to replace.
     ///   - replacementText: Replacement text to apply.
-    func replaceText(_ text: NSAttributedString, range: NSRange, replacementText: String) -> Bool {
+    func replaceText(_ textView: UITextView, range: NSRange, replacementText: String) -> Bool {
+        guard !plainTextMode else {
+            return true
+        }
+
         let update: ComposerUpdate
         let shouldAcceptChange: Bool
 
-        if range != content.attributedSelection {
+        if range != content.attributedSelection, let text = textView.attributedText {
             select(text: text, range: range)
         }
 
@@ -192,6 +240,9 @@ public extension WysiwygComposerViewModel {
         }
 
         applyUpdate(update)
+        if !shouldAcceptChange {
+            didUpdateText(textView: textView)
+        }
         return shouldAcceptChange
     }
 
@@ -199,8 +250,13 @@ public extension WysiwygComposerViewModel {
     ///
     /// - Parameter textView: The composer's text view.
     func didUpdateText(textView: UITextView) {
-        // Reconciliate
-        if textView.attributedText != content.attributed {
+        if plainTextMode {
+            plainText = textView.text
+            if textView.text.isEmpty != isContentEmpty {
+                isContentEmpty = textView.text.isEmpty
+            }
+        } else if textView.attributedText != content.attributed {
+            // Reconciliate
             Logger.viewModel.logDebug(["Reconciliate from \"\(textView.text ?? "")\" to \"\(content.plainText)\""],
                                       functionName: #function)
             textView.apply(content)
@@ -208,11 +264,30 @@ public extension WysiwygComposerViewModel {
 
         updateCompressedHeightIfNeeded(textView)
     }
+    
+    /// Update the composer compressed required height if it has changed.
+    ///
+    /// - Parameters:
+    ///   - textView: The composer's text view.
+    func updateCompressedHeightIfNeeded(_ textView: UITextView) {
+        let idealTextHeight = textView
+            .sizeThatFits(CGSize(width: textView.bounds.size.width,
+                                 height: CGFloat.greatestFiniteMagnitude)
+            )
+            .height
+        
+        compressedHeight = min(maxHeight, max(minHeight, idealTextHeight))
+    }
 }
 
 // MARK: - Private
 
 private extension WysiwygComposerViewModel {
+    func updateTextView() {
+        guard let textView = textView else { return }
+        didUpdateText(textView: textView)
+    }
+    
     /// Apply given composer update to the composer.
     ///
     /// - Parameter update: ComposerUpdate to apply.
@@ -249,12 +324,7 @@ private extension WysiwygComposerViewModel {
         do {
             let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count)
             let htmlWithStyle = generateHtmlBodyWithStyle(htmlFragment: html)
-            var attributed = try NSAttributedString(html: htmlWithStyle)
-            let mutableAttributed = NSMutableAttributedString(attributedString: attributed)
-            mutableAttributed.addAttributes(
-                [.foregroundColor: textColor], range: NSRange(location: 0, length: mutableAttributed.length)
-            )
-            attributed = NSAttributedString(attributedString: mutableAttributed)
+            let attributed = try NSAttributedString(html: htmlWithStyle).changeColor(to: textColor)
             // FIXME: handle error for out of bounds index
             let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
             // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
@@ -300,20 +370,6 @@ private extension WysiwygComposerViewModel {
                                       functionName: #function)
         }
     }
-
-    /// Update the composer compressed required height if it has changed.
-    ///
-    /// - Parameters:
-    ///   - textView: The composer's text view.
-    func updateCompressedHeightIfNeeded(_ textView: UITextView) {
-        let idealTextHeight = textView
-            .sizeThatFits(CGSize(width: textView.bounds.size.width,
-                                 height: CGFloat.greatestFiniteMagnitude)
-            )
-            .height
-        
-        compressedHeight = min(maxHeight, max(minHeight, idealTextHeight))
-    }
     
     /// Update the composer ideal height based on the maximised state.
     ///
@@ -327,9 +383,37 @@ private extension WysiwygComposerViewModel {
             }
         }
     }
+
+    /// Updates the view model content for given plain text mode setting.
+    ///
+    /// - Parameter enabled: whether plain text mode is enabled
+    func updatePlainTextMode(_ enabled: Bool) {
+        if enabled {
+            do {
+                let previousContent = content
+                let attributed = try NSAttributedString(html: generateHtmlBodyWithStyle(htmlFragment: previousContent.plainText)).changeColor(to: textColor)
+                clearContent()
+                guard let textView = textView else { return }
+                textView.attributedText = attributed
+            } catch {
+                Logger.viewModel.logError(
+                    [
+                        "Error: \(error.localizedDescription)",
+                        "updatePlainTextMode: enabled",
+                    ],
+                    functionName: #function
+                )
+            }
+        } else {
+            // TODO: convert Markdown content to HTML
+            let update = model.replaceAllHtml(html: plainText)
+            applyUpdate(update)
+            updateTextView()
+        }
+    }
     
     func generateHtmlBodyWithStyle(htmlFragment: String) -> String {
-        "<html><head><style>body {font-family:-apple-system;font:-apple-system-subheadline;}</style></head><body>\(htmlFragment)</body></html>"
+        "<html><head><style>body {font-family:-apple-system;font:-apple-system-body;}</style></head><body>\(htmlFragment)</body></html>"
     }
 }
 

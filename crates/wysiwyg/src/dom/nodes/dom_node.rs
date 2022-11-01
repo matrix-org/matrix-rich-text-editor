@@ -16,6 +16,7 @@ use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::nodes::{ContainerNode, LineBreakNode, TextNode};
 use crate::dom::to_html::ToHtml;
+use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
 use crate::dom::unicode_string::UnicodeStrExt;
@@ -143,6 +144,14 @@ where
             _ => false,
         }
     }
+
+    pub(crate) fn is_block_node(&self) -> bool {
+        matches!(self, Self::Container(container) if container.is_block_node())
+    }
+
+    pub(crate) fn is_inline_node(&self) -> bool {
+        !self.is_block_node()
+    }
 }
 
 impl<S> ToHtml<S> for DomNode<S>
@@ -191,6 +200,25 @@ where
             DomNode::Container(n) => n.to_tree_display(continuous_positions),
             DomNode::LineBreak(n) => n.to_tree_display(continuous_positions),
             DomNode::Text(n) => n.to_tree_display(continuous_positions),
+        }
+    }
+}
+
+impl<S> ToMarkdown<S> for DomNode<S>
+where
+    S: UnicodeString,
+{
+    fn fmt_markdown(
+        &self,
+        buffer: &mut S,
+        options: &MarkdownOptions,
+    ) -> Result<(), MarkdownError<S>> {
+        match self {
+            DomNode::Container(container) => {
+                container.fmt_markdown(buffer, options)
+            }
+            DomNode::Text(text) => text.fmt_markdown(buffer, options),
+            DomNode::LineBreak(node) => node.fmt_markdown(buffer, options),
         }
     }
 }

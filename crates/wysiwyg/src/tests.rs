@@ -23,6 +23,7 @@ pub mod test_menu_state;
 pub mod test_paragraphs;
 pub mod test_replace_all_html;
 pub mod test_selection;
+pub mod test_to_markdown;
 pub mod test_to_raw_text;
 pub mod test_to_tree;
 pub mod test_undo_redo;

@@ -1,6 +1,7 @@
 package io.element.android.wysiwyg.utils
 
 import android.graphics.Typeface
+import android.text.Editable
 import android.text.SpannableString
 import android.text.SpannableStringBuilder
 import android.text.Spanned
@@ -9,10 +10,11 @@ import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
 import androidx.core.text.getSpans
+import io.element.android.wysiwyg.BuildConfig
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
+import io.element.android.wysiwyg.spans.ExtraCharacterSpan
 import io.element.android.wysiwyg.spans.InlineCodeSpan
 import io.element.android.wysiwyg.spans.OrderedListSpan
-import io.element.android.wysiwyg.spans.ExtraCharacterSpan
 import org.ccil.cowan.tagsoup.Parser
 import org.xml.sax.Attributes
 import org.xml.sax.ContentHandler
@@ -43,6 +45,7 @@ internal class HtmlToSpansParser(
 
     fun convert(): Spanned {
         parser.parse(InputSource(StringReader(html)))
+        if (BuildConfig.DEBUG) text.assertOnlyAllowedSpans()
         return text
     }
 
@@ -203,4 +206,41 @@ internal class HtmlToSpansParser(
         return spans.lastOrNull()
     }
 
+    companion object FormattingSpans {
+        /**
+         * This list keeps track of the spans used by the editor.
+         *
+         * This is needed because the editor currently uses Editable.replace
+         * to replace the entire contents of the editor when the model changes.
+         * This method does not replace spans that are not contained within the
+         * range resulting in spans which cover the whole range being duplicated.
+         *
+         * @see android.text.Editable.replace(int, int, CharSequence)
+         * to
+         */
+        private val spans: List<Class<out Any>> = listOf(
+            // Formatting
+            StyleSpan::class.java,
+            UnderlineSpan::class.java,
+            StrikethroughSpan::class.java,
+            InlineCodeSpan::class.java,
+
+            // Lists
+            BulletSpan::class.java,
+            OrderedListSpan::class.java,
+            ExtraCharacterSpan::class.java,
+        )
+
+        fun Editable.removeFormattingSpans() =
+            spans.flatMap { type ->
+                getSpans(0, length, type).toList()
+            }.forEach {
+                removeSpan(it)
+            }
+
+        fun Spanned.assertOnlyAllowedSpans() =
+            assert(getSpans(0, length, Any::class.java).all {
+                spans.contains(it.javaClass)
+            })
+    }
 }

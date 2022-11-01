@@ -1,4 +1,4 @@
-# WYSIWYG iOS example app
+# Matrix Rich Text Editor iOS example app
 
 This application provides an example usage of the WysiwygComposer 
 package found at `/../lib/WysiwygComposer`.

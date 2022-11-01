@@ -35,6 +35,7 @@ pub use crate::dom::ToHtml;
 pub use crate::dom::ToRawText;
 pub use crate::dom::ToTree;
 pub use crate::dom::UnicodeString;
+pub use crate::dom::{MarkdownError, ToMarkdown};
 pub use crate::format_type::InlineFormatType;
 pub use crate::list_type::ListType;
 pub use crate::location::Location;

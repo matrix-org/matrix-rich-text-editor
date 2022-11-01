@@ -1,8 +1,7 @@
 package io.element.android.wysiwyg.extensions
 
-import android.util.Log
 import io.element.android.wysiwyg.BuildConfig
-import uniffi.wysiwyg_composer.ComposerModel
+import timber.log.Timber
 import uniffi.wysiwyg_composer.ComposerModelInterface
 import uniffi.wysiwyg_composer.ComposerState
 
@@ -18,9 +17,9 @@ fun ComposerState.dump() = "'${html.string()}' | Start: $start | End: $end"
  * Log the current state of the editor in the Rust code.
  */
 fun ComposerModelInterface.log() = if (LOG_ENABLED) {
-    Log.d(
-        "COMPOSER_PROCESSOR", getCurrentDomState().dump()
+    Timber.d(
+        getCurrentDomState().dump()
             // To visualize zero-width spaces easily
             .replace("\u200b", "~")
     )
-} else 0
+} else Unit

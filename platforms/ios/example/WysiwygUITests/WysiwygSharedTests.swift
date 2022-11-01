@@ -116,6 +116,37 @@ final class WysiwygSharedTests {
         XCTAssertEqual(content.label, "Some bold text")
         XCTAssertEqual(htmlContent.label, "Some bold <strong>text</strong>")
     }
+    
+    static func typingFast(_ app: XCUIApplication) throws {
+        let text = "Some long text that I am going to type very fast"
+        let textView = app.textViews["WysiwygComposer"]
+        textView.tap()
+        sleep(1)
+        textView.typeText(text)
+        let textToVerify = textView.value as? String
+        XCTAssert(text == textToVerify)
+    }
+    
+    static func longPressDelete(_ app: XCUIApplication) throws {
+        let multilineText =
+            """
+            test1
+            test2
+            test3
+            test4
+            test5
+            test6
+            test7
+            test8
+            test9
+            test10
+            """
+        let textView = app.textViews["WysiwygComposer"]
+        app.typeTextCharByChar(multilineText)
+        XCUIApplication().keys["delete"].press(forDuration: 10.0)
+        let resultText = textView.value as? String
+        XCTAssert(resultText == "")
+    }
 }
 
 private extension WysiwygSharedTests {

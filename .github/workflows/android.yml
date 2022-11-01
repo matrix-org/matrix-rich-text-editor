@@ -12,6 +12,9 @@ on:
 env:
   GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx4096m -Dfile.encoding=UTF-8 -XX:+HeapDumpOnOutOfMemoryError" -Dkotlin.daemon.jvm.options="-Xmx2560m" -Dkotlin.incremental=false
   CI_GRADLE_ARG_PROPERTIES: --stacktrace -PpreDexEnable=false --max-workers 4 --no-daemon
+  ARCH: x86_64
+  DEVICE: Nexus 5X
+  UNIFFI_VERSION: 0.19.2
 
 jobs:
   tests:
@@ -19,10 +22,10 @@ jobs:
       github.event_name == 'push' ||
       (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'Android'))
     name: Run all tests
-    runs-on: macos-latest
+    runs-on: macos-12
     strategy:
       matrix:
-        api-level: [28]
+        api-level: [31]
     steps:
       - uses: actions/checkout@v3
         with:
@@ -50,7 +53,7 @@ jobs:
         with:
           command: install
           # keep in sync with uniffi dependency in Cargo.toml's
-          args: uniffi_bindgen --version 0.19.2
+          args: uniffi_bindgen --version ${{ env.UNIFFI_VERSION }}
 
       - name: Setup Gradle & Build test cases
         uses: gradle/gradle-build-action@v2
@@ -62,16 +65,40 @@ jobs:
             :library:assembleDebugUnitTest :library:assembleDebugAndroidTest ${{ env.CI_GRADLE_ARG_PROPERTIES }}
           cache-read-only: false
 
+      - name: AVD cache
+        uses: actions/cache@v3
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ matrix.api-level }}
+
+      - name: Create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          working-directory: platforms/android
+          api-level: ${{ matrix.api-level }}
+          profile: ${{ env.DEVICE }}
+          arch: ${{ env.ARCH }}
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          enable-hw-keyboard: true
+          script: echo "Generated AVD snapshot for caching."
+
       - name: Run all the tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
           working-directory: platforms/android
           api-level: ${{ matrix.api-level }}
-          arch: x86
-          profile: Nexus 5X
+          arch: ${{ env.ARCH }}
+          profile: ${{ env.DEVICE }}
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
+          enable-hw-keyboard: true
           script: |
             ./gradlew :library:testDebugUnitTest :library:connectedDebugAndroidTest ${{ env.CI_GRADLE_ARG_PROPERTIES }}
 

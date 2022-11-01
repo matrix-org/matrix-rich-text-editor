@@ -20,9 +20,9 @@ import com.google.android.material.textfield.TextInputEditText
 import io.element.android.wysiwyg.inputhandlers.InterceptInputConnection
 import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
+import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
 import io.element.android.wysiwyg.utils.*
-import io.element.android.wysiwyg.utils.AndroidHtmlConverter
-import io.element.android.wysiwyg.utils.HtmlToSpansParser
+import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
 import io.element.android.wysiwyg.viewmodel.EditorViewModel
 import uniffi.wysiwyg_composer.MenuState
 import uniffi.wysiwyg_composer.newComposerModel
@@ -36,7 +36,7 @@ class EditorEditText : TextInputEditText {
         val htmlConverter = AndroidHtmlConverter(
             provideHtmlToSpansParser = { html -> HtmlToSpansParser(resourcesProvider, html) },
         )
-        val composer = if(!isInEditMode) newComposerModel() else null
+        val composer = if (!isInEditMode) newComposerModel() else null
         EditorViewModel(composer, htmlConverter)
     })
 
@@ -49,11 +49,11 @@ class EditorEditText : TextInputEditText {
 
     private var isInitialized = false
 
-    constructor(context: Context): super(context)
+    constructor(context: Context) : super(context)
 
-    constructor(context: Context, attrs: AttributeSet?): super(context, attrs)
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
 
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) :
             super(context, attrs, defStyleAttr)
 
     init {
@@ -125,34 +125,42 @@ class EditorEditText : TextInputEditText {
     override fun onTextContextMenuItem(id: Int): Boolean {
         when (id) {
             android.R.id.cut -> {
-                val clipboardManager = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-                val clpData = ClipData.newPlainText("newText", this.editableText.slice(this.selectionStart until this.selectionEnd))
+                val clipboardManager =
+                    context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                val clpData = ClipData.newPlainText(
+                    "newText",
+                    this.editableText.slice(this.selectionStart until this.selectionEnd)
+                )
                 clipboardManager.setPrimaryClip(clpData)
 
-                val update = viewModel.processInput(EditorInputAction.Delete(this.selectionStart, this.selectionEnd))
-                val result = update?.let { viewModel.processUpdate(it) }
+                val result = viewModel.processInput(
+                    EditorInputAction.Delete(
+                        this.selectionStart,
+                        this.selectionEnd
+                    )
+                )
 
                 if (result != null) {
-                    setTextInternal(result.text)
+                    setTextFromComposerUpdate(result)
                     setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
                 }
 
                 return false
             }
             android.R.id.paste, android.R.id.pasteAsPlainText -> {
-                val clipBoardManager = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                val clipBoardManager =
+                    context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
                 val copiedString = clipBoardManager.primaryClip?.getItemAt(0)?.text ?: return false
-                val update = viewModel.processInput(EditorInputAction.ReplaceText(copiedString))
-                val result = update?.let { viewModel.processUpdate(it) }
+                val result = viewModel.processInput(EditorInputAction.ReplaceText(copiedString))
 
                 if (result != null) {
-                    setTextInternal(result.text)
+                    setTextFromComposerUpdate(result)
                     setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
                 }
 
                 return false
             }
-            else -> { return super.onTextContextMenuItem(id) }
+            else -> return super.onTextContextMenuItem(id)
         }
     }
 
@@ -188,99 +196,68 @@ class EditorEditText : TextInputEditText {
         // Although inputProcessor is assured to be not null, that's not the case while inflating.
         // We have to add this here to prevent some NullPointerExceptions from being thrown.
         if (!this.isInitialized) {
-            super.setText(text, type)
-        } else {
-            viewModel.updateSelection(editableText, 0, end)
-            val update = viewModel.processInput(EditorInputAction.ReplaceText(text.toString()))
-            val result = update?.let { viewModel.processUpdate(it) }
-
-            if (result != null) {
-                setTextInternal(result.text)
-                setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
-            } else {
-                super.setText(text, type)
-            }
+            return super.setText(text, type)
         }
-    }
 
-    private fun setTextInternal(text: CharSequence?) {
-        beginBatchEdit()
-        editableText.clear()
-        editableText.replace(0, editableText.length, text)
-        endBatchEdit()
+        viewModel.updateSelection(editableText, 0, end)
+
+        val result = viewModel.processInput(EditorInputAction.ReplaceText(text.toString()))
+            ?: return super.setText(text, type)
+
+        setTextFromComposerUpdate(result)
+        setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
     }
 
     override fun append(text: CharSequence?, start: Int, end: Int) {
-        val update = viewModel.processInput(EditorInputAction.ReplaceText(text.toString()))
-        val result = update?.let { viewModel.processUpdate(it) }
+        val result = viewModel.processInput(EditorInputAction.ReplaceText(text.toString()))
+            ?: return super.append(text, start, end)
 
-        if (result != null) {
-            setTextInternal(result.text)
-            setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
-        } else {
-            super.append(text, start, end)
-        }
+        setTextFromComposerUpdate(result)
+        setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
     }
 
     fun toggleInlineFormat(inlineFormat: InlineFormat): Boolean {
-        val update = viewModel.processInput(EditorInputAction.ApplyInlineFormat(inlineFormat))
-        val result = update?.let { viewModel.processUpdate(it) }
+        val result = viewModel.processInput(EditorInputAction.ApplyInlineFormat(inlineFormat))
+            ?: return false
 
-        if (result != null) {
-            setTextInternal(result.text)
-            setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
-        }
-        return result != null
+        setTextFromComposerUpdate(result)
+        setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
+        return true
     }
 
     fun undo() {
-        val update = viewModel.processInput(EditorInputAction.Undo)
-        val result = update?.let { viewModel.processUpdate(it) }
+        val result = viewModel.processInput(EditorInputAction.Undo) ?: return
 
-        if (result != null) {
-            setTextInternal(result.text)
-            setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
-        }
+        setTextFromComposerUpdate(result)
+        setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
     }
 
     fun redo() {
-        val update = viewModel.processInput(EditorInputAction.Redo)
-        val result = update?.let { viewModel.processUpdate(it) }
+        val result = viewModel.processInput(EditorInputAction.Redo) ?: return
 
-        if (result != null) {
-            setTextInternal(result.text)
-            setSelectionFromComposerUpdate(result.selection.last)
-        }
+        setTextFromComposerUpdate(result)
+        setSelectionFromComposerUpdate(result.selection.last)
     }
 
     fun setLink(link: String) {
-        val update = viewModel.processInput(EditorInputAction.SetLink(link))
-        val result = update?.let { viewModel.processUpdate(it) }
+        val result = viewModel.processInput(EditorInputAction.SetLink(link)) ?: return
 
-        if (result != null) {
-            setTextInternal(result.text)
-            setSelectionFromComposerUpdate(result.selection.last)
-        }
+        setTextFromComposerUpdate(result)
+        setSelectionFromComposerUpdate(result.selection.last)
     }
 
     fun toggleList(ordered: Boolean) {
-        val update = viewModel.processInput(EditorInputAction.ToggleList(ordered))
-        val result = update?.let { viewModel.processUpdate(it) }
+        val result = viewModel.processInput(EditorInputAction.ToggleList(ordered)) ?: return
 
-        if (result != null) {
-            setTextInternal(result.text)
-            setSelectionFromComposerUpdate(result.selection.last)
-        }
+        setTextFromComposerUpdate(result)
+        setSelectionFromComposerUpdate(result.selection.last)
     }
 
     fun setHtml(html: String) {
-        val update = viewModel.processInput(EditorInputAction.ReplaceAllHtml(html))
-        val result = update?.let { viewModel.processUpdate(it) }
+        val result = viewModel.processInput(EditorInputAction.ReplaceAllHtml(html)) ?: return
 
-        if (result != null) {
-            setTextInternal(result.text)
-            setSelectionFromComposerUpdate(result.selection.last)
-        }
+        setTextFromComposerUpdate(result)
+        setSelectionFromComposerUpdate(result.selection.last)
     }
 
     fun getHtmlOutput(): String {
@@ -292,8 +269,7 @@ class EditorEditText : TextInputEditText {
      * Note that markdown is not currently supported.
      * TODO: Return markdown formatted plain text
      */
-    fun getPlainText(): String
-        = viewModel.getPlainText()
+    fun getPlainText(): String = viewModel.getPlainText()
 
     /**
      * Set the text as plain text, ignoring HTML formatting.
@@ -302,6 +278,13 @@ class EditorEditText : TextInputEditText {
      */
     fun setPlainText(plainText: String) =
         setText(plainText)
+
+    private fun setTextFromComposerUpdate(result: ReplaceTextResult) {
+        beginBatchEdit()
+        editableText.removeFormattingSpans()
+        editableText.replace(0, editableText.length, result.text)
+        endBatchEdit()
+    }
 
     private fun setSelectionFromComposerUpdate(start: Int, end: Int = start) {
         val (newStart, newEnd) = EditorIndexMapper.fromComposerToEditor(start, end, editableText)
