@@ -155,7 +155,8 @@ public extension WysiwygComposerViewModel {
 // MARK: - WysiwygComposerViewModelProtocol
 
 public extension WysiwygComposerViewModel {
-    func updateCompressedHeightIfNeeded(_ textView: UITextView) {
+    func updateCompressedHeightIfNeeded() {
+        guard let textView = textView else { return }
         let idealTextHeight = textView
             .sizeThatFits(CGSize(width: textView.bounds.size.width,
                                  height: CGFloat.greatestFiniteMagnitude)
@@ -165,7 +166,7 @@ public extension WysiwygComposerViewModel {
         compressedHeight = min(maxHeight, max(minHeight, idealTextHeight))
     }
 
-    func replaceText(_ textView: UITextView, range: NSRange, replacementText: String) -> Bool {
+    func replaceText(range: NSRange, replacementText: String) -> Bool {
         guard !plainTextMode else {
             return true
         }
@@ -173,8 +174,8 @@ public extension WysiwygComposerViewModel {
         let update: ComposerUpdate
         let shouldAcceptChange: Bool
 
-        if range != content.attributedSelection, let text = textView.attributedText {
-            select(text: text, range: range)
+        if range != content.attributedSelection {
+            select(range: range)
         }
 
         if content.attributedSelection.length == 0, replacementText == "" {
@@ -193,13 +194,14 @@ public extension WysiwygComposerViewModel {
 
         applyUpdate(update)
         if !shouldAcceptChange {
-            didUpdateText(textView: textView)
+            didUpdateText()
         }
         return shouldAcceptChange
     }
 
-    func select(text: NSAttributedString, range: NSRange) {
+    func select(range: NSRange) {
         do {
+            guard let text = textView?.attributedText else { return }
             // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
             let htmlSelection = try text.htmlRange(from: range,
                                                    shouldIgnoreTrailingNewline: false)
@@ -218,7 +220,8 @@ public extension WysiwygComposerViewModel {
         }
     }
 
-    func didUpdateText(textView: UITextView) {
+    func didUpdateText() {
+        guard let textView = textView else { return }
         if plainTextMode {
             plainText = textView.text
             if textView.text.isEmpty != isContentEmpty {
@@ -231,7 +234,7 @@ public extension WysiwygComposerViewModel {
             textView.apply(content)
         }
 
-        updateCompressedHeightIfNeeded(textView)
+        updateCompressedHeightIfNeeded()
     }
 }
 
@@ -239,8 +242,7 @@ public extension WysiwygComposerViewModel {
 
 private extension WysiwygComposerViewModel {
     func updateTextView() {
-        guard let textView = textView else { return }
-        didUpdateText(textView: textView)
+        didUpdateText()
     }
     
     /// Apply given composer update to the composer.
