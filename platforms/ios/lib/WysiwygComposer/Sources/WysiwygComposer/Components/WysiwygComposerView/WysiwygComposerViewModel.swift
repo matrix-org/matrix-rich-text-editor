@@ -19,16 +19,6 @@ import Foundation
 import OSLog
 import UIKit
 
-public protocol WysiwygComposerViewModelProtocol: AnyObject {
-    var textView: PlaceholdableTextView? { get set }
-    var content: WysiwygComposerContent { get }
-    
-    func updateCompressedHeightIfNeeded(_ textView: UITextView)
-    func replaceText(_ textView: UITextView, range: NSRange, replacementText: String) -> Bool
-    func select(text: NSAttributedString, range: NSRange)
-    func didUpdateText(textView: UITextView)
-}
-
 /// Main view model for the composer. Forwards actions to the Rust model and publishes resulting states.
 public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, ObservableObject {
     // MARK: - Public
@@ -127,31 +117,6 @@ public extension WysiwygComposerViewModel {
         updateTextView()
     }
 
-    /// Select given range of text within the model.
-    ///
-    /// - Parameters:
-    ///   - text: Text currently displayed in the composer.
-    ///   - range: Range to select.
-    func select(text: NSAttributedString, range: NSRange) {
-        do {
-            // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
-            let htmlSelection = try text.htmlRange(from: range,
-                                                   shouldIgnoreTrailingNewline: false)
-            Logger.viewModel.logDebug(["Sel(att): \(range)",
-                                       "Sel: \(htmlSelection)",
-                                       "Text: \"\(text.string)\""],
-                                      functionName: #function)
-            let update = model.select(startUtf16Codeunit: UInt32(htmlSelection.location),
-                                      endUtf16Codeunit: UInt32(htmlSelection.upperBound))
-
-            applyUpdate(update)
-        } catch {
-            Logger.viewModel.logError(["Sel(att): \(range)",
-                                       "Error: \(error.localizedDescription)"],
-                                      functionName: #function)
-        }
-    }
-
     /// Apply given action to the composer.
     ///
     /// - Parameters:
@@ -185,13 +150,21 @@ public extension WysiwygComposerViewModel {
     func treeRepresentation() -> String {
         model.toTree()
     }
+}
 
-    /// Replace text in the model.
-    ///
-    /// - Parameters:
-    ///   - textView: TextView which currently holds the displayed text in the composer.
-    ///   - range: Range to replace.
-    ///   - replacementText: Replacement text to apply.
+// MARK: - WysiwygComposerViewModelProtocol
+
+public extension WysiwygComposerViewModel {
+    func updateCompressedHeightIfNeeded(_ textView: UITextView) {
+        let idealTextHeight = textView
+            .sizeThatFits(CGSize(width: textView.bounds.size.width,
+                                 height: CGFloat.greatestFiniteMagnitude)
+            )
+            .height
+
+        compressedHeight = min(maxHeight, max(minHeight, idealTextHeight))
+    }
+
     func replaceText(_ textView: UITextView, range: NSRange, replacementText: String) -> Bool {
         guard !plainTextMode else {
             return true
@@ -225,9 +198,26 @@ public extension WysiwygComposerViewModel {
         return shouldAcceptChange
     }
 
-    /// Notify that the text view content has changed.
-    ///
-    /// - Parameter textView: The composer's text view.
+    func select(text: NSAttributedString, range: NSRange) {
+        do {
+            // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
+            let htmlSelection = try text.htmlRange(from: range,
+                                                   shouldIgnoreTrailingNewline: false)
+            Logger.viewModel.logDebug(["Sel(att): \(range)",
+                                       "Sel: \(htmlSelection)",
+                                       "Text: \"\(text.string)\""],
+                                      functionName: #function)
+            let update = model.select(startUtf16Codeunit: UInt32(htmlSelection.location),
+                                      endUtf16Codeunit: UInt32(htmlSelection.upperBound))
+
+            applyUpdate(update)
+        } catch {
+            Logger.viewModel.logError(["Sel(att): \(range)",
+                                       "Error: \(error.localizedDescription)"],
+                                      functionName: #function)
+        }
+    }
+
     func didUpdateText(textView: UITextView) {
         if plainTextMode {
             plainText = textView.text
@@ -242,20 +232,6 @@ public extension WysiwygComposerViewModel {
         }
 
         updateCompressedHeightIfNeeded(textView)
-    }
-    
-    /// Update the composer compressed required height if it has changed.
-    ///
-    /// - Parameters:
-    ///   - textView: The composer's text view.
-    func updateCompressedHeightIfNeeded(_ textView: UITextView) {
-        let idealTextHeight = textView
-            .sizeThatFits(CGSize(width: textView.bounds.size.width,
-                                 height: CGFloat.greatestFiniteMagnitude)
-            )
-            .height
-        
-        compressedHeight = min(maxHeight, max(minHeight, idealTextHeight))
     }
 }
 
