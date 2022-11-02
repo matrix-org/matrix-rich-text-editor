@@ -76,9 +76,9 @@ where
             // If we're dealing with complex graphemes, this value might not be 1
             let next_char_len =
                 if let Some((text_node, loc)) = self.get_selected_text_node() {
+                    let selection_start_in_str = s - loc.position;
                     Self::find_next_char_len(
-                        s - loc.position,
-                        text_node.data().len(),
+                        selection_start_in_str,
                         &text_node.data(),
                     ) as isize
                 } else {
@@ -130,9 +130,9 @@ where
             // If we're dealing with complex graphemes, this value might not be 1
             let prev_char_len =
                 if let Some((text_node, loc)) = self.get_selected_text_node() {
+                    let selection_end_in_str = e - loc.position;
                     Self::find_previous_char_len(
-                        0,
-                        e - loc.position,
+                        selection_end_in_str,
                         &text_node.data(),
                     ) as isize
                 } else {
@@ -162,26 +162,26 @@ where
         None
     }
 
-    /// Returns the length of the [char] for the current [S] string encoding after the start of the
-    /// given range.
-    fn find_next_char_len(start: usize, end: usize, str: &S::Str) -> usize {
-        let (u8start, _) = str.u8_mapped_indexes(start, end);
-        let graphemes = str.find_graphemes_at(u8start);
-        if let Some(first_grapheme) = graphemes.1 {
-            S::from(&first_grapheme).len()
+    /// Returns the length of the [char] for the current [S] string encoding before the given [pos].
+    fn find_previous_char_len(pos: usize, str: &S::Str) -> usize {
+        let u8end = str.u8_mapped_indexes(pos);
+        let graphemes = str.find_graphemes_at(u8end);
+        // Take the grapheme before the position
+        if let Some(last_grapheme) = graphemes.0 {
+            S::from(last_grapheme.as_str()).len()
         } else {
             // Default length for characters
             1
         }
     }
 
-    /// Returns the length of the [char] for the current [S] string encoding before the end of the
-    /// given range.
-    fn find_previous_char_len(start: usize, end: usize, str: &S::Str) -> usize {
-        let (_, u8end) = str.u8_mapped_indexes(start, end);
-        let graphemes = str.find_graphemes_at(u8end);
-        if let Some(last_grapheme) = graphemes.0 {
-            S::from(&last_grapheme).len()
+    /// Returns the length of the [char] for the current [S] string encoding after the given [pos].
+    fn find_next_char_len(pos: usize, str: &S::Str) -> usize {
+        let u8start = str.u8_mapped_indexes(pos);
+        let graphemes = str.find_graphemes_at(u8start);
+        // Take the grapheme after the position
+        if let Some(first_grapheme) = graphemes.1 {
+            S::from(first_grapheme.as_str()).len()
         } else {
             // Default length for characters
             1

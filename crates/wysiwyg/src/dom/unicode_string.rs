@@ -186,7 +186,7 @@ pub trait UnicodeStrExt: UnicodeStr {
         &self,
         index: usize,
     ) -> (Option<String>, Option<String>);
-    fn u8_mapped_indexes(&self, start: usize, end: usize) -> (usize, usize);
+    fn u8_mapped_indexes(&self, pos: usize) -> usize;
 }
 
 impl<S: UnicodeStr + ?Sized> UnicodeStrExt for S {
@@ -221,26 +221,23 @@ impl<S: UnicodeStr + ?Sized> UnicodeStrExt for S {
     }
 
     /// Translates indexes from any [UnicodeString] implementation to UTF-8.
-    fn u8_mapped_indexes(&self, start: usize, end: usize) -> (usize, usize) {
+    fn u8_mapped_indexes(&self, pos: usize) -> usize {
         let mut offset_u8: usize = 0;
         let mut offset_orig: usize = 0;
         let mut pos_u8 = usize::MAX;
-        let mut end_u8 = usize::MAX;
         for char in self.chars() {
             let cur_offset = offset_orig;
             offset_orig += self.char_len(&char);
-            if pos_u8 == usize::MAX && cur_offset >= start {
+            if pos_u8 == usize::MAX && cur_offset >= pos {
                 pos_u8 = offset_u8;
-            }
-            offset_u8 += char.len_utf8();
-            if end_u8 == usize::MAX && offset_orig >= end {
-                end_u8 = offset_u8;
-            }
-            if pos_u8 != usize::MAX && end_u8 != usize::MAX {
                 break;
             }
+            offset_u8 += char.len_utf8();
         }
-        (pos_u8, end_u8)
+        if pos_u8 == usize::MAX {
+            pos_u8 = offset_u8;
+        }
+        pos_u8
     }
 }
 
