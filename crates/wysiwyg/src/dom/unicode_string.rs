@@ -14,6 +14,7 @@
 use std::fmt;
 use std::iter;
 use std::ops::{Deref, Index, Range, RangeFrom, RangeTo};
+use unicode_segmentation::UnicodeSegmentation;
 
 use widestring::{Utf16Str, Utf16String, Utf32Str, Utf32String};
 
@@ -66,7 +67,7 @@ pub trait UnicodeStr:
     fn char_len(&self, char: &char) -> usize;
 
     /// Splits the current UnicodeStr into graphemes (visual characters), from start to end indexes
-    fn graphemes(&self, start: usize, end: usize) -> Vec<&Self> {
+    fn graphemes_us(&self, start: usize, end: usize) -> Vec<&Self> {
         let mut ret = Vec::new();
         let mut start = start;
         let mut offset = 0;
@@ -181,6 +182,11 @@ impl<S: UnicodeString> UnicodeStringExt for S {
 pub trait UnicodeStrExt: UnicodeStr {
     fn is_empty(&self) -> bool;
     fn len(&self) -> usize;
+    fn find_graphemes_at(
+        &self,
+        index: usize,
+    ) -> (Option<String>, Option<String>);
+    fn u8_mapped_indexes(&self, start: usize, end: usize) -> (usize, usize);
 }
 
 impl<S: UnicodeStr + ?Sized> UnicodeStrExt for S {
@@ -190,6 +196,51 @@ impl<S: UnicodeStr + ?Sized> UnicodeStrExt for S {
 
     fn len(&self) -> usize {
         self.as_ref().len()
+    }
+
+    /// Assuming [index] is a boundary between graphemes, returns a pair with the previous and next
+    /// graphemes, if present.
+    fn find_graphemes_at(
+        &self,
+        index: usize,
+    ) -> (Option<String>, Option<String>) {
+        let u8str = self.to_string();
+        let graphemes = u8str.grapheme_indices(true);
+        let mut prev = None;
+        let mut next = None;
+        for g in graphemes {
+            if g.0 == index {
+                next = Some(g.1.to_string())
+            }
+            let length = g.1.len();
+            if g.0 + length == index {
+                prev = Some(g.1.to_string())
+            }
+        }
+        (prev, next)
+    }
+
+    /// Translates indexes from any [UnicodeString] implementation to UTF-8.
+    fn u8_mapped_indexes(&self, start: usize, end: usize) -> (usize, usize) {
+        let mut offset_u8: usize = 0;
+        let mut offset_orig: usize = 0;
+        let mut pos_u8 = usize::MAX;
+        let mut end_u8 = usize::MAX;
+        for char in self.chars() {
+            let cur_offset = offset_orig;
+            offset_orig += self.char_len(&char);
+            if pos_u8 == usize::MAX && cur_offset >= start {
+                pos_u8 = offset_u8;
+            }
+            offset_u8 += char.len_utf8();
+            if end_u8 == usize::MAX && offset_orig >= end {
+                end_u8 = offset_u8;
+            }
+            if pos_u8 != usize::MAX && end_u8 != usize::MAX {
+                break;
+            }
+        }
+        (pos_u8, end_u8)
     }
 }
 
@@ -201,14 +252,14 @@ mod test {
     #[test]
     fn test_emoji_utf8() {
         let str = "😄";
-        let graphemes = str.graphemes(0, str.len());
+        let graphemes = str.graphemes_us(0, str.len());
         assert_eq!(1, graphemes.len());
     }
 
     #[test]
     fn test_emoji_complex_utf8() {
         let str = "😮‍💨";
-        let graphemes = str.graphemes(0, str.len());
+        let graphemes = str.graphemes_us(0, str.len());
         assert_eq!(1, graphemes.len());
     }
 
@@ -216,20 +267,20 @@ mod test {
     #[should_panic]
     fn test_index_inside_char_with_emoji_utf8() {
         let str = "😮‍💨";
-        str.graphemes(1, str.len());
+        str.graphemes_us(1, str.len());
     }
 
     #[test]
     fn test_indexes_out_of_range_with_emoji_utf8() {
         let str = "😮‍💨";
-        let graphemes = str.graphemes(10, str.len());
+        let graphemes = str.graphemes_us(10, str.len());
         assert!(graphemes.is_empty());
     }
 
     #[test]
     fn test_emoji_complex_with_text_utf8() {
         let str = "Test 😮‍💨";
-        let graphemes = str.graphemes(0, str.len());
+        let graphemes = str.graphemes_us(0, str.len());
         // [ 'T', 'e', 's', 't', ' ', '😮‍💨' ]
         assert_eq!(6, graphemes.len());
     }
@@ -237,7 +288,7 @@ mod test {
     #[test]
     fn test_emoji_complex_with_text_utf16() {
         let str = Utf16String::from_str("Test 😮‍💨");
-        let graphemes = str.graphemes(0, str.len());
+        let graphemes = str.graphemes_us(0, str.len());
         assert_eq!(6, graphemes.len());
     }
 
@@ -245,20 +296,20 @@ mod test {
     #[should_panic]
     fn test_index_inside_char_with_emoji_utf16() {
         let str = Utf16String::from_str("😮‍💨");
-        str.graphemes(1, str.len());
+        str.graphemes_us(1, str.len());
     }
 
     #[test]
     fn test_indexes_out_of_range_with_emoji_utf16() {
         let str = Utf16String::from_str("😮‍💨");
-        let graphemes = str.graphemes(10, str.len());
+        let graphemes = str.graphemes_us(10, str.len());
         assert!(graphemes.is_empty());
     }
 
     #[test]
     fn test_emoji_complex_with_text_utf32() {
         let str = Utf32String::from_str("Test 😮‍💨");
-        let graphemes = str.graphemes(0, str.len());
+        let graphemes = str.graphemes_us(0, str.len());
         // [ 'T', 'e', 's', 't', ' ', '😮‍💨' ]
         assert_eq!(6, graphemes.len());
     }
@@ -266,7 +317,7 @@ mod test {
     #[test]
     fn test_indexes_out_of_range_with_emoji_utf32() {
         let str = Utf32String::from_str("😮‍💨");
-        let graphemes = str.graphemes(10, str.len());
+        let graphemes = str.graphemes_us(10, str.len());
         assert!(graphemes.is_empty());
     }
 }

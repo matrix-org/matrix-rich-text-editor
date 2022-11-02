@@ -256,3 +256,17 @@ fn test_delete_complex_emoji() {
     model.delete();
     assert_eq!(tx(&model), "Test|");
 }
+
+#[test]
+fn test_delete_complex_grapheme() {
+    let mut model = cm("Test|О́");
+    model.delete();
+    assert_eq!(tx(&model), "Test|");
+}
+
+#[test]
+fn test_backspace_complex_grapheme() {
+    let mut model = cm("TestО́|");
+    model.backspace();
+    assert_eq!(tx(&model), "Test|");
+}

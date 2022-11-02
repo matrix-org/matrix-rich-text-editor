@@ -13,8 +13,8 @@
 // limitations under the License.
 
 use crate::composer_model::base::adjust_handles_for_delete;
-use crate::dom::nodes::DomNode;
-use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
+use crate::dom::nodes::{DomNode, TextNode};
+use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
 
@@ -72,22 +72,18 @@ where
     /// Deletes the character after the current cursor position.
     pub fn delete(&mut self) -> ComposerUpdate<S> {
         if self.state.start == self.state.end {
-            let mut next_char_len: isize = 1;
-            let (s, e) = self.safe_selection();
-            let range = self.state.dom.find_range(s, e);
-            let leaves: Vec<&DomLocation> = range.leaves().collect();
-            if s == e && leaves.len() == 1 {
-                let leaf = leaves[0];
-                if let DomNode::Text(text_node) =
-                    self.state.dom.lookup_node(&leaf.node_handle)
-                {
-                    next_char_len = Self::find_next_char_len(
-                        s - leaf.position,
+            let (s, _) = self.safe_selection();
+            // If we're dealing with complex graphemes, this value might not be 1
+            let next_char_len =
+                if let Some((text_node, loc)) = self.get_selected_text_node() {
+                    Self::find_next_char_len(
+                        s - loc.position,
                         text_node.data().len(),
                         &text_node.data(),
-                    ) as isize;
-                }
-            }
+                    ) as isize
+                } else {
+                    1
+                };
             // Go forward `next_char_len` positions from the current location
             self.state.end += next_char_len;
         }
@@ -130,22 +126,18 @@ where
 
     pub(crate) fn do_backspace(&mut self) -> ComposerUpdate<S> {
         if self.state.start == self.state.end {
-            let mut prev_char_len: isize = 1;
-            let (s, e) = self.safe_selection();
-            let range = self.state.dom.find_range(s, e);
-            let leaves: Vec<&DomLocation> = range.leaves().collect();
-            if s == e && leaves.len() == 1 {
-                let leaf = leaves[0];
-                if let DomNode::Text(text_node) =
-                    self.state.dom.lookup_node(&leaf.node_handle)
-                {
-                    prev_char_len = Self::find_previous_char_len(
+            let (_, e) = self.safe_selection();
+            // If we're dealing with complex graphemes, this value might not be 1
+            let prev_char_len =
+                if let Some((text_node, loc)) = self.get_selected_text_node() {
+                    Self::find_previous_char_len(
                         0,
-                        e - leaf.position,
+                        e - loc.position,
                         &text_node.data(),
-                    ) as isize;
-                }
-            }
+                    ) as isize
+                } else {
+                    1
+                };
             // Go back `prev_char_len` positions from the current location
             self.state.start -= prev_char_len;
         }
@@ -153,20 +145,43 @@ where
         self.replace_text(S::default())
     }
 
+    /// Returns the currently selected TextNode if it's the only leaf node and the cursor is inside
+    /// its range.
+    fn get_selected_text_node(&self) -> Option<(&TextNode<S>, DomLocation)> {
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        let leaves: Vec<&DomLocation> = range.leaves().collect();
+        if s == e && leaves.len() == 1 {
+            let leaf = leaves[0];
+            if let DomNode::Text(text_node) =
+                self.state.dom.lookup_node(&leaf.node_handle)
+            {
+                return Some((text_node, leaf.clone()));
+            }
+        }
+        None
+    }
+
+    /// Returns the length of the [char] for the current [S] string encoding after the start of the
+    /// given range.
     fn find_next_char_len(start: usize, end: usize, str: &S::Str) -> usize {
-        let graphemes = str.graphemes(start, end);
-        if let Some(first_grapheme) = graphemes.first() {
-            first_grapheme.len()
+        let (u8start, _) = str.u8_mapped_indexes(start, end);
+        let graphemes = str.find_graphemes_at(u8start);
+        if let Some(first_grapheme) = graphemes.1 {
+            S::from(&first_grapheme).len()
         } else {
             // Default length for characters
             1
         }
     }
 
+    /// Returns the length of the [char] for the current [S] string encoding before the end of the
+    /// given range.
     fn find_previous_char_len(start: usize, end: usize, str: &S::Str) -> usize {
-        let graphemes = str.graphemes(start, end);
-        if let Some(last_grapheme) = graphemes.last() {
-            last_grapheme.len()
+        let (_, u8end) = str.u8_mapped_indexes(start, end);
+        let graphemes = str.find_graphemes_at(u8end);
+        if let Some(last_grapheme) = graphemes.0 {
+            S::from(&last_grapheme).len()
         } else {
             // Default length for characters
             1
