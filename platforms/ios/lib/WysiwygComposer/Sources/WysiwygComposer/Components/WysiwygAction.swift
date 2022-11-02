@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 
+/// Describes an action that can be done in the rich text editor.
 public enum WysiwygAction {
     /// Apply bold formatting to the current selection.
     case bold
