@@ -160,29 +160,7 @@ public extension WysiwygComposerViewModel {
         Logger.viewModel.logDebug([content.logAttributedSelection,
                                    "Apply action: \(action)"],
                                   functionName: #function)
-        let update: ComposerUpdate
-        switch action {
-        case .bold:
-            update = model.bold()
-        case .italic:
-            update = model.italic()
-        case .strikeThrough:
-            update = model.strikeThrough()
-        case .underline:
-            update = model.underline()
-        case .inlineCode:
-            update = model.inlineCode()
-        case let .link(url: url):
-            update = model.setLink(newText: url)
-        case .undo:
-            update = model.undo()
-        case .redo:
-            update = model.redo()
-        case .orderedList:
-            update = model.orderedList()
-        case .unorderedList:
-            update = model.unorderedList()
-        }
+        let update = model.apply(action)
         applyUpdate(update)
         updateTextView()
     }
@@ -292,7 +270,7 @@ private extension WysiwygComposerViewModel {
     /// Apply given composer update to the composer.
     ///
     /// - Parameter update: ComposerUpdate to apply.
-    func applyUpdate(_ update: ComposerUpdate) {
+    func applyUpdate(_ update: ComposerUpdateProtocol) {
         switch update.textUpdate() {
         case let .replaceAll(replacementHtml: codeUnits,
                              startUtf16Codeunit: start,
@@ -324,8 +302,7 @@ private extension WysiwygComposerViewModel {
     func applyReplaceAll(codeUnits: [UInt16], start: UInt32, end: UInt32) {
         do {
             let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count)
-            let htmlWithStyle = generateHtmlBodyWithStyle(htmlFragment: html)
-            let attributed = try NSAttributedString(html: htmlWithStyle).changeColor(to: textColor)
+            let attributed = try HTMLParser.parse(html: html, textColor: textColor)
             // FIXME: handle error for out of bounds index
             let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
             // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
@@ -394,8 +371,7 @@ private extension WysiwygComposerViewModel {
                 plainText = content.plainText
                 clearContent()
                 guard let textView = textView else { return }
-                let htmlWithStyle = generateHtmlBodyWithStyle(htmlFragment: plainText)
-                let attributed = try NSAttributedString(html: htmlWithStyle).changeColor(to: textColor)
+                let attributed = try HTMLParser.parse(html: plainText, textColor: textColor)
                 textView.attributedText = attributed
             } catch {
                 Logger.viewModel.logError(
@@ -412,14 +388,6 @@ private extension WysiwygComposerViewModel {
             applyUpdate(update)
             updateTextView()
         }
-    }
-
-    /// Generate an HTML body with standard style from given fragment.
-    ///
-    /// - Parameter htmlFragment: HTML fragment
-    /// - Returns: HTML body
-    func generateHtmlBodyWithStyle(htmlFragment: String) -> String {
-        "<html><head><style>body {font-family:-apple-system;font:-apple-system-body;}</style></head><body>\(htmlFragment)</body></html>"
     }
 }
 
