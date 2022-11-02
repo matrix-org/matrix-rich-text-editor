@@ -23,28 +23,23 @@ public protocol WysiwygComposerViewModelProtocol: AnyObject {
     var content: WysiwygComposerContent { get }
 
     /// Update the composer compressed required height if it has changed.
-    ///
-    /// - Parameters:
-    ///   - textView: The composer's text view.
-    func updateCompressedHeightIfNeeded(_ textView: UITextView)
+    func updateCompressedHeightIfNeeded()
 
     /// Replace text in the model.
     ///
     /// - Parameters:
-    ///   - textView: TextView which currently holds the displayed text in the composer.
     ///   - range: Range to replace.
     ///   - replacementText: Replacement text to apply.
-    func replaceText(_ textView: UITextView, range: NSRange, replacementText: String) -> Bool
+    func replaceText(range: NSRange, replacementText: String) -> Bool
 
     /// Select given range of text within the model.
     ///
     /// - Parameters:
-    ///   - text: Text currently displayed in the composer.
     ///   - range: Range to select.
-    func select(text: NSAttributedString, range: NSRange)
+    func select(range: NSRange)
 
     /// Notify that the text view content has changed.
     ///
     /// - Parameter textView: The composer's text view.
-    func didUpdateText(textView: UITextView)
+    func didUpdateText()
 }

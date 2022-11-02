@@ -47,7 +47,7 @@ struct WysiwygActionToolbar: View {
             guard let url = url else { return }
             // Note: the selection needs to be restored because of an issue with SwiftUI
             // integrating multiple UITextField/UITextView breaking selection.
-            viewModel.select(text: viewModel.content.attributed, range: linkAttributedRange)
+            viewModel.select(range: linkAttributedRange)
             let action: WysiwygAction = .link(url: url)
             toolbarAction(action)
         }))
