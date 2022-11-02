@@ -114,17 +114,14 @@ impl TreeSink for PaDomCreator {
                     PaDomNode::Text(_) => Some(parent.clone()),
                     PaDomNode::Container(PaNodeContainer {
                         children, ..
-                    }) => match children.last() {
-                        Some(last_child_handle) => {
-                            match self.state.dom.get_node(last_child_handle) {
-                                PaDomNode::Text(_) => {
-                                    Some(last_child_handle.clone())
-                                }
-                                _ => None,
-                            }
+                    }) => match children
+                        .last()
+                        .map(|handle| (handle, self.state.dom.get_node(handle)))
+                    {
+                        Some((last_child_handle, PaDomNode::Text(_))) => {
+                            Some(last_child_handle.clone())
                         }
-
-                        None => None,
+                        _ => None,
                     },
                 };
 
