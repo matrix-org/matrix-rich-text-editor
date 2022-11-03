@@ -45,10 +45,7 @@ def"#,
 #[test]
 fn text_with_italic() {
     assert_to_md("<em>abc</em>", "*abc*");
-    // Internal emphasis.
-    assert_to_md("abc<em>def</em>ghi", "abc*def*ghi");
     assert_to_md("abc <em>def</em> ghi", "abc *def* ghi");
-    assert_to_md_no_roundtrip("abc<em> def </em>ghi", "abc* def *ghi");
     assert_to_md(
         "abc <em>line1<br />line2<br /><br />line3</em> def",
         r#"abc *line1\
@@ -56,23 +53,34 @@ line2\
 \
 line3* def"#,
     );
+
+    // Intraword emphasis is restricted to `*` so it works here!
+    assert_to_md("abc<em>def</em>ghi", "abc*def*ghi");
+
+    // Immediate intra-spaces for a strong emphasis isn't supported.
+    assert_to_md_no_roundtrip("abc<em> def </em>ghi", "abc* def *ghi");
 }
 
 #[test]
 fn text_with_bold() {
     assert_to_md("<strong>abc</strong>", "__abc__");
-    assert_to_md_no_roundtrip("abc<strong>def</strong>ghi", "abc__def__ghi");
     assert_to_md("abc <strong>def</strong> ghi", "abc __def__ ghi");
-    assert_to_md_no_roundtrip(
-        "abc<strong> def </strong>ghi",
-        "abc__ def __ghi",
-    );
     assert_to_md(
         "abc <strong>line1<br />line2<br /><br />line3</strong> def",
         r#"abc __line1\
 line2\
 \
 line3__ def"#,
+    );
+
+    // Intraword emphasis is restricted to `*` (simple emphasis, i.e. italic),
+    // it's not possible with `__` (strong emphasis, i.e. bold).
+    assert_to_md_no_roundtrip("abc<strong>def</strong>ghi", "abc__def__ghi");
+
+    // Immediate intra-spaces for a strong emphasis isn't supported.
+    assert_to_md_no_roundtrip(
+        "abc<strong> def </strong>ghi",
+        "abc__ def __ghi",
     );
 }
 
@@ -90,9 +98,7 @@ line2__ def*"#,
 #[test]
 fn text_with_strikethrough() {
     assert_to_md("<del>abc</del>", "~~abc~~");
-    assert_to_md_no_roundtrip("abc<del>def</del>ghi", "abc~~def~~ghi");
     assert_to_md("abc <del>def</del> ghi", "abc ~~def~~ ghi");
-    assert_to_md_no_roundtrip("abc<del> def </del>ghi", "abc~~ def ~~ghi");
     assert_to_md(
         "abc <del>line1<br />line2<br /><br />line3</del> def",
         r#"abc ~~line1\
@@ -100,6 +106,12 @@ line2\
 \
 line3~~ def"#,
     );
+
+    // Intraword strikethrough isn't supported in the specification.
+    assert_to_md_no_roundtrip("abc<del>def</del>ghi", "abc~~def~~ghi");
+
+    // Immediate intra-spaces for a strikethrough isn't supported.
+    assert_to_md_no_roundtrip("abc<del> def </del>ghi", "abc~~ def ~~ghi");
 }
 
 #[test]
@@ -116,11 +128,13 @@ fn text_with_inline_code() {
     assert_to_md("<code>`abc</code>", "`` `abc ``");
     assert_to_md("abc <code>def</code> ghi", "abc `` def `` ghi");
     assert_to_md("abc<code> def </code>ghi", "abc``  def  ``ghi");
+
     // It's impossible to get a line break inside an inline code with Markdown.
     assert_to_md_no_roundtrip(
         "abc <code>line1<br />line2<br /><br />line3</code> def",
         "abc `` line1 line2  line3 `` def",
     );
+    // Inline formatting inside an inline code is ignored.
     assert_to_md_no_roundtrip(
         "abc <code>def <strong>ghi</strong> jkl</code> mno",
         "abc `` def __ghi__ jkl `` mno",
@@ -130,7 +144,6 @@ fn text_with_inline_code() {
 #[test]
 fn link() {
     assert_to_md(r#"<a href="url">abc</a>"#, "[abc](<url>)");
-    assert_to_md_no_roundtrip(r#"<a href="u<rl">abc</a>"#, r#"[abc](<u\<rl>)"#);
     // Empty link.
     assert_to_md(r#"<a href="">abc</a>"#, r#"[abc](<>)"#);
     // Formatting inside link.
@@ -139,6 +152,9 @@ fn link() {
         r#"[abc __def__ ghi](<url>)"#,
     );
     assert_to_md(r#"<a href="(url)">abc</a>"#, r#"[abc](<\(url\)>)"#);
+
+    // Escaping cannot be roundtrip'ed.
+    assert_to_md_no_roundtrip(r#"<a href="u<rl">abc</a>"#, r#"[abc](<u\<rl>)"#);
 }
 
 #[test]
