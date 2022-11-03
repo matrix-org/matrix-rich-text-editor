@@ -544,9 +544,11 @@ where
             S: UnicodeString,
         {
             // Underline format is absent from Markdown. Let's
-            // ignore it!
+            // use raw HTML.
 
+            buffer.push("<u>");
             fmt_children(this, buffer, &options)?;
+            buffer.push("</u>");
 
             Ok(())
         }
