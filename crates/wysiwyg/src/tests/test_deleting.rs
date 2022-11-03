@@ -222,3 +222,51 @@ fn deleting_a_newline_deletes_it() {
     model.delete();
     assert_eq!(tx(&model), "abc|ef");
 }
+
+#[test]
+fn test_backspace_emoji() {
+    let mut model = cm("😄|😅");
+    model.backspace();
+    assert_eq!(tx(&model), "|😅");
+}
+
+#[test]
+fn test_backspace_complex_emoji() {
+    let mut model = cm("Test😮‍💨|😅");
+    model.backspace();
+    assert_eq!(tx(&model), "Test|😅");
+    model.select(6.into(), 6.into());
+    model.backspace();
+    assert_eq!(tx(&model), "Test|");
+}
+
+#[test]
+fn test_delete_emoji() {
+    let mut model = cm("😄|😅");
+    model.delete();
+    assert_eq!(tx(&model), "😄|");
+}
+
+#[test]
+fn test_delete_complex_emoji() {
+    let mut model = cm("Test😮‍💨|😅");
+    model.delete();
+    assert_eq!(tx(&model), "Test😮‍💨|");
+    model.select(4.into(), 4.into());
+    model.delete();
+    assert_eq!(tx(&model), "Test|");
+}
+
+#[test]
+fn test_delete_complex_grapheme() {
+    let mut model = cm("Test|О́");
+    model.delete();
+    assert_eq!(tx(&model), "Test|");
+}
+
+#[test]
+fn test_backspace_complex_grapheme() {
+    let mut model = cm("TestО́|");
+    model.backspace();
+    assert_eq!(tx(&model), "Test|");
+}

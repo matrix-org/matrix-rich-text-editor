@@ -345,7 +345,6 @@ where
 #[cfg(test)]
 mod test {
     use std::collections::HashSet;
-
     use widestring::Utf16String;
 
     use crate::menu_state::MenuStateUpdate;

@@ -13,8 +13,9 @@
 // limitations under the License.
 
 use crate::composer_model::base::adjust_handles_for_delete;
-use crate::dom::nodes::DomNode;
-use crate::dom::{DomHandle, Range};
+use crate::dom::nodes::{DomNode, TextNode};
+use crate::dom::unicode_string::UnicodeStrExt;
+use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
 
 impl<S> ComposerModel<S>
@@ -71,8 +72,20 @@ where
     /// Deletes the character after the current cursor position.
     pub fn delete(&mut self) -> ComposerUpdate<S> {
         if self.state.start == self.state.end {
-            // Go forward 1 from the current location
-            self.state.end += 1;
+            let (s, _) = self.safe_selection();
+            // If we're dealing with complex graphemes, this value might not be 1
+            let next_char_len =
+                if let Some((text_node, loc)) = self.get_selected_text_node() {
+                    let selection_start_in_str = s - loc.position;
+                    Self::find_next_char_len(
+                        selection_start_in_str,
+                        &text_node.data(),
+                    ) as isize
+                } else {
+                    1
+                };
+            // Go forward `next_char_len` positions from the current location
+            self.state.end += next_char_len;
         }
 
         self.replace_text(S::default())
@@ -113,10 +126,63 @@ where
 
     pub(crate) fn do_backspace(&mut self) -> ComposerUpdate<S> {
         if self.state.start == self.state.end {
-            // Go back 1 from the current location
-            self.state.start -= 1;
+            let (_, e) = self.safe_selection();
+            // If we're dealing with complex graphemes, this value might not be 1
+            let prev_char_len =
+                if let Some((text_node, loc)) = self.get_selected_text_node() {
+                    let selection_end_in_str = e - loc.position;
+                    Self::find_previous_char_len(
+                        selection_end_in_str,
+                        &text_node.data(),
+                    ) as isize
+                } else {
+                    1
+                };
+            // Go back `prev_char_len` positions from the current location
+            self.state.start -= prev_char_len;
         }
 
         self.replace_text(S::default())
+    }
+
+    /// Returns the currently selected TextNode if it's the only leaf node and the cursor is inside
+    /// its range.
+    fn get_selected_text_node(&self) -> Option<(&TextNode<S>, DomLocation)> {
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        let leaves: Vec<&DomLocation> = range.leaves().collect();
+        if s == e && leaves.len() == 1 {
+            let leaf = leaves[0];
+            if let DomNode::Text(text_node) =
+                self.state.dom.lookup_node(&leaf.node_handle)
+            {
+                return Some((text_node, leaf.clone()));
+            }
+        }
+        None
+    }
+
+    /// Returns the length of the [char] for the current [S] string encoding before the given [pos].
+    fn find_previous_char_len(pos: usize, str: &S::Str) -> usize {
+        let graphemes = str.find_graphemes_at(pos);
+        // Take the grapheme before the position
+        if let Some(last_grapheme) = graphemes.0 {
+            last_grapheme.len()
+        } else {
+            // Default length for characters
+            1
+        }
+    }
+
+    /// Returns the length of the [char] for the current [S] string encoding after the given [pos].
+    fn find_next_char_len(pos: usize, str: &S::Str) -> usize {
+        let graphemes = str.find_graphemes_at(pos);
+        // Take the grapheme after the position
+        if let Some(first_grapheme) = graphemes.1 {
+            first_grapheme.len()
+        } else {
+            // Default length for characters
+            1
+        }
     }
 }

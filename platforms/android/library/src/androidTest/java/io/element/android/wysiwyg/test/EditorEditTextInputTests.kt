@@ -8,6 +8,7 @@ import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
 import android.view.KeyEvent
 import android.view.View
+import android.widget.EditText
 import android.widget.TextView
 import androidx.core.text.getSpans
 import androidx.test.espresso.Espresso.onView
@@ -23,10 +24,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.spans.OrderedListSpan
-import io.element.android.wysiwyg.test.utils.EditorActions
-import io.element.android.wysiwyg.test.utils.ImeActions
-import io.element.android.wysiwyg.test.utils.TestActivity
-import io.element.android.wysiwyg.test.utils.selectionIsAt
+import io.element.android.wysiwyg.test.utils.*
 import io.mockk.confirmVerified
 import io.mockk.spyk
 import io.mockk.verify
@@ -72,6 +70,36 @@ class EditorEditTextInputTests {
             // Type a character again to make sure the composer and the UI match
             .perform(typeText("t"))
             .check(matches(withText("Test")))
+    }
+
+    @Test
+    fun testHardwareKeyboardDelete() {
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(typeText("Test"))
+            .perform(ImeActions.setSelection(0))
+            .perform(pressKey(KeyEvent.KEYCODE_FORWARD_DEL))
+            .check(matches(withText("est")))
+    }
+
+    @Test
+    fun testHardwareKeyboardBackspaceEmoji() {
+        onView(withId(R.id.rich_text_edit_text))
+            // pressKey doesn't seem to work if no `typeText` is used before
+            .perform(pressKey(KeyEvent.KEYCODE_A))
+            .perform(replaceText("\uD83D\uDE2E\u200D\uD83D\uDCA8"))
+            .perform(pressKey(KeyEvent.KEYCODE_DEL))
+            .check(matches(withText("")))
+    }
+
+    @Test
+    fun testHardwareKeyboardDeleteEmoji() {
+        onView(withId(R.id.rich_text_edit_text))
+            // pressKey doesn't seem to work if no `typeText` is used before
+            .perform(pressKey(KeyEvent.KEYCODE_A))
+            .perform(replaceText("\uD83D\uDE2E\u200D\uD83D\uDCA8"))
+            .perform(AnyViewAction { view -> (view as EditText).setSelection(0) })
+            .perform(pressKey(KeyEvent.KEYCODE_FORWARD_DEL))
+            .check(matches(withText("")))
     }
 
     @Test
@@ -260,9 +288,10 @@ class EditorEditTextInputTests {
             .perform(ImeActions.setSelection(start, end))
             .perform(EditorActions.toggleFormat(InlineFormat.Bold))
             // Check text contains a Bold StyleSpan
-            .check(containsSpan(StyleSpan::class.java, start, end) {
-                (it as? StyleSpan)?.style == Typeface.BOLD
-            })
+            .check(matches(TextViewMatcher { view ->
+                view.editableText.getSpans<StyleSpan>(start, end)
+                    .any { (it as? StyleSpan)?.style == Typeface.BOLD }
+            }))
     }
 
     @Test
@@ -334,28 +363,6 @@ class EditorEditTextInputTests {
             textWatcher.invoke(match { it.toString() == "" })
         }
         confirmVerified(textWatcher)
-    }
-}
-
-fun containsSpan(
-    spanClass: Class<*>,
-    start: Int,
-    end: Int,
-    extraCheck: ((Any) -> Boolean)? = null,
-): ViewAssertion {
-    return ViewAssertion { view, _ ->
-        if (view is TextView) {
-            val spannableText = view.text as? Spannable
-                ?: throw AssertionError("Text is not Spannable")
-            val spans = spannableText.getSpans(start, end, spanClass)
-            if (spans.isEmpty()) {
-                throw AssertionError("No $spanClass found in ($start, $end)")
-            } else if (extraCheck != null && spans.none(extraCheck)) {
-                throw AssertionError("No span matches the extra check.")
-            }
-        } else {
-            throw AssertionError("View is not TextView")
-        }
     }
 }
 

@@ -19,7 +19,12 @@ sealed interface EditorInputAction {
     /**
      * Deletes text in the [start]..[end] selection
      */
-    data class Delete(val start: Int, val end: Int): EditorInputAction
+    data class DeleteIn(val start: Int, val end: Int): EditorInputAction
+
+    /**
+     * Deletes text for the current selection
+     */
+    object Delete : EditorInputAction
 
     /**
      * Adds a new line break at the current selection.
