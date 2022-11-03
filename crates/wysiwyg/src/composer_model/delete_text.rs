@@ -164,8 +164,7 @@ where
 
     /// Returns the length of the [char] for the current [S] string encoding before the given [pos].
     fn find_previous_char_len(pos: usize, str: &S::Str) -> usize {
-        let u8end = str.u8_mapped_indexes(pos);
-        let graphemes = str.find_graphemes_at(u8end);
+        let graphemes = str.find_graphemes_at(pos);
         // Take the grapheme before the position
         if let Some(last_grapheme) = graphemes.0 {
             S::from(last_grapheme.as_str()).len()
@@ -177,8 +176,7 @@ where
 
     /// Returns the length of the [char] for the current [S] string encoding after the given [pos].
     fn find_next_char_len(pos: usize, str: &S::Str) -> usize {
-        let u8start = str.u8_mapped_indexes(pos);
-        let graphemes = str.find_graphemes_at(u8start);
+        let graphemes = str.find_graphemes_at(pos);
         // Take the grapheme after the position
         if let Some(first_grapheme) = graphemes.1 {
             S::from(first_grapheme.as_str()).len()
