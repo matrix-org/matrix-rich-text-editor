@@ -133,8 +133,7 @@ export function replaceEditor(
                 sameNodeButEndOffsetBeforeStartOffset
             ) {
                 [start, end] = [end, start];
-                assert(start.node); // Silence TypeScript - we checked this
-                assert(end.node); // above.
+                if (!start.node || !end.node) throw new Error();
             }
 
             range.setStart(start.node, start.offset);
