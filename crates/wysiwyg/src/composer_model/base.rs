@@ -15,7 +15,10 @@
 use crate::composer_state::ComposerState;
 use crate::dom::parser::parse;
 use crate::dom::{DomHandle, UnicodeString};
-use crate::{ComposerAction, ComposerUpdate, Location, ToHtml, ToTree};
+use crate::markdown_html_parser::MarkdownHTMLParser;
+use crate::{
+    ComposerAction, ComposerUpdate, Location, ToHtml, ToMarkdown, ToTree,
+};
 use std::collections::HashSet;
 
 #[derive(Clone)]
@@ -104,6 +107,12 @@ where
         }
     }
 
+    pub fn replace_all_text(&mut self, markdown: &S) -> ComposerUpdate<S> {
+        let html = MarkdownHTMLParser::to_html(markdown);
+
+        self.replace_all_html(&html)
+    }
+
     pub(crate) fn create_update_replace_all(&mut self) -> ComposerUpdate<S> {
         ComposerUpdate::replace_all(
             self.state.dom.to_html(),
@@ -119,6 +128,10 @@ where
 
     pub fn get_html(&self) -> S {
         self.state.dom.to_html()
+    }
+
+    pub fn get_markdown(&self) -> S {
+        self.state.dom.to_markdown().unwrap()
     }
 
     pub fn get_current_state(&self) -> &ComposerState<S> {

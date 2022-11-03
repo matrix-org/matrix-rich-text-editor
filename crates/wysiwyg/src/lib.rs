@@ -20,6 +20,7 @@ mod dom;
 mod format_type;
 mod list_type;
 mod location;
+mod markdown_html_parser;
 mod menu_state;
 mod tests;
 mod text_update;

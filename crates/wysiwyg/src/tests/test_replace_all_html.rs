@@ -26,6 +26,13 @@ fn replace_all_html() {
 }
 
 #[test]
+fn replace_all_text() {
+    let mut model = ComposerModel::new();
+    model.replace_all_text(&Utf16String::from("**abc**"));
+    assert_eq!(tx(&model), "<strong>abc|</strong>");
+}
+
+#[test]
 fn replace_all_html_moves_cursor_to_the_end() {
     let mut model = cm("abc|");
     model.replace_all_html(&"content".into());
