@@ -148,10 +148,6 @@ where
     pub(crate) fn is_block_node(&self) -> bool {
         matches!(self, Self::Container(container) if container.is_block_node())
     }
-
-    pub(crate) fn is_inline_node(&self) -> bool {
-        !self.is_block_node()
-    }
 }
 
 impl<S> ToHtml<S> for DomNode<S>

@@ -21,7 +21,7 @@ where
     cfg_if::cfg_if! {
         if #[cfg(feature = "sys")] {
             sys::parse(html)
-        } else if #[cfg(feature = "js")] {
+        } else if #[cfg(all(feature = "js", target_arch = "wasm32"))] {
             js::parse(html)
         } else {
             unreachable!("The `sys` or `js` are mutually exclusive, and one of them must be enabled.")
@@ -288,7 +288,7 @@ mod sys {
     }
 }
 
-#[cfg(feature = "js")]
+#[cfg(all(feature = "js", target_arch = "wasm32"))]
 mod js {
     use super::*;
     use crate::{
