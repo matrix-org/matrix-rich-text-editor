@@ -104,7 +104,7 @@ line3~~ def"#,
 
 #[test]
 fn text_with_underline() {
-    assert_to_md_no_roundtrip("<u>abc</u>", "abc");
+    assert_to_md("<u>abc</u>", "<u>abc</u>");
 }
 
 #[test]
