@@ -212,7 +212,7 @@ where
         &self.children
     }
 
-    #[cfg(feature = "js")]
+    #[cfg(all(feature = "js", target_arch = "wasm32"))]
     pub(crate) fn take_children(self) -> Vec<DomNode<S>> {
         self.children
     }
