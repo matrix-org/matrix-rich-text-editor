@@ -59,6 +59,7 @@ pub trait UnicodeStr:
     + Index<RangeTo<usize>, Output = Self>
 {
     type CodeUnit: Copy + From<u8> + PartialEq;
+    type StringType: UnicodeString;
 
     // Should really be `-> Self::Chars<'a>`, but that requires GATs
     fn chars(&self) -> Box<dyn Iterator<Item = char> + '_>;
@@ -78,6 +79,7 @@ impl UnicodeString for String {
 
 impl UnicodeStr for str {
     type CodeUnit = u8;
+    type StringType = String;
 
     fn chars(&self) -> Box<dyn Iterator<Item = char> + '_> {
         Box::new(self.chars())
@@ -99,6 +101,7 @@ impl UnicodeString for Utf16String {
 
 impl UnicodeStr for Utf16Str {
     type CodeUnit = u16;
+    type StringType = Utf16String;
 
     fn chars(&self) -> Box<dyn Iterator<Item = char> + '_> {
         Box::new(self.chars())
@@ -120,6 +123,7 @@ impl UnicodeString for Utf32String {
 
 impl UnicodeStr for Utf32Str {
     type CodeUnit = u32;
+    type StringType = Utf32String;
 
     fn chars(&self) -> Box<dyn Iterator<Item = char> + '_> {
         Box::new(self.chars())
@@ -152,7 +156,7 @@ pub trait UnicodeStrExt: UnicodeStr {
     fn find_graphemes_at(
         &self,
         index: usize,
-    ) -> (Option<String>, Option<String>);
+    ) -> (Option<Self::StringType>, Option<Self::StringType>);
     fn u8_map_index(&self, pos: usize) -> usize;
 }
 
@@ -170,7 +174,7 @@ impl<S: UnicodeStr + ?Sized> UnicodeStrExt for S {
     fn find_graphemes_at(
         &self,
         index: usize,
-    ) -> (Option<String>, Option<String>) {
+    ) -> (Option<Self::StringType>, Option<Self::StringType>) {
         let u8_str = self.to_string();
         let u8_index = self.u8_map_index(index);
         let graphemes = u8_str.grapheme_indices(true);
@@ -178,11 +182,11 @@ impl<S: UnicodeStr + ?Sized> UnicodeStrExt for S {
         let mut next = None;
         for g in graphemes {
             if g.0 == u8_index {
-                next = Some(g.1.to_string())
+                next = Some(Self::StringType::from(g.1))
             }
             let length = g.1.len();
             if g.0 + length == u8_index {
-                prev = Some(g.1.to_string())
+                prev = Some(Self::StringType::from(g.1))
             }
         }
         (prev, next)

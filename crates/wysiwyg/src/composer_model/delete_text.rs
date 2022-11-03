@@ -167,7 +167,7 @@ where
         let graphemes = str.find_graphemes_at(pos);
         // Take the grapheme before the position
         if let Some(last_grapheme) = graphemes.0 {
-            S::from(last_grapheme.as_str()).len()
+            last_grapheme.len()
         } else {
             // Default length for characters
             1
@@ -179,7 +179,7 @@ where
         let graphemes = str.find_graphemes_at(pos);
         // Take the grapheme after the position
         if let Some(first_grapheme) = graphemes.1 {
-            S::from(first_grapheme.as_str()).len()
+            first_grapheme.len()
         } else {
             // Default length for characters
             1
