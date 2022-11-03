@@ -71,6 +71,10 @@ impl ComposerModel {
         self.inner.get_html().to_string()
     }
 
+    pub fn get_markdown(&self) -> String {
+        self.inner.get_markdown().to_string()
+    }
+
     pub fn document(&self) -> DomHandle {
         DomHandle {
             inner: self.inner.state.dom.document().handle(),
@@ -115,6 +119,12 @@ impl ComposerModel {
     pub fn replace_all_html(&mut self, text: &str) -> ComposerUpdate {
         ComposerUpdate::from(
             self.inner.replace_all_html(&Utf16String::from_str(text)),
+        )
+    }
+
+    pub fn replace_all_text(&mut self, text: &str) -> ComposerUpdate {
+        ComposerUpdate::from(
+            self.inner.replace_all_text(&Utf16String::from_str(text)),
         )
     }
 

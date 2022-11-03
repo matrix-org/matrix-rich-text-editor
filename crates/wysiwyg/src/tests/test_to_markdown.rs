@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{tests::testutils_composer_model::cm, ToMarkdown};
-use pulldown_cmark as md_parser;
+use crate::{
+    markdown_html_parser::MarkdownHTMLParser,
+    tests::testutils_composer_model::cm, ToMarkdown,
+};
 use widestring::Utf16String;
 
 #[test]
@@ -212,7 +214,7 @@ fn assert_to_md(html: &str, expected_markdown: &str) {
     assert_eq!(markdown, expected_markdown);
 
     let expected_html = html;
-    let html = to_html(&markdown);
+    let html = MarkdownHTMLParser::to_html(&markdown);
 
     assert_eq!(html, expected_html);
 }
@@ -221,43 +223,4 @@ fn to_markdown(html: &str) -> Utf16String {
     assert!(markdown.is_ok());
 
     markdown.unwrap()
-}
-
-fn to_html(markdown: &Utf16String) -> String {
-    use md_parser::{html::push_html as compile_to_html, Options, Parser};
-
-    let mut options = Options::empty();
-    options.insert(Options::ENABLE_STRIKETHROUGH);
-
-    let markdown = markdown.as_ustr().to_string_lossy();
-
-    let parser = Parser::new_ext(&markdown, options);
-
-    let mut html = String::new();
-    compile_to_html(&mut html, parser);
-
-    // By default, there is a `<p>…</p>\n` around the HTML content. That's the
-    // correct way to handle a text block in Markdown. But it breaks our
-    // assumption regarding the HTML markup. So let's remove it.
-    let html = {
-        if !html.starts_with("<p>") {
-            &html[..]
-        } else {
-            let p = "<p>".len();
-            let ppnl = "</p>\n".len();
-
-            &html[p..html.len() - ppnl]
-        }
-    };
-
-    // Format new lines.
-    let html = html
-        .replace("<ul>\n", "<ul>")
-        .replace("</ul>\n", "</ul>")
-        .replace("<ol>\n", "<ol>")
-        .replace("</ol>\n", "</ol>")
-        .replace("</li>\n", "</li>")
-        .replace("<br />\n", "<br />");
-
-    html
 }
