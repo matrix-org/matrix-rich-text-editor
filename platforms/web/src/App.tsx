@@ -77,11 +77,10 @@ function App() {
         return e;
     };
 
-    const { ref, isWysiwygReady, formattingStates, wysiwyg, debug } =
-        useWysiwyg({
-            isAutoFocusEnabled: true,
-            inputEventProcessor,
-        });
+    const { ref, isWysiwygReady, actionStates, wysiwyg, debug } = useWysiwyg({
+        isAutoFocusEnabled: true,
+        inputEventProcessor,
+    });
 
     const onEnterToSendChanged = () => {
         setEnterToSend((prevValue) => !prevValue);
@@ -96,55 +95,55 @@ function App() {
                             onClick={wysiwyg.undo}
                             alt="undo"
                             imagePath={undoImage}
-                            state={formattingStates.undo}
+                            state={actionStates.undo}
                         />
                         <Button
                             onClick={wysiwyg.redo}
                             alt="redo"
                             imagePath={redoImage}
-                            state={formattingStates.redo}
+                            state={actionStates.redo}
                         />
                         <Button
                             onClick={wysiwyg.bold}
                             alt="bold"
                             imagePath={boldImage}
-                            state={formattingStates.bold}
+                            state={actionStates.bold}
                         />
                         <Button
                             onClick={wysiwyg.italic}
                             alt="italic"
                             imagePath={italicImage}
-                            state={formattingStates.italic}
+                            state={actionStates.italic}
                         />
                         <Button
                             onClick={wysiwyg.underline}
                             alt="underline"
                             imagePath={underlineImage}
-                            state={formattingStates.underline}
+                            state={actionStates.underline}
                         />
                         <Button
                             onClick={wysiwyg.strikeThrough}
                             alt="strike through"
                             imagePath={strikeTroughImage}
-                            state={formattingStates.strikeThrough}
+                            state={actionStates.strikeThrough}
                         />
                         <Button
                             onClick={wysiwyg.unorderedList}
                             alt="list unordered"
                             imagePath={listUnorderedImage}
-                            state={formattingStates.unorderedList}
+                            state={actionStates.unorderedList}
                         />
                         <Button
                             onClick={wysiwyg.orderedList}
                             alt="list ordered"
                             imagePath={listOrderedImage}
-                            state={formattingStates.orderedList}
+                            state={actionStates.orderedList}
                         />
                         <Button
                             onClick={wysiwyg.inlineCode}
                             alt="inline code"
                             imagePath={listOrderedImage}
-                            state={formattingStates.inlineCode}
+                            state={actionStates.inlineCode}
                         />
                         <button type="button" onClick={(_e) => wysiwyg.clear()}>
                             clear

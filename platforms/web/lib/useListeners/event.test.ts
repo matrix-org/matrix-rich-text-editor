@@ -16,7 +16,7 @@ limitations under the License.
 
 // eslint-disable-next-line camelcase
 import init, { new_composer_model } from '../../generated/wysiwyg';
-import { getFormattingState } from './event';
+import { extractActionStates } from './event';
 
 beforeAll(async () => {
     await init();
@@ -32,7 +32,7 @@ describe('getFormattingState', () => {
         if (!menuStateUpdate) {
             fail('There should be an update!');
         }
-        const states = getFormattingState(menuStateUpdate);
+        const states = extractActionStates(menuStateUpdate);
 
         // Then
         expect(states.italic).toBe('enabled');

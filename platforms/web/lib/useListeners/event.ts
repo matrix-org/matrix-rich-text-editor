@@ -30,8 +30,8 @@ import {
     WysiwygInputEvent,
 } from '../types';
 import { TestUtilities } from '../useTestCases/types';
-import { FormattingStates } from './types';
-import { mapToFormattingStates } from './utils';
+import { AllActionStates } from '../types';
+import { mapToAllActionStates } from './utils';
 
 export function sendWysiwygInputEvent(
     editor: HTMLElement,
@@ -82,10 +82,10 @@ export function handleKeyDown(e: KeyboardEvent, editor: HTMLElement) {
     }
 }
 
-export function getFormattingState(
+export function extractActionStates(
     menuStateUpdate: MenuStateUpdate,
-): FormattingStates {
-    return mapToFormattingStates(menuStateUpdate.action_states);
+): AllActionStates {
+    return mapToAllActionStates(menuStateUpdate.action_states);
 }
 
 export function handleInput(
@@ -99,7 +99,7 @@ export function handleInput(
 ):
     | {
           content?: string;
-          formattingStates: FormattingStates | null;
+          actionStates: AllActionStates | null;
       }
     | undefined {
     const update = processInput(
@@ -130,8 +130,8 @@ export function handleInput(
         const menuStateUpdate = update.menu_state().update();
         const res = {
             content: repl?.replacement_html,
-            formattingStates: menuStateUpdate
-                ? getFormattingState(menuStateUpdate)
+            actionStates: menuStateUpdate
+                ? extractActionStates(menuStateUpdate)
                 : null,
         };
 
@@ -143,7 +143,7 @@ export function handleSelectionChange(
     editor: HTMLElement,
     composeModel: ComposerModel,
     { traceAction, getSelectionAccordingToActions }: TestUtilities,
-): FormattingStates | undefined {
+): AllActionStates | undefined {
     const [start, end] = getCurrentSelection(editor, document.getSelection());
 
     const prevStart = composeModel.selection_start();
@@ -178,6 +178,6 @@ export function handleSelectionChange(
     const menuStateUpdate = update.menu_state().update();
 
     if (menuStateUpdate) {
-        return getFormattingState(menuStateUpdate);
+        return extractActionStates(menuStateUpdate);
     }
 }

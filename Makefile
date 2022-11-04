@@ -81,6 +81,7 @@ clean:
 
 test:
 	cargo test
+	cd platforms/web && yarn tsc && yarn test
 
 coverage:
 	@echo "Requires `rustup component add llvm-tools-preview`"

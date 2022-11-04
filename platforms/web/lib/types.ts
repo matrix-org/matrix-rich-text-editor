@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { FORMATTING_ACTIONS } from './constants';
+import { ACTION_TYPES } from './constants';
 
 export type BlockType = InputEvent['inputType'] | 'formatInlineCode' | 'clear';
 
@@ -22,13 +22,13 @@ export type WysiwygInputEvent =
     | ClipboardEvent
     | (InputEvent & { inputType: BlockType });
 
-export type FormattingActions = typeof FORMATTING_ACTIONS[number];
+export type ActionTypes = typeof ACTION_TYPES[number];
 
-export type FormattingState = 'enabled' | 'reversed' | 'disabled';
+export type ActionState = 'enabled' | 'reversed' | 'disabled';
 
-export type FormattingStates = Record<FormattingActions, FormattingState>;
+export type AllActionStates = Record<ActionTypes, ActionState>;
 
-export type FormattingFunctions = Record<FormattingActions, () => void>;
+export type FormattingFunctions = Record<ActionTypes, () => void>;
 
 export type Wysiwyg = {
     actions: FormattingFunctions;

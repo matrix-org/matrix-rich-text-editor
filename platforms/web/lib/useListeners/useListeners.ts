@@ -21,17 +21,17 @@ import { isClipboardEvent, isInputEvent } from './assert';
 import { handleInput, handleKeyDown, handleSelectionChange } from './event';
 import {
     FormattingFunctions,
-    FormattingStates,
+    AllActionStates,
     InputEventProcessor,
     WysiwygInputEvent,
 } from '../types';
 import { TestUtilities } from '../useTestCases/types';
 import { FormatBlockEvent } from './types';
-import { getDefaultFormattingStates } from './utils';
+import { defaultActionStates } from './utils';
 
 type State = {
     content: string | null;
-    formattingStates: FormattingStates;
+    actionStates: AllActionStates;
 };
 
 export function useListeners(
@@ -45,7 +45,7 @@ export function useListeners(
 ) {
     const [state, setState] = useState<State>({
         content: initialContent || null,
-        formattingStates: getDefaultFormattingStates(),
+        actionStates: defaultActionStates(),
     });
 
     useEffect(() => {
@@ -66,11 +66,10 @@ export function useListeners(
             );
 
             if (res) {
-                setState(({ content, formattingStates }) => {
+                setState(({ content, actionStates }) => {
                     const newState: State = {
                         content,
-                        formattingStates:
-                            res.formattingStates || formattingStates,
+                        actionStates: res.actionStates || actionStates,
                     };
                     if (res.content !== undefined) {
                         newState.content = res.content;
@@ -111,14 +110,17 @@ export function useListeners(
         editorNode.addEventListener('keydown', onKeyDown);
 
         const onSelectionChange = () => {
-            const formattingStates = handleSelectionChange(
+            const actionStates = handleSelectionChange(
                 editorNode,
                 composerModel,
                 testUtilities,
             );
 
-            if (formattingStates) {
-                setState(({ content }) => ({ content, formattingStates }));
+            if (actionStates) {
+                setState(({ content }) => ({
+                    content,
+                    actionStates,
+                }));
             }
         };
         document.addEventListener('selectionchange', onSelectionChange);
