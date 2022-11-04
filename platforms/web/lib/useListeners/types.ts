@@ -14,10 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { BlockType, FormattingActions, FormattingState } from '../types';
+import { BlockType } from '../types';
 
 export type FormatBlockEvent = CustomEvent<{
     blockType: BlockType;
 }>;
-
-export type FormattingStates = Record<FormattingActions, FormattingState>;
