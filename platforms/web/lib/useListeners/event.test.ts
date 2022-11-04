@@ -35,8 +35,8 @@ describe('getFormattingState', () => {
         const states = getFormattingState(menuStateUpdate);
 
         // Then
-        expect(states.get('Italic')).toBe('Enabled');
-        expect(states.get('Bold')).toBe('Reversed');
-        expect(states.get('Redo')).toBe('Disabled');
+        expect(states.italic).toBe('enabled');
+        expect(states.bold).toBe('reversed');
+        expect(states.redo).toBe('disabled');
     });
 });
