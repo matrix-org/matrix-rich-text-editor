@@ -98,7 +98,7 @@ export function handleInput(
     inputEventProcessor?: InputEventProcessor,
 ):
     | {
-          content: string | undefined;
+          content?: string;
           formattingStates: FormattingStates | null;
       }
     | undefined {
