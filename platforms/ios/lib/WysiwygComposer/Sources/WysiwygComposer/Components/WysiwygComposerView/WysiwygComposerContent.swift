@@ -21,31 +21,41 @@ import Foundation
 public class WysiwygComposerContent: NSObject {
     // MARK: - Public
 
-    /// Displayed text, as plain text.
-    public let plainText: String
+    /// Markdown representation of the displayed text.
+    public let markdown: String
     /// HTML representation of the displayed text.
     public let html: String
-    /// Attributed string representation of the displayed text.
-    public let attributed: NSAttributedString
-    /// Range of the selected text within the attributed representation.
-    public var attributedSelection: NSRange
 
     // MARK: - Internal
 
     /// Init.
     ///
     /// - Parameters:
-    ///   - plainText: Displayed text, as plain text.
+    ///   - markdown: Markdown representation of the displayed text.
     ///   - html: HTML representation of the displayed text.
-    ///   - attributed: Attributed string representation of the displayed text.
-    ///   - attributedSelection: Range of the selected text within the attributed representation.
-    init(plainText: String = "",
-         html: String = "",
-         attributed: NSAttributedString = .init(string: ""),
-         attributedSelection: NSRange = .zero) {
-        self.plainText = plainText
+    init(markdown: String = "",
+         html: String = "") {
+        self.markdown = markdown
         self.html = html
-        self.attributed = attributed
-        self.attributedSelection = attributedSelection
+    }
+}
+
+public struct WysiwygComposerAttributedContent {
+    /// Attributed string representation of the displayed text.
+    public let text: NSAttributedString
+    /// Range of the selected text within the attributed representation.
+    public var selection: NSRange
+
+    // MARK: - Internal
+
+    /// Init.
+    ///
+    /// - Parameters:
+    ///   - text: Attributed string representation of the displayed text.
+    ///   - selection: Range of the selected text within the attributed representation.
+    init(text: NSAttributedString = .init(string: ""),
+         selection: NSRange = .zero) {
+        self.text = text
+        self.selection = selection
     }
 }

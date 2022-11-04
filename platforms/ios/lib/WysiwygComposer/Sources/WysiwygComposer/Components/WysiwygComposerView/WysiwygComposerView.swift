@@ -64,8 +64,8 @@ public struct WysiwygComposerView: UIViewRepresentable {
     public func updateUIView(_ uiView: PlaceholdableTextView, context: Context) {
         Logger.textView.logDebug(
             [
-                viewModel.content.logAttributedSelection,
-                viewModel.content.logText,
+                viewModel.attributedContent.logSelection,
+                viewModel.attributedContent.logText,
             ],
             functionName: #function
         )

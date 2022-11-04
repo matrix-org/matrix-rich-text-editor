@@ -25,8 +25,8 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
 
     /// The textView with placeholder support that the model manages
     public var textView: PlaceholdableTextView?
-    /// Published object for the composer content.
-    @Published public var content: WysiwygComposerContent = .init()
+    /// Published object for the composer attributed content.
+    @Published public var attributedContent: WysiwygComposerAttributedContent = .init()
     /// Published boolean for the composer empty content state.
     @Published public var isContentEmpty = true
     /// Published value for the composer required height to fit entirely without scrolling.
@@ -60,14 +60,13 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         }
     }
 
-    /// The composer content for plain text mode.
-    public var plainTextModeContent: WysiwygComposerContent {
-        _ = model.setContentFromMarkdown(markdown: plainText)
-        return WysiwygComposerContent(plainText: model.getContentAsMarkdown(),
-                                      html: model.getContentAsHtml(),
-                                      attributed: NSAttributedString(string: plainText),
-                                      attributedSelection: .init(location: plainText.utf16Length,
-                                                                 length: 0))
+    /// The current composer content.
+    public var content: WysiwygComposerContent {
+        if plainTextMode {
+            _ = model.setContentFromMarkdown(markdown: plainText)
+        }
+        return WysiwygComposerContent(markdown: model.getContentAsMarkdown(),
+                                      html: model.getContentAsHtml())
     }
 
     // MARK: - Private
@@ -92,8 +91,8 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         self.textColor = textColor
         model = newComposerModel()
         // Publish composer empty state.
-        $content.sink { [unowned self] content in
-            self.isContentEmpty = content.plainText.isEmpty
+        $attributedContent.sink { [unowned self] content in
+            self.isContentEmpty = content.text.length == 0
         }
         .store(in: &cancellables)
         
@@ -122,7 +121,7 @@ public extension WysiwygComposerViewModel {
     /// - Parameters:
     ///   - action: Action to apply.
     func apply(_ action: WysiwygAction) {
-        Logger.viewModel.logDebug([content.logAttributedSelection,
+        Logger.viewModel.logDebug([attributedContent.logSelection,
                                    "Apply action: \(action)"],
                                   functionName: #function)
         let update = model.apply(action)
@@ -174,11 +173,11 @@ public extension WysiwygComposerViewModel {
         let update: ComposerUpdate
         let shouldAcceptChange: Bool
 
-        if range != content.attributedSelection {
+        if range != attributedContent.selection {
             select(range: range)
         }
 
-        if content.attributedSelection.length == 0, replacementText == "" {
+        if attributedContent.selection.length == 0, replacementText == "" {
             Logger.viewModel.logDebug(["Ignored an empty replacement"],
                                       functionName: #function)
             return false
@@ -227,11 +226,11 @@ public extension WysiwygComposerViewModel {
             if textView.text.isEmpty != isContentEmpty {
                 isContentEmpty = textView.text.isEmpty
             }
-        } else if textView.attributedText != content.attributed {
+        } else if textView.attributedText != attributedContent.text {
             // Reconciliate
-            Logger.viewModel.logDebug(["Reconciliate from \"\(textView.text ?? "")\" to \"\(content.plainText)\""],
+            Logger.viewModel.logDebug(["Reconciliate from \"\(textView.text ?? "")\" to \"\(attributedContent.text)\""],
                                       functionName: #function)
-            textView.apply(content)
+            textView.apply(attributedContent)
         }
 
         updateCompressedHeightIfNeeded()
@@ -286,12 +285,7 @@ private extension WysiwygComposerViewModel {
             // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
             let textSelection = try attributed.attributedRange(from: htmlSelection,
                                                                shouldIgnoreTrailingNewline: false)
-            content = WysiwygComposerContent(
-                plainText: attributed.string,
-                html: html,
-                attributed: attributed,
-                attributedSelection: textSelection
-            )
+            attributedContent = WysiwygComposerAttributedContent(text: attributed, selection: textSelection)
             Logger.viewModel.logDebug(["Sel(att): \(textSelection)",
                                        "Sel: \(htmlSelection)",
                                        "HTML: \"\(html)\"",
@@ -314,9 +308,9 @@ private extension WysiwygComposerViewModel {
         do {
             let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
             // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
-            let textSelection = try content.attributed.attributedRange(from: htmlSelection,
-                                                                       shouldIgnoreTrailingNewline: false)
-            content.attributedSelection = textSelection
+            let textSelection = try attributedContent.text.attributedRange(from: htmlSelection,
+                                                                           shouldIgnoreTrailingNewline: false)
+            attributedContent.selection = textSelection
             Logger.viewModel.logDebug(["Sel(att): \(textSelection)",
                                        "Sel: \(htmlSelection)"],
                                       functionName: #function)

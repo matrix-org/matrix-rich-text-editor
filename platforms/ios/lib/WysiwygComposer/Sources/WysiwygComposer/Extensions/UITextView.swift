@@ -24,13 +24,13 @@ extension UITextView {
     ///
     /// - Parameters:
     ///   - content: Content to apply.
-    func apply(_ content: WysiwygComposerContent) {
+    func apply(_ content: WysiwygComposerAttributedContent) {
         performWithoutDelegate {
-            self.attributedText = content.attributed
+            self.attributedText = content.text
             // Set selection to {0, 0} then to expected position
             // avoids an issue with autocapitalization.
             self.selectedRange = .zero
-            self.selectedRange = content.attributedSelection
+            self.selectedRange = content.selection
         }
     }
 }
