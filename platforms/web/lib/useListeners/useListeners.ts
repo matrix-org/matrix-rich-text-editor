@@ -27,7 +27,7 @@ import {
 } from '../types';
 import { TestUtilities } from '../useTestCases/types';
 import { FormatBlockEvent } from './types';
-import { defaultActionStates } from './utils';
+import { createDefaultActionStates } from './utils';
 
 type State = {
     content: string | null;
@@ -45,7 +45,7 @@ export function useListeners(
 ) {
     const [state, setState] = useState<State>({
         content: initialContent || null,
-        actionStates: defaultActionStates(),
+        actionStates: createDefaultActionStates(),
     });
 
     useEffect(() => {
