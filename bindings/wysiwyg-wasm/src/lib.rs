@@ -67,12 +67,12 @@ impl ComposerModel {
         self.inner.to_example_format()
     }
 
-    pub fn get_html(&self) -> String {
-        self.inner.get_html().to_string()
+    pub fn get_content_as_html(&self) -> String {
+        self.inner.get_content_as_html().to_string()
     }
 
-    pub fn get_markdown(&self) -> String {
-        self.inner.get_markdown().to_string()
+    pub fn get_content_as_markdown(&self) -> String {
+        self.inner.get_content_as_markdown().to_string()
     }
 
     pub fn document(&self) -> DomHandle {
@@ -116,15 +116,17 @@ impl ComposerModel {
         )
     }
 
-    pub fn replace_all_html(&mut self, text: &str) -> ComposerUpdate {
+    pub fn set_content_from_html(&mut self, text: &str) -> ComposerUpdate {
         ComposerUpdate::from(
-            self.inner.replace_all_html(&Utf16String::from_str(text)),
+            self.inner
+                .set_content_from_html(&Utf16String::from_str(text)),
         )
     }
 
-    pub fn replace_all_text(&mut self, text: &str) -> ComposerUpdate {
+    pub fn set_content_from_markdown(&mut self, text: &str) -> ComposerUpdate {
         ComposerUpdate::from(
-            self.inner.replace_all_text(&Utf16String::from_str(text)),
+            self.inner
+                .set_content_from_markdown(&Utf16String::from_str(text)),
         )
     }
 

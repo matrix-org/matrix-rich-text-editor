@@ -17,10 +17,10 @@ namespace wysiwyg_composer {
 };
 
 interface ComposerModel {
-    ComposerUpdate replace_all_html(string html);
-    ComposerUpdate replace_all_text(string markdown);
-    string get_html();
-    string get_markdown();
+    ComposerUpdate set_content_from_html(string html);
+    ComposerUpdate set_content_from_markdown(string markdown);
+    string get_content_as_html();
+    string get_content_as_markdown();
     ComposerUpdate clear();
     ComposerUpdate select(u32 start_utf16_codeunit, u32 end_utf16_codeunit);
     ComposerUpdate replace_text(string new_text);

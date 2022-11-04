@@ -29,7 +29,7 @@ fn pressing_enter_with_a_brand_new_model() {
 #[test]
 fn pressing_enter_after_replacing_with_empty_html() {
     let mut model = ComposerModel::new();
-    model.replace_all_html(&Utf16String::new());
+    model.set_content_from_html(&Utf16String::new());
     model.enter();
     assert_eq!(tx(&model), "<br />|");
 }
