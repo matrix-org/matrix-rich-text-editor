@@ -17,32 +17,39 @@ impl ComposerModel {
         }
     }
 
-    pub fn replace_all_html(
+    pub fn set_content_from_html(
         self: &Arc<Self>,
         html: String,
     ) -> Arc<ComposerUpdate> {
         let html = Utf16String::from_str(&html);
         Arc::new(ComposerUpdate::from(
-            self.inner.lock().unwrap().replace_all_html(&html),
+            self.inner.lock().unwrap().set_content_from_html(&html),
         ))
     }
 
-    pub fn replace_all_text(
+    pub fn set_content_from_markdown(
         self: &Arc<Self>,
         markdown: String,
     ) -> Arc<ComposerUpdate> {
         let markdown = Utf16String::from_str(&markdown);
         Arc::new(ComposerUpdate::from(
-            self.inner.lock().unwrap().replace_all_text(&markdown),
+            self.inner
+                .lock()
+                .unwrap()
+                .set_content_from_markdown(&markdown),
         ))
     }
 
-    pub fn get_html(self: &Arc<Self>) -> String {
-        self.inner.lock().unwrap().get_html().to_string()
+    pub fn get_content_as_html(self: &Arc<Self>) -> String {
+        self.inner.lock().unwrap().get_content_as_html().to_string()
     }
 
-    pub fn get_markdown(self: &Arc<Self>) -> String {
-        self.inner.lock().unwrap().get_markdown().to_string()
+    pub fn get_content_as_markdown(self: &Arc<Self>) -> String {
+        self.inner
+            .lock()
+            .unwrap()
+            .get_content_as_markdown()
+            .to_string()
     }
 
     pub fn clear(self: &Arc<Self>) -> Arc<ComposerUpdate> {

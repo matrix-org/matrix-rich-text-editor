@@ -60,7 +60,7 @@ internal class EditorViewModel(
                 )
                 is EditorInputAction.Delete -> composer?.delete()
                 is EditorInputAction.SetLink -> composer?.setLink(action.link)
-                is EditorInputAction.ReplaceAllHtml -> composer?.replaceAllHtml(action.html)
+                is EditorInputAction.ReplaceAllHtml -> composer?.setContentFromHtml(action.html)
                 is EditorInputAction.Undo -> composer?.undo()
                 is EditorInputAction.Redo -> composer?.redo()
                 is EditorInputAction.ToggleList ->

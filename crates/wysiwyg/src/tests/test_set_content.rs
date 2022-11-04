@@ -19,30 +19,30 @@ use crate::{tests::testutils_composer_model::tx, ComposerModel};
 use super::testutils_composer_model::cm;
 
 #[test]
-fn replace_all_html() {
+fn set_content_from_html() {
     let mut model = ComposerModel::new();
-    model.replace_all_html(&Utf16String::from("content"));
+    model.set_content_from_html(&Utf16String::from("content"));
     assert_eq!(tx(&model), "content|");
 }
 
 #[test]
-fn replace_all_text() {
+fn set_content_from_markdown() {
     let mut model = ComposerModel::new();
-    model.replace_all_text(&Utf16String::from("**abc**"));
+    model.set_content_from_markdown(&Utf16String::from("**abc**"));
     assert_eq!(tx(&model), "<strong>abc|</strong>");
 }
 
 #[test]
-fn replace_all_html_moves_cursor_to_the_end() {
+fn set_content_from_html_moves_cursor_to_the_end() {
     let mut model = cm("abc|");
-    model.replace_all_html(&"content".into());
+    model.set_content_from_html(&"content".into());
     assert_eq!(tx(&model), "content|");
 }
 
 #[test]
 fn clear() {
     let mut model = ComposerModel::new();
-    model.replace_all_html(&Utf16String::from("content"));
+    model.set_content_from_html(&Utf16String::from("content"));
     model.clear();
     assert_eq!(tx(&model), "");
 }

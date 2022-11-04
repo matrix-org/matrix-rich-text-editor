@@ -440,23 +440,23 @@ mod test {
     fn cm_creates_correct_component_model_plain() {
         assert_eq!(cm("|").state.start, 0);
         assert_eq!(cm("|").state.end, 0);
-        assert_eq!(cm("|").get_html(), utf16(""));
+        assert_eq!(cm("|").get_content_as_html(), utf16(""));
 
         assert_eq!(cm("a|").state.start, 1);
         assert_eq!(cm("a|").state.end, 1);
-        assert_eq!(cm("a|").get_html(), utf16("a"));
+        assert_eq!(cm("a|").get_content_as_html(), utf16("a"));
 
         assert_eq!(cm("a|b").state.start, 1);
         assert_eq!(cm("a|b").state.end, 1);
-        assert_eq!(cm("a|b").get_html(), utf16("ab"));
+        assert_eq!(cm("a|b").get_content_as_html(), utf16("ab"));
 
         assert_eq!(cm("|ab").state.start, 0);
         assert_eq!(cm("|ab").state.end, 0);
-        assert_eq!(cm("|ab").get_html(), utf16("ab"));
+        assert_eq!(cm("|ab").get_content_as_html(), utf16("ab"));
 
         assert_eq!(cm("foo|").state.start, 3);
         assert_eq!(cm("foo|").state.end, 3);
-        assert_eq!(cm("foo|").get_html(), (utf16("foo")));
+        assert_eq!(cm("foo|").get_content_as_html(), (utf16("foo")));
     }
 
     #[test]
@@ -464,7 +464,7 @@ mod test {
         let t0 = cm("AAA<b>B|BB</b>CCC");
         assert_eq!(t0.state.start, 4);
         assert_eq!(t0.state.end, 4);
-        assert_eq!(t0.get_html(), utf16("AAA<b>BBB</b>CCC"));
+        assert_eq!(t0.get_content_as_html(), utf16("AAA<b>BBB</b>CCC"));
     }
 
     #[test]
@@ -472,20 +472,20 @@ mod test {
         let t0 = cm("|<br />");
         assert_eq!(t0.state.start, 0);
         assert_eq!(t0.state.end, 0);
-        assert_eq!(t0.get_html(), utf16("<br />"));
+        assert_eq!(t0.get_content_as_html(), utf16("<br />"));
         // TODO: There should only be one node for the br tag
         //assert_eq!(t0.state.dom.children().len(), 1);
 
         let t1 = cm("<br />|<br />");
         assert_eq!(t1.state.start, 1);
         assert_eq!(t1.state.end, 1);
-        assert_eq!(t1.get_html(), utf16("<br /><br />"));
+        assert_eq!(t1.get_content_as_html(), utf16("<br /><br />"));
         // TODO: assert_eq!(t1.state.dom.children().len(), 2);
 
         let t2 = cm("<br /><br />|");
         assert_eq!(t2.state.start, 2);
         assert_eq!(t2.state.end, 2);
-        assert_eq!(t2.get_html(), utf16("<br /><br />"));
+        assert_eq!(t2.get_content_as_html(), utf16("<br /><br />"));
         // TODO: assert_eq!(t1.state.dom.children().len(), 2);
     }
 
@@ -494,47 +494,65 @@ mod test {
         let t1 = cm("foo|\u{1F4A9}bar");
         assert_eq!(t1.state.start, 3);
         assert_eq!(t1.state.end, 3);
-        assert_eq!(t1.get_html(), utf16("foo\u{1F4A9}bar"));
+        assert_eq!(t1.get_content_as_html(), utf16("foo\u{1F4A9}bar"));
 
         let t2 = cm("foo\u{1F4A9}|bar");
         assert_eq!(t2.state.start, 5);
         assert_eq!(t2.state.end, 5);
-        assert_eq!(t2.get_html(), utf16("foo\u{1F4A9}bar"));
+        assert_eq!(t2.get_content_as_html(), utf16("foo\u{1F4A9}bar"));
 
         assert_eq!(cm("foo|\u{1F4A9}").state.start, 3);
         assert_eq!(cm("foo|\u{1F4A9}").state.end, 3);
-        assert_eq!(cm("foo|\u{1F4A9}").get_html(), utf16("foo\u{1F4A9}"));
+        assert_eq!(
+            cm("foo|\u{1F4A9}").get_content_as_html(),
+            utf16("foo\u{1F4A9}")
+        );
 
         assert_eq!(cm("foo\u{1F4A9}|").state.start, 5);
         assert_eq!(cm("foo\u{1F4A9}|").state.end, 5);
-        assert_eq!(cm("foo\u{1F4A9}|").get_html(), utf16("foo\u{1F4A9}"));
+        assert_eq!(
+            cm("foo\u{1F4A9}|").get_content_as_html(),
+            utf16("foo\u{1F4A9}")
+        );
 
         assert_eq!(cm("|\u{1F4A9}bar").state.start, 0);
         assert_eq!(cm("|\u{1F4A9}bar").state.end, 0);
-        assert_eq!(cm("|\u{1F4A9}bar").get_html(), utf16("\u{1F4A9}bar"));
+        assert_eq!(
+            cm("|\u{1F4A9}bar").get_content_as_html(),
+            utf16("\u{1F4A9}bar")
+        );
 
         assert_eq!(cm("\u{1F4A9}|bar").state.start, 2);
         assert_eq!(cm("\u{1F4A9}|bar").state.end, 2);
-        assert_eq!(cm("\u{1F4A9}|bar").get_html(), utf16("\u{1F4A9}bar"));
+        assert_eq!(
+            cm("\u{1F4A9}|bar").get_content_as_html(),
+            utf16("\u{1F4A9}bar")
+        );
     }
 
     #[test]
     fn cm_creates_correct_component_model_selection_plain_text() {
         assert_eq!(cm("{a}|").state.start, 0);
         assert_eq!(cm("{a}|").state.end, 1);
-        assert_eq!(cm("{a}|").get_html(), utf16("a"));
+        assert_eq!(cm("{a}|").get_content_as_html(), utf16("a"));
 
         assert_eq!(cm("|{a}").state.start, 1);
         assert_eq!(cm("|{a}").state.end, 0);
-        assert_eq!(cm("|{a}").get_html(), utf16("a"));
+        assert_eq!(cm("|{a}").get_content_as_html(), utf16("a"));
 
         assert_eq!(cm("abc{def}|ghi").state.start, 3);
         assert_eq!(cm("abc{def}|ghi").state.end, 6);
-        assert_eq!(cm("abc{def}|ghi").get_html(), utf16("abcdefghi"));
+        assert_eq!(
+            cm("abc{def}|ghi").get_content_as_html(),
+            utf16("abcdefghi")
+        );
 
         assert_eq!(cm("abc|{def}ghi").state.start, 6);
         assert_eq!(cm("abc|{def}ghi").state.end, 3);
-        assert_eq!(cm("abc|{def}ghi").get_html(), utf16("abcdefghi"));
+        assert_eq!(
+            cm("abc|{def}ghi").get_content_as_html(),
+            utf16("abcdefghi")
+        );
     }
 
     #[test]
@@ -542,32 +560,32 @@ mod test {
         let t3 = cm("\u{1F4A9}{def}|ghi");
         assert_eq!(t3.state.start, 2);
         assert_eq!(t3.state.end, 5);
-        assert_eq!(t3.get_html(), utf16("\u{1F4A9}defghi"));
+        assert_eq!(t3.get_content_as_html(), utf16("\u{1F4A9}defghi"));
 
         let t4 = cm("\u{1F4A9}|{def}ghi");
         assert_eq!(t4.state.start, 5);
         assert_eq!(t4.state.end, 2);
-        assert_eq!(t4.get_html(), utf16("\u{1F4A9}defghi"));
+        assert_eq!(t4.get_content_as_html(), utf16("\u{1F4A9}defghi"));
 
         let t5 = cm("abc{d\u{1F4A9}f}|ghi");
         assert_eq!(t5.state.start, 3);
         assert_eq!(t5.state.end, 7);
-        assert_eq!(t5.get_html(), utf16("abcd\u{1F4A9}fghi"));
+        assert_eq!(t5.get_content_as_html(), utf16("abcd\u{1F4A9}fghi"));
 
         let t6 = cm("abc|{d\u{1F4A9}f}ghi");
         assert_eq!(t6.state.start, 7);
         assert_eq!(t6.state.end, 3);
-        assert_eq!(t6.get_html(), utf16("abcd\u{1F4A9}fghi"));
+        assert_eq!(t6.get_content_as_html(), utf16("abcd\u{1F4A9}fghi"));
 
         let t7 = cm("abc{def}|\u{1F4A9}ghi");
         assert_eq!(t7.state.start, 3);
         assert_eq!(t7.state.end, 6);
-        assert_eq!(t7.get_html(), utf16("abcdef\u{1F4A9}ghi"));
+        assert_eq!(t7.get_content_as_html(), utf16("abcdef\u{1F4A9}ghi"));
 
         let t8 = cm("abc|{def}\u{1F4A9}ghi");
         assert_eq!(t8.state.start, 6);
         assert_eq!(t8.state.end, 3);
-        assert_eq!(t8.get_html(), utf16("abcdef\u{1F4A9}ghi"));
+        assert_eq!(t8.get_content_as_html(), utf16("abcdef\u{1F4A9}ghi"));
     }
 
     #[test]
@@ -575,7 +593,7 @@ mod test {
         let model = cm("AAA<b>B{BB</b>C}|CC");
         assert_eq!(model.state.start, 4);
         assert_eq!(model.state.end, 7);
-        assert_eq!(model.get_html(), utf16("AAA<b>BBB</b>CCC"));
+        assert_eq!(model.get_content_as_html(), utf16("AAA<b>BBB</b>CCC"));
     }
 
     #[test]
@@ -583,7 +601,7 @@ mod test {
         let model = cm("AAA<b>B|{BB</b>C}CC");
         assert_eq!(model.state.start, 7);
         assert_eq!(model.state.end, 4);
-        assert_eq!(model.get_html(), utf16("AAA<b>BBB</b>CCC"));
+        assert_eq!(model.get_content_as_html(), utf16("AAA<b>BBB</b>CCC"));
     }
 
     #[test]
@@ -627,7 +645,10 @@ mod test {
         let model = cm("a<i>bc|{d<b>ef}\u{1F4A9}g</b>hi</i>");
         assert_eq!(model.state.start, 6);
         assert_eq!(model.state.end, 3);
-        assert_eq!(model.get_html(), utf16("a<i>bcd<b>ef\u{1F4A9}g</b>hi</i>"));
+        assert_eq!(
+            model.get_content_as_html(),
+            utf16("a<i>bcd<b>ef\u{1F4A9}g</b>hi</i>")
+        );
     }
 
     #[test]

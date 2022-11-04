@@ -46,7 +46,7 @@ export function processInput(
         e,
         {
             actions: formattingFunctions,
-            content: () => composerModel.get_html(),
+            content: () => composerModel.get_content_as_html(),
         },
         inputEventProcessor,
     );

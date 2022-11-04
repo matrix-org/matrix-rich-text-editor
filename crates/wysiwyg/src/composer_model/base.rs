@@ -85,7 +85,7 @@ where
     /// Replace the entire content of the model with given HTML string.
     /// This will remove all previous and next states, effectively disabling
     /// undo and redo until further updates.
-    pub fn replace_all_html(&mut self, html: &S) -> ComposerUpdate<S> {
+    pub fn set_content_from_html(&mut self, html: &S) -> ComposerUpdate<S> {
         let dom = parse(&html.to_string());
 
         match dom {
@@ -107,10 +107,13 @@ where
         }
     }
 
-    pub fn replace_all_text(&mut self, markdown: &S) -> ComposerUpdate<S> {
+    pub fn set_content_from_markdown(
+        &mut self,
+        markdown: &S,
+    ) -> ComposerUpdate<S> {
         let html = MarkdownHTMLParser::to_html(markdown);
 
-        self.replace_all_html(&html)
+        self.set_content_from_html(&html)
     }
 
     pub(crate) fn create_update_replace_all(&mut self) -> ComposerUpdate<S> {
@@ -126,11 +129,11 @@ where
         (self.state.start, self.state.end)
     }
 
-    pub fn get_html(&self) -> S {
+    pub fn get_content_as_html(&self) -> S {
         self.state.dom.to_html()
     }
 
-    pub fn get_markdown(&self) -> S {
+    pub fn get_content_as_markdown(&self) -> S {
         self.state.dom.to_markdown().unwrap()
     }
 
@@ -143,7 +146,7 @@ where
     }
 
     pub fn clear(&mut self) -> ComposerUpdate<S> {
-        self.replace_all_html(&"".into())
+        self.set_content_from_html(&"".into())
     }
 }
 
@@ -222,7 +225,7 @@ mod test {
     #[test]
     fn completely_replacing_html_works() {
         let mut model = cm("{hello}| world");
-        model.replace_all_html(&Utf16String::from_str("foo <b>bar</b>"));
+        model.set_content_from_html(&Utf16String::from_str("foo <b>bar</b>"));
         assert_eq!(model.state.dom.to_string(), "foo <b>bar</b>");
     }
 

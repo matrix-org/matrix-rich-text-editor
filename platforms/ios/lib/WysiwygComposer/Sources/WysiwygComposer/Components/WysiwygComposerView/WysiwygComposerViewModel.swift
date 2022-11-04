@@ -54,7 +54,7 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     public var textColor: UIColor {
         didSet {
             // In case of a color change, this will refresh the attributed text
-            let update = model.replaceAllHtml(html: content.html)
+            let update = model.setContentFromHtml(html: content.html)
             applyUpdate(update)
             updateTextView()
         }
@@ -113,7 +113,7 @@ public extension WysiwygComposerViewModel {
     /// Should be called when the view appears.
     func setup() {
         // FIXME: multiple textViews sharing the model might unwittingly clear the composer because of this.
-        applyUpdate(model.replaceAllHtml(html: ""))
+        applyUpdate(model.setContentFromHtml(html: ""))
         updateTextView()
     }
 
@@ -135,7 +135,7 @@ public extension WysiwygComposerViewModel {
     /// - Parameters:
     ///   - html: HTML content to apply
     func setHtmlContent(_ html: String) {
-        let update = model.replaceAllHtml(html: html)
+        let update = model.setContentFromHtml(html: html)
         applyUpdate(update)
         updateTextView()
     }
@@ -362,7 +362,7 @@ private extension WysiwygComposerViewModel {
             }
         } else {
             // TODO: convert Markdown content to HTML
-            let update = model.replaceAllHtml(html: plainText)
+            let update = model.setContentFromHtml(html: plainText)
             applyUpdate(update)
             updateTextView()
         }
