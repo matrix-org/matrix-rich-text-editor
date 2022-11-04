@@ -17,7 +17,7 @@ limitations under the License.
 import { ACTION_TYPES } from '../constants';
 import { ActionTypes, ActionState, AllActionStates } from '../types';
 
-export function defaultActionStates(): AllActionStates {
+export function createDefaultActionStates(): AllActionStates {
     return ACTION_TYPES.reduce<AllActionStates>((acc, action) => {
         acc[action] = 'enabled';
         return acc;
