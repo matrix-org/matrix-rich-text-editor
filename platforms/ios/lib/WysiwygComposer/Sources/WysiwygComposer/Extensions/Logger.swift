@@ -74,16 +74,16 @@ extension UITextView {
     }
 }
 
-// MARK: - WysiwygComposerContent + Logger
+// MARK: - WysiwygComposerAttributedContent + Logger
 
-extension WysiwygComposerContent {
+extension WysiwygComposerAttributedContent {
     /// Returns a log ready description of the attributed selection.
-    var logAttributedSelection: String {
-        "Sel(att): \(attributedSelection)"
+    var logSelection: String {
+        "Sel(att): \(selection)"
     }
 
-    /// Returns a log ready description of the text.
+    /// Returns a log ready description of the markdown text.
     var logText: String {
-        "Text: \"\(plainText)\""
+        "Text: \"\(text)\""
     }
 }

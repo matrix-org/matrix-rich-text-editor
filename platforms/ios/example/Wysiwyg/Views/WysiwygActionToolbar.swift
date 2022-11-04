@@ -28,7 +28,7 @@ struct WysiwygActionToolbar: View {
             ForEach(WysiwygAction.allCases) { action in
                 Button {
                     if action == .link(url: "unset") {
-                        linkAttributedRange = viewModel.content.attributedSelection
+                        linkAttributedRange = viewModel.attributedContent.selection
                         isShowingUrlAlert = true
                     } else {
                         toolbarAction(action)

@@ -37,11 +37,7 @@ struct ContentView: View {
             viewModel.plainTextMode.toggle()
         }
         Button("Send") {
-            if viewModel.plainTextMode {
-                sentMessage = viewModel.plainTextModeContent
-            } else {
-                sentMessage = viewModel.content
-            }
+            sentMessage = viewModel.content
             viewModel.clearContent()
         }
         .disabled(viewModel.isContentEmpty)
@@ -59,7 +55,7 @@ struct ContentView: View {
                 VStack {
                     HStack {
                         Text("Content:")
-                        Text(sentMessage.plainText)
+                        Text(sentMessage.markdown)
                             .accessibilityIdentifier(.contentText)
                     }
                     HStack {
