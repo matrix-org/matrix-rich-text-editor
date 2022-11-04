@@ -96,15 +96,10 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.content.html, "Some bold <strong>text</strong>")
 
         viewModel.plainTextMode = true
-
-        XCTExpectFailure("Plain text should contain the appropriate Markdown")
-        XCTAssertEqual(viewModel.plainTextModeContent.plainText, "Some bold **text**")
-        XCTExpectFailure("HTML should be re-generated from Markdown input upon sending")
+        XCTAssertEqual(viewModel.plainTextModeContent.plainText, "Some bold __text__")
         XCTAssertEqual(viewModel.plainTextModeContent.html, "Some bold <strong>text</strong>")
 
         viewModel.plainTextMode = false
-
-        XCTExpectFailure("Switching back to WYSIWYG should restore the HTML")
         XCTAssertEqual(viewModel.content.html, "Some bold <strong>text</strong>")
     }
 }
