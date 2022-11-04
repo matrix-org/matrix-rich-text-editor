@@ -40,8 +40,8 @@ jobs:
         # keep in sync with uniffi dependency in Cargo.toml's
         args: uniffi_bindgen --version 0.19.2
 
-    - name: Set XCode 13.4.1
-      run: sudo xcode-select -switch /Applications/Xcode_13.4.1.app
+    - name: Set XCode 14.1
+      run: sudo xcode-select -switch /Applications/Xcode_14.1.app
 
     - name: Build framework & bindings
       run: make ios
