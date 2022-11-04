@@ -74,7 +74,7 @@ class MockComposer {
     fun givenReplaceAllHtmlResult(
         html: String,
         update: ComposerUpdate = MockComposerUpdateFactory.create(),
-    ) = every { instance.replaceAllHtml(html = html) } returns update
+    ) = every { instance.setContentFromHtml(html = html) } returns update
 
     fun givenUndoResult(
         update: ComposerUpdate = MockComposerUpdateFactory.create(),

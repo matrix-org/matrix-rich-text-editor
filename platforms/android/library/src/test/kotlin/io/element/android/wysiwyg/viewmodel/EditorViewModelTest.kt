@@ -205,7 +205,7 @@ internal class EditorViewModelTest {
         val result = viewModel.processInput(EditorInputAction.ReplaceAllHtml("new html"))
 
         verify {
-            composer.instance.replaceAllHtml("new html")
+            composer.instance.setContentFromHtml("new html")
             menuStateCallback(menuStateUpdate)
         }
         assertThat(result, equalTo(replaceTextResult))
