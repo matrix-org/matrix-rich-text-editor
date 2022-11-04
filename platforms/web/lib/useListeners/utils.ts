@@ -15,13 +15,29 @@ limitations under the License.
 */
 
 import { FORMATTING_ACTIONS } from '../constants';
-import { FormattingState, FormattingActions } from '../types';
+import { FormattingActions, FormattingState } from '../types';
+import { FormattingStates } from './types';
 
-export function getDefaultFormattingStates() {
-    return FORMATTING_ACTIONS.reduce<
-        Record<FormattingActions, FormattingState>
-    >((acc, action) => {
+export function getDefaultFormattingStates(): FormattingStates {
+    return FORMATTING_ACTIONS.reduce<FormattingStates>((acc, action) => {
         acc[action] = 'enabled';
         return acc;
-    }, {} as Record<FormattingActions, FormattingState>);
+    }, {} as FormattingStates);
+}
+
+/**
+ * Convert a Map<string, string> containing title-case strings like:
+ * "Bold": "Enabled"
+ * to a FormattingStates record with entries like:
+ * bold: enabled
+ */
+export function mapToFormattingStates(
+    actionStatesMap: Map<string, string>,
+): FormattingStates {
+    const ret = {} as FormattingStates;
+    for (const [key, value] of actionStatesMap) {
+        ret[key.toLowerCase() as FormattingActions] =
+            value.toLowerCase() as FormattingState;
+    }
+    return ret as FormattingStates;
 }

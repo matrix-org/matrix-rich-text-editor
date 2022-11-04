@@ -16,12 +16,7 @@ limitations under the License.
 
 import { MouseEvent as ReactMouseEvent } from 'react';
 
-import {
-    ComposerAction,
-    ComposerActions,
-    ComposerModel,
-    MenuStateUpdate,
-} from '../../generated/wysiwyg';
+import { ComposerModel, MenuStateUpdate } from '../../generated/wysiwyg';
 import { processInput } from '../composer';
 import {
     getCurrentSelection,
@@ -35,7 +30,8 @@ import {
     WysiwygInputEvent,
 } from '../types';
 import { TestUtilities } from '../useTestCases/types';
-import { getDefaultFormattingStates } from './utils';
+import { FormattingStates } from './types';
+import { mapToFormattingStates } from './utils';
 
 export function sendWysiwygInputEvent(
     editor: HTMLElement,
@@ -86,56 +82,10 @@ export function handleKeyDown(e: KeyboardEvent, editor: HTMLElement) {
     }
 }
 
-function getFormattingState(menuStateUpdate: MenuStateUpdate) {
-    const reversedActions = menuStateUpdate.reversed_actions;
-    const disabledActions = menuStateUpdate.disabled_actions;
-    const states = getDefaultFormattingStates();
-
-    const computeActions = (
-        actions: ComposerActions,
-        value: 'reversed' | 'disabled',
-    ) => {
-        let act: ComposerAction | undefined;
-
-        while ((act = actions.next()) !== undefined) {
-            switch (act) {
-                case ComposerAction.Bold:
-                    states.bold = value;
-                    break;
-                case ComposerAction.Italic:
-                    states.italic = value;
-                    break;
-                case ComposerAction.Underline:
-                    states.underline = value;
-                    break;
-                case ComposerAction.StrikeThrough:
-                    states.strikeThrough = value;
-                    break;
-                case ComposerAction.Undo:
-                    states.undo = value;
-                    break;
-                case ComposerAction.Redo:
-                    states.redo = value;
-                    break;
-                case ComposerAction.OrderedList:
-                    states.orderedList = value;
-                    break;
-                case ComposerAction.UnorderedList:
-                    states.unorderedList = value;
-                    break;
-                case ComposerAction.InlineCode:
-                    states.inlineCode = value;
-                    break;
-                default:
-                    break;
-            }
-        }
-    };
-
-    computeActions(reversedActions, 'reversed');
-    computeActions(disabledActions, 'disabled');
-
-    return states;
+export function getFormattingState(
+    menuStateUpdate: MenuStateUpdate,
+): FormattingStates {
+    return mapToFormattingStates(menuStateUpdate.action_states);
 }
 
 export function handleInput(
@@ -146,7 +96,12 @@ export function handleInput(
     testUtilities: TestUtilities,
     formattingFunctions: FormattingFunctions,
     inputEventProcessor?: InputEventProcessor,
-) {
+):
+    | {
+          content: string | undefined;
+          formattingStates: FormattingStates | null;
+      }
+    | undefined {
     const update = processInput(
         e,
         composerModel,
@@ -188,7 +143,7 @@ export function handleSelectionChange(
     editor: HTMLElement,
     composeModel: ComposerModel,
     { traceAction, getSelectionAccordingToActions }: TestUtilities,
-) {
+): FormattingStates | undefined {
     const [start, end] = getCurrentSelection(editor, document.getSelection());
 
     const prevStart = composeModel.selection_start();

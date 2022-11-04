@@ -26,9 +26,15 @@ pub struct ComposerModel<S>
 where
     S: UnicodeString,
 {
+    /// The current state of the model
     pub state: ComposerState<S>,
-    pub previous_states: Vec<ComposerState<S>>,
-    pub next_states: Vec<ComposerState<S>>,
+
+    /// Old states that may be restored by calling undo()
+    pub(crate) previous_states: Vec<ComposerState<S>>,
+
+    /// States after the current one that may be restored by calling redo()
+    pub(crate) next_states: Vec<ComposerState<S>>,
+
     pub reversed_actions: HashSet<ComposerAction>,
     pub disabled_actions: HashSet<ComposerAction>,
 }
