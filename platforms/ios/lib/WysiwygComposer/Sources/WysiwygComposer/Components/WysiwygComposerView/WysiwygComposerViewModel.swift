@@ -62,12 +62,12 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
 
     /// The composer content for plain text mode.
     public var plainTextModeContent: WysiwygComposerContent {
-        // TODO: convert plain text to HTML
-        WysiwygComposerContent(plainText: plainText,
-                               html: "",
-                               attributed: NSAttributedString(string: plainText),
-                               attributedSelection: .init(location: plainText.utf16Length,
-                                                          length: 0))
+        _ = model.setContentFromMarkdown(markdown: plainText)
+        return WysiwygComposerContent(plainText: model.getContentAsMarkdown(),
+                                      html: model.getContentAsHtml(),
+                                      attributed: NSAttributedString(string: plainText),
+                                      attributedSelection: .init(location: plainText.utf16Length,
+                                                                 length: 0))
     }
 
     // MARK: - Private
@@ -345,24 +345,14 @@ private extension WysiwygComposerViewModel {
     /// - Parameter enabled: whether plain text mode is enabled
     func updatePlainTextMode(_ enabled: Bool) {
         if enabled {
-            do {
-                plainText = content.plainText
-                clearContent()
-                guard let textView = textView else { return }
-                let attributed = try HTMLParser.parse(html: plainText, textColor: textColor)
-                textView.attributedText = attributed
-            } catch {
-                Logger.viewModel.logError(
-                    [
-                        "Error: \(error.localizedDescription)",
-                        "updatePlainTextMode: enabled",
-                    ],
-                    functionName: #function
-                )
-            }
+            plainText = model.getContentAsMarkdown()
+            guard let textView = textView else { return }
+            let attributed = NSAttributedString(string: plainText,
+                                                attributes: [.font: UIFont.preferredFont(forTextStyle: .body),
+                                                             .foregroundColor: textColor])
+            textView.attributedText = attributed
         } else {
-            // TODO: convert Markdown content to HTML
-            let update = model.setContentFromHtml(html: plainText)
+            let update = model.setContentFromMarkdown(markdown: plainText)
             applyUpdate(update)
             updateTextView()
         }
