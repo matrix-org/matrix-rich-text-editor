@@ -32,8 +32,8 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         let expectFalse = expectation(description: "Await isContentEmpty false")
         let cancellableFalse = viewModel.$isContentEmpty
             // Ignore on subscribe publish.
-            .dropFirst()
             .removeDuplicates()
+            .dropFirst()
             .sink(receiveValue: { isEmpty in
                 XCTAssertFalse(isEmpty)
                 expectFalse.fulfill()
@@ -41,6 +41,7 @@ final class WysiwygComposerViewModelTests: XCTestCase {
 
         _ = viewModel.replaceText(range: .zero,
                                   replacementText: "Test")
+        viewModel.textView?.attributedText = viewModel.attributedContent.text
 
         wait(for: [expectFalse], timeout: 2.0)
         cancellableFalse.cancel()
@@ -48,16 +49,16 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         let expectTrue = expectation(description: "Await isContentEmpty true")
         let cancellableTrue = viewModel.$isContentEmpty
             // Ignore on subscribe publish.
-            .dropFirst()
             .removeDuplicates()
+            .dropFirst()
             .sink(receiveValue: { isEmpty in
                 XCTAssertTrue(isEmpty)
                 expectTrue.fulfill()
             })
 
-        viewModel.textView?.attributedText = viewModel.content.attributed
-        _ = viewModel.replaceText(range: .init(location: 0, length: viewModel.content.attributed.length),
+        _ = viewModel.replaceText(range: .init(location: 0, length: viewModel.attributedContent.text.length),
                                   replacementText: "")
+        viewModel.textView?.attributedText = viewModel.attributedContent.text
 
         wait(for: [expectTrue], timeout: 2.0)
         cancellableTrue.cancel()
@@ -96,8 +97,8 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.content.html, "Some bold <strong>text</strong>")
 
         viewModel.plainTextMode = true
-        XCTAssertEqual(viewModel.plainTextModeContent.plainText, "Some bold __text__")
-        XCTAssertEqual(viewModel.plainTextModeContent.html, "Some bold <strong>text</strong>")
+        XCTAssertEqual(viewModel.content.markdown, "Some bold __text__")
+        XCTAssertEqual(viewModel.content.html, "Some bold <strong>text</strong>")
 
         viewModel.plainTextMode = false
         XCTAssertEqual(viewModel.content.html, "Some bold <strong>text</strong>")
