@@ -113,7 +113,7 @@ final class WysiwygSharedTests {
         let content = app.staticTexts[rawIdentifier(.contentText)]
         let htmlContent = app.staticTexts[rawIdentifier(.htmlContentText)]
 
-        XCTAssertEqual(content.label, "Some bold text")
+        XCTAssertEqual(content.label, "Some bold __text__")
         XCTAssertEqual(htmlContent.label, "Some bold <strong>text</strong>")
     }
     
