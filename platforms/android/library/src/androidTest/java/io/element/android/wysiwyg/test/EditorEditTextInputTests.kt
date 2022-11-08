@@ -2,7 +2,6 @@ package io.element.android.wysiwyg.test
 
 import android.graphics.Typeface
 import android.text.Editable
-import android.text.Spannable
 import android.text.style.BulletSpan
 import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
@@ -12,7 +11,6 @@ import android.widget.EditText
 import android.widget.TextView
 import androidx.core.text.getSpans
 import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.ViewAssertion
 import androidx.test.espresso.accessibility.AccessibilityChecks
 import androidx.test.espresso.action.ViewActions.*
 import androidx.test.espresso.assertion.ViewAssertions.matches
@@ -298,7 +296,7 @@ class EditorEditTextInputTests {
     fun testMenuStateChangedListener() {
         var isItalicHighlighted = false
         scenarioRule.scenario.onActivity {
-            it.findViewById<EditorEditText>(R.id.rich_text_edit_text).menuStateChangedListener =
+            it.findViewById<EditorEditText>(R.id.rich_text_edit_text).actionStatesChangedListener =
                 EditorEditText.OnMenuStateChangedListener { state ->
                     if (state is MenuState.Update) {
                         if (state.reversedActions.contains(ComposerAction.Italic)) {

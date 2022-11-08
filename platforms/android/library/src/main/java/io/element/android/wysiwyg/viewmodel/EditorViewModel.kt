@@ -10,20 +10,18 @@ import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
 import io.element.android.wysiwyg.utils.EditorIndexMapper
 import io.element.android.wysiwyg.utils.HtmlConverter
 import io.element.android.wysiwyg.utils.throwIfDebugBuild
-import uniffi.wysiwyg_composer.ComposerModelInterface
-import uniffi.wysiwyg_composer.MenuState
-import uniffi.wysiwyg_composer.TextUpdate
+import uniffi.wysiwyg_composer.*
 
 internal class EditorViewModel(
     private val composer: ComposerModelInterface?,
     private val htmlConverter: HtmlConverter,
 ) : ViewModel() {
 
-    private var menuStateCallback: ((MenuState) -> Unit)? = null
+    private var actionStatesCallback: ((Map<ComposerAction, ActionState>) -> Unit)? = null
 
-    fun setMenuStateCallback(callback: ((MenuState) -> Unit)?) {
-        this.menuStateCallback = callback
-        getMenuState()?.let { menuStateCallback?.invoke(it) }
+    fun setActionStatesCallback(callback: ((Map<ComposerAction, ActionState>) -> Unit)?) {
+        this.actionStatesCallback = callback
+        actionStates()?.let { actionStatesCallback?.invoke(it) }
     }
 
     fun updateSelection(editable: Editable, start: Int, end: Int) {
@@ -33,7 +31,7 @@ internal class EditorViewModel(
         val update = composer?.select(newStart, newEnd)
         val menuState = update?.menuState()
         if (menuState is MenuState.Update) {
-            menuStateCallback?.invoke(menuState)
+            actionStatesCallback?.invoke(menuState.actionStates)
         }
         composer?.log()
     }
@@ -72,7 +70,12 @@ internal class EditorViewModel(
 
         composer?.log()
 
-        update?.menuState()?.let { menuStateCallback?.invoke(it) }
+        update?.menuState()?.let {
+            when (it) {
+                is MenuState.Update -> actionStatesCallback?.invoke(it.actionStates)
+                else -> null
+            }
+        }
 
         return when (val textUpdate = update?.textUpdate()) {
             is TextUpdate.ReplaceAll -> ReplaceTextResult(
@@ -96,8 +99,8 @@ internal class EditorViewModel(
         return stringToSpans(getHtml())
     }
 
-    fun getMenuState(): MenuState? {
-        return composer?.getCurrentMenuState()
+    fun actionStates(): Map<ComposerAction, ActionState>? {
+        return composer?.actionStates()
     }
 
     private fun stringToSpans(string: String): CharSequence =

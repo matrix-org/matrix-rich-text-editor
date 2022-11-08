@@ -46,13 +46,13 @@ internal class EditorViewModelTest {
 
     @Before
     fun setUp() {
-        viewModel.setMenuStateCallback(menuStateCallback)
+        viewModel.setActionStatesCallback(menuStateCallback)
     }
 
     @Test
     fun `when menu state callback is not set, it processes input without an error`() {
         composer.givenReplaceTextResult(composerStateUpdate)
-        viewModel.setMenuStateCallback(null)
+        viewModel.setActionStatesCallback(null)
 
         val result = viewModel.processInput(EditorInputAction.ReplaceText(paragraph))
 

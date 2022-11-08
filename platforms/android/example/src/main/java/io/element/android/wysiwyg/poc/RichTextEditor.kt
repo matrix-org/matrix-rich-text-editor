@@ -9,8 +9,8 @@ import com.google.android.material.textfield.TextInputLayout
 import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.poc.databinding.ViewRichTextEditorBinding
+import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
-import uniffi.wysiwyg_composer.MenuState
 
 class RichTextEditor : TextInputLayout {
 
@@ -62,32 +62,35 @@ class RichTextEditor : TextInputLayout {
                 editText.toggleList(false)
             }
 
-            editText.menuStateChangedListener = EditorEditText.OnMenuStateChangedListener { state ->
-                if (state is MenuState.Update) {
-                    updateMenuState(state)
-                }
+            editText.actionStatesChangedListener = EditorEditText.OnActionStatesChangedListener { actionStates ->
+                updateActionStates(actionStates)
             }
         }
     }
 
-    private fun updateMenuState(menuState: MenuState.Update) {
+    private fun updateActionStates(actionStates: Map<ComposerAction, ActionState>) {
         with(binding) {
-            updateMenuStateFor(formatBoldButton, ComposerAction.Bold, menuState)
-            updateMenuStateFor(formatItalicButton, ComposerAction.Italic, menuState)
-            updateMenuStateFor(formatUnderlineButton, ComposerAction.Underline, menuState)
-            updateMenuStateFor(formatInlineCodeButton, ComposerAction.InlineCode, menuState)
-            updateMenuStateFor(formatStrikeThroughButton, ComposerAction.StrikeThrough, menuState)
-            updateMenuStateFor(addLinkButton, ComposerAction.Link, menuState)
-            updateMenuStateFor(undoButton, ComposerAction.Undo, menuState)
-            updateMenuStateFor(redoButton, ComposerAction.Redo, menuState)
-            updateMenuStateFor(orderedListButton, ComposerAction.OrderedList, menuState)
-            updateMenuStateFor(unorderedListButton, ComposerAction.UnorderedList, menuState)
+            updateActionStateFor(formatBoldButton, ComposerAction.BOLD, actionStates)
+            updateActionStateFor(formatItalicButton, ComposerAction.ITALIC, actionStates)
+            updateActionStateFor(formatUnderlineButton, ComposerAction.UNDERLINE, actionStates)
+            updateActionStateFor(formatInlineCodeButton, ComposerAction.INLINE_CODE, actionStates)
+            updateActionStateFor(formatStrikeThroughButton, ComposerAction.STRIKE_THROUGH, actionStates)
+            updateActionStateFor(addLinkButton, ComposerAction.LINK, actionStates)
+            updateActionStateFor(undoButton, ComposerAction.UNDO, actionStates)
+            updateActionStateFor(redoButton, ComposerAction.REDO, actionStates)
+            updateActionStateFor(orderedListButton, ComposerAction.ORDERED_LIST, actionStates)
+            updateActionStateFor(unorderedListButton, ComposerAction.UNORDERED_LIST, actionStates)
         }
     }
 
-    private fun updateMenuStateFor(button: View, action: ComposerAction, menuState: MenuState.Update) {
-        button.isEnabled = !menuState.disabledActions.contains(action)
-        button.isActivated = menuState.reversedActions.contains(action)
+    private fun updateActionStateFor(
+        button: View,
+        action: ComposerAction,
+        actionStates: Map<ComposerAction, ActionState>
+    ) {
+        val state = actionStates[action];
+        button.isEnabled = state == ActionState.ENABLED || state == ActionState.REVERSED;
+        button.isActivated = state == ActionState.REVERSED;
     }
 
     override fun requestFocus(direction: Int, previouslyFocusedRect: Rect?): Boolean {
