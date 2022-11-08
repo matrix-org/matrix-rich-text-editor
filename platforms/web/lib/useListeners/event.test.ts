@@ -16,7 +16,8 @@ limitations under the License.
 
 // eslint-disable-next-line camelcase
 import init, { new_composer_model } from '../../generated/wysiwyg';
-import { extractActionStates } from './event';
+import { extractActionStates, handleKeyDown } from './event';
+import { FormatBlockEvent } from './types';
 
 beforeAll(async () => {
     await init();
@@ -38,5 +39,39 @@ describe('getFormattingState', () => {
         expect(states.italic).toBe('enabled');
         expect(states.bold).toBe('reversed');
         expect(states.redo).toBe('disabled');
+    });
+});
+
+describe('handleKeyDown', () => {
+    it.each([
+        ['formatBold', { ctrlKey: true, key: 'b' }],
+        ['formatBold', { metaKey: true, key: 'b' }],
+        ['formatItalic', { ctrlKey: true, key: 'i' }],
+        ['formatItalic', { metaKey: true, key: 'i' }],
+        ['formatUnderline', { ctrlKey: true, key: 'u' }],
+        ['formatUnderline', { metaKey: true, key: 'u' }],
+        ['historyRedo', { ctrlKey: true, key: 'y' }],
+        ['historyRedo', { metaKey: true, key: 'y' }],
+        ['historyRedo', { ctrlKey: true, key: 'Z' }],
+        ['historyRedo', { metaKey: true, key: 'Z' }],
+        ['historyUndo', { ctrlKey: true, key: 'z' }],
+        ['historyUndo', { metaKey: true, key: 'z' }],
+        ['sendMessage', { ctrlKey: true, key: 'Enter' }],
+        ['sendMessage', { metaKey: true, key: 'Enter' }],
+        ['formatStrikeThrough', { shiftKey: true, altKey: true, key: '5' }],
+    ])('Should dispatch %s when %o', async (expected, input) => {
+        const elem = document.createElement('input');
+        const event = new KeyboardEvent('keydown', input);
+
+        const result = new Promise((resolve) => {
+            elem.addEventListener('wysiwygInput', (({
+                detail: { blockType },
+            }: FormatBlockEvent) => {
+                resolve(blockType);
+            }) as EventListener);
+        });
+
+        handleKeyDown(event, elem);
+        expect(await result).toBe(expected);
     });
 });

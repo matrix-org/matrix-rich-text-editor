@@ -17,6 +17,10 @@ limitations under the License.
 import { ACTION_TYPES } from '../constants';
 import { ActionTypes, ActionState, AllActionStates } from '../types';
 
+/**
+ * Create the default state for all the available actions
+ * @returns {AllActionStates}
+ */
 export function createDefaultActionStates(): AllActionStates {
     return ACTION_TYPES.reduce<AllActionStates>((acc, action) => {
         acc[action] = 'enabled';
@@ -29,6 +33,8 @@ export function createDefaultActionStates(): AllActionStates {
  * "Bold": "Enabled"
  * to a AllActionStates record with entries like:
  * bold: enabled
+ * @param {Map<string, string>} actionStatesMap Map to convert
+ * @returns {AllActionStates}
  */
 export function mapToAllActionStates(
     actionStatesMap: Map<string, string>,
