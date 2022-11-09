@@ -18,11 +18,17 @@ import { forwardRef } from 'react';
 
 import { useWysiwyg } from '../useWysiwyg';
 
-export const Editor = forwardRef<HTMLDivElement>(function Editor(
-    _props,
+interface EditorProps {
+    initialContent?: string;
+}
+
+export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
+    { initialContent }: EditorProps,
     forwardRef,
 ) {
-    const { ref, isWysiwygReady, wysiwyg, actionStates } = useWysiwyg();
+    const { ref, isWysiwygReady, wysiwyg, actionStates } = useWysiwyg({
+        initialContent,
+    });
 
     const keys = Object.keys(wysiwyg) as Array<keyof typeof wysiwyg>;
     return (

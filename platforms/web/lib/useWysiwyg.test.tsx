@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { render } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 
 import { Editor } from './testUtils/Editor';
 import { deleteRange } from './testUtils/selection';
@@ -103,5 +103,16 @@ describe('useWysiwyg', () => {
             //Then
             expect(editor).toContainHTML('cd');
         });
+    });
+
+    test('Create wysiwyg with initial content', async () => {
+        // When
+        const content = 'fo<strong>o</strong><br />b<em>ar</em>';
+        render(<Editor initialContent={content} />);
+
+        // Then
+        await waitFor(() =>
+            expect(screen.getByRole('textbox')).toContainHTML(content),
+        );
     });
 });
