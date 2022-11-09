@@ -60,13 +60,19 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         }
     }
     
-    /// The current max allowed height for the textView
-    public var maxHeight: CGFloat {
+    /// The current max allowed height for the textView when maximised
+    public var maxExpandedHeight: CGFloat {
         didSet {
             updateIdealHeight()
         }
     }
-
+    
+    /// The current max allowed height for the textView when minimised
+    public var maxCompressedHeight: CGFloat {
+        didSet {
+            updateIdealHeight()
+        }
+    }
 
     /// The current composer content.
     public var content: WysiwygComposerContent {
@@ -95,9 +101,13 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
 
     // MARK: - Public
 
-    public init(minHeight: CGFloat = 20, maxHeight: CGFloat = 200, textColor: UIColor = .label) {
+    public init(minHeight: CGFloat = 20,
+                maxCompressedHeight: CGFloat = 200,
+                maxExpandedHeight: CGFloat = 300,
+                textColor: UIColor = .label) {
         self.minHeight = minHeight
-        self.maxHeight = maxHeight
+        self.maxCompressedHeight = maxCompressedHeight
+        self.maxExpandedHeight = maxExpandedHeight
         self.textColor = textColor
         model = newComposerModel()
         // Publish composer empty state.
@@ -110,6 +120,17 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
             .removeDuplicates()
             .sink { [unowned self] isContentEmpty in
                 self.textView?.shouldShowPlaceholder = isContentEmpty
+            }
+            .store(in: &cancellables)
+        
+        $idealHeight
+            .removeDuplicates()
+            .sink { [unowned self] _ in
+                guard let textView = textView else { return }
+                // Improves a lot the user experience by keeping the selected range always visible when there are changes in the size.
+                DispatchQueue.main.async {
+                    textView.scrollRangeToVisible(textView.selectedRange)
+                }
             }
             .store(in: &cancellables)
     }
@@ -176,7 +197,7 @@ public extension WysiwygComposerViewModel {
             )
             .height
 
-        compressedHeight = min(maxHeight, max(minHeight, idealTextHeight))
+        compressedHeight = min(maxCompressedHeight, max(minHeight, idealTextHeight))
     }
 
     func replaceText(range: NSRange, replacementText: String) -> Bool {
@@ -338,7 +359,7 @@ private extension WysiwygComposerViewModel {
     ///
     func updateIdealHeight() {
         if maximised {
-            idealHeight = maxHeight
+            idealHeight = maxExpandedHeight
         } else {
             // This solves the slowdown caused by the "Publishing changes from within view updates" purple warning
             DispatchQueue.main.async {
