@@ -40,6 +40,7 @@ export default defineConfig({
         coverage: {
             all: true,
             include: ['lib/**/*.{ts,tsx}'],
+            exclude: ['lib/testUtils/**/*.{ts,tsx}', 'lib/**/*.d.ts'],
         },
     },
     build: {
