@@ -122,6 +122,17 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
                 self.textView?.shouldShowPlaceholder = isContentEmpty
             }
             .store(in: &cancellables)
+        
+        $idealHeight
+            .removeDuplicates()
+            .sink { [unowned self] _ in
+                guard let textView = textView else { return }
+                // Improves a lot the user experience by keeping the selected range always visible when there are changes in the size.
+                DispatchQueue.main.async {
+                    textView.scrollRangeToVisible(textView.selectedRange)
+                }
+            }
+            .store(in: &cancellables)
     }
 }
 
