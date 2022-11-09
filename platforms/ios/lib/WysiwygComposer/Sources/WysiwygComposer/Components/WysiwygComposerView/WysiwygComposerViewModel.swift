@@ -346,9 +346,8 @@ private extension WysiwygComposerViewModel {
     /// - Parameter enabled: whether plain text mode is enabled
     func updatePlainTextMode(_ enabled: Bool) {
         if enabled {
-            let plainText = model.getContentAsMarkdown()
             guard let textView = textView else { return }
-            let attributed = NSAttributedString(string: plainText,
+            let attributed = NSAttributedString(string: model.getContentAsMarkdown(),
                                                 attributes: defaultTextAttributes)
             textView.attributedText = attributed
         } else {
