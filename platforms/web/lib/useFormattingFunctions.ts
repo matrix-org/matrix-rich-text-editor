@@ -34,7 +34,7 @@ export function useFormattingFunctions(
         return {
             bold: () => sendEvent('formatBold'),
             italic: () => sendEvent('formatItalic'),
-            strikeThrough: () => sendEvent('formatStrikeThrough'),
+            strikethrough: () => sendEvent('formatStrikeThrough'),
             underline: () => sendEvent('formatUnderline'),
             undo: () => sendEvent('historyUndo'),
             redo: () => sendEvent('historyRedo'),

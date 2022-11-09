@@ -14,15 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-export const ACTION_TYPES = [
-    'bold',
-    'italic',
-    'strikethrough',
-    'underline',
-    'undo',
-    'redo',
-    'orderedList',
-    'unorderedList',
-    'inlineCode',
-    'clear',
-] as const;
+import { selectContent } from '../dom';
+
+export function select(
+    editor: HTMLDivElement,
+    startIndex: number,
+    endIndex: number,
+) {
+    selectContent(editor, startIndex, endIndex);
+
+    // the event is not automatically fired in jest
+    document.dispatchEvent(new CustomEvent('selectionchange'));
+}
+
+export function deleteRange(
+    editor: HTMLDivElement,
+    start: number,
+    end: number,
+) {
+    select(editor, start, end);
+    const sel = document.getSelection();
+    sel?.deleteFromDocument();
+}

@@ -25,7 +25,7 @@ describe('createDefaultActionStates', () => {
         expect(states).toStrictEqual({
             bold: 'enabled',
             italic: 'enabled',
-            strikeThrough: 'enabled',
+            strikethrough: 'enabled',
             underline: 'enabled',
             clear: 'enabled',
             inlineCode: 'enabled',

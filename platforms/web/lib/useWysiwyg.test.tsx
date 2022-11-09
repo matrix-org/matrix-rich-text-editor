@@ -15,66 +15,9 @@ limitations under the License.
 */
 
 import { render } from '@testing-library/react';
-import { forwardRef } from 'react';
 
-import { useWysiwyg } from './useWysiwyg';
-
-const Editor = forwardRef<HTMLDivElement>(function Editor(_props, forwardRef) {
-    const { ref, isWysiwygReady } = useWysiwyg();
-    return (
-        <div
-            ref={(node) => {
-                if (node) {
-                    ref.current = node;
-                    if (typeof forwardRef === 'function') forwardRef(node);
-                    else if (forwardRef) forwardRef.current = node;
-                }
-            }}
-            contentEditable={isWysiwygReady}
-        />
-    );
-});
-
-function toContainHtml(
-    this: jest.MatcherContext,
-    editor: HTMLDivElement,
-    html: string,
-) {
-    const { printReceived, matcherHint } = this.utils;
-    const received = editor.innerHTML;
-    const expected = html + '<br>';
-    const passMessage =
-        matcherHint('.not.toContainHtml', 'received', '') +
-        '\n\n' +
-        `Expected editor inner HTML to be ${printReceived(
-            expected,
-        )} but received:\n` +
-        `${received}`;
-
-    const failMessage =
-        matcherHint('.toContainHtml', 'received', '') +
-        '\n\n' +
-        `Expected editor inner HTML to be ${printReceived(
-            expected,
-        )} but received:\n` +
-        `${received}`;
-
-    const pass = received == expected;
-
-    return { pass, message: () => (pass ? passMessage : failMessage) };
-}
-
-declare global {
-    // TODO: can we avoid disabling this lint?
-    // eslint-disable-next-line @typescript-eslint/no-namespace
-    namespace jest {
-        interface Matchers<R> {
-            toContainHtml(html: string): R;
-        }
-    }
-}
-
-expect.extend({ toContainHtml });
+import { Editor } from './testUtils/Editor';
+import { deleteRange } from './testUtils/selection';
 
 describe('useWysiwyg', () => {
     describe('Rendering characters', () => {
@@ -83,19 +26,6 @@ describe('useWysiwyg', () => {
         function setEditorHtml(html: string) {
             // The editor always needs an extra BR after your HTML
             editor.innerHTML = html + '<br />';
-        }
-
-        function deleteRange(start: number, end: number) {
-            const textNode = editor.childNodes[0];
-            const range = document.createRange();
-            range.setStart(textNode, start);
-            range.setEnd(textNode, end);
-            const sel = document.getSelection();
-            if (sel) {
-                sel.removeAllRanges();
-                sel.addRange(range);
-                sel.deleteFromDocument();
-            }
         }
 
         beforeAll(() => {
@@ -113,65 +43,65 @@ describe('useWysiwyg', () => {
         it('Should render ASCII characters with width 1', () => {
             // When
             setEditorHtml('abcd');
-            deleteRange(0, 1);
+            deleteRange(editor, 0, 1);
 
             // Then
-            expect(editor).toContainHtml('bcd');
+            expect(editor).toContainHTML('bcd');
 
             //When
             setEditorHtml('abcd');
-            deleteRange(0, 2);
+            deleteRange(editor, 0, 2);
 
             //Then
-            expect(editor).toContainHtml('cd');
+            expect(editor).toContainHTML('cd');
         });
 
-        it.skip('Should render UCS-2 characters with width 1', () => {
+        it('Should render UCS-2 characters with width 1', () => {
             // When
             setEditorHtml('\u{03A9}bcd');
-            deleteRange(0, 1);
+            deleteRange(editor, 0, 1);
 
             // Then
-            expect(editor).toContainHtml('bcd');
+            expect(editor).toContainHTML('bcd');
 
             // When
             setEditorHtml('\u{03A9}bcd');
-            deleteRange(0, 2);
+            deleteRange(editor, 0, 2);
 
             // Then
-            expect(editor).toContainHtml('cd');
+            expect(editor).toContainHTML('cd');
         });
 
-        it.skip('Should render Multi-code unit UTF-16 chars width 2', () => {
+        it('Should render Multi-code unit UTF-16 chars width 2', () => {
             // When
             setEditorHtml('\u{1F4A9}bcd');
-            deleteRange(0, 2);
+            deleteRange(editor, 0, 2);
 
             // Then
-            expect(editor).toContainHtml('bcd');
+            expect(editor).toContainHTML('bcd');
 
             //When
             setEditorHtml('\u{1F4A9}bcd');
-            deleteRange(0, 3);
+            deleteRange(editor, 0, 3);
 
             //Then
-            expect(editor).toContainHtml('cd');
+            expect(editor).toContainHTML('cd');
         });
 
-        it.skip('Should render complex chars width = UTF-16 code units', () => {
+        it('Should render complex chars width = UTF-16 code units', () => {
             // When
             setEditorHtml('\u{1F469}\u{1F3FF}\u{200D}\u{1F680}bcd');
-            deleteRange(0, 7);
+            deleteRange(editor, 0, 7);
 
             // Then
-            expect(editor).toContainHtml('bcd');
+            expect(editor).toContainHTML('bcd');
 
             //When
             setEditorHtml('\u{1F469}\u{1F3FF}\u{200D}\u{1F680}bcd');
-            deleteRange(0, 8);
+            deleteRange(editor, 0, 8);
 
             //Then
-            expect(editor).toContainHtml('cd');
+            expect(editor).toContainHTML('cd');
         });
     });
 });

@@ -105,6 +105,52 @@ export function refreshComposerView(
     writeChildren(doc, node);
 }
 
+/**
+ * Select the content between the two indexes
+ * Exported for test
+ * @param {HTMLElement} editor
+ * @param {number} startUtf16Codeunit
+ * @param {number} endUtf16Codeunit
+ */
+export function selectContent(
+    editor: HTMLElement,
+    startUtf16Codeunit: number,
+    endUtf16Codeunit: number,
+) {
+    const range = document.createRange();
+
+    let start = computeNodeAndOffset(editor, startUtf16Codeunit);
+    let end = computeNodeAndOffset(editor, endUtf16Codeunit);
+
+    if (start.node && end.node) {
+        const endNodeBeforeStartNode =
+            start.node.compareDocumentPosition(end.node) &
+            Node.DOCUMENT_POSITION_PRECEDING;
+
+        const sameNodeButEndOffsetBeforeStartOffset =
+            start.node === end.node && end.offset < start.offset;
+
+        // Ranges must always have start before end
+        if (endNodeBeforeStartNode || sameNodeButEndOffsetBeforeStartOffset) {
+            [start, end] = [end, start];
+            if (!start.node || !end.node) throw new Error();
+        }
+
+        range.setStart(start.node, start.offset);
+        range.setEnd(end.node, end.offset);
+    } else {
+        // Nothing found in selection: select the end of editor
+        range.selectNodeContents(editor);
+        range.collapse();
+    }
+
+    const sel = document.getSelection();
+    if (sel) {
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
+}
+
 export function replaceEditor(
     editor: HTMLElement,
     htmlContent: string,
@@ -112,46 +158,7 @@ export function replaceEditor(
     endUtf16Codeunit: number,
 ) {
     editor.innerHTML = htmlContent + '<br />';
-
-    const sr = () => {
-        const range = document.createRange();
-
-        let start = computeNodeAndOffset(editor, startUtf16Codeunit);
-        let end = computeNodeAndOffset(editor, endUtf16Codeunit);
-
-        if (start.node && end.node) {
-            const endNodeBeforeStartNode =
-                start.node.compareDocumentPosition(end.node) &
-                Node.DOCUMENT_POSITION_PRECEDING;
-
-            const sameNodeButEndOffsetBeforeStartOffset =
-                start.node === end.node && end.offset < start.offset;
-
-            // Ranges must always have start before end
-            if (
-                endNodeBeforeStartNode ||
-                sameNodeButEndOffsetBeforeStartOffset
-            ) {
-                [start, end] = [end, start];
-                if (!start.node || !end.node) throw new Error();
-            }
-
-            range.setStart(start.node, start.offset);
-            range.setEnd(end.node, end.offset);
-        } else {
-            // Nothing found in selection: select the end of editor
-            range.selectNodeContents(editor);
-            range.collapse();
-        }
-
-        const sel = document.getSelection();
-        if (sel) {
-            sel.removeAllRanges();
-            sel.addRange(range);
-        }
-    };
-
-    sr();
+    selectContent(editor, startUtf16Codeunit, endUtf16Codeunit);
 }
 
 /**
