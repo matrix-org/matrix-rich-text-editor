@@ -59,6 +59,14 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
             updateTextView()
         }
     }
+    
+    /// The current max allowed height for the textView
+    public var maxHeight: CGFloat {
+        didSet {
+            updateIdealHeight()
+        }
+    }
+
 
     /// The current composer content.
     public var content: WysiwygComposerContent {
@@ -72,10 +80,8 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     // MARK: - Private
 
     private let minHeight: CGFloat
-    private let maxHeight: CGFloat
     private var model: ComposerModel
     private var cancellables = Set<AnyCancellable>()
-
     private var defaultTextAttributes: [NSAttributedString.Key: Any] {
         [.font: UIFont.preferredFont(forTextStyle: .body),
          .foregroundColor: textColor]
