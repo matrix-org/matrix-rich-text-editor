@@ -151,7 +151,7 @@ describe.each([
                 data: 'foo',
                 inputType: 'insertText',
             });
-            await userEvent.type(textbox, '{enter}');
+            await act(() => userEvent.type(textbox, '{enter}'));
             fireEvent.input(textbox, {
                 data: 'bar',
                 inputType: 'insertText',
