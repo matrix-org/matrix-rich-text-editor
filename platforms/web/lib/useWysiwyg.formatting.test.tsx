@@ -88,9 +88,7 @@ describe.each([
 
         it(`Should be ${defaultState} by default`, async () => {
             // Then
-            await waitFor(() =>
-                expect(button).toHaveAttribute('data-state', defaultState),
-            );
+            expect(button).toHaveAttribute('data-state', defaultState);
         });
 
         it(
