@@ -19,6 +19,9 @@ import UIKit
 
 /// Defines accessibility identifiers shared between the UIKit and the SwiftUI example apps.
 public enum WysiwygSharedAccessibilityIdentifier: String {
+    // Composer text view needs to be in sync with the value set for the text view in the library
+    // Unfortunately trying to expose it from the lib results in undefined symbols error in a UI Test context.
+    case composerTextView = "WysiwygComposer"
     case boldButton = "WysiwygBoldButton"
     case italicButton = "WysiwygItalicButton"
     case strikeThroughButton = "WysiwygStrikeThroughButton"
