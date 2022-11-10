@@ -26,7 +26,7 @@ export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
     { initialContent }: EditorProps,
     forwardRef,
 ) {
-    const { ref, isWysiwygReady, wysiwyg, actionStates } = useWysiwyg({
+    const { ref, isWysiwygReady, wysiwyg, actionStates, content } = useWysiwyg({
         initialContent,
     });
 
@@ -53,6 +53,7 @@ export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
                 }}
                 contentEditable={isWysiwygReady}
                 role="textbox"
+                data-content={content}
             />
         </>
     );
