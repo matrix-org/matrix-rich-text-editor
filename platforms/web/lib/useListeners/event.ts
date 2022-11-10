@@ -33,6 +33,13 @@ import { TestUtilities } from '../useTestCases/types';
 import { AllActionStates } from '../types';
 import { mapToAllActionStates } from './utils';
 
+/**
+ * Send a custom event named wysiwygInput
+ * See {FormatBlockEvent} for the event structure
+ * @param {HTMLElement} editor
+ * @param {BlockType} blockType
+ * @param {ReactMouseEvent<HTMLElement, MouseEvent> | KeyboardEvent} e
+ */
 export function sendWysiwygInputEvent(
     editor: HTMLElement,
     blockType: BlockType,
@@ -45,7 +52,12 @@ export function sendWysiwygInputEvent(
     );
 }
 
-function getInputFromKeyDown(e: KeyboardEvent) {
+/**
+ * Return the blockType associated to a shortcut
+ * @param {KeyboardEvent} e
+ * @returns {BlockType | null}
+ */
+function getInputFromKeyDown(e: KeyboardEvent): BlockType | null {
     if (e.shiftKey && e.altKey) {
         switch (e.key) {
             case '5':
@@ -75,6 +87,11 @@ function getInputFromKeyDown(e: KeyboardEvent) {
     return null;
 }
 
+/**
+ * Event listener for keydown event
+ * @param {KeyboardEvent} e
+ * @param {HTMLElement} editor
+ */
 export function handleKeyDown(e: KeyboardEvent, editor: HTMLElement) {
     const inputType = getInputFromKeyDown(e);
     if (inputType) {
@@ -82,12 +99,28 @@ export function handleKeyDown(e: KeyboardEvent, editor: HTMLElement) {
     }
 }
 
+/**
+ * Extract the action states from the menu state of the composer
+ * @param {MenuStateUpdate} menuStateUpdate menu state update from the composer
+ * @returns {AllActionStates}
+ */
 export function extractActionStates(
     menuStateUpdate: MenuStateUpdate,
 ): AllActionStates {
     return mapToAllActionStates(menuStateUpdate.action_states);
 }
 
+/**
+ * Event listener for WysiwygInputEvent
+ * @param {WysiwygInputEvent} e
+ * @param {HTMLElement} editor
+ * @param {ComposerModel} composerModel
+ * @param {HTMLElement | null} modelNode
+ * @param {TestUtilities} testUtilities
+ * @param {FormattingFunctions} formattingFunctions
+ * @param {InputEventProcessor} inputEventProcessor
+ * @returns
+ */
 export function handleInput(
     e: WysiwygInputEvent,
     editor: HTMLElement,
@@ -139,6 +172,13 @@ export function handleInput(
     }
 }
 
+/**
+ * Event listener for selectionChange event
+ * @param {Editor} editor
+ * @param {ComposerModel} composeModel
+ * @param {TestUtilities}
+ * @returns
+ */
 export function handleSelectionChange(
     editor: HTMLElement,
     composeModel: ComposerModel,

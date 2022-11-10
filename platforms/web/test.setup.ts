@@ -18,6 +18,7 @@ limitations under the License.
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 
+import '@testing-library/jest-dom';
 import fs from 'node:fs/promises';
 import path from 'path';
 
@@ -31,3 +32,7 @@ globalThis.fetch = (url) => {
         throw new Error('fetch is not defined');
     }
 };
+
+// Work around missing ClipboardEvent type
+class MyClipboardEvent {}
+globalThis.ClipboardEvent = MyClipboardEvent as ClipboardEvent;

@@ -29,14 +29,31 @@ export function createDefaultActionStates(): AllActionStates {
  * "Bold": "Enabled"
  * to a AllActionStates record with entries like:
  * bold: enabled
+ * @param {Map<string, string>} actionStatesMap Map to convert
+ * @returns {AllActionStates}
  */
 export function mapToAllActionStates(
     actionStatesMap: Map<string, string>,
 ): AllActionStates {
     const ret = {} as AllActionStates;
     for (const [key, value] of actionStatesMap) {
-        ret[key.toLowerCase() as ActionTypes] =
-            value.toLowerCase() as ActionState;
+        switch (key) {
+            case 'OrderedList':
+                ret.orderedList = value.toLowerCase() as ActionState;
+                break;
+            case 'UnorderedList':
+                ret.unorderedList = value.toLowerCase() as ActionState;
+                break;
+            case 'InlineCode':
+                ret.inlineCode = value.toLowerCase() as ActionState;
+                break;
+            case 'StrikeThrough':
+                ret.strikeThrough = value.toLowerCase() as ActionState;
+                break;
+            default:
+                ret[key.toLowerCase() as ActionTypes] =
+                    value.toLowerCase() as ActionState;
+        }
     }
     return ret as AllActionStates;
 }
