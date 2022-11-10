@@ -89,7 +89,7 @@ class RichTextEditor : TextInputLayout {
         actionStates: Map<ComposerAction, ActionState>
     ) {
         val state = actionStates[action];
-        button.isEnabled = state == ActionState.ENABLED || state == ActionState.REVERSED;
+        button.isEnabled = state != ActionState.DISABLED;
         button.isActivated = state == ActionState.REVERSED;
     }
 
