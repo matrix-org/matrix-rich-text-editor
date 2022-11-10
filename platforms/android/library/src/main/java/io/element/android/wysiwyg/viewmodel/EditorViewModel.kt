@@ -70,7 +70,10 @@ internal class EditorViewModel(
 
         composer?.log()
 
-        update?.menuState()?.let {
+        val menuState = update?.menuState()
+        if (menuState is MenuState.Update) {
+            actionStatesCallback?.invoke(menuState.actionStates)
+        }
             when (it) {
                 is MenuState.Update -> actionStatesCallback?.invoke(it.actionStates)
                 else -> null
