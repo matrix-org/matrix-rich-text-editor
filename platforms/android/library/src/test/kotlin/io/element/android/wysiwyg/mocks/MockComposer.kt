@@ -6,14 +6,13 @@ import io.mockk.mockk
 import uniffi.wysiwyg_composer.ComposerModelInterface
 import uniffi.wysiwyg_composer.ComposerState
 import uniffi.wysiwyg_composer.ComposerUpdate
-import uniffi.wysiwyg_composer.MenuState
 
 class MockComposer {
     val instance = mockk<ComposerModelInterface>()
 
     init {
         givenCurrentDomState()
-        givenMenuState()
+        givenActionStates()
     }
 
     fun givenCurrentDomState(
@@ -23,10 +22,10 @@ class MockComposer {
     ) = every { instance.getCurrentDomState() } returns
             ComposerState(html.toUShortList(), start.toUInt(), end.toUInt())
 
-    fun givenMenuState() =
+    fun givenActionStates() =
         every {
-            instance.getCurrentMenuState()
-        } returns MenuState.Keep
+            instance.actionStates()
+        } returns mapOf()
 
     fun givenReplaceTextResult(
         update: ComposerUpdate = MockComposerUpdateFactory.create(),
