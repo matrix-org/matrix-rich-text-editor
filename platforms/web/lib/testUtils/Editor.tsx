@@ -16,18 +16,21 @@ limitations under the License.
 
 import { forwardRef } from 'react';
 
+import { InputEventProcessor } from '../types';
 import { useWysiwyg } from '../useWysiwyg';
 
 interface EditorProps {
     initialContent?: string;
+    inputEventProcessor?: InputEventProcessor;
 }
 
 export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
-    { initialContent }: EditorProps,
+    { initialContent, inputEventProcessor }: EditorProps,
     forwardRef,
 ) {
     const { ref, isWysiwygReady, wysiwyg, actionStates, content } = useWysiwyg({
         initialContent,
+        inputEventProcessor,
     });
 
     const keys = Object.keys(wysiwyg) as Array<keyof typeof wysiwyg>;
