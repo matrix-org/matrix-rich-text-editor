@@ -45,7 +45,10 @@ export default defineConfig({
                 'lib/**/*test.{ts,tsx}',
                 'lib/**/*.d.ts',
             ],
+            reporter: ['text', 'lcov'],
         },
+        reporters: ['default', 'vitest-sonar-reporter'],
+        outputFile: 'coverage/sonar-report.xml',
     },
     build: {
         lib: {
