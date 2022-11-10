@@ -105,13 +105,6 @@ export function refreshComposerView(
     writeChildren(doc, node);
 }
 
-/**
- * Select the content between the two indexes
- * Exported for test
- * @param {HTMLElement} editor
- * @param {number} startUtf16Codeunit
- * @param {number} endUtf16Codeunit
- */
 export function selectContent(
     editor: HTMLElement,
     startUtf16Codeunit: number,
