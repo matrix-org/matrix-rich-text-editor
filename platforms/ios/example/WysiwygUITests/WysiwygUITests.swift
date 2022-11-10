@@ -176,7 +176,7 @@ private extension WysiwygUITests {
     /// Focus the composer text view inside given app and
     /// clear the tutorial for keyboard swipe if it is displayed.
     func focusComposerAndClearTutorialIfNeeded() throws {
-        app.textViews["WysiwygComposer"].tap()
+        textView.tap()
         let continueButton = app.buttons["Continue"]
         // If a continue button exists, we are on the keyboard Swipe tutorial.
         if continueButton.exists {
