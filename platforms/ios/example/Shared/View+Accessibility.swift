@@ -30,6 +30,8 @@ public enum WysiwygSharedAccessibilityIdentifier: String {
     case orderedListButton = "WysiwygOrderedListButton"
     case unorderedListButton = "WysiwygUnorderedListButton"
     case sendButton = "WysiwygSendButton"
+    case minMaxButton = "WysiwygMinMaxButton"
+    case plainRichButton = "WysiwygPlainRichButton"
     case contentText = "WysiwygContentText"
     case htmlContentText = "WysiwygHtmlContentText"
 }

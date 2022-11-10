@@ -48,4 +48,8 @@ class WysiwygUITests: XCTestCase {
     func testLongPressDelete() throws {
         try WysiwygSharedTests.longPressDelete(app)
     }
+
+    func testMinMaxResizing() throws {
+        try WysiwygSharedTests.testMinMaxResizing(app)
+    }
 }

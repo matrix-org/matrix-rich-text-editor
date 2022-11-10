@@ -150,6 +150,14 @@ final class WysiwygSharedTests {
         let resultText = textView.value as? String
         XCTAssert(resultText == "")
     }
+
+    static func testMinMaxResizing(_ app: XCUIApplication) throws {
+        let textView = app.textViews["WysiwygComposer"]
+        XCTAssertEqual(textView.frame.height, 20.0)
+        let minMaxButton = app.buttons[rawIdentifier(.minMaxButton)]
+        minMaxButton.tap()
+        XCTAssertEqual(textView.frame.height, 300.0)
+    }
 }
 
 private extension WysiwygSharedTests {

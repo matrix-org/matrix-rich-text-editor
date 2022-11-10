@@ -30,12 +30,14 @@ struct ContentView: View {
         Spacer()
             .frame(width: nil, height: 50, alignment: .center)
         Composer(viewModel: viewModel)
-        Button("Max/Min") {
+        Button("Min/Max") {
             viewModel.maximised.toggle()
         }
+        .accessibilityIdentifier(.minMaxButton)
         Button("Plain/Rich") {
             viewModel.plainTextMode.toggle()
         }
+        .accessibilityIdentifier(.plainRichButton)
         Button("Send") {
             sentMessage = viewModel.content
             viewModel.clearContent()
