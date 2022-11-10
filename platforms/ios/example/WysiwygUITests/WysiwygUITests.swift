@@ -137,6 +137,9 @@ class WysiwygUITests: XCTestCase {
         button(.minMaxButton).tap()
         sleep(1)
         XCTAssertEqual(textView.frame.height, WysiwygSharedConstants.composerMaxExtendedHeight)
+        button(.minMaxButton).tap()
+        sleep(1)
+        XCTAssertEqual(textView.frame.height, WysiwygSharedConstants.composerMinHeight)
     }
 }
 
