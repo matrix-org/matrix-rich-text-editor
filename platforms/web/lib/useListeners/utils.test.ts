@@ -25,7 +25,7 @@ describe('createDefaultActionStates', () => {
         expect(states).toStrictEqual({
             bold: 'enabled',
             italic: 'enabled',
-            strikethrough: 'enabled',
+            strikeThrough: 'enabled',
             underline: 'enabled',
             clear: 'enabled',
             inlineCode: 'enabled',
@@ -47,6 +47,7 @@ describe('mapToAllActionStates', () => {
             ['InlineCode', 'ENABLED'],
             ['OrderedList', 'ENABLED'],
             ['UnorderedList', 'ENABLED'],
+            ['StrikeThrough', 'ENABLED'],
         ]);
         const states = mapToAllActionStates(map);
 
@@ -58,6 +59,7 @@ describe('mapToAllActionStates', () => {
             inlineCode: 'enabled',
             orderedList: 'enabled',
             unorderedList: 'enabled',
+            strikeThrough: 'enabled',
         });
     });
 });

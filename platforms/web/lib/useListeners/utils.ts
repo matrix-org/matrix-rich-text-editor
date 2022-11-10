@@ -51,6 +51,9 @@ export function mapToAllActionStates(
             case 'InlineCode':
                 ret.inlineCode = value.toLowerCase() as ActionState;
                 break;
+            case 'StrikeThrough':
+                ret.strikeThrough = value.toLowerCase() as ActionState;
+                break;
             default:
                 ret[key.toLowerCase() as ActionTypes] =
                     value.toLowerCase() as ActionState;

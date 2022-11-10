@@ -55,7 +55,7 @@ describe.each([
         '<u>fo</u>o <u>bar</u>',
     ],
     [
-        'strikethrough',
+        'strikeThrough',
         'enabled',
         'reversed',
         '<del>foo</del>',
@@ -142,7 +142,7 @@ describe.each([
             // When
             await act(() =>
                 userEvent.click(
-                    screen.getByRole('button', { name: 'strikethrough' }),
+                    screen.getByRole('button', { name: 'strikeThrough' }),
                 ),
             );
             fireEvent.input(textbox, {

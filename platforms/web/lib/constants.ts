@@ -17,7 +17,7 @@ limitations under the License.
 export const ACTION_TYPES = [
     'bold',
     'italic',
-    'strikethrough',
+    'strikeThrough',
     'underline',
     'undo',
     'redo',
