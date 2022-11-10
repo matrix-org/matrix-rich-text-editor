@@ -24,7 +24,10 @@ struct ContentView: View {
     @State private var sentMessage: WysiwygComposerContent?
     @State private var tree: String?
     /// View model for the composer.
-    @StateObject private var viewModel = WysiwygComposerViewModel()
+    @StateObject private var viewModel = WysiwygComposerViewModel(
+        minHeight: WysiwygSharedConstants.composerMinHeight,
+        maxExpandedHeight: WysiwygSharedConstants.composerMaxExtendedHeight
+    )
 
     var body: some View {
         Spacer()

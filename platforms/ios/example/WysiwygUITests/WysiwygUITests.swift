@@ -22,34 +22,171 @@ class WysiwygUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app.launch()
-        try WysiwygSharedTests.focusComposerAndClearTutorialIfNeeded(app)
+        try focusComposerAndClearTutorialIfNeeded()
     }
 
     override func tearDownWithError() throws { }
 
+    /// Type a text and delete some different kind of text selections with the composer.
     func testTypingAndDeleting() throws {
-        try WysiwygSharedTests.testTypingAndDeleting(app)
+        let textView = app.textViews["WysiwygComposer"]
+        // Type something into composer.
+        textView.typeTextCharByChar("abc🎉🎉👩🏿‍🚀")
+        XCTAssertEqual(textView.value as? String, "abc🎉🎉👩🏿‍🚀")
+
+        // Test deleting parts of the text.
+        let deleteKey = app.keys["delete"]
+        deleteKey.tap()
+        XCTAssertEqual(textView.value as? String, "abc🎉🎉")
+
+        let delete3CharString = String(repeating: XCUIKeyboardKey.delete.rawValue, count: 3)
+        textView.typeTextCharByChar(delete3CharString)
+        XCTAssertEqual(textView.value as? String, "ab")
+
+        // Rewrite some content.
+        textView.typeTextCharByChar("cde 🥳 fgh")
+        XCTAssertEqual(textView.value as? String, "abcde 🥳 fgh")
+
+        // Double tap results in selecting the last word.
+        textView.doubleTap()
+        deleteKey.tap()
+        XCTAssertEqual(textView.value as? String, "abcde 🥳 ")
+
+        // Triple tap selects the entire line.
+        textView.tap(withNumberOfTaps: 3, numberOfTouches: 1)
+        deleteKey.tap()
+        XCTAssertEqual(textView.value as? String, "")
     }
 
+    /// Type a text and make it bold in the composer.
+    /// A screenshot is saved since string attributes can't be read from this context.
     func testTypingAndBolding() throws {
-        let attachment = try WysiwygSharedTests.testTypingAndBolding(app)
+        let textView = app.textViews["WysiwygComposer"]
+        // Type something into composer.
+        textView.typeTextCharByChar("Some bold text")
+
+        textView.doubleTap()
+        // We can't detect data being properly reported back to the model but
+        // 1s is more than enough for the Rust side to get notified for the selection.
+        sleep(1)
+
+        let boldButton = app.buttons[rawIdentifier(.boldButton)]
+        boldButton.tap()
+        // Bolding doesn't change text and we can't test text attributes from this context.
+        XCTAssertEqual(textView.value as? String, "Some bold text")
+
+        // Keep a screenshot of the bolded text.
+        let screenshot = textView.screenshot()
+        let attachment = XCTAttachment(screenshot: screenshot)
+        attachment.lifetime = .keepAlways
         add(attachment)
     }
 
+    /// Type and send a message with the composer.
+    ///
+    /// Expected plain text content is "Some bold text" and
+    /// HTML representation is "Some bold <strong>text</strong>"
     func testTypingAndSending() throws {
-        try WysiwygSharedTests.typeAndSendMessage(app)
+        let textView = app.textViews["WysiwygComposer"]
+        // Type something into composer.
+        textView.typeTextCharByChar("Some bold text")
+
+        textView.doubleTap()
+        // 1s is more than enough for the Rust side to get notified for the selection.
+        sleep(1)
+
+        let boldButton = app.buttons[rawIdentifier(.boldButton)]
+        boldButton.tap()
+
+        // We can't detect data being properly reported back to the model but
+        // 1s is more than enough for the Rust side to get notified for the selection.
+        sleep(1)
+
+        let sendButton = app.buttons[rawIdentifier(.sendButton)]
+        sendButton.tap()
+
+        let content = app.staticTexts[rawIdentifier(.contentText)]
+        let htmlContent = app.staticTexts[rawIdentifier(.htmlContentText)]
+
+        XCTAssertEqual(content.label, "Some bold __text__")
+        XCTAssertEqual(htmlContent.label, "Some bold <strong>text</strong>")
     }
     
     // Remember to disable hardware keyboard and use only software keyboard for this UITest
     func testTypingFast() throws {
-        try WysiwygSharedTests.typingFast(app)
+        let text = "Some long text that I am going to type very fast"
+        let textView = app.textViews["WysiwygComposer"]
+        textView.tap()
+        sleep(1)
+        textView.typeText(text)
+        let textToVerify = textView.value as? String
+        let options = XCTExpectedFailure.Options()
+        options.isStrict = false
+        XCTExpectFailure("Typing fast might fail on CI", options: options)
+        XCTAssertEqual(text, textToVerify)
     }
     
     func testLongPressDelete() throws {
-        try WysiwygSharedTests.longPressDelete(app)
+        let multilineText =
+            """
+            test1
+            test2
+            test3
+            test4
+            test5
+            test6
+            test7
+            test8
+            test9
+            test10
+            """
+        let textView = app.textViews["WysiwygComposer"]
+        app.typeTextCharByChar(multilineText)
+        XCUIApplication().keys["delete"].press(forDuration: 10.0)
+        let resultText = textView.value as? String
+        XCTAssert(resultText == "")
     }
 
     func testMinMaxResizing() throws {
-        try WysiwygSharedTests.testMinMaxResizing(app)
+        sleep(1)
+        let textView = app.textViews["WysiwygComposer"]
+        XCTAssertEqual(textView.frame.height, WysiwygSharedConstants.composerMinHeight)
+        let minMaxButton = app.buttons[rawIdentifier(.minMaxButton)]
+        minMaxButton.tap()
+        sleep(1)
+        XCTAssertEqual(textView.frame.height, WysiwygSharedConstants.composerMaxExtendedHeight)
+    }
+}
+
+private extension WysiwygUITests {
+    /// Focus the composer text view inside given app and
+    /// clear the tutorial for keyboard swipe if it is displayed.
+    func focusComposerAndClearTutorialIfNeeded() throws {
+        app.textViews["WysiwygComposer"].tap()
+        let continueButton = app.buttons["Continue"]
+        // If a continue button exists, we are on the keyboard Swipe tutorial.
+        if continueButton.exists {
+            continueButton.tap()
+        }
+    }
+
+    /// Get the raw value of an UI element accessibility identifier
+    ///
+    /// - Parameter id: accessibility identifier of the UI element
+    /// - Returns: raw string value
+    func rawIdentifier(_ id: WysiwygSharedAccessibilityIdentifier) -> String {
+        id.rawValue
+    }
+}
+
+private extension XCUIElement {
+    /// Types a text inside the UI element character by character.
+    /// This is especially useful to avoid missing some characters on
+    /// UI tests running on a rather slow CI.
+    ///
+    /// - Parameters:
+    ///   - text: Text to type in the UI element.
+    func typeTextCharByChar(_ text: String) {
+        text.forEach { self.typeText(String($0)) }
     }
 }

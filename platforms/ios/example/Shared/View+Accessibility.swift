@@ -48,13 +48,3 @@ public extension View {
         accessibilityIdentifier(identifier.rawValue)
     }
 }
-
-public extension UIView {
-    /// Sets up an accessibility identifier to the view from the enum
-    /// of expected accessibilityIdentifiers.
-    ///
-    /// - Parameter identifier: the accessibility identifer to setup
-    func setAccessibilityIdentifier(_ identifier: WysiwygSharedAccessibilityIdentifier) {
-        accessibilityIdentifier = identifier.rawValue
-    }
-}

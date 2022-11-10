@@ -8,14 +8,15 @@
 
 /* Begin PBXBuildFile section */
 		66F8D0C928E34D4E00CFA145 /* Composer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66F8D0C828E34D4E00CFA145 /* Composer.swift */; };
-		A623EBE5289AA6DE00067E57 /* WysiwygSharedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A623EBE4289AA6DE00067E57 /* WysiwygSharedTests.swift */; };
 		A6472CAB2886CF830021A0E8 /* WysiwygApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6472CAA2886CF830021A0E8 /* WysiwygApp.swift */; };
 		A6472CAD2886CF830021A0E8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6472CAC2886CF830021A0E8 /* ContentView.swift */; };
 		A6472CAF2886CF840021A0E8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A6472CAE2886CF840021A0E8 /* Assets.xcassets */; };
 		A6472CB22886CF840021A0E8 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A6472CB12886CF840021A0E8 /* Preview Assets.xcassets */; };
 		A6472CC62886CF840021A0E8 /* WysiwygUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6472CC52886CF840021A0E8 /* WysiwygUITests.swift */; };
+		A68E713C291D34A50023CC04 /* View+Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157428C0E95C00C8E727 /* View+Accessibility.swift */; };
+		A68E7140291D40710023CC04 /* WysiwygSharedConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A68E713F291D40710023CC04 /* WysiwygSharedConstants.swift */; };
+		A68E7141291D40710023CC04 /* WysiwygSharedConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A68E713F291D40710023CC04 /* WysiwygSharedConstants.swift */; };
 		A6C2157528C0E95C00C8E727 /* View+Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157428C0E95C00C8E727 /* View+Accessibility.swift */; };
-		A6C2157728C0E95C00C8E727 /* View+Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157428C0E95C00C8E727 /* View+Accessibility.swift */; };
 		A6C2157928C0F62000C8E727 /* WysiwygActionToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157828C0F62000C8E727 /* WysiwygActionToolbar.swift */; };
 		A6C2157C28C0FAAD00C8E727 /* WysiwygAction+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157B28C0FAAD00C8E727 /* WysiwygAction+Utils.swift */; };
 		A6E6B26F2886D9AA009596F2 /* WysiwygComposer in Frameworks */ = {isa = PBXBuildFile; productRef = A6E6B26E2886D9AA009596F2 /* WysiwygComposer */; };
@@ -36,7 +37,6 @@
 
 /* Begin PBXFileReference section */
 		66F8D0C828E34D4E00CFA145 /* Composer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Composer.swift; sourceTree = "<group>"; };
-		A623EBE4289AA6DE00067E57 /* WysiwygSharedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygSharedTests.swift; sourceTree = "<group>"; };
 		A6472CA72886CF830021A0E8 /* Wysiwyg.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Wysiwyg.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A6472CAA2886CF830021A0E8 /* WysiwygApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygApp.swift; sourceTree = "<group>"; };
 		A6472CAC2886CF830021A0E8 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -44,6 +44,7 @@
 		A6472CB12886CF840021A0E8 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		A6472CC12886CF840021A0E8 /* WysiwygUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WysiwygUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A6472CC52886CF840021A0E8 /* WysiwygUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygUITests.swift; sourceTree = "<group>"; };
+		A68E713F291D40710023CC04 /* WysiwygSharedConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygSharedConstants.swift; sourceTree = "<group>"; };
 		A6C2157428C0E95C00C8E727 /* View+Accessibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Accessibility.swift"; sourceTree = "<group>"; };
 		A6C2157828C0F62000C8E727 /* WysiwygActionToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygActionToolbar.swift; sourceTree = "<group>"; };
 		A6C2157B28C0FAAD00C8E727 /* WysiwygAction+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WysiwygAction+Utils.swift"; sourceTree = "<group>"; };
@@ -116,7 +117,6 @@
 		A6472CC42886CF840021A0E8 /* WysiwygUITests */ = {
 			isa = PBXGroup;
 			children = (
-				A623EBE4289AA6DE00067E57 /* WysiwygSharedTests.swift */,
 				A6472CC52886CF840021A0E8 /* WysiwygUITests.swift */,
 			);
 			path = WysiwygUITests;
@@ -126,7 +126,7 @@
 			isa = PBXGroup;
 			children = (
 				A6C2157428C0E95C00C8E727 /* View+Accessibility.swift */,
-				A6C2157B28C0FAAD00C8E727 /* WysiwygAction+Utils.swift */,
+				A68E713F291D40710023CC04 /* WysiwygSharedConstants.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -160,8 +160,9 @@
 		A6F3FC0228D4659E00C170E8 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
-				A6F3FC0328D465AF00C170E8 /* View.swift */,
 				A6F3FC0528DA123900C170E8 /* UIAlertController.swift */,
+				A6F3FC0328D465AF00C170E8 /* View.swift */,
+				A6C2157B28C0FAAD00C8E727 /* WysiwygAction+Utils.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -318,6 +319,7 @@
 				A6472CAD2886CF830021A0E8 /* ContentView.swift in Sources */,
 				A6472CAB2886CF830021A0E8 /* WysiwygApp.swift in Sources */,
 				A6C2157928C0F62000C8E727 /* WysiwygActionToolbar.swift in Sources */,
+				A68E7140291D40710023CC04 /* WysiwygSharedConstants.swift in Sources */,
 				A6F3FC0628DA123900C170E8 /* UIAlertController.swift in Sources */,
 				A6F3FC0128D4658000C170E8 /* AlertHelper.swift in Sources */,
 				A6F3FC0428D465AF00C170E8 /* View.swift in Sources */,
@@ -331,8 +333,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A6472CC62886CF840021A0E8 /* WysiwygUITests.swift in Sources */,
-				A6C2157728C0E95C00C8E727 /* View+Accessibility.swift in Sources */,
-				A623EBE5289AA6DE00067E57 /* WysiwygSharedTests.swift in Sources */,
+				A68E7141291D40710023CC04 /* WysiwygSharedConstants.swift in Sources */,
+				A68E713C291D34A50023CC04 /* View+Accessibility.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
