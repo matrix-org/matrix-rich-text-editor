@@ -31,6 +31,7 @@ import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.*
 import org.junit.runner.RunWith
+import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
 import uniffi.wysiwyg_composer.MenuState
 
@@ -297,11 +298,9 @@ class EditorEditTextInputTests {
         var isItalicHighlighted = false
         scenarioRule.scenario.onActivity {
             it.findViewById<EditorEditText>(R.id.rich_text_edit_text).actionStatesChangedListener =
-                EditorEditText.OnMenuStateChangedListener { state ->
-                    if (state is MenuState.Update) {
-                        if (state.reversedActions.contains(ComposerAction.Italic)) {
-                            isItalicHighlighted = true
-                        }
+                EditorEditText.OnActionStatesChangedListener { actionStates ->
+                    if (actionStates.get(ComposerAction.ITALIC) == ActionState.REVERSED) {
+                        isItalicHighlighted = true
                     }
                 }
         }
