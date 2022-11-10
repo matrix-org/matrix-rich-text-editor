@@ -5,7 +5,7 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-    types: [ labeled, synchronized, opened, reopened ]
+    types: [ labeled, synchronize, opened, reopened ]
 
 env:
   CARGO_TERM_COLOR: always

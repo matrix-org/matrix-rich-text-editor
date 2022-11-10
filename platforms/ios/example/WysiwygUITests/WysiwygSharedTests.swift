@@ -113,7 +113,7 @@ final class WysiwygSharedTests {
         let content = app.staticTexts[rawIdentifier(.contentText)]
         let htmlContent = app.staticTexts[rawIdentifier(.htmlContentText)]
 
-        XCTAssertEqual(content.label, "Some bold text")
+        XCTAssertEqual(content.label, "Some bold __text__")
         XCTAssertEqual(htmlContent.label, "Some bold <strong>text</strong>")
     }
     
@@ -124,7 +124,10 @@ final class WysiwygSharedTests {
         sleep(1)
         textView.typeText(text)
         let textToVerify = textView.value as? String
-        XCTAssert(text == textToVerify)
+        let options = XCTExpectedFailure.Options()
+        options.isStrict = false
+        XCTExpectFailure("Typing fast might fail on CI", options: options)
+        XCTAssertEqual(text, textToVerify)
     }
     
     static func longPressDelete(_ app: XCUIApplication) throws {

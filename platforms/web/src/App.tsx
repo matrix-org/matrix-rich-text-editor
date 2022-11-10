@@ -122,10 +122,10 @@ function App() {
                             state={actionStates.underline}
                         />
                         <Button
-                            onClick={wysiwyg.strikeThrough}
+                            onClick={wysiwyg.strikethrough}
                             alt="strike through"
                             imagePath={strikeTroughImage}
-                            state={actionStates.strikeThrough}
+                            state={actionStates.strikethrough}
                         />
                         <Button
                             onClick={wysiwyg.unorderedList}

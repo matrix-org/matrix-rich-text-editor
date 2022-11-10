@@ -30,6 +30,6 @@
         "alwaysStrict": true,
         "types": ["vitest/globals", "jest"]
     },
-    "include": ["src", "lib"],
+    "include": ["src", "lib", "./test.setup.ts"],
     "references": [{ "path": "./tsconfig.node.json" }]
 }

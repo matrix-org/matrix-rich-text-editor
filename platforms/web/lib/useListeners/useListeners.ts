@@ -27,7 +27,7 @@ import {
 } from '../types';
 import { TestUtilities } from '../useTestCases/types';
 import { FormatBlockEvent } from './types';
-import { createDefaultActionStates } from './utils';
+import { createDefaultActionStates, mapToAllActionStates } from './utils';
 
 type State = {
     content: string | null;
@@ -47,6 +47,17 @@ export function useListeners(
         content: initialContent || null,
         actionStates: createDefaultActionStates(),
     });
+
+    useEffect(() => {
+        if (composerModel) {
+            setState({
+                content: composerModel.get_content_as_html(),
+                actionStates: mapToAllActionStates(
+                    composerModel.action_states(),
+                ),
+            });
+        }
+    }, [composerModel]);
 
     useEffect(() => {
         const editorNode = editorRef.current;

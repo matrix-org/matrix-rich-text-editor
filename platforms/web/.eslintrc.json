@@ -1,9 +1,10 @@
 {
-    "plugins": ["matrix-org"],
+    "plugins": ["matrix-org", "prettier"],
     "extends": [
         "plugin:matrix-org/typescript",
         "plugin:matrix-org/react",
-        "plugin:matrix-org/a11y"
+        "plugin:matrix-org/a11y",
+        "prettier"
     ],
     "env": {
         "browser": true,
@@ -26,7 +27,8 @@
                 "leadingUnderscore": "allow"
             }
         ],
-        "max-len": ["error", { "code": 80 }],
-        "matrix-org/require-copyright-header": "error"
+        "max-len": ["error", { "code": 80, "ignoreUrls": true }],
+        "matrix-org/require-copyright-header": "error",
+        "prettier/prettier": "error"
     }
 }
