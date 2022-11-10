@@ -88,9 +88,9 @@ class RichTextEditor : TextInputLayout {
         action: ComposerAction,
         actionStates: Map<ComposerAction, ActionState>
     ) {
-        val state = actionStates[action];
-        button.isEnabled = state != ActionState.DISABLED;
-        button.isActivated = state == ActionState.REVERSED;
+        val state = actionStates[action]
+        button.isEnabled = state != ActionState.DISABLED
+        button.isActivated = state == ActionState.REVERSED
     }
 
     override fun requestFocus(direction: Int, previouslyFocusedRect: Rect?): Boolean {
