@@ -44,6 +44,9 @@ describe('mapToAllActionStates', () => {
             ['BOLD', 'eNabled'],
             ['italic', 'reversed'],
             ['uNderLine', 'DISABLED'],
+            ['InlineCode', 'ENABLED'],
+            ['OrderedList', 'ENABLED'],
+            ['UnorderedList', 'ENABLED'],
         ]);
         const states = mapToAllActionStates(map);
 
@@ -52,6 +55,9 @@ describe('mapToAllActionStates', () => {
             bold: 'enabled',
             italic: 'reversed',
             underline: 'disabled',
+            inlineCode: 'enabled',
+            orderedList: 'enabled',
+            unorderedList: 'enabled',
         });
     });
 });
