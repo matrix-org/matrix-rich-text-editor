@@ -41,9 +41,9 @@ describe('mapToAllActionStates', () => {
     it('Should convert the map to an AllActionStates object', () => {
         // When
         const map = new Map([
-            ['BOLD', 'eNabled'],
-            ['italic', 'reversed'],
-            ['uNderLine', 'DISABLED'],
+            ['Bold', 'eNabled'],
+            ['Italic', 'reversed'],
+            ['Underline', 'DISABLED'],
             ['InlineCode', 'ENABLED'],
             ['OrderedList', 'ENABLED'],
             ['UnorderedList', 'ENABLED'],
