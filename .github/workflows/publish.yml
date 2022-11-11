@@ -1,8 +1,63 @@
 name: Publish
 
-on: workflow_dispatch
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+
+env:
+  GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx4096m -Dfile.encoding=UTF-8 -XX:+HeapDumpOnOutOfMemoryError" -Dkotlin.daemon.jvm.options="-Xmx2560m" -Dkotlin.incremental=false
+  CI_GRADLE_ARG_PROPERTIES: --stacktrace -PpreDexEnable=false --max-workers 4 --no-daemon
+  UNIFFI_VERSION: 0.19.2
 
 jobs:
+  android:
+    name: Publish to maven
+    runs-on: ubuntu-latest # No need for macos-latest if there are no UI tests
+    steps:
+      - name: 🧮 Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: ☕️ Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'adopt'
+          java-version: '11'
+
+      - name: 🔧 Rust & Cargo cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
+      - name: 🦀 Install Rust targets
+        run: |
+          rustup target add i686-linux-android
+          rustup target add x86_64-linux-android
+          rustup target add armv7-linux-androideabi
+          rustup target add aarch64-linux-android
+
+      - name: 🔨 Install Uniffi
+        uses: actions-rs/cargo@v1
+        with:
+          command: install
+          # keep in sync with uniffi dependency in Cargo.toml's
+          args: uniffi_bindgen --version ${{ env.UNIFFI_VERSION }}
+
+      - name: 🚀 Publish to Sonatype
+        uses: gradle/gradle-build-action@v2
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.ANDROID_SIGNING_GPG }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.ANDROID_SIGNING_KEY_ID }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
+        with:
+          build-root-directory: platforms/android
+          arguments: |
+            publishAllPublicationsToMavenCentral
   npm:
     name: Publish to npm
     runs-on: ubuntu-latest
