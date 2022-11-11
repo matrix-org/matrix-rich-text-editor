@@ -70,6 +70,13 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
             updateIdealHeight()
         }
     }
+    
+    /// the current height of the textView when minimised
+    public private(set) var compressedHeight: CGFloat = .zero {
+        didSet {
+            updateIdealHeight()
+        }
+    }
 
     /// The current composer content.
     public var content: WysiwygComposerContent {
@@ -88,12 +95,6 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     private var defaultTextAttributes: [NSAttributedString.Key: Any] {
         [.font: UIFont.preferredFont(forTextStyle: .body),
          .foregroundColor: textColor]
-    }
-
-    private var compressedHeight: CGFloat = .zero {
-        didSet {
-            updateIdealHeight()
-        }
     }
 
     // MARK: - Public
