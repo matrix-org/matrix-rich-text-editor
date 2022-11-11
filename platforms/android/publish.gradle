@@ -1,5 +1,5 @@
 group = "io.element.android"
-version = "0.4.0-SNAPSHOT"
+version = "0.5.0"
 // note that it's currently not possible to modify the artifact id through the DSL
 // by default `project.name` is used, to modify it use gradle.properties
 

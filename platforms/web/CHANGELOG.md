@@ -1,5 +1,32 @@
 # Changelog
 
+# [0.5.0]
+
+### Added
+
+* Common: initial Markdown support.
+* Common: added get/set methods for Markdown text (`set_content_from_markdown`, `get_content_as_markdown`). Also added a getter for HTML contents (`get_content_as_html`).
+* iOS: added plain text mode with Markdown support.
+* iOS: expose `maxExpandedHeight` and `maxCompressedHeight` properties in `WysiwygComposerViewModel`.
+* Web: added `prettier` config to `eslint`.
+
+### Fixed
+
+* Common: prevent crash when deleting an emoji or other complex grapheme.
+* Common: fix html5ever output when a text node contains escaped HTML entities.
+* Android: fixed `TextWatcher`s being called with an empty String for every change in the composer.
+* Android: fixed back system key being intercepted by the editor, preventing back navigation. 
+* iOS: fixed bold + italic formatting not being correctly rendered on iOS 14-15.
+* iOS: fixed bug when deleting whole words with long press on backspace.
+* iOS: fixed missing keystrokes when the user typed very fast.
+* iOS: fixed the editor contents being cleared when plain text mode was enabled.
+
+### Changed
+
+* Common: `replace_all_html` is now `set_content_from_html`.
+* Web: use native `DOMParser` instead of `html5ever` to parse HTML. This should decrease the WASM binary size.
+* Web: reduced WASM binary size by 76%.
+
 # [0.4.0] - 2022-10-26
 
 ### Added
