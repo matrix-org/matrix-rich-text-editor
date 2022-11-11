@@ -60,4 +60,4 @@ jobs:
         with:
           build-root-directory: platforms/android
           arguments: |
-            publishToMavenLocal
+            publishAllPublicationsToMavenCentral
