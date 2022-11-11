@@ -10,8 +10,6 @@ plugins {
     id("com.vanniktech.maven.publish") version "0.22.0"
 }
 
-apply from: "publish.gradle"
-
 def launchTask = getGradle()
         .getStartParameter()
         .getTaskRequests()
