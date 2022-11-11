@@ -41,5 +41,5 @@ public protocol WysiwygComposerViewModelProtocol: AnyObject {
     /// Notify that the text view content has changed.
     ///
     /// - Parameter textView: The composer's text view.
-    func didUpdateText()
+    func didUpdateText(hasSkippedShouldAcceptChanges: Bool)
 }

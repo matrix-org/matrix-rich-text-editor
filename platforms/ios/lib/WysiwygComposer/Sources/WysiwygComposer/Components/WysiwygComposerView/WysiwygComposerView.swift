@@ -42,7 +42,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
         let textView = PlaceholdableTextView()
         
         textView.accessibilityIdentifier = "WysiwygComposer"
-        textView.font = UIFont.preferredFont(forTextStyle: .subheadline)
+        textView.font = UIFont.preferredFont(forTextStyle: .body)
         textView.autocapitalizationType = .sentences
         textView.isSelectable = true
         textView.isUserInteractionEnabled = true
@@ -53,7 +53,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
         textView.adjustsFontForContentSizeCategory = true
         textView.backgroundColor = .clear
         textView.tintColor = UIColor(tintColor)
-        textView.placeholderFont = UIFont.preferredFont(forTextStyle: .subheadline)
+        textView.placeholderFont = UIFont.preferredFont(forTextStyle: .body)
         textView.placeholderColor = UIColor(placeholderColor)
         textView.placeholder = placeholder
         viewModel.textView = textView
@@ -86,14 +86,15 @@ public struct WysiwygComposerView: UIViewRepresentable {
 
     /// Coordinates UIKit communication.
     public class Coordinator: NSObject, UITextViewDelegate, NSTextStorageDelegate {
+        private var hasSkippedShouldAcceptChanges = true
         var focused: Binding<Bool>
         var replaceText: (NSRange, String) -> Bool
         var select: (NSRange) -> Void
-        var didUpdateText: () -> Void
+        var didUpdateText: (Bool) -> Void
         init(_ focused: Binding<Bool>,
              _ replaceText: @escaping (NSRange, String) -> Bool,
              _ select: @escaping (NSRange) -> Void,
-             _ didUpdateText: @escaping () -> Void) {
+             _ didUpdateText: @escaping (Bool) -> Void) {
             self.focused = focused
             self.replaceText = replaceText
             self.select = select
@@ -105,6 +106,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
                                       textView.logText,
                                       "Replacement: \"\(text)\""],
                                      functionName: #function)
+            hasSkippedShouldAcceptChanges = false
             return replaceText(range, text)
         }
         
@@ -116,7 +118,8 @@ public struct WysiwygComposerView: UIViewRepresentable {
                 ],
                 functionName: #function
             )
-            didUpdateText()
+            didUpdateText(hasSkippedShouldAcceptChanges)
+            hasSkippedShouldAcceptChanges = true
         }
 
         public func textViewDidChangeSelection(_ textView: UITextView) {

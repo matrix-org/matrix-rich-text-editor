@@ -99,7 +99,7 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
 
     // MARK: - Public
 
-    public init(minHeight: CGFloat = 20,
+    public init(minHeight: CGFloat = 22,
                 maxCompressedHeight: CGFloat = 200,
                 maxExpandedHeight: CGFloat = 300,
                 textColor: UIColor = .label) {
@@ -252,7 +252,7 @@ public extension WysiwygComposerViewModel {
         }
     }
 
-    func didUpdateText() {
+    func didUpdateText(hasSkippedShouldAcceptChanges: Bool = false) {
         guard let textView = textView else { return }
         if plainTextMode {
             if textView.text.isEmpty != isContentEmpty {
@@ -262,7 +262,11 @@ public extension WysiwygComposerViewModel {
             // Reconciliate
             Logger.viewModel.logDebug(["Reconciliate from \"\(textView.text ?? "")\" to \"\(attributedContent.text)\""],
                                       functionName: #function)
-            textView.apply(attributedContent)
+            if !hasSkippedShouldAcceptChanges {
+                textView.apply(attributedContent)
+            } else {
+                textView.shouldShowPlaceholder = textView.attributedText.length == 0
+            }
         }
 
         updateCompressedHeightIfNeeded()
