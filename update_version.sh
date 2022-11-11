@@ -16,15 +16,18 @@ else
 fi
 
 VERSION=$1
+CARGO_REGEX="s/^version\s*=\s*\".*\"/version = \"$VERSION\"/g"
+PACKAGE_JSON_REGEX="s/\"version\":\s*\".*\"/\"version\": \"$VERSION\"/g"
+GRADLE_REGEX="s/^version\s*=\s*\".*\"/version = \"$VERSION\"/g"
 
 echo "Updating Rust"
-$SED_CMD "s/^version\s*=\s*\".*\"/version = \"$VERSION\"/g" bindings/wysiwyg-ffi/Cargo.toml
-$SED_CMD "s/^version\s*=\s*\".*\"/version = \"$VERSION\"/g" bindings/wysiwyg-wasm/Cargo.toml
-$SED_CMD "s/^version\s*=\s*\".*\"/version = \"$VERSION\"/g" crates/wysiwyg/Cargo.toml
+$SED_CMD "$CARGO_REGEX" bindings/wysiwyg-ffi/Cargo.toml
+$SED_CMD "$CARGO_REGEX" bindings/wysiwyg-wasm/Cargo.toml
+$SED_CMD "$CARGO_REGEX" crates/wysiwyg/Cargo.toml
 
 echo "Updating Web"
-$SED_CMD "s/\"version\":\s*\".*\"/\"version\": \"$VERSION\"/g" platforms/web/package.json
-$SED_CMD "s/\"version\":\s*\".*\"/\"version\": \"$VERSION\"/g" bindings/wysiwyg-wasm/package.json
+$SED_CMD "$PACKAGE_JSON_REGEX" platforms/web/package.json
+$SED_CMD "$PACKAGE_JSON_REGEX" bindings/wysiwyg-wasm/package.json
 
 echo "Updating Android"
-$SED_CMD "s/version\s*=\s*\".*\"/version = \"$VERSION\"/g" platforms/android/publish.gradle
+$SED_CMD "$GRADLE_REGEX" platforms/android/publish.gradle
