@@ -49,7 +49,7 @@ jobs:
           # keep in sync with uniffi dependency in Cargo.toml's
           args: uniffi_bindgen --version ${{ env.UNIFFI_VERSION }}
 
-      - name: Setup publishing config
+      - name: Publish to Sonatype
         uses: gradle/gradle-build-action@v2
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
