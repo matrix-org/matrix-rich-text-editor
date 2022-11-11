@@ -21,10 +21,10 @@ echo "Updating Rust"
 $SED_CMD "s/^version\s*=\s*\".*\"/version = \"$VERSION\"/g" bindings/wysiwyg-ffi/Cargo.toml
 $SED_CMD "s/^version\s*=\s*\".*\"/version = \"$VERSION\"/g" bindings/wysiwyg-wasm/Cargo.toml
 $SED_CMD "s/^version\s*=\s*\".*\"/version = \"$VERSION\"/g" crates/wysiwyg/Cargo.toml
-$SED_CMD "s/\"version\":\s*\".+\"/\"version\": \"$VERSION\"/g" bindings/wysiwyg-wasm/package.json
 
 echo "Updating Web"
-$SED_CMD "s/\"version\":\s*\".+\"/\"version\": \"$VERSION\"/g" platforms/web/package.json
+$SED_CMD "s/\"version\":\s*\".*\"/\"version\": \"$VERSION\"/g" platforms/web/package.json
+$SED_CMD "s/\"version\":\s*\".*\"/\"version\": \"$VERSION\"/g" bindings/wysiwyg-wasm/package.json
 
 echo "Updating Android"
 $SED_CMD "s/version\s*=\s*\".*\"/version = \"$VERSION\"/g" platforms/android/publish.gradle
