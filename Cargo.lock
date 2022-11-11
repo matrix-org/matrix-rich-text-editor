@@ -1033,6 +1033,8 @@ dependencies = [
 name = "uniffi-wysiwyg-composer"
 version = "0.4.0"
 dependencies = [
+ "strum",
+ "strum_macros",
  "uniffi",
  "uniffi_build",
  "uniffi_macros",

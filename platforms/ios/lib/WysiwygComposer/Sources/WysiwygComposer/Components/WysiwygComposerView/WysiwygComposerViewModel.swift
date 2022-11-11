@@ -31,11 +31,8 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     @Published public var isContentEmpty = true
     /// Published value for the composer required height to fit entirely without scrolling.
     @Published public var idealHeight: CGFloat = .zero
-    /// Published value for the composer current expected reversed actions
-    /// (e.g. calling `bold` will effectively un-bold the current selection).
-    @Published public var reversedActions: [ComposerAction] = []
-    /// Published value for the composer current expected disabled actions.
-    @Published public var disabledActions: [ComposerAction] = []
+    /// Published value for the composer current action states
+    @Published public var actionStates: [ComposerAction: ActionState] = [:]
     /// Published value for the composer maximised state.
     @Published public var maximised = false {
         didSet {
@@ -296,10 +293,8 @@ private extension WysiwygComposerViewModel {
         }
 
         switch update.menuState() {
-        case let .update(reversedActions: reversedActions,
-                         disabledActions: disabledActions):
-            self.reversedActions = reversedActions
-            self.disabledActions = disabledActions
+        case let .update(actionStates: actionStates):
+            self.actionStates = actionStates
         default:
             break
         }

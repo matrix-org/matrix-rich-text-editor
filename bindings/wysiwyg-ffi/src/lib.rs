@@ -14,6 +14,7 @@
 
 uniffi_macros::include_scaffolding!("wysiwyg_composer");
 
+mod ffi_action_state;
 mod ffi_composer_action;
 mod ffi_composer_model;
 mod ffi_composer_state;
@@ -23,6 +24,7 @@ mod ffi_text_update;
 
 use std::sync::Arc;
 
+pub use crate::ffi_action_state::ActionState;
 pub use crate::ffi_composer_action::ComposerAction;
 pub use crate::ffi_composer_model::ComposerModel;
 pub use crate::ffi_composer_state::ComposerState;

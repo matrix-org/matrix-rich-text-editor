@@ -241,3 +241,19 @@ fn changing_selection_to_same_doesnt_removes_formatting_state() {
     model.select(Location::from(4), Location::from(4));
     assert!(model.state.toggled_format_types.contains(&Bold));
 }
+
+#[test]
+fn formatting_before_typing_anything_applies_formatting() {
+    let mut model = cm("|");
+    model.bold();
+    model.replace_text(utf16("d"));
+    assert_eq!(tx(&model), "<strong>d|</strong>");
+}
+
+#[test]
+fn formatting_in_an_empty_model_applies_formatting() {
+    let mut model = ComposerModel::new();
+    model.bold();
+    model.replace_text(utf16("d"));
+    assert_eq!(tx(&model), "<strong>d|</strong>");
+}

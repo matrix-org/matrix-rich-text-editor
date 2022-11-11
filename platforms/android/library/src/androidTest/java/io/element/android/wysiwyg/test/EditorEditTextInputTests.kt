@@ -2,7 +2,6 @@ package io.element.android.wysiwyg.test
 
 import android.graphics.Typeface
 import android.text.Editable
-import android.text.Spannable
 import android.text.style.BulletSpan
 import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
@@ -12,7 +11,6 @@ import android.widget.EditText
 import android.widget.TextView
 import androidx.core.text.getSpans
 import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.ViewAssertion
 import androidx.test.espresso.accessibility.AccessibilityChecks
 import androidx.test.espresso.action.ViewActions.*
 import androidx.test.espresso.assertion.ViewAssertions.matches
@@ -33,6 +31,7 @@ import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.*
 import org.junit.runner.RunWith
+import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
 import uniffi.wysiwyg_composer.MenuState
 
@@ -298,12 +297,10 @@ class EditorEditTextInputTests {
     fun testMenuStateChangedListener() {
         var isItalicHighlighted = false
         scenarioRule.scenario.onActivity {
-            it.findViewById<EditorEditText>(R.id.rich_text_edit_text).menuStateChangedListener =
-                EditorEditText.OnMenuStateChangedListener { state ->
-                    if (state is MenuState.Update) {
-                        if (state.reversedActions.contains(ComposerAction.Italic)) {
-                            isItalicHighlighted = true
-                        }
+            it.findViewById<EditorEditText>(R.id.rich_text_edit_text).actionStatesChangedListener =
+                EditorEditText.OnActionStatesChangedListener { actionStates ->
+                    if (actionStates.get(ComposerAction.ITALIC) == ActionState.REVERSED) {
+                        isItalicHighlighted = true
                     }
                 }
         }

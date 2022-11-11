@@ -34,7 +34,7 @@ extension WysiwygAction: CaseIterable, Identifiable {
     public func color(_ viewModel: WysiwygComposerViewModel) -> Color {
         let isDisabled = isDisabled(viewModel)
         // Buttons for reversed actions should be highlighted with a specific colour.
-        let isActive = viewModel.reversedActions.contains(composerAction)
+        let isActive = viewModel.actionStates[composerAction] == ActionState.reversed
         switch (isDisabled, isActive) {
         case (true, _):
             return .black.opacity(0.3)
@@ -50,7 +50,7 @@ extension WysiwygAction: CaseIterable, Identifiable {
     /// - Parameter viewModel: Composer's view model.
     /// - Returns: True if the action is disabled, false otherwise.
     public func isDisabled(_ viewModel: WysiwygComposerViewModel) -> Bool {
-        viewModel.disabledActions.contains(composerAction)
+        viewModel.actionStates[composerAction] == ActionState.disabled
     }
 
     var accessibilityIdentifier: WysiwygSharedAccessibilityIdentifier {

@@ -17,6 +17,8 @@ crate-type = ["cdylib", "staticlib"]
 # Keep the uniffi version here in sync with the installed version of
 # uniffi-bindgen that is called from
 # ../../examples/example-android/app/build.gradle
+strum = "0.24"
+strum_macros = "0.24"
 uniffi = "=0.19.2"
 uniffi_macros = "=0.19.2"
 widestring = "1.0.2"
