@@ -24,7 +24,8 @@ import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
 import io.element.android.wysiwyg.utils.*
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
 import io.element.android.wysiwyg.viewmodel.EditorViewModel
-import uniffi.wysiwyg_composer.MenuState
+import uniffi.wysiwyg_composer.ActionState
+import uniffi.wysiwyg_composer.ComposerAction
 import uniffi.wysiwyg_composer.newComposerModel
 
 class EditorEditText : TextInputEditText {
@@ -67,17 +68,17 @@ class EditorEditText : TextInputEditText {
         fun selectionChanged(start: Int, end: Int)
     }
 
-    fun interface OnMenuStateChangedListener {
-        fun menuStateChanged(menuState: MenuState)
+    fun interface OnActionStatesChangedListener {
+        fun actionStatesChanged(actionStates: Map<ComposerAction, ActionState>)
     }
 
     var selectionChangeListener: OnSelectionChangeListener? = null
-    var menuStateChangedListener: OnMenuStateChangedListener? = null
+    var actionStatesChangedListener: OnActionStatesChangedListener? = null
         set(value) {
             field = value
 
-            viewModel.setMenuStateCallback { state ->
-                value?.menuStateChanged(state)
+            viewModel.setActionStatesCallback { actionStates ->
+                value?.actionStatesChanged(actionStates)
             }
         }
 

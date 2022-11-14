@@ -37,23 +37,10 @@ export function mapToAllActionStates(
 ): AllActionStates {
     const ret = {} as AllActionStates;
     for (const [key, value] of actionStatesMap) {
-        switch (key) {
-            case 'OrderedList':
-                ret.orderedList = value.toLowerCase() as ActionState;
-                break;
-            case 'UnorderedList':
-                ret.unorderedList = value.toLowerCase() as ActionState;
-                break;
-            case 'InlineCode':
-                ret.inlineCode = value.toLowerCase() as ActionState;
-                break;
-            case 'StrikeThrough':
-                ret.strikeThrough = value.toLowerCase() as ActionState;
-                break;
-            default:
-                ret[key.toLowerCase() as ActionTypes] =
-                    value.toLowerCase() as ActionState;
-        }
+        ret[
+            (key.substring(0, 1).toLowerCase() +
+                key.substring(1)) as ActionTypes
+        ] = value.toLowerCase() as ActionState;
     }
     return ret as AllActionStates;
 }

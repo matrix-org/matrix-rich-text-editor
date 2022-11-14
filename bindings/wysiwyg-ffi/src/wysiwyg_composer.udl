@@ -43,7 +43,7 @@ interface ComposerModel {
     ComposerUpdate set_link(string new_text);
     string to_tree();
     ComposerState get_current_dom_state();
-    MenuState get_current_menu_state();
+    record<ComposerAction, ActionState> action_states();
 };
 
 interface ComposerUpdate {
@@ -67,31 +67,35 @@ interface TextUpdate {
     );
     Select(
         u32 start_utf16_codeunit,
-        u32 end_utf16_codeunit 
+        u32 end_utf16_codeunit
     );
 };
 
-[Enum]
-interface ComposerAction {
-    Bold();
-    Italic();
-    StrikeThrough();
-    Underline();
-    InlineCode();
-    Link();
-    Undo();
-    Redo();
-    OrderedList();
-    UnorderedList();
-    Indent();
-    UnIndent();
+enum ComposerAction {
+    "Bold",
+    "Italic",
+    "StrikeThrough",
+    "Underline",
+    "InlineCode",
+    "Link",
+    "Undo",
+    "Redo",
+    "OrderedList",
+    "UnorderedList",
+    "Indent",
+    "UnIndent",
+};
+
+enum ActionState {
+    "Enabled",
+    "Reversed",
+    "Disabled",
 };
 
 [Enum]
 interface MenuState {
     Keep();
     Update(
-        sequence<ComposerAction> reversed_actions,
-        sequence<ComposerAction> disabled_actions
+        record<ComposerAction, ActionState> action_states
     );
 };

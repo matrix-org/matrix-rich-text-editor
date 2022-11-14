@@ -1,10 +1,12 @@
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use widestring::Utf16String;
 
 use crate::ffi_composer_state::ComposerState;
 use crate::ffi_composer_update::ComposerUpdate;
-use crate::{ComposerAction, MenuState};
+use crate::ffi_menu_state::build_composer_action_states;
+use crate::{ActionState, ComposerAction};
 
 pub struct ComposerModel {
     inner: Mutex<wysiwyg::ComposerModel<Utf16String>>,
@@ -198,21 +200,10 @@ impl ComposerModel {
             .into()
     }
 
-    pub fn get_current_menu_state(self: &Arc<Self>) -> MenuState {
+    pub fn action_states(
+        self: &Arc<Self>,
+    ) -> HashMap<ComposerAction, ActionState> {
         let inner = self.inner.lock().unwrap();
-        MenuState::Update {
-            reversed_actions: inner
-                .reversed_actions
-                .clone()
-                .into_iter()
-                .map(|a| ComposerAction::from(a))
-                .collect(),
-            disabled_actions: inner
-                .disabled_actions
-                .clone()
-                .into_iter()
-                .map(|a| ComposerAction::from(a))
-                .collect(),
-        }
+        build_composer_action_states(&inner)
     }
 }

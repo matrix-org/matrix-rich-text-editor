@@ -35,10 +35,12 @@ describe('Undo redo', () => {
         redo = screen.getByRole('button', { name: 'redo' });
     });
 
-    test('Should be disabled by default', () => {
+    test('Should be disabled by default', async () => {
         // Then
-        expect(undo).toHaveAttribute('data-state', 'disabled');
-        expect(redo).toHaveAttribute('data-state', 'disabled');
+        await waitFor(() => {
+            expect(undo).toHaveAttribute('data-state', 'disabled');
+            expect(redo).toHaveAttribute('data-state', 'disabled');
+        });
     });
 
     test('Should undo and redo content', async () => {
@@ -49,23 +51,29 @@ describe('Undo redo', () => {
         });
 
         // Then
-        expect(undo).toHaveAttribute('data-state', 'enabled');
-        expect(redo).toHaveAttribute('data-state', 'disabled');
+        await waitFor(() => {
+            expect(undo).toHaveAttribute('data-state', 'enabled');
+            expect(redo).toHaveAttribute('data-state', 'disabled');
+        });
 
         // When
         await act(() => userEvent.click(undo));
 
         // Then
-        expect(textbox).toHaveTextContent(/^$/);
-        expect(undo).toHaveAttribute('data-state', 'disabled');
-        expect(redo).toHaveAttribute('data-state', 'enabled');
+        await waitFor(() => {
+            expect(textbox).toHaveTextContent(/^$/);
+            expect(undo).toHaveAttribute('data-state', 'disabled');
+            expect(redo).toHaveAttribute('data-state', 'enabled');
+        });
 
         // When
         await act(() => userEvent.click(redo));
 
         // Then
-        expect(textbox).toHaveTextContent(/^foo bar$/);
-        expect(undo).toHaveAttribute('data-state', 'enabled');
-        expect(redo).toHaveAttribute('data-state', 'disabled');
+        await waitFor(() => {
+            expect(textbox).toHaveTextContent(/^foo bar$/);
+            expect(undo).toHaveAttribute('data-state', 'enabled');
+            expect(redo).toHaveAttribute('data-state', 'disabled');
+        });
     });
 });

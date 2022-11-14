@@ -16,6 +16,6 @@ def launchTask = getGradle()
         .toString()
         .toLowerCase()
 
-if (launchTask.contains("coverage".toLowerCase())) {
+if (launchTask.containsIgnoreCase("coverage")) {
     apply from: 'coverage.gradle'
 }

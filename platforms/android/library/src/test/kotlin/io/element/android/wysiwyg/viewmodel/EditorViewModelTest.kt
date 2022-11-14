@@ -13,6 +13,7 @@ import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.Before
 import org.junit.Test
+import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
 import uniffi.wysiwyg_composer.MenuState
 
@@ -24,7 +25,9 @@ internal class EditorViewModelTest {
         composer = composer.instance,
         htmlConverter = htmlConverter,
     )
-    private val menuStateCallback = mockk<(MenuState) -> Unit>(relaxed = true)
+    private val actionsStatesCallback = mockk<(
+        Map<ComposerAction, ActionState>
+    ) -> Unit>(relaxed = true)
 
     companion object {
         private const val paragraph =
@@ -35,29 +38,43 @@ internal class EditorViewModelTest {
             "<p><b>$paragraph</b></p>" +
                     "<p><i>$paragraph</i></p>"
         private const val plainTextParagraphs = "$paragraph$paragraph"
-        private val menuStateUpdate =
-            MenuState.Update(listOf(ComposerAction.Bold), listOf(ComposerAction.Link))
+        private val actionStates =
+            mapOf(
+                ComposerAction.BOLD to ActionState.REVERSED,
+                ComposerAction.LINK to ActionState.DISABLED,
+                ComposerAction.ITALIC to ActionState.ENABLED,
+                ComposerAction.UNORDERED_LIST to ActionState.ENABLED,
+                ComposerAction.ORDERED_LIST to ActionState.ENABLED,
+                ComposerAction.REDO to ActionState.ENABLED,
+                ComposerAction.UNDO to ActionState.ENABLED,
+                ComposerAction.STRIKE_THROUGH to ActionState.ENABLED,
+                ComposerAction.INLINE_CODE to ActionState.ENABLED,
+                ComposerAction.UNDERLINE to ActionState.ENABLED,
+                ComposerAction.INDENT to ActionState.ENABLED,
+                ComposerAction.UN_INDENT to ActionState.ENABLED,
+            )
+
         private val composerStateUpdate = MockComposerUpdateFactory.create(
             textUpdate = MockTextUpdateFactory.createReplaceAll(updatedParagraph, 2, 3),
-            menuState = menuStateUpdate,
+            menuState = MenuState.Update(actionStates = actionStates),
         )
         private val replaceTextResult = ReplaceTextResult(updatedParagraph, 2..3)
     }
 
     @Before
     fun setUp() {
-        viewModel.setMenuStateCallback(menuStateCallback)
+        viewModel.setActionStatesCallback(actionsStatesCallback)
     }
 
     @Test
     fun `when menu state callback is not set, it processes input without an error`() {
         composer.givenReplaceTextResult(composerStateUpdate)
-        viewModel.setMenuStateCallback(null)
+        viewModel.setActionStatesCallback(null)
 
         val result = viewModel.processInput(EditorInputAction.ReplaceText(paragraph))
 
         verify(inverse = true) {
-            menuStateCallback(menuStateUpdate)
+            actionsStatesCallback(actionStates)
         }
 
         assertThat(result, equalTo(replaceTextResult))
@@ -71,7 +88,7 @@ internal class EditorViewModelTest {
 
         verify {
             composer.instance.replaceText(paragraph)
-            menuStateCallback(menuStateUpdate)
+            actionsStatesCallback(actionStates)
         }
         assertThat(result, equalTo(replaceTextResult))
     }
@@ -84,7 +101,7 @@ internal class EditorViewModelTest {
 
         verify {
             composer.instance.enter()
-            menuStateCallback(menuStateUpdate)
+            actionsStatesCallback(actionStates)
         }
         assertThat(result, equalTo(replaceTextResult))
     }
@@ -97,7 +114,7 @@ internal class EditorViewModelTest {
 
         verify {
             composer.instance.backspace()
-            menuStateCallback(menuStateUpdate)
+            actionsStatesCallback(actionStates)
         }
         assertThat(result, equalTo(replaceTextResult))
     }
@@ -110,7 +127,7 @@ internal class EditorViewModelTest {
 
         verify {
             composer.instance.bold()
-            menuStateCallback(menuStateUpdate)
+            actionsStatesCallback(actionStates)
         }
         assertThat(result, equalTo(replaceTextResult))
     }
@@ -124,7 +141,7 @@ internal class EditorViewModelTest {
 
         verify {
             composer.instance.italic()
-            menuStateCallback(menuStateUpdate)
+            actionsStatesCallback(actionStates)
         }
         assertThat(result, equalTo(replaceTextResult))
     }
@@ -139,7 +156,7 @@ internal class EditorViewModelTest {
 
         verify {
             composer.instance.underline()
-            menuStateCallback(menuStateUpdate)
+            actionsStatesCallback(actionStates)
         }
         assertThat(result, equalTo(replaceTextResult))
     }
@@ -153,7 +170,7 @@ internal class EditorViewModelTest {
 
         verify {
             composer.instance.strikeThrough()
-            menuStateCallback(menuStateUpdate)
+            actionsStatesCallback(actionStates)
         }
         assertThat(result, equalTo(replaceTextResult))
     }
@@ -167,7 +184,7 @@ internal class EditorViewModelTest {
 
         verify {
             composer.instance.inlineCode()
-            menuStateCallback(menuStateUpdate)
+            actionsStatesCallback(actionStates)
         }
         assertThat(result, equalTo(replaceTextResult))
     }
@@ -180,7 +197,7 @@ internal class EditorViewModelTest {
 
         verify {
             composer.instance.deleteIn(3.toUInt(), 4.toUInt())
-            menuStateCallback(menuStateUpdate)
+            actionsStatesCallback(actionStates)
         }
         assertThat(result, equalTo(replaceTextResult))
     }
@@ -193,7 +210,7 @@ internal class EditorViewModelTest {
 
         verify {
             composer.instance.setLink("https://element.io")
-            menuStateCallback(menuStateUpdate)
+            actionsStatesCallback(actionStates)
         }
         assertThat(result, equalTo(replaceTextResult))
     }
@@ -206,7 +223,7 @@ internal class EditorViewModelTest {
 
         verify {
             composer.instance.setContentFromHtml("new html")
-            menuStateCallback(menuStateUpdate)
+            actionsStatesCallback(actionStates)
         }
         assertThat(result, equalTo(replaceTextResult))
     }
@@ -219,7 +236,7 @@ internal class EditorViewModelTest {
 
         verify {
             composer.instance.undo()
-            menuStateCallback(menuStateUpdate)
+            actionsStatesCallback(actionStates)
         }
         assertThat(result, equalTo(replaceTextResult))
     }
@@ -232,7 +249,7 @@ internal class EditorViewModelTest {
 
         verify {
             composer.instance.redo()
-            menuStateCallback(menuStateUpdate)
+            actionsStatesCallback(actionStates)
         }
         assertThat(result, equalTo(replaceTextResult))
     }
@@ -245,7 +262,7 @@ internal class EditorViewModelTest {
 
         verify {
             composer.instance.orderedList()
-            menuStateCallback(menuStateUpdate)
+            actionsStatesCallback(actionStates)
         }
         assertThat(result, equalTo(replaceTextResult))
     }
@@ -258,7 +275,7 @@ internal class EditorViewModelTest {
 
         verify {
             composer.instance.unorderedList()
-            menuStateCallback(menuStateUpdate)
+            actionsStatesCallback(actionStates)
         }
         assertThat(result, equalTo(replaceTextResult))
     }
