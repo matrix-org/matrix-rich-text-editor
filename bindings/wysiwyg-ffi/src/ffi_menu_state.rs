@@ -5,6 +5,7 @@ use wysiwyg::UnicodeString;
 
 use crate::{ActionState, ComposerAction};
 
+#[derive(Debug, PartialEq)]
 pub enum MenuState {
     Keep,
     Update {

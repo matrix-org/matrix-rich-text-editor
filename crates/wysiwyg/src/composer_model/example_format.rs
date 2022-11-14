@@ -17,6 +17,7 @@ use std::ops::Not;
 
 use widestring::Utf16String;
 
+use crate::composer_model::menu_state::MenuStateComputeType;
 use crate::dom::nodes::{LineBreakNode, TextNode};
 use crate::dom::parser::parse;
 use crate::dom::unicode_string::UnicodeStrExt;
@@ -130,7 +131,7 @@ impl ComposerModel<Utf16String> {
             model.state.start = Location::from(curs);
             model.state.end = Location::from(curs);
         }
-        model.compute_menu_state();
+        model.compute_menu_state(MenuStateComputeType::KeepIfUnchanged);
 
         model
     }

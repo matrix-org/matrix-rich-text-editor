@@ -22,11 +22,19 @@ use crate::{
 };
 use std::collections::HashSet;
 
+pub(crate) enum MenuStateComputeType {
+    AlwaysUpdate,
+    KeepIfUnchanged,
+}
+
 impl<S> ComposerModel<S>
 where
     S: UnicodeString,
 {
-    pub(crate) fn compute_menu_state(&mut self) -> MenuState {
+    pub(crate) fn compute_menu_state(
+        &mut self,
+        compute_type: MenuStateComputeType,
+    ) -> MenuState {
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
         let reversed_actions: HashSet<ComposerAction> =
@@ -35,6 +43,7 @@ where
 
         if reversed_actions == self.reversed_actions
             && disabled_actions == self.disabled_actions
+            && matches!(compute_type, MenuStateComputeType::KeepIfUnchanged)
         {
             MenuState::Keep
         } else {

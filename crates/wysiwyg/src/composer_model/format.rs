@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::composer_model::menu_state::MenuStateComputeType;
 use crate::dom::action_list::DomActionList;
 use crate::dom::nodes::{ContainerNodeKind, DomNode};
 use crate::dom::unicode_string::UnicodeStrExt;
@@ -93,7 +94,9 @@ where
 
         if s == e {
             self.toggle_zero_length_format(&format);
-            ComposerUpdate::update_menu_state(self.compute_menu_state())
+            ComposerUpdate::update_menu_state(
+                self.compute_menu_state(MenuStateComputeType::KeepIfUnchanged),
+            )
         } else {
             self.format_range(s, e, &format);
             self.create_update_replace_all()
@@ -116,7 +119,9 @@ where
 
         if s == e {
             self.toggle_zero_length_format(&format);
-            ComposerUpdate::update_menu_state(self.compute_menu_state())
+            ComposerUpdate::update_menu_state(
+                self.compute_menu_state(MenuStateComputeType::KeepIfUnchanged),
+            )
         } else {
             self.unformat_range(s, e, &format);
             self.create_update_replace_all()

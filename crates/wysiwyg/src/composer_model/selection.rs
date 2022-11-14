@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::composer_model::menu_state::MenuStateComputeType;
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
 
 impl<S> ComposerModel<S>
@@ -32,7 +33,8 @@ where
         self.state.start = start;
         self.state.end = end;
 
-        let menu_state = self.compute_menu_state();
+        let menu_state =
+            self.compute_menu_state(MenuStateComputeType::KeepIfUnchanged);
         ComposerUpdate::update_selection(start, end, menu_state)
     }
 
