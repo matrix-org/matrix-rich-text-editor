@@ -7,10 +7,12 @@ import io.element.android.wysiwyg.mocks.MockComposer
 import io.element.android.wysiwyg.mocks.MockComposerUpdateFactory
 import io.element.android.wysiwyg.mocks.MockTextUpdateFactory
 import io.element.android.wysiwyg.utils.BasicHtmlConverter
+import io.element.android.wysiwyg.utils.RustErrorCollector
 import io.mockk.mockk
 import io.mockk.verify
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
+import org.hamcrest.Matchers.notNullValue
 import org.junit.Before
 import org.junit.Test
 import uniffi.wysiwyg_composer.ActionState
@@ -296,6 +298,21 @@ internal class EditorViewModelTest {
         val plainText = viewModel.getPlainText()
 
         assertThat(plainText, equalTo(plainTextParagraphs))
+    }
+
+    @Test
+    fun `given an error callback, it will collect errors thrown by the Rust library`() {
+        composer.givenErrorInUpdateSelection()
+        var errorCollected: Throwable? = null
+        // Collect the error
+        viewModel.rustErrorCollector = RustErrorCollector { error ->
+            errorCollected = error
+        }
+
+        // Use runCatching so the tests can continue in debug mode, otherwise they would crash
+        runCatching { viewModel.updateSelection(mockk(relaxed = true), 0, 0) }
+
+        assertThat(errorCollected, notNullValue())
     }
 
 }

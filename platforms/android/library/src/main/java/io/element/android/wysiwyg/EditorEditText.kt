@@ -83,6 +83,13 @@ class EditorEditText : TextInputEditText {
         }
 
     /**
+     * When not null, it will serve as an error callback for the client integrating this lib.
+     */
+    var rustErrorCollector: RustErrorCollector?
+        set(value) { viewModel.rustErrorCollector = value }
+        get() = viewModel.rustErrorCollector
+
+    /**
      * We'll do our own text restoration.
      */
     override fun getFreezesText(): Boolean {
@@ -97,6 +104,7 @@ class EditorEditText : TextInputEditText {
 
         val start = Selection.getSelectionStart(editableText)
         val end = Selection.getSelectionEnd(editableText)
+
         viewModel.updateSelection(editableText, start, end)
     }
 
@@ -168,7 +176,6 @@ class EditorEditText : TextInputEditText {
     private fun addHardwareKeyInterceptor() {
         // This seems to be the only way to prevent EditText from automatically handling key strokes
         setOnKeyListener { _, keyCode, event ->
-            println("Key Event: $event")
             if (keyCode == KeyEvent.KEYCODE_ENTER) {
                 if (event.action == MotionEvent.ACTION_DOWN) {
                     inputConnection?.sendHardwareKeyboardInput(event)

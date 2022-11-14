@@ -9,6 +9,7 @@ import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
 import io.element.android.wysiwyg.utils.EditorIndexMapper
 import io.element.android.wysiwyg.utils.HtmlConverter
+import io.element.android.wysiwyg.utils.RustErrorCollector
 import io.element.android.wysiwyg.utils.throwIfDebugBuild
 import uniffi.wysiwyg_composer.*
 
@@ -16,6 +17,8 @@ internal class EditorViewModel(
     private val composer: ComposerModelInterface?,
     private val htmlConverter: HtmlConverter,
 ) : ViewModel() {
+
+    var rustErrorCollector: RustErrorCollector? = null
 
     private var actionStatesCallback: ((Map<ComposerAction, ActionState>) -> Unit)? = null
 
@@ -28,7 +31,12 @@ internal class EditorViewModel(
         val (newStart, newEnd) = EditorIndexMapper.fromEditorToComposer(start, end, editable)
             ?: return
 
-        val update = composer?.select(newStart, newEnd)
+        val update = runCatching {
+            composer?.select(newStart, newEnd)
+        }.onFailure { error ->
+            rustErrorCollector?.onRustError(error)
+            error.throwIfDebugBuild()
+        }.getOrNull()
         val menuState = update?.menuState()
         if (menuState is MenuState.Update) {
             actionStatesCallback?.invoke(menuState.actionStates)
@@ -64,8 +72,9 @@ internal class EditorViewModel(
                 is EditorInputAction.ToggleList ->
                     if (action.ordered) composer?.orderedList() else composer?.unorderedList()
             }
-        }.onFailure {
-            it.throwIfDebugBuild()
+        }.onFailure { error ->
+            rustErrorCollector?.onRustError(error)
+            error.throwIfDebugBuild()
         }.getOrNull()
 
         composer?.log()

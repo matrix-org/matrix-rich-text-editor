@@ -90,4 +90,8 @@ class MockComposer {
     fun givenToggleUnorderedListResult(
         update: ComposerUpdate = MockComposerUpdateFactory.create(),
     ) = every { instance.unorderedList() } returns update
+
+    fun givenErrorInUpdateSelection(
+        throwable: Throwable = IllegalStateException("Invalid selection range"),
+    ) = every { instance.select(any(), any()) } throws throwable
 }
