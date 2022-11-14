@@ -62,13 +62,6 @@ public struct WysiwygComposerView: UIViewRepresentable {
     }
 
     public func updateUIView(_ uiView: PlaceholdableTextView, context: Context) {
-        Logger.textView.logDebug(
-            [
-                viewModel.attributedContent.logSelection,
-                viewModel.attributedContent.logText,
-            ],
-            functionName: #function
-        )
         uiView.tintColor = UIColor(tintColor)
         uiView.placeholderColor = UIColor(placeholderColor)
         uiView.placeholder = placeholder
