@@ -317,28 +317,6 @@ class EditorEditTextInputTests {
     }
 
     @Test
-    fun testSetPlainText_ignoresHtml() {
-        scenarioRule.scenario.onActivity {
-            it.findViewById<EditorEditText>(R.id.rich_text_edit_text)
-                .setMarkdown("<b>$ipsum</b>")
-        }
-        onView(withId(R.id.rich_text_edit_text))
-            .check(matches(withText("<b>$ipsum</b>")))
-    }
-
-    @Test
-    fun testGetPlainText_stripsHtml() {
-        scenarioRule.scenario.onActivity {
-            val editText = it.findViewById<EditorEditText>(R.id.rich_text_edit_text)
-            editText.setHtml("<b>$ipsum</b>")
-
-            val plainText = editText.getMarkdown()
-
-            assertThat(plainText, equalTo(ipsum))
-        }
-    }
-
-    @Test
     fun testTextWatcher() {
         val textWatcher = spyk<(text: Editable?) -> Unit>({ })
         onView(withId(R.id.rich_text_edit_text))

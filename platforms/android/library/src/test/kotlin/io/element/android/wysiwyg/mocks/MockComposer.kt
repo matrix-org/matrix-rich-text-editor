@@ -99,4 +99,12 @@ class MockComposer {
     fun givenErrorInUpdateSelection(
         throwable: Throwable = IllegalStateException("Invalid selection range"),
     ) = every { instance.select(any(), any()) } throws throwable
+
+    fun givenGetContentAsHtml(
+        html: String = ""
+    ) = every { instance.getContentAsHtml() } returns html
+
+    fun givenGetContentAsMarkdown(
+        markdown: String = ""
+    ) = every { instance.getContentAsMarkdown() } returns markdown
 }
