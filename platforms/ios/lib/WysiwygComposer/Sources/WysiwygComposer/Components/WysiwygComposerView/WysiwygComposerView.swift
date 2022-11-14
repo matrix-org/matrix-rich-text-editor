@@ -111,7 +111,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
                 ],
                 functionName: #function
             )
-            didUpdateText(hasSkippedShouldAcceptChanges)
+            didUpdateText(!hasSkippedShouldAcceptChanges)
             hasSkippedShouldAcceptChanges = true
         }
 

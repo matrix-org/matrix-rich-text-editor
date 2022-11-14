@@ -252,17 +252,17 @@ public extension WysiwygComposerViewModel {
         }
     }
 
-    func didUpdateText(hasSkippedShouldAcceptChanges: Bool = false) {
+    func didUpdateText(shouldReconciliate: Bool = true) {
         guard let textView = textView else { return }
         if plainTextMode {
             if textView.text.isEmpty != isContentEmpty {
                 isContentEmpty = textView.text.isEmpty
             }
         } else if textView.attributedText != attributedContent.text {
-            // Reconciliate
-            Logger.viewModel.logDebug(["Reconciliate from \"\(textView.text ?? "")\" to \"\(attributedContent.text)\""],
-                                      functionName: #function)
-            if !hasSkippedShouldAcceptChanges {
+            if shouldReconciliate {
+                // Reconciliate
+                Logger.viewModel.logDebug(["Reconciliate from \"\(textView.text ?? "")\" to \"\(attributedContent.text)\""],
+                                          functionName: #function)
                 textView.apply(attributedContent)
             } else {
                 textView.shouldShowPlaceholder = textView.attributedText.length == 0
