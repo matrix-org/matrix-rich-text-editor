@@ -32,16 +32,13 @@ extension WysiwygAction: CaseIterable, Identifiable {
     /// - Parameter viewModel: Composer's view model.
     /// - Returns: Tint color that the button should use.
     public func color(_ viewModel: WysiwygComposerViewModel) -> Color {
-        let isDisabled = isDisabled(viewModel)
-        // Buttons for reversed actions should be highlighted with a specific colour.
-        let isActive = viewModel.actionStates[composerAction] == ActionState.reversed
-        switch (isDisabled, isActive) {
-        case (true, _):
-            return .black.opacity(0.3)
-        case (false, true):
-            return .blue
-        case (false, false):
-            return .black
+        switch viewModel.actionStates[composerAction] {
+        case .enabled:
+            return Color.primary
+        case .reversed:
+            return Color.accentColor
+        default:
+            return Color.primary.opacity(0.3)
         }
     }
 
