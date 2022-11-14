@@ -1,6 +1,6 @@
 use strum_macros::{AsRefStr, EnumIter};
 
-#[derive(AsRefStr, Clone, Copy, EnumIter, Eq, Hash, PartialEq)]
+#[derive(AsRefStr, Clone, Copy, Debug, EnumIter, Eq, Hash, PartialEq)]
 pub enum ComposerAction {
     Bold,
     Italic,

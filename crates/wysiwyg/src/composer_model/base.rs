@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::composer_model::menu_state::MenuStateComputeType;
 use crate::composer_state::ComposerState;
 use crate::dom::parser::parse;
 use crate::dom::{DomHandle, UnicodeString};
@@ -51,7 +52,7 @@ where
             reversed_actions: HashSet::new(),
             disabled_actions: HashSet::new(),
         };
-        instance.compute_menu_state();
+        instance.compute_menu_state(MenuStateComputeType::AlwaysUpdate);
         instance
     }
 
@@ -84,7 +85,7 @@ where
             reversed_actions: HashSet::new(),
             disabled_actions: HashSet::new(),
         };
-        model.compute_menu_state();
+        model.compute_menu_state(MenuStateComputeType::AlwaysUpdate);
         model
     }
 
@@ -101,14 +102,14 @@ where
                 self.state.end = self.state.start;
                 self.previous_states.clear();
                 self.next_states.clear();
-                self.create_update_replace_all()
+                self.create_update_replace_all_with_menu_state()
             }
             Err(e) => {
                 // We should log here - internal task PSU-741
                 self.state.dom = e.dom;
                 self.previous_states.clear();
                 self.next_states.clear();
-                self.create_update_replace_all()
+                self.create_update_replace_all_with_menu_state()
             }
         }
     }
@@ -127,7 +128,18 @@ where
             self.state.dom.to_html(),
             self.state.start,
             self.state.end,
-            self.compute_menu_state(),
+            self.compute_menu_state(MenuStateComputeType::KeepIfUnchanged),
+        )
+    }
+
+    pub(crate) fn create_update_replace_all_with_menu_state(
+        &mut self,
+    ) -> ComposerUpdate<S> {
+        ComposerUpdate::replace_all(
+            self.state.dom.to_html(),
+            self.state.start,
+            self.state.end,
+            self.compute_menu_state(MenuStateComputeType::AlwaysUpdate),
         )
     }
 
