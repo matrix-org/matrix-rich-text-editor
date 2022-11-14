@@ -17,6 +17,11 @@ sealed interface EditorInputAction {
     data class ReplaceAllHtml(val html: String): EditorInputAction
 
     /**
+     * Replaces the whole contents of the editor with the passed [markdown], re-creating the Dom.
+     */
+    data class ReplaceAllMarkdown(val markdown: String): EditorInputAction
+
+    /**
      * Deletes text in the [start]..[end] selection
      */
     data class DeleteIn(val start: Int, val end: Int): EditorInputAction

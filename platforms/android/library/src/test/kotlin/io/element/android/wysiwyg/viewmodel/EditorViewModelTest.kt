@@ -39,7 +39,7 @@ internal class EditorViewModelTest {
         private const val htmlParagraphs =
             "<p><b>$paragraph</b></p>" +
                     "<p><i>$paragraph</i></p>"
-        private const val plainTextParagraphs = "$paragraph$paragraph"
+        private const val markdownParagraphs = "**paragraph**\n**paragraph**"
         private val actionStates =
             mapOf(
                 ComposerAction.BOLD to ActionState.REVERSED,
@@ -231,6 +231,19 @@ internal class EditorViewModelTest {
     }
 
     @Test
+    fun `when process replace all markdown action, it returns a text update`() {
+        composer.givenReplaceAllMarkdownResult("new **markdown**", composerStateUpdate)
+
+        val result = viewModel.processInput(EditorInputAction.ReplaceAllMarkdown("new **markdown**"))
+
+        verify {
+            composer.instance.setContentFromMarkdown("new **markdown**")
+            actionsStatesCallback(actionStates)
+        }
+        assertThat(result, equalTo(replaceTextResult))
+    }
+
+    @Test
     fun `when process undo action, it returns a text update`() {
         composer.givenUndoResult(composerStateUpdate)
 
@@ -283,8 +296,8 @@ internal class EditorViewModelTest {
     }
 
     @Test
-    fun `given formatted text, getHtml returns formatted HTML`() {
-        composer.givenCurrentDomState(htmlParagraphs)
+    fun `given formatted text, getHtml function returns formatted HTML`() {
+        composer.givenGetContentAsHtml(htmlParagraphs)
 
         val html = viewModel.getHtml()
 
@@ -292,12 +305,12 @@ internal class EditorViewModelTest {
     }
 
     @Test
-    fun `given formatted text, getPlainText returns plain text`() {
-        composer.givenCurrentDomState(htmlParagraphs)
+    fun `given markdown text, getMarkdown function returns markdown`() {
+        composer.givenGetContentAsMarkdown(markdownParagraphs)
 
-        val plainText = viewModel.getPlainText()
+        val html = viewModel.getMarkdown()
 
-        assertThat(plainText, equalTo(plainTextParagraphs))
+        assertThat(html, equalTo(markdownParagraphs))
     }
 
     @Test

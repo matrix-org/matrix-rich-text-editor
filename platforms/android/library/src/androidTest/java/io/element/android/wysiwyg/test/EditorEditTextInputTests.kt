@@ -15,6 +15,7 @@ import androidx.test.espresso.accessibility.AccessibilityChecks
 import androidx.test.espresso.action.ViewActions.*
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.BoundedDiagnosingMatcher
+import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
@@ -26,6 +27,7 @@ import io.element.android.wysiwyg.test.utils.*
 import io.mockk.confirmVerified
 import io.mockk.spyk
 import io.mockk.verify
+import org.hamcrest.CoreMatchers
 import org.hamcrest.Description
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
@@ -33,7 +35,6 @@ import org.junit.*
 import org.junit.runner.RunWith
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
-import uniffi.wysiwyg_composer.MenuState
 
 @RunWith(AndroidJUnit4::class)
 class EditorEditTextInputTests {
@@ -316,28 +317,6 @@ class EditorEditTextInputTests {
     }
 
     @Test
-    fun testSetPlainText_ignoresHtml() {
-        scenarioRule.scenario.onActivity {
-            it.findViewById<EditorEditText>(R.id.rich_text_edit_text)
-                .setPlainText("<b>$ipsum</b>")
-        }
-        onView(withId(R.id.rich_text_edit_text))
-            .check(matches(withText("<b>$ipsum</b>")))
-    }
-
-    @Test
-    fun testGetPlainText_stripsHtml() {
-        scenarioRule.scenario.onActivity {
-            val editText = it.findViewById<EditorEditText>(R.id.rich_text_edit_text)
-            editText.setHtml("<b>$ipsum</b>")
-
-            val plainText = editText.getPlainText()
-
-            assertThat(plainText, equalTo(ipsum))
-        }
-    }
-
-    @Test
     fun testTextWatcher() {
         val textWatcher = spyk<(text: Editable?) -> Unit>({ })
         onView(withId(R.id.rich_text_edit_text))
@@ -360,6 +339,40 @@ class EditorEditTextInputTests {
             textWatcher.invoke(match { it.toString() == "" })
         }
         confirmVerified(textWatcher)
+    }
+
+    @Test
+    fun getMarkdownTranslatesDomToMarkdown() {
+        scenarioRule.scenario.onActivity { activity ->
+            val editor = activity.findViewById<EditorEditText>(R.id.rich_text_edit_text)
+            editor.setHtml("<b>Test</b>")
+            val markdown = editor.getMarkdown()
+            ViewMatchers.assertThat(markdown, CoreMatchers.equalTo("__Test__"))
+        }
+    }
+
+    @Test
+    fun setMarkdownCanParseProperMarkdownIntoDom() {
+        scenarioRule.scenario.onActivity { activity ->
+            val editor = activity.findViewById<EditorEditText>(R.id.rich_text_edit_text)
+            editor.setMarkdown("__Test__")
+            ViewMatchers.assertThat(
+                editor.getHtmlOutput(),
+                CoreMatchers.equalTo("<strong>Test</strong>")
+            )
+            editor.setMarkdown("**Test**")
+            ViewMatchers.assertThat(
+                editor.getHtmlOutput(),
+                CoreMatchers.equalTo("<strong>Test</strong>")
+            )
+            editor.setMarkdown("**Test*")
+            ViewMatchers.assertThat(editor.getHtmlOutput(), CoreMatchers.equalTo("*<em>Test</em>"))
+            editor.setMarkdown("<u>*Test*</u>")
+            ViewMatchers.assertThat(
+                editor.getHtmlOutput(),
+                CoreMatchers.equalTo("<u><em>Test</em></u>")
+            )
+        }
     }
 }
 
