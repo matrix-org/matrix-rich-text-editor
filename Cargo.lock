@@ -1033,8 +1033,6 @@ dependencies = [
 name = "uniffi-wysiwyg-composer"
 version = "0.6.0"
 dependencies = [
- "strum",
- "strum_macros",
  "uniffi",
  "uniffi_build",
  "uniffi_macros",
@@ -1331,6 +1329,8 @@ dependencies = [
  "once_cell",
  "pulldown-cmark",
  "speculoos",
+ "strum",
+ "strum_macros",
  "unicode-segmentation",
  "wasm-bindgen",
  "wasm-bindgen-test",
@@ -1344,8 +1344,6 @@ version = "0.6.0"
 dependencies = [
  "console_error_panic_hook",
  "js-sys",
- "strum",
- "strum_macros",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "widestring",

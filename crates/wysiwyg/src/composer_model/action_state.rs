@@ -12,16 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{composer_model::action_state::ActionState, ComposerAction};
-use std::collections::HashMap;
+use strum_macros::AsRefStr;
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum MenuState {
-    Keep,
-    Update(MenuStateUpdate),
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct MenuStateUpdate {
-    pub action_states: HashMap<ComposerAction, ActionState>,
+#[derive(AsRefStr, Clone, Debug, PartialEq)]
+pub enum ActionState {
+    Enabled,
+    Reversed,
+    Disabled,
 }

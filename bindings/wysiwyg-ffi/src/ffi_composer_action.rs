@@ -1,6 +1,4 @@
-use strum_macros::{AsRefStr, EnumIter};
-
-#[derive(AsRefStr, Clone, Copy, Debug, EnumIter, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ComposerAction {
     Bold,
     Italic,
@@ -31,6 +29,25 @@ impl From<&ComposerAction> for wysiwyg::ComposerAction {
             ComposerAction::UnorderedList => Self::UnorderedList,
             ComposerAction::Indent => Self::Indent,
             ComposerAction::UnIndent => Self::UnIndent,
+        }
+    }
+}
+
+impl From<&wysiwyg::ComposerAction> for ComposerAction {
+    fn from(action: &wysiwyg::ComposerAction) -> Self {
+        match action {
+            wysiwyg::ComposerAction::Bold => Self::Bold,
+            wysiwyg::ComposerAction::Italic => Self::Italic,
+            wysiwyg::ComposerAction::StrikeThrough => Self::StrikeThrough,
+            wysiwyg::ComposerAction::Underline => Self::Underline,
+            wysiwyg::ComposerAction::InlineCode => Self::InlineCode,
+            wysiwyg::ComposerAction::Link => Self::Link,
+            wysiwyg::ComposerAction::Undo => Self::Undo,
+            wysiwyg::ComposerAction::Redo => Self::Redo,
+            wysiwyg::ComposerAction::OrderedList => Self::OrderedList,
+            wysiwyg::ComposerAction::UnorderedList => Self::UnorderedList,
+            wysiwyg::ComposerAction::Indent => Self::Indent,
+            wysiwyg::ComposerAction::UnIndent => Self::UnIndent,
         }
     }
 }

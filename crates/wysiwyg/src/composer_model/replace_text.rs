@@ -344,9 +344,10 @@ where
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashSet;
+    use std::collections::HashMap;
     use widestring::Utf16String;
 
+    use crate::composer_model::action_state::ActionState;
     use crate::menu_state::MenuStateUpdate;
     use crate::tests::testutils_composer_model::cm;
     use crate::tests::testutils_conversion::utf16;
@@ -363,15 +364,26 @@ mod test {
                 Location::from(1),
                 Location::from(1),
                 MenuState::Update(MenuStateUpdate {
-                    reversed_actions: HashSet::new(),
-                    disabled_actions: [
-                        ComposerAction::Indent,
-                        ComposerAction::UnIndent,
-                        ComposerAction::Redo
-                    ]
-                    .into()
+                    action_states: indent_unindent_redo_disabled()
                 }),
             )
         );
+    }
+
+    fn indent_unindent_redo_disabled() -> HashMap<ComposerAction, ActionState> {
+        HashMap::from([
+            (ComposerAction::Bold, ActionState::Enabled),
+            (ComposerAction::Italic, ActionState::Enabled),
+            (ComposerAction::StrikeThrough, ActionState::Enabled),
+            (ComposerAction::Underline, ActionState::Enabled),
+            (ComposerAction::InlineCode, ActionState::Enabled),
+            (ComposerAction::Link, ActionState::Enabled),
+            (ComposerAction::Undo, ActionState::Enabled),
+            (ComposerAction::Redo, ActionState::Disabled),
+            (ComposerAction::OrderedList, ActionState::Enabled),
+            (ComposerAction::UnorderedList, ActionState::Enabled),
+            (ComposerAction::Indent, ActionState::Disabled),
+            (ComposerAction::UnIndent, ActionState::Disabled),
+        ])
     }
 }

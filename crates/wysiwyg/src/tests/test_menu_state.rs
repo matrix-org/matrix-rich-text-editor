@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::collections::HashSet;
-
 use widestring::Utf16String;
 
 use crate::tests::testutils_composer_model::cm;
@@ -25,60 +23,43 @@ use crate::{ComposerAction, ComposerModel, Location};
 fn creating_and_deleting_lists_updates_reversed_actions() {
     let mut model = cm("|");
     model.ordered_list();
-    assert_eq!(
-        model.reversed_actions,
-        HashSet::from([ComposerAction::OrderedList])
-    );
+    assert!(model.action_is_reversed(ComposerAction::OrderedList));
+    assert!(model.action_is_enabled(ComposerAction::UnorderedList));
     model.unordered_list();
-    assert_eq!(
-        model.reversed_actions,
-        HashSet::from([ComposerAction::UnorderedList])
-    );
+    assert!(model.action_is_enabled(ComposerAction::OrderedList));
+    assert!(model.action_is_reversed(ComposerAction::UnorderedList));
     model.backspace();
-    assert_eq!(model.reversed_actions, HashSet::new());
+    assert!(model.action_is_enabled(ComposerAction::OrderedList));
+    assert!(model.action_is_enabled(ComposerAction::UnorderedList));
 }
 
 #[test]
 fn selecting_nested_nodes_updates_reversed_actions() {
     let model = cm("<ul><li><b><i>{ab}|</i></b></li></ul>");
-    assert_eq!(
-        model.reversed_actions,
-        HashSet::from([
-            ComposerAction::UnorderedList,
-            ComposerAction::Bold,
-            ComposerAction::Italic,
-        ]),
-    );
+    assert!(model.action_is_enabled(ComposerAction::OrderedList));
+
+    assert!(model.action_is_reversed(ComposerAction::UnorderedList));
+    assert!(model.action_is_reversed(ComposerAction::Bold));
+    assert!(model.action_is_reversed(ComposerAction::Italic));
 }
 
 #[test]
 fn selecting_multiple_nodes_updates_reversed_actions() {
     let model = cm("<ol><li>{ab</li><li><b>cd</b>}|</li></ol>");
-    assert_eq!(
-        model.reversed_actions,
-        HashSet::from([ComposerAction::OrderedList])
-    );
+    assert!(model.action_is_reversed(ComposerAction::OrderedList));
     let model = cm("<ol><li>{ab</li></ol>cd}|");
-    assert_eq!(model.reversed_actions, HashSet::new());
+    assert!(model.action_is_enabled(ComposerAction::OrderedList));
 
     let mut model = cm("<a href=\"https://matrix.org\">{link}|</a>ab");
-    assert_eq!(
-        model.reversed_actions,
-        HashSet::from([ComposerAction::Link])
-    );
+    assert!(model.action_is_reversed(ComposerAction::Link));
     model.select(Location::from(2), Location::from(6));
-    assert_eq!(model.reversed_actions, HashSet::new());
+    assert!(model.action_is_enabled(ComposerAction::Link));
 
     let mut model = cm("<del>{ab<em>cd}|</em></del>");
-    assert_eq!(
-        model.reversed_actions,
-        HashSet::from([ComposerAction::StrikeThrough]),
-    );
+    assert!(model.action_is_reversed(ComposerAction::StrikeThrough));
     model.select(Location::from(2), Location::from(4));
-    assert_eq!(
-        model.reversed_actions,
-        HashSet::from([ComposerAction::Italic, ComposerAction::StrikeThrough,]),
-    )
+    assert!(model.action_is_reversed(ComposerAction::Italic));
+    assert!(model.action_is_reversed(ComposerAction::StrikeThrough));
 }
 
 #[test]
@@ -87,63 +68,44 @@ fn formatting_updates_reversed_actions() {
     model.bold();
     model.italic();
     model.underline();
-    assert_eq!(
-        model.reversed_actions,
-        HashSet::from([
-            ComposerAction::Bold,
-            ComposerAction::Italic,
-            ComposerAction::Underline,
-        ]),
-    )
+    assert!(model.action_is_reversed(ComposerAction::Bold));
+    assert!(model.action_is_reversed(ComposerAction::Italic));
+    assert!(model.action_is_reversed(ComposerAction::Underline));
 }
 
 #[test]
 fn updating_model_updates_disabled_actions() {
     let mut model = cm("|");
-    assert_eq!(
-        model.disabled_actions,
-        HashSet::from([
-            ComposerAction::Undo,
-            ComposerAction::Redo,
-            ComposerAction::Indent,
-            ComposerAction::UnIndent
-        ]),
-    );
+    assert!(model.action_is_enabled(ComposerAction::Bold));
+    assert!(model.action_is_enabled(ComposerAction::Italic));
+    assert!(model.action_is_enabled(ComposerAction::StrikeThrough));
+    assert!(model.action_is_enabled(ComposerAction::Underline));
+    assert!(model.action_is_enabled(ComposerAction::InlineCode));
+    assert!(model.action_is_enabled(ComposerAction::Link));
+    assert!(model.action_is_enabled(ComposerAction::OrderedList));
+    assert!(model.action_is_enabled(ComposerAction::UnorderedList));
+    assert!(model.action_is_disabled(ComposerAction::Undo));
+    assert!(model.action_is_disabled(ComposerAction::Redo));
+    assert!(model.action_is_disabled(ComposerAction::Indent));
+    assert!(model.action_is_disabled(ComposerAction::UnIndent));
+
     replace_text(&mut model, "a");
     model.select(Location::from(0), Location::from(1));
     model.bold();
-    assert_eq!(
-        model.disabled_actions,
-        HashSet::from([
-            ComposerAction::Redo,
-            ComposerAction::Indent,
-            ComposerAction::UnIndent
-        ])
-    );
+    assert!(model.action_is_disabled(ComposerAction::Redo));
+    assert!(model.action_is_disabled(ComposerAction::Indent));
+    assert!(model.action_is_disabled(ComposerAction::UnIndent));
+    assert!(model.action_is_enabled(ComposerAction::StrikeThrough));
+
     model.undo();
-    assert_eq!(
-        model.disabled_actions,
-        HashSet::from([ComposerAction::Indent, ComposerAction::UnIndent])
-    );
+    assert!(model.action_is_enabled(ComposerAction::Redo));
+
     model.redo();
-    assert_eq!(
-        model.disabled_actions,
-        HashSet::from([
-            ComposerAction::Redo,
-            ComposerAction::Indent,
-            ComposerAction::UnIndent
-        ])
-    );
+    assert!(model.action_is_disabled(ComposerAction::Redo));
+
     model.undo();
     model.undo();
-    assert_eq!(
-        model.disabled_actions,
-        HashSet::from([
-            ComposerAction::Undo,
-            ComposerAction::Indent,
-            ComposerAction::UnIndent
-        ])
-    );
+    assert!(model.action_is_disabled(ComposerAction::Undo));
 }
 
 #[test]
@@ -151,10 +113,9 @@ fn formatting_zero_length_selection_updates_reversed_actions() {
     let mut model = cm("<strong><em>aaa|bbb</em></strong>");
     model.bold();
     model.underline();
-    assert_eq!(
-        model.reversed_actions,
-        HashSet::from([ComposerAction::Italic, ComposerAction::Underline,]),
-    );
+    assert!(model.action_is_reversed(ComposerAction::Italic));
+    assert!(model.action_is_reversed(ComposerAction::Underline));
+    assert!(model.action_is_enabled(ComposerAction::Bold));
 }
 
 #[test]
@@ -163,55 +124,44 @@ fn selecting_restores_reversed_actions() {
     model.bold();
     model.underline();
     model.select(Location::from(2), Location::from(2));
-    assert_eq!(
-        model.reversed_actions,
-        HashSet::from([ComposerAction::Bold, ComposerAction::Italic,]),
-    );
+    assert!(model.action_is_reversed(ComposerAction::Italic));
+    assert!(model.action_is_reversed(ComposerAction::Bold));
+    assert!(model.action_is_enabled(ComposerAction::StrikeThrough));
 }
 
 #[test]
 fn test_menu_updates_indent() {
     let model = cm("<ul><li>First item</li><li>{Second item}|</li></ul>");
-    assert_eq!(
-        model.disabled_actions,
-        HashSet::from([
-            ComposerAction::UnIndent,
-            ComposerAction::Undo,
-            ComposerAction::Redo
-        ])
-    );
+    assert!(model.action_is_disabled(ComposerAction::Redo));
+    assert!(model.action_is_disabled(ComposerAction::Undo));
+    assert!(model.action_is_disabled(ComposerAction::UnIndent));
+    assert!(model.action_is_enabled(ComposerAction::StrikeThrough));
 }
 
 #[test]
 fn test_menu_updates_unindent() {
     let model =
         cm("<ul><li>First item<ul><li>{Second item}|</li></ul></li></ul>");
-    assert_eq!(
-        model.disabled_actions,
-        HashSet::from([
-            ComposerAction::Indent,
-            ComposerAction::Undo,
-            ComposerAction::Redo
-        ])
-    );
+    assert!(model.action_is_disabled(ComposerAction::Redo));
+    assert!(model.action_is_disabled(ComposerAction::Undo));
+    assert!(model.action_is_disabled(ComposerAction::Indent));
+    assert!(model.action_is_enabled(ComposerAction::StrikeThrough));
 }
 
 #[test]
 fn selecting_line_break_inside_formatting_node_reversed_actions() {
     let model = cm("<strong><em>aaa<br />{<br />}|bbb</em></strong>");
-    assert_eq!(
-        model.reversed_actions,
-        HashSet::from([ComposerAction::Bold, ComposerAction::Italic,])
-    );
+    assert!(model.action_is_reversed(ComposerAction::Bold));
+    assert!(model.action_is_reversed(ComposerAction::Italic));
+    assert!(model.action_is_enabled(ComposerAction::StrikeThrough));
 }
 
 #[test]
 fn selecting_after_a_line_break_inside_formatting_nodes_reversed_actions() {
     let model = cm("<strong><em>aaa<br /><br />|bbb</em></strong>");
-    assert_eq!(
-        model.reversed_actions,
-        HashSet::from([ComposerAction::Bold, ComposerAction::Italic,])
-    );
+    assert!(model.action_is_reversed(ComposerAction::Bold));
+    assert!(model.action_is_reversed(ComposerAction::Italic));
+    assert!(model.action_is_enabled(ComposerAction::StrikeThrough));
 }
 
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {

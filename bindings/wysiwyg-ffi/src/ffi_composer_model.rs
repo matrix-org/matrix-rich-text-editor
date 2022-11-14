@@ -5,7 +5,7 @@ use widestring::Utf16String;
 
 use crate::ffi_composer_state::ComposerState;
 use crate::ffi_composer_update::ComposerUpdate;
-use crate::ffi_menu_state::build_composer_action_states;
+use crate::into_ffi::IntoFfi;
 use crate::{ActionState, ComposerAction};
 
 pub struct ComposerModel {
@@ -203,7 +203,6 @@ impl ComposerModel {
     pub fn action_states(
         self: &Arc<Self>,
     ) -> HashMap<ComposerAction, ActionState> {
-        let inner = self.inner.lock().unwrap();
-        build_composer_action_states(&inner)
+        self.inner.lock().unwrap().action_states().into_ffi()
     }
 }

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use strum::IntoEnumIterator;
+
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind};
 use crate::dom::{DomLocation, Range};
 use crate::menu_state::MenuStateUpdate;
@@ -20,7 +22,9 @@ use crate::{
     ComposerAction, ComposerModel, DomHandle, DomNode, InlineFormatType,
     ListType, MenuState, UnicodeString,
 };
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
+
+use super::action_state::ActionState;
 
 pub(crate) enum MenuStateComputeType {
     AlwaysUpdate,
@@ -37,27 +41,44 @@ where
     ) -> MenuState {
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
-        let reversed_actions: HashSet<ComposerAction> =
-            self.compute_reversed_actions_from_range(&range);
-        let disabled_actions = self.compute_disabled_actions();
 
-        if reversed_actions == self.reversed_actions
-            && disabled_actions == self.disabled_actions
+        let action_states = self.compute_action_states(&range);
+
+        if action_states == self.action_states
             && matches!(compute_type, MenuStateComputeType::KeepIfUnchanged)
         {
             MenuState::Keep
         } else {
-            self.reversed_actions = reversed_actions;
-            self.disabled_actions = disabled_actions;
-            MenuState::Update(MenuStateUpdate {
-                reversed_actions: self.reversed_actions.clone(),
-                disabled_actions: self.disabled_actions.clone(),
-            })
+            self.action_states = action_states.clone();
+            MenuState::Update(MenuStateUpdate { action_states })
         }
     }
 
+    fn compute_action_states(
+        &self,
+        range: &Range,
+    ) -> HashMap<ComposerAction, ActionState> {
+        let mut action_states = HashMap::new();
+
+        let reversed = self.compute_reversed_actions_from_range(range);
+        let disabled = self.compute_disabled_actions();
+
+        for action in ComposerAction::iter() {
+            let state = if disabled.contains(&action) {
+                ActionState::Disabled
+            } else if reversed.contains(&action) {
+                ActionState::Reversed
+            } else {
+                ActionState::Enabled
+            };
+            action_states.insert(action, state);
+        }
+
+        action_states
+    }
+
     fn compute_reversed_actions_from_range(
-        &mut self,
+        &self,
         range: &Range,
     ) -> HashSet<ComposerAction> {
         let toggled_format_actions = self
