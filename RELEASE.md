@@ -19,35 +19,40 @@ so the NPM packaging can find it.
 
 ## 3. Set the version number
 
-Currently this is manual:
+To change the current version, run the script:
 
-* Edit platforms/web/package.json
-* Edit bindings/wysiwyg-ffi/Cargo.toml
-* Edit bindings/wysiwyg-wasm/Cargo.toml
-* Edit crates/wysiwyg/Cargo.toml
-* Edit bindings/wysiwyg-wasm/package.json
-* Edit platforms/android/gradle.properties
+```shell
+./update-version.sh VERSION_NUMBER
+```
+
+This will change the version number across the Rust, Web and Android projects.
+
+Then:
 * `make web` to update .lock files
 * (For iOS the release script uses the git tag, so nothing to do I think.)
-* `git checkout -b version-0.1.0`
-* `git commit -a -m "Version 0.1.0"`
-* `git tag 0.1.0 && git push --tags`
-* Now push your branch and make a PR, and get it merged.
+* `git checkout -b version-X.Y.Z`
+* `git commit -a -m "Version X.Y.Z"`
+* `git push -u origin version-X.Y.Z`
 
-TODO: make a script that sets the git tag and pushes it, and updates the
-various files containing the version number. And checks that the changelog
-entry has been created.
+Get the PR reviewed and merged to `main`.
+
+* `git tag X.Y.Z`
+* Now push your tag to the repo `git push X.Y.Z`.
+
+TODO: automate tag creation when the `version-X.Y.Z` branch is merged.
 
 ## 4. Create the packages
 
 ### Web
-Manually launch the
+
+This should be done automatically when a tag is uploaded, but you can also manually launch the
 [github action](https://github.com/matrix-org/matrix-wysiwyg/actions/workflows/publish.yml)
 which will package the code and upload it to NPM. It uses the version number
 it finds in package.json, which you updated above.
 
 ### Android
-Currently this must be done manually from a local development environment.
+
+This should be done automatically when a tag is uploaded, but it can also be done manually from a local development environment.
 
 1. Copy the GPG secret keyring file to your machine
 2. Add the following Maven credentials to `~/.gradle/gradle.properties`

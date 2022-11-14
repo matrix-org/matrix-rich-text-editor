@@ -24,18 +24,23 @@ struct ContentView: View {
     @State private var sentMessage: WysiwygComposerContent?
     @State private var tree: String?
     /// View model for the composer.
-    @StateObject private var viewModel = WysiwygComposerViewModel()
+    @StateObject private var viewModel = WysiwygComposerViewModel(
+        minHeight: WysiwygSharedConstants.composerMinHeight,
+        maxExpandedHeight: WysiwygSharedConstants.composerMaxExtendedHeight
+    )
 
     var body: some View {
         Spacer()
             .frame(width: nil, height: 50, alignment: .center)
         Composer(viewModel: viewModel)
-        Button("Max/Min") {
+        Button("Min/Max") {
             viewModel.maximised.toggle()
         }
+        .accessibilityIdentifier(.minMaxButton)
         Button("Plain/Rich") {
             viewModel.plainTextMode.toggle()
         }
+        .accessibilityIdentifier(.plainRichButton)
         Button("Send") {
             sentMessage = viewModel.content
             viewModel.clearContent()
