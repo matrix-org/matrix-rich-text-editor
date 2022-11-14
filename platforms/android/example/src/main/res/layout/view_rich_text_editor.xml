@@ -1,32 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.textfield.TextInputLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:hint="Rich text editor"
     android:orientation="vertical">
 
-    <io.element.android.wysiwyg.EditorEditText
-        android:id="@+id/editText"
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/richTextInputLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="top"
-        android:inputType="textMultiLine"
-        android:minHeight="48dp"
-        android:background="?colorSurface"
-        android:singleLine="false" />
+        android:hint="Rich text editor">
+
+        <io.element.android.wysiwyg.EditorEditText
+            android:id="@+id/richTextEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="top"
+            android:inputType="textMultiLine"
+            android:minHeight="48dp"
+            android:background="?colorSurface"
+            android:singleLine="false" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/markdownInputLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Markdown"
+        android:visibility="gone">
+
+        <EditText
+            android:id="@+id/markdownEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="top"
+            android:inputType="textMultiLine"
+            android:minHeight="48dp"
+            android:background="?colorSurface"
+            android:singleLine="false" />
+    </com.google.android.material.textfield.TextInputLayout>
 
     <LinearLayout
         android:id="@+id/menu"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:background="?colorSurface"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:gravity="bottom">
 
         <HorizontalScrollView
+            android:id="@+id/menuFormattingGroup"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:clipToPadding="false"
             android:paddingHorizontal="10dp">
 
@@ -151,8 +179,17 @@
                 android:src="@drawable/ic_redo"
                 app:tint="@drawable/editor_menu_text_selector" />
 
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/formattingSwitch"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Formatting"
+                android:gravity="end|center_vertical"
+                app:switchPadding="10dp" />
+
         </LinearLayout>
 
     </LinearLayout>
 
-</com.google.android.material.textfield.TextInputLayout>
+</LinearLayout>

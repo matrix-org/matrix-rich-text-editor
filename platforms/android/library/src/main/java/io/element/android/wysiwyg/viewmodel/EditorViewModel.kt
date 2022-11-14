@@ -67,6 +67,7 @@ internal class EditorViewModel(
                 is EditorInputAction.Delete -> composer?.delete()
                 is EditorInputAction.SetLink -> composer?.setLink(action.link)
                 is EditorInputAction.ReplaceAllHtml -> composer?.setContentFromHtml(action.html)
+                is EditorInputAction.ReplaceAllMarkdown -> composer?.setContentFromMarkdown(action.markdown)
                 is EditorInputAction.Undo -> composer?.undo()
                 is EditorInputAction.Redo -> composer?.redo()
                 is EditorInputAction.ToggleList ->
@@ -96,11 +97,11 @@ internal class EditorViewModel(
     }
 
     fun getHtml(): String {
-        return composer?.getCurrentDomState()?.html?.string().orEmpty()
+        return composer?.getContentAsHtml().orEmpty()
     }
 
-    fun getPlainText(): String =
-        htmlConverter.fromHtmlToPlainText(getHtml())
+    fun getMarkdown(): String =
+        composer?.getContentAsMarkdown().orEmpty()
 
     fun getCurrentFormattedText(): CharSequence {
         return stringToSpans(getHtml())

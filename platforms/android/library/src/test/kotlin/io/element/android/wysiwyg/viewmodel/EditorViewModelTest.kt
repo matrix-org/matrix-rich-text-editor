@@ -231,6 +231,19 @@ internal class EditorViewModelTest {
     }
 
     @Test
+    fun `when process replace all markdown action, it returns a text update`() {
+        composer.givenReplaceAllMarkdownResult("new **markdown**", composerStateUpdate)
+
+        val result = viewModel.processInput(EditorInputAction.ReplaceAllMarkdown("new **markdown**"))
+
+        verify {
+            composer.instance.setContentFromMarkdown("new **markdown**")
+            actionsStatesCallback(actionStates)
+        }
+        assertThat(result, equalTo(replaceTextResult))
+    }
+
+    @Test
     fun `when process undo action, it returns a text update`() {
         composer.givenUndoResult(composerStateUpdate)
 
@@ -295,7 +308,7 @@ internal class EditorViewModelTest {
     fun `given formatted text, getPlainText returns plain text`() {
         composer.givenCurrentDomState(htmlParagraphs)
 
-        val plainText = viewModel.getPlainText()
+        val plainText = viewModel.getMarkdown()
 
         assertThat(plainText, equalTo(plainTextParagraphs))
     }

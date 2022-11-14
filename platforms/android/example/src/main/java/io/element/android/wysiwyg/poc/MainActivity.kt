@@ -25,12 +25,12 @@ class MainActivity : AppCompatActivity() {
                     .setTitle("Set a link to:")
                     .setView(dialogBinding.root)
                     .setPositiveButton("OK") { _, _ ->
-                        callback(dialogBinding.editText.text.toString())
+                        callback(dialogBinding.richTextEditText.text.toString())
                     }
                     .setNegativeButton("Cancel", null)
                     .show()
 
-                dialogBinding.editText.performClick()
+                dialogBinding.richTextEditText.performClick()
             }
         }
     }

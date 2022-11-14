@@ -75,6 +75,11 @@ class MockComposer {
         update: ComposerUpdate = MockComposerUpdateFactory.create(),
     ) = every { instance.setContentFromHtml(html = html) } returns update
 
+    fun givenReplaceAllMarkdownResult(
+        markdown: String,
+        update: ComposerUpdate = MockComposerUpdateFactory.create(),
+    ) = every { instance.setContentFromMarkdown(markdown = markdown) } returns update
+
     fun givenUndoResult(
         update: ComposerUpdate = MockComposerUpdateFactory.create(),
     ) = every { instance.undo() } returns update

@@ -5,14 +5,16 @@ import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
-import com.google.android.material.textfield.TextInputLayout
+import android.widget.LinearLayout
+import androidx.core.view.isGone
+import androidx.core.view.isVisible
 import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.poc.databinding.ViewRichTextEditorBinding
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
 
-class RichTextEditor : TextInputLayout {
+class RichTextEditor : LinearLayout {
 
     private val binding = ViewRichTextEditorBinding.inflate(LayoutInflater.from(context), this, true)
 
@@ -29,40 +31,55 @@ class RichTextEditor : TextInputLayout {
         super.onAttachedToWindow()
 
         with (binding) {
+            formattingSwitch.apply {
+                isChecked = true
+                setOnCheckedChangeListener { _, isChecked ->
+                    if (isChecked) {
+                        val markdown = binding.markdownEditText.text.toString()
+                        binding.richTextEditText.setMarkdown(markdown)
+                    } else {
+                        val markdown = binding.richTextEditText.getMarkdown()
+                        binding.markdownEditText.setText(markdown)
+                    }
+                    binding.menuFormattingGroup.isVisible = isChecked
+                    binding.richTextInputLayout.isVisible = isChecked
+                    binding.markdownInputLayout.isGone = isChecked
+                }
+            }
             formatBoldButton.setOnClickListener {
-                editText.toggleInlineFormat(InlineFormat.Bold)
+                richTextEditText.toggleInlineFormat(InlineFormat.Bold)
             }
             formatItalicButton.setOnClickListener {
-                editText.toggleInlineFormat(InlineFormat.Italic)
+                richTextEditText.toggleInlineFormat(InlineFormat.Italic)
             }
             formatUnderlineButton.setOnClickListener {
-                editText.toggleInlineFormat(InlineFormat.Underline)
+                richTextEditText.toggleInlineFormat(InlineFormat.Underline)
             }
             formatStrikeThroughButton.setOnClickListener {
-                editText.toggleInlineFormat(InlineFormat.StrikeThrough)
+                richTextEditText.toggleInlineFormat(InlineFormat.StrikeThrough)
             }
             formatInlineCodeButton.setOnClickListener {
-                editText.toggleInlineFormat(InlineFormat.InlineCode)
+                richTextEditText.toggleInlineFormat(InlineFormat.InlineCode)
             }
             addLinkButton.setOnClickListener {
                 onSetLinkListener?.openLinkDialog(null) { link ->
-                    editText.setLink(link)
+                    richTextEditText.setLink(link)
                 }
             }
             undoButton.setOnClickListener {
-                editText.undo()
+                richTextEditText.undo()
             }
             redoButton.setOnClickListener {
-                editText.redo()
+                richTextEditText.redo()
             }
             orderedListButton.setOnClickListener {
-                editText.toggleList(true)
+                richTextEditText.toggleList(true)
             }
             unorderedListButton.setOnClickListener {
-                editText.toggleList(false)
+                richTextEditText.toggleList(false)
             }
 
-            editText.actionStatesChangedListener = EditorEditText.OnActionStatesChangedListener { actionStates ->
+            richTextEditText.actionStatesChangedListener = EditorEditText.OnActionStatesChangedListener { actionStates ->
                 updateActionStates(actionStates)
             }
         }
@@ -94,7 +111,7 @@ class RichTextEditor : TextInputLayout {
     }
 
     override fun requestFocus(direction: Int, previouslyFocusedRect: Rect?): Boolean {
-        return binding.editText.requestFocus(direction, previouslyFocusedRect)
+        return binding.richTextEditText.requestFocus(direction, previouslyFocusedRect)
     }
 
 }

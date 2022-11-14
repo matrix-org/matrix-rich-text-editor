@@ -276,19 +276,18 @@ class EditorEditText : TextInputEditText {
     }
 
     /**
-     * Get the text as plain text (without any HTML formatting).
-     * Note that markdown is not currently supported.
-     * TODO: Return markdown formatted plain text
+     * Get the text as markdown.
      */
-    fun getPlainText(): String = viewModel.getPlainText()
+    fun getMarkdown(): String = viewModel.getMarkdown()
 
     /**
-     * Set the text as plain text, ignoring HTML formatting.
-     * Note that markdown is not currently supported.
-     * TODO: Accept markdown formatted plain text
+     * Set the text as markdown, it will be turned into to HTML internally.
      */
-    fun setPlainText(plainText: String) =
-        setText(plainText)
+    fun setMarkdown(markdown: String) {
+        val result = viewModel.processInput(EditorInputAction.ReplaceAllMarkdown(markdown)) ?: return
+        setTextFromComposerUpdate(result)
+        setSelectionFromComposerUpdate(result.selection.last)
+    }
 
     private fun setTextFromComposerUpdate(result: ReplaceTextResult) {
         beginBatchEdit()
