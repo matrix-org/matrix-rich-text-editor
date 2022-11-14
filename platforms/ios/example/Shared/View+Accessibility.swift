@@ -19,6 +19,9 @@ import UIKit
 
 /// Defines accessibility identifiers shared between the UIKit and the SwiftUI example apps.
 public enum WysiwygSharedAccessibilityIdentifier: String {
+    // Composer text view needs to be in sync with the value set for the text view in the library
+    // Unfortunately trying to expose it from the lib results in undefined symbols error in a UI Test context.
+    case composerTextView = "WysiwygComposer"
     case boldButton = "WysiwygBoldButton"
     case italicButton = "WysiwygItalicButton"
     case strikeThroughButton = "WysiwygStrikeThroughButton"
@@ -30,6 +33,8 @@ public enum WysiwygSharedAccessibilityIdentifier: String {
     case orderedListButton = "WysiwygOrderedListButton"
     case unorderedListButton = "WysiwygUnorderedListButton"
     case sendButton = "WysiwygSendButton"
+    case minMaxButton = "WysiwygMinMaxButton"
+    case plainRichButton = "WysiwygPlainRichButton"
     case contentText = "WysiwygContentText"
     case htmlContentText = "WysiwygHtmlContentText"
 }
@@ -44,15 +49,5 @@ public extension View {
     func accessibilityIdentifier(_ identifier: WysiwygSharedAccessibilityIdentifier)
         -> ModifiedContent<Self, AccessibilityAttachmentModifier> {
         accessibilityIdentifier(identifier.rawValue)
-    }
-}
-
-public extension UIView {
-    /// Sets up an accessibility identifier to the view from the enum
-    /// of expected accessibilityIdentifiers.
-    ///
-    /// - Parameter identifier: the accessibility identifer to setup
-    func setAccessibilityIdentifier(_ identifier: WysiwygSharedAccessibilityIdentifier) {
-        accessibilityIdentifier = identifier.rawValue
     }
 }
