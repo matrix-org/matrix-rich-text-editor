@@ -127,7 +127,7 @@ class WysiwygUITests: XCTestCase {
             test10
             """
         app.typeTextCharByChar(multilineText)
-        XCUIApplication().keys["delete"].press(forDuration: 10.0)
+        XCUIApplication().keys["delete"].press(forDuration: 15.0)
         assertTextViewContent("")
     }
 
