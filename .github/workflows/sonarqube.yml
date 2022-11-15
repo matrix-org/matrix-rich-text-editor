@@ -10,7 +10,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.workflow_run.head_branch }}
   cancel-in-progress: true
 jobs:
-  sonarqube:
+  sonarqube trigger:
     name: 🩻 SonarQube
     runs-on: ubuntu-latest
     secrets:
