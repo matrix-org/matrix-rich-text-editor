@@ -155,7 +155,8 @@ public extension WysiwygComposerViewModel {
                                   functionName: #function)
         let update = model.apply(action)
         applyUpdate(update)
-        updateTextView()
+        textView?.apply(attributedContent)
+        updateCompressedHeightIfNeeded()
     }
 
     /// Sets given HTML as the current content of the composer.
@@ -165,7 +166,8 @@ public extension WysiwygComposerViewModel {
     func setHtmlContent(_ html: String) {
         let update = model.setContentFromHtml(html: html)
         applyUpdate(update)
-        updateTextView()
+        textView?.apply(attributedContent)
+        updateCompressedHeightIfNeeded()
     }
 
     /// Clear the content of the composer.
@@ -174,7 +176,8 @@ public extension WysiwygComposerViewModel {
             textView.attributedText = NSAttributedString(string: "", attributes: defaultTextAttributes)
         } else {
             applyUpdate(model.clear())
-            updateTextView()
+            textView?.apply(attributedContent)
+            updateCompressedHeightIfNeeded()
         }
     }
 
@@ -225,7 +228,8 @@ public extension WysiwygComposerViewModel {
 
         applyUpdate(update)
         if !shouldAcceptChange {
-            didUpdateText()
+            textView?.apply(attributedContent)
+            updateCompressedHeightIfNeeded()
         }
         return shouldAcceptChange
     }
@@ -256,16 +260,25 @@ public extension WysiwygComposerViewModel {
             if textView.text.isEmpty != isContentEmpty {
                 isContentEmpty = textView.text.isEmpty
             }
-        } else if textView.attributedText != attributedContent.text {
-            if shouldReconciliate {
-                // Reconciliate
-                Logger.viewModel.logDebug(["Reconciliate from \"\(textView.text ?? "")\" to \"\(attributedContent.text)\""],
-                                          functionName: #function)
-                textView.apply(attributedContent)
-            } else {
-                textView.shouldShowPlaceholder = textView.attributedText.length == 0
-            }
+        } else if let replacement = try? StringDiffer.replacement(from: attributedContent.text.string,
+                                                                  to: textView.text ?? "") {
+            // Reconciliate
+
+            // swiftlint:disable:next force_try
+            let rustRange = try! attributedContent.text.htmlRange(from: replacement.0)
+
+            _ = model.replaceTextIn(newText: replacement.1,
+                                    start: UInt32(rustRange.location),
+                                    end: UInt32(rustRange.upperBound))
+
+            Logger.viewModel.logDebug(["Reconciliate from \"\(attributedContent.text.string)\" to \"\(textView.text ?? "")\" with \"\(replacement.1)\""],
+                                      functionName: #function)
+            Logger.viewModel.logDebug(["Reconciliate model markdown: \"\(model.getContentAsMarkdown())\""],
+                                      functionName: #function)
+        } else {
+            textView.shouldShowPlaceholder = textView.attributedText.length == 0
         }
+        // }
 
         updateCompressedHeightIfNeeded()
     }
