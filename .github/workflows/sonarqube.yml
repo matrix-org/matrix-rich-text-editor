@@ -38,7 +38,7 @@ jobs:
           coverage_run_id: ${{ github.event.workflow_run.id }}
           coverage_workflow_name: react-build.yml
           coverage_extract_path: coverage
-          extra_args: ${{ inputs.extra_args }}
+          extra_args: -X
 
       - uses: Sibz/github-status-action@v1
         if: always()
