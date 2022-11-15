@@ -38,7 +38,7 @@ jobs:
     - name: Lint check
       working-directory: platforms/web
       run: yarn lint
-    - name: Test with coverage alpaga
+    - name: Test with coverage
       working-directory: platforms/web
       run: yarn coverage
     - name: Upload Artifact
