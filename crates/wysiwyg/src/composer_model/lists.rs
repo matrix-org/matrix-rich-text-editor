@@ -138,18 +138,14 @@ where
             let parent_list_item_handle =
                 self.state.dom.find_parent_list_item_or_self(handle);
             if let Some(list_item_handle) = parent_list_item_handle {
-                let list_node_handle = list_item_handle.parent_handle();
-                let list_node = self.state.dom.lookup_node(&list_node_handle);
-                if let DomNode::Container(list) = list_node {
-                    if list.is_list_of_type(list_type.clone()) {
-                        self.move_list_item_content_to_list_parent(
-                            &list_item_handle,
-                        )
-                    } else {
-                        self.update_list_type(&list_node_handle, list_type)
-                    }
+                let list = self.state.dom.parent(&list_item_handle);
+                if list.is_list_of_type(list_type.clone()) {
+                    self.move_list_item_content_to_list_parent(
+                        &list_item_handle,
+                    )
                 } else {
-                    panic!("List item is not in a list")
+                    let list_node_handle = list.handle();
+                    self.update_list_type(&list_node_handle, list_type)
                 }
             } else {
                 self.create_list(list_type)
@@ -168,16 +164,10 @@ where
             let list_item_children = list_item.children().clone();
             let list_handle = list_item_handle.parent_handle();
             let list_index_in_parent = list_handle.index_in_parent();
-            let list_parent_handle = list_handle.parent_handle();
-            let list_parent_node =
-                self.state.dom.lookup_node_mut(&list_parent_handle);
-            if let DomNode::Container(list_parent) = list_parent_node {
-                for child in list_item_children.iter().rev() {
-                    list_parent
-                        .insert_child(list_index_in_parent + 1, child.clone());
-                }
-            } else {
-                panic!("List parent node is not a container")
+            let list_parent = self.state.dom.parent_mut(&list_handle);
+            for child in list_item_children.iter().rev() {
+                list_parent
+                    .insert_child(list_index_in_parent + 1, child.clone());
             }
 
             let list_item_index_in_parent = list_item_handle.index_in_parent();
@@ -250,17 +240,8 @@ where
                     if let DomNode::Container(previous) = previous_node {
                         if previous.is_list_of_type(list_type.clone()) {
                             previous.append_child(list_item);
-                            let parent_node_handle = handle.parent_handle();
-                            let parent_node = self
-                                .state
-                                .dom
-                                .lookup_node_mut(&parent_node_handle);
-                            if let DomNode::Container(parent) = parent_node {
-                                parent.remove_child(index_in_parent);
-                            } else {
-                                panic!("Unexpected missing parent container")
-                            }
-
+                            let parent = self.state.dom.parent_mut(handle);
+                            parent.remove_child(index_in_parent);
                             return self.create_update_replace_all();
                         }
                     }
@@ -332,41 +313,27 @@ where
             let list_len = list.to_raw_text().len();
             let li_len = list.children()[li_index].to_raw_text().len();
             if list.children().len() == 1 {
-                let parent_handle = list_handle.parent_handle();
-                let parent_node =
-                    self.state.dom.lookup_node_mut(&parent_handle);
-                if let DomNode::Container(parent) = parent_node {
-                    parent.remove_child(list_handle.index_in_parent());
-                    if parent.children().is_empty() {
-                        parent.append_child(DomNode::new_text(S::default()));
-                    }
-                    let new_location = Location::from(
-                        current_cursor_global_location - list_len,
-                    );
-                    self.state.start = new_location;
-                    self.state.end = new_location;
-                } else {
-                    // TODO: handle list items outside of lists
-                    panic!("List has no parent container")
+                // TODO: handle list items outside of lists
+                let parent = self.state.dom.parent_mut(list_handle);
+                parent.remove_child(list_handle.index_in_parent());
+                if parent.children().is_empty() {
+                    parent.append_child(DomNode::new_text(S::default()));
                 }
+                let new_location =
+                    Location::from(current_cursor_global_location - list_len);
+                self.state.start = new_location;
+                self.state.end = new_location;
             } else {
                 list.remove_child(li_index);
                 if insert_trailing_text_node {
-                    let parent_handle = list_handle.parent_handle();
-                    let parent_node =
-                        self.state.dom.lookup_node_mut(&parent_handle);
-                    if let DomNode::Container(parent) = parent_node {
-                        // TODO: should probably append a paragraph instead
-                        parent
-                            .append_child(DomNode::new_text("\u{200b}".into()));
-                        let new_location = Location::from(
-                            current_cursor_global_location - li_len + 1,
-                        );
-                        self.state.start = new_location;
-                        self.state.end = new_location;
-                    } else {
-                        panic!("Parent node is not a container")
-                    }
+                    let parent = self.state.dom.parent_mut(list_handle);
+                    // TODO: should probably append a paragraph instead
+                    parent.append_child(DomNode::new_text("\u{200b}".into()));
+                    let new_location = Location::from(
+                        current_cursor_global_location - li_len + 1,
+                    );
+                    self.state.start = new_location;
+                    self.state.end = new_location;
                 } else {
                     let new_location =
                         Location::from(current_cursor_global_location - li_len);
@@ -387,19 +354,12 @@ where
     }
 
     pub(crate) fn can_indent_handle(&self, handle: &DomHandle) -> bool {
-        if let DomNode::Container(parent) =
-            self.state.dom.lookup_node(&handle.parent_handle())
-        {
-            let parent = parent;
-
-            // Parent must be a ListItem
-            if parent.is_list_item() {
-                return handle.parent_handle().index_in_parent() > 0;
-            }
+        let parent = self.state.dom.parent(handle);
+        if parent.is_list_item() {
+            handle.parent_handle().index_in_parent() > 0
         } else {
-            panic!("Parent node must be a ContainerNode");
+            false
         }
-        false
     }
 
     pub fn can_unindent(&self, locations: &Vec<DomLocation>) -> bool {
@@ -507,28 +467,17 @@ where
         at_index: usize,
         parent_list_type: &ListType,
     ) {
-        let list_item_handle = handle.parent_handle();
+        let list_item = self.state.dom.parent(handle);
+        let list_item_handle = list_item.handle();
         if list_item_handle.index_in_parent() == 0 {
             panic!("Can't indent first list item node");
         }
-        let removed_list_item = if let DomNode::Container(list_item) =
-            self.state.dom.lookup_node(&list_item_handle)
-        {
-            if !list_item.is_list_item() {
-                panic!("Parent node must be a list item");
-            }
-            if let DomNode::Container(list) = self
-                .state
-                .dom
-                .lookup_node_mut(&list_item_handle.parent_handle())
-            {
-                list.remove_child(list_item_handle.index_in_parent())
-            } else {
-                panic!("ListItem mus have a parent");
-            }
-        } else {
-            panic!("Parent must be a ContainerNode");
-        };
+        if !list_item.is_list_item() {
+            panic!("Parent node must be a list item");
+        }
+        let list = self.state.dom.parent_mut(&list_item_handle);
+        let removed_list_item =
+            list.remove_child(list_item_handle.index_in_parent());
 
         if let DomNode::Container(into_node) =
             self.state.dom.lookup_node_mut(into_handle)
@@ -607,36 +556,28 @@ where
     ) {
         let list_item_handle = handle.parent_handle();
         let mut list_node_to_insert = None;
-        let removed_list_item = if let DomNode::Container(current_parent) = self
-            .state
-            .dom
-            .lookup_node_mut(&list_item_handle.parent_handle())
-        {
-            if current_parent.children().len() > 1 {
-                let mut to_add = Vec::new();
-                let from = list_item_handle.index_in_parent() + 1;
-                for i in (from..current_parent.children().len()).rev() {
-                    to_add.insert(0, current_parent.remove_child(i));
-                }
-                if !to_add.is_empty() {
-                    let list_type =
-                        ListType::from(current_parent.name().to_owned());
-                    list_node_to_insert =
-                        Some(DomNode::new_list(list_type, to_add));
-                }
+        let current_parent = self.state.dom.parent_mut(&list_item_handle);
+        if current_parent.children().len() > 1 {
+            let mut to_add = Vec::new();
+            let from = list_item_handle.index_in_parent() + 1;
+            for i in (from..current_parent.children().len()).rev() {
+                to_add.insert(0, current_parent.remove_child(i));
             }
-            let ret =
-                current_parent.remove_child(list_item_handle.index_in_parent());
-            if current_parent.children().is_empty() {
-                // List is empty, remove list node
-                self.state
-                    .dom
-                    .replace(&list_item_handle.parent_handle(), Vec::new());
+            if !to_add.is_empty() {
+                let list_type =
+                    ListType::from(current_parent.name().to_owned());
+                list_node_to_insert =
+                    Some(DomNode::new_list(list_type, to_add));
             }
-            ret
-        } else {
-            panic!("Handle {:?} has no parent", handle);
-        };
+        }
+        let removed_list_item =
+            current_parent.remove_child(list_item_handle.index_in_parent());
+        if current_parent.children().is_empty() {
+            // List is empty, remove list node
+            self.state
+                .dom
+                .replace(&list_item_handle.parent_handle(), Vec::new());
+        }
 
         if let DomNode::Container(new_list_parent) =
             self.state.dom.lookup_node_mut(into_handle)
