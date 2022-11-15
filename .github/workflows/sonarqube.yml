@@ -1,17 +1,19 @@
 name: SonarQube
 on:
   workflow_run:
-    workflows: [ "React build" ]
+    workflows: 
+      - React build
     types:
       - completed
+  workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.workflow_run.head_branch }}
   cancel-in-progress: true
 jobs:
-  sonarqube test:
-    name: 🩻 SonarQube test
+  sonarqube:
+    name: 🩻 SonarQube
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success'
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       # We create the status here and then update it to success/failure in the `report` stage
       # This provides an easy link to this workflow_run from the PR before Cypress is done.
