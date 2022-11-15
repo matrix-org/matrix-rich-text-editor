@@ -13,8 +13,6 @@ jobs:
   sonarqube:
     name: 🩻 SonarQube
     runs-on: ubuntu-latest
-    secrets:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       # We create the status here and then update it to success/failure in the `report` stage
