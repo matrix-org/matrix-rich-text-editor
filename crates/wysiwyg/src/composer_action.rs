@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#[derive(Debug, Clone, Eq, Hash, PartialEq)]
+use strum_macros::{AsRefStr, EnumIter};
+
+#[derive(AsRefStr, Debug, Clone, EnumIter, Eq, Hash, PartialEq)]
 pub enum ComposerAction {
     Bold,
     Italic,

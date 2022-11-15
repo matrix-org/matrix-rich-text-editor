@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::composer_model::action_state::ActionState;
 use crate::composer_model::menu_state::MenuStateComputeType;
 use crate::composer_state::ComposerState;
 use crate::dom::parser::parse;
@@ -20,7 +21,7 @@ use crate::markdown_html_parser::MarkdownHTMLParser;
 use crate::{
     ComposerAction, ComposerUpdate, Location, ToHtml, ToMarkdown, ToTree,
 };
-use std::collections::HashSet;
+use std::collections::HashMap;
 
 #[derive(Clone)]
 pub struct ComposerModel<S>
@@ -36,8 +37,8 @@ where
     /// States after the current one that may be restored by calling redo()
     pub(crate) next_states: Vec<ComposerState<S>>,
 
-    pub reversed_actions: HashSet<ComposerAction>,
-    pub disabled_actions: HashSet<ComposerAction>,
+    /// The states of the buttons for each action e.g. bold, undo
+    pub(crate) action_states: HashMap<ComposerAction, ActionState>,
 }
 
 impl<S> ComposerModel<S>
@@ -49,8 +50,7 @@ where
             state: ComposerState::new(),
             previous_states: Vec::new(),
             next_states: Vec::new(),
-            reversed_actions: HashSet::new(),
-            disabled_actions: HashSet::new(),
+            action_states: HashMap::new(), // TODO: Calculate state based on ComposerState
         };
         instance.compute_menu_state(MenuStateComputeType::AlwaysUpdate);
         instance
@@ -61,8 +61,7 @@ where
             state,
             previous_states: Vec::new(),
             next_states: Vec::new(),
-            reversed_actions: HashSet::new(),
-            disabled_actions: HashSet::new(),
+            action_states: HashMap::new(), // TODO: Calculate state based on ComposerState
         }
     }
 
@@ -82,8 +81,7 @@ where
             },
             previous_states: Vec::new(),
             next_states: Vec::new(),
-            reversed_actions: HashSet::new(),
-            disabled_actions: HashSet::new(),
+            action_states: HashMap::new(), // TODO: Calculate state based on ComposerState
         };
         model.compute_menu_state(MenuStateComputeType::AlwaysUpdate);
         model
@@ -121,6 +119,24 @@ where
         let html = MarkdownHTMLParser::to_html(markdown);
 
         self.set_content_from_html(&html)
+    }
+
+    pub fn action_states(&self) -> &HashMap<ComposerAction, ActionState> {
+        &self.action_states
+    }
+
+    #[cfg(test)]
+    pub(crate) fn action_is_enabled(&self, action: ComposerAction) -> bool {
+        self.action_states.get(&action) == Some(&ActionState::Enabled)
+    }
+
+    pub(crate) fn action_is_reversed(&self, action: ComposerAction) -> bool {
+        self.action_states.get(&action) == Some(&ActionState::Reversed)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn action_is_disabled(&self, action: ComposerAction) -> bool {
+        self.action_states.get(&action) == Some(&ActionState::Disabled)
     }
 
     pub(crate) fn create_update_replace_all(&mut self) -> ComposerUpdate<S> {
@@ -298,5 +314,17 @@ mod test {
         assert_eq!(*handles[1].raw(), vec![0, 9, 2, 4, 5]);
         assert_eq!(*handles[2].raw(), vec![0, 9, 2]);
         assert_eq!(handles.len(), 3);
+    }
+
+    #[test]
+    fn action_states_are_reported() {
+        let mut model = ComposerModel::new();
+        model.replace_text(Utf16String::from("a"));
+        model.select(Location::from(0), Location::from(1));
+        model.bold();
+
+        assert!(model.action_is_reversed(ComposerAction::Bold));
+        assert!(model.action_is_enabled(ComposerAction::StrikeThrough));
+        assert!(model.action_is_disabled(ComposerAction::Redo));
     }
 }

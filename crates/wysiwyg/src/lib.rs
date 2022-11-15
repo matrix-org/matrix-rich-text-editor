@@ -26,6 +26,7 @@ mod tests;
 mod text_update;
 
 pub use crate::composer_action::ComposerAction;
+pub use crate::composer_model::action_state::ActionState;
 pub use crate::composer_model::ComposerModel;
 pub use crate::composer_state::ComposerState;
 pub use crate::composer_update::ComposerUpdate;

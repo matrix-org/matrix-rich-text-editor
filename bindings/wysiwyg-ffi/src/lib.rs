@@ -21,6 +21,7 @@ mod ffi_composer_state;
 mod ffi_composer_update;
 mod ffi_menu_state;
 mod ffi_text_update;
+mod into_ffi;
 
 use std::sync::Arc;
 

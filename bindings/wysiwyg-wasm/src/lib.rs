@@ -12,10 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, VecDeque};
 
-use strum::IntoEnumIterator;
-use strum_macros::{AsRefStr, EnumIter};
 use wasm_bindgen::prelude::*;
 use widestring::Utf16String;
 
@@ -47,7 +45,6 @@ pub fn new_composer_model_from_html(
 }
 
 #[wasm_bindgen]
-#[derive(AsRefStr)]
 pub enum ActionState {
     /// The button can be clicked, and will perform its normal action
     /// e.g. make something bold
@@ -59,6 +56,20 @@ pub enum ActionState {
 
     /// The button cannot be clicked
     Disabled,
+}
+
+trait IntoFfi {
+    fn into_ffi(self) -> js_sys::Map;
+}
+
+impl IntoFfi for &HashMap<wysiwyg::ComposerAction, wysiwyg::ActionState> {
+    fn into_ffi(self) -> js_sys::Map {
+        let ret = js_sys::Map::new();
+        for (k, v) in self.into_iter() {
+            ret.set(&k.as_ref().into(), &v.as_ref().into());
+        }
+        ret
+    }
 }
 
 #[wasm_bindgen]
@@ -99,7 +110,7 @@ impl ComposerModel {
     }
 
     pub fn action_states(&self) -> js_sys::Map {
-        build_composer_action_states(self).into_map()
+        self.inner.action_states().into_ffi()
     }
 
     pub fn select(
@@ -201,59 +212,6 @@ impl ComposerModel {
 
     pub fn unordered_list(&mut self) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.unordered_list())
-    }
-}
-
-fn build_composer_action_states(
-    model: &ComposerModel,
-) -> HashMap<String, String> {
-    build_action_states(
-        &model.inner.reversed_actions,
-        &model.inner.disabled_actions,
-    )
-}
-
-fn build_action_states(
-    reversed_actions: &HashSet<wysiwyg::ComposerAction>,
-    disabled_actions: &HashSet<wysiwyg::ComposerAction>,
-) -> HashMap<String, String> {
-    ComposerAction::iter()
-        .map(|action_type| {
-            (
-                action_type.as_ref().into(),
-                action_value(&action_type, reversed_actions, disabled_actions),
-            )
-        })
-        .collect()
-}
-
-fn action_value(
-    action_type: &ComposerAction,
-    reversed_actions: &HashSet<wysiwyg::ComposerAction>,
-    disabled_actions: &HashSet<wysiwyg::ComposerAction>,
-) -> String {
-    let action_type = action_type.into();
-    let ret = if reversed_actions.contains(&action_type) {
-        ActionState::Reversed
-    } else if disabled_actions.contains(&action_type) {
-        ActionState::Disabled
-    } else {
-        ActionState::Enabled
-    };
-    ret.as_ref().into()
-}
-
-trait IntoMap {
-    fn into_map(self) -> js_sys::Map;
-}
-
-impl IntoMap for HashMap<String, String> {
-    fn into_map(self) -> js_sys::Map {
-        let ret = js_sys::Map::new();
-        for (k, v) in self.into_iter() {
-            ret.set(&k.into(), &v.into());
-        }
-        ret
     }
 }
 
@@ -389,17 +347,13 @@ pub struct MenuStateUpdate {
 impl MenuStateUpdate {
     pub fn from(inner: &wysiwyg::MenuStateUpdate) -> Self {
         Self {
-            action_states: build_action_states(
-                &inner.reversed_actions,
-                &inner.disabled_actions,
-            )
-            .into_map(),
+            action_states: inner.action_states.into_ffi(),
         }
     }
 }
 
 #[wasm_bindgen]
-#[derive(AsRefStr, Clone, EnumIter)]
+#[derive(Clone)]
 pub enum ComposerAction {
     Bold,
     Italic,
@@ -552,8 +506,6 @@ impl DomHandle {
 
 #[cfg(test)]
 mod test {
-    use crate::build_composer_action_states;
-
     use super::ComposerModel;
 
     #[test]
@@ -595,24 +547,5 @@ mod test {
         assert_eq!(grandchildren[2].text(&model), "3");
         assert_eq!(children[2].node_type(&model), "text");
         assert_eq!(children[2].text(&model), "4");
-    }
-
-    #[test]
-    fn can_build_action_states() {
-        let mut model = ComposerModel::new();
-        model.bold();
-        model.italic();
-
-        let action_states = build_composer_action_states(&model);
-        assert_eq!(action_states.get("Bold"), Some(&String::from("Reversed")));
-        assert_eq!(
-            action_states.get("Italic"),
-            Some(&String::from("Reversed"))
-        );
-        assert_eq!(
-            action_states.get("Underline"),
-            Some(&String::from("Enabled"))
-        );
-        assert_eq!(action_states.get("Redo"), Some(&String::from("Disabled")));
     }
 }

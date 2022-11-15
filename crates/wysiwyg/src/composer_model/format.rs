@@ -17,10 +17,7 @@ use crate::dom::action_list::DomActionList;
 use crate::dom::nodes::{ContainerNodeKind, DomNode};
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{Dom, DomHandle, DomLocation, Range};
-use crate::{
-    ComposerAction, ComposerModel, ComposerUpdate, InlineFormatType,
-    UnicodeString,
-};
+use crate::{ComposerModel, ComposerUpdate, InlineFormatType, UnicodeString};
 
 #[derive(Eq, PartialEq, Debug)]
 enum FormatSelectionType {
@@ -32,54 +29,42 @@ impl<S> ComposerModel<S>
 where
     S: UnicodeString,
 {
-    pub fn bold(&mut self) -> ComposerUpdate<S> {
-        if self.reversed_actions.contains(&ComposerAction::Bold) {
-            self.unformat(InlineFormatType::Bold)
+    fn format_or_unformat(
+        &mut self,
+        format_type: InlineFormatType,
+    ) -> ComposerUpdate<S> {
+        if self.action_is_reversed(format_type.action()) {
+            self.unformat(format_type)
         } else {
-            self.format(InlineFormatType::Bold)
+            self.format(format_type)
         }
+    }
+
+    pub fn bold(&mut self) -> ComposerUpdate<S> {
+        self.format_or_unformat(InlineFormatType::Bold)
     }
 
     pub fn italic(&mut self) -> ComposerUpdate<S> {
-        if self.reversed_actions.contains(&ComposerAction::Italic) {
-            self.unformat(InlineFormatType::Italic)
-        } else {
-            self.format(InlineFormatType::Italic)
-        }
+        self.format_or_unformat(InlineFormatType::Italic)
     }
 
     pub fn strike_through(&mut self) -> ComposerUpdate<S> {
-        if self
-            .reversed_actions
-            .contains(&ComposerAction::StrikeThrough)
-        {
-            self.unformat(InlineFormatType::StrikeThrough)
-        } else {
-            self.format(InlineFormatType::StrikeThrough)
-        }
+        self.format_or_unformat(InlineFormatType::StrikeThrough)
     }
 
     pub fn underline(&mut self) -> ComposerUpdate<S> {
-        if self.reversed_actions.contains(&ComposerAction::Underline) {
-            self.unformat(InlineFormatType::Underline)
-        } else {
-            self.format(InlineFormatType::Underline)
-        }
+        self.format_or_unformat(InlineFormatType::Underline)
     }
 
     pub fn inline_code(&mut self) -> ComposerUpdate<S> {
-        if self.reversed_actions.contains(&ComposerAction::InlineCode) {
-            self.unformat(InlineFormatType::InlineCode)
-        } else {
-            self.format(InlineFormatType::InlineCode)
-        }
+        self.format_or_unformat(InlineFormatType::InlineCode)
     }
 
     pub(crate) fn apply_pending_formats(&mut self, start: usize, end: usize) {
         // Reverse to pop and apply in expected order.
         self.state.toggled_format_types.reverse();
         while let Some(format) = self.state.toggled_format_types.pop() {
-            if self.reversed_actions.contains(&format.action()) {
+            if self.action_is_reversed(format.action()) {
                 self.format_range(start, end, &format);
             } else {
                 self.unformat_range(start, end, &format);
