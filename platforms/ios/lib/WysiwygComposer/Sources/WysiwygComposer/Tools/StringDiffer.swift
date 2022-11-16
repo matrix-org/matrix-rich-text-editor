@@ -62,33 +62,31 @@ final class StringDiffer {
             return nil
         }
 
-        let insertedText = String(difference.insertedText)
+        let removedRanges = difference.removedRanges
+        let textInsertions = difference.textInsertions
 
-        // swiftlint:disable force_unwrapping
-        switch (difference.removedRange, difference.insertedRange) {
-        case (nil, nil):
-            // Multiple insertions or removals (otherwise difference would have been empty)
+        guard removedRanges.count < 2, textInsertions.count < 2 else {
             throw StringDifferError.tooComplicated
-        case (nil, let insertedRange):
-            // Just an insertion
-            return .init(location: insertedRange!.location, length: 0, text: insertedText)
-        case (let removedRange, nil):
-            if insertedText.isEmpty {
-                // Just a removal
-                return .init(range: removedRange!, text: insertedText)
-            } else {
-                // Inserted text spans over multiple ranges.
-                throw StringDifferError.tooComplicated
-            }
-        case (let removedRange, let insertedRange):
-            if removedRange!.location == insertedRange!.location {
-                // Actual replacement of a piece of text with something else
-                return .init(range: removedRange!, text: insertedText)
-            } else {
-                throw StringDifferError.insertionsDontMatchRemovals
-            }
         }
-        // swiftlint:enable force_unwrapping
+
+        if let removedRange = removedRanges.first {
+            if let insertion = textInsertions.first {
+                if insertion.range.location == removedRange.location {
+                    // Replacement
+                    return StringDifferReplacement(range: removedRange, text: insertion.text)
+                } else {
+                    throw StringDifferError.insertionsDontMatchRemovals
+                }
+            } else {
+                // Simple removal
+                return StringDifferReplacement(range: removedRange, text: "")
+            }
+        } else if let insertedRange = textInsertions.first {
+            // Simple insertion
+            return StringDifferReplacement(location: insertedRange.range.location, length: 0, text: insertedRange.text)
+        } else {
+            fatalError("Should never happen => difference is empty")
+        }
     }
 }
 
@@ -96,62 +94,5 @@ private extension String {
     /// Converts all whitespaces to NBSP to avoid diffs caused by HTML translations.
     var withNBSP: String {
         String(map { $0.isWhitespace ? Character("\u{00A0}") : $0 })
-    }
-}
-
-private extension CollectionDifference<Character> {
-    var removedRange: NSRange? {
-        removals.reduce(nil) { partialResult, change in
-            let index: Int
-            switch change {
-            case .remove(offset: let offset, element: _, associatedWith: _):
-                index = offset
-            default:
-                return nil
-            }
-
-            if let partialResult = partialResult {
-                if partialResult.upperBound == index {
-                    return NSRange(location: partialResult.location, length: partialResult.length + 1)
-                } else {
-                    return nil
-                }
-            } else {
-                return NSRange(location: index, length: 1)
-            }
-        }
-    }
-
-    var insertedRange: NSRange? {
-        insertions.reduce(nil) { partialResult, change in
-            let index: Int
-            switch change {
-            case .insert(offset: let offset, element: _, associatedWith: _):
-                index = offset
-            default:
-                return nil
-            }
-
-            if let partialResult = partialResult {
-                if partialResult.upperBound == index {
-                    return NSRange(location: partialResult.location, length: partialResult.length + 1)
-                } else {
-                    return nil
-                }
-            } else {
-                return NSRange(location: index, length: 1)
-            }
-        }
-    }
-
-    var insertedText: [Character] {
-        insertions.compactMap {
-            switch $0 {
-            case .insert(offset: _, element: let element, associatedWith: _):
-                return element
-            default:
-                return nil
-            }
-        }
     }
 }
