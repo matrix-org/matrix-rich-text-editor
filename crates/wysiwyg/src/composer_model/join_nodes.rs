@@ -233,19 +233,13 @@ where
                     let mut new_data = start_i.data().to_owned();
                     new_data.push(next_i.data());
                     let text_node = DomNode::new_text(new_data);
-                    if let DomNode::Container(old_parent) =
-                        dom.lookup_node_mut(&next_handle.parent_handle())
-                    {
-                        old_parent.remove_child(next_handle.index_in_parent());
-                    }
-                    if let DomNode::Container(parent) =
-                        dom.lookup_node_mut(&start_handle.parent_handle())
-                    {
-                        parent.replace_child(
-                            start_handle.index_in_parent(),
-                            vec![text_node],
-                        );
-                    }
+                    let old_parent = dom.parent_mut(next_handle);
+                    old_parent.remove_child(next_handle.index_in_parent());
+                    let parent = dom.parent_mut(start_handle);
+                    parent.replace_child(
+                        start_handle.index_in_parent(),
+                        vec![text_node],
+                    );
                     return;
                 }
                 _ => return,
@@ -333,13 +327,8 @@ where
             panic!("Destination node must be a ContainerNode");
         }
 
-        if let DomNode::Container(parent) =
-            dom.lookup_node_mut(&from_handle.parent_handle())
-        {
-            parent.remove_child(from_handle.index_in_parent());
-        } else {
-            panic!("Previous parent of source node must be a ContainerNode");
-        }
+        let parent = dom.parent_mut(from_handle);
+        parent.remove_child(from_handle.index_in_parent());
 
         (ret, moved_handles)
     }

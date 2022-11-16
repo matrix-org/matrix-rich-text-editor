@@ -269,50 +269,39 @@ where
                 loc.node_handle.replace_ancestor(from_handle, to_handle);
             }
             if Self::needs_format(&self.state.dom, &loc, format) {
-                if let DomNode::Container(parent) = self
-                    .state
-                    .dom
-                    .lookup_node_mut(&loc.node_handle.parent_handle())
-                {
-                    let index = loc.node_handle.index_in_parent();
-                    let node = parent.remove_child(index);
-                    if loc.is_covered() {
-                        // Node completely covered by selection, happy path. Just replace the old
-                        // text node with a formatting node that contains a copy.
-                        let format_node =
-                            DomNode::new_formatting(format.clone(), vec![node]);
-                        parent.insert_child(index, format_node);
-                    } else {
-                        // Node only partially covered by selection, we need
-                        // to split into 2 or 3 nodes and add them to the
-                        // parent.
-                        let (before, mut middle, after) =
-                            Self::split_text_node_by_offsets(&loc, node);
-
-                        if let Some(after) = after {
-                            parent.insert_child(index, after);
-                        }
-                        self.state.end +=
-                            Self::insert_zwspace_if_needed(&mut middle);
-                        let middle = DomNode::new_formatting(
-                            format.clone(),
-                            vec![middle],
-                        );
-                        parent.insert_child(index, middle);
-
-                        if let Some(before) = before {
-                            parent.insert_child(index, before);
-                        }
-                    }
-                    // Clean up by removing any empty text nodes and merging formatting nodes
-                    action_list.extend(
-                        self.merge_formatting_node_with_siblings(
-                            &loc.node_handle,
-                        ),
-                    );
+                let parent = self.state.dom.parent_mut(&loc.node_handle);
+                let index = loc.node_handle.index_in_parent();
+                let node = parent.remove_child(index);
+                if loc.is_covered() {
+                    // Node completely covered by selection, happy path. Just replace the old
+                    // text node with a formatting node that contains a copy.
+                    let format_node =
+                        DomNode::new_formatting(format.clone(), vec![node]);
+                    parent.insert_child(index, format_node);
                 } else {
-                    panic!("Parent is not a container!");
+                    // Node only partially covered by selection, we need
+                    // to split into 2 or 3 nodes and add them to the
+                    // parent.
+                    let (before, mut middle, after) =
+                        Self::split_text_node_by_offsets(&loc, node);
+
+                    if let Some(after) = after {
+                        parent.insert_child(index, after);
+                    }
+                    self.state.end +=
+                        Self::insert_zwspace_if_needed(&mut middle);
+                    let middle =
+                        DomNode::new_formatting(format.clone(), vec![middle]);
+                    parent.insert_child(index, middle);
+
+                    if let Some(before) = before {
+                        parent.insert_child(index, before);
+                    }
                 }
+                // Clean up by removing any empty text nodes and merging formatting nodes
+                action_list.extend(
+                    self.merge_formatting_node_with_siblings(&loc.node_handle),
+                );
             }
         }
     }
@@ -436,15 +425,12 @@ where
         // Lists of handles that have been moved by merging nodes
         let mut action_list = DomActionList::default();
         // If has next sibling, try to join it with the current node
-        if let DomNode::Container(parent) =
-            self.state.dom.lookup_node(&handle.parent_handle())
-        {
-            if parent.children().len() - handle.index_in_parent() > 1 {
-                self.join_format_node_with_prev(
-                    &handle.next_sibling(),
-                    &mut action_list,
-                );
-            }
+        let parent = self.state.dom.parent(handle);
+        if parent.children().len() - handle.index_in_parent() > 1 {
+            self.join_format_node_with_prev(
+                &handle.next_sibling(),
+                &mut action_list,
+            );
         }
         // Merge current node with previous if possible
         self.join_format_node_with_prev(handle, &mut action_list);
