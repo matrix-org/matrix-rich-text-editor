@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::composer_model::action_state::ActionState;
+use crate::action_state::ActionState;
 use crate::composer_model::menu_state::MenuStateComputeType;
 use crate::composer_state::ComposerState;
 use crate::dom::parser::parse;

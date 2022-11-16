@@ -347,7 +347,7 @@ mod test {
     use std::collections::HashMap;
     use widestring::Utf16String;
 
-    use crate::composer_model::action_state::ActionState;
+    use crate::action_state::ActionState;
     use crate::menu_state::MenuStateUpdate;
     use crate::tests::testutils_composer_model::cm;
     use crate::tests::testutils_conversion::utf16;

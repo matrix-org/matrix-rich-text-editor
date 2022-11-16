@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+mod action_state;
 mod composer_action;
 mod composer_model;
 mod composer_state;
@@ -25,8 +26,8 @@ mod menu_state;
 mod tests;
 mod text_update;
 
+pub use crate::action_state::ActionState;
 pub use crate::composer_action::ComposerAction;
-pub use crate::composer_model::action_state::ActionState;
 pub use crate::composer_model::ComposerModel;
 pub use crate::composer_state::ComposerState;
 pub use crate::composer_update::ComposerUpdate;
