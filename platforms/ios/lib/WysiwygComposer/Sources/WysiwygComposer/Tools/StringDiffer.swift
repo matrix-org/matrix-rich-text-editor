@@ -32,6 +32,22 @@ enum StringDifferError: LocalizedError, Equatable {
     }
 }
 
+/// Describes the output replacement from string diffing.
+struct StringDifferReplacement: Equatable {
+    let range: NSRange
+    let text: String
+
+    init(range: NSRange, text: String) {
+        self.range = range
+        self.text = text
+    }
+
+    init(location: Int, length: Int, text: String) {
+        range = NSRange(location: location, length: length)
+        self.text = text
+    }
+}
+
 final class StringDiffer {
     // MARK: - Private
 
@@ -39,7 +55,7 @@ final class StringDiffer {
 
     // MARK: - Internal
 
-    static func replacement(from oldText: String, to newText: String) throws -> (range: NSRange, text: String)? {
+    static func replacement(from oldText: String, to newText: String) throws -> StringDifferReplacement? {
         let difference = newText.withNBSP.difference(from: oldText.withNBSP)
 
         guard !difference.isEmpty else {
@@ -55,11 +71,11 @@ final class StringDiffer {
             throw StringDifferError.tooComplicated
         case (nil, let insertedRange):
             // Just an insertion
-            return (NSRange(location: insertedRange!.location, length: 0), insertedText)
+            return .init(location: insertedRange!.location, length: 0, text: insertedText)
         case (let removedRange, nil):
             if insertedText.isEmpty {
                 // Just a removal
-                return (removedRange!, insertedText)
+                return .init(range: removedRange!, text: insertedText)
             } else {
                 // Inserted text spans over multiple ranges.
                 throw StringDifferError.tooComplicated
@@ -67,7 +83,7 @@ final class StringDiffer {
         case (let removedRange, let insertedRange):
             if removedRange!.location == insertedRange!.location {
                 // Actual replacement of a piece of text with something else
-                return (removedRange!, insertedText)
+                return .init(range: removedRange!, text: insertedText)
             } else {
                 throw StringDifferError.insertionsDontMatchRemovals
             }
