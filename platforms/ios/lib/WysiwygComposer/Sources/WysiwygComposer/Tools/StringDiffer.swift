@@ -145,7 +145,7 @@ private extension CollectionDifference<Character> {
     }
 
     var insertedText: [Character] {
-        compactMap {
+        insertions.compactMap {
             switch $0 {
             case .insert(offset: _, element: let element, associatedWith: _):
                 return element
