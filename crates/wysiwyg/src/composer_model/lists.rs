@@ -13,10 +13,11 @@
 // limitations under the License.
 
 use std::collections::HashMap;
+use std::ops::AddAssign;
 
 use crate::dom::nodes::{ContainerNode, DomNode};
 use crate::dom::to_raw_text::ToRawText;
-use crate::dom::unicode_string::UnicodeStrExt;
+use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, ListType, Location, UnicodeString};
 
@@ -253,7 +254,7 @@ where
                 list_type,
                 vec![DomNode::Container(ContainerNode::new_list_item(
                     "li".into(),
-                    vec![DomNode::new_text(S::default())],
+                    vec![DomNode::new_text("\u{200b}".into())],
                 ))],
             ));
             self.create_update_replace_all()
@@ -274,10 +275,20 @@ where
             if let DomNode::Text(t) = node {
                 let text = t.data();
                 let index_in_parent = handle.index_in_parent();
+                let add_zwsp = text.is_empty();
+                let insert_zwsp = !text.to_string().starts_with("\u{200b}");
                 let list_item =
                     DomNode::Container(ContainerNode::new_list_item(
                         "li".into(),
-                        vec![DomNode::new_text(text.to_owned())],
+                        vec![DomNode::new_text(if add_zwsp {
+                            "\u{200b}".into()
+                        } else if insert_zwsp {
+                            let mut owned_text: S = "\u{200b}".into();
+                            owned_text.push(text);
+                            owned_text
+                        } else {
+                            text.to_owned()
+                        })],
                     ));
                 if index_in_parent > 0 {
                     let previous_handle = handle.prev_sibling();
@@ -294,6 +305,11 @@ where
                 }
 
                 self.replace_node_with_new_list(handle, list_type, list_item);
+                if add_zwsp || insert_zwsp {
+                    // FIXME: is there a case where ZWSP is inserted in the middle of the selection ?
+                    self.state.start.add_assign(1);
+                    self.state.end.add_assign(1);
+                }
                 self.create_update_replace_all()
             } else {
                 panic!("Can't create a list from a non-text node")
