@@ -24,6 +24,21 @@ final class StringDifferTests: XCTestCase {
         XCTAssertNil(replacement)
     }
 
+    func testSimpleRemoval() throws {
+        let replacement = try StringDiffer.replacement(from: "text", to: "te")
+        XCTAssertEqual(replacement?.range,
+                       NSRange(location: 2, length: 2))
+        XCTAssertEqual(replacement?.text, "")
+    }
+
+    func testSimpleInsertion() throws {
+        let replacement = try StringDiffer.replacement(from: "te", to: "text")
+        XCTAssertEqual(replacement?.range,
+                       NSRange(location: 2, length: 0))
+        XCTAssertEqual(replacement?.text,
+                       "xt")
+    }
+
     func testFullReplacement() throws {
         let oldText = "wa"
         let newText = "わ"
@@ -40,5 +55,23 @@ final class StringDifferTests: XCTestCase {
         XCTAssertEqual(replacement?.range,
                        NSRange(location: 1, length: 2))
         XCTAssertEqual(replacement?.text, "た")
+    }
+
+    func testDoubleReplacementIsNotHandled() throws {
+        let oldText = "text"
+        let newText = "fexf"
+        XCTAssertThrowsError(try StringDiffer.replacement(from: oldText, to: newText), "doubleReplacementIsNotHandled") { error in
+            XCTAssertEqual(error as? StringDifferError,
+                           StringDifferError.tooComplicated)
+        }
+    }
+
+    func testInsertionsDontMatchRemovalsLocation() throws {
+        let oldText = "text"
+        let newText = "extab"
+        XCTAssertThrowsError(try StringDiffer.replacement(from: oldText, to: newText), "insertionsDontMatchRemovalsLocation") { error in
+            XCTAssertEqual(error as? StringDifferError,
+                           StringDifferError.insertionsDontMatchRemovals)
+        }
     }
 }

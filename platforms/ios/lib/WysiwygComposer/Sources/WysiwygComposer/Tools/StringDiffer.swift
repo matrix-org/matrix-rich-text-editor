@@ -17,14 +17,17 @@
 import Foundation
 import OSLog
 
-/// Describe an error occurring during HTML string build.
+/// Describe an error occurring during string diffing.
 enum StringDifferError: LocalizedError, Equatable {
-    case unknown
+    case tooComplicated
+    case insertionsDontMatchRemovals
 
     var errorDescription: String? {
         switch self {
-        case .unknown:
-            return "An unknown error occurred during string diffing"
+        case .tooComplicated:
+            return "Diff is too complicated to be handled as a simple replacement"
+        case .insertionsDontMatchRemovals:
+            return "Insertions don't match removals"
         }
     }
 }
@@ -40,27 +43,37 @@ final class StringDiffer {
         let difference = newText.withNBSP.difference(from: oldText.withNBSP)
 
         guard !difference.isEmpty else {
-            Logger.stringDiffer.log("No difference between strings")
             return nil
         }
 
         let insertedText = String(difference.insertedText)
 
-        if let removedRange = difference.removedRange {
-            Logger.stringDiffer.log("Range: \(removedRange), Text: \(insertedText)")
-            return (removedRange, insertedText)
-        } else if let insertedRange = difference.insertedRange {
-            Logger.stringDiffer.log("Range: \(NSRange(location: insertedRange.location, length: 0)), Text: \(insertedText)")
-            return (NSRange(location: insertedRange.location, length: 0), insertedText)
-        } else {
-            Logger.stringDiffer.log("No difference between strings ???")
-            throw StringDifferError.unknown
+        // swiftlint:disable force_unwrapping
+        switch (difference.removedRange, difference.insertedRange) {
+        case (nil, nil):
+            // Multiple insertions or removals (otherwise difference would have been empty)
+            throw StringDifferError.tooComplicated
+        case (nil, let insertedRange):
+            // Just an insertion
+            return (NSRange(location: insertedRange!.location, length: 0), insertedText)
+        case (let removedRange, nil):
+            if insertedText.isEmpty {
+                // Just a removal
+                return (removedRange!, insertedText)
+            } else {
+                // Inserted text spans over multiple ranges.
+                throw StringDifferError.tooComplicated
+            }
+        case (let removedRange, let insertedRange):
+            if removedRange!.location == insertedRange!.location {
+                // Actual replacement of a piece of text with something else
+                return (removedRange!, insertedText)
+            } else {
+                throw StringDifferError.insertionsDontMatchRemovals
+            }
         }
+        // swiftlint:enable force_unwrapping
     }
-}
-
-private extension Logger {
-    static let stringDiffer = Logger(subsystem: subsystem, category: "StringDiffer")
 }
 
 private extension String {
