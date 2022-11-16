@@ -9,7 +9,7 @@ and platform-specific wrappers.
 ## Live demo
 
 Try it out at
-[matrix-org.github.io/matrix-wysiwyg](https://matrix-org.github.io/matrix-wysiwyg/).
+[matrix-org.github.io/matrix-rich-text-editor](https://matrix-org.github.io/matrix-rich-text-editor/).
 
 ## Building the code
 
