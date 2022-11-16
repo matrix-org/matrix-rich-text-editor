@@ -29,6 +29,31 @@ impl<S> ComposerModel<S>
 where
     S: UnicodeString,
 {
+    pub fn bold(&mut self) -> ComposerUpdate<S> {
+        self.push_state_to_history();
+        self.format_or_unformat(InlineFormatType::Bold)
+    }
+
+    pub fn italic(&mut self) -> ComposerUpdate<S> {
+        self.push_state_to_history();
+        self.format_or_unformat(InlineFormatType::Italic)
+    }
+
+    pub fn strike_through(&mut self) -> ComposerUpdate<S> {
+        self.push_state_to_history();
+        self.format_or_unformat(InlineFormatType::StrikeThrough)
+    }
+
+    pub fn underline(&mut self) -> ComposerUpdate<S> {
+        self.push_state_to_history();
+        self.format_or_unformat(InlineFormatType::Underline)
+    }
+
+    pub fn inline_code(&mut self) -> ComposerUpdate<S> {
+        self.push_state_to_history();
+        self.format_or_unformat(InlineFormatType::InlineCode)
+    }
+
     fn format_or_unformat(
         &mut self,
         format_type: InlineFormatType,
@@ -38,26 +63,6 @@ where
         } else {
             self.format(format_type)
         }
-    }
-
-    pub fn bold(&mut self) -> ComposerUpdate<S> {
-        self.format_or_unformat(InlineFormatType::Bold)
-    }
-
-    pub fn italic(&mut self) -> ComposerUpdate<S> {
-        self.format_or_unformat(InlineFormatType::Italic)
-    }
-
-    pub fn strike_through(&mut self) -> ComposerUpdate<S> {
-        self.format_or_unformat(InlineFormatType::StrikeThrough)
-    }
-
-    pub fn underline(&mut self) -> ComposerUpdate<S> {
-        self.format_or_unformat(InlineFormatType::Underline)
-    }
-
-    pub fn inline_code(&mut self) -> ComposerUpdate<S> {
-        self.format_or_unformat(InlineFormatType::InlineCode)
     }
 
     pub(crate) fn apply_pending_formats(&mut self, start: usize, end: usize) {
@@ -73,8 +78,6 @@ where
     }
 
     fn format(&mut self, format: InlineFormatType) -> ComposerUpdate<S> {
-        // Store current Dom
-        self.push_state_to_history();
         let (s, e) = self.safe_selection();
 
         if s == e {

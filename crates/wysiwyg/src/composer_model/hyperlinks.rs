@@ -22,12 +22,12 @@ where
     S: UnicodeString,
 {
     pub fn set_link(&mut self, link: S) -> ComposerUpdate<S> {
+        // push_state_to_history is after this check:
         let (s, e) = self.safe_selection();
         // Can't add a link to an empty selection
         if s == e {
             return ComposerUpdate::keep();
         }
-        // Store current Dom
         self.push_state_to_history();
 
         let range = self.state.dom.find_range(s, e);

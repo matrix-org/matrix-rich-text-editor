@@ -22,6 +22,7 @@ where
     S: UnicodeString,
 {
     pub fn backspace(&mut self) -> ComposerUpdate<S> {
+        self.push_state_to_history();
         let (s, e) = self.safe_selection();
 
         if s == e {
@@ -33,6 +34,36 @@ where
         } else {
             self.do_backspace()
         }
+    }
+
+    /// Deletes text in an arbitrary start..end range.
+    pub fn delete_in(&mut self, start: usize, end: usize) -> ComposerUpdate<S> {
+        self.push_state_to_history();
+        self.state.end = Location::from(start);
+        self.do_replace_text_in(S::default(), start, end)
+    }
+
+    /// Deletes the character after the current cursor position.
+    pub fn delete(&mut self) -> ComposerUpdate<S> {
+        self.push_state_to_history();
+        if self.state.start == self.state.end {
+            let (s, _) = self.safe_selection();
+            // If we're dealing with complex graphemes, this value might not be 1
+            let next_char_len =
+                if let Some((text_node, loc)) = self.get_selected_text_node() {
+                    let selection_start_in_str = s - loc.position;
+                    Self::find_next_char_len(
+                        selection_start_in_str,
+                        &text_node.data(),
+                    ) as isize
+                } else {
+                    1
+                };
+            // Go forward `next_char_len` positions from the current location
+            self.state.end += next_char_len;
+        }
+
+        self.do_replace_text(S::default())
     }
 
     fn backspace_single_cursor(
@@ -60,34 +91,6 @@ where
         } else {
             self.do_backspace()
         }
-    }
-
-    /// Deletes text in an arbitrary start..end range.
-    pub fn delete_in(&mut self, start: usize, end: usize) -> ComposerUpdate<S> {
-        self.state.end = Location::from(start);
-        self.replace_text_in(S::default(), start, end)
-    }
-
-    /// Deletes the character after the current cursor position.
-    pub fn delete(&mut self) -> ComposerUpdate<S> {
-        if self.state.start == self.state.end {
-            let (s, _) = self.safe_selection();
-            // If we're dealing with complex graphemes, this value might not be 1
-            let next_char_len =
-                if let Some((text_node, loc)) = self.get_selected_text_node() {
-                    let selection_start_in_str = s - loc.position;
-                    Self::find_next_char_len(
-                        selection_start_in_str,
-                        &text_node.data(),
-                    ) as isize
-                } else {
-                    1
-                };
-            // Go forward `next_char_len` positions from the current location
-            self.state.end += next_char_len;
-        }
-
-        self.replace_text(S::default())
     }
 
     pub(crate) fn delete_nodes(&mut self, mut to_delete: Vec<DomHandle>) {
@@ -133,7 +136,7 @@ where
             self.state.start -= prev_char_len;
         }
 
-        self.replace_text(S::default())
+        self.do_replace_text(S::default())
     }
 
     /// Returns the currently selected TextNode if it's the only leaf node and the cursor is inside
