@@ -265,13 +265,13 @@ public extension WysiwygComposerViewModel {
             // Reconciliate
 
             // swiftlint:disable:next force_try
-            let rustRange = try! attributedContent.text.htmlRange(from: replacement.0)
+            let rustRange = try! attributedContent.text.htmlRange(from: replacement.range)
 
-            _ = model.replaceTextIn(newText: replacement.1,
+            _ = model.replaceTextIn(newText: replacement.text,
                                     start: UInt32(rustRange.location),
                                     end: UInt32(rustRange.upperBound))
 
-            Logger.viewModel.logDebug(["Reconciliate from \"\(attributedContent.text.string)\" to \"\(textView.text ?? "")\" with \"\(replacement.1)\""],
+            Logger.viewModel.logDebug(["Reconciliate from \"\(attributedContent.text.string)\" to \"\(textView.text ?? "")\" with \"\(replacement.text)\""],
                                       functionName: #function)
             Logger.viewModel.logDebug(["Reconciliate model markdown: \"\(model.getContentAsMarkdown())\""],
                                       functionName: #function)

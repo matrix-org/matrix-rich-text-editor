@@ -36,8 +36,8 @@ final class StringDiffer {
 
     // MARK: - Internal
 
-    static func replacement(from oldString: String, to newString: String) throws -> (NSRange, String)? {
-        let difference = newString.withNBSP.difference(from: oldString.withNBSP)
+    static func replacement(from oldText: String, to newText: String) throws -> (range: NSRange, text: String)? {
+        let difference = newText.withNBSP.difference(from: oldText.withNBSP)
 
         guard !difference.isEmpty else {
             Logger.stringDiffer.log("No difference between strings")
