@@ -56,4 +56,34 @@ final class StringDifferTests: XCTestCase {
                            StringDifferError.insertionsDontMatchRemovals)
         }
     }
+
+    func testDifferentWhitespacesAreEquivalent() throws {
+        let whitespaceCodeUnits = CharacterSet.whitespaces.codePoints()
+        let whitespaceString = String(
+            String(utf16CodeUnits: whitespaceCodeUnits, count: whitespaceCodeUnits.count)
+                // We need to remove unicode characters that are related to whitespaces but have a property `White_space = no`
+                .filter(\.isWhitespace)
+        )
+        XCTAssertNil(try StringDiffer.replacement(from: whitespaceString,
+                                                  to: String(repeating: "\u{00A0}", count: whitespaceString.utf16Length)))
+    }
+}
+
+private extension CharacterSet {
+    func codePoints() -> [UInt16] {
+        var result: [Int] = []
+        var plane = 0
+        for (i, w) in bitmapRepresentation.enumerated() {
+            let k = i % 8193
+            if k == 8192 {
+                plane = Int(w) << 13
+                continue
+            }
+            let base = (plane + k) << 3
+            for j in 0..<8 where w & 1 << j != 0 {
+                result.append(base + j)
+            }
+        }
+        return result.map { UInt16($0) }
+    }
 }
