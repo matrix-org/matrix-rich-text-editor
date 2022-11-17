@@ -24,7 +24,7 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     // MARK: - Public
 
     /// The textView with placeholder support that the model manages
-    public var textView: PlaceholdableTextView?
+    public private(set) var textView = PlaceholdableTextView()
     /// Published object for the composer attributed content.
     @Published public var attributedContent: WysiwygComposerAttributedContent = .init()
     /// Published boolean for the composer empty content state.
@@ -80,8 +80,8 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
 
     /// The current composer content.
     public var content: WysiwygComposerContent {
-        if plainTextMode, let plainText = textView?.text {
-            _ = model.setContentFromMarkdown(markdown: plainText)
+        if plainTextMode {
+            _ = model.setContentFromMarkdown(markdown: textView.text)
         }
         return WysiwygComposerContent(markdown: model.getContentAsMarkdown(),
                                       html: model.getContentAsHtml())
@@ -117,17 +117,16 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         $isContentEmpty
             .removeDuplicates()
             .sink { [unowned self] isContentEmpty in
-                self.textView?.shouldShowPlaceholder = isContentEmpty
+                self.textView.shouldShowPlaceholder = isContentEmpty
             }
             .store(in: &cancellables)
         
         $idealHeight
             .removeDuplicates()
             .sink { [unowned self] _ in
-                guard let textView = textView else { return }
                 // Improves a lot the user experience by keeping the selected range always visible when there are changes in the size.
                 DispatchQueue.main.async {
-                    textView.scrollRangeToVisible(textView.selectedRange)
+                    self.textView.scrollRangeToVisible(self.textView.selectedRange)
                 }
             }
             .store(in: &cancellables)
@@ -171,7 +170,7 @@ public extension WysiwygComposerViewModel {
     /// Clear the content of the composer.
     func clearContent() {
         if plainTextMode {
-            textView?.attributedText = NSAttributedString(string: "", attributes: defaultTextAttributes)
+            textView.attributedText = NSAttributedString(string: "", attributes: defaultTextAttributes)
         } else {
             applyUpdate(model.clear())
             updateTextView()
@@ -188,7 +187,6 @@ public extension WysiwygComposerViewModel {
 
 public extension WysiwygComposerViewModel {
     func updateCompressedHeightIfNeeded() {
-        guard let textView = textView else { return }
         let idealTextHeight = textView
             .sizeThatFits(CGSize(width: textView.bounds.size.width,
                                  height: CGFloat.greatestFiniteMagnitude)
@@ -233,7 +231,7 @@ public extension WysiwygComposerViewModel {
 
     func select(range: NSRange) {
         do {
-            guard let text = textView?.attributedText else { return }
+            guard let text = textView.attributedText else { return }
             // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
             let htmlSelection = try text.htmlRange(from: range,
                                                    shouldIgnoreTrailingNewline: false)
@@ -253,7 +251,6 @@ public extension WysiwygComposerViewModel {
     }
 
     func didUpdateText(shouldReconciliate: Bool = true) {
-        guard let textView = textView else { return }
         if plainTextMode {
             if textView.text.isEmpty != isContentEmpty {
                 isContentEmpty = textView.text.isEmpty
@@ -373,13 +370,11 @@ private extension WysiwygComposerViewModel {
     /// - Parameter enabled: whether plain text mode is enabled
     func updatePlainTextMode(_ enabled: Bool) {
         if enabled {
-            guard let textView = textView else { return }
             let attributed = NSAttributedString(string: model.getContentAsMarkdown(),
                                                 attributes: defaultTextAttributes)
             textView.attributedText = attributed
         } else {
-            guard let plainText = textView?.text else { return }
-            let update = model.setContentFromMarkdown(markdown: plainText)
+            let update = model.setContentFromMarkdown(markdown: textView.text)
             applyUpdate(update)
             updateTextView()
         }

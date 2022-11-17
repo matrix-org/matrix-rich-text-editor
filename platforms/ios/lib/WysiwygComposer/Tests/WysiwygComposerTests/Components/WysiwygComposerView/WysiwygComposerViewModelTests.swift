@@ -23,7 +23,6 @@ final class WysiwygComposerViewModelTests: XCTestCase {
 
     override func setUpWithError() throws {
         viewModel.clearContent()
-        viewModel.textView = PlaceholdableTextView()
     }
 
     func testIsContentEmpty() throws {
@@ -41,7 +40,7 @@ final class WysiwygComposerViewModelTests: XCTestCase {
 
         _ = viewModel.replaceText(range: .zero,
                                   replacementText: "Test")
-        viewModel.textView?.attributedText = viewModel.attributedContent.text
+        viewModel.textView.attributedText = viewModel.attributedContent.text
 
         wait(for: [expectFalse], timeout: 2.0)
         cancellableFalse.cancel()
@@ -58,7 +57,7 @@ final class WysiwygComposerViewModelTests: XCTestCase {
 
         _ = viewModel.replaceText(range: .init(location: 0, length: viewModel.attributedContent.text.length),
                                   replacementText: "")
-        viewModel.textView?.attributedText = viewModel.attributedContent.text
+        viewModel.textView.attributedText = viewModel.attributedContent.text
 
         wait(for: [expectTrue], timeout: 2.0)
         cancellableTrue.cancel()
@@ -79,18 +78,18 @@ final class WysiwygComposerViewModelTests: XCTestCase {
     func testReconciliateTextView() {
         _ = viewModel.replaceText(range: .zero,
                                   replacementText: "A")
-        viewModel.textView?.attributedText = NSAttributedString(string: "AA")
-        XCTAssertEqual(viewModel.textView?.text, "AA")
-        XCTAssertEqual(viewModel.textView?.selectedRange, NSRange(location: 2, length: 0))
+        viewModel.textView.attributedText = NSAttributedString(string: "AA")
+        XCTAssertEqual(viewModel.textView.text, "AA")
+        XCTAssertEqual(viewModel.textView.selectedRange, NSRange(location: 2, length: 0))
         viewModel.didUpdateText()
-        XCTAssertEqual(viewModel.textView?.text, "A")
-        XCTAssertEqual(viewModel.textView?.selectedRange, NSRange(location: 1, length: 0))
+        XCTAssertEqual(viewModel.textView.text, "A")
+        XCTAssertEqual(viewModel.textView.selectedRange, NSRange(location: 1, length: 0))
     }
 
     func testPlainTextMode() {
         _ = viewModel.replaceText(range: .zero,
                                   replacementText: "Some bold text")
-        viewModel.textView?.attributedText = NSAttributedString(string: "Some bold text")
+        viewModel.textView.attributedText = NSAttributedString(string: "Some bold text")
         viewModel.select(range: .init(location: 10, length: 4))
         viewModel.apply(.bold)
 
