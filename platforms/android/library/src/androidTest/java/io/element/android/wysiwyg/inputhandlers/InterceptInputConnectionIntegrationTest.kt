@@ -258,4 +258,40 @@ class InterceptInputConnectionIntegrationTest {
             )
         )
     }
+
+    @Test
+    fun testIncrementalCommitTextRespectsFormatting() {
+        // Set initial text
+        val initialText = viewModel.processInput(
+            EditorInputAction.ReplaceAllHtml("<strong>test</strong>")
+        )?.text
+        textView.setText(initialText)
+        // Disable bold at end of string
+        textView.setSelection(4)
+        viewModel.processInput(EditorInputAction.ApplyInlineFormat(InlineFormat.Bold))
+        // Autocomplete 'test' -> 'testing'
+        inputConnection.setComposingRegion(0, 4)
+        inputConnection.commitText("testing", 1)
+
+        assertThat(viewModel.getHtml(), equalTo("<strong>test</strong>ing"))
+    }
+
+    @Test
+    fun testIncrementalCommitWithFormattingDisabledKeepsItDisabledWithWhitespace() {
+        // Set initial text
+        val initialText = viewModel.processInput(
+            EditorInputAction.ReplaceAllHtml("<strong>test</strong>")
+        )?.text
+        textView.setText(initialText)
+        // Disable bold at end of string
+        textView.setSelection(4)
+        viewModel.processInput(EditorInputAction.ApplyInlineFormat(InlineFormat.Bold))
+        // Autocomplete 'test' -> 'testing'
+        inputConnection.setComposingRegion(0, 4)
+        inputConnection.commitText("test ", 1)
+        // Add some extra text
+        inputConnection.setComposingText("whitespaces", 1)
+
+        assertThat(viewModel.getHtml(), equalTo("<strong>test</strong> whitespaces"))
+    }
 }
