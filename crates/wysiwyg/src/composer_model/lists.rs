@@ -25,11 +25,57 @@ where
     S: UnicodeString,
 {
     pub fn ordered_list(&mut self) -> ComposerUpdate<S> {
+        self.push_state_to_history();
         self.toggle_list(ListType::Ordered)
     }
 
     pub fn unordered_list(&mut self) -> ComposerUpdate<S> {
+        self.push_state_to_history();
         self.toggle_list(ListType::Unordered)
+    }
+
+    pub fn indent(&mut self) -> ComposerUpdate<S> {
+        // push_state_to_history is called if we can indent
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        if !range.locations.is_empty() && self.can_indent(&range.locations) {
+            self.push_state_to_history();
+            self.indent_locations(&range.locations);
+            self.create_update_replace_all()
+        } else {
+            ComposerUpdate::keep()
+        }
+    }
+
+    pub fn unindent(&mut self) -> ComposerUpdate<S> {
+        // push_state_to_history is called if we can unindent
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        if self.can_unindent(&range.locations) {
+            self.push_state_to_history();
+            self.unindent_locations(&range.locations);
+            self.create_update_replace_all()
+        } else {
+            ComposerUpdate::keep()
+        }
+    }
+
+    pub fn can_indent(&self, locations: &Vec<DomLocation>) -> bool {
+        for loc in locations {
+            if loc.is_leaf && !self.can_indent_handle(&loc.node_handle) {
+                return false;
+            }
+        }
+        true
+    }
+
+    pub fn can_unindent(&self, locations: &Vec<DomLocation>) -> bool {
+        for loc in locations {
+            if loc.is_leaf && !self.can_unindent_handle(&loc.node_handle) {
+                return false;
+            }
+        }
+        true
     }
 
     pub(crate) fn do_backspace_in_list(
@@ -344,15 +390,6 @@ where
         }
     }
 
-    pub fn can_indent(&self, locations: &Vec<DomLocation>) -> bool {
-        for loc in locations {
-            if loc.is_leaf && !self.can_indent_handle(&loc.node_handle) {
-                return false;
-            }
-        }
-        true
-    }
-
     pub(crate) fn can_indent_handle(&self, handle: &DomHandle) -> bool {
         let parent = self.state.dom.parent(handle);
         if parent.is_list_item() {
@@ -360,15 +397,6 @@ where
         } else {
             false
         }
-    }
-
-    pub fn can_unindent(&self, locations: &Vec<DomLocation>) -> bool {
-        for loc in locations {
-            if loc.is_leaf && !self.can_unindent_handle(&loc.node_handle) {
-                return false;
-            }
-        }
-        true
     }
 
     pub(crate) fn can_unindent_handle(&self, handle: &DomHandle) -> bool {
@@ -382,28 +410,6 @@ where
                 .is_some()
         } else {
             false
-        }
-    }
-
-    pub fn indent(&mut self) -> ComposerUpdate<S> {
-        let (s, e) = self.safe_selection();
-        let range = self.state.dom.find_range(s, e);
-        if !range.locations.is_empty() && self.can_indent(&range.locations) {
-            self.indent_locations(&range.locations);
-            self.create_update_replace_all()
-        } else {
-            ComposerUpdate::keep()
-        }
-    }
-
-    pub fn unindent(&mut self) -> ComposerUpdate<S> {
-        let (s, e) = self.safe_selection();
-        let range = self.state.dom.find_range(s, e);
-        if self.can_unindent(&range.locations) {
-            self.unindent_locations(&range.locations);
-            self.create_update_replace_all()
-        } else {
-            ComposerUpdate::keep()
         }
     }
 
@@ -524,7 +530,7 @@ where
         None
     }
 
-    pub fn unindent_locations(&mut self, locations: &[DomLocation]) {
+    fn unindent_locations(&mut self, locations: &[DomLocation]) {
         self.unindent_handles(&Self::leaf_handles_from_locations(locations));
     }
 

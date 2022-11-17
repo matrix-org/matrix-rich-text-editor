@@ -65,6 +65,7 @@ web:
 		pkg/wysiwyg.d.ts \
 		pkg/wysiwyg.js \
 		../../platforms/web/generated/
+	cd platforms/web && yarn install && yarn build
 
 web-format:
 	cd platforms/web && \
