@@ -77,13 +77,15 @@ final class WysiwygComposerViewModelTests: XCTestCase {
 
     func testReconciliateTextView() {
         _ = viewModel.replaceText(range: .zero,
-                                  replacementText: "A")
-        viewModel.textView.attributedText = NSAttributedString(string: "AA")
-        XCTAssertEqual(viewModel.textView.text, "AA")
-        XCTAssertEqual(viewModel.textView.selectedRange, NSRange(location: 2, length: 0))
-        viewModel.didUpdateText()
-        XCTAssertEqual(viewModel.textView.text, "A")
+                                  replacementText: "wa")
+        viewModel.textView.attributedText = NSAttributedString(string: "わ")
+        XCTAssertEqual(viewModel.textView.text, "わ")
         XCTAssertEqual(viewModel.textView.selectedRange, NSRange(location: 1, length: 0))
+        XCTAssertEqual(viewModel.attributedContent.text.string, "wa")
+        XCTAssertEqual(viewModel.attributedContent.selection, NSRange(location: 2, length: 0))
+        viewModel.didUpdateText()
+        XCTAssertEqual(viewModel.attributedContent.text.string, "わ")
+        XCTAssertEqual(viewModel.attributedContent.selection, NSRange(location: 1, length: 0))
     }
 
     func testPlainTextMode() {

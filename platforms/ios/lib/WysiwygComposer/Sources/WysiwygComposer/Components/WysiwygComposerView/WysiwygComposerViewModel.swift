@@ -142,7 +142,6 @@ public extension WysiwygComposerViewModel {
     func setup() {
         // FIXME: multiple textViews sharing the model might unwittingly clear the composer because of this.
         applyUpdate(model.setContentFromHtml(html: ""))
-        updateTextView()
     }
 
     /// Apply given action to the composer.
@@ -155,8 +154,6 @@ public extension WysiwygComposerViewModel {
                                   functionName: #function)
         let update = model.apply(action)
         applyUpdate(update)
-        textView?.apply(attributedContent)
-        updateCompressedHeightIfNeeded()
     }
 
     /// Sets given HTML as the current content of the composer.
@@ -166,8 +163,6 @@ public extension WysiwygComposerViewModel {
     func setHtmlContent(_ html: String) {
         let update = model.setContentFromHtml(html: html)
         applyUpdate(update)
-        textView?.apply(attributedContent)
-        updateCompressedHeightIfNeeded()
     }
 
     /// Clear the content of the composer.
@@ -176,8 +171,6 @@ public extension WysiwygComposerViewModel {
             textView.attributedText = NSAttributedString(string: "", attributes: defaultTextAttributes)
         } else {
             applyUpdate(model.clear())
-            textView?.apply(attributedContent)
-            updateCompressedHeightIfNeeded()
         }
     }
 
@@ -226,12 +219,7 @@ public extension WysiwygComposerViewModel {
             shouldAcceptChange = true
         }
 
-        applyUpdate(update)
-
-        if !shouldAcceptChange {
-            textView?.apply(attributedContent)
-            updateCompressedHeightIfNeeded()
-        }
+        applyUpdate(update, skipTextViewUpdate: shouldAcceptChange)
         return shouldAcceptChange
     }
 
@@ -264,13 +252,20 @@ public extension WysiwygComposerViewModel {
         } else if let replacement = try? StringDiffer.replacement(from: attributedContent.text.string,
                                                                   to: textView.text ?? "") {
             // Reconciliate
-
             // swiftlint:disable:next force_try
             let rustRange = try! attributedContent.text.htmlRange(from: replacement.range)
 
-            _ = model.replaceTextIn(newText: replacement.text,
-                                    start: UInt32(rustRange.location),
-                                    end: UInt32(rustRange.upperBound))
+            let replaceUpdate = model.replaceTextIn(newText: replacement.text,
+                                                    start: UInt32(rustRange.location),
+                                                    end: UInt32(rustRange.upperBound))
+            applyUpdate(replaceUpdate, skipTextViewUpdate: true)
+
+            // Resync selectedRange
+            // swiftlint:disable:next force_try
+            let rustSelection = try! textView.attributedText.htmlRange(from: textView.selectedRange)
+            let selectUpdate = model.select(startUtf16Codeunit: UInt32(rustSelection.location),
+                                            endUtf16Codeunit: UInt32(rustSelection.upperBound))
+            applyUpdate(selectUpdate)
 
             Logger.viewModel.logDebug(["Reconciliate from \"\(attributedContent.text.string)\" to \"\(textView.text ?? "")\" with \"\(replacement.text)\""],
                                       functionName: #function)
@@ -281,7 +276,6 @@ public extension WysiwygComposerViewModel {
         }
         // }
 
-        textView.shouldShowPlaceholder = textView.attributedText.length == 0
         updateCompressedHeightIfNeeded()
     }
 }
@@ -292,16 +286,24 @@ private extension WysiwygComposerViewModel {
     func updateTextView() {
         didUpdateText()
     }
-    
+
     /// Apply given composer update to the composer.
     ///
-    /// - Parameter update: ComposerUpdate to apply.
-    func applyUpdate(_ update: ComposerUpdateProtocol) {
+    /// - Parameters:
+    ///   - update: ComposerUpdate to apply.
+    ///   - skipTextViewUpdate: A boolean indicating whether updating the text view should be skipped.
+    func applyUpdate(_ update: ComposerUpdateProtocol, skipTextViewUpdate: Bool = false) {
         switch update.textUpdate() {
         case let .replaceAll(replacementHtml: codeUnits,
                              startUtf16Codeunit: start,
                              endUtf16Codeunit: end):
             applyReplaceAll(codeUnits: codeUnits, start: start, end: end)
+            // Note: this makes replaceAll act like .keep on cases where we expect the text
+            // view to be properly updated by the system.
+            if !skipTextViewUpdate {
+                textView.apply(attributedContent)
+                updateCompressedHeightIfNeeded()
+            }
         case let .select(startUtf16Codeunit: start,
                          endUtf16Codeunit: end):
             applySelect(start: start, end: end)
@@ -332,15 +334,12 @@ private extension WysiwygComposerViewModel {
             // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
             let textSelection = try attributed.attributedRange(from: htmlSelection,
                                                                shouldIgnoreTrailingNewline: false)
-            let newContent = WysiwygComposerAttributedContent(text: attributed, selection: textSelection)
-            if attributedContent != newContent {
-                attributedContent = newContent
-                Logger.viewModel.logDebug(["Sel(att): \(textSelection)",
-                                           "Sel: \(htmlSelection)",
-                                           "HTML: \"\(html)\"",
-                                           "replaceAll"],
-                                          functionName: #function)
-            }
+            attributedContent = WysiwygComposerAttributedContent(text: attributed, selection: textSelection)
+            Logger.viewModel.logDebug(["Sel(att): \(textSelection)",
+                                       "Sel: \(htmlSelection)",
+                                       "HTML: \"\(html)\"",
+                                       "replaceAll"],
+                                      functionName: #function)
         } catch {
             Logger.viewModel.logError(["Sel: {\(start), \(end - start)}",
                                        "Error: \(error.localizedDescription)",
@@ -360,12 +359,10 @@ private extension WysiwygComposerViewModel {
             // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
             let textSelection = try attributedContent.text.attributedRange(from: htmlSelection,
                                                                            shouldIgnoreTrailingNewline: false)
-            if attributedContent.selection != textSelection {
-                attributedContent.selection = textSelection
-                Logger.viewModel.logDebug(["Sel(att): \(textSelection)",
-                                           "Sel: \(htmlSelection)"],
-                                          functionName: #function)
-            }
+            attributedContent.selection = textSelection
+            Logger.viewModel.logDebug(["Sel(att): \(textSelection)",
+                                       "Sel: \(htmlSelection)"],
+                                      functionName: #function)
         } catch {
             Logger.viewModel.logError(["Sel: {\(start), \(end - start)}",
                                        "Error: \(error.localizedDescription)"],
