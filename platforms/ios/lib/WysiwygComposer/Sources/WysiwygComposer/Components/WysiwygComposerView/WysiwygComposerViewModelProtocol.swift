@@ -18,7 +18,7 @@ import UIKit
 
 public protocol WysiwygComposerViewModelProtocol: AnyObject {
     /// The textView with placeholder support that the model manages
-    var textView: PlaceholdableTextView? { get set }
+    var textView: PlaceholdableTextView { get }
 
     /// Update the composer compressed required height if it has changed.
     func updateCompressedHeightIfNeeded()
