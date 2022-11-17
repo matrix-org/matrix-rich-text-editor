@@ -25,6 +25,8 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
 
     /// The textView with placeholder support that the model manages
     public private(set) var textView = PlaceholdableTextView()
+    /// The composer minimal height.
+    public let minHeight: CGFloat
     /// Published object for the composer attributed content.
     @Published public var attributedContent: WysiwygComposerAttributedContent = .init()
     /// Published boolean for the composer empty content state.
@@ -89,7 +91,6 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
 
     // MARK: - Private
 
-    private let minHeight: CGFloat
     private var model: ComposerModel
     private var cancellables = Set<AnyCancellable>()
     private var defaultTextAttributes: [NSAttributedString.Key: Any] {
