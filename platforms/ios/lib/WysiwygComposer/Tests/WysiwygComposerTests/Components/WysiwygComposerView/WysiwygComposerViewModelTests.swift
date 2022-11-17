@@ -100,6 +100,13 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.attributedContent.selection, .zero)
     }
 
+    func testReconciliateRestoresFromModel() {
+        _ = viewModel.replaceText(range: .zero, replacementText: "Some text")
+        viewModel.textView.attributedText = NSAttributedString(string: "Some text")
+        reconciliate(to: "Home test", selectedRange: .zero)
+        XCTAssertEqual(viewModel.textView.text, "Some text")
+    }
+
     func testPlainTextMode() {
         _ = viewModel.replaceText(range: .zero,
                                   replacementText: "Some bold text")

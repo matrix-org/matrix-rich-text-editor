@@ -249,33 +249,50 @@ public extension WysiwygComposerViewModel {
             if textView.text.isEmpty != isContentEmpty {
                 isContentEmpty = textView.text.isEmpty
             }
-        } else if let replacement = try? StringDiffer.replacement(from: attributedContent.text.string,
-                                                                  to: textView.text ?? "") {
-            // Reconciliate
-            // swiftlint:disable:next force_try
-            let rustRange = try! attributedContent.text.htmlRange(from: replacement.range)
-
-            let replaceUpdate = model.replaceTextIn(newText: replacement.text,
-                                                    start: UInt32(rustRange.location),
-                                                    end: UInt32(rustRange.upperBound))
-            applyUpdate(replaceUpdate, skipTextViewUpdate: true)
-
-            // Resync selectedRange
-            // swiftlint:disable:next force_try
-            let rustSelection = try! textView.attributedText.htmlRange(from: textView.selectedRange)
-            let selectUpdate = model.select(startUtf16Codeunit: UInt32(rustSelection.location),
-                                            endUtf16Codeunit: UInt32(rustSelection.upperBound))
-            applyUpdate(selectUpdate)
-
-            Logger.viewModel.logDebug(["Reconciliate from \"\(attributedContent.text.string)\" to \"\(textView.text ?? "")\" with \"\(replacement.text)\""],
-                                      functionName: #function)
-            Logger.viewModel.logDebug(["Reconciliate model markdown: \"\(model.getContentAsMarkdown())\""],
-                                      functionName: #function)
         } else {
-            textView.shouldShowPlaceholder = textView.attributedText.length == 0
-        }
-        // }
+            do {
+                if let replacement = try StringDiffer.replacement(from: attributedContent.text.string,
+                                                                  to: textView.text ?? "") {
+                    // Reconciliate
+                    let rustRange = try attributedContent.text.htmlRange(from: replacement.range)
 
+                    let replaceUpdate = model.replaceTextIn(newText: replacement.text,
+                                                            start: UInt32(rustRange.location),
+                                                            end: UInt32(rustRange.upperBound))
+                    applyUpdate(replaceUpdate, skipTextViewUpdate: true)
+
+                    // Resync selectedRange
+                    let rustSelection = try textView.attributedText.htmlRange(from: textView.selectedRange)
+                    let selectUpdate = model.select(startUtf16Codeunit: UInt32(rustSelection.location),
+                                                    endUtf16Codeunit: UInt32(rustSelection.upperBound))
+                    applyUpdate(selectUpdate)
+
+                    Logger.viewModel.logDebug(["Reconciliate from \"\(attributedContent.text.string)\" to \"\(textView.text ?? "")\" with \"\(replacement.text)\""],
+                                              functionName: #function)
+                    Logger.viewModel.logDebug(["Reconciliate model markdown: \"\(model.getContentAsMarkdown())\""],
+                                              functionName: #function)
+                }
+            } catch {
+                switch error {
+                case StringDifferError.tooComplicated,
+                     StringDifferError.insertionsDontMatchRemovals:
+                    // Restore from the model, as otherwise the composer will enter a broken state
+                    textView.apply(attributedContent)
+                    updateCompressedHeightIfNeeded()
+                    Logger.viewModel.logError(["Reconciliate failed, content has been restored from the model"],
+                                              functionName: #function)
+                case AttributedRangeError.outOfBoundsAttributedIndex,
+                     AttributedRangeError.outOfBoundsHtmlIndex:
+                    // Just log here for now, the composer is already in a broken state
+                    Logger.viewModel.logError(["Reconciliate failed due to out of bounds indexes"],
+                                              functionName: #function)
+                default:
+                    break
+                }
+            }
+        }
+
+        textView.shouldShowPlaceholder = textView.attributedText.length == 0
         updateCompressedHeightIfNeeded()
     }
 }
