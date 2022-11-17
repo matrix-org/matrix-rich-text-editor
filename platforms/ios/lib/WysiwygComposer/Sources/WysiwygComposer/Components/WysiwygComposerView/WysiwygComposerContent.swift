@@ -40,7 +40,7 @@ public class WysiwygComposerContent: NSObject {
     }
 }
 
-public struct WysiwygComposerAttributedContent {
+public struct WysiwygComposerAttributedContent: Equatable {
     /// Attributed string representation of the displayed text.
     public let text: NSAttributedString
     /// Range of the selected text within the attributed representation.

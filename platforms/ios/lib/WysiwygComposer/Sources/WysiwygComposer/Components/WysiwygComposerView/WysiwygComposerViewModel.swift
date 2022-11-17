@@ -227,6 +227,7 @@ public extension WysiwygComposerViewModel {
         }
 
         applyUpdate(update)
+
         if !shouldAcceptChange {
             textView?.apply(attributedContent)
             updateCompressedHeightIfNeeded()
@@ -280,6 +281,7 @@ public extension WysiwygComposerViewModel {
         }
         // }
 
+        textView.shouldShowPlaceholder = textView.attributedText.length == 0
         updateCompressedHeightIfNeeded()
     }
 }
@@ -330,12 +332,15 @@ private extension WysiwygComposerViewModel {
             // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
             let textSelection = try attributed.attributedRange(from: htmlSelection,
                                                                shouldIgnoreTrailingNewline: false)
-            attributedContent = WysiwygComposerAttributedContent(text: attributed, selection: textSelection)
-            Logger.viewModel.logDebug(["Sel(att): \(textSelection)",
-                                       "Sel: \(htmlSelection)",
-                                       "HTML: \"\(html)\"",
-                                       "replaceAll"],
-                                      functionName: #function)
+            let newContent = WysiwygComposerAttributedContent(text: attributed, selection: textSelection)
+            if attributedContent != newContent {
+                attributedContent = newContent
+                Logger.viewModel.logDebug(["Sel(att): \(textSelection)",
+                                           "Sel: \(htmlSelection)",
+                                           "HTML: \"\(html)\"",
+                                           "replaceAll"],
+                                          functionName: #function)
+            }
         } catch {
             Logger.viewModel.logError(["Sel: {\(start), \(end - start)}",
                                        "Error: \(error.localizedDescription)",
@@ -355,10 +360,12 @@ private extension WysiwygComposerViewModel {
             // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
             let textSelection = try attributedContent.text.attributedRange(from: htmlSelection,
                                                                            shouldIgnoreTrailingNewline: false)
-            attributedContent.selection = textSelection
-            Logger.viewModel.logDebug(["Sel(att): \(textSelection)",
-                                       "Sel: \(htmlSelection)"],
-                                      functionName: #function)
+            if attributedContent.selection != textSelection {
+                attributedContent.selection = textSelection
+                Logger.viewModel.logDebug(["Sel(att): \(textSelection)",
+                                           "Sel: \(htmlSelection)"],
+                                          functionName: #function)
+            }
         } catch {
             Logger.viewModel.logError(["Sel: {\(start), \(end - start)}",
                                        "Error: \(error.localizedDescription)"],
