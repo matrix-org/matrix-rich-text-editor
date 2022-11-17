@@ -75,17 +75,29 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         XCTAssertFalse(shouldChange)
     }
 
-    func testReconciliateTextView() {
+    func testReconciliateModel() {
         _ = viewModel.replaceText(range: .zero,
                                   replacementText: "wa")
-        viewModel.textView.attributedText = NSAttributedString(string: "わ")
-        XCTAssertEqual(viewModel.textView.text, "わ")
-        XCTAssertEqual(viewModel.textView.selectedRange, NSRange(location: 1, length: 0))
         XCTAssertEqual(viewModel.attributedContent.text.string, "wa")
         XCTAssertEqual(viewModel.attributedContent.selection, NSRange(location: 2, length: 0))
-        viewModel.didUpdateText()
+        reconciliate(to: "わ", selectedRange: NSRange(location: 1, length: 0))
         XCTAssertEqual(viewModel.attributedContent.text.string, "わ")
         XCTAssertEqual(viewModel.attributedContent.selection, NSRange(location: 1, length: 0))
+    }
+
+    func testReconciliateRestoresSelection() {
+        _ = viewModel.replaceText(range: .zero, replacementText: "I\'m")
+        XCTAssertEqual(viewModel.attributedContent.selection, NSRange(location: 3, length: 0))
+        reconciliate(to: "I’m", selectedRange: NSRange(location: 3, length: 0))
+        XCTAssertEqual(viewModel.attributedContent.selection, NSRange(location: 3, length: 0))
+
+        viewModel.clearContent()
+
+        _ = viewModel.replaceText(range: .zero, replacementText: "Some text")
+        viewModel.select(range: .zero)
+        XCTAssertEqual(viewModel.attributedContent.selection, .zero)
+        reconciliate(to: "Some test", selectedRange: .zero)
+        XCTAssertEqual(viewModel.attributedContent.selection, .zero)
     }
 
     func testPlainTextMode() {
@@ -103,5 +115,19 @@ final class WysiwygComposerViewModelTests: XCTestCase {
 
         viewModel.plainTextMode = false
         XCTAssertEqual(viewModel.content.html, "Some bold <strong>text</strong>")
+    }
+}
+
+private extension WysiwygComposerViewModelTests {
+    /// Fakes a trigger of the reconciliate mechanism of the view model.
+    ///
+    /// - Parameters:
+    ///   - newText: New text to apply.
+    ///   - selectedRange: Simulated selection in the text view.
+    func reconciliate(to newText: String, selectedRange: NSRange) {
+        viewModel.textView.attributedText = NSAttributedString(string: newText)
+        // Set selection where we want it, as setting the content automatically moves cursor to the end.
+        viewModel.textView.selectedRange = selectedRange
+        viewModel.didUpdateText()
     }
 }
