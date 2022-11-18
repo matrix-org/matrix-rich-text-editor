@@ -45,12 +45,21 @@ where
     }
 }
 
+/// A DomNode and the index of its child that we are currently processing.
+struct NodeAndChildIndex<'a, S>
+where
+    S: UnicodeString,
+{
+    node: &'a DomNode<S>,
+    child_index: usize,
+}
+
 pub struct DomIterator<'a, S>
 where
     S: UnicodeString,
 {
     started: bool,
-    ancestors: Vec<(&'a DomNode<S>, usize)>,
+    ancestors: Vec<NodeAndChildIndex<'a, S>>,
 }
 
 impl<'a, S> DomIterator<'a, S>
@@ -60,7 +69,10 @@ where
     fn over(dom: &'a Dom<S>) -> Self {
         Self {
             started: false,
-            ancestors: vec![(&dom.document_node(), 0)],
+            ancestors: vec![NodeAndChildIndex {
+                node: &dom.document_node(),
+                child_index: 0,
+            }],
         }
     }
 }
@@ -74,13 +86,20 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         if self.started {
             let parent = self.ancestors.iter_mut().last();
-            if let Some((DomNode::Container(c), idx)) = parent {
+            if let Some(NodeAndChildIndex {
+                node: DomNode::Container(c),
+                child_index: idx,
+            }) = parent
+            {
                 let siblings = c.children();
                 if *idx < siblings.len() {
                     let myself = &siblings[*idx];
                     *idx += 1;
                     if let DomNode::Container(_) = myself {
-                        self.ancestors.push((myself, 0));
+                        self.ancestors.push(NodeAndChildIndex {
+                            node: myself,
+                            child_index: 0,
+                        });
                     }
                     Some(myself)
                 } else {
@@ -92,7 +111,7 @@ where
             }
         } else {
             self.started = true;
-            Some(self.ancestors[0].0)
+            Some(self.ancestors[0].node)
         }
     }
 }
