@@ -249,7 +249,7 @@ public extension WysiwygComposerViewModel {
         }
     }
 
-    func didUpdateText(shouldReconciliate: Bool = true) {
+    func didUpdateText() {
         if plainTextMode {
             if textView.text.isEmpty != isContentEmpty {
                 isContentEmpty = textView.text.isEmpty

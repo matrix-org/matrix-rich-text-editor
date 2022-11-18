@@ -48,6 +48,15 @@ struct StringDifferReplacement: Equatable {
     }
 }
 
+private struct StringDiff {
+    let removals: UTF16Removals
+    let insertions: UTF16Insertions
+
+    var isEmpty: Bool {
+        removals.isEmpty && insertions.isEmpty
+    }
+}
+
 final class StringDiffer {
     // MARK: - Private
 
@@ -56,14 +65,14 @@ final class StringDiffer {
     // MARK: - Internal
 
     static func replacement(from oldText: String, to newText: String) throws -> StringDifferReplacement? {
-        let difference = newText.withNBSP.difference(from: oldText.withNBSP)
+        let difference = newText.withNBSP.utf16Difference(from: oldText.withNBSP)
 
         guard !difference.isEmpty else {
             return nil
         }
 
-        let removedRanges = difference.removedRanges
-        let textInsertions = difference.textInsertions
+        let removedRanges = difference.removals
+        let textInsertions = difference.insertions
 
         guard removedRanges.count < 2, textInsertions.count < 2 else {
             throw StringDifferError.tooComplicated
@@ -94,5 +103,11 @@ private extension String {
     /// Converts all whitespaces to NBSP to avoid diffs caused by HTML translations.
     var withNBSP: String {
         String(map { $0.isWhitespace ? Character("\u{00A0}") : $0 })
+    }
+
+    func utf16Difference(from otherString: String) -> StringDiff {
+        let difference = difference(from: otherString)
+        return StringDiff(removals: difference.utf16Removals(in: otherString),
+                          insertions: difference.utf16Insertions(in: self))
     }
 }
