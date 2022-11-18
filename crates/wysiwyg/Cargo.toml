@@ -8,7 +8,7 @@ keywords = ["matrix", "chat", "messaging", "composer", "wysiwyg"]
 license = "Apache-2.0"
 name = "wysiwyg"
 version = "0.6.0"
-rust-version = "1.60"
+rust = "1.65"
 
 [features]
 default = ["sys", "to-markdown"]
