@@ -211,12 +211,9 @@ public extension WysiwygComposerViewModel {
         }
 
         if attributedContent.selection.length == 0, replacementText == "" {
-            Logger.viewModel.logDebug(["Ignored an empty replacement"],
-                                      functionName: #function)
-            return false
-        }
-
-        if replacementText.count == 1, replacementText[String.Index(utf16Offset: 0, in: replacementText)].isNewline {
+            update = model.backspace()
+            shouldAcceptChange = false
+        } else if replacementText.count == 1, replacementText[String.Index(utf16Offset: 0, in: replacementText)].isNewline {
             update = model.enter()
             shouldAcceptChange = false
         } else {
