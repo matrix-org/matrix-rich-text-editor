@@ -36,36 +36,31 @@ where
 
     fn set_link_range(&mut self, range: Range, link: S) -> ComposerUpdate<S> {
         let leaves: Vec<&DomLocation> = range.leaves().collect();
-        if leaves.len() == 1 {
-            let location = leaves[0];
-            let handle = &location.node_handle;
+        for leaf in leaves.into_iter().rev() {
+            let handle = &leaf.node_handle;
 
             // TODO: set link should be able to wrap container nodes, unlike formatting
             let node = self.state.dom.lookup_node(handle);
             if let DomNode::Text(t) = node {
                 let text = t.data();
-                let before = text[..location.start_offset].to_owned();
+                let before = text[..leaf.start_offset].to_owned();
                 let during =
-                    text[location.start_offset..location.end_offset].to_owned();
-                let after = text[location.end_offset..].to_owned();
+                    text[leaf.start_offset..leaf.end_offset].to_owned();
+                let after = text[leaf.end_offset..].to_owned();
                 let mut new_nodes = Vec::new();
                 if !before.is_empty() {
                     new_nodes.push(DomNode::new_text(before));
                 }
                 new_nodes.push(DomNode::new_link(
-                    link,
+                    link.clone(),
                     vec![DomNode::new_text(during)],
                 ));
                 if !after.is_empty() {
                     new_nodes.push(DomNode::new_text(after));
                 }
                 self.state.dom.replace(handle, new_nodes);
-                self.create_update_replace_all()
-            } else {
-                panic!("Trying to linkify a non-text node")
             }
-        } else {
-            panic!("Can't add link in complex object models yet")
         }
+        self.create_update_replace_all()
     }
 }
