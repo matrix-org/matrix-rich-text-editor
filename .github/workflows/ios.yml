@@ -38,7 +38,7 @@ jobs:
       with:
         command: install
         # keep in sync with uniffi dependency in Cargo.toml's
-        args: uniffi_bindgen --version 0.19.2
+        args: uniffi_bindgen --version 0.21.0
 
     - name: Set XCode 14.1
       run: sudo xcode-select -switch /Applications/Xcode_14.1.app
