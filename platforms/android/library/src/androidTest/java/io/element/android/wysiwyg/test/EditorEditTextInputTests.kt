@@ -29,8 +29,6 @@ import io.mockk.spyk
 import io.mockk.verify
 import org.hamcrest.CoreMatchers
 import org.hamcrest.Description
-import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.Matchers.equalTo
 import org.junit.*
 import org.junit.runner.RunWith
 import uniffi.wysiwyg_composer.ActionState
@@ -209,6 +207,7 @@ class EditorEditTextInputTests {
     }
 
     @Test
+    @Ignore("Lists are being refactored at the moment")
     fun testAddingOrderedList() {
         onView(withId(R.id.rich_text_edit_text))
             .perform(EditorActions.toggleList(true))
@@ -223,6 +222,7 @@ class EditorEditTextInputTests {
     }
 
     @Test
+    @Ignore("Lists are being refactored at the moment")
     fun testAddingUnorderedList() {
         onView(withId(R.id.rich_text_edit_text))
             .perform(EditorActions.toggleList(false))
