@@ -16,6 +16,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Version Install
+      run: rustup install 1.65
+    - name: Set Version
+      run: rustup default 1.65
     - name: Format
       run: cargo fmt -- --check
     - name: Build
