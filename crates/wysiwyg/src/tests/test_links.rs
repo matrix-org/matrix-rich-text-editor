@@ -35,7 +35,7 @@ fn set_link_wraps_selection_in_link_tag() {
 }
 
 #[test]
-fn set_link_in_multiple_leaves() {
+fn set_link_in_multiple_leaves_of_formatted_text() {
     let mut model = cm("{<i>test_italic<b>test_italic_bold</b></i>}|");
     model.set_link(utf16("https://element.io"));
     assert_eq!(
@@ -45,11 +45,21 @@ fn set_link_in_multiple_leaves() {
 }
 
 #[test]
-fn set_link_in_multiple_leaves_partially_covered() {
+fn set_link_in_multiple_leaves_of_formatted_text_partially_covered() {
     let mut model = cm("<i>test_it{alic<b>test_ital}|ic_bold</b></i>");
     model.set_link(utf16("https://element.io"));
     assert_eq!(
         model.state.dom.to_string(),
         "<i>test_it<a href=\"https://element.io\">alic</a><b><a href=\"https://element.io\">test_ital</a>ic_bold</b></i>"
+    )
+}
+
+#[test]
+fn set_link_in_multiple_leaves_of_formatted_text_partially_covered_2() {
+    let mut model = cm("<i><u>test_it{alic_underline</u>test_italic<b>test_ital}|ic_bold</b></i>");
+    model.set_link(utf16("https://element.io"));
+    assert_eq!(
+        model.state.dom.to_string(),
+        "<i><u>test_it<a href=\"https://element.io\">alic_underline</a></u><b><a href=\"https://element.io\">test_ital</a>ic_bold</b></i>"
     )
 }
