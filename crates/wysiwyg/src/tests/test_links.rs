@@ -69,8 +69,5 @@ fn set_link_in_multiple_leaves_of_formatted_text_partially_covered_2() {
 fn set_link_in_already_linked_text() {
     let mut model = cm("{<a href=\"https://element.io\">link_text</a>}|");
     model.set_link(utf16("https://element.io"));
-    assert_eq!(
-        model.state.dom.to_string(),
-        ""
-    )
+    assert_eq!(model.state.dom.to_string(),"")
 }
