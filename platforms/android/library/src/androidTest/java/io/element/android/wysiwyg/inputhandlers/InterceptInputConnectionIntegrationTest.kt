@@ -277,7 +277,7 @@ class InterceptInputConnectionIntegrationTest {
     }
 
     @Test
-    fun testIncrementalCommitWithFormattingDisabledKeepsItDisabledWithWhitespace() {
+    fun testIncrementalCommitWithDisabledFormattingKeepsItDisabledAfterWhitespace() {
         // Set initial text
         val initialText = viewModel.processInput(
             EditorInputAction.ReplaceAllHtml("<strong>test</strong>")
@@ -286,7 +286,7 @@ class InterceptInputConnectionIntegrationTest {
         // Disable bold at end of string
         textView.setSelection(4)
         viewModel.processInput(EditorInputAction.ApplyInlineFormat(InlineFormat.Bold))
-        // Autocomplete 'test' -> 'testing'
+        // Autocomplete 'test' -> 'test '
         inputConnection.setComposingRegion(0, 4)
         inputConnection.commitText("test ", 1)
         // Add some extra text
