@@ -50,6 +50,6 @@ fn set_link_in_multiple_leaves_partially_covered() {
     model.set_link(utf16("https://element.io"));
     assert_eq!(
         model.state.dom.to_string(),
-        "<i>test_it<b><a href=\"https://element.io\">test_ital</a></b></i>"
+        "<i>test_it<a href=\"https://element.io\">alic</a><b><a href=\"https://element.io\">test_ital</a>ic_bold</b></i>"
     )
 }
