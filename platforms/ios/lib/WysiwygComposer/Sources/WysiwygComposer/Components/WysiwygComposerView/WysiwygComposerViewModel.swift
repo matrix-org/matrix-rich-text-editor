@@ -382,7 +382,7 @@ private extension WysiwygComposerViewModel {
         }
     }
 
-    /// Reconcilaite the content of the model with the content of the text view.
+    /// Reconciliate the content of the model with the content of the text view.
     func reconciliateIfNeeded() {
         do {
             guard let replacement = try StringDiffer.replacement(from: attributedContent.text.string,
@@ -403,9 +403,7 @@ private extension WysiwygComposerViewModel {
                                             endUtf16Codeunit: UInt32(rustSelection.upperBound))
             applyUpdate(selectUpdate)
 
-            Logger.viewModel.logDebug(["Reconciliate from \"\(attributedContent.text.string)\" to \"\(textView.text ?? "")\" with \"\(replacement.text)\""],
-                                      functionName: #function)
-            Logger.viewModel.logDebug(["Reconciliate model markdown: \"\(model.getContentAsMarkdown())\""],
+            Logger.viewModel.logDebug(["Reconciliate from \"\(attributedContent.text.string)\" to \"\(textView.text ?? "")\""],
                                       functionName: #function)
         } catch {
             switch error {
