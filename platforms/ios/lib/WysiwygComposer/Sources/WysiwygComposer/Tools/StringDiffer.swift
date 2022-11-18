@@ -48,15 +48,6 @@ struct StringDifferReplacement: Equatable {
     }
 }
 
-private struct StringDiff {
-    let removals: UTF16Removals
-    let insertions: UTF16Insertions
-
-    var isEmpty: Bool {
-        removals.isEmpty && insertions.isEmpty
-    }
-}
-
 final class StringDiffer {
     // MARK: - Private
 
@@ -64,6 +55,15 @@ final class StringDiffer {
 
     // MARK: - Internal
 
+    /// Creates a simple diff replacement between the two provided strings. This differ treats all
+    /// types of whitespaces as non-breaking spaces in order to avoid unneccessary positives due to
+    /// Rust usage of non-breaking spaces in HTML output. Throws if the changes
+    /// between the two strings are more than just a single located replacement.
+    ///
+    /// - Parameters:
+    ///   - oldText: The old (previous) text.
+    ///   - newText: The new text.
+    /// - Returns: Replacement that have occured in order to get from `oldText` to `newText`. Nil if strings are identical.
     static func replacement(from oldText: String, to newText: String) throws -> StringDifferReplacement? {
         let difference = newText.withNBSP.utf16Difference(from: oldText.withNBSP)
 
@@ -71,31 +71,46 @@ final class StringDiffer {
             return nil
         }
 
-        let removedRanges = difference.removals
-        let textInsertions = difference.insertions
-
-        guard removedRanges.count < 2, textInsertions.count < 2 else {
+        guard !difference.isComplex else {
             throw StringDifferError.tooComplicated
         }
 
-        if let removedRange = removedRanges.first {
-            if let insertion = textInsertions.first {
-                if insertion.range.location == removedRange.location {
+        if let removal = difference.removals.first {
+            if let insertion = difference.insertions.first {
+                if insertion.range.location == removal.location {
                     // Replacement
-                    return StringDifferReplacement(range: removedRange, text: insertion.text)
+                    return StringDifferReplacement(range: removal, text: insertion.text)
                 } else {
                     throw StringDifferError.insertionsDontMatchRemovals
                 }
             } else {
                 // Simple removal
-                return StringDifferReplacement(range: removedRange, text: "")
+                return StringDifferReplacement(range: removal, text: "")
             }
-        } else if let insertedRange = textInsertions.first {
+        } else if let insertion = difference.insertions.first {
             // Simple insertion
-            return StringDifferReplacement(location: insertedRange.range.location, length: 0, text: insertedRange.text)
+            return StringDifferReplacement(location: insertion.range.location, length: 0, text: insertion.text)
         } else {
             fatalError("Should never happen => difference is empty")
         }
+    }
+}
+
+// MARK: - Private
+
+/// Describes a diff from a string to another, with UTF16 locations and lengths.
+private struct StringDiff {
+    let removals: UTF16Removals
+    let insertions: UTF16Insertions
+
+    /// Returns true if there is no actual changes in the diff.
+    var isEmpty: Bool {
+        removals.isEmpty && insertions.isEmpty
+    }
+
+    /// Returns true if the diff includes multiple removals or insertions.
+    var isComplex: Bool {
+        removals.count > 1 || insertions.count > 1
     }
 }
 
@@ -105,6 +120,10 @@ private extension String {
         String(map { $0.isWhitespace ? Character("\u{00A0}") : $0 })
     }
 
+    /// Computes the diff from provided string to self. Outputs UTF16 locations and lengths.
+    ///
+    /// - Parameter otherString: Other string to compare.
+    /// - Returns: Result diff (UTF16).
     func utf16Difference(from otherString: String) -> StringDiff {
         let difference = difference(from: otherString)
         return StringDiff(removals: difference.utf16Removals(in: otherString),
