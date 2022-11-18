@@ -17,6 +17,7 @@ import io.element.android.wysiwyg.utils.EditorIndexMapper
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
 import io.element.android.wysiwyg.viewmodel.EditorViewModel
 import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.min
 
 internal class InterceptInputConnection(
@@ -199,9 +200,11 @@ internal class InterceptInputConnection(
         if (start == 0 && end == 0) return false
 
         val toDelete = if (start == end) 1 else abs(start - end)
+        // We're going to copy backspace behaviour, the selection must be at the greater value
+        val deletePos = max(start, end)
 
         // Imitate the software key backspace which updates the selection start to match the end.
-        Selection.setSelection(editable, end, end)
+        Selection.setSelection(editable, deletePos, deletePos)
 
         return deleteSurroundingText(toDelete, 0)
     }
