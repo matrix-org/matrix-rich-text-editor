@@ -90,5 +90,5 @@ coverage:
 	cargo llvm-cov --open
 
 setup:
-	rustup default 1.65
+	rustup override set 1.65
 
