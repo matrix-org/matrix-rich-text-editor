@@ -63,9 +63,66 @@ where
         }
     }
 
-    /// Deletes a single word when user 
+    /// Remove a single word when user does ctrl/cmd + backspace
     pub fn backspace_word(&mut self) -> ComposerUpdate<S> {
-        self.delete()
+        let (s, e) = self.safe_selection();
+
+        // if we're at the start of the string, do nothing
+        if s == 0 {
+            return ComposerUpdate::keep();
+        } 
+
+        // categories of character before cursor
+        #[derive(PartialEq)]
+        enum Cat {
+            Whitespace, 
+            Other,
+            None
+        }
+        
+        // not at the start of the string from here onwards
+        let content = self.state.dom.to_string();
+        println!("CONTENT: {}", content);
+        let mut search_index = e-1;
+        let start_type = match content.chars().nth(e-1) {
+            Some(c) => {
+                if c.is_whitespace() {
+                    Cat::Whitespace
+                } else {
+                    Cat::Other
+                }
+            }
+            None => Cat::None,
+        };
+        let mut trigger = start_type.eq(&Cat::Whitespace);
+
+        while search_index > 0 {
+            let nth_char = content.chars().nth(search_index);
+            match nth_char {
+                Some(c) => {
+                    if trigger && !c.is_whitespace() {
+                        trigger = false
+                    }
+                    match start_type {
+                        Cat::Whitespace => {
+                            if c.is_whitespace() && !trigger {
+                                break;
+                            }
+                        },
+                        Cat::Other => {
+                            if c.is_whitespace() {
+                                break;
+                            }
+                        },
+                        Cat::None => break,
+                    }
+                },
+                None => break,
+            }
+            search_index -= 1; 
+        }
+        
+        self.delete_in(search_index + 1,e)
     }
  
     /// Deletes text in an arbitrary start..end range.
