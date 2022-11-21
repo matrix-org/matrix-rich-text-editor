@@ -19,7 +19,9 @@ use crate::dom::action_list::DomActionList;
 use crate::dom::nodes::{ContainerNodeKind, DomNode};
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{Dom, DomHandle, DomLocation, Range};
-use crate::{ComposerModel, ComposerUpdate, InlineFormatType, UnicodeString};
+use crate::{
+    ComposerModel, ComposerUpdate, InlineFormatType, ToHtml, UnicodeString,
+};
 
 #[derive(Eq, PartialEq, Debug)]
 enum FormatSelectionType {
@@ -150,6 +152,7 @@ where
                         }
                         DomNode::LineBreak(_) => {
                             // We should split inline code nodes at line breaks
+                            let text = cur_text.clone().to_string();
                             self.state.dom.insert(
                                 &ancestor_child.next_sibling(),
                                 DomNode::new_formatting(
@@ -157,6 +160,16 @@ where
                                     vec![DomNode::new_text(cur_text)],
                                 ),
                             );
+                            // If leaf line break is not a direct child of the common ancestor,
+                            // move it to the parent ancestor
+                            if ancestor_child != leaf.node_handle {
+                                self.state.dom.remove(&leaf.node_handle);
+                                self.state.dom.insert(
+                                    &ancestor_child.next_sibling(),
+                                    DomNode::new_line_break(),
+                                );
+                            }
+                            let html = self.state.dom.to_html().to_string();
                             // Update insertion point and reset text
                             insert_text_at = Some(ancestor_child.clone());
                             cur_text = S::default();
