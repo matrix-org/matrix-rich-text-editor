@@ -63,6 +63,11 @@ where
         }
     }
 
+    /// Deletes a single word when user 
+    pub fn backspace_word(&mut self) -> ComposerUpdate<S> {
+        self.delete()
+    }
+ 
     /// Deletes text in an arbitrary start..end range.
     pub fn delete_in(&mut self, start: usize, end: usize) -> ComposerUpdate<S> {
         self.state.end = Location::from(start);
