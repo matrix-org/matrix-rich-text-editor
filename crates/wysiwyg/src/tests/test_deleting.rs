@@ -270,3 +270,76 @@ fn test_backspace_complex_grapheme() {
     model.backspace();
     assert_eq!(tx(&model), "Test|");
 }
+
+#[test]
+fn backspace_word_at_beginning_does_nothing(){
+    let mut model = cm("|abc");
+    model.backspace_word();
+    assert_eq!(tx(&model), "|abc")
+}
+
+#[test]
+fn backspace_word_at_end_of_word_removes_single_word(){
+    let mut model = cm("abc def|");
+    model.backspace_word();
+    assert_eq!(tx(&model), "abc |")
+} 
+
+#[test]
+fn backspace_word_at_whitespace_removes_whitespace_and_word(){
+    let mut model = cm("abc def |");
+    model.backspace_word();
+    assert_eq!(tx(&model), "abc |")
+} 
+
+#[test]
+fn backspace_word_in_word_removes_start_of_word(){
+    let mut model = cm("abc de|f");
+    model.backspace_word();
+    assert_eq!(tx(&model), "abc |f")
+} 
+
+#[test]
+fn backspace_word_with_selection_only_removes_selection(){
+    let mut model = cm("ab{c def}|");
+    model.backspace_word();
+    assert_eq!(tx(&model), "ab|")
+} 
+
+#[test]
+fn backspace_word_removes_runs_of_whitespace(){
+    let mut model = cm("abc def          |");
+    model.backspace_word();
+    assert_eq!(tx(&model), "abc |")
+} 
+
+#[test]
+fn backspace_word_removes_runs_of_non_word_characters(){
+    let mut model = cm("abc,.()<>!@£$^&*|");
+    model.backspace_word();
+    assert_eq!(tx(&model), "abc|")
+} 
+
+#[test]
+fn backspace_word_removes_runs_of_non_word_characters_and_whitespace(){
+    let mut model = cm("abc  ,.!@£$%       |");
+    model.backspace_word();
+    assert_eq!(tx(&model), "abc  |")
+} 
+
+#[test]
+fn backspace_word_does_not_remove_past_newline_in_word(){
+    let mut model = cm("abc\ndef   |");
+    model.backspace_word();
+    assert_eq!(tx(&model), "abc\n|")
+} 
+
+#[test]
+fn backspace_word_does_not_remove_past_newline_in_whitespace(){
+    let mut model = cm("abc  \n       |");
+    model.backspace_word();
+    assert_eq!(tx(&model), "abc  \n|");
+    model.backspace_word();
+    assert_eq!(tx(&model), "abc|");
+
+} 
