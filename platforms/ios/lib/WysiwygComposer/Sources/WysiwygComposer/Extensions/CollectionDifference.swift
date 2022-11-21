@@ -32,23 +32,22 @@ extension CollectionDifference<Character> {
             case .remove(offset: let offset, element: let element, associatedWith: _):
                 let index = string.index(string.startIndex, offsetBy: offset)
                 let utf16Offset = string[..<index].utf16.count
-                if let lastRange = partialRes.popLast() {
-                    if lastRange.upperBound == utf16Offset {
-                        partialRes.append(NSRange(location: lastRange.location, length: lastRange.length + element.utf16.count))
-                    } else {
-                        partialRes.append(lastRange)
-                        partialRes.append(NSRange(location: utf16Offset, length: element.utf16.count))
-                    }
-                    return partialRes
-                } else {
+                guard let lastRange = partialRes.popLast() else {
                     return [NSRange(location: utf16Offset, length: element.utf16.count)]
                 }
+                if lastRange.upperBound == utf16Offset {
+                    partialRes.append(NSRange(location: lastRange.location, length: lastRange.length + element.utf16.count))
+                } else {
+                    partialRes.append(lastRange)
+                    partialRes.append(NSRange(location: utf16Offset, length: element.utf16.count))
+                }
+                return partialRes
             default:
                 return []
             }
         }
     }
-
+    
     /// Transforms the insertions in the `CollectionDifference` into an array of ranges and associated text.
     /// Output ranges are defined with UTF16 locations and lengths.
     ///
@@ -61,20 +60,19 @@ extension CollectionDifference<Character> {
             case .insert(offset: let offset, element: let element, associatedWith: _):
                 let index = string.index(string.startIndex, offsetBy: offset)
                 let utf16Offset = string[..<index].utf16.count
-                if let lastRange = partialRes.popLast() {
-                    let (range, text) = lastRange
-                    if range.upperBound == utf16Offset {
-                        partialRes.append(
-                            (NSRange(location: range.location, length: range.length + element.utf16.count), text + String(element))
-                        )
-                    } else {
-                        partialRes.append(lastRange)
-                        partialRes.append((NSRange(location: utf16Offset, length: element.utf16.count), String(element)))
-                    }
-                    return partialRes
-                } else {
+                guard let lastRange = partialRes.popLast() else {
                     return [(NSRange(location: utf16Offset, length: element.utf16.count), String(element))]
                 }
+                let (range, text) = lastRange
+                if range.upperBound == utf16Offset {
+                    partialRes.append(
+                        (NSRange(location: range.location, length: range.length + element.utf16.count), text + String(element))
+                    )
+                } else {
+                    partialRes.append(lastRange)
+                    partialRes.append((NSRange(location: utf16Offset, length: element.utf16.count), String(element)))
+                }
+                return partialRes
             default:
                 return []
             }
