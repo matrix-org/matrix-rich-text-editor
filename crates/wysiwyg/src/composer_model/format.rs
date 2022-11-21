@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::collections::HashMap;
+
 use crate::composer_model::menu_state::MenuStateComputeType;
 use crate::dom::action_list::DomActionList;
 use crate::dom::nodes::{ContainerNodeKind, DomNode};
@@ -51,8 +53,200 @@ where
 
     pub fn inline_code(&mut self) -> ComposerUpdate<S> {
         self.push_state_to_history();
-        self.format_or_unformat(InlineFormatType::InlineCode)
+        let format_type = InlineFormatType::InlineCode;
+        if self.action_is_reversed(format_type.action()) {
+            self.unformat(format_type)
+        } else {
+            self.add_inline_code()
+        }
     }
+
+    fn add_inline_code(&mut self) -> ComposerUpdate<S> {
+        let (s, e) = self.safe_selection();
+        let format = InlineFormatType::InlineCode;
+
+        if s == e {
+            self.toggle_zero_length_format(&format);
+            ComposerUpdate::update_menu_state(
+                self.compute_menu_state(MenuStateComputeType::KeepIfUnchanged),
+            )
+        } else {
+            let range = self.state.dom.find_range(s, e);
+            let leaves: Vec<&DomLocation> = range.leaves().collect();
+            let mut structure_ancestors = HashMap::new();
+            for leaf in leaves {
+                let first_structure_ancestor =
+                    self.find_structure_ancestor(&leaf.node_handle);
+                if let Some(ancestor_handle) = first_structure_ancestor {
+                    let list = structure_ancestors
+                        .entry(ancestor_handle.raw().clone())
+                        .or_insert(Vec::new());
+                    list.push(leaf.clone());
+                } else {
+                    let list = structure_ancestors
+                        .entry(Vec::new())
+                        .or_insert(Vec::new());
+                    list.push(leaf.clone());
+                }
+            }
+
+            let mut keys: Vec<&Vec<usize>> =
+                structure_ancestors.keys().collect();
+            keys.sort();
+
+            for ancestor_handle in keys.into_iter().rev() {
+                let leaves = structure_ancestors.get(ancestor_handle).unwrap();
+                let mut cur_text = S::default();
+                let mut insert_text_at: Option<DomHandle> = None;
+                for leaf in leaves.into_iter().rev() {
+                    let html = self.get_content_as_html().to_string();
+                    let (path, _) = leaf
+                        .node_handle
+                        .raw()
+                        .split_at(ancestor_handle.len() + 1)
+                        .clone();
+                    let ancestor_child = DomHandle::from_raw(path.to_vec());
+                    let node =
+                        self.state.dom.lookup_node(&leaf.node_handle).clone();
+                    match node {
+                        DomNode::Text(text_node) => {
+                            cur_text.insert(
+                                0,
+                                &text_node.data()
+                                    [leaf.start_offset..leaf.end_offset]
+                                    .to_owned(),
+                            );
+
+                            if leaf.is_covered() {
+                                insert_text_at = Some(ancestor_child.clone());
+                                self.clean_up_until(
+                                    &leaf.node_handle,
+                                    &ancestor_child,
+                                );
+                            } else if leaf.is_start() {
+                                // This node is at the start of the selection and not completely
+                                // covered, split it and set the insertion point to be after it.
+                                insert_text_at =
+                                    Some(ancestor_child.next_sibling());
+                                let text = text_node.data()
+                                    [..leaf.start_offset]
+                                    .to_owned();
+                                self.state.dom.replace(
+                                    &leaf.node_handle,
+                                    vec![DomNode::new_text(text)],
+                                );
+                            } else if leaf.is_end() {
+                                // This node is at the end of the selection and not completely
+                                // covered, split it and set the insertion point to be before it.
+                                insert_text_at =
+                                    Some(ancestor_child.prev_sibling());
+                                let text = text_node.data()[leaf.end_offset..]
+                                    .to_owned();
+                                self.state.dom.replace(
+                                    &leaf.node_handle,
+                                    vec![DomNode::new_text(text)],
+                                );
+                            }
+                        }
+                        DomNode::LineBreak(_) => {
+                            // We should split inline code nodes at line breaks
+                            self.state.dom.insert(
+                                &ancestor_child.next_sibling(),
+                                DomNode::new_formatting(
+                                    InlineFormatType::InlineCode,
+                                    vec![DomNode::new_text(cur_text)],
+                                ),
+                            );
+                            // Update insertion point and reset text
+                            insert_text_at = Some(ancestor_child.clone());
+                            cur_text = S::default();
+                        }
+                        _ => panic!(
+                            "Leaf should be either a line break or a text node"
+                        ),
+                    }
+                }
+                if !cur_text.is_empty() && insert_text_at.is_some() {
+                    let insert_at = insert_text_at.unwrap();
+                    let html = self.get_content_as_html().to_string();
+                    self.state.dom.insert(
+                        &insert_at,
+                        DomNode::new_formatting(
+                            InlineFormatType::InlineCode,
+                            vec![DomNode::new_text(cur_text.clone())],
+                        ),
+                    );
+
+                    self.merge_formatting_node_with_siblings(&insert_at);
+                }
+            }
+            self.create_update_replace_all()
+        }
+    }
+
+    fn clean_up_until(
+        &mut self,
+        cur_handle: &DomHandle,
+        top_handle: &DomHandle,
+    ) {
+        self.state.dom.remove(cur_handle);
+        if cur_handle != top_handle
+            && self.state.dom.parent(cur_handle).children().is_empty()
+        {
+            self.clean_up_until(&cur_handle.parent_handle(), top_handle)
+        }
+    }
+
+    fn find_structure_ancestor(&self, handle: &DomHandle) -> Option<DomHandle> {
+        let parent = self.state.dom.parent(handle);
+        if parent.is_structure_node() {
+            Some(parent.handle().clone())
+        } else {
+            if parent.handle().has_parent() {
+                self.find_structure_ancestor(&parent.handle())
+            } else {
+                None
+            }
+        }
+    }
+
+    // fn remove_inline_code(&mut self) -> ComposerUpdate<S> {
+    //     let (s, e) = self.safe_selection();
+    //     let format = InlineFormatType::InlineCode;
+    //
+    //     if s == e {
+    //         self.toggle_zero_length_format(&format);
+    //         ComposerUpdate::update_menu_state(
+    //             self.compute_menu_state(MenuStateComputeType::KeepIfUnchanged),
+    //         )
+    //     } else {
+    //         let leaves: Vec<&DomLocation> =
+    //             self.state.dom.find_range(s, e).leaves().collect();
+    //         if leaves.len() == 1 {
+    //             let leaf = leaves[0];
+    //
+    //             let DomNode::Text(text_node) =
+    //                 self.state.dom.lookup_node(&leaf.node_handle)?;
+    //             let text = text_node.data();
+    //             let DomNode::Container(mut parent) =
+    //                 self.state.dom.parent_mut(&leaf.node_handle)?;
+    //             assert!(
+    //                 parent.is_formatting_node_of_type(
+    //                     &InlineFormatType::InlineCode
+    //                 ),
+    //                 "Parent node should be a Formatting node"
+    //             );
+    //             parent.replace_child(
+    //                 leaf.node_handle.index_in_parent(),
+    //                 vec![DomNode::new_text(text)],
+    //             );
+    //         } else {
+    //             panic!("Inline code format node should only have a single leaf child");
+    //         }
+    //
+    //         self.create_update_replace_all()
+    //     }
+    // }
 
     fn format_or_unformat(
         &mut self,
@@ -620,5 +814,96 @@ mod test {
         assert_eq!(tx(&model), "AAA&nbsp;|");
         model.bold();
         assert_eq!(tx(&model), "AAA&nbsp;|");
+    }
+
+    #[test]
+    fn format_inline_code_same_row() {
+        let mut model = cm("<b>{bold</b><i>text}|</i>");
+        model.inline_code();
+        assert_eq!(tx(&model), "<code>{boldtext}|</code>");
+    }
+
+    #[test]
+    fn format_inline_code_same_row_partial() {
+        let mut model = cm("<b>bo{ld</b><i>te}|xt</i>");
+        model.inline_code();
+        assert_eq!(tx(&model), "<b>bo</b><code>{ldte}|</code><i>xt</i>");
+    }
+
+    #[test]
+    fn format_inline_code_same_row_with_line_breaks() {
+        let mut model = cm("<b>{bold</b><br /><i>text}|</i>");
+        model.inline_code();
+        assert_eq!(tx(&model), "<code>{bold</code><br /><code>text}|</code>");
+    }
+
+    #[test]
+    fn format_inline_code_different_rows() {
+        let mut model = cm("<b><u>{bold</u></b><i>text}|</i>");
+        model.inline_code();
+        assert_eq!(tx(&model), "<code>{boldtext}|</code>");
+    }
+
+    #[test]
+    fn format_inline_code_different_rows_nested() {
+        let mut model = cm("<b><u>{bold</u><i>italic</i></b><i>text}|</i>");
+        model.inline_code();
+        assert_eq!(tx(&model), "<code>{bolditalictext}|</code>");
+    }
+
+    #[test]
+    fn format_inline_code_different_rows_partial() {
+        let mut model = cm("<b><u>bo{ld</u></b><i>te}|xt</i>");
+        model.inline_code();
+        assert_eq!(tx(&model), "<b><u>bo</u></b><code>{ldte}|</code><i>xt</i>");
+    }
+
+    #[test]
+    fn format_inline_code_different_rows_partial_with_line_break() {
+        let mut model = cm("<b><u>bo{ld</u></b><br /><i>te}|xt</i>");
+        model.inline_code();
+        assert_eq!(
+            tx(&model),
+            "<b><u>bo</u></b><code>{ld</code><br /><code>te}|</code><i>xt</i>"
+        );
+    }
+
+    #[test]
+    fn format_inline_code_different_rows_partial_with_line_break_inside_parent()
+    {
+        let mut model = cm("<b><u>bo{ld</u><br /></b><i>te}|xt</i>");
+        model.inline_code();
+        assert_eq!(
+            tx(&model),
+            "<b><u>bo</u></b><code>{ld</code><br /><code>te}|</code><i>xt</i>"
+        );
+    }
+
+    #[test]
+    fn format_inline_code_in_list_item() {
+        let mut model = cm("<ul><li><b>bo{ld</b><i>text}|</i></li></ul>");
+        model.inline_code();
+        assert_eq!(
+            tx(&model),
+            "<ul><li><b>bo</b><code>{ldtext}|</code></li></ul>"
+        );
+    }
+
+    #[test]
+    fn format_inline_code_in_several_list_items() {
+        let mut model =
+            cm("<ul><li><b>bo{ld</b></li><li><i>text}|</i></li></ul>");
+        model.inline_code();
+        assert_eq!(
+            tx(&model),
+            "<ul><li><b>bo</b><code>{ld</code></li><li><code>text}|</code></li></ul>"
+        );
+    }
+
+    #[test]
+    fn format_inline_code_with_existing_inline_code() {
+        let mut model = cm("{Some <code>co}|de</code>");
+        model.inline_code();
+        assert_eq!(tx(&model), "<code>{Some co}|de</code>");
     }
 }

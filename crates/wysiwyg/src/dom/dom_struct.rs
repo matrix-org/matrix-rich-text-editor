@@ -90,6 +90,27 @@ where
         self.document_mut().append_child(child)
     }
 
+    pub fn append_child_to_parent(
+        &mut self,
+        parent_handle: &DomHandle,
+        child: DomNode<S>,
+    ) -> DomHandle {
+        let parent = if let DomNode::Container(container) =
+            self.lookup_node_mut(parent_handle)
+        {
+            container
+        } else {
+            panic!("Parent is not a container node");
+        };
+        parent.append_child(child)
+    }
+
+    pub fn insert(&mut self, node_handle: &DomHandle, node: DomNode<S>) {
+        let parent = self.parent_mut(node_handle);
+        let index = node_handle.index_in_parent();
+        parent.insert_child(index, node)
+    }
+
     pub fn replace(
         &mut self,
         node_handle: &DomHandle,
@@ -100,10 +121,10 @@ where
         parent.replace_child(index, nodes)
     }
 
-    pub fn remove(&mut self, node_handle: &DomHandle) {
+    pub fn remove(&mut self, node_handle: &DomHandle) -> DomNode<S> {
         let parent = self.parent_mut(node_handle);
         let index = node_handle.index_in_parent();
-        parent.remove_child(index);
+        parent.remove_child(index)
     }
 
     /// Removes node at given handle from the dom, and if it has children
