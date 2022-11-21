@@ -1,8 +1,7 @@
 all: android ios web
 
 # The gradle plugin will take care of building the bindings too
-android:
-	make setup
+android: setup
 	cd platforms/android && \
 		./gradlew publishToMavenLocal
 
@@ -26,8 +25,7 @@ android-bindings-x86_64:
 IOS_PACKAGE_DIR := ../../platforms/ios/lib/WysiwygComposer
 IOS_GENERATION_DIR := .generated/ios
 
-ios:
-	make setup
+ios: setup
 	cd bindings/wysiwyg-ffi && \
 	cargo build --release --target aarch64-apple-ios && \
 	cargo build --release --target aarch64-apple-ios-sim && \
@@ -56,8 +54,7 @@ ios:
 	  -library ../../target/ios-simulator/libuniffi_wysiwyg_composer.a \
 	  -headers ${IOS_GENERATION_DIR}/headers \
 	  -output ${IOS_PACKAGE_DIR}/WysiwygComposerFFI.xcframework
-web:
-	make setup
+web: setup
 	cd bindings/wysiwyg-wasm && \
 	npm install && \
 	npm run build && \
@@ -93,5 +90,5 @@ coverage:
 	cargo llvm-cov --open
 
 setup:
-	restup default 1.65
+	rustup default 1.65
 
