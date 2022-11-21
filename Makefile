@@ -1,8 +1,6 @@
-all:
-	rustup default 1.65
-	android
-	ios
-	web
+rustup default 1.65
+
+all: android ios web
 
 # The gradle plugin will take care of building the bindings too
 android:
