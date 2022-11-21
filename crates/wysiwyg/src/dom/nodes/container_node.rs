@@ -292,6 +292,14 @@ where
             ),
         }
     }
+
+    pub(crate) fn set_link(&mut self, link: S) {
+        let ContainerNodeKind::Link(_) = self.kind else {
+            panic!("Setting list type to a non-list container is not allowed")
+        };
+        self.kind = ContainerNodeKind::Link(link.clone());
+        self.attrs = Some(vec![("href".into(), link)]);
+    }
 }
 
 impl<S> ToHtml<S> for ContainerNode<S>

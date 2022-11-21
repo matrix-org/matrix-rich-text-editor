@@ -14,7 +14,7 @@ env:
   CI_GRADLE_ARG_PROPERTIES: --stacktrace -PpreDexEnable=false --max-workers 4 --no-daemon
   ARCH: x86_64
   DEVICE: Nexus 5X
-  UNIFFI_VERSION: 0.19.2
+  UNIFFI_VERSION: 0.21.0
 
 jobs:
   tests:
@@ -35,6 +35,13 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: '11'
+          
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.65
+          profile: minimal
+          override: true
 
       - name: Rust & Cargo cache
         uses: Swatinem/rust-cache@v2

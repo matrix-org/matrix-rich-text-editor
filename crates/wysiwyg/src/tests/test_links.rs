@@ -65,9 +65,42 @@ fn set_link_in_multiple_leaves_of_formatted_text_partially_covered_2() {
 }
 
 #[test]
-#[ignore]
 fn set_link_in_already_linked_text() {
     let mut model = cm("{<a href=\"https://element.io\">link_text</a>}|");
-    model.set_link(utf16("https://element.io"));
-    assert_eq!(model.state.dom.to_string(), "")
+    model.set_link(utf16("https://matrix.org"));
+    assert_eq!(
+        model.state.dom.to_string(),
+        "<a href=\"https://matrix.org\">link_text</a>"
+    )
+}
+
+#[test]
+fn set_link_in_already_linked_text_with_partial_selection() {
+    let mut model = cm("<a href=\"https://element.io\">link_{text}|</a>");
+    model.set_link(utf16("https://matrix.org"));
+    assert_eq!(
+        model.state.dom.to_string(),
+        "<a href=\"https://matrix.org\">link_text</a>"
+    )
+}
+
+#[test]
+fn set_link_in_text_and_already_linked_text() {
+    let mut model =
+        cm("{non_link_text<a href=\"https://element.io\">link_text</a>}|");
+    model.set_link(utf16("https://matrix.org"));
+    assert_eq!(
+        model.state.dom.to_string(),
+        "<a href=\"https://matrix.org\">non_link_text</a><a href=\"https://matrix.org\">link_text</a>"
+    )
+}
+
+#[test]
+fn set_link_in_multiple_leaves_of_formatted_text_with_link() {
+    let mut model = cm("{<i><a href=\"https://element.io\">test_italic</a><b><a href=\"https://element.io\">test_italic_bold</a></b></i>}|");
+    model.set_link(utf16("https://matrix.org"));
+    assert_eq!(
+        model.state.dom.to_string(),
+        "<i><a href=\"https://matrix.org\">test_italic</a><b><a href=\"https://matrix.org\">test_italic_bold</a></b></i>"
+    )
 }

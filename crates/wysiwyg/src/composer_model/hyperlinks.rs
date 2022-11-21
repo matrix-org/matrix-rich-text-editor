@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::dom::nodes::DomNode;
+use crate::dom::nodes::{ContainerNodeKind::Link, DomNode};
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, UnicodeString};
@@ -38,28 +38,32 @@ where
         let leaves: Vec<&DomLocation> = range.leaves().collect();
         for leaf in leaves.into_iter().rev() {
             let handle = &leaf.node_handle;
-
-            // TODO: set link should be able to wrap container nodes, unlike formatting
-            let node = self.state.dom.lookup_node(handle);
-            if let DomNode::Text(t) = node {
-                let text = t.data();
-                let before = text[..leaf.start_offset].to_owned();
-                let during =
-                    text[leaf.start_offset..leaf.end_offset].to_owned();
-                let after = text[leaf.end_offset..].to_owned();
-                let mut new_nodes = Vec::new();
-                if !before.is_empty() {
-                    new_nodes.push(DomNode::new_text(before));
+            let parent = self.state.dom.parent_mut(&leaf.node_handle);
+            if let Link(_) = parent.kind() {
+                parent.set_link(link.clone());
+            } else {
+                let node = self.state.dom.lookup_node(handle);
+                if let DomNode::Text(t) = node {
+                    let text = t.data();
+                    let before = text[..leaf.start_offset].to_owned();
+                    let during =
+                        text[leaf.start_offset..leaf.end_offset].to_owned();
+                    let after = text[leaf.end_offset..].to_owned();
+                    let mut new_nodes = Vec::new();
+                    if !before.is_empty() {
+                        new_nodes.push(DomNode::new_text(before));
+                    }
+                    new_nodes.push(DomNode::new_link(
+                        link.clone(),
+                        vec![DomNode::new_text(during)],
+                    ));
+                    if !after.is_empty() {
+                        new_nodes.push(DomNode::new_text(after));
+                    }
+                    self.state.dom.replace(handle, new_nodes);
                 }
-                new_nodes.push(DomNode::new_link(
-                    link.clone(),
-                    vec![DomNode::new_text(during)],
-                ));
-                if !after.is_empty() {
-                    new_nodes.push(DomNode::new_text(after));
-                }
-                self.state.dom.replace(handle, new_nodes);
             }
+            // TODO: set link should be able to wrap container nodes, unlike formatting
         }
         self.create_update_replace_all()
     }
