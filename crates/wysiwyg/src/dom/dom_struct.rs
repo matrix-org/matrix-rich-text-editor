@@ -69,6 +69,10 @@ where
         }
     }
 
+    pub fn document_node(&self) -> &DomNode<S> {
+        &self.document
+    }
+
     pub fn children(&self) -> &Vec<DomNode<S>> {
         self.document().children()
     }
