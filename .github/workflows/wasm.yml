@@ -16,6 +16,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Set Version
+      run: rustup default 1.65
     - name: Install `wasm-pack`
       run: cargo install wasm-pack
     - name: Test the `wysiwyg` crate
