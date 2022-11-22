@@ -275,14 +275,11 @@ where
             if let DomNode::Text(t) = node {
                 let text = t.data();
                 let index_in_parent = handle.index_in_parent();
-                let add_zwsp = text.is_empty();
-                let insert_zwsp = !text.to_string().starts_with("\u{200b}");
+                let add_zwsp = !text.to_string().starts_with("\u{200b}");
                 let list_item =
                     DomNode::Container(ContainerNode::new_list_item(
                         "li".into(),
                         vec![DomNode::new_text(if add_zwsp {
-                            "\u{200b}".into()
-                        } else if insert_zwsp {
                             let mut owned_text: S = "\u{200b}".into();
                             owned_text.push(text);
                             owned_text
@@ -305,7 +302,7 @@ where
                 }
 
                 self.replace_node_with_new_list(handle, list_type, list_item);
-                if add_zwsp || insert_zwsp {
+                if add_zwsp {
                     // FIXME: is there a case where ZWSP is inserted in the middle of the selection ?
                     self.state.start.add_assign(1);
                     self.state.end.add_assign(1);
