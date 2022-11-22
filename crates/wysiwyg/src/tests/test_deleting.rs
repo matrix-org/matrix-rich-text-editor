@@ -337,17 +337,49 @@ fn backspace_word_removes_past_newline_in_whitespace(){
     assert_eq!(restore_whitespace(&tx(&model)), "|");
 }
 
-// #[test]
-// fn backspace_word_removes_runs_of_non_word_characters(){
-//     let mut model = cm("abc,.()<>!@£$^&*|");
-//     model.backspace_word();
-//     assert_eq!(tx(&model), "abc|")
-// } 
+#[test]
+fn backspace_word_removes_runs_of_non_word_characters(){
+    let mut model = cm("abc,.()!@£$^*|");
+    model.backspace_word();
+    assert_eq!(tx(&model), "abc|")
+} 
 
-// #[test]
-// fn backspace_word_removes_runs_of_non_word_characters_and_whitespace(){
-//     let mut model = cm("abc  ,.!@£$%       |");
-//     model.backspace_word();
-//     assert_eq!(tx(&model), "abc  |")
-// } 
+#[test]
+fn backspace_word_removes_runs_of_non_word_characters_and_whitespace(){
+    let mut model = cm("abc  ,.!@£$%       |");
+    model.backspace_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "abc  |")
+}
+
+#[test]
+fn backspace_word_multi_step_test(){
+    let mut model = cm("first   line \n with .,punctuation   \nthird**line \n\n    last  |");
+    model.backspace_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "first   line \n with .,punctuation   \nthird**line \n\n    |");
+    model.backspace_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "first   line \n with .,punctuation   \nthird**line \n|");
+    model.backspace_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "first   line \n with .,punctuation   \nthird**line |");
+    model.backspace_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "first   line \n with .,punctuation   \nthird**|");
+    model.backspace_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "first   line \n with .,punctuation   \nthird|");
+    model.backspace_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "first   line \n with .,punctuation   \n|");
+    model.backspace_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "first   line \n with .,punctuation   |");
+    model.backspace_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "first   line \n with .,|");
+    model.backspace_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "first   line \n with |");
+    model.backspace_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "first   line \n |");
+    model.backspace_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "first   line |");
+    model.backspace_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "first   |");
+    model.backspace_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "|")
+
+}
 

@@ -24,6 +24,7 @@ use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
 enum Cat {
     Whitespace,
     Newline,
+    Punctuation,
     Other,
     None
 }
@@ -92,6 +93,7 @@ where
         println!("CONTENT: {}", content);
         let start_type = self.get_char_type_at(e-1);
 
+
         // next actions depend on start type
         match start_type {
             Cat::Whitespace => {
@@ -107,6 +109,11 @@ where
             },
             Cat::Newline => {
                 return self.delete_in(s-1, e);
+            },
+            Cat::Punctuation => {
+                let (start_delete_index, _) = self.get_start_index_of_run(e-1);
+                println!("think we should delete punctutation from {start_delete_index}");
+                return self.delete_in(start_delete_index, e);
             },
             Cat::Other => {
                 let (start_delete_index, _) = self.get_start_index_of_run(e-1);
@@ -129,6 +136,10 @@ where
 
                 if c.is_whitespace() {
                     return Cat::Whitespace;
+                } else if c.is_ascii_punctuation() || c == '£'{
+                    // is_ascii_punctuation doesn't include £, if we don't add this, behaviour will
+                    // be as per google docs
+                    return Cat::Punctuation;
                 } else {
                     return Cat::Other;
                 }
@@ -158,7 +169,7 @@ where
             return (current_index, stopped_at_newline);
         }
  
-        // consolidate with above block
+        // consolidate with above block??
         if current_index == 0 {
             return (current_index, stopped_at_newline);
         }
