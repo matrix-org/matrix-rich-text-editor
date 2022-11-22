@@ -343,11 +343,13 @@ where
             t.set_data(new_text);
             let list_node = self.state.dom.lookup_node_mut(list_handle);
             if let DomNode::Container(list) = list_node {
-                let add_zwsp = new_li_text.is_empty();
+                let add_zwsp = !new_li_text.to_string().starts_with("\u{200b}");
                 list.append_child(DomNode::new_list_item(
                     "li".into(),
                     vec![DomNode::new_text(if add_zwsp {
-                        "\u{200b}".into()
+                        let mut text: S = "\u{200b}".into();
+                        text.push(new_li_text);
+                        text
                     } else {
                         new_li_text
                     })],

@@ -112,16 +112,14 @@ fn entering_with_entire_selection_with_formatting() {
 fn entering_mid_text_node() {
     let mut model = cm("<ol><li>~ab|gh</li></ol>");
     model.enter();
-    // FIXME: selection should be before the first char of second node
-    assert_eq!(tx(&model), "<ol><li>~ab|</li><li>gh</li></ol>");
+    assert_eq!(tx(&model), "<ol><li>~ab</li><li>~|gh</li></ol>");
 }
 
 #[test]
 fn entering_mid_text_node_with_selection() {
     let mut model = cm("<ol><li>~ab{cdef}|gh</li></ol>");
     model.enter();
-    // FIXME: selection should be before the first char of second node
-    assert_eq!(tx(&model), "<ol><li>~ab|</li><li>gh</li></ol>");
+    assert_eq!(tx(&model), "<ol><li>~ab</li><li>~|gh</li></ol>");
 }
 
 #[test]
@@ -243,7 +241,20 @@ fn replacing_text_with_newline_characters_inserts_list_items() {
 }
 
 #[test]
-#[ignore] // TODO: linebreak transformed into list item is misplaced
+fn replacing_selection_containing_zwsp_works() {
+    let mut model = cm("<ul><li>~a{bc</li><li>~de}|f</li></ul>");
+    replace_text(&mut model, "ghi");
+    assert_eq!(tx(&model), "<ul><li>~aghi|f</li></ul>");
+}
+
+#[test]
+fn replacing_selection_containing_zwsp_with_text_containing_trailing_newline_works() {
+    let mut model = cm("<ul><li>~a{bc</li><li>~de}|f</li></ul>");
+    replace_text(&mut model, "ghi\n");
+    assert_eq!(tx(&model), "<ul><li>~aghi</li><li>~|f</li></ul>");
+}
+
+#[test]
 fn replacing_cross_list_item_selection_with_text_containing_newline_works() {
     let mut model = cm("<ul><li>~a{bc</li><li>~de}|f</li></ul>");
     replace_text(&mut model, "ghi\njkl");
