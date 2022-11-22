@@ -916,10 +916,17 @@ mod test {
     }
 
     #[test]
-    fn format_inline_code_with_existing_inline_code_side_to_side() {
+    fn format_inline_code_with_existing_inline_code_side_to_side_start() {
         let mut model = cm("<code>Some </code>{code}|");
         model.inline_code();
         assert_eq!(tx(&model), "<code>Some {code}|</code>");
+    }
+
+    #[test]
+    fn format_inline_code_with_existing_inline_code_side_to_side_end() {
+        let mut model = cm("{Some }|<code>code</code>");
+        model.inline_code();
+        assert_eq!(tx(&model), "<code>{Some }|code</code>");
     }
 
     #[test]
@@ -938,5 +945,14 @@ mod test {
             tx(&model),
             "Text {before<br /><ul><li>bo}|<b>ld</b></li><li><i>text</i></li></ul>"
         );
+    }
+
+    // TODO: might need to re-visit it if we add ZWSP ant the end of inline code tags
+    #[test]
+    fn disable_inline_code_then_write_text() {
+        let mut model = cm("<code>code|</code>");
+        model.inline_code();
+        model.replace_text(" plain text".into());
+        assert_eq!(tx(&model), "<code>code</code> plain text|");
     }
 }
