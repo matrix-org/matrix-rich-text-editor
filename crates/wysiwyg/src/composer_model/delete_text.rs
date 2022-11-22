@@ -70,9 +70,14 @@ where
         // if we're at the start of the string, do nothing
         if s == 0 {
             return ComposerUpdate::keep();
-        } 
+        }
 
-        // categories of character before cursor
+        // if we have a selection, only remove the selection 
+        if s != e {
+            return self.delete_in(s, e);
+        }
+
+        // categories of character
         #[derive(PartialEq)]
         enum Cat {
             Whitespace, 
