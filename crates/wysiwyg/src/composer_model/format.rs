@@ -914,9 +914,34 @@ mod test {
     }
 
     #[test]
-    fn format_inline_code_with_existing_inline_code() {
+    fn format_inline_code_in_several_list_items_and_text() {
+        let mut model =
+            cm("Text {before<br /><ul><li><b>bo}|ld</b></li><li><i>text</i></li></ul>");
+        model.inline_code();
+        assert_eq!(
+            tx(&model),
+            "Text <code>{before</code><br /><ul><li><code>bo}|</code><b>ld</b></li><li><i>text</i></li></ul>"
+        );
+    }
+
+    #[test]
+    fn format_inline_code_with_existing_inline_code_start() {
         let mut model = cm("{Some <code>co}|de</code>");
         model.inline_code();
         assert_eq!(tx(&model), "<code>{Some co}|de</code>");
+    }
+
+    #[test]
+    fn format_inline_code_with_existing_inline_code_end() {
+        let mut model = cm("<code>So{me </code>code}|");
+        model.inline_code();
+        assert_eq!(tx(&model), "<code>So{me code}|</code>");
+    }
+
+    #[test]
+    fn format_inline_code_with_existing_inline_code_side_to_side() {
+        let mut model = cm("<code>Some </code>{code}|");
+        model.inline_code();
+        assert_eq!(tx(&model), "<code>Some {code}|</code>");
     }
 }
