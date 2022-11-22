@@ -29,6 +29,13 @@ enum Cat {
     None
 }
 
+#[derive(PartialEq)]
+#[derive(Debug)]
+enum Dir {
+    Forwards,
+    Backwards
+}
+
 impl<S> ComposerModel<S>
 where
     S: UnicodeString,
@@ -78,14 +85,14 @@ where
     pub fn backspace_word(&mut self) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
 
-        // if we're at the start of the string, do nothing
-        if s == 0 {
-            return ComposerUpdate::keep();
-        }
-
         // if we have a selection, only remove the selection 
         if s != e {
             return self.delete_in(s, e);
+        }
+
+        // if we're at the start of the string, do nothing
+        if s == 0 {
+            return ComposerUpdate::keep();
         }
         
         // not at the start of the string from here onwards
@@ -93,17 +100,18 @@ where
         println!("CONTENT: {}", content);
         let start_type = self.get_char_type_at(e-1);
 
-
         // next actions depend on start type
         match start_type {
             Cat::Whitespace => {
-                let (ws_delete_index, stopped_at_newline) = self.get_start_index_of_run(e-1);
+                let (ws_delete_index, stopped_at_newline) = self.get_end_index_of_run(e-1, &Dir::Backwards);
+                println!("stopped at newline! index: {}", ws_delete_index);
                 if stopped_at_newline {
-                    return self.delete_in(ws_delete_index, e);
+                    // -1 to account for the fact we want to remove the newline
+                    return self.delete_in(ws_delete_index - 1, e);
                 } else {
                     self.delete_in(ws_delete_index, e);
                     let (_s, _e) = self.safe_selection();
-                    let (non_ws_delete_index, _) = self.get_start_index_of_run(_e-1);
+                    let (non_ws_delete_index, _) = self.get_end_index_of_run(_e-1,&Dir::Backwards);
                     return self.delete_in(non_ws_delete_index, _e);
                 }
             },
@@ -111,16 +119,15 @@ where
                 return self.delete_in(s-1, e);
             },
             Cat::Punctuation => {
-                let (start_delete_index, _) = self.get_start_index_of_run(e-1);
-                println!("think we should delete punctutation from {start_delete_index}");
-                return self.delete_in(start_delete_index, e);
+                let (delete_index, _) = self.get_end_index_of_run(e-1,&Dir::Backwards);
+                return self.delete_in(delete_index, e);
             },
             Cat::Other => {
-                let (start_delete_index, _) = self.get_start_index_of_run(e-1);
-                println!("think we should delete from {start_delete_index}");
-                return self.delete_in(start_delete_index, e);
+                let (delete_index, _) = self.get_end_index_of_run(e-1,&Dir::Backwards);
+                println!("DELETE INDEX: {delete_index}");
+                return self.delete_in(delete_index, e);
             }
-            Cat::None => todo!(),
+            Cat::None => ComposerUpdate::keep(),
         }
     }
 
@@ -148,33 +155,53 @@ where
         }
     }
 
-    // figure out where the run starts and also if we're returning due to a 
+    // figure out where the run ends and also if we're returning due to a 
     // newline (true) or a change in character type (false)
-    fn get_start_index_of_run(& self, start: usize) -> (usize, bool) {
+    fn get_end_index_of_run(& self, start: usize, direction: &Dir) -> (usize, bool) {
         let start_type = self.get_char_type_at(start);
         let mut current_index = start.clone();
         let mut current_type = self.get_char_type_at(current_index);
         let mut stopped_at_newline = start_type.eq(&Cat::Newline);
+        let mut would_hit_end = false;
 
-        while current_index > 0 && current_type.eq(&start_type) && !stopped_at_newline {
-            current_index -= 1;
+        fn increment(index: usize, dir: &Dir) -> usize {
+            match dir {
+                Dir::Backwards => index - 1,
+                Dir::Forwards => index + 1
+            }
+        }
+        fn decrement(index: usize, dir: &Dir) -> usize {
+            match dir {
+                Dir::Backwards => index + 1,
+                Dir::Forwards => index - 1
+            }
+        }
+
+        fn check_condition(index: usize, max: usize, start_type: &Cat, current_type: &Cat, dir: &Dir, stopped_at_newline: bool) -> bool {
+            let base_condition = current_type.eq(start_type) && !stopped_at_newline;
+            match dir {
+                Dir::Backwards => base_condition && index > 0,
+                Dir::Forwards => base_condition && index < max
+            }
+        }
+
+        while check_condition(current_index, self.state.dom.text_len(), &start_type, &current_type, direction, stopped_at_newline) {
+            current_index = increment(current_index, direction);
             current_type = self.get_char_type_at(current_index);
+            if current_type.eq(&start_type) && (current_index == 0 || current_index == self.state.dom.text_len()) {
+                would_hit_end = true;
+            }
             if current_type.eq(&Cat::Newline) {
                 stopped_at_newline = true;
             }
         }
 
-        // if we started at whitespace, we will go one past a newline char
-        if start_type.eq(&Cat::Whitespace) && stopped_at_newline {
-            return (current_index, stopped_at_newline);
+        // if we'd have hit the end, return that index, otherwise
+        // return the index of the end of the run
+        match would_hit_end {
+            true => (current_index, stopped_at_newline),
+            false => (decrement(current_index, direction), stopped_at_newline),
         }
- 
-        // consolidate with above block??
-        if current_index == 0 {
-            return (current_index, stopped_at_newline);
-        }
-
-        (current_index+1, stopped_at_newline)
     }
  
     /// Deletes text in an arbitrary start..end range.
@@ -203,6 +230,61 @@ where
         }
 
         self.replace_text(S::default())
+    }
+
+    /// Remove a single word when user does ctrl/cmd + delete
+    pub fn delete_word(&mut self) -> ComposerUpdate<S> {
+        let (s, e) = self.safe_selection();
+
+        // if we have a selection, only remove the selection 
+        if s != e {
+            return self.delete_in(s, e);
+        }
+
+        // if we're at the end of the string, do nothing
+        if e == self.state.dom.text_len() {
+            return ComposerUpdate::keep();
+        }
+        
+        // not at the start of the string from here onwards
+        let content = self.state.dom.to_string();
+        println!("CONTENT:{}", content);
+        let start_type = self.get_char_type_at(e);
+        println!("start type - {:?}", start_type);
+
+        // next actions depend on start type
+        match start_type {
+            Cat::Whitespace => {
+                let (ws_delete_index, stopped_at_newline) = self.get_end_index_of_run(e,&Dir::Forwards);
+                println!("stopped at index: {}", ws_delete_index);
+                if stopped_at_newline {
+                    println!("stopped at newline! index: {}", ws_delete_index);
+                    // +2 to account for the fact we want to remove the newline
+                    return self.delete_in(s, ws_delete_index + 2);
+                } else {
+                    self.delete_in(s, ws_delete_index + 1);
+                    let (_s, _e) = self.safe_selection();
+                    println!("s - {_s} and e - {_e}"); 
+                    println!("NEW CONTENT:{}", self.state.dom.to_string()); 
+                    let (non_ws_delete_index, _) = self.get_end_index_of_run(_e+1,&Dir::Forwards);
+                    return self.delete_in(_s, non_ws_delete_index + 1);
+                }
+            },
+            Cat::Newline => {
+                return self.delete_in(s, e+1);
+            },
+            Cat::Punctuation => {
+                let (delete_index, _) = self.get_end_index_of_run(e+1,&Dir::Forwards);
+                println!("think we should delete punctutation from {delete_index}");
+                return self.delete_in(s, delete_index + 1);
+            },
+            Cat::Other => {
+                let (delete_index, _) = self.get_end_index_of_run(e+1,&Dir::Forwards);
+                println!("think we should delete to {delete_index}");
+                return self.delete_in(s, delete_index + 1);
+            }
+            Cat::None => ComposerUpdate::keep(),
+        }
     }
 
     pub(crate) fn delete_nodes(&mut self, mut to_delete: Vec<DomHandle>) {
