@@ -285,11 +285,25 @@ fn backspace_word_with_selection_only_removes_selection(){
 } 
 
 #[test]
+fn backspace_word_in_word_removes_start_of_word(){
+    let mut model = cm("abc de|f");
+    model.backspace_word();
+    assert_eq!(tx(&model), "abc |f")
+} 
+
+#[test]
 fn backspace_word_at_end_of_word_removes_single_word(){
     let mut model = cm("abc def|");
     model.backspace_word();
     assert_eq!(restore_whitespace(&tx(&model)), "abc |")
 } 
+
+#[test]
+fn backspace_word_removes_runs_of_whitespace(){
+    let mut model = cm("abc def          |");
+    model.backspace_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "abc |")
+}
 
 #[test]
 fn backspace_word_at_whitespace_removes_whitespace_and_word(){
@@ -298,21 +312,22 @@ fn backspace_word_at_whitespace_removes_whitespace_and_word(){
     assert_eq!(restore_whitespace(&tx(&model)), "abc |")
 } 
 
-// #[test]
-// fn backspace_word_in_word_removes_start_of_word(){
-//     let mut model = cm("abc de|f");
-//     model.backspace_word();
-//     assert_eq!(tx(&model), "abc |f")
-// } 
+#[test]
+fn backspace_word_does_not_remove_past_newline_in_word(){
+    let mut model = cm("abc\ndef   |");
+    model.backspace_word();
+    assert_eq!(tx(&model), "abc\n|")
+}
 
-
-// #[test]
-// fn backspace_word_removes_runs_of_whitespace(){
-//     let mut model = cm("abc def          |");
-//     model.backspace_word();
-//     assert_eq!(tx(&model), "abc |")
-// } 
-
+#[test]
+fn backspace_word_removes_past_newline_in_whitespace(){
+    // behaviour as per google docs
+    let mut model = cm("abc  \n       |");
+    model.backspace_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "abc  |");
+    model.backspace_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "");
+} 
 // #[test]
 // fn backspace_word_removes_runs_of_non_word_characters(){
 //     let mut model = cm("abc,.()<>!@£$^&*|");
@@ -327,19 +342,3 @@ fn backspace_word_at_whitespace_removes_whitespace_and_word(){
 //     assert_eq!(tx(&model), "abc  |")
 // } 
 
-// #[test]
-// fn backspace_word_does_not_remove_past_newline_in_word(){
-//     let mut model = cm("abc\ndef   |");
-//     model.backspace_word();
-//     assert_eq!(tx(&model), "abc\n|")
-// } 
-
-// #[test]
-// fn backspace_word_does_not_remove_past_newline_in_whitespace(){
-//     let mut model = cm("abc  \n       |");
-//     model.backspace_word();
-//     assert_eq!(tx(&model), "abc  \n|");
-//     model.backspace_word();
-//     assert_eq!(tx(&model), "abc|");
-
-// } 

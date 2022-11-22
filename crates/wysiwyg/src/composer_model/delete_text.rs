@@ -18,6 +18,16 @@ use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
 
+// categories of character
+#[derive(PartialEq)]
+#[derive(Debug)]
+enum Cat {
+    Whitespace,
+    Newline,
+    Other,
+    None
+}
+
 impl<S> ComposerModel<S>
 where
     S: UnicodeString,
@@ -76,58 +86,75 @@ where
         if s != e {
             return self.delete_in(s, e);
         }
-
-        // categories of character
-        #[derive(PartialEq)]
-        enum Cat {
-            Whitespace, 
-            Other,
-            None
-        }
         
         // not at the start of the string from here onwards
         let content = self.state.dom.to_string();
         println!("CONTENT: {}", content);
-        let mut search_index = e-1;
-        let start_type = match content.chars().nth(e-1) {
-            Some(c) => {
-                if c.is_whitespace() {
-                    Cat::Whitespace
-                } else {
-                    Cat::Other
-                }
-            }
-            None => Cat::None,
-        };
-        let mut trigger = start_type.eq(&Cat::Whitespace);
+        let start_type = self.get_char_type_at(e-1);
 
-        while search_index > 0 {
-            let nth_char = content.chars().nth(search_index);
-            match nth_char {
-                Some(c) => {
-                    if trigger && !c.is_whitespace() {
-                        trigger = false
-                    }
-                    match start_type {
-                        Cat::Whitespace => {
-                            if c.is_whitespace() && !trigger {
-                                break;
-                            }
-                        },
-                        Cat::Other => {
-                            if c.is_whitespace() {
-                                break;
-                            }
-                        },
-                        Cat::None => break,
-                    }
-                },
-                None => break,
+        // next actions depend on start type
+        match start_type {
+            Cat::Whitespace => {
+                let (ws_delete_index, stop_at_newline) = self.get_start_index_of_run(e-1);
+
+                self.delete_in(ws_delete_index, e);
+                let (_s, _e) = self.safe_selection();
+                let (non_ws_delete_index, is_newline) = self.get_start_index_of_run(_e-1);
+                return self.delete_in(non_ws_delete_index, _e);
+            },
+            Cat::Newline => {
+                return self.delete_in(s-1, e);
+            },
+            Cat::Other => {
+                let (start_delete_index, is_newline) = self.get_start_index_of_run(e-1);
+                return self.delete_in(start_delete_index, e);
             }
-            search_index -= 1; 
+            Cat::None => todo!(),
         }
-        
-        self.delete_in(search_index + 1,e)
+    }
+
+    // types defined in the Cat struct
+    fn get_char_type_at(& self, index: usize) -> Cat {
+        let content = self.state.dom.to_string();
+        match content.chars().nth(index) {
+            Some(c) => {
+                // handle newlines separately, otherwise they'll get classed as white space
+                if c == '\n' {
+                    return Cat::Newline;
+                }
+
+                if c.is_whitespace() {
+                    return Cat::Whitespace;
+                } else {
+                    return Cat::Other;
+                }
+            },
+            None => Cat::None,
+        }
+    }
+
+    // figure out where the run starts and also if we're returning due to a 
+    // newline (true) or a change in character type (false)
+    fn get_start_index_of_run(& self, start: usize) -> (usize, bool) {
+        let start_type = self.get_char_type_at(start);
+        let mut current_index = start.clone();
+        let mut current_type = self.get_char_type_at(current_index);
+        let mut stopped_at_newline = start_type.eq(&Cat::Newline);
+
+        while current_type.eq(&start_type) && !stopped_at_newline {
+            current_index -= 1;
+            current_type = self.get_char_type_at(current_index);
+            if current_type.eq(&Cat::Newline) {
+                stopped_at_newline = true;
+            }
+        }
+
+        // if we started at whitespace, we will go one past a newline char
+        if start_type.eq(&Cat::Whitespace) {
+            return (current_index, stopped_at_newline);
+        }
+
+        (current_index + 1, stopped_at_newline)
     }
  
     /// Deletes text in an arbitrary start..end range.
