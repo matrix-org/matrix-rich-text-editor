@@ -75,43 +75,51 @@ where
         } else {
             let range = self.state.dom.find_range(s, e);
             let leaves: Vec<&DomLocation> = range.leaves().collect();
+            // We'll iterate through the leaves finding their closest structural node ancestor and
+            // grouping these leaves based on the handles of these ancestors.
             let mut structure_ancestors = HashMap::new();
             for leaf in leaves {
                 let first_structure_ancestor =
                     self.find_structure_ancestor(&leaf.node_handle);
-                if let Some(ancestor_handle) = first_structure_ancestor {
-                    let list = structure_ancestors
-                        .entry(ancestor_handle.raw().clone())
-                        .or_insert(Vec::new());
-                    list.push(leaf.clone());
-                } else {
-                    let list = structure_ancestors
-                        .entry(Vec::new())
-                        .or_insert(Vec::new());
-                    list.push(leaf.clone());
-                }
+                // Get the closest ancestor path or the root one (empty Vec) if there is none
+                let ancestor_handle = first_structure_ancestor
+                    .map(|a| a.raw().clone())
+                    .unwrap_or(Vec::new());
+                let list = structure_ancestors
+                    .entry(ancestor_handle)
+                    .or_insert(Vec::new());
+                // Add the DomHandle of the leaf to the list of grouped handles by this ancestor
+                list.push(leaf.clone());
             }
 
+            // Order those ancestors
             let mut keys: Vec<&Vec<usize>> =
                 structure_ancestors.keys().collect();
             keys.sort();
 
+            // Iterate through them backwards, replacing their descendant leaves as needed
             for ancestor_handle in keys.into_iter().rev() {
                 let leaves = structure_ancestors.get(ancestor_handle).unwrap();
+                // We'll store the text contents of the removed formatted nodes here
                 let mut cur_text = S::default();
+                // Where we'll insert the result of merging the text contents
                 let mut insert_text_at: Option<DomHandle> = None;
+                // Iterate the leaves backwards to avoid modifying the previous Dom structure
                 for leaf in leaves.into_iter().rev() {
-                    let html = self.get_content_as_html().to_string();
-                    let (path, _) = leaf
+                    // Find the immediate child of the common ancestor containing this leaf as its descendant
+                    let (path_to_child, _) = leaf
                         .node_handle
                         .raw()
                         .split_at(ancestor_handle.len() + 1)
                         .clone();
-                    let ancestor_child = DomHandle::from_raw(path.to_vec());
+                    let ancestor_child =
+                        DomHandle::from_raw(path_to_child.to_vec());
+
                     let node =
                         self.state.dom.lookup_node(&leaf.node_handle).clone();
                     match node {
                         DomNode::Text(text_node) => {
+                            // Add the selected text to the current text holder
                             cur_text.insert(
                                 0,
                                 &text_node.data()
@@ -120,8 +128,10 @@ where
                             );
 
                             if leaf.is_covered() {
+                                // This node is covered, remove it and any empty ancestors and set
+                                // the insertion point to be at its position.
                                 insert_text_at = Some(ancestor_child.clone());
-                                self.clean_up_until(
+                                self.remove_and_clean_up_empty_nodes_until(
                                     &leaf.node_handle,
                                     &ancestor_child,
                                 );
@@ -141,7 +151,11 @@ where
                                 // This node is at the end of the selection and not completely
                                 // covered, split it and set the insertion point to be before it.
                                 insert_text_at =
-                                    Some(ancestor_child.prev_sibling());
+                                    if ancestor_child.index_in_parent() > 0 {
+                                        Some(ancestor_child.prev_sibling())
+                                    } else {
+                                        Some(ancestor_child.clone())
+                                    };
                                 let text = text_node.data()[leaf.end_offset..]
                                     .to_owned();
                                 self.state.dom.replace(
@@ -153,13 +167,15 @@ where
                         DomNode::LineBreak(_) => {
                             // We should split inline code nodes at line breaks
                             let text = cur_text.clone().to_string();
-                            self.state.dom.insert(
-                                &ancestor_child.next_sibling(),
-                                DomNode::new_formatting(
-                                    InlineFormatType::InlineCode,
-                                    vec![DomNode::new_text(cur_text)],
-                                ),
-                            );
+                            if !cur_text.is_empty() {
+                                self.state.dom.insert(
+                                    &ancestor_child.next_sibling(),
+                                    DomNode::new_formatting(
+                                        InlineFormatType::InlineCode,
+                                        vec![DomNode::new_text(cur_text)],
+                                    ),
+                                );
+                            }
                             // If leaf line break is not a direct child of the common ancestor,
                             // move it to the parent ancestor
                             if ancestor_child != leaf.node_handle {
@@ -169,7 +185,6 @@ where
                                     DomNode::new_line_break(),
                                 );
                             }
-                            let html = self.state.dom.to_html().to_string();
                             // Update insertion point and reset text
                             insert_text_at = Some(ancestor_child.clone());
                             cur_text = S::default();
@@ -179,17 +194,23 @@ where
                         ),
                     }
                 }
-                if !cur_text.is_empty() && insert_text_at.is_some() {
-                    let insert_at = insert_text_at.unwrap();
-                    let html = self.get_content_as_html().to_string();
-                    self.state.dom.insert(
-                        &insert_at,
-                        DomNode::new_formatting(
-                            InlineFormatType::InlineCode,
-                            vec![DomNode::new_text(cur_text.clone())],
-                        ),
-                    );
 
+                // If there is still some collected text not added to the Dom, insert it inside an
+                // inline code node.
+                if insert_text_at.is_some() {
+                    let insert_at = insert_text_at.unwrap();
+
+                    if !cur_text.is_empty() {
+                        self.state.dom.insert(
+                            &insert_at,
+                            DomNode::new_formatting(
+                                InlineFormatType::InlineCode,
+                                vec![DomNode::new_text(cur_text.clone())],
+                            ),
+                        );
+                    }
+
+                    // Merge inline code nodes for clean up
                     self.merge_formatting_node_with_siblings(&insert_at);
                 }
             }
@@ -197,7 +218,7 @@ where
         }
     }
 
-    fn clean_up_until(
+    fn remove_and_clean_up_empty_nodes_until(
         &mut self,
         cur_handle: &DomHandle,
         top_handle: &DomHandle,
@@ -206,7 +227,10 @@ where
         if cur_handle != top_handle
             && self.state.dom.parent(cur_handle).children().is_empty()
         {
-            self.clean_up_until(&cur_handle.parent_handle(), top_handle)
+            self.remove_and_clean_up_empty_nodes_until(
+                &cur_handle.parent_handle(),
+                top_handle,
+            )
         }
     }
 
@@ -222,44 +246,6 @@ where
             }
         }
     }
-
-    // fn remove_inline_code(&mut self) -> ComposerUpdate<S> {
-    //     let (s, e) = self.safe_selection();
-    //     let format = InlineFormatType::InlineCode;
-    //
-    //     if s == e {
-    //         self.toggle_zero_length_format(&format);
-    //         ComposerUpdate::update_menu_state(
-    //             self.compute_menu_state(MenuStateComputeType::KeepIfUnchanged),
-    //         )
-    //     } else {
-    //         let leaves: Vec<&DomLocation> =
-    //             self.state.dom.find_range(s, e).leaves().collect();
-    //         if leaves.len() == 1 {
-    //             let leaf = leaves[0];
-    //
-    //             let DomNode::Text(text_node) =
-    //                 self.state.dom.lookup_node(&leaf.node_handle)?;
-    //             let text = text_node.data();
-    //             let DomNode::Container(mut parent) =
-    //                 self.state.dom.parent_mut(&leaf.node_handle)?;
-    //             assert!(
-    //                 parent.is_formatting_node_of_type(
-    //                     &InlineFormatType::InlineCode
-    //                 ),
-    //                 "Parent node should be a Formatting node"
-    //             );
-    //             parent.replace_child(
-    //                 leaf.node_handle.index_in_parent(),
-    //                 vec![DomNode::new_text(text)],
-    //             );
-    //         } else {
-    //             panic!("Inline code format node should only have a single leaf child");
-    //         }
-    //
-    //         self.create_update_replace_all()
-    //     }
-    // }
 
     fn format_or_unformat(
         &mut self,
@@ -943,5 +929,12 @@ mod test {
         let mut model = cm("<code>Some </code>{code}|");
         model.inline_code();
         assert_eq!(tx(&model), "<code>Some {code}|</code>");
+    }
+
+    #[test]
+    fn unformat_inline_code_same_row_with_line_breaks() {
+        let mut model = cm("<code>{bold</code><br /><code>text}|</code>");
+        model.inline_code();
+        assert_eq!(tx(&model), "{bold<br />text}|");
     }
 }
