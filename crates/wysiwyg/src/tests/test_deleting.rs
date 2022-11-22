@@ -277,12 +277,20 @@ fn backspace_word_at_beginning_does_nothing(){
     model.backspace_word();
     assert_eq!(tx(&model), "|abc")
 }
+
 #[test]
 fn backspace_word_with_selection_only_removes_selection(){
     let mut model = cm("ab{c def}|");
     model.backspace_word();
     assert_eq!(tx(&model), "ab|")
 } 
+
+#[test]
+fn backspace_word_at_end_of_single_word_removes_word(){
+    let mut model = cm("abc|");
+    model.backspace_word();
+    assert_eq!(tx(&model), "|")
+}
 
 #[test]
 fn backspace_word_in_word_removes_start_of_word(){
@@ -326,8 +334,9 @@ fn backspace_word_removes_past_newline_in_whitespace(){
     model.backspace_word();
     assert_eq!(restore_whitespace(&tx(&model)), "abc  |");
     model.backspace_word();
-    assert_eq!(restore_whitespace(&tx(&model)), "");
-} 
+    assert_eq!(restore_whitespace(&tx(&model)), "|");
+}
+
 // #[test]
 // fn backspace_word_removes_runs_of_non_word_characters(){
 //     let mut model = cm("abc,.()<>!@£$^&*|");

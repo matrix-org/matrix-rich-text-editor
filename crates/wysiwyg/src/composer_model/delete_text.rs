@@ -95,18 +95,22 @@ where
         // next actions depend on start type
         match start_type {
             Cat::Whitespace => {
-                let (ws_delete_index, stop_at_newline) = self.get_start_index_of_run(e-1);
-
-                self.delete_in(ws_delete_index, e);
-                let (_s, _e) = self.safe_selection();
-                let (non_ws_delete_index, is_newline) = self.get_start_index_of_run(_e-1);
-                return self.delete_in(non_ws_delete_index, _e);
+                let (ws_delete_index, stopped_at_newline) = self.get_start_index_of_run(e-1);
+                if stopped_at_newline {
+                    return self.delete_in(ws_delete_index, e);
+                } else {
+                    self.delete_in(ws_delete_index, e);
+                    let (_s, _e) = self.safe_selection();
+                    let (non_ws_delete_index, _) = self.get_start_index_of_run(_e-1);
+                    return self.delete_in(non_ws_delete_index, _e);
+                }
             },
             Cat::Newline => {
                 return self.delete_in(s-1, e);
             },
             Cat::Other => {
-                let (start_delete_index, is_newline) = self.get_start_index_of_run(e-1);
+                let (start_delete_index, _) = self.get_start_index_of_run(e-1);
+                println!("think we should delete from {start_delete_index}");
                 return self.delete_in(start_delete_index, e);
             }
             Cat::None => todo!(),
@@ -141,7 +145,7 @@ where
         let mut current_type = self.get_char_type_at(current_index);
         let mut stopped_at_newline = start_type.eq(&Cat::Newline);
 
-        while current_type.eq(&start_type) && !stopped_at_newline {
+        while current_index > 0 && current_type.eq(&start_type) && !stopped_at_newline {
             current_index -= 1;
             current_type = self.get_char_type_at(current_index);
             if current_type.eq(&Cat::Newline) {
@@ -150,11 +154,16 @@ where
         }
 
         // if we started at whitespace, we will go one past a newline char
-        if start_type.eq(&Cat::Whitespace) {
+        if start_type.eq(&Cat::Whitespace) && stopped_at_newline {
+            return (current_index, stopped_at_newline);
+        }
+ 
+        // consolidate with above block
+        if current_index == 0 {
             return (current_index, stopped_at_newline);
         }
 
-        (current_index + 1, stopped_at_newline)
+        (current_index+1, stopped_at_newline)
     }
  
     /// Deletes text in an arbitrary start..end range.
