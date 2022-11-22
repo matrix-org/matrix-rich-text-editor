@@ -19,9 +19,7 @@ use crate::dom::action_list::DomActionList;
 use crate::dom::nodes::{ContainerNodeKind, DomNode};
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{Dom, DomHandle, DomLocation, Range};
-use crate::{
-    ComposerModel, ComposerUpdate, InlineFormatType, ToHtml, UnicodeString,
-};
+use crate::{ComposerModel, ComposerUpdate, InlineFormatType, UnicodeString};
 
 #[derive(Eq, PartialEq, Debug)]
 enum FormatSelectionType {
@@ -74,7 +72,7 @@ where
             )
         } else {
             let range = self.state.dom.find_range(s, e);
-            let leaves: Vec<&DomLocation> = range.leaves().collect();
+            let leaves = range.leaves();
             // We'll iterate through the leaves finding their closest structural node ancestor and
             // grouping these leaves based on the handles of these ancestors.
             let mut structure_ancestors = HashMap::new();
@@ -92,7 +90,7 @@ where
                 list.push(leaf.clone());
             }
 
-            // Order those ancestors
+            // Order those ancestors (important to avoid node replacement & conflicts of handles)
             let mut keys: Vec<&Vec<usize>> =
                 structure_ancestors.keys().collect();
             keys.sort();
@@ -104,6 +102,8 @@ where
                 let mut cur_text = S::default();
                 // Where we'll insert the result of merging the text contents
                 let mut insert_text_at: Option<DomHandle> = None;
+                // Nodes to be added to the Dom, might contain both TextNodes and LineBreaks
+                let mut nodes_to_add = Vec::new();
                 // Iterate the leaves backwards to avoid modifying the previous Dom structure
                 for leaf in leaves.into_iter().rev() {
                     // Find the immediate child of the common ancestor containing this leaf as its descendant
@@ -166,25 +166,12 @@ where
                         }
                         DomNode::LineBreak(_) => {
                             // We should split inline code nodes at line breaks
-                            let text = cur_text.clone().to_string();
                             if !cur_text.is_empty() {
-                                self.state.dom.insert(
-                                    &ancestor_child.next_sibling(),
-                                    DomNode::new_formatting(
-                                        InlineFormatType::InlineCode,
-                                        vec![DomNode::new_text(cur_text)],
-                                    ),
-                                );
+                                nodes_to_add
+                                    .insert(0, DomNode::new_text(cur_text));
                             }
-                            // If leaf line break is not a direct child of the common ancestor,
-                            // move it to the parent ancestor
-                            if ancestor_child != leaf.node_handle {
-                                self.state.dom.remove(&leaf.node_handle);
-                                self.state.dom.insert(
-                                    &ancestor_child.next_sibling(),
-                                    DomNode::new_line_break(),
-                                );
-                            }
+                            nodes_to_add.insert(0, DomNode::new_line_break());
+                            self.state.dom.remove(&leaf.node_handle);
                             // Update insertion point and reset text
                             insert_text_at = Some(ancestor_child.clone());
                             cur_text = S::default();
@@ -195,20 +182,24 @@ where
                     }
                 }
 
-                // If there is still some collected text not added to the Dom, insert it inside an
-                // inline code node.
+                // Insert the nodes into the Dom inside an inline code node
                 if insert_text_at.is_some() {
                     let insert_at = insert_text_at.unwrap();
 
+                    // If there is still some collected text add it to he list of nodes to insert
                     if !cur_text.is_empty() {
-                        self.state.dom.insert(
-                            &insert_at,
-                            DomNode::new_formatting(
-                                InlineFormatType::InlineCode,
-                                vec![DomNode::new_text(cur_text.clone())],
-                            ),
-                        );
+                        nodes_to_add
+                            .insert(0, DomNode::new_text(cur_text.clone()));
                     }
+
+                    // Insert the inline code node
+                    self.state.dom.insert(
+                        &insert_at,
+                        DomNode::new_formatting(
+                            InlineFormatType::InlineCode,
+                            nodes_to_add,
+                        ),
+                    );
 
                     // Merge inline code nodes for clean up
                     self.merge_formatting_node_with_siblings(&insert_at);
@@ -833,7 +824,7 @@ mod test {
     fn format_inline_code_same_row_with_line_breaks() {
         let mut model = cm("<b>{bold</b><br /><i>text}|</i>");
         model.inline_code();
-        assert_eq!(tx(&model), "<code>{bold</code><br /><code>text}|</code>");
+        assert_eq!(tx(&model), "<code>{bold<br />text}|</code>");
     }
 
     #[test]
@@ -863,7 +854,7 @@ mod test {
         model.inline_code();
         assert_eq!(
             tx(&model),
-            "<b><u>bo</u></b><code>{ld</code><br /><code>te}|</code><i>xt</i>"
+            "<b><u>bo</u></b><code>{ld<br />te}|</code><i>xt</i>"
         );
     }
 
@@ -874,7 +865,7 @@ mod test {
         model.inline_code();
         assert_eq!(
             tx(&model),
-            "<b><u>bo</u></b><code>{ld</code><br /><code>te}|</code><i>xt</i>"
+            "<b><u>bo</u></b><code>{ld<br />te}|</code><i>xt</i>"
         );
     }
 
@@ -906,7 +897,7 @@ mod test {
         model.inline_code();
         assert_eq!(
             tx(&model),
-            "Text <code>{before</code><br /><ul><li><code>bo}|</code><b>ld</b></li><li><i>text</i></li></ul>"
+            "Text <code>{before<br /></code><ul><li><code>bo}|</code><b>ld</b></li><li><i>text</i></li></ul>"
         );
     }
 
@@ -933,8 +924,19 @@ mod test {
 
     #[test]
     fn unformat_inline_code_same_row_with_line_breaks() {
-        let mut model = cm("<code>{bold</code><br /><code>text}|</code>");
+        let mut model = cm("<code>{bold<br />text}|</code>");
         model.inline_code();
         assert_eq!(tx(&model), "{bold<br />text}|");
+    }
+
+    #[test]
+    fn unformat_inline_code_in_several_list_items_and_text() {
+        let mut model =
+            cm("Text <code>{before<br /></code><ul><li><code>bo}|</code><b>ld</b></li><li><i>text</i></li></ul>");
+        model.inline_code();
+        assert_eq!(
+            tx(&model),
+            "Text {before<br /><ul><li>bo}|<b>ld</b></li><li><i>text</i></li></ul>"
+        );
     }
 }
