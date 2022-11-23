@@ -165,7 +165,8 @@ where
                             }
                         }
                         DomNode::LineBreak(_) => {
-                            // We should split inline code nodes at line breaks
+                            // Get any pending text and create a new TextNode to insert along with
+                            // the LineBreak one, removing the old LineBreak node.
                             if !cur_text.is_empty() {
                                 nodes_to_add
                                     .insert(0, DomNode::new_text(cur_text));
@@ -193,7 +194,7 @@ where
                     }
 
                     // Insert the inline code node
-                    self.state.dom.insert(
+                    self.state.dom.insert_at(
                         &insert_at,
                         DomNode::new_formatting(
                             InlineFormatType::InlineCode,
@@ -229,12 +230,10 @@ where
         let parent = self.state.dom.parent(handle);
         if parent.is_structure_node() {
             Some(parent.handle().clone())
+        } else if parent.handle().has_parent() {
+            self.find_structure_ancestor(&parent.handle())
         } else {
-            if parent.handle().has_parent() {
-                self.find_structure_ancestor(&parent.handle())
-            } else {
-                None
-            }
+            None
         }
     }
 
@@ -807,49 +806,50 @@ mod test {
     }
 
     #[test]
-    fn format_inline_code_same_row() {
+    fn inline_code_replacing_formatting_removes_formatting() {
         let mut model = cm("<b>{bold</b><i>text}|</i>");
         model.inline_code();
         assert_eq!(tx(&model), "<code>{boldtext}|</code>");
     }
 
     #[test]
-    fn format_inline_code_same_row_partial() {
+    fn inline_code_replacing_partial_formatting_removes_overlapping_formatting()
+    {
         let mut model = cm("<b>bo{ld</b><i>te}|xt</i>");
         model.inline_code();
         assert_eq!(tx(&model), "<b>bo</b><code>{ldte}|</code><i>xt</i>");
     }
 
     #[test]
-    fn format_inline_code_same_row_with_line_breaks() {
+    fn inline_code_with_formatting_preserves_line_breaks() {
         let mut model = cm("<b>{bold</b><br /><i>text}|</i>");
         model.inline_code();
         assert_eq!(tx(&model), "<code>{bold<br />text}|</code>");
     }
 
     #[test]
-    fn format_inline_code_different_rows() {
+    fn inline_code_replacing_complex_formatting_removes_formatting() {
         let mut model = cm("<b><u>{bold</u></b><i>text}|</i>");
         model.inline_code();
         assert_eq!(tx(&model), "<code>{boldtext}|</code>");
     }
 
     #[test]
-    fn format_inline_code_different_rows_nested() {
+    fn inline_code_replacing_formatting_removes_formatting() {
         let mut model = cm("<b><u>{bold</u><i>italic</i></b><i>text}|</i>");
         model.inline_code();
         assert_eq!(tx(&model), "<code>{bolditalictext}|</code>");
     }
 
     #[test]
-    fn format_inline_code_different_rows_partial() {
+    fn inline_code_partially_replacing_formatting_removes_overlap() {
         let mut model = cm("<b><u>bo{ld</u></b><i>te}|xt</i>");
         model.inline_code();
         assert_eq!(tx(&model), "<b><u>bo</u></b><code>{ldte}|</code><i>xt</i>");
     }
 
     #[test]
-    fn format_inline_code_different_rows_partial_with_line_break() {
+    fn inline_code_on_partial_nested_line_break_removes_formatting() {
         let mut model = cm("<b><u>bo{ld</u></b><br /><i>te}|xt</i>");
         model.inline_code();
         assert_eq!(
@@ -859,8 +859,8 @@ mod test {
     }
 
     #[test]
-    fn format_inline_code_different_rows_partial_with_line_break_inside_parent()
-    {
+    fn inline_code_on_partial_nested_line_break_within_parent_removes_formatting(
+    ) {
         let mut model = cm("<b><u>bo{ld</u><br /></b><i>te}|xt</i>");
         model.inline_code();
         assert_eq!(
@@ -947,7 +947,7 @@ mod test {
         );
     }
 
-    // TODO: might need to re-visit it if we add ZWSP ant the end of inline code tags
+    // TODO: might need to re-visit it if we add ZWSP at the end of inline code tags
     #[test]
     fn disable_inline_code_then_write_text() {
         let mut model = cm("<code>code|</code>");

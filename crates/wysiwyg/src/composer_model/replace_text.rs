@@ -156,7 +156,9 @@ where
             let range = self.state.dom.find_range(start, end);
             if range.is_empty() {
                 if !new_text.is_empty() {
-                    self.state.dom.append_child(DomNode::new_text(new_text));
+                    self.state
+                        .dom
+                        .append_at_end_of_document(DomNode::new_text(new_text));
                 }
                 start = 0;
             } else {
