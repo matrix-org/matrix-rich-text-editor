@@ -140,7 +140,6 @@ fn updating_list_type() {
 }
 
 #[test]
-#[ignore] // TODO: should remove starting ZWSP when moving out of list
 fn moving_list_item_content_out() {
     let mut model = cm("<ol><li>~ab</li><li>~cd|</li></ol>");
     model.ordered_list();
@@ -148,7 +147,6 @@ fn moving_list_item_content_out() {
 }
 
 #[test]
-#[ignore] // TODO: selection did not move in that case
 fn appending_new_list_to_previous() {
     let mut model = cm("<ol><li>~ab</li></ol>cd|");
     model.ordered_list();
@@ -248,7 +246,8 @@ fn replacing_selection_containing_zwsp_works() {
 }
 
 #[test]
-fn replacing_selection_containing_zwsp_with_text_containing_trailing_newline_works() {
+fn replacing_selection_containing_zwsp_with_text_containing_trailing_newline_works(
+) {
     let mut model = cm("<ul><li>~a{bc</li><li>~de}|f</li></ul>");
     replace_text(&mut model, "ghi\n");
     assert_eq!(tx(&model), "<ul><li>~aghi</li><li>~|f</li></ul>");
