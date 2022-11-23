@@ -16,7 +16,7 @@ use std::collections::HashMap;
 
 use crate::composer_model::menu_state::MenuStateComputeType;
 use crate::dom::action_list::DomActionList;
-use crate::dom::nodes::{ContainerNodeKind, DomNode};
+use crate::dom::nodes::{ContainerNodeKind, DomNode, TextNode};
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{Dom, DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, InlineFormatType, UnicodeString};
@@ -72,26 +72,14 @@ where
             )
         } else {
             let range = self.state.dom.find_range(s, e);
-            let leaves = range.leaves();
+            let leaves: Vec<&DomLocation> = range.leaves().collect();
             // We'll iterate through the leaves finding their closest structural node ancestor and
             // grouping these leaves based on the handles of these ancestors.
-            let mut structure_ancestors = HashMap::new();
-            for leaf in leaves {
-                let first_structure_ancestor =
-                    self.find_structure_ancestor(&leaf.node_handle);
-                // Get the closest ancestor path or the root one (empty Vec) if there is none
-                let ancestor_handle = first_structure_ancestor
-                    .map(|a| a.raw().clone())
-                    .unwrap_or(Vec::new());
-                let list = structure_ancestors
-                    .entry(ancestor_handle)
-                    .or_insert(Vec::new());
-                // Add the DomHandle of the leaf to the list of grouped handles by this ancestor
-                list.push(leaf.clone());
-            }
+            let structure_ancestors = self
+                .group_leaves_by_closest_structure_ancestors(leaves.clone());
 
             // Order those ancestors (important to avoid node replacement & conflicts of handles)
-            let mut keys: Vec<&Vec<usize>> =
+            let mut keys: Vec<&DomHandle> =
                 structure_ancestors.keys().collect();
             keys.sort();
 
@@ -107,74 +95,32 @@ where
                 // Iterate the leaves backwards to avoid modifying the previous Dom structure
                 for leaf in leaves.into_iter().rev() {
                     // Find the immediate child of the common ancestor containing this leaf as its descendant
-                    let (path_to_child, _) = leaf
+                    let ancestor_child_handle = leaf
                         .node_handle
-                        .raw()
-                        .split_at(ancestor_handle.len() + 1)
-                        .clone();
-                    let ancestor_child =
-                        DomHandle::from_raw(path_to_child.to_vec());
+                        .sub_handle_up_to(ancestor_handle.raw().len() + 1);
 
                     let node =
                         self.state.dom.lookup_node(&leaf.node_handle).clone();
                     match node {
                         DomNode::Text(text_node) => {
-                            // Add the selected text to the current text holder
-                            cur_text.insert(
-                                0,
-                                &text_node.data()
-                                    [leaf.start_offset..leaf.end_offset]
-                                    .to_owned(),
-                            );
-
-                            if leaf.is_covered() {
-                                // This node is covered, remove it and any empty ancestors and set
-                                // the insertion point to be at its position.
-                                insert_text_at = Some(ancestor_child.clone());
-                                self.remove_and_clean_up_empty_nodes_until(
-                                    &leaf.node_handle,
-                                    &ancestor_child,
+                            let (text, pos) = self
+                                .process_text_node_for_inline_code(
+                                    &text_node,
+                                    leaf,
+                                    &ancestor_child_handle,
                                 );
-                            } else if leaf.is_start() {
-                                // This node is at the start of the selection and not completely
-                                // covered, split it and set the insertion point to be after it.
-                                insert_text_at =
-                                    Some(ancestor_child.next_sibling());
-                                let text = text_node.data()
-                                    [..leaf.start_offset]
-                                    .to_owned();
-                                self.state.dom.replace(
-                                    &leaf.node_handle,
-                                    vec![DomNode::new_text(text)],
-                                );
-                            } else if leaf.is_end() {
-                                // This node is at the end of the selection and not completely
-                                // covered, split it and set the insertion point to be before it.
-                                insert_text_at =
-                                    if ancestor_child.index_in_parent() > 0 {
-                                        Some(ancestor_child.prev_sibling())
-                                    } else {
-                                        Some(ancestor_child.clone())
-                                    };
-                                let text = text_node.data()[leaf.end_offset..]
-                                    .to_owned();
-                                self.state.dom.replace(
-                                    &leaf.node_handle,
-                                    vec![DomNode::new_text(text)],
-                                );
-                            }
+                            cur_text.insert(0, &text);
+                            insert_text_at = pos;
                         }
                         DomNode::LineBreak(_) => {
-                            // Get any pending text and create a new TextNode to insert along with
-                            // the LineBreak one, removing the old LineBreak node.
-                            if !cur_text.is_empty() {
-                                nodes_to_add
-                                    .insert(0, DomNode::new_text(cur_text));
-                            }
-                            nodes_to_add.insert(0, DomNode::new_line_break());
-                            self.state.dom.remove(&leaf.node_handle);
+                            nodes_to_add.extend(
+                                self.process_line_break_for_inline_code(
+                                    &leaf, &cur_text,
+                                ),
+                            );
                             // Update insertion point and reset text
-                            insert_text_at = Some(ancestor_child.clone());
+                            insert_text_at =
+                                Some(ancestor_child_handle.clone());
                             cur_text = S::default();
                         }
                         _ => panic!(
@@ -208,6 +154,90 @@ where
             }
             self.create_update_replace_all()
         }
+    }
+
+    fn process_text_node_for_inline_code(
+        &mut self,
+        text_node: &TextNode<S>,
+        location: &DomLocation,
+        ancestor_child_handle: &DomHandle,
+    ) -> (S, Option<DomHandle>) {
+        let mut insert_text_at = None;
+        // Add the selected text to the current text holder
+        let text = text_node.data()[location.start_offset..location.end_offset]
+            .to_owned();
+
+        if location.is_covered() {
+            // This node is covered, remove it and any empty ancestors and set
+            // the insertion point to be at its position.
+            insert_text_at = Some(ancestor_child_handle.clone());
+            self.remove_and_clean_up_empty_nodes_until(
+                &location.node_handle,
+                ancestor_child_handle,
+            );
+        } else if location.is_start() {
+            // This node is at the start of the selection and not completely
+            // covered, split it and set the insertion point to be after it.
+            insert_text_at = Some(ancestor_child_handle.next_sibling());
+            let text = text_node.data()[..location.start_offset].to_owned();
+            self.state
+                .dom
+                .replace(&location.node_handle, vec![DomNode::new_text(text)]);
+        } else if location.is_end() {
+            // This node is at the end of the selection and not completely
+            // covered, split it and set the insertion point to be before it.
+            insert_text_at = if ancestor_child_handle.index_in_parent() > 0 {
+                Some(ancestor_child_handle.prev_sibling())
+            } else {
+                Some(ancestor_child_handle.clone())
+            };
+            let text = text_node.data()[location.end_offset..].to_owned();
+            self.state
+                .dom
+                .replace(&location.node_handle, vec![DomNode::new_text(text)]);
+        }
+
+        (text, insert_text_at)
+    }
+
+    fn process_line_break_for_inline_code(
+        &mut self,
+        location: &DomLocation,
+        cur_text: &S,
+    ) -> Vec<DomNode<S>> {
+        let mut nodes_to_add = Vec::new();
+        // Get any pending text and create a new TextNode to insert along with
+        // the LineBreak one, removing the old LineBreak node.
+        if !cur_text.is_empty() {
+            nodes_to_add.insert(0, DomNode::new_text(cur_text.clone()));
+        }
+        nodes_to_add.insert(0, DomNode::new_line_break());
+        self.state.dom.remove(&location.node_handle);
+        nodes_to_add
+    }
+
+    /// Finds the closest structure node ancestor for each leaf node handle and groups it with other
+    /// leaves that share it as the common closest structure node ancestor. If none is found,
+    /// the root/document node is used instead.
+    fn group_leaves_by_closest_structure_ancestors(
+        &self,
+        leaves: Vec<&DomLocation>,
+    ) -> HashMap<DomHandle, Vec<DomLocation>> {
+        let mut structure_ancestors = HashMap::new();
+        for leaf in leaves {
+            let first_structure_ancestor =
+                self.find_structure_ancestor(&leaf.node_handle);
+            // Get the closest ancestor path or the root one (empty Vec) if there is none
+            let ancestor_handle = first_structure_ancestor
+                .map(|a| a.clone())
+                .unwrap_or(DomHandle::root());
+            let list = structure_ancestors
+                .entry(ancestor_handle)
+                .or_insert(Vec::new());
+            // Add the DomHandle of the leaf to the list of grouped handles by this ancestor
+            list.push(leaf.clone());
+        }
+        structure_ancestors
     }
 
     fn remove_and_clean_up_empty_nodes_until(
@@ -835,7 +865,8 @@ mod test {
     }
 
     #[test]
-    fn inline_code_replacing_formatting_removes_formatting() {
+    fn inline_code_replacing_nested_and_complex_formatting_removes_formatting()
+    {
         let mut model = cm("<b><u>{bold</u><i>italic</i></b><i>text}|</i>");
         model.inline_code();
         assert_eq!(tx(&model), "<code>{bolditalictext}|</code>");
