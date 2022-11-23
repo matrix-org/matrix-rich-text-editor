@@ -19,7 +19,7 @@ use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
 
 // categories of character
 #[derive(PartialEq, Debug)]
-enum Cat {
+enum CharType {
     Whitespace,
     Newline,
     Punctuation,
@@ -28,22 +28,22 @@ enum Cat {
 }
 
 #[derive(PartialEq, Debug)]
-enum Dir {
+enum Direction {
     Forwards,
     Backwards,
 }
 
-impl Dir {
+impl Direction {
     fn increment(&self, index: usize) -> usize {
         match self {
-            Dir::Backwards => index - 1,
-            Dir::Forwards => index + 1,
+            Direction::Backwards => index - 1,
+            Direction::Forwards => index + 1,
         }
     }
     fn decrement(&self, index: usize) -> usize {
         match self {
-            Dir::Backwards => index + 1,
-            Dir::Forwards => index - 1,
+            Direction::Backwards => index + 1,
+            Direction::Forwards => index - 1,
         }
     }
 }
@@ -57,7 +57,7 @@ where
         let (s, e) = self.safe_selection();
 
         if s == e {
-            // We have no selection - check for special list behaviour
+            // We have no selection - check for special list behaviour`
             // TODO: should probably also get inside here if our selection
             // only contains a zero-wdith space.
             let range = self.state.dom.find_range(s, e);
@@ -100,43 +100,49 @@ where
     /// Remove a single word when user does ctrl/cmd + delete
     pub fn delete_word(&mut self) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
 
         // if we have a selection, only remove the selection
-        if s != e {
+        if range.start() != range.end() {
             return self.delete_in(s, e);
         }
 
         // if we're at the end of the string, do nothing
-        if e == self.state.dom.text_len() {
+        if range.end() == self.state.dom.text_len() {
             return ComposerUpdate::keep();
         }
 
+        // from here on, start == end, so let's make a cursor position called c
+        let c = range.start();
+
         // next actions depend on start type
-        let start_type = self.get_char_type_at(s);
+        let start_type = self.get_char_type_at(c);
         match start_type {
-            Cat::Whitespace => {
+            CharType::Whitespace => {
                 let (ws_delete_index, stopped_at_newline) =
-                    self.get_end_index_of_run(s, &Dir::Forwards);
+                    self.get_end_index_of_run(c, &Direction::Forwards);
 
                 match stopped_at_newline {
                     // +2 to account for the fact we want to remove the newline
-                    true => self.delete_in(s, ws_delete_index + 2),
+                    true => self.delete_in(c, ws_delete_index + 2),
                     false => {
-                        self.delete_in(s, ws_delete_index + 1);
-                        let (_s, _) = self.safe_selection();
-                        let (next_delete_index, _) =
-                            self.get_end_index_of_run(_s + 1, &Dir::Forwards);
-                        self.delete_in(_s, next_delete_index + 1)
+                        self.delete_in(c, ws_delete_index + 1);
+                        let (_s, _e) = self.safe_selection();
+                        let _range = self.state.dom.find_range(_s, _e);
+                        let _c = _range.start();
+                        let (next_delete_index, _) = self
+                            .get_end_index_of_run(_c + 1, &Direction::Forwards);
+                        self.delete_in(_c, next_delete_index + 1)
                     }
                 }
             }
-            Cat::Newline => self.delete_in(s, s + 1),
-            Cat::Punctuation | Cat::Other => {
+            CharType::Newline => self.delete_in(c, c + 1),
+            CharType::Punctuation | CharType::Other => {
                 let (delete_index, _) =
-                    self.get_end_index_of_run(s + 1, &Dir::Forwards);
-                self.delete_in(s, delete_index + 1)
+                    self.get_end_index_of_run(c + 1, &Direction::Forwards);
+                self.delete_in(c, delete_index + 1)
             }
-            Cat::None => ComposerUpdate::keep(),
+            CharType::None => ComposerUpdate::keep(),
         }
     }
 
@@ -170,51 +176,59 @@ where
     /// Remove a single word when user does ctrl/cmd + backspace
     pub fn backspace_word(&mut self) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
 
         // if we have a selection, only remove the selection
-        if s != e {
+        if range.start() != range.end() {
             return self.delete_in(s, e);
         }
 
         // if we're at the start of the string, do nothing
-        if s == 0 {
+        if range.start() == 0 {
             return ComposerUpdate::keep();
         }
 
+        // from here on, start == end, so let's make a cursor position called c
+        let c = range.start();
+
         // next actions depend on start type
-        let start_type = self.get_char_type_at(e - 1);
+        let start_type = self.get_char_type_at(c - 1);
         // need to find the dom location of the cursor, then write code to allow us to go backwards
         // done by calling find_range
         match start_type {
-            Cat::Whitespace => {
+            CharType::Whitespace => {
                 let (ws_delete_index, stopped_at_newline) =
-                    self.get_end_index_of_run(e - 1, &Dir::Backwards);
+                    self.get_end_index_of_run(c - 1, &Direction::Backwards);
 
                 // switch to if
                 match stopped_at_newline {
                     // -1 to account for the fact we want to remove the newline
-                    true => self.delete_in(ws_delete_index - 1, e),
+                    true => self.delete_in(ws_delete_index - 1, c),
                     false => {
-                        self.delete_in(ws_delete_index, e);
-                        let (_, _e) = self.safe_selection();
-                        let (next_delete_index, _) =
-                            self.get_end_index_of_run(_e - 1, &Dir::Backwards);
-                        self.delete_in(next_delete_index, _e)
+                        self.delete_in(ws_delete_index, c);
+                        let (_s, _e) = self.safe_selection();
+                        let _range = self.state.dom.find_range(_s, _e);
+                        let _c = _range.start();
+                        let (next_delete_index, _) = self.get_end_index_of_run(
+                            _c - 1,
+                            &Direction::Backwards,
+                        );
+                        self.delete_in(next_delete_index, _c)
                     }
                 }
             }
-            Cat::Newline => self.delete_in(e - 1, e),
-            Cat::Punctuation | Cat::Other => {
+            CharType::Newline => self.delete_in(c - 1, c),
+            CharType::Punctuation | CharType::Other => {
                 let (delete_index, _) =
-                    self.get_end_index_of_run(e - 1, &Dir::Backwards);
-                self.delete_in(delete_index, e)
+                    self.get_end_index_of_run(c - 1, &Direction::Backwards);
+                self.delete_in(delete_index, c)
             }
-            Cat::None => ComposerUpdate::keep(),
+            CharType::None => ComposerUpdate::keep(),
         }
     }
 
     // types defined in the Cat struct
-    fn get_char_type_at(&self, index: usize) -> Cat {
+    fn get_char_type_at(&self, index: usize) -> CharType {
         let content = self.state.dom.to_string();
         // self.state.dom.find_range(start, end), use this instead
         // and will need to go codepoint by codepoint
@@ -225,19 +239,19 @@ where
                 // do we want to also have \r in here?
                 // this will actually be a br tag
                 if c == '\n' {
-                    return Cat::Newline;
+                    return CharType::Newline;
                 }
 
                 if c.is_whitespace() {
-                    return Cat::Whitespace;
+                    return CharType::Whitespace;
                 } else if c.is_ascii_punctuation() || c == '£' {
                     // is_ascii_punctuation doesn't include £, do we want to manually add this?
-                    return Cat::Punctuation;
+                    return CharType::Punctuation;
                 } else {
-                    return Cat::Other;
+                    return CharType::Other;
                 }
             }
-            None => Cat::None,
+            None => CharType::None,
         }
     }
 
@@ -246,27 +260,27 @@ where
     fn get_end_index_of_run(
         &self,
         start: usize,
-        direction: &Dir,
+        direction: &Direction,
     ) -> (usize, bool) {
         let start_type = self.get_char_type_at(start);
         let mut current_index = start.clone();
         let mut current_type = self.get_char_type_at(current_index);
-        let mut stopped_at_newline = start_type.eq(&Cat::Newline);
+        let mut stopped_at_newline = start_type.eq(&CharType::Newline);
         let mut would_hit_end = false;
 
         fn check_condition(
             index: usize,
             max: usize,
-            start_type: &Cat,
-            current_type: &Cat,
-            dir: &Dir,
+            start_type: &CharType,
+            current_type: &CharType,
+            dir: &Direction,
             stopped_at_newline: bool,
         ) -> bool {
             let base_condition =
                 current_type.eq(start_type) && !stopped_at_newline;
             match dir {
-                Dir::Backwards => base_condition && index > 0,
-                Dir::Forwards => base_condition && index < max,
+                Direction::Backwards => base_condition && index > 0,
+                Direction::Forwards => base_condition && index < max,
             }
         }
 
@@ -286,7 +300,7 @@ where
             {
                 would_hit_end = true;
             }
-            if current_type.eq(&Cat::Newline) {
+            if current_type.eq(&CharType::Newline) {
                 stopped_at_newline = true;
             }
         }
