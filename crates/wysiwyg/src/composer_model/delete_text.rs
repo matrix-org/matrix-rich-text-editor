@@ -18,21 +18,19 @@ use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
 
 // categories of character
-#[derive(PartialEq)]
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 enum Cat {
     Whitespace,
     Newline,
     Punctuation,
     Other,
-    None
+    None,
 }
 
-#[derive(PartialEq)]
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 enum Dir {
     Forwards,
-    Backwards
+    Backwards,
 }
 
 impl<S> ComposerModel<S>
@@ -115,7 +113,7 @@ where
     pub fn backspace_word(&mut self) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
 
-        // if we have a selection, only remove the selection 
+        // if we have a selection, only remove the selection
         if s != e {
             return self.delete_in(s, e);
         }
@@ -124,39 +122,43 @@ where
         if s == 0 {
             return ComposerUpdate::keep();
         }
-        
+
         // next actions depend on start type
-        let start_type = self.get_char_type_at(e-1);
+        let start_type = self.get_char_type_at(e - 1);
         match start_type {
             Cat::Whitespace => {
-                let (ws_delete_index, stopped_at_newline) = self.get_end_index_of_run(e-1, &Dir::Backwards);
+                let (ws_delete_index, stopped_at_newline) =
+                    self.get_end_index_of_run(e - 1, &Dir::Backwards);
                 if stopped_at_newline {
                     // -1 to account for the fact we want to remove the newline
                     return self.delete_in(ws_delete_index - 1, e);
                 } else {
                     self.delete_in(ws_delete_index, e);
                     let (_s, _e) = self.safe_selection();
-                    let (non_ws_delete_index, _) = self.get_end_index_of_run(_e-1,&Dir::Backwards);
+                    let (non_ws_delete_index, _) =
+                        self.get_end_index_of_run(_e - 1, &Dir::Backwards);
                     return self.delete_in(non_ws_delete_index, _e);
                 }
-            },
+            }
             Cat::Newline => {
-                return self.delete_in(s-1, e);
-            },
+                return self.delete_in(s - 1, e);
+            }
             Cat::Punctuation => {
-                let (delete_index, _) = self.get_end_index_of_run(e-1,&Dir::Backwards);
+                let (delete_index, _) =
+                    self.get_end_index_of_run(e - 1, &Dir::Backwards);
                 return self.delete_in(delete_index, e);
-            },
+            }
             Cat::Other => {
-                let (delete_index, _) = self.get_end_index_of_run(e-1,&Dir::Backwards);
-                 return self.delete_in(delete_index, e);
+                let (delete_index, _) =
+                    self.get_end_index_of_run(e - 1, &Dir::Backwards);
+                return self.delete_in(delete_index, e);
             }
             Cat::None => ComposerUpdate::keep(),
         }
     }
 
     // types defined in the Cat struct
-    fn get_char_type_at(& self, index: usize) -> Cat {
+    fn get_char_type_at(&self, index: usize) -> Cat {
         let content = self.state.dom.to_string();
 
         match content.chars().nth(index) {
@@ -169,20 +171,24 @@ where
 
                 if c.is_whitespace() {
                     return Cat::Whitespace;
-                } else if c.is_ascii_punctuation() || c == '£'{
+                } else if c.is_ascii_punctuation() || c == '£' {
                     // is_ascii_punctuation doesn't include £, do we want to manually add this?
                     return Cat::Punctuation;
                 } else {
                     return Cat::Other;
                 }
-            },
+            }
             None => Cat::None,
         }
     }
 
-    // figure out where the run ends and also if we're returning due to a 
+    // figure out where the run ends and also if we're returning due to a
     // newline (true) or a change in character type (false)
-    fn get_end_index_of_run(& self, start: usize, direction: &Dir) -> (usize, bool) {
+    fn get_end_index_of_run(
+        &self,
+        start: usize,
+        direction: &Dir,
+    ) -> (usize, bool) {
         let start_type = self.get_char_type_at(start);
         let mut current_index = start.clone();
         let mut current_type = self.get_char_type_at(current_index);
@@ -192,28 +198,46 @@ where
         fn increment(index: usize, dir: &Dir) -> usize {
             match dir {
                 Dir::Backwards => index - 1,
-                Dir::Forwards => index + 1
+                Dir::Forwards => index + 1,
             }
         }
         fn decrement(index: usize, dir: &Dir) -> usize {
             match dir {
                 Dir::Backwards => index + 1,
-                Dir::Forwards => index - 1
+                Dir::Forwards => index - 1,
             }
         }
 
-        fn check_condition(index: usize, max: usize, start_type: &Cat, current_type: &Cat, dir: &Dir, stopped_at_newline: bool) -> bool {
-            let base_condition = current_type.eq(start_type) && !stopped_at_newline;
+        fn check_condition(
+            index: usize,
+            max: usize,
+            start_type: &Cat,
+            current_type: &Cat,
+            dir: &Dir,
+            stopped_at_newline: bool,
+        ) -> bool {
+            let base_condition =
+                current_type.eq(start_type) && !stopped_at_newline;
             match dir {
                 Dir::Backwards => base_condition && index > 0,
-                Dir::Forwards => base_condition && index < max
+                Dir::Forwards => base_condition && index < max,
             }
         }
 
-        while check_condition(current_index, self.state.dom.text_len(), &start_type, &current_type, direction, stopped_at_newline) {
+        while check_condition(
+            current_index,
+            self.state.dom.text_len(),
+            &start_type,
+            &current_type,
+            direction,
+            stopped_at_newline,
+        ) {
             current_index = increment(current_index, direction);
             current_type = self.get_char_type_at(current_index);
-            if current_type.eq(&start_type) && (current_index == 0 || current_index == self.state.dom.text_len()) {
+            if current_type.eq(&start_type)
+                && (current_index == 0
+                    || current_index == self.state.dom.text_len())
+            {
                 would_hit_end = true;
             }
             if current_type.eq(&Cat::Newline) {
@@ -228,40 +252,12 @@ where
             false => (decrement(current_index, direction), stopped_at_newline),
         }
     }
- 
-    /// Deletes text in an arbitrary start..end range.
-    pub fn delete_in(&mut self, start: usize, end: usize) -> ComposerUpdate<S> {
-        self.state.end = Location::from(start);
-        self.replace_text_in(S::default(), start, end)
-    }
-
-    /// Deletes the character after the current cursor position.
-    pub fn delete(&mut self) -> ComposerUpdate<S> {
-        if self.state.start == self.state.end {
-            let (s, _) = self.safe_selection();
-            // If we're dealing with complex graphemes, this value might not be 1
-            let next_char_len =
-                if let Some((text_node, loc)) = self.get_selected_text_node() {
-                    let selection_start_in_str = s - loc.position;
-                    Self::find_next_char_len(
-                        selection_start_in_str,
-                        &text_node.data(),
-                    ) as isize
-                } else {
-                    1
-                };
-            // Go forward `next_char_len` positions from the current location
-            self.state.end += next_char_len;
-        }
-
-        self.replace_text(S::default())
-    }
 
     /// Remove a single word when user does ctrl/cmd + delete
     pub fn delete_word(&mut self) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
 
-        // if we have a selection, only remove the selection 
+        // if we have a selection, only remove the selection
         if s != e {
             return self.delete_in(s, e);
         }
@@ -270,31 +266,35 @@ where
         if e == self.state.dom.text_len() {
             return ComposerUpdate::keep();
         }
-        
+
         // next actions depend on start type
         let start_type = self.get_char_type_at(e);
         match start_type {
             Cat::Whitespace => {
-                let (ws_delete_index, stopped_at_newline) = self.get_end_index_of_run(e,&Dir::Forwards);
+                let (ws_delete_index, stopped_at_newline) =
+                    self.get_end_index_of_run(e, &Dir::Forwards);
                 if stopped_at_newline {
                     // +2 to account for the fact we want to remove the newline
                     return self.delete_in(s, ws_delete_index + 2);
                 } else {
                     self.delete_in(s, ws_delete_index + 1);
                     let (_s, _e) = self.safe_selection();
-                    let (non_ws_delete_index, _) = self.get_end_index_of_run(_e+1,&Dir::Forwards);
+                    let (non_ws_delete_index, _) =
+                        self.get_end_index_of_run(_e + 1, &Dir::Forwards);
                     return self.delete_in(_s, non_ws_delete_index + 1);
                 }
-            },
+            }
             Cat::Newline => {
-                return self.delete_in(s, e+1);
-            },
+                return self.delete_in(s, e + 1);
+            }
             Cat::Punctuation => {
-                let (delete_index, _) = self.get_end_index_of_run(e+1,&Dir::Forwards);
+                let (delete_index, _) =
+                    self.get_end_index_of_run(e + 1, &Dir::Forwards);
                 return self.delete_in(s, delete_index + 1);
-            },
+            }
             Cat::Other => {
-                let (delete_index, _) = self.get_end_index_of_run(e+1,&Dir::Forwards);
+                let (delete_index, _) =
+                    self.get_end_index_of_run(e + 1, &Dir::Forwards);
                 return self.delete_in(s, delete_index + 1);
             }
             Cat::None => ComposerUpdate::keep(),
