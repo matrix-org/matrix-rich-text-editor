@@ -95,16 +95,11 @@ where
             return ComposerUpdate::keep();
         }
         
-        // not at the start of the string from here onwards
-        let content = self.state.dom.to_string();
-        println!("CONTENT: {}", content);
-        let start_type = self.get_char_type_at(e-1);
-
         // next actions depend on start type
+        let start_type = self.get_char_type_at(e-1);
         match start_type {
             Cat::Whitespace => {
                 let (ws_delete_index, stopped_at_newline) = self.get_end_index_of_run(e-1, &Dir::Backwards);
-                println!("stopped at newline! index: {}", ws_delete_index);
                 if stopped_at_newline {
                     // -1 to account for the fact we want to remove the newline
                     return self.delete_in(ws_delete_index - 1, e);
@@ -124,8 +119,7 @@ where
             },
             Cat::Other => {
                 let (delete_index, _) = self.get_end_index_of_run(e-1,&Dir::Backwards);
-                println!("DELETE INDEX: {delete_index}");
-                return self.delete_in(delete_index, e);
+                 return self.delete_in(delete_index, e);
             }
             Cat::None => ComposerUpdate::keep(),
         }
@@ -134,9 +128,11 @@ where
     // types defined in the Cat struct
     fn get_char_type_at(& self, index: usize) -> Cat {
         let content = self.state.dom.to_string();
+
         match content.chars().nth(index) {
             Some(c) => {
-                // handle newlines separately, otherwise they'll get classed as white space
+                // handle newlines separately, otherwise they'll get classed as white space,
+                // do we want to also have \r in here?
                 if c == '\n' {
                     return Cat::Newline;
                 }
@@ -144,8 +140,7 @@ where
                 if c.is_whitespace() {
                     return Cat::Whitespace;
                 } else if c.is_ascii_punctuation() || c == '£'{
-                    // is_ascii_punctuation doesn't include £, if we don't add this, behaviour will
-                    // be as per google docs
+                    // is_ascii_punctuation doesn't include £, do we want to manually add this?
                     return Cat::Punctuation;
                 } else {
                     return Cat::Other;
@@ -196,7 +191,7 @@ where
             }
         }
 
-        // if we'd have hit the end, return that index, otherwise
+        // if it would have hit the end of the string, return that index, otherwise
         // return the index of the end of the run
         match would_hit_end {
             true => (current_index, stopped_at_newline),
@@ -246,26 +241,17 @@ where
             return ComposerUpdate::keep();
         }
         
-        // not at the start of the string from here onwards
-        let content = self.state.dom.to_string();
-        println!("CONTENT:{}", content);
-        let start_type = self.get_char_type_at(e);
-        println!("start type - {:?}", start_type);
-
         // next actions depend on start type
+        let start_type = self.get_char_type_at(e);
         match start_type {
             Cat::Whitespace => {
                 let (ws_delete_index, stopped_at_newline) = self.get_end_index_of_run(e,&Dir::Forwards);
-                println!("stopped at index: {}", ws_delete_index);
                 if stopped_at_newline {
-                    println!("stopped at newline! index: {}", ws_delete_index);
                     // +2 to account for the fact we want to remove the newline
                     return self.delete_in(s, ws_delete_index + 2);
                 } else {
                     self.delete_in(s, ws_delete_index + 1);
                     let (_s, _e) = self.safe_selection();
-                    println!("s - {_s} and e - {_e}"); 
-                    println!("NEW CONTENT:{}", self.state.dom.to_string()); 
                     let (non_ws_delete_index, _) = self.get_end_index_of_run(_e+1,&Dir::Forwards);
                     return self.delete_in(_s, non_ws_delete_index + 1);
                 }
@@ -275,12 +261,10 @@ where
             },
             Cat::Punctuation => {
                 let (delete_index, _) = self.get_end_index_of_run(e+1,&Dir::Forwards);
-                println!("think we should delete punctutation from {delete_index}");
                 return self.delete_in(s, delete_index + 1);
             },
             Cat::Other => {
                 let (delete_index, _) = self.get_end_index_of_run(e+1,&Dir::Forwards);
-                println!("think we should delete to {delete_index}");
                 return self.delete_in(s, delete_index + 1);
             }
             Cat::None => ComposerUpdate::keep(),
