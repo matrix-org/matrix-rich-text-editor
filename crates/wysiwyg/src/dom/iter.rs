@@ -205,7 +205,8 @@ mod test {
         let dom = cm(EXAMPLE_HTML).state.dom;
         if let DomNode::Container(list) = dom.children().first().unwrap() {
             let deep_child = list.children().first().unwrap();
-            let text_nodes: Vec<String> = deep_child.iter().map(node_txt).collect();
+            let text_nodes: Vec<String> =
+                deep_child.iter().map(node_txt).collect();
 
             assert_eq!(text_nodes, vec!["li", "'b'", "strong", "'c'"])
         } else {
@@ -265,7 +266,10 @@ mod test {
         let dom = cm(EXAMPLE_HTML).state.dom;
         if let DomNode::Container(list) = dom.children().first().unwrap() {
             let deep_child = list.children().first().unwrap();
-            let text_nodes: Vec<String> = deep_child.iter_text().map(|text| text.data().to_string()).collect();
+            let text_nodes: Vec<String> = deep_child
+                .iter_text()
+                .map(|text| text.data().to_string())
+                .collect();
 
             assert_eq!(text_nodes, vec!["b", "c"])
         } else {
