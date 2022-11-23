@@ -97,34 +97,29 @@ where
         }
 
         // next actions depend on start type
-        let start_type = self.get_char_type_at(e);
+        let start_type = self.get_char_type_at(s);
         match start_type {
             Cat::Whitespace => {
                 let (ws_delete_index, stopped_at_newline) =
-                    self.get_end_index_of_run(e, &Dir::Forwards);
-                if stopped_at_newline {
+                    self.get_end_index_of_run(s, &Dir::Forwards);
+
+                match stopped_at_newline {
                     // +2 to account for the fact we want to remove the newline
-                    return self.delete_in(s, ws_delete_index + 2);
-                } else {
-                    self.delete_in(s, ws_delete_index + 1);
-                    let (_s, _e) = self.safe_selection();
-                    let (non_ws_delete_index, _) =
-                        self.get_end_index_of_run(_e + 1, &Dir::Forwards);
-                    return self.delete_in(_s, non_ws_delete_index + 1);
+                    true => self.delete_in(s, ws_delete_index + 2),
+                    false => {
+                        self.delete_in(s, ws_delete_index + 1);
+                        let (_s, _) = self.safe_selection();
+                        let (next_delete_index, _) =
+                            self.get_end_index_of_run(_s + 1, &Dir::Forwards);
+                        self.delete_in(_s, next_delete_index + 1)
+                    }
                 }
             }
-            Cat::Newline => {
-                return self.delete_in(s, e + 1);
-            }
-            Cat::Punctuation => {
+            Cat::Newline => self.delete_in(s, s + 1),
+            Cat::Punctuation | Cat::Other => {
                 let (delete_index, _) =
-                    self.get_end_index_of_run(e + 1, &Dir::Forwards);
-                return self.delete_in(s, delete_index + 1);
-            }
-            Cat::Other => {
-                let (delete_index, _) =
-                    self.get_end_index_of_run(e + 1, &Dir::Forwards);
-                return self.delete_in(s, delete_index + 1);
+                    self.get_end_index_of_run(s + 1, &Dir::Forwards);
+                self.delete_in(s, delete_index + 1)
             }
             Cat::None => ComposerUpdate::keep(),
         }
@@ -177,29 +172,24 @@ where
             Cat::Whitespace => {
                 let (ws_delete_index, stopped_at_newline) =
                     self.get_end_index_of_run(e - 1, &Dir::Backwards);
-                if stopped_at_newline {
+
+                match stopped_at_newline {
                     // -1 to account for the fact we want to remove the newline
-                    return self.delete_in(ws_delete_index - 1, e);
-                } else {
-                    self.delete_in(ws_delete_index, e);
-                    let (_s, _e) = self.safe_selection();
-                    let (non_ws_delete_index, _) =
-                        self.get_end_index_of_run(_e - 1, &Dir::Backwards);
-                    return self.delete_in(non_ws_delete_index, _e);
+                    true => self.delete_in(ws_delete_index - 1, e),
+                    false => {
+                        self.delete_in(ws_delete_index, e);
+                        let (_, _e) = self.safe_selection();
+                        let (next_delete_index, _) =
+                            self.get_end_index_of_run(_e - 1, &Dir::Backwards);
+                        self.delete_in(next_delete_index, _e)
+                    }
                 }
             }
-            Cat::Newline => {
-                return self.delete_in(s - 1, e);
-            }
-            Cat::Punctuation => {
+            Cat::Newline => self.delete_in(e - 1, e),
+            Cat::Punctuation | Cat::Other => {
                 let (delete_index, _) =
                     self.get_end_index_of_run(e - 1, &Dir::Backwards);
-                return self.delete_in(delete_index, e);
-            }
-            Cat::Other => {
-                let (delete_index, _) =
-                    self.get_end_index_of_run(e - 1, &Dir::Backwards);
-                return self.delete_in(delete_index, e);
+                self.delete_in(delete_index, e)
             }
             Cat::None => ComposerUpdate::keep(),
         }
