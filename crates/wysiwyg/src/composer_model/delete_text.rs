@@ -183,11 +183,14 @@ where
 
         // next actions depend on start type
         let start_type = self.get_char_type_at(e - 1);
+        // need to find the dom location of the cursor, then write code to allow us to go backwards
+        // done by calling find_range
         match start_type {
             Cat::Whitespace => {
                 let (ws_delete_index, stopped_at_newline) =
                     self.get_end_index_of_run(e - 1, &Dir::Backwards);
 
+                // switch to if
                 match stopped_at_newline {
                     // -1 to account for the fact we want to remove the newline
                     true => self.delete_in(ws_delete_index - 1, e),
@@ -213,11 +216,14 @@ where
     // types defined in the Cat struct
     fn get_char_type_at(&self, index: usize) -> Cat {
         let content = self.state.dom.to_string();
-
+        // self.state.dom.find_range(start, end), use this instead
+        // and will need to go codepoint by codepoint
+        // will need to use some dom code to figure out the positioning, then use some dom deletion method too
         match content.chars().nth(index) {
             Some(c) => {
                 // handle newlines separately, otherwise they'll get classed as white space,
                 // do we want to also have \r in here?
+                // this will actually be a br tag
                 if c == '\n' {
                     return Cat::Newline;
                 }

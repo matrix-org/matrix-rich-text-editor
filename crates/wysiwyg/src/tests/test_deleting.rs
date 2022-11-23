@@ -514,3 +514,5 @@ fn delete_word_multi_step_test() {
     model.delete_word();
     assert_eq!(restore_whitespace(&tx(&model)), "|")
 }
+
+// add test cases to use html
