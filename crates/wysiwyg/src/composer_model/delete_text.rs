@@ -82,6 +82,54 @@ where
         self.do_replace_text(S::default())
     }
 
+    /// Remove a single word when user does ctrl/cmd + delete
+    pub fn delete_word(&mut self) -> ComposerUpdate<S> {
+        let (s, e) = self.safe_selection();
+
+        // if we have a selection, only remove the selection
+        if s != e {
+            return self.delete_in(s, e);
+        }
+
+        // if we're at the end of the string, do nothing
+        if e == self.state.dom.text_len() {
+            return ComposerUpdate::keep();
+        }
+
+        // next actions depend on start type
+        let start_type = self.get_char_type_at(e);
+        match start_type {
+            Cat::Whitespace => {
+                let (ws_delete_index, stopped_at_newline) =
+                    self.get_end_index_of_run(e, &Dir::Forwards);
+                if stopped_at_newline {
+                    // +2 to account for the fact we want to remove the newline
+                    return self.delete_in(s, ws_delete_index + 2);
+                } else {
+                    self.delete_in(s, ws_delete_index + 1);
+                    let (_s, _e) = self.safe_selection();
+                    let (non_ws_delete_index, _) =
+                        self.get_end_index_of_run(_e + 1, &Dir::Forwards);
+                    return self.delete_in(_s, non_ws_delete_index + 1);
+                }
+            }
+            Cat::Newline => {
+                return self.delete_in(s, e + 1);
+            }
+            Cat::Punctuation => {
+                let (delete_index, _) =
+                    self.get_end_index_of_run(e + 1, &Dir::Forwards);
+                return self.delete_in(s, delete_index + 1);
+            }
+            Cat::Other => {
+                let (delete_index, _) =
+                    self.get_end_index_of_run(e + 1, &Dir::Forwards);
+                return self.delete_in(s, delete_index + 1);
+            }
+            Cat::None => ComposerUpdate::keep(),
+        }
+    }
+
     fn backspace_single_cursor(
         &mut self,
         range: Range,
@@ -250,54 +298,6 @@ where
         match would_hit_end {
             true => (current_index, stopped_at_newline),
             false => (decrement(current_index, direction), stopped_at_newline),
-        }
-    }
-
-    /// Remove a single word when user does ctrl/cmd + delete
-    pub fn delete_word(&mut self) -> ComposerUpdate<S> {
-        let (s, e) = self.safe_selection();
-
-        // if we have a selection, only remove the selection
-        if s != e {
-            return self.delete_in(s, e);
-        }
-
-        // if we're at the end of the string, do nothing
-        if e == self.state.dom.text_len() {
-            return ComposerUpdate::keep();
-        }
-
-        // next actions depend on start type
-        let start_type = self.get_char_type_at(e);
-        match start_type {
-            Cat::Whitespace => {
-                let (ws_delete_index, stopped_at_newline) =
-                    self.get_end_index_of_run(e, &Dir::Forwards);
-                if stopped_at_newline {
-                    // +2 to account for the fact we want to remove the newline
-                    return self.delete_in(s, ws_delete_index + 2);
-                } else {
-                    self.delete_in(s, ws_delete_index + 1);
-                    let (_s, _e) = self.safe_selection();
-                    let (non_ws_delete_index, _) =
-                        self.get_end_index_of_run(_e + 1, &Dir::Forwards);
-                    return self.delete_in(_s, non_ws_delete_index + 1);
-                }
-            }
-            Cat::Newline => {
-                return self.delete_in(s, e + 1);
-            }
-            Cat::Punctuation => {
-                let (delete_index, _) =
-                    self.get_end_index_of_run(e + 1, &Dir::Forwards);
-                return self.delete_in(s, delete_index + 1);
-            }
-            Cat::Other => {
-                let (delete_index, _) =
-                    self.get_end_index_of_run(e + 1, &Dir::Forwards);
-                return self.delete_in(s, delete_index + 1);
-            }
-            Cat::None => ComposerUpdate::keep(),
         }
     }
 
