@@ -201,6 +201,19 @@ mod test {
     }
 
     #[test]
+    fn can_walk_all_nodes_of_a_deep_subnode() {
+        let dom = cm(EXAMPLE_HTML).state.dom;
+        if let DomNode::Container(list) = dom.children().first().unwrap() {
+            let deep_child = list.children().first().unwrap();
+            let text_nodes: Vec<String> = deep_child.iter().map(node_txt).collect();
+
+            assert_eq!(text_nodes, vec!["li", "'b'", "strong", "'c'"])
+        } else {
+            panic!("First child should have been the list")
+        }
+    }
+
+    #[test]
     fn can_walk_all_text_nodes() {
         let dom = cm(EXAMPLE_HTML).state.dom;
         let text_nodes: Vec<String> = dom
@@ -245,6 +258,19 @@ mod test {
             .collect();
 
         assert_eq!(text_nodes, vec!["x"])
+    }
+
+    #[test]
+    fn can_walk_all_text_nodes_of_a_deep_subnode() {
+        let dom = cm(EXAMPLE_HTML).state.dom;
+        if let DomNode::Container(list) = dom.children().first().unwrap() {
+            let deep_child = list.children().first().unwrap();
+            let text_nodes: Vec<String> = deep_child.iter_text().map(|text| text.data().to_string()).collect();
+
+            assert_eq!(text_nodes, vec!["b", "c"])
+        } else {
+            panic!("First child should have been the list")
+        }
     }
 
     fn node_txt(node: &DomNode<Utf16String>) -> String {
