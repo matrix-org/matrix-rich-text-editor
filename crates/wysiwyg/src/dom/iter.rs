@@ -169,7 +169,7 @@ mod test {
     }
 
     #[test]
-    fn can_walk_all_nodes_of_a_leading_subnode() {
+    fn can_walk_all_nodes_of_a_leading_subtree() {
         let dom = cm(EXAMPLE_HTML).state.dom;
         let first_child = dom.children().first().unwrap();
         let text_nodes: Vec<String> =
@@ -182,7 +182,7 @@ mod test {
     }
 
     #[test]
-    fn can_walk_all_nodes_of_a_middle_subnode() {
+    fn can_walk_all_nodes_of_a_middle_subtree() {
         let dom = cm(EXAMPLE_HTML).state.dom;
         let second_child = &dom.children()[1];
         let text_nodes: Vec<String> =
@@ -192,7 +192,7 @@ mod test {
     }
 
     #[test]
-    fn can_walk_all_nodes_of_a_trailing_subnode() {
+    fn can_walk_all_nodes_of_a_trailing_subtree() {
         let dom = cm(EXAMPLE_HTML).state.dom;
         let last_child = dom.children().last().unwrap();
         let text_nodes: Vec<String> = last_child.iter().map(node_txt).collect();
@@ -201,7 +201,7 @@ mod test {
     }
 
     #[test]
-    fn can_walk_all_nodes_of_a_deep_subnode() {
+    fn can_walk_all_nodes_of_a_deep_subtree() {
         let dom = cm(EXAMPLE_HTML).state.dom;
         if let DomNode::Container(list) = dom.children().first().unwrap() {
             let deep_child = list.children().first().unwrap();
@@ -226,7 +226,7 @@ mod test {
     }
 
     #[test]
-    fn can_walk_all_text_nodes_of_a_leading_subnode() {
+    fn can_walk_all_text_nodes_of_a_leading_subtree() {
         let dom = cm(EXAMPLE_HTML).state.dom;
         let first_child = dom.children().first().unwrap();
         let text_nodes: Vec<String> = first_child
@@ -238,7 +238,7 @@ mod test {
     }
 
     #[test]
-    fn can_walk_all_text_nodes_of_a_middle_subnode() {
+    fn can_walk_all_text_nodes_of_a_middle_subtree() {
         let dom = cm(EXAMPLE_HTML).state.dom;
         let second_child = &dom.children()[1];
         let text_nodes: Vec<String> = second_child
@@ -250,7 +250,7 @@ mod test {
     }
 
     #[test]
-    fn can_walk_all_text_nodes_of_a_trailing_subnode() {
+    fn can_walk_all_text_nodes_of_a_trailing_subtree() {
         let dom = cm(EXAMPLE_HTML).state.dom;
         let last_child = dom.children().last().unwrap();
         let text_nodes: Vec<String> = last_child
@@ -262,7 +262,7 @@ mod test {
     }
 
     #[test]
-    fn can_walk_all_text_nodes_of_a_deep_subnode() {
+    fn can_walk_all_text_nodes_of_a_deep_subtree() {
         let dom = cm(EXAMPLE_HTML).state.dom;
         if let DomNode::Container(list) = dom.children().first().unwrap() {
             let deep_child = list.children().first().unwrap();
