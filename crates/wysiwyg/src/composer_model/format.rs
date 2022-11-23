@@ -119,8 +119,7 @@ where
                                 ),
                             );
                             // Update insertion point and reset text
-                            insert_text_at =
-                                Some(ancestor_child_handle.clone());
+                            insert_text_at = Some(ancestor_child_handle);
                             cur_text = S::default();
                         }
                         _ => panic!(
@@ -135,8 +134,7 @@ where
 
                     // If there is still some collected text add it to he list of nodes to insert
                     if !cur_text.is_empty() {
-                        nodes_to_add
-                            .insert(0, DomNode::new_text(cur_text.clone()));
+                        nodes_to_add.insert(0, DomNode::new_text(cur_text));
                     }
 
                     // Insert the inline code node
