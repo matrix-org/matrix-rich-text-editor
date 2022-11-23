@@ -33,6 +33,21 @@ enum Dir {
     Backwards,
 }
 
+impl Dir {
+    fn increment(&self, index: usize) -> usize {
+        match self {
+            Dir::Backwards => index - 1,
+            Dir::Forwards => index + 1,
+        }
+    }
+    fn decrement(&self, index: usize) -> usize {
+        match self {
+            Dir::Backwards => index + 1,
+            Dir::Forwards => index - 1,
+        }
+    }
+}
+
 impl<S> ComposerModel<S>
 where
     S: UnicodeString,
@@ -233,19 +248,6 @@ where
         let mut stopped_at_newline = start_type.eq(&Cat::Newline);
         let mut would_hit_end = false;
 
-        fn increment(index: usize, dir: &Dir) -> usize {
-            match dir {
-                Dir::Backwards => index - 1,
-                Dir::Forwards => index + 1,
-            }
-        }
-        fn decrement(index: usize, dir: &Dir) -> usize {
-            match dir {
-                Dir::Backwards => index + 1,
-                Dir::Forwards => index - 1,
-            }
-        }
-
         fn check_condition(
             index: usize,
             max: usize,
@@ -270,7 +272,7 @@ where
             direction,
             stopped_at_newline,
         ) {
-            current_index = increment(current_index, direction);
+            current_index = direction.increment(current_index);
             current_type = self.get_char_type_at(current_index);
             if current_type.eq(&start_type)
                 && (current_index == 0
@@ -287,7 +289,7 @@ where
         // return the index of the end of the run
         match would_hit_end {
             true => (current_index, stopped_at_newline),
-            false => (decrement(current_index, direction), stopped_at_newline),
+            false => (direction.decrement(current_index), stopped_at_newline),
         }
     }
 
