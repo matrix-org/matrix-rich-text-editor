@@ -93,9 +93,7 @@ where
                 }
 
                 // Insert the nodes into the Dom inside an inline code node
-                if insert_text_at.is_some() {
-                    let insert_at = insert_text_at.unwrap();
-
+                if let Some(insert_text_at) = insert_text_at {
                     // If there is still some collected text add it to he list of nodes to insert
                     if !cur_text.is_empty() {
                         nodes_to_add.insert(0, DomNode::new_text(cur_text));
@@ -103,7 +101,7 @@ where
 
                     // Insert the inline code node
                     self.state.dom.insert_at(
-                        &insert_at,
+                        &insert_text_at,
                         DomNode::new_formatting(
                             InlineFormatType::InlineCode,
                             nodes_to_add,
@@ -111,7 +109,7 @@ where
                     );
 
                     // Merge inline code nodes for clean up
-                    self.merge_formatting_node_with_siblings(&insert_at);
+                    self.merge_formatting_node_with_siblings(&insert_text_at);
                 }
             }
             self.create_update_replace_all()

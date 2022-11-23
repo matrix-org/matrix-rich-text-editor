@@ -73,9 +73,8 @@ where
             let first_structure_ancestor =
                 self.find_structure_ancestor(&leaf.node_handle);
             // Get the closest ancestor path or the root one (empty Vec) if there is none
-            let ancestor_handle = first_structure_ancestor
-                .map(|a| a.clone())
-                .unwrap_or(DomHandle::root());
+            let ancestor_handle =
+                first_structure_ancestor.unwrap_or(DomHandle::root());
             let list = structure_ancestors
                 .entry(ancestor_handle)
                 .or_insert(Vec::new());
@@ -83,33 +82,6 @@ where
             list.push(leaf.clone());
         }
         structure_ancestors
-    }
-
-    pub(crate) fn remove_and_clean_up_empty_nodes_until(
-        &mut self,
-        cur_handle: &DomHandle,
-        top_handle: &DomHandle,
-    ) {
-        self.state.dom.remove(cur_handle);
-        if cur_handle != top_handle
-            && self.state.dom.parent(cur_handle).children().is_empty()
-        {
-            self.remove_and_clean_up_empty_nodes_until(
-                &cur_handle.parent_handle(),
-                top_handle,
-            )
-        }
-    }
-
-    fn find_structure_ancestor(&self, handle: &DomHandle) -> Option<DomHandle> {
-        let parent = self.state.dom.parent(handle);
-        if parent.is_structure_node() {
-            Some(parent.handle().clone())
-        } else if parent.handle().has_parent() {
-            self.find_structure_ancestor(&parent.handle())
-        } else {
-            None
-        }
     }
 
     fn format_or_unformat(

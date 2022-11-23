@@ -181,7 +181,8 @@ where
         let action_list = self.replace_in_text_nodes(range.clone(), new_text);
 
         let (to_add, to_delete, _) = action_list.grouped();
-        let to_delete = to_delete.into_iter().map(|a| a.handle).collect();
+        let to_delete: Vec<DomHandle> =
+            to_delete.into_iter().map(|a| a.handle).collect();
 
         // We only add nodes in one special case: when the selection ends at
         // a BR tag. In that case, the only nodes that might be deleted are
@@ -198,7 +199,9 @@ where
         }
 
         // Delete the nodes marked for deletion
-        self.delete_nodes(to_delete);
+        if !to_delete.is_empty() {
+            self.delete_nodes(to_delete);
+        }
 
         // If our range covered multiple text-like nodes, join together
         // the two sides of the range.
