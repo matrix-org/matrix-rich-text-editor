@@ -51,6 +51,10 @@ internal class EditorViewModel(
                     // This conversion to a plain String might be too simple
                     composer?.replaceText(action.value.toString())
                 }
+                is EditorInputAction.ReplaceTextIn -> {
+                    // This conversion to a plain String might be too simple
+                    composer?.replaceTextIn(action.value.toString(), action.start.toUInt(), action.end.toUInt())
+                }
                 is EditorInputAction.InsertParagraph -> composer?.enter()
                 is EditorInputAction.BackPress -> composer?.backspace()
                 is EditorInputAction.ApplyInlineFormat -> when (action.format) {

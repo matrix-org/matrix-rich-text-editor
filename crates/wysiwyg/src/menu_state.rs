@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{composer_model::action_state::ActionState, ComposerAction};
+use crate::action_state::ActionState;
+use crate::ComposerAction;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq)]

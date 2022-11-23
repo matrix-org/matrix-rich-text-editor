@@ -1,5 +1,27 @@
 # Changelog
 
+# [0.7.0] - 2022-11-21
+
+### Changed
+
+* Common: update to Rust 1.65 and uniffi-rs 0.21.0.
+* Common: internal refactor.
+* Common: MenuState updates are now always returned when we change some content.
+* Common: new API for retrieving parent nodes: `Dom.parent(&child_handle)` and `Dom.parent_mut(&child_handle)`.
+
+### Added
+
+* Common: `Dom` is now iterable.
+* Common: links can now be added to several nodes and updated.
+* Android: add Markdown support.
+* Android: add `RustErrorCollector` to be able to collect and treat any Rust errors manually in the integrating clients.
+* Web: added debug mode.
+
+### Fixed
+
+* Android: text input is now diffed so we don't rely on composition, as it sometimes broke formatting.
+* iOS: Voice dictation should work now.
+
 # [0.6.0] - 2022-11-11
 
 ### Changed

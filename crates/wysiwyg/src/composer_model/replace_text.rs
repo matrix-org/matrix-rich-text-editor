@@ -26,8 +26,8 @@ where
     /// Treats its input as plain text, so any HTML code will show up in
     /// the document (i.e. it will be escaped).
     pub fn replace_text(&mut self, new_text: S) -> ComposerUpdate<S> {
-        let (s, e) = self.safe_selection();
-        self.replace_text_in(new_text, s, e)
+        self.push_state_to_history();
+        self.do_replace_text(new_text)
     }
 
     /// Replaces text in the an arbitrary start..end range with new_text.
@@ -37,7 +37,6 @@ where
         start: usize,
         end: usize,
     ) -> ComposerUpdate<S> {
-        // Store current Dom
         self.push_state_to_history();
         self.do_replace_text_in(new_text, start, end)
     }
@@ -125,6 +124,11 @@ where
         }
         self.state.start += 1;
         self.state.end = self.state.start;
+    }
+
+    pub(crate) fn do_replace_text(&mut self, new_text: S) -> ComposerUpdate<S> {
+        let (s, e) = self.safe_selection();
+        self.do_replace_text_in(new_text, s, e)
     }
 
     /// Internal: replace some text without modifying the undo/redo state.
@@ -347,7 +351,7 @@ mod test {
     use std::collections::HashMap;
     use widestring::Utf16String;
 
-    use crate::composer_model::action_state::ActionState;
+    use crate::action_state::ActionState;
     use crate::menu_state::MenuStateUpdate;
     use crate::tests::testutils_composer_model::cm;
     use crate::tests::testutils_conversion::utf16;

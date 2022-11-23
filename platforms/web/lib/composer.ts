@@ -97,6 +97,8 @@ export function processInput(
         case 'insertLineBreak':
         case 'insertParagraph':
             return action(composerModel.enter(), 'enter');
+        case 'insertCompositionText':
+        case 'insertFromComposition':
         case 'insertText':
             if (event.data) {
                 return action(

@@ -39,7 +39,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
     }
     
     public func makeUIView(context: Context) -> PlaceholdableTextView {
-        let textView = PlaceholdableTextView()
+        let textView = viewModel.textView
         
         textView.accessibilityIdentifier = "WysiwygComposer"
         textView.font = UIFont.preferredFont(forTextStyle: .body)
@@ -56,7 +56,6 @@ public struct WysiwygComposerView: UIViewRepresentable {
         textView.placeholderFont = UIFont.preferredFont(forTextStyle: .body)
         textView.placeholderColor = UIColor(placeholderColor)
         textView.placeholder = placeholder
-        viewModel.textView = textView
         viewModel.updateCompressedHeightIfNeeded()
         return textView
     }
@@ -79,15 +78,14 @@ public struct WysiwygComposerView: UIViewRepresentable {
 
     /// Coordinates UIKit communication.
     public class Coordinator: NSObject, UITextViewDelegate, NSTextStorageDelegate {
-        private var hasSkippedShouldAcceptChanges = true
         var focused: Binding<Bool>
         var replaceText: (NSRange, String) -> Bool
         var select: (NSRange) -> Void
-        var didUpdateText: (Bool) -> Void
+        var didUpdateText: () -> Void
         init(_ focused: Binding<Bool>,
              _ replaceText: @escaping (NSRange, String) -> Bool,
              _ select: @escaping (NSRange) -> Void,
-             _ didUpdateText: @escaping (Bool) -> Void) {
+             _ didUpdateText: @escaping () -> Void) {
             self.focused = focused
             self.replaceText = replaceText
             self.select = select
@@ -99,7 +97,6 @@ public struct WysiwygComposerView: UIViewRepresentable {
                                       textView.logText,
                                       "Replacement: \"\(text)\""],
                                      functionName: #function)
-            hasSkippedShouldAcceptChanges = false
             return replaceText(range, text)
         }
         
@@ -111,8 +108,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
                 ],
                 functionName: #function
             )
-            didUpdateText(!hasSkippedShouldAcceptChanges)
-            hasSkippedShouldAcceptChanges = true
+            didUpdateText()
         }
 
         public func textViewDidChangeSelection(_ textView: UITextView) {

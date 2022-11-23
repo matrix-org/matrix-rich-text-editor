@@ -14,6 +14,7 @@
 
 use strum::IntoEnumIterator;
 
+use crate::action_state::ActionState;
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind};
 use crate::dom::{DomLocation, Range};
 use crate::menu_state::MenuStateUpdate;
@@ -23,8 +24,6 @@ use crate::{
     ListType, MenuState, UnicodeString,
 };
 use std::collections::{HashMap, HashSet};
-
-use super::action_state::ActionState;
 
 pub(crate) enum MenuStateComputeType {
     AlwaysUpdate,

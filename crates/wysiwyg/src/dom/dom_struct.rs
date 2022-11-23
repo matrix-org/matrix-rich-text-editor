@@ -69,6 +69,10 @@ where
         }
     }
 
+    pub fn document_node(&self) -> &DomNode<S> {
+        &self.document
+    }
+
     pub fn children(&self) -> &Vec<DomNode<S>> {
         self.document().children()
     }
@@ -91,44 +95,28 @@ where
         node_handle: &DomHandle,
         nodes: Vec<DomNode<S>>,
     ) -> Vec<DomHandle> {
-        let parent_node = self.lookup_node_mut(&node_handle.parent_handle());
+        let parent = self.parent_mut(node_handle);
         let index = node_handle.index_in_parent();
-        match parent_node {
-            DomNode::Text(_n) => panic!("Text nodes can't have children"),
-            DomNode::LineBreak(_n) => panic!("Line breaks can't have children"),
-            DomNode::Container(n) => n.replace_child(index, nodes),
-        }
+        parent.replace_child(index, nodes)
     }
 
     pub fn remove(&mut self, node_handle: &DomHandle) {
-        let parent_node = self.lookup_node_mut(&node_handle.parent_handle());
-        match parent_node {
-            DomNode::Container(parent) => {
-                let index = node_handle.index_in_parent();
-                parent.remove_child(index);
-            }
-            DomNode::Text(_) => panic!("Text nodes can't have children"),
-            DomNode::LineBreak(_) => panic!("Line breaks can't have children"),
-        }
+        let parent = self.parent_mut(node_handle);
+        let index = node_handle.index_in_parent();
+        parent.remove_child(index);
     }
 
     /// Removes node at given handle from the dom, and if it has children
     /// moves them to its parent container children.
     pub fn remove_and_keep_children(&mut self, node_handle: &DomHandle) {
-        let parent_node = self.lookup_node_mut(&node_handle.parent_handle());
-        match parent_node {
-            DomNode::Container(parent) => {
-                let index = node_handle.index_in_parent();
-                let node = parent.remove_child(index);
-                if let DomNode::Container(mut node) = node {
-                    for i in (0..node.children().len()).rev() {
-                        let child = node.remove_child(i);
-                        parent.insert_child(index, child);
-                    }
-                }
+        let parent = self.parent_mut(node_handle);
+        let index = node_handle.index_in_parent();
+        let node = parent.remove_child(index);
+        if let DomNode::Container(mut node) = node {
+            for i in (0..node.children().len()).rev() {
+                let child = node.remove_child(i);
+                parent.insert_child(index, child);
             }
-            DomNode::Text(_) => panic!("Text nodes can't have children"),
-            DomNode::LineBreak(_) => panic!("Line breaks can't have children"),
         }
     }
 
@@ -164,14 +152,12 @@ where
         handle: &DomHandle,
     ) -> Option<DomHandle> {
         if handle.has_parent() {
-            let parent_handle = handle.parent_handle();
-            if let DomNode::Container(parent) = self.lookup_node(&parent_handle)
-            {
-                if *parent.kind() == ContainerNodeKind::List {
-                    return Some(parent_handle.clone());
-                } else if parent_handle.has_parent() {
-                    return self.find_closest_list_ancestor(&parent_handle);
-                }
+            let parent = self.parent(handle);
+            let parent_handle = parent.handle();
+            if *parent.kind() == ContainerNodeKind::List {
+                return Some(parent_handle);
+            } else if parent_handle.has_parent() {
+                return self.find_closest_list_ancestor(&parent_handle);
             }
         }
         None
@@ -295,7 +281,7 @@ where
                 } else {
                     panic!(
                         "Attempting to insert a new line into a new line node, but offset wasn't \
-                        either 0 or 1: {}", 
+                        either 0 or 1: {}",
                         offset
                     );
                 }
@@ -313,7 +299,7 @@ where
 
         match wh {
             Where::Before => {
-                self.parent(handle)
+                self.parent_mut(handle)
                     .insert_child(handle.index_in_parent(), new_node);
             }
             Where::During => {
@@ -325,7 +311,7 @@ where
                     let after_text = data[offset..].to_owned();
                     old_text_node.set_data(before_text);
                     let new_text_node = DomNode::new_text(after_text);
-                    let parent = self.parent(handle);
+                    let parent = self.parent_mut(handle);
                     parent.insert_child(handle.index_in_parent() + 1, new_node);
                     parent.insert_child(
                         handle.index_in_parent() + 2,
@@ -336,14 +322,34 @@ where
                 }
             }
             Where::After => {
-                self.parent(handle)
+                self.parent_mut(handle)
                     .insert_child(handle.index_in_parent() + 1, new_node);
             }
         }
     }
 
-    fn parent(&mut self, handle: &DomHandle) -> &mut ContainerNode<S> {
+    /// Look up the parent node of the node pointed to by this handle and
+    /// provide a mutable reference.
+    /// Panics if:
+    /// * this handle has no parent (it is the root)
+    /// * the parent is not a container node
+    /// * the handle is invalid
+    pub fn parent_mut(&mut self, handle: &DomHandle) -> &mut ContainerNode<S> {
         let parent = self.lookup_node_mut(&handle.parent_handle());
+        if let DomNode::Container(parent) = parent {
+            parent
+        } else {
+            panic!("Parent node was not a container!");
+        }
+    }
+
+    /// Look up the parent node of the node pointed to by this handle.
+    /// Panics if:
+    /// * this handle has no parent (it is the root)
+    /// * the parent is not a container node
+    /// * the handle is invalid
+    pub fn parent(&self, handle: &DomHandle) -> &ContainerNode<S> {
+        let parent = self.lookup_node(&handle.parent_handle());
         if let DomNode::Container(parent) = parent {
             parent
         } else {

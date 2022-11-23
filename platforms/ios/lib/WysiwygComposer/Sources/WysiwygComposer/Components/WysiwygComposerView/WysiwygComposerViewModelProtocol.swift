@@ -18,7 +18,7 @@ import UIKit
 
 public protocol WysiwygComposerViewModelProtocol: AnyObject {
     /// The textView with placeholder support that the model manages
-    var textView: PlaceholdableTextView? { get set }
+    var textView: PlaceholdableTextView { get }
 
     /// Update the composer compressed required height if it has changed.
     func updateCompressedHeightIfNeeded()
@@ -37,7 +37,5 @@ public protocol WysiwygComposerViewModelProtocol: AnyObject {
     func select(range: NSRange)
 
     /// Notify that the text view content has changed.
-    ///
-    /// - Parameter shouldReconciliate: value that indicates if the the function should reconciliate the content of the model to the content of the textView.
-    func didUpdateText(shouldReconciliate: Bool)
+    func didUpdateText()
 }

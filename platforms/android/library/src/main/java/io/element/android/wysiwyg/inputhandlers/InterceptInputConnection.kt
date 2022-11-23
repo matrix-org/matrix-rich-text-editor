@@ -12,13 +12,12 @@ import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
+import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
 import io.element.android.wysiwyg.utils.EditorIndexMapper
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
 import io.element.android.wysiwyg.viewmodel.EditorViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.min
 
 internal class InterceptInputConnection(
@@ -105,10 +104,7 @@ internal class InterceptInputConnection(
     // Called when started typing
     override fun setComposingText(text: CharSequence?, newCursorPosition: Int): Boolean {
         val (start, end) = getCurrentCompositionOrSelection()
-        viewModel.updateSelection(editable, start, end)
-        val result = withProcessor {
-            processInput(EditorInputAction.ReplaceText(text.toString()))
-        }
+        val result = processTextEntry(text, start, end)
 
         return if (result != null) {
             val newText = result.text.subSequence(start, start + (text?.length ?: 0))
@@ -118,13 +114,13 @@ internal class InterceptInputConnection(
             // shift the composition indices so that it is not included.
             val compositionStart = start
                 .let { if (newText.startsWith("\u200b")) it + 1 else it }
-            val compositionEnd = (text?.length?.let { it + start } ?: end)
+            val compositionEnd = (newText.length + start)
                 .let { if (newText.startsWith("\u200b")) it + 1 else it }
 
             // Here we restore the background color spans from the IME input. This seems to be
             // important for Japanese input.
-            if (text is Spannable && result.text is Spannable) {
-                copyImeHighlightSpans(text, result.text, start)
+            if (newText is Spannable && result.text is Spannable) {
+                copyImeHighlightSpans(newText, result.text, start)
             }
             replaceAll(result.text, compositionStart = compositionStart, compositionEnd = compositionEnd)
             setSelectionOnEditable(editable, result.selection.last, result.selection.last)
@@ -137,14 +133,7 @@ internal class InterceptInputConnection(
     // Called for suggestion from IME selected
     override fun commitText(text: CharSequence?, newCursorPosition: Int): Boolean {
         val (start, end) = getCurrentCompositionOrSelection()
-        val result = withProcessor {
-            if (text?.lastOrNull() == '\n') {
-                processInput(EditorInputAction.InsertParagraph)
-            } else {
-                viewModel.updateSelection(editable, start, end)
-                processInput(EditorInputAction.ReplaceText(text.toString()))
-            }
-        }
+        val result = processTextEntry(text, start, end)
 
         return if (result != null) {
             replaceAll(result.text, compositionStart = end, compositionEnd = end)
@@ -155,6 +144,55 @@ internal class InterceptInputConnection(
         }
     }
 
+    private fun processTextEntry(newText: CharSequence?, start: Int, end: Int): ReplaceTextResult? {
+        val previousText = editable.substring(start until end)
+        return withProcessor {
+            when {
+                // Special case for whitespace, to keep the formatting status we need to add it first
+                newText != null && newText.length > 1 && newText.lastOrNull() == ' ' -> {
+                    val toAppend = newText.substring(0 until newText.length - 1)
+                    val (cStart, cEnd) = EditorIndexMapper.fromEditorToComposer(start, end, editable)
+                        ?: error("Invalid indexes in composer $start, $end")
+                    // First add whitespace
+                    processInput(EditorInputAction.ReplaceTextIn(cEnd, cEnd, " "))
+                    // Then replace text
+                    processInput(EditorInputAction.ReplaceTextIn(cStart, cEnd, toAppend))?.let {
+                        // Fix selection to include whitespace at the end
+                        val prevSelection = it.selection
+                        it.copy(selection = prevSelection.first until prevSelection.last + 2)
+                    }
+                }
+                // This only happens when a new line key stroke is received
+                newText?.lastOrNull() == '\n' -> {
+                    processInput(EditorInputAction.InsertParagraph)
+                }
+                previousText.isNotEmpty() && newText?.startsWith(previousText) == true -> {
+                    // Appending new text at the end
+                    val pos = end - start
+                    val diff = newText.length - previousText.length
+                    val toAppend = newText.substring(pos until pos + diff)
+                    val (_, cEnd) = EditorIndexMapper.fromEditorToComposer(start, end, editable)
+                        ?: error("Invalid indexes in composer $start, $end")
+                    processInput(EditorInputAction.ReplaceTextIn(cEnd, cEnd, toAppend))
+                }
+                newText != null && previousText.startsWith(newText) -> {
+                    // Removing text from the end
+                    val diff = previousText.length - newText.length
+                    val pos = end - diff
+                    val (cStart, cEnd) = EditorIndexMapper.fromEditorToComposer(pos, end, editable)
+                        ?: error("Invalid indexes in composer $pos, $end")
+                    processInput(EditorInputAction.ReplaceTextIn(cStart, cEnd, ""))
+                }
+                else -> {
+                    // New composing text
+                    val (cStart, cEnd) = EditorIndexMapper.fromEditorToComposer(start, end, editable)
+                        ?: error("Invalid indexes in composer $start, $end")
+                    processInput(EditorInputAction.ReplaceTextIn(cStart, cEnd, newText.toString()))
+                }
+            }
+        }
+    }
+
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun onHardwareBackspaceKey(): Boolean {
         val start = Selection.getSelectionStart(editable)
@@ -162,9 +200,11 @@ internal class InterceptInputConnection(
         if (start == 0 && end == 0) return false
 
         val toDelete = if (start == end) 1 else abs(start - end)
+        // We're going to copy backspace behaviour, the selection must be at the greater value
+        val deletePos = max(start, end)
 
         // Imitate the software key backspace which updates the selection start to match the end.
-        Selection.setSelection(editable, end, end)
+        Selection.setSelection(editable, deletePos, deletePos)
 
         return deleteSurroundingText(toDelete, 0)
     }

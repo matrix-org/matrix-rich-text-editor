@@ -1,7 +1,7 @@
 all: android ios web
 
 # The gradle plugin will take care of building the bindings too
-android:
+android: setup
 	cd platforms/android && \
 		./gradlew publishToMavenLocal
 
@@ -25,7 +25,7 @@ android-bindings-x86_64:
 IOS_PACKAGE_DIR := ../../platforms/ios/lib/WysiwygComposer
 IOS_GENERATION_DIR := .generated/ios
 
-ios:
+ios: setup
 	cd bindings/wysiwyg-ffi && \
 	cargo build --release --target aarch64-apple-ios && \
 	cargo build --release --target aarch64-apple-ios-sim && \
@@ -54,7 +54,7 @@ ios:
 	  -library ../../target/ios-simulator/libuniffi_wysiwyg_composer.a \
 	  -headers ${IOS_GENERATION_DIR}/headers \
 	  -output ${IOS_PACKAGE_DIR}/WysiwygComposerFFI.xcframework
-web:
+web: setup
 	cd bindings/wysiwyg-wasm && \
 	npm install && \
 	npm run build && \
@@ -65,6 +65,7 @@ web:
 		pkg/wysiwyg.d.ts \
 		pkg/wysiwyg.js \
 		../../platforms/web/generated/
+	cd platforms/web && yarn install && yarn build
 
 web-format:
 	cd platforms/web && \
@@ -87,4 +88,7 @@ coverage:
 	@echo "Requires `rustup component add llvm-tools-preview`"
 	@echo "Requires `cargo install cargo-llvm-cov`"
 	cargo llvm-cov --open
+
+setup:
+	rustup override set 1.65
 
