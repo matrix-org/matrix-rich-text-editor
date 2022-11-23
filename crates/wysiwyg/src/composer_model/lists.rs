@@ -208,11 +208,7 @@ where
             list_item_node.iter_text().next().unwrap().handle();
         let first_text = self.state.dom.lookup_node_mut(&first_text_handle);
         if let DomNode::Text(t) = first_text {
-            let mut text = t.data().to_string();
-            if text.starts_with("\u{200b}") {
-                text.remove(0);
-                t.set_data(text.into());
-            } else {
+            if !t.remove_leading_zwsp() {
                 panic!(
                     "First text of a list item should always start with ZWSP"
                 )
