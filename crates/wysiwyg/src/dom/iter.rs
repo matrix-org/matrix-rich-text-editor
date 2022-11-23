@@ -35,13 +35,7 @@ where
     /// Return an iterator over all text nodes of this DOM, in depth-first
     /// order
     pub fn iter_text(&self) -> impl Iterator<Item = &TextNode<S>> {
-        self.iter().filter_map(|node| {
-            if let DomNode::Text(t) = node {
-                Some(t)
-            } else {
-                None
-            }
-        })
+        self.iter().filter_map(DomNode::as_text)
     }
 }
 
@@ -58,13 +52,7 @@ where
     /// Return an iterator over all text nodes of the subtree starting from
     /// this node (including self), in depth-first order
     pub fn iter_text(&self) -> impl Iterator<Item = &TextNode<S>> {
-        self.iter().filter_map(|node| {
-            if let DomNode::Text(t) = node {
-                Some(t)
-            } else {
-                None
-            }
-        })
+        self.iter().filter_map(DomNode::as_text)
     }
 }
 
