@@ -29,7 +29,7 @@ where
 {
     /// Return an iterator over all nodes of this DOM, in depth-first order
     pub fn iter(&self) -> DomIterator<S> {
-        DomIterator::over(self)
+        DomIterator::over(self.document_node())
     }
 
     /// Return an iterator over all text nodes of this DOM, in depth-first
@@ -52,7 +52,7 @@ where
     /// Return an iterator over all nodes of the subtree starting from this
     /// node (including self), in depth-first order
     pub fn iter(&self) -> DomIterator<S> {
-        DomIterator::over_node(self)
+        DomIterator::over(self)
     }
 
     /// Return an iterator over all text nodes of the subtree starting from
@@ -89,17 +89,7 @@ impl<'a, S> DomIterator<'a, S>
 where
     S: UnicodeString,
 {
-    fn over(dom: &'a Dom<S>) -> Self {
-        Self {
-            started: false,
-            ancestors: vec![NodeAndChildIndex {
-                node: &dom.document_node(),
-                child_index: 0,
-            }],
-        }
-    }
-
-    fn over_node(dom_node: &'a DomNode<S>) -> Self {
+    fn over(dom_node: &'a DomNode<S>) -> Self {
         Self {
             started: false,
             ancestors: vec![NodeAndChildIndex {
