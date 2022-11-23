@@ -164,6 +164,12 @@ fn selecting_after_a_line_break_inside_formatting_nodes_reversed_actions() {
     assert!(model.action_is_enabled(ComposerAction::StrikeThrough));
 }
 
+#[test]
+fn cursor_at_the_end_of_link_reverses_the_link_action() {
+    let model = cm("non_link_text <a href=\"https://element.io\">link_text|</a> non_link_text");
+    assert!(model.action_is_reversed(ComposerAction::Link));
+}
+
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
     model.replace_text(utf16(new_text));
 }
