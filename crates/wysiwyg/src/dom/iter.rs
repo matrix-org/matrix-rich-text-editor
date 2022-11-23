@@ -45,6 +45,29 @@ where
     }
 }
 
+impl<S> DomNode<S>
+where
+    S: UnicodeString,
+{
+    /// Return an iterator over all nodes of the subtree starting from this
+    /// node (including self), in depth-first order
+    pub fn iter(&self) -> DomIterator<S> {
+        DomIterator::over_node(self)
+    }
+
+    /// Return an iterator over all text nodes of the subtree starting from
+    /// this node (including self), in depth-first order
+    pub fn iter_text(&self) -> impl Iterator<Item = &TextNode<S>> {
+        self.iter().filter_map(|node| {
+            if let DomNode::Text(t) = node {
+                Some(t)
+            } else {
+                None
+            }
+        })
+    }
+}
+
 /// A DomNode and the index of its child that we are currently processing.
 struct NodeAndChildIndex<'a, S>
 where
@@ -71,6 +94,16 @@ where
             started: false,
             ancestors: vec![NodeAndChildIndex {
                 node: &dom.document_node(),
+                child_index: 0,
+            }],
+        }
+    }
+
+    fn over_node(dom_node: &'a DomNode<S>) -> Self {
+        Self {
+            started: false,
+            ancestors: vec![NodeAndChildIndex {
+                node: &dom_node,
                 child_index: 0,
             }],
         }
@@ -128,7 +161,7 @@ mod test {
             <li>b<strong>c</strong></li>\
             <li>foo</li>\
         </ul>\
-        d|<br />\
+        <i>d</i>e|<br />\
         <b>x</b>";
 
     #[test]
@@ -139,10 +172,42 @@ mod test {
         assert_eq!(
             text_nodes,
             vec![
-                "", "ul", "li", "'b'", "strong", "'c'", "li", "'foo'", "'d'",
-                "br", "b", "'x'"
+                "", "ul", "li", "'b'", "strong", "'c'", "li", "'foo'", "i",
+                "'d'", "'e'", "br", "b", "'x'"
             ]
         );
+    }
+
+    #[test]
+    fn can_walk_all_nodes_of_a_leading_subnode() {
+        let dom = cm(EXAMPLE_HTML).state.dom;
+        let first_child = dom.children().first().unwrap();
+        let text_nodes: Vec<String> =
+            first_child.iter().map(node_txt).collect();
+
+        assert_eq!(
+            text_nodes,
+            vec!["ul", "li", "'b'", "strong", "'c'", "li", "'foo'"]
+        )
+    }
+
+    #[test]
+    fn can_walk_all_nodes_of_a_middle_subnode() {
+        let dom = cm(EXAMPLE_HTML).state.dom;
+        let second_child = &dom.children()[1];
+        let text_nodes: Vec<String> =
+            second_child.iter().map(node_txt).collect();
+
+        assert_eq!(text_nodes, vec!["i", "'d'"])
+    }
+
+    #[test]
+    fn can_walk_all_nodes_of_a_trailing_subnode() {
+        let dom = cm(EXAMPLE_HTML).state.dom;
+        let last_child = dom.children().last().unwrap();
+        let text_nodes: Vec<String> = last_child.iter().map(node_txt).collect();
+
+        assert_eq!(text_nodes, vec!["b", "'x'"])
     }
 
     #[test]
@@ -153,7 +218,43 @@ mod test {
             .map(|text| text.data().to_string())
             .collect();
 
-        assert_eq!(text_nodes, vec!["b", "c", "foo", "d", "x"]);
+        assert_eq!(text_nodes, vec!["b", "c", "foo", "d", "e", "x"]);
+    }
+
+    #[test]
+    fn can_walk_all_text_nodes_of_a_leading_subnode() {
+        let dom = cm(EXAMPLE_HTML).state.dom;
+        let first_child = dom.children().first().unwrap();
+        let text_nodes: Vec<String> = first_child
+            .iter_text()
+            .map(|text| text.data().to_string())
+            .collect();
+
+        assert_eq!(text_nodes, vec!["b", "c", "foo"])
+    }
+
+    #[test]
+    fn can_walk_all_text_nodes_of_a_middle_subnode() {
+        let dom = cm(EXAMPLE_HTML).state.dom;
+        let second_child = &dom.children()[1];
+        let text_nodes: Vec<String> = second_child
+            .iter_text()
+            .map(|text| text.data().to_string())
+            .collect();
+
+        assert_eq!(text_nodes, vec!["d"])
+    }
+
+    #[test]
+    fn can_walk_all_text_nodes_of_a_trailing_subnode() {
+        let dom = cm(EXAMPLE_HTML).state.dom;
+        let last_child = dom.children().last().unwrap();
+        let text_nodes: Vec<String> = last_child
+            .iter_text()
+            .map(|text| text.data().to_string())
+            .collect();
+
+        assert_eq!(text_nodes, vec!["x"])
     }
 
     fn node_txt(node: &DomNode<Utf16String>) -> String {
