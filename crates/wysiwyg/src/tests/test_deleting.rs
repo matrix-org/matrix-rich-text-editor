@@ -381,7 +381,7 @@ use crate::{
 fn backspace_word_at_whitespace_does_not_remove_past_linebreak_in_word() {
     let mut model = cm("a<br />defg|");
     model.backspace_word();
-    assert_eq!(tx(&model), "abc<br />|")
+    assert_eq!(tx(&model), "a<br />|")
 }
 // #[test]
 // fn delete_word_at_whitespace_does_not_remove_past_linebreak_in_word() {
