@@ -40,7 +40,6 @@ fn creating_unordered_list() {
 }
 
 #[test]
-#[ignore] // TODO: empty model probably as no current selection to update, so the '|' is misplaced
 fn can_create_list_in_empty_model() {
     let mut model = ComposerModel::new();
     model.unordered_list();

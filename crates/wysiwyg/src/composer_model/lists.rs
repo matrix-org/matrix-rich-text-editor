@@ -276,6 +276,8 @@ where
                     vec![DomNode::new_text("\u{200b}".into())],
                 ))],
             ));
+            self.state.start.add_assign(1);
+            self.state.end.add_assign(1);
             self.create_update_replace_all()
         } else {
             self.create_list_range(list_type, range)
