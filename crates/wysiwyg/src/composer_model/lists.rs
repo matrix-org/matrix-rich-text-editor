@@ -202,25 +202,10 @@ where
         }
     }
 
-    fn remove_leading_zwsp(&mut self, list_item_handle: &DomHandle) {
-        let list_item_node = self.state.dom.lookup_node(list_item_handle);
-        let first_text_handle =
-            list_item_node.iter_text().next().unwrap().handle();
-        let first_text = self.state.dom.lookup_node_mut(&first_text_handle);
-        if let DomNode::Text(t) = first_text {
-            if !t.remove_leading_zwsp() {
-                panic!(
-                    "First text of a list item should always start with ZWSP"
-                )
-            }
-        }
-    }
-
     fn move_list_item_content_to_list_parent(
         &mut self,
         list_item_handle: &DomHandle,
     ) -> ComposerUpdate<S> {
-        self.remove_leading_zwsp(list_item_handle);
         let list_item_node = self.state.dom.lookup_node(list_item_handle);
         if let DomNode::Container(list_item) = list_item_node {
             let list_item_children = list_item.children().clone();
@@ -242,10 +227,6 @@ where
         } else {
             panic!("List item is not a container")
         }
-
-        // We should always have successfully removed a ZWSP.
-        self.state.start.add_assign(-1);
-        self.state.end.add_assign(-1);
 
         self.create_update_replace_all()
     }
