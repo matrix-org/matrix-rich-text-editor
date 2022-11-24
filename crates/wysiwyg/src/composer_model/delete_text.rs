@@ -432,7 +432,8 @@ where
                 }
                 DomNode::LineBreak(node) => {
                     // this will depend on the direction, bear in mind
-                    return (c - 1, false);
+                    // we will want to increment it...
+                    return (direction.increment(c), true);
                 }
             };
         } else {

@@ -378,6 +378,36 @@ fn delete_word_removes_runs_of_non_word_characters_and_whitespace() {
 
 // Remove word tests including html
 #[test]
+fn backspace_word_removes_single_linebreak() {
+    let mut model = cm("<br />|");
+    model.backspace_word();
+    assert_eq!(tx(&model), "|")
+}
+#[test]
+fn delete_word_removes_single_linebreak() {
+    let mut model = cm("|<br />");
+    model.delete_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "|")
+}
+
+#[test]
+fn backspace_word_removes_only_one_linebreak_of_many() {
+    let mut model = cm("<br /><br />|<br />");
+    model.backspace_word();
+    assert_eq!(tx(&model), "<br />|<br />");
+    model.backspace_word();
+    assert_eq!(tx(&model), "|<br />")
+}
+#[test]
+fn delete_word_removes_only_one_linebreak_of_many() {
+    let mut model = cm("<br />|<br /><br />");
+    model.delete_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "<br />|<br />");
+    model.delete_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "<br />|")
+}
+
+#[test]
 fn backspace_word_does_not_remove_past_linebreak_in_word() {
     let mut model = cm("a<br />defg|");
     model.backspace_word();
