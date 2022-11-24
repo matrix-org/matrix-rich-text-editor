@@ -253,16 +253,23 @@ where
 
         if let Some(leaf) = thing2 {
             let my_dom_node = self.state.dom.lookup_node(&leaf.node_handle);
+
             match my_dom_node {
                 DomNode::Container(node) => {
                     return CharType::Other;
                 }
                 DomNode::Text(node) => {
-                    println!("leaf offset {}", leaf.start_offset);
+                    if node.data().len() == 0 {
+                        // I have no idea why a line break in this test case "|<br/> abc"
+                        // ends up hitting here... surely it should be a line break type,
+                        // not an empty node? Is this an issue somewhere else?
+                        // "abc <br />|" gets identified properly. Weird.
+                        return CharType::Newline;
+                    }
                     let content = node.data();
                     let n = match direction {
                         Direction::Forwards => leaf.start_offset,
-                        Direction::Backwards => leaf.start_offset - 1,
+                        Direction::Backwards => leaf.start_offset - 1, // used to have a -1
                     };
                     let nth_char = content.chars().nth(n);
                     return match nth_char {
@@ -311,6 +318,12 @@ where
         start: usize,
         direction: &Direction,
     ) -> (usize, bool) {
+        // TODO need to give this some base cases (assuming it's passed a range)
+        // so that we can go onto the recursive call phase, to keep going until either we
+        // - hit a br tag
+        // - hit the beginning or end of the dom
+        // - there's a change in character type
+
         // similar to above, instead of passing in the start index, we can use the range thing and
         // work it out here, then refactor to pass in a range eventually
         // let start_type = self.get_char_type_at(start);
@@ -337,20 +350,20 @@ where
                         Direction::Forwards => leaf.start_offset,
                         Direction::Backwards => leaf.start_offset - 1,
                     };
+                    println!("start index for run, {:?}", start_index);
                     let start_char = content.chars().nth(start_index);
                     let start_type = self.get_char_type(start_char);
 
                     let mut current_index = start_index.clone();
                     let mut current_char = content.chars().nth(current_index);
                     let mut current_type = self.get_char_type(current_char);
-                    let mut would_hit_end = false;
+                    let mut have_hit_leaf_end = false;
 
                     let mut offset: usize = 0; // nb sense of this changes depending on direction...maybe
 
                     let mut stopped_at_newline =
                         start_type.eq(&CharType::Newline);
 
-                    println!("start type  : {:?}", start_type);
                     println!("current type: {:?}", current_type);
 
                     fn check_condition(
@@ -379,22 +392,34 @@ where
                         stopped_at_newline,
                         direction,
                     ) {
+                        println!("running the while");
                         current_index = direction.increment(current_index);
                         offset += 1; // as above
                         current_char = content.chars().nth(current_index);
                         current_type = self.get_char_type(current_char);
                         println!("current type: {:?}", current_type);
 
+                        // think this can go as we'll no longer encounter newlines in the
+                        // string, as they're going to be tags
                         if current_type.eq(&CharType::Newline) {
                             stopped_at_newline = true;
                         }
-                        // next condition will need to have a max length check too
-                        if current_type.eq(&start_type) && current_index == 0 {
-                            would_hit_end = true;
-                            offset += 1; // nb sign related to direction
-                        }
+                    }
+
+                    // this was previously inside the while loop which caused issues for
+                    // text nodes of length == 1
+                    if current_type.eq(&start_type)
+                        && (current_index == 0 || current_index == leaf.length)
+                    {
+                        have_hit_leaf_end = true;
+                        offset += 1; // nb sign related to direction...maybe
                     }
                     println!("offset is {}", offset);
+
+                    if have_hit_leaf_end {
+                        println!("it's the end of the leaf");
+                    }
+                    // TODO next step is to make a recursive call
 
                     let delete_index = match direction {
                         Direction::Forwards => c + offset,
@@ -404,7 +429,7 @@ where
                     println!("delete index is {}", delete_index);
 
                     // nb this used to use decrement in the false case
-                    return match would_hit_end {
+                    return match have_hit_leaf_end {
                         true => (delete_index, stopped_at_newline),
                         false => (delete_index, stopped_at_newline),
                     };
