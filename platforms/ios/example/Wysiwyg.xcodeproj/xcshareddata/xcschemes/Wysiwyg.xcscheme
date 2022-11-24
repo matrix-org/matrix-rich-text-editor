@@ -38,6 +38,11 @@
                BlueprintName = "WysiwygComposerTests"
                ReferencedContainer = "container:../lib/WysiwygComposer">
             </BuildableReference>
+            <SkippedTests>
+               <Test
+                  Identifier = "WysiwygComposerTests/testLists()">
+               </Test>
+            </SkippedTests>
          </TestableReference>
          <TestableReference
             skipped = "NO">
