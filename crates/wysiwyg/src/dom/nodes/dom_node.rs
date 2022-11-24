@@ -157,6 +157,14 @@ where
     pub(crate) fn is_list(&self) -> bool {
         matches!(self, Self::Container(container) if container.is_list())
     }
+
+    pub(crate) fn as_text(&self) -> Option<&TextNode<S>> {
+        if let Self::Text(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
 }
 
 impl<S> ToHtml<S> for DomNode<S>
