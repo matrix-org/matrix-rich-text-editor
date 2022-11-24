@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::dom::action_list::{DomAction, DomActionList};
-use crate::dom::nodes::DomNode;
+use crate::dom::nodes::{DomNode, TextNode};
 use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
@@ -154,18 +154,6 @@ where
         } else {
             let len = new_text.len();
             let range = self.state.dom.find_range(start, end);
-            // If we have a text node inside the link, and the selection starts inside the link and the end is either outisde or at the end
-            // we will look at the sibling of the link node and if is a text node we add to the text node, otherwise we create another text node as a sibling
-            let mut starting_link_handle: Option<DomHandle> = None;
-            // this will be a find
-            for loc in range.locations.iter() {
-                let node = self.state.dom.lookup_node(&loc.node_handle);
-                if node.is_link_node() && !loc.is_covered() && loc.is_start() {
-                    starting_link_handle = Some(loc.node_handle.clone());
-                    break;
-                }
-            }
-
             if range.is_empty() {
                 if !new_text.is_empty() {
                     self.state
@@ -173,37 +161,18 @@ where
                         .append_at_end_of_document(DomNode::new_text(new_text));
                 }
                 start = 0;
-            } else if let Some(starting_link_handle) = starting_link_handle {
+            // We check for the first starting_link_handle if any
+            // Because for links we always add the text to the next sibling
+            } else if let Some(starting_link_handle) =
+                self.first_link_handle(&range)
+            {
+                // We replace and delete as normal with an empty string on the current range
                 self.replace_multiple_nodes(range, "".into());
-                let parent = self.state.dom.parent(&starting_link_handle);
-                let children_number = parent.children().len();
-                let is_sibling_text_node_already_inserted =
-                    if starting_link_handle.index_in_parent()
-                        < children_number - 1
-                    {
-                        let sibling = self.state.dom.lookup_node_mut(
-                            &starting_link_handle.next_sibling(),
-                        );
-                        if let DomNode::Text(sibling_text_node) = sibling {
-                            let mut data = sibling_text_node.data().to_owned();
-                            data.insert(0, &new_text);
-                            sibling_text_node.set_data(data);
-                            true
-                        } else {
-                            false
-                        }
-                    } else {
-                        false
-                    };
-                if !is_sibling_text_node_already_inserted
-                    && !new_text.is_empty()
-                {
-                    let new_child = DomNode::new_text(new_text);
-                    let parent =
-                        self.state.dom.parent_mut(&starting_link_handle);
-                    let index = starting_link_handle.index_in_parent() + 1;
-                    parent.insert_child(index, new_child);
-                }
+                // Then we set the new text value in the next sibling node (or create a new one if none exists)
+                self.set_new_text_in_sibling_node(
+                    starting_link_handle,
+                    new_text,
+                )
             } else {
                 self.replace_multiple_nodes(range, new_text)
             }
@@ -217,6 +186,54 @@ where
         // TODO: for now, we replace every time, to check ourselves, but
         // at least some of the time we should not
         self.create_update_replace_all()
+    }
+
+    fn set_new_text_in_sibling_node(
+        &mut self,
+        node_handle: DomHandle,
+        new_text: S,
+    ) {
+        if let Some(sibling_text_node) =
+            self.first_sibling_text_node(&node_handle)
+        {
+            let mut data = sibling_text_node.data().to_owned();
+            data.insert(0, &new_text);
+            sibling_text_node.set_data(data);
+        } else if !new_text.is_empty() {
+            let new_child = DomNode::new_text(new_text);
+            let parent = self.state.dom.parent_mut(&node_handle);
+            let index = node_handle.index_in_parent() + 1;
+            parent.insert_child(index, new_child);
+        }
+    }
+
+    fn first_sibling_text_node(
+        &mut self,
+        node_handle: &DomHandle,
+    ) -> Option<&mut TextNode<S>> {
+        let parent = self.state.dom.parent(node_handle);
+        let children_number = parent.children().len();
+        if node_handle.index_in_parent() < children_number - 1 {
+            let sibling =
+                self.state.dom.lookup_node_mut(&node_handle.next_sibling());
+            if let DomNode::Text(sibling_text_node) = sibling {
+                Some(sibling_text_node)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+
+    fn first_link_handle(&self, range: &Range) -> Option<DomHandle> {
+        let Some(link_loc) = range.locations.iter().find(|loc| {
+            let node = self.state.dom.lookup_node(&loc.node_handle);
+            node.is_link_node() && !loc.is_covered() && loc.is_start()
+        }) else {
+            return None
+        };
+        Some(link_loc.node_handle.clone())
     }
 
     fn replace_multiple_nodes(&mut self, range: Range, new_text: S) {
