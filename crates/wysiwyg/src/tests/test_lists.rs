@@ -130,6 +130,38 @@ fn removing_list() {
 }
 
 #[test]
+fn removing_trailing_list_item_with_enter() {
+    let mut model = cm("<ol><li>~abc</li><li>~|</li></ol>");
+    model.enter();
+    assert_eq!(tx(&model), "<ol><li>~abc</li></ol>~|")
+}
+
+#[test]
+#[ignore] // TODO: should keep the ZWSP in the same manner as enter
+fn removing_trailing_list_item_with_list_toggle() {
+    let mut model = cm("<ol><li>~abc</li><li>~|</li></ol>");
+    model.ordered_list();
+    assert_eq!(tx(&model), "<ol><li>~abc</li></ol>~|")
+}
+
+#[test]
+#[ignore] // TODO: should auto-remove ZWSP when writing
+fn removing_trailing_list_item_then_replace_text() {
+    let mut model = cm("<ol><li>~abc</li><li>~|</li></ol>");
+    model.enter();
+    replace_text(&mut model, "def");
+    assert_eq!(tx(&model), "<ol><li>~abc</li></ol>def|")
+}
+
+#[test]
+#[ignore] // TODO: should auto-add WZSP when backspacing
+fn backspacing_to_the_end_of_a_list_adds_zwsp() {
+    let mut model = cm("<ol><li>~abc</li></ol>{def}|");
+    model.backspace();
+    assert_eq!(tx(&model), "<ol><li>~abc</li></ol>~|")
+}
+
+#[test]
 fn updating_list_type() {
     let mut model = cm("<ol><li>~ab</li><li>~cd|</li></ol>");
     model.unordered_list();
