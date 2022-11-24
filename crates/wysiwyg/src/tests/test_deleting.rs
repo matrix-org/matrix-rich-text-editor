@@ -376,36 +376,36 @@ use crate::{
 //     assert_eq!(restore_whitespace(&tx(&model)), "|  abc")
 // }
 
-// Remove word tests including html
-#[test]
-fn backspace_word_at_whitespace_does_not_remove_past_linebreak_in_word() {
-    let mut model = cm("a<br />defg|");
-    model.backspace_word();
-    assert_eq!(tx(&model), "a<br />|")
-}
+// // Remove word tests including html
 // #[test]
-// fn delete_word_at_whitespace_does_not_remove_past_linebreak_in_word() {
-//     let mut model = cm("|  abc<br />def ");
+// fn backspace_word_does_not_remove_past_linebreak_in_word() {
+//     let mut model = cm("a<br />defg|");
+//     model.backspace_word();
+//     assert_eq!(tx(&model), "a<br />|")
+// }
+// #[test]
+// fn delete_word_does_not_remove_past_linebreak_in_word() {
+//     let mut model = cm("|abcd<br />f ");
 //     model.delete_word();
-//     assert_eq!(restore_whitespace(&tx(&model)), "|<br />def ")
+//     assert_eq!(restore_whitespace(&tx(&model)), "|<br />f ")
 // }
 
-// #[test]
-// fn backspace_word_removes_past_newline_in_whitespace() {f
-//     let mut model = cm("abc \n       |");
-//     model.backspace_word();
-//     assert_eq!(restore_whitespace(&tx(&model)), "abc |");
-//     model.backspace_word();
-//     assert_eq!(restore_whitespace(&tx(&model)), "|");
-// }
-// #[test]
-// fn delete_word_removes_past_newline_in_whitespace() {
-//     let mut model = cm("|    \n abc");
-//     model.delete_word();
-//     assert_eq!(restore_whitespace(&tx(&model)), "| abc");
-//     model.delete_word();
-//     assert_eq!(restore_whitespace(&tx(&model)), "|");
-// }
+#[test]
+fn backspace_word_removes_past_newline_in_whitespace() {
+    let mut model = cm("abc \n       |");
+    model.backspace_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "abc |");
+    model.backspace_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "|");
+}
+#[test]
+fn delete_word_removes_past_newline_in_whitespace() {
+    let mut model = cm("|    \n abc");
+    model.delete_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "| abc");
+    model.delete_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "|");
+}
 
 // #[test]
 // fn backspace_word_multi_step_test() {

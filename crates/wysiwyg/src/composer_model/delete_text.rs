@@ -115,8 +115,14 @@ where
         // from here on, start == end, so let's make a cursor position called c
         let c = range.start();
 
+        println!("<<< LOGGING >>>");
         // next actions depend on start type
-        let start_type = self.get_char_type_at(c);
+        let start_type = self.get_char_type_at(&Direction::Forwards);
+        let content = self.state.dom.to_string();
+
+        println!("CONTENT    -- {:?}", content);
+        println!("CURSOR AT  -- {:?}", c);
+        println!("START TYPE -- {:?}", start_type);
         match start_type {
             CharType::Whitespace => {
                 let (ws_delete_index, stopped_at_newline) =
@@ -126,13 +132,13 @@ where
                     // +2 to account for the fact we want to remove the newline
                     true => self.delete_in(c, ws_delete_index + 2),
                     false => {
-                        self.delete_in(c, ws_delete_index + 1);
+                        self.delete_in(c, ws_delete_index);
                         let (_s, _e) = self.safe_selection();
                         let _range = self.state.dom.find_range(_s, _e);
                         let _c = _range.start();
                         let (next_delete_index, _) = self
                             .get_end_index_of_run(_c + 1, &Direction::Forwards);
-                        self.delete_in(_c, next_delete_index + 1)
+                        self.delete_in(_c, next_delete_index)
                     }
                 }
             }
@@ -140,7 +146,7 @@ where
             CharType::Punctuation | CharType::Other => {
                 let (delete_index, _) =
                     self.get_end_index_of_run(c + 1, &Direction::Forwards);
-                self.delete_in(c, delete_index + 1)
+                self.delete_in(c, delete_index)
             }
             CharType::None => ComposerUpdate::keep(),
         }
@@ -193,7 +199,7 @@ where
 
         println!("<<< LOGGING >>>");
         // next actions depend on start type
-        let start_type = self.get_char_type_at(c - 1);
+        let start_type = self.get_char_type_at(&Direction::Backwards);
         let content = self.state.dom.to_string();
 
         println!("CONTENT    -- {:?}", content);
@@ -234,7 +240,7 @@ where
     }
 
     // types defined in the Cat struct
-    fn get_char_type_at(&self, index: usize) -> CharType {
+    fn get_char_type_at(&self, direction: &Direction) -> CharType {
         // initial approach to get started is to call find range from self, but this could be passed
         // in as an argument with direction in order for this function to grab the next character in
         // the correct direction (c-1 for backwards, c for forwards)
@@ -252,8 +258,13 @@ where
                     return CharType::Other;
                 }
                 DomNode::Text(node) => {
+                    println!("leaf offset {}", leaf.start_offset);
                     let content = node.data();
-                    let nth_char = content.chars().nth(leaf.start_offset - 1);
+                    let n = match direction {
+                        Direction::Forwards => leaf.start_offset,
+                        Direction::Backwards => leaf.start_offset - 1,
+                    };
+                    let nth_char = content.chars().nth(n);
                     return match nth_char {
                         Some(c) => {
                             if c.is_whitespace() {
@@ -313,7 +324,7 @@ where
         let range = self.state.dom.find_range(s, e);
         let c = range.start();
 
-        // get the leaf
+        // get the leaf, may be able to use rev here to make the direction sense easier, try it later in a refactor
         let first_leaf = range.locations.iter().find(|loc| loc.is_leaf);
 
         if let Some(leaf) = first_leaf {
@@ -322,7 +333,10 @@ where
                 DomNode::Container(node) => return (1, false),
                 DomNode::Text(node) => {
                     let content = node.data();
-                    let start_index = leaf.start_offset - 1; // will be different for delete
+                    let start_index = match direction {
+                        Direction::Forwards => leaf.start_offset,
+                        Direction::Backwards => leaf.start_offset - 1,
+                    };
                     let start_char = content.chars().nth(start_index);
                     let start_type = self.get_char_type(start_char);
 
@@ -345,12 +359,16 @@ where
                         start_type: &CharType,
                         current_type: &CharType,
                         stopped_at_newline: bool,
+                        dir: &Direction,
                     ) -> bool {
                         let base_condition =
                             current_type.eq(start_type) && !stopped_at_newline;
-                        let still_in_range = index > 0;
-
-                        base_condition && still_in_range
+                        return match dir {
+                            Direction::Forwards => {
+                                base_condition && index < length
+                            }
+                            Direction::Backwards => base_condition && index > 0,
+                        };
                     }
 
                     while check_condition(
@@ -359,11 +377,14 @@ where
                         &start_type,
                         &current_type,
                         stopped_at_newline,
+                        direction,
                     ) {
-                        current_index -= 1; // will change depending on direction
+                        current_index = direction.increment(current_index);
                         offset += 1; // as above
                         current_char = content.chars().nth(current_index);
                         current_type = self.get_char_type(current_char);
+                        println!("current type: {:?}", current_type);
+
                         if current_type.eq(&CharType::Newline) {
                             stopped_at_newline = true;
                         }
@@ -373,11 +394,20 @@ where
                             offset += 1; // nb sign related to direction
                         }
                     }
+                    println!("offset is {}", offset);
 
-                    println!("current index is !!!! {}", current_index);
-                    println!("looking to backspace {} codepoints", offset);
+                    let delete_index = match direction {
+                        Direction::Forwards => c + offset,
+                        Direction::Backwards => c - offset,
+                    };
 
-                    return (c - offset, false);
+                    println!("delete index is {}", delete_index);
+
+                    // nb this used to use decrement in the false case
+                    return match would_hit_end {
+                        true => (delete_index, stopped_at_newline),
+                        false => (delete_index, stopped_at_newline),
+                    };
                 }
                 DomNode::LineBreak(node) => return (1, false),
             };
