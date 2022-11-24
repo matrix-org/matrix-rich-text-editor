@@ -164,7 +164,7 @@ where
             // We check for the first starting_link_handle if any
             // Because for links we always add the text to the next sibling
             } else if let Some(starting_link_handle) =
-                self.first_link_handle(&range)
+                self.first_link_node_handle(&range)
             {
                 // We replace and delete as normal with an empty string on the current range
                 self.replace_multiple_nodes(range, "".into());
@@ -194,7 +194,7 @@ where
         new_text: S,
     ) {
         if let Some(sibling_text_node) =
-            self.first_sibling_text_node(&node_handle)
+            self.first_sibling_text_node_mut(&node_handle)
         {
             let mut data = sibling_text_node.data().to_owned();
             data.insert(0, &new_text);
@@ -207,7 +207,7 @@ where
         }
     }
 
-    fn first_sibling_text_node(
+    fn first_sibling_text_node_mut(
         &mut self,
         node_handle: &DomHandle,
     ) -> Option<&mut TextNode<S>> {
@@ -226,7 +226,7 @@ where
         }
     }
 
-    fn first_link_handle(&self, range: &Range) -> Option<DomHandle> {
+    fn first_link_node_handle(&self, range: &Range) -> Option<DomHandle> {
         let Some(link_loc) = range.locations.iter().find(|loc| {
             let node = self.state.dom.lookup_node(&loc.node_handle);
             node.is_link_node() && !loc.is_covered() && loc.is_start()
