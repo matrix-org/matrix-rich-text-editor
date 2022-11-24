@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::tests::testutils_composer_model::cm;
+use crate::tests::testutils_composer_model::{cm, tx};
 use crate::tests::testutils_conversion::utf16;
 
 use crate::TextUpdate;
@@ -103,4 +103,34 @@ fn set_link_in_multiple_leaves_of_formatted_text_with_link() {
         model.state.dom.to_string(),
         "<i><a href=\"https://matrix.org\">test_italic</a><b><a href=\"https://matrix.org\">test_italic_bold</a></b></i>"
     )
+}
+
+#[test]
+fn add_text_at_end_of_link_does_not_add_them_to_the_link() {
+    let mut model = cm("<a href=\"https://element.io\">link|</a>");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(
+        tx(&model),
+        "<a href=\"https://element.io\">link</a>added_text|"
+    );
+}
+
+#[test]
+fn add_text_at_end_of_link_inside_a_container_does_not_add_them_to_the_link() {
+    let mut model =
+        cm("<b>test <a href=\"https://element.io\">test_link|</a> test</b>");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(tx(&model), "<b>test <a href=\"https://element.io\">test_link</a>added_text| test</b>");
+}
+
+#[test]
+fn add_text_at_end_of_link_inside_a_container_does_not_add_them_to_the_link_2()
+{
+    let mut model =
+        cm("<b>test <a href=\"https://element.io\">test_{link</a> test}|</b>");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(
+        tx(&model),
+        "<b>test <a href=\"https://element.io\">test_</a>added_text|</b>"
+    );
 }

@@ -154,11 +154,54 @@ where
         } else {
             let len = new_text.len();
             let range = self.state.dom.find_range(start, end);
+            // If we have a text node inside the link, and the selection starts inside the link and the end is either outisde or at the end
+            // we will look at the sibling of the link node and if is a text node we add to the text node, otherwise we create another text node as a sibling
+            let mut starting_link_handle: Option<DomHandle> = None;
+            // this will be a find
+            for loc in range.locations.iter() {
+                let node = self.state.dom.lookup_node(&loc.node_handle);
+                if node.is_link_node() && !loc.is_covered() && loc.is_start() {
+                    starting_link_handle = Some(loc.node_handle.clone());
+                    break;
+                }
+            }
+
             if range.is_empty() {
                 if !new_text.is_empty() {
                     self.state.dom.append_child(DomNode::new_text(new_text));
                 }
                 start = 0;
+            } else if let Some(starting_link_handle) = starting_link_handle {
+                self.replace_multiple_nodes(range, "".into());
+                let parent = self.state.dom.parent(&starting_link_handle);
+                let children_number = parent.children().len();
+                let is_sibling_text_node_already_inserted =
+                    if starting_link_handle.index_in_parent()
+                        < children_number - 1
+                    {
+                        let sibling = self.state.dom.lookup_node_mut(
+                            &starting_link_handle.next_sibling(),
+                        );
+                        if let DomNode::Text(sibling_text_node) = sibling {
+                            let mut data = sibling_text_node.data().to_owned();
+                            data.insert(0, &new_text);
+                            sibling_text_node.set_data(data);
+                            true
+                        } else {
+                            false
+                        }
+                    } else {
+                        false
+                    };
+                if !is_sibling_text_node_already_inserted
+                    && !new_text.is_empty()
+                {
+                    let new_child = DomNode::new_text(new_text);
+                    let parent =
+                        self.state.dom.parent_mut(&starting_link_handle);
+                    let index = starting_link_handle.index_in_parent() + 1;
+                    parent.insert_child(index, new_child);
+                }
             } else {
                 self.replace_multiple_nodes(range, new_text)
             }

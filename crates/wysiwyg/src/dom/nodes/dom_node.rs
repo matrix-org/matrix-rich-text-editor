@@ -112,6 +112,10 @@ where
         matches!(self, DomNode::Container(_))
     }
 
+    pub(crate) fn is_link_node(&self) -> bool {
+        matches!(self, DomNode::Container(n) if n.is_link_node())
+    }
+
     pub fn is_text_node(&self) -> bool {
         matches!(self, DomNode::Text(_))
     }

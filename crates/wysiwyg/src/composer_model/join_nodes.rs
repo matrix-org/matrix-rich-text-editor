@@ -333,7 +333,7 @@ where
         (ret, moved_handles)
     }
 
-    fn find_ancestor_list(handle: &DomHandle) -> Vec<DomHandle> {
+    pub(crate) fn find_ancestor_list(handle: &DomHandle) -> Vec<DomHandle> {
         let mut ancestors = Vec::new();
         let mut cur_handle = handle.clone();
         while cur_handle.has_parent() {
