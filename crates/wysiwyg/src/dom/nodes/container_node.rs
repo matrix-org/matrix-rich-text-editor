@@ -225,6 +225,10 @@ where
         matches!(self.kind, ContainerNodeKind::ListItem)
     }
 
+    pub fn is_list(&self) -> bool {
+        matches!(self.kind, ContainerNodeKind::List)
+    }
+
     pub(crate) fn is_list_of_type(&self, list_type: ListType) -> bool {
         match self.kind {
             ContainerNodeKind::List => {

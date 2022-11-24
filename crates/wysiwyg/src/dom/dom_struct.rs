@@ -86,10 +86,41 @@ where
         }
     }
 
-    pub fn append_child(&mut self, child: DomNode<S>) -> DomHandle {
+    /// Appends the [child] node at the end of the root node (document node).
+    pub fn append_at_end_of_document(
+        &mut self,
+        child: DomNode<S>,
+    ) -> DomHandle {
         self.document_mut().append_child(child)
     }
 
+    /// Appends [child] node at the end of the node at [parent_handle], if it's a container node.
+    /// Returns the [DomHandle] of the added node.
+    pub fn append(
+        &mut self,
+        parent_handle: &DomHandle,
+        child: DomNode<S>,
+    ) -> DomHandle {
+        let parent = if let DomNode::Container(container) =
+            self.lookup_node_mut(parent_handle)
+        {
+            container
+        } else {
+            panic!("Parent is not a container node");
+        };
+        parent.append_child(child)
+    }
+
+    /// Inserts the given [node] at the [node_handle] position, moving the node at that position
+    /// forward, if any.
+    pub fn insert_at(&mut self, node_handle: &DomHandle, node: DomNode<S>) {
+        let parent = self.parent_mut(node_handle);
+        let index = node_handle.index_in_parent();
+        parent.insert_child(index, node)
+    }
+
+    /// Replaces the node at [node_handle] with the list of [nodes]. Returns the list of new handles
+    /// added to the Dom for these nodes.
     pub fn replace(
         &mut self,
         node_handle: &DomHandle,
@@ -100,10 +131,11 @@ where
         parent.replace_child(index, nodes)
     }
 
-    pub fn remove(&mut self, node_handle: &DomHandle) {
+    /// Removes the node at [node_handle] and returns it.
+    pub fn remove(&mut self, node_handle: &DomHandle) -> DomNode<S> {
         let parent = self.parent_mut(node_handle);
         let index = node_handle.index_in_parent();
-        parent.remove_child(index);
+        parent.remove_child(index)
     }
 
     /// Removes node at given handle from the dom, and if it has children

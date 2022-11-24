@@ -19,6 +19,13 @@ pub struct DomHandle {
 }
 
 impl DomHandle {
+    /// Create a new handle for the root/document node.
+    pub fn root() -> Self {
+        Self {
+            path: Some(Vec::new()),
+        }
+    }
+
     /// Create a new handle with the provided path.
     /// So long as the path provided points to a valid node, this handle
     /// can be used (it is set).
@@ -65,6 +72,16 @@ impl DomHandle {
         let mut new_path = self.raw().clone();
         new_path.push(child_index);
         DomHandle::from_raw(new_path)
+    }
+
+    /// Returns a DomHandle with the 'sub-path' up to the passed 'level'.
+    /// i.e.: a DomHandle with path `[0, 1, 2, 3]` with `at_level(2)` will return a DomHandle
+    /// with path `[0, 1, 2]`.
+    pub fn sub_handle_up_to(&self, level: usize) -> DomHandle {
+        assert!(&self.path.is_some());
+        let path = self.path.clone().unwrap();
+        let (new_path, _) = path.split_at(level);
+        DomHandle::from_raw(new_path.to_vec())
     }
 
     /// Return true if this handle has a parent i.e. it is not the root. If
