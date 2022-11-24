@@ -411,14 +411,14 @@ fn backspace_word_removes_past_linebreak_in_whitespace() {
     model.backspace_word();
     assert_eq!(restore_whitespace(&tx(&model)), "|");
 }
-// #[test]
-// fn delete_word_removes_past_linebreak_in_whitespace() {
-//     let mut model = cm("| <br/> abc");
-//     model.delete_word();
-//     assert_eq!(restore_whitespace(&tx(&model)), "| abc");
-//     model.delete_word();
-//     assert_eq!(restore_whitespace(&tx(&model)), "|");
-// }
+#[test]
+fn delete_word_removes_past_linebreak_in_whitespace() {
+    let mut model = cm("| <br/> abc");
+    model.delete_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "| abc");
+    model.delete_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "|");
+}
 
 // #[test]
 // fn backspace_word_multi_step_test() {
