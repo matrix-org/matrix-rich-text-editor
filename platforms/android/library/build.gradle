@@ -98,3 +98,10 @@ android.libraryVariants.all { variant ->
     sourceSet.java.srcDir new File(buildDir, "generated/source/uniffi/${variant.name}/java")
 }
 
+afterEvaluate {
+    def isReleaseBuild = getGradle().getStartParameter().getTaskRequests().toString().containsIgnoreCase("release")
+    if (isReleaseBuild) {
+        cargo.profile = "release"
+    }
+}
+
