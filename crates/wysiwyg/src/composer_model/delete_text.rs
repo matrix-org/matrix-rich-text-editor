@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::dom::nodes::{DomNode, TextNode};
-use crate::dom::unicode_string::UnicodeStrExt;
+use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
 use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
 
@@ -191,8 +191,14 @@ where
         // from here on, start == end, so let's make a cursor position called c
         let c = range.start();
 
+        println!("<<< LOGGING >>>");
         // next actions depend on start type
         let start_type = self.get_char_type_at(c - 1);
+        let content = self.state.dom.to_string();
+
+        println!("CONTENT   --{:?}", content);
+        println!("C INDEX   --{:?}", c);
+        println!("START TYPE--{:?}", start_type);
         // need to find the dom location of the cursor, then write code to allow us to go backwards
         // done by calling find_range
         match start_type {
@@ -229,30 +235,49 @@ where
 
     // types defined in the Cat struct
     fn get_char_type_at(&self, index: usize) -> CharType {
-        let content = self.state.dom.to_string();
-        // self.state.dom.find_range(start, end), use this instead
-        // and will need to go codepoint by codepoint
-        // will need to use some dom code to figure out the positioning, then use some dom deletion method too
-        match content.chars().nth(index) {
-            Some(c) => {
-                // handle newlines separately, otherwise they'll get classed as white space,
-                // do we want to also have \r in here?
-                // this will actually be a br tag
-                if c == '\n' {
-                    return CharType::Newline;
-                }
+        // initial approach to get started is to call find range from self, but this could be passed
+        // in as an argument with direction in order for this function to grab the next character in
+        // the correct direction (c-1 for backwards, c for forwards)
 
-                if c.is_whitespace() {
-                    return CharType::Whitespace;
-                } else if c.is_ascii_punctuation() || c == '£' {
-                    // is_ascii_punctuation doesn't include £, do we want to manually add this?
-                    return CharType::Punctuation;
-                } else {
+        // this will be passed in eventually
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        // let thing = range.leaves().next(); // could potentially use this instead
+        let thing2 = range.locations.iter().find(|loc| loc.is_leaf); // seems to have a rev method...
+
+        if let Some(leaf) = thing2 {
+            // here we have a dom location, lets try and log the content
+            let my_dom_node = self.state.dom.lookup_node(&leaf.node_handle);
+            match my_dom_node {
+                DomNode::Container(node) => {
                     return CharType::Other;
                 }
-            }
-            None => CharType::None,
-        }
+                DomNode::Text(node) => {
+                    let content = node.data();
+                    let nth_char = content.chars().nth(leaf.start_offset - 1);
+                    println!("nth_char? {:?}", nth_char);
+                    return match nth_char {
+                        Some(c) => {
+                            if c.is_whitespace() {
+                                return CharType::Whitespace;
+                            } else if c.is_ascii_punctuation() || c == '£' {
+                                // is_ascii_punctuation doesn't include £, do we want to manually add this?
+                                return CharType::Punctuation;
+                            } else {
+                                return CharType::Other;
+                            }
+                        }
+                        None => CharType::None,
+                    };
+                }
+                DomNode::LineBreak(node) => {
+                    return CharType::Newline;
+                }
+            };
+        } else {
+            println!("{}", "nope");
+            return CharType::None;
+        };
     }
 
     // figure out where the run ends and also if we're returning due to a

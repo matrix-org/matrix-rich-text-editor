@@ -378,20 +378,20 @@ use crate::{
 
 // Remove word tests including html
 #[test]
-fn backspace_word_at_whitespace_does_not_remove_past_newline_in_word() {
-    let mut model = cm("abc\ndef  |");
+fn backspace_word_at_whitespace_does_not_remove_past_linebreak_in_word() {
+    let mut model = cm("a<br />defg|");
     model.backspace_word();
-    assert_eq!(tx(&model), "abc\n|")
+    assert_eq!(tx(&model), "abc<br />|")
 }
-#[test]
-fn delete_word_at_whitespace_does_not_remove_past_newline_in_word() {
-    let mut model = cm("|  abc\ndef ");
-    model.delete_word();
-    assert_eq!(restore_whitespace(&tx(&model)), "|\ndef ")
-}
+// #[test]
+// fn delete_word_at_whitespace_does_not_remove_past_linebreak_in_word() {
+//     let mut model = cm("|  abc<br />def ");
+//     model.delete_word();
+//     assert_eq!(restore_whitespace(&tx(&model)), "|<br />def ")
+// }
 
 // #[test]
-// fn backspace_word_removes_past_newline_in_whitespace() {
+// fn backspace_word_removes_past_newline_in_whitespace() {f
 //     let mut model = cm("abc \n       |");
 //     model.backspace_word();
 //     assert_eq!(restore_whitespace(&tx(&model)), "abc |");
