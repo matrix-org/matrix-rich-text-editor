@@ -249,7 +249,7 @@ where
         let range = self.state.dom.find_range(s, e);
 
         if range.is_empty() {
-            self.state.dom.append_child(DomNode::new_list(
+            self.state.dom.append_at_end_of_document(DomNode::new_list(
                 list_type,
                 vec![DomNode::Container(ContainerNode::new_list_item(
                     "li".into(),

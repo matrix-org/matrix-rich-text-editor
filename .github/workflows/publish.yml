@@ -64,7 +64,7 @@ jobs:
         with:
           build-root-directory: platforms/android
           arguments: |
-            publishAllPublicationsToMavenCentral closeAndReleaseRepository
+            publish closeAndReleaseRepository
   npm:
     name: Publish to npm
     runs-on: ubuntu-latest
