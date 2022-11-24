@@ -93,6 +93,8 @@ where
         }
     }
 
+    /// Deletes the given [to_delete] nodes and then removes any given parent nodes that became
+    /// empty, recursively.
     pub(crate) fn delete_nodes(&mut self, mut to_delete: Vec<DomHandle>) {
         // Delete in reverse order to avoid invalidating handles
         to_delete.reverse();
@@ -115,6 +117,24 @@ where
             }
 
             to_delete = new_to_delete;
+        }
+    }
+
+    /// Removes the node at [cur_handle] and then will recursively delete any empty parent nodes
+    /// until we reach the [top_handle] node.
+    pub(crate) fn remove_and_clean_up_empty_nodes_until(
+        &mut self,
+        cur_handle: &DomHandle,
+        top_handle: &DomHandle,
+    ) {
+        self.state.dom.remove(cur_handle);
+        if cur_handle != top_handle
+            && self.state.dom.parent(cur_handle).children().is_empty()
+        {
+            self.remove_and_clean_up_empty_nodes_until(
+                &cur_handle.parent_handle(),
+                top_handle,
+            )
         }
     }
 

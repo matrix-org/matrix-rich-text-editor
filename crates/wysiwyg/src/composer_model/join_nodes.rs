@@ -56,8 +56,11 @@ where
         // Find next node
         if let Some(mut next_handle) = self.find_leaf_containing(new_pos) {
             // Find struct parents
-            if let (Some(struct_parent_start), Some(struct_parent_next)) =
-                self.find_struct_parents(start_handle, &next_handle)
+            if let (Some(struct_parent_start), Some(struct_parent_next)) = self
+                .find_closest_structure_ancestors_to_join(
+                    start_handle,
+                    &next_handle,
+                )
             {
                 if struct_parent_start != struct_parent_next {
                     // Move children
@@ -70,8 +73,10 @@ where
                 }
 
                 // Find ancestor lists
-                let ancestors_start = Self::find_ancestor_list(start_handle);
-                let ancestors_next = Self::find_ancestor_list(&next_handle);
+                let ancestors_start =
+                    Self::list_of_ancestors_from_root(start_handle);
+                let ancestors_next =
+                    Self::list_of_ancestors_from_root(&next_handle);
 
                 // Merge nodes based on ancestors
                 self.do_join_structure_nodes(&ancestors_start, &ancestors_next);
@@ -257,7 +262,7 @@ where
         let new_next_handle = DomHandle::from_raw(new_next_path);
 
         // Re-calculate ancestors
-        Self::find_ancestor_list(&new_next_handle)
+        Self::list_of_ancestors_from_root(&new_next_handle)
     }
 
     /// Given a position, find the text or line break node containing it
@@ -270,28 +275,41 @@ where
         range.leaves().next().map(|loc| loc.node_handle.clone())
     }
 
-    fn find_struct_parents(
+    /// Finds the closest structure ancestors to join for the start and end handles, or None if they
+    /// can't be found.
+    /// Note: If a ListItem is found, the parent List will be returned instead.
+    fn find_closest_structure_ancestors_to_join(
         &self,
         start: &DomHandle,
         next: &DomHandle,
     ) -> (Option<DomHandle>, Option<DomHandle>) {
-        let struct_parent_start = self.find_struct_parent(start);
-        let struct_parent_next = self.find_struct_parent(next);
+        let get_list_parent_if_is_list_item = |handle| {
+            let node = self.state.dom.lookup_node(&handle);
+            if node.is_list_item() {
+                handle.parent_handle()
+            } else {
+                handle.clone()
+            }
+        };
+        let struct_parent_start = self
+            .find_structure_ancestor(start)
+            .map(get_list_parent_if_is_list_item);
+        let struct_parent_next = self
+            .find_structure_ancestor(next)
+            .map(get_list_parent_if_is_list_item);
         (struct_parent_start, struct_parent_next)
     }
 
-    fn find_struct_parent(&self, handle: &DomHandle) -> Option<DomHandle> {
-        let parent_handle = handle.parent_handle();
-        let parent = self.state.dom.lookup_node(&parent_handle);
-        if parent.is_structure_node() && parent_handle.has_parent() {
-            if let Some(parent_result) = self.find_struct_parent(&parent_handle)
-            {
-                Some(parent_result)
-            } else {
-                Some(parent_handle)
-            }
-        } else if parent_handle.has_parent() {
-            self.find_struct_parent(&parent_handle)
+    /// Finds the closest structure node ancestor for the given handle, or None if it doesn't exist
+    pub(crate) fn find_structure_ancestor(
+        &self,
+        handle: &DomHandle,
+    ) -> Option<DomHandle> {
+        let parent = self.state.dom.parent(handle);
+        if parent.is_structure_node() {
+            Some(parent.handle().clone())
+        } else if parent.handle().has_parent() {
+            self.find_structure_ancestor(&parent.handle())
         } else {
             None
         }
@@ -333,7 +351,7 @@ where
         (ret, moved_handles)
     }
 
-    pub(crate) fn find_ancestor_list(handle: &DomHandle) -> Vec<DomHandle> {
+    fn list_of_ancestors_from_root(handle: &DomHandle) -> Vec<DomHandle> {
         let mut ancestors = Vec::new();
         let mut cur_handle = handle.clone();
         while cur_handle.has_parent() {
