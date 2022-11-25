@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use crate::dom::action_list::{DomAction, DomActionList};
+use crate::dom::nodes::dom_node::DomNodeKind::Link;
 use crate::dom::nodes::{DomNode, TextNode};
 use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use crate::dom::{DomHandle, DomLocation, Range};
@@ -227,8 +228,7 @@ where
 
     fn first_link_node_handle(&self, range: &Range) -> Option<DomHandle> {
         let Some(link_loc) = range.locations.iter().find(|loc| {
-            let node = self.state.dom.lookup_node(&loc.node_handle);
-            node.is_link_node() && !loc.is_covered() && loc.is_start()
+            loc.kind == Link && !loc.is_covered() && loc.is_start()
         }) else {
             return None
         };
