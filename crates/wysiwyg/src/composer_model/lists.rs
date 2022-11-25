@@ -291,7 +291,6 @@ where
                     ));
 
                 if add_zwsp {
-                    // FIXME: is there a case where ZWSP is inserted in the middle of the selection ?
                     self.state.start.add_assign(1);
                     self.state.end.add_assign(1);
                 }
