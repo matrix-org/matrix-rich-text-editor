@@ -291,10 +291,7 @@ where
     }
 
     pub(crate) fn is_link_node(&self) -> bool {
-        let ContainerNodeKind::Link(_) = self.kind else {
-            return false
-        };
-        true
+        matches!(self.kind, ContainerNodeKind::Link(_))
     }
 
     pub(crate) fn set_list_type(&mut self, list_type: ListType) {
