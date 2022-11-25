@@ -173,6 +173,10 @@ where
         self.children.get_mut(idx)
     }
 
+    pub fn get_child(&self, idx: usize) -> Option<&DomNode<S>> {
+        self.children.get(idx)
+    }
+
     pub fn last_child_mut(&mut self) -> Option<&mut DomNode<S>> {
         self.children.last_mut()
     }

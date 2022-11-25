@@ -13,7 +13,8 @@
 // limitations under the License.
 
 use crate::dom::action_list::{DomAction, DomActionList};
-use crate::dom::nodes::DomNode;
+use crate::dom::nodes::dom_node::DomNodeKind::Link;
+use crate::dom::nodes::{DomNode, TextNode};
 use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
@@ -161,6 +162,18 @@ where
                         .append_at_end_of_document(DomNode::new_text(new_text));
                 }
                 start = 0;
+            // We check for the first starting_link_handle if any
+            // Because for links we always add the text to the next sibling
+            } else if let Some(starting_link_handle) =
+                self.first_shrinkable_link_node_handle(&range)
+            {
+                // We replace and delete as normal with an empty string on the current range
+                self.replace_multiple_nodes(range, "".into());
+                // Then we set the new text value in the next sibling node (or create a new one if none exists)
+                self.set_new_text_in_next_sibling_node(
+                    starting_link_handle,
+                    new_text,
+                )
             } else {
                 self.replace_multiple_nodes(range, new_text)
             }
@@ -174,6 +187,55 @@ where
         // TODO: for now, we replace every time, to check ourselves, but
         // at least some of the time we should not
         self.create_update_replace_all()
+    }
+
+    fn set_new_text_in_next_sibling_node(
+        &mut self,
+        node_handle: DomHandle,
+        new_text: S,
+    ) {
+        if let Some(sibling_text_node) =
+            self.first_next_sibling_text_node_mut(&node_handle)
+        {
+            let mut data = sibling_text_node.data().to_owned();
+            data.insert(0, &new_text);
+            sibling_text_node.set_data(data);
+        } else if !new_text.is_empty() {
+            let new_child = DomNode::new_text(new_text);
+            let parent = self.state.dom.parent_mut(&node_handle);
+            let index = node_handle.index_in_parent() + 1;
+            parent.insert_child(index, new_child);
+        }
+    }
+
+    fn first_next_sibling_text_node_mut(
+        &mut self,
+        node_handle: &DomHandle,
+    ) -> Option<&mut TextNode<S>> {
+        let parent = self.state.dom.parent(node_handle);
+        let children_number = parent.children().len();
+        if node_handle.index_in_parent() < children_number - 1 {
+            let sibling =
+                self.state.dom.lookup_node_mut(&node_handle.next_sibling());
+            let DomNode::Text(sibling_text_node) = sibling else {
+                return None
+            };
+            Some(sibling_text_node)
+        } else {
+            None
+        }
+    }
+
+    fn first_shrinkable_link_node_handle(
+        &self,
+        range: &Range,
+    ) -> Option<DomHandle> {
+        let Some(link_loc) = range.locations.iter().find(|loc| {
+            loc.kind == Link && !loc.is_covered() && loc.is_start()
+        }) else {
+            return None
+        };
+        Some(link_loc.node_handle.clone())
     }
 
     fn replace_multiple_nodes(&mut self, range: Range, new_text: S) {
