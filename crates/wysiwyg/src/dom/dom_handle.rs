@@ -128,7 +128,7 @@ impl DomHandle {
 
     /// Returns true if the passed handle is an ancestor of the current one, but false if it is
     /// either unrelated to it or it's the same handle.
-    pub fn is_parent_of(&self, other: &DomHandle) -> bool {
+    pub fn is_ancestor_of(&self, other: &DomHandle) -> bool {
         let own_path = self.raw();
         let other_path = other.raw();
         other_path.starts_with(own_path.as_slice()) && other_path != own_path
@@ -136,7 +136,7 @@ impl DomHandle {
 
     /// Replaces the sub-path shared with [old] handle with the same sub-path in [new].
     pub fn replace_ancestor(&mut self, old: DomHandle, new: DomHandle) {
-        assert!(old.is_parent_of(self) || old == *self);
+        assert!(old.is_ancestor_of(self) || old == *self);
         assert!(self.is_set());
         let mut new_path = self.path.as_ref().unwrap().clone();
         new_path.splice(0..old.raw().len(), new.into_raw());

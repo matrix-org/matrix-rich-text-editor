@@ -308,6 +308,31 @@ fn inserting_a_new_line_and_text_before_a_new_line_works() {
     assert_eq!(tx(&model), "Test|<br /><br />");
 }
 
+#[test]
+fn replace_text_in_covered_link() {
+    let mut model =
+        cm("test {<a href=\"https://element.io\">test_link</a>}| test");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(tx(&model), "test added_text| test");
+}
+
+#[test]
+fn replace_text_in_covered_link_containing_format_nodes() {
+    let mut model =
+        cm("test {<a href=\"https://element.io\"><b>test_link</b></a>}| test");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(tx(&model), "test added_text| test");
+}
+
+#[test]
+fn replace_text_in_covered_link_inside_format_node() {
+    let mut model = cm(
+        "test <i>{<a href=\"https://element.io\"><b>test_link</b></a></i>}| test",
+    );
+    model.replace_text(utf16("added_text"));
+    assert_eq!(tx(&model), "test <i>added_text|</i> test");
+}
+
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
     model.replace_text(utf16(new_text));
 }

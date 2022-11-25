@@ -13,7 +13,8 @@
 // limitations under the License.
 
 use crate::dom::action_list::{DomAction, DomActionList};
-use crate::dom::nodes::DomNode;
+use crate::dom::nodes::dom_node::DomNodeKind;
+use crate::dom::nodes::{ContainerNodeKind, DomNode};
 use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
@@ -200,7 +201,7 @@ where
 
         // Delete the nodes marked for deletion
         if !to_delete.is_empty() {
-            self.delete_nodes(to_delete);
+            self.delete_nodes(to_delete.clone());
         }
 
         // If our range covered multiple text-like nodes, join together
@@ -216,9 +217,15 @@ where
             // invalidated, because it should not have been deleted.
             self.join_nodes(&range, new_pos);
         } else if let Some(first_leave) = range.leaves().next() {
-            self.join_text_nodes_in_parent(
-                &first_leave.node_handle.parent_handle(),
-            )
+            let ancestor_was_deleted = to_delete
+                .into_iter()
+                .find(|l| l.is_ancestor_of(&first_leave.node_handle))
+                .is_some();
+            if !ancestor_was_deleted {
+                self.join_text_nodes_in_parent(
+                    &first_leave.node_handle.parent_handle(),
+                )
+            }
         }
     }
 
@@ -273,8 +280,23 @@ where
         for loc in range.into_iter() {
             let mut node = self.state.dom.lookup_node_mut(&loc.node_handle);
             match &mut node {
-                DomNode::Container(_) => {
-                    // Nothing to do for container nodes
+                DomNode::Container(c) => {
+                    // Special case, when selection begins at the start of a Link node and completely covers it
+                    if matches!(c.kind(), ContainerNodeKind::Link(_))
+                        && loc.position == start
+                        && loc.is_covered()
+                    {
+                        // Mark the Link node to be removed
+                        action_list
+                            .push(DomAction::remove_node(c.handle().clone()));
+                        // Push the new text after the Link node so it will be at the same DomHandle
+                        // once the Link node is removed
+                        action_list.push(DomAction::add_node(
+                            loc.node_handle.parent_handle(),
+                            loc.node_handle.index_in_parent() + 1,
+                            DomNode::new_text(new_text.clone()),
+                        ));
+                    }
                 }
                 DomNode::LineBreak(_) => {
                     match (loc.start_offset, loc.end_offset) {

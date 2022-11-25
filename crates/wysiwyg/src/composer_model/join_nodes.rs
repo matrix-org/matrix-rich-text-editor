@@ -351,7 +351,9 @@ where
         (ret, moved_handles)
     }
 
-    fn list_of_ancestors_from_root(handle: &DomHandle) -> Vec<DomHandle> {
+    pub(crate) fn list_of_ancestors_from_root(
+        handle: &DomHandle,
+    ) -> Vec<DomHandle> {
         let mut ancestors = Vec::new();
         let mut cur_handle = handle.clone();
         while cur_handle.has_parent() {
