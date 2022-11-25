@@ -254,7 +254,7 @@ where
                 list_type,
                 vec![DomNode::Container(ContainerNode::new_list_item(
                     "li".into(),
-                    vec![DomNode::new_text("\u{200b}".into())],
+                    vec![DomNode::new_text(S::zwsp())],
                 ))],
             ));
             self.state.start.add_assign(1);
@@ -282,7 +282,7 @@ where
                     DomNode::Container(ContainerNode::new_list_item(
                         "li".into(),
                         vec![DomNode::new_text(if add_zwsp {
-                            let mut owned_text: S = "\u{200b}".into();
+                            let mut owned_text = S::zwsp();
                             owned_text.push(text);
                             owned_text
                         } else {
@@ -350,7 +350,7 @@ where
                 list.append_child(DomNode::new_list_item(
                     "li".into(),
                     vec![DomNode::new_text(if add_zwsp {
-                        let mut text: S = "\u{200b}".into();
+                        let mut text = S::zwsp();
                         text.push(new_li_text);
                         text
                     } else {
@@ -392,7 +392,7 @@ where
                 if insert_trailing_text_node {
                     let parent = self.state.dom.parent_mut(list_handle);
                     // TODO: should probably append a paragraph instead
-                    parent.append_child(DomNode::new_text("\u{200b}".into()));
+                    parent.append_child(DomNode::new_text(S::zwsp()));
                     let new_location = Location::from(
                         current_cursor_global_location - li_len + 1,
                     );
