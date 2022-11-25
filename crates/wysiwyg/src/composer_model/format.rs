@@ -188,7 +188,7 @@ where
         } else {
             // Find text nodes inside the selection that are not formatted with this format
             let non_formatted_leaf_locations = locations.iter().filter(|l| {
-                l.is_leaf
+                l.is_leaf()
                     && Self::path_contains_format_node(
                         &self.state.dom,
                         &l.node_handle,

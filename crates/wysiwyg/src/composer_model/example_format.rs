@@ -427,7 +427,7 @@ mod test {
         let mut state = SelectionWritingState::new(0, 1, 1);
         let handle = DomHandle::from_raw(vec![0]);
         let location =
-            DomLocation::new(handle, 0, 0, 1, 1, true, DomNodeKind::Generic);
+            DomLocation::new(handle, 0, 0, 1, 1, DomNodeKind::Generic);
 
         // When we advance
         let strings_to_add = state.advance(&location, 1);

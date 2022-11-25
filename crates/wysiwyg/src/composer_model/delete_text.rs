@@ -74,7 +74,7 @@ where
         // Find the first leaf node in this selection - note there
         // should only be one because s == e, so we don't have a
         // selection that spans multiple leaves.
-        let first_leaf = range.locations.iter().find(|loc| loc.is_leaf);
+        let first_leaf = range.locations.iter().find(|loc| loc.is_leaf());
         if let Some(leaf) = first_leaf {
             // We are backspacing inside a text node with no
             // selection - we might need special behaviour, if

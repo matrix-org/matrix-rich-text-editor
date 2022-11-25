@@ -49,10 +49,6 @@ pub struct DomLocation {
     /// a line break, this will be 1.
     pub length: usize,
 
-    /// True if this is a node which is not a container i.e. a text node or
-    /// a text-like node like a line break.
-    pub is_leaf: bool,
-
     /// Node kind
     pub kind: DomNodeKind,
 }
@@ -64,7 +60,6 @@ impl DomLocation {
         start_offset: usize,
         end_offset: usize,
         length: usize,
-        is_leaf: bool,
         kind: DomNodeKind,
     ) -> Self {
         Self {
@@ -73,7 +68,6 @@ impl DomLocation {
             start_offset,
             end_offset,
             length,
-            is_leaf,
             kind,
         }
     }
@@ -85,8 +79,16 @@ impl DomLocation {
             start_offset: self.start_offset,
             end_offset: self.end_offset,
             length: self.length,
-            is_leaf: self.is_leaf,
             kind: self.kind.clone(),
+        }
+    }
+
+    /// True if this is a node which is not a container i.e. a text node or
+    /// a text-like node like a line break.
+    pub fn is_leaf(&self) -> bool {
+        match self.kind {
+            DomNodeKind::Text | DomNodeKind::LineBreak => true,
+            _ => false,
         }
     }
 
@@ -104,7 +106,6 @@ impl DomLocation {
             start_offset: self.end_offset,
             end_offset: self.start_offset,
             length: self.length,
-            is_leaf: self.is_leaf,
             kind: self.kind.clone(),
         }
     }
@@ -173,7 +174,7 @@ impl Range {
         self.locations
             .iter()
             .find_map(|loc| {
-                if loc.is_leaf {
+                if loc.is_leaf() {
                     Some(loc.position + loc.start_offset)
                 } else {
                     None
@@ -187,7 +188,7 @@ impl Range {
             .iter()
             .rev()
             .find_map(|loc| {
-                if loc.is_leaf {
+                if loc.is_leaf() {
                     Some(loc.position + loc.end_offset)
                 } else {
                     None
@@ -197,7 +198,7 @@ impl Range {
     }
 
     pub fn leaves(&self) -> impl Iterator<Item = &DomLocation> {
-        self.locations.iter().filter(|loc| loc.is_leaf)
+        self.locations.iter().filter(|loc| loc.is_leaf())
     }
 
     // TODO: remove all uses of this when we guarantee that Dom is never empty

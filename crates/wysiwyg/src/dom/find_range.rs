@@ -147,7 +147,6 @@ where
             start_offset,
             end_offset,
             length: container_node_len,
-            is_leaf: false,
             kind: DomNodeKind::from_container_kind(node.kind()),
         })
     }
@@ -230,7 +229,6 @@ fn process_textlike_node(
             start_offset,
             end_offset,
             length: node_len,
-            is_leaf: true,
             kind,
         })
     }
@@ -261,7 +259,6 @@ mod test {
             start_offset,
             end_offset,
             length,
-            is_leaf: true,
             kind: DomNodeKind::Text,
         }])
     }
@@ -462,7 +459,6 @@ mod test {
                         end_offset: 2,
                         position: 8,
                         length: 2,
-                        is_leaf: true,
                         kind: DomNodeKind::Text,
                     },
                     DomLocation {
@@ -471,7 +467,6 @@ mod test {
                         end_offset: 2,
                         position: 8,
                         length: 2,
-                        is_leaf: false,
                         kind: DomNodeKind::Formatting(InlineFormatType::Italic),
                     },
                     DomLocation {
@@ -480,7 +475,6 @@ mod test {
                         end_offset: 6,
                         position: 4,
                         length: 6,
-                        is_leaf: false,
                         kind: DomNodeKind::Formatting(InlineFormatType::Bold),
                     }
                 ]
