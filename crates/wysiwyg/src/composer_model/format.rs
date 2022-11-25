@@ -188,7 +188,7 @@ where
         } else {
             // Find text nodes inside the selection that are not formatted with this format
             let non_formatted_leaf_locations = locations.iter().filter(|l| {
-                l.is_leaf
+                l.is_leaf()
                     && Self::path_contains_format_node(
                         &self.state.dom,
                         &l.node_handle,
@@ -444,7 +444,7 @@ where
     fn insert_zwspace_if_needed(node: &mut DomNode<S>) -> isize {
         if let DomNode::Text(text) = node {
             if text.data().is_empty() {
-                text.set_data("\u{200B}".into());
+                text.set_data(S::zwsp());
                 1
             } else {
                 0

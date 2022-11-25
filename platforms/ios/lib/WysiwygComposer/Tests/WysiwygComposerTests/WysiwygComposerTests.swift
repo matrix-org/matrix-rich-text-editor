@@ -101,65 +101,46 @@ final class WysiwygComposerTests: XCTestCase {
         )
     }
 
-    // swiftlint:disable:next function_body_length
     func testLists() {
         let composer = newComposerModel()
         _ = composer.orderedList()
         _ = composer.replaceText(newText: "Item 1")
         _ = composer.enter()
         _ = composer.replaceText(newText: "Item 2")
-        // Add a third list item
-        let update = composer.enter()
-        switch update.textUpdate() {
-        case .keep, .select:
-            XCTFail("Expected replace all HTML update")
-        case let .replaceAll(replacementHtml: codeUnits,
-                             startUtf16Codeunit: start,
-                             endUtf16Codeunit: end):
-            let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count)
-            XCTAssertEqual(html,
-                           "<ol><li>Item 1</li><li>"
-                               + Constants.zwsp
-                               + "Item 2</li><li>"
-                               + Constants.zwsp
-                               + "</li></ol>")
-            XCTAssertEqual(start, end)
-            XCTAssertEqual(start, 14)
-        }
+        // Add a thirs list item
+        _ = composer.enter()
+        XCTAssertEqual(composer.getContentAsHtml(),
+                       "<ol><li>"
+                           + Constants.zwsp
+                           + "Item 1</li><li>"
+                           + Constants.zwsp
+                           + "Item 2</li><li>"
+                           + Constants.zwsp
+                           + "</li></ol>")
+        XCTAssertEqual(composer.getCurrentDomState().start, composer.getCurrentDomState().end)
+        XCTAssertEqual(composer.getCurrentDomState().start, 15)
         // Remove it
-        let update2 = composer.enter()
-        switch update2.textUpdate() {
-        case .keep, .select:
-            XCTFail("Expected replace all HTML update")
-        case let .replaceAll(replacementHtml: codeUnits,
-                             startUtf16Codeunit: start,
-                             endUtf16Codeunit: end):
-            let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count)
-            XCTAssertEqual(html,
-                           "<ol><li>Item 1</li><li>"
-                               + Constants.zwsp
-                               + "Item 2</li></ol>"
-                               + Constants.zwsp)
-            XCTAssertEqual(start, end)
-            XCTAssertEqual(start, 14)
-        }
+        _ = composer.enter()
+        XCTAssertEqual(composer.getContentAsHtml(),
+                       "<ol><li>"
+                           + Constants.zwsp
+                           + "Item 1</li><li>"
+                           + Constants.zwsp
+                           + "Item 2</li></ol>"
+                           + Constants.zwsp)
+        XCTAssertEqual(composer.getCurrentDomState().start, composer.getCurrentDomState().end)
+        XCTAssertEqual(composer.getCurrentDomState().start, 15)
         // Insert some text afterwards
-        let update3 = composer.replaceText(newText: "Some text")
-        switch update3.textUpdate() {
-        case .keep, .select:
-            XCTFail("Expected replace all HTML update")
-        case let .replaceAll(replacementHtml: codeUnits,
-                             startUtf16Codeunit: start,
-                             endUtf16Codeunit: end):
-            let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count)
-            XCTAssertEqual(html,
-                           "<ol><li>Item 1</li><li>"
-                               + Constants.zwsp
-                               + "Item 2</li></ol>"
-                               + Constants.zwsp
-                               + "Some text")
-            XCTAssertEqual(start, end)
-            XCTAssertEqual(start, 23)
-        }
+        _ = composer.replaceText(newText: "Some text")
+        XCTAssertEqual(composer.getContentAsHtml(),
+                       "<ol><li>"
+                           + Constants.zwsp
+                           + "Item 1</li><li>"
+                           + Constants.zwsp
+                           + "Item 2</li></ol>"
+                           + Constants.zwsp
+                           + "Some text")
+        XCTAssertEqual(composer.getCurrentDomState().start, composer.getCurrentDomState().end)
+        XCTAssertEqual(composer.getCurrentDomState().start, 24)
     }
 }

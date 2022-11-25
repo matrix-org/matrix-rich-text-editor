@@ -13,10 +13,11 @@
 // limitations under the License.
 
 use std::collections::HashMap;
+use std::ops::AddAssign;
 
 use crate::dom::nodes::{ContainerNode, DomNode};
 use crate::dom::to_raw_text::ToRawText;
-use crate::dom::unicode_string::UnicodeStrExt;
+use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, ListType, Location, UnicodeString};
 
@@ -62,7 +63,7 @@ where
 
     pub fn can_indent(&self, locations: &Vec<DomLocation>) -> bool {
         for loc in locations {
-            if loc.is_leaf && !self.can_indent_handle(&loc.node_handle) {
+            if loc.is_leaf() && !self.can_indent_handle(&loc.node_handle) {
                 return false;
             }
         }
@@ -71,7 +72,7 @@ where
 
     pub fn can_unindent(&self, locations: &Vec<DomLocation>) -> bool {
         for loc in locations {
-            if loc.is_leaf && !self.can_unindent_handle(&loc.node_handle) {
+            if loc.is_leaf() && !self.can_unindent_handle(&loc.node_handle) {
                 return false;
             }
         }
@@ -253,9 +254,11 @@ where
                 list_type,
                 vec![DomNode::Container(ContainerNode::new_list_item(
                     "li".into(),
-                    vec![DomNode::new_text(S::default())],
+                    vec![DomNode::new_text(S::zwsp())],
                 ))],
             ));
+            self.state.start.add_assign(1);
+            self.state.end.add_assign(1);
             self.create_update_replace_all()
         } else {
             self.create_list_range(list_type, range)
@@ -274,11 +277,24 @@ where
             if let DomNode::Text(t) = node {
                 let text = t.data();
                 let index_in_parent = handle.index_in_parent();
+                let add_zwsp = !text.to_string().starts_with("\u{200b}");
                 let list_item =
                     DomNode::Container(ContainerNode::new_list_item(
                         "li".into(),
-                        vec![DomNode::new_text(text.to_owned())],
+                        vec![DomNode::new_text(if add_zwsp {
+                            let mut owned_text = S::zwsp();
+                            owned_text.push(text);
+                            owned_text
+                        } else {
+                            text.to_owned()
+                        })],
                     ));
+
+                if add_zwsp {
+                    self.state.start.add_assign(1);
+                    self.state.end.add_assign(1);
+                }
+
                 if index_in_parent > 0 {
                     let previous_handle = handle.prev_sibling();
                     let previous_node =
@@ -330,11 +346,13 @@ where
             t.set_data(new_text);
             let list_node = self.state.dom.lookup_node_mut(list_handle);
             if let DomNode::Container(list) = list_node {
-                let add_zwsp = new_li_text.is_empty();
+                let add_zwsp = !new_li_text.to_string().starts_with("\u{200b}");
                 list.append_child(DomNode::new_list_item(
                     "li".into(),
                     vec![DomNode::new_text(if add_zwsp {
-                        "\u{200b}".into()
+                        let mut text = S::zwsp();
+                        text.push(new_li_text);
+                        text
                     } else {
                         new_li_text
                     })],
@@ -374,7 +392,7 @@ where
                 if insert_trailing_text_node {
                     let parent = self.state.dom.parent_mut(list_handle);
                     // TODO: should probably append a paragraph instead
-                    parent.append_child(DomNode::new_text("\u{200b}".into()));
+                    parent.append_child(DomNode::new_text(S::zwsp()));
                     let new_location = Location::from(
                         current_cursor_global_location - li_len + 1,
                     );
@@ -608,7 +626,7 @@ where
         locations
             .iter()
             .filter_map(|l| {
-                if l.is_leaf {
+                if l.is_leaf() {
                     Some(l.node_handle.clone())
                 } else {
                     None
