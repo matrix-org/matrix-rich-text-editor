@@ -129,7 +129,7 @@ where
             CharType::Whitespace => {
                 let (ws_delete_index, stopped_at_newline) = self
                     .get_end_index_of_run(
-                        range,
+                        &range,
                         &Direction::Forwards,
                         &start_type,
                     );
@@ -146,7 +146,7 @@ where
                             self.get_char_type_at(&Direction::Forwards);
 
                         let (next_delete_index, _) = self.get_end_index_of_run(
-                            _range,
+                            &_range,
                             &Direction::Forwards,
                             &_start_type,
                         );
@@ -156,7 +156,7 @@ where
             }
             CharType::Newline | CharType::Punctuation | CharType::Other => {
                 let (delete_index, _) = self.get_end_index_of_run(
-                    range,
+                    &range,
                     &Direction::Forwards,
                     &start_type,
                 );
@@ -225,7 +225,7 @@ where
             CharType::Whitespace => {
                 let (ws_delete_index, stopped_at_newline) = self
                     .get_end_index_of_run(
-                        range,
+                        &range,
                         &Direction::Backwards,
                         &start_type,
                     );
@@ -235,7 +235,6 @@ where
                     // -1 to account for the fact we want to remove the newline
                     true => self.delete_in(ws_delete_index - 1, c),
                     false => {
-                        println!("did not stop at newline");
                         self.delete_in(ws_delete_index, c);
                         let (_s, _e) = self.safe_selection();
                         let _range = self.state.dom.find_range(_s, _e);
@@ -244,7 +243,7 @@ where
 
                         let _c = _range.start();
                         let (next_delete_index, _) = self.get_end_index_of_run(
-                            _range,
+                            &_range,
                             &Direction::Backwards,
                             &_start_type,
                         );
@@ -254,7 +253,7 @@ where
             }
             CharType::Newline | CharType::Punctuation | CharType::Other => {
                 let (delete_index, _) = self.get_end_index_of_run(
-                    range,
+                    &range,
                     &Direction::Backwards,
                     &start_type,
                 );
@@ -353,10 +352,13 @@ where
     // we can just keep changing the index each time to move it around
     fn get_end_index_of_run(
         &self,
-        range: Range,
+        range: &Range,
         direction: &Direction,
         start_type: &CharType,
     ) -> (usize, bool) {
+        println!("---<<<--->>>---");
+        println!("call get end of index run");
+        println!("with start type of {:?}", start_type);
         // TODO need to give this some base cases (assuming it's passed a range)
         // so that we can go onto the recursive call phase, to keep going until either we
         // - hit the beginning or end of the dom X
@@ -389,10 +391,8 @@ where
         //     }
         // };
         let first_leaf = range.locations.iter().find(|loc| loc.is_leaf);
-
         if let Some(leaf) = first_leaf {
             let my_dom_node = self.state.dom.lookup_node(&leaf.node_handle);
-
             match my_dom_node {
                 DomNode::Container(node) => {
                     // need to probably sort this case out for lists
@@ -472,18 +472,13 @@ where
 
                     // this was previously inside the while loop which caused issues for
                     // text nodes of length == 1
-                    println!("---<<<--->>>---");
-                    println!("CURRENT TYPE {:?}", current_type);
-                    println!("START TYPE {:?}", start_type);
-                    println!("CURRENT INDEX {}", current_index);
-                    println!("LEAF LENGTH {}", leaf.length);
                     // this logic is not quite right, as we can iterate outside the right hand end of a string
                     // due to the cursor numbering, so should it be something like
                     // current_type.eq(&start_type) && current_index == 0) || current_type.eq(&CharType::None
                     // ????
                     if current_type.eq(&start_type) && current_index == 0 {
                         have_hit_leaf_end = true;
-                        offset += 1; // nb sign related to direction...maybe
+                        // offset += 1; // nb sign related to direction...maybe this isn't required
                     }
                     if current_type.eq(&CharType::None) {
                         // then we've already iterated outside the current leaf,
@@ -491,44 +486,50 @@ where
                         have_hit_leaf_end = true;
                     }
 
-                    // println!("offset is :{}", offset);
+                    println!("offset is... {}", offset);
                     let delete_index = match direction {
                         Direction::Forwards => c + offset,
                         Direction::Backwards => c - offset,
                     };
 
+                    // base case for if we've hit the end of the dom
+                    if delete_index == 0 && direction.eq(&Direction::Backwards)
+                    {
+                        // we've hit the end, so return
+                        return (delete_index, false);
+                    }
+                    if delete_index == self.state.dom.text_len()
+                        && direction.eq(&Direction::Forwards)
+                    {
+                        // we've hit the end, so return
+                        return (delete_index, false);
+                    }
+
                     if have_hit_leaf_end {
-                        println!("hit leaf end ");
+                        println!("then we hit the end");
+                        println!("at delete index : {}", delete_index);
                         // answer, yes! we will always need to keep going. so make a recursive
                         // call to this function. base cases will handle if we hit the end of the dom
                         // first though, we'll have to make a new range to account for our position
-                        println!("offset -- {}", offset);
-                        println!("delete_index -- {}", delete_index);
+                        let new_thing = match direction {
+                            Direction::Forwards => delete_index,
+                            Direction::Backwards => delete_index - 1,
+                        };
 
                         // there is a problem here! uncommenting the below breaks
                         // tests so must be mutating ...something ... somewhere
                         // maybe the refactor to use index fixes this?
-                        // let next_cursor_index = match direction {
-                        //     Direction::Forwards => c + offset,
-                        //     Direction::Backwards => c - offset - 1,
-                        // };
-                        let next_range = self
-                            .state
-                            .dom
-                            .find_range(delete_index, delete_index);
-                        println!(
-                            "next run starts from idx : {}",
-                            next_range.start()
-                        );
+                        let next_range =
+                            self.state.dom.find_range(new_thing, new_thing);
+                        println!("next range start: {}", next_range.start());
                         // then make the recursive call
-                        // return self.get_end_index_of_run(
-                        //     next_range,
-                        //     direction,
-                        //     &start_type,
-                        // );
+                        return self.get_end_index_of_run(
+                            &next_range,
+                            direction,
+                            &start_type,
+                        );
                     }
 
-                    // println!("... and delete index is: {}", delete_index);
                     return (delete_index, false);
                 }
                 DomNode::LineBreak(node) => {
