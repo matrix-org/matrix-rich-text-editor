@@ -169,7 +169,7 @@ where
                 // We replace and delete as normal with an empty string on the current range
                 self.replace_multiple_nodes(range, "".into());
                 // Then we set the new text value in the next sibling node (or create a new one if none exists)
-                self.set_new_text_in_sibling_node(
+                self.set_new_text_in_next_sibling_node(
                     starting_link_handle,
                     new_text,
                 )
@@ -188,7 +188,7 @@ where
         self.create_update_replace_all()
     }
 
-    fn set_new_text_in_sibling_node(
+    fn set_new_text_in_next_sibling_node(
         &mut self,
         node_handle: DomHandle,
         new_text: S,
