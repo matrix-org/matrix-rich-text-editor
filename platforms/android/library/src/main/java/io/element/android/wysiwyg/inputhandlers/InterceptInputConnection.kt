@@ -154,13 +154,16 @@ internal class InterceptInputConnection(
                     val (cStart, cEnd) = EditorIndexMapper.fromEditorToComposer(start, end, editable)
                         ?: error("Invalid indexes in composer $start, $end")
                     // First add whitespace
-                    processInput(EditorInputAction.ReplaceTextIn(cEnd, cEnd, " "))
-                    // Then replace text
-                    processInput(EditorInputAction.ReplaceTextIn(cStart, cEnd, toAppend))?.let {
-                        // Fix selection to include whitespace at the end
-                        val prevSelection = it.selection
-                        it.copy(selection = prevSelection.first until prevSelection.last + 2)
+                    var result = processInput(EditorInputAction.ReplaceTextIn(cEnd, cEnd, " "))
+                    // Then replace text if needed
+                    if (toAppend != previousText) {
+                        result = processInput(EditorInputAction.ReplaceTextIn(cStart, cEnd, toAppend))?.let {
+                            // Fix selection to include whitespace at the end
+                            val prevSelection = it.selection
+                            it.copy(selection = prevSelection.first until prevSelection.last + 2)
+                        }
                     }
+                    result
                 }
                 // This only happens when a new line key stroke is received
                 newText?.lastOrNull() == '\n' -> {
