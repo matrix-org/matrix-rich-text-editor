@@ -165,7 +165,7 @@ where
             // We check for the first starting_link_handle if any
             // Because for links we always add the text to the next sibling
             } else if let Some(starting_link_handle) =
-                self.first_link_node_handle(&range)
+                self.first_shrinkable_link_node_handle(&range)
             {
                 // We replace and delete as normal with an empty string on the current range
                 self.replace_multiple_nodes(range, "".into());
@@ -226,7 +226,10 @@ where
         }
     }
 
-    fn first_link_node_handle(&self, range: &Range) -> Option<DomHandle> {
+    fn first_shrinkable_link_node_handle(
+        &self,
+        range: &Range,
+    ) -> Option<DomHandle> {
         let Some(link_loc) = range.locations.iter().find(|loc| {
             loc.kind == Link && !loc.is_covered() && loc.is_start()
         }) else {
