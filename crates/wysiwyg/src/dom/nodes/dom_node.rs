@@ -14,7 +14,9 @@
 
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
-use crate::dom::nodes::{ContainerNode, LineBreakNode, TextNode};
+use crate::dom::nodes::{
+    ContainerNode, ContainerNodeKind, LineBreakNode, TextNode,
+};
 use crate::dom::to_html::ToHtml;
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_raw_text::ToRawText;
@@ -165,6 +167,14 @@ where
             None
         }
     }
+
+    pub fn kind(&self) -> DomNodeKind {
+        match self {
+            DomNode::Text(_) => DomNodeKind::Text,
+            DomNode::LineBreak(_) => DomNodeKind::LineBreak,
+            DomNode::Container(n) => DomNodeKind::from_container_kind(n.kind()),
+        }
+    }
 }
 
 impl<S> ToHtml<S> for DomNode<S>
@@ -232,6 +242,33 @@ where
             }
             DomNode::Text(text) => text.fmt_markdown(buffer, options),
             DomNode::LineBreak(node) => node.fmt_markdown(buffer, options),
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum DomNodeKind {
+    Generic, // Should only be used for root node so far
+    Text,
+    LineBreak,
+    Formatting(InlineFormatType),
+    Link,
+    ListItem,
+    List,
+}
+
+impl DomNodeKind {
+    pub fn from_container_kind<S: UnicodeString>(
+        kind: &ContainerNodeKind<S>,
+    ) -> Self {
+        match kind {
+            ContainerNodeKind::Formatting(f) => {
+                DomNodeKind::Formatting(f.clone())
+            }
+            ContainerNodeKind::Link(_) => DomNodeKind::Link,
+            ContainerNodeKind::List => DomNodeKind::List,
+            ContainerNodeKind::ListItem => DomNodeKind::ListItem,
+            ContainerNodeKind::Generic => DomNodeKind::Generic,
         }
     }
 }

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use crate::dom::dom_handle::DomHandle;
+use crate::dom::nodes::dom_node::DomNodeKind;
 use std::cmp::Ordering;
 
 /// Represents a part of a Range.
@@ -51,6 +52,9 @@ pub struct DomLocation {
     /// True if this is a node which is not a container i.e. a text node or
     /// a text-like node like a line break.
     pub is_leaf: bool,
+
+    /// Node kind
+    pub kind: DomNodeKind,
 }
 
 impl DomLocation {
@@ -61,6 +65,7 @@ impl DomLocation {
         end_offset: usize,
         length: usize,
         is_leaf: bool,
+        kind: DomNodeKind,
     ) -> Self {
         Self {
             node_handle,
@@ -69,6 +74,7 @@ impl DomLocation {
             end_offset,
             length,
             is_leaf,
+            kind,
         }
     }
 
@@ -80,6 +86,7 @@ impl DomLocation {
             end_offset: self.end_offset,
             length: self.length,
             is_leaf: self.is_leaf,
+            kind: self.kind.clone(),
         }
     }
 
@@ -98,6 +105,7 @@ impl DomLocation {
             end_offset: self.start_offset,
             length: self.length,
             is_leaf: self.is_leaf,
+            kind: self.kind.clone(),
         }
     }
 

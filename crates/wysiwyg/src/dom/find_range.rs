@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::{ContainerNode, DomNode, LineBreakNode, TextNode};
 use crate::dom::range::DomLocation;
 use crate::dom::unicode_string::UnicodeStrExt;
@@ -147,6 +148,7 @@ where
             end_offset,
             length: container_node_len,
             is_leaf: false,
+            kind: DomNodeKind::from_container_kind(node.kind()),
         })
     }
     results
@@ -161,7 +163,14 @@ fn process_text_node<S>(
 where
     S: UnicodeString,
 {
-    process_textlike_node(node.handle(), node.data().len(), start, end, offset)
+    process_textlike_node(
+        node.handle(),
+        node.data().len(),
+        start,
+        end,
+        offset,
+        DomNodeKind::Text,
+    )
 }
 
 fn process_line_break_node<S>(
@@ -174,7 +183,14 @@ where
     S: UnicodeString,
 {
     // Line breaks are like 1-character text nodes
-    process_textlike_node(node.handle(), 1, start, end, offset)
+    process_textlike_node(
+        node.handle(),
+        1,
+        start,
+        end,
+        offset,
+        DomNodeKind::LineBreak,
+    )
 }
 
 fn process_textlike_node(
@@ -183,6 +199,7 @@ fn process_textlike_node(
     start: usize,
     end: usize,
     offset: &mut usize,
+    kind: DomNodeKind,
 ) -> Option<DomLocation> {
     let node_start = *offset;
     let node_end = node_start + node_len;
@@ -214,6 +231,7 @@ fn process_textlike_node(
             end_offset,
             length: node_len,
             is_leaf: true,
+            kind,
         })
     }
 }
@@ -228,7 +246,7 @@ mod test {
     use crate::tests::testutils_composer_model::{cm, restore_whitespace_u16};
     use crate::tests::testutils_conversion::utf16;
     use crate::tests::testutils_dom::{b, dom, tn};
-    use crate::ToHtml;
+    use crate::{InlineFormatType, ToHtml};
 
     fn found_single_node(
         handle: DomHandle,
@@ -244,6 +262,7 @@ mod test {
             end_offset,
             length,
             is_leaf: true,
+            kind: DomNodeKind::Text,
         }])
     }
 
@@ -443,7 +462,8 @@ mod test {
                         end_offset: 2,
                         position: 8,
                         length: 2,
-                        is_leaf: true
+                        is_leaf: true,
+                        kind: DomNodeKind::Text,
                     },
                     DomLocation {
                         node_handle: DomHandle::from_raw(vec![1, 1]),
@@ -451,7 +471,8 @@ mod test {
                         end_offset: 2,
                         position: 8,
                         length: 2,
-                        is_leaf: false
+                        is_leaf: false,
+                        kind: DomNodeKind::Formatting(InlineFormatType::Italic),
                     },
                     DomLocation {
                         node_handle: DomHandle::from_raw(vec![1]),
@@ -459,7 +480,8 @@ mod test {
                         end_offset: 6,
                         position: 4,
                         length: 6,
-                        is_leaf: false
+                        is_leaf: false,
+                        kind: DomNodeKind::Formatting(InlineFormatType::Bold),
                     }
                 ]
             }
