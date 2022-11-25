@@ -63,7 +63,7 @@ where
 
     pub fn can_indent(&self, locations: &Vec<DomLocation>) -> bool {
         for loc in locations {
-            if loc.is_leaf && !self.can_indent_handle(&loc.node_handle) {
+            if loc.is_leaf() && !self.can_indent_handle(&loc.node_handle) {
                 return false;
             }
         }
@@ -72,7 +72,7 @@ where
 
     pub fn can_unindent(&self, locations: &Vec<DomLocation>) -> bool {
         for loc in locations {
-            if loc.is_leaf && !self.can_unindent_handle(&loc.node_handle) {
+            if loc.is_leaf() && !self.can_unindent_handle(&loc.node_handle) {
                 return false;
             }
         }
@@ -626,7 +626,7 @@ where
         locations
             .iter()
             .filter_map(|l| {
-                if l.is_leaf {
+                if l.is_leaf() {
                     Some(l.node_handle.clone())
                 } else {
                     None
