@@ -194,7 +194,7 @@ where
         new_text: S,
     ) {
         if let Some(sibling_text_node) =
-            self.first_sibling_text_node_mut(&node_handle)
+            self.first_next_sibling_text_node_mut(&node_handle)
         {
             let mut data = sibling_text_node.data().to_owned();
             data.insert(0, &new_text);
@@ -207,7 +207,7 @@ where
         }
     }
 
-    fn first_sibling_text_node_mut(
+    fn first_next_sibling_text_node_mut(
         &mut self,
         node_handle: &DomHandle,
     ) -> Option<&mut TextNode<S>> {
@@ -216,11 +216,10 @@ where
         if node_handle.index_in_parent() < children_number - 1 {
             let sibling =
                 self.state.dom.lookup_node_mut(&node_handle.next_sibling());
-            if let DomNode::Text(sibling_text_node) = sibling {
-                Some(sibling_text_node)
-            } else {
-                None
-            }
+            let DomNode::Text(sibling_text_node) = sibling else {
+                return None
+            };
+            Some(sibling_text_node)
         } else {
             None
         }
