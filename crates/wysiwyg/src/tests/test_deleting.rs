@@ -546,14 +546,14 @@ fn html_backspace_word_removes_past_linebreak_in_whitespace() {
     model.backspace_word();
     assert_eq!(restore_whitespace(&tx(&model)), "|");
 }
-// #[test]
-// fn html_delete_word_removes_past_linebreak_in_whitespace() {
-//     let mut model = cm("| <br/> abc");
-//     model.delete_word();
-//     assert_eq!(restore_whitespace(&tx(&model)), "| abc");
-//     model.delete_word();
-//     assert_eq!(restore_whitespace(&tx(&model)), "|");
-// }
+#[test]
+fn html_delete_word_removes_past_linebreak_in_whitespace() {
+    let mut model = cm("| <br/> abc");
+    model.delete_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "| abc");
+    model.delete_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "|");
+}
 #[test]
 fn html_backspace_word_removes_whole_word() {
     let mut model = cm("<em>italic|</em>");
@@ -573,12 +573,12 @@ fn html_backspace_word_removes_into_a_tag() {
     model.backspace_word();
     assert_eq!(restore_whitespace(&tx(&model)), " some |<em></em>needed");
 }
-// #[test]
-// fn html_delete_word_removes_into_a_tag() {
-//     let mut model = cm(" some| <em>em</em>phasis needed");
-//     model.delete_word();
-//     assert_eq!(restore_whitespace(&tx(&model)), " some| needed");
-// }
+#[test]
+fn html_delete_word_removes_into_a_tag() {
+    let mut model = cm(" some| <em>em</em>phasis needed");
+    model.delete_word();
+    assert_eq!(restore_whitespace(&tx(&model)), " some| needed");
+}
 
 // TODO next tests:
 // repeat all of the plain text tests inside a tag
