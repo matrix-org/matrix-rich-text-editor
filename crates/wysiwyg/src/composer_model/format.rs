@@ -444,7 +444,7 @@ where
     fn insert_zwspace_if_needed(node: &mut DomNode<S>) -> isize {
         if let DomNode::Text(text) = node {
             if text.data().is_empty() {
-                text.set_data("\u{200B}".into());
+                text.set_data(S::zwsp());
                 1
             } else {
                 0
