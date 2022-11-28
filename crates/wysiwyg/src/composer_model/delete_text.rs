@@ -38,14 +38,14 @@ enum Direction {
 impl Direction {
     fn increment(&self, index: usize) -> usize {
         match self {
-            Direction::Backwards => index - 1,
             Direction::Forwards => index + 1,
+            Direction::Backwards => index - 1,
         }
     }
     fn get_index_from_cursor(&self, index: usize) -> usize {
         match self {
-            Direction::Backwards => index - 1,
             Direction::Forwards => index,
+            Direction::Backwards => index - 1,
         }
     }
 }
@@ -99,8 +99,11 @@ where
         self.do_replace_text(S::default())
     }
 
-    /// Remove a single word when user does ctrl/cmd + delete
-    pub fn delete_word(&mut self) -> ComposerUpdate<S> {
+    /// Implements the ctrl/opt + delete/backspace functionality
+    fn remove_word_in_direction(
+        &mut self,
+        direction: &Direction,
+    ) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
 
@@ -109,30 +112,28 @@ where
             return self.delete_in(s, e);
         }
 
-        // if we're at the end of the string, do nothing
-        if range.end() == self.state.dom.text_len() {
+        // if we are trying to move outside the dom, do nothing
+        if (direction.eq(&Direction::Forwards)
+            && range.start() == self.state.dom.text_len())
+            || (direction.eq(&Direction::Backwards) && range.start() == 0)
+        {
             return ComposerUpdate::keep();
         }
 
         // from here on, start == end, so let's make a cursor position called cursor
         let cursor = range.start();
-
         println!("<<< LOGGING >>>");
         // next actions depend on start type
-        let start_type = self.get_char_type_at(&Direction::Forwards);
-        let content = self.state.dom.to_string();
+        let start_type = self.get_char_type_at(direction);
 
-        println!("CONTENT    -- {:?}", content);
+        println!("CONTENT    -- {:?}", self.state.dom.to_string());
         println!("CURSOR AT  -- {:?}", cursor);
         println!("START TYPE -- {:?}", start_type);
-        match start_type {
+
+        return match start_type {
             CharType::Whitespace => {
-                let (ws_delete_cursor, stopped_at_newline) = self
-                    .get_end_index_of_run(
-                        &range,
-                        &Direction::Forwards,
-                        &start_type,
-                    );
+                let (ws_delete_cursor, stopped_at_newline) =
+                    self.get_end_index_of_run(&range, direction, &start_type);
                 println!(
                     "ws delete cursor: {}, stop at linebreak - {}",
                     ws_delete_cursor, stopped_at_newline
@@ -140,14 +141,29 @@ where
 
                 match stopped_at_newline {
                     // +2 to account for the fact we want to remove the newline
-                    true => self.delete_in(cursor, ws_delete_cursor + 1),
+                    true => match direction {
+                        Direction::Forwards => self.delete_in(
+                            cursor,
+                            direction.increment(ws_delete_cursor),
+                        ),
+                        Direction::Backwards => self.delete_in(
+                            direction.increment(ws_delete_cursor),
+                            cursor,
+                        ),
+                    },
                     false => {
-                        self.delete_in(cursor, ws_delete_cursor);
+                        match direction {
+                            Direction::Forwards => {
+                                self.delete_in(cursor, ws_delete_cursor)
+                            }
+                            Direction::Backwards => {
+                                self.delete_in(ws_delete_cursor, cursor)
+                            }
+                        };
                         let (_s, _e) = self.safe_selection();
                         let _range = self.state.dom.find_range(_s, _e);
                         let _c = _range.start();
-                        let _start_type =
-                            self.get_char_type_at(&Direction::Forwards);
+                        let _start_type = self.get_char_type_at(direction);
                         println!(
                             "second cursor: {}, second type - {:?}",
                             _c, _start_type
@@ -156,23 +172,40 @@ where
                         let (next_delete_cursor, _) = self
                             .get_end_index_of_run(
                                 &_range,
-                                &Direction::Forwards,
+                                direction,
                                 &_start_type,
                             );
-                        self.delete_in(_c, next_delete_cursor)
+                        match direction {
+                            Direction::Forwards => {
+                                self.delete_in(_c, next_delete_cursor)
+                            }
+
+                            Direction::Backwards => {
+                                self.delete_in(next_delete_cursor, _c)
+                            }
+                        }
                     }
                 }
             }
             CharType::Newline | CharType::Punctuation | CharType::Other => {
-                let (delete_cursor, _) = self.get_end_index_of_run(
-                    &range,
-                    &Direction::Forwards,
-                    &start_type,
-                );
-                self.delete_in(cursor, delete_cursor)
+                let (delete_cursor, _) =
+                    self.get_end_index_of_run(&range, direction, &start_type);
+                match direction {
+                    Direction::Forwards => {
+                        self.delete_in(cursor, delete_cursor)
+                    }
+                    Direction::Backwards => {
+                        self.delete_in(delete_cursor, cursor)
+                    }
+                }
             }
             CharType::None => ComposerUpdate::keep(),
-        }
+        };
+    }
+
+    /// Remove a single word when user does ctrl/cmd + delete
+    pub fn delete_word(&mut self) -> ComposerUpdate<S> {
+        self.remove_word_in_direction(&Direction::Forwards)
     }
 
     fn backspace_single_cursor(
@@ -204,73 +237,7 @@ where
 
     /// Remove a single word when user does ctrl/cmd + backspace
     pub fn backspace_word(&mut self) -> ComposerUpdate<S> {
-        let (s, e) = self.safe_selection();
-        let range = self.state.dom.find_range(s, e);
-
-        // if we have a selection, only remove the selection
-        if range.start() != range.end() {
-            return self.delete_in(s, e);
-        }
-
-        // if we're at the start of the string, do nothing
-        if range.start() == 0 {
-            return ComposerUpdate::keep();
-        }
-
-        // from here on, start == end, so let's make a cursor position called cursor
-        let cursor = range.start();
-
-        println!("<<< LOGGING >>>");
-        // next actions depend on start type
-        let start_type = self.get_char_type_at(&Direction::Backwards);
-        let content = self.state.dom.to_string();
-
-        println!("CONTENT    -- {:?}", content);
-        println!("CURSOR AT  -- {:?}", cursor);
-        println!("START TYPE -- {:?}", start_type);
-        // need to find the dom location of the cursor, then write code to allow us to go backwards
-        // done by calling find_range
-        match start_type {
-            CharType::Whitespace => {
-                let (ws_delete_cursor, stopped_at_newline) = self
-                    .get_end_index_of_run(
-                        &range,
-                        &Direction::Backwards,
-                        &start_type,
-                    );
-
-                // switch to if
-                match stopped_at_newline {
-                    // -1 to account for the fact we want to remove the newline
-                    true => self.delete_in(ws_delete_cursor - 1, cursor),
-                    false => {
-                        self.delete_in(ws_delete_cursor, cursor);
-                        let (_s, _e) = self.safe_selection();
-                        let _range = self.state.dom.find_range(_s, _e);
-                        let _start_type =
-                            self.get_char_type_at(&Direction::Backwards);
-
-                        let _cursor = _range.start();
-                        let (next_delete_cursor, _) = self
-                            .get_end_index_of_run(
-                                &_range,
-                                &Direction::Backwards,
-                                &_start_type,
-                            );
-                        self.delete_in(next_delete_cursor, _cursor)
-                    }
-                }
-            }
-            CharType::Newline | CharType::Punctuation | CharType::Other => {
-                let (delete_cursor, _) = self.get_end_index_of_run(
-                    &range,
-                    &Direction::Backwards,
-                    &start_type,
-                );
-                self.delete_in(delete_cursor, cursor)
-            }
-            CharType::None => ComposerUpdate::keep(),
-        }
+        self.remove_word_in_direction(&Direction::Backwards)
     }
 
     // types defined in the Cat struct
