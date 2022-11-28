@@ -345,6 +345,9 @@ where
         container: &'a ContainerNode<S>,
         direction: &Direction,
     ) -> Option<&DomNode<S>> {
+        // perhaps can use the below instead, think it can be reversed as well
+        // let node =
+        // node.children().iter().find(|node| node.is_text_node());
         for child in container.children().iter() {
             match child {
                 DomNode::Container(node) => {
@@ -479,10 +482,6 @@ where
                             return Some((cursor, true));
                         };
                     }
-                    // let start_index = match direction {
-                    //     Direction::Forwards => leaf.start_offset,
-                    //     Direction::Backwards => leaf.start_offset - 1,
-                    // };
                     let leaf_cursor = leaf.start_offset;
 
                     // don't want to use the below, will get passed in the real start type
