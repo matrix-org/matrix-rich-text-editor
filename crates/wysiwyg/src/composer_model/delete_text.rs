@@ -133,6 +133,10 @@ where
                         &Direction::Forwards,
                         &start_type,
                     );
+                println!(
+                    "ws delete cursor: {}, stop at linebreak - {}",
+                    ws_delete_cursor, stopped_at_newline
+                );
 
                 match stopped_at_newline {
                     // +2 to account for the fact we want to remove the newline
@@ -144,6 +148,10 @@ where
                         let _c = _range.start();
                         let _start_type =
                             self.get_char_type_at(&Direction::Forwards);
+                        println!(
+                            "second cursor: {}, second type - {:?}",
+                            _c, _start_type
+                        );
 
                         let (next_delete_cursor, _) = self
                             .get_end_index_of_run(
@@ -275,8 +283,24 @@ where
         let (s, _) = self.safe_selection();
         let range = self.state.dom.find_range(s, s);
         let first_leaf = range.locations.iter().find(|loc| loc.is_leaf);
+        println!("{:?}", range.locations);
+        // issue here is that the assumption that we want to use the first leaf doesn't hold in the case
+        // where we have a cursor on the boundary of two leaves and we're going forwards. in that case,
+        // increment to go to the second leaf
         if let Some(leaf) = first_leaf {
-            let my_dom_node = self.state.dom.lookup_node(&leaf.node_handle);
+            let mut my_dom_node = self.state.dom.lookup_node(&leaf.node_handle);
+
+            let increment_leaf = leaf.start_offset == leaf.length
+                && direction.eq(&Direction::Forwards);
+            if increment_leaf {
+                println!("should increment leaf");
+                let next_sibling = &leaf.node_handle.next_sibling();
+                let next_node = self.state.dom.lookup_node(next_sibling);
+                println!("leaf stuff - {:?}", next_node);
+                my_dom_node = self.state.dom.lookup_node(next_sibling)
+            }
+
+            println!("dom node: {:?}", my_dom_node);
 
             match my_dom_node {
                 DomNode::Container(node) => {
@@ -307,7 +331,10 @@ where
                                 return CharType::Other;
                             }
                         }
-                        None => CharType::None,
+                        None => {
+                            println!("no char!");
+                            CharType::None
+                        }
                     };
                 }
                 DomNode::LineBreak(node) => {
@@ -315,6 +342,7 @@ where
                 }
             };
         } else {
+            println!("no leaf!");
             return CharType::None;
         };
     }
@@ -367,22 +395,36 @@ where
         if cursor == 0 && direction.eq(&Direction::Backwards) {
             return (cursor, false);
         }
-
-        // get the leaf, may be able to use rev here to make the direction sense easier, try it later in a refactor
-        // let first_leaf = match direction {
-        //     Direction::Forwards => {
-        //         range.locations.iter().rev().find(|loc| loc.is_leaf)
-        //     }
-        //     Direction::Backwards => {
-        //         range.locations.iter().find(|loc| loc.is_leaf)
-        //     }
-        // };
         let first_leaf = range.locations.iter().find(|loc| loc.is_leaf);
         if let Some(leaf) = first_leaf {
-            let my_dom_node = self.state.dom.lookup_node(&leaf.node_handle);
+            let mut my_dom_node = self.state.dom.lookup_node(&leaf.node_handle);
+            let increment_leaf = leaf.start_offset == leaf.length
+                && direction.eq(&Direction::Forwards);
+            if increment_leaf {
+                println!("should increment leaf");
+                let next_sibling = &leaf.node_handle.next_sibling();
+                let next_node = self.state.dom.lookup_node(next_sibling);
+                println!("leaf stuff - {:?}", next_node);
+                my_dom_node = self.state.dom.lookup_node(next_sibling)
+            }
             match my_dom_node {
                 DomNode::Container(node) => {
                     // need to probably sort this case out for lists,
+                    let node =
+                        node.children().iter().find(|node| node.is_text_node());
+                    match node {
+                        Some(node) => {
+                            match node {
+                                DomNode::Container(_) => todo!(),
+                                DomNode::Text(_node) => {
+                                    println!("node data - {:?}", _node.data());
+                                }
+                                DomNode::LineBreak(_) => todo!(),
+                            };
+                        }
+                        None => todo!(),
+                    };
+
                     panic!("we hit a container, perhaps handle this like a text node");
                 }
                 DomNode::Text(node) => {
