@@ -10,6 +10,11 @@ env:
   GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx4096m -Dfile.encoding=UTF-8 -XX:+HeapDumpOnOutOfMemoryError" -Dkotlin.daemon.jvm.options="-Xmx2560m" -Dkotlin.incremental=false
   CI_GRADLE_ARG_PROPERTIES: --stacktrace -PpreDexEnable=false --max-workers 4 --no-daemon
   UNIFFI_VERSION: 0.21.0
+  ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+  ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+  ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.ANDROID_SIGNING_GPG }}
+  ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.ANDROID_SIGNING_KEY_ID }}
+  ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
 
 jobs:
   android:
@@ -53,18 +58,16 @@ jobs:
           # keep in sync with uniffi dependency in Cargo.toml's
           args: uniffi_bindgen --version ${{ env.UNIFFI_VERSION }}
 
-      - name: 🚀 Publish to Sonatype
+      - name: ⬆️ Publish to Sonatype
         uses: gradle/gradle-build-action@v2
-        env:
-          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.ANDROID_SIGNING_GPG }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.ANDROID_SIGNING_KEY_ID }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
         with:
           build-root-directory: platforms/android
-          arguments: |
-            publishAllPublicationsToMavenCentral closeAndReleaseRepository
+          arguments: publishAllPublicationsToMavenCentral
+      - name: 🚀 Close staging repo and release version
+        uses: gradle/gradle-build-action@v2
+        with:
+          build-root-directory: platforms/android
+          arguments: closeAndReleaseRepository
   npm:
     name: Publish to npm
     runs-on: ubuntu-latest
