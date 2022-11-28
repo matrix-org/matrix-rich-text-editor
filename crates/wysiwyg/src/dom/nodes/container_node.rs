@@ -308,6 +308,16 @@ where
         self.kind = ContainerNodeKind::Link(link.clone());
         self.attrs = Some(vec![("href".into(), link)]);
     }
+
+    pub(crate) fn clone_without_children(&self) -> Self {
+        Self {
+            name: self.name.clone(),
+            kind: self.kind.clone(),
+            children: vec![],
+            attrs: self.attrs.clone(),
+            handle: self.handle.clone(),
+        }
+    }
 }
 
 impl<S> ToHtml<S> for ContainerNode<S>

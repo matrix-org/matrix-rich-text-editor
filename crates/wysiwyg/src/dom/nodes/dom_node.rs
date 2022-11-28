@@ -175,6 +175,14 @@ where
             DomNode::Container(n) => DomNodeKind::from_container_kind(n.kind()),
         }
     }
+
+    pub fn as_container(&self) -> Option<&ContainerNode<S>> {
+        if let Self::Container(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
 }
 
 impl<S> ToHtml<S> for DomNode<S>

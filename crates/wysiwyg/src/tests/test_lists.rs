@@ -115,6 +115,20 @@ fn entering_mid_text_node() {
 }
 
 #[test]
+fn entering_mid_text_node_with_formatting() {
+    let mut model = cm("<ol><li><strong>~abc|def</strong></li></ol>");
+    model.enter();
+    assert_eq!(tx(&model), "<ol><li><strong>~abc</strong></li><li><strong>~|def</strong></li></ol>")
+}
+
+#[test]
+fn entering_mid_text_node_with_multiple_formatting() {
+    let mut model = cm("<ol><li><em><strong>~abc|def</strong></em></li></ol>");
+    model.enter();
+    assert_eq!(tx(&model), "<ol><li><em><strong>~abc</strong></em></li><li><em><strong>~|def</strong></em></li></ol>")
+}
+
+#[test]
 fn entering_mid_text_node_with_selection() {
     let mut model = cm("<ol><li>~ab{cdef}|gh</li></ol>");
     model.enter();
@@ -137,7 +151,6 @@ fn removing_trailing_list_item_with_enter() {
 }
 
 #[test]
-#[ignore] // TODO: should keep the ZWSP in the same manner as enter
 fn removing_trailing_list_item_with_list_toggle() {
     let mut model = cm("<ol><li>~abc</li><li>~|</li></ol>");
     model.ordered_list();
