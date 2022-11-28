@@ -127,10 +127,24 @@ fn entering_with_entire_selection_with_formatting() {
 }
 
 #[test]
+fn entering_with_subsequent_items() {
+    let mut model = cm("<ol><li>~abcd|</li><li>~ef</li></ol>");
+    model.enter();
+    assert_eq!(tx(&model), "<ol><li>~abcd</li><li>~|</li><li>~ef</li></ol>")
+}
+
+#[test]
 fn entering_mid_text_node() {
     let mut model = cm("<ol><li>~ab|gh</li></ol>");
     model.enter();
     assert_eq!(tx(&model), "<ol><li>~ab</li><li>~|gh</li></ol>");
+}
+
+#[test]
+fn entering_mid_text_node_with_subsequent_items() {
+    let mut model = cm("<ol><li>~ab|cd</li><li>~ef</li></ol>");
+    model.enter();
+    assert_eq!(tx(&model), "<ol><li>~ab</li><li>~|cd</li><li>~ef</li></ol>")
 }
 
 #[test]
