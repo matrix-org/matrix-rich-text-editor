@@ -14,7 +14,7 @@
 
 use core::panic;
 
-use crate::dom::nodes::{DomNode, TextNode};
+use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
 use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
 use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
@@ -204,74 +204,81 @@ where
 
         return match start_type {
             CharType::Whitespace => {
-                let (ws_delete_cursor, stopped_at_newline) =
-                    self.get_end_index_of_run(&range, direction, &start_type);
-                println!(
-                    "ws delete cursor: {}, stop at linebreak - {}",
-                    ws_delete_cursor, stopped_at_newline
-                );
+                match self.get_end_index_of_run(&range, direction, &start_type)
+                {
+                    None => return ComposerUpdate::keep(),
+                    Some((ws_delete_cursor, stopped_at_newline)) => {
+                        match stopped_at_newline {
+                            // +2 to account for the fact we want to remove the newline
+                            true => match direction {
+                                Direction::Forwards => self.delete_in(
+                                    cursor,
+                                    direction.increment(ws_delete_cursor),
+                                ),
+                                Direction::Backwards => self.delete_in(
+                                    direction.increment(ws_delete_cursor),
+                                    cursor,
+                                ),
+                            },
+                            false => {
+                                match direction {
+                                    Direction::Forwards => {
+                                        self.delete_in(cursor, ws_delete_cursor)
+                                    }
+                                    Direction::Backwards => {
+                                        self.delete_in(ws_delete_cursor, cursor)
+                                    }
+                                };
+                                let (_s, _e) = self.safe_selection();
+                                let _range = self.state.dom.find_range(_s, _e);
+                                let _cursor = _range.start();
+                                let _start_type = self
+                                    .get_char_type_at_cursor_position(
+                                        &_range, direction,
+                                    );
+                                println!(
+                                    "second cursor: {}, second type - {:?}",
+                                    _cursor, _start_type
+                                );
 
-                match stopped_at_newline {
-                    // +2 to account for the fact we want to remove the newline
-                    true => match direction {
-                        Direction::Forwards => self.delete_in(
-                            cursor,
-                            direction.increment(ws_delete_cursor),
-                        ),
-                        Direction::Backwards => self.delete_in(
-                            direction.increment(ws_delete_cursor),
-                            cursor,
-                        ),
-                    },
-                    false => {
-                        match direction {
-                            Direction::Forwards => {
-                                self.delete_in(cursor, ws_delete_cursor)
-                            }
-                            Direction::Backwards => {
-                                self.delete_in(ws_delete_cursor, cursor)
-                            }
-                        };
-                        let (_s, _e) = self.safe_selection();
-                        let _range = self.state.dom.find_range(_s, _e);
-                        let _cursor = _range.start();
-                        let _start_type = self
-                            .get_char_type_at_cursor_position(
-                                &_range, direction,
-                            );
-                        println!(
-                            "second cursor: {}, second type - {:?}",
-                            _cursor, _start_type
-                        );
+                                match self.get_end_index_of_run(
+                                    &_range,
+                                    direction,
+                                    &_start_type,
+                                ) {
+                                    None => return ComposerUpdate::keep(),
+                                    Some((
+                                        next_delete_cursor,
+                                        stopped_at_newline,
+                                    )) => match direction {
+                                        Direction::Forwards => self.delete_in(
+                                            _cursor,
+                                            next_delete_cursor,
+                                        ),
 
-                        let (next_delete_cursor, _) = self
-                            .get_end_index_of_run(
-                                &_range,
-                                direction,
-                                &_start_type,
-                            );
-                        match direction {
-                            Direction::Forwards => {
-                                self.delete_in(_cursor, next_delete_cursor)
-                            }
-
-                            Direction::Backwards => {
-                                self.delete_in(next_delete_cursor, _cursor)
+                                        Direction::Backwards => self.delete_in(
+                                            next_delete_cursor,
+                                            _cursor,
+                                        ),
+                                    },
+                                }
                             }
                         }
                     }
                 }
             }
             CharType::Newline | CharType::Punctuation | CharType::Other => {
-                let (delete_cursor, _) =
-                    self.get_end_index_of_run(&range, direction, &start_type);
-                match direction {
-                    Direction::Forwards => {
-                        self.delete_in(cursor, delete_cursor)
-                    }
-                    Direction::Backwards => {
-                        self.delete_in(delete_cursor, cursor)
-                    }
+                match self.get_end_index_of_run(&range, direction, &start_type)
+                {
+                    Some((delete_cursor, _)) => match direction {
+                        Direction::Forwards => {
+                            self.delete_in(cursor, delete_cursor)
+                        }
+                        Direction::Backwards => {
+                            self.delete_in(delete_cursor, cursor)
+                        }
+                    },
+                    None => ComposerUpdate::keep(),
                 }
             }
             CharType::None => ComposerUpdate::keep(),
@@ -331,6 +338,53 @@ where
             CharType::None
         }
     }
+
+    /// can become a util
+    fn recursively_search_container<'a>(
+        &'a self,
+        container: &'a ContainerNode<S>,
+        direction: &Direction,
+    ) -> Option<&DomNode<S>> {
+        for child in container.children().iter() {
+            match child {
+                DomNode::Container(node) => {
+                    return self.recursively_search_container(node, direction);
+                }
+                DomNode::LineBreak(_) | DomNode::Text(_) => return Some(child),
+            };
+        }
+        return None;
+    }
+
+    fn get_next_text_like_node_from_range(
+        &self,
+        range: &Range,
+        direction: &Direction,
+    ) -> Option<&DomNode<S>> {
+        // this needs to be able to deal with the case where we're between containers
+        let start_location = match direction {
+            Direction::Forwards => range.locations.last(),
+            Direction::Backwards => range.locations.first(),
+        };
+        match start_location {
+            Some(loc) => {
+                // to do move nodes when we're at the end
+                if loc.start_offset == loc.length {}
+                let dom_node = self.state.dom.lookup_node(&loc.node_handle);
+
+                return match dom_node {
+                    DomNode::Container(node) => {
+                        self.recursively_search_container(node, direction)
+                    }
+                    DomNode::Text(_) => Some(dom_node),
+                    DomNode::LineBreak(_) => Some(dom_node),
+                };
+            }
+            None => None::<&DomNode<S>>,
+        };
+        return None;
+    }
+
     // figure out where the run ends and also if we're returning due to a
     // newline (true) or a change in character type (false)
 
@@ -342,7 +396,7 @@ where
         range: &Range,
         direction: &Direction,
         start_type: &CharType,
-    ) -> (usize, bool) {
+    ) -> Option<(usize, bool)> {
         println!("---<<<--->>>---");
         println!("call get end of index run");
         println!("with start type of {:?}", start_type);
@@ -358,11 +412,23 @@ where
         if cursor == self.state.dom.text_len()
             && direction.eq(&Direction::Forwards)
         {
-            return (cursor, false);
+            return Some((cursor, false));
         }
         if cursor == 0 && direction.eq(&Direction::Backwards) {
-            return (cursor, false);
+            return Some((cursor, false));
         }
+
+        let next_text_node =
+            self.get_next_text_like_node_from_range(range, direction);
+        match next_text_node {
+            Some(text_node) => {
+                println!("first text node is: {:?}", text_node)
+            }
+            None => {
+                println!("no textnodes")
+            }
+        };
+
         let first_leaf = range.locations.iter().find(|loc| loc.is_leaf);
         if let Some(leaf) = first_leaf {
             let mut my_dom_node = self.state.dom.lookup_node(&leaf.node_handle);
@@ -373,7 +439,7 @@ where
                 let next_sibling = &leaf.node_handle.next_sibling();
                 let next_node = self.state.dom.lookup_node(next_sibling);
                 println!("leaf stuff - {:?}", next_node);
-                my_dom_node = self.state.dom.lookup_node(next_sibling)
+                my_dom_node = self.state.dom.lookup_node(next_sibling);
             }
             match my_dom_node {
                 DomNode::Container(node) => {
@@ -408,9 +474,9 @@ where
                         // "abc <br />|" gets identified properly. Weird.
                         println!("have hit empty node, is this a linebreak?");
                         if start_type.eq(&CharType::Newline) {
-                            return (direction.increment(cursor), true);
+                            return Some((direction.increment(cursor), true));
                         } else {
-                            return (cursor, true);
+                            return Some((cursor, true));
                         };
                     }
                     // let start_index = match direction {
@@ -489,12 +555,12 @@ where
                     // check for if we've hit the end of the dom
                     if delete_cursor == 0 && direction.eq(&Direction::Backwards)
                     {
-                        return (delete_cursor, false);
+                        return Some((delete_cursor, false));
                     }
                     if delete_cursor == self.state.dom.text_len()
                         && direction.eq(&Direction::Forwards)
                     {
-                        return (delete_cursor, false);
+                        return Some((delete_cursor, false));
                     }
 
                     if have_hit_leaf_end {
@@ -511,15 +577,15 @@ where
                         );
                     }
 
-                    return (delete_cursor, false);
+                    return Some((delete_cursor, false));
                 }
                 DomNode::LineBreak(node) => {
                     // increment if we started at a newline and we're at one of those dom nodes
                     // so that we remove those nodes
                     if start_type.eq(&CharType::Newline) {
-                        return (direction.increment(cursor), true);
+                        return Some((direction.increment(cursor), true));
                     } else {
-                        return (cursor, true);
+                        return Some((cursor, true));
                     };
                 }
             };
