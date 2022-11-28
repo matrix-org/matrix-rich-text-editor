@@ -1,5 +1,18 @@
 # Changelog
 
+# [0.8.0] - 2022-11-28
+
+### Added
+* Common: inline code formatting now works for selections with several nodes, also, formatting states are disabled when inline code is selected.
+* Common: `DomLocation` now has `kind()` method to make finding nodes of some kind easier in ranges.
+* Common: `DomIterator` can now be used in a sub-tree of the DOM (from an internal node instead of the root one).
+
+### Fixed:
+
+* Common: when replacing text at the end of a link node, the new text is added to the next text node if exists instead of the link node.
+* Android: fixed formatting disappearing from the last typed word when adding a whitespace.
+* Web: Handle insertCompositionText as if it were insertText (hopefully fixing accented characters in Element Desktop)
+
 # [0.7.0] - 2022-11-21
 
 ### Changed
