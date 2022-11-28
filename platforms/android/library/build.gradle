@@ -99,7 +99,8 @@ android.libraryVariants.all { variant ->
 }
 
 afterEvaluate {
-    def isReleaseBuild = getGradle().getStartParameter().getTaskRequests().toString().containsIgnoreCase("release")
+    def taskName = getGradle().getStartParameter().getTaskRequests().toString()
+    def isReleaseBuild = taskName.containsIgnoreCase("release") || taskName.containsIgnoreCase("publish")
     if (isReleaseBuild) {
         cargo.profile = "release"
     }
