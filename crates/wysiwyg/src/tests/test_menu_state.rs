@@ -170,6 +170,35 @@ fn cursor_at_the_end_of_link_reverses_the_link_action() {
     assert!(model.action_is_reversed(ComposerAction::Link));
 }
 
+#[test]
+fn formatting_is_disabled_when_selection_is_inside_inline_code_node() {
+    let model = cm("<code>Some inl|ine code</code>");
+    assert_formatting_actions_and_links_are_disabled(&model);
+}
+
+#[test]
+fn formatting_is_disabled_when_selection_covers_inline_code_node() {
+    let model = cm("<code>{Some inline code}|</code>");
+    assert_formatting_actions_and_links_are_disabled(&model);
+}
+
+#[test]
+fn formatting_is_disabled_when_selection_covers_inline_code_node_and_others() {
+    let model =
+        cm("<code>{Some inline code</code>, plain text and <b>bold text}|</b>");
+    assert_formatting_actions_and_links_are_disabled(&model);
+}
+
+fn assert_formatting_actions_and_links_are_disabled(
+    model: &ComposerModel<Utf16String>,
+) {
+    assert!(model.action_is_disabled(ComposerAction::Bold));
+    assert!(model.action_is_disabled(ComposerAction::Italic));
+    assert!(model.action_is_disabled(ComposerAction::Underline));
+    assert!(model.action_is_disabled(ComposerAction::StrikeThrough));
+    assert!(model.action_is_disabled(ComposerAction::Link));
+}
+
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
     model.replace_text(utf16(new_text));
 }
