@@ -73,7 +73,7 @@ where
             let parent_list_item_handle =
                 self.state.dom.find_parent_list_item_or_self(handle);
             if let Some(parent_list_item_handle) = parent_list_item_handle {
-                let list_item_start_offset = range
+                let list_item_end_offset = range
                     .locations
                     .into_iter()
                     .filter(|loc| {
@@ -82,11 +82,11 @@ where
                     })
                     .next()
                     .unwrap()
-                    .start_offset;
+                    .end_offset;
                 self.do_enter_in_list(
                     &parent_list_item_handle,
                     current_cursor_global_location,
-                    list_item_start_offset,
+                    list_item_end_offset,
                 )
             } else {
                 self.do_enter_in_text(handle, location.start_offset)

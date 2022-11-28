@@ -127,7 +127,7 @@ where
         &mut self,
         list_item_handle: &DomHandle,
         current_cursor_global_location: usize,
-        list_item_start_offset: usize,
+        list_item_end_offset: usize,
     ) -> ComposerUpdate<S> {
         // Store current Dom
         self.push_state_to_history();
@@ -150,7 +150,7 @@ where
                     &list_handle,
                     list_item_handle,
                     current_cursor_global_location,
-                    list_item_start_offset,
+                    list_item_end_offset,
                 );
             }
             self.create_update_replace_all()
@@ -331,7 +331,7 @@ where
         list_handle: &DomHandle,
         list_item_handle: &DomHandle,
         location: usize,
-        list_item_start_offset: usize,
+        list_item_end_offset: usize,
     ) {
         let list_item = self.state.dom.lookup_node(list_item_handle);
         let list_clone = list_item.clone();
@@ -346,12 +346,12 @@ where
         self.do_replace_text_in(
             S::default(),
             location,
-            location + (list_text_length - list_item_start_offset),
+            location + (list_text_length - list_item_end_offset),
         );
         self.do_replace_text_in(
             S::zwsp(),
             location,
-            location + list_item_start_offset,
+            location + list_item_end_offset,
         );
         self.state.start = Location::from(location + 1);
         self.state.end = Location::from(location + 1);
