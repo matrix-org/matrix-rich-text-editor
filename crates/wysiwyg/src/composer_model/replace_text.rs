@@ -67,13 +67,14 @@ where
         let leaves: Vec<&DomLocation> = range.leaves().collect();
         if leaves.len() == 1 {
             let location = leaves[0];
+            let current_cursor_global_location =
+                location.position + location.start_offset;
             let handle = &location.node_handle;
             let parent_list_item_handle =
                 self.state.dom.find_parent_list_item_or_self(handle);
             if let Some(parent_list_item_handle) = parent_list_item_handle {
                 let list_item_start_offset = range
                     .locations
-                    .clone()
                     .into_iter()
                     .filter(|loc| {
                         self.state.dom.lookup_node(&loc.node_handle).kind()
@@ -84,7 +85,7 @@ where
                     .start_offset;
                 self.do_enter_in_list(
                     &parent_list_item_handle,
-                    location.position + location.start_offset,
+                    current_cursor_global_location,
                     list_item_start_offset,
                 )
             } else {
