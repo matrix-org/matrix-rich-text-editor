@@ -335,12 +335,12 @@ where
     ) {
         let list_item = self.state.dom.lookup_node(list_item_handle);
         let list_item_text_length = list_item.text_len();
-        let list_clone = list_item.clone();
+        let list_item_clone = list_item.clone();
         let list = self.state.dom.lookup_node_mut(list_handle);
         if let DomNode::Container(list) = list {
             list.insert_child(
                 list_item_handle.index_in_parent() + 1,
-                list_clone,
+                list_item_clone,
             );
         }
         self.do_replace_text_in(
