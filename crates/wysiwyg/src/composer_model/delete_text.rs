@@ -99,77 +99,23 @@ where
         self.do_replace_text(S::default())
     }
 
-    /// Recursively searches the dom to find the next char type, only ever
-    /// called with a range where start == end
-    fn get_char_type_at_cursor_position(
-        &self,
-        range: &Range,
-        direction: &Direction,
-    ) -> CharType {
-        let location = self.get_location_from_range(range, direction);
-        // let first_leaf = range.locations.iter().find(|loc| loc.is_leaf);
-        // issue here is that the assumption that we want to use the first leaf doesn't hold in the case
-        // where we have a cursor on the boundary of two leaves and we're going forwards. in that case,
-        // increment to go to the second leaf
-        if let Some(leaf) = location {
-            let mut my_dom_node = self.state.dom.lookup_node(&leaf.node_handle);
-
-            let increment_leaf = leaf.start_offset == leaf.length
-                && direction.eq(&Direction::Forwards);
-            if increment_leaf {
-                println!("should increment leaf");
-                let next_sibling = &leaf.node_handle.next_sibling();
-                let next_node = self.state.dom.lookup_node(next_sibling);
-                my_dom_node = self.state.dom.lookup_node(next_sibling)
-            }
-
-            match my_dom_node {
-                DomNode::Container(node) => {
-                    return CharType::Other;
-                }
-                DomNode::Text(node) => {
-                    if node.data().len() == 0 {
-                        // I have no idea why a line break in this test case "|<br/> abc"
-                        // ends up hitting here... surely it should be a line break type,
-                        // not an empty node? Is this an issue somewhere else?
-                        // "abc <br />|" gets identified properly. Weird.
-                        println!("have hit empty node, is this a linebreak? cursor pos");
-                        return CharType::Newline;
-                    }
-                    let content = node.data();
-                    let leaf_cursor = leaf.start_offset;
-                    let n = direction.get_index_from_cursor(leaf_cursor);
-
-                    let nth_char = content.chars().nth(n);
-                    return match nth_char {
-                        Some(c) => {
-                            if c.is_whitespace() {
-                                return CharType::Whitespace;
-                            } else if c.is_ascii_punctuation() || c == '£' {
-                                // is_ascii_punctuation doesn't include £, do we want to manually add this?
-                                return CharType::Punctuation;
-                            } else {
-                                return CharType::Other;
-                            }
-                        }
-                        None => {
-                            println!("no char!");
-                            CharType::None
-                        }
-                    };
-                }
-                DomNode::LineBreak(node) => {
-                    return CharType::Newline;
-                }
-            };
-        } else {
-            println!("no leaf!");
-            return CharType::None;
-        };
+    /// Remove a single word when user does ctrl/opt + delete
+    pub fn delete_word(&mut self) -> ComposerUpdate<S> {
+        self.remove_word_in_direction(&Direction::Forwards)
     }
 
+    /// Remove a single word when user does ctrl/opt + backspace
+    pub fn backspace_word(&mut self) -> ComposerUpdate<S> {
+        self.remove_word_in_direction(&Direction::Backwards)
+    }
+
+    fn remove_word_in_direction(&self, dir: &Direction) -> ComposerUpdate<S> {
+        ComposerUpdate::keep()
+    }
+    fn get_details_from_charpoint_position() {}
+
     /// Implements the ctrl/opt + delete/backspace functionality
-    fn remove_word_in_direction(
+    fn remove_word_in_direction1(
         &mut self,
         direction: &Direction,
     ) -> ComposerUpdate<S> {
@@ -293,9 +239,73 @@ where
         };
     }
 
-    /// Remove a single word when user does ctrl/cmd + delete
-    pub fn delete_word(&mut self) -> ComposerUpdate<S> {
-        self.remove_word_in_direction(&Direction::Forwards)
+    /// Recursively searches the dom to find the next char type, only ever
+    /// called with a range where start == end
+    fn get_char_type_at_cursor_position(
+        &self,
+        range: &Range,
+        direction: &Direction,
+    ) -> CharType {
+        let location = self.get_location_from_range(range, direction);
+        // let first_leaf = range.locations.iter().find(|loc| loc.is_leaf);
+        // issue here is that the assumption that we want to use the first leaf doesn't hold in the case
+        // where we have a cursor on the boundary of two leaves and we're going forwards. in that case,
+        // increment to go to the second leaf
+        if let Some(leaf) = location {
+            let mut my_dom_node = self.state.dom.lookup_node(&leaf.node_handle);
+
+            let increment_leaf = leaf.start_offset == leaf.length
+                && direction.eq(&Direction::Forwards);
+            if increment_leaf {
+                println!("should increment leaf");
+                let next_sibling = &leaf.node_handle.next_sibling();
+                let next_node = self.state.dom.lookup_node(next_sibling);
+                my_dom_node = self.state.dom.lookup_node(next_sibling)
+            }
+
+            match my_dom_node {
+                DomNode::Container(node) => {
+                    return CharType::Other;
+                }
+                DomNode::Text(node) => {
+                    if node.data().len() == 0 {
+                        // I have no idea why a line break in this test case "|<br/> abc"
+                        // ends up hitting here... surely it should be a line break type,
+                        // not an empty node? Is this an issue somewhere else?
+                        // "abc <br />|" gets identified properly. Weird.
+                        println!("have hit empty node, is this a linebreak? cursor pos");
+                        return CharType::Newline;
+                    }
+                    let content = node.data();
+                    let leaf_cursor = leaf.start_offset;
+                    let n = direction.get_index_from_cursor(leaf_cursor);
+
+                    let nth_char = content.chars().nth(n);
+                    return match nth_char {
+                        Some(c) => {
+                            if c.is_whitespace() {
+                                return CharType::Whitespace;
+                            } else if c.is_ascii_punctuation() || c == '£' {
+                                // is_ascii_punctuation doesn't include £, do we want to manually add this?
+                                return CharType::Punctuation;
+                            } else {
+                                return CharType::Other;
+                            }
+                        }
+                        None => {
+                            println!("no char!");
+                            CharType::None
+                        }
+                    };
+                }
+                DomNode::LineBreak(node) => {
+                    return CharType::Newline;
+                }
+            };
+        } else {
+            println!("no leaf!");
+            return CharType::None;
+        };
     }
 
     fn backspace_single_cursor(
@@ -323,11 +333,6 @@ where
         } else {
             self.do_backspace()
         }
-    }
-
-    /// Remove a single word when user does ctrl/cmd + backspace
-    pub fn backspace_word(&mut self) -> ComposerUpdate<S> {
-        self.remove_word_in_direction(&Direction::Backwards)
     }
 
     /// can become a util
