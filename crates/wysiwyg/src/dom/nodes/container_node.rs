@@ -46,6 +46,7 @@ where
     Link(S),
     List,
     ListItem,
+    CodeBlock,
 }
 
 impl<S> ContainerNode<S>
@@ -113,6 +114,16 @@ where
         Self {
             name: "li".into(),
             kind: ContainerNodeKind::ListItem,
+            attrs: None,
+            children,
+            handle: DomHandle::new_unset(),
+        }
+    }
+
+    pub fn new_code_block(children: Vec<DomNode<S>>) -> Self {
+        Self {
+            name: "pre".into(),
+            kind: ContainerNodeKind::CodeBlock,
             attrs: None,
             children,
             handle: DomHandle::new_unset(),
@@ -264,7 +275,7 @@ where
     pub(crate) fn is_block_node(&self) -> bool {
         use ContainerNodeKind::*;
 
-        matches!(self.kind, Generic | List)
+        matches!(self.kind, Generic | List | CodeBlock)
     }
 
     pub fn text_len(&self) -> usize {
@@ -478,6 +489,10 @@ where
 
             ListItem => {
                 fmt_list_item(self, buffer, &options)?;
+            }
+
+            CodeBlock => {
+                fmt_code_block(self, buffer, &options)?;
             }
         };
 
@@ -795,6 +810,22 @@ where
             S: UnicodeString,
         {
             fmt_children(this, buffer, options)?;
+
+            Ok(())
+        }
+
+        #[inline(always)]
+        fn fmt_code_block<S>(
+            this: &ContainerNode<S>,
+            buffer: &mut S,
+            options: &MarkdownOptions,
+        ) -> Result<(), MarkdownError<S>>
+        where
+            S: UnicodeString,
+        {
+            buffer.push("```\n");
+            fmt_children(this, buffer, &options)?;
+            buffer.push("\n```\n");
 
             Ok(())
         }

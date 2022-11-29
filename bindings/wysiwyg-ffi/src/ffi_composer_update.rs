@@ -100,6 +100,7 @@ mod test {
             (ComposerAction::Underline, ActionState::Enabled),
             (ComposerAction::Undo, ActionState::Enabled),
             (ComposerAction::UnorderedList, ActionState::Enabled),
+            (ComposerAction::CodeBlock, ActionState::Enabled),
         ])
     }
 
@@ -118,6 +119,7 @@ mod test {
             (ComposerAction::Underline, ActionState::Enabled),
             (ComposerAction::Undo, ActionState::Disabled),
             (ComposerAction::UnorderedList, ActionState::Enabled),
+            (ComposerAction::CodeBlock, ActionState::Enabled),
         ])
     }
 }

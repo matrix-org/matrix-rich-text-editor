@@ -228,6 +228,7 @@ mod test {
             (ComposerAction::UnorderedList, ActionState::Enabled),
             (ComposerAction::Indent, ActionState::Disabled),
             (ComposerAction::UnIndent, ActionState::Disabled),
+            (ComposerAction::CodeBlock, ActionState::Enabled),
         ])
     }
 }

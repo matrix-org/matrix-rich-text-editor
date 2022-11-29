@@ -28,4 +28,5 @@ pub enum ComposerAction {
     UnorderedList,
     Indent,
     UnIndent,
+    CodeBlock,
 }

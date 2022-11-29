@@ -12,6 +12,7 @@ pub enum ComposerAction {
     UnorderedList,
     Indent,
     UnIndent,
+    CodeBlock,
 }
 
 impl From<&ComposerAction> for wysiwyg::ComposerAction {
@@ -29,6 +30,7 @@ impl From<&ComposerAction> for wysiwyg::ComposerAction {
             ComposerAction::UnorderedList => Self::UnorderedList,
             ComposerAction::Indent => Self::Indent,
             ComposerAction::UnIndent => Self::UnIndent,
+            ComposerAction::CodeBlock => Self::CodeBlock,
         }
     }
 }
@@ -48,6 +50,7 @@ impl From<&wysiwyg::ComposerAction> for ComposerAction {
             wysiwyg::ComposerAction::UnorderedList => Self::UnorderedList,
             wysiwyg::ComposerAction::Indent => Self::Indent,
             wysiwyg::ComposerAction::UnIndent => Self::UnIndent,
+            wysiwyg::ComposerAction::CodeBlock => Self::CodeBlock,
         }
     }
 }
