@@ -69,6 +69,18 @@ where
         }
     }
 
+    // to allow us to call delete in with numbers in any order
+    fn do_delete_between(
+        &mut self,
+        pos1: usize,
+        pos2: usize,
+    ) -> ComposerUpdate<S> {
+        if pos1 < pos2 {
+            self.delete_in(pos1, pos2)
+        } else {
+            self.delete_in(pos2, pos1)
+        }
+    }
     /// Deletes text in an arbitrary start..end range.
     pub fn delete_in(&mut self, start: usize, end: usize) -> ComposerUpdate<S> {
         self.push_state_to_history();
@@ -101,18 +113,253 @@ where
 
     /// Remove a single word when user does ctrl/opt + delete
     pub fn delete_word(&mut self) -> ComposerUpdate<S> {
-        self.remove_word_in_direction(&Direction::Forwards)
+        // start off by getting the current actual cursor and making a range
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        self.remove_word_in_direction(range, &Direction::Forwards)
     }
 
     /// Remove a single word when user does ctrl/opt + backspace
     pub fn backspace_word(&mut self) -> ComposerUpdate<S> {
-        self.remove_word_in_direction(&Direction::Backwards)
+        // start off by getting the current actual cursor and making a range
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        self.remove_word_in_direction(range, &Direction::Backwards)
     }
 
-    fn remove_word_in_direction(&self, dir: &Direction) -> ComposerUpdate<S> {
+    fn remove_word_in_direction(
+        &mut self,
+        range: Range,
+        dir: &Direction,
+    ) -> ComposerUpdate<S> {
+        // if we have a selection, only remove the selection
+        if range.start() != range.end() {
+            return self.delete_in(range.start(), range.end());
+        }
+
+        // to remove a word, we need details from the current range
+        let current_details =
+            self.get_details_from_range_and_direction(&range, dir);
+        match current_details {
+            None => {
+                // if we don't have all the details, we're in an unhandled scenario
+                // so keep everything as is
+                ComposerUpdate::keep()
+            }
+            Some(details) => {
+                // use the details to remove a word
+                // here we have a non-split cursor, a single location, and a textlike node
+                let (loc, node, starting_char_type) = details;
+                self.remove_word(
+                    range.start(),
+                    starting_char_type,
+                    dir,
+                    loc,
+                    node,
+                )
+            }
+        }
+    }
+
+    fn remove_word(
+        &self,
+        start_position: usize,
+        start_type: CharType,
+        dir: &Direction,
+        location: &DomLocation,
+        node: &DomNode<S>,
+    ) -> ComposerUpdate<S> {
+        // actions here depend on the node first
+        match node {
+            DomNode::Container(_) => panic!("Hit container in remove_word"),
+            DomNode::LineBreak(_) => {
+                // actions here depend on the start_type
+                match start_type {
+                    CharType::None => panic!("Hit none type in remove_word"),
+                    CharType::Punctuation | CharType::Other => {
+                        // in this case delete up to but not including the linebreak
+                        let delete_position = match dir {
+                            Direction::Forwards => location.position,
+                            Direction::Backwards => {
+                                location.position + location.length
+                            }
+                        };
+                        // <<< TODO how to fix this borrowing issue?
+                        // self.do_delete_between(start_position, delete_position)
+                        ComposerUpdate::<S>::keep()
+                    }
+                    CharType::Whitespace | CharType::Newline => {
+                        // in this case, delete the linebreak
+                        let delete_position = match dir {
+                            Direction::Forwards => {
+                                location.position + location.length
+                            }
+                            Direction::Backwards => location.position,
+                        };
+                        // self.do_delete_between(start_position, delete_position)
+                        ComposerUpdate::<S>::keep()
+                    }
+                }
+            }
+            DomNode::Text(text_node) => {
+                // I have no idea why a line break in this test case "|<br/> abc"
+                // ends up hitting here... surely it should be a line break type,
+                // not an empty node? Is this an issue somewhere else?
+                // "abc <br />|" gets identified properly. Weird.
+                // <<< TODO investigate if this is a test funny
+                if text_node.data().len() == 0 {
+                    println!("have hit empty node, is this a linebreak?");
+                    panic!(
+                        "we hit a zero length text node in test string: {}",
+                        self.state.dom.to_string()
+                    )
+                }
+
+                fn offset_is_inside_location(
+                    current_offset: &usize,
+                    location_length: &usize,
+                    direction: &Direction,
+                ) -> bool {
+                    match direction {
+                        Direction::Forwards => current_offset < location_length,
+                        Direction::Backwards => current_offset > &0,
+                    }
+                }
+
+                fn start_and_current_types_match(
+                    start_type: &CharType,
+                    current_type: &CharType,
+                ) -> bool {
+                    current_type.eq(start_type)
+                }
+
+                let mut current_offset = location.start_offset.clone();
+                let mut current_type = self.get_char_type_at_text_node_offset(
+                    text_node,
+                    current_offset,
+                    dir,
+                );
+
+                while offset_is_inside_location(
+                    &current_offset,
+                    &location.length,
+                    dir,
+                ) && start_and_current_types_match(
+                    &start_type,
+                    &current_type,
+                ) {
+                    let next_offset = dir.increment(current_offset);
+                    let next_type = self.get_char_type_at_text_node_offset(
+                        text_node,
+                        current_offset,
+                        dir,
+                    );
+                    current_offset = next_offset;
+                    if next_type.eq(&CharType::None) {
+                        break;
+                    } else {
+                        current_type = next_type;
+                    }
+                }
+
+                // we have stopped looping for some reason, determine current position
+                let current_position = location.position + current_offset;
+
+                if offset_is_inside_location(
+                    &current_offset,
+                    &location.length,
+                    dir,
+                ) {
+                    // TODO same mutable issue
+                    // we have stopped inside the location, so do a delete
+                    // return self.do_delete_between(
+                    //     start_position,
+                    //     current_position,
+                    // );
+                    return ComposerUpdate::<S>::keep();
+                } else {
+                    // if we are still going but reached the end of the node, do this
+                    // <<< TODO make a recursive call
+                    // let next_range = self
+                    //     .state
+                    //     .dom
+                    //     .find_range(current_position, current_position);
+                    // return self.remove_word_in_direction(next_range, dir);
+                    return ComposerUpdate::<S>::keep();
+                }
+            }
+        };
         ComposerUpdate::keep()
     }
-    fn get_details_from_charpoint_position() {}
+    fn get_details_from_range_and_direction<'a>(
+        &'a self,
+        range: &'a Range,
+        dir: &Direction,
+    ) -> Option<(&DomLocation, &DomNode<S>, CharType)> {
+        // check that we're not trying to move outside the dom
+        let trying_to_move_outside_dom = match dir {
+            Direction::Forwards => range.start() == self.state.dom.text_len(),
+            Direction::Backwards => range.start() == 0,
+        };
+
+        if trying_to_move_outside_dom {
+            return None;
+        }
+
+        // firstly we need to deduce the correct location
+        match self.get_location_from_range(range, dir) {
+            None => {
+                // if we can't get a location, we're not going to be able to do
+                // anything so return
+                None
+            }
+            Some(loc) => {
+                // we now have a single location, so find the first text like node
+                let text_like_node =
+                    self.get_text_like_node_from_location(loc, dir);
+                match text_like_node {
+                    None => {
+                        // if we haven't found a text node, move the cursor to
+                        // one end of the location and recurse self
+                        let next_cursor_position = match dir {
+                            Direction::Forwards => loc.position + loc.length,
+                            Direction::Backwards => loc.position,
+                        };
+                        let next_range = self.state.dom.find_range(
+                            next_cursor_position,
+                            next_cursor_position,
+                        );
+                        // <<< TODO figure out how to recurse here
+                        // self.get_details_from_range_and_direction(
+                        //     &next_range,
+                        //     dir,
+                        // )
+                        None
+                    }
+                    Some(node) => {
+                        let char_type = self
+                            .get_char_type_from_node_with_offset(
+                                node,
+                                loc.start_offset,
+                                dir,
+                            );
+                        match char_type {
+                            None => {
+                                // if we haven't got a char type we have tried looking outside a text node,
+                                // so will need to recurse BUT where do we check for the dom edge??
+                                // EITHER panic or recurse as per the above TODO
+                                None
+                            }
+                            Some(char_type) => {
+                                // we finally have all the stuff we need
+                                Some((loc, node, char_type))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     /// Implements the ctrl/opt + delete/backspace functionality
     fn remove_word_in_direction1(
@@ -246,66 +493,68 @@ where
         range: &Range,
         direction: &Direction,
     ) -> CharType {
-        let location = self.get_location_from_range(range, direction);
-        // let first_leaf = range.locations.iter().find(|loc| loc.is_leaf);
-        // issue here is that the assumption that we want to use the first leaf doesn't hold in the case
-        // where we have a cursor on the boundary of two leaves and we're going forwards. in that case,
-        // increment to go to the second leaf
-        if let Some(leaf) = location {
-            let mut my_dom_node = self.state.dom.lookup_node(&leaf.node_handle);
+        // for compilation
+        // let location = self.get_location_from_range(range, direction);
+        // // let first_leaf = range.locations.iter().find(|loc| loc.is_leaf);
+        // // issue here is that the assumption that we want to use the first leaf doesn't hold in the case
+        // // where we have a cursor on the boundary of two leaves and we're going forwards. in that case,
+        // // increment to go to the second leaf
+        // if let Some(leaf) = location {
+        //     let mut my_dom_node = self.state.dom.lookup_node(&leaf.node_handle);
 
-            let increment_leaf = leaf.start_offset == leaf.length
-                && direction.eq(&Direction::Forwards);
-            if increment_leaf {
-                println!("should increment leaf");
-                let next_sibling = &leaf.node_handle.next_sibling();
-                let next_node = self.state.dom.lookup_node(next_sibling);
-                my_dom_node = self.state.dom.lookup_node(next_sibling)
-            }
+        //     let increment_leaf = leaf.start_offset == leaf.length
+        //         && direction.eq(&Direction::Forwards);
+        //     if increment_leaf {
+        //         println!("should increment leaf");
+        //         let next_sibling = &leaf.node_handle.next_sibling();
+        //         let next_node = self.state.dom.lookup_node(next_sibling);
+        //         my_dom_node = self.state.dom.lookup_node(next_sibling)
+        //     }
 
-            match my_dom_node {
-                DomNode::Container(node) => {
-                    return CharType::Other;
-                }
-                DomNode::Text(node) => {
-                    if node.data().len() == 0 {
-                        // I have no idea why a line break in this test case "|<br/> abc"
-                        // ends up hitting here... surely it should be a line break type,
-                        // not an empty node? Is this an issue somewhere else?
-                        // "abc <br />|" gets identified properly. Weird.
-                        println!("have hit empty node, is this a linebreak? cursor pos");
-                        return CharType::Newline;
-                    }
-                    let content = node.data();
-                    let leaf_cursor = leaf.start_offset;
-                    let n = direction.get_index_from_cursor(leaf_cursor);
+        //     match my_dom_node {
+        //         DomNode::Container(node) => {
+        //             return CharType::Other;
+        //         }
+        //         DomNode::Text(node) => {
+        //             if node.data().len() == 0 {
+        //                 // I have no idea why a line break in this test case "|<br/> abc"
+        //                 // ends up hitting here... surely it should be a line break type,
+        //                 // not an empty node? Is this an issue somewhere else?
+        //                 // "abc <br />|" gets identified properly. Weird.
+        //                 println!("have hit empty node, is this a linebreak? cursor pos");
+        //                 return CharType::Newline;
+        //             }
+        //             let content = node.data();
+        //             let leaf_cursor = leaf.start_offset;
+        //             let n = direction.get_index_from_cursor(leaf_cursor);
 
-                    let nth_char = content.chars().nth(n);
-                    return match nth_char {
-                        Some(c) => {
-                            if c.is_whitespace() {
-                                return CharType::Whitespace;
-                            } else if c.is_ascii_punctuation() || c == '£' {
-                                // is_ascii_punctuation doesn't include £, do we want to manually add this?
-                                return CharType::Punctuation;
-                            } else {
-                                return CharType::Other;
-                            }
-                        }
-                        None => {
-                            println!("no char!");
-                            CharType::None
-                        }
-                    };
-                }
-                DomNode::LineBreak(node) => {
-                    return CharType::Newline;
-                }
-            };
-        } else {
-            println!("no leaf!");
-            return CharType::None;
-        };
+        //             let nth_char = content.chars().nth(n);
+        //             return match nth_char {
+        //                 Some(c) => {
+        //                     if c.is_whitespace() {
+        //                         return CharType::Whitespace;
+        //                     } else if c.is_ascii_punctuation() || c == '£' {
+        //                         // is_ascii_punctuation doesn't include £, do we want to manually add this?
+        //                         return CharType::Punctuation;
+        //                     } else {
+        //                         return CharType::Other;
+        //                     }
+        //                 }
+        //                 None => {
+        //                     println!("no char!");
+        //                     CharType::None
+        //                 }
+        //             };
+        //         }
+        //         DomNode::LineBreak(node) => {
+        //             return CharType::Newline;
+        //         }
+        //     };
+        // } else {
+        //     println!("no leaf!");
+        //     return CharType::None;
+        // };
+        CharType::None
     }
 
     fn backspace_single_cursor(
@@ -336,15 +585,17 @@ where
     }
 
     /// can become a util
+    /// <<< TODO figure out how to make the return type text or linebreak node only
     fn recursively_search_container<'a>(
         &'a self,
         container: &'a ContainerNode<S>,
         direction: &Direction,
     ) -> Option<&DomNode<S>> {
-        // perhaps can use the below instead, think it can be reversed as well
-        // let node =
-        // node.children().iter().find(|node| node.is_text_node());
-        for child in container.children().iter() {
+        let children = match direction {
+            Direction::Forwards => container.children().iter(), // <<< TODO reverse here
+            Direction::Backwards => container.children().iter(),
+        };
+        for child in children {
             match child {
                 DomNode::Container(node) => {
                     return self.recursively_search_container(node, direction);
@@ -388,6 +639,22 @@ where
         &self,
         location: &DomLocation,
         direction: &Direction,
+    ) -> Option<&DomNode<S>> {
+        let dom_node = self.state.dom.lookup_node(&location.node_handle);
+        return match dom_node {
+            DomNode::Container(node) => {
+                // this can return none if we don't find a text like node
+                // inside the container children
+                self.recursively_search_container(node, direction)
+            }
+            DomNode::Text(_) | DomNode::LineBreak(_) => Some(dom_node),
+        };
+    }
+
+    fn get_text_like_node_from_location1(
+        &self,
+        location: &DomLocation,
+        direction: &Direction,
         start_type: &CharType,
     ) -> Option<&DomNode<S>> {
         // to do move nodes when we're at the end and going forwards
@@ -409,6 +676,49 @@ where
         };
     }
 
+    /// as briefed
+    fn get_char_type_from_node_with_offset(
+        &self,
+        node: &DomNode<S>,
+        offset: usize,
+        direction: &Direction,
+    ) -> Option<CharType> {
+        match node {
+            DomNode::Container(_) => {
+                // we should never get a container type!
+                // <<< TODO sort out the types to be Text | linebreak nodes only
+                panic!("hit container in get_details_from_range_and_direction")
+            }
+            DomNode::LineBreak(_) => {
+                // if we have a linebreak node, that is it's char type
+                Some(CharType::Newline) // <<< TODO change to linebreak
+            }
+            DomNode::Text(text_node) => {
+                let current_char = text_node
+                    .data()
+                    .chars()
+                    .nth(direction.get_index_from_cursor(offset));
+
+                // if we have a text node here, but we don't find a char, this means
+                // that we are trying to look outside the node
+                match current_char {
+                    Some(c) => Some(self.get_char_type(c)),
+                    None => None,
+                }
+            }
+        }
+    }
+
+    fn get_char_type(&self, c: char) -> CharType {
+        if c.is_whitespace() {
+            return CharType::Whitespace;
+        } else if c.is_ascii_punctuation() || c == '£' {
+            // is_ascii_punctuation doesn't include £, do we want to manually add this?
+            return CharType::Punctuation;
+        } else {
+            return CharType::Other;
+        }
+    }
     /// as briefed
     fn get_char_type_at_text_node_offset(
         &self,
@@ -486,184 +796,188 @@ where
         if cursor == 0 && direction.eq(&Direction::Backwards) {
             return Some((cursor, false));
         }
-
+        None
+        // for compilation
         // get the location, then from the location get the node, and move node if required
-        let location = self.get_location_from_range(range, direction);
-        match location {
-            Some(location) => {
-                let current_node = self.get_text_like_node_from_location(
-                    location, direction, start_type,
-                );
-                match current_node {
-                    Some(node) => {
-                        println!("NODE - {:?}", node);
-                        match node {
-                            DomNode::Container(_) => {
-                                println!("shouldn't hit here container");
-                                None
-                            }
-                            DomNode::Text(text_node) => {
-                                if text_node.data().len() == 0 {
-                                    // panic!(
-                                    //     "we hit a zero length text node in test string: {}",
-                                    //     self.state.dom.to_string()
-                                    // );
-                                    // I have no idea why a line break in this test case "|<br/> abc"
-                                    // ends up hitting here... surely it should be a line break type,
-                                    // not an empty node? Is this an issue somewhere else?
-                                    // "abc <br />|" gets identified properly. Weird.
-                                    println!(
-                                    "have hit empty node, is this a linebreak?"
-                                );
-                                    if start_type.eq(&CharType::Newline) {
-                                        return Some((
-                                            direction.increment(cursor),
-                                            true,
-                                        ));
-                                    } else {
-                                        return Some((cursor, true));
-                                    };
-                                }
+        // let location = self.get_location_from_range(range, direction);
+        // match location {
+        //     Some(location) => {
+        //         // commenting for compilation
+        //         // let current_node = self.get_text_like_node_from_location(
+        //         //     location, direction,
+        //         // );
+        //         let current_node =
+        //             self.get_text_like_node_from_location(location, direction);
+        //         match current_node {
+        //             Some(node) => {
+        //                 println!("NODE - {:?}", node);
+        //                 match node {
+        //                     DomNode::Container(_) => {
+        //                         println!("shouldn't hit here container");
+        //                         None
+        //                     }
+        //                     DomNode::Text(text_node) => {
+        //                         if text_node.data().len() == 0 {
+        //                             // panic!(
+        //                             //     "we hit a zero length text node in test string: {}",
+        //                             //     self.state.dom.to_string()
+        //                             // );
+        //                             // I have no idea why a line break in this test case "|<br/> abc"
+        //                             // ends up hitting here... surely it should be a line break type,
+        //                             // not an empty node? Is this an issue somewhere else?
+        //                             // "abc <br />|" gets identified properly. Weird.
+        //                             println!(
+        //                             "have hit empty node, is this a linebreak?"
+        //                         );
+        //                             if start_type.eq(&CharType::Newline) {
+        //                                 return Some((
+        //                                     direction.increment(cursor),
+        //                                     true,
+        //                                 ));
+        //                             } else {
+        //                                 return Some((cursor, true));
+        //                             };
+        //                         }
 
-                                let mut current_leaf_cursor_offset =
-                                    location.start_offset.clone();
-                                let mut current_type = self
-                                    .get_char_type_at_text_node_offset(
-                                        text_node,
-                                        current_leaf_cursor_offset,
-                                        direction,
-                                    );
-                                println!("CURRENT TYOE - {:?}", current_type);
+        //                         let mut current_leaf_cursor_offset =
+        //                             location.start_offset.clone();
+        //                         let mut current_type = self
+        //                             .get_char_type_at_text_node_offset(
+        //                                 text_node,
+        //                                 current_leaf_cursor_offset,
+        //                                 direction,
+        //                             );
+        //                         println!("CURRENT TYOE - {:?}", current_type);
 
-                                let mut have_hit_leaf_end = false; // this will get easier using cursors and maybe can go
+        //                         let mut have_hit_leaf_end = false; // this will get easier using cursors and maybe can go
 
-                                fn check_condition(
-                                    start_type: &CharType,
-                                    current_type: &CharType,
-                                    current_leaf_cursor: &usize,
-                                    leaf_length: &usize,
-                                    direction: &Direction,
-                                ) -> bool {
-                                    let base_condition =
-                                        current_type.eq(start_type);
-                                    return match direction {
-                                        Direction::Forwards => {
-                                            base_condition
-                                                && current_leaf_cursor
-                                                    < leaf_length
-                                        }
-                                        Direction::Backwards => {
-                                            base_condition
-                                                && current_leaf_cursor > &0
-                                        }
-                                    };
-                                }
+        //                         fn check_condition(
+        //                             start_type: &CharType,
+        //                             current_type: &CharType,
+        //                             current_leaf_cursor: &usize,
+        //                             leaf_length: &usize,
+        //                             direction: &Direction,
+        //                         ) -> bool {
+        //                             let base_condition =
+        //                                 current_type.eq(start_type);
+        //                             return match direction {
+        //                                 Direction::Forwards => {
+        //                                     base_condition
+        //                                         && current_leaf_cursor
+        //                                             < leaf_length
+        //                                 }
+        //                                 Direction::Backwards => {
+        //                                     base_condition
+        //                                         && current_leaf_cursor > &0
+        //                                 }
+        //                             };
+        //                         }
 
-                                // TODO sort out the logic in here - we need to make sure we can go
-                                // all the way up to the edge of the leaf without overflow in the index
-                                // (because if we have a 0 cursor going backwards it will try to get at the -1th char)
-                                while check_condition(
-                                    &start_type,
-                                    &current_type,
-                                    &current_leaf_cursor_offset,
-                                    &location.length,
-                                    direction,
-                                ) {
-                                    println!("running the loop");
-                                    current_leaf_cursor_offset = direction
-                                        .increment(current_leaf_cursor_offset);
+        //                         // TODO sort out the logic in here - we need to make sure we can go
+        //                         // all the way up to the edge of the leaf without overflow in the index
+        //                         // (because if we have a 0 cursor going backwards it will try to get at the -1th char)
+        //                         while check_condition(
+        //                             &start_type,
+        //                             &current_type,
+        //                             &current_leaf_cursor_offset,
+        //                             &location.length,
+        //                             direction,
+        //                         ) {
+        //                             println!("running the loop");
+        //                             current_leaf_cursor_offset = direction
+        //                                 .increment(current_leaf_cursor_offset);
 
-                                    if current_leaf_cursor_offset == 0
-                                        || current_leaf_cursor_offset
-                                            == location.length
-                                    {
-                                        have_hit_leaf_end = true;
-                                        break;
-                                    }
-                                    current_type = self
-                                        .get_char_type_at_text_node_offset(
-                                            text_node,
-                                            current_leaf_cursor_offset,
-                                            direction,
-                                        );
-                                }
+        //                             if current_leaf_cursor_offset == 0
+        //                                 || current_leaf_cursor_offset
+        //                                     == location.length
+        //                             {
+        //                                 have_hit_leaf_end = true;
+        //                                 break;
+        //                             }
+        //                             current_type = self
+        //                                 .get_char_type_at_text_node_offset(
+        //                                     text_node,
+        //                                     current_leaf_cursor_offset,
+        //                                     direction,
+        //                                 );
+        //                         }
 
-                                let delete_cursor = location.position
-                                    + current_leaf_cursor_offset;
-                                println!("DELETE CURSOR = {}", delete_cursor);
+        //                         let delete_cursor = location.position
+        //                             + current_leaf_cursor_offset;
+        //                         println!("DELETE CURSOR = {}", delete_cursor);
 
-                                // check for if we've hit the end of the dom
-                                if delete_cursor == 0
-                                    && direction.eq(&Direction::Backwards)
-                                {
-                                    return Some((delete_cursor, false));
-                                }
-                                if delete_cursor == self.state.dom.text_len()
-                                    && direction.eq(&Direction::Forwards)
-                                {
-                                    return Some((delete_cursor, false));
-                                }
+        //                         // check for if we've hit the end of the dom
+        //                         if delete_cursor == 0
+        //                             && direction.eq(&Direction::Backwards)
+        //                         {
+        //                             return Some((delete_cursor, false));
+        //                         }
+        //                         if delete_cursor == self.state.dom.text_len()
+        //                             && direction.eq(&Direction::Forwards)
+        //                         {
+        //                             return Some((delete_cursor, false));
+        //                         }
 
-                                if have_hit_leaf_end {
-                                    // make a new range...
-                                    let next_range = self.state.dom.find_range(
-                                        delete_cursor,
-                                        delete_cursor,
-                                    );
-                                    // ...then make the recursive call
-                                    return self.get_end_index_of_run(
-                                        &next_range,
-                                        direction,
-                                        &start_type,
-                                    );
-                                }
+        //                         if have_hit_leaf_end {
+        //                             // make a new range...
+        //                             let next_range = self.state.dom.find_range(
+        //                                 delete_cursor,
+        //                                 delete_cursor,
+        //                             );
+        //                             // ...then make the recursive call
+        //                             return self.get_end_index_of_run(
+        //                                 &next_range,
+        //                                 direction,
+        //                                 &start_type,
+        //                             );
+        //                         }
 
-                                return Some((delete_cursor, false));
-                            }
-                            DomNode::LineBreak(_) => {
-                                // increment if we started at a newline and we're at one of those dom nodes
-                                // so that we remove those nodes
-                                if start_type.eq(&CharType::Newline) {
-                                    return Some((
-                                        direction.increment(cursor),
-                                        true,
-                                    ));
-                                } else {
-                                    return Some((cursor, true));
-                                };
-                            }
-                        }
-                    }
-                    None => {
-                        // if we hit none, then we need to move nodes if we're not dealing with line breaks
-                        println!("hit the none in end of index run");
-                        if start_type.eq(&CharType::Newline) {
-                            return Some((cursor + location.length, true));
-                        }
-                        if direction.eq(&Direction::Forwards) {
-                            // lets make a new range and recall this function
-                            let next_range =
-                                self.state.dom.find_range(cursor, cursor);
-                            let next_char_type = self
-                                .get_char_type_at_cursor_position(
-                                    &next_range,
-                                    direction,
-                                );
-                            if next_char_type.eq(&CharType::Newline) {
-                                return Some((cursor, true));
-                            }
-                            return self.get_end_index_of_run(
-                                &next_range,
-                                direction,
-                                start_type,
-                            );
-                        }
-                        None
-                    }
-                }
-            }
-            None => None,
-        }
+        //                         return Some((delete_cursor, false));
+        //                     }
+        //                     DomNode::LineBreak(_) => {
+        //                         // increment if we started at a newline and we're at one of those dom nodes
+        //                         // so that we remove those nodes
+        //                         if start_type.eq(&CharType::Newline) {
+        //                             return Some((
+        //                                 direction.increment(cursor),
+        //                                 true,
+        //                             ));
+        //                         } else {
+        //                             return Some((cursor, true));
+        //                         };
+        //                     }
+        //                 }
+        //             }
+        //             None => {
+        //                 // if we hit none, then we need to move nodes if we're not dealing with line breaks
+        //                 println!("hit the none in end of index run");
+        //                 if start_type.eq(&CharType::Newline) {
+        //                     return Some((cursor + location.length, true));
+        //                 }
+        //                 if direction.eq(&Direction::Forwards) {
+        //                     // lets make a new range and recall this function
+        //                     let next_range =
+        //                         self.state.dom.find_range(cursor, cursor);
+        //                     let next_char_type = self
+        //                         .get_char_type_at_cursor_position(
+        //                             &next_range,
+        //                             direction,
+        //                         );
+        //                     if next_char_type.eq(&CharType::Newline) {
+        //                         return Some((cursor, true));
+        //                     }
+        //                     return self.get_end_index_of_run(
+        //                         &next_range,
+        //                         direction,
+        //                         start_type,
+        //                     );
+        //                 }
+        //                 None
+        //             }
+        //         }
+        //     }
+        //     None => None,
+        // }
 
         // let first_leaf = range.locations.iter().find(|loc| loc.is_leaf);
         // if let Some(leaf) = first_leaf {
