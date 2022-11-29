@@ -69,7 +69,7 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     /// The current max allowed height for the textView when minimised
     public var maxCompressedHeight: CGFloat {
         didSet {
-            updateIdealHeight()
+            updateCompressedHeightIfNeeded()
         }
     }
     
