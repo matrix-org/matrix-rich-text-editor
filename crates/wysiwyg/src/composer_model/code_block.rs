@@ -14,13 +14,12 @@
 
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::DomNodeKind::ListItem;
-use crate::dom::nodes::{DomNode, TextNode};
-use crate::dom::unicode_string::UnicodeStrExt;
-use crate::dom::{DomHandle, DomLocation, Range};
-use crate::{
-    ComposerAction, ComposerModel, ComposerUpdate, Location, UnicodeString,
-};
-use std::cmp::{max, min};
+use crate::dom::nodes::DomNode;
+use crate::dom::{DomHandle, DomLocation};
+use crate::{ComposerAction, ComposerModel, ComposerUpdate, UnicodeString};
+use std::cmp::min;
+use std::collections::HashSet;
+use std::ops::AddAssign;
 
 impl<S> ComposerModel<S>
 where
@@ -40,7 +39,8 @@ where
         let Some((parent_handle, idx_start, idx_end)) = self.find_nodes_to_wrap(s, e) else {
             return ComposerUpdate::keep();
         };
-        let mut leaves_to_add = Vec::new();
+        let mut leaves_to_add: Vec<DomNode<S>> = Vec::new();
+        let mut nodes_visited = HashSet::new();
         let start_handle = parent_handle.child_handle(idx_start);
         let up_to_handle = parent_handle.child_handle(idx_end + 1);
         let iter = self.state.dom.iter_from_handle(&start_handle);
@@ -48,9 +48,38 @@ where
             if node.handle() >= up_to_handle {
                 break;
             }
-            if matches!(node.kind(), DomNodeKind::Text | DomNodeKind::LineBreak)
-            {
-                leaves_to_add.push(node.clone());
+            match node.kind() {
+                DomNodeKind::Text
+                | DomNodeKind::Formatting(_)
+                | DomNodeKind::Link => {
+                    nodes_visited.insert(node.handle());
+                    if nodes_visited.contains(&node.handle().parent_handle()) {
+                        continue;
+                    }
+                    leaves_to_add.push(node.clone());
+                }
+                DomNodeKind::LineBreak => {
+                    leaves_to_add.push(DomNode::new_text("\n".into()));
+                }
+                DomNodeKind::List | DomNodeKind::ListItem => {
+                    let mut needs_to_add_line_break =
+                        node.handle().index_in_parent() > 0;
+                    if needs_to_add_line_break {
+                        if let Some(DomNode::Text(text_node)) =
+                            leaves_to_add.last()
+                        {
+                            if text_node.data().to_string() == "\n" {
+                                needs_to_add_line_break = false;
+                            }
+                        }
+                    }
+
+                    if needs_to_add_line_break {
+                        leaves_to_add.push(DomNode::new_text("\n".into()));
+                        self.state.end.add_assign(1);
+                    }
+                }
+                _ => {}
             }
         }
 
@@ -115,7 +144,6 @@ where
             }
 
             for node in iter {
-                let handle = node.handle();
                 if !node.is_block_node()
                     && node.kind() != DomNodeKind::LineBreak
                     && (node.kind() != ListItem
@@ -244,7 +272,10 @@ mod test {
     fn add_code_block_to_several_nodes() {
         let mut model = cm("Some text| <b>and bold </b><i>and italic</i>");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>Some text| and bold and italic</pre>");
+        assert_eq!(
+            tx(&model),
+            "<pre>Some text| <b>and bold&nbsp;</b><i>and italic</i></pre>"
+        );
     }
 
     #[test]
@@ -253,7 +284,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<pre>Some text| and bold&nbsp;</pre><br /><i>and italic</i>"
+            "<pre>Some text| <b>and bold&nbsp;</b></pre><br /><i>and italic</i>"
         );
     }
 
@@ -263,7 +294,47 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "Some text <br /><pre>and bold and |italic</pre>"
+            "Some text <br /><pre><b>and bold&nbsp;</b><i>and |italic</i></pre>"
         );
+    }
+
+    #[test]
+    fn add_code_block_to_list_item() {
+        let mut model = cm(
+            "<ul><li>Some text <b>and bold </b><i>|and italic</i></li></ul>",
+        );
+        model.code_block();
+        assert_eq!(
+            tx(&model),
+            "<ul><li><pre>Some text <b>and bold&nbsp;|</b><i>and italic</i></pre></li></ul>"
+        );
+    }
+
+    #[test]
+    fn add_code_block_to_list_item_with_line_breaks() {
+        let mut model = cm(
+            "<ul><li>Some text <b>and bold </b><br/><i>and| italic</i></li></ul>",
+        );
+        model.code_block();
+        assert_eq!(
+            tx(&model),
+            "<ul><li>Some text <b>and bold&nbsp;</b><br /><pre><i>and| italic</i></pre></li></ul>"
+        );
+    }
+
+    #[test]
+    fn add_code_block_to_several_list_items() {
+        let mut model =
+            cm("<ul><li>{First item</li><li>Second}| item</li></ul>");
+        model.code_block();
+        assert_eq!(tx(&model), "<pre>{First item\nSecond}| item</pre>");
+    }
+
+    #[test]
+    fn add_code_block_to_list_and_external_nodes() {
+        let mut model =
+            cm("{Text <ul><li>First item</li><li>Second}| item</li></ul>");
+        model.code_block();
+        assert_eq!(tx(&model), "<pre>{Text \nFirst item\nSecond}| item</pre>");
     }
 }
