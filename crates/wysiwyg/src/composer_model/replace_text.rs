@@ -76,10 +76,7 @@ where
                 let list_item_end_offset = range
                     .locations
                     .into_iter()
-                    .filter(|loc| {
-                        self.state.dom.lookup_node(&loc.node_handle).kind()
-                            == ListItem
-                    })
+                    .filter(|loc| loc.kind == ListItem)
                     .next()
                     .unwrap()
                     .end_offset;
