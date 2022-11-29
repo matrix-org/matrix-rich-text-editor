@@ -91,4 +91,5 @@ coverage:
 
 setup:
 	rustup override set 1.65
+	cargo install uniffi_bindgen --version 0.21.0
 
