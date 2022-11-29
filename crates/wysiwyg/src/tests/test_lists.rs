@@ -87,6 +87,25 @@ fn backspacing_empty_second_list_item_into_whole_of_first_leaves_empty_item() {
 }
 
 #[test]
+fn backspacing_trailing_part_of_a_list_item() {
+    let mut model =
+        cm("<ol><li>~abc{def}|</li><li><strong>~abcd</strong>ef</li></ol>");
+    model.backspace();
+    assert_eq!(
+        tx(&model),
+        "<ol><li>~abc|</li><li><strong>~abcd</strong>ef</li></ol>"
+    )
+}
+
+#[test]
+#[ignore] // TODO: fix replace_text for cases where a list item contains formatting
+fn backspacing_trailing_part_of_a_list_item_with_formatting() {
+    let mut model = cm("<ol><li><strong>~abc{d</strong>ef}|</li><li><strong>~abcd</strong>ef</li></ol>");
+    model.backspace();
+    assert_eq!(tx(&model), "<ol><li><strong>~abc|</strong></li><li><strong>~abcd</strong>ef</li></ol>")
+}
+
+#[test]
 fn entering_with_entire_selection_in_one_node_deletes_list() {
     let mut model = cm("<ol><li>~{abcd}|</li></ol>");
     model.enter();
@@ -108,10 +127,53 @@ fn entering_with_entire_selection_with_formatting() {
 }
 
 #[test]
+fn entering_with_subsequent_items() {
+    let mut model = cm("<ol><li>~abcd|</li><li>~ef</li></ol>");
+    model.enter();
+    assert_eq!(tx(&model), "<ol><li>~abcd</li><li>~|</li><li>~ef</li></ol>")
+}
+
+#[test]
 fn entering_mid_text_node() {
     let mut model = cm("<ol><li>~ab|gh</li></ol>");
     model.enter();
     assert_eq!(tx(&model), "<ol><li>~ab</li><li>~|gh</li></ol>");
+}
+
+#[test]
+fn entering_mid_text_node_with_subsequent_items() {
+    let mut model = cm("<ol><li>~ab|cd</li><li>~ef</li></ol>");
+    model.enter();
+    assert_eq!(tx(&model), "<ol><li>~ab</li><li>~|cd</li><li>~ef</li></ol>")
+}
+
+#[test]
+fn entering_mid_text_node_with_formatting() {
+    let mut model = cm("<ol><li><strong>~abc|def</strong></li></ol>");
+    model.enter();
+    assert_eq!(tx(&model), "<ol><li><strong>~abc</strong></li><li><strong>~|def</strong></li></ol>")
+}
+
+#[test]
+fn entering_mid_text_node_with_multiple_formatting() {
+    let mut model = cm("<ol><li><em><strong>~abc|def</strong></em></li></ol>");
+    model.enter();
+    assert_eq!(tx(&model), "<ol><li><em><strong>~abc</strong></em></li><li><em><strong>~|def</strong></em></li></ol>")
+}
+
+#[test]
+#[ignore] // TODO: see `backspacing_trailing_part_of_a_list_item_with_formatting`
+fn entering_mid_text_node_with_leading_formatting() {
+    let mut model = cm("<ol><li><strong>~abc|d</strong>ef</li></ol>");
+    model.enter();
+    assert_eq!(tx(&model), "<ol><li><strong>~abc</strong></li><li><strong>~|d</strong>ef</li></ol>")
+}
+
+#[test]
+fn entering_mid_text_node_with_trailing_formatting() {
+    let mut model = cm("<ol><li>ab<strong>~c|def</strong></li></ol>");
+    model.enter();
+    assert_eq!(tx(&model), "<ol><li>ab<strong>~c</strong></li><li>~|<strong>def</strong></li></ol>")
 }
 
 #[test]
@@ -137,7 +199,6 @@ fn removing_trailing_list_item_with_enter() {
 }
 
 #[test]
-#[ignore] // TODO: should keep the ZWSP in the same manner as enter
 fn removing_trailing_list_item_with_list_toggle() {
     let mut model = cm("<ol><li>~abc</li><li>~|</li></ol>");
     model.ordered_list();

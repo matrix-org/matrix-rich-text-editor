@@ -127,9 +127,7 @@ where
         &mut self,
         list_item_handle: &DomHandle,
         current_cursor_global_location: usize,
-        text_node_handle: &DomHandle,
-        start_offset: usize,
-        end_offset: usize,
+        list_item_end_offset: usize,
     ) -> ComposerUpdate<S> {
         // Store current Dom
         self.push_state_to_history();
@@ -150,10 +148,9 @@ where
                 // into two.
                 self.slice_list_item(
                     &list_handle,
+                    list_item_handle,
                     current_cursor_global_location,
-                    text_node_handle,
-                    start_offset,
-                    end_offset,
+                    list_item_end_offset,
                 );
             }
             self.create_update_replace_all()
@@ -332,37 +329,32 @@ where
     fn slice_list_item(
         &mut self,
         list_handle: &DomHandle,
+        list_item_handle: &DomHandle,
         location: usize,
-        text_node_handle: &DomHandle,
-        start_offset: usize,
-        end_offset: usize,
+        list_item_end_offset: usize,
     ) {
-        let text_node = self.state.dom.lookup_node_mut(text_node_handle);
-        if let DomNode::Text(ref mut t) = text_node {
-            let text = t.data();
-            // TODO: should slice container nodes between li and text node as well
-            let new_text = text[..start_offset].to_owned();
-            let new_li_text = text[end_offset..].to_owned();
-            t.set_data(new_text);
-            let list_node = self.state.dom.lookup_node_mut(list_handle);
-            if let DomNode::Container(list) = list_node {
-                let add_zwsp = !new_li_text.to_string().starts_with("\u{200b}");
-                list.append_child(DomNode::new_list_item(
-                    "li".into(),
-                    vec![DomNode::new_text(if add_zwsp {
-                        let mut text = S::zwsp();
-                        text.push(new_li_text);
-                        text
-                    } else {
-                        new_li_text
-                    })],
-                ));
-                if add_zwsp {
-                    self.state.start = Location::from(location + 1);
-                    self.state.end = Location::from(location + 1);
-                }
-            }
+        let list_item = self.state.dom.lookup_node(list_item_handle);
+        let list_item_text_length = list_item.text_len();
+        let list_item_clone = list_item.clone();
+        let list = self.state.dom.lookup_node_mut(list_handle);
+        if let DomNode::Container(list) = list {
+            list.insert_child(
+                list_item_handle.index_in_parent() + 1,
+                list_item_clone,
+            );
         }
+        self.do_replace_text_in(
+            S::default(),
+            location,
+            location + (list_item_text_length - list_item_end_offset),
+        );
+        self.do_replace_text_in(
+            S::zwsp(),
+            location,
+            location + list_item_end_offset,
+        );
+        self.state.start = Location::from(location + 1);
+        self.state.end = Location::from(location + 1);
     }
 
     fn remove_list_item(

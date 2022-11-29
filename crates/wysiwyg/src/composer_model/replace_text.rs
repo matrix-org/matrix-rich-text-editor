@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::dom::action_list::{DomAction, DomActionList};
-use crate::dom::nodes::dom_node::DomNodeKind::Link;
+use crate::dom::nodes::dom_node::DomNodeKind::{Link, ListItem};
 use crate::dom::nodes::{DomNode, TextNode};
 use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use crate::dom::{DomHandle, DomLocation, Range};
@@ -67,16 +67,23 @@ where
         let leaves: Vec<&DomLocation> = range.leaves().collect();
         if leaves.len() == 1 {
             let location = leaves[0];
+            let current_cursor_global_location =
+                location.position + location.start_offset;
             let handle = &location.node_handle;
             let parent_list_item_handle =
                 self.state.dom.find_parent_list_item_or_self(handle);
             if let Some(parent_list_item_handle) = parent_list_item_handle {
+                let list_item_end_offset = range
+                    .locations
+                    .into_iter()
+                    .filter(|loc| loc.kind == ListItem)
+                    .next()
+                    .unwrap()
+                    .end_offset;
                 self.do_enter_in_list(
                     &parent_list_item_handle,
-                    location.position + location.start_offset,
-                    handle,
-                    location.start_offset,
-                    location.end_offset,
+                    current_cursor_global_location,
+                    list_item_end_offset,
                 )
             } else {
                 self.do_enter_in_text(handle, location.start_offset)
