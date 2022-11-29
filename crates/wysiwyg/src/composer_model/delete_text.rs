@@ -165,7 +165,7 @@ where
 
     // Actually removes words from the dom
     fn remove_word(
-        &self,
+        &mut self,
         start_position: usize,
         start_type: CharType,
         dir: &Direction,
@@ -275,24 +275,21 @@ where
                 ) {
                     // TODO same mutable issue
                     // we have stopped inside the location, so do a delete
-                    // return self.do_delete_between(
-                    //     start_position,
-                    //     current_position,
-                    // );
-                    return ComposerUpdate::<S>::keep();
+                    return self
+                        .do_delete_between(start_position, current_position);
+                    // return ComposerUpdate::<S>::keep();
                 } else {
                     // if we are still going but reached the end of the node, do this
                     // <<< TODO make a recursive call
-                    // let next_range = self
-                    //     .state
-                    //     .dom
-                    //     .find_range(current_position, current_position);
-                    // return self.remove_word_in_direction(next_range, dir);
-                    return ComposerUpdate::<S>::keep();
+                    let next_range = self
+                        .state
+                        .dom
+                        .find_range(current_position, current_position);
+                    return self.remove_word_in_direction(next_range, dir);
+                    // return ComposerUpdate::<S>::keep();
                 }
             }
-        };
-        ComposerUpdate::keep()
+        }
     }
 
     /// In order for the recursive calls to work we need quite a few details
