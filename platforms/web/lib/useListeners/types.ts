@@ -18,4 +18,5 @@ import { BlockType } from '../types';
 
 export type FormatBlockEvent = CustomEvent<{
     blockType: BlockType;
+    data?: string;
 }>;
