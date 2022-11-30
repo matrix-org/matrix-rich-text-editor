@@ -31,9 +31,12 @@
 //! TODO: build the demo app with these assertions enabled
 //! TODO: add more assertions - see the code of assert_invariants for ideas
 
+#[cfg(any(test, feature = "assert-invariants"))]
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::Dom;
-use crate::{DomNode, ToTree, UnicodeString};
+use crate::UnicodeString;
+#[cfg(any(test, feature = "assert-invariants"))]
+use crate::{DomNode, ToTree};
 
 impl<S> Dom<S>
 where
