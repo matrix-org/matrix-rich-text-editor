@@ -67,13 +67,7 @@ where
     /// Return an iterator over all container nodes of this DOM, in depth-first
     /// order
     pub fn iter_containers(&self) -> impl Iterator<Item = &ContainerNode<S>> {
-        self.iter().filter_map(|node| {
-            if let DomNode::Container(c) = node {
-                Some(c)
-            } else {
-                None
-            }
-        })
+        self.iter().filter_map(DomNode::as_container)
     }
 }
 
