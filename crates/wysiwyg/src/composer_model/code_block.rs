@@ -310,6 +310,81 @@ where
 
         self.create_update_replace_all()
     }
+
+    fn find_parent_to_split(&self, handle: &DomHandle) -> DomHandle {
+        let path_len = handle.raw().len();
+        if path_len <= 1 {
+            DomHandle::root()
+        } else {
+            for i in (0..handle.raw().len()).rev() {
+                let ancestor_handle = handle.sub_handle_up_to(i);
+                let ancestor = self.state.dom.lookup_node(&ancestor_handle);
+                match ancestor.kind() {
+                    Generic | List | ListItem | CodeBlock => {
+                        return ancestor_handle
+                    }
+                    _ => continue,
+                }
+            }
+            panic!("Should never reach this point, one of the parents surely can be split.");
+        }
+    }
+
+    fn split_sub_tree(
+        &mut self,
+        from_handle: &DomHandle,
+        offset: usize,
+        level: usize,
+    ) {
+        let handle_at_level = from_handle.sub_handle_up_to(level + 1);
+        let cur_subtree = self.state.dom.lookup_node(&handle_at_level);
+        let mut new_subtree = cur_subtree.clone();
+        let subtree_len = from_handle.raw().len();
+        for i in (level + 1)..subtree_len {
+            let index_at_level = from_handle.raw()[i];
+            let handle_at_level = from_handle.sub_handle_up_to(level + 1);
+
+            let DomNode::Container(cur_subtree) = self.state.dom.lookup_node_mut(&handle_at_level) else {
+                panic!("Passed 'from_handle' must be from a container node");
+            };
+
+            for j in (index_at_level..cur_subtree.children().len()).rev() {
+                if i + 1 == subtree_len && j == index_at_level {
+                    if let Some(DomNode::Text(text_node)) =
+                        cur_subtree.get_child_mut(j)
+                    {
+                        let new_data = text_node.data()[offset..].to_owned();
+                        text_node.set_data(new_data);
+                    }
+                } else {
+                    cur_subtree.remove_child(j);
+                }
+            }
+        }
+
+        for i in (level + 1)..(subtree_len - 1) {
+            let index_at_level = from_handle.raw()[i];
+
+            let DomNode::Container(cur_subtree) = self.state.dom.lookup_node_mut(&handle_at_level) else {
+                panic!("Passed 'from_handle' must be from a container node");
+            };
+
+            for j in (index_at_level..cur_subtree.children().len()).rev() {
+                if i + 1 == subtree_len && j == index_at_level {
+                    if let Some(DomNode::Text(text_node)) =
+                        cur_subtree.get_child_mut(j)
+                    {
+                        let new_data = text_node.data()[offset..].to_owned();
+                        text_node.set_data(new_data);
+                    }
+                } else {
+                    cur_subtree.remove_child(j);
+                }
+            }
+
+            new_subtree =
+        }
+    }
 }
 
 struct HandleWithKind {
@@ -491,6 +566,26 @@ mod test {
         assert_eq!(
             tx(&model),
             "<pre>{Text <b>code}|</b><i> and italic</i></pre>"
+        );
+    }
+
+    #[test]
+    fn add_code_block_to_nested_item_in_formatting_node() {
+        let mut model = cm("<b>Text<br /><i>{in italic}|</i></b>");
+        model.code_block();
+        assert_eq!(
+            tx(&model),
+            "<b>Text<br /></b><pre><b><i>{in italic}|</i></b></pre>"
+        );
+    }
+
+    #[test]
+    fn add_code_block_to_deep_nested_item_in_formatting_nodes() {
+        let mut model = cm("<u><b>Text<br /><i>{in italic}|</i></b></u>");
+        model.code_block();
+        assert_eq!(
+            tx(&model),
+            "<u><b>Text<br /></b></u><pre><u><b><i>{in italic}|</i></b></u></pre>"
         );
     }
 
