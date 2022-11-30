@@ -14,6 +14,7 @@
 
 use core::panic;
 
+use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
 use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
 use crate::dom::{DomHandle, DomLocation, Range};
@@ -165,7 +166,6 @@ where
                 // use the details to remove a word
                 // here we have a non-split cursor, a single location, and a textlike node
                 let (loc, node_handle, starting_char_type) = details;
-                println!("ORIGINAL TYPE == {:?}", starting_char_type);
                 self.remove_word(
                     start_position,
                     starting_char_type,
@@ -186,7 +186,6 @@ where
         location: DomLocation,
         node_handle: DomHandle,
     ) -> ComposerUpdate<S> {
-        println!("_start_type -- {:?}", start_type);
         // actions here depend on the node first
         let node = self.state.dom.lookup_node_mut(&node_handle);
         match node {
@@ -195,7 +194,6 @@ where
                 // actions here depend on the start_type
                 //<br />|<br /><br /> only returns one location, which is unexpected, so
                 // handle that by using the fact that a break length is one, increment manually
-                println!("hitting the linebreak node");
                 match start_type {
                     CharType::None => panic!("Hit none type in remove_word"),
                     CharType::Punctuation | CharType::Other => {
@@ -205,10 +203,6 @@ where
                     CharType::Whitespace | CharType::Newline => {
                         // in this case, delete the linebreak
                         let delete_position = dir.increment(start_position);
-                        println!(
-                            "calling do delete with start {} end {}",
-                            start_position, delete_position
-                        );
                         self.do_delete_between(start_position, delete_position)
                     }
                 }
@@ -220,7 +214,6 @@ where
                 // "abc <br />|" gets identified properly. Weird.
                 // <<< TODO investigate if this is a test funny
                 if text_node.data().len() == 0 {
-                    println!("have hit empty node, is this a linebreak?");
                     panic!(
                         "we hit a zero length text node in test string: {}",
                         self.state.dom.to_string()
@@ -277,7 +270,6 @@ where
 
                 // we have stopped looping for some reason, determine current position
                 let current_position = location.position + current_offset;
-                println!("current :: {}", current_position);
                 if offset_is_inside_location(
                     &current_offset,
                     &location.length,
@@ -324,7 +316,6 @@ where
                             current_position,
                         );
                     } else {
-                        println!("in this block");
                         // in this case, delete what we have in the current node, then make
                         // recursive call
                         self.do_delete_between(
@@ -333,15 +324,11 @@ where
                         );
                         // the delete has moved the cursor position, so get that for the range
                         let (_s, _e) = self.safe_selection();
-                        println!("cursor now at _s{} _e{}", _s, _e);
                         let _range = self.state.dom.find_range(_s, _e);
                         let next_details = self
                             .get_details_from_range_and_direction(_range, dir);
                         return match next_details {
-                            None => {
-                                println!("couldn't find next details");
-                                ComposerUpdate::keep()
-                            }
+                            None => ComposerUpdate::keep(),
                             Some(details) => {
                                 let (loc, node_handle, _) = details;
                                 self.remove_word(
@@ -363,7 +350,7 @@ where
     /// from the cursor location, this gets those details and returns them
     /// as a tuple. Likely this can be replaced by DOM iteration methods
     fn get_details_from_range_and_direction<'a>(
-        &'a self,
+        &'a mut self,
         range: Range,
         dir: &Direction,
     ) -> Option<(DomLocation, DomHandle, CharType)> {
@@ -374,7 +361,6 @@ where
         };
 
         if trying_to_move_outside_dom {
-            println!("hitting dom edge");
             return None;
         }
 
@@ -383,7 +369,6 @@ where
             None => {
                 // if we can't get a location, we're not going to be able to do
                 // anything so return
-                println!("can't find location");
                 None
             }
             Some(loc) => {
@@ -392,7 +377,6 @@ where
                     self.get_text_like_node_from_location(&loc, dir);
                 match text_like_node_handle {
                     None => {
-                        println!("couldn't find text handle");
                         // if we haven't found a text node, move the cursor to
                         // one end of the location and recurse self
                         let next_cursor_position = match dir {
@@ -415,13 +399,10 @@ where
                                 loc.start_offset,
                                 dir,
                             );
+
                         match char_type {
                             None => {
                                 println!("couldn't find a char type");
-                                // this can happen if we hit a text node where data = ""!
-                                // we actually can't proceed past one of these, so need to destroy
-                                // it somehow, then recursively call this function to try again
-                                // TODO destroy an empty text node
 
                                 // if we haven't got a char type we have tried looking outside a text node,
                                 // so will need to recurse BUT where do we check for the dom edge??
@@ -502,9 +483,6 @@ where
                 Some(CharType::Newline) // <<< TODO change to linebreak
             }
             DomNode::Text(text_node) => {
-                if text_node.data().len() == 0 {
-                    panic!("found a zero length text node");
-                }
                 let current_char = text_node
                     .data()
                     .chars()
@@ -521,19 +499,63 @@ where
     }
 
     fn get_location_from_range<'a>(
-        &'a self,
+        &'a mut self,
         range: Range,
         direction: &Direction,
     ) -> Option<DomLocation> {
+        // zero length text type locations are a serious issue here as we can
+        // end up with a single cursor having more than two locations so to make
+        // sure we can deal with this, filter out the locations which are zero length text
+
+        let filtered_locations = range
+            .locations
+            .into_iter()
+            .to_owned()
+            .filter(|loc| !(loc.kind == DomNodeKind::Text && loc.length == 0))
+            .collect::<Vec<_>>();
+
         // if we have only one location, the cursor is in a usable location
-        if range.locations.len() == 1 {
-            return range.locations.get(0).cloned();
+        if filtered_locations.len() == 1 {
+            return filtered_locations.get(0).cloned();
         }
+
+        // we can get stuck if we're ever between two empty text nodes
+        // if that is the case, remove both of those nodes and then retry
+        // println!("locations length is {}", range.locations.len());
+        // if range.locations.len() == 2 {
+        //     let loc0: Option<DomLocation> = range.locations.get(0).cloned();
+        //     let location_zero_is_empty_text_node = match loc0 {
+        //         None => false,
+        //         Some(loc) => loc.kind == DomNodeKind::Text && loc.length == 0,
+        //     };
+        //     let loc1: Option<DomLocation> = range.locations.get(1).cloned();
+        //     let location_one_is_empty_text_node = match loc1 {
+        //         None => false,
+        //         Some(loc) => loc.kind == DomNodeKind::Text && loc.length == 0,
+        //     };
+        //     println!("loc 0 {}", location_zero_is_empty_text_node);
+        //     println!("loc 1 {}", location_one_is_empty_text_node);
+        //     if location_zero_is_empty_text_node
+        //         && location_one_is_empty_text_node
+        //     {
+        //         // remove both nodes
+        //         let to_delete: Vec<DomHandle> = range
+        //             .locations
+        //             .into_iter()
+        //             .to_owned()
+        //             .map(|loc| loc.node_handle)
+        //             .collect::<Vec<_>>();
+        //         self.delete_nodes(to_delete);
+        //         let (s, e) = self.safe_selection();
+        //         let new_range = self.state.dom.find_range(s, e);
+        //         return self.get_location_from_range(new_range, direction);
+        //     }
+        // }
 
         // otherwise we're between nodes, so choose appropriately
         match direction {
-            Direction::Forwards => range.locations.get(1).cloned(),
-            Direction::Backwards => range.locations.get(0).cloned(),
+            Direction::Forwards => filtered_locations.get(1).cloned(),
+            Direction::Backwards => filtered_locations.get(0).cloned(),
         }
     }
 
