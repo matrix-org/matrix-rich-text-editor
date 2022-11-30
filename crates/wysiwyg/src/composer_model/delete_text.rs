@@ -137,6 +137,9 @@ where
             return self.delete_in(s, e);
         }
 
+        println!("<<< TESTING >>>");
+        println!("{}, starting at {}", self.state.dom.to_string(), s);
+
         // to remove a word, we need details from the current range
         let current_details =
             self.get_details_from_range_and_direction(range, dir);
@@ -305,8 +308,7 @@ where
                         let next_details = self
                             .get_details_from_range_and_direction(_range, dir);
                         println!("attempting to recurse at start: {}", _s);
-                        // we have an issue here, can't use the range to reliably get location then reliably
-                        // get
+                        // the issue here is pretty simple, it's how do we get to the next text node properly
                         return match next_details {
                             None => ComposerUpdate::keep(),
                             Some(details) => {
@@ -349,10 +351,11 @@ where
             None => {
                 // if we can't get a location, we're not going to be able to do
                 // anything so return
+                println!("didn't find a location");
                 None
             }
             Some(loc) => {
-                println!("locations look like");
+                println!("chosen location:");
                 println!("{:?}", loc);
                 // we now have a single location, so find the first text like node
                 let text_like_node_handle =
@@ -489,59 +492,13 @@ where
         range: Range,
         direction: &Direction,
     ) -> Option<DomLocation> {
-        // zero length text type locations are a serious issue here as we can
-        // end up with a single cursor having more than two locations so to make
-        // sure we can deal with this, filter out the locations which are zero length text
-
-        let filtered_locations = range
-            .locations
-            .into_iter()
-            .to_owned()
-            .filter(|loc| !(loc.kind == DomNodeKind::Text && loc.length == 0))
-            .collect::<Vec<_>>();
-
-        // if we have only one location, the cursor is in a usable location
-        if filtered_locations.len() == 1 {
-            return filtered_locations.get(0).cloned();
-        }
-
-        // we can get stuck if we're ever between two empty text nodes
-        // if that is the case, remove both of those nodes and then retry
-        // println!("locations length is {}", range.locations.len());
-        // if range.locations.len() == 2 {
-        //     let loc0: Option<DomLocation> = range.locations.get(0).cloned();
-        //     let location_zero_is_empty_text_node = match loc0 {
-        //         None => false,
-        //         Some(loc) => loc.kind == DomNodeKind::Text && loc.length == 0,
-        //     };
-        //     let loc1: Option<DomLocation> = range.locations.get(1).cloned();
-        //     let location_one_is_empty_text_node = match loc1 {
-        //         None => false,
-        //         Some(loc) => loc.kind == DomNodeKind::Text && loc.length == 0,
-        //     };
-        //     println!("loc 0 {}", location_zero_is_empty_text_node);
-        //     println!("loc 1 {}", location_one_is_empty_text_node);
-        //     if location_zero_is_empty_text_node
-        //         && location_one_is_empty_text_node
-        //     {
-        //         // remove both nodes
-        //         let to_delete: Vec<DomHandle> = range
-        //             .locations
-        //             .into_iter()
-        //             .to_owned()
-        //             .map(|loc| loc.node_handle)
-        //             .collect::<Vec<_>>();
-        //         self.delete_nodes(to_delete);
-        //         let (s, e) = self.safe_selection();
-        //         let new_range = self.state.dom.find_range(s, e);
-        //         return self.get_location_from_range(new_range, direction);
-        //     }
-        // }
-
+        // heaps of issues here:
+        // zero length text type locations cause real hassle
+        // it' surprising how often you end up with loads of locations to choose from for a single cursor
         // otherwise we're between nodes, so choose appropriately
         match direction {
-            Direction::Forwards => filtered_locations.get(1).cloned(),
-            Direction::Backwards => filtered_locations.get(0).cloned(),
+            Direction::Forwards => range.locations.into_iter().last(),
+            Direction::Backwards => range.locations.into_iter().nth(0),
         }
     }
 

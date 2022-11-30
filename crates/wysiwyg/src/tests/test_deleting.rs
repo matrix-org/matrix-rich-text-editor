@@ -608,7 +608,7 @@ fn html_delete_word_removes_between_tags() {
     model.delete_word();
     assert_eq!(
         restore_whitespace(&tx(&model)),
-        "<em>start |</em><strong/></strong/> end"
+        "<em>start |</em><strong></strong> end"
     );
 }
 
