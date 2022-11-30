@@ -168,6 +168,14 @@ where
         }
     }
 
+    pub(crate) fn as_container(&self) -> Option<&ContainerNode<S>> {
+        if let Self::Container(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
     pub fn kind(&self) -> DomNodeKind {
         match self {
             DomNode::Text(_) => DomNodeKind::Text,

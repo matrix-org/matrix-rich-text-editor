@@ -242,6 +242,10 @@ mod sys {
             fn roundtrips(&self) {
                 let subject = self.subject.as_ref();
                 let dom = parse::<Utf16String>(subject).unwrap();
+
+                // After parsing all our invariants should be satisifed
+                dom.explicitly_assert_invariants();
+
                 let output = restore_whitespace(&dom.to_html().to_string());
                 if output != subject {
                     AssertionFailure::from_spec(self)
