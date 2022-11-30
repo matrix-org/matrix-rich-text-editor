@@ -611,118 +611,40 @@ fn html_delete_word_removes_between_tags() {
         "<em>start |</em><strong></strong> end"
     );
 }
+#[test]
+fn html_backspace_word_removes_between_nested_tags() {
+    let mut model = cm("<em><em>start spl</em></em><strong>it</strong>| end");
+    model.backspace_word();
+    assert_eq!(
+        restore_whitespace(&tx(&model)),
+        "<em><em>start |</em></em><strong></strong> end"
+    );
+}
+#[test]
+fn html_delete_word_removes_between_nested_tags() {
+    let mut model = cm("<em><em>start |spl</em></em><strong>it</strong> end");
+    model.delete_word();
+    assert_eq!(
+        restore_whitespace(&tx(&model)),
+        "<em><em>start |</em></em><strong></strong> end"
+    );
+}
 
-// TODO next tests:
-// repeat all of the plain text tests inside a tag
-// then move on to testing between sibling tags
-// then move on to testing with nested tags
-
-// #[test]
-// fn backspace_word_multi_step_test() {
-//     let mut model = cm(
-//         "first   line \n with .,punctuation   \nthird**line \n\n    last  |",
-//     );
-//     model.backspace_word();
-//     assert_eq!(
-//         restore_whitespace(&tx(&model)),
-//         "first   line \n with .,punctuation   \nthird**line \n\n    |"
-//     );
-//     model.backspace_word();
-//     assert_eq!(
-//         restore_whitespace(&tx(&model)),
-//         "first   line \n with .,punctuation   \nthird**line \n|"
-//     );
-//     model.backspace_word();
-//     assert_eq!(
-//         restore_whitespace(&tx(&model)),
-//         "first   line \n with .,punctuation   \nthird**line |"
-//     );
-//     model.backspace_word();
-//     assert_eq!(
-//         restore_whitespace(&tx(&model)),
-//         "first   line \n with .,punctuation   \nthird**|"
-//     );
-//     model.backspace_word();
-//     assert_eq!(
-//         restore_whitespace(&tx(&model)),
-//         "first   line \n with .,punctuation   \nthird|"
-//     );
-//     model.backspace_word();
-//     assert_eq!(
-//         restore_whitespace(&tx(&model)),
-//         "first   line \n with .,punctuation   \n|"
-//     );
-//     model.backspace_word();
-//     assert_eq!(
-//         restore_whitespace(&tx(&model)),
-//         "first   line \n with .,punctuation   |"
-//     );
-//     model.backspace_word();
-//     assert_eq!(restore_whitespace(&tx(&model)), "first   line \n with .,|");
-//     model.backspace_word();
-//     assert_eq!(restore_whitespace(&tx(&model)), "first   line \n with |");
-//     model.backspace_word();
-//     assert_eq!(restore_whitespace(&tx(&model)), "first   line \n |");
-//     model.backspace_word();
-//     assert_eq!(restore_whitespace(&tx(&model)), "first   line |");
-//     model.backspace_word();
-//     assert_eq!(restore_whitespace(&tx(&model)), "first   |");
-//     model.backspace_word();
-//     assert_eq!(restore_whitespace(&tx(&model)), "|")
-// }
-
-// #[test]
-// fn delete_word_multi_step_test() {
-//     let mut model = cm(
-//         "|first   line \n with .,punctuation   \nthird**line \n\n    last  ",
-//     );
-//     model.delete_word();
-//     assert_eq!(
-//         restore_whitespace(&tx(&model)),
-//         "|   line \n with .,punctuation   \nthird**line \n\n    last  "
-//     );
-//     model.delete_word();
-//     assert_eq!(
-//         restore_whitespace(&tx(&model)),
-//         "| \n with .,punctuation   \nthird**line \n\n    last  "
-//     );
-//     model.delete_word();
-//     assert_eq!(
-//         restore_whitespace(&tx(&model)),
-//         "| with .,punctuation   \nthird**line \n\n    last  "
-//     );
-//     model.delete_word();
-//     assert_eq!(
-//         restore_whitespace(&tx(&model)),
-//         "| .,punctuation   \nthird**line \n\n    last  "
-//     );
-//     model.delete_word();
-//     assert_eq!(
-//         restore_whitespace(&tx(&model)),
-//         "|punctuation   \nthird**line \n\n    last  "
-//     );
-//     model.delete_word();
-//     assert_eq!(
-//         restore_whitespace(&tx(&model)),
-//         "|   \nthird**line \n\n    last  "
-//     );
-//     model.delete_word();
-//     assert_eq!(
-//         restore_whitespace(&tx(&model)),
-//         "|third**line \n\n    last  "
-//     );
-//     model.delete_word();
-//     assert_eq!(restore_whitespace(&tx(&model)), "|**line \n\n    last  ");
-//     model.delete_word();
-//     assert_eq!(restore_whitespace(&tx(&model)), "|line \n\n    last  ");
-//     model.delete_word();
-//     assert_eq!(restore_whitespace(&tx(&model)), "| \n\n    last  ");
-//     model.delete_word();
-//     assert_eq!(restore_whitespace(&tx(&model)), "|\n    last  ");
-//     model.delete_word();
-//     assert_eq!(restore_whitespace(&tx(&model)), "|    last  ");
-//     model.delete_word();
-//     assert_eq!(restore_whitespace(&tx(&model)), "|  ");
-//     model.delete_word();
-//     assert_eq!(restore_whitespace(&tx(&model)), "|")
-// }
+#[test]
+fn html_backspace_word_deep_nesting() {
+    let mut model = cm("<em>remains <em>all<em>of<em>the<em>rest</em>goes</em>away</em>x</em>y|</em>");
+    model.backspace_word();
+    assert_eq!(
+        restore_whitespace(&tx(&model)),
+        "<em>remains |<em><em><em><em></em></em></em></em></em>"
+    );
+}
+#[test]
+fn html_delete_word_deep_nesting() {
+    let mut model = cm("<em>remains |<em>all<em>of<em>the<em>rest</em>goes</em>away</em>x</em>y</em>");
+    model.delete_word();
+    assert_eq!(
+        restore_whitespace(&tx(&model)),
+        "<em>remains |<em><em><em><em></em></em></em></em></em>"
+    );
+}

@@ -137,9 +137,6 @@ where
             return self.delete_in(s, e);
         }
 
-        println!("<<< TESTING >>>");
-        println!("{}, starting at {}", self.state.dom.to_string(), s);
-
         // to remove a word, we need details from the current range
         let current_details =
             self.get_details_from_range_and_direction(range, dir);
@@ -307,7 +304,6 @@ where
                         let _range = self.state.dom.find_range(_s, _e);
                         let next_details = self
                             .get_details_from_range_and_direction(_range, dir);
-                        println!("attempting to recurse at start: {}", _s);
                         // the issue here is pretty simple, it's how do we get to the next text node properly
                         return match next_details {
                             None => ComposerUpdate::keep(),
@@ -351,12 +347,9 @@ where
             None => {
                 // if we can't get a location, we're not going to be able to do
                 // anything so return
-                println!("didn't find a location");
                 None
             }
             Some(loc) => {
-                println!("chosen location:");
-                println!("{:?}", loc);
                 // we now have a single location, so find the first text like node
                 let text_like_node_handle =
                     self.get_text_like_node_from_location(&loc, dir);
@@ -379,8 +372,6 @@ where
                     }
                     Some(node_handle) => {
                         let node = self.state.dom.lookup_node(&node_handle);
-                        println!("text like node looks like:");
-                        println!("{:?}", node);
                         let char_type = self
                             .get_char_type_from_node_with_offset(
                                 node,
@@ -390,11 +381,10 @@ where
 
                         match char_type {
                             None => {
-                                println!("couldn't find a char type");
-
                                 // if we haven't got a char type we have tried looking outside a text node,
                                 // so will need to recurse BUT where do we check for the dom edge??
                                 // EITHER panic or recurse as per the above TODO
+                                // I think we should go to the next
                                 None
                             }
                             Some(char_type) => {
@@ -471,7 +461,6 @@ where
                 Some(CharType::Newline) // <<< TODO change to linebreak
             }
             DomNode::Text(text_node) => {
-                println!("node text: '{}'", text_node.data());
                 let current_char = text_node
                     .data()
                     .chars()
@@ -487,6 +476,7 @@ where
         }
     }
 
+    // <<< TODO this is what's causing the issue
     fn get_location_from_range<'a>(
         &'a mut self,
         range: Range,
@@ -495,11 +485,57 @@ where
         // heaps of issues here:
         // zero length text type locations cause real hassle
         // it' surprising how often you end up with loads of locations to choose from for a single cursor
-        // otherwise we're between nodes, so choose appropriately
+
+        // dream case
+        if range.locations.len() == 1 {
+            return range.locations.into_iter().nth(0);
+        }
+        // next try and find one where the position is the same as our cursor position, which
+        // matters for direction
+        // let filtered_locations = range
+        //     .locations
+        //     .into_iter()
+        //     .to_owned()
+        //     // filter our the 0 length text nodes, nobody wants them
+        //     .filter(|loc| !(loc.kind == DomNodeKind::Text && loc.length == 0))
+        //     // filter based on the direction
+        //     .filter(|loc| match direction {
+        //         Direction::Forwards => loc.position == range.start(),
+        //         Direction::Backwards => {
+        //             loc.position + loc.start_offset == range.start()
+        //         }
+        //     })
+        //     .collect::<Vec<_>>();
+
+        // if filtered_locations.len() != 0 {
+        //     return match direction {
+        //         Direction::Forwards => filtered_locations.into_iter().last(),
+        //         Direction::Backwards => filtered_locations.into_iter().nth(0),
+        //     };
+        // }
+
+        // // this works for the vast majority of cases, but heavy nesting breaks it
         match direction {
             Direction::Forwards => range.locations.into_iter().last(),
             Direction::Backwards => range.locations.into_iter().nth(0),
         }
+
+        // println!("dom length is :: {}", self.state.dom.text_len());
+        // let filtered_locations = range
+        //     .locations
+        //     .into_iter()
+        //     .to_owned()
+        //     // filter our the 0 length text nodes, nobody wants them
+        //     .filter(|loc| !(loc.kind == DomNodeKind::Text && loc.length == 0))
+        //     // filter based on the direction
+        //     .filter(|loc| loc.length == self.state.dom.text_len())
+        //     .collect::<Vec<_>>();
+        // println!("filtered locations are");
+        // println!("{:?}", filtered_locations);
+        // match direction {
+        //     Direction::Forwards => filtered_locations.into_iter().last(),
+        //     Direction::Backwards => filtered_locations.into_iter().nth(0),
+        // }
     }
 
     /// Deletes the given [to_delete] nodes and then removes any given parent nodes that became

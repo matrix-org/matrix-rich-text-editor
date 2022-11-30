@@ -133,7 +133,7 @@ where
     }
     // If container node is completely selected, include it
     let container_end = *offset;
-    let container_node_len = container_end - container_start;
+    let container_node_len = node.text_len();
     // We never want to return the root node
     if container_end >= start
         && container_start <= end
@@ -211,10 +211,10 @@ fn process_textlike_node(
 
     // Intersect selection and node ranges with a couple of exceptions
     if outside_selection_range
-        // Selection start is at the end of a node, but it's not a cursor
-        || (start == node_end && !is_cursor)
-        // Selection end is at the start of a node, but not on position 0
-        || (node_start == end && end != 0)
+    // Selection start is at the end of a node, but it's not a cursor
+    || (start == node_end && !is_cursor)
+    // Selection end is at the start of a node, but not on position 0
+    || (node_start == end && end != 0)
     {
         // Node discarded, it's not selected
         None
