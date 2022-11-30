@@ -21,7 +21,10 @@
 
 use crate::{DomNode, UnicodeString};
 
-use super::{nodes::TextNode, Dom};
+use super::{
+    nodes::{ContainerNode, TextNode},
+    Dom,
+};
 
 impl<S> Dom<S>
 where
@@ -36,6 +39,12 @@ where
     /// order
     pub fn iter_text(&self) -> impl Iterator<Item = &TextNode<S>> {
         self.iter().filter_map(DomNode::as_text)
+    }
+
+    /// Return an iterator over all container nodes of this DOM, in depth-first
+    /// order
+    pub fn iter_containers(&self) -> impl Iterator<Item = &ContainerNode<S>> {
+        self.iter().filter_map(DomNode::as_container)
     }
 }
 
@@ -53,6 +62,12 @@ where
     /// this node (including self), in depth-first order
     pub fn iter_text(&self) -> impl Iterator<Item = &TextNode<S>> {
         self.iter().filter_map(DomNode::as_text)
+    }
+
+    /// Return an iterator over all container nodes of this DOM, in depth-first
+    /// order
+    pub fn iter_containers(&self) -> impl Iterator<Item = &ContainerNode<S>> {
+        self.iter().filter_map(DomNode::as_container)
     }
 }
 
@@ -263,6 +278,20 @@ mod test {
         } else {
             panic!("First child should have been the list")
         }
+    }
+
+    #[test]
+    fn can_walk_all_container_nodes() {
+        let dom = cm(EXAMPLE_HTML).state.dom;
+        let container_nodes: Vec<String> = dom
+            .iter_containers()
+            .map(|c| c.name().to_string())
+            .collect();
+
+        assert_eq!(
+            container_nodes,
+            vec!["", "ul", "li", "strong", "li", "i", "b"]
+        );
     }
 
     fn node_txt(node: &DomNode<Utf16String>) -> String {
