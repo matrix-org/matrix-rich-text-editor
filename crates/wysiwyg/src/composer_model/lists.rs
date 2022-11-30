@@ -18,8 +18,11 @@ use std::ops::AddAssign;
 use crate::dom::nodes::{ContainerNode, DomNode};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
-use crate::dom::{DomHandle, DomLocation, Range};
-use crate::{ComposerModel, ComposerUpdate, ListType, Location, UnicodeString};
+use crate::dom::{Dom, DomHandle, DomLocation, Range};
+use crate::{
+    ComposerModel, ComposerState, ComposerUpdate, ListType, Location,
+    UnicodeString,
+};
 
 impl<S> ComposerModel<S>
 where
@@ -648,6 +651,47 @@ where
         by_list_sorted.sort();
         by_list_sorted
     }
+
+    // FIXME: returning the model to simplify testing that it works
+    fn slice_from_range(&self, range: Range) -> Self /*Vec<DomNode<S>>*/ {
+        let top_level_locations = range.top_level_locations();
+        // FIXME: Do better than cloning for this
+        let start_offset = range
+            .clone()
+            .top_level_locations()
+            .next()
+            .unwrap()
+            .start_offset;
+        let binding = range.clone();
+        let last = binding.top_level_locations().last().unwrap();
+        let last_node = self.state.dom.lookup_node(&last.node_handle);
+        let end_offset = last_node.text_len() - last.end_offset;
+        let top_level_nodes = top_level_locations
+            .map(|l| self.state.dom.lookup_node(&l.node_handle).clone())
+            .collect();
+
+        let temp_dom = Dom::new(top_level_nodes);
+        let mut temp_model = Self {
+            state: ComposerState {
+                dom: temp_dom,
+                start: Location::from(0),
+                end: Location::from(0),
+                toggled_format_types: Vec::new(),
+            },
+            previous_states: Vec::new(),
+            next_states: Vec::new(),
+            action_states: HashMap::new(),
+        };
+        temp_model.do_replace_text_in(
+            S::default(),
+            temp_model.state.dom.text_len() - end_offset,
+            temp_model.state.dom.text_len(),
+        );
+        temp_model.do_replace_text_in(S::default(), 0, start_offset);
+
+        temp_model
+        //return temp_model.state.dom.children().clone();
+    }
 }
 
 #[cfg(test)]
@@ -655,6 +699,15 @@ mod tests {
     use crate::tests::testutils_composer_model::{cm, tx};
 
     use super::*;
+
+    #[test]
+    fn test_slice_from_range() {
+        let model = cm("<strong>abc{def</strong>g<em>hi}|klm</em>");
+        let (s, e) = model.safe_selection();
+        let range = model.state.dom.find_range(s, e);
+        let temp_model = model.slice_from_range(range);
+        assert_eq!(tx(&temp_model), "<strong>|def</strong>g<em>hi</em>")
+    }
 
     #[test]
     fn cannot_indent_first_item() {

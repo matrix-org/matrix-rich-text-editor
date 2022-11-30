@@ -201,6 +201,12 @@ impl Range {
         self.locations.iter().filter(|loc| loc.is_leaf())
     }
 
+    pub fn top_level_locations(&self) -> impl Iterator<Item = &DomLocation> {
+        self.locations
+            .iter()
+            .filter(|l| l.node_handle.raw().len() == 1)
+    }
+
     // TODO: remove all uses of this when we guarantee that Dom is never empty
     pub fn is_empty(&self) -> bool {
         self.locations.is_empty()
