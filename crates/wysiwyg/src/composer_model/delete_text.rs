@@ -306,8 +306,7 @@ where
                     return self
                         .do_delete_between(start_position, current_position);
                 } else {
-                    // if we are still going but reached the end of the node, make
-                    // a recursive call if we're not at the dom edge
+                    // if we have reached the end of the dom, delete up to there
                     if current_position == 0
                         || current_position == self.state.dom.text_len()
                     {
@@ -327,6 +326,9 @@ where
                         let _range = self.state.dom.find_range(_s, _e);
                         let next_details = self
                             .get_details_from_range_and_direction(_range, dir);
+                        println!("attempting to recurse at start: {}", _s);
+                        // we have an issue here, can't use the range to reliably get location then reliably
+                        // get
                         return match next_details {
                             None => ComposerUpdate::keep(),
                             Some(details) => {
@@ -372,9 +374,12 @@ where
                 None
             }
             Some(loc) => {
+                println!("locations look like");
+                println!("{:?}", loc);
                 // we now have a single location, so find the first text like node
                 let text_like_node_handle =
                     self.get_text_like_node_from_location(&loc, dir);
+
                 match text_like_node_handle {
                     None => {
                         // if we haven't found a text node, move the cursor to
@@ -393,6 +398,8 @@ where
                     }
                     Some(node_handle) => {
                         let node = self.state.dom.lookup_node(&node_handle);
+                        println!("text like node looks like:");
+                        println!("{:?}", node);
                         let char_type = self
                             .get_char_type_from_node_with_offset(
                                 node,
@@ -483,6 +490,7 @@ where
                 Some(CharType::Newline) // <<< TODO change to linebreak
             }
             DomNode::Text(text_node) => {
+                println!("node text: '{}'", text_node.data());
                 let current_char = text_node
                     .data()
                     .chars()

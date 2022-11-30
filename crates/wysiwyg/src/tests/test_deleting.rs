@@ -595,20 +595,20 @@ fn html_delete_word_removes_through_a_tag() {
 
 #[test]
 fn html_backspace_word_removes_between_tags() {
-    let mut model = cm("<em>start spl</em><em>it</em>| end");
+    let mut model = cm("<em>start spl</em><strong>it</strong>| end");
     model.backspace_word();
     assert_eq!(
         restore_whitespace(&tx(&model)),
-        "<em>start |</em><em></em> end"
+        "<em>start |</em><strong></strong> end"
     );
 }
 #[test]
 fn html_delete_word_removes_between_tags() {
-    let mut model = cm("<em>start |spl</em><em>it</em> end");
+    let mut model = cm("<em>start |spl</em><strong>it</strong> end");
     model.delete_word();
     assert_eq!(
         restore_whitespace(&tx(&model)),
-        "<em>start |</em><em></em> end"
+        "<em>start |</em><strong/></strong/> end"
     );
 }
 
