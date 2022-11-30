@@ -43,12 +43,6 @@ impl Direction {
             Direction::Backwards => index - 1,
         }
     }
-    fn decrement(&self, index: usize) -> usize {
-        match self {
-            Direction::Forwards => index - 1,
-            Direction::Backwards => index + 1,
-        }
-    }
     fn get_index_from_cursor(&self, index: usize) -> usize {
         match self {
             Direction::Forwards => index,
@@ -121,36 +115,26 @@ where
 
     /// Remove a single word when user does ctrl/opt + delete
     pub fn delete_word(&mut self) -> ComposerUpdate<S> {
-        // start off by getting the current actual cursor and making a range
-        let (s, e) = self.safe_selection();
-        let range = self.state.dom.find_range(s, e);
-        self.remove_word_in_direction(range, &Direction::Forwards)
+        self.remove_word_in_direction(&Direction::Forwards)
     }
 
     /// Remove a single word when user does ctrl/opt + backspace
     pub fn backspace_word(&mut self) -> ComposerUpdate<S> {
-        // start off by getting the current actual cursor and making a range
-        let (s, e) = self.safe_selection();
-        let range = self.state.dom.find_range(s, e);
-        self.remove_word_in_direction(range, &Direction::Backwards)
+        self.remove_word_in_direction(&Direction::Backwards)
     }
 
     /// Given a direction and a range will run the remove word method
     fn remove_word_in_direction(
         &mut self,
-        range: Range,
         dir: &Direction,
     ) -> ComposerUpdate<S> {
-        println!(
-            "{}, c at {}, going {:?}",
-            self.state.dom.to_string(),
-            range.start(),
-            dir
-        );
-        let start_position = range.start();
+        // start off by getting the current actual cursor and making a range
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+
         // if we have a selection, only remove the selection
-        if range.start() != range.end() {
-            return self.delete_in(range.start(), range.end());
+        if s != e {
+            return self.delete_in(s, e);
         }
 
         // to remove a word, we need details from the current range
@@ -166,13 +150,7 @@ where
                 // use the details to remove a word
                 // here we have a non-split cursor, a single location, and a textlike node
                 let (loc, node_handle, starting_char_type) = details;
-                self.remove_word(
-                    start_position,
-                    starting_char_type,
-                    dir,
-                    loc,
-                    node_handle,
-                )
+                self.remove_word(s, starting_char_type, dir, loc, node_handle)
             }
         }
     }
