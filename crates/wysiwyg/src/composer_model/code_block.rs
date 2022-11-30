@@ -12,14 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::dom::action_list::DomActionList;
 use crate::dom::nodes::dom_node::DomNodeKind;
-use crate::dom::nodes::dom_node::DomNodeKind::ListItem;
-use crate::dom::nodes::DomNode;
+use crate::dom::nodes::dom_node::DomNodeKind::*;
+use crate::dom::nodes::{ContainerNodeKind, DomNode};
+use crate::dom::unicode_string::UnicodeStr;
 use crate::dom::{DomHandle, DomLocation};
-use crate::{ComposerAction, ComposerModel, ComposerUpdate, UnicodeString};
+use crate::{
+    ComposerAction, ComposerModel, ComposerUpdate, ToHtml, UnicodeString,
+};
 use std::cmp::min;
 use std::collections::HashSet;
-use std::ops::AddAssign;
+use std::ops::{Add, AddAssign};
 
 impl<S> ComposerModel<S>
 where
@@ -27,8 +31,8 @@ where
 {
     pub fn code_block(&mut self) -> ComposerUpdate<S> {
         if self.action_is_reversed(ComposerAction::CodeBlock) {
-            // TODO: add code block removal
-            ComposerUpdate::keep()
+            // TODO: add code block removal if selection is inside the code block, otherwise extend it
+            self.remove_code_block()
         } else {
             self.add_code_block()
         }
@@ -36,7 +40,7 @@ where
 
     fn add_code_block(&mut self) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
-        let Some((parent_handle, idx_start, idx_end)) = self.find_nodes_to_wrap(s, e) else {
+        let Some((parent_handle, idx_start, idx_end)) = self.find_nodes_to_wrap_in_block(s, e) else {
             return ComposerUpdate::keep();
         };
         let mut leaves_to_add: Vec<DomNode<S>> = Vec::new();
@@ -49,19 +53,17 @@ where
                 break;
             }
             match node.kind() {
-                DomNodeKind::Text
-                | DomNodeKind::Formatting(_)
-                | DomNodeKind::Link => {
+                Text | Formatting(_) | Link => {
                     nodes_visited.insert(node.handle());
                     if nodes_visited.contains(&node.handle().parent_handle()) {
                         continue;
                     }
                     leaves_to_add.push(node.clone());
                 }
-                DomNodeKind::LineBreak => {
+                LineBreak => {
                     leaves_to_add.push(DomNode::new_text("\n".into()));
                 }
-                DomNodeKind::List | DomNodeKind::ListItem => {
+                List | ListItem => {
                     let mut needs_to_add_line_break =
                         node.handle().index_in_parent() > 0;
                     if needs_to_add_line_break {
@@ -91,27 +93,72 @@ where
             .dom
             .insert_at(&start_handle, DomNode::new_code_block(leaves_to_add));
 
+        // Merge any nodes that need it
+        self.post_process_code_block(&start_handle);
+
         self.create_update_replace_all()
     }
 
-    fn find_nodes_to_wrap(
+    fn post_process_code_block(&mut self, handle: &DomHandle) {
+        let mut handle = handle.clone();
+        let next_code_block_handle =
+            if let Some(next_sibling) = self.state.dom.next_sibling(&handle) {
+                if next_sibling.kind() == CodeBlock {
+                    Some(next_sibling.handle())
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+        if let Some(next_code_block_handle) = next_code_block_handle {
+            self.move_children_and_delete_parent(
+                &next_code_block_handle,
+                &handle,
+            );
+        }
+
+        let prev_code_block_handle =
+            if let Some(prev_sibling) = self.state.dom.prev_sibling(&handle) {
+                if prev_sibling.kind() == CodeBlock {
+                    Some(prev_sibling.handle())
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+        if let Some(prev_code_block_handle) = prev_code_block_handle {
+            self.move_children_and_delete_parent(
+                &handle,
+                &prev_code_block_handle,
+            );
+            handle = prev_code_block_handle.clone();
+        }
+
+        self.join_format_nodes_at_level(
+            &handle,
+            handle.raw().len() - 1,
+            &mut DomActionList::default(),
+        );
+        self.join_text_nodes_in_parent(&handle);
+    }
+
+    fn find_nodes_to_wrap_in_block(
         &self,
         start: usize,
         end: usize,
     ) -> Option<(DomHandle, usize, usize)> {
-        let range = self.state.dom.find_range(start, end);
+        let dom = &self.state.dom;
+        let range = dom.find_range(start, end);
         let leaves: Vec<&DomLocation> = range.leaves().collect();
         if leaves.is_empty() {
             None
         } else {
             let first_leaf = leaves.first().unwrap();
             let last_leaf = leaves.last().unwrap();
-            let iter = self.state.dom.iter_from_handle(&last_leaf.node_handle);
-            let rev_iter = self
-                .state
-                .dom
-                .iter_from_handle(&first_leaf.node_handle)
-                .rev();
+            let iter = dom.iter_from_handle(&last_leaf.node_handle);
+            let rev_iter = dom.iter_from_handle(&first_leaf.node_handle).rev();
             let mut nodes_to_cover = (
                 HandleWithKind {
                     handle: first_leaf.node_handle.clone(),
@@ -122,6 +169,7 @@ where
                     kind: last_leaf.kind.clone(),
                 },
             );
+            // TODO: check if ancestors of both start and end leaves contains a ListItem instead
             let selection_contains_several_list_items = range
                 .locations
                 .iter()
@@ -130,7 +178,7 @@ where
                 > 1;
             for node in rev_iter {
                 if !node.is_block_node()
-                    && node.kind() != DomNodeKind::LineBreak
+                    && node.kind() != LineBreak
                     && (node.kind() != ListItem
                         || selection_contains_several_list_items)
                 {
@@ -145,7 +193,7 @@ where
 
             for node in iter {
                 if !node.is_block_node()
-                    && node.kind() != DomNodeKind::LineBreak
+                    && node.kind() != LineBreak
                     && (node.kind() != ListItem
                         || selection_contains_several_list_items)
                 {
@@ -178,6 +226,90 @@ where
             Some((ancestor_handle, idx_start, idx_end))
         }
     }
+
+    fn remove_code_block(&mut self) -> ComposerUpdate<S> {
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        let Some(code_block_location) = range.locations.iter().find(|l| l.kind == CodeBlock) else {
+            return ComposerUpdate::keep();
+        };
+
+        let start_in_block = code_block_location.start_offset;
+        let end_in_block = code_block_location.end_offset;
+        let mut selection_offset_start = 0;
+        let mut selection_offset_end = 0;
+        self.state.start.add_assign(1);
+        self.state.end.add_assign(1);
+
+        // If we remove the whole code block, we should start by adding a line break
+        let mut nodes_to_add = vec![DomNode::new_line_break()];
+        // Just remove everything
+        let DomNode::Container(block) =
+            self.state.dom.lookup_node(&code_block_location.node_handle) else
+        {
+            panic!("CodeBlock must be a container node");
+        };
+        for child in block.children() {
+            match child {
+                DomNode::Text(text_node) => {
+                    // Split the TextNode by \n and add them both to the nodes to add
+                    let mut text_start: usize = 0;
+                    let mut text_end = text_start;
+                    let data = text_node.data();
+                    for char in data.chars() {
+                        text_end += data.char_len(&char);
+                        if char == '\n' {
+                            let text_to_add =
+                                data[text_start..text_end - 1].to_owned();
+                            nodes_to_add
+                                .push(DomNode::new_text(S::from(text_to_add)));
+                            nodes_to_add.push(DomNode::new_line_break());
+                            if text_end <= start_in_block {
+                                selection_offset_start += 1;
+                            }
+                            if text_end <= end_in_block {
+                                selection_offset_end += 1;
+                            }
+                            text_start = text_end;
+                        }
+                    }
+                    if text_start != text_end {
+                        let text_to_add =
+                            text_node.data()[text_start..text_end].to_owned();
+                        nodes_to_add
+                            .push(DomNode::new_text(S::from(text_to_add)));
+                        nodes_to_add.push(DomNode::new_line_break());
+                        if text_end <= start_in_block {
+                            selection_offset_start += 1;
+                        }
+                        if text_end <= end_in_block {
+                            selection_offset_end += 1;
+                        }
+                    }
+                }
+                // Just move the node out
+                _ => nodes_to_add.push(child.clone()),
+            }
+        }
+
+        // Add a final line break if needed
+        if let Some(last_node) = nodes_to_add.last() {
+            if last_node.kind() != LineBreak {
+                nodes_to_add.push(DomNode::new_line_break());
+            }
+        }
+
+        self.state
+            .dom
+            .replace(&code_block_location.node_handle, nodes_to_add);
+
+        if selection_offset_start > 0 {
+            self.state.start.add_assign(selection_offset_start);
+            self.state.end.add_assign(selection_offset_end);
+        }
+
+        self.create_update_replace_all()
+    }
 }
 
 struct HandleWithKind {
@@ -194,7 +326,7 @@ mod test {
     fn find_ranges_to_wrap_simple_text() {
         let model = cm("Some text|");
         let (s, e) = model.safe_selection();
-        let ret = model.find_nodes_to_wrap(s, e);
+        let ret = model.find_nodes_to_wrap_in_block(s, e);
         assert_eq!(ret, Some((DomHandle::from_raw(Vec::new()), 0, 0)));
     }
 
@@ -202,7 +334,7 @@ mod test {
     fn find_ranges_to_wrap_several_nodes() {
         let model = cm("Some text| <b>and bold </b><i>and italic</i>");
         let (s, e) = model.safe_selection();
-        let ret = model.find_nodes_to_wrap(s, e);
+        let ret = model.find_nodes_to_wrap_in_block(s, e);
         assert_eq!(ret, Some((DomHandle::from_raw(Vec::new()), 0, 2)));
     }
 
@@ -210,7 +342,7 @@ mod test {
     fn find_ranges_to_wrap_several_nodes_with_line_break_at_end() {
         let model = cm("Some text| <b>and bold </b><br/><i>and italic</i>");
         let (s, e) = model.safe_selection();
-        let ret = model.find_nodes_to_wrap(s, e);
+        let ret = model.find_nodes_to_wrap_in_block(s, e);
         assert_eq!(ret, Some((DomHandle::from_raw(Vec::new()), 0, 1)));
     }
 
@@ -218,7 +350,7 @@ mod test {
     fn find_ranges_to_wrap_several_nodes_with_line_break_at_start() {
         let model = cm("Some text <br/><b>and bold </b><i>|and italic</i>");
         let (s, e) = model.safe_selection();
-        let ret = model.find_nodes_to_wrap(s, e);
+        let ret = model.find_nodes_to_wrap_in_block(s, e);
         assert_eq!(ret, Some((DomHandle::from_raw(Vec::new()), 2, 3)));
     }
 
@@ -228,7 +360,7 @@ mod test {
             "<ul><li>Some text <b>and bold </b><i>|and italic</i></li></ul>",
         );
         let (s, e) = model.safe_selection();
-        let ret = model.find_nodes_to_wrap(s, e);
+        let ret = model.find_nodes_to_wrap_in_block(s, e);
         assert_eq!(ret, Some((DomHandle::from_raw(vec![0, 0]), 0, 2)));
     }
 
@@ -238,7 +370,7 @@ mod test {
             "<ul><li>Some text <b>and bold </b><br/><i>and| italic</i></li></ul>",
         );
         let (s, e) = model.safe_selection();
-        let ret = model.find_nodes_to_wrap(s, e);
+        let ret = model.find_nodes_to_wrap_in_block(s, e);
         assert_eq!(ret, Some((DomHandle::from_raw(vec![0, 0]), 3, 3)));
     }
 
@@ -246,7 +378,7 @@ mod test {
     fn find_ranges_to_wrap_several_list_items() {
         let model = cm("<ul><li>{First item</li><li>Second}| item</li></ul>");
         let (s, e) = model.safe_selection();
-        let ret = model.find_nodes_to_wrap(s, e);
+        let ret = model.find_nodes_to_wrap_in_block(s, e);
         assert_eq!(ret, Some((DomHandle::from_raw(vec![]), 0, 0)));
     }
 
@@ -255,11 +387,18 @@ mod test {
         let model =
             cm("{Text <ul><li>First item</li><li>Second}| item</li></ul>");
         let (s, e) = model.safe_selection();
-        let ret = model.find_nodes_to_wrap(s, e);
+        let ret = model.find_nodes_to_wrap_in_block(s, e);
         assert_eq!(ret, Some((DomHandle::from_raw(vec![]), 0, 1)));
     }
 
     // Tests: Code block
+
+    #[test]
+    fn add_code_block_to_empty_dom() {
+        let mut model = cm("|");
+        model.code_block();
+        assert_eq!(tx(&model), "<pre>|</pre>");
+    }
 
     #[test]
     fn add_code_block_to_simple_text() {
@@ -336,5 +475,49 @@ mod test {
             cm("{Text <ul><li>First item</li><li>Second}| item</li></ul>");
         model.code_block();
         assert_eq!(tx(&model), "<pre>{Text \nFirst item\nSecond}| item</pre>");
+    }
+
+    #[test]
+    fn add_code_block_to_existing_code_block() {
+        let mut model = cm("{Text <pre>code}|</pre>");
+        model.code_block();
+        assert_eq!(tx(&model), "<pre>{Text code}|</pre>");
+    }
+
+    #[test]
+    fn add_code_block_to_existing_code_block_partially_selected() {
+        let mut model = cm("{Text <pre><b>code}|</b><i> and italic</i></pre>");
+        model.code_block();
+        assert_eq!(
+            tx(&model),
+            "<pre>{Text <b>code}|</b><i> and italic</i></pre>"
+        );
+    }
+
+    #[test]
+    fn remove_code_block_moves_its_children_out() {
+        let mut model = cm("Text <pre><b>code|</b><i> and italic</i></pre>");
+        model.code_block();
+        assert_eq!(
+            tx(&model),
+            "Text <br /><b>code|</b><i> and italic</i><br />"
+        );
+    }
+
+    #[test]
+    fn remove_code_block_moves_its_children_and_restores_line_breaks() {
+        let mut model = cm("Text <pre>with|\nline\nbreaks</pre>");
+        model.code_block();
+        assert_eq!(tx(&model), "Text <br />with|<br />line<br />breaks<br />");
+    }
+
+    #[test]
+    fn remove_code_block_moves_its_children_and_keeps_selection_in_place() {
+        let mut model = cm("Text <pre>wi{th\nline\nbrea}|ks</pre>");
+        model.code_block();
+        assert_eq!(
+            tx(&model),
+            "Text <br />wi{th<br />line<br />brea}|ks<br />"
+        );
     }
 }

@@ -164,6 +164,7 @@ where
                     ListType::Unordered => Some(ComposerAction::UnorderedList),
                 }
             }
+            ContainerNodeKind::CodeBlock => Some(ComposerAction::CodeBlock),
             _ => None,
         }
     }
