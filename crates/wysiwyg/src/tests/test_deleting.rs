@@ -569,15 +569,28 @@ fn html_delete_word_removes_whole_word() {
 
 #[test]
 fn html_backspace_word_removes_into_a_tag() {
-    let mut model = cm(" some <em>em</em>phasis |needed");
+    let mut model = cm("<em>some em</em>phasis|");
     model.backspace_word();
-    assert_eq!(restore_whitespace(&tx(&model)), " some |<em></em>needed");
+    assert_eq!(restore_whitespace(&tx(&model)), "<em>some |</em>");
 }
 #[test]
 fn html_delete_word_removes_into_a_tag() {
-    let mut model = cm(" some| <em>em</em>phasis needed");
+    let mut model = cm("|so<em>me emphasis</em>");
     model.delete_word();
-    assert_eq!(restore_whitespace(&tx(&model)), " some| <em></em>needed");
+    assert_eq!(restore_whitespace(&tx(&model)), "|<em> emphasis</em>");
+}
+
+#[test]
+fn html_backspace_word_removes_through_a_tag() {
+    let mut model = cm("si<em>ng</em>le|");
+    model.backspace_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "|<em></em>");
+}
+#[test]
+fn html_delete_word_removes_through_a_tag() {
+    let mut model = cm("|si<em>ng</em>le");
+    model.delete_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "|");
 }
 
 // TODO next tests:

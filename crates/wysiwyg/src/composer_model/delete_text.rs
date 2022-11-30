@@ -502,6 +502,9 @@ where
                 Some(CharType::Newline) // <<< TODO change to linebreak
             }
             DomNode::Text(text_node) => {
+                if text_node.data().len() == 0 {
+                    panic!("found a zero length text node");
+                }
                 let current_char = text_node
                     .data()
                     .chars()
