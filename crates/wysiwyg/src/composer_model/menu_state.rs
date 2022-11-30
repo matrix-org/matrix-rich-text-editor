@@ -194,6 +194,25 @@ where
         if !self.can_unindent(locations) {
             disabled_actions.insert(UnIndent);
         }
+        let contains_inline_code_node = locations
+            .iter()
+            .find(|l| {
+                self.state
+                    .dom
+                    .lookup_node(&l.node_handle)
+                    .is_formatting_node_of_type(&InlineFormatType::InlineCode)
+            })
+            .is_some();
+        if contains_inline_code_node {
+            // Remove the rest of inline formatting options
+            disabled_actions.extend(vec![
+                ComposerAction::Bold,
+                ComposerAction::Italic,
+                ComposerAction::Underline,
+                ComposerAction::StrikeThrough,
+                ComposerAction::Link,
+            ])
+        }
         disabled_actions
     }
 }

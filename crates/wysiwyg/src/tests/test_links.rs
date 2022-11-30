@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::tests::testutils_composer_model::cm;
+use crate::tests::testutils_composer_model::{cm, tx};
 use crate::tests::testutils_conversion::utf16;
 
 use crate::TextUpdate;
@@ -103,4 +103,223 @@ fn set_link_in_multiple_leaves_of_formatted_text_with_link() {
         model.state.dom.to_string(),
         "<i><a href=\"https://matrix.org\">test_italic</a><b><a href=\"https://matrix.org\">test_italic_bold</a></b></i>"
     )
+}
+
+#[test]
+fn add_text_at_end_of_link() {
+    let mut model = cm("<a href=\"https://element.io\">link|</a>");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(
+        tx(&model),
+        "<a href=\"https://element.io\">link</a>added_text|"
+    );
+}
+
+#[test]
+fn add_text_at_end_of_link_inside_a_container() {
+    let mut model =
+        cm("<b>test <a href=\"https://element.io\">test_link|</a> test</b>");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(tx(&model), "<b>test <a href=\"https://element.io\">test_link</a>added_text| test</b>");
+}
+
+#[test]
+fn replace_text_partially_highlighted_inside_a_link_and_starting_inside() {
+    let mut model = cm("<a href=\"https://element.io\">test_{link</a> test}|");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(
+        tx(&model),
+        "<a href=\"https://element.io\">test_</a>added_text|"
+    );
+}
+
+#[test]
+fn replace_text_partially_highlighted_inside_a_link_and_starting_inside_in_a_container(
+) {
+    let mut model =
+        cm("<b>test <a href=\"https://element.io\">test_{link</a> test}|</b>");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(
+        tx(&model),
+        "<b>test <a href=\"https://element.io\">test_</a>added_text|</b>"
+    );
+}
+
+#[test]
+fn replace_text_partially_highlighted_inside_a_link_and_starting_before() {
+    let mut model = cm("{test <a href=\"https://element.io\">test}|_link</a>");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(
+        tx(&model),
+        "added_text|<a href=\"https://element.io\">_link</a>"
+    );
+}
+
+#[test]
+fn replace_text_partially_highlighted_inside_a_link_and_starting_before_in_a_container(
+) {
+    let mut model =
+        cm("<b>{test <a href=\"https://element.io\">test}|_link</a> test</b>");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(
+        tx(&model),
+        "<b>added_text|<a href=\"https://element.io\">_link</a> test</b>"
+    );
+}
+
+#[test]
+#[ignore]
+// TODO: Fix replacing link text when selection starts at the start of the link bug
+fn replace_text_with_selection_starting_in_one_link_and_ending_in_another() {
+    let mut model =
+        cm("test {<a href=\"https://element.io\">test_link_1</a> <a href=\"https://matrix.org\">test_link_2}|</a> test");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(tx(&model), "test added_text| test");
+}
+
+#[test]
+fn replace_text_with_selection_starting_partially_in_one_link_and_ending_in_another_partially(
+) {
+    let mut model =
+        cm("test <a href=\"https://element.io\">test_{link_1</a> <a href=\"https://matrix.org\">test}|_link_2</a> test");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(tx(&model), "test <a href=\"https://element.io\">test_</a>added_text|<a href=\"https://matrix.org\">_link_2</a> test");
+}
+
+#[test]
+#[ignore]
+// TODO: Fix replacing link text when selection starts at the start of the link bug
+fn replace_text_with_selection_starting_in_one_link_and_ending_in_another_partially(
+) {
+    let mut model =
+        cm("test <a href=\"https://element.io\">{test_link_1</a> <a href=\"https://matrix.org\">test}|_link_2</a> test");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(
+        tx(&model),
+        "test added_text|<a href=\"https://matrix.org\">_link_2</a> test"
+    );
+}
+
+#[test]
+fn replace_text_with_selection_starting_partially_in_one_link_and_ending_in_another(
+) {
+    let mut model =
+        cm("test <a href=\"https://element.io\">test_{link_1</a> <a href=\"https://matrix.org\">test_link_2}|</a> test");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(
+        tx(&model),
+        "test <a href=\"https://element.io\">test_</a>added_text| test"
+    );
+}
+
+#[test]
+#[ignore]
+// TODO: Fix replacing link text when selection starts at the start of the link bug
+fn replace_text_over_a_link() {
+    let mut model =
+        cm("test {<a href=\"https://element.io\">test_link</a>}| test");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(tx(&model), "test added_text| test");
+}
+
+#[test]
+fn replace_text_over_a_link_starting_before() {
+    let mut model =
+        cm("{test <a href=\"https://element.io\">test_link</a>}| test");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(tx(&model), "added_text| test");
+}
+
+#[test]
+#[ignore]
+// TODO: Fix replacing link text when selection starts at the start of the link bug
+fn replace_text_over_a_link_ending_after() {
+    let mut model =
+        cm("test {<a href=\"https://element.io\">test_link</a> test}|");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(tx(&model), "test added_text|");
+}
+
+#[test]
+fn replace_text_over_a_link_starting_before_and_ending_afterwards() {
+    let mut model =
+        cm("{test <a href=\"https://element.io\">test_link</a> test}|");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(tx(&model), "added_text|");
+}
+
+#[test]
+fn replace_text_in_a_partially_highlighted_container_inside_a_link_at_the_start(
+) {
+    let mut model =
+        cm("<a href=\"https://element.io\"><i><b>{test_bold}|_italic_link</b></i></a>");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(tx(&model), "<a href=\"https://element.io\"><i><b>added_text|_italic_link</b></i></a>");
+}
+
+#[test]
+fn replace_text_in_a_partially_highlighted_container_inside_a_link_starting_and_ending_inside(
+) {
+    let mut model =
+        cm("<a href=\"https://element.io\"><i><b>test_bold_{italic}|_link</b></i></a>");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(tx(&model), "<a href=\"https://element.io\"><i><b>test_bold_added_text|_link</b></i></a>");
+}
+
+#[test]
+fn replace_text_in_a_partially_highlighted_container_inside_a_link_starting_inside_and_ending_at_the_end(
+) {
+    let mut model =
+        cm("<a href=\"https://element.io\"><i><b>test_bold_{italic_link}|</b></i></a>");
+    model.replace_text(utf16("added_text"));
+    // It looses the bold and italic property, but this is actually google doc's behaviour
+    // However we have task to actually support the extension of the contained containers in the future
+    // This also only happens when the link is the outermost container
+    assert_eq!(tx(&model), "<a href=\"https://element.io\"><i><b>test_bold_</b></i></a>added_text|");
+}
+
+#[test]
+#[ignore]
+// TODO: Fix replacing link text when selection starts at the start of the link bug
+fn replace_text_in_a_completely_highlighted_container_inside_a_link() {
+    let mut model =
+        cm("<a href=\"https://element.io\"><i><b>{test_bold_italic_link}|</b></i></a>");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(tx(&model), "added_text|");
+}
+
+#[test]
+#[ignore]
+// TODO: Fix replacing link text when selection starts at the start of the link bug
+fn replace_text_in_a_link_inside_a_list() {
+    let mut model = cm("<ul><li>list_element</li><li><a href=\"https://element.io\">{link_in_list}|</a></li></ul>");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(
+        tx(&model),
+        "<ul><li>list_element</li><li>added_text|</li></ul>"
+    );
+}
+
+#[test]
+fn replace_text_in_a_link_inside_a_list_partially_selected_starting_inside() {
+    let mut model = cm("<ul><li>list_element</li><li><a href=\"https://element.io\">link_in_{list}|</a></li></ul>");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(tx(&model), "<ul><li>list_element</li><li><a href=\"https://element.io\">link_in_</a>added_text|</li></ul>");
+}
+
+#[test]
+#[ignore]
+// TODO: Fix replacing link text when selection starts at the start of the link bug
+fn replace_text_in_a_link_inside_a_list_partially_selected_ending_inside() {
+    let mut model = cm("<ul><li>list_element</li><li><a href=\"https://element.io\">{link}|_in_list</a></li></ul>");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(tx(&model), "<ul><li>list_element</li><li>added_text|<a href=\"https://element.io\">_in_list</a></li></ul>");
+}
+
+#[test]
+fn replace_text_in_a_link_inside_a_list_partially_selected_starting_inside_ending_inside(
+) {
+    let mut model = cm("<ul><li>list_element</li><li><a href=\"https://element.io\">link{_in_}|list</a></li></ul>");
+    model.replace_text(utf16("added_text"));
+    assert_eq!(tx(&model), "<ul><li>list_element</li><li><a href=\"https://element.io\">linkadded_text|list</a></li></ul>");
 }

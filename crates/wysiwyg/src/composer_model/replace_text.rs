@@ -13,7 +13,8 @@
 // limitations under the License.
 
 use crate::dom::action_list::{DomAction, DomActionList};
-use crate::dom::nodes::DomNode;
+use crate::dom::nodes::dom_node::DomNodeKind::{Link, ListItem};
+use crate::dom::nodes::{DomNode, TextNode};
 use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
@@ -66,16 +67,23 @@ where
         let leaves: Vec<&DomLocation> = range.leaves().collect();
         if leaves.len() == 1 {
             let location = leaves[0];
+            let current_cursor_global_location =
+                location.position + location.start_offset;
             let handle = &location.node_handle;
             let parent_list_item_handle =
                 self.state.dom.find_parent_list_item_or_self(handle);
             if let Some(parent_list_item_handle) = parent_list_item_handle {
+                let list_item_end_offset = range
+                    .locations
+                    .into_iter()
+                    .filter(|loc| loc.kind == ListItem)
+                    .next()
+                    .unwrap()
+                    .end_offset;
                 self.do_enter_in_list(
                     &parent_list_item_handle,
-                    location.position + location.start_offset,
-                    handle,
-                    location.start_offset,
-                    location.end_offset,
+                    current_cursor_global_location,
+                    list_item_end_offset,
                 )
             } else {
                 self.do_enter_in_text(handle, location.start_offset)
@@ -156,9 +164,23 @@ where
             let range = self.state.dom.find_range(start, end);
             if range.is_empty() {
                 if !new_text.is_empty() {
-                    self.state.dom.append_child(DomNode::new_text(new_text));
+                    self.state
+                        .dom
+                        .append_at_end_of_document(DomNode::new_text(new_text));
                 }
                 start = 0;
+            // We check for the first starting_link_handle if any
+            // Because for links we always add the text to the next sibling
+            } else if let Some(starting_link_handle) =
+                self.first_shrinkable_link_node_handle(&range)
+            {
+                // We replace and delete as normal with an empty string on the current range
+                self.replace_multiple_nodes(range, "".into());
+                // Then we set the new text value in the next sibling node (or create a new one if none exists)
+                self.set_new_text_in_next_sibling_node(
+                    starting_link_handle,
+                    new_text,
+                )
             } else {
                 self.replace_multiple_nodes(range, new_text)
             }
@@ -174,12 +196,62 @@ where
         self.create_update_replace_all()
     }
 
+    fn set_new_text_in_next_sibling_node(
+        &mut self,
+        node_handle: DomHandle,
+        new_text: S,
+    ) {
+        if let Some(sibling_text_node) =
+            self.first_next_sibling_text_node_mut(&node_handle)
+        {
+            let mut data = sibling_text_node.data().to_owned();
+            data.insert(0, &new_text);
+            sibling_text_node.set_data(data);
+        } else if !new_text.is_empty() {
+            let new_child = DomNode::new_text(new_text);
+            let parent = self.state.dom.parent_mut(&node_handle);
+            let index = node_handle.index_in_parent() + 1;
+            parent.insert_child(index, new_child);
+        }
+    }
+
+    fn first_next_sibling_text_node_mut(
+        &mut self,
+        node_handle: &DomHandle,
+    ) -> Option<&mut TextNode<S>> {
+        let parent = self.state.dom.parent(node_handle);
+        let children_number = parent.children().len();
+        if node_handle.index_in_parent() < children_number - 1 {
+            let sibling =
+                self.state.dom.lookup_node_mut(&node_handle.next_sibling());
+            let DomNode::Text(sibling_text_node) = sibling else {
+                return None
+            };
+            Some(sibling_text_node)
+        } else {
+            None
+        }
+    }
+
+    fn first_shrinkable_link_node_handle(
+        &self,
+        range: &Range,
+    ) -> Option<DomHandle> {
+        let Some(link_loc) = range.locations.iter().find(|loc| {
+            loc.kind == Link && !loc.is_covered() && loc.is_start()
+        }) else {
+            return None
+        };
+        Some(link_loc.node_handle.clone())
+    }
+
     fn replace_multiple_nodes(&mut self, range: Range, new_text: S) {
         let len = new_text.len();
         let action_list = self.replace_in_text_nodes(range.clone(), new_text);
 
         let (to_add, to_delete, _) = action_list.grouped();
-        let to_delete = to_delete.into_iter().map(|a| a.handle).collect();
+        let to_delete: Vec<DomHandle> =
+            to_delete.into_iter().map(|a| a.handle).collect();
 
         // We only add nodes in one special case: when the selection ends at
         // a BR tag. In that case, the only nodes that might be deleted are
@@ -196,7 +268,9 @@ where
         }
 
         // Delete the nodes marked for deletion
-        self.delete_nodes(to_delete);
+        if !to_delete.is_empty() {
+            self.delete_nodes(to_delete);
+        }
 
         // If our range covered multiple text-like nodes, join together
         // the two sides of the range.

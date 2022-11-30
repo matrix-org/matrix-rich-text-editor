@@ -91,21 +91,18 @@ android.libraryVariants.all { variant ->
         workingDir "${project.projectDir}"
         // Runs the bindings generation, note that you must have uniffi-bindgen installed and in your PATH environment variable
         commandLine 'uniffi-bindgen', 'generate', '../../../bindings/wysiwyg-ffi/src/wysiwyg_composer.udl', '--language', 'kotlin', '--out-dir', "${buildDir}/generated/source/uniffi/${variant.name}/java"
+        dependsOn("cargoBuild")
     }
-    variant.javaCompileProvider.get().dependsOn(generateBindingTasks)
+    tasks.preBuild.dependsOn(generateBindingTasks)
     def sourceSet = variant.sourceSets.find { it.name == variant.name }
     sourceSet.java.srcDir new File(buildDir, "generated/source/uniffi/${variant.name}/java")
 }
 
 afterEvaluate {
-    // The `cargoBuild` task isn't available until after evaluation.
-    android.libraryVariants.all { variant ->
-        def productFlavor = ""
-        variant.productFlavors.each {
-            productFlavor += "${it.name.capitalize()}"
-        }
-        def buildType = "${variant.buildType.name.capitalize()}"
-        def generateAssetsTask = tasks["generate${productFlavor}${buildType}Assets"]
-        generateAssetsTask.dependsOn(tasks["cargoBuild"])
+    def taskName = getGradle().getStartParameter().getTaskRequests().toString()
+    def isReleaseBuild = taskName.containsIgnoreCase("release") || taskName.containsIgnoreCase("publish")
+    if (isReleaseBuild) {
+        cargo.profile = "release"
     }
 }
+

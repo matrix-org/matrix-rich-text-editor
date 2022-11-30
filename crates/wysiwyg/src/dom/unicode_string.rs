@@ -45,6 +45,11 @@ pub trait UnicodeString:
     type Str: UnicodeStr<CodeUnit = Self::CodeUnit, Owned = Self> + ?Sized;
 
     fn insert(&mut self, idx: usize, s: &Self::Str);
+
+    /// Creates a new unicode string consisting of a single ZWSP.
+    fn zwsp() -> Self {
+        "\u{200B}".into()
+    }
 }
 
 pub trait UnicodeStr:

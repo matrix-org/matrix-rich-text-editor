@@ -413,6 +413,7 @@ mod test {
     use speculoos::{prelude::*, AssertionFailure, Spec};
     use widestring::Utf16String;
 
+    use crate::dom::nodes::dom_node::DomNodeKind;
     use crate::dom::{parser, Dom, DomLocation};
     use crate::tests::testutils_composer_model::{cm, restore_whitespace, tx};
     use crate::tests::testutils_conversion::utf16;
@@ -425,7 +426,8 @@ mod test {
         // We have one text node with one character
         let mut state = SelectionWritingState::new(0, 1, 1);
         let handle = DomHandle::from_raw(vec![0]);
-        let location = DomLocation::new(handle, 0, 0, 1, 1, true);
+        let location =
+            DomLocation::new(handle, 0, 0, 1, 1, DomNodeKind::Generic);
 
         // When we advance
         let strings_to_add = state.advance(&location, 1);

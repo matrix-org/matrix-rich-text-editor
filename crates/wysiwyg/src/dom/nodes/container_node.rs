@@ -173,6 +173,10 @@ where
         self.children.get_mut(idx)
     }
 
+    pub fn get_child(&self, idx: usize) -> Option<&DomNode<S>> {
+        self.children.get(idx)
+    }
+
     pub fn last_child_mut(&mut self) -> Option<&mut DomNode<S>> {
         self.children.last_mut()
     }
@@ -223,6 +227,10 @@ where
 
     pub fn is_list_item(&self) -> bool {
         matches!(self.kind, ContainerNodeKind::ListItem)
+    }
+
+    pub fn is_list(&self) -> bool {
+        matches!(self.kind, ContainerNodeKind::List)
     }
 
     pub(crate) fn is_list_of_type(&self, list_type: ListType) -> bool {

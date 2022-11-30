@@ -24,7 +24,8 @@ fn undoing_action_restores_previous_state() {
     let mut model = cm("hello |");
     let mut prev = model.state.clone();
     let prev_text_node = TextNode::from(utf16("world!"));
-    prev.dom.append_child(DomNode::Text(prev_text_node));
+    prev.dom
+        .append_at_end_of_document(DomNode::Text(prev_text_node));
     model.previous_states.push(prev.clone());
 
     model.undo();

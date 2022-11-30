@@ -16,6 +16,7 @@ pub mod base;
 pub mod delete_text;
 pub mod example_format;
 pub mod format;
+mod format_inline_code;
 pub mod hyperlinks;
 pub mod join_nodes;
 pub mod lists;

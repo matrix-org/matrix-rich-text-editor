@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::collections::HashMap;
+
 use crate::composer_model::menu_state::MenuStateComputeType;
 use crate::dom::action_list::DomActionList;
 use crate::dom::nodes::{ContainerNodeKind, DomNode};
@@ -51,7 +53,35 @@ where
 
     pub fn inline_code(&mut self) -> ComposerUpdate<S> {
         self.push_state_to_history();
-        self.format_or_unformat(InlineFormatType::InlineCode)
+        let format_type = InlineFormatType::InlineCode;
+        if self.action_is_reversed(format_type.action()) {
+            self.unformat(format_type)
+        } else {
+            self.add_inline_code()
+        }
+    }
+
+    /// Finds the closest structure node ancestor for each leaf node handle and groups it with other
+    /// leaves that share it as the common closest structure node ancestor. If none is found,
+    /// the root/document node is used instead.
+    pub(crate) fn group_leaves_by_closest_structure_ancestors(
+        &self,
+        leaves: Vec<&DomLocation>,
+    ) -> HashMap<DomHandle, Vec<DomLocation>> {
+        let mut structure_ancestors = HashMap::new();
+        for leaf in leaves {
+            let first_structure_ancestor =
+                self.find_structure_ancestor(&leaf.node_handle);
+            // Get the closest ancestor path or the root one (empty Vec) if there is none
+            let ancestor_handle =
+                first_structure_ancestor.unwrap_or(DomHandle::root());
+            let list = structure_ancestors
+                .entry(ancestor_handle)
+                .or_insert(Vec::new());
+            // Add the DomHandle of the leaf to the list of grouped handles by this ancestor
+            list.push(leaf.clone());
+        }
+        structure_ancestors
     }
 
     fn format_or_unformat(
@@ -126,7 +156,10 @@ where
         self.unformat_several_nodes(start, end, &range, format);
     }
 
-    fn toggle_zero_length_format(&mut self, format: &InlineFormatType) {
+    pub(crate) fn toggle_zero_length_format(
+        &mut self,
+        format: &InlineFormatType,
+    ) {
         let index = self
             .state
             .toggled_format_types
@@ -155,7 +188,7 @@ where
         } else {
             // Find text nodes inside the selection that are not formatted with this format
             let non_formatted_leaf_locations = locations.iter().filter(|l| {
-                l.is_leaf
+                l.is_leaf()
                     && Self::path_contains_format_node(
                         &self.state.dom,
                         &l.node_handle,
@@ -411,7 +444,7 @@ where
     fn insert_zwspace_if_needed(node: &mut DomNode<S>) -> isize {
         if let DomNode::Text(text) = node {
             if text.data().is_empty() {
-                text.set_data("\u{200B}".into());
+                text.set_data(S::zwsp());
                 1
             } else {
                 0
@@ -421,7 +454,7 @@ where
         }
     }
 
-    fn merge_formatting_node_with_siblings(
+    pub(crate) fn merge_formatting_node_with_siblings(
         &mut self,
         handle: &DomHandle,
     ) -> DomActionList<S> {
