@@ -150,7 +150,6 @@ where
                     node_handle,
                     starting_char_type,
                     node_start,
-                    node_end,
                     node_offset,
                 ) = details;
                 self.remove_word(
@@ -160,7 +159,6 @@ where
                     loc,
                     node_handle,
                     node_start,
-                    node_end,
                     node_offset,
                 )
             }
@@ -176,10 +174,8 @@ where
         location: DomLocation,
         node_handle: DomHandle,
         node_start: usize,
-        node_end: usize,
         node_offset: usize,
     ) -> ComposerUpdate<S> {
-        // actions here depend on the node first
         let node = self.state.dom.lookup_node_mut(&node_handle);
         let is_list_item = node.is_list_item();
         match node {
@@ -249,7 +245,6 @@ where
                                     node_handle,
                                     next_type,
                                     node_start,
-                                    node_end,
                                     node_offset,
                                 ) = details;
                                 self.remove_word(
@@ -259,7 +254,6 @@ where
                                     loc,
                                     node_handle,
                                     node_start,
-                                    node_end,
                                     node_offset,
                                 )
                             }
@@ -297,14 +291,8 @@ where
                     return match next_details {
                         None => ComposerUpdate::keep(),
                         Some(details) => {
-                            let (
-                                loc,
-                                node_handle,
-                                _,
-                                node_start,
-                                node_end,
-                                node_offset,
-                            ) = details;
+                            let (loc, node_handle, _, node_start, node_offset) =
+                                details;
                             self.remove_word(
                                 _s,
                                 start_type, // nb using the original first type from the remove_word call
@@ -312,7 +300,6 @@ where
                                 loc,
                                 node_handle,
                                 node_start,
-                                node_end,
                                 node_offset,
                             )
                         }
@@ -329,7 +316,7 @@ where
         &'a mut self,
         range: Range,
         dir: &Direction,
-    ) -> Option<(DomLocation, DomHandle, CharType, usize, usize, usize)> {
+    ) -> Option<(DomLocation, DomHandle, CharType, usize, usize)> {
         // check that we're not trying to move outside the dom
         let trying_to_move_outside_dom = match dir {
             Direction::Forwards => range.start() == self.state.dom.text_len(),
@@ -373,7 +360,7 @@ where
                             next_range, dir,
                         )
                     }
-                    Some((node_handle, node_start, node_end, node_offset)) => {
+                    Some((node_handle, node_start, node_offset)) => {
                         let node = self.state.dom.lookup_node(&node_handle);
                         let char_type =
                             get_char_type_from_node(node, node_offset, dir);
@@ -394,7 +381,6 @@ where
                                     node_handle,
                                     char_type,
                                     node_start,
-                                    node_end,
                                     node_offset,
                                 ))
                             }
@@ -439,7 +425,7 @@ where
         location: &DomLocation,
         direction: &Direction,
         position: usize,
-    ) -> Option<(DomHandle, usize, usize, usize)> {
+    ) -> Option<(DomHandle, usize, usize)> {
         // if we find a text or linebreak node, return them with their details
         // if we find a container node, recursively search it
         match self.state.dom.lookup_node(&location.node_handle) {
@@ -449,7 +435,6 @@ where
             DomNode::Text(_) | DomNode::LineBreak(_) => Some((
                 location.node_handle.clone(),
                 location.position,
-                location.position + location.length,
                 location.start_offset,
             )),
         }
@@ -668,7 +653,7 @@ fn recursively_search_container<'a, S: UnicodeString>(
     direction: &'a Direction,
     cursor_position: usize,
     location: &DomLocation,
-) -> Option<(DomHandle, usize, usize, usize)> {
+) -> Option<(DomHandle, usize, usize)> {
     // we need to keep track of a current offset for the case where we have a container
     // that contains multiple adjacent text nodes
     let mut current_container_offset: usize = 0;
@@ -690,7 +675,6 @@ fn recursively_search_container<'a, S: UnicodeString>(
                 return Some((
                     child.handle(),
                     location.position,
-                    location.position + location.length,
                     location.start_offset,
                 ))
             }
@@ -712,12 +696,7 @@ fn recursively_search_container<'a, S: UnicodeString>(
                 };
 
                 if has_length && (is_inside_node || is_correct_adjacent_node) {
-                    return Some((
-                        child.handle(),
-                        node_start,
-                        node_end,
-                        node_offset,
-                    ));
+                    return Some((child.handle(), node_start, node_offset));
                 }
 
                 // to handle adjacent text nodes, increment the current offset in this container
