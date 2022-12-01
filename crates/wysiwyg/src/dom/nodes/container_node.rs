@@ -308,6 +308,13 @@ where
         self.kind = ContainerNodeKind::Link(link.clone());
         self.attrs = Some(vec![("href".into(), link)]);
     }
+
+    pub(crate) fn get_link(&self) -> Option<S> {
+        let ContainerNodeKind::Link(link) = self.kind.clone() else {
+            return None
+        };
+        Some(link)
+    }
 }
 
 impl<S> ToHtml<S> for ContainerNode<S>
