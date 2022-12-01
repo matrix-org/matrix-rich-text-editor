@@ -172,7 +172,10 @@ impl ComposerModel<Utf16String> {
             // ({ or |) by now.
             assert!(selection_writer.is_selection_written());
         }
-        let html = buf.to_string();
+        let mut html = buf.to_string();
+        if html == "" {
+            html = String::from("|");
+        }
 
         // Replace characters with visible ones
         html.replace('\u{200b}', "~").replace('\u{A0}', "&nbsp;")
@@ -640,7 +643,7 @@ mod test {
                 end: Location::from(1),
                 toggled_format_types: Vec::new(),
             });
-        assert_eq!(tx(&model), "");
+        assert_eq!(tx(&model), "|");
     }
 
     #[test]
