@@ -58,6 +58,7 @@ fn backspacing_a_lone_newline_deletes_it() {
     model.enter();
     model.backspace();
     assert_eq!(tx(&model), "|");
+    model.state.dom.explicitly_assert_invariants();
 }
 
 #[test]

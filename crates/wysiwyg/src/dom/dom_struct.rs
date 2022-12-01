@@ -680,12 +680,11 @@ mod test {
     #[test]
     fn find_parent_list_item_or_self_finds_our_grandparent() {
         let d = cm("|<ul><li>b<strong>c</strong></li></ul>d").state.dom;
-        // TODO: assumes model will have a leading empty text node!
         let res = d.find_parent_list_item_or_self(&DomHandle::from_raw(vec![
-            1, 0, 1, 0,
+            0, 0, 1, 0,
         ]));
         let res = res.expect("Should have found a list parent!");
-        assert_eq!(res.into_raw(), vec![1, 0]);
+        assert_eq!(res.into_raw(), vec![0, 0]);
     }
 
     #[test]
