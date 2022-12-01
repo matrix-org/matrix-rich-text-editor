@@ -17,6 +17,7 @@
 pub mod test_characters;
 pub mod test_deleting;
 pub mod test_formatting;
+pub mod test_get_link_action;
 pub mod test_links;
 pub mod test_lists;
 pub mod test_menu_state;
