@@ -52,6 +52,23 @@ where
         #[cfg(any(test, feature = "assert-invariants"))]
         self.assert_invariants();
     }
+
+    pub(crate) fn merge_text_nodes_around(&mut self, handle: &DomHandle) {
+        // TODO: make this method not public because it is used to make
+        // the invariants true, instead of assuming they are true at the
+        // beginning!
+        // Instead, move another method into here, and make it call this one.
+
+        let parent = self.parent_mut(handle);
+        let idx = handle.index_in_parent();
+        if idx > 0 {
+            merge_if_adjacent_text_nodes(parent, idx - 1);
+        }
+        merge_if_adjacent_text_nodes(parent, idx);
+
+        #[cfg(any(test, feature = "assert-invariants"))]
+        self.assert_invariants();
+    }
 }
 
 /// If the child of parent at index and the one after it are both text

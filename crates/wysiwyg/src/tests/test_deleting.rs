@@ -139,7 +139,7 @@ fn deleting_when_spanning_two_separate_identical_tags_joins_them() {
     let mut model = cm("<b>bo{ld</b> plain <b>BO}|LD</b>");
     model.delete();
     assert_eq!(tx(&model), "<b>bo|LD</b>");
-    // TODO: model.state.dom.explicitly_assert_invariants();
+    model.state.dom.explicitly_assert_invariants();
 }
 
 #[test]
@@ -224,7 +224,7 @@ fn deleting_in_nested_structure_and_format_nodes_works() {
     let mut model = cm("<ul><li>A</li><li><b>B{B</b><b>C}|C</b></li></ul>");
     model.delete();
     assert_eq!(tx(&model), "<ul><li>A</li><li><b>B|C</b></li></ul>");
-    // TODO: model.state.dom.explicitly_assert_invariants();
+    model.state.dom.explicitly_assert_invariants();
 }
 
 #[test]
