@@ -213,6 +213,10 @@ impl ComposerModel {
     pub fn unordered_list(&mut self) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.unordered_list())
     }
+
+    pub fn get_link_action(&self) -> LinkAction {
+        self.inner.get_link_action().into()
+    }
 }
 
 #[wasm_bindgen]
@@ -525,8 +529,8 @@ pub struct LinkAction {
     pub edit_link: Option<Edit>,
 }
 
-impl LinkAction {
-    pub fn from(inner: wysiwyg::LinkAction<Utf16String>) -> Self {
+impl From<wysiwyg::LinkAction<Utf16String>> for LinkAction {
+    fn from(inner: wysiwyg::LinkAction<Utf16String>) -> Self {
         match inner {
             wysiwyg::LinkAction::CreateWithText => Self {
                 create_with_text: Some(CreateWithText),
