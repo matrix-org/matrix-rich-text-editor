@@ -14,6 +14,7 @@
 
 use core::panic;
 
+use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
 use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
 use crate::dom::{DomHandle, DomLocation, Range};
@@ -185,6 +186,7 @@ where
     ) -> ComposerUpdate<S> {
         // actions here depend on the node first
         let node = self.state.dom.lookup_node_mut(&node_handle);
+        // let node_type = ;
         match node {
             DomNode::Container(_) => panic!("Hit container in remove_word"),
             DomNode::LineBreak(_) => {
@@ -308,9 +310,19 @@ where
                         .do_delete_between(start_position, current_position);
                 } else {
                     // if we have reached the end of the dom, delete up to there and stop
-                    if current_position == 0
-                        || current_position == self.state.dom.text_len()
-                    {
+                    let reached_end_of_dom = current_position == 0
+                        || current_position == self.state.dom.text_len();
+
+                    println!("LOC {:?}", location);
+                    println!("CURR POS {}", current_position);
+                    let reached_end_of_list_item =
+                        location.kind.eq(&DomNodeKind::ListItem)
+                            && (current_position == location.position
+                                || current_position
+                                    == location.position + location.length);
+
+                    if reached_end_of_dom || reached_end_of_list_item {
+                        println!("STOP");
                         return self.do_delete_between(
                             start_position,
                             current_position,
