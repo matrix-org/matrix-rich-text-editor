@@ -44,5 +44,5 @@ fn clear() {
     let mut model = ComposerModel::new();
     model.set_content_from_html(&Utf16String::from("content"));
     model.clear();
-    assert_eq!(tx(&model), "");
+    assert_eq!(tx(&model), "|");
 }

@@ -336,6 +336,6 @@ mod test {
     fn delete_nodes_refuses_recursively_to_delete_root() {
         let mut model = cm("a|");
         model.delete_nodes(vec![DomHandle::from_raw(vec![0])]);
-        assert_eq!(tx(&model), "")
+        assert_eq!(tx(&model), "|")
     }
 }
