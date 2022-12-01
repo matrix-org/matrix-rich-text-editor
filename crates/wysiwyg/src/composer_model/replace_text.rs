@@ -146,6 +146,8 @@ where
         mut start: usize,
         end: usize,
     ) -> ComposerUpdate<S> {
+        self.state.dom.explicitly_assert_invariants();
+
         let text_string = new_text.to_string();
         // If the inserted text contains newlines, slice it and
         // insert each slice while simulating calls to the
@@ -175,21 +177,28 @@ where
                 self.first_shrinkable_link_node_handle(&range)
             {
                 // We replace and delete as normal with an empty string on the current range
-                self.replace_multiple_nodes(range, "".into());
+                self.replace_multiple_nodes(&range, "".into());
                 // Then we set the new text value in the next sibling node (or create a new one if none exists)
                 self.set_new_text_in_next_sibling_node(
                     starting_link_handle,
                     new_text,
                 )
             } else {
-                self.replace_multiple_nodes(range, new_text)
+                self.replace_multiple_nodes(&range, new_text)
             }
 
             self.apply_pending_formats(start, start + len);
 
+            if let Some(first_location) = range.locations.first() {
+                self.state
+                    .dom
+                    .merge_text_nodes_around(&first_location.node_handle);
+            }
+
             self.state.start = Location::from(start + len);
             self.state.end = self.state.start;
         }
+        self.state.dom.explicitly_assert_invariants();
 
         // TODO: for now, we replace every time, to check ourselves, but
         // at least some of the time we should not
@@ -245,7 +254,7 @@ where
         Some(link_loc.node_handle.clone())
     }
 
-    fn replace_multiple_nodes(&mut self, range: Range, new_text: S) {
+    fn replace_multiple_nodes(&mut self, range: &Range, new_text: S) {
         let len = new_text.len();
         let action_list = self.replace_in_text_nodes(range.clone(), new_text);
 
