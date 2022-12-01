@@ -5,6 +5,7 @@ use widestring::Utf16String;
 
 use crate::ffi_composer_state::ComposerState;
 use crate::ffi_composer_update::ComposerUpdate;
+use crate::ffi_link_actions::LinkAction;
 use crate::into_ffi::IntoFfi;
 use crate::{ActionState, ComposerAction};
 
@@ -204,5 +205,9 @@ impl ComposerModel {
         self: &Arc<Self>,
     ) -> HashMap<ComposerAction, ActionState> {
         self.inner.lock().unwrap().action_states().into_ffi()
+    }
+
+    pub fn get_link_action(self: &Arc<Self>) -> LinkAction {
+        self.inner.lock().unwrap().get_link_action().into()
     }
 }

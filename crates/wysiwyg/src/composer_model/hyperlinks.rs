@@ -12,15 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::{ContainerNodeKind::Link, DomNode};
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{DomLocation, Range};
-use crate::{ComposerModel, ComposerUpdate, UnicodeString};
+use crate::{ComposerModel, ComposerUpdate, LinkAction, UnicodeString};
 
 impl<S> ComposerModel<S>
 where
     S: UnicodeString,
 {
+    pub fn get_link_action(&self) -> LinkAction<S> {
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        for loc in range.locations {
+            if loc.kind == DomNodeKind::Link {
+                let node = self.state.dom.lookup_node(&loc.node_handle);
+                let link = node.as_container().unwrap().get_link().unwrap();
+                return LinkAction::Edit(link);
+            }
+        }
+        if s == e {
+            LinkAction::CreateWithText
+        } else {
+            LinkAction::Create
+        }
+    }
+
     pub fn set_link(&mut self, link: S) -> ComposerUpdate<S> {
         // push_state_to_history is after this check:
         let (s, e) = self.safe_selection();

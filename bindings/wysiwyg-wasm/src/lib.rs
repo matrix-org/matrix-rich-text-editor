@@ -213,6 +213,10 @@ impl ComposerModel {
     pub fn unordered_list(&mut self) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.unordered_list())
     }
+
+    pub fn get_link_action(&self) -> LinkAction {
+        self.inner.get_link_action().into()
+    }
 }
 
 #[wasm_bindgen]
@@ -500,6 +504,52 @@ impl DomHandle {
             wysiwyg::DomNode::Container(node) => node.name().to_string(),
             wysiwyg::DomNode::LineBreak(node) => node.name().to_string(),
             wysiwyg::DomNode::Text(_) => String::from("-text-"),
+        }
+    }
+}
+
+#[derive(Clone)]
+#[wasm_bindgen]
+pub struct CreateWithText;
+
+#[derive(Clone)]
+#[wasm_bindgen]
+pub struct Create;
+
+#[derive(Clone)]
+#[wasm_bindgen(getter_with_clone)]
+pub struct Edit {
+    pub link: String,
+}
+
+#[wasm_bindgen(getter_with_clone)]
+pub struct LinkAction {
+    pub create_with_text: Option<CreateWithText>,
+    pub create: Option<Create>,
+    pub edit_link: Option<Edit>,
+}
+
+impl From<wysiwyg::LinkAction<Utf16String>> for LinkAction {
+    fn from(inner: wysiwyg::LinkAction<Utf16String>) -> Self {
+        match inner {
+            wysiwyg::LinkAction::CreateWithText => Self {
+                create_with_text: Some(CreateWithText),
+                create: None,
+                edit_link: None,
+            },
+            wysiwyg::LinkAction::Create => Self {
+                create_with_text: None,
+                create: Some(Create),
+                edit_link: None,
+            },
+            wysiwyg::LinkAction::Edit(link) => {
+                let link = link.to_string();
+                Self {
+                    create_with_text: None,
+                    create: None,
+                    edit_link: Some(Edit { link }),
+                }
+            }
         }
     }
 }
