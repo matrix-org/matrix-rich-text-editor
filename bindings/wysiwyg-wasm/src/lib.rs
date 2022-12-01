@@ -504,6 +504,52 @@ impl DomHandle {
     }
 }
 
+#[derive(Clone)]
+#[wasm_bindgen]
+pub struct CreateWithText;
+
+#[derive(Clone)]
+#[wasm_bindgen]
+pub struct Create;
+
+#[derive(Clone)]
+#[wasm_bindgen(getter_with_clone)]
+pub struct EditLink {
+    pub link: String,
+}
+
+#[wasm_bindgen(getter_with_clone)]
+pub struct LinkAction {
+    pub create_with_text: Option<CreateWithText>,
+    pub create: Option<Create>,
+    pub edit_link: Option<EditLink>,
+}
+
+impl LinkAction {
+    pub fn from(inner: wysiwyg::LinkAction<Utf16String>) -> Self {
+        match inner {
+            wysiwyg::LinkAction::CreateWithText => Self {
+                create_with_text: Some(CreateWithText),
+                create: None,
+                edit_link: None,
+            },
+            wysiwyg::LinkAction::Create => Self {
+                create_with_text: None,
+                create: Some(Create),
+                edit_link: None,
+            },
+            wysiwyg::LinkAction::EditLink(link) => {
+                let link = link.to_string();
+                Self {
+                    create_with_text: None,
+                    create: None,
+                    edit_link: Some(EditLink { link }),
+                }
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::ComposerModel;

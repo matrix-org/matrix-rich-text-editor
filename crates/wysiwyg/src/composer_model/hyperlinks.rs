@@ -15,12 +15,16 @@
 use crate::dom::nodes::{ContainerNodeKind::Link, DomNode};
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{DomLocation, Range};
-use crate::{ComposerModel, ComposerUpdate, UnicodeString};
+use crate::{ComposerModel, ComposerUpdate, LinkAction, UnicodeString};
 
 impl<S> ComposerModel<S>
 where
     S: UnicodeString,
 {
+    pub fn get_link_action(&self) -> LinkAction<S> {
+        todo!();
+    }
+
     pub fn set_link(&mut self, link: S) -> ComposerUpdate<S> {
         // push_state_to_history is after this check:
         let (s, e) = self.safe_selection();
