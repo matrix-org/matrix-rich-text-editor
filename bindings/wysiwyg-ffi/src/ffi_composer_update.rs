@@ -36,7 +36,7 @@ mod test {
         assert_eq!(
             update.menu_state(),
             MenuState::Update {
-                action_states: redo_disabled()
+                action_states: redo_indent_unindent_disabled()
             }
         );
     }
@@ -50,7 +50,7 @@ mod test {
         assert_eq!(
             update.menu_state(),
             MenuState::Update {
-                action_states: undo_and_redo_disabled()
+                action_states: undo_redo_indent_unindent_disabled()
             }
         );
     }
@@ -67,7 +67,7 @@ mod test {
         assert_eq!(
             update.menu_state(),
             MenuState::Update {
-                action_states: undo_and_redo_disabled()
+                action_states: undo_redo_indent_unindent_disabled()
             }
         );
     }
@@ -81,39 +81,40 @@ mod test {
         assert_eq!(
             update.menu_state(),
             MenuState::Update {
-                action_states: undo_and_redo_disabled()
+                action_states: undo_redo_indent_unindent_disabled()
             }
         );
     }
 
-    fn redo_disabled() -> HashMap<ComposerAction, ActionState> {
+    fn redo_indent_unindent_disabled() -> HashMap<ComposerAction, ActionState> {
         HashMap::from([
             (ComposerAction::Bold, ActionState::Enabled),
-            (ComposerAction::Indent, ActionState::Enabled),
+            (ComposerAction::Indent, ActionState::Disabled),
             (ComposerAction::InlineCode, ActionState::Enabled),
             (ComposerAction::Italic, ActionState::Enabled),
             (ComposerAction::Link, ActionState::Enabled),
             (ComposerAction::OrderedList, ActionState::Enabled),
             (ComposerAction::Redo, ActionState::Disabled),
             (ComposerAction::StrikeThrough, ActionState::Enabled),
-            (ComposerAction::UnIndent, ActionState::Enabled),
+            (ComposerAction::UnIndent, ActionState::Disabled),
             (ComposerAction::Underline, ActionState::Enabled),
             (ComposerAction::Undo, ActionState::Enabled),
             (ComposerAction::UnorderedList, ActionState::Enabled),
         ])
     }
 
-    fn undo_and_redo_disabled() -> HashMap<ComposerAction, ActionState> {
+    fn undo_redo_indent_unindent_disabled(
+    ) -> HashMap<ComposerAction, ActionState> {
         HashMap::from([
             (ComposerAction::Bold, ActionState::Enabled),
-            (ComposerAction::Indent, ActionState::Enabled),
+            (ComposerAction::Indent, ActionState::Disabled),
             (ComposerAction::InlineCode, ActionState::Enabled),
             (ComposerAction::Italic, ActionState::Enabled),
             (ComposerAction::Link, ActionState::Enabled),
             (ComposerAction::OrderedList, ActionState::Enabled),
             (ComposerAction::Redo, ActionState::Disabled),
             (ComposerAction::StrikeThrough, ActionState::Enabled),
-            (ComposerAction::UnIndent, ActionState::Enabled),
+            (ComposerAction::UnIndent, ActionState::Disabled),
             (ComposerAction::Underline, ActionState::Enabled),
             (ComposerAction::Undo, ActionState::Disabled),
             (ComposerAction::UnorderedList, ActionState::Enabled),
