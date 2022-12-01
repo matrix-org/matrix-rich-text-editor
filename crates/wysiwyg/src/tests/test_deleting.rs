@@ -631,7 +631,7 @@ fn html_delete_word_removes_between_nested_tags() {
 }
 
 #[test]
-fn html_backspace_word_deep_nesting() {
+fn html_backspace_word_into_deep_nesting() {
     let mut model = cm("<em>remains <em>all<em>of<em>the<em>rest</em>goes</em>away</em>x</em>y|</em>");
     model.backspace_word();
     assert_eq!(
@@ -640,11 +640,32 @@ fn html_backspace_word_deep_nesting() {
     );
 }
 #[test]
-fn html_delete_word_deep_nesting() {
+fn html_delete_word_into_deep_nesting() {
     let mut model = cm("<em>remains |<em>all<em>of<em>the<em>rest</em>goes</em>away</em>x</em>y</em>");
     model.delete_word();
     assert_eq!(
         restore_whitespace(&tx(&model)),
         "<em>remains |<em><em><em><em></em></em></em></em></em>"
+    );
+}
+
+#[test]
+fn html_backspace_word_out_of_deep_nesting() {
+    let mut model =
+        cm("<em><em>stop <em><em><em>removethis|</em></em></em></em></em>");
+    model.backspace_word();
+    assert_eq!(
+        restore_whitespace(&tx(&model)),
+        "<em><em>stop |<em><em><em></em></em></em></em></em>"
+    );
+}
+#[test]
+fn html_delete_word_out_of_deep_nesting() {
+    let mut model =
+        cm("<em><em><em><em><em>|removethis</em></em></em> stop</em></em>");
+    model.delete_word();
+    assert_eq!(
+        restore_whitespace(&tx(&model)),
+        "<em><em><em><em><em>|</em></em></em> stop</em></em>"
     );
 }
