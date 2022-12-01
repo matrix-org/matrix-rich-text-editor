@@ -62,6 +62,9 @@ where
     }
 
     pub fn can_indent(&self, locations: &Vec<DomLocation>) -> bool {
+        if locations.is_empty() {
+            return false;
+        }
         for loc in locations {
             if loc.is_leaf() && !self.can_indent_handle(&loc.node_handle) {
                 return false;
@@ -71,6 +74,9 @@ where
     }
 
     pub fn can_unindent(&self, locations: &Vec<DomLocation>) -> bool {
+        if locations.is_empty() {
+            return false;
+        }
         for loc in locations {
             if loc.is_leaf() && !self.can_unindent_handle(&loc.node_handle) {
                 return false;
