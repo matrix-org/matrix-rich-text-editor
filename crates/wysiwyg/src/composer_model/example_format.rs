@@ -729,9 +729,9 @@ mod test {
         assert_that!("aa|{<br />b}bb").roundtrips();
         assert_that!("aa{a<br />b}|bb").roundtrips();
         assert_that!("aa|{a<br />}bb").roundtrips();
-        // TODO: easier after refactor assert_that!("aa{<br />}|bb").rou
-        // TODO: assert_that!("aa|{<br />}bb").roundtrips();
-        assert_that!("<ol><li>|</li></ol>").roundtrips();
+        assert_that!("aa{<br />}|bb").roundtrips();
+        assert_that!("aa|{<br />}bb").roundtrips();
+        assert_that!("<ol><li>a|</li></ol>").roundtrips();
     }
 
     #[test]

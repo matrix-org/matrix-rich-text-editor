@@ -357,13 +357,15 @@ where
                             // Cursor is after line break, no need to delete
                         }
                         (0, 0) => {
-                            let node =
-                                DomNode::new_text(new_text.clone().into());
-                            action_list.push(DomAction::add_node(
-                                loc.node_handle.parent_handle(),
-                                loc.node_handle.index_in_parent(),
-                                node,
-                            ));
+                            if !new_text.is_empty() {
+                                let node =
+                                    DomNode::new_text(new_text.clone().into());
+                                action_list.push(DomAction::add_node(
+                                    loc.node_handle.parent_handle(),
+                                    loc.node_handle.index_in_parent(),
+                                    node,
+                                ));
+                            }
                         }
                         _ => panic!(
                             "Tried to insert text into a line break with offset != 0 or 1. \
@@ -380,11 +382,13 @@ where
                         // deleted nodes. (That is true in this case, because
                         // we are checking that the selection ends inside this
                         // line break.)
-                        action_list.push(DomAction::add_node(
-                            loc.node_handle.parent_handle(),
-                            loc.node_handle.index_in_parent() + 1,
-                            DomNode::new_text(new_text.clone()),
-                        ));
+                        if !new_text.is_empty() {
+                            action_list.push(DomAction::add_node(
+                                loc.node_handle.parent_handle(),
+                                loc.node_handle.index_in_parent() + 1,
+                                DomNode::new_text(new_text.clone()),
+                            ));
+                        }
                     }
                 }
                 DomNode::Text(node) => {
@@ -409,7 +413,12 @@ where
                         }
 
                         new_data.push(&old_data[loc.end_offset..]);
-                        node.set_data(new_data);
+                        if new_data.is_empty() {
+                            action_list
+                                .push(DomAction::remove_node(loc.node_handle));
+                        } else {
+                            node.set_data(new_data);
+                        }
                     }
 
                     first_text_node = false;
