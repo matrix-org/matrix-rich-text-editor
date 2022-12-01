@@ -132,6 +132,7 @@ impl ComposerModel<Utf16String> {
             model.state.end = Location::from(curs);
         }
         model.compute_menu_state(MenuStateComputeType::KeepIfUnchanged);
+        model.state.dom.explicitly_assert_invariants();
 
         model
     }

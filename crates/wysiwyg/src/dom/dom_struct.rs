@@ -138,20 +138,6 @@ where
         parent.remove_child(index)
     }
 
-    /// Removes node at given handle from the dom, and if it has children
-    /// moves them to its parent container children.
-    pub fn remove_and_keep_children(&mut self, node_handle: &DomHandle) {
-        let parent = self.parent_mut(node_handle);
-        let index = node_handle.index_in_parent();
-        let node = parent.remove_child(index);
-        if let DomNode::Container(mut node) = node {
-            for i in (0..node.children().len()).rev() {
-                let child = node.remove_child(i);
-                parent.insert_child(index, child);
-            }
-        }
-    }
-
     /// Given the start and end code units, find which nodes of this Dom are
     /// selected. The returned range lists all the Dom nodes involved.
     pub fn find_range(&self, start: usize, end: usize) -> Range {
