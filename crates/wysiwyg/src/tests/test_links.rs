@@ -329,3 +329,18 @@ fn link_action_from_non_highlighted_normal_text() {
     let model = cm("test|");
     assert_eq!(model.get_link_action(), LinkAction::CreateWithText)
 }
+
+#[test]
+fn link_action_from_highlighted_normal_text() {
+    let model = cm("{test}|");
+    assert_eq!(model.get_link_action(), LinkAction::Create)
+}
+
+#[test]
+fn link_action_from_highlighted_link() {
+    let model = cm("{<a href=\"https://element.io\">test</a>}|");
+    assert_eq!(
+        model.get_link_action(),
+        LinkAction::Edit(utf16("https://element.io"))
+    )
+}
