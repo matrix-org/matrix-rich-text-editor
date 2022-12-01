@@ -105,11 +105,10 @@ where
             // Keep a list of things we will delete next time around the loop
             let mut new_to_delete = Vec::new();
 
-            for handle in to_delete.into_iter() {
-                let child_index =
-                    handle.raw().last().expect("Text node can't be root!");
+            for handle in to_delete.into_iter().filter(not_root) {
+                let index_in_parent = handle.index_in_parent();
                 let parent = self.state.dom.parent_mut(&handle);
-                parent.remove_child(*child_index);
+                parent.remove_child(index_in_parent);
                 adjust_handles_for_delete(&mut new_to_delete, &handle);
                 if parent.children().is_empty() {
                     new_to_delete.push(parent.handle());
@@ -201,6 +200,10 @@ where
     }
 }
 
+fn not_root(handle: &DomHandle) -> bool {
+    !handle.is_root()
+}
+
 fn starts_with(subject: &DomHandle, object: &DomHandle) -> bool {
     // Can't start with something longer than you
     if subject.raw().len() < object.raw().len() {
@@ -265,6 +268,7 @@ fn adjust_handles_for_delete(
 #[cfg(test)]
 mod test {
     use crate::dom::DomHandle;
+    use crate::tests::testutils_composer_model::{cm, tx};
 
     use super::*;
 
@@ -319,5 +323,19 @@ mod test {
         assert_eq!(*handles[1].raw(), vec![0, 9, 2, 4, 5]);
         assert_eq!(*handles[2].raw(), vec![0, 9, 2]);
         assert_eq!(handles.len(), 3);
+    }
+
+    #[test]
+    fn delete_nodes_refuses_to_delete_root() {
+        let mut model = cm("|");
+        model.delete_nodes(vec![model.state.dom.document_handle()]);
+        assert_eq!(tx(&model), "|")
+    }
+
+    #[test]
+    fn delete_nodes_refuses_recursively_to_delete_root() {
+        let mut model = cm("a|");
+        model.delete_nodes(vec![DomHandle::from_raw(vec![0])]);
+        assert_eq!(tx(&model), "")
     }
 }
