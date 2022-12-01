@@ -343,8 +343,5 @@ fn set_link_with_text_and_undo() {
         "test<a href=\"https://element.io\">added_link|</a>"
     );
     model.undo();
-    assert_eq!(
-        tx(&model),
-        "test|"
-    );
+    assert_eq!(tx(&model), "test|");
 }
