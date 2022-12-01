@@ -136,9 +136,9 @@ where
             return self.delete_in(s, e);
         }
 
+        // TODO do we make the argument getter do the above too? can just call with direction then
         // to remove a word, we need details from the current range
-        let current_details =
-            self.get_details_from_range_and_direction(range, dir);
+        let current_details = self.get_remove_word_arguments(range, dir);
         match current_details {
             None => ComposerUpdate::keep(),
             Some(details) => {
@@ -181,17 +181,13 @@ where
             DomNode::Container(_) => ComposerUpdate::keep(),
             // for a linebreak, remove it if we started the operation from the whitespace
             // char type, otherwise keep it
-            DomNode::LineBreak(_) => {
-                match start_type {
-                    CharType::Punctuation | CharType::Other => {
-                        ComposerUpdate::keep()
-                    }
-                    CharType::Whitespace | CharType::Linebreak => self
-                        .delete_to_cursor(dir.increment(
-                            location.position + location.start_offset,
-                        )),
+            DomNode::LineBreak(_) => match start_type {
+                CharType::Punctuation | CharType::Other => {
+                    ComposerUpdate::keep()
                 }
-            }
+                CharType::Whitespace | CharType::Linebreak => self
+                    .delete_to_cursor(dir.increment(node_start + node_offset)),
+            },
             DomNode::Text(text_node) => {
                 let node_length = text_node.data().len();
                 let mut current_offset = node_offset;
@@ -234,8 +230,8 @@ where
 
                         let (_s, _e) = self.safe_selection();
                         let _range = self.state.dom.find_range(_s, _e);
-                        let next_details = self
-                            .get_details_from_range_and_direction(_range, dir);
+                        let next_details =
+                            self.get_remove_word_arguments(_range, dir);
                         return match next_details {
                             None => ComposerUpdate::keep(),
                             Some(details) => {
@@ -282,7 +278,7 @@ where
                     let (_s, _e) = self.safe_selection();
                     let _range = self.state.dom.find_range(_s, _e);
                     let next_details =
-                        self.get_details_from_range_and_direction(_range, dir);
+                        self.get_remove_word_arguments(_range, dir);
                     // the issue here is pretty simple, it's how do we get to the next text node properly
                     return match next_details {
                         None => ComposerUpdate::keep(),
@@ -307,7 +303,7 @@ where
     /// In order for the recursive calls to work we need quite a few details
     /// from the cursor location, this gets those details and returns them
     /// as a tuple. Likely this can be replaced by DOM iteration methods
-    fn get_details_from_range_and_direction<'a>(
+    fn get_remove_word_arguments<'a>(
         &'a mut self,
         range: Range,
         dir: &Direction,
@@ -351,9 +347,7 @@ where
                             next_cursor_position,
                             next_cursor_position,
                         );
-                        self.get_details_from_range_and_direction(
-                            next_range, dir,
-                        )
+                        self.get_remove_word_arguments(next_range, dir)
                     }
                     Some((node_handle, node_start, node_offset)) => {
                         let node = self.state.dom.lookup_node(&node_handle);
