@@ -193,7 +193,11 @@ where
         self.children.last_mut()
     }
 
-    pub fn insert_child(&mut self, index: usize, node: DomNode<S>) {
+    pub fn insert_child(
+        &mut self,
+        index: usize,
+        node: DomNode<S>,
+    ) -> &DomNode<S> {
         assert!(self.handle.is_set());
         assert!(index <= self.children().len());
 
@@ -203,6 +207,8 @@ where
             let new_handle = self.handle.child_handle(i);
             self.children[i].set_handle(new_handle);
         }
+
+        self.children.get(index).unwrap()
     }
 
     pub fn handle(&self) -> DomHandle {
@@ -343,6 +349,19 @@ where
         while !other_node.children().is_empty() {
             let child = other_node.remove_child(0);
             self.append_child(child);
+        }
+    }
+
+    pub(crate) fn copy_with_new_children(
+        &self,
+        new_children: Vec<DomNode<S>>,
+    ) -> Self {
+        Self {
+            name: self.name.clone(),
+            kind: self.kind.clone(),
+            attrs: self.attrs.clone(),
+            children: new_children,
+            handle: self.handle.clone(),
         }
     }
 }

@@ -113,7 +113,11 @@ where
 
     /// Inserts the given [node] at the [node_handle] position, moving the node at that position
     /// forward, if any.
-    pub fn insert_at(&mut self, node_handle: &DomHandle, node: DomNode<S>) {
+    pub fn insert_at(
+        &mut self,
+        node_handle: &DomHandle,
+        node: DomNode<S>,
+    ) -> &DomNode<S> {
         let parent = self.parent_mut(node_handle);
         let index = node_handle.index_in_parent();
         parent.insert_child(index, node)

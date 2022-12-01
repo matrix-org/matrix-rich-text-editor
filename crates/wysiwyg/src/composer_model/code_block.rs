@@ -15,7 +15,7 @@
 use crate::dom::action_list::DomActionList;
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::DomNodeKind::*;
-use crate::dom::nodes::{ContainerNodeKind, DomNode};
+use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode};
 use crate::dom::unicode_string::UnicodeStr;
 use crate::dom::{DomHandle, DomLocation};
 use crate::{
@@ -43,11 +43,12 @@ where
         let Some((parent_handle, idx_start, idx_end)) = self.find_nodes_to_wrap_in_block(s, e) else {
             return ComposerUpdate::keep();
         };
+        let mut dom = &mut self.state.dom;
         let mut leaves_to_add: Vec<DomNode<S>> = Vec::new();
         let mut nodes_visited = HashSet::new();
         let start_handle = parent_handle.child_handle(idx_start);
         let up_to_handle = parent_handle.child_handle(idx_end + 1);
-        let iter = self.state.dom.iter_from_handle(&start_handle);
+        let iter = dom.iter_from_handle(&start_handle);
         for node in iter {
             if node.handle() >= up_to_handle {
                 break;
@@ -86,54 +87,44 @@ where
         }
 
         for i in (idx_start..=idx_end).rev() {
-            self.state.dom.remove(&parent_handle.child_handle(i));
+            dom.remove(&parent_handle.child_handle(i));
         }
 
-        self.state
-            .dom
-            .insert_at(&start_handle, DomNode::new_code_block(leaves_to_add));
+        dom.insert_at(&start_handle, DomNode::new_code_block(leaves_to_add));
 
         // Merge any nodes that need it
-        self.post_process_code_block(&start_handle);
+        self.merge_adjacent_code_blocks(&start_handle);
 
         self.create_update_replace_all()
     }
 
-    fn post_process_code_block(&mut self, handle: &DomHandle) {
+    fn merge_adjacent_code_blocks(&mut self, handle: &DomHandle) {
         let mut handle = handle.clone();
-        let next_code_block_handle =
-            if let Some(next_sibling) = self.state.dom.next_sibling(&handle) {
-                if next_sibling.kind() == CodeBlock {
-                    Some(next_sibling.handle())
-                } else {
-                    None
-                }
-            } else {
-                None
-            };
-        if let Some(next_code_block_handle) = next_code_block_handle {
+        if let Some(next_code_block_handle) = self
+            .state
+            .dom
+            .next_sibling(&handle)
+            .filter(|n| n.kind() == CodeBlock)
+            .map(|n| n.handle())
+        {
             self.move_children_and_delete_parent(
                 &next_code_block_handle,
                 &handle,
             );
         }
 
-        let prev_code_block_handle =
-            if let Some(prev_sibling) = self.state.dom.prev_sibling(&handle) {
-                if prev_sibling.kind() == CodeBlock {
-                    Some(prev_sibling.handle())
-                } else {
-                    None
-                }
-            } else {
-                None
-            };
-        if let Some(prev_code_block_handle) = prev_code_block_handle {
+        if let Some(prev_code_block_handle) = self
+            .state
+            .dom
+            .prev_sibling(&handle)
+            .filter(|n| n.kind() == CodeBlock)
+            .map(|n| n.handle())
+        {
             self.move_children_and_delete_parent(
                 &handle,
                 &prev_code_block_handle,
             );
-            handle = prev_code_block_handle.clone();
+            handle = prev_code_block_handle;
         }
 
         self.join_format_nodes_at_level(
@@ -335,55 +326,82 @@ where
         from_handle: &DomHandle,
         offset: usize,
         level: usize,
-    ) {
-        let handle_at_level = from_handle.sub_handle_up_to(level + 1);
-        let cur_subtree = self.state.dom.lookup_node(&handle_at_level);
-        let mut new_subtree = cur_subtree.clone();
+    ) -> DomNode<S> {
         let subtree_len = from_handle.raw().len();
-        for i in (level + 1)..subtree_len {
-            let index_at_level = from_handle.raw()[i];
-            let handle_at_level = from_handle.sub_handle_up_to(level + 1);
-
-            let DomNode::Container(cur_subtree) = self.state.dom.lookup_node_mut(&handle_at_level) else {
-                panic!("Passed 'from_handle' must be from a container node");
-            };
-
-            for j in (index_at_level..cur_subtree.children().len()).rev() {
-                if i + 1 == subtree_len && j == index_at_level {
-                    if let Some(DomNode::Text(text_node)) =
-                        cur_subtree.get_child_mut(j)
-                    {
-                        let new_data = text_node.data()[offset..].to_owned();
-                        text_node.set_data(new_data);
+        // Create new 'root' node to contain the split sub-tree
+        let mut new_subtree = DomNode::Container(ContainerNode::new(
+            S::default(),
+            ContainerNodeKind::Generic,
+            None,
+            Vec::new(),
+        ));
+        new_subtree.set_handle(DomHandle::root());
+        for cur_level in level..subtree_len {
+            let index_at_level = from_handle.raw()[cur_level];
+            let handle_up_to = from_handle.sub_handle_up_to(cur_level);
+            if let DomNode::Container(cur) =
+                self.state.dom.lookup_node_mut(&handle_up_to)
+            {
+                let mut removed_nodes = Vec::new();
+                for idx in (index_at_level..cur.children().len()).rev() {
+                    if idx == index_at_level {
+                        let child = cur.get_child_mut(idx).unwrap();
+                        match child {
+                            DomNode::Container(container) => {
+                                removed_nodes.insert(
+                                    0,
+                                    DomNode::Container(
+                                        container
+                                            .copy_with_new_children(Vec::new()),
+                                    ),
+                                );
+                            }
+                            DomNode::Text(text_node) => {
+                                if offset == 0 {
+                                    removed_nodes.insert(0, child.clone());
+                                } else {
+                                    let left_data =
+                                        text_node.data()[..offset].to_owned();
+                                    let right_data =
+                                        text_node.data()[offset..].to_owned();
+                                    text_node.set_data(left_data);
+                                    removed_nodes.insert(
+                                        0,
+                                        DomNode::new_text(right_data),
+                                    );
+                                }
+                            }
+                            _ => {
+                                removed_nodes.insert(0, child.clone());
+                            }
+                        }
+                    } else {
+                        removed_nodes.insert(0, cur.remove_child(idx));
                     }
-                } else {
-                    cur_subtree.remove_child(j);
+                }
+                let mut new_subtree_at_prev_level = &mut new_subtree;
+                for _ in level..cur_level {
+                    if let DomNode::Container(c) = new_subtree_at_prev_level {
+                        let child = c.get_child_mut(0).unwrap();
+                        new_subtree_at_prev_level = child;
+                    }
+                }
+                if let DomNode::Container(new_subtree) =
+                    new_subtree_at_prev_level
+                {
+                    if !removed_nodes.is_empty() {
+                        for node in removed_nodes {
+                            new_subtree.append_child(node);
+                        }
+                    }
                 }
             }
         }
 
-        for i in (level + 1)..(subtree_len - 1) {
-            let index_at_level = from_handle.raw()[i];
+        let html = new_subtree.to_html().to_string();
+        dbg!(html);
 
-            let DomNode::Container(cur_subtree) = self.state.dom.lookup_node_mut(&handle_at_level) else {
-                panic!("Passed 'from_handle' must be from a container node");
-            };
-
-            for j in (index_at_level..cur_subtree.children().len()).rev() {
-                if i + 1 == subtree_len && j == index_at_level {
-                    if let Some(DomNode::Text(text_node)) =
-                        cur_subtree.get_child_mut(j)
-                    {
-                        let new_data = text_node.data()[offset..].to_owned();
-                        text_node.set_data(new_data);
-                    }
-                } else {
-                    cur_subtree.remove_child(j);
-                }
-            }
-
-            new_subtree =
-        }
+        new_subtree
     }
 }
 
@@ -395,7 +413,7 @@ struct HandleWithKind {
 #[cfg(test)]
 mod test {
     use crate::tests::testutils_composer_model::{cm, tx};
-    use crate::DomHandle;
+    use crate::{DomHandle, ToHtml};
 
     #[test]
     fn find_ranges_to_wrap_simple_text() {
@@ -614,5 +632,59 @@ mod test {
             tx(&model),
             "Text <br />wi{th<br />line<br />brea}|ks<br />"
         );
+    }
+
+    #[test]
+    fn split_dom_simple() {
+        let mut model = cm("Text|<b>bold</b><i>italic</i>");
+        let ret = model.split_sub_tree(&DomHandle::from_raw(vec![1, 0]), 2, 0);
+        assert_eq!(ret.to_html().to_string(), "<b>ld</b><i>italic</i>");
+    }
+
+    #[test]
+    fn split_dom_with_nested_formatting() {
+        let mut model = cm("<u>Text|<b>bold</b><i>italic</i></u>");
+        let ret =
+            model.split_sub_tree(&DomHandle::from_raw(vec![0, 1, 0]), 2, 0);
+        assert_eq!(ret.to_html().to_string(), "<u><b>ld</b><i>italic</i></u>");
+    }
+
+    #[test]
+    fn split_dom_with_nested_formatting_at_sub_level() {
+        let mut model = cm("<u>Text|<b>bold</b><i>italic</i></u>");
+        let ret =
+            model.split_sub_tree(&DomHandle::from_raw(vec![0, 1, 0]), 2, 1);
+        assert_eq!(ret.to_html().to_string(), "<b>ld</b><i>italic</i>")
+    }
+
+    #[test]
+    fn split_dom_with_lists() {
+        let mut model =
+            cm("<ul><li>Text|</li><li><b>bold</b><i>italic</i></li></ul>");
+        let depth = 0;
+        let offset = 2;
+        let ret = model.split_sub_tree(
+            &DomHandle::from_raw(vec![0, 1, 0, 0]),
+            offset,
+            depth,
+        );
+        assert_eq!(
+            ret.to_html().to_string(),
+            "<ul><li><b>ld</b><i>italic</i></li></ul>"
+        )
+    }
+
+    #[test]
+    fn split_dom_with_lists_at_sub_level() {
+        let mut model =
+            cm("<ul><li>Text|</li><li><b>bold</b><i>italic</i></li></ul>");
+        let depth = 1;
+        let offset = 2;
+        let ret = model.split_sub_tree(
+            &DomHandle::from_raw(vec![0, 1, 0, 0]),
+            offset,
+            depth,
+        );
+        assert_eq!(ret.to_html().to_string(), "<li><b>ld</b><i>italic</i></li>")
     }
 }
