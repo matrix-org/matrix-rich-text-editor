@@ -88,6 +88,7 @@ where
     let node = dom.lookup_node(node_handle);
     let mut locations = Vec::new();
     if *offset > end {
+        *offset += node.text_len();
         return locations;
     }
     match node {
@@ -133,7 +134,7 @@ where
     }
     // If container node is completely selected, include it
     let container_end = *offset;
-    let container_node_len = node.text_len();
+    let container_node_len = container_end - container_start;
     // We never want to return the root node
     if container_end >= start
         && container_start <= end
