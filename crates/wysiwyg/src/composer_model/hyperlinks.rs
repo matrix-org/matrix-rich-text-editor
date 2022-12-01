@@ -39,6 +39,23 @@ where
         }
     }
 
+    pub fn set_link_with_text(
+        &mut self,
+        link: S,
+        text: S,
+    ) -> ComposerUpdate<S> {
+        let (s, mut e) = self.safe_selection();
+        if s != e {
+            // This function is made to be used only when s == e
+            return ComposerUpdate::keep();
+        }
+        self.push_state_to_history();
+        self.do_replace_text(text.clone());
+        e += text.len();
+        let range = self.state.dom.find_range(s, e);
+        self.set_link_range(range, link)
+    }
+
     pub fn set_link(&mut self, link: S) -> ComposerUpdate<S> {
         // push_state_to_history is after this check:
         let (s, e) = self.safe_selection();

@@ -323,3 +323,28 @@ fn replace_text_in_a_link_inside_a_list_partially_selected_starting_inside_endin
     model.replace_text(utf16("added_text"));
     assert_eq!(tx(&model), "<ul><li>list_element</li><li><a href=\"https://element.io\">linkadded_text|list</a></li></ul>");
 }
+
+#[test]
+fn set_link_with_text() {
+    let mut model = cm("test|");
+    model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
+    assert_eq!(
+        tx(&model),
+        "test<a href=\"https://element.io\">added_link|</a>"
+    );
+}
+
+#[test]
+fn set_link_with_text_and_undo() {
+    let mut model = cm("test|");
+    model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
+    assert_eq!(
+        tx(&model),
+        "test<a href=\"https://element.io\">added_link|</a>"
+    );
+    model.undo();
+    assert_eq!(
+        tx(&model),
+        "test|"
+    );
+}
