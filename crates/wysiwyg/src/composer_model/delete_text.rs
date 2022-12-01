@@ -70,15 +70,15 @@ where
     }
 
     /// Allows deletion between two positions, regardless of argument order
-    fn delete_between(
-        &mut self,
-        pos1: usize,
-        pos2: usize,
-    ) -> ComposerUpdate<S> {
-        if pos1 < pos2 {
-            self.delete_in(pos1, pos2)
+    fn delete_to_cursor(&mut self, position: usize) -> ComposerUpdate<S> {
+        let (s, e) = self.safe_selection();
+        if s != e {
+            panic!("Can't delete to a split cursor")
+        }
+        if s < position {
+            self.delete_in(s, position)
         } else {
-            self.delete_in(pos2, pos1)
+            self.delete_in(position, s)
         }
     }
 
@@ -153,7 +153,6 @@ where
                     node_offset,
                 ) = details;
                 self.remove_word(
-                    s,
                     starting_char_type,
                     dir,
                     loc,
@@ -168,7 +167,6 @@ where
     // Actually removes words from the dom
     fn remove_word(
         &mut self,
-        start_position: usize,
         start_type: CharType,
         dir: &Direction,
         location: DomLocation,
@@ -183,16 +181,17 @@ where
             DomNode::Container(_) => ComposerUpdate::keep(),
             // for a linebreak, remove it if we started the operation from the whitespace
             // char type, otherwise keep it
-            DomNode::LineBreak(_) => match start_type {
-                CharType::Punctuation | CharType::Other => {
-                    ComposerUpdate::keep()
+            DomNode::LineBreak(_) => {
+                match start_type {
+                    CharType::Punctuation | CharType::Other => {
+                        ComposerUpdate::keep()
+                    }
+                    CharType::Whitespace | CharType::Linebreak => self
+                        .delete_to_cursor(dir.increment(
+                            location.position + location.start_offset,
+                        )),
                 }
-                CharType::Whitespace | CharType::Linebreak => self
-                    .delete_between(
-                        start_position,
-                        dir.increment(start_position),
-                    ),
-            },
+            }
             DomNode::Text(text_node) => {
                 let node_length = text_node.data().len();
                 let mut current_offset = node_offset;
@@ -231,7 +230,7 @@ where
                     if start_type.eq(&CharType::Whitespace) {
                         // for whitespace, we remove that run and then make a recursive
                         // call to also remove the next run
-                        self.delete_between(start_position, current_position);
+                        self.delete_to_cursor(current_position);
 
                         let (_s, _e) = self.safe_selection();
                         let _range = self.state.dom.find_range(_s, _e);
@@ -248,7 +247,6 @@ where
                                     node_offset,
                                 ) = details;
                                 self.remove_word(
-                                    _s,
                                     next_type, // pass it the new type to remove
                                     dir,
                                     loc,
@@ -259,8 +257,7 @@ where
                             }
                         };
                     }
-                    return self
-                        .delete_between(start_position, current_position);
+                    return self.delete_to_cursor(current_position);
                 } else {
                     let reached_end_of_dom = match dir {
                         Direction::Forwards => {
@@ -276,12 +273,11 @@ where
 
                     // if we have reached the end of the dom or the end of a list item delete then stop
                     if reached_end_of_dom || reached_end_of_list_item {
-                        return self
-                            .delete_between(start_position, current_position);
+                        return self.delete_to_cursor(current_position);
                     }
 
                     // otherwise we delete then make the recursive call
-                    self.delete_between(start_position, current_position);
+                    self.delete_to_cursor(current_position);
 
                     let (_s, _e) = self.safe_selection();
                     let _range = self.state.dom.find_range(_s, _e);
@@ -294,7 +290,6 @@ where
                             let (loc, node_handle, _, node_start, node_offset) =
                                 details;
                             self.remove_word(
-                                _s,
                                 start_type, // nb using the original first type from the remove_word call
                                 dir,
                                 loc,
