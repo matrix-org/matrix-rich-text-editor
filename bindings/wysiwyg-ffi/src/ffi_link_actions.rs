@@ -11,7 +11,7 @@ impl From<wysiwyg::LinkAction<Utf16String>> for LinkAction {
         match inner {
             wysiwyg::LinkAction::CreateWithText => Self::CreateWithText,
             wysiwyg::LinkAction::Create => Self::Create,
-            wysiwyg::LinkAction::EditLink(link) => Self::Edit {
+            wysiwyg::LinkAction::Edit(link) => Self::Edit {
                 link: link.into_vec(),
             },
         }

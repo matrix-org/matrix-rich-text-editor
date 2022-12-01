@@ -514,7 +514,7 @@ pub struct Create;
 
 #[derive(Clone)]
 #[wasm_bindgen(getter_with_clone)]
-pub struct EditLink {
+pub struct Edit {
     pub link: String,
 }
 
@@ -522,7 +522,7 @@ pub struct EditLink {
 pub struct LinkAction {
     pub create_with_text: Option<CreateWithText>,
     pub create: Option<Create>,
-    pub edit_link: Option<EditLink>,
+    pub edit_link: Option<Edit>,
 }
 
 impl LinkAction {
@@ -538,12 +538,12 @@ impl LinkAction {
                 create: Some(Create),
                 edit_link: None,
             },
-            wysiwyg::LinkAction::EditLink(link) => {
+            wysiwyg::LinkAction::Edit(link) => {
                 let link = link.to_string();
                 Self {
                     create_with_text: None,
                     create: None,
-                    edit_link: Some(EditLink { link }),
+                    edit_link: Some(Edit { link }),
                 }
             }
         }
