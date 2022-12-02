@@ -13,6 +13,12 @@ pub struct ComposerModel {
     inner: Mutex<wysiwyg::ComposerModel<Utf16String>>,
 }
 
+impl Default for ComposerModel {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ComposerModel {
     pub fn new() -> Self {
         Self {
@@ -177,6 +183,18 @@ impl ComposerModel {
         let link = Utf16String::from_str(&link);
         Arc::new(ComposerUpdate::from(
             self.inner.lock().unwrap().set_link(link),
+        ))
+    }
+
+    pub fn set_link_with_text(
+        self: &Arc<Self>,
+        link: String,
+        text: String,
+    ) -> Arc<ComposerUpdate> {
+        let link = Utf16String::from_str(&link);
+        let text = Utf16String::from_str(&text);
+        Arc::new(ComposerUpdate::from(
+            self.inner.lock().unwrap().set_link_with_text(link, text),
         ))
     }
 
