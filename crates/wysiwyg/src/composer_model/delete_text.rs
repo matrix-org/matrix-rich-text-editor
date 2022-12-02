@@ -14,19 +14,11 @@
 
 use core::panic;
 
+use crate::dom::nodes::text_node::CharType;
 use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
 use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
 use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
-
-// categories of character
-#[derive(PartialEq, Debug)]
-enum CharType {
-    Whitespace,
-    Linebreak,
-    Punctuation,
-    Other,
-}
 
 #[derive(PartialEq, Debug)]
 pub enum Direction {
@@ -35,13 +27,13 @@ pub enum Direction {
 }
 
 impl Direction {
-    fn increment(&self, index: usize) -> usize {
+    pub fn increment(&self, index: usize) -> usize {
         match self {
             Direction::Forwards => index + 1,
             Direction::Backwards => index - 1,
         }
     }
-    fn get_index_from_cursor(&self, index: usize) -> usize {
+    pub fn get_index_from_cursor(&self, index: usize) -> usize {
         match self {
             Direction::Forwards => index,
             Direction::Backwards => index - 1,
@@ -68,7 +60,7 @@ where
         }
     }
 
-    /// Deletes the current selection, will return no selection in case where
+    /// Deletes the current selection, will return a keep in case where
     /// we don't have a selection
     fn delete_selection(&mut self) -> ComposerUpdate<S> {
         if self.has_cursor() {
@@ -134,8 +126,8 @@ where
         self.remove_word_in_direction(Direction::Backwards)
     }
 
-    /// Given a direction and a range will get the remove word arguments and
-    /// then run 'remove_word' if the arguments are valid
+    /// Given a direction will get the remove word arguments and then run 'remove_word'
+    /// if arguments can be generated
     fn remove_word_in_direction(
         &mut self,
         direction: Direction,
@@ -145,22 +137,21 @@ where
             return self.delete_selection();
         }
 
-        // TODO do we make the argument getter do the above too? can just call with direction then
-        // to remove a word, we need details from the current range
-        let current_details = self.get_remove_word_arguments(&direction);
-        match current_details {
+        let inital_arguments = self.get_remove_word_arguments(&direction);
+        match inital_arguments {
             None => ComposerUpdate::keep(),
-            Some(details) => {
-                // here we have a non-split cursor, a single location, and a textlike node
-                // we need to track the individual node start/end/offset due to
-                // adjacent similar nodes
+            Some(arguments) => {
+                // here we have a non-split cursor, a single location, and a textlike node,
+                // we need to track the individual node start/end/offset due to adjacent similar
+                // nodes so when those no longer appear, the required number of arguments will
+                // decrease, possibly just to the first 3
                 let (
                     loc,
                     node_handle,
                     starting_char_type,
                     node_start,
                     node_offset,
-                ) = details;
+                ) = arguments;
                 self.remove_word(
                     starting_char_type,
                     direction,
@@ -173,7 +164,9 @@ where
         }
     }
 
-    // Actually removes words from the dom
+    /// Actually removes words from the dom. Number of arguments is due to adjacent text nodes.
+    /// If we can guarantee no adjacent similar nodes, this function could be refactored to just
+    /// use start_type, direction and location
     fn remove_word(
         &mut self,
         start_type: CharType,
@@ -183,9 +176,7 @@ where
         node_start: usize,
         node_offset: usize,
     ) -> ComposerUpdate<S> {
-        let node = self.state.dom.lookup_node_mut(&node_handle);
-        let is_list_item = node.is_list_item();
-        match node {
+        match self.state.dom.lookup_node_mut(&node_handle) {
             // we should never be passed a container
             DomNode::Container(_) => ComposerUpdate::keep(),
             // for a linebreak, remove it if we started the operation from the whitespace
@@ -199,34 +190,26 @@ where
                         direction.increment(node_start + node_offset),
                     ),
             },
-            DomNode::Text(text_node) => {
-                let node_length = text_node.data().len();
+            DomNode::Text(node) => {
                 let mut current_offset = node_offset;
 
-                // we can guarantee that we're inside the text node and stop when we hit
-                // the edge of the node, so use unwrap to get the types
-                let mut current_type = get_char_type_from_text_node(
-                    text_node,
-                    current_offset,
-                    &direction,
-                )
-                .unwrap();
-
-                while offset_is_inside_node(
-                    current_offset,
-                    node_length,
-                    &direction,
-                ) && current_type.eq(&start_type)
-                {
-                    let next_offset = direction.increment(current_offset);
-                    let next_type = get_char_type_from_text_node(
-                        text_node,
-                        current_offset,
-                        &direction,
-                    )
+                // TODO this could be tidied up by making text_node able to
+                // generate a directional iterator from a given offset
+                // We use unwrap here because we are only ever calling it when
+                // definitely inside a text node
+                let mut current_type = node
+                    .char_type_at_offset(current_offset, &direction)
                     .unwrap();
 
-                    if !next_type.eq(&current_type) {
+                while node.offset_is_inside_node(current_offset, &direction)
+                    && current_type == start_type
+                {
+                    let next_offset = direction.increment(current_offset);
+                    let next_type = node
+                        .char_type_at_offset(current_offset, &direction)
+                        .unwrap();
+
+                    if next_type != current_type {
                         break;
                     }
 
@@ -234,72 +217,64 @@ where
                     current_type = next_type;
                 }
 
+                // we have two scenarios here, we have either stopped looping due to a change of type
+                // inside the text node, or we have reached the edge of the text node
+
                 let current_position = node_start + current_offset;
-
-                if offset_is_inside_node(
-                    current_offset,
-                    node_length,
-                    &direction,
-                ) {
-                    if start_type.eq(&CharType::Whitespace) {
-                        // for whitespace, we remove that run and then make a recursive
-                        // call to also remove the next run
-                        self.delete_to_cursor(current_position);
-
-                        let next_details =
-                            self.get_remove_word_arguments(&direction);
-                        return match next_details {
-                            None => ComposerUpdate::keep(),
-                            Some(details) => {
-                                let (
-                                    loc,
-                                    node_handle,
-                                    next_type,
-                                    node_start,
-                                    node_offset,
-                                ) = details;
-                                self.remove_word(
-                                    next_type, // pass it the new type to remove
-                                    direction,
-                                    loc,
-                                    node_handle,
-                                    node_start,
-                                    node_offset,
-                                )
-                            }
-                        };
-                    }
-                    return self.delete_to_cursor(current_position);
-                } else {
-                    let reached_end_of_dom = match direction {
-                        Direction::Forwards => {
-                            current_position == self.state.dom.text_len()
-                        }
-                        Direction::Backwards => current_position == 0,
-                    };
-
-                    let reached_end_of_list_item = is_list_item
-                        && (current_position == location.position
-                            || current_position
-                                == location.position + location.length);
-
-                    // if we have reached the end of the dom or the end of a list item delete then stop
-                    if reached_end_of_dom || reached_end_of_list_item {
-                        return self.delete_to_cursor(current_position);
-                    }
-
-                    // otherwise we delete then make the recursive call
+                if node.offset_is_inside_node(current_offset, &direction) {
+                    // if we have stopped inside the node, first do the required deletion
                     self.delete_to_cursor(current_position);
-                    let next_details =
+
+                    // if we didn't start this removal at whitespace, stop
+                    if start_type != CharType::Whitespace {
+                        return ComposerUpdate::keep();
+                    }
+
+                    // otherwise, get the next set of arguments and make the recursive call
+                    let next_arguments =
                         self.get_remove_word_arguments(&direction);
-                    // the issue here is pretty simple, it's how do we get to the next text node properly
-                    return match next_details {
+                    return match next_arguments {
+                        None => ComposerUpdate::keep(),
+                        Some(arguments) => {
+                            let (
+                                loc,
+                                node_handle,
+                                next_type,
+                                node_start,
+                                node_offset,
+                            ) = arguments;
+                            self.remove_word(
+                                next_type, // pass it the new type to remove
+                                direction,
+                                loc,
+                                node_handle,
+                                node_start,
+                                node_offset,
+                            )
+                        }
+                    };
+                } else {
+                    // firstly do the deletion
+                    self.delete_to_cursor(current_position);
+
+                    // then if we have reached the end of the dom or the end of a list, stop
+                    if self.has_selected_end_of_dom(&direction)
+                        || location
+                            .position_is_end_of_list_item(current_position)
+                    {
+                        return ComposerUpdate::keep();
+                    }
+
+                    // otherwise, make a recursive call to continue to the next node
+                    let next_arguments =
+                        self.get_remove_word_arguments(&direction);
+                    return match next_arguments {
                         None => ComposerUpdate::keep(),
                         Some(details) => {
                             let (loc, node_handle, _, node_start, node_offset) =
                                 details;
                             self.remove_word(
-                                start_type, // nb using the original first type from the remove_word call
+                                start_type, // use the original first type from the remove_word call
                                 direction,
                                 loc,
                                 node_handle,
@@ -322,46 +297,29 @@ where
     ) -> Option<(DomLocation, DomHandle, CharType, usize, usize)> {
         // check that we're not trying to move outside the dom or calling this function
         // with a text selection
-        if self.has_selected_end_of_dom_in_direction(direction)
-            || self.has_selection()
-        {
+        if self.has_selected_end_of_dom(direction) || self.has_selection() {
             return None;
         }
 
         let (cursor_position, _) = self.safe_selection();
 
+        // at any stage in these calls, if we don't get Some() back, return None
         match self.get_location_from_cursor_position(cursor_position, direction)
         {
-            None => {
-                // if we can't get a location, we're not going to be able to do
-                // anything so return
-                None
-            }
-            Some(loc) => {
-                // we now have a single location, so find the first text like node,
+            None => None,
+            Some(location) => {
+                // we now have a single location, so find the first text like node in it,
                 // noting that due to adjacent similar nodes we have to track individual
                 // node start,end and offset positions
                 let text_node_details = self
                     .get_text_like_node_details_from_location(
-                        &loc,
+                        &location,
                         direction,
                         cursor_position,
                     );
 
                 match text_node_details {
-                    None => {
-                        // if we haven't found a text node, move the cursor to
-                        // one end of the location and recurse self
-                        let next_cursor_position = match direction {
-                            Direction::Forwards => loc.position + loc.length,
-                            Direction::Backwards => loc.position,
-                        };
-                        let next_range = self.state.dom.find_range(
-                            next_cursor_position,
-                            next_cursor_position,
-                        );
-                        self.get_remove_word_arguments(direction)
-                    }
+                    None => None,
                     Some((node_handle, node_start, node_offset)) => {
                         let node = self.state.dom.lookup_node(&node_handle);
                         let char_type = get_char_type_from_node(
@@ -371,24 +329,14 @@ where
                         );
 
                         match char_type {
-                            None => {
-                                println!("couldn't find the char type");
-                                // if we haven't got a char type we have tried looking outside a text node,
-                                // so will need to recurse BUT where do we check for the dom edge??
-                                // EITHER panic or recurse as per the above TODO
-                                // I think we should go to the next
-                                None
-                            }
-                            Some(char_type) => {
-                                // we finally have all the stuff we need
-                                Some((
-                                    loc.clone(),
-                                    node_handle,
-                                    char_type,
-                                    node_start,
-                                    node_offset,
-                                ))
-                            }
+                            None => None,
+                            Some(char_type) => Some((
+                                location.clone(),
+                                node_handle,
+                                char_type,
+                                node_start,
+                                node_offset,
+                            )),
                         }
                     }
                 }
