@@ -103,5 +103,8 @@ fn remove_multiple_partially_selected_links() {
 fn remove_multiple_partially_selected_links_in_different_containers() {
     let mut model = cm("<b><a href=\"https://matrix.org\">test_{link_bold</a></b> <a href=\"https://element.io\"><i>test}|_link_italic</i></a>");
     model.remove_links();
-    assert_eq!(tx(&model), "<b>test_{link_bold</b> <i>test}|_link_italic</i>");
+    assert_eq!(
+        tx(&model),
+        "<b>test_{link_bold</b> <i>test}|_link_italic</i>"
+    );
 }
