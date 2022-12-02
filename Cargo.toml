@@ -10,5 +10,8 @@ resolver = "2"
 opt-level = 'z'     # Optimize for size.
 lto = true          # Enable Link Time Optimization
 codegen-units = 1   # Reduce number of codegen units to increase optimizations.
-panic = 'abort'     # Abort on panic
+# Unwind on panic to allow error handling at the FFI boundary. Note this 
+# imposes a small performance/size cost and it could be worth switching 
+# the behaviour to 'abort' once the library is stable.
+panic = 'unwind'    
 debug = true        # Enable debug symbols. For example, we can use `dwarfdump` to check crash traces.
