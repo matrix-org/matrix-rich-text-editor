@@ -71,16 +71,17 @@ where
     }
 }
 
-/// If the child of parent at index and the one after it are both text
-/// nodes, merge them into the first and delete the second.
+/// Look at the children of parent at index and index + 1. If they are both
+/// text nodes, merge them into the first and delete the second.
+/// If either child does not exist, do nothing.
 fn merge_if_adjacent_text_nodes<S>(parent: &mut ContainerNode<S>, index: usize)
 where
     S: UnicodeString,
 {
-    let last_inserted_child = parent.children().get(index);
+    let previous_child = parent.children().get(index);
     let after_child = parent.children().get(index + 1);
     if let (Some(DomNode::Text(t1)), Some(DomNode::Text(t2))) =
-        (last_inserted_child, after_child)
+        (previous_child, after_child)
     {
         let mut data = t1.data().to_owned();
         data.push(t2.data());

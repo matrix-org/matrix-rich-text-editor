@@ -95,7 +95,13 @@ where
 
     /// Deletes the given [to_delete] nodes and then removes any given parent nodes that became
     /// empty, recursively.
-    pub(crate) fn delete_nodes(&mut self, mut to_delete: Vec<DomHandle>) {
+    /// Returns a list of all the nodes that were deleted
+    pub(crate) fn delete_nodes(
+        &mut self,
+        mut to_delete: Vec<DomHandle>,
+    ) -> Vec<DomHandle> {
+        let mut deleted = Vec::new();
+
         // Delete in reverse order to avoid invalidating handles
         to_delete.reverse();
 
@@ -110,6 +116,7 @@ where
                 let parent = self.state.dom.parent_mut(&handle);
                 parent.remove_child(index_in_parent);
                 adjust_handles_for_delete(&mut new_to_delete, &handle);
+                deleted.push(handle);
                 if parent.children().is_empty() {
                     new_to_delete.push(parent.handle());
                 }
@@ -117,6 +124,7 @@ where
 
             to_delete = new_to_delete;
         }
+        deleted
     }
 
     /// Removes the node at [cur_handle] and then will recursively delete any empty parent nodes

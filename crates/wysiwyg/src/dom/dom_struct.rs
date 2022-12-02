@@ -357,7 +357,10 @@ where
         if let DomNode::Container(parent) = parent {
             parent
         } else {
-            panic!("Parent node was not a container!");
+            panic!(
+                "Parent node was not a container! handle={:?} parent={:?}",
+                handle, parent
+            );
         }
     }
 
