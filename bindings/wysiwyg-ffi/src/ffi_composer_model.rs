@@ -13,12 +13,6 @@ pub struct ComposerModel {
     inner: Mutex<wysiwyg::ComposerModel<Utf16String>>,
 }
 
-impl Default for ComposerModel {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl ComposerModel {
     pub fn new() -> Self {
         Self {

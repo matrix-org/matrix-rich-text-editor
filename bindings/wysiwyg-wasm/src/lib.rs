@@ -77,12 +77,6 @@ pub struct ComposerModel {
     inner: wysiwyg::ComposerModel<Utf16String>,
 }
 
-impl Default for ComposerModel {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 #[wasm_bindgen]
 impl ComposerModel {
     pub fn new() -> Self {
