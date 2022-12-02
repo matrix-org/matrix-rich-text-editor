@@ -31,15 +31,17 @@ import uniffi.wysiwyg_composer.newComposerModel
 class EditorEditText : TextInputEditText {
 
     private var inputConnection: InterceptInputConnection? = null
-    private val viewModel: EditorViewModel by viewModel(viewModelInitializer = {
-        val applicationContext = context.applicationContext as Application
-        val resourcesProvider = AndroidResourcesProvider(applicationContext)
-        val htmlConverter = AndroidHtmlConverter(
-            provideHtmlToSpansParser = { html -> HtmlToSpansParser(resourcesProvider, html) },
-        )
-        val composer = if (!isInEditMode) newComposerModel() else null
-        EditorViewModel(composer, htmlConverter)
-    })
+    private val viewModel: EditorViewModel by viewModel(
+        viewModelInitializer = {
+            val applicationContext = context.applicationContext as Application
+            val resourcesProvider = AndroidResourcesProvider(applicationContext)
+            val htmlConverter = AndroidHtmlConverter(
+                provideHtmlToSpansParser = { html -> HtmlToSpansParser(resourcesProvider, html) },
+            )
+            val composer = if (!isInEditMode) newComposerModel() else null
+            EditorViewModel(composer, htmlConverter)
+        }
+    )
 
     private val spannableFactory = object : Spannable.Factory() {
         override fun newSpannable(source: CharSequence?): Spannable {
