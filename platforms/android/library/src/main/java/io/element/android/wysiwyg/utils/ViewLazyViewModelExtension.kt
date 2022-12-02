@@ -12,17 +12,14 @@ import androidx.lifecycle.findViewTreeViewModelStoreOwner
 
 @MainThread
 inline fun <reified VM : ViewModel> View.viewModel(
-    useViewTreeOwner: Boolean = false,
     noinline viewModelInitializer: (() -> VM)? = null,
 ): Lazy<VM> {
     return ViewModelLazy(
         viewModelClass = VM::class,
         storeProducer = {
-            if (useViewTreeOwner) {
-                findViewTreeViewModelStoreOwner()!!.viewModelStore
-            } else {
-                (getBaseContext(context) as ViewModelStoreOwner).viewModelStore
-            }
+            // We no longer use `findViewTreeViewModelStoreOwner` here because it can cause crashes
+            // in Compose AndroidViews. See https://github.com/matrix-org/matrix-rich-text-editor/pull/365.
+            context.getViewModelStoreOwner().viewModelStore
         },
         factoryProducer = {
             object : ViewModelProvider.Factory {
@@ -36,13 +33,13 @@ inline fun <reified VM : ViewModel> View.viewModel(
     )
 }
 
-fun getBaseContext(context: Context): Context {
-    var currentContext = context
+fun Context.getViewModelStoreOwner(): ViewModelStoreOwner {
+    var currentContext = this
     while (currentContext !is ViewModelStoreOwner) {
         if (currentContext is ContextWrapper) {
             currentContext = currentContext.baseContext
         } else {
-            error("There is not base context that is a ViewModelStoreOwner")
+            error("There is no base context that is a ViewModelStoreOwner")
         }
     }
     return currentContext
