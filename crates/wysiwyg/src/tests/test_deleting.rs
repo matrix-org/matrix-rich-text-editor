@@ -298,3 +298,38 @@ fn test_backspace_complex_grapheme() {
     assert_eq!(tx(&model), "Test|");
     model.state.dom.explicitly_assert_invariants();
 }
+
+#[test]
+fn deleting_initial_text_node_removes_it_completely_without_crashing() {
+    let mut model = cm("abc<br />def<br />gh|");
+    model.delete_in(4, 10);
+    assert_eq!(tx(&model), "abc<br />|",);
+}
+
+#[test]
+fn deleting_initial_text_node_via_selection_removes_it_completely() {
+    let mut model = cm("abc<br />{def<br />gh}|");
+    model.delete();
+    assert_eq!(tx(&model), "abc<br />|",);
+}
+
+#[test]
+fn deleting_all_initial_text_and_merging_later_text_produces_one_text_node() {
+    let mut model = cm("abc<br />{def<br />gh}|ijk");
+    model.delete();
+    assert_eq!(tx(&model), "abc<br />|ijk",);
+}
+
+#[test]
+fn deleting_all_initial_text_within_a_tag_preserves_the_tag() {
+    let mut model = cm("abc<br /><strong>{def<br />gh}|ijk</strong>");
+    model.delete();
+    assert_eq!(tx(&model), "abc<br />|<strong>ijk</strong>",);
+}
+
+#[test]
+fn deleting_all_text_within_a_tag_deletes_the_tag() {
+    let mut model = cm("abc<br /><strong>{def<br />gh}|</strong>ijk");
+    model.delete();
+    assert_eq!(tx(&model), "abc<br />|ijk",);
+}

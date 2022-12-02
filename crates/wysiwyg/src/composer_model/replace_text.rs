@@ -164,36 +164,38 @@ where
         } else {
             let len = new_text.len();
             let range = self.state.dom.find_range(start, end);
-            if range.is_empty() {
+            let deleted_handles = if range.is_empty() {
                 if !new_text.is_empty() {
                     self.state
                         .dom
                         .append_at_end_of_document(DomNode::new_text(new_text));
                 }
                 start = 0;
+                Vec::new()
             // We check for the first starting_link_handle if any
             // Because for links we always add the text to the next sibling
             } else if let Some(starting_link_handle) =
                 self.first_shrinkable_link_node_handle(&range)
             {
                 // We replace and delete as normal with an empty string on the current range
-                self.replace_multiple_nodes(&range, "".into());
+                let deleted_handles =
+                    self.replace_multiple_nodes(&range, "".into());
                 // Then we set the new text value in the next sibling node (or create a new one if none exists)
                 self.set_new_text_in_next_sibling_node(
                     starting_link_handle,
                     new_text,
-                )
+                );
+                deleted_handles
             } else {
                 self.replace_multiple_nodes(&range, new_text)
-            }
+            };
 
             self.apply_pending_formats(start, start + len);
 
-            if let Some(first_location) = range.locations.first() {
-                self.state
-                    .dom
-                    .merge_text_nodes_around(&first_location.node_handle);
-            }
+            self.merge_adjacent_text_nodes_after_replace(
+                range,
+                deleted_handles,
+            );
 
             self.state.start = Location::from(start + len);
             self.state.end = self.state.start;
@@ -203,6 +205,33 @@ where
         // TODO: for now, we replace every time, to check ourselves, but
         // at least some of the time we should not
         self.create_update_replace_all()
+    }
+
+    fn merge_adjacent_text_nodes_after_replace(
+        &mut self,
+        replaced_range: Range,
+        deleted_handles: Vec<DomHandle>,
+    ) {
+        // If we've ended up with adjacent text nodes, merge them
+        if let Some(first_location) = replaced_range.locations.first() {
+            let first_handle = &first_location.node_handle;
+            if deleted_handles.contains(first_handle) {
+                // If we deleted the first node in the range ...
+                if first_handle.index_in_parent() > 0 {
+                    // ... and that was not the first in its parent,
+                    // then merge the node before with the next.
+                    let prev_handle = first_handle.prev_sibling();
+                    self.state.dom.merge_text_nodes_around(&prev_handle);
+                }
+            } else {
+                // If the first node of the range still exists, then
+                // merge it with the next, and potentially also the
+                // previous.
+                self.state
+                    .dom
+                    .merge_text_nodes_around(&first_location.node_handle);
+            }
+        }
     }
 
     fn set_new_text_in_next_sibling_node(
@@ -254,7 +283,12 @@ where
         Some(link_loc.node_handle.clone())
     }
 
-    fn replace_multiple_nodes(&mut self, range: &Range, new_text: S) {
+    /// Returns a list of handles to all the nodes that we deleted
+    fn replace_multiple_nodes(
+        &mut self,
+        range: &Range,
+        new_text: S,
+    ) -> Vec<DomHandle> {
         let len = new_text.len();
         let action_list = self.replace_in_text_nodes(range.clone(), new_text);
 
@@ -277,27 +311,39 @@ where
         }
 
         // Delete the nodes marked for deletion
-        if !to_delete.is_empty() {
-            self.delete_nodes(to_delete);
-        }
+        let deleted_handles = if !to_delete.is_empty() {
+            self.delete_nodes(to_delete.clone())
+        } else {
+            Vec::new()
+        };
 
         // If our range covered multiple text-like nodes, join together
         // the two sides of the range.
         if range.leaves().count() > 1 {
-            // Calculate the position 1 code unit after the end of the range,
-            // after the in-between characters have been deleted, and the new
-            // characters have been inserted.
-            let new_pos = range.start() + len + 1;
+            // join_nodes will use the first location of our range, so we must
+            // check whether we deleted it!
+            if let Some(first_loc) = range.locations.first() {
+                if !deleted_handles.contains(&first_loc.node_handle) {
+                    // Calculate the position 1 code unit after the end of the
+                    // range, after the in-between characters have been
+                    // deleted, and the new characters have been inserted.
+                    let new_pos = range.start() + len + 1;
 
-            // Note: the handles in range may have been made invalid by deleting
-            // nodes above, but the first text node in it should not have been
-            // invalidated, because it should not have been deleted.
-            self.join_nodes(&range, new_pos);
+                    // join_nodes only requires that the first location in
+                    // the supplied range has a valid handle.
+                    // We think it's OK to pass in a range where later
+                    // locations have been deleted.
+                    // TODO: can we just pass in this handle, to avoid the
+                    // ambiguity here?
+                    self.join_nodes(&range, new_pos);
+                }
+            }
         } else if let Some(first_leave) = range.leaves().next() {
             self.join_text_nodes_in_parent(
                 &first_leave.node_handle.parent_handle(),
             )
         }
+        deleted_handles
     }
 
     fn join_text_nodes_in_parent(&mut self, parent_handle: &DomHandle) {

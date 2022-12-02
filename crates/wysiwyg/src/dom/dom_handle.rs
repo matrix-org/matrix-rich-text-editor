@@ -111,6 +111,7 @@ impl DomHandle {
         self.path.expect("Handle is unset!")
     }
 
+    /// Returns a handle to an invalid location if this is the last child
     pub fn next_sibling(&self) -> Self {
         let index_in_parent = self.index_in_parent();
         let mut path = self.parent_handle().into_raw();
@@ -118,6 +119,7 @@ impl DomHandle {
         Self::from_raw(path)
     }
 
+    /// Panics if this is the first child
     pub fn prev_sibling(&self) -> Self {
         let index_in_parent = self.index_in_parent();
         assert!(index_in_parent > 0);
