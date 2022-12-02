@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::composer_model::delete_text::Direction;
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::to_html::ToHtml;
@@ -24,6 +25,14 @@ use html_escape;
 
 const ZWSP: &str = "\u{200B}";
 
+// categories of character for backspace/delete word
+#[derive(PartialEq, Debug)]
+pub enum CharType {
+    Whitespace,
+    Linebreak,
+    Punctuation,
+    Other,
+}
 #[derive(Clone, Debug, PartialEq)]
 pub struct TextNode<S>
 where
@@ -96,6 +105,68 @@ where
             false
         }
     }
+
+    /// This gets the character at the cursor, considering the
+    /// direction of travel
+    pub fn char_at_offset(
+        &self,
+        offset: usize,
+        direction: &Direction,
+    ) -> Option<char> {
+        self.data()
+            .chars()
+            .nth(direction.get_index_from_cursor(offset))
+    }
+
+    /// This gets the character type at the cursor, considering the
+    /// direction of travel
+    pub fn char_type_at_offset(
+        &self,
+        offset: usize,
+        direction: &Direction,
+    ) -> Option<CharType> {
+        let char = self.char_at_offset(offset, direction);
+        match char {
+            Some(c) => Some(get_char_type(c)),
+            None => None,
+        }
+    }
+
+    /// When moving through a node, the cursor counts as inside the node
+    /// at one end, but not the other. This function determines that.
+    pub fn offset_is_inside_node(
+        &self,
+        current_offset: usize,
+        direction: &Direction,
+    ) -> bool {
+        let node_length = self.data().len();
+        match direction {
+            Direction::Forwards => current_offset < node_length,
+            Direction::Backwards => current_offset > 0,
+        }
+    }
+
+    /// Required due to zero length text node existence
+    pub fn has_length(&self) -> bool {
+        self.data().len() != 0
+    }
+}
+
+/// Given a character, determine it's type
+fn get_char_type(c: char) -> CharType {
+    // in order to determine where a ctrl/opt + delete type operation finishes
+    // we need to distinguish between whitespace (nb no newline characters), punctuation
+    // and then everything else is treated as the same type
+    if c.is_whitespace() {
+        return CharType::Whitespace;
+    }
+
+    if c.is_ascii_punctuation() || c == '£' {
+        // manually adding £ sign so it gets removed too
+        return CharType::Punctuation;
+    }
+
+    return CharType::Other;
 }
 
 impl<S> ToHtml<S> for TextNode<S>
