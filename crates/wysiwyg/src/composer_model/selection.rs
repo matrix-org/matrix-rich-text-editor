@@ -84,16 +84,27 @@ where
 
     /// Return a boolean to let us know if we are touching the edge of the DOM
     /// when moving in a specific direction
-    pub fn has_selected_end_of_dom_in_direction(
-        &self,
-        direction: &Direction,
-    ) -> bool {
+    pub fn has_selected_end_of_dom(&self, direction: &Direction) -> bool {
         let (s, e) = self.safe_selection();
         match direction {
             Direction::Forwards => e == self.state.dom.text_len(),
             Direction::Backwards => s == 0,
         }
     }
+
+    // TODO remove if not required
+    // Return a boolean to let us know if a position is touching the edge of the DOM
+    // when moving in a specific direction
+    // pub fn position_is_end_of_dom(
+    //     &self,
+    //     position: usize,
+    //     direction: &Direction,
+    // ) -> bool {
+    //     match direction {
+    //         Direction::Forwards => position == self.state.dom.text_len(),
+    //         Direction::Backwards => position == 0,
+    //     }
+    // }
 }
 
 #[cfg(test)]
