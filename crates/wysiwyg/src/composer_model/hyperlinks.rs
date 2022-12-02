@@ -57,7 +57,6 @@ where
     }
 
     pub fn set_link(&mut self, link: S) -> ComposerUpdate<S> {
-        // push_state_to_history is after this check:
         self.push_state_to_history();
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
