@@ -21,6 +21,7 @@ pub mod dom_struct;
 pub mod find_range;
 pub mod find_result;
 pub mod iter;
+pub mod join_nodes;
 pub mod nodes;
 pub mod parser;
 pub mod range;
