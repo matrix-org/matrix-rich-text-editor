@@ -134,6 +134,21 @@ impl DomLocation {
     pub fn is_covered(&self) -> bool {
         self.is_start() && self.is_end()
     }
+
+    /// Allows us to check whether a location is both a list item and the
+    /// passed position is at the end of it, we need this to handle adjacent
+    /// similar nodes within a list item
+    pub fn position_is_end_of_list_item(&self, position: usize) -> bool {
+        let is_list_item = self.kind == DomNodeKind::ListItem;
+
+        let location_start = self.position;
+        let location_end = self.position + self.length;
+
+        let position_is_at_end_of_location =
+            position == location_start || position == location_end;
+
+        is_list_item && position_is_at_end_of_location
+    }
 }
 
 impl PartialOrd<Self> for DomLocation {
@@ -344,6 +359,31 @@ mod test {
                 DomHandle::from_raw(vec![2]),       // fgh
             ]
         );
+    }
+
+    // position_is_end_of_list_item tests
+    #[test]
+    fn location_method_returns_false_for_end_of_non_list_item() {
+        let model = cm("<em>abcd|</em>");
+        let (s, e) = model.safe_selection();
+        let range = model.state.dom.find_range(s, e);
+        assert_eq!(range.locations[1].position_is_end_of_list_item(4), false);
+    }
+
+    #[test]
+    fn location_method_returns_false_for_inside_list_item() {
+        let model = cm("<ol><li>abcd|</li></ol>");
+        let (s, e) = model.safe_selection();
+        let range = model.state.dom.find_range(s, e);
+        assert_eq!(range.locations[1].position_is_end_of_list_item(2), false);
+    }
+
+    #[test]
+    fn location_method_returns_true_for_end_of_list_item() {
+        let model = cm("<ol><li>abcd|</li></ol>");
+        let (s, e) = model.safe_selection();
+        let range = model.state.dom.find_range(s, e);
+        assert_eq!(range.locations[1].position_is_end_of_list_item(4), true);
     }
 
     fn range_of(model: &str) -> Range {
