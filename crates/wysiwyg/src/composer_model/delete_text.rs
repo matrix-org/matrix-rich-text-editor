@@ -304,21 +304,20 @@ where
         let (cursor_position, _) = self.safe_selection();
 
         // at any stage in these calls, if we don't get Some() back, return None
-        match self.get_location_from_cursor_position(cursor_position, direction)
-        {
+        match self.get_single_location_from_cursor(direction) {
             None => None,
             Some(location) => {
                 // we now have a single location, so find the first text like node in it,
                 // noting that due to adjacent similar nodes we have to track individual
                 // node start,end and offset positions
-                let text_node_details = self
+                let text_like_node_details = self
                     .get_text_like_node_details_from_location(
                         &location,
                         direction,
                         cursor_position,
                     );
 
-                match text_node_details {
+                match text_like_node_details {
                     None => None,
                     Some((node_handle, node_start, node_offset)) => {
                         let node = self.state.dom.lookup_node(&node_handle);
@@ -379,12 +378,12 @@ where
         direction: &Direction,
         position: usize,
     ) -> Option<(DomHandle, usize, usize)> {
-        // if we find a text or linebreak node, return them with their details
-        // if we find a container node, recursively search it
         match self.state.dom.lookup_node(&location.node_handle) {
+            // if we find a container node, recursively search it
             DomNode::Container(node) => recursively_search_container(
                 node, direction, position, location,
             ),
+            // if we find a text or linebreak node, return them with their details
             DomNode::Text(_) | DomNode::LineBreak(_) => Some((
                 location.node_handle.clone(),
                 location.position,
@@ -393,22 +392,23 @@ where
         }
     }
 
-    /// If we have a single cursor, generate the range for that cursor and return a single location
+    /// If we have a non-split cursor, generate the range for that cursor and return a single location
     /// if possible
-    fn get_location_from_cursor_position<'a>(
+    fn get_single_location_from_cursor<'a>(
         &'a mut self,
-        position: usize,
         direction: &Direction,
     ) -> Option<DomLocation> {
         if self.has_selection() {
             return None;
         }
 
-        let range = self.state.dom.find_range(position, position);
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
 
         // TODO this is required because "<br />|<br />" only returns a single location, for the
         // tag to the left of the cursor, if we got both tags' locations we could remove this block
         if range.locations.len() == 1 {
+            // <<<<<< TODO also make this return the text like node details as a tuple
             return range.locations.into_iter().nth(0);
         }
 
@@ -537,36 +537,6 @@ where
     }
 }
 
-/// When moving through a node, the cursor counts as inside the node
-/// at one end, but not the other. This function determines that.
-fn offset_is_inside_node(
-    current_offset: usize,
-    node_length: usize,
-    direction: &Direction,
-) -> bool {
-    match direction {
-        Direction::Forwards => current_offset < node_length,
-        Direction::Backwards => current_offset > 0,
-    }
-}
-
-/// Given a character, determine it's type
-fn get_char_type(c: char) -> CharType {
-    // in order to determine where a ctrl/opt + delete type operation finishes
-    // we need to distinguish between whitespace (nb no newline characters), punctuation
-    // and then everything else is treated as the same type
-    if c.is_whitespace() {
-        return CharType::Whitespace;
-    }
-
-    if c.is_ascii_punctuation() || c == '£' {
-        // manually adding £ sign so it gets removed too
-        return CharType::Punctuation;
-    }
-
-    return CharType::Other;
-}
-
 /// Given a node, return the type of character adjacent to the cursor offset position
 /// bearing in mind the direction
 fn get_char_type_from_node<S: UnicodeString>(
@@ -584,25 +554,8 @@ fn get_char_type_from_node<S: UnicodeString>(
             Some(CharType::Linebreak)
         }
         DomNode::Text(text_node) => {
-            get_char_type_from_text_node(text_node, offset, direction)
+            text_node.char_type_at_offset(offset, direction)
         }
-    }
-}
-
-// Separate function as we also call this directly
-fn get_char_type_from_text_node<S: UnicodeString>(
-    text_node: &TextNode<S>,
-    offset: usize,
-    direction: &Direction,
-) -> Option<CharType> {
-    let current_char = text_node
-        .data()
-        .chars()
-        .nth(direction.get_index_from_cursor(offset));
-
-    match current_char {
-        Some(c) => Some(get_char_type(c)),
-        None => None,
     }
 }
 
@@ -618,11 +571,9 @@ fn recursively_search_container<'a, S: UnicodeString>(
     // that contains multiple adjacent text nodes
     let mut current_container_offset: usize = 0;
 
-    // loop through the children, if it's a container, recursively call this function
-    // if it's a linebreak, return that node's details
-    // if it's a text node, make sure we handle adjacent unmerged text nodes
     for child in container.children() {
         match child {
+            //if it's a container, recursively call this function
             DomNode::Container(node) => {
                 recursively_search_container(
                     node,
@@ -631,6 +582,7 @@ fn recursively_search_container<'a, S: UnicodeString>(
                     location,
                 );
             }
+            // if it's a linebreak, return that node's details
             DomNode::LineBreak(_) => {
                 return Some((
                     child.handle(),
@@ -638,24 +590,23 @@ fn recursively_search_container<'a, S: UnicodeString>(
                     location.start_offset,
                 ))
             }
+            // if it's a text node, make sure we handle adjacent unmerged text nodes
             DomNode::Text(node) => {
                 // want to ignore text nodes that are zero length and in the case
                 // of adjacent text nodes return the correct one
                 let node_length = node.data().len();
-                let has_length = node_length != 0;
-
                 let node_start = location.position + current_container_offset;
-                let node_end = node_start + node_length;
-
                 let node_offset = cursor_position - node_start;
 
-                let is_inside_node = cursor_position < node_end;
                 let is_correct_adjacent_node = match direction {
                     Direction::Forwards => node_offset == 0,
                     Direction::Backwards => node_offset == node_length,
                 };
 
-                if has_length && (is_inside_node || is_correct_adjacent_node) {
+                if node.has_length()
+                    && (node.offset_is_inside_node(node_offset, direction)
+                        || is_correct_adjacent_node)
+                {
                     return Some((child.handle(), node_start, node_offset));
                 }
 

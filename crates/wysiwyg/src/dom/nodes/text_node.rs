@@ -145,6 +145,11 @@ where
             Direction::Backwards => current_offset > 0,
         }
     }
+
+    /// Required due to zero length text node existence
+    pub fn has_length(&self) -> bool {
+        self.data().len() != 0
+    }
 }
 
 /// Given a character, determine it's type
