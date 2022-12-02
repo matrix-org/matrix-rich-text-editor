@@ -24,6 +24,7 @@ use crate::dom::UnicodeString;
 use html_escape;
 
 const ZWSP: &str = "\u{200B}";
+const ZWSP_char: char = '\u{200B}';
 
 // categories of character for backspace/delete word
 #[derive(PartialEq, Debug)]
@@ -157,12 +158,12 @@ fn get_char_type(c: char) -> CharType {
     // in order to determine where a ctrl/opt + delete type operation finishes
     // we need to distinguish between whitespace (nb no newline characters), punctuation
     // and then everything else is treated as the same type
-    if c.is_whitespace() {
+    if c.is_whitespace() || c == ZWSP_char {
+        // manually add zero width space character
         return CharType::Whitespace;
     }
 
-    if c.is_ascii_punctuation() || c == '£' {
-        // manually adding £ sign so it gets removed too
+    if c.is_ascii_punctuation() {
         return CharType::Punctuation;
     }
 
@@ -240,5 +241,40 @@ where
         buffer.push(self.data.to_owned());
 
         Ok(())
+    }
+}
+
+mod test {
+    use crate::dom::nodes::text_node::{CharType, ZWSP_char};
+
+    use super::get_char_type;
+
+    #[test]
+    fn get_char_type_for_whitespace() {
+        // space
+        assert_eq!(get_char_type('\u{0020}'), CharType::Whitespace);
+        // no break space
+        assert_eq!(get_char_type('\u{00A0}'), CharType::Whitespace);
+        // zero width space
+        assert_eq!(get_char_type(ZWSP_char), CharType::Whitespace);
+    }
+
+    #[test]
+    fn get_char_type_for_punctuation() {
+        assert_eq!(get_char_type('='), CharType::Punctuation);
+        assert_eq!(get_char_type('-'), CharType::Punctuation);
+        assert_eq!(get_char_type('_'), CharType::Punctuation);
+        assert_eq!(get_char_type('$'), CharType::Punctuation);
+        assert_eq!(get_char_type('#'), CharType::Punctuation);
+        assert_eq!(get_char_type('@'), CharType::Punctuation);
+        assert_eq!(get_char_type('.'), CharType::Punctuation);
+        assert_eq!(get_char_type(','), CharType::Punctuation);
+    }
+
+    #[test]
+    fn get_char_type_for_other() {
+        assert_eq!(get_char_type('1'), CharType::Other);
+        assert_eq!(get_char_type('Q'), CharType::Other);
+        assert_eq!(get_char_type('z'), CharType::Other);
     }
 }
