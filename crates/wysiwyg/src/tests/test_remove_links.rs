@@ -29,6 +29,27 @@ fn remove_selected_link() {
 }
 
 #[test]
+fn remove_link_with_cursor_at_end() {
+    let mut model = cm("<a href=\"https://matrix.org\">test_link|</a>");
+    model.remove_links();
+    assert_eq!(tx(&model), "test_link|");
+}
+
+#[test]
+fn remove_link_with_cursor_in_the_middle() {
+    let mut model = cm("<a href=\"https://matrix.org\">test|_link</a>");
+    model.remove_links();
+    assert_eq!(tx(&model), "test|_link");
+}
+
+#[test]
+fn remove_link_with_cursor_at_the_start() {
+    let mut model = cm("<a href=\"https://matrix.org\">|test_link</a>");
+    model.remove_links();
+    assert_eq!(tx(&model), "|test_link");
+}
+
+#[test]
 fn remove_selected_link_and_undo() {
     let mut model = cm("<a href=\"https://matrix.org\">{test_link}|</a>");
     model.remove_links();
@@ -76,4 +97,11 @@ fn remove_multiple_partially_selected_links() {
     let mut model = cm("<a href=\"https://matrix.org\">test_{link_1</a> <a href=\"https://element.io\">test}|_link_2</a>");
     model.remove_links();
     assert_eq!(tx(&model), "test_{link_1 test}|_link_2");
+}
+
+#[test]
+fn remove_multiple_partially_selected_links_in_different_containers() {
+    let mut model = cm("<b><a href=\"https://matrix.org\">test_{link_bold</a></b> <a href=\"https://element.io\"><i>test}|_link_italic</i></a>");
+    model.remove_links();
+    assert_eq!(tx(&model), "<b>test_{link_bold</b> <i>test}|_link_italic</i>");
 }
