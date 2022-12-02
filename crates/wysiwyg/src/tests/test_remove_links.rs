@@ -20,3 +20,12 @@ fn remove_selected_link() {
     model.remove_links();
     assert_eq!(tx(&model), "{test_link}|");
 }
+
+#[test]
+fn remove_selected_link_and_undo() {
+    let mut model = cm("<a href=\"https://matrix.org\">{test_link}|</a>");
+    model.remove_links();
+    assert_eq!(tx(&model), "{test_link}|");
+    model.undo();
+    assert_eq!(tx(&model), "<a href=\"https://matrix.org\">{test_link}|</a>");
+}

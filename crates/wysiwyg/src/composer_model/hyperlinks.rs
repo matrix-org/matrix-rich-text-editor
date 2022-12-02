@@ -111,15 +111,9 @@ where
                     self.push_state_to_history();
                     has_pushed_history = true;
                 }
-                let link = self
-                    .state
-                    .dom
-                    .lookup_node(&loc.node_handle)
-                    .as_container()
-                    .unwrap();
                 self.state
                     .dom
-                    .replace(&loc.node_handle, link.children().clone());
+                    .replace_node_with_its_children(&loc.node_handle);
             }
         }
         if !has_found_link {
