@@ -34,6 +34,7 @@ pub enum CharType {
     Punctuation,
     Other,
 }
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct TextNode<S>
 where
@@ -148,26 +149,24 @@ where
     }
 
     /// Required due to zero length text node existence
-    pub fn has_length(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.data().len() != 0
     }
 }
 
-/// Given a character, determine it's type
+/// Given a character, determine its type
 fn get_char_type(c: char) -> CharType {
     // in order to determine where a ctrl/opt + delete type operation finishes
     // we need to distinguish between whitespace (nb no newline characters), punctuation
     // and then everything else is treated as the same type
     if c.is_whitespace() || c == ZWSP_char {
         // manually add zero width space character
-        return CharType::Whitespace;
+        CharType::Whitespace
+    } else if c.is_ascii_punctuation() {
+        CharType::Punctuation
+    } else {
+        CharType::Other
     }
-
-    if c.is_ascii_punctuation() {
-        return CharType::Punctuation;
-    }
-
-    return CharType::Other;
 }
 
 impl<S> ToHtml<S> for TextNode<S>
@@ -243,11 +242,13 @@ where
         Ok(())
     }
 }
-
+#[cfg(test)]
 mod test {
+    use crate::composer_model::delete_text::Direction;
     use crate::dom::nodes::text_node::{CharType, ZWSP_char};
+    use crate::tests::testutils_conversion::utf16;
 
-    use super::get_char_type;
+    use super::{get_char_type, TextNode};
 
     #[test]
     fn get_char_type_for_whitespace() {
@@ -276,5 +277,44 @@ mod test {
         assert_eq!(get_char_type('1'), CharType::Other);
         assert_eq!(get_char_type('Q'), CharType::Other);
         assert_eq!(get_char_type('z'), CharType::Other);
+    }
+
+    #[test]
+    fn offset_is_inside_node_end_of_node() {
+        let test_node = TextNode::from(utf16("test"));
+        assert_eq!(
+            test_node.offset_is_inside_node(4, &Direction::Forwards),
+            false
+        );
+        assert_eq!(
+            test_node.offset_is_inside_node(4, &Direction::Backwards),
+            true
+        );
+    }
+
+    #[test]
+    fn offset_is_inside_node_start_of_node() {
+        let test_node = TextNode::from(utf16("test"));
+        assert_eq!(
+            test_node.offset_is_inside_node(0, &Direction::Forwards),
+            true
+        );
+        assert_eq!(
+            test_node.offset_is_inside_node(0, &Direction::Backwards),
+            false
+        );
+    }
+
+    #[test]
+    fn offset_is_inside_node_middle_of_node() {
+        let test_node = TextNode::from(utf16("test"));
+        assert_eq!(
+            test_node.offset_is_inside_node(2, &Direction::Forwards),
+            true
+        );
+        assert_eq!(
+            test_node.offset_is_inside_node(2, &Direction::Backwards),
+            true
+        );
     }
 }

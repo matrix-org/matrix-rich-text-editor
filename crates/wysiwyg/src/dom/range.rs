@@ -361,6 +361,31 @@ mod test {
         );
     }
 
+    // position_is_end_of_list_item tests
+    #[test]
+    fn location_method_returns_false_for_end_of_non_list_item() {
+        let model = cm("<em>abcd|</em>");
+        let (s, e) = model.safe_selection();
+        let range = model.state.dom.find_range(s, e);
+        assert_eq!(range.locations[1].position_is_end_of_list_item(4), false);
+    }
+
+    #[test]
+    fn location_method_returns_false_for_inside_list_item() {
+        let model = cm("<ol><li>abcd|</li></ol>");
+        let (s, e) = model.safe_selection();
+        let range = model.state.dom.find_range(s, e);
+        assert_eq!(range.locations[1].position_is_end_of_list_item(2), false);
+    }
+
+    #[test]
+    fn location_method_returns_true_for_end_of_list_item() {
+        let model = cm("<ol><li>abcd|</li></ol>");
+        let (s, e) = model.safe_selection();
+        let range = model.state.dom.find_range(s, e);
+        assert_eq!(range.locations[1].position_is_end_of_list_item(4), true);
+    }
+
     fn range_of(model: &str) -> Range {
         let model = cm(model);
         let (s, e) = model.safe_selection();
