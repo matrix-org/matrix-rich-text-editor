@@ -192,6 +192,12 @@ impl ComposerModel {
         ))
     }
 
+    pub fn remove_links(self: &Arc<Self>) -> Arc<ComposerUpdate> {
+        Arc::new(ComposerUpdate::from(
+            self.inner.lock().unwrap().remove_links(),
+        ))
+    }
+
     pub fn indent(self: &Arc<Self>) -> Arc<ComposerUpdate> {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().indent()))
     }
