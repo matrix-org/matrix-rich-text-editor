@@ -17,6 +17,27 @@ use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
 
+#[derive(PartialEq, Debug)]
+pub enum Direction {
+    Forwards,
+    Backwards,
+}
+
+impl Direction {
+    pub fn increment(&self, index: usize) -> usize {
+        match self {
+            Direction::Forwards => index + 1,
+            Direction::Backwards => index - 1,
+        }
+    }
+    pub fn get_index_from_cursor(&self, index: usize) -> usize {
+        match self {
+            Direction::Forwards => index,
+            Direction::Backwards => index - 1,
+        }
+    }
+}
+
 impl<S> ComposerModel<S>
 where
     S: UnicodeString,
