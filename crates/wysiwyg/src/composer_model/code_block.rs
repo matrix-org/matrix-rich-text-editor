@@ -43,57 +43,96 @@ where
         let Some((parent_handle, idx_start, idx_end)) = self.find_nodes_to_wrap_in_block(s, e) else {
             return ComposerUpdate::keep();
         };
-        let mut dom = &mut self.state.dom;
-        let mut leaves_to_add: Vec<DomNode<S>> = Vec::new();
+        let mut code_block: DomNode<S> = DomNode::new_code_block(Vec::new());
+        code_block.set_handle(DomHandle::root());
         let mut nodes_visited = HashSet::new();
         let start_handle = parent_handle.child_handle(idx_start);
         let up_to_handle = parent_handle.child_handle(idx_end + 1);
-        let iter = dom.iter_from_handle(&start_handle);
-        for node in iter {
-            if node.handle() >= up_to_handle {
-                break;
+        let ancestor_to_split = self.find_ancestor_to_split(&start_handle);
+        let start_depth = ancestor_to_split.raw().len();
+        let mut path: Vec<usize> = Vec::new();
+        for depth in start_depth..start_handle.raw().len() {
+            let mut cur_child = &mut code_block;
+            let mut path_to_traverse = path.clone();
+            for i in &path_to_traverse {
+                if let DomNode::Container(c) = cur_child {
+                    cur_child = c.get_child_mut(*i).unwrap();
+                }
             }
-            match node.kind() {
-                Text | Formatting(_) | Link => {
-                    nodes_visited.insert(node.handle());
-                    if nodes_visited.contains(&node.handle().parent_handle()) {
-                        continue;
+
+            let DomNode::Container(cur_container) = cur_child else { break; };
+            let path_len = parent_handle.raw().len();
+            if depth == path_len {
+                let iter = self.state.dom.iter_from_handle(&start_handle);
+                for node in iter {
+                    if node.handle() == up_to_handle {
+                        break;
                     }
-                    leaves_to_add.push(node.clone());
-                }
-                LineBreak => {
-                    leaves_to_add.push(DomNode::new_text("\n".into()));
-                }
-                List | ListItem => {
-                    let mut needs_to_add_line_break =
-                        node.handle().index_in_parent() > 0;
-                    if needs_to_add_line_break {
-                        if let Some(DomNode::Text(text_node)) =
-                            leaves_to_add.last()
-                        {
-                            if text_node.data().to_string() == "\n" {
-                                needs_to_add_line_break = false;
+                    match node.kind() {
+                        Text | Formatting(_) | Link => {
+                            nodes_visited.insert(node.handle());
+                            if nodes_visited
+                                .contains(&node.handle().parent_handle())
+                            {
+                                continue;
+                            }
+                            cur_container.append_child(node.clone());
+                        }
+                        LineBreak => {
+                            cur_container
+                                .append_child(DomNode::new_text("\n".into()));
+                        }
+                        List | ListItem => {
+                            let mut needs_to_add_line_break =
+                                node.handle().index_in_parent() > 0;
+                            if needs_to_add_line_break {
+                                if let Some(DomNode::Text(text_node)) =
+                                    cur_container.children().last()
+                                {
+                                    if text_node.data().to_string() == "\n" {
+                                        needs_to_add_line_break = false;
+                                    }
+                                }
+                            }
+
+                            if needs_to_add_line_break {
+                                cur_container.append_child(DomNode::new_text(
+                                    "\n".into(),
+                                ));
+                                self.state.end.add_assign(1);
                             }
                         }
-                    }
-
-                    if needs_to_add_line_break {
-                        leaves_to_add.push(DomNode::new_text("\n".into()));
-                        self.state.end.add_assign(1);
+                        _ => {}
                     }
                 }
-                _ => {}
+                for i in (idx_start..=idx_end).rev() {
+                    self.state.dom.remove(&parent_handle.child_handle(i));
+                }
+            } else {
+                let cur_sub_handle = start_handle.sub_handle_up_to(depth + 1);
+                let index_at_depth = cur_sub_handle.index_in_parent();
+                path.push(index_at_depth);
+                if let DomNode::Container(container) =
+                    self.state.dom.lookup_node(&cur_sub_handle)
+                {
+                    cur_container.append_child(DomNode::Container(
+                        container.copy_with_new_children(Vec::new()),
+                    ));
+                }
             }
         }
 
-        for i in (idx_start..=idx_end).rev() {
-            dom.remove(&parent_handle.child_handle(i));
-        }
-
-        dom.insert_at(&start_handle, DomNode::new_code_block(leaves_to_add));
+        let insert_at_handle =
+            start_handle.sub_handle_up_to(ancestor_to_split.raw().len() + 1);
+        let insert_at_handle = if self.state.dom.exists(&insert_at_handle) {
+            insert_at_handle.next_sibling()
+        } else {
+            insert_at_handle
+        };
+        self.state.dom.insert_at(&insert_at_handle, code_block);
 
         // Merge any nodes that need it
-        self.merge_adjacent_code_blocks(&start_handle);
+        self.merge_adjacent_code_blocks(&insert_at_handle);
 
         self.create_update_replace_all()
     }
@@ -302,7 +341,7 @@ where
         self.create_update_replace_all()
     }
 
-    fn find_parent_to_split(&self, handle: &DomHandle) -> DomHandle {
+    fn find_ancestor_to_split(&self, handle: &DomHandle) -> DomHandle {
         let path_len = handle.raw().len();
         if path_len <= 1 {
             DomHandle::root()
@@ -346,68 +385,6 @@ where
             from_handle,
             &mut new_subtree,
         );
-
-        // for cur_level in depth..subtree_len {
-        //     let index_at_level = from_handle.raw()[cur_level];
-        //     let handle_up_to = from_handle.sub_handle_up_to(cur_level);
-        //     if let DomNode::Container(cur) =
-        //         self.state.dom.lookup_node_mut(&handle_up_to)
-        //     {
-        //         let mut removed_nodes = Vec::new();
-        //         for idx in (index_at_level..cur.children().len()).rev() {
-        //             if idx == index_at_level {
-        //                 let child = cur.get_child_mut(idx).unwrap();
-        //                 match child {
-        //                     DomNode::Container(container) => {
-        //                         removed_nodes.insert(
-        //                             0,
-        //                             DomNode::Container(
-        //                                 container
-        //                                     .copy_with_new_children(Vec::new()),
-        //                             ),
-        //                         );
-        //                     }
-        //                     DomNode::Text(text_node) => {
-        //                         if offset == 0 {
-        //                             removed_nodes.insert(0, child.clone());
-        //                         } else {
-        //                             let left_data =
-        //                                 text_node.data()[..offset].to_owned();
-        //                             let right_data =
-        //                                 text_node.data()[offset..].to_owned();
-        //                             text_node.set_data(left_data);
-        //                             removed_nodes.insert(
-        //                                 0,
-        //                                 DomNode::new_text(right_data),
-        //                             );
-        //                         }
-        //                     }
-        //                     _ => {
-        //                         removed_nodes.insert(0, child.clone());
-        //                     }
-        //                 }
-        //             } else {
-        //                 removed_nodes.insert(0, cur.remove_child(idx));
-        //             }
-        //         }
-        //         let mut new_subtree_at_prev_level = &mut new_subtree;
-        //         for _ in depth..cur_level {
-        //             if let DomNode::Container(c) = new_subtree_at_prev_level {
-        //                 let child = c.get_child_mut(0).unwrap();
-        //                 new_subtree_at_prev_level = child;
-        //             }
-        //         }
-        //         if let DomNode::Container(new_subtree) =
-        //             new_subtree_at_prev_level
-        //         {
-        //             if !removed_nodes.is_empty() {
-        //                 for node in removed_nodes {
-        //                     new_subtree.append_child(node);
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
 
         let html = new_subtree.to_html().to_string();
         dbg!(html);
@@ -459,7 +436,7 @@ where
                         }
                         _ => {
                             removed_nodes.insert(0, child.clone());
-                        } // TODO: fix
+                        }
                     }
                 } else {
                     removed_nodes.insert(0, container.remove_child(idx));
