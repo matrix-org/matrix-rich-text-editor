@@ -15,13 +15,33 @@
 use crate::tests::testutils_composer_model::{cm, tx};
 use crate::tests::testutils_conversion::utf16;
 
-use crate::TextUpdate;
+#[test]
+fn set_link_to_empty_selection_at_end_of_alink() {
+    let mut model = cm("<a href=\"https://matrix.org\">test_link</a>|");
+    model.set_link(utf16("https://element.io"));
+    assert_eq!(tx(&model), "<a href=\"https://element.io\">test_link|</a>");
+}
 
 #[test]
-fn cant_set_link_to_empty_selection() {
-    let mut model = cm("hello |world");
-    let update = model.set_link(utf16("https://element.io"));
-    assert!(matches!(update.text_update, TextUpdate::Keep));
+fn set_link_to_empty_selection_within_a_link() {
+    let mut model = cm("<a href=\"https://matrix.org\">test_|link</a>");
+    model.set_link(utf16("https://element.io"));
+    assert_eq!(tx(&model), "<a href=\"https://element.io\">test_|link</a>");
+}
+
+#[test]
+fn set_link_to_empty_selection_at_start_of_a_link() {
+    let mut model = cm("<a href=\"https://matrix.org\">|test_link</a>");
+    model.set_link(utf16("https://element.io"));
+    assert_eq!(tx(&model), "<a href=\"https://element.io\">|test_link</a>");
+}
+
+#[test]
+fn set_link_to_empty_selection() {
+    // This use case should never happen but in case it would...
+    let mut model = cm("test|");
+    model.set_link(utf16("https://element.io"));
+    assert_eq!(tx(&model), "test|");
 }
 
 #[test]
@@ -344,4 +364,41 @@ fn set_link_with_text_and_undo() {
     );
     model.undo();
     assert_eq!(tx(&model), "test|");
+}
+
+#[test]
+fn set_link_with_text_in_container() {
+    let mut model = cm("<b>test_bold|</b> test");
+    model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
+    assert_eq!(
+        tx(&model),
+        "<b>test_bold<a href=\"https://element.io\">added_link|</a></b> test"
+    );
+}
+
+#[test]
+fn set_link_with_text_on_selection() {
+    // This use case should never happen, but just in case it would, nothing will happen.
+    let mut model = cm("{test}|");
+    model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
+    assert_eq!(tx(&model), "{test}|");
+}
+
+#[test]
+fn set_link_with_text_at_end_of_a_link() {
+    // This use case should never happen, but just in case it would...
+    let mut model = cm("<a href=\"https://matrix.org\">test_link|</a>");
+    model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
+    assert_eq!(tx(&model), "<a href=\"https://matrix.org\">test_link</a><a href=\"https://element.io\">added_link|</a>");
+}
+
+#[test]
+fn set_link_with_text_within_a_link() {
+    // This use case should never happen, but just in case it would...
+    let mut model = cm("<a href=\"https://matrix.org\">test|_link</a>");
+    model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
+    assert_eq!(
+        tx(&model),
+        "<a href=\"https://element.io\">testadded_link|_link</a>"
+    );
 }
