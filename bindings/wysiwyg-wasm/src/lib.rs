@@ -65,7 +65,7 @@ trait IntoFfi {
 impl IntoFfi for &HashMap<wysiwyg::ComposerAction, wysiwyg::ActionState> {
     fn into_ffi(self) -> js_sys::Map {
         let ret = js_sys::Map::new();
-        for (k, v) in self.into_iter() {
+        for (k, v) in self.iter() {
             ret.set(&k.as_ref().into(), &v.as_ref().into());
         }
         ret
@@ -217,6 +217,21 @@ impl ComposerModel {
     pub fn get_link_action(&self) -> LinkAction {
         self.inner.get_link_action().into()
     }
+
+    pub fn set_link(&mut self, link: &str) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.set_link(Utf16String::from_str(link)))
+    }
+
+    pub fn set_link_with_text(
+        &mut self,
+        link: &str,
+        text: &str,
+    ) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.set_link_with_text(
+            Utf16String::from_str(link),
+            Utf16String::from_str(text),
+        ))
+    }
 }
 
 #[wasm_bindgen]
@@ -326,10 +341,7 @@ impl MenuState {
 #[wasm_bindgen]
 impl MenuState {
     pub fn keep(&self) -> bool {
-        match self.inner {
-            wysiwyg::MenuState::Keep => true,
-            _ => false,
-        }
+        matches!(self.inner, wysiwyg::MenuState::Keep)
     }
 
     pub fn update(&self) -> Option<MenuStateUpdate> {
@@ -426,6 +438,7 @@ impl DomChildren {
         }
     }
 
+    // Clippy suggests that this name is ambiguous
     pub fn next(&mut self) -> Option<DomHandle> {
         self.inner.pop_front()
     }

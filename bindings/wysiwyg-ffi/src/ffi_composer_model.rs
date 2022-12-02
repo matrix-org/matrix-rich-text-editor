@@ -180,6 +180,18 @@ impl ComposerModel {
         ))
     }
 
+    pub fn set_link_with_text(
+        self: &Arc<Self>,
+        link: String,
+        text: String,
+    ) -> Arc<ComposerUpdate> {
+        let link = Utf16String::from_str(&link);
+        let text = Utf16String::from_str(&text);
+        Arc::new(ComposerUpdate::from(
+            self.inner.lock().unwrap().set_link_with_text(link, text),
+        ))
+    }
+
     pub fn indent(self: &Arc<Self>) -> Arc<ComposerUpdate> {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().indent()))
     }
