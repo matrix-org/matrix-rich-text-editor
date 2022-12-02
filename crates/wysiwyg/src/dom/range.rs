@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::composer_model::delete_text::Direction;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::nodes::dom_node::DomNodeKind;
 use std::cmp::Ordering;
@@ -133,6 +134,21 @@ impl DomLocation {
     /// Whether the selection completely covers this location
     pub fn is_covered(&self) -> bool {
         self.is_start() && self.is_end()
+    }
+
+    /// Allows us to check whether a location is both a list item and the
+    /// passed position is at the end of it, we need this to handle adjacent
+    /// similar nodes within a list item
+    pub fn position_is_end_of_list_item(&self, position: usize) -> bool {
+        let is_list_item = self.kind == DomNodeKind::ListItem;
+
+        let location_start = self.position;
+        let location_end = self.position + self.length;
+
+        let position_is_at_end_of_location =
+            position == location_start || position == location_end;
+
+        is_list_item && position_is_at_end_of_location
     }
 }
 
