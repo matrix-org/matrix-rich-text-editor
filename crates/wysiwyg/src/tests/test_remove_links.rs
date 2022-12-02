@@ -15,6 +15,13 @@
 use crate::tests::testutils_composer_model::{cm, tx};
 
 #[test]
+fn remove_link_on_a_non_link_node() {
+    let mut model = cm("{test}|");
+    model.remove_links();
+    assert_eq!(tx(&model), "{test}|");
+}
+
+#[test]
 fn remove_selected_link() {
     let mut model = cm("<a href=\"https://matrix.org\">{test_link}|</a>");
     model.remove_links();
@@ -27,5 +34,46 @@ fn remove_selected_link_and_undo() {
     model.remove_links();
     assert_eq!(tx(&model), "{test_link}|");
     model.undo();
-    assert_eq!(tx(&model), "<a href=\"https://matrix.org\">{test_link}|</a>");
+    assert_eq!(
+        tx(&model),
+        "<a href=\"https://matrix.org\">{test_link}|</a>"
+    );
+}
+
+#[test]
+fn remove_partially_selected_link() {
+    let mut model = cm("<a href=\"https://matrix.org\">{test}|_link</a>");
+    model.remove_links();
+    assert_eq!(tx(&model), "{test}|_link");
+}
+
+#[test]
+fn remove_link_in_selected_container() {
+    let mut model = cm(
+        "<b>{test <a href=\"https://matrix.org\">test_link_bold}|</a></b> test",
+    );
+    model.remove_links();
+    assert_eq!(tx(&model), "<b>{test test_link_bold}|</b> test");
+}
+
+#[test]
+fn remove_link_that_contains_a_container() {
+    let mut model =
+        cm("<a href=\"https://matrix.org\"><b>{test_link_bold}|</b></a>");
+    model.remove_links();
+    assert_eq!(tx(&model), "<b>{test_link_bold}|</b>");
+}
+
+#[test]
+fn remove_multiple_selected_links() {
+    let mut model = cm("<a href=\"https://matrix.org\">{test_link_1</a> <a href=\"https://element.io\">test_link_2}|</a>");
+    model.remove_links();
+    assert_eq!(tx(&model), "{test_link_1 test_link_2}|");
+}
+
+#[test]
+fn remove_multiple_partially_selected_links() {
+    let mut model = cm("<a href=\"https://matrix.org\">test_{link_1</a> <a href=\"https://element.io\">test}|_link_2</a>");
+    model.remove_links();
+    assert_eq!(tx(&model), "test_{link_1 test}|_link_2");
 }
