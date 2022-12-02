@@ -98,4 +98,33 @@ where
         }
         self.create_update_replace_all()
     }
+
+    pub fn remove_links(&mut self) -> ComposerUpdate<S> {
+        let mut has_pushed_history = false;
+        let mut has_found_link = false;
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        for loc in range.locations {
+            if loc.kind == DomNodeKind::Link {
+                has_found_link = true;
+                if !has_pushed_history {
+                    self.push_state_to_history();
+                    has_pushed_history = true;
+                }
+                let link = self
+                    .state
+                    .dom
+                    .lookup_node(&loc.node_handle)
+                    .as_container()
+                    .unwrap();
+                self.state
+                    .dom
+                    .replace(&loc.node_handle, link.children().clone());
+            }
+        }
+        if !has_found_link {
+            return ComposerUpdate::keep();
+        }
+        self.create_update_replace_all()
+    }
 }

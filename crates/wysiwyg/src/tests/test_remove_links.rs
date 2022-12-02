@@ -12,23 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#![cfg(test)]
+use crate::tests::testutils_composer_model::{cm, tx};
 
-pub mod test_characters;
-pub mod test_deleting;
-pub mod test_formatting;
-pub mod test_get_link_action;
-pub mod test_links;
-pub mod test_lists;
-pub mod test_menu_state;
-pub mod test_paragraphs;
-pub mod test_remove_links;
-pub mod test_selection;
-pub mod test_set_content;
-pub mod test_to_markdown;
-pub mod test_to_raw_text;
-pub mod test_to_tree;
-pub mod test_undo_redo;
-pub mod testutils_composer_model;
-pub mod testutils_conversion;
-pub mod testutils_dom;
+#[test]
+fn remove_selected_link() {
+    let mut model = cm("<a href=\"https://matrix.org\">{test_link}|</a>");
+    model.remove_links();
+    assert_eq!(tx(&model), "{test_link}|");
+}
