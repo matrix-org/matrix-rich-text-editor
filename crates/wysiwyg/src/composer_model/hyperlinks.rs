@@ -100,16 +100,14 @@ where
     }
 
     pub fn remove_links(&mut self) -> ComposerUpdate<S> {
-        let mut has_pushed_history = false;
         let mut has_found_link = false;
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
         for loc in range.locations {
             if loc.kind == DomNodeKind::Link {
-                has_found_link = true;
-                if !has_pushed_history {
+                if !has_found_link {
+                    has_found_link = true;
                     self.push_state_to_history();
-                    has_pushed_history = true;
                 }
                 self.state
                     .dom
