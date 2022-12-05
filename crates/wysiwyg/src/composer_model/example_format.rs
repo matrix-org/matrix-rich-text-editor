@@ -17,6 +17,7 @@ use std::ops::Not;
 
 use widestring::Utf16String;
 
+use crate::char::CharExt;
 use crate::composer_model::menu_state::MenuStateComputeType;
 use crate::dom::nodes::{LineBreakNode, TextNode};
 use crate::dom::parser::parse;
@@ -179,7 +180,7 @@ impl ComposerModel<Utf16String> {
         }
 
         // Replace characters with visible ones
-        html.replace('\u{200b}', "~").replace('\u{A0}', "&nbsp;")
+        html.replace(char::zwsp(), "~").replace('\u{A0}', "&nbsp;")
     }
 }
 
