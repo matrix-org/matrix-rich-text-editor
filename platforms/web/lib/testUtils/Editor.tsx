@@ -48,6 +48,12 @@ export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
                     {key}
                 </button>
             ))}
+            <button
+                type="button"
+                onClick={() => wysiwyg.insertText('add new words')}
+            >
+                insertText
+            </button>
             <div
                 ref={(node) => {
                     if (node) {
