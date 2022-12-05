@@ -50,7 +50,7 @@ struct WysiwygActionToolbar: View {
     }
     
     func makeAlertConfig() -> AlertConfig {
-        var actions: [AlertConfig.Action] = [.cancel(title: "Cancel")]
+        var actions: [AlertConfig.Action] = [.cancel(titlet: "Cancel")]
         let createLinkTitle = "Create Link"
         let singleTextAction: ([String]) -> Void = { strings in
             let urlString = strings[0]
