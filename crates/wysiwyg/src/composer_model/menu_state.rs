@@ -90,6 +90,8 @@ where
         if let Some(intersection) = range.leaves().next().map(|l| {
             range
                 .leaves()
+                // do not need locations after the cursor for next logic
+                .filter(|loc| loc.position < range.end())
                 .fold(
                     // Init with reversed_actions from the first leave.
                     self.compute_reversed_actions(&l.node_handle),
@@ -106,6 +108,8 @@ where
                 .cloned()
                 .collect()
         }) {
+            println!("{:?}", intersection);
+
             intersection
         } else if self.state.dom.document().children().is_empty() {
             HashSet::from_iter(toggled_format_actions.into_iter())
