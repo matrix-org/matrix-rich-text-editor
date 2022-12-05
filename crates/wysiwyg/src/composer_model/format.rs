@@ -71,7 +71,7 @@ where
         let mut structure_ancestors = HashMap::new();
         for leaf in leaves {
             let first_structure_ancestor =
-                self.find_structure_ancestor(&leaf.node_handle);
+                self.state.dom.find_structure_ancestor(&leaf.node_handle);
             // Get the closest ancestor path or the root one (empty Vec) if there is none
             let ancestor_handle =
                 first_structure_ancestor.unwrap_or(DomHandle::root());
@@ -463,13 +463,15 @@ where
         // If has next sibling, try to join it with the current node
         let parent = self.state.dom.parent(handle);
         if parent.children().len() - handle.index_in_parent() > 1 {
-            self.join_format_node_with_prev(
+            self.state.dom.join_format_node_with_prev(
                 &handle.next_sibling(),
                 &mut action_list,
             );
         }
         // Merge current node with previous if possible
-        self.join_format_node_with_prev(handle, &mut action_list);
+        self.state
+            .dom
+            .join_format_node_with_prev(handle, &mut action_list);
         action_list
     }
 }
