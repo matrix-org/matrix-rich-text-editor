@@ -206,18 +206,16 @@ fn process_textlike_node(
 
     // Increase offset to keep track of the current position
     *offset += node_len;
-
-    let outside_selection_range = start > node_end || end < node_start;
     let is_cursor = start == end;
 
-    // Intersect selection and node ranges with a couple of exceptions
-    if outside_selection_range
-        // Selection start is at the end of a node, but it's not a cursor
-        || (start == node_end && !is_cursor)
-        // Selection end is at the start of a node, but not on position 0
-        || (node_start == end && end != 0)
-    {
-        // Node discarded, it's not selected
+    let should_discard = match is_cursor {
+        // for a cursor, discard when it is outside the node
+        true => start < node_start || start > node_end,
+        // for a selection, discard when it ends before (inclusive) or starts after (inclusive) the node
+        false => end <= node_start || start >= node_end,
+    };
+
+    if should_discard {
         None
     } else {
         // Diff between selected position and the start position of the node
