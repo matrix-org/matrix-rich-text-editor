@@ -42,6 +42,7 @@ interface ComposerModel {
     ComposerUpdate un_indent();
     ComposerUpdate set_link(string new_text);
     ComposerUpdate set_link_with_text(string link, string text);
+    ComposerUpdate remove_links();
     string to_tree();
     ComposerState get_current_dom_state();
     record<ComposerAction, ActionState> action_states();

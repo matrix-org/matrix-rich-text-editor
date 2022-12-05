@@ -22,6 +22,7 @@ pub mod test_links;
 pub mod test_lists;
 pub mod test_menu_state;
 pub mod test_paragraphs;
+pub mod test_remove_links;
 pub mod test_selection;
 pub mod test_set_content;
 pub mod test_to_markdown;

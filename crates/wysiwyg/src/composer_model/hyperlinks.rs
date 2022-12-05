@@ -98,4 +98,25 @@ where
         }
         self.create_update_replace_all()
     }
+
+    pub fn remove_links(&mut self) -> ComposerUpdate<S> {
+        let mut has_found_link = false;
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        for loc in range.locations {
+            if loc.kind == DomNodeKind::Link {
+                if !has_found_link {
+                    has_found_link = true;
+                    self.push_state_to_history();
+                }
+                self.state
+                    .dom
+                    .replace_node_with_its_children(&loc.node_handle);
+            }
+        }
+        if !has_found_link {
+            return ComposerUpdate::keep();
+        }
+        self.create_update_replace_all()
+    }
 }

@@ -131,6 +131,20 @@ where
         parent.replace_child(index, nodes)
     }
 
+    /// Replaces the node at [node_handle] with its children. Returns the list of new handles
+    /// for the replaced children, but only if the [node_handle] belonged to a container
+    /// otherwise will return an empy list.
+    pub fn replace_node_with_its_children(
+        &mut self,
+        node_handle: &DomHandle,
+    ) -> Vec<DomHandle> {
+        let node = self.lookup_node(node_handle);
+        let Some(parent) = node.as_container() else {
+            return vec![]
+        };
+        self.replace(node_handle, parent.children().clone())
+    }
+
     /// Removes the node at [node_handle] and returns it.
     pub fn remove(&mut self, node_handle: &DomHandle) -> DomNode<S> {
         let parent = self.parent_mut(node_handle);

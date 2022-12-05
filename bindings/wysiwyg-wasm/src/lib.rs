@@ -232,6 +232,10 @@ impl ComposerModel {
             Utf16String::from_str(text),
         ))
     }
+
+    pub fn remove_links(&mut self) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.remove_links())
+    }
 }
 
 #[wasm_bindgen]
