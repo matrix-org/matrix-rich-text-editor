@@ -19,13 +19,35 @@ import UIKit
 extension UIAlertController {
     convenience init(alert: AlertConfig) {
         self.init(title: alert.title, message: nil, preferredStyle: .alert)
-        addTextField()
-        addAction(UIAlertAction(title: alert.cancel, style: .cancel) { _ in
-            alert.action(nil)
-        })
-        let textField = textFields?.first
-        addAction(UIAlertAction(title: alert.accept, style: .default) { _ in
-            alert.action(textField?.text)
-        })
+        var numberOfTextFields = 0
+        for action in alert.actions {
+            switch action {
+            case let .cancel(title):
+                addAction(UIAlertAction(title: title, style: .cancel) { _ in
+                    alert.dismissAction?()
+                })
+            case let .destructive(title, action):
+                addAction(UIAlertAction(title: title, style: .destructive) { _ in
+                    alert.dismissAction?()
+                    action()
+                })
+            case let .textAction(title: title, textsData, action):
+                for textData in textsData {
+                    addTextField()
+                    textFields![numberOfTextFields].placeholder = textData.placeholder
+                    textFields![numberOfTextFields].text = textData.defaultValue
+                    numberOfTextFields += 1
+                }
+                let textFields = textFields!
+                addAction(UIAlertAction(title: title, style: .default) { _ in
+                    alert.dismissAction?()
+                    var strings: [String] = []
+                    for textField in textFields {
+                        strings.append(textField.text ?? "")
+                    }
+                    action(strings)
+                })
+            }
+        }
     }
 }

@@ -154,7 +154,7 @@ public extension WysiwygComposerViewModel {
         Logger.viewModel.logDebug([attributedContent.logSelection,
                                    "Apply action: \(action)"],
                                   functionName: #function)
-        let update = model.apply(action)
+        guard let update = model.apply(action) else { return }
         if update.textUpdate() == .keep {
             hasPendingFormats = true
         }
@@ -258,6 +258,23 @@ public extension WysiwygComposerViewModel {
 
         textView.shouldShowPlaceholder = textView.attributedText.length == 0
         updateCompressedHeightIfNeeded()
+    }
+    
+    func applyLinkAction(_ linkAction: WysiwygLinkOperation) {
+        let update: ComposerUpdate
+        switch linkAction {
+        case let .createLink(urlString, text):
+            update = model.setLinkWithText(link: urlString, text: text)
+        case let .setLink(urlString):
+            update = model.setLink(newText: urlString)
+        case .removeLinks:
+            update = model.removeLinks()
+        }
+        applyUpdate(update)
+    }
+    
+    func getLinkAction() -> WysiwygLinkAction {
+        model.getLinkAction().wysiwygLinkAction
     }
 }
 

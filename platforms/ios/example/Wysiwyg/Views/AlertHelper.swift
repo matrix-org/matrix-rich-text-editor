@@ -40,12 +40,11 @@ struct AlertHelper<Content: View>: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIHostingController<Content>,
                                 context: UIViewControllerRepresentableContext<AlertHelper>) {
         uiViewController.rootView = content
+        var alert = alert
+        alert.dismissAction = {
+            self.isPresented = false
+        }
         if isPresented, uiViewController.presentedViewController == nil {
-            var alert = alert
-            alert.action = {
-                self.isPresented = false
-                self.alert.action($0)
-            }
             context.coordinator.alertController = UIAlertController(alert: alert)
             guard let controller = context.coordinator.alertController else { return }
             uiViewController.present(controller, animated: true)
@@ -57,8 +56,18 @@ struct AlertHelper<Content: View>: UIViewControllerRepresentable {
 }
 
 public struct AlertConfig {
+    public struct TextFieldData {
+        let placeholder: String
+        let defaultValue: String?
+    }
+    
+    public enum Action {
+        case cancel(title: String)
+        case destructive(title: String, action: () -> Void)
+        case textAction(title: String, textsData: [TextFieldData], action: ([String]) -> Void)
+    }
+    
     public var title: String
-    public var accept = "OK"
-    public var cancel = "Cancel"
-    public var action: (String?) -> Void
+    public var actions: [Action]
+    public var dismissAction: (() -> Void)?
 }

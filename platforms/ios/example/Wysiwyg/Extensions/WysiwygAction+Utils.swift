@@ -20,7 +20,7 @@ import WysiwygComposer
 extension WysiwygAction: CaseIterable, Identifiable {
     public static var allCases: [WysiwygAction] = [
         .bold, .italic, .strikeThrough, .underline, .inlineCode,
-        .link(url: "unset"), .undo, .redo, .orderedList, .unorderedList,
+        .link, .undo, .redo, .orderedList, .unorderedList,
     ]
 
     public var id: String {
@@ -98,17 +98,6 @@ extension WysiwygAction: CaseIterable, Identifiable {
             return "list.number"
         case .unorderedList:
             return "list.bullet"
-        }
-    }
-}
-
-extension WysiwygAction: Equatable {
-    public static func == (lhs: WysiwygAction, rhs: WysiwygAction) -> Bool {
-        switch (lhs, rhs) {
-        case let (.link(url: lhsUrl), .link(url: rhsUrl)):
-            return lhsUrl == rhsUrl
-        default:
-            return lhs.id == rhs.id
         }
     }
 }
