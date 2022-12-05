@@ -31,20 +31,19 @@ extension UIAlertController {
                     alert.dismissAction?()
                     action()
                 })
-            case let .textAction(title: title, textsData, action):
-                for textData in textsData {
+            case let .textAction(title: title, textFieldsData, action):
+                for textFieldData in textFieldsData {
                     addTextField()
-                    textFields![numberOfTextFields].placeholder = textData.placeholder
-                    textFields![numberOfTextFields].text = textData.defaultValue
+                    guard let textFields = textFields else { return }
+                    textFields[numberOfTextFields].placeholder = textFieldData.placeholder
+                    textFields[numberOfTextFields].text = textFieldData.defaultValue
                     numberOfTextFields += 1
                 }
-                let textFields = textFields!
+                guard let textFields = textFields else { return }
                 addAction(UIAlertAction(title: title, style: .default) { _ in
                     alert.dismissAction?()
                     var strings: [String] = []
-                    for textField in textFields {
-                        strings.append(textField.text ?? "")
-                    }
+                    strings = textFields.compactMap { $0.text ?? "" }
                     action(strings)
                 })
             }

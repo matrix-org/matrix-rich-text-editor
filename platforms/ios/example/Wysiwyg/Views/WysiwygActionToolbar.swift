@@ -61,7 +61,7 @@ struct WysiwygActionToolbar: View {
         case .create:
             actions.append(.textAction(
                 title: "Ok",
-                textsData: [.init(placeholder: "URL", defaultValue: nil)],
+                textFieldsData: [.init(placeholder: "URL", defaultValue: nil)],
                 action: singleTextAction
             )
             )
@@ -75,7 +75,7 @@ struct WysiwygActionToolbar: View {
             }
             actions.append(.textAction(
                 title: "Ok",
-                textsData: [
+                textFieldsData: [
                     .init(placeholder: "URL", defaultValue: nil),
                     .init(placeholder: "Text", defaultValue: nil),
                 ],
@@ -84,10 +84,10 @@ struct WysiwygActionToolbar: View {
             )
             return AlertConfig(title: createLinkTitle, actions: actions)
         case let .edit(link):
-            let title = "Edit Link"
+            let editLinktitle = "Edit Link"
             actions.append(.textAction(
                 title: "Ok",
-                textsData: [.init(placeholder: "URL", defaultValue: link)],
+                textFieldsData: [.init(placeholder: "URL", defaultValue: link)],
                 action: singleTextAction
             )
             )
@@ -96,7 +96,7 @@ struct WysiwygActionToolbar: View {
                 viewModel.applyLinkAction(.removeLinks)
             }
             actions.append(.destructive(title: "Remove", action: removeAction))
-            return AlertConfig(title: createLinkTitle, actions: actions)
+            return AlertConfig(title: editLinktitle, actions: actions)
         case .none:
             return AlertConfig(title: "", actions: actions)
         }

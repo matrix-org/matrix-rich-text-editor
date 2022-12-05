@@ -64,7 +64,7 @@ public struct AlertConfig {
     public enum Action {
         case cancel(title: String)
         case destructive(title: String, action: () -> Void)
-        case textAction(title: String, textsData: [TextFieldData], action: ([String]) -> Void)
+        case textAction(title: String, textFieldsData: [TextFieldData], action: ([String]) -> Void)
     }
     
     public var title: String
