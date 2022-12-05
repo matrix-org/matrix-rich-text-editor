@@ -333,3 +333,10 @@ fn deleting_all_text_within_a_tag_deletes_the_tag() {
     model.delete();
     assert_eq!(tx(&model), "abc<br />|ijk",);
 }
+
+#[test]
+fn deleting_last_character_in_a_container() {
+    let mut model = cm("<b>t|</b>");
+    model.backspace();
+    assert_eq!(tx(&model), "|");
+}

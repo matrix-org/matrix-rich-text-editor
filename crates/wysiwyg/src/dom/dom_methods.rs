@@ -220,9 +220,13 @@ where
                 }
             }
         } else if let Some(first_leave) = range.leaves().next() {
-            self.join_text_nodes_in_parent(
-                &first_leave.node_handle.parent_handle(),
-            )
+            if !deleted_handles
+                .contains(&first_leave.node_handle.parent_handle())
+            {
+                self.join_text_nodes_in_parent(
+                    &first_leave.node_handle.parent_handle(),
+                )
+            }
         }
         deleted_handles
     }
