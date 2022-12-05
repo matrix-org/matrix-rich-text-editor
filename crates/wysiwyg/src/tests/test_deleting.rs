@@ -347,3 +347,17 @@ fn deleting_selection_in_a_container() {
     model.backspace();
     assert_eq!(tx(&model), "|");
 }
+
+#[test]
+fn deleting_selection_in_multiple_containers() {
+    let mut model = cm("<i><b>{test}|</b></i>");
+    model.backspace();
+    assert_eq!(tx(&model), "|");
+}
+
+#[test]
+fn deleting_selection_of_a_container_in_multiple_containers() {
+    let mut model = cm("<i><b>{test}|</b> test</i>");
+    model.backspace();
+    assert_eq!(tx(&model), "<i>| test</i>");
+}
