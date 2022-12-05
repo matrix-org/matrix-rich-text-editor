@@ -15,6 +15,7 @@
 use std::collections::HashMap;
 use std::ops::AddAssign;
 
+use crate::char::CharExt;
 use crate::dom::nodes::{ContainerNode, DomNode};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
@@ -280,7 +281,7 @@ where
             if let DomNode::Text(t) = node {
                 let text = t.data();
                 let index_in_parent = handle.index_in_parent();
-                let add_zwsp = !text.to_string().starts_with("\u{200b}");
+                let add_zwsp = !text.to_string().starts_with(char::zwsp());
                 let list_item =
                     DomNode::Container(ContainerNode::new_list_item(
                         "li".into(),
