@@ -120,14 +120,11 @@ mod sys {
         }
 
         /// Create a list item node
-        fn new_list_item<S>(tag: &str) -> DomNode<S>
+        fn new_list_item<S>() -> DomNode<S>
         where
             S: UnicodeString,
         {
-            DomNode::Container(ContainerNode::new_list_item(
-                tag.into(),
-                Vec::new(),
-            ))
+            DomNode::Container(ContainerNode::new_list_item(Vec::new()))
         }
 
         /// Copy all panode's information into node (now we know it's a container).
@@ -152,7 +149,7 @@ mod sys {
                     convert_children(padom, child, node.last_child_mut());
                 }
                 "li" => {
-                    node.append_child(new_list_item(tag));
+                    node.append_child(new_list_item());
                     convert_children(padom, child, node.last_child_mut());
                 }
                 "a" => {
@@ -400,7 +397,6 @@ mod js {
                     "LI" => {
                         dom.append_child(DomNode::Container(
                             ContainerNode::new_list_item(
-                                "li".into(),
                                 convert(node.child_nodes())?.take_children(),
                             ),
                         ));

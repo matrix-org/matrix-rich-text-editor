@@ -333,3 +333,31 @@ fn deleting_all_text_within_a_tag_deletes_the_tag() {
     model.delete();
     assert_eq!(tx(&model), "abc<br />|ijk",);
 }
+
+#[test]
+fn deleting_last_character_in_a_container() {
+    let mut model = cm("<b>t|</b>");
+    model.backspace();
+    assert_eq!(tx(&model), "|");
+}
+
+#[test]
+fn deleting_selection_in_a_container() {
+    let mut model = cm("<b>{test}|</b>");
+    model.backspace();
+    assert_eq!(tx(&model), "|");
+}
+
+#[test]
+fn deleting_selection_in_multiple_containers() {
+    let mut model = cm("<i><b>{test}|</b></i>");
+    model.backspace();
+    assert_eq!(tx(&model), "|");
+}
+
+#[test]
+fn deleting_selection_of_a_container_in_multiple_containers() {
+    let mut model = cm("<i><b>{test}|</b> test</i>");
+    model.backspace();
+    assert_eq!(tx(&model), "<i>| test</i>");
+}

@@ -108,9 +108,9 @@ where
         }
     }
 
-    pub fn new_list_item(item_name: S, children: Vec<DomNode<S>>) -> Self {
+    pub fn new_list_item(children: Vec<DomNode<S>>) -> Self {
         Self {
-            name: item_name,
+            name: "li".into(),
             kind: ContainerNodeKind::ListItem,
             attrs: None,
             children,

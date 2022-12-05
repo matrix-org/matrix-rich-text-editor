@@ -255,10 +255,9 @@ where
         if range.is_empty() {
             self.state.dom.append_at_end_of_document(DomNode::new_list(
                 list_type,
-                vec![DomNode::Container(ContainerNode::new_list_item(
-                    "li".into(),
-                    vec![DomNode::new_text(S::zwsp())],
-                ))],
+                vec![DomNode::Container(ContainerNode::new_list_item(vec![
+                    DomNode::new_text(S::zwsp()),
+                ]))],
             ));
             self.state.start.add_assign(1);
             self.state.end.add_assign(1);
@@ -282,16 +281,15 @@ where
                 let index_in_parent = handle.index_in_parent();
                 let add_zwsp = !text.to_string().starts_with("\u{200b}");
                 let list_item =
-                    DomNode::Container(ContainerNode::new_list_item(
-                        "li".into(),
-                        vec![DomNode::new_text(if add_zwsp {
+                    DomNode::Container(ContainerNode::new_list_item(vec![
+                        DomNode::new_text(if add_zwsp {
                             let mut owned_text = S::zwsp();
                             owned_text.push(text);
                             owned_text
                         } else {
                             text.to_owned()
-                        })],
-                    ));
+                        }),
+                    ]));
 
                 if add_zwsp {
                     self.state.start.add_assign(1);
