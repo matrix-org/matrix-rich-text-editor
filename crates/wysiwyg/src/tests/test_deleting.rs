@@ -340,3 +340,10 @@ fn deleting_last_character_in_a_container() {
     model.backspace();
     assert_eq!(tx(&model), "|");
 }
+
+#[test]
+fn deleting_selection_in_a_container() {
+    let mut model = cm("<b>{test}|</b>");
+    model.backspace();
+    assert_eq!(tx(&model), "|");
+}
