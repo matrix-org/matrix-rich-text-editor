@@ -193,14 +193,16 @@ where
 
         // Delete the nodes marked for deletion
         let deleted_handles = if !to_delete.is_empty() {
-            self.delete_nodes(to_delete.clone())
+            self.delete_nodes(to_delete)
         } else {
             Vec::new()
         };
 
-        // If our range covered multiple text-like nodes, join together
-        // the two sides of the range.
-        if range.leaves().count() > 1 {
+        if self.children().is_empty() {
+            // Nothing to join if the deletion left the DOM empty.
+        } else if range.leaves().count() > 1 {
+            // If our range covered multiple text-like nodes, join together
+            // the two sides of the range.
             // join_nodes will use the first location of our range, so we must
             // check whether we deleted it!
             if let Some(first_loc) = range.locations.first() {
@@ -216,7 +218,7 @@ where
                     // locations have been deleted.
                     // TODO: can we just pass in this handle, to avoid the
                     // ambiguity here?
-                    self.join_nodes(&range, new_pos);
+                    self.join_nodes(range, new_pos);
                 }
             }
         } else if let Some(first_leave) = range.leaves().next() {
@@ -294,7 +296,7 @@ where
                         (0, 0) => {
                             if !new_text.is_empty() {
                                 let node =
-                                    DomNode::new_text(new_text.clone().into());
+                                    DomNode::new_text(new_text.clone());
                                 action_list.push(DomAction::add_node(
                                     loc.node_handle.parent_handle(),
                                     loc.node_handle.index_in_parent(),
