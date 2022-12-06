@@ -296,7 +296,7 @@ mod test {
     }
 
     #[test]
-    fn finding_a_node_within_flat_text_nodes_is_found() {
+    fn finding_first_node_within_flat_text_nodes_is_found() {
         let d = dom(&[tn("foo"), tn("bar")]);
         assert_eq!(
             find_pos(&d, &d.document_handle(), 0, 0),
@@ -310,26 +310,14 @@ mod test {
             find_pos(&d, &d.document_handle(), 2, 2),
             found_single_node(DomHandle::from_raw(vec![0]), 0, 2, 2, 3)
         );
-        assert_eq!(
-            find_pos(&d, &d.document_handle(), 3, 3),
-            found_single_node(DomHandle::from_raw(vec![0]), 0, 3, 3, 3)
-        );
-        assert_eq!(
-            find_pos(&d, &d.document_handle(), 3, 4),
-            found_single_node(DomHandle::from_raw(vec![1]), 3, 0, 1, 3)
-        );
-        // TODO: break up this test and name parts!
+    }
+
+    #[test]
+    fn finding_second_node_within_flat_text_nodes_is_found() {
+        let d = dom(&[tn("foo"), tn("bar")]);
         assert_eq!(
             find_pos(&d, &d.document_handle(), 4, 4),
             found_single_node(DomHandle::from_raw(vec![1]), 3, 1, 1, 3)
-        );
-        assert_eq!(
-            find_pos(&d, &d.document_handle(), 4, 4),
-            found_single_node(DomHandle::from_raw(vec![1]), 3, 1, 1, 3)
-        );
-        assert_eq!(
-            find_pos(&d, &d.document_handle(), 5, 5),
-            found_single_node(DomHandle::from_raw(vec![1]), 3, 2, 2, 3)
         );
         assert_eq!(
             find_pos(&d, &d.document_handle(), 5, 5),
@@ -344,11 +332,24 @@ mod test {
     // TODO: comprehensive test like above for non-flat nodes
 
     #[test]
+    fn finding_a_boundary_between_flat_text_nodes_finds_both() {
+        let d = dom(&[tn("foo"), tn("bar")]);
+        assert_eq!(
+            find_pos(&d, &d.document_handle(), 3, 3),
+            FindResult::Found(vec![
+                make_single_location(DomHandle::from_raw(vec![0]), 0, 3, 3, 3),
+                make_single_location(DomHandle::from_raw(vec![1]), 3, 0, 0, 3)
+            ])
+        );
+    }
+
+    #[test]
     fn finding_a_range_within_an_empty_dom_returns_no_nodes() {
         let d = dom(&[]);
         let range = d.find_range(0, 0);
         assert_eq!(range, Range::new(Vec::new()));
     }
+    // TODO: comprehensive test like above for non-flat nodes
 
     #[test]
     fn finding_a_range_within_the_single_text_node_works() {
