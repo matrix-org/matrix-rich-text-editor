@@ -15,6 +15,7 @@
 //! Methods on Dom that modify its contents and are guaranteed to conform to
 //! our invariants e.g. no empty text nodes, no adjacent text nodes.
 
+use crate::char::CharExt;
 use crate::{DomHandle, DomNode, UnicodeString};
 
 use super::action_list::{DomAction, DomActionList};
@@ -193,7 +194,7 @@ where
 
         // Delete the nodes marked for deletion
         let deleted_handles = if !to_delete.is_empty() {
-            self.delete_nodes(to_delete.clone())
+            self.delete_nodes(to_delete)
         } else {
             Vec::new()
         };
@@ -216,22 +217,47 @@ where
                     // locations have been deleted.
                     // TODO: can we just pass in this handle, to avoid the
                     // ambiguity here?
-                    self.join_nodes(&range, new_pos);
+                    self.join_nodes(range, new_pos);
                 }
             }
         } else if let Some(first_leave) = range.leaves().next() {
-            if !deleted_handles
-                .contains(&first_leave.node_handle.parent_handle())
-            {
-                self.join_text_nodes_in_parent(
-                    &first_leave.node_handle.parent_handle(),
+            if let Some(ancestor_handle) = self
+                .find_first_non_matching_ancestor_in(
+                    deleted_handles.clone(),
+                    &first_leave.node_handle,
                 )
+            {
+                // FIXME: need to join other types of node as well
+                self.join_nodes_in_parent(&ancestor_handle);
             }
         }
         deleted_handles
     }
 
-    fn join_text_nodes_in_parent(&mut self, parent_handle: &DomHandle) {
+    fn find_first_non_matching_ancestor_in(
+        &self,
+        list: Vec<DomHandle>,
+        node_handle: &DomHandle,
+    ) -> Option<DomHandle> {
+        fn parent_handle_in_list(
+            list: Vec<DomHandle>,
+            handle: &DomHandle,
+        ) -> Option<DomHandle> {
+            if handle.has_parent() {
+                let parent_handle = handle.parent_handle();
+                if !list.contains(&parent_handle) {
+                    Some(parent_handle)
+                } else {
+                    parent_handle_in_list(list, &parent_handle)
+                }
+            } else {
+                None
+            }
+        }
+        parent_handle_in_list(list, node_handle)
+    }
+
+    fn join_nodes_in_parent(&mut self, parent_handle: &DomHandle) {
         let child_count = if let DomNode::Container(parent) =
             self.lookup_node(parent_handle)
         {
@@ -244,20 +270,31 @@ where
             for i in (0..child_count - 1).rev() {
                 let handle = parent_handle.child_handle(i);
                 let next_handle = parent_handle.child_handle(i + 1);
-                if let (DomNode::Text(cur_text), DomNode::Text(next_text)) =
-                    (self.lookup_node(&handle), self.lookup_node(&next_handle))
-                {
-                    let mut text_data = cur_text.data().to_owned();
-                    let next_data = next_text.data();
-                    if !next_data.is_empty() && next_data != "\u{200B}" {
-                        text_data.push(next_text.data().to_owned());
-                    }
+                let next_node = self.lookup_node(&next_handle);
+                let node = self.lookup_node(&handle);
 
-                    self.remove(&next_handle);
-                    let new_text_node = DomNode::new_text(text_data);
-                    self.replace(&handle, vec![new_text_node]);
+                if self.can_directly_join_nodes(node, next_node) {
+                    let mut next_node = self.remove(&next_handle);
+                    let node_mut = self.lookup_node_mut(&handle);
+                    node_mut.push(&mut next_node);
                 }
             }
+        }
+    }
+
+    fn can_directly_join_nodes(
+        &self,
+        n1: &DomNode<S>,
+        n2: &DomNode<S>,
+    ) -> bool {
+        match (n1, n2) {
+            (DomNode::Container(c1), DomNode::Container(c2)) => {
+                c1.kind() == c2.kind() && !c1.is_list_item() && !c1.is_list()
+            }
+            (DomNode::Text(_), DomNode::Text(t2)) => {
+                !t2.data().to_string().starts_with(char::zwsp())
+            }
+            _ => false,
         }
     }
 
@@ -298,7 +335,7 @@ where
                         (0, 0) => {
                             if !new_text.is_empty() {
                                 let node =
-                                    DomNode::new_text(new_text.clone().into());
+                                    DomNode::new_text(new_text.clone());
                                 action_list.push(DomAction::add_node(
                                     loc.node_handle.parent_handle(),
                                     loc.node_handle.index_in_parent(),

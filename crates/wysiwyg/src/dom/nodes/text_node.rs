@@ -147,6 +147,15 @@ where
     pub fn is_empty(&self) -> bool {
         self.data().len() != 0
     }
+
+    pub(crate) fn push(&mut self, other_node: &TextNode<S>) {
+        let mut text_data = self.data().to_owned();
+        let other_text_data = other_node.data();
+        if !other_text_data.is_empty() && other_text_data != "\u{200B}" {
+            text_data.push(other_text_data.to_owned());
+        }
+        self.set_data(text_data);
+    }
 }
 
 /// Given a character, determine its type

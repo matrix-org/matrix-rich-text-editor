@@ -173,12 +173,42 @@ where
         }
     }
 
+    pub(crate) fn as_container_mut(&mut self) -> Option<&mut ContainerNode<S>> {
+        if let Self::Container(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
     pub fn kind(&self) -> DomNodeKind {
         match self {
             DomNode::Text(_) => DomNodeKind::Text,
             DomNode::LineBreak(_) => DomNodeKind::LineBreak,
             DomNode::Container(n) => DomNodeKind::from_container_kind(n.kind()),
         }
+    }
+
+    pub(crate) fn push(&mut self, other_node: &mut DomNode<S>) {
+        if self.kind() != other_node.kind() {
+            panic!("Trying to push a non-matching node kind")
+        }
+
+        match self {
+            DomNode::Container(c) => {
+                c.push(other_node.as_container_mut().unwrap())
+            }
+            DomNode::Text(t) => t.push(other_node.as_text().unwrap()),
+            DomNode::LineBreak(_) => panic!("Can't merge linebreaks"),
+        }
+    }
+
+    /// Returns `true` if the dom node is [`LineBreak`].
+    ///
+    /// [`LineBreak`]: DomNode::LineBreak
+    #[must_use]
+    pub fn is_line_break(&self) -> bool {
+        matches!(self, Self::LineBreak(..))
     }
 }
 
