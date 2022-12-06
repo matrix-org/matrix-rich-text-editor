@@ -220,7 +220,16 @@ public extension WysiwygComposerViewModel {
             update = model.replaceText(newText: replacementText)
             shouldAcceptChange = true
         }
-
+        switch update.menuState() {
+        case let .update(newState):
+            if newState[.link] != actionStates[.link] {
+                applyUpdate(update, skipTextViewUpdate: true)
+                textView.apply(attributedContent)
+                updateCompressedHeightIfNeeded()
+                return false
+            }
+        default: break
+        }
         applyUpdate(update, skipTextViewUpdate: shouldAcceptChange)
         return shouldAcceptChange
     }
