@@ -131,7 +131,9 @@ where
             results.extend(locations);
         }
     }
-    // If container node is completely selected, include it
+    // If container node is completely selected, include it // TODO I think this is wrong,
+    // BECAUSE this will include containers that cover the selection, NOT JUST containers
+    // completely covered by the selection
     let container_end = *offset;
     let container_node_len = node.text_len();
     // We never want to return the root node
@@ -202,7 +204,6 @@ fn process_textlike_node(
 ) -> Option<DomLocation> {
     let node_start = *offset;
     let node_end = node_start + node_len;
-
     // Increase offset to keep track of the current position
     *offset += node_len;
 
