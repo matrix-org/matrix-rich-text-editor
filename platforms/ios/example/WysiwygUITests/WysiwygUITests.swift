@@ -198,6 +198,15 @@ class WysiwygUITests: XCTestCase {
     
     func testCreateLinkFromSelection() {
         textView.typeTextCharByChar("text")
+        button(.showTreeButton).tap()
+        XCTAssertEqual(
+            staticText(.treeText).label,
+            """
+            
+            └>"text"
+            
+            """
+        )
         textView.doubleTap()
         button(.linkButton).tap()
         XCTAssertFalse(textField(.linkTextTextField).exists)
