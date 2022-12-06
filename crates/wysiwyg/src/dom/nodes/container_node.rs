@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::char::CharExt;
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::nodes::dom_node::DomNode;
@@ -284,7 +285,7 @@ where
         match self.kind {
             ContainerNodeKind::ListItem => {
                 let raw_text = self.to_raw_text().to_string();
-                raw_text.is_empty() || raw_text == "\u{200b}"
+                raw_text.is_empty() || raw_text == char::zwsp().to_string()
             }
             _ => false,
         }

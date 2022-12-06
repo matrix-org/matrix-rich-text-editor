@@ -44,6 +44,7 @@ export default defineConfig({
                 'lib/testUtils/**/*.{ts,tsx}',
                 'lib/**/*test.{ts,tsx}',
                 'lib/**/*.d.ts',
+                'lib/**/types.ts',
             ],
             reporter: ['text', 'lcov'],
         },

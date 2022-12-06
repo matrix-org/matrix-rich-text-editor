@@ -63,50 +63,64 @@ where
         &mut self,
         range: Range,
     ) -> ComposerUpdate<S> {
-        let leaves: Vec<&DomLocation> = range.leaves().collect();
-        if leaves.len() == 1 {
-            let location = leaves[0];
-            let current_cursor_global_location =
-                location.position + location.start_offset;
-            let handle = &location.node_handle;
-            let parent_list_item_handle =
-                self.state.dom.find_parent_list_item_or_self(handle);
-            if let Some(parent_list_item_handle) = parent_list_item_handle {
-                let list_item_end_offset = range
-                    .locations
-                    .into_iter()
-                    .filter(|loc| loc.kind == ListItem)
-                    .next()
-                    .unwrap()
-                    .end_offset;
-                self.do_enter_in_list(
-                    &parent_list_item_handle,
-                    current_cursor_global_location,
-                    list_item_end_offset,
-                )
-            } else {
-                self.do_enter_in_text(handle, location.start_offset)
+        let position = range.start();
+        let leaf_at_cursor: Option<&DomLocation> = range.leaves().find(|loc| {
+            loc.position <= position && position <= loc.position + loc.length
+        });
+
+        match leaf_at_cursor {
+            None => {
+                // Selection doesn't contain any text like nodes. We can assume it's an empty Dom.
+                self.state
+                    .dom
+                    .document_mut()
+                    .append_child(DomNode::new_line_break());
+                self.state.start += 1;
+                self.state.end = self.state.start;
+                self.create_update_replace_all()
             }
-        } else if leaves.is_empty() {
-            // Selection doesn't contain any text node. We can assume it's an empty Dom.
-            self.state
-                .dom
-                .document_mut()
-                .append_child(DomNode::new_line_break());
-            self.state.start += 1;
-            self.state.end = self.state.start;
-            self.create_update_replace_all()
-        } else {
-            // Special case, there might be one or several empty text nodes at the cursor position
-            self.enter_with_zero_length_selection_and_empty_text_nodes(leaves);
-            self.create_update_replace_all()
+            Some(leaf) => {
+                if leaf.length == 0 {
+                    // Special case, there is an empty text node at the cursor position
+                    self.enter_with_zero_length_selection_and_empty_text_nodes(
+                        range,
+                    );
+                    self.create_update_replace_all()
+                } else {
+                    let current_cursor_global_location =
+                        leaf.position + leaf.start_offset;
+                    let handle = &leaf.node_handle;
+                    let parent_list_item_handle =
+                        self.state.dom.find_parent_list_item_or_self(handle);
+
+                    match parent_list_item_handle {
+                        Some(handle) => {
+                            let list_item_end_offset = range
+                                .locations
+                                .into_iter()
+                                .find(|loc| loc.kind == ListItem)
+                                .unwrap()
+                                .end_offset;
+                            self.do_enter_in_list(
+                                &handle,
+                                current_cursor_global_location,
+                                list_item_end_offset,
+                            )
+                        }
+                        None => {
+                            self.do_enter_in_text(handle, leaf.start_offset)
+                        }
+                    }
+                }
+            }
         }
     }
 
     fn enter_with_zero_length_selection_and_empty_text_nodes(
         &mut self,
-        leaves: Vec<&DomLocation>,
+        range: Range,
     ) {
+        let leaves = range.leaves();
         let empty_text_leaves: Vec<&DomLocation> = leaves
             .into_iter()
             .filter(|l| {

@@ -182,3 +182,39 @@ describe.each([
         });
     },
 );
+
+describe('insertText', () => {
+    let button: HTMLButtonElement;
+    let textbox: HTMLDivElement;
+
+    beforeEach(async () => {
+        render(<Editor />);
+        textbox = screen.getByRole('textbox');
+        await waitFor(() =>
+            expect(textbox).toHaveAttribute('contentEditable', 'true'),
+        );
+        button = screen.getByRole('button', { name: 'insertText' });
+    });
+
+    it('Should insert the text when empty', async () => {
+        // When
+        await act(() => userEvent.click(button));
+
+        // Then
+        await waitFor(() => expect(textbox).toContainHTML('add new words'));
+    });
+
+    it('Should insert the text when ', async () => {
+        // When
+        fireEvent.input(textbox, {
+            data: 'foo bar',
+            inputType: 'insertText',
+        });
+        await act(() => userEvent.click(button));
+
+        // Then
+        await waitFor(() =>
+            expect(textbox).toContainHTML('foo baradd new words'),
+        );
+    });
+});

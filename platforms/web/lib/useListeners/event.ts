@@ -39,16 +39,18 @@ import { mapToAllActionStates } from './utils';
  * @param {HTMLElement} editor
  * @param {BlockType} blockType
  * @param {ReactMouseEvent<HTMLElement, MouseEvent> | KeyboardEvent} e
+ * @param {String} data
  */
 export function sendWysiwygInputEvent(
     editor: HTMLElement,
     blockType: BlockType,
     e?: ReactMouseEvent<HTMLElement, MouseEvent> | KeyboardEvent,
+    data?: string,
 ) {
     e?.preventDefault();
     e?.stopPropagation();
     editor.dispatchEvent(
-        new CustomEvent('wysiwygInput', { detail: { blockType } }),
+        new CustomEvent('wysiwygInput', { detail: { blockType, data } }),
     );
 }
 

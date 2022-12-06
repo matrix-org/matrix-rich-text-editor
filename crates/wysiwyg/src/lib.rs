@@ -13,6 +13,7 @@
 // limitations under the License.
 
 mod action_state;
+mod char;
 mod composer_action;
 mod composer_model;
 mod composer_state;

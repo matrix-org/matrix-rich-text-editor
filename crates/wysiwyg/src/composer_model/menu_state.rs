@@ -90,6 +90,8 @@ where
         if let Some(intersection) = range.leaves().next().map(|l| {
             range
                 .leaves()
+                // do not need locations after the cursor for next logic
+                .filter(|loc| loc.position < range.end())
                 .fold(
                     // Init with reversed_actions from the first leave.
                     self.compute_reversed_actions(&l.node_handle),
