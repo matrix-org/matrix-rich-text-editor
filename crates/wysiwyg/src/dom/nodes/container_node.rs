@@ -36,7 +36,7 @@ where
     handle: DomHandle,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ContainerNodeKind<S>
 where
     S: UnicodeString,
@@ -522,7 +522,7 @@ where
             // trend to avoid unexpected behaviours for our users.
 
             buffer.push("*");
-            fmt_children(this, buffer, &options)?;
+            fmt_children(this, buffer, options)?;
             buffer.push("*");
 
             Ok(())
@@ -548,7 +548,7 @@ where
             // there. Instead, it will produce `*__…__*`.
 
             buffer.push("__");
-            fmt_children(this, buffer, &options)?;
+            fmt_children(this, buffer, options)?;
             buffer.push("__");
 
             Ok(())
@@ -570,7 +570,7 @@ where
             // do not support this format extension.
 
             buffer.push("~~");
-            fmt_children(this, buffer, &options)?;
+            fmt_children(this, buffer, options)?;
             buffer.push("~~");
 
             Ok(())
@@ -589,7 +589,7 @@ where
             // use raw HTML.
 
             buffer.push("<u>");
-            fmt_children(this, buffer, &options)?;
+            fmt_children(this, buffer, options)?;
             buffer.push("</u>");
 
             Ok(())
@@ -619,7 +619,7 @@ where
             buffer.push("`` ");
 
             options.insert(MarkdownOptions::IGNORE_LINE_BREAK);
-            fmt_children(this, buffer, &options)?;
+            fmt_children(this, buffer, options)?;
 
             buffer.push(" ``");
 
@@ -638,7 +638,7 @@ where
         {
             buffer.push('[');
 
-            fmt_children(this, buffer, &options)?;
+            fmt_children(this, buffer, options)?;
 
             // A link destination can be delimited by `<` and
             // `>`.
@@ -751,7 +751,7 @@ where
                 {
                     // Let's create a new buffer for the child formatting.
                     let mut child_buffer = S::default();
-                    child.fmt_markdown(&mut child_buffer, &options)?;
+                    child.fmt_markdown(&mut child_buffer, options)?;
 
                     // Generate the indentation of form `\n` followed by
                     // $x$ spaces where $x$ is `indentation`.
@@ -794,7 +794,7 @@ where
         where
             S: UnicodeString,
         {
-            fmt_children(this, buffer, &options)?;
+            fmt_children(this, buffer, options)?;
 
             Ok(())
         }
