@@ -15,15 +15,15 @@
 use crate::dom::action_list::{DomAction, DomActionList};
 use crate::dom::nodes::{ContainerNodeKind, DomNode};
 use crate::dom::unicode_string::UnicodeStringExt;
-use crate::dom::{DomHandle, DomLocation, Range};
-use crate::{ComposerModel, UnicodeString};
+use crate::dom::{Dom, DomHandle, DomLocation, Range};
+use crate::UnicodeString;
 
 /// Handles joining together nodes after an edit event.
 ///
 /// For example, if your selection starts in a bold tag, leaves that tag,
 /// and then ends up in another bold tag, the final result should be a
 /// single bold tag containing all your text.
-impl<S> ComposerModel<S>
+impl<S> Dom<S>
 where
     S: UnicodeString,
 {
@@ -162,9 +162,8 @@ where
         prev: &DomHandle,
         next: &DomHandle,
     ) -> bool {
-        let dom = &self.state.dom;
         if let (DomNode::Container(prev_node), DomNode::Container(next_node)) =
-            (dom.lookup_node(prev), dom.lookup_node(next))
+            (self.lookup_node(prev), self.lookup_node(next))
         {
             if let (
                 ContainerNodeKind::Formatting(prev_format),
@@ -183,7 +182,6 @@ where
         ancestors_start: &Vec<DomHandle>,
         ancestors_next: &Vec<DomHandle>,
     ) {
-        let dom = &mut self.state.dom;
         let mut i = 0;
         let mut j = 0;
         while i < ancestors_start.len() && j < ancestors_next.len() {
@@ -197,8 +195,8 @@ where
                 continue;
             }
 
-            let start_i = dom.lookup_node(start_handle);
-            let next_i = dom.lookup_node(next_handle);
+            let start_i = self.lookup_node(start_handle);
+            let next_i = self.lookup_node(next_handle);
 
             match (start_i, next_i) {
                 (DomNode::Container(start_i), DomNode::Container(next_i)) => {
@@ -238,9 +236,9 @@ where
                     let mut new_data = start_i.data().to_owned();
                     new_data.push(next_i.data());
                     let text_node = DomNode::new_text(new_data);
-                    let old_parent = dom.parent_mut(next_handle);
+                    let old_parent = self.parent_mut(next_handle);
                     old_parent.remove_child(next_handle.index_in_parent());
-                    let parent = dom.parent_mut(start_handle);
+                    let parent = self.parent_mut(start_handle);
                     parent.replace_child(
                         start_handle.index_in_parent(),
                         vec![text_node],
@@ -267,7 +265,7 @@ where
 
     /// Given a position, find the text or line break node containing it
     fn find_leaf_containing(&self, pos: usize) -> Option<DomHandle> {
-        let range = self.state.dom.find_range(pos, pos);
+        let range = self.find_range(pos, pos);
         self.find_next_node_range(range)
     }
 
@@ -284,7 +282,7 @@ where
         next: &DomHandle,
     ) -> (Option<DomHandle>, Option<DomHandle>) {
         let get_list_parent_if_is_list_item = |handle| {
-            let node = self.state.dom.lookup_node(&handle);
+            let node = self.lookup_node(&handle);
             if node.is_list_item() {
                 handle.parent_handle()
             } else {
@@ -305,7 +303,7 @@ where
         &self,
         handle: &DomHandle,
     ) -> Option<DomHandle> {
-        let parent = self.state.dom.parent(handle);
+        let parent = self.parent(handle);
         if parent.is_structure_node() {
             Some(parent.handle().clone())
         } else if parent.handle().has_parent() {
@@ -324,17 +322,16 @@ where
         to_handle: &DomHandle,
     ) -> (usize, Vec<(DomHandle, DomHandle)>) {
         let mut moved_handles = Vec::new();
-        let dom = &mut self.state.dom;
         let ret;
         let children = if let DomNode::Container(from_node) =
-            dom.lookup_node(from_handle)
+            self.lookup_node(from_handle)
         {
             from_node.children().clone()
         } else {
             panic!("Source node must be a ContainerNode");
         };
 
-        if let DomNode::Container(to_node) = dom.lookup_node_mut(to_handle) {
+        if let DomNode::Container(to_node) = self.lookup_node_mut(to_handle) {
             ret = to_node.children().len();
             for c in children {
                 let old_handle = c.handle();
@@ -345,7 +342,7 @@ where
             panic!("Destination node must be a ContainerNode");
         }
 
-        let parent = dom.parent_mut(from_handle);
+        let parent = self.parent_mut(from_handle);
         parent.remove_child(from_handle.index_in_parent());
 
         (ret, moved_handles)
@@ -372,9 +369,7 @@ where
         mut locations: impl Iterator<Item = &'a DomLocation>,
     ) -> Option<DomHandle> {
         locations.find_map(|loc| {
-            if let DomNode::Text(_) =
-                self.state.dom.lookup_node(&loc.node_handle)
-            {
+            if let DomNode::Text(_) = self.lookup_node(&loc.node_handle) {
                 Some(loc.node_handle.clone())
             } else {
                 None

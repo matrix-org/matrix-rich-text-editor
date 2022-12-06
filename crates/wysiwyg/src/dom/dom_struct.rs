@@ -131,25 +131,25 @@ where
         parent.replace_child(index, nodes)
     }
 
+    /// Replaces the node at [node_handle] with its children. Returns the list of new handles
+    /// for the replaced children, but only if the [node_handle] belonged to a container
+    /// otherwise will return an empy list.
+    pub fn replace_node_with_its_children(
+        &mut self,
+        node_handle: &DomHandle,
+    ) -> Vec<DomHandle> {
+        let node = self.lookup_node(node_handle);
+        let Some(parent) = node.as_container() else {
+            return vec![]
+        };
+        self.replace(node_handle, parent.children().clone())
+    }
+
     /// Removes the node at [node_handle] and returns it.
     pub fn remove(&mut self, node_handle: &DomHandle) -> DomNode<S> {
         let parent = self.parent_mut(node_handle);
         let index = node_handle.index_in_parent();
         parent.remove_child(index)
-    }
-
-    /// Removes node at given handle from the dom, and if it has children
-    /// moves them to its parent container children.
-    pub fn remove_and_keep_children(&mut self, node_handle: &DomHandle) {
-        let parent = self.parent_mut(node_handle);
-        let index = node_handle.index_in_parent();
-        let node = parent.remove_child(index);
-        if let DomNode::Container(mut node) = node {
-            for i in (0..node.children().len()).rev() {
-                let child = node.remove_child(i);
-                parent.insert_child(index, child);
-            }
-        }
     }
 
     /// Given the start and end code units, find which nodes of this Dom are
@@ -371,7 +371,10 @@ where
         if let DomNode::Container(parent) = parent {
             parent
         } else {
-            panic!("Parent node was not a container!");
+            panic!(
+                "Parent node was not a container! handle={:?} parent={:?}",
+                handle, parent
+            );
         }
     }
 
@@ -680,12 +683,11 @@ mod test {
     #[test]
     fn find_parent_list_item_or_self_finds_our_grandparent() {
         let d = cm("|<ul><li>b<strong>c</strong></li></ul>d").state.dom;
-        // TODO: assumes model will have a leading empty text node!
         let res = d.find_parent_list_item_or_self(&DomHandle::from_raw(vec![
-            1, 0, 1, 0,
+            0, 0, 1, 0,
         ]));
         let res = res.expect("Should have found a list parent!");
-        assert_eq!(res.into_raw(), vec![1, 0]);
+        assert_eq!(res.into_raw(), vec![0, 0]);
     }
 
     #[test]

@@ -15,10 +15,13 @@
 pub mod action_list;
 pub mod dom_creation_error;
 pub mod dom_handle;
+pub mod dom_invariants;
+pub mod dom_methods;
 pub mod dom_struct;
 pub mod find_range;
 pub mod find_result;
 pub mod iter;
+pub mod join_nodes;
 pub mod nodes;
 pub mod parser;
 pub mod range;

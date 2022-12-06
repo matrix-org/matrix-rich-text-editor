@@ -11,6 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+use crate::char::CharExt;
 use std::fmt;
 use std::iter;
 use std::ops::{Deref, Index, Range, RangeFrom, RangeTo};
@@ -48,7 +50,7 @@ pub trait UnicodeString:
 
     /// Creates a new unicode string consisting of a single ZWSP.
     fn zwsp() -> Self {
-        "\u{200B}".into()
+        char::zwsp().to_string().into()
     }
 }
 

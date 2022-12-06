@@ -33,13 +33,6 @@ jobs:
         rustup target add aarch64-apple-ios-sim
         rustup target add x86_64-apple-ios
 
-    - name: Install Uniffi
-      uses: actions-rs/cargo@v1
-      with:
-        command: install
-        # keep in sync with uniffi dependency in Cargo.toml's
-        args: uniffi_bindgen --version 0.21.0
-
     - name: Set XCode 14.1
       run: sudo xcode-select -switch /Applications/Xcode_14.1.app
 

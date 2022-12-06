@@ -75,11 +75,8 @@ where
         DomNode::Container(ContainerNode::new_list(list_type, children))
     }
 
-    pub fn new_list_item(
-        item_name: S,
-        children: Vec<DomNode<S>>,
-    ) -> DomNode<S> {
-        DomNode::Container(ContainerNode::new_list_item(item_name, children))
+    pub fn new_list_item(children: Vec<DomNode<S>>) -> DomNode<S> {
+        DomNode::Container(ContainerNode::new_list_item(children))
     }
 
     pub fn handle(&self) -> DomHandle {
@@ -162,6 +159,14 @@ where
 
     pub(crate) fn as_text(&self) -> Option<&TextNode<S>> {
         if let Self::Text(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
+    pub(crate) fn as_container(&self) -> Option<&ContainerNode<S>> {
+        if let Self::Container(v) = self {
             Some(v)
         } else {
             None

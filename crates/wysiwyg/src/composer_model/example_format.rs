@@ -17,6 +17,7 @@ use std::ops::Not;
 
 use widestring::Utf16String;
 
+use crate::char::CharExt;
 use crate::composer_model::menu_state::MenuStateComputeType;
 use crate::dom::nodes::{LineBreakNode, TextNode};
 use crate::dom::parser::parse;
@@ -79,7 +80,7 @@ impl ComposerModel<Utf16String> {
     /// assert_eq!(model.to_example_format(), "a{abbc}|c");
     /// ```
     pub fn from_example_format(text: &str) -> Self {
-        let text = text.replace('~', "\u{200b}");
+        let text = text.replace('~', &char::zwsp().to_string());
         let text_u16 = Utf16String::from_str(&text).into_vec();
 
         let curs = find_char(&text_u16, "|").unwrap_or_else(|| {
@@ -132,6 +133,7 @@ impl ComposerModel<Utf16String> {
             model.state.end = Location::from(curs);
         }
         model.compute_menu_state(MenuStateComputeType::KeepIfUnchanged);
+        model.state.dom.explicitly_assert_invariants();
 
         model
     }
@@ -172,10 +174,13 @@ impl ComposerModel<Utf16String> {
             // ({ or |) by now.
             assert!(selection_writer.is_selection_written());
         }
-        let html = buf.to_string();
+        let mut html = buf.to_string();
+        if html == "" {
+            html = String::from("|");
+        }
 
         // Replace characters with visible ones
-        html.replace('\u{200b}', "~").replace('\u{A0}', "&nbsp;")
+        html.replace(char::zwsp(), "~").replace('\u{A0}', "&nbsp;")
     }
 }
 
@@ -417,7 +422,10 @@ mod test {
     use crate::dom::{parser, Dom, DomLocation};
     use crate::tests::testutils_composer_model::{cm, restore_whitespace, tx};
     use crate::tests::testutils_conversion::utf16;
-    use crate::{ComposerModel, ComposerState, DomHandle, DomNode, Location};
+    use crate::{
+        ComposerModel, ComposerState, DomHandle, DomNode, Location,
+        UnicodeString,
+    };
 
     use super::SelectionWritingState;
 
@@ -640,7 +648,7 @@ mod test {
                 end: Location::from(1),
                 toggled_format_types: Vec::new(),
             });
-        assert_eq!(tx(&model), "");
+        assert_eq!(tx(&model), "|");
     }
 
     #[test]
@@ -661,7 +669,7 @@ mod test {
         assert_eq!(model.state.end, 1);
 
         if let DomNode::Text(node) = &model.state.dom.document().children()[0] {
-            assert_eq!(node.data(), "\u{200b}");
+            assert_eq!(node.data(), Utf16String::zwsp());
         } else {
             panic!("Expected a text node!");
         }
@@ -726,9 +734,9 @@ mod test {
         assert_that!("aa|{<br />b}bb").roundtrips();
         assert_that!("aa{a<br />b}|bb").roundtrips();
         assert_that!("aa|{a<br />}bb").roundtrips();
-        // TODO: easier after refactor assert_that!("aa{<br />}|bb").rou
-        // TODO: assert_that!("aa|{<br />}bb").roundtrips();
-        assert_that!("<ol><li>|</li></ol>").roundtrips();
+        assert_that!("aa{<br />}|bb").roundtrips();
+        assert_that!("aa|{<br />}bb").roundtrips();
+        assert_that!("<ol><li>a|</li></ol>").roundtrips();
     }
 
     #[test]

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::char::CharExt;
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::nodes::dom_node::DomNode;
@@ -108,9 +109,9 @@ where
         }
     }
 
-    pub fn new_list_item(item_name: S, children: Vec<DomNode<S>>) -> Self {
+    pub fn new_list_item(children: Vec<DomNode<S>>) -> Self {
         Self {
-            name: item_name,
+            name: "li".into(),
             kind: ContainerNodeKind::ListItem,
             attrs: None,
             children,
@@ -284,7 +285,7 @@ where
         match self.kind {
             ContainerNodeKind::ListItem => {
                 let raw_text = self.to_raw_text().to_string();
-                raw_text.is_empty() || raw_text == "\u{200b}"
+                raw_text.is_empty() || raw_text == char::zwsp().to_string()
             }
             _ => false,
         }
@@ -307,6 +308,13 @@ where
         };
         self.kind = ContainerNodeKind::Link(link.clone());
         self.attrs = Some(vec![("href".into(), link)]);
+    }
+
+    pub(crate) fn get_link(&self) -> Option<S> {
+        let ContainerNodeKind::Link(link) = self.kind.clone() else {
+            return None
+        };
+        Some(link)
     }
 }
 

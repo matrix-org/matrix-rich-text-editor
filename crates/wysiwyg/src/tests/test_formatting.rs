@@ -222,9 +222,16 @@ fn unformatting_consecutive_same_formatting_nodes_with_nested_line_break() {
 
 #[test]
 fn unformatting_consecutive_same_formatting_nodes_with_nested_node() {
-    let mut model = cm("{<strong>Test</strong><strong> </strong><strong>t<em>es</em>t</strong><strong> test</strong>}|");
+    let mut model = cm("\
+        {<strong>Test</strong>\
+        <strong> </strong>\
+        <strong>t<em>es</em>t</strong>\
+        <strong> test</strong>}|\
+    ");
+
     model.bold();
     assert_eq!(tx(&model), "{Test t<em>es</em>t test}|");
+    model.state.dom.explicitly_assert_invariants();
 }
 
 #[test]

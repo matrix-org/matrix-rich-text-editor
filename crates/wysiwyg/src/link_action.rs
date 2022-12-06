@@ -12,16 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod base;
-pub mod delete_text;
-pub mod example_format;
-pub mod format;
-mod format_inline_code;
-pub mod hyperlinks;
-pub mod lists;
-pub mod menu_state;
-pub mod replace_text;
-pub mod selection;
-pub mod undo_redo;
+use crate::UnicodeString;
 
-pub use base::ComposerModel;
+#[derive(PartialEq, Debug)]
+pub enum LinkAction<S: UnicodeString> {
+    CreateWithText,
+    Create,
+    Edit(S),
+}

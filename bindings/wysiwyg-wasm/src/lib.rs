@@ -65,7 +65,7 @@ trait IntoFfi {
 impl IntoFfi for &HashMap<wysiwyg::ComposerAction, wysiwyg::ActionState> {
     fn into_ffi(self) -> js_sys::Map {
         let ret = js_sys::Map::new();
-        for (k, v) in self.into_iter() {
+        for (k, v) in self.iter() {
             ret.set(&k.as_ref().into(), &v.as_ref().into());
         }
         ret
@@ -221,6 +221,29 @@ impl ComposerModel {
     pub fn unordered_list(&mut self) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.unordered_list())
     }
+
+    pub fn get_link_action(&self) -> LinkAction {
+        self.inner.get_link_action().into()
+    }
+
+    pub fn set_link(&mut self, link: &str) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.set_link(Utf16String::from_str(link)))
+    }
+
+    pub fn set_link_with_text(
+        &mut self,
+        link: &str,
+        text: &str,
+    ) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.set_link_with_text(
+            Utf16String::from_str(link),
+            Utf16String::from_str(text),
+        ))
+    }
+
+    pub fn remove_links(&mut self) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.remove_links())
+    }
 }
 
 #[wasm_bindgen]
@@ -330,10 +353,7 @@ impl MenuState {
 #[wasm_bindgen]
 impl MenuState {
     pub fn keep(&self) -> bool {
-        match self.inner {
-            wysiwyg::MenuState::Keep => true,
-            _ => false,
-        }
+        matches!(self.inner, wysiwyg::MenuState::Keep)
     }
 
     pub fn update(&self) -> Option<MenuStateUpdate> {
@@ -430,6 +450,7 @@ impl DomChildren {
         }
     }
 
+    // Clippy suggests that this name is ambiguous
     pub fn next(&mut self) -> Option<DomHandle> {
         self.inner.pop_front()
     }
@@ -508,6 +529,52 @@ impl DomHandle {
             wysiwyg::DomNode::Container(node) => node.name().to_string(),
             wysiwyg::DomNode::LineBreak(node) => node.name().to_string(),
             wysiwyg::DomNode::Text(_) => String::from("-text-"),
+        }
+    }
+}
+
+#[derive(Clone)]
+#[wasm_bindgen]
+pub struct CreateWithText;
+
+#[derive(Clone)]
+#[wasm_bindgen]
+pub struct Create;
+
+#[derive(Clone)]
+#[wasm_bindgen(getter_with_clone)]
+pub struct Edit {
+    pub link: String,
+}
+
+#[wasm_bindgen(getter_with_clone)]
+pub struct LinkAction {
+    pub create_with_text: Option<CreateWithText>,
+    pub create: Option<Create>,
+    pub edit_link: Option<Edit>,
+}
+
+impl From<wysiwyg::LinkAction<Utf16String>> for LinkAction {
+    fn from(inner: wysiwyg::LinkAction<Utf16String>) -> Self {
+        match inner {
+            wysiwyg::LinkAction::CreateWithText => Self {
+                create_with_text: Some(CreateWithText),
+                create: None,
+                edit_link: None,
+            },
+            wysiwyg::LinkAction::Create => Self {
+                create_with_text: None,
+                create: Some(Create),
+                edit_link: None,
+            },
+            wysiwyg::LinkAction::Edit(link) => {
+                let link = link.to_string();
+                Self {
+                    create_with_text: None,
+                    create: None,
+                    edit_link: Some(Edit { link }),
+                }
+            }
         }
     }
 }

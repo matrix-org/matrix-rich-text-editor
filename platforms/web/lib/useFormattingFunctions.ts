@@ -27,9 +27,14 @@ export function useFormattingFunctions(
         // Safari does not keep the inputType in an input event
         // when the input event is fired manually, so we send a custom event
         // and we do not use the browser input event handling
-        const sendEvent = (blockType: BlockType) =>
+        const sendEvent = (blockType: BlockType, data?: string) =>
             editorRef.current &&
-            sendWysiwygInputEvent(editorRef.current, blockType);
+            sendWysiwygInputEvent(
+                editorRef.current,
+                blockType,
+                undefined,
+                data,
+            );
 
         return {
             bold: () => sendEvent('formatBold'),
@@ -42,6 +47,7 @@ export function useFormattingFunctions(
             unorderedList: () => sendEvent('insertUnorderedList'),
             inlineCode: () => sendEvent('formatInlineCode'),
             clear: () => sendEvent('clear'),
+            insertText: (text: string) => sendEvent('insertText', text),
         };
     }, [editorRef]);
 

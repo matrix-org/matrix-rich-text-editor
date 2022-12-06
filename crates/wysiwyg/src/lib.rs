@@ -13,12 +13,14 @@
 // limitations under the License.
 
 mod action_state;
+mod char;
 mod composer_action;
 mod composer_model;
 mod composer_state;
 mod composer_update;
 mod dom;
 mod format_type;
+mod link_action;
 mod list_type;
 mod location;
 mod markdown_html_parser;
@@ -40,6 +42,7 @@ pub use crate::dom::ToTree;
 pub use crate::dom::UnicodeString;
 pub use crate::dom::{MarkdownError, ToMarkdown};
 pub use crate::format_type::InlineFormatType;
+pub use crate::link_action::LinkAction;
 pub use crate::list_type::ListType;
 pub use crate::location::Location;
 pub use crate::menu_state::MenuState;

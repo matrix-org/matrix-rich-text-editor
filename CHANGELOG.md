@@ -1,5 +1,23 @@
 # Changelog
 
+# [0.9.0] - 2022-12-06
+
+### Added
+
+* Web: Add `insertText` method in available functions
+* Common: Add extension to character to create ZWSP easily
+
+### Changed
+
+Common & iOS: Remove the Rust & Uniffi version duplication from publish.yml
+Common: Change Rust panic behaviour from abort to unwind
+
+### Fixed
+
+* Android: Fix crashes in ElementX on config changes
+* Common: Fix dom location length with nested tags
+* Common: Fix crashes when `replace_text` is called
+
 # [0.8.0] - 2022-11-28
 
 ### Added

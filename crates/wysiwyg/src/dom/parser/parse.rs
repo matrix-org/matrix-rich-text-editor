@@ -120,14 +120,11 @@ mod sys {
         }
 
         /// Create a list item node
-        fn new_list_item<S>(tag: &str) -> DomNode<S>
+        fn new_list_item<S>() -> DomNode<S>
         where
             S: UnicodeString,
         {
-            DomNode::Container(ContainerNode::new_list_item(
-                tag.into(),
-                Vec::new(),
-            ))
+            DomNode::Container(ContainerNode::new_list_item(Vec::new()))
         }
 
         /// Copy all panode's information into node (now we know it's a container).
@@ -152,7 +149,7 @@ mod sys {
                     convert_children(padom, child, node.last_child_mut());
                 }
                 "li" => {
-                    node.append_child(new_list_item(tag));
+                    node.append_child(new_list_item());
                     convert_children(padom, child, node.last_child_mut());
                 }
                 "a" => {
@@ -242,6 +239,10 @@ mod sys {
             fn roundtrips(&self) {
                 let subject = self.subject.as_ref();
                 let dom = parse::<Utf16String>(subject).unwrap();
+
+                // After parsing all our invariants should be satisifed
+                dom.explicitly_assert_invariants();
+
                 let output = restore_whitespace(&dom.to_html().to_string());
                 if output != subject {
                     AssertionFailure::from_spec(self)
@@ -396,7 +397,6 @@ mod js {
                     "LI" => {
                         dom.append_child(DomNode::Container(
                             ContainerNode::new_list_item(
-                                "li".into(),
                                 convert(node.child_nodes())?.take_children(),
                             ),
                         ));

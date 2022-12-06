@@ -7,14 +7,14 @@ description = "Model code to power a rich text editor for Matrix"
 keywords = ["matrix", "chat", "messaging", "composer", "wysiwyg"]
 license = "Apache-2.0"
 name = "wysiwyg"
-version = "0.8.0"
+version = "0.9.0"
 rust-version = "1.65"
 
 [features]
-default = ["sys", "to-markdown"]
+default = ["assert-invariants", "sys"]
 js = ["dep:wasm-bindgen", "dep:web-sys"]
 sys = ["dep:html5ever"]
-to-markdown = []
+assert-invariants = []
 
 [dependencies]
 cfg-if = "1.0.0"

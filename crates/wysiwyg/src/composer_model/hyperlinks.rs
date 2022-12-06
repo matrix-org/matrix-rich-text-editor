@@ -12,24 +12,53 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::{ContainerNodeKind::Link, DomNode};
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{DomLocation, Range};
-use crate::{ComposerModel, ComposerUpdate, UnicodeString};
+use crate::{ComposerModel, ComposerUpdate, LinkAction, UnicodeString};
 
 impl<S> ComposerModel<S>
 where
     S: UnicodeString,
 {
-    pub fn set_link(&mut self, link: S) -> ComposerUpdate<S> {
-        // push_state_to_history is after this check:
+    pub fn get_link_action(&self) -> LinkAction<S> {
         let (s, e) = self.safe_selection();
-        // Can't add a link to an empty selection
+        let range = self.state.dom.find_range(s, e);
+        for loc in range.locations {
+            if loc.kind == DomNodeKind::Link {
+                let node = self.state.dom.lookup_node(&loc.node_handle);
+                let link = node.as_container().unwrap().get_link().unwrap();
+                return LinkAction::Edit(link);
+            }
+        }
         if s == e {
+            LinkAction::CreateWithText
+        } else {
+            LinkAction::Create
+        }
+    }
+
+    pub fn set_link_with_text(
+        &mut self,
+        link: S,
+        text: S,
+    ) -> ComposerUpdate<S> {
+        let (s, mut e) = self.safe_selection();
+        if s != e {
+            // This function is made to be used only when s == e
             return ComposerUpdate::keep();
         }
         self.push_state_to_history();
+        self.do_replace_text(text.clone());
+        e += text.len();
+        let range = self.state.dom.find_range(s, e);
+        self.set_link_range(range, link)
+    }
 
+    pub fn set_link(&mut self, link: S) -> ComposerUpdate<S> {
+        self.push_state_to_history();
+        let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
         self.set_link_range(range, link)
     }
@@ -53,10 +82,12 @@ where
                     if !before.is_empty() {
                         new_nodes.push(DomNode::new_text(before));
                     }
-                    new_nodes.push(DomNode::new_link(
-                        link.clone(),
-                        vec![DomNode::new_text(during)],
-                    ));
+                    if !during.is_empty() {
+                        new_nodes.push(DomNode::new_link(
+                            link.clone(),
+                            vec![DomNode::new_text(during)],
+                        ));
+                    }
                     if !after.is_empty() {
                         new_nodes.push(DomNode::new_text(after));
                     }
@@ -64,6 +95,27 @@ where
                 }
             }
             // TODO: set link should be able to wrap container nodes, unlike formatting
+        }
+        self.create_update_replace_all()
+    }
+
+    pub fn remove_links(&mut self) -> ComposerUpdate<S> {
+        let mut has_found_link = false;
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        for loc in range.locations {
+            if loc.kind == DomNodeKind::Link {
+                if !has_found_link {
+                    has_found_link = true;
+                    self.push_state_to_history();
+                }
+                self.state
+                    .dom
+                    .replace_node_with_its_children(&loc.node_handle);
+            }
+        }
+        if !has_found_link {
+            return ComposerUpdate::keep();
         }
         self.create_update_replace_all()
     }

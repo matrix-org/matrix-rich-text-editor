@@ -21,14 +21,12 @@ fn single_nested_tag_produces_tree() {
     assert_eq!(
         model.state.dom.to_tree(),
         r#"
-├>b
-│ ├>"abc"
-│ └>i
-│   └>"def"
-└>""
+└>b
+  ├>"abc"
+  └>i
+    └>"def"
 "#,
     );
-    // TODO: trailing "" needs fixing in parse
 }
 
 #[test]

@@ -12,16 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod base;
-pub mod delete_text;
-pub mod example_format;
-pub mod format;
-mod format_inline_code;
-pub mod hyperlinks;
-pub mod lists;
-pub mod menu_state;
-pub mod replace_text;
-pub mod selection;
-pub mod undo_redo;
+pub trait CharExt: Sized {
+    fn is_zwsp(&self) -> bool;
+    fn zwsp() -> Self;
+}
 
-pub use base::ComposerModel;
+impl CharExt for char {
+    fn is_zwsp(&self) -> bool {
+        self == &char::zwsp()
+    }
+
+    fn zwsp() -> Self {
+        '\u{200B}'
+    }
+}

@@ -88,6 +88,7 @@ where
     let node = dom.lookup_node(node_handle);
     let mut locations = Vec::new();
     if *offset > end {
+        *offset += node.text_len();
         return locations;
     }
     match node {
@@ -206,18 +207,16 @@ fn process_textlike_node(
     let node_end = node_start + node_len;
     // Increase offset to keep track of the current position
     *offset += node_len;
-
-    let outside_selection_range = start > node_end || end < node_start;
     let is_cursor = start == end;
 
-    // Intersect selection and node ranges with a couple of exceptions
-    if outside_selection_range
-    // Selection start is at the end of a node, but it's not a cursor
-    || (start == node_end && !is_cursor)
-    // Selection end is at the start of a node, but not on position 0
-    || (node_start == end && end != 0)
-    {
-        // Node discarded, it's not selected
+    let should_discard = match is_cursor {
+        // for a cursor, discard when it is outside the node
+        true => start < node_start || start > node_end,
+        // for a selection, discard when it ends before (inclusive) or starts after (inclusive) the node
+        false => end <= node_start || start >= node_end,
+    };
+
+    if should_discard {
         None
     } else {
         // Diff between selected position and the start position of the node
@@ -245,7 +244,7 @@ mod test {
     use crate::tests::testutils_composer_model::{cm, restore_whitespace_u16};
     use crate::tests::testutils_conversion::utf16;
     use crate::tests::testutils_dom::{b, dom, tn};
-    use crate::{InlineFormatType, ToHtml};
+    use crate::{InlineFormatType, InlineFormatType::Italic, ToHtml};
 
     fn found_single_node(
         handle: DomHandle,
@@ -262,6 +261,23 @@ mod test {
             length,
             kind: DomNodeKind::Text,
         }])
+    }
+
+    fn make_single_location(
+        handle: DomHandle,
+        position: usize,
+        start_offset: usize,
+        end_offset: usize,
+        length: usize,
+    ) -> DomLocation {
+        DomLocation {
+            node_handle: handle,
+            position,
+            start_offset,
+            end_offset,
+            length,
+            kind: DomNodeKind::Text,
+        }
     }
 
     fn ranges_to_html(
@@ -298,7 +314,7 @@ mod test {
     }
 
     #[test]
-    fn finding_a_node_within_flat_text_nodes_is_found() {
+    fn finding_first_node_within_flat_text_nodes_is_found() {
         let d = dom(&[tn("foo"), tn("bar")]);
         assert_eq!(
             find_pos(&d, &d.document_handle(), 0, 0),
@@ -312,26 +328,14 @@ mod test {
             find_pos(&d, &d.document_handle(), 2, 2),
             found_single_node(DomHandle::from_raw(vec![0]), 0, 2, 2, 3)
         );
-        assert_eq!(
-            find_pos(&d, &d.document_handle(), 3, 3),
-            found_single_node(DomHandle::from_raw(vec![0]), 0, 3, 3, 3)
-        );
-        assert_eq!(
-            find_pos(&d, &d.document_handle(), 3, 4),
-            found_single_node(DomHandle::from_raw(vec![1]), 3, 0, 1, 3)
-        );
-        // TODO: break up this test and name parts!
+    }
+
+    #[test]
+    fn finding_second_node_within_flat_text_nodes_is_found() {
+        let d = dom(&[tn("foo"), tn("bar")]);
         assert_eq!(
             find_pos(&d, &d.document_handle(), 4, 4),
             found_single_node(DomHandle::from_raw(vec![1]), 3, 1, 1, 3)
-        );
-        assert_eq!(
-            find_pos(&d, &d.document_handle(), 4, 4),
-            found_single_node(DomHandle::from_raw(vec![1]), 3, 1, 1, 3)
-        );
-        assert_eq!(
-            find_pos(&d, &d.document_handle(), 5, 5),
-            found_single_node(DomHandle::from_raw(vec![1]), 3, 2, 2, 3)
         );
         assert_eq!(
             find_pos(&d, &d.document_handle(), 5, 5),
@@ -346,11 +350,24 @@ mod test {
     // TODO: comprehensive test like above for non-flat nodes
 
     #[test]
+    fn finding_a_boundary_between_flat_text_nodes_finds_both() {
+        let d = dom(&[tn("foo"), tn("bar")]);
+        assert_eq!(
+            find_pos(&d, &d.document_handle(), 3, 3),
+            FindResult::Found(vec![
+                make_single_location(DomHandle::from_raw(vec![0]), 0, 3, 3, 3),
+                make_single_location(DomHandle::from_raw(vec![1]), 3, 0, 0, 3)
+            ])
+        );
+    }
+
+    #[test]
     fn finding_a_range_within_an_empty_dom_returns_no_nodes() {
         let d = dom(&[]);
         let range = d.find_range(0, 0);
         assert_eq!(range, Range::new(Vec::new()));
     }
+    // TODO: comprehensive test like above for non-flat nodes
 
     #[test]
     fn finding_a_range_within_the_single_text_node_works() {
@@ -495,5 +512,51 @@ mod test {
         assert_eq!(utf16("<i>a </i>"), html_of_ranges[1]);
         assert_eq!(utf16("<b>ing <i>a </i></b>"), html_of_ranges[2]);
         assert_eq!(utf16("new feature"), html_of_ranges[3]);
+    }
+
+    #[test]
+    fn find_range_builds_dom_location_with_expected_length() {
+        let model = cm("<em>remains |<em>all<em>of<em>the<em>rest</em>goes</em>away</em>x</em>y</em>");
+        let (s, e) = model.safe_selection();
+        let range = model.state.dom.find_range(s, e);
+        assert_eq!(
+            range,
+            Range {
+                locations: vec![
+                    DomLocation {
+                        node_handle: DomHandle::from_raw(vec![0, 0]),
+                        start_offset: 8,
+                        end_offset: 8,
+                        position: 0,
+                        length: 8,
+                        kind: DomNodeKind::Text
+                    },
+                    DomLocation {
+                        node_handle: DomHandle::from_raw(vec![0, 1, 0]),
+                        start_offset: 0,
+                        end_offset: 0,
+                        position: 8,
+                        length: 3,
+                        kind: DomNodeKind::Text
+                    },
+                    DomLocation {
+                        node_handle: DomHandle::from_raw(vec![0, 1]),
+                        start_offset: 0,
+                        end_offset: 0,
+                        position: 8,
+                        length: 21,
+                        kind: DomNodeKind::Formatting(Italic)
+                    },
+                    DomLocation {
+                        node_handle: DomHandle::from_raw(vec![0]),
+                        start_offset: 8,
+                        end_offset: 8,
+                        position: 0,
+                        length: 30,
+                        kind: DomNodeKind::Formatting(Italic)
+                    },
+                ]
+            }
+        )
     }
 }

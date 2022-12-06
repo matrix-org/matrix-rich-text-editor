@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::char::CharExt;
 use crate::composer_model::delete_text::Direction;
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
@@ -23,17 +24,16 @@ use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt, UnicodeStringExt};
 use crate::dom::UnicodeString;
 use html_escape;
 
-const ZWSP: &str = "\u{200B}";
-
-// categories of character
-#[derive(PartialEq, Debug)]
+// categories of character for backspace/delete word
+#[derive(PartialEq, Eq, Debug)]
 pub enum CharType {
     Whitespace,
     Linebreak,
     Punctuation,
     Other,
 }
-#[derive(Clone, Debug, PartialEq)]
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TextNode<S>
 where
     S: UnicodeString,
@@ -83,8 +83,8 @@ where
     /// has one. Return true if the operation is executed.
     pub fn add_leading_zwsp(&mut self) -> bool {
         let text = self.data.to_string();
-        if !text.starts_with(ZWSP) {
-            let mut new_text: S = ZWSP.into();
+        if !text.starts_with(char::zwsp()) {
+            let mut new_text = S::zwsp();
             new_text.push(self.data());
             self.set_data(new_text);
             true
@@ -97,7 +97,7 @@ where
     /// Return true if the operation is executed.
     pub fn remove_leading_zwsp(&mut self) -> bool {
         let mut text = self.data().to_string();
-        if text.starts_with(ZWSP) {
+        if text.starts_with(char::zwsp()) {
             text.remove(0);
             self.set_data(text.into());
             true
@@ -126,10 +126,7 @@ where
         direction: &Direction,
     ) -> Option<CharType> {
         let char = self.char_at_offset(offset, direction);
-        match char {
-            Some(c) => Some(get_char_type(c)),
-            None => None,
-        }
+        char.map(get_char_type)
     }
 
     /// When moving through a node, the cursor counts as inside the node
@@ -147,26 +144,24 @@ where
     }
 
     /// Required due to zero length text node existence
-    pub fn has_length(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.data().len() != 0
     }
 }
 
-/// Given a character, determine it's type
+/// Given a character, determine its type
 fn get_char_type(c: char) -> CharType {
     // in order to determine where a ctrl/opt + delete type operation finishes
     // we need to distinguish between whitespace (nb no newline characters), punctuation
     // and then everything else is treated as the same type
-    if c.is_whitespace() {
-        return CharType::Whitespace;
+    if c.is_whitespace() || c.is_zwsp() {
+        // manually add zero width space character
+        CharType::Whitespace
+    } else if c.is_ascii_punctuation() {
+        CharType::Punctuation
+    } else {
+        CharType::Other
     }
-
-    if c.is_ascii_punctuation() || c == '£' {
-        // manually adding £ sign so it gets removed too
-        return CharType::Punctuation;
-    }
-
-    return CharType::Other;
 }
 
 impl<S> ToHtml<S> for TextNode<S>
@@ -217,7 +212,7 @@ where
 {
     fn to_tree_display(&self, continuous_positions: Vec<usize>) -> S {
         let mut description = S::from("\"");
-        let text = &self.data.to_string().replace('\u{200b}', "~");
+        let text = &self.data.to_string().replace(char::zwsp(), "~");
         description.push(text.as_str());
         description.push('"');
         return self.tree_line(
@@ -240,5 +235,64 @@ where
         buffer.push(self.data.to_owned());
 
         Ok(())
+    }
+}
+#[cfg(test)]
+mod test {
+    use crate::char::CharExt;
+    use crate::composer_model::delete_text::Direction;
+    use crate::dom::nodes::text_node::CharType;
+    use crate::tests::testutils_conversion::utf16;
+
+    use super::{get_char_type, TextNode};
+
+    #[test]
+    fn get_char_type_for_whitespace() {
+        // space
+        assert_eq!(get_char_type('\u{0020}'), CharType::Whitespace);
+        // no break space
+        assert_eq!(get_char_type('\u{00A0}'), CharType::Whitespace);
+        // zero width space
+        assert_eq!(get_char_type(char::zwsp()), CharType::Whitespace);
+    }
+
+    #[test]
+    fn get_char_type_for_punctuation() {
+        assert_eq!(get_char_type('='), CharType::Punctuation);
+        assert_eq!(get_char_type('-'), CharType::Punctuation);
+        assert_eq!(get_char_type('_'), CharType::Punctuation);
+        assert_eq!(get_char_type('$'), CharType::Punctuation);
+        assert_eq!(get_char_type('#'), CharType::Punctuation);
+        assert_eq!(get_char_type('@'), CharType::Punctuation);
+        assert_eq!(get_char_type('.'), CharType::Punctuation);
+        assert_eq!(get_char_type(','), CharType::Punctuation);
+    }
+
+    #[test]
+    fn get_char_type_for_other() {
+        assert_eq!(get_char_type('1'), CharType::Other);
+        assert_eq!(get_char_type('Q'), CharType::Other);
+        assert_eq!(get_char_type('z'), CharType::Other);
+    }
+
+    #[test]
+    fn offset_is_inside_node_end_of_node() {
+        let test_node = TextNode::from(utf16("test"));
+        assert!(!test_node.offset_is_inside_node(4, &Direction::Forwards));
+        assert!(test_node.offset_is_inside_node(4, &Direction::Backwards))
+    }
+
+    #[test]
+    fn offset_is_inside_node_start_of_node() {
+        let test_node = TextNode::from(utf16("test"));
+        assert!(test_node.offset_is_inside_node(0, &Direction::Forwards));
+        assert!(!test_node.offset_is_inside_node(0, &Direction::Backwards));
+    }
+
+    #[test]
+    fn offset_is_inside_node_middle_of_node() {
+        let test_node = TextNode::from(utf16("test"));
+        assert!(test_node.offset_is_inside_node(2, &Direction::Forwards));
+        assert!(test_node.offset_is_inside_node(2, &Direction::Backwards));
     }
 }
