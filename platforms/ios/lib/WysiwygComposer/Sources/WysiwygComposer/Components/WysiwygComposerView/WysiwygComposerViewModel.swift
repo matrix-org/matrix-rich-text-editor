@@ -234,6 +234,8 @@ public extension WysiwygComposerViewModel {
         }
         
         // Reconciliates the model with the text any time the link state changes
+        // this adjusts an iOS behaviour that extends a link when typing after it
+        // which does not reflect the model state.
         switch update.menuState() {
         case let .update(newState):
             if newState[.link] != actionStates[.link] {
