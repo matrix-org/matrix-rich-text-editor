@@ -140,8 +140,8 @@ where
             None => ComposerUpdate::keep(),
             Some(arguments) => {
                 // here we have a non-split cursor, a single location, and a textlike node
-                let (loc, starting_char_type) = arguments;
-                self.remove_word(starting_char_type, direction, loc)
+                let (location, starting_char_type) = arguments;
+                self.remove_word(starting_char_type, direction, location)
             }
         }
     }
