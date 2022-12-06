@@ -33,9 +33,10 @@ final class HTMLParser {
     /// - Returns: an attributed string representation of the HTML content
     static func parse(html: String,
                       encoding: String.Encoding = .utf16,
-                      textColor: UIColor) throws -> NSAttributedString {
+                      textColor: UIColor,
+                      linkColor: UIColor) throws -> NSAttributedString {
         let htmlWithStyle = generateHtmlBodyWithStyle(htmlFragment: html)
-        let attributed = try NSAttributedString(html: htmlWithStyle).changeColor(to: textColor)
+        let attributed = try NSAttributedString(html: htmlWithStyle).changeColor(to: textColor, linkColor: linkColor)
         return attributed
     }
 }

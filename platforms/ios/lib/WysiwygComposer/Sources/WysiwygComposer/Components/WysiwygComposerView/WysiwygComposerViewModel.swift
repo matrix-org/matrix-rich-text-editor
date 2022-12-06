@@ -59,6 +59,16 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         }
     }
     
+    /// The color that will be used to display links
+    public var linkColor: UIColor {
+        didSet {
+            // In case of a color change, this will refresh the attributed text
+            let update = model.setContentFromHtml(html: content.html)
+            applyUpdate(update)
+            updateTextView()
+        }
+    }
+    
     /// The current max allowed height for the textView when maximised
     public var maxExpandedHeight: CGFloat {
         didSet {
@@ -105,11 +115,13 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     public init(minHeight: CGFloat = 22,
                 maxCompressedHeight: CGFloat = 200,
                 maxExpandedHeight: CGFloat = 300,
-                textColor: UIColor = .label) {
+                textColor: UIColor = .label,
+                linkColor: UIColor = .link) {
         self.minHeight = minHeight
         self.maxCompressedHeight = maxCompressedHeight
         self.maxExpandedHeight = maxExpandedHeight
         self.textColor = textColor
+        self.linkColor = linkColor
         model = newComposerModel()
         // Publish composer empty state.
         $attributedContent.sink { [unowned self] content in
@@ -220,6 +232,8 @@ public extension WysiwygComposerViewModel {
             update = model.replaceText(newText: replacementText)
             shouldAcceptChange = true
         }
+        
+        // Reconciliates the model with the text any time the link state changes
         switch update.menuState() {
         case let .update(newState):
             if newState[.link] != actionStates[.link] {
@@ -230,6 +244,7 @@ public extension WysiwygComposerViewModel {
             }
         default: break
         }
+        
         applyUpdate(update, skipTextViewUpdate: shouldAcceptChange)
         return shouldAcceptChange
     }
@@ -335,7 +350,7 @@ private extension WysiwygComposerViewModel {
     func applyReplaceAll(codeUnits: [UInt16], start: UInt32, end: UInt32) {
         do {
             let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count)
-            let attributed = try HTMLParser.parse(html: html, textColor: textColor)
+            let attributed = try HTMLParser.parse(html: html, textColor: textColor, linkColor: linkColor)
             // FIXME: handle error for out of bounds index
             let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
             // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
