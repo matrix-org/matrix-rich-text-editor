@@ -364,13 +364,10 @@ fn deleting_selection_of_a_container_in_multiple_containers() {
 
 #[test]
 fn deleting_selection_of_a_container_with_text_node_neighbors() {
-    let mut model = cm(
-        "<em>abc<del>{def}|</del>ghi</em>",
-    );
+    let mut model = cm("<em>abc<del>{def}|</del>ghi</em>");
     model.backspace();
     assert_eq!(tx(&model), "<em>abc|ghi</em>");
 }
-
 
 #[test]
 fn deleting_selection_of_a_container_with_matching_neighbors() {
