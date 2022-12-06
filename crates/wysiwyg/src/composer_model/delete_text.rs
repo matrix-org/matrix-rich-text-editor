@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core::panic;
-
 use crate::dom::nodes::text_node::CharType;
 use crate::dom::nodes::{DomNode, TextNode};
 use crate::dom::unicode_string::UnicodeStrExt;
