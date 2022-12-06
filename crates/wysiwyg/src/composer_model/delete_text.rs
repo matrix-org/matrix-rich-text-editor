@@ -258,7 +258,7 @@ where
                     self.delete_to_cursor(current_position);
 
                     // then if we have reached the end of the dom or the end of a list, stop
-                    if self.has_selected_end_of_dom(&direction)
+                    if self.selection_touches_start_or_end_of_dom(&direction)
                         || location
                             .position_is_end_of_list_item(current_position)
                     {
@@ -297,7 +297,9 @@ where
     ) -> Option<(DomLocation, DomHandle, CharType, usize, usize)> {
         // check that we're not trying to move outside the dom or calling this function
         // with a text selection
-        if self.has_selected_end_of_dom(direction) || self.has_selection() {
+        if self.selection_touches_start_or_end_of_dom(direction)
+            || self.has_selection()
+        {
             return None;
         }
 
@@ -603,7 +605,7 @@ fn recursively_search_container<'a, S: UnicodeString>(
                     Direction::Backwards => node_offset == node_length,
                 };
 
-                if node.has_length()
+                if node.is_empty()
                     && (node.offset_is_inside_node(node_offset, direction)
                         || is_correct_adjacent_node)
                 {
