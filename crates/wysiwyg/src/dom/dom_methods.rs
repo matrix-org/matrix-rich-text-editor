@@ -256,7 +256,7 @@ where
         parent_handle_in_list(list, node_handle)
     }
 
-    fn join_nodes_in_parent(&mut self, parent_handle: &DomHandle) {
+    pub(crate) fn join_nodes_in_parent(&mut self, parent_handle: &DomHandle) {
         let child_count = if let DomNode::Container(parent) =
             self.lookup_node(parent_handle)
         {

@@ -142,7 +142,9 @@ where
         let Some(parent) = node.as_container() else {
             return vec![]
         };
-        self.replace(node_handle, parent.children().clone())
+        let ret = self.replace(node_handle, parent.children().clone());
+        self.join_nodes_in_parent(&node_handle.parent_handle());
+        ret
     }
 
     /// Removes the node at [node_handle] and returns it.

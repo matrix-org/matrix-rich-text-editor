@@ -108,3 +108,11 @@ fn remove_multiple_partially_selected_links_in_different_containers() {
         "<b>test_{link_bold</b> <i>test}|_link_italic</i>"
     );
 }
+
+#[test]
+fn remove_link_between_text_nodes_joins() {
+    let mut model = cm("abc{<a href=\"https://matrix.org\">def</a>}|ghi");
+    model.remove_links();
+    assert_eq!(tx(&model), "abc{def}|ghi");
+    model.state.dom.explicitly_assert_invariants();
+}
