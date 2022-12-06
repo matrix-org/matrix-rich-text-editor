@@ -48,7 +48,7 @@ where
         let (s, e) = self.safe_selection();
 
         if s == e {
-            // We have no selection - check for special list behaviour`
+            // We have no selection - check for special list behaviour
             // TODO: should probably also get inside here if our selection
             // only contains a zero-wdith space.
             let range = self.state.dom.find_range(s, e);
