@@ -49,7 +49,7 @@ where
     }
 
     pub fn new_line_break() -> DomNode<S> {
-        DomNode::LineBreak(LineBreakNode::new())
+        DomNode::LineBreak(LineBreakNode::default())
     }
 
     pub fn new_formatting(
