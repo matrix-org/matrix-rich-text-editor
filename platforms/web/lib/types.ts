@@ -20,7 +20,7 @@ export type BlockType = InputEvent['inputType'] | 'formatInlineCode' | 'clear';
 
 export type WysiwygInputEvent =
     | ClipboardEvent
-    | (InputEvent & { inputType: BlockType });
+    | (InputEvent & { inputType: BlockType; data?: string | null });
 
 export type ActionTypes = typeof ACTION_TYPES[number];
 
@@ -28,7 +28,9 @@ export type ActionState = 'enabled' | 'reversed' | 'disabled';
 
 export type AllActionStates = Record<ActionTypes, ActionState>;
 
-export type FormattingFunctions = Record<ActionTypes, () => void>;
+export type FormattingFunctions = Record<ActionTypes, () => void> & {
+    insertText: (text: string) => void;
+};
 
 export type Wysiwyg = {
     actions: FormattingFunctions;

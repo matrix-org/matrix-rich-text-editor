@@ -111,6 +111,7 @@ export function useListeners(
         const onWysiwygInput = ((e: FormatBlockEvent) => {
             _handleInput({
                 inputType: e.detail.blockType,
+                data: e.detail.data,
             } as WysiwygInputEvent);
         }) as EventListener;
         editorNode.addEventListener('wysiwygInput', onWysiwygInput);

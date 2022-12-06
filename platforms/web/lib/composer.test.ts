@@ -37,6 +37,7 @@ const formattingFunctions: FormattingFunctions = {
     unorderedList: () => {},
     inlineCode: () => {},
     clear: () => {},
+    insertText: (text: string) => {},
 };
 
 let replacedWithText: string | null = null;
