@@ -264,3 +264,19 @@ fn formatting_in_an_empty_model_applies_formatting() {
     model.replace_text(utf16("d"));
     assert_eq!(tx(&model), "<strong>d|</strong>");
 }
+
+#[test]
+#[ignore = "TODO"]
+fn formatting_some_char_in_word_with_inline_code() {
+    let mut model = cm("w{or}|d");
+    model.inline_code();
+    assert_eq!(tx(&model), "w<code>or|</code>d");
+}
+
+#[test]
+#[ignore = "TODO"]
+fn formatting_multiple_lines_with_inline_code() {
+    let mut model = cm("fo{o<br />b}|ar|");
+    model.inline_code();
+    assert_eq!(tx(&model), "fo<code>{o</code><code><br/>b}|</code>ar");
+}
