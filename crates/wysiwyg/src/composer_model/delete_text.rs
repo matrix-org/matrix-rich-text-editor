@@ -15,8 +15,8 @@
 use core::panic;
 
 use crate::dom::nodes::text_node::CharType;
-use crate::dom::nodes::{ContainerNode, DomNode, TextNode};
-use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
+use crate::dom::nodes::{DomNode, TextNode};
+use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
 
@@ -74,7 +74,7 @@ where
     /// Allows deletion between two positions, regardless of argument order
     fn delete_to_cursor(&mut self, position: usize) -> ComposerUpdate<S> {
         if self.has_selection() {
-            panic!("Can't delete to a split cursor")
+            panic!("Can't delete from a position to a selection")
         }
 
         let (s, _) = self.safe_selection();
@@ -141,25 +141,9 @@ where
         match inital_arguments {
             None => ComposerUpdate::keep(),
             Some(arguments) => {
-                // here we have a non-split cursor, a single location, and a textlike node,
-                // we need to track the individual node start/end/offset due to adjacent similar
-                // nodes so when those no longer appear, the required number of arguments will
-                // decrease, possibly just to the first 3
-                let (
-                    loc,
-                    node_handle,
-                    starting_char_type,
-                    node_start,
-                    node_offset,
-                ) = arguments;
-                self.remove_word(
-                    starting_char_type,
-                    direction,
-                    loc,
-                    node_handle,
-                    node_start,
-                    node_offset,
-                )
+                // here we have a non-split cursor, a single location, and a textlike node
+                let (loc, starting_char_type) = arguments;
+                self.remove_word(starting_char_type, direction, loc)
             }
         }
     }
@@ -172,26 +156,25 @@ where
         start_type: CharType,
         direction: Direction,
         location: DomLocation,
-        node_handle: DomHandle,
-        node_start: usize,
-        node_offset: usize,
     ) -> ComposerUpdate<S> {
-        match self.state.dom.lookup_node_mut(&node_handle) {
+        match self.state.dom.lookup_node_mut(&location.node_handle) {
             // we should never be passed a container
             DomNode::Container(_) => ComposerUpdate::keep(),
             // for a linebreak, remove it if we started the operation from the whitespace
             // char type, otherwise keep it
-            DomNode::LineBreak(_) => match start_type {
-                CharType::Punctuation | CharType::Other => {
-                    ComposerUpdate::keep()
+            DomNode::LineBreak(_) => {
+                match start_type {
+                    CharType::Punctuation | CharType::Other => {
+                        ComposerUpdate::keep()
+                    }
+                    CharType::Whitespace | CharType::Linebreak => self
+                        .delete_to_cursor(direction.increment(
+                            location.position + location.start_offset,
+                        )),
                 }
-                CharType::Whitespace | CharType::Linebreak => self
-                    .delete_to_cursor(
-                        direction.increment(node_start + node_offset),
-                    ),
-            },
+            }
             DomNode::Text(node) => {
-                let mut current_offset = node_offset;
+                let mut current_offset = location.start_offset;
 
                 // TODO this could be tidied up by making text_node able to
                 // generate a directional iterator from a given offset
@@ -220,7 +203,7 @@ where
                 // we have two scenarios here, we have either stopped looping due to a change of type
                 // inside the text node, or we have reached the edge of the text node
 
-                let current_position = node_start + current_offset;
+                let current_position = location.position + current_offset;
                 if node.offset_is_inside_node(current_offset, &direction) {
                     // if we have stopped inside the node, first do the required deletion
                     self.delete_to_cursor(current_position);
@@ -236,20 +219,10 @@ where
                     return match next_arguments {
                         None => ComposerUpdate::keep(),
                         Some(arguments) => {
-                            let (
-                                loc,
-                                node_handle,
-                                next_type,
-                                node_start,
-                                node_offset,
-                            ) = arguments;
+                            let (loc, next_type) = arguments;
                             self.remove_word(
                                 next_type, // pass it the new type to remove
-                                direction,
-                                loc,
-                                node_handle,
-                                node_start,
-                                node_offset,
+                                direction, loc,
                             )
                         }
                     };
@@ -271,15 +244,10 @@ where
                     return match next_arguments {
                         None => ComposerUpdate::keep(),
                         Some(details) => {
-                            let (loc, node_handle, _, node_start, node_offset) =
-                                details;
+                            let (_location, _) = details;
                             self.remove_word(
                                 start_type, // use the original first type from the remove_word call
-                                direction,
-                                loc,
-                                node_handle,
-                                node_start,
-                                node_offset,
+                                direction, _location,
                             )
                         }
                     };
@@ -294,53 +262,48 @@ where
     fn get_remove_word_arguments<'a>(
         &'a mut self,
         direction: &Direction,
-    ) -> Option<(DomLocation, DomHandle, CharType, usize, usize)> {
-        // check that we're not trying to move outside the dom or calling this function
-        // with a text selection
-        if self.selection_touches_start_or_end_of_dom(direction)
-            || self.has_selection()
-        {
+    ) -> Option<(DomLocation, CharType)> {
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        let dom_length = self.state.dom.text_len();
+
+        if self.has_selection() {
             return None;
         }
 
-        let (cursor_position, _) = self.safe_selection();
+        match range
+            .locations
+            .iter()
+            .find(|loc| {
+                // do not include the location if it is at the bad end of the dom
+                let exclude_due_to_end_of_dom = match direction {
+                    Direction::Forwards => e == dom_length,
+                    Direction::Backwards => s == 0,
+                };
 
-        // at any stage in these calls, if we don't get Some() back, return None
-        match self.get_single_location_from_cursor(direction) {
+                let inside_location = loc.start_offset < loc.length;
+
+                let is_correct_boundary_location = match direction {
+                    Direction::Forwards => loc.start_offset == 0,
+                    Direction::Backwards => loc.start_offset == loc.length,
+                };
+
+                // find the first location that we are inside, or if we're at a boundary,
+                // choose based on direction
+                return !exclude_due_to_end_of_dom
+                    && (inside_location || is_correct_boundary_location);
+            })
+            .cloned()
+        {
             None => None,
             Some(location) => {
-                // we now have a single location, so find the first text like node in it,
-                // noting that due to adjacent similar nodes we have to track individual
-                // node start,end and offset positions
-                let text_like_node_details = self
-                    .get_text_like_node_details_from_location(
-                        &location,
-                        direction,
-                        cursor_position,
-                    );
+                let char_type =
+                    self.get_char_type_from_location(&location, direction);
 
-                match text_like_node_details {
+                return match char_type {
                     None => None,
-                    Some((node_handle, node_start, node_offset)) => {
-                        let node = self.state.dom.lookup_node(&node_handle);
-                        let char_type = get_char_type_from_node(
-                            node,
-                            node_offset,
-                            direction,
-                        );
-
-                        match char_type {
-                            None => None,
-                            Some(char_type) => Some((
-                                location.clone(),
-                                node_handle,
-                                char_type,
-                                node_start,
-                                node_offset,
-                            )),
-                        }
-                    }
-                }
+                    Some(char_type) => Some((location, char_type)),
+                };
             }
         }
     }
@@ -369,92 +332,6 @@ where
             }
         } else {
             self.do_backspace()
-        }
-    }
-
-    /// Given a location, find the handle and start/end/offset positions for the
-    /// node. This is required to allow us to cope with similar adjacent nodes
-    fn get_text_like_node_details_from_location(
-        &self,
-        location: &DomLocation,
-        direction: &Direction,
-        position: usize,
-    ) -> Option<(DomHandle, usize, usize)> {
-        match self.state.dom.lookup_node(&location.node_handle) {
-            // if we find a container node, recursively search it
-            DomNode::Container(node) => recursively_search_container(
-                node, direction, position, location,
-            ),
-            // if we find a text or linebreak node, return them with their details
-            DomNode::Text(_) | DomNode::LineBreak(_) => Some((
-                location.node_handle.clone(),
-                location.position,
-                location.start_offset,
-            )),
-        }
-    }
-
-    /// If we have a non-split cursor, generate the range for that cursor and return a single location
-    /// if possible
-    fn get_single_location_from_cursor<'a>(
-        &'a mut self,
-        direction: &Direction,
-    ) -> Option<DomLocation> {
-        if self.has_selection() {
-            return None;
-        }
-
-        let (s, e) = self.safe_selection();
-        let range = self.state.dom.find_range(s, e);
-
-        // TODO this is required because "<br />|<br />" only returns a single location, for the
-        // tag to the left of the cursor, if we got both tags' locations we could remove this block
-        if range.locations.len() == 1 {
-            // <<<<<< TODO also make this return the text like node details as a tuple
-            return range.locations.into_iter().nth(0);
-        }
-
-        return range
-            .locations
-            .iter()
-            // zero length locations cause issues, so filter them out
-            .filter(|loc| loc.length != 0)
-            .find(|loc| {
-                // find the first location that we are inside, or if we're at a boundary,
-                // choose based on direction
-                return loc.start_offset < loc.length
-                    || match direction {
-                        Direction::Forwards => loc.start_offset == 0,
-                        Direction::Backwards => loc.start_offset == loc.length,
-                    };
-            })
-            .cloned();
-    }
-
-    /// Deletes the given [to_delete] nodes and then removes any given parent nodes that became
-    /// empty, recursively.
-    pub(crate) fn delete_nodes(&mut self, mut to_delete: Vec<DomHandle>) {
-        // Delete in reverse order to avoid invalidating handles
-        to_delete.reverse();
-
-        // We repeatedly delete to ensure anything that became empty because
-        // of deletions is itself deleted.
-        while !to_delete.is_empty() {
-            // Keep a list of things we will delete next time around the loop
-            let mut new_to_delete = Vec::new();
-
-            for handle in to_delete.into_iter() {
-                let child_index =
-                    handle.raw().last().expect("Text node can't be root!");
-                let parent = self.state.dom.parent_mut(&handle);
-                parent.remove_child(*child_index);
-                adjust_handles_for_delete(&mut new_to_delete, &handle);
-                if parent.children().is_empty() {
-                    new_to_delete.push(parent.handle());
-                }
-            }
-
-            to_delete = new_to_delete;
         }
     }
 
@@ -497,6 +374,28 @@ where
         self.do_replace_text(S::default())
     }
 
+    /// Given a node, return the type of character adjacent to the cursor offset position
+    /// bearing in mind the direction
+    fn get_char_type_from_location(
+        &self,
+        location: &DomLocation,
+        direction: &Direction,
+    ) -> Option<CharType> {
+        let node = self.state.dom.lookup_node(&location.node_handle);
+        match node {
+            DomNode::Container(_) => {
+                // we should never get a container type!
+                panic!("hit container in get_details_from_range_and_direction")
+            }
+            DomNode::LineBreak(_) => {
+                // we have to treat linebreaks as chars, so they have their own CharType
+                Some(CharType::Linebreak)
+            }
+            DomNode::Text(text_node) => {
+                text_node.char_type_at_offset(location.start_offset, direction)
+            }
+        }
+    }
     /// Returns the currently selected TextNode if it's the only leaf node and the cursor is inside
     /// its range.
     fn get_selected_text_node(&self) -> Option<(&TextNode<S>, DomLocation)> {
@@ -536,207 +435,5 @@ where
             // Default length for characters
             1
         }
-    }
-}
-
-/// Given a node, return the type of character adjacent to the cursor offset position
-/// bearing in mind the direction
-fn get_char_type_from_node<S: UnicodeString>(
-    node: &DomNode<S>,
-    offset: usize,
-    direction: &Direction,
-) -> Option<CharType> {
-    match node {
-        DomNode::Container(_) => {
-            // we should never get a container type!
-            panic!("hit container in get_details_from_range_and_direction")
-        }
-        DomNode::LineBreak(_) => {
-            // we have to treat linebreaks as chars, so they have their own CharType
-            Some(CharType::Linebreak)
-        }
-        DomNode::Text(text_node) => {
-            text_node.char_type_at_offset(offset, direction)
-        }
-    }
-}
-
-/// Given a container search through it looking for text like nodes and return the first one
-/// that we find (given the cursor position and direction)
-fn recursively_search_container<'a, S: UnicodeString>(
-    container: &'a ContainerNode<S>,
-    direction: &'a Direction,
-    cursor_position: usize,
-    location: &DomLocation,
-) -> Option<(DomHandle, usize, usize)> {
-    // we need to keep track of a current offset for the case where we have a container
-    // that contains multiple adjacent text nodes
-    let mut current_container_offset: usize = 0;
-
-    for child in container.children() {
-        match child {
-            //if it's a container, recursively call this function
-            DomNode::Container(node) => {
-                recursively_search_container(
-                    node,
-                    direction,
-                    cursor_position,
-                    location,
-                );
-            }
-            // if it's a linebreak, return that node's details
-            DomNode::LineBreak(_) => {
-                return Some((
-                    child.handle(),
-                    location.position,
-                    location.start_offset,
-                ))
-            }
-            // if it's a text node, make sure we handle adjacent unmerged text nodes
-            DomNode::Text(node) => {
-                // want to ignore text nodes that are zero length and in the case
-                // of adjacent text nodes return the correct one
-                let node_length = node.data().len();
-                let node_start = location.position + current_container_offset;
-                let node_offset = cursor_position - node_start;
-
-                let is_correct_adjacent_node = match direction {
-                    Direction::Forwards => node_offset == 0,
-                    Direction::Backwards => node_offset == node_length,
-                };
-
-                if node.is_empty()
-                    && (node.offset_is_inside_node(node_offset, direction)
-                        || is_correct_adjacent_node)
-                {
-                    return Some((child.handle(), node_start, node_offset));
-                }
-
-                // to handle adjacent text nodes, increment the current offset in this container
-                current_container_offset += node_length;
-            }
-        };
-    }
-    return None;
-}
-
-fn starts_with(subject: &DomHandle, object: &DomHandle) -> bool {
-    // Can't start with something longer than you
-    if subject.raw().len() < object.raw().len() {
-        return false;
-    }
-
-    // If any path element doesn't match we don't start with this
-    for (s, o) in subject.raw().iter().zip(object.raw().iter()) {
-        if s != o {
-            return false;
-        }
-    }
-
-    // All elements match, so we do start with it
-    true
-}
-
-fn adjust_handles_for_delete(
-    handles: &mut Vec<DomHandle>,
-    deleted: &DomHandle,
-) {
-    let mut indices_in_handles_to_delete = Vec::new();
-    let mut handles_to_replace = Vec::new();
-
-    let parent = deleted.parent_handle();
-    for (i, handle) in handles.iter().enumerate() {
-        if starts_with(handle, deleted) {
-            // We are the deleted node (or a descendant of it)
-            indices_in_handles_to_delete.push(i);
-        } else if starts_with(handle, &parent) {
-            // We are a sibling of the deleted node (or a descendant of one)
-
-            // If we're after a deleted node, reduce our index
-            let mut child_index = handle.raw()[parent.raw().len()];
-            let deleted_index = *deleted.raw().last().unwrap();
-            if child_index > deleted_index {
-                child_index -= 1;
-            }
-
-            // Create a handle with the adjusted index (but missing anything
-            // after the delete node's length).
-            let mut new_handle = parent.child_handle(child_index);
-
-            // Add back the rest of our original handle, unadjusted
-            for h in &handle.raw()[deleted.raw().len()..] {
-                new_handle = new_handle.child_handle(*h);
-            }
-            handles_to_replace.push((i, new_handle));
-        }
-    }
-
-    for (i, new_handle) in handles_to_replace {
-        handles[i] = new_handle;
-    }
-
-    indices_in_handles_to_delete.reverse();
-    for i in indices_in_handles_to_delete {
-        handles.remove(i);
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use crate::dom::DomHandle;
-
-    use super::*;
-
-    #[test]
-    fn starts_with_works() {
-        let h0123 = DomHandle::from_raw(vec![0, 1, 2, 3]);
-        let h012 = DomHandle::from_raw(vec![0, 1, 2]);
-        let h123 = DomHandle::from_raw(vec![1, 2, 3]);
-        let h = DomHandle::from_raw(vec![]);
-
-        assert!(starts_with(&h0123, &h012));
-        assert!(!starts_with(&h012, &h0123));
-        assert!(starts_with(&h012, &h012));
-        assert!(starts_with(&h012, &h));
-        assert!(!starts_with(&h123, &h012));
-        assert!(!starts_with(&h012, &h123));
-    }
-
-    #[test]
-    fn can_adjust_handles_when_removing_nodes() {
-        let mut handles = vec![
-            DomHandle::from_raw(vec![1, 2, 3]), // Ignored because before
-            DomHandle::from_raw(vec![2, 3, 4, 5]), // Deleted because inside
-            DomHandle::from_raw(vec![3, 4, 5]), // Adjusted because after
-            DomHandle::from_raw(vec![3]),       // Adjusted because after
-        ];
-
-        let to_delete = DomHandle::from_raw(vec![2]);
-
-        adjust_handles_for_delete(&mut handles, &to_delete);
-
-        assert_eq!(*handles[0].raw(), vec![1, 2, 3]);
-        assert_eq!(*handles[1].raw(), vec![2, 4, 5]);
-        assert_eq!(*handles[2].raw(), vec![2]);
-        assert_eq!(handles.len(), 3);
-    }
-
-    #[test]
-    fn can_adjust_handles_when_removing_nested_nodes() {
-        let mut handles = vec![
-            DomHandle::from_raw(vec![0, 9, 1, 2, 3]),
-            DomHandle::from_raw(vec![0, 9, 2, 3, 4, 5]),
-            DomHandle::from_raw(vec![0, 9, 3, 4, 5]),
-            DomHandle::from_raw(vec![0, 9, 3]),
-        ];
-
-        let to_delete = DomHandle::from_raw(vec![0, 9, 2]);
-
-        adjust_handles_for_delete(&mut handles, &to_delete);
-
-        assert_eq!(*handles[0].raw(), vec![0, 9, 1, 2, 3]);
-        assert_eq!(*handles[1].raw(), vec![0, 9, 2, 4, 5]);
-        assert_eq!(*handles[2].raw(), vec![0, 9, 2]);
-        assert_eq!(handles.len(), 3);
     }
 }
