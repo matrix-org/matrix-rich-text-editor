@@ -5,7 +5,7 @@ import uniffi.wysiwyg_composer.ComposerModel
 /**
  * Text editing actions to be performed by the Rust code through the [ComposerModel] component.
  */
-sealed interface EditorInputAction {
+internal sealed interface EditorInputAction {
     /**
      * Replaces the text at the current selection with the provided [value] in plain text.
      */
@@ -63,9 +63,19 @@ sealed interface EditorInputAction {
     object Redo: EditorInputAction
 
     /**
-     * Creates a link to the [link] url in the current selection.
+     * Add or edit a link to the [link] url in the current selection.
      */
     data class SetLink(val link: String): EditorInputAction
+
+    /**
+     * Remove link on the current selection.
+     */
+    object RemoveLink: EditorInputAction
+
+    /**
+     * Create text with a link.
+     */
+    data class SetLinkWithText(val link: String, val text: String): EditorInputAction
 
     /**
      * Creates a list, [ordered] if true or unordered in the current selection.

@@ -40,7 +40,7 @@ interface ComposerModel {
     ComposerUpdate redo();
     ComposerUpdate indent();
     ComposerUpdate un_indent();
-    ComposerUpdate set_link(string new_text);
+    ComposerUpdate set_link(string link);
     ComposerUpdate set_link_with_text(string link, string text);
     ComposerUpdate remove_links();
     string to_tree();

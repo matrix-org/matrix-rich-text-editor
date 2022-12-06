@@ -8,6 +8,7 @@ import android.text.Spanned
 import android.text.style.BulletSpan
 import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
+import android.text.style.URLSpan
 import android.text.style.UnderlineSpan
 import androidx.core.text.getSpans
 import io.element.android.wysiwyg.BuildConfig
@@ -182,8 +183,7 @@ internal class HtmlToSpansParser(
     }
     private fun handleHyperlinkEnd() {
         val last = getLast<Hyperlink>() ?: return
-        // TODO: use custom link span maybe
-        val span = UnderlineSpan()
+        val span = URLSpan(last.link)
         setSpanFromMark(last, span)
     }
 
@@ -224,6 +224,9 @@ internal class HtmlToSpansParser(
             UnderlineSpan::class.java,
             StrikethroughSpan::class.java,
             InlineCodeSpan::class.java,
+
+            // Links
+            URLSpan::class.java,
 
             // Lists
             BulletSpan::class.java,

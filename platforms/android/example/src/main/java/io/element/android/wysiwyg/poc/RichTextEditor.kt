@@ -10,6 +10,7 @@ import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
+import io.element.android.wysiwyg.inputhandlers.models.LinkAction
 import io.element.android.wysiwyg.poc.databinding.ViewRichTextEditorBinding
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
@@ -62,8 +63,17 @@ class RichTextEditor : LinearLayout {
                 richTextEditText.toggleInlineFormat(InlineFormat.InlineCode)
             }
             addLinkButton.setOnClickListener {
-                onSetLinkListener?.openLinkDialog(null) { link ->
-                    richTextEditText.setLink(link)
+                val linkAction = richTextEditText.getLinkAction() ?: return@setOnClickListener
+                when(linkAction) {
+                    is LinkAction.InsertLink -> {
+                        onSetLinkListener?.openInsertLinkDialog { text, link ->
+                            richTextEditText.insertLink(link = link, text = text)
+                        }
+                    }
+                    is LinkAction.SetLink ->
+                        onSetLinkListener?.openSetLinkDialog(linkAction.currentLink) { link ->
+                            richTextEditText.setLink(link)
+                        }
                 }
             }
             undoButton.setOnClickListener {
@@ -117,5 +127,6 @@ class RichTextEditor : LinearLayout {
 }
 
 interface OnSetLinkListener {
-    fun openLinkDialog(link: String?, callback: (String) -> Unit)
+    fun openSetLinkDialog(currentLink: String?, callback: (url: String?) -> Unit)
+    fun openInsertLinkDialog(callback: (text: String, url: String) -> Unit)
 }
