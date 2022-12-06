@@ -55,7 +55,7 @@ struct WysiwygActionToolbar: View {
         let singleTextAction: ([String]) -> Void = { strings in
             let urlString = strings[0]
             viewModel.select(range: linkAttributedRange)
-            viewModel.applyLinkAction(.setLink(urlString: urlString))
+            viewModel.applyLinkOperation(.setLink(urlString: urlString))
         }
         switch linkAction {
         case .create:
@@ -71,7 +71,7 @@ struct WysiwygActionToolbar: View {
                 let urlString = strings[0]
                 let text = strings[1]
                 viewModel.select(range: linkAttributedRange)
-                viewModel.applyLinkAction(.createLink(urlString: urlString, text: text))
+                viewModel.applyLinkOperation(.createLink(urlString: urlString, text: text))
             }
             actions.append(.textAction(
                 title: "Ok",
@@ -93,7 +93,7 @@ struct WysiwygActionToolbar: View {
             )
             let removeAction = {
                 viewModel.select(range: linkAttributedRange)
-                viewModel.applyLinkAction(.removeLinks)
+                viewModel.applyLinkOperation(.removeLinks)
             }
             actions.append(.destructive(title: "Remove", action: removeAction))
             return AlertConfig(title: editLinktitle, actions: actions)

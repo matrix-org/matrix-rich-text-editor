@@ -123,6 +123,13 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         viewModel.plainTextMode = false
         XCTAssertEqual(viewModel.content.html, "Some bold <strong>text</strong>")
     }
+    
+    func testReplaceTextAfterLinkIsNotAccepted() {
+        viewModel.applyLinkOperation(.createLink(urlString: "https://element.io", text: "test"))
+        let result = viewModel.replaceText(range: .init(location: 4, length: 0), replacementText: "abc")
+        XCTAssert(result == false)
+        XCTAssertEqual(viewModel.content.html, "<a href=\"https://element.io\">test</a>abc")
+    }
 }
 
 private extension WysiwygComposerViewModelTests {

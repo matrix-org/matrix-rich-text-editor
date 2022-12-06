@@ -286,9 +286,9 @@ public extension WysiwygComposerViewModel {
         updateCompressedHeightIfNeeded()
     }
     
-    func applyLinkAction(_ linkAction: WysiwygLinkOperation) {
+    func applyLinkOperation(_ linkOperation: WysiwygLinkOperation) {
         let update: ComposerUpdate
-        switch linkAction {
+        switch linkOperation {
         case let .createLink(urlString, text):
             update = model.setLinkWithText(link: urlString, text: text)
         case let .setLink(urlString):
