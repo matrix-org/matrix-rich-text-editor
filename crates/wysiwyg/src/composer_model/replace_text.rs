@@ -87,7 +87,6 @@ where
                     );
                     return self.create_update_replace_all();
                 } else {
-                    println!("working on {:?}", leaf);
                     let current_cursor_global_location =
                         leaf.position + leaf.start_offset;
                     let handle = &leaf.node_handle;

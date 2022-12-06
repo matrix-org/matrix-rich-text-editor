@@ -198,9 +198,9 @@ where
             Vec::new()
         };
 
-        // If our range covered multiple text-like nodes, join together
+        // If our range has length and covered multiple text-like nodes, join together
         // the two sides of the range.
-        if range.leaves().count() > 1 {
+        if range.start() != range.end() && range.leaves().count() > 1 {
             // join_nodes will use the first location of our range, so we must
             // check whether we deleted it!
             if let Some(first_loc) = range.locations.first() {

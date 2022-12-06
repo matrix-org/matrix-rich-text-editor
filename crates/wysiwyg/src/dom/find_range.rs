@@ -262,6 +262,23 @@ mod test {
         }])
     }
 
+    fn make_single_location(
+        handle: DomHandle,
+        position: usize,
+        start_offset: usize,
+        end_offset: usize,
+        length: usize,
+    ) -> DomLocation {
+        DomLocation {
+            node_handle: handle,
+            position,
+            start_offset,
+            end_offset,
+            length,
+            kind: DomNodeKind::Text,
+        }
+    }
+
     fn ranges_to_html(
         dom: &Dom<Utf16String>,
         range: &Range,
