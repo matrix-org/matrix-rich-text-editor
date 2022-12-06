@@ -77,7 +77,7 @@ where
                     .append_child(DomNode::new_line_break());
                 self.state.start += 1;
                 self.state.end = self.state.start;
-                return self.create_update_replace_all();
+                self.create_update_replace_all()
             }
             Some(leaf) => {
                 if leaf.length == 0 {
@@ -85,7 +85,7 @@ where
                     self.enter_with_zero_length_selection_and_empty_text_nodes(
                         range,
                     );
-                    return self.create_update_replace_all();
+                    self.create_update_replace_all()
                 } else {
                     let current_cursor_global_location =
                         leaf.position + leaf.start_offset;
@@ -98,8 +98,7 @@ where
                             let list_item_end_offset = range
                                 .locations
                                 .into_iter()
-                                .filter(|loc| loc.kind == ListItem)
-                                .next()
+                                .find(|loc| loc.kind == ListItem)
                                 .unwrap()
                                 .end_offset;
                             self.do_enter_in_list(
