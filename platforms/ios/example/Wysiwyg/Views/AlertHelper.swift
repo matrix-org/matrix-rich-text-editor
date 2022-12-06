@@ -57,6 +57,7 @@ struct AlertHelper<Content: View>: UIViewControllerRepresentable {
 
 public struct AlertConfig {
     public struct TextFieldData {
+        let accessibilityIdentifier: WysiwygSharedAccessibilityIdentifier
         let placeholder: String
         let defaultValue: String?
     }

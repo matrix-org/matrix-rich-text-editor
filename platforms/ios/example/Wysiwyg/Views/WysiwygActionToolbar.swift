@@ -23,7 +23,7 @@ struct WysiwygActionToolbar: View {
     @State private var isShowingUrlAlert = false
     @State private var linkAttributedRange = NSRange.zero
     @State private var linkAction: LinkAction?
-
+    
     var body: some View {
         HStack {
             ForEach(WysiwygAction.allCases) { action in
@@ -61,7 +61,13 @@ struct WysiwygActionToolbar: View {
         case .create:
             actions.append(.textAction(
                 title: "Ok",
-                textFieldsData: [.init(placeholder: "URL", defaultValue: nil)],
+                textFieldsData: [
+                    .init(
+                        accessibilityIdentifier: .linkUrlTextField,
+                        placeholder: "URL",
+                        defaultValue: nil
+                    ),
+                ],
                 action: singleTextAction
             )
             )
@@ -76,8 +82,16 @@ struct WysiwygActionToolbar: View {
             actions.append(.textAction(
                 title: "Ok",
                 textFieldsData: [
-                    .init(placeholder: "URL", defaultValue: nil),
-                    .init(placeholder: "Text", defaultValue: nil),
+                    .init(
+                        accessibilityIdentifier: .linkUrlTextField,
+                        placeholder: "URL",
+                        defaultValue: nil
+                    ),
+                    .init(
+                        accessibilityIdentifier: .linkTextTextField,
+                        placeholder: "Text",
+                        defaultValue: nil
+                    ),
                 ],
                 action: doubleTextAction
             )
@@ -87,7 +101,13 @@ struct WysiwygActionToolbar: View {
             let editLinktitle = "Edit Link"
             actions.append(.textAction(
                 title: "Ok",
-                textFieldsData: [.init(placeholder: "URL", defaultValue: link)],
+                textFieldsData: [
+                    .init(
+                        accessibilityIdentifier: .linkUrlTextField,
+                        placeholder: "URL",
+                        defaultValue: link
+                    ),
+                ],
                 action: singleTextAction
             )
             )

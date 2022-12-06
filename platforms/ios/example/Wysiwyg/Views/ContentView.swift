@@ -50,9 +50,11 @@ struct ContentView: View {
         Button("Show tree") {
             tree = viewModel.treeRepresentation()
         }
+        .accessibilityIdentifier(.showTreeButton)
         ScrollView {
             if let tree = tree {
                 Text(tree)
+                    .accessibilityIdentifier(.treeText)
                     .font(.system(size: 11.0, weight: .regular, design: .monospaced))
                     .multilineTextAlignment(.leading)
             }

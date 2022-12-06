@@ -37,6 +37,7 @@ extension UIAlertController {
                     guard let textFields = textFields else { return }
                     textFields[numberOfTextFields].placeholder = textFieldData.placeholder
                     textFields[numberOfTextFields].text = textFieldData.defaultValue
+                    textFields[numberOfTextFields].accessibilityIdentifier = textFieldData.accessibilityIdentifier.rawValue
                     numberOfTextFields += 1
                 }
                 guard let textFields = textFields else { return }

@@ -143,6 +143,77 @@ class WysiwygUITests: XCTestCase {
         sleep(1)
         XCTAssertEqual(textView.frame.height, WysiwygSharedConstants.composerMinHeight)
     }
+    
+    func testCreateLinkWithTextEditAndRemove() {
+        // Create with text
+        button(.linkButton).tap()
+        XCTAssertTrue(textField(.linkUrlTextField).exists)
+        XCTAssertTrue(textField(.linkTextTextField).exists)
+        textField(.linkUrlTextField).typeTextCharByChar("url")
+        textField(.linkTextTextField).tap()
+        textField(.linkTextTextField).typeTextCharByChar("text")
+        app.buttons["Ok"].tap()
+        button(.showTreeButton).tap()
+        XCTAssertEqual(
+            staticText(.treeText).label,
+            """
+            
+            └>a "url"
+              └>"text"
+            
+            """
+        )
+        
+        // Edit
+        button(.linkButton).tap()
+        XCTAssertFalse(textField(.linkTextTextField).exists)
+        textField(.linkUrlTextField).doubleTap()
+        textField(.linkUrlTextField).typeTextCharByChar("new_url")
+        app.buttons["Ok"].tap()
+        button(.showTreeButton).tap()
+        XCTAssertEqual(
+            staticText(.treeText).label,
+            """
+            
+            └>a "new_url"
+              └>"text"
+            
+            """
+        )
+        
+        // Remove
+        button(.linkButton).tap()
+        XCTAssertFalse(textField(.linkTextTextField).exists)
+        app.buttons["Remove"].tap()
+        button(.showTreeButton).tap()
+        XCTAssertEqual(
+            staticText(.treeText).label,
+            """
+            
+            └>"text"
+            
+            """
+        )
+    }
+    
+    func testCreateLinkFromSelection() {
+        textView.typeTextCharByChar("text")
+        textView.doubleTap()
+        button(.linkButton).tap()
+        XCTAssertFalse(textField(.linkTextTextField).exists)
+        textField(.linkUrlTextField).typeTextCharByChar("url")
+        app.buttons["Ok"].tap()
+        button(.showTreeButton).tap()
+        XCTAssertEqual(
+            staticText(.treeText).label,
+            """
+            
+            └>a "url"
+              └>"text"
+            
+            """
+        )
+    }
 }
 
 private extension WysiwygUITests {
@@ -157,6 +228,10 @@ private extension WysiwygUITests {
     /// - Returns: Associated button, if it exists
     func button(_ id: WysiwygSharedAccessibilityIdentifier) -> XCUIElement {
         app.buttons[rawIdentifier(id)]
+    }
+    
+    func textField(_ id: WysiwygSharedAccessibilityIdentifier) -> XCUIElement {
+        app.textFields[id.rawValue]
     }
 
     /// Get the static text with given id
