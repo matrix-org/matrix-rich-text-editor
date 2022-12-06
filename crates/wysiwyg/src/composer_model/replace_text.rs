@@ -87,6 +87,7 @@ where
                     );
                     return self.create_update_replace_all();
                 } else {
+                    println!("working on {:?}", leaf);
                     let current_cursor_global_location =
                         leaf.position + leaf.start_offset;
                     let handle = &leaf.node_handle;
@@ -121,7 +122,7 @@ where
         &mut self,
         range: Range,
     ) {
-        let leaves: Vec<&DomLocation> = range.leaves().collect();
+        let leaves = range.leaves();
         let empty_text_leaves: Vec<&DomLocation> = leaves
             .into_iter()
             .filter(|l| {
