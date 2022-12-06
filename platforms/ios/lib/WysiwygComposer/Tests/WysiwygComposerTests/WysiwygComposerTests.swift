@@ -163,12 +163,7 @@ final class WysiwygComposerTests: XCTestCase {
         let composer = newComposerModel()
         _ = composer.setLinkWithText(link: link, text: "test")
         let action = composer.getLinkAction()
-        switch action {
-        case let .edit(utf16Link):
-            XCTAssert(link == String(utf16CodeUnits: utf16Link, count: utf16Link.count))
-        default:
-            XCTFail("did not return the correct link action")
-        }
+        XCTAssert(action == .edit(link: link))
     }
     
     func testSetLinkWithText() {

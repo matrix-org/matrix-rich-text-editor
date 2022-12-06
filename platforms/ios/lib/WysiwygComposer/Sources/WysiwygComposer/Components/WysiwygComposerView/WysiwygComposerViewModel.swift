@@ -299,8 +299,8 @@ public extension WysiwygComposerViewModel {
         applyUpdate(update)
     }
     
-    func getLinkAction() -> WysiwygLinkAction {
-        model.getLinkAction().wysiwygLinkAction
+    func getLinkAction() -> LinkAction {
+        model.getLinkAction()
     }
 }
 

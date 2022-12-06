@@ -22,7 +22,7 @@ struct WysiwygActionToolbar: View {
     var toolbarAction: (WysiwygAction) -> Void
     @State private var isShowingUrlAlert = false
     @State private var linkAttributedRange = NSRange.zero
-    @State private var linkAction: WysiwygLinkAction?
+    @State private var linkAction: LinkAction?
 
     var body: some View {
         HStack {
