@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::char::CharExt;
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::nodes::{
@@ -157,6 +158,14 @@ where
         matches!(self, Self::Container(container) if container.is_list())
     }
 
+    /// Returns `true` if the dom node is [`LineBreak`].
+    ///
+    /// [`LineBreak`]: DomNode::LineBreak
+    #[must_use]
+    pub fn is_line_break(&self) -> bool {
+        matches!(self, Self::LineBreak(..))
+    }
+
     pub(crate) fn as_text(&self) -> Option<&TextNode<S>> {
         if let Self::Text(v) = self {
             Some(v)
@@ -189,9 +198,23 @@ where
         }
     }
 
+    /// Returns true if given node can be pushed into self without any specific change.
+    pub(crate) fn can_push(&self, other_node: &DomNode<S>) -> bool {
+        match (self, other_node) {
+            (DomNode::Container(c1), DomNode::Container(c2)) => {
+                c1.kind() == c2.kind() && !c1.is_list_item() && !c1.is_list()
+            }
+            (DomNode::Text(_), DomNode::Text(t2)) => {
+                !t2.data().to_string().starts_with(char::zwsp())
+            }
+            _ => false,
+        }
+    }
+
+    /// Push content of the given node into self. Panics if pushing is not possible.
     pub(crate) fn push(&mut self, other_node: &mut DomNode<S>) {
-        if self.kind() != other_node.kind() {
-            panic!("Trying to push a non-matching node kind")
+        if !self.can_push(other_node) {
+            panic!("Trying to push incompatible nodes")
         }
 
         match self {
@@ -199,16 +222,8 @@ where
                 c.push(other_node.as_container_mut().unwrap())
             }
             DomNode::Text(t) => t.push(other_node.as_text().unwrap()),
-            DomNode::LineBreak(_) => panic!("Can't merge linebreaks"),
+            _ => unreachable!(),
         }
-    }
-
-    /// Returns `true` if the dom node is [`LineBreak`].
-    ///
-    /// [`LineBreak`]: DomNode::LineBreak
-    #[must_use]
-    pub fn is_line_break(&self) -> bool {
-        matches!(self, Self::LineBreak(..))
     }
 }
 

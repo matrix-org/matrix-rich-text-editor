@@ -148,6 +148,8 @@ where
         self.data().len() != 0
     }
 
+    /// Push content of the given text node into self. If given
+    /// node is empty or a single ZWSP, nothing is pushed.
     pub(crate) fn push(&mut self, other_node: &TextNode<S>) {
         let mut text_data = self.data().to_owned();
         let other_text_data = other_node.data();

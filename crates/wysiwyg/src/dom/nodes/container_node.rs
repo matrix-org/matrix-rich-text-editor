@@ -317,18 +317,17 @@ where
         Some(link)
     }
 
+    /// Push content of the given container node into self. Panics
+    /// if given container node is not of the same kind.
     pub(crate) fn push(&mut self, other_node: &mut ContainerNode<S>) {
         if other_node.kind != self.kind {
-            panic!("Trying to push a non-matching node kind");
+            panic!("Trying to push a non-matching container kind");
         }
         let last_child = self.children.last().unwrap();
-        let first_pushed_child = other_node.get_child_mut(0).unwrap();
-        if last_child.kind() == first_pushed_child.kind()
-            && !last_child.is_list_item()
-            && !last_child.is_line_break()
-        {
-            self.last_child_mut().unwrap().push(first_pushed_child);
-            other_node.remove_child(0);
+        let other_node_first_child = other_node.get_child(0).unwrap();
+        if last_child.can_push(other_node_first_child) {
+            let mut next_child = other_node.remove_child(0);
+            self.last_child_mut().unwrap().push(&mut next_child);
         }
         while !other_node.children().is_empty() {
             let child = other_node.remove_child(0);

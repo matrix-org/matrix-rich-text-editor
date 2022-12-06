@@ -15,7 +15,6 @@
 //! Methods on Dom that modify its contents and are guaranteed to conform to
 //! our invariants e.g. no empty text nodes, no adjacent text nodes.
 
-use crate::char::CharExt;
 use crate::{DomHandle, DomNode, UnicodeString};
 
 use super::action_list::{DomAction, DomActionList};
@@ -273,28 +272,12 @@ where
                 let next_node = self.lookup_node(&next_handle);
                 let node = self.lookup_node(&handle);
 
-                if self.can_directly_join_nodes(node, next_node) {
+                if node.can_push(next_node) {
                     let mut next_node = self.remove(&next_handle);
                     let node_mut = self.lookup_node_mut(&handle);
                     node_mut.push(&mut next_node);
                 }
             }
-        }
-    }
-
-    fn can_directly_join_nodes(
-        &self,
-        n1: &DomNode<S>,
-        n2: &DomNode<S>,
-    ) -> bool {
-        match (n1, n2) {
-            (DomNode::Container(c1), DomNode::Container(c2)) => {
-                c1.kind() == c2.kind() && !c1.is_list_item() && !c1.is_list()
-            }
-            (DomNode::Text(_), DomNode::Text(t2)) => {
-                !t2.data().to_string().starts_with(char::zwsp())
-            }
-            _ => false,
         }
     }
 
