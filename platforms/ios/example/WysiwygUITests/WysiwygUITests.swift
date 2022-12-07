@@ -143,6 +143,67 @@ class WysiwygUITests: XCTestCase {
         sleep(1)
         XCTAssertEqual(textView.frame.height, WysiwygSharedConstants.composerMinHeight)
     }
+    
+    func testCreateLinkWithTextEditAndRemove() {
+        // Create with text
+        button(.linkButton).tap()
+        XCTAssertTrue(textField(.linkUrlTextField).exists)
+        XCTAssertTrue(textField(.linkTextTextField).exists)
+        textField(.linkUrlTextField).typeTextCharByChar("url")
+        textField(.linkTextTextField).tap()
+        textField(.linkTextTextField).typeTextCharByChar("text")
+        app.buttons["Ok"].tap()
+        assertTreeEquals(
+            """
+            └>a "url"
+              └>"text"
+            """
+        )
+        
+        // Edit
+        button(.linkButton).tap()
+        XCTAssertFalse(textField(.linkTextTextField).exists)
+        textField(.linkUrlTextField).doubleTap()
+        textField(.linkUrlTextField).typeTextCharByChar("new_url")
+        app.buttons["Ok"].tap()
+        assertTreeEquals(
+            """
+            └>a "new_url"
+              └>"text"
+            """
+        )
+        
+        // Remove
+        button(.linkButton).tap()
+        XCTAssertFalse(textField(.linkTextTextField).exists)
+        app.buttons["Remove"].tap()
+        assertTreeEquals(
+            """
+            └>"text"
+            """
+        )
+    }
+    
+    func testCreateLinkFromSelection() {
+        textView.typeTextCharByChar("text")
+        assertTreeEquals(
+            """
+            └>"text"
+            """
+        )
+        
+        textView.doubleTap()
+        button(.linkButton).tap()
+        XCTAssertFalse(textField(.linkTextTextField).exists)
+        textField(.linkUrlTextField).typeTextCharByChar("url")
+        app.buttons["Ok"].tap()
+        assertTreeEquals(
+            """
+            └>a "url"
+              └>"text"
+            """
+        )
+    }
 }
 
 private extension WysiwygUITests {
@@ -157,6 +218,10 @@ private extension WysiwygUITests {
     /// - Returns: Associated button, if it exists
     func button(_ id: WysiwygSharedAccessibilityIdentifier) -> XCUIElement {
         app.buttons[rawIdentifier(id)]
+    }
+    
+    func textField(_ id: WysiwygSharedAccessibilityIdentifier) -> XCUIElement {
+        app.textFields[id.rawValue]
     }
 
     /// Get the static text with given id
@@ -192,6 +257,14 @@ private extension WysiwygUITests {
     /// - Returns: raw string value
     func rawIdentifier(_ id: WysiwygSharedAccessibilityIdentifier) -> String {
         id.rawValue
+    }
+    
+    /// Shows or updates the current tree content of the text view and checks if is equal to provided content
+    ///
+    /// - Parameter content: the tree content to assert, must be provided without newlines at the start and at the end.
+    func assertTreeEquals(_ content: String) {
+        button(.showTreeButton).tap()
+        XCTAssertEqual(staticText(.treeText).label, "\n\(content)\n")
     }
 }
 

@@ -19,7 +19,7 @@ extension ComposerModel {
     ///
     /// - Parameters:
     ///   - action: Action to apply.
-    func apply(_ action: WysiwygAction) -> ComposerUpdateProtocol {
+    func apply(_ action: WysiwygAction) -> ComposerUpdateProtocol? {
         let update: ComposerUpdateProtocol
         switch action {
         case .bold:
@@ -32,8 +32,6 @@ extension ComposerModel {
             update = underline()
         case .inlineCode:
             update = inlineCode()
-        case let .link(url: url):
-            update = setLink(newText: url)
         case .undo:
             update = undo()
         case .redo:
@@ -42,6 +40,8 @@ extension ComposerModel {
             update = orderedList()
         case .unorderedList:
             update = unorderedList()
+        default:
+            return nil
         }
 
         return update
