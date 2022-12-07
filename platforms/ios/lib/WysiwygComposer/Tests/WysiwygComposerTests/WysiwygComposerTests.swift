@@ -147,7 +147,7 @@ final class WysiwygComposerTests: XCTestCase {
     func testCreateWithTextLinkAction() {
         let composer = newComposerModel()
         let action = composer.getLinkAction()
-        XCTAssert(action == .createWithText)
+        XCTAssertEqual(action, .createWithText)
     }
     
     func testCreateLinkAction() {
