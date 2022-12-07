@@ -895,6 +895,38 @@ mod test {
         assert_eq!(text_node2.handle().raw(), &[4, 5, 4, 4]);
     }
 
+    #[test]
+    fn pushing_container_of_same_kind() {
+        let mut c1 =
+            format_container_with_handle(InlineFormatType::Bold, &[0, 0]);
+        c1.append_child(text_node("abc"));
+        let mut c2 =
+            format_container_with_handle(InlineFormatType::Bold, &[0, 1]);
+        c2.append_child(text_node("def"));
+        c2.append_child(DomNode::new_line_break());
+        c1.push(&mut c2);
+        assert!(c2.children().is_empty());
+
+        let mut expected =
+            format_container_with_handle(InlineFormatType::Bold, &[0, 0]);
+        expected.append_child(text_node("abcdef"));
+        expected.append_child(DomNode::new_line_break());
+
+        assert_eq!(c1, expected)
+    }
+
+    #[test]
+    #[should_panic]
+    fn pushing_container_of_different_kind_panics() {
+        let mut c1 =
+            format_container_with_handle(InlineFormatType::Bold, &[0, 0]);
+        c1.append_child(text_node("abc"));
+        let mut c2 =
+            format_container_with_handle(InlineFormatType::Italic, &[0, 1]);
+        c2.append_child(text_node("def"));
+        c1.push(&mut c2);
+    }
+
     fn container_with_handle<'a>(
         raw_handle: impl IntoIterator<Item = &'a usize>,
     ) -> ContainerNode<Utf16String> {
@@ -904,6 +936,17 @@ mod test {
             None,
             Vec::new(),
         );
+        let handle =
+            DomHandle::from_raw(raw_handle.into_iter().cloned().collect());
+        node.set_handle(handle);
+        node
+    }
+
+    fn format_container_with_handle<'a>(
+        format: InlineFormatType,
+        raw_handle: impl IntoIterator<Item = &'a usize>,
+    ) -> ContainerNode<Utf16String> {
+        let mut node = ContainerNode::new_formatting(format, vec![]);
         let handle =
             DomHandle::from_raw(raw_handle.into_iter().cloned().collect());
         node.set_handle(handle);

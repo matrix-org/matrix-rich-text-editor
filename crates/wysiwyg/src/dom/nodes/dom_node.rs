@@ -322,3 +322,102 @@ impl DomNodeKind {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use widestring::Utf16String;
+
+    use crate::{DomHandle, DomNode, InlineFormatType, UnicodeString};
+
+    #[test]
+    fn pushing_nodes_of_same_kind() {
+        let mut n1 = format_container_with_handle_and_children(
+            InlineFormatType::Bold,
+            vec![text_node("abc")],
+            &[0, 0],
+        );
+        let mut n2 = format_container_with_handle_and_children(
+            InlineFormatType::Bold,
+            vec![text_node("def")],
+            &[0, 1],
+        );
+
+        assert!(n1.can_push(&n2));
+        n1.push(&mut n2);
+
+        let expected = format_container_with_handle_and_children(
+            InlineFormatType::Bold,
+            vec![text_node("abcdef")],
+            &[0, 0],
+        );
+        assert_eq!(n1, expected);
+    }
+
+    #[test]
+    fn pushing_nodes_of_different_kind_is_not_allowed() {
+        let n1 = format_container_with_handle_and_children(
+            InlineFormatType::Bold,
+            vec![text_node("abc")],
+            &[0, 0],
+        );
+        let n2 = format_container_with_handle_and_children(
+            InlineFormatType::Italic,
+            vec![text_node("def")],
+            &[0, 1],
+        );
+
+        assert!(!n1.can_push(&n2));
+    }
+
+    #[test]
+    fn pushing_list_item_directly_is_not_allowed() {
+        let li1 = list_item_with_handle(&[0, 0]);
+        let li2 = list_item_with_handle(&[0, 1]);
+        assert!(!li1.can_push(&li2));
+    }
+
+    #[test]
+    #[should_panic]
+    fn pushing_nodes_of_different_kind_panics() {
+        let mut n1 = format_container_with_handle_and_children(
+            InlineFormatType::Bold,
+            vec![text_node("abc")],
+            &[0, 0],
+        );
+        let mut n2 = format_container_with_handle_and_children(
+            InlineFormatType::Italic,
+            vec![text_node("def")],
+            &[0, 1],
+        );
+        n1.push(&mut n2);
+    }
+
+    fn format_container_with_handle_and_children<'a>(
+        format: InlineFormatType,
+        children: Vec<DomNode<Utf16String>>,
+        raw_handle: impl IntoIterator<Item = &'a usize>,
+    ) -> DomNode<Utf16String> {
+        let mut node = DomNode::new_formatting(format, children);
+        let handle =
+            DomHandle::from_raw(raw_handle.into_iter().cloned().collect());
+        node.set_handle(handle);
+        node
+    }
+
+    fn list_item_with_handle<'a>(
+        raw_handle: impl IntoIterator<Item = &'a usize>,
+    ) -> DomNode<Utf16String> {
+        let mut node = DomNode::new_list_item(vec![]);
+        let handle =
+            DomHandle::from_raw(raw_handle.into_iter().cloned().collect());
+        node.set_handle(handle);
+        node
+    }
+
+    fn text_node<S>(content: &str) -> DomNode<S>
+    where
+        S: UnicodeString,
+    {
+        DomNode::new_text(content.into())
+    }
+}
