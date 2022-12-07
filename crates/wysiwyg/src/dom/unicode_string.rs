@@ -69,7 +69,7 @@ pub trait UnicodeStr:
     type StringType: UnicodeString;
 
     // Should really be `-> Self::Chars<'a>`, but that requires GATs
-    fn chars(&self) -> Box<dyn Iterator<Item = char> + '_>; // can call this to go through the chars
+    fn chars(&self) -> Box<dyn Iterator<Item = char> + '_>;
 
     /// Returns the length of the char in indices of the current encoding
     fn char_len(&self, char: &char) -> usize;

@@ -207,7 +207,7 @@ where
 
                     // if we did start with whitespace, get the next set of arguments and make the recursive call
                     let _args = self.get_remove_word_arguments(&direction);
-                    return match _args {
+                    match _args {
                         None => ComposerUpdate::keep(),
                         Some(arguments) => {
                             let (location, next_type) = arguments;
@@ -216,7 +216,7 @@ where
                                 next_type, direction, location,
                             )
                         }
-                    };
+                    }
                 } else {
                     // if we have stopped at the edge of the node, first do the required deletion
                     self.delete_to_cursor(current_position);
@@ -228,7 +228,7 @@ where
 
                     // otherwise, make a recursive call to continue to the next node
                     let _args = self.get_remove_word_arguments(&direction);
-                    return match _args {
+                    match _args {
                         None => ComposerUpdate::keep(),
                         Some(details) => {
                             let (_location, _) = details;
@@ -237,7 +237,7 @@ where
                                 start_type, direction, _location,
                             )
                         }
-                    };
+                    }
                 }
             }
         }
@@ -246,8 +246,8 @@ where
     /// In order for the recursive calls to work we need quite a few details
     /// from the cursor location, this gets those details and returns them
     /// as a tuple.
-    fn get_remove_word_arguments<'a>(
-        &'a mut self,
+    fn get_remove_word_arguments(
+        &self,
         direction: &Direction,
     ) -> Option<(DomLocation, CharType)> {
         let (s, e) = self.safe_selection();
