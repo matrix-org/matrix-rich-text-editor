@@ -153,9 +153,7 @@ where
         }
     }
 
-    /// Actually removes words from the dom. Number of arguments is due to adjacent text nodes.
-    /// If we can guarantee no adjacent similar nodes, this function could be refactored to just
-    /// use start_type, direction and location
+    /// Remove the word runs from the dom and can recursively call itself
     fn remove_word(
         &mut self,
         start_type: CharType,
