@@ -253,8 +253,11 @@ mod test {
         assert_eq!(get_char_type('\u{0020}'), CharType::Whitespace);
         // no break space
         assert_eq!(get_char_type('\u{00A0}'), CharType::Whitespace);
-        // zero width space
-        assert_eq!(get_char_type(char::zwsp()), CharType::Whitespace);
+    }
+
+    #[test]
+    fn get_char_type_for_zwsp() {
+        assert_eq!(get_char_type(char::zwsp()), CharType::ZWSP);
     }
 
     #[test]
