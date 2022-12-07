@@ -135,7 +135,7 @@ final class WysiwygComposerViewModelTests: XCTestCase {
     func testReplaceTextPartiallyInsideAndAfterLinkIsNotAccepted() {
         viewModel.applyLinkOperation(.createLink(urlString: "https://element.io", text: "test"))
         let result = viewModel.replaceText(range: .init(location: 3, length: 1), replacementText: "abc")
-        XCTAssert(result == false)
+        XCTAssertFalse(result)
         XCTAssertEqual(viewModel.content.html, "<a href=\"https://element.io\">tes</a>abc")
         XCTAssertTrue(viewModel.textView.attributedText.isEqual(to: viewModel.attributedContent.text))
     }
