@@ -143,4 +143,79 @@ final class WysiwygComposerTests: XCTestCase {
         XCTAssertEqual(composer.getCurrentDomState().start, composer.getCurrentDomState().end)
         XCTAssertEqual(composer.getCurrentDomState().start, 24)
     }
+    
+    func testCreateWithTextLinkAction() {
+        let composer = newComposerModel()
+        let action = composer.getLinkAction()
+        XCTAssertEqual(action, .createWithText)
+    }
+    
+    func testCreateLinkAction() {
+        let composer = newComposerModel()
+        _ = composer.replaceText(newText: "test")
+        _ = composer.select(startUtf16Codeunit: 0, endUtf16Codeunit: 4)
+        let action = composer.getLinkAction()
+        XCTAssertEqual(action, .create)
+    }
+    
+    func testEditLinkAction() {
+        let link = "test_url"
+        let composer = newComposerModel()
+        _ = composer.setLinkWithText(link: link, text: "test")
+        let action = composer.getLinkAction()
+        XCTAssertEqual(action, .edit(link: link))
+    }
+    
+    func testSetLinkWithText() {
+        let composer = newComposerModel()
+        _ = composer.setLinkWithText(link: "link", text: "text")
+        XCTAssertEqual(
+            composer.toTree(),
+            """
+            
+            └>a \"link\"
+              └>\"text\"
+            
+            """
+        )
+    }
+    
+    func testSetLink() {
+        let composer = newComposerModel()
+        _ = composer.replaceText(newText: "text")
+        _ = composer.select(startUtf16Codeunit: 0, endUtf16Codeunit: 4)
+        _ = composer.setLink(newText: "link")
+        XCTAssertEqual(
+            composer.toTree(),
+            """
+            
+            └>a \"link\"
+              └>\"text\"
+            
+            """
+        )
+    }
+    
+    func testRemoveLinks() {
+        let composer = newComposerModel()
+        _ = composer.setLinkWithText(link: "link", text: "text")
+        XCTAssertEqual(
+            composer.toTree(),
+            """
+            
+            └>a \"link\"
+              └>\"text\"
+            
+            """
+        )
+        _ = composer.removeLinks()
+        XCTAssertEqual(
+            composer.toTree(),
+            """
+            
+            └>"text"
+            
+            """
+        )
+    }
 }

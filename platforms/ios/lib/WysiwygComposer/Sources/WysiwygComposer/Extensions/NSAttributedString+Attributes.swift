@@ -26,7 +26,7 @@ extension NSAttributedString {
         let substring = attributedSubstring(from: .init(location: index, length: 1))
         return substring.string.first
     }
-
+    
     /// Enumerate attribute for given key and conveniently ignore any attribute that doesn't match given generic type.
     ///
     /// - Parameters:
@@ -42,11 +42,11 @@ extension NSAttributedString {
                            in: enumerationRange ?? .init(location: 0, length: length),
                            options: opts) { (attr: Any?, range: NSRange, stop: UnsafeMutablePointer<ObjCBool>) in
             guard let typedAttr = attr as? T else { return }
-
+            
             block(typedAttr, range, stop)
         }
     }
-
+    
     /// Retrieve font symbolic traits at a given attributed index.
     ///
     /// - Parameters:
@@ -61,12 +61,19 @@ extension NSAttributedString {
     ///
     /// - Parameters:
     ///   - color: the new UIColor to update the attributed string
+    ///   - linkColor: the new UIColor for links inside the attributed string
     /// - Returns: a new attributed string with the same content and attributes, but its foregroundColor is changed
-    func changeColor(to color: UIColor) -> NSAttributedString {
+    func changeColor(to color: UIColor, linkColor: UIColor) -> NSAttributedString {
         let mutableAttributed = NSMutableAttributedString(attributedString: self)
         mutableAttributed.addAttributes(
             [.foregroundColor: color], range: NSRange(location: 0, length: mutableAttributed.length)
         )
+        // This fixes an iOS bug where if some text is typed after a link, and then a whitespace is added the link color is overridden.
+        mutableAttributed.enumerateAttribute(.link, in: NSRange(location: 0, length: mutableAttributed.length)) { value, range, _ in
+            if value != nil {
+                mutableAttributed.addAttributes([.foregroundColor: UIColor.systemBlue], range: range)
+            }
+        }
         let newSelf = NSAttributedString(attributedString: mutableAttributed)
         return newSelf
     }

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::char::CharExt;
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::nodes::{
@@ -48,7 +49,7 @@ where
     }
 
     pub fn new_line_break() -> DomNode<S> {
-        DomNode::LineBreak(LineBreakNode::new())
+        DomNode::LineBreak(LineBreakNode::default())
     }
 
     pub fn new_formatting(
@@ -157,6 +158,14 @@ where
         matches!(self, Self::Container(container) if container.is_list())
     }
 
+    /// Returns `true` if the dom node is [`LineBreak`].
+    ///
+    /// [`LineBreak`]: DomNode::LineBreak
+    #[must_use]
+    pub fn is_line_break(&self) -> bool {
+        matches!(self, Self::LineBreak(..))
+    }
+
     pub(crate) fn as_text(&self) -> Option<&TextNode<S>> {
         if let Self::Text(v) = self {
             Some(v)
@@ -173,11 +182,47 @@ where
         }
     }
 
+    pub(crate) fn as_container_mut(&mut self) -> Option<&mut ContainerNode<S>> {
+        if let Self::Container(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
     pub fn kind(&self) -> DomNodeKind {
         match self {
             DomNode::Text(_) => DomNodeKind::Text,
             DomNode::LineBreak(_) => DomNodeKind::LineBreak,
             DomNode::Container(n) => DomNodeKind::from_container_kind(n.kind()),
+        }
+    }
+
+    /// Returns true if given node can be pushed into self without any specific change.
+    pub(crate) fn can_push(&self, other_node: &DomNode<S>) -> bool {
+        match (self, other_node) {
+            (DomNode::Container(c1), DomNode::Container(c2)) => {
+                c1.kind() == c2.kind() && !c1.is_list_item() && !c1.is_list()
+            }
+            (DomNode::Text(_), DomNode::Text(t2)) => {
+                !t2.data().to_string().starts_with(char::zwsp())
+            }
+            _ => false,
+        }
+    }
+
+    /// Push content of the given node into self. Panics if pushing is not possible.
+    pub(crate) fn push(&mut self, other_node: &mut DomNode<S>) {
+        if !self.can_push(other_node) {
+            panic!("Trying to push incompatible nodes")
+        }
+
+        match self {
+            DomNode::Container(c) => {
+                c.push(other_node.as_container_mut().unwrap())
+            }
+            DomNode::Text(t) => t.push(other_node.as_text().unwrap()),
+            _ => unreachable!(),
         }
     }
 }
@@ -275,5 +320,104 @@ impl DomNodeKind {
             ContainerNodeKind::ListItem => DomNodeKind::ListItem,
             ContainerNodeKind::Generic => DomNodeKind::Generic,
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use widestring::Utf16String;
+
+    use crate::{DomHandle, DomNode, InlineFormatType, UnicodeString};
+
+    #[test]
+    fn pushing_nodes_of_same_kind() {
+        let mut n1 = format_container_with_handle_and_children(
+            InlineFormatType::Bold,
+            vec![text_node("abc")],
+            &[0, 0],
+        );
+        let mut n2 = format_container_with_handle_and_children(
+            InlineFormatType::Bold,
+            vec![text_node("def")],
+            &[0, 1],
+        );
+
+        assert!(n1.can_push(&n2));
+        n1.push(&mut n2);
+
+        let expected = format_container_with_handle_and_children(
+            InlineFormatType::Bold,
+            vec![text_node("abcdef")],
+            &[0, 0],
+        );
+        assert_eq!(n1, expected);
+    }
+
+    #[test]
+    fn pushing_nodes_of_different_kind_is_not_allowed() {
+        let n1 = format_container_with_handle_and_children(
+            InlineFormatType::Bold,
+            vec![text_node("abc")],
+            &[0, 0],
+        );
+        let n2 = format_container_with_handle_and_children(
+            InlineFormatType::Italic,
+            vec![text_node("def")],
+            &[0, 1],
+        );
+
+        assert!(!n1.can_push(&n2));
+    }
+
+    #[test]
+    fn pushing_list_item_directly_is_not_allowed() {
+        let li1 = list_item_with_handle(&[0, 0]);
+        let li2 = list_item_with_handle(&[0, 1]);
+        assert!(!li1.can_push(&li2));
+    }
+
+    #[test]
+    #[should_panic]
+    fn pushing_nodes_of_different_kind_panics() {
+        let mut n1 = format_container_with_handle_and_children(
+            InlineFormatType::Bold,
+            vec![text_node("abc")],
+            &[0, 0],
+        );
+        let mut n2 = format_container_with_handle_and_children(
+            InlineFormatType::Italic,
+            vec![text_node("def")],
+            &[0, 1],
+        );
+        n1.push(&mut n2);
+    }
+
+    fn format_container_with_handle_and_children<'a>(
+        format: InlineFormatType,
+        children: Vec<DomNode<Utf16String>>,
+        raw_handle: impl IntoIterator<Item = &'a usize>,
+    ) -> DomNode<Utf16String> {
+        let mut node = DomNode::new_formatting(format, children);
+        let handle =
+            DomHandle::from_raw(raw_handle.into_iter().cloned().collect());
+        node.set_handle(handle);
+        node
+    }
+
+    fn list_item_with_handle<'a>(
+        raw_handle: impl IntoIterator<Item = &'a usize>,
+    ) -> DomNode<Utf16String> {
+        let mut node = DomNode::new_list_item(vec![]);
+        let handle =
+            DomHandle::from_raw(raw_handle.into_iter().cloned().collect());
+        node.set_handle(handle);
+        node
+    }
+
+    fn text_node<S>(content: &str) -> DomNode<S>
+    where
+        S: UnicodeString,
+    {
+        DomNode::new_text(content.into())
     }
 }

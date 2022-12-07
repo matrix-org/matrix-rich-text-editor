@@ -22,13 +22,15 @@ struct WysiwygActionToolbar: View {
     var toolbarAction: (WysiwygAction) -> Void
     @State private var isShowingUrlAlert = false
     @State private var linkAttributedRange = NSRange.zero
-
+    @State private var linkAction: LinkAction?
+    
     var body: some View {
         HStack {
             ForEach(WysiwygAction.allCases) { action in
                 Button {
-                    if action == .link(url: "unset") {
+                    if action == .link {
                         linkAttributedRange = viewModel.attributedContent.selection
+                        linkAction = viewModel.getLinkAction()
                         isShowingUrlAlert = true
                     } else {
                         toolbarAction(action)
@@ -43,14 +45,80 @@ struct WysiwygActionToolbar: View {
                 .accessibilityIdentifier(action.accessibilityIdentifier)
             }
         }
-        .alert(isPresented: $isShowingUrlAlert, AlertConfig(title: "Enter URL", action: { url in
-            guard let url = url else { return }
-            // Note: the selection needs to be restored because of an issue with SwiftUI
-            // integrating multiple UITextField/UITextView breaking selection.
-            viewModel.select(range: linkAttributedRange)
-            let action: WysiwygAction = .link(url: url)
-            toolbarAction(action)
-        }))
+        .alert(isPresented: $isShowingUrlAlert, makeAlertConfig())
         .frame(width: nil, height: 50, alignment: .center)
+    }
+    
+    func makeAlertConfig() -> AlertConfig {
+        var actions: [AlertConfig.Action] = [.cancel(title: "Cancel")]
+        let createLinkTitle = "Create Link"
+        let singleTextAction: ([String]) -> Void = { strings in
+            let urlString = strings[0]
+            viewModel.select(range: linkAttributedRange)
+            viewModel.applyLinkOperation(.setLink(urlString: urlString))
+        }
+        switch linkAction {
+        case .create:
+            actions.append(.textAction(
+                title: "Ok",
+                textFieldsData: [
+                    .init(
+                        accessibilityIdentifier: .linkUrlTextField,
+                        placeholder: "URL",
+                        defaultValue: nil
+                    ),
+                ],
+                action: singleTextAction
+            )
+            )
+            return AlertConfig(title: createLinkTitle, actions: actions)
+        case .createWithText:
+            let doubleTextAction: ([String]) -> Void = { strings in
+                let urlString = strings[0]
+                let text = strings[1]
+                viewModel.select(range: linkAttributedRange)
+                viewModel.applyLinkOperation(.createLink(urlString: urlString, text: text))
+            }
+            actions.append(.textAction(
+                title: "Ok",
+                textFieldsData: [
+                    .init(
+                        accessibilityIdentifier: .linkUrlTextField,
+                        placeholder: "URL",
+                        defaultValue: nil
+                    ),
+                    .init(
+                        accessibilityIdentifier: .linkTextTextField,
+                        placeholder: "Text",
+                        defaultValue: nil
+                    ),
+                ],
+                action: doubleTextAction
+            )
+            )
+            return AlertConfig(title: createLinkTitle, actions: actions)
+        case let .edit(link):
+            let editLinktitle = "Edit Link"
+            actions.append(.textAction(
+                title: "Ok",
+                textFieldsData: [
+                    .init(
+                        accessibilityIdentifier: .linkUrlTextField,
+                        placeholder: "URL",
+                        defaultValue: link
+                    ),
+                ],
+                action: singleTextAction
+            )
+            )
+            let removeAction = {
+                viewModel.select(range: linkAttributedRange)
+                viewModel.applyLinkOperation(.removeLinks)
+            }
+            actions.append(.destructive(title: "Remove", action: removeAction))
+            return AlertConfig(title: editLinktitle, actions: actions)
+        case .none:
+            return AlertConfig(title: "", actions: actions)
+        }
     }
 }

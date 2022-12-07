@@ -15,7 +15,7 @@
 //
 
 /// Describes an action that can be done in the rich text editor.
-public enum WysiwygAction {
+public enum WysiwygAction: Equatable {
     /// Apply bold formatting to the current selection.
     case bold
     /// Apply italic formatting to the current selection.
@@ -26,8 +26,8 @@ public enum WysiwygAction {
     case underline
     /// Apply inline code formatting to the current selection
     case inlineCode
-    /// Create a link at current selection
-    case link(url: String)
+    /// Verifies the possible link action
+    case link
     /// Undo last model operation.
     case undo
     /// Redo latest undone operation.

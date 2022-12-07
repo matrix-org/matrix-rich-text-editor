@@ -123,6 +123,29 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         viewModel.plainTextMode = false
         XCTAssertEqual(viewModel.content.html, "Some bold <strong>text</strong>")
     }
+    
+    func testReplaceTextAfterLinkIsNotAccepted() {
+        viewModel.applyLinkOperation(.createLink(urlString: "https://element.io", text: "test"))
+        let result = viewModel.replaceText(range: .init(location: 4, length: 0), replacementText: "abc")
+        XCTAssertFalse(result)
+        XCTAssertEqual(viewModel.content.html, "<a href=\"https://element.io\">test</a>abc")
+        XCTAssertTrue(viewModel.textView.attributedText.isEqual(to: viewModel.attributedContent.text))
+    }
+    
+    func testReplaceTextPartiallyInsideAndAfterLinkIsNotAccepted() {
+        viewModel.applyLinkOperation(.createLink(urlString: "https://element.io", text: "test"))
+        let result = viewModel.replaceText(range: .init(location: 3, length: 1), replacementText: "abc")
+        XCTAssertFalse(result)
+        XCTAssertEqual(viewModel.content.html, "<a href=\"https://element.io\">tes</a>abc")
+        XCTAssertTrue(viewModel.textView.attributedText.isEqual(to: viewModel.attributedContent.text))
+    }
+    
+    func testReplaceTextInsideLinkIsAccepted() {
+        viewModel.applyLinkOperation(.createLink(urlString: "https://element.io", text: "test"))
+        let result = viewModel.replaceText(range: .init(location: 2, length: 0), replacementText: "abc")
+        XCTAssertTrue(result)
+        XCTAssertEqual(viewModel.content.html, "<a href=\"https://element.io\">teabcst</a>")
+    }
 }
 
 private extension WysiwygComposerViewModelTests {

@@ -31,21 +31,26 @@ where
     handle: DomHandle,
 }
 
-impl<S> LineBreakNode<S>
+impl<S> Default for LineBreakNode<S>
 where
     S: UnicodeString,
 {
-    /// Create a new LineBreakNode
+    /// Create a new default LineBreakNode
     ///
     /// NOTE: Its handle() will be unset until you call set_handle() or
     /// append() it to another node.
-    pub fn new() -> Self {
+    fn default() -> Self {
         Self {
             _phantom_data: PhantomData {},
             handle: DomHandle::new_unset(),
         }
     }
+}
 
+impl<S> LineBreakNode<S>
+where
+    S: UnicodeString,
+{
     pub fn name(&self) -> S {
         "br".into()
     }

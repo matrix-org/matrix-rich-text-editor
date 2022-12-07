@@ -142,6 +142,22 @@ where
             Direction::Backwards => current_offset > 0,
         }
     }
+
+    /// Required due to zero length text node existence
+    pub fn is_empty(&self) -> bool {
+        self.data().len() != 0
+    }
+
+    /// Push content of the given text node into self. If given
+    /// node is empty or a single ZWSP, nothing is pushed.
+    pub(crate) fn push(&mut self, other_node: &TextNode<S>) {
+        let mut text_data = self.data().to_owned();
+        let other_text_data = other_node.data();
+        if !other_text_data.is_empty() && other_text_data != "\u{200B}" {
+            text_data.push(other_text_data.to_owned());
+        }
+        self.set_data(text_data);
+    }
 }
 
 /// Given a character, determine its type
@@ -235,10 +251,13 @@ where
 }
 #[cfg(test)]
 mod test {
+    use widestring::Utf16String;
+
     use crate::char::CharExt;
     use crate::composer_model::delete_text::Direction;
     use crate::dom::nodes::text_node::CharType;
     use crate::tests::testutils_conversion::utf16;
+    use crate::UnicodeString;
 
     use super::{get_char_type, TextNode};
 
@@ -293,5 +312,29 @@ mod test {
         let test_node = TextNode::from(utf16("test"));
         assert!(test_node.offset_is_inside_node(2, &Direction::Forwards));
         assert!(test_node.offset_is_inside_node(2, &Direction::Backwards));
+    }
+
+    #[test]
+    fn pushing_text_node() {
+        let mut t1 = TextNode::from(utf16("abc"));
+        let t2 = TextNode::from(utf16("def"));
+        t1.push(&t2);
+        assert_eq!(t1, TextNode::from(utf16("abcdef")));
+    }
+
+    #[test]
+    fn pushing_empty_text_node_does_nothing() {
+        let mut t1 = TextNode::from(utf16("abc"));
+        let t2 = TextNode::from(utf16(""));
+        t1.push(&t2);
+        assert_eq!(t1, TextNode::from(utf16("abc")));
+    }
+
+    #[test]
+    fn pushing_zwsp_text_node_does_nothing() {
+        let mut t1 = TextNode::from(utf16("abc"));
+        let t2 = TextNode::from(Utf16String::zwsp());
+        t1.push(&t2);
+        assert_eq!(t1, TextNode::from(utf16("abc")));
     }
 }
