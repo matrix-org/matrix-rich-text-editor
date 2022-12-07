@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::composer_model::delete_text::Direction;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::nodes::dom_node::DomNodeKind;
 use std::cmp::Ordering;

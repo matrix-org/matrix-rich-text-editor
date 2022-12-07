@@ -140,8 +140,8 @@ where
             None => ComposerUpdate::keep(),
             Some(arguments) => {
                 // here we have a non-split cursor, a single location, and a textlike node
-                let (location, starting_char_type) = arguments;
-                self.remove_word(starting_char_type, direction, location)
+                let (location, start_type) = arguments;
+                self.remove_word(start_type, direction, location)
             }
         }
     }
@@ -158,17 +158,16 @@ where
         match self.state.dom.lookup_node_mut(&location.node_handle) {
             // we should never be passed a container
             DomNode::Container(_) => ComposerUpdate::keep(),
-            // for a linebreak, remove it if we started the operation from the whitespace
-            // char type, otherwise keep it
             DomNode::LineBreak(_) => {
+                // for a linebreak, remove it if we started the operation from the whitespace
+                // char type, otherwise keep it
                 match start_type {
-                    CharType::Punctuation | CharType::Other => {
-                        ComposerUpdate::keep()
-                    }
-                    CharType::Whitespace | CharType::Linebreak => self
-                        .delete_to_cursor(direction.increment(
+                    CharType::Whitespace => {
+                        self.delete_to_cursor(direction.increment(
                             location.position + location.start_offset,
-                        )),
+                        ))
+                    }
+                    _ => ComposerUpdate::keep(),
                 }
             }
             DomNode::Text(node) => {
@@ -374,6 +373,9 @@ where
 
     /// Given a node, return the type of character adjacent to the cursor offset position
     /// bearing in mind the direction
+    /// TODO this can become a function that lives on a location, extract out then check other util
+    /// methods and delete if not required
+    /// TODO can also remove the linebreak char type as that will not be used at all
     fn get_char_type_from_location(
         &self,
         location: &DomLocation,
@@ -386,8 +388,8 @@ where
                 panic!("hit container in get_details_from_range_and_direction")
             }
             DomNode::LineBreak(_) => {
-                // we have to treat linebreaks as chars, so they have their own CharType
-                Some(CharType::Linebreak)
+                // we have to treat linebreaks as chars, this type fits best
+                Some(CharType::Whitespace)
             }
             DomNode::Text(text_node) => {
                 text_node.char_type_at_offset(location.start_offset, direction)

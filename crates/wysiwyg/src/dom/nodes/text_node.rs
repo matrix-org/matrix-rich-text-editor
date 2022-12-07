@@ -28,7 +28,6 @@ use html_escape;
 #[derive(PartialEq, Eq, Debug)]
 pub enum CharType {
     Whitespace,
-    Linebreak,
     Punctuation,
     Other,
 }
