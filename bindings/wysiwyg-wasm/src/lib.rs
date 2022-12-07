@@ -174,8 +174,16 @@ impl ComposerModel {
         ComposerUpdate::from(self.inner.backspace())
     }
 
+    pub fn backspace_word(&mut self) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.backspace_word())
+    }
+
     pub fn delete(&mut self) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.delete())
+    }
+
+    pub fn delete_word(&mut self) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.delete_word())
     }
 
     pub fn bold(&mut self) -> ComposerUpdate {

@@ -28,7 +28,7 @@ use html_escape;
 #[derive(PartialEq, Eq, Debug)]
 pub enum CharType {
     Whitespace,
-    Linebreak,
+    ZWSP,
     Punctuation,
     Other,
 }
@@ -106,9 +106,9 @@ where
         }
     }
 
-    /// This gets the character at the cursor, considering the
+    /// This gets the character at the cursor offset, considering the
     /// direction of travel
-    pub fn char_at_offset(
+    fn char_at_offset(
         &self,
         offset: usize,
         direction: &Direction,
@@ -118,7 +118,7 @@ where
             .nth(direction.get_index_from_cursor(offset))
     }
 
-    /// This gets the character type at the cursor, considering the
+    /// This gets the character type at the cursor offset, considering the
     /// direction of travel
     pub fn char_type_at_offset(
         &self,
@@ -165,9 +165,10 @@ fn get_char_type(c: char) -> CharType {
     // in order to determine where a ctrl/opt + delete type operation finishes
     // we need to distinguish between whitespace (nb no newline characters), punctuation
     // and then everything else is treated as the same type
-    if c.is_whitespace() || c.is_zwsp() {
-        // manually add zero width space character
+    if c.is_whitespace() {
         CharType::Whitespace
+    } else if c.is_zwsp() {
+        CharType::ZWSP
     } else if c.is_ascii_punctuation() {
         CharType::Punctuation
     } else {
@@ -266,8 +267,11 @@ mod test {
         assert_eq!(get_char_type('\u{0020}'), CharType::Whitespace);
         // no break space
         assert_eq!(get_char_type('\u{00A0}'), CharType::Whitespace);
-        // zero width space
-        assert_eq!(get_char_type(char::zwsp()), CharType::Whitespace);
+    }
+
+    #[test]
+    fn get_char_type_for_zwsp() {
+        assert_eq!(get_char_type(char::zwsp()), CharType::ZWSP);
     }
 
     #[test]

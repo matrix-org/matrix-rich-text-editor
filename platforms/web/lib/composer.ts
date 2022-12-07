@@ -64,8 +64,12 @@ export function processInput(
             return action(composerModel.clear(), 'clear');
         case 'deleteContentBackward':
             return action(composerModel.backspace(), 'backspace');
+        case 'deleteWordBackward':
+            return action(composerModel.backspace_word(), 'backspace_word');
         case 'deleteContentForward':
             return action(composerModel.delete(), 'delete');
+        case 'deleteWordForward':
+            return action(composerModel.delete_word(), 'delete_word');
         case 'deleteByCut':
             return action(composerModel.delete(), 'delete');
         case 'formatBold':

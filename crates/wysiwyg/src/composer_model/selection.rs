@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::composer_model::delete_text::Direction;
 use crate::composer_model::menu_state::MenuStateComputeType;
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
 
@@ -74,19 +73,6 @@ where
     pub fn has_cursor(&self) -> bool {
         let (s, e) = self.safe_selection();
         s == e
-    }
-
-    /// Return a boolean to let us know if we are touching the edge of the DOM
-    /// when moving in a specific direction
-    pub fn selection_touches_start_or_end_of_dom(
-        &self,
-        direction: &Direction,
-    ) -> bool {
-        let (s, e) = self.safe_selection();
-        match direction {
-            Direction::Forwards => e == self.state.dom.text_len(),
-            Direction::Backwards => s == 0,
-        }
     }
 }
 

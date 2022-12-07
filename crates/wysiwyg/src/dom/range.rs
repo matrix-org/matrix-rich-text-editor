@@ -216,6 +216,14 @@ impl Range {
         self.locations.iter().filter(|loc| loc.is_leaf())
     }
 
+    pub fn is_cursor(&self) -> bool {
+        self.start() == self.end()
+    }
+
+    pub fn is_selection(&self) -> bool {
+        self.start() == self.end()
+    }
+
     // TODO: remove all uses of this when we guarantee that Dom is never empty
     pub fn is_empty(&self) -> bool {
         self.locations.is_empty()
