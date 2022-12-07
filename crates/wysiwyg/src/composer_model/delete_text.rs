@@ -167,11 +167,9 @@ where
                 // for a linebreak, remove it if we started the operation from the whitespace
                 // char type, otherwise keep it
                 match start_type {
-                    CharType::Whitespace => {
-                        self.delete_to_cursor(direction.increment(
-                            location.position + location.start_offset,
-                        ))
-                    }
+                    CharType::Whitespace => self.delete_to_cursor(
+                        direction.increment(location.index_in_dom()),
+                    ),
                     _ => ComposerUpdate::keep(),
                 }
             }
