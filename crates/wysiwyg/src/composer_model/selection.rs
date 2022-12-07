@@ -75,19 +75,6 @@ where
         let (s, e) = self.safe_selection();
         s == e
     }
-
-    /// Return a boolean to let us know if we are touching the edge of the DOM
-    /// when moving in a specific direction
-    pub fn selection_touches_start_or_end_of_dom(
-        &self,
-        direction: &Direction,
-    ) -> bool {
-        let (s, e) = self.safe_selection();
-        match direction {
-            Direction::Forwards => e == self.state.dom.text_len(),
-            Direction::Backwards => s == 0,
-        }
-    }
 }
 
 #[cfg(test)]

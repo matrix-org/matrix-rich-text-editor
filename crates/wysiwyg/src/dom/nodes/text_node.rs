@@ -108,7 +108,7 @@ where
 
     /// This gets the character at the cursor offset, considering the
     /// direction of travel
-    pub fn char_at_offset(
+    fn char_at_offset(
         &self,
         offset: usize,
         direction: &Direction,
@@ -141,11 +141,6 @@ where
             Direction::Forwards => current_offset < node_length,
             Direction::Backwards => current_offset > 0,
         }
-    }
-
-    /// Required due to zero length text node existence
-    pub fn is_empty(&self) -> bool {
-        self.data().len() != 0
     }
 }
 
