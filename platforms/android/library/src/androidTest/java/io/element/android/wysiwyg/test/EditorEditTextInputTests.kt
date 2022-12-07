@@ -4,7 +4,6 @@ import android.graphics.Typeface
 import android.text.Editable
 import android.text.style.BulletSpan
 import android.text.style.StyleSpan
-import android.text.style.URLSpan
 import android.view.KeyEvent
 import android.view.View
 import android.widget.EditText
@@ -22,6 +21,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
+import io.element.android.wysiwyg.spans.LinkSpan
 import io.element.android.wysiwyg.spans.OrderedListSpan
 import io.element.android.wysiwyg.test.utils.*
 import io.mockk.confirmVerified
@@ -201,7 +201,7 @@ class EditorEditTextInputTests {
             .perform(ImeActions.setSelection(2, 6))
             .perform(EditorActions.setLink("https://element.io"))
             .check(matches(TextViewMatcher {
-                it.editableText.getSpans<URLSpan>().isNotEmpty()
+                it.editableText.getSpans<LinkSpan>().isNotEmpty()
             }))
     }
 
@@ -212,7 +212,7 @@ class EditorEditTextInputTests {
             .perform(ImeActions.setSelection(2, 2))
             .perform(EditorActions.setLink("https://element.io"))
             .check(matches(TextViewMatcher {
-                it.editableText.getSpans<URLSpan>().isEmpty()
+                it.editableText.getSpans<LinkSpan>().isEmpty()
             }))
     }
 
@@ -224,7 +224,7 @@ class EditorEditTextInputTests {
             .perform(EditorActions.setLink("https://element.io"))
             .perform(EditorActions.removeLink())
             .check(matches(TextViewMatcher {
-                it.editableText.getSpans<URLSpan>().isEmpty()
+                it.editableText.getSpans<LinkSpan>().isEmpty()
             }))
     }
 
@@ -235,7 +235,7 @@ class EditorEditTextInputTests {
             .perform(ImeActions.setSelection(2, 2))
             .perform(EditorActions.insertLink("Element", "https://element.io"))
             .check(matches(TextViewMatcher {
-                it.editableText.getSpans<URLSpan>().isNotEmpty()
+                it.editableText.getSpans<LinkSpan>().isNotEmpty()
             }))
     }
 
@@ -246,7 +246,7 @@ class EditorEditTextInputTests {
             .perform(ImeActions.setSelection(2, 6))
             .perform(EditorActions.insertLink("Element", "https://element.io"))
             .check(matches(TextViewMatcher {
-                it.editableText.getSpans<URLSpan>().isEmpty()
+                it.editableText.getSpans<LinkSpan>().isEmpty()
             }))
     }
 
