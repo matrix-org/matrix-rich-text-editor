@@ -108,6 +108,6 @@ interface LinkAction {
     CreateWithText();
     Create();
     Edit(
-        sequence<u16> link
+        string link
     );
 };
