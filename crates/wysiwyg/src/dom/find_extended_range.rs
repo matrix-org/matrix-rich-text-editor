@@ -66,12 +66,14 @@ where
         let mut offset = location.start_offset;
 
         for node in iter {
-            if node.is_text_node() {
+            if node.is_leaf() {
                 offset += node.text_len();
-            } else if node.is_line_break() {
-                offset += node.text_len();
-                break;
-            } else if node.is_block_node() || node.is_list_item() {
+            }
+
+            if node.is_line_break()
+                || node.is_block_node()
+                || node.is_list_item()
+            {
                 break;
             }
         }
@@ -95,15 +97,16 @@ where
         let mut offset = location.length - location.end_offset;
 
         for node in iter {
-            if node.is_text_node() {
+            if node.is_leaf() {
                 offset += node.text_len();
-                if self.is_last_child_of_list(&node.handle()) {
-                    break;
-                }
-            } else if node.is_line_break() {
-                offset += node.text_len();
-                break;
-            } else if node.is_block_node() || node.is_list_item() {
+            }
+
+            if (node.is_text_node()
+                && self.is_last_child_of_list(&node.handle()))
+                || node.is_line_break()
+                || node.is_block_node()
+                || node.is_list_item()
+            {
                 break;
             }
         }
