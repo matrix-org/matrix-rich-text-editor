@@ -779,6 +779,21 @@ fn html_delete_word_does_not_move_outside_list_item() {
 }
 
 #[test]
+// TODO: remove these tests when implementing list behaviour
+fn html_backspace_word_does_not_change_model() {
+    let mut model = cm("<ol><li>~|</li></ol>");
+    model.backspace_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "<ol><li>~|</li></ol>");
+}
+#[test]
+// TODO: remove these tests when implementing list behaviour
+fn html_delete_word_does_not_change_model() {
+    let mut model = cm("<ol><li>~|</li></ol>");
+    model.delete_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "<ol><li>~|</li></ol>");
+}
+
+#[test]
 #[ignore] // TODO: implement comprehensive list behaviour
 fn html_backspace_word_for_single_empty_list_item() {
     let mut model = cm("<ol><li>~|</li></ol>");

@@ -141,6 +141,13 @@ where
             Some(arguments) => {
                 // here we have a non-split cursor, a single location, and a textlike node
                 let (location, start_type) = arguments;
+
+                // if the first type is a zwsp, we are dealing with empty list items
+                if start_type == CharType::ZWSP {
+                    // TODO implement list behaviour
+                    return ComposerUpdate::keep();
+                }
+
                 self.remove_word(start_type, direction, location)
             }
         }
@@ -220,11 +227,6 @@ where
                 } else {
                     // if we have stopped at the edge of the node, first do the required deletion
                     self.delete_to_cursor(current_position);
-
-                    // if we have reached the end of a list item, stop
-                    if location.position_is_end_of_list_item(current_position) {
-                        return ComposerUpdate::keep();
-                    }
 
                     // otherwise, make a recursive call to continue to the next node
                     let _args = self.get_remove_word_arguments(&direction);
