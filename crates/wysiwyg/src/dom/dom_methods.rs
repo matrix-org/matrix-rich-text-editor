@@ -222,7 +222,7 @@ where
         } else if let Some(first_leave) = range.leaves().next() {
             if let Some(ancestor_handle) = self
                 .find_first_non_matching_ancestor_in(
-                    deleted_handles.clone(),
+                    &deleted_handles,
                     &first_leave.node_handle,
                 )
             {
@@ -235,11 +235,11 @@ where
 
     fn find_first_non_matching_ancestor_in(
         &self,
-        list: Vec<DomHandle>,
+        list: &Vec<DomHandle>,
         node_handle: &DomHandle,
     ) -> Option<DomHandle> {
         fn parent_handle_in_list(
-            list: Vec<DomHandle>,
+            list: &Vec<DomHandle>,
             handle: &DomHandle,
         ) -> Option<DomHandle> {
             if handle.has_parent() {
