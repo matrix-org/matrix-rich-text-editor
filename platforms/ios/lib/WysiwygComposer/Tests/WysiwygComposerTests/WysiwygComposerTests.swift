@@ -155,7 +155,7 @@ final class WysiwygComposerTests: XCTestCase {
         _ = composer.replaceText(newText: "test")
         _ = composer.select(startUtf16Codeunit: 0, endUtf16Codeunit: 4)
         let action = composer.getLinkAction()
-        XCTAssert(action == .create)
+        XCTAssertEqual(action, .create)
     }
     
     func testEditLinkAction() {
