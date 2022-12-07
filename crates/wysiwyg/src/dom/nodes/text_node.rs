@@ -28,6 +28,7 @@ use html_escape;
 #[derive(PartialEq, Eq, Debug)]
 pub enum CharType {
     Whitespace,
+    ZWSP,
     Punctuation,
     Other,
 }
@@ -105,7 +106,7 @@ where
         }
     }
 
-    /// This gets the character at the cursor, considering the
+    /// This gets the character at the cursor offset, considering the
     /// direction of travel
     pub fn char_at_offset(
         &self,
@@ -117,7 +118,7 @@ where
             .nth(direction.get_index_from_cursor(offset))
     }
 
-    /// This gets the character type at the cursor, considering the
+    /// This gets the character type at the cursor offset, considering the
     /// direction of travel
     pub fn char_type_at_offset(
         &self,
@@ -153,9 +154,10 @@ fn get_char_type(c: char) -> CharType {
     // in order to determine where a ctrl/opt + delete type operation finishes
     // we need to distinguish between whitespace (nb no newline characters), punctuation
     // and then everything else is treated as the same type
-    if c.is_whitespace() || c.is_zwsp() {
-        // manually add zero width space character
+    if c.is_whitespace() {
         CharType::Whitespace
+    } else if c.is_zwsp() {
+        CharType::ZWSP
     } else if c.is_ascii_punctuation() {
         CharType::Punctuation
     } else {

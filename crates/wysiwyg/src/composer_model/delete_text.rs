@@ -172,11 +172,6 @@ where
             }
             DomNode::Text(node) => {
                 let mut current_offset = location.start_offset;
-
-                // TODO this could be tidied up by making text_node able to
-                // generate a directional iterator from a given offset
-                // We use unwrap here because we are only ever calling it when
-                // definitely inside a text node
                 let mut current_type = node
                     .char_type_at_offset(current_offset, &direction)
                     .unwrap();
@@ -255,7 +250,7 @@ where
 
     /// In order for the recursive calls to work we need quite a few details
     /// from the cursor location, this gets those details and returns them
-    /// as a tuple. Likely this can be replaced by DOM iteration methods
+    /// as a tuple.
     fn get_remove_word_arguments<'a>(
         &'a mut self,
         direction: &Direction,
@@ -268,11 +263,11 @@ where
             return None;
         }
 
-        match range
+        let selected_location = range
             .locations
             .iter()
             .find(|loc| {
-                // do not include the location if it is at the bad end of the dom
+                // do not include the location if it is at the wrong end of the dom
                 let exclude_due_to_end_of_dom = match direction {
                     Direction::Forwards => e == dom_length,
                     Direction::Backwards => s == 0,
@@ -290,17 +285,41 @@ where
                 return !exclude_due_to_end_of_dom
                     && (inside_location || is_correct_boundary_location);
             })
-            .cloned()
-        {
+            .cloned();
+
+        match selected_location {
             None => None,
             Some(location) => {
                 let char_type =
                     self.get_char_type_from_location(&location, direction);
 
-                return match char_type {
+                match char_type {
                     None => None,
                     Some(char_type) => Some((location, char_type)),
-                };
+                }
+            }
+        }
+    }
+
+    /// Given a location, return the type of character adjacent to the cursor offset position
+    /// bearing in mind the direction
+    fn get_char_type_from_location(
+        &self,
+        location: &DomLocation,
+        direction: &Direction,
+    ) -> Option<CharType> {
+        let node = self.state.dom.lookup_node(&location.node_handle);
+        match node {
+            DomNode::Container(_) => {
+                // we should never get a container type
+                panic!("hit container in get_details_from_range_and_direction")
+            }
+            DomNode::LineBreak(_) => {
+                // we have to treat linebreaks as chars, this type fits best
+                Some(CharType::Whitespace)
+            }
+            DomNode::Text(text_node) => {
+                text_node.char_type_at_offset(location.start_offset, direction)
             }
         }
     }
@@ -371,31 +390,6 @@ where
         self.do_replace_text(S::default())
     }
 
-    /// Given a node, return the type of character adjacent to the cursor offset position
-    /// bearing in mind the direction
-    /// TODO this can become a function that lives on a location, extract out then check other util
-    /// methods and delete if not required
-    /// TODO can also remove the linebreak char type as that will not be used at all
-    fn get_char_type_from_location(
-        &self,
-        location: &DomLocation,
-        direction: &Direction,
-    ) -> Option<CharType> {
-        let node = self.state.dom.lookup_node(&location.node_handle);
-        match node {
-            DomNode::Container(_) => {
-                // we should never get a container type!
-                panic!("hit container in get_details_from_range_and_direction")
-            }
-            DomNode::LineBreak(_) => {
-                // we have to treat linebreaks as chars, this type fits best
-                Some(CharType::Whitespace)
-            }
-            DomNode::Text(text_node) => {
-                text_node.char_type_at_offset(location.start_offset, direction)
-            }
-        }
-    }
     /// Returns the currently selected TextNode if it's the only leaf node and the cursor is inside
     /// its range.
     fn get_selected_text_node(&self) -> Option<(&TextNode<S>, DomLocation)> {

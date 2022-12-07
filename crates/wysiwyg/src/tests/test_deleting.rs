@@ -759,21 +759,21 @@ fn html_delete_word_inside_list_item() {
 }
 
 // TODO
-// #[test]
-// fn html_backspace_word_does_not_move_outside_list_item() {
-//     let mut model = cm("<ol><li>1</li><li>12|</li><li>123</li></ol>");
-//     model.backspace_word();
-//     assert_eq!(
-//         restore_whitespace(&tx(&model)),
-//         "<ol><li>1|</li><li></li><li>123</li></ol>"
-//     );
-// }
-// #[test]
-// fn html_delete_word_does_not_move_outside_list_item() {
-//     let mut model = cm("<ol><li>1</li><li>|12</li><li>123</li></ol>");
-//     model.delete_word();
-//     assert_eq!(
-//         restore_whitespace(&tx(&model)),
-//         "<ol><li>1|</li><li></li><li>123</li></ol>"
-//     );
-// }
+#[test]
+fn html_backspace_word_does_not_move_outside_list_item() {
+    let mut model = cm("<ol><li>1</li><li>12|</li><li>123</li></ol>");
+    model.backspace_word();
+    assert_eq!(
+        restore_whitespace(&tx(&model)),
+        "<ol><li>1|</li><li></li><li>123</li></ol>"
+    );
+}
+#[test]
+fn html_delete_word_does_not_move_outside_list_item() {
+    let mut model = cm("<ol><li>1</li><li>|12</li><li>123</li></ol>");
+    model.delete_word();
+    assert_eq!(
+        restore_whitespace(&tx(&model)),
+        "<ol><li>1|</li><li></li><li>123</li></ol>"
+    );
+}
