@@ -228,7 +228,6 @@ fn deleting_in_nested_structure_and_format_nodes_works() {
 }
 
 #[test]
-#[ignore] // TODO: fix this test once this deletion works
 fn deleting_empty_list_item() {
     let mut model = cm("<ul><li>A{</li><li>~}|</li></ul>");
     model.backspace();
@@ -749,13 +748,14 @@ fn html_backspace_word_into_deep_nesting() {
     let mut model = cm("<em>remains <em>all<em>of<em>the<em>rest</em>goes</em>away</em>x</em>y|</em>");
     model.backspace_word();
     assert_eq!(restore_whitespace(&tx(&model)), "<em>remains |</em>");
+    model.state.dom.explicitly_assert_invariants();
 }
 #[test]
-#[ignore] // TODO: fix this invariant failure
 fn html_delete_word_into_deep_nesting() {
     let mut model = cm("<em>remains |<em>all<em>of<em>the<em>rest</em>goes</em>away</em>x</em>y</em>");
     model.delete_word();
-    assert_eq!(restore_whitespace(&tx(&model)), "<em>remains |<em><em>");
+    assert_eq!(restore_whitespace(&tx(&model)), "<em>remains |</em>");
+    model.state.dom.explicitly_assert_invariants();
 }
 
 #[test]
@@ -764,6 +764,7 @@ fn html_backspace_word_out_of_deep_nesting() {
         cm("<em><em>stop <em><em><em>removethis|</em></em></em></em></em>");
     model.backspace_word();
     assert_eq!(restore_whitespace(&tx(&model)), "<em><em>stop |</em></em>");
+    model.state.dom.explicitly_assert_invariants();
 }
 #[test]
 fn html_delete_word_out_of_deep_nesting() {
@@ -771,6 +772,7 @@ fn html_delete_word_out_of_deep_nesting() {
         cm("<em><em><em><em><em>|removethis</em></em></em> stop</em></em>");
     model.delete_word();
     assert_eq!(restore_whitespace(&tx(&model)), "<em><em>| stop</em></em>");
+    model.state.dom.explicitly_assert_invariants();
 }
 
 #[test]
