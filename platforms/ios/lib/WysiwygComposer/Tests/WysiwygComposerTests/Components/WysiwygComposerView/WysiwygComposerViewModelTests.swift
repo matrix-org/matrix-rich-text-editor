@@ -127,7 +127,7 @@ final class WysiwygComposerViewModelTests: XCTestCase {
     func testReplaceTextAfterLinkIsNotAccepted() {
         viewModel.applyLinkOperation(.createLink(urlString: "https://element.io", text: "test"))
         let result = viewModel.replaceText(range: .init(location: 4, length: 0), replacementText: "abc")
-        XCTAssert(result == false)
+        XCTAssertFalse(result)
         XCTAssertEqual(viewModel.content.html, "<a href=\"https://element.io\">test</a>abc")
         XCTAssertTrue(viewModel.textView.attributedText.isEqual(to: viewModel.attributedContent.text))
     }
