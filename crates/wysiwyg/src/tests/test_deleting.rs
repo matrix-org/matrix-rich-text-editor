@@ -304,6 +304,7 @@ fn deleting_initial_text_node_removes_it_completely_without_crashing() {
     let mut model = cm("abc<br />def<br />gh|");
     model.delete_in(4, 10);
     assert_eq!(tx(&model), "abc<br />|",);
+    model.state.dom.explicitly_assert_invariants();
 }
 
 #[test]
@@ -311,6 +312,7 @@ fn deleting_initial_text_node_via_selection_removes_it_completely() {
     let mut model = cm("abc<br />{def<br />gh}|");
     model.delete();
     assert_eq!(tx(&model), "abc<br />|",);
+    model.state.dom.explicitly_assert_invariants();
 }
 
 #[test]
@@ -318,6 +320,7 @@ fn deleting_all_initial_text_and_merging_later_text_produces_one_text_node() {
     let mut model = cm("abc<br />{def<br />gh}|ijk");
     model.delete();
     assert_eq!(tx(&model), "abc<br />|ijk",);
+    model.state.dom.explicitly_assert_invariants();
 }
 
 #[test]
@@ -325,6 +328,7 @@ fn deleting_all_initial_text_within_a_tag_preserves_the_tag() {
     let mut model = cm("abc<br /><strong>{def<br />gh}|ijk</strong>");
     model.delete();
     assert_eq!(tx(&model), "abc<br />|<strong>ijk</strong>",);
+    model.state.dom.explicitly_assert_invariants();
 }
 
 #[test]
@@ -332,6 +336,7 @@ fn deleting_all_text_within_a_tag_deletes_the_tag() {
     let mut model = cm("abc<br /><strong>{def<br />gh}|</strong>ijk");
     model.delete();
     assert_eq!(tx(&model), "abc<br />|ijk",);
+    model.state.dom.explicitly_assert_invariants();
 }
 
 #[test]
@@ -339,6 +344,7 @@ fn deleting_last_character_in_a_container() {
     let mut model = cm("<b>t|</b>");
     model.backspace();
     assert_eq!(tx(&model), "|");
+    model.state.dom.explicitly_assert_invariants();
 }
 
 #[test]
@@ -346,6 +352,7 @@ fn deleting_selection_in_a_container() {
     let mut model = cm("<b>{test}|</b>");
     model.backspace();
     assert_eq!(tx(&model), "|");
+    model.state.dom.explicitly_assert_invariants();
 }
 
 #[test]
@@ -353,6 +360,7 @@ fn deleting_selection_in_multiple_containers() {
     let mut model = cm("<i><b>{test}|</b></i>");
     model.backspace();
     assert_eq!(tx(&model), "|");
+    model.state.dom.explicitly_assert_invariants();
 }
 
 #[test]
@@ -360,6 +368,7 @@ fn deleting_selection_of_a_container_in_multiple_containers() {
     let mut model = cm("<i><b>{test}|</b> test</i>");
     model.backspace();
     assert_eq!(tx(&model), "<i>| test</i>");
+    model.state.dom.explicitly_assert_invariants();
 }
 
 #[test]
@@ -367,6 +376,7 @@ fn deleting_selection_of_a_container_with_text_node_neighbors() {
     let mut model = cm("<em>abc<del>{def}|</del>ghi</em>");
     model.backspace();
     assert_eq!(tx(&model), "<em>abc|ghi</em>");
+    model.state.dom.explicitly_assert_invariants();
 }
 
 #[test]
@@ -376,4 +386,5 @@ fn deleting_selection_of_a_container_with_matching_neighbors() {
     );
     model.backspace();
     assert_eq!(tx(&model), "<em><strong>abc|ghi</strong></em>");
+    model.state.dom.explicitly_assert_invariants();
 }
