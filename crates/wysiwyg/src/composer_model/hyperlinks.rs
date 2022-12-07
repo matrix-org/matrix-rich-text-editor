@@ -103,7 +103,8 @@ where
         let mut has_found_link = false;
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
-        for loc in range.locations {
+        let iter = range.locations.into_iter().rev();
+        for loc in iter {
             if loc.kind == DomNodeKind::Link {
                 if !has_found_link {
                     has_found_link = true;

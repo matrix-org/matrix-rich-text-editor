@@ -36,7 +36,7 @@ where
     handle: DomHandle,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ContainerNodeKind<S>
 where
     S: UnicodeString,
@@ -316,6 +316,24 @@ where
         };
         Some(link)
     }
+
+    /// Push content of the given container node into self. Panics
+    /// if given container node is not of the same kind.
+    pub(crate) fn push(&mut self, other_node: &mut ContainerNode<S>) {
+        if other_node.kind != self.kind {
+            panic!("Trying to push a non-matching container kind");
+        }
+        let last_child = self.children.last().unwrap();
+        let other_node_first_child = other_node.get_child(0).unwrap();
+        if last_child.can_push(other_node_first_child) {
+            let mut next_child = other_node.remove_child(0);
+            self.last_child_mut().unwrap().push(&mut next_child);
+        }
+        while !other_node.children().is_empty() {
+            let child = other_node.remove_child(0);
+            self.append_child(child);
+        }
+    }
 }
 
 impl<S> ToHtml<S> for ContainerNode<S>
@@ -504,7 +522,7 @@ where
             // trend to avoid unexpected behaviours for our users.
 
             buffer.push("*");
-            fmt_children(this, buffer, &options)?;
+            fmt_children(this, buffer, options)?;
             buffer.push("*");
 
             Ok(())
@@ -530,7 +548,7 @@ where
             // there. Instead, it will produce `*__…__*`.
 
             buffer.push("__");
-            fmt_children(this, buffer, &options)?;
+            fmt_children(this, buffer, options)?;
             buffer.push("__");
 
             Ok(())
@@ -552,7 +570,7 @@ where
             // do not support this format extension.
 
             buffer.push("~~");
-            fmt_children(this, buffer, &options)?;
+            fmt_children(this, buffer, options)?;
             buffer.push("~~");
 
             Ok(())
@@ -571,7 +589,7 @@ where
             // use raw HTML.
 
             buffer.push("<u>");
-            fmt_children(this, buffer, &options)?;
+            fmt_children(this, buffer, options)?;
             buffer.push("</u>");
 
             Ok(())
@@ -601,7 +619,7 @@ where
             buffer.push("`` ");
 
             options.insert(MarkdownOptions::IGNORE_LINE_BREAK);
-            fmt_children(this, buffer, &options)?;
+            fmt_children(this, buffer, options)?;
 
             buffer.push(" ``");
 
@@ -620,7 +638,7 @@ where
         {
             buffer.push('[');
 
-            fmt_children(this, buffer, &options)?;
+            fmt_children(this, buffer, options)?;
 
             // A link destination can be delimited by `<` and
             // `>`.
@@ -733,7 +751,7 @@ where
                 {
                     // Let's create a new buffer for the child formatting.
                     let mut child_buffer = S::default();
-                    child.fmt_markdown(&mut child_buffer, &options)?;
+                    child.fmt_markdown(&mut child_buffer, options)?;
 
                     // Generate the indentation of form `\n` followed by
                     // $x$ spaces where $x$ is `indentation`.
@@ -776,7 +794,7 @@ where
         where
             S: UnicodeString,
         {
-            fmt_children(this, buffer, &options)?;
+            fmt_children(this, buffer, options)?;
 
             Ok(())
         }
@@ -877,6 +895,38 @@ mod test {
         assert_eq!(text_node2.handle().raw(), &[4, 5, 4, 4]);
     }
 
+    #[test]
+    fn pushing_container_of_same_kind() {
+        let mut c1 =
+            format_container_with_handle(InlineFormatType::Bold, &[0, 0]);
+        c1.append_child(text_node("abc"));
+        let mut c2 =
+            format_container_with_handle(InlineFormatType::Bold, &[0, 1]);
+        c2.append_child(text_node("def"));
+        c2.append_child(DomNode::new_line_break());
+        c1.push(&mut c2);
+        assert!(c2.children().is_empty());
+
+        let mut expected =
+            format_container_with_handle(InlineFormatType::Bold, &[0, 0]);
+        expected.append_child(text_node("abcdef"));
+        expected.append_child(DomNode::new_line_break());
+
+        assert_eq!(c1, expected)
+    }
+
+    #[test]
+    #[should_panic]
+    fn pushing_container_of_different_kind_panics() {
+        let mut c1 =
+            format_container_with_handle(InlineFormatType::Bold, &[0, 0]);
+        c1.append_child(text_node("abc"));
+        let mut c2 =
+            format_container_with_handle(InlineFormatType::Italic, &[0, 1]);
+        c2.append_child(text_node("def"));
+        c1.push(&mut c2);
+    }
+
     fn container_with_handle<'a>(
         raw_handle: impl IntoIterator<Item = &'a usize>,
     ) -> ContainerNode<Utf16String> {
@@ -886,6 +936,17 @@ mod test {
             None,
             Vec::new(),
         );
+        let handle =
+            DomHandle::from_raw(raw_handle.into_iter().cloned().collect());
+        node.set_handle(handle);
+        node
+    }
+
+    fn format_container_with_handle<'a>(
+        format: InlineFormatType,
+        raw_handle: impl IntoIterator<Item = &'a usize>,
+    ) -> ContainerNode<Utf16String> {
+        let mut node = ContainerNode::new_formatting(format, vec![]);
         let handle =
             DomHandle::from_raw(raw_handle.into_iter().cloned().collect());
         node.set_handle(handle);
