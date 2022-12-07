@@ -198,43 +198,34 @@ where
 
                 // determine our current position in the dom
                 let current_position = location.position + current_offset;
+                let offset_is_inside_node =
+                    node.offset_is_inside_node(current_offset, &direction);
 
-                if node.offset_is_inside_node(current_offset, &direction) {
-                    // if we have stopped inside the node, first do the required deletion
-                    self.delete_to_cursor(current_position);
+                // delete to the cursor
+                self.delete_to_cursor(current_position);
 
-                    // if we didn't start this removal at whitespace, stop
-                    if start_type != CharType::Whitespace {
-                        return ComposerUpdate::keep();
-                    }
+                // if we have stopped inside the node and we didn't start at whitespace, stop
+                if offset_is_inside_node && start_type != CharType::Whitespace {
+                    return ComposerUpdate::keep();
+                }
 
-                    // if we did start with whitespace, get the next set of arguments and make the recursive call
-                    let _args = self.get_remove_word_arguments(&direction);
-                    match _args {
-                        None => ComposerUpdate::keep(),
-                        Some(arguments) => {
-                            let (location, next_type) = arguments;
-                            self.remove_word(
-                                // pass it the new type to remove
-                                next_type, direction, location,
-                            )
-                        }
-                    }
-                } else {
-                    // if we have stopped at the edge of the node, first do the required deletion
-                    self.delete_to_cursor(current_position);
+                // otherwise make a recursive call
+                let next_args = self.get_remove_word_arguments(&direction);
+                match next_args {
+                    None => ComposerUpdate::keep(),
+                    Some(args) => {
+                        let (location, next_type) = args;
+                        let type_argument = if offset_is_inside_node {
+                            // where we finished inside the node, get the next type when we
+                            // are making a recursive call after having removed whitespace
+                            next_type
+                        } else {
+                            // if we hit the edge of the node, we need to make the next call
+                            // with the same initial starting type
+                            start_type
+                        };
 
-                    // otherwise, make a recursive call to continue to the next node
-                    let _args = self.get_remove_word_arguments(&direction);
-                    match _args {
-                        None => ComposerUpdate::keep(),
-                        Some(details) => {
-                            let (_location, _) = details;
-                            self.remove_word(
-                                // use the original start type from the previous call
-                                start_type, direction, _location,
-                            )
-                        }
+                        self.remove_word(type_argument, direction, location)
                     }
                 }
             }
@@ -275,21 +266,16 @@ where
 
                 // find the first location that we are inside, or if we're at a boundary,
                 // choose based on direction
-                return !exclude_due_to_end_of_dom
-                    && (inside_location || is_correct_boundary_location);
+                !exclude_due_to_end_of_dom
+                    && (inside_location || is_correct_boundary_location)
             })
             .cloned();
-
         match selected_location {
             None => None,
             Some(location) => {
                 let char_type =
                     self.get_char_type_from_location(&location, direction);
-
-                match char_type {
-                    None => None,
-                    Some(char_type) => Some((location, char_type)),
-                }
+                char_type.map(|char_type| (location, char_type))
             }
         }
     }
@@ -305,7 +291,7 @@ where
         match node {
             DomNode::Container(_) => {
                 // we should never get a container type
-                panic!("hit container in get_details_from_range_and_direction")
+                panic!("get_char_type_from_location")
             }
             DomNode::LineBreak(_) => {
                 // we have to treat linebreaks as chars, this type fits best
