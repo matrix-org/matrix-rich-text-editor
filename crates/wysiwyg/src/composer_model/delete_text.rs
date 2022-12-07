@@ -135,8 +135,8 @@ where
             return self.delete_selection();
         }
 
-        let inital_arguments = self.get_remove_word_arguments(&direction);
-        match inital_arguments {
+        let args = self.get_remove_word_arguments(&direction);
+        match args {
             None => ComposerUpdate::keep(),
             Some(arguments) => {
                 // here we have a non-split cursor, a single location, and a textlike node
@@ -171,6 +171,7 @@ where
                 }
             }
             DomNode::Text(node) => {
+                // we are guaranteed to get valid chars here, so can use unwrap
                 let mut current_offset = location.start_offset;
                 let mut current_type = node
                     .char_type_at_offset(current_offset, &direction)
@@ -192,10 +193,9 @@ where
                     current_type = next_type;
                 }
 
-                // we have two scenarios here, we have either stopped looping due to a change of type
-                // inside the text node, or we have reached the edge of the text node
-
+                // determine our current position in the dom
                 let current_position = location.position + current_offset;
+
                 if node.offset_is_inside_node(current_offset, &direction) {
                     // if we have stopped inside the node, first do the required deletion
                     self.delete_to_cursor(current_position);
@@ -205,41 +205,36 @@ where
                         return ComposerUpdate::keep();
                     }
 
-                    // otherwise, get the next set of arguments and make the recursive call
-                    let next_arguments =
-                        self.get_remove_word_arguments(&direction);
-                    return match next_arguments {
+                    // if we did start with whitespace, get the next set of arguments and make the recursive call
+                    let _args = self.get_remove_word_arguments(&direction);
+                    return match _args {
                         None => ComposerUpdate::keep(),
                         Some(arguments) => {
-                            let (loc, next_type) = arguments;
+                            let (location, next_type) = arguments;
                             self.remove_word(
-                                next_type, // pass it the new type to remove
-                                direction, loc,
+                                // pass it the new type to remove
+                                next_type, direction, location,
                             )
                         }
                     };
                 } else {
-                    // firstly do the deletion
+                    // if we have stopped at the edge of the node, first do the required deletion
                     self.delete_to_cursor(current_position);
 
-                    // then if we have reached the end of the dom or the end of a list, stop
-                    if self.selection_touches_start_or_end_of_dom(&direction)
-                        || location
-                            .position_is_end_of_list_item(current_position)
-                    {
+                    // if we have reached the end of a list item, stop
+                    if location.position_is_end_of_list_item(current_position) {
                         return ComposerUpdate::keep();
                     }
 
                     // otherwise, make a recursive call to continue to the next node
-                    let next_arguments =
-                        self.get_remove_word_arguments(&direction);
-                    return match next_arguments {
+                    let _args = self.get_remove_word_arguments(&direction);
+                    return match _args {
                         None => ComposerUpdate::keep(),
                         Some(details) => {
                             let (_location, _) = details;
                             self.remove_word(
-                                start_type, // use the original first type from the remove_word call
-                                direction, _location,
+                                // use the original start type from the previous call
+                                start_type, direction, _location,
                             )
                         }
                     };
