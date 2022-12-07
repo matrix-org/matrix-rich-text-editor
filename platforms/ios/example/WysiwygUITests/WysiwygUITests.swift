@@ -153,14 +153,10 @@ class WysiwygUITests: XCTestCase {
         textField(.linkTextTextField).tap()
         textField(.linkTextTextField).typeTextCharByChar("text")
         app.buttons["Ok"].tap()
-        button(.showTreeButton).tap()
-        XCTAssertEqual(
-            staticText(.treeText).label,
+        assertTreeContent(
             """
-            
             └>a "url"
               └>"text"
-            
             """
         )
         
@@ -170,14 +166,10 @@ class WysiwygUITests: XCTestCase {
         textField(.linkUrlTextField).doubleTap()
         textField(.linkUrlTextField).typeTextCharByChar("new_url")
         app.buttons["Ok"].tap()
-        button(.showTreeButton).tap()
-        XCTAssertEqual(
-            staticText(.treeText).label,
+        assertTreeContent(
             """
-            
             └>a "new_url"
               └>"text"
-            
             """
         )
         
@@ -185,41 +177,30 @@ class WysiwygUITests: XCTestCase {
         button(.linkButton).tap()
         XCTAssertFalse(textField(.linkTextTextField).exists)
         app.buttons["Remove"].tap()
-        button(.showTreeButton).tap()
-        XCTAssertEqual(
-            staticText(.treeText).label,
+        assertTreeContent(
             """
-            
             └>"text"
-            
             """
         )
     }
     
     func testCreateLinkFromSelection() {
         textView.typeTextCharByChar("text")
-        button(.showTreeButton).tap()
-        XCTAssertEqual(
-            staticText(.treeText).label,
+        assertTreeContent(
             """
-            
             └>"text"
-            
             """
         )
+        
         textView.doubleTap()
         button(.linkButton).tap()
         XCTAssertFalse(textField(.linkTextTextField).exists)
         textField(.linkUrlTextField).typeTextCharByChar("url")
         app.buttons["Ok"].tap()
-        button(.showTreeButton).tap()
-        XCTAssertEqual(
-            staticText(.treeText).label,
+        assertTreeContent(
             """
-            
             └>a "url"
               └>"text"
-            
             """
         )
     }
@@ -276,6 +257,14 @@ private extension WysiwygUITests {
     /// - Returns: raw string value
     func rawIdentifier(_ id: WysiwygSharedAccessibilityIdentifier) -> String {
         id.rawValue
+    }
+    
+    /// Shows or updates the current tree content of the text view and checks if is equal to provided content
+    ///
+    /// - Parameter content: the tree content to assert, must be provided without newlines at the start and at the end.
+    func assertTreeContent(_ content: String) {
+        button(.showTreeButton).tap()
+        XCTAssertEqual(staticText(.treeText).label, "\n\(content)\n")
     }
 }
 
