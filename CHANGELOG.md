@@ -1,5 +1,25 @@
 # Changelog
 
+# [0.10.0] - 2022-12-08
+
+### Added
+
+* Common: Add extension to character to create ZWSP easily
+* Common: Add 'remove word' functionality
+* Common: Extended selection/range for DOM
+* Common: Add DOM handle depth helper
+* iOS: Add links implementation in the example app for testing
+* Android: Add link APIs
+
+### Changed
+
+* Common: Change link interface to use string
+
+### Fixed
+
+* Common: Make `find_range_by` work symmetrically
+* Common: Lookup and join ancestor on join nodes
+
 # [0.9.0] - 2022-12-06
 
 ### Added
