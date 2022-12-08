@@ -116,6 +116,20 @@ where
         matches!(self, DomNode::Text(_))
     }
 
+    /// Returns `true` if the dom node is [`LineBreak`].
+    ///
+    /// [`LineBreak`]: DomNode::LineBreak
+    #[must_use]
+    pub fn is_line_break(&self) -> bool {
+        matches!(self, Self::LineBreak(..))
+    }
+
+    /// Returns `true` if thie dom node is not a container i.e. a text node or
+    /// a text-like node like a line break.
+    pub fn is_leaf(&self) -> bool {
+        self.is_text_node() || self.is_line_break()
+    }
+
     pub fn is_structure_node(&self) -> bool {
         matches!(self, DomNode::Container(n) if n.is_structure_node())
     }
@@ -156,14 +170,6 @@ where
     #[allow(dead_code)]
     pub(crate) fn is_list(&self) -> bool {
         matches!(self, Self::Container(container) if container.is_list())
-    }
-
-    /// Returns `true` if the dom node is [`LineBreak`].
-    ///
-    /// [`LineBreak`]: DomNode::LineBreak
-    #[must_use]
-    pub fn is_line_break(&self) -> bool {
-        matches!(self, Self::LineBreak(..))
     }
 
     pub(crate) fn as_text(&self) -> Option<&TextNode<S>> {
