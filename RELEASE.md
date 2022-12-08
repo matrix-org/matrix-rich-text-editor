@@ -12,7 +12,7 @@ It can't be anything that has been pushed to any package repo before.
 
 ## 2. Add a changelog entry
 
-Currently this is stored in platforms/web/CHANGELOG.md.
+Currently this is stored in [CHANGELOG.md](CHANGELOG.md).
 
 TODO: store the canonical version in the project root, and copy it to there
 so the NPM packaging can find it.
