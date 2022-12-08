@@ -51,6 +51,12 @@ impl DomHandle {
         self.raw().is_empty()
     }
 
+    /// Returns the depth of the handle.
+    /// Panics if this handle is unset.  
+    pub fn depth(&self) -> usize {
+        self.path.as_ref().expect("Handle is unset!").len()
+    }
+
     /// Return the handle of this node's parent, or None if this is the
     /// root node.
     /// Panics if this handle is unset
@@ -74,13 +80,13 @@ impl DomHandle {
         DomHandle::from_raw(new_path)
     }
 
-    /// Returns a DomHandle with the 'sub-path' up to the passed 'level'.
-    /// i.e.: a DomHandle with path `[0, 1, 2, 3]` with `at_level(2)` will return a DomHandle
+    /// Returns a DomHandle with the 'sub-path' up to the passed 'depth'.
+    /// i.e.: a DomHandle with path `[0, 1, 2, 3]` with `at_depth(2)` will return a DomHandle
     /// with path `[0, 1, 2]`.
-    pub fn sub_handle_up_to(&self, level: usize) -> DomHandle {
+    pub fn sub_handle_up_to(&self, depth: usize) -> DomHandle {
         assert!(&self.path.is_some());
         let path = self.path.clone().unwrap();
-        let (new_path, _) = path.split_at(level);
+        let (new_path, _) = path.split_at(depth);
         DomHandle::from_raw(new_path.to_vec())
     }
 
@@ -143,5 +149,109 @@ impl DomHandle {
         let mut new_path = self.path.as_ref().unwrap().clone();
         new_path.splice(0..old.raw().len(), new.into_raw());
         self.path = Some(new_path.clone());
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::DomHandle;
+
+    #[test]
+    fn creating_root_handle() {
+        let root = DomHandle::root();
+        assert!(root.is_root());
+        assert!(!root.is_parent_of(&DomHandle::root()));
+        assert!(root.is_parent_of(&DomHandle::from_raw(vec![0, 1, 2])));
+    }
+
+    #[test]
+    #[should_panic]
+    fn lookup_parent_of_root_panics() {
+        DomHandle::root().parent_handle();
+    }
+
+    #[test]
+    #[should_panic]
+    fn computing_sibling_of_root_panics() {
+        DomHandle::root().next_sibling();
+    }
+
+    #[test]
+    fn computing_handle_depth() {
+        assert_eq!(DomHandle::root().depth(), 0);
+        assert_eq!(DomHandle::from_raw(vec![0]).depth(), 1);
+        assert_eq!(DomHandle::from_raw(vec![0, 1, 2]).depth(), 3);
+    }
+
+    #[test]
+    #[should_panic]
+    fn computing_unset_handle_depth_panics() {
+        DomHandle::new_unset().depth();
+    }
+
+    #[test]
+    fn computing_parent_handle() {
+        let handle = DomHandle::from_raw(vec![0, 1, 2]);
+        assert!(handle.has_parent());
+        assert_eq!(handle.index_in_parent(), 2);
+        assert_eq!(handle.parent_handle().index_in_parent(), 1);
+        assert_eq!(handle.parent_handle().raw(), &vec![0, 1]);
+        assert_eq!(
+            &handle.parent_handle().parent_handle().parent_handle(),
+            &DomHandle::root(),
+        );
+    }
+
+    #[test]
+    fn sub_handle_up_to_depth() {
+        let handle = DomHandle::from_raw(vec![0, 1, 2, 1, 2]);
+        assert_eq!(handle.sub_handle_up_to(3).raw(), &vec![0, 1, 2]);
+        assert_eq!(handle.sub_handle_up_to(handle.depth()), handle)
+    }
+
+    #[test]
+    #[should_panic]
+    fn sub_handle_up_to_unreachable_depth_panics() {
+        let handle = DomHandle::from_raw(vec![0, 1, 2, 1, 2]);
+        handle.sub_handle_up_to(10);
+    }
+
+    #[test]
+    fn computing_siblings_handle() {
+        let handle = DomHandle::from_raw(vec![0, 2, 1]);
+        assert_eq!(handle.prev_sibling().raw(), &vec![0, 2, 0]);
+        assert_eq!(handle.next_sibling().raw(), &vec![0, 2, 2]);
+    }
+
+    #[test]
+    #[should_panic]
+    fn computing_prev_sibling_of_first_child_panics() {
+        DomHandle::from_raw(vec![0, 1, 0]).prev_sibling();
+    }
+
+    #[test]
+    fn replacing_handle_ancestor() {
+        let mut handle = DomHandle::from_raw(vec![0, 1, 2, 4, 5]);
+        let parent = DomHandle::from_raw(vec![0, 1, 2]);
+        let new_parent = DomHandle::from_raw(vec![7, 8]);
+        handle.replace_ancestor(parent, new_parent);
+        assert_eq!(handle.raw(), &vec![7, 8, 4, 5],)
+    }
+
+    #[test]
+    fn replacing_handle_ancestor_using_self() {
+        let mut handle = DomHandle::from_raw(vec![0, 1, 2, 4, 5]);
+        let new_parent = DomHandle::from_raw(vec![7, 8]);
+        handle.replace_ancestor(handle.clone(), new_parent.clone());
+        assert_eq!(handle.raw(), new_parent.raw());
+    }
+
+    #[test]
+    #[should_panic]
+    fn replacing_handle_ancestor_panics_if_not_using_ancestor() {
+        let mut handle = DomHandle::from_raw(vec![0, 1, 2, 4, 5]);
+        let parent = DomHandle::from_raw(vec![0, 1, 4]);
+        let new_parent = DomHandle::from_raw(vec![7, 8]);
+        handle.replace_ancestor(parent, new_parent);
     }
 }
