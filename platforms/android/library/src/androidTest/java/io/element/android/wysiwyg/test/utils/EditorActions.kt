@@ -51,6 +51,31 @@ object Editor {
         }
     }
 
+    object RemoveLink : ViewAction {
+        override fun getConstraints(): Matcher<View> = isDisplayed()
+
+        override fun getDescription(): String = "Remove link"
+
+        override fun perform(uiController: UiController?, view: View?) {
+            val editor = view as? EditorEditText ?: return
+            editor.removeLink()
+        }
+    }
+
+    data class InsertLink(
+        val text: String,
+        val link: String,
+    ) : ViewAction {
+        override fun getConstraints(): Matcher<View> = isDisplayed()
+
+        override fun getDescription(): String = "Insert text ($text) linking to $link"
+
+        override fun perform(uiController: UiController?, view: View?) {
+            val editor = view as? EditorEditText ?: return
+            editor.insertLink(link = link, text = text)
+        }
+    }
+
     class ToggleList(
         private val ordered: Boolean,
     ) : ViewAction {
@@ -125,6 +150,8 @@ object EditorActions {
     fun setText(text: String) = Editor.SetText(text)
     fun setHtml(html: String) = Editor.SetHtml(html)
     fun setLink(url: String) = Editor.SetLink(url)
+    fun insertLink(text: String, url: String) = Editor.InsertLink(text, url)
+    fun removeLink() = Editor.RemoveLink
     fun toggleList(ordered: Boolean) = Editor.ToggleList(ordered)
     fun undo() = Editor.Undo
     fun redo() = Editor.Redo

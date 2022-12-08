@@ -6,6 +6,7 @@ import io.mockk.mockk
 import uniffi.wysiwyg_composer.ComposerModelInterface
 import uniffi.wysiwyg_composer.ComposerState
 import uniffi.wysiwyg_composer.ComposerUpdate
+import uniffi.wysiwyg_composer.LinkAction
 
 class MockComposer {
     val instance = mockk<ComposerModelInterface>()
@@ -65,10 +66,24 @@ class MockComposer {
         update: ComposerUpdate = MockComposerUpdateFactory.create(),
     ) = every { instance.deleteIn(start.toUInt(), end.toUInt()) } returns update
 
+    fun givenLinkAction(
+        linkAction: LinkAction,
+    ) = every { instance.getLinkAction() } returns linkAction
+
     fun givenSetLinkResult(
-        newText: String,
+        link: String,
         update: ComposerUpdate = MockComposerUpdateFactory.create(),
-    ) = every { instance.setLink(newText = newText) } returns update
+    ) = every { instance.setLink(link = link) } returns update
+
+    fun givenSetLinkWithTextResult(
+        link: String,
+        text: String,
+        update: ComposerUpdate = MockComposerUpdateFactory.create(),
+    ) = every { instance.setLinkWithText(link = link, text = text) } returns update
+
+    fun givenRemoveLinkResult(
+        update: ComposerUpdate = MockComposerUpdateFactory.create(),
+    ) = every { instance.removeLinks() } returns update
 
     fun givenReplaceAllHtmlResult(
         html: String,

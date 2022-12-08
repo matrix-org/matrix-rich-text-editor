@@ -1,3 +1,9 @@
 <resources>
-    <string name="app_name">WYSIWYG</string>
+    <string name="app_name">Rich text editor</string>
+    <string name="text">Text</string>
+    <string name="link">Link</string>
+    <string name="add_link">Add link</string>
+    <string name="remove_link">Remove link</string>
+    <string name="edit_link">Edit link</string>
+    <string name="insert_link">Insert link</string>
 </resources>

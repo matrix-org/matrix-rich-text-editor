@@ -20,6 +20,7 @@ import com.google.android.material.textfield.TextInputEditText
 import io.element.android.wysiwyg.inputhandlers.InterceptInputConnection
 import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
+import io.element.android.wysiwyg.inputhandlers.models.LinkAction
 import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
 import io.element.android.wysiwyg.utils.*
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
@@ -252,8 +253,47 @@ class EditorEditText : TextInputEditText {
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
-    fun setLink(link: String) {
-        val result = viewModel.processInput(EditorInputAction.SetLink(link)) ?: return
+    /**
+     * Get the action that can be performed based on the current link
+     * and selection state.
+     *
+     * Based on this the caller can decide whether to call [setLink],
+     * [removeLink], or [insertLink].
+     *
+     * @return The link action or null if no action is available.
+     */
+    fun getLinkAction(): LinkAction? =
+        viewModel.getLinkAction()
+
+    /**
+     * Set a link for the current selection. This method does nothing if there is no text selected.
+     *
+     * @param link The link to set or null to remove
+     */
+    fun setLink(link: String?) {
+        val result = viewModel.processInput(
+            if(link != null) EditorInputAction.SetLink(link) else EditorInputAction.RemoveLink
+        ) ?: return
+
+        setTextFromComposerUpdate(result)
+        setSelectionFromComposerUpdate(result.selection.last)
+    }
+
+    /**
+     * Remove a link for the current selection. Convenience for setLink(null).
+     *
+     * @see [setLink]
+     */
+    fun removeLink() = setLink(null)
+
+    /**
+     * Insert new text with a link.
+     *
+     * @param link The link to set
+     * @param text The new text to insert
+     */
+    fun insertLink(link: String, text: String) {
+        val result = viewModel.processInput(EditorInputAction.SetLinkWithText(link, text)) ?: return
 
         setTextFromComposerUpdate(result)
         setSelectionFromComposerUpdate(result.selection.last)

@@ -4,7 +4,6 @@ import android.graphics.Typeface
 import android.text.Editable
 import android.text.style.BulletSpan
 import android.text.style.StyleSpan
-import android.text.style.UnderlineSpan
 import android.view.KeyEvent
 import android.view.View
 import android.widget.EditText
@@ -22,6 +21,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
+import io.element.android.wysiwyg.spans.LinkSpan
 import io.element.android.wysiwyg.spans.OrderedListSpan
 import io.element.android.wysiwyg.test.utils.*
 import io.mockk.confirmVerified
@@ -195,14 +195,58 @@ class EditorEditTextInputTests {
     }
 
     @Test
-    fun testAddingLink() {
+    fun testSettingLink() {
         onView(withId(R.id.rich_text_edit_text))
             .perform(ImeActions.setComposingText("a link to set"))
             .perform(ImeActions.setSelection(2, 6))
             .perform(EditorActions.setLink("https://element.io"))
             .check(matches(TextViewMatcher {
-                // TODO: once we decide a Span for links, replace `UnderlineSpan`
-                it.editableText.getSpans<UnderlineSpan>(start = 2, end = 6).isNotEmpty()
+                it.editableText.getSpans<LinkSpan>().isNotEmpty()
+            }))
+    }
+
+    @Test
+    fun testSettingLink_withoutSelection_hasNoEffect() {
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(ImeActions.setComposingText("a link to set"))
+            .perform(ImeActions.setSelection(2, 2))
+            .perform(EditorActions.setLink("https://element.io"))
+            .check(matches(TextViewMatcher {
+                it.editableText.getSpans<LinkSpan>().isEmpty()
+            }))
+    }
+
+    @Test
+    fun testRemovingLink() {
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(ImeActions.setComposingText("a link to set"))
+            .perform(ImeActions.setSelection(2, 6))
+            .perform(EditorActions.setLink("https://element.io"))
+            .perform(EditorActions.removeLink())
+            .check(matches(TextViewMatcher {
+                it.editableText.getSpans<LinkSpan>().isEmpty()
+            }))
+    }
+
+    @Test
+    fun testInsertingLink_inSpace() {
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(ImeActions.setComposingText("a  b"))
+            .perform(ImeActions.setSelection(2, 2))
+            .perform(EditorActions.insertLink("Element", "https://element.io"))
+            .check(matches(TextViewMatcher {
+                it.editableText.getSpans<LinkSpan>().isNotEmpty()
+            }))
+    }
+
+    @Test
+    fun testInsertingLink_onSelection_hasNoEffect() {
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(ImeActions.setComposingText("a link to set"))
+            .perform(ImeActions.setSelection(2, 6))
+            .perform(EditorActions.insertLink("Element", "https://element.io"))
+            .check(matches(TextViewMatcher {
+                it.editableText.getSpans<LinkSpan>().isEmpty()
             }))
     }
 

@@ -14,6 +14,7 @@ import io.element.android.wysiwyg.BuildConfig
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.spans.ExtraCharacterSpan
 import io.element.android.wysiwyg.spans.InlineCodeSpan
+import io.element.android.wysiwyg.spans.LinkSpan
 import io.element.android.wysiwyg.spans.OrderedListSpan
 import org.ccil.cowan.tagsoup.Parser
 import org.xml.sax.Attributes
@@ -182,8 +183,7 @@ internal class HtmlToSpansParser(
     }
     private fun handleHyperlinkEnd() {
         val last = getLast<Hyperlink>() ?: return
-        // TODO: use custom link span maybe
-        val span = UnderlineSpan()
+        val span = LinkSpan(last.link)
         setSpanFromMark(last, span)
     }
 
@@ -224,6 +224,9 @@ internal class HtmlToSpansParser(
             UnderlineSpan::class.java,
             StrikethroughSpan::class.java,
             InlineCodeSpan::class.java,
+
+            // Links
+            LinkSpan::class.java,
 
             // Lists
             BulletSpan::class.java,

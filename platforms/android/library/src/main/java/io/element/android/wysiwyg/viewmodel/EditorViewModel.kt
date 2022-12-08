@@ -6,12 +6,14 @@ import io.element.android.wysiwyg.extensions.log
 import io.element.android.wysiwyg.extensions.string
 import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
+import io.element.android.wysiwyg.inputhandlers.models.LinkAction
 import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
 import io.element.android.wysiwyg.utils.EditorIndexMapper
 import io.element.android.wysiwyg.utils.HtmlConverter
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import io.element.android.wysiwyg.utils.throwIfDebugBuild
 import uniffi.wysiwyg_composer.*
+import uniffi.wysiwyg_composer.LinkAction as ComposerLinkAction
 
 internal class EditorViewModel(
     private val composer: ComposerModelInterface?,
@@ -69,7 +71,9 @@ internal class EditorViewModel(
                     action.end.toUInt()
                 )
                 is EditorInputAction.Delete -> composer?.delete()
-                is EditorInputAction.SetLink -> composer?.setLink(action.link)
+                is EditorInputAction.SetLink -> composer?.setLink(link = action.link)
+                is EditorInputAction.RemoveLink -> composer?.removeLinks()
+                is EditorInputAction.SetLinkWithText -> composer?.setLinkWithText(action.link, action.text)
                 is EditorInputAction.ReplaceAllHtml -> composer?.setContentFromHtml(action.html)
                 is EditorInputAction.ReplaceAllMarkdown -> composer?.setContentFromMarkdown(action.markdown)
                 is EditorInputAction.Undo -> composer?.undo()
@@ -114,6 +118,15 @@ internal class EditorViewModel(
     fun actionStates(): Map<ComposerAction, ActionState>? {
         return composer?.actionStates()
     }
+
+    fun getLinkAction(): LinkAction? =
+        composer?.getLinkAction()?.let {
+            when(it) {
+                is ComposerLinkAction.Edit -> LinkAction.SetLink(currentLink = it.link)
+                is ComposerLinkAction.Create -> LinkAction.SetLink(currentLink = null)
+                is ComposerLinkAction.CreateWithText -> LinkAction.InsertLink
+            }
+        }
 
     private fun stringToSpans(string: String): CharSequence =
         htmlConverter.fromHtmlToSpans(string)

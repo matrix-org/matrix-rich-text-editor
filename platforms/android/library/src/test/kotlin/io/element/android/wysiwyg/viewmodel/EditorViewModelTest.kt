@@ -2,6 +2,7 @@ package io.element.android.wysiwyg.viewmodel
 
 import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
+import io.element.android.wysiwyg.inputhandlers.models.LinkAction
 import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
 import io.element.android.wysiwyg.mocks.MockComposer
 import io.element.android.wysiwyg.mocks.MockComposerUpdateFactory
@@ -18,6 +19,7 @@ import org.junit.Test
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
 import uniffi.wysiwyg_composer.MenuState
+import uniffi.wysiwyg_composer.LinkAction as ComposerLinkAction
 
 internal class EditorViewModelTest {
 
@@ -40,6 +42,8 @@ internal class EditorViewModelTest {
             "<p><b>$paragraph</b></p>" +
                     "<p><i>$paragraph</i></p>"
         private const val markdownParagraphs = "**paragraph**\n**paragraph**"
+        private const val link = "https://matrix.org"
+        private const val linkText = "Matrix"
         private val actionStates =
             mapOf(
                 ComposerAction.BOLD to ActionState.REVERSED,
@@ -205,6 +209,39 @@ internal class EditorViewModelTest {
     }
 
     @Test
+    fun `given internal edit link action, when get, it returns the right action`() {
+        composer.givenLinkAction(ComposerLinkAction.Edit(link))
+
+        assertThat(
+            viewModel.getLinkAction(), equalTo(
+                LinkAction.SetLink(
+                    currentLink = link
+                )
+            )
+        )
+    }
+
+    @Test
+    fun `given internal create with text action, when get, it returns the right action`() {
+        composer.givenLinkAction(ComposerLinkAction.CreateWithText)
+
+        assertThat(viewModel.getLinkAction(), equalTo(LinkAction.InsertLink))
+    }
+
+    @Test
+    fun `given internal create link action, when get, it returns the right action`() {
+        composer.givenLinkAction(ComposerLinkAction.Create)
+
+        assertThat(
+            viewModel.getLinkAction(), equalTo(
+                LinkAction.SetLink(
+                    currentLink = null
+                )
+            )
+        )
+    }
+
+    @Test
     fun `when process set link action, it returns a text update`() {
         composer.givenSetLinkResult("https://element.io", composerStateUpdate)
 
@@ -212,6 +249,39 @@ internal class EditorViewModelTest {
 
         verify {
             composer.instance.setLink("https://element.io")
+            actionsStatesCallback(actionStates)
+        }
+        assertThat(result, equalTo(replaceTextResult))
+    }
+
+    @Test
+    fun `when process remove link action, it returns a text update`() {
+        composer.givenRemoveLinkResult(composerStateUpdate)
+
+        val result = viewModel.processInput(EditorInputAction.RemoveLink)
+
+        verify {
+            composer.instance.removeLinks()
+            actionsStatesCallback(actionStates)
+        }
+        assertThat(result, equalTo(replaceTextResult))
+    }
+
+    @Test
+    fun `when process set link with text action, it returns a text update`() {
+        composer.givenSetLinkWithTextResult(
+            link = link, text = linkText,
+            composerStateUpdate
+        )
+
+        val result = viewModel.processInput(
+            EditorInputAction.SetLinkWithText(link, linkText)
+        )
+
+        verify {
+            composer.instance.setLinkWithText(
+                link = link, text = linkText
+            )
             actionsStatesCallback(actionStates)
         }
         assertThat(result, equalTo(replaceTextResult))
@@ -234,7 +304,8 @@ internal class EditorViewModelTest {
     fun `when process replace all markdown action, it returns a text update`() {
         composer.givenReplaceAllMarkdownResult("new **markdown**", composerStateUpdate)
 
-        val result = viewModel.processInput(EditorInputAction.ReplaceAllMarkdown("new **markdown**"))
+        val result =
+            viewModel.processInput(EditorInputAction.ReplaceAllMarkdown("new **markdown**"))
 
         verify {
             composer.instance.setContentFromMarkdown("new **markdown**")
