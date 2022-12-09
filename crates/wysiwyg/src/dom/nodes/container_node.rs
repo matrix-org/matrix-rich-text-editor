@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::ops::ControlFlow;
+
 use crate::char::CharExt;
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
@@ -317,6 +319,18 @@ where
         Some(link)
     }
 
+    /// Creates a container with the same kind & attributes
+    /// as self, with given children and an unset handle.
+    fn clone_with_children(&self, children: Vec<DomNode<S>>) -> Self {
+        Self {
+            name: self.name.clone(),
+            kind: self.kind.clone(),
+            attrs: self.attrs.clone(),
+            children,
+            handle: DomHandle::new_unset(),
+        }
+    }
+
     /// Add a leading ZWSP char to this container.
     /// Returns false if no updates was done.
     /// e.g. first text-like node is a line break
@@ -352,45 +366,29 @@ where
     /// expected hierarchy.
     pub fn slice_after(&mut self, offset: usize) -> ContainerNode<S> {
         assert!(offset <= self.text_len());
-        let mut current: usize = 0;
-        let mut slice_index: Option<usize> = None;
-        let mut first_removed_index: Option<usize> = None;
-        let mut removed = Vec::new();
+        let result = self.find_slice_location(offset);
 
-        for (index, child) in self.children.iter().enumerate() {
-            let child_length = child.text_len();
-            if current + child_length <= offset {
-                current += child_length;
-            } else if current < offset {
-                slice_index = Some(index);
-                break;
-            } else {
-                first_removed_index = Some(index);
-                break;
+        match result {
+            ControlFlow::Continue(_) => self.clone_with_children(vec![]),
+            ControlFlow::Break((current_loc, child_index, should_slice)) => {
+                let mut removed_children = Vec::new();
+                let index_to_remove: usize;
+                if should_slice {
+                    index_to_remove = child_index + 1;
+                    let sliced = self
+                        .get_child_mut(child_index)
+                        .unwrap()
+                        .slice_after(offset - current_loc);
+                    removed_children.push(sliced);
+                } else {
+                    index_to_remove = child_index;
+                }
+                while self.children.len() > index_to_remove {
+                    removed_children
+                        .push(self.children.remove(index_to_remove));
+                }
+                self.clone_with_children(removed_children)
             }
-        }
-
-        if let Some(first_removed_index) = first_removed_index {
-            while self.children.len() > first_removed_index {
-                removed.push(self.children.remove(first_removed_index));
-            }
-        } else if let Some(slice_index) = slice_index {
-            let sliced = self
-                .get_child_mut(slice_index)
-                .unwrap()
-                .slice_after(offset - current);
-            removed.insert(0, sliced);
-            while self.children.len() > slice_index + 1 {
-                removed.push(self.children.remove(slice_index + 1));
-            }
-        }
-
-        ContainerNode {
-            name: self.name.clone(),
-            kind: self.kind.clone(),
-            attrs: self.attrs.clone(),
-            children: removed,
-            handle: DomHandle::new_unset(),
         }
     }
 
@@ -400,46 +398,44 @@ where
     /// expected hierarchy.
     pub fn slice_before(&mut self, offset: usize) -> ContainerNode<S> {
         assert!(offset <= self.text_len());
-        let mut current: usize = 0;
-        let mut slice_index: Option<usize> = None;
-        let mut first_index_to_keep: Option<usize> = None;
-        let mut removed = Vec::new();
+        let result = self.find_slice_location(offset);
 
-        for (index, child) in self.children.iter().enumerate() {
-            let child_length = child.text_len();
-            if current + child_length <= offset {
-                current += child_length;
-            } else if current < offset {
-                slice_index = Some(index);
-                break;
-            } else {
-                first_index_to_keep = Some(index);
-                break;
+        match result {
+            ControlFlow::Continue(_) => self.clone_with_children(vec![]),
+            ControlFlow::Break((current_loc, child_index, should_slice)) => {
+                let mut removed_children = Vec::new();
+                if should_slice {
+                    let sliced = self
+                        .get_child_mut(child_index)
+                        .unwrap()
+                        .slice_before(offset - current_loc);
+                    removed_children.push(sliced);
+                }
+                for i in (0..child_index).rev() {
+                    removed_children.insert(0, self.children.remove(i));
+                }
+                self.clone_with_children(removed_children)
             }
         }
+    }
 
-        if let Some(slice_index) = slice_index {
-            let sliced = self
-                .get_child_mut(slice_index)
-                .unwrap()
-                .slice_before(offset - current);
-            removed.push(sliced);
-            for i in (0..slice_index).rev() {
-                removed.insert(0, self.children.remove(i));
-            }
-        } else if let Some(first_index_to_keep) = first_index_to_keep {
-            for i in (0..first_index_to_keep).rev() {
-                removed.insert(0, self.children.remove(i));
-            }
-        }
-
-        ContainerNode {
-            name: self.name.clone(),
-            kind: self.kind.clone(),
-            attrs: self.attrs.clone(),
-            children: removed,
-            handle: DomHandle::new_unset(),
-        }
+    fn find_slice_location(
+        &self,
+        offset: usize,
+    ) -> ControlFlow<(usize, usize, bool), usize> {
+        self.children.iter().enumerate().try_fold(
+            0,
+            |current_loc, (index, child)| {
+                let child_length = child.text_len();
+                if current_loc + child_length <= offset {
+                    ControlFlow::Continue(current_loc + child_length)
+                } else if current_loc < offset {
+                    ControlFlow::Break((current_loc, index, true))
+                } else {
+                    ControlFlow::Break((current_loc, index, false))
+                }
+            },
+        )
     }
 
     /// Returns the positions of linebreaks inside container.
