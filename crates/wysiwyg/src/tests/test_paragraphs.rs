@@ -178,3 +178,31 @@ fn backspace_merges_formatting_nodes() {
     model.backspace();
     assert_eq!(tx(&model), "<b>a|b</b>");
 }
+
+#[test]
+fn enter_in_code_block_in_text_node_adds_line_break_as_text() {
+    let mut model = cm("<pre>Test|</pre>");
+    model.enter();
+    assert_eq!(tx(&model), "<pre>Test\n|</pre>")
+}
+
+#[test]
+fn enter_in_code_block_after_line_break_at_end_ends_code_block() {
+    let mut model = cm("<pre>Test\n|</pre>");
+    model.enter();
+    assert_eq!(tx(&model), "<pre>Test</pre><br />|")
+}
+
+#[test]
+fn enter_in_code_block_after_line_break_in_middle_splits_code_block() {
+    let mut model = cm("<pre>Test\n|code blocks</pre>");
+    model.enter();
+    assert_eq!(tx(&model), "<pre>Test</pre><br />|<pre>code blocks</pre>")
+}
+
+#[test]
+fn enter_in_code_block_after_nested_line_break_in_middle_splits_code_block() {
+    let mut model = cm("<pre><b><i>Test\n|code blocks</i></b></pre>");
+    model.enter();
+    assert_eq!(tx(&model), "<pre><b><i>Test</i></b></pre><br />|<pre><b><i>code blocks</i></b></pre>")
+}

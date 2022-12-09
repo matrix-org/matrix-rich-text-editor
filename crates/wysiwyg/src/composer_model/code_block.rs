@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::cmp::{max, min};
+use std::cmp::min;
 use std::collections::HashSet;
-use std::ops::{Add, AddAssign};
 
 use crate::dom::action_list::DomActionList;
 use crate::dom::nodes::dom_node::DomNodeKind;
@@ -22,9 +21,7 @@ use crate::dom::nodes::dom_node::DomNodeKind::*;
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode};
 use crate::dom::unicode_string::UnicodeStr;
 use crate::dom::{DomHandle, DomLocation};
-use crate::{
-    ComposerAction, ComposerModel, ComposerUpdate, ToHtml, UnicodeString,
-};
+use crate::{ComposerAction, ComposerModel, ComposerUpdate, UnicodeString};
 
 impl<S> ComposerModel<S>
 where
@@ -55,7 +52,7 @@ where
         let mut path: Vec<usize> = Vec::new();
         for depth in start_depth..start_handle.raw().len() {
             let mut cur_child = &mut code_block;
-            let mut path_to_traverse = path.clone();
+            let path_to_traverse = path.clone();
             for i in &path_to_traverse {
                 if let DomNode::Container(c) = cur_child {
                     cur_child = c.get_child_mut(*i).unwrap();
@@ -71,18 +68,16 @@ where
                         break;
                     }
                     match node.kind() {
-                        Text | Formatting(_) | Link => {
+                        Text | Formatting(_) | Link | LineBreak => {
                             nodes_visited.insert(node.handle());
                             if nodes_visited
                                 .contains(&node.handle().parent_handle())
                             {
                                 continue;
                             }
-                            cur_container.append_child(node.clone());
-                        }
-                        LineBreak => {
-                            cur_container
-                                .append_child(DomNode::new_text("\n".into()));
+                            cur_container.append_child(
+                                Self::format_node_for_code_block(node),
+                            );
                         }
                         List | ListItem => {
                             let mut needs_to_add_line_break =
@@ -101,7 +96,7 @@ where
                                 cur_container.append_child(DomNode::new_text(
                                     "\n".into(),
                                 ));
-                                self.state.end.add_assign(1);
+                                self.state.end += 1;
                             }
                         }
                         _ => {}
@@ -271,8 +266,8 @@ where
         let end_in_block = code_block_location.end_offset;
         let mut selection_offset_start = 0;
         let mut selection_offset_end = 0;
-        self.state.start.add_assign(1);
-        self.state.end.add_assign(1);
+        self.state.start += 1;
+        self.state.end += 1;
 
         // If we remove the whole code block, we should start by adding a line break
         let mut nodes_to_add = vec![DomNode::new_line_break()];
@@ -337,8 +332,8 @@ where
             .replace(&code_block_location.node_handle, nodes_to_add);
 
         if selection_offset_start > 0 {
-            self.state.start.add_assign(selection_offset_start);
-            self.state.end.add_assign(selection_offset_end);
+            self.state.start += selection_offset_start;
+            self.state.end += selection_offset_end;
         }
 
         self.create_update_replace_all()
@@ -363,13 +358,12 @@ where
         }
     }
 
-    fn split_sub_tree(
+    pub(crate) fn split_sub_tree(
         &mut self,
         from_handle: &DomHandle,
         offset: usize,
         depth: usize,
     ) -> DomNode<S> {
-        let subtree_len = from_handle.raw().len();
         // Create new 'root' node to contain the split sub-tree
         let mut new_subtree = DomNode::Container(ContainerNode::new(
             S::default(),
@@ -379,7 +373,7 @@ where
         ));
         new_subtree.set_handle(DomHandle::root());
 
-        let mut path = from_handle.sub_handle_up_to(depth).raw().clone();
+        let path = from_handle.sub_handle_up_to(depth).raw().clone();
         self.split_sub_tree_at(
             path,
             from_handle.raw()[depth],
@@ -388,10 +382,6 @@ where
             from_handle,
             &mut new_subtree,
         );
-
-        let html = new_subtree.to_html().to_string();
-        dbg!(html);
-
         new_subtree
     }
 
@@ -402,7 +392,7 @@ where
         min_depth: usize,
         offset: usize,
         handle: &DomHandle,
-        mut result: &'a mut DomNode<S>,
+        result: &'a mut DomNode<S>,
     ) {
         let mut path = path;
         let cur_handle = DomHandle::from_raw(path.clone());
@@ -427,6 +417,9 @@ where
                         DomNode::Text(text_node) => {
                             if offset == 0 {
                                 removed_nodes.insert(0, child.clone());
+                            } else if offset >= text_node.data().chars().count()
+                            {
+                                // Do nothing
                             } else {
                                 let left_data =
                                     text_node.data()[..offset].to_owned();
@@ -446,8 +439,6 @@ where
                 }
             }
         }
-        let html = result.to_html().to_string();
-        dbg!(html);
         let mut new_subtree_at_prev_level = result;
         if (path.len() - min_depth) > 1 {
             if let DomNode::Container(c) = new_subtree_at_prev_level {
@@ -476,6 +467,24 @@ where
                 &handle,
                 new_subtree_at_prev_level,
             );
+        }
+    }
+
+    pub(crate) fn format_node_for_code_block(node: &DomNode<S>) -> DomNode<S> {
+        match node {
+            DomNode::LineBreak(_) => {
+                let mut text_node = DomNode::new_text("\n".into());
+                text_node.set_handle(node.handle().clone());
+                text_node
+            }
+            DomNode::Text(_) => node.clone(),
+            DomNode::Container(container) => {
+                let mut children = Vec::new();
+                for c in container.children() {
+                    children.push(Self::format_node_for_code_block(c));
+                }
+                DomNode::Container(container.copy_with_new_children(children))
+            }
         }
     }
 }
