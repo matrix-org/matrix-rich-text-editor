@@ -292,7 +292,7 @@ public extension WysiwygComposerViewModel {
         case let .createLink(urlString, text):
             update = model.setLinkWithText(link: urlString, text: text)
         case let .setLink(urlString):
-            update = model.setLink(newText: urlString)
+            update = model.setLink(link: urlString)
         case .removeLinks:
             update = model.removeLinks()
         }
