@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::cmp::{max, min};
+use std::collections::HashSet;
+use std::ops::{Add, AddAssign};
+
 use crate::dom::action_list::DomActionList;
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::DomNodeKind::*;
@@ -21,9 +25,6 @@ use crate::dom::{DomHandle, DomLocation};
 use crate::{
     ComposerAction, ComposerModel, ComposerUpdate, ToHtml, UnicodeString,
 };
-use std::cmp::{max, min};
-use std::collections::HashSet;
-use std::ops::{Add, AddAssign};
 
 impl<S> ComposerModel<S>
 where
@@ -41,7 +42,8 @@ where
     fn add_code_block(&mut self) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
         let Some((parent_handle, idx_start, idx_end)) = self.find_nodes_to_wrap_in_block(s, e) else {
-            return ComposerUpdate::keep();
+            self.state.dom.append_at_end_of_document(DomNode::new_code_block(vec![DomNode::new_empty_text()]));
+            return self.create_update_replace_all();
         };
         let mut code_block: DomNode<S> = DomNode::new_code_block(Vec::new());
         code_block.set_handle(DomHandle::root());
@@ -124,11 +126,12 @@ where
 
         let insert_at_handle =
             start_handle.sub_handle_up_to(ancestor_to_split.raw().len() + 1);
-        let insert_at_handle = if self.state.dom.exists(&insert_at_handle) {
-            insert_at_handle.next_sibling()
-        } else {
-            insert_at_handle
-        };
+        let insert_at_handle =
+            if idx_start > 0 && self.state.dom.exists(&insert_at_handle) {
+                insert_at_handle.next_sibling()
+            } else {
+                insert_at_handle
+            };
         self.state.dom.insert_at(&insert_at_handle, code_block);
 
         // Merge any nodes that need it
@@ -146,7 +149,7 @@ where
             .filter(|n| n.kind() == CodeBlock)
             .map(|n| n.handle())
         {
-            self.move_children_and_delete_parent(
+            self.state.dom.move_children_and_delete_parent(
                 &next_code_block_handle,
                 &handle,
             );
@@ -159,19 +162,19 @@ where
             .filter(|n| n.kind() == CodeBlock)
             .map(|n| n.handle())
         {
-            self.move_children_and_delete_parent(
+            self.state.dom.move_children_and_delete_parent(
                 &handle,
                 &prev_code_block_handle,
             );
             handle = prev_code_block_handle;
         }
 
-        self.join_format_nodes_at_level(
+        self.state.dom.join_format_nodes_at_level(
             &handle,
             handle.raw().len() - 1,
             &mut DomActionList::default(),
         );
-        self.join_text_nodes_in_parent(&handle);
+        self.state.dom.join_nodes_in_parent(&handle);
     }
 
     fn find_nodes_to_wrap_in_block(

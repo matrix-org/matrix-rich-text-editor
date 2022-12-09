@@ -411,7 +411,7 @@ where
             {
                 if let DomNode::Container(node) = node {
                     current = node;
-                } else {
+                } else if i != path_len {
                     return false;
                 }
             } else {
