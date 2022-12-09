@@ -204,6 +204,18 @@ where
         }
     }
 
+    /// Add a leading ZWSP char to this node.
+    /// Returns false if no updates was done.
+    /// e.g. first text-like node is a line break
+    /// or a text node that already starts with a ZWSP.
+    pub fn add_leading_zwsp(&mut self) -> bool {
+        match self {
+            DomNode::Container(c) => c.add_leading_zwsp(),
+            DomNode::Text(t) => t.add_leading_zwsp(),
+            DomNode::LineBreak(_) => false,
+        }
+    }
+
     /// Returns true if given node can be pushed into self without any specific change.
     pub(crate) fn can_push(&self, other_node: &DomNode<S>) -> bool {
         match (self, other_node) {
@@ -229,6 +241,30 @@ where
             }
             DomNode::Text(t) => t.push(other_node.as_text().unwrap()),
             _ => unreachable!(),
+        }
+    }
+
+    /// Slice this node after given position.
+    /// Returns a new node of the same kind with the
+    /// removed content, with both nodes keeping
+    /// expected hierarchy.
+    pub fn slice_after(&mut self, offset: usize) -> Self {
+        match self {
+            DomNode::Container(c) => DomNode::Container(c.slice_after(offset)),
+            DomNode::Text(t) => DomNode::Text(t.slice_after(offset)),
+            DomNode::LineBreak(_) => panic!("Can't slice a linebreak"),
+        }
+    }
+
+    /// Slice this node before given position.
+    /// Returns a new node of the same kind with the
+    /// removed content, with both nodes keeping
+    /// expected hierarchy.
+    pub fn slice_before(&mut self, offset: usize) -> Self {
+        match self {
+            DomNode::Container(c) => DomNode::Container(c.slice_before(offset)),
+            DomNode::Text(t) => DomNode::Text(t.slice_before(offset)),
+            DomNode::LineBreak(_) => panic!("Can't slice a linebreak"),
         }
     }
 }
@@ -333,7 +369,7 @@ impl DomNodeKind {
 mod test {
     use widestring::Utf16String;
 
-    use crate::{DomHandle, DomNode, InlineFormatType, UnicodeString};
+    use crate::{DomHandle, DomNode, InlineFormatType, ToHtml, UnicodeString};
 
     #[test]
     fn pushing_nodes_of_same_kind() {
@@ -396,6 +432,46 @@ mod test {
             &[0, 1],
         );
         n1.push(&mut n2);
+    }
+
+    #[test]
+    fn slicing_node() {
+        let mut node = format_container_with_nested_children();
+        let mut before = node.slice_before(4);
+        assert_eq!(before.to_html(), "<del><em>abc</em>d</del>");
+        assert_eq!(node.to_html(), "<del>ef</del>");
+        before.push(&mut node);
+        assert_eq!(before.to_html(), "<del><em>abc</em>def</del>");
+    }
+
+    #[test]
+    fn slicing_node_on_edge_removes_nothing() {
+        let mut node = format_container_with_nested_children();
+        node.slice_after(6);
+        node.slice_before(0);
+        assert_eq!(node.to_html(), "<del><em>abc</em>def</del>")
+    }
+
+    #[test]
+    #[should_panic]
+    fn slicing_over_edge_panics() {
+        let mut node = format_container_with_nested_children();
+        node.slice_after(42);
+        assert_eq!(node.to_html(), "<del><em>abc</em>def</del>");
+    }
+
+    /// Result HTML is "<del><em>abc</em>def</del>".
+    fn format_container_with_nested_children() -> DomNode<Utf16String> {
+        let italic = format_container_with_handle_and_children(
+            InlineFormatType::Italic,
+            vec![text_node("abc")],
+            &[0, 0],
+        );
+        format_container_with_handle_and_children(
+            InlineFormatType::StrikeThrough,
+            vec![italic, text_node("def")],
+            &[0, 0],
+        )
     }
 
     fn format_container_with_handle_and_children<'a>(
