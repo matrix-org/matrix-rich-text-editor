@@ -187,6 +187,14 @@ fn enter_in_code_block_in_text_node_adds_line_break_as_text() {
 }
 
 #[test]
+#[ignore = "For some reason, the HTML parser returns '<pre>|Test</pre>', removing the leading line break. Might be a bug?"]
+fn enter_in_code_block_after_line_break_at_start_splits_code_block() {
+    let mut model = cm("<pre>\n|Test</pre>");
+    model.enter();
+    assert_eq!(tx(&model), "<br />|<pre>Test</pre>")
+}
+
+#[test]
 fn enter_in_code_block_after_line_break_at_end_ends_code_block() {
     let mut model = cm("<pre>Test\n|</pre>");
     model.enter();
