@@ -162,20 +162,20 @@ where
     /// Slice this text node after given position.
     /// Returns a new text node of the same kind with the
     /// removed content.
-    pub fn slice_after(&mut self, offset: usize) -> TextNode<S> {
-        assert!(offset <= self.data.len());
-        let data_after = self.data[offset..].to_owned();
-        self.set_data(self.data[..offset].to_owned());
+    pub fn slice_after(&mut self, position: usize) -> TextNode<S> {
+        assert!(position <= self.data.len());
+        let data_after = self.data[position..].to_owned();
+        self.set_data(self.data[..position].to_owned());
         TextNode::from(data_after)
     }
 
     /// Slice this text node before given position.
     /// Returns a new text node of the same kind with the
     /// removed content.
-    pub fn slice_before(&mut self, offset: usize) -> TextNode<S> {
-        assert!(offset <= self.data.len());
-        let data_before = self.data[..offset].to_owned();
-        self.set_data(self.data[offset..].to_owned());
+    pub fn slice_before(&mut self, position: usize) -> TextNode<S> {
+        assert!(position <= self.data.len());
+        let data_before = self.data[..position].to_owned();
+        self.set_data(self.data[position..].to_owned());
         TextNode::from(data_before)
     }
 }

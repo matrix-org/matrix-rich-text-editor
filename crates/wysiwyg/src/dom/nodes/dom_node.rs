@@ -248,10 +248,12 @@ where
     /// Returns a new node of the same kind with the
     /// removed content, with both nodes keeping
     /// expected hierarchy.
-    pub fn slice_after(&mut self, offset: usize) -> Self {
+    pub fn slice_after(&mut self, position: usize) -> Self {
         match self {
-            DomNode::Container(c) => DomNode::Container(c.slice_after(offset)),
-            DomNode::Text(t) => DomNode::Text(t.slice_after(offset)),
+            DomNode::Container(c) => {
+                DomNode::Container(c.slice_after(position))
+            }
+            DomNode::Text(t) => DomNode::Text(t.slice_after(position)),
             DomNode::LineBreak(_) => panic!("Can't slice a linebreak"),
         }
     }
@@ -260,10 +262,12 @@ where
     /// Returns a new node of the same kind with the
     /// removed content, with both nodes keeping
     /// expected hierarchy.
-    pub fn slice_before(&mut self, offset: usize) -> Self {
+    pub fn slice_before(&mut self, position: usize) -> Self {
         match self {
-            DomNode::Container(c) => DomNode::Container(c.slice_before(offset)),
-            DomNode::Text(t) => DomNode::Text(t.slice_before(offset)),
+            DomNode::Container(c) => {
+                DomNode::Container(c.slice_before(position))
+            }
+            DomNode::Text(t) => DomNode::Text(t.slice_before(position)),
             DomNode::LineBreak(_) => panic!("Can't slice a linebreak"),
         }
     }

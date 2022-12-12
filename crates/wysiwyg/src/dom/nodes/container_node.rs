@@ -364,9 +364,9 @@ where
     /// Returns a new container of the same kind with the
     /// removed content, with both nodes keeping
     /// expected hierarchy.
-    pub fn slice_after(&mut self, offset: usize) -> ContainerNode<S> {
-        assert!(offset <= self.text_len());
-        let result = self.find_slice_location(offset);
+    pub fn slice_after(&mut self, position: usize) -> ContainerNode<S> {
+        assert!(position <= self.text_len());
+        let result = self.find_slice_location(position);
 
         match result {
             ControlFlow::Continue(_) => self.clone_with_children(vec![]),
@@ -378,7 +378,7 @@ where
                     let sliced = self
                         .get_child_mut(child_index)
                         .unwrap()
-                        .slice_after(offset - current_loc);
+                        .slice_after(position - current_loc);
                     removed_children.push(sliced);
                 } else {
                     index_to_remove = child_index;
@@ -396,9 +396,9 @@ where
     /// Returns a new container of the same kind with the
     /// removed content, with both nodes keeping
     /// expected hierarchy.
-    pub fn slice_before(&mut self, offset: usize) -> ContainerNode<S> {
-        assert!(offset <= self.text_len());
-        let result = self.find_slice_location(offset);
+    pub fn slice_before(&mut self, position: usize) -> ContainerNode<S> {
+        assert!(position <= self.text_len());
+        let result = self.find_slice_location(position);
 
         match result {
             ControlFlow::Continue(_) => self.clone_with_children(vec![]),
@@ -408,7 +408,7 @@ where
                     let sliced = self
                         .get_child_mut(child_index)
                         .unwrap()
-                        .slice_before(offset - current_loc);
+                        .slice_before(position - current_loc);
                     removed_children.push(sliced);
                 }
                 for i in (0..child_index).rev() {
@@ -421,15 +421,15 @@ where
 
     fn find_slice_location(
         &self,
-        offset: usize,
+        position: usize,
     ) -> ControlFlow<(usize, usize, bool), usize> {
         self.children.iter().enumerate().try_fold(
             0,
             |current_loc, (index, child)| {
                 let child_length = child.text_len();
-                if current_loc + child_length <= offset {
+                if current_loc + child_length <= position {
                     ControlFlow::Continue(current_loc + child_length)
-                } else if current_loc < offset {
+                } else if current_loc < position {
                     ControlFlow::Break((current_loc, index, true))
                 } else {
                     ControlFlow::Break((current_loc, index, false))
