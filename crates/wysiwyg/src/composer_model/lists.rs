@@ -168,7 +168,7 @@ where
 
     fn toggle_list(&mut self, list_type: ListType) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
-        let range = self.state.dom.find_range(s, e);
+        let range = self.state.dom.find_extended_range(s, e);
 
         if range.is_empty() {
             self.create_list(list_type)
@@ -202,8 +202,34 @@ where
                 self.create_list(list_type)
             }
         } else {
-            panic!("Can't toggle list in complex object models yet")
+            // TODO: handle other cases
+            self.create_list_from_range(list_type, range)
         }
+    }
+
+    fn create_list_from_range(
+        &mut self,
+        list_type: ListType,
+        range: Range,
+    ) -> ComposerUpdate<S> {
+        let (s, e) = self.safe_selection();
+        let offset_before = s - range.start();
+        let offset_after = range.end() - e;
+        let handles = range
+            .top_level_locations()
+            .map(|l| &l.node_handle)
+            .collect();
+        let (s_correction, e_correction) = self.state.dom.wrap_nodes_in_list(
+            list_type,
+            handles,
+            offset_before,
+            offset_after,
+        );
+        self.select(
+            Location::from(s + s_correction),
+            Location::from(e + e_correction),
+        );
+        self.create_update_replace_all()
     }
 
     fn move_list_item_content_to_list_parent(
