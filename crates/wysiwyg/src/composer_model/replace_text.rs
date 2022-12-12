@@ -179,7 +179,7 @@ where
             }
         }
         if has_previous_line_break {
-            let DomNode::Container(sub_tree) = self.split_sub_tree(&leaf.node_handle, leaf.start_offset - selection_offset, block_location.node_handle.depth()) else {
+            let DomNode::Container(sub_tree) = self.state.dom.split_sub_tree(&leaf.node_handle, leaf.start_offset - selection_offset, block_location.node_handle.depth()) else {
                 panic!("Sub tree must start from a container node");
             };
             let DomNode::Container(block) = self.state.dom.lookup_node_mut(&block_location.node_handle) else {

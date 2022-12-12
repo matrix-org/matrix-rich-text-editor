@@ -361,7 +361,7 @@ where
             kind: self.kind.clone(),
             attrs: self.attrs.clone(),
             children: new_children,
-            handle: self.handle.clone(),
+            handle: DomHandle::new_unset(),
         }
     }
 }
