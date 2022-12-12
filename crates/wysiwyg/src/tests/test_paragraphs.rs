@@ -214,3 +214,24 @@ fn enter_in_code_block_after_nested_line_break_in_middle_splits_code_block() {
     model.enter();
     assert_eq!(tx(&model), "<pre><b><i>Test</i></b></pre><br />|<pre><b><i>code blocks</i></b></pre>")
 }
+
+#[test]
+fn backspace_at_start_of_code_block_removes_previous_text() {
+    let mut model = cm("Test <pre>|code</pre>");
+    model.backspace();
+    assert_eq!(tx(&model), "Test|<pre>code</pre>");
+}
+
+#[test]
+fn backspace_at_end_of_code_block_deletes_its_last_character() {
+    let mut model = cm("Test <pre>code</pre>| and more");
+    model.backspace();
+    assert_eq!(tx(&model), "Test <pre>cod|</pre> and more");
+}
+
+#[test]
+fn backspace_emptying_code_block_removes_it() {
+    let mut model = cm("Test <pre>c|</pre>");
+    model.backspace();
+    assert_eq!(tx(&model), "Test&nbsp;|");
+}

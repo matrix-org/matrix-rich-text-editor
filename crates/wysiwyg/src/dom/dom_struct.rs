@@ -399,7 +399,7 @@ where
     }
 
     /// Checks if the passed [handle] exists in the DOM.
-    pub fn exists(&self, handle: &DomHandle) -> bool {
+    pub fn contains(&self, handle: &DomHandle) -> bool {
         let mut current = self.document();
         let path_len = handle.raw().len();
         for i in 0..=path_len {
@@ -427,7 +427,7 @@ where
             return None;
         }
         let prev_handle = handle.prev_sibling();
-        if self.exists(&prev_handle) {
+        if self.contains(&prev_handle) {
             Some(self.lookup_node(&prev_handle))
         } else {
             None
@@ -443,7 +443,7 @@ where
             return None;
         }
         let prev_handle = handle.prev_sibling();
-        if self.exists(&prev_handle) {
+        if self.contains(&prev_handle) {
             Some(self.lookup_node_mut(&prev_handle))
         } else {
             None
@@ -453,7 +453,7 @@ where
     /// Gets the next sibling of the node if exists.
     pub fn next_sibling(&self, handle: &DomHandle) -> Option<&DomNode<S>> {
         let next_handle = handle.next_sibling();
-        if self.exists(&next_handle) {
+        if self.contains(&next_handle) {
             Some(self.lookup_node(&next_handle))
         } else {
             None
@@ -466,7 +466,7 @@ where
         handle: &DomHandle,
     ) -> Option<&mut DomNode<S>> {
         let next_handle = handle.next_sibling();
-        if self.exists(&next_handle) {
+        if self.contains(&next_handle) {
             Some(self.lookup_node_mut(&next_handle))
         } else {
             None
@@ -783,7 +783,7 @@ mod test {
     fn node_exists_returns_true_if_exists() {
         let d = cm("<ul><li>b<strong>c</strong></li></ul>d|").state.dom;
         let handle = DomHandle::from_raw(vec![0, 0, 1, 0]);
-        assert!(d.exists(&handle));
+        assert!(d.contains(&handle));
     }
 
     #[test]
@@ -791,7 +791,7 @@ mod test {
         let d = cm("<ul><li>b<strong>c</strong></li></ul>d|").state.dom;
         // Last level doesn't exist, [0, 0, 1, 0] is a leaf node
         let handle = DomHandle::from_raw(vec![0, 0, 1, 0, 2]);
-        assert!(!d.exists(&handle));
+        assert!(!d.contains(&handle));
     }
 
     #[test]
@@ -799,7 +799,7 @@ mod test {
         let d = cm("<ul><li>b<strong>c</strong></li></ul>d|").state.dom;
         // Last level doesn't exist, [0, 0, 1] does not have 6 children
         let handle = DomHandle::from_raw(vec![0, 0, 1, 5]);
-        assert!(!d.exists(&handle));
+        assert!(!d.contains(&handle));
     }
 
     const NO_CHILDREN: &Vec<DomNode<Utf16String>> = &Vec::new();

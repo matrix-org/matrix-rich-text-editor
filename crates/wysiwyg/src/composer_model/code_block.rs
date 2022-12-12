@@ -122,7 +122,7 @@ where
         let insert_at_handle =
             start_handle.sub_handle_up_to(ancestor_to_split.raw().len() + 1);
         let insert_at_handle =
-            if idx_start > 0 && self.state.dom.exists(&insert_at_handle) {
+            if idx_start > 0 && self.state.dom.contains(&insert_at_handle) {
                 insert_at_handle.next_sibling()
             } else {
                 insert_at_handle
