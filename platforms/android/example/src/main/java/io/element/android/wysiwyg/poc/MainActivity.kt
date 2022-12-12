@@ -20,23 +20,42 @@ class MainActivity : AppCompatActivity() {
         val context = this
 
         binding.editor.onSetLinkListener = object: OnSetLinkListener {
-            override fun openSetLinkDialog(currentLink: String?, callback: (url: String?) -> Unit) {
+            override fun openCreateLinkDialog(
+                readonlyText: String,
+                callback: (url: String?) -> Unit
+            ) {
                 val dialogBinding = DialogSetLinkBinding.inflate(LayoutInflater.from(context))
-                val title = if(currentLink == null) R.string.add_link else R.string.edit_link
-                dialogBinding.link.setText(currentLink)
-                dialogBinding.text.visibility = View.GONE
+                dialogBinding.text.setText(readonlyText)
+                dialogBinding.text.isEnabled = false
                 AlertDialog.Builder(context)
-                    .setTitle(title)
+                    .setTitle(R.string.add_link)
                     .setView(dialogBinding.root)
                     .setPositiveButton(android.R.string.ok) { _, _ ->
                         callback(dialogBinding.link.text.toString())
                     }
-                    .apply {
-                        if(currentLink != null) {
-                            setNeutralButton(R.string.remove_link) { _, _ ->
-                                callback(null)
-                            }
-                        }
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show()
+
+                dialogBinding.link.performClick()
+            }
+
+            override fun openEditLinkDialog(
+                currentLink: String?,
+                currentText: String,
+                callback: (url: String, text: String) -> Unit,
+                removeLink: () -> Unit
+            ) {
+                val dialogBinding = DialogSetLinkBinding.inflate(LayoutInflater.from(context))
+                dialogBinding.text.setText(currentText)
+                dialogBinding.link.setText(currentLink)
+                AlertDialog.Builder(context)
+                    .setTitle(R.string.edit_link)
+                    .setView(dialogBinding.root)
+                    .setPositiveButton(android.R.string.ok) { _, _ ->
+                        callback(dialogBinding.link.text.toString(), dialogBinding.text.text.toString())
+                    }
+                    .setNeutralButton(R.string.remove_link) { _, _ ->
+                        removeLink()
                     }
                     .setNegativeButton(android.R.string.cancel, null)
                     .show()

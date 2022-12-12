@@ -16,38 +16,47 @@ use crate::tests::testutils_composer_model::{cm, tx};
 use crate::tests::testutils_conversion::utf16;
 
 #[test]
-fn set_link_to_empty_selection_at_end_of_alink() {
+fn edit_link_in_empty_selection_at_end_of_alink() {
     let mut model = cm("<a href=\"https://matrix.org\">test_link</a>|");
-    model.set_link(utf16("https://element.io"));
-    assert_eq!(tx(&model), "<a href=\"https://element.io\">test_link|</a>");
+    model.edit_link(utf16("https://matrix.org"), utf16("test_link_edited"));
+    assert_eq!(
+        tx(&model),
+        "<a href=\"https://matrix.org\">test_link_edited|</a>"
+    );
 }
 
 #[test]
-fn set_link_to_empty_selection_within_a_link() {
+fn edit_link_in_empty_selection_within_a_link() {
     let mut model = cm("<a href=\"https://matrix.org\">test_|link</a>");
-    model.set_link(utf16("https://element.io"));
-    assert_eq!(tx(&model), "<a href=\"https://element.io\">test_|link</a>");
+    model.edit_link(utf16("https://element.io"), utf16("test_link_edited"));
+    assert_eq!(
+        tx(&model),
+        "<a href=\"https://element.io\">test_link_edited|</a>"
+    );
 }
 
 #[test]
-fn set_link_to_empty_selection_at_start_of_a_link() {
+fn edit_link_in_empty_selection_at_start_of_a_link() {
     let mut model = cm("<a href=\"https://matrix.org\">|test_link</a>");
-    model.set_link(utf16("https://element.io"));
-    assert_eq!(tx(&model), "<a href=\"https://element.io\">|test_link</a>");
+    model.edit_link(utf16("https://element.io"), utf16("test_link_edited"));
+    assert_eq!(
+        tx(&model),
+        "<a href=\"https://element.io\">test_link_edited|</a>"
+    );
 }
 
 #[test]
-fn set_link_to_empty_selection() {
+fn edit_link_in_empty_selection() {
     // This use case should never happen but in case it would...
     let mut model = cm("test|");
-    model.set_link(utf16("https://element.io"));
+    model.edit_link(utf16("https://element.io"), utf16("test_link_edited"));
     assert_eq!(tx(&model), "test|");
 }
 
 #[test]
-fn set_link_wraps_selection_in_link_tag() {
+fn create_link_wraps_selection_in_link_tag() {
     let mut model = cm("{hello}| world");
-    model.set_link(utf16("https://element.io"));
+    model.create_link(utf16("https://element.io"));
     assert_eq!(
         model.state.dom.to_string(),
         "<a href=\"https://element.io\">hello</a> world"
@@ -55,9 +64,9 @@ fn set_link_wraps_selection_in_link_tag() {
 }
 
 #[test]
-fn set_link_in_multiple_leaves_of_formatted_text() {
+fn create_link_in_multiple_leaves_of_formatted_text() {
     let mut model = cm("{<i>test_italic<b>test_italic_bold</b></i>}|");
-    model.set_link(utf16("https://element.io"));
+    model.create_link(utf16("https://element.io"));
     assert_eq!(
         model.state.dom.to_string(),
         "<i><a href=\"https://element.io\">test_italic</a><b><a href=\"https://element.io\">test_italic_bold</a></b></i>"
@@ -65,9 +74,9 @@ fn set_link_in_multiple_leaves_of_formatted_text() {
 }
 
 #[test]
-fn set_link_in_multiple_leaves_of_formatted_text_partially_covered() {
+fn create_link_in_multiple_leaves_of_formatted_text_partially_covered() {
     let mut model = cm("<i>test_it{alic<b>test_ital}|ic_bold</b></i>");
-    model.set_link(utf16("https://element.io"));
+    model.create_link(utf16("https://element.io"));
     assert_eq!(
         model.state.dom.to_string(),
         "<i>test_it<a href=\"https://element.io\">alic</a><b><a href=\"https://element.io\">test_ital</a>ic_bold</b></i>"
@@ -75,9 +84,9 @@ fn set_link_in_multiple_leaves_of_formatted_text_partially_covered() {
 }
 
 #[test]
-fn set_link_in_multiple_leaves_of_formatted_text_partially_covered_2() {
+fn create_link_in_multiple_leaves_of_formatted_text_partially_covered_2() {
     let mut model = cm("<i><u>test_it{alic_underline</u>test_italic<b>test_ital}|ic_bold</b></i>");
-    model.set_link(utf16("https://element.io"));
+    model.create_link(utf16("https://element.io"));
     assert_eq!(
         model.state.dom.to_string(),
         "<i><u>test_it<a href=\"https://element.io\">alic_underline</a></u><a href=\"https://element.io\">test_italic</a><b><a href=\"https://element.io\">test_ital</a>ic_bold</b></i>"
@@ -85,46 +94,148 @@ fn set_link_in_multiple_leaves_of_formatted_text_partially_covered_2() {
 }
 
 #[test]
-fn set_link_in_already_linked_text() {
+#[should_panic]
+fn create_link_in_already_linked_text() {
     let mut model = cm("{<a href=\"https://element.io\">link_text</a>}|");
-    model.set_link(utf16("https://matrix.org"));
-    assert_eq!(
-        model.state.dom.to_string(),
-        "<a href=\"https://matrix.org\">link_text</a>"
-    )
+    model.create_link(utf16("https://matrix.org"));
 }
 
 #[test]
-fn set_link_in_already_linked_text_with_partial_selection() {
+#[should_panic]
+fn create_link_in_already_linked_text_with_partial_selection() {
     let mut model = cm("<a href=\"https://element.io\">link_{text}|</a>");
-    model.set_link(utf16("https://matrix.org"));
-    assert_eq!(
-        model.state.dom.to_string(),
-        "<a href=\"https://matrix.org\">link_text</a>"
-    )
+    model.create_link(utf16("https://matrix.org"));
 }
 
 #[test]
-fn set_link_in_text_and_already_linked_text() {
+fn create_link_in_text_and_already_linked_text() {
     let mut model =
         cm("{non_link_text<a href=\"https://element.io\">link_text</a>}|");
-    model.set_link(utf16("https://matrix.org"));
+    model.create_link(utf16("https://matrix.org"));
     assert_eq!(
         model.state.dom.to_string(),
-        "<a href=\"https://matrix.org\">non_link_text</a><a href=\"https://matrix.org\">link_text</a>"
+        "<a href=\"https://matrix.org\">non_link_textlink_text</a>"
     )
 }
 
 #[test]
-fn set_link_in_multiple_leaves_of_formatted_text_with_link() {
+fn create_link_in_multiple_leaves_of_formatted_text_with_link() {
     let mut model = cm("{<i><a href=\"https://element.io\">test_italic</a><b><a href=\"https://element.io\">test_italic_bold</a></b></i>}|");
-    model.set_link(utf16("https://matrix.org"));
+    model.create_link(utf16("https://matrix.org"));
     assert_eq!(
         model.state.dom.to_string(),
         "<i><a href=\"https://matrix.org\">test_italic</a><b><a href=\"https://matrix.org\">test_italic_bold</a></b></i>"
     )
 }
 
+#[test]
+fn edit_link() {
+    let mut model = cm("{<a href=\"https://element.io\">link_text</a>}|");
+    model.edit_link(utf16("https://matrix.org"), utf16("new_text"));
+    assert_eq!(
+        model.state.dom.to_string(),
+        "<a href=\"https://matrix.org\">new_text</a>"
+    )
+}
+
+#[test]
+fn edit_link_and_non_link_text() {
+    let mut model =
+        cm("{non_link_text<a href=\"https://element.io\">link_text</a>}|");
+    model.edit_link(utf16("https://matrix.org"), utf16("new_text"));
+    assert_eq!(
+        model.state.dom.to_string(),
+        "non_link_text<a href=\"https://matrix.org\">new_text</a>"
+    )
+}
+
+#[test]
+fn edit_link_and_formatted_text() {
+    let mut model =
+            cm("{<u><i>non_link_</i><b>text<a href=\"https://element.io\">link_text</a></b></u>}|");
+    model.edit_link(utf16("https://matrix.org"), utf16("new_text"));
+    assert_eq!(
+            model.state.dom.to_string(),
+            "<u><i>non_link_</i><b>text<a href=\"https://matrix.org\">new_text</a></b></u>"
+        )
+}
+
+#[test]
+fn edit_link_in_formatting() {
+    let mut model =
+            cm("<u><i>non_link_</i>{<b>text<a href=\"https://element.io\">link_text</a></b></u>}|");
+    model.edit_link(utf16("https://matrix.org"), utf16("new_text"));
+    assert_eq!(
+            model.state.dom.to_string(),
+            "<u><i>non_link_</i><b>text<a href=\"https://matrix.org\">new_text</a></b></u>"
+        )
+}
+
+#[test]
+fn edit_link_without_link() {
+    let mut model = cm("before {middle}| after");
+    model.edit_link(utf16("https://matrix.org"), utf16("new_text"));
+    assert_eq!(
+        model.state.dom.to_string(),
+        "before <a href=\"https://matrix.org\">new_text</a> after"
+    )
+}
+
+#[test]
+fn insert_link() {
+    let mut model = cm("test|");
+    model.insert_link(utf16("https://element.io"), utf16("added_link"));
+    assert_eq!(
+        tx(&model),
+        "test<a href=\"https://element.io\">added_link|</a>"
+    );
+}
+
+#[test]
+fn insert_link_and_undo() {
+    let mut model = cm("test|");
+    model.insert_link(utf16("https://element.io"), utf16("added_link"));
+    assert_eq!(
+        tx(&model),
+        "test<a href=\"https://element.io\">added_link|</a>"
+    );
+    model.undo();
+    assert_eq!(tx(&model), "test|");
+}
+
+#[test]
+fn insert_link_in_container() {
+    let mut model = cm("<b>test_bold|</b> test");
+    model.insert_link(utf16("https://element.io"), utf16("added_link"));
+    assert_eq!(
+        tx(&model),
+        "<b>test_bold<a href=\"https://element.io\">added_link|</a></b> test"
+    );
+}
+
+#[test]
+fn insert_link_on_selection() {
+    let mut model = cm("{test}|");
+    model.insert_link(utf16("https://element.io"), utf16("added_link"));
+    assert_eq!(tx(&model), "<a href=\"https://element.io\">added_link|</a>");
+}
+
+#[test]
+#[should_panic]
+fn insert_link_at_end_of_a_link() {
+    // This use case should never happen, but just in case it would...
+    let mut model = cm("<a href=\"https://matrix.org\">test_link|</a>");
+    model.insert_link(utf16("https://element.io"), utf16("added_link"));
+    assert_eq!(tx(&model), "<a href=\"https://matrix.org\">test_link</a><a href=\"https://element.io\">added_link|</a>");
+}
+
+#[test]
+#[should_panic]
+fn insert_link_within_a_link() {
+    // This use case should never happen, but just in case it would...
+    let mut model = cm("<a href=\"https://matrix.org\">test|_link</a>");
+    model.insert_link(utf16("https://element.io"), utf16("added_link"));
+}
 #[test]
 fn add_text_at_end_of_link() {
     let mut model = cm("<a href=\"https://element.io\">link|</a>");
@@ -342,63 +453,4 @@ fn replace_text_in_a_link_inside_a_list_partially_selected_starting_inside_endin
     let mut model = cm("<ul><li>list_element</li><li><a href=\"https://element.io\">link{_in_}|list</a></li></ul>");
     model.replace_text(utf16("added_text"));
     assert_eq!(tx(&model), "<ul><li>list_element</li><li><a href=\"https://element.io\">linkadded_text|list</a></li></ul>");
-}
-
-#[test]
-fn set_link_with_text() {
-    let mut model = cm("test|");
-    model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
-    assert_eq!(
-        tx(&model),
-        "test<a href=\"https://element.io\">added_link|</a>"
-    );
-}
-
-#[test]
-fn set_link_with_text_and_undo() {
-    let mut model = cm("test|");
-    model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
-    assert_eq!(
-        tx(&model),
-        "test<a href=\"https://element.io\">added_link|</a>"
-    );
-    model.undo();
-    assert_eq!(tx(&model), "test|");
-}
-
-#[test]
-fn set_link_with_text_in_container() {
-    let mut model = cm("<b>test_bold|</b> test");
-    model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
-    assert_eq!(
-        tx(&model),
-        "<b>test_bold<a href=\"https://element.io\">added_link|</a></b> test"
-    );
-}
-
-#[test]
-fn set_link_with_text_on_selection() {
-    // This use case should never happen, but just in case it would, nothing will happen.
-    let mut model = cm("{test}|");
-    model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
-    assert_eq!(tx(&model), "{test}|");
-}
-
-#[test]
-fn set_link_with_text_at_end_of_a_link() {
-    // This use case should never happen, but just in case it would...
-    let mut model = cm("<a href=\"https://matrix.org\">test_link|</a>");
-    model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
-    assert_eq!(tx(&model), "<a href=\"https://matrix.org\">test_link</a><a href=\"https://element.io\">added_link|</a>");
-}
-
-#[test]
-fn set_link_with_text_within_a_link() {
-    // This use case should never happen, but just in case it would...
-    let mut model = cm("<a href=\"https://matrix.org\">test|_link</a>");
-    model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
-    assert_eq!(
-        tx(&model),
-        "<a href=\"https://element.io\">testadded_link|_link</a>"
-    );
 }

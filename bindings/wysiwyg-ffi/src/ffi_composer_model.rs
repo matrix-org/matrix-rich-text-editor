@@ -173,14 +173,14 @@ impl ComposerModel {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().redo()))
     }
 
-    pub fn set_link(self: &Arc<Self>, link: String) -> Arc<ComposerUpdate> {
+    pub fn create_link(self: &Arc<Self>, link: String) -> Arc<ComposerUpdate> {
         let link = Utf16String::from_str(&link);
         Arc::new(ComposerUpdate::from(
-            self.inner.lock().unwrap().set_link(link),
+            self.inner.lock().unwrap().create_link(link),
         ))
     }
 
-    pub fn set_link_with_text(
+    pub fn insert_link_with_text(
         self: &Arc<Self>,
         link: String,
         text: String,
@@ -188,7 +188,19 @@ impl ComposerModel {
         let link = Utf16String::from_str(&link);
         let text = Utf16String::from_str(&text);
         Arc::new(ComposerUpdate::from(
-            self.inner.lock().unwrap().set_link_with_text(link, text),
+            self.inner.lock().unwrap().insert_link(link, text),
+        ))
+    }
+
+    pub fn edit_link_with_text(
+        self: &Arc<Self>,
+        link: String,
+        text: String,
+    ) -> Arc<ComposerUpdate> {
+        let link = Utf16String::from_str(&link);
+        let text = Utf16String::from_str(&text);
+        Arc::new(ComposerUpdate::from(
+            self.inner.lock().unwrap().edit_link(link, text),
         ))
     }
 

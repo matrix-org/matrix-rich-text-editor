@@ -17,13 +17,14 @@ import uniffi.wysiwyg_composer.ComposerAction
 
 class RichTextEditor : LinearLayout {
 
-    private val binding = ViewRichTextEditorBinding.inflate(LayoutInflater.from(context), this, true)
+    private val binding =
+        ViewRichTextEditorBinding.inflate(LayoutInflater.from(context), this, true)
 
-    constructor(context: Context): super(context)
+    constructor(context: Context) : super(context)
 
-    constructor(context: Context, attrs: AttributeSet?): super(context, attrs)
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
 
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) :
             super(context, attrs, defStyleAttr)
 
     var onSetLinkListener: OnSetLinkListener? = null
@@ -31,7 +32,7 @@ class RichTextEditor : LinearLayout {
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
 
-        with (binding) {
+        with(binding) {
             formattingSwitch.apply {
                 isChecked = true
                 setOnCheckedChangeListener { _, isChecked ->
@@ -64,16 +65,26 @@ class RichTextEditor : LinearLayout {
             }
             addLinkButton.setOnClickListener {
                 val linkAction = richTextEditText.getLinkAction() ?: return@setOnClickListener
-                when(linkAction) {
+                when (linkAction) {
                     is LinkAction.InsertLink -> {
                         onSetLinkListener?.openInsertLinkDialog { text, link ->
                             richTextEditText.insertLink(link = link, text = text)
                         }
                     }
-                    is LinkAction.SetLink ->
-                        onSetLinkListener?.openSetLinkDialog(linkAction.currentLink) { link ->
-                            richTextEditText.setLink(link)
+                    is LinkAction.CreateLink ->
+                        onSetLinkListener?.openCreateLinkDialog(linkAction.readonlyText) { link ->
+                            if (link == null) return@openCreateLinkDialog
+                            richTextEditText.createLink(link)
                         }
+                    is LinkAction.EditLink ->
+                        onSetLinkListener?.openEditLinkDialog(
+                            linkAction.currentLink,
+                            linkAction.currentText,
+                            callback = { link, text ->
+                                richTextEditText.editLink(link = link, text = text)
+                            }, removeLink = {
+                                richTextEditText.removeLink()
+                            })
                 }
             }
             undoButton.setOnClickListener {
@@ -89,9 +100,10 @@ class RichTextEditor : LinearLayout {
                 richTextEditText.toggleList(false)
             }
 
-            richTextEditText.actionStatesChangedListener = EditorEditText.OnActionStatesChangedListener { actionStates ->
-                updateActionStates(actionStates)
-            }
+            richTextEditText.actionStatesChangedListener =
+                EditorEditText.OnActionStatesChangedListener { actionStates ->
+                    updateActionStates(actionStates)
+                }
         }
     }
 
@@ -101,7 +113,11 @@ class RichTextEditor : LinearLayout {
             updateActionStateFor(formatItalicButton, ComposerAction.ITALIC, actionStates)
             updateActionStateFor(formatUnderlineButton, ComposerAction.UNDERLINE, actionStates)
             updateActionStateFor(formatInlineCodeButton, ComposerAction.INLINE_CODE, actionStates)
-            updateActionStateFor(formatStrikeThroughButton, ComposerAction.STRIKE_THROUGH, actionStates)
+            updateActionStateFor(
+                formatStrikeThroughButton,
+                ComposerAction.STRIKE_THROUGH,
+                actionStates
+            )
             updateActionStateFor(addLinkButton, ComposerAction.LINK, actionStates)
             updateActionStateFor(undoButton, ComposerAction.UNDO, actionStates)
             updateActionStateFor(redoButton, ComposerAction.REDO, actionStates)
@@ -127,6 +143,13 @@ class RichTextEditor : LinearLayout {
 }
 
 interface OnSetLinkListener {
-    fun openSetLinkDialog(currentLink: String?, callback: (url: String?) -> Unit)
+    fun openCreateLinkDialog(readonlyText: String, callback: (url: String?) -> Unit)
+    fun openEditLinkDialog(
+        currentLink: String?,
+        currentText: String,
+        callback: (url: String, text: String) -> Unit,
+        removeLink: () -> Unit,
+    )
+
     fun openInsertLinkDialog(callback: (text: String, url: String) -> Unit)
 }

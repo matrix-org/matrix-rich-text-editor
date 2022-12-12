@@ -71,9 +71,10 @@ internal class EditorViewModel(
                     action.end.toUInt()
                 )
                 is EditorInputAction.Delete -> composer?.delete()
-                is EditorInputAction.SetLink -> composer?.setLink(link = action.link)
+                is EditorInputAction.CreateLink -> composer?.createLink(link = action.link)
                 is EditorInputAction.RemoveLink -> composer?.removeLinks()
-                is EditorInputAction.SetLinkWithText -> composer?.setLinkWithText(action.link, action.text)
+                is EditorInputAction.InsertLink -> composer?.insertLinkWithText(action.link, action.text)
+                is EditorInputAction.EditLink -> composer?.editLinkWithText(action.link, action.text)
                 is EditorInputAction.ReplaceAllHtml -> composer?.setContentFromHtml(action.html)
                 is EditorInputAction.ReplaceAllMarkdown -> composer?.setContentFromMarkdown(action.markdown)
                 is EditorInputAction.Undo -> composer?.undo()
@@ -122,9 +123,9 @@ internal class EditorViewModel(
     fun getLinkAction(): LinkAction? =
         composer?.getLinkAction()?.let {
             when(it) {
-                is ComposerLinkAction.Edit -> LinkAction.SetLink(currentLink = it.link)
-                is ComposerLinkAction.Create -> LinkAction.SetLink(currentLink = null)
-                is ComposerLinkAction.CreateWithText -> LinkAction.InsertLink
+                is ComposerLinkAction.Edit -> LinkAction.EditLink(currentLink = it.link, currentText = it.text)
+                is ComposerLinkAction.Create -> LinkAction.CreateLink(readonlyText = "todo")
+                is ComposerLinkAction.Insert -> LinkAction.InsertLink
             }
         }
 

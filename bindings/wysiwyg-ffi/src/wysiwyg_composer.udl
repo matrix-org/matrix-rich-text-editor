@@ -40,8 +40,9 @@ interface ComposerModel {
     ComposerUpdate redo();
     ComposerUpdate indent();
     ComposerUpdate un_indent();
-    ComposerUpdate set_link(string link);
-    ComposerUpdate set_link_with_text(string link, string text);
+    ComposerUpdate create_link(string link);
+    ComposerUpdate edit_link_with_text(string link, string text);
+    ComposerUpdate insert_link_with_text(string link, string text);
     ComposerUpdate remove_links();
     string to_tree();
     ComposerState get_current_dom_state();
@@ -105,9 +106,10 @@ interface MenuState {
 
 [Enum]
 interface LinkAction {
-    CreateWithText();
+    Insert();
     Create();
     Edit(
-        string link
+        string link,
+        string text
     );
 };

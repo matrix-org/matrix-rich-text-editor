@@ -227,7 +227,9 @@ impl ComposerModel {
     }
 
     pub fn set_link(&mut self, link: &str) -> ComposerUpdate {
-        ComposerUpdate::from(self.inner.set_link(Utf16String::from_str(link)))
+        ComposerUpdate::from(
+            self.inner.create_link(Utf16String::from_str(link)),
+        )
     }
 
     pub fn set_link_with_text(
@@ -235,7 +237,7 @@ impl ComposerModel {
         link: &str,
         text: &str,
     ) -> ComposerUpdate {
-        ComposerUpdate::from(self.inner.set_link_with_text(
+        ComposerUpdate::from(self.inner.insert_link(
             Utf16String::from_str(link),
             Utf16String::from_str(text),
         ))
@@ -557,7 +559,7 @@ pub struct LinkAction {
 impl From<wysiwyg::LinkAction<Utf16String>> for LinkAction {
     fn from(inner: wysiwyg::LinkAction<Utf16String>) -> Self {
         match inner {
-            wysiwyg::LinkAction::CreateWithText => Self {
+            wysiwyg::LinkAction::Insert => Self {
                 create_with_text: Some(CreateWithText),
                 create: None,
                 edit_link: None,
@@ -567,7 +569,7 @@ impl From<wysiwyg::LinkAction<Utf16String>> for LinkAction {
                 create: Some(Create),
                 edit_link: None,
             },
-            wysiwyg::LinkAction::Edit(link) => {
+            wysiwyg::LinkAction::Edit { link, text } => {
                 let link = link.to_string();
                 Self {
                     create_with_text: None,

@@ -270,9 +270,9 @@ class EditorEditText : TextInputEditText {
      *
      * @param link The link to set or null to remove
      */
-    fun setLink(link: String?) {
+    fun createLink(link: String) {
         val result = viewModel.processInput(
-            if(link != null) EditorInputAction.SetLink(link) else EditorInputAction.RemoveLink
+            EditorInputAction.CreateLink(link)
         ) ?: return
 
         setTextFromComposerUpdate(result)
@@ -284,7 +284,14 @@ class EditorEditText : TextInputEditText {
      *
      * @see [setLink]
      */
-    fun removeLink() = setLink(null)
+    fun removeLink() {
+        val result = viewModel.processInput(
+            EditorInputAction.RemoveLink
+        ) ?: return
+
+        setTextFromComposerUpdate(result)
+        setSelectionFromComposerUpdate(result.selection.last)
+    }
 
     /**
      * Insert new text with a link.
@@ -292,8 +299,22 @@ class EditorEditText : TextInputEditText {
      * @param link The link to set
      * @param text The new text to insert
      */
+    @Deprecated("Use [setLink]")
     fun insertLink(link: String, text: String) {
-        val result = viewModel.processInput(EditorInputAction.SetLinkWithText(link, text)) ?: return
+        val result = viewModel.processInput(EditorInputAction.InsertLink(link, text)) ?: return
+
+        setTextFromComposerUpdate(result)
+        setSelectionFromComposerUpdate(result.selection.last)
+    }
+
+    /**
+     * Set a link with text
+     *
+     * @param link The link to set
+     * @param text The new text to insert or replinsertLinkWithText
+     */
+    fun editLink(link: String, text: String) {
+        val result = viewModel.processInput(EditorInputAction.EditLink(link, text)) ?: return
 
         setTextFromComposerUpdate(result)
         setSelectionFromComposerUpdate(result.selection.last)
