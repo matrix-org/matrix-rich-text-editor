@@ -15,7 +15,6 @@
 use std::cmp::min;
 use std::collections::HashSet;
 
-use crate::dom::action_list::DomActionList;
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::DomNodeKind::*;
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode};
@@ -29,7 +28,6 @@ where
 {
     pub fn code_block(&mut self) -> ComposerUpdate<S> {
         if self.action_is_reversed(ComposerAction::CodeBlock) {
-            // TODO: add code block removal if selection is inside the code block, otherwise extend it
             self.remove_code_block()
         } else {
             self.add_code_block()
@@ -48,19 +46,19 @@ where
         let start_handle = parent_handle.child_handle(idx_start);
         let up_to_handle = parent_handle.child_handle(idx_end + 1);
         let ancestor_to_split = self.find_ancestor_to_split(&start_handle);
-        let start_depth = ancestor_to_split.raw().len();
+        let start_depth = ancestor_to_split.depth();
         let mut path: Vec<usize> = Vec::new();
-        for depth in start_depth..start_handle.raw().len() {
+        // We'll build a new sub-tree with the contents of the code block, then insert it
+        for depth in start_depth..start_handle.depth() {
             let mut cur_child = &mut code_block;
-            let path_to_traverse = path.clone();
-            for i in &path_to_traverse {
+            for i in path.iter() {
                 if let DomNode::Container(c) = cur_child {
                     cur_child = c.get_child_mut(*i).unwrap();
                 }
             }
 
             let DomNode::Container(cur_container) = cur_child else { break; };
-            let path_len = parent_handle.raw().len();
+            let path_len = parent_handle.depth();
             if depth == path_len {
                 let iter = self.state.dom.iter_from_handle(&start_handle);
                 for node in iter {
@@ -102,10 +100,13 @@ where
                         _ => {}
                     }
                 }
+                // We already copied everything we needed to the sub-tree, delete the original nodes
                 for i in (idx_start..=idx_end).rev() {
                     self.state.dom.remove(&parent_handle.child_handle(i));
                 }
             } else {
+                // For every depth level, just copy any ancestor node with no children
+                // to re-create the sub-tree
                 let cur_sub_handle = start_handle.sub_handle_up_to(depth + 1);
                 let index_at_depth = cur_sub_handle.index_in_parent();
                 path.push(index_at_depth);
@@ -120,7 +121,7 @@ where
         }
 
         let insert_at_handle =
-            start_handle.sub_handle_up_to(ancestor_to_split.raw().len() + 1);
+            start_handle.sub_handle_up_to(ancestor_to_split.depth() + 1);
         let insert_at_handle =
             if idx_start > 0 && self.state.dom.contains(&insert_at_handle) {
                 insert_at_handle.next_sibling()
@@ -137,6 +138,7 @@ where
 
     fn merge_adjacent_code_blocks(&mut self, handle: &DomHandle) {
         let mut handle = handle.clone();
+        // If there is a next code block, add its contents to the current one and remove it
         if let Some(next_code_block_handle) = self
             .state
             .dom
@@ -150,6 +152,7 @@ where
             );
         }
 
+        // If there is a previous code block, add the contents of the current one to it and remove it
         if let Some(prev_code_block_handle) = self
             .state
             .dom
@@ -164,12 +167,8 @@ where
             handle = prev_code_block_handle;
         }
 
-        self.state.dom.join_format_nodes_at_level(
-            &handle,
-            handle.raw().len() - 1,
-            &mut DomActionList::default(),
-        );
-        self.state.dom.join_nodes_in_parent(&handle);
+        // Join any nodes inside the current code block
+        self.state.dom.join_nodes_in_container(&handle);
     }
 
     fn find_nodes_to_wrap_in_block(
@@ -185,8 +184,8 @@ where
         } else {
             let first_leaf = leaves.first().unwrap();
             let last_leaf = leaves.last().unwrap();
-            let iter = dom.iter_from_handle(&last_leaf.node_handle);
             let rev_iter = dom.iter_from_handle(&first_leaf.node_handle).rev();
+            let iter = dom.iter_from_handle(&last_leaf.node_handle);
             let mut nodes_to_cover = (
                 HandleWithKind {
                     handle: first_leaf.node_handle.clone(),
@@ -197,7 +196,9 @@ where
                     kind: last_leaf.kind.clone(),
                 },
             );
-            // TODO: check if ancestors of both start and end leaves contains a ListItem instead
+            // If we have a selection inside a single ListItem we only want to wrap its contents.
+            // However, if the selection covers several list items, we should split its parent List
+            // and wrap their contents instead.
             let selection_contains_several_list_items = range
                 .locations
                 .iter()
@@ -235,22 +236,21 @@ where
             }
 
             let (first, last) = nodes_to_cover;
-            let max_level =
-                min(first.handle.raw().len(), last.handle.raw().len());
-            let mut min_level = 0;
-            for i in min_level..max_level {
-                min_level = i;
+            let max_depth = min(first.handle.depth(), last.handle.depth());
+            let mut min_depth = 0;
+            for i in min_depth..max_depth {
+                min_depth = i;
                 if first.handle.raw()[i] != last.handle.raw()[i] {
                     break;
                 }
             }
             if first.kind == ListItem || last.kind == ListItem {
                 // We should wrap their parent List instead
-                min_level -= 1;
+                min_depth -= 1;
             }
-            let idx_start = first.handle.raw()[min_level];
-            let idx_end = last.handle.raw()[min_level];
-            let ancestor_handle = first.handle.sub_handle_up_to(min_level);
+            let idx_start = first.handle.raw()[min_depth];
+            let idx_end = last.handle.raw()[min_depth];
+            let ancestor_handle = first.handle.sub_handle_up_to(min_depth);
             Some((ancestor_handle, idx_start, idx_end))
         }
     }
@@ -280,7 +280,7 @@ where
         for child in block.children() {
             match child {
                 DomNode::Text(text_node) => {
-                    // Split the TextNode by \n and add them both to the nodes to add
+                    // Split the TextNode by \n and add them and a line break to the nodes to add
                     let mut text_start: usize = 0;
                     let mut text_end = text_start;
                     let data = text_node.data();
@@ -340,11 +340,11 @@ where
     }
 
     fn find_ancestor_to_split(&self, handle: &DomHandle) -> DomHandle {
-        let path_len = handle.raw().len();
+        let path_len = handle.depth();
         if path_len <= 1 {
             DomHandle::root()
         } else {
-            for i in (0..handle.raw().len()).rev() {
+            for i in (0..handle.depth()).rev() {
                 let ancestor_handle = handle.sub_handle_up_to(i);
                 let ancestor = self.state.dom.lookup_node(&ancestor_handle);
                 match ancestor.kind() {
@@ -454,7 +454,7 @@ where
         }
 
         if has_next_level {
-            let index_at_level = if path.len() < handle.raw().len() {
+            let index_at_level = if path.len() < handle.depth() {
                 handle.raw()[path.len()]
             } else {
                 0

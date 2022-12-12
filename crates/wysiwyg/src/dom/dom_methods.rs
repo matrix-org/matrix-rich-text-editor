@@ -227,7 +227,7 @@ where
                 )
             {
                 // FIXME: need to join other types of node as well
-                self.join_nodes_in_parent(&ancestor_handle);
+                self.join_nodes_in_container(&ancestor_handle);
             }
         }
         deleted_handles
@@ -256,19 +256,22 @@ where
         parent_handle_in_list(list, node_handle)
     }
 
-    pub(crate) fn join_nodes_in_parent(&mut self, parent_handle: &DomHandle) {
-        let child_count = if let DomNode::Container(parent) =
-            self.lookup_node(parent_handle)
+    pub(crate) fn join_nodes_in_container(
+        &mut self,
+        container_handle: &DomHandle,
+    ) {
+        let child_count = if let DomNode::Container(container) =
+            self.lookup_node(container_handle)
         {
-            parent.children().len()
+            container.children().len()
         } else {
             panic!("Parent node should be a container");
         };
 
         if child_count > 0 {
             for i in (0..child_count - 1).rev() {
-                let handle = parent_handle.child_handle(i);
-                let next_handle = parent_handle.child_handle(i + 1);
+                let handle = container_handle.child_handle(i);
+                let next_handle = container_handle.child_handle(i + 1);
                 let next_node = self.lookup_node(&next_handle);
                 let node = self.lookup_node(&handle);
 

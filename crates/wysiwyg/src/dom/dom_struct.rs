@@ -147,7 +147,7 @@ where
             return vec![]
         };
         let ret = self.replace(node_handle, parent.children().clone());
-        self.join_nodes_in_parent(&node_handle.parent_handle());
+        self.join_nodes_in_container(&node_handle.parent_handle());
         ret
     }
 
