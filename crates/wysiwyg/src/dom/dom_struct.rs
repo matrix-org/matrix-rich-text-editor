@@ -421,6 +421,12 @@ where
         true
     }
 
+    /// Checks if the passed handle is the last one in its parent.
+    pub fn is_last_in_parent(&self, handle: &DomHandle) -> bool {
+        return self.parent(handle).children().len()
+            == handle.index_in_parent() + 1;
+    }
+
     /// Gets the previous sibling of the node if exists.
     pub fn prev_sibling(&self, handle: &DomHandle) -> Option<&DomNode<S>> {
         if handle.index_in_parent() == 0 {

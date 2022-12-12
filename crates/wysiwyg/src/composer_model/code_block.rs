@@ -19,7 +19,7 @@ use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::DomNodeKind::*;
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode};
 use crate::dom::unicode_string::UnicodeStr;
-use crate::dom::{DomHandle, DomLocation};
+use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerAction, ComposerModel, ComposerUpdate, UnicodeString};
 
 impl<S> ComposerModel<S>
@@ -36,10 +36,18 @@ where
 
     fn add_code_block(&mut self) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
-        let Some((parent_handle, idx_start, idx_end)) = self.find_nodes_to_wrap_in_block(s, e) else {
+        let Some(wrap_result) = self.find_nodes_to_wrap_in_block(s, e) else {
             self.state.dom.append_at_end_of_document(DomNode::new_code_block(vec![DomNode::new_empty_text()]));
             return self.create_update_replace_all();
         };
+        let parent_handle = wrap_result.ancestor_handle;
+        let idx_start = wrap_result.idx_start;
+        let idx_end = wrap_result.idx_end;
+        let range = wrap_result.range;
+        let leaves: Vec<&DomLocation> = range.leaves().collect();
+        let first_leaf = leaves.first().unwrap();
+        let last_leaf = leaves.last().unwrap();
+
         let mut code_block: DomNode<S> = DomNode::new_code_block(Vec::new());
         code_block.set_handle(DomHandle::root());
         let mut nodes_visited = HashSet::new();
@@ -62,9 +70,18 @@ where
             if depth == path_len {
                 let iter = self.state.dom.iter_from_handle(&start_handle);
                 for node in iter {
+                    let parent = self.state.dom.parent(&node.handle());
+
                     if node.handle() == up_to_handle {
                         break;
                     }
+
+                    let is_in_selection = range.contains(&node.handle());
+                    let is_before = node.handle() <= first_leaf.node_handle
+                        && !is_in_selection;
+                    let is_after = node.handle() > last_leaf.node_handle
+                        && !is_in_selection;
+
                     match node.kind() {
                         Text | Formatting(_) | Link | LineBreak => {
                             nodes_visited.insert(node.handle());
@@ -76,25 +93,51 @@ where
                             cur_container.append_child(
                                 Self::format_node_for_code_block(node),
                             );
-                        }
-                        List | ListItem => {
-                            let mut needs_to_add_line_break =
-                                node.handle().index_in_parent() > 0;
-                            if needs_to_add_line_break {
-                                if let Some(DomNode::Text(text_node)) =
-                                    cur_container.children().last()
-                                {
-                                    if text_node.data().to_string() == "\n" {
-                                        needs_to_add_line_break = false;
-                                    }
-                                }
-                            }
+
+                            let needs_to_add_line_break = node.kind()
+                                != LineBreak
+                                && *parent.kind()
+                                    == ContainerNodeKind::ListItem
+                                && self
+                                    .state
+                                    .dom
+                                    .is_last_in_parent(&node.handle());
 
                             if needs_to_add_line_break {
                                 cur_container.append_child(DomNode::new_text(
                                     "\n".into(),
                                 ));
-                                self.state.end += 1;
+                                if is_before {
+                                    self.state.start += 1;
+                                    self.state.end += 1;
+                                }
+                                if !is_after {
+                                    if let Some(location) =
+                                        range.locations.iter().find(|l| {
+                                            l.node_handle == node.handle()
+                                        })
+                                    {
+                                        if location.is_covered() {
+                                            self.state.end += 1;
+                                        }
+                                    } else {
+                                        self.state.end += 1;
+                                    }
+                                }
+                            }
+                        }
+                        List => {
+                            // Add line break before the List if it's not at the start
+                            if node.handle().index_in_parent() > 0 {
+                                cur_container.append_child(DomNode::new_text(
+                                    "\n".into(),
+                                ));
+                                if is_before {
+                                    self.state.start += 1;
+                                }
+                                if !is_after {
+                                    self.state.end += 1;
+                                }
                             }
                         }
                         _ => {}
@@ -175,7 +218,7 @@ where
         &self,
         start: usize,
         end: usize,
-    ) -> Option<(DomHandle, usize, usize)> {
+    ) -> Option<WrapSearchResult> {
         let dom = &self.state.dom;
         let range = dom.find_range(start, end);
         let leaves: Vec<&DomLocation> = range.leaves().collect();
@@ -244,14 +287,21 @@ where
                     break;
                 }
             }
-            if first.kind == ListItem || last.kind == ListItem {
+            if (first.kind == ListItem || last.kind == ListItem)
+                && min_depth > 0
+            {
                 // We should wrap their parent List instead
                 min_depth -= 1;
             }
             let idx_start = first.handle.raw()[min_depth];
             let idx_end = last.handle.raw()[min_depth];
             let ancestor_handle = first.handle.sub_handle_up_to(min_depth);
-            Some((ancestor_handle, idx_start, idx_end))
+            Some(WrapSearchResult {
+                ancestor_handle,
+                idx_start,
+                idx_end,
+                range,
+            })
         }
     }
 
@@ -494,6 +544,13 @@ struct HandleWithKind {
     kind: DomNodeKind,
 }
 
+struct WrapSearchResult {
+    ancestor_handle: DomHandle,
+    idx_start: usize,
+    idx_end: usize,
+    range: Range,
+}
+
 #[cfg(test)]
 mod test {
     use crate::tests::testutils_composer_model::{cm, tx};
@@ -503,32 +560,40 @@ mod test {
     fn find_ranges_to_wrap_simple_text() {
         let model = cm("Some text|");
         let (s, e) = model.safe_selection();
-        let ret = model.find_nodes_to_wrap_in_block(s, e);
-        assert_eq!(ret, Some((DomHandle::from_raw(Vec::new()), 0, 0)));
+        let ret = model.find_nodes_to_wrap_in_block(s, e).unwrap();
+        assert_eq!(ret.ancestor_handle, DomHandle::from_raw(Vec::new()));
+        assert_eq!(ret.idx_start, 0);
+        assert_eq!(ret.idx_end, 0);
     }
 
     #[test]
     fn find_ranges_to_wrap_several_nodes() {
         let model = cm("Some text| <b>and bold </b><i>and italic</i>");
         let (s, e) = model.safe_selection();
-        let ret = model.find_nodes_to_wrap_in_block(s, e);
-        assert_eq!(ret, Some((DomHandle::from_raw(Vec::new()), 0, 2)));
+        let ret = model.find_nodes_to_wrap_in_block(s, e).unwrap();
+        assert_eq!(ret.ancestor_handle, DomHandle::from_raw(Vec::new()));
+        assert_eq!(ret.idx_start, 0);
+        assert_eq!(ret.idx_end, 2);
     }
 
     #[test]
     fn find_ranges_to_wrap_several_nodes_with_line_break_at_end() {
         let model = cm("Some text| <b>and bold </b><br/><i>and italic</i>");
         let (s, e) = model.safe_selection();
-        let ret = model.find_nodes_to_wrap_in_block(s, e);
-        assert_eq!(ret, Some((DomHandle::from_raw(Vec::new()), 0, 1)));
+        let ret = model.find_nodes_to_wrap_in_block(s, e).unwrap();
+        assert_eq!(ret.ancestor_handle, DomHandle::from_raw(Vec::new()));
+        assert_eq!(ret.idx_start, 0);
+        assert_eq!(ret.idx_end, 1);
     }
 
     #[test]
     fn find_ranges_to_wrap_several_nodes_with_line_break_at_start() {
         let model = cm("Some text <br/><b>and bold </b><i>|and italic</i>");
         let (s, e) = model.safe_selection();
-        let ret = model.find_nodes_to_wrap_in_block(s, e);
-        assert_eq!(ret, Some((DomHandle::from_raw(Vec::new()), 2, 3)));
+        let ret = model.find_nodes_to_wrap_in_block(s, e).unwrap();
+        assert_eq!(ret.ancestor_handle, DomHandle::from_raw(Vec::new()));
+        assert_eq!(ret.idx_start, 2);
+        assert_eq!(ret.idx_end, 3);
     }
 
     #[test]
@@ -537,8 +602,10 @@ mod test {
             "<ul><li>Some text <b>and bold </b><i>|and italic</i></li></ul>",
         );
         let (s, e) = model.safe_selection();
-        let ret = model.find_nodes_to_wrap_in_block(s, e);
-        assert_eq!(ret, Some((DomHandle::from_raw(vec![0, 0]), 0, 2)));
+        let ret = model.find_nodes_to_wrap_in_block(s, e).unwrap();
+        assert_eq!(ret.ancestor_handle, DomHandle::from_raw(vec![0, 0]));
+        assert_eq!(ret.idx_start, 0);
+        assert_eq!(ret.idx_end, 2);
     }
 
     #[test]
@@ -547,16 +614,20 @@ mod test {
             "<ul><li>Some text <b>and bold </b><br/><i>and| italic</i></li></ul>",
         );
         let (s, e) = model.safe_selection();
-        let ret = model.find_nodes_to_wrap_in_block(s, e);
-        assert_eq!(ret, Some((DomHandle::from_raw(vec![0, 0]), 3, 3)));
+        let ret = model.find_nodes_to_wrap_in_block(s, e).unwrap();
+        assert_eq!(ret.ancestor_handle, DomHandle::from_raw(vec![0, 0]));
+        assert_eq!(ret.idx_start, 3);
+        assert_eq!(ret.idx_end, 3);
     }
 
     #[test]
     fn find_ranges_to_wrap_several_list_items() {
         let model = cm("<ul><li>{First item</li><li>Second}| item</li></ul>");
         let (s, e) = model.safe_selection();
-        let ret = model.find_nodes_to_wrap_in_block(s, e);
-        assert_eq!(ret, Some((DomHandle::from_raw(vec![]), 0, 0)));
+        let ret = model.find_nodes_to_wrap_in_block(s, e).unwrap();
+        assert_eq!(ret.ancestor_handle, DomHandle::from_raw(Vec::new()));
+        assert_eq!(ret.idx_start, 0);
+        assert_eq!(ret.idx_end, 0);
     }
 
     #[test]
@@ -564,8 +635,10 @@ mod test {
         let model =
             cm("{Text <ul><li>First item</li><li>Second}| item</li></ul>");
         let (s, e) = model.safe_selection();
-        let ret = model.find_nodes_to_wrap_in_block(s, e);
-        assert_eq!(ret, Some((DomHandle::from_raw(vec![]), 0, 1)));
+        let ret = model.find_nodes_to_wrap_in_block(s, e).unwrap();
+        assert_eq!(ret.ancestor_handle, DomHandle::from_raw(Vec::new()));
+        assert_eq!(ret.idx_start, 0);
+        assert_eq!(ret.idx_end, 1);
     }
 
     // Tests: Code block
@@ -622,7 +695,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<ul><li><pre>Some text <b>and bold&nbsp;|</b><i>and italic</i></pre></li></ul>"
+            "<ul><li><pre>Some text <b>and bold&nbsp;|</b><i>and italic</i>\n</pre></li></ul>"
         );
     }
 
@@ -634,7 +707,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<ul><li>Some text <b>and bold&nbsp;</b><br /><pre><i>and| italic</i></pre></li></ul>"
+            "<ul><li>Some text <b>and bold&nbsp;</b><br /><pre><i>and| italic</i>\n</pre></li></ul>"
         );
     }
 
@@ -643,7 +716,15 @@ mod test {
         let mut model =
             cm("<ul><li>{First item</li><li>Second}| item</li></ul>");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>{First item\nSecond}| item</pre>");
+        assert_eq!(tx(&model), "<pre>{First item\nSecond}| item\n</pre>");
+    }
+
+    #[test]
+    fn add_code_block_to_several_lists() {
+        let mut model =
+            cm("<ul><li>{First item</li><li>Second item</li></ul>Some text<ul><li>Third}| item</li><li>Fourth one</li></ul>");
+        model.code_block();
+        assert_eq!(tx(&model), "<pre>{First item\nSecond item\nSome text\nThird}| item\nFourth one\n</pre>");
     }
 
     #[test]
@@ -651,7 +732,10 @@ mod test {
         let mut model =
             cm("{Text <ul><li>First item</li><li>Second}| item</li></ul>");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>{Text \nFirst item\nSecond}| item</pre>");
+        assert_eq!(
+            tx(&model),
+            "<pre>{Text \nFirst item\nSecond}| item\n</pre>"
+        );
     }
 
     #[test]
