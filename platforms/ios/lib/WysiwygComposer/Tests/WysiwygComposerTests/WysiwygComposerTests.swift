@@ -184,7 +184,7 @@ final class WysiwygComposerTests: XCTestCase {
         let composer = newComposerModel()
         _ = composer.replaceText(newText: "text")
         _ = composer.select(startUtf16Codeunit: 0, endUtf16Codeunit: 4)
-        _ = composer.setLink(newText: "link")
+        _ = composer.setLink(link: "link")
         XCTAssertEqual(
             composer.toTree(),
             """
