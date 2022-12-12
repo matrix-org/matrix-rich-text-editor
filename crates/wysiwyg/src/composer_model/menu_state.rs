@@ -198,16 +198,7 @@ where
         if !self.can_unindent(locations) {
             disabled_actions.insert(UnIndent);
         }
-        let contains_inline_code_node = locations
-            .iter()
-            .find(|l| {
-                matches!(
-                    l.kind,
-                    DomNodeKind::Formatting(InlineFormatType::InlineCode)
-                )
-            })
-            .is_some();
-        if contains_inline_code_node {
+        if contains_inline_code(locations) {
             // Remove the rest of inline formatting options
             disabled_actions.extend(vec![
                 ComposerAction::Bold,
@@ -216,7 +207,28 @@ where
                 ComposerAction::StrikeThrough,
                 ComposerAction::Link,
             ])
+        } else if contains_code_block(locations) {
+            disabled_actions.extend(vec![ComposerAction::InlineCode])
         }
         disabled_actions
     }
+}
+
+fn contains_inline_code(locations: &Vec<DomLocation>) -> bool {
+    locations
+        .iter()
+        .find(|l| {
+            matches!(
+                l.kind,
+                DomNodeKind::Formatting(InlineFormatType::InlineCode)
+            )
+        })
+        .is_some()
+}
+
+fn contains_code_block(locations: &Vec<DomLocation>) -> bool {
+    locations
+        .iter()
+        .find(|l| l.kind == DomNodeKind::CodeBlock)
+        .is_some()
 }

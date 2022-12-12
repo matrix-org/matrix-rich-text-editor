@@ -189,6 +189,12 @@ fn formatting_is_disabled_when_selection_covers_inline_code_node_and_others() {
     assert_formatting_actions_and_links_are_disabled(&model);
 }
 
+#[test]
+fn inline_code_is_disabled_when_selection_intersects_with_code_block() {
+    let model = cm("<pre>Some {code</pre> and}| text");
+    assert!(model.action_is_disabled(ComposerAction::InlineCode));
+}
+
 fn assert_formatting_actions_and_links_are_disabled(
     model: &ComposerModel<Utf16String>,
 ) {
