@@ -192,7 +192,7 @@ where
         if handle.has_parent() {
             let parent = self.parent(handle);
             let parent_handle = parent.handle();
-            if *parent.kind() == ContainerNodeKind::List {
+            if parent.is_list() {
                 return Some(parent_handle);
             } else if parent_handle.has_parent() {
                 return self.find_closest_list_ancestor(&parent_handle);

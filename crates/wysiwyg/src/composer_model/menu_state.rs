@@ -157,14 +157,10 @@ where
                 }
             },
             ContainerNodeKind::Link(_) => Some(ComposerAction::Link),
-            ContainerNodeKind::List => {
-                let list_type =
-                    ListType::try_from(container.name().to_owned()).unwrap();
-                match list_type {
-                    ListType::Ordered => Some(ComposerAction::OrderedList),
-                    ListType::Unordered => Some(ComposerAction::UnorderedList),
-                }
-            }
+            ContainerNodeKind::List(list_type) => match list_type {
+                ListType::Ordered => Some(ComposerAction::OrderedList),
+                ListType::Unordered => Some(ComposerAction::UnorderedList),
+            },
             ContainerNodeKind::CodeBlock => Some(ComposerAction::CodeBlock),
             _ => None,
         }
@@ -214,7 +210,7 @@ where
     }
 }
 
-fn contains_inline_code(locations: &Vec<DomLocation>) -> bool {
+fn contains_inline_code(locations: &[DomLocation]) -> bool {
     locations.iter().any(|l| {
         matches!(
             l.kind,
@@ -223,6 +219,6 @@ fn contains_inline_code(locations: &Vec<DomLocation>) -> bool {
     })
 }
 
-fn contains_code_block(locations: &Vec<DomLocation>) -> bool {
+fn contains_code_block(locations: &[DomLocation]) -> bool {
     locations.iter().any(|l| l.kind == DomNodeKind::CodeBlock)
 }

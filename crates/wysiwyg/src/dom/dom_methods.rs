@@ -539,7 +539,7 @@ where
                 index_at_level,
                 min_depth,
                 offset,
-                &handle,
+                handle,
                 new_subtree_at_prev_level,
             );
         }
