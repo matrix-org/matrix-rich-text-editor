@@ -153,6 +153,20 @@ where
             };
             let text = text_node.data()[location.end_offset..].to_owned();
             dom.replace(handle, vec![DomNode::new_text(text)]);
+        } else {
+            insert_text_at = Some(ancestor_child_handle.next_sibling());
+
+            let prev_text =
+                text_node.data()[..location.start_offset].to_owned();
+            let next_text = text_node.data()[location.end_offset..].to_owned();
+            let mut text_nodes = Vec::new();
+            if !prev_text.is_empty() {
+                text_nodes.push(DomNode::new_text(prev_text));
+            }
+            if !next_text.is_empty() {
+                text_nodes.push(DomNode::new_text(next_text));
+            }
+            dom.replace(handle, text_nodes);
         }
 
         (text, insert_text_at)
