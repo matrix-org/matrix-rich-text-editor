@@ -268,6 +268,8 @@ class EditorEditText : TextInputEditText {
     /**
      * Set a link for the current selection. This method does nothing if there is no text selected.
      *
+     * Call [getLinkAction] first to check whether this action is suggested.
+     *
      * @param link The link to set or null to remove
      */
     fun createLink(link: String) {
@@ -294,12 +296,13 @@ class EditorEditText : TextInputEditText {
     }
 
     /**
-     * Insert new text with a link.
+     * Insert new text with a link at the cursor position.
+     *
+     * Call [getLinkAction] first to check whether this action is suggested.
      *
      * @param link The link to set
      * @param text The new text to insert
      */
-    @Deprecated("Use [setLink]")
     fun insertLink(link: String, text: String) {
         val result = viewModel.processInput(EditorInputAction.InsertLink(link, text)) ?: return
 
@@ -308,10 +311,12 @@ class EditorEditText : TextInputEditText {
     }
 
     /**
-     * Set a link with text
+     * Edit the link that is currently selected or under the cursor
+     *
+     * Call [getLinkAction] first to check whether this action is suggested.
      *
      * @param link The link to set
-     * @param text The new text to insert or replinsertLinkWithText
+     * @param text The new text for the selected link
      */
     fun editLink(link: String, text: String) {
         val result = viewModel.processInput(EditorInputAction.EditLink(link, text)) ?: return

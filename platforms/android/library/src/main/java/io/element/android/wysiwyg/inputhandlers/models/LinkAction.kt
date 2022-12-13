@@ -10,12 +10,12 @@ sealed class LinkAction {
     object InsertLink : LinkAction()
 
     /**
-     * Add or change the link for the current selection.
+     * Edit the link for the current selection.
      */
     data class EditLink(val currentLink: String?, val currentText: String) : LinkAction()
 
     /**
-     * Add a link for the current selection.
+     * Create a new link for the current selection.
      */
     data class CreateLink(val readonlyText: String) : LinkAction()
 }

@@ -130,9 +130,20 @@ impl DomLocation {
         start_offset == 0
     }
 
-    /// Whether the selection completely covers this location
+    /// Whether this location completely covers the selection
     pub fn is_covered(&self) -> bool {
         self.is_start() && self.is_end()
+    }
+
+    /// Given the exact selection indices, whether the selection is equal to or covering the
+    /// location
+    pub fn is_equal_to_or_covering_selection(
+        &self,
+        selection_start: usize,
+        selection_end: usize,
+    ) -> bool {
+        selection_start >= self.index_in_dom()
+            && selection_end <= self.index_in_dom() + self.length
     }
 
     /// Allows us to check whether a location is both a list item and the

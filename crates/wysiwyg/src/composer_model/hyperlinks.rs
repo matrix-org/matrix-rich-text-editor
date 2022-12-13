@@ -24,24 +24,17 @@ impl<S> ComposerModel<S>
 where
     S: UnicodeString,
 {
-    // Get the link action
+    /// Get the suggested link action based on the current selection and DOM state
     pub fn get_link_action(&self) -> LinkAction<S> {
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
-        let locations = range.locations;
+        let link_locations = self.link_locations(&range);
 
-        // If the selection is within a single link then we can edit it
-        let link_locations: Vec<DomLocation> = locations
-            .into_iter()
-            .filter(|loc| loc.kind == DomNodeKind::Link)
-            .collect();
+        // If the selection is equal to or covering a single link then we can edit it
         if link_locations.len() == 1 {
-            let link = &link_locations[0];
-            // TODO: extract this logic to a function
-            if s >= link.index_in_dom()
-                && e <= link.index_in_dom() + link.length
-            {
-                let node = self.state.dom.lookup_node(&link.node_handle);
+            let location = &link_locations[0];
+            if location.is_equal_to_or_covering_selection(s, e) {
+                let node = self.state.dom.lookup_node(&location.node_handle);
                 let text = node.to_raw_text();
                 let link = node.as_container().unwrap().get_link().unwrap();
                 return LinkAction::Edit { link, text };
@@ -54,9 +47,12 @@ where
             LinkAction::Create
         }
     }
-    // Inserts some text with a link
-    //   If there is a selection, the selected text is replaced
-    //   If there is no selection, the new linked text is inserted at the cursor position
+
+    /// Inserts some text with a link
+    ///   If there is a selection, the selected text is replaced
+    ///   If there is no selection, the new linked text is inserted at the cursor position
+    ///
+    /// Use [get_link_action] first to check if this action is suggested.
     pub fn insert_link(&mut self, link: S, text: S) -> ComposerUpdate<S> {
         match self.get_link_action() {
             LinkAction::Edit { link: _, text: _ } => {
@@ -72,7 +68,9 @@ where
         self.set_link_range(range, link)
     }
 
-    // Edit the link that is selected or at the cursor position
+    /// Edit the link that is selected or at the cursor position
+    ///
+    /// Use [get_link_action] first to check if this action is suggested.
     pub fn edit_link(&mut self, link: S, text: S) -> ComposerUpdate<S> {
         let (mut s, mut e) = self.safe_selection();
         self.push_state_to_history();
@@ -98,7 +96,9 @@ where
         self.set_link_range(range, link)
     }
 
-    // Create a link on the selected text
+    /// Create a link on the selected text
+    ///
+    /// Use [get_link_action] first to check if this action is suggested.
     pub fn create_link(&mut self, link: S) -> ComposerUpdate<S> {
         match self.get_link_action() {
             LinkAction::Edit { link: _, text: _ } => {
@@ -175,6 +175,16 @@ where
             return ComposerUpdate::keep();
         }
         self.create_update_replace_all()
+    }
+
+    /// Get the locations of any links within a given range
+    fn link_locations(&self, range: &Range) -> Vec<DomLocation> {
+        range
+            .locations
+            .clone()
+            .into_iter()
+            .filter(|loc| loc.kind == DomNodeKind::Link)
+            .collect()
     }
 }
 

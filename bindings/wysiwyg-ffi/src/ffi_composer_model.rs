@@ -180,7 +180,7 @@ impl ComposerModel {
         ))
     }
 
-    pub fn insert_link_with_text(
+    pub fn insert_link(
         self: &Arc<Self>,
         link: String,
         text: String,
@@ -192,7 +192,7 @@ impl ComposerModel {
         ))
     }
 
-    pub fn edit_link_with_text(
+    pub fn edit_link(
         self: &Arc<Self>,
         link: String,
         text: String,
