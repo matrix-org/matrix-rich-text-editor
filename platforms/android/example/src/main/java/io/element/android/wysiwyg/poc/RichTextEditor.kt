@@ -72,7 +72,7 @@ class RichTextEditor : LinearLayout {
                         }
                     }
                     is LinkAction.CreateLink ->
-                        onSetLinkListener?.openCreateLinkDialog(linkAction.readonlyText) { link ->
+                        onSetLinkListener?.openCreateLinkDialog { link ->
                             if (link == null) return@openCreateLinkDialog
                             richTextEditText.createLink(link)
                         }
@@ -143,7 +143,7 @@ class RichTextEditor : LinearLayout {
 }
 
 interface OnSetLinkListener {
-    fun openCreateLinkDialog(readonlyText: String, callback: (url: String?) -> Unit)
+    fun openCreateLinkDialog(callback: (url: String?) -> Unit)
     fun openEditLinkDialog(
         currentLink: String?,
         currentText: String,

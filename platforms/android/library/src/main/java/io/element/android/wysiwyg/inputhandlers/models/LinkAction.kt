@@ -16,6 +16,8 @@ sealed class LinkAction {
 
     /**
      * Create a new link for the current selection.
+     *
+     * TODO: Include the currently selected text to be displayed in the UI
      */
-    data class CreateLink(val readonlyText: String) : LinkAction()
+    object CreateLink : LinkAction()
 }

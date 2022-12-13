@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isGone
 import io.element.android.wysiwyg.poc.databinding.DialogSetLinkBinding
 import io.element.android.wysiwyg.poc.databinding.ActivityMainBinding
 
@@ -21,12 +22,10 @@ class MainActivity : AppCompatActivity() {
 
         binding.editor.onSetLinkListener = object: OnSetLinkListener {
             override fun openCreateLinkDialog(
-                readonlyText: String,
                 callback: (url: String?) -> Unit
             ) {
                 val dialogBinding = DialogSetLinkBinding.inflate(LayoutInflater.from(context))
-                dialogBinding.text.setText(readonlyText)
-                dialogBinding.text.isEnabled = false
+                dialogBinding.text.isGone = true
                 AlertDialog.Builder(context)
                     .setTitle(R.string.add_link)
                     .setView(dialogBinding.root)

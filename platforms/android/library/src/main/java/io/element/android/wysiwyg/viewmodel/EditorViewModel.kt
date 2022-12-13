@@ -124,7 +124,7 @@ internal class EditorViewModel(
         composer?.getLinkAction()?.let {
             when(it) {
                 is ComposerLinkAction.Edit -> LinkAction.EditLink(currentLink = it.link, currentText = it.text)
-                is ComposerLinkAction.Create -> LinkAction.CreateLink(readonlyText = "todo")
+                is ComposerLinkAction.Create -> LinkAction.CreateLink
                 is ComposerLinkAction.Insert -> LinkAction.InsertLink
             }
         }
