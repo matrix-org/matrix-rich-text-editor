@@ -196,7 +196,7 @@ fn enter_in_code_block_at_start_adds_the_line_break() {
 #[test]
 fn enter_in_code_block_at_start_with_previous_line_break_moves_it_outside_the_code_block(
 ) {
-    // The initial line break will be removed, so it's the as having a single line break at the start
+    // The initial line break will be removed, so it's the same as having a single line break at the start
     let mut model = cm("<pre>\n\n|Test</pre>");
     model.enter();
     assert_eq!(tx(&model), "<br />|<pre>Test</pre>")
@@ -204,7 +204,7 @@ fn enter_in_code_block_at_start_with_previous_line_break_moves_it_outside_the_co
 
 #[test]
 fn enter_in_code_block_at_start_with_a_line_break_after_it_adds_another_one() {
-    // The initial line break will be removed, so it's the as having a single line break at the start
+    // The initial line break will be removed, so it's the same as having a single line break at the start
     let mut model = cm("<pre>\n|\nTest</pre>");
     model.enter();
     assert_eq!(tx(&model), "<pre>\n|\nTest</pre>")
