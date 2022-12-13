@@ -215,20 +215,14 @@ where
 }
 
 fn contains_inline_code(locations: &Vec<DomLocation>) -> bool {
-    locations
-        .iter()
-        .find(|l| {
-            matches!(
-                l.kind,
-                DomNodeKind::Formatting(InlineFormatType::InlineCode)
-            )
-        })
-        .is_some()
+    locations.iter().any(|l| {
+        matches!(
+            l.kind,
+            DomNodeKind::Formatting(InlineFormatType::InlineCode)
+        )
+    })
 }
 
 fn contains_code_block(locations: &Vec<DomLocation>) -> bool {
-    locations
-        .iter()
-        .find(|l| l.kind == DomNodeKind::CodeBlock)
-        .is_some()
+    locations.iter().any(|l| l.kind == DomNodeKind::CodeBlock)
 }

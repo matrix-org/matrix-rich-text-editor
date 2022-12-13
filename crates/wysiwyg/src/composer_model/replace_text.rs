@@ -94,7 +94,8 @@ where
                         .iter()
                         .filter(|l| {
                             l.kind.is_block_kind()
-                                && l.node_handle.is_parent_of(&leaf.node_handle)
+                                && l.node_handle
+                                    .is_ancestor_of(&leaf.node_handle)
                         })
                         .max();
 
@@ -129,8 +130,8 @@ where
                     .find(|l| {
                         block_ancestor_loc
                             .node_handle
-                            .is_parent_of(&l.node_handle)
-                            && l.node_handle.is_parent_of(&leaf.node_handle)
+                            .is_ancestor_of(&l.node_handle)
+                            && l.node_handle.is_ancestor_of(&leaf.node_handle)
                             && l.kind == ListItem
                     })
                     .unwrap();

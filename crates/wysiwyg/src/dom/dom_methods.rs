@@ -228,7 +228,6 @@ where
                     &first_leave.node_handle,
                 )
             {
-                // FIXME: need to join other types of node as well
                 self.join_nodes_in_container(&ancestor_handle);
             }
         }
@@ -583,23 +582,6 @@ fn not_root(handle: &DomHandle) -> bool {
     !handle.is_root()
 }
 
-fn starts_with(subject: &DomHandle, object: &DomHandle) -> bool {
-    // Can't start with something longer than you
-    if subject.raw().len() < object.raw().len() {
-        return false;
-    }
-
-    // If any path element doesn't match we don't start with this
-    for (s, o) in subject.raw().iter().zip(object.raw().iter()) {
-        if s != o {
-            return false;
-        }
-    }
-
-    // All elements match, so we do start with it
-    true
-}
-
 fn adjust_handles_for_delete(
     handles: &mut Vec<DomHandle>,
     deleted: &DomHandle,
@@ -609,10 +591,10 @@ fn adjust_handles_for_delete(
 
     let parent = deleted.parent_handle();
     for (i, handle) in handles.iter().enumerate() {
-        if starts_with(handle, deleted) {
+        if deleted.is_ancestor_of(handle) {
             // We are the deleted node (or a descendant of it)
             indices_in_handles_to_delete.push(i);
-        } else if starts_with(handle, &parent) {
+        } else if parent.is_ancestor_of(handle) {
             // We are a sibling of the deleted node (or a descendant of one)
 
             // If we're after a deleted node, reduce our index
@@ -651,21 +633,6 @@ mod test {
     use crate::ToHtml;
 
     use super::*;
-
-    #[test]
-    fn starts_with_works() {
-        let h0123 = DomHandle::from_raw(vec![0, 1, 2, 3]);
-        let h012 = DomHandle::from_raw(vec![0, 1, 2]);
-        let h123 = DomHandle::from_raw(vec![1, 2, 3]);
-        let h = DomHandle::from_raw(vec![]);
-
-        assert!(starts_with(&h0123, &h012));
-        assert!(!starts_with(&h012, &h0123));
-        assert!(starts_with(&h012, &h012));
-        assert!(starts_with(&h012, &h));
-        assert!(!starts_with(&h123, &h012));
-        assert!(!starts_with(&h012, &h123));
-    }
 
     #[test]
     fn can_adjust_handles_when_removing_nodes() {
