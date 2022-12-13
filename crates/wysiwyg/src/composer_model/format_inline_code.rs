@@ -122,7 +122,7 @@ where
         location: &DomLocation,
         ancestor_child_handle: &DomHandle,
     ) -> (S, Option<DomHandle>) {
-        let mut insert_text_at = None;
+        let insert_text_at;
         // Get the selected text from the TextNode
         let text = text_node.data()[location.start_offset..location.end_offset]
             .to_owned();

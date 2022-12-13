@@ -491,7 +491,8 @@ where
                         }
                         DomNode::Text(text_node) => {
                             if offset == 0 {
-                                removed_nodes.insert(0, child.clone());
+                                removed_nodes
+                                    .insert(0, container.remove_child(idx));
                             } else if offset >= text_node.data().chars().count()
                             {
                                 // Do nothing

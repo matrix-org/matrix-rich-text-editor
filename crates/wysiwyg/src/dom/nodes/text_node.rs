@@ -23,6 +23,7 @@ use crate::dom::to_tree::ToTree;
 use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt, UnicodeStringExt};
 use crate::dom::UnicodeString;
 use html_escape;
+use std::ops::Range;
 
 // categories of character for backspace/delete word
 #[derive(PartialEq, Eq, Debug)]
@@ -104,6 +105,19 @@ where
         } else {
             false
         }
+    }
+
+    pub fn remove_trailing_line_break(&mut self) -> bool {
+        if self.data.chars().last() == Some('\n') {
+            self.data.pop_last();
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn clone_with_range(&self, range: Range<usize>) -> TextNode<S> {
+        TextNode::from(self.data[range].to_owned())
     }
 
     /// This gets the character at the cursor offset, considering the

@@ -242,14 +242,18 @@ fn find_char(haystack: &[u16], needle: &str) -> Option<usize> {
     // Track the contents of the tag we are inside, so we know whether we've
     // seen a br tag.
     let mut tag_contents: Vec<u16> = Vec::new();
+    let mut parent_tag_contents: Vec<u16> = Vec::new();
+    let mut pos_from_close_tag = 0;
 
     let needle = utf16_code_unit(needle);
     let open = utf16_code_unit("<");
     let close = utf16_code_unit(">");
     let space = utf16_code_unit(" ");
     let forward_slash = utf16_code_unit("/");
+    let line_break = utf16_code_unit("\n");
 
     let br_tag = Utf16String::from_str("br").into_vec();
+    let pre_tag = Utf16String::from_str("pre").into_vec();
 
     for (i, &ch) in haystack.iter().enumerate() {
         if ch == needle {
@@ -264,7 +268,17 @@ fn find_char(haystack: &[u16], needle: &str) -> Option<usize> {
                 skip_count += 1;
             }
             in_tag = false;
+            pos_from_close_tag = 0;
+            parent_tag_contents = tag_contents.clone();
             tag_contents.clear();
+        } else {
+            if pos_from_close_tag == 0
+                && parent_tag_contents == pre_tag
+                && ch == line_break
+            {
+                skip_count += 1;
+            }
+            pos_from_close_tag += 1;
         }
         if in_tag {
             skip_count += 1;
