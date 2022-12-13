@@ -154,7 +154,7 @@ impl<S: UnicodeString> DomActionList<S> {
     ) -> Option<(DomHandle, DomHandle)> {
         self.actions.iter().find_map(|action| match action {
             DomAction::Move(a) => {
-                if a.from_handle.is_parent_of(handle)
+                if a.from_handle.is_ancestor_of(handle)
                     || a.from_handle == *handle
                 {
                     Some((a.from_handle.clone(), a.to_handle.clone()))

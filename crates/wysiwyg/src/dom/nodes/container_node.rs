@@ -48,6 +48,7 @@ where
     Link(S),
     List,
     ListItem,
+    CodeBlock,
 }
 
 impl<S> ContainerNode<S>
@@ -121,6 +122,16 @@ where
         }
     }
 
+    pub fn new_code_block(children: Vec<DomNode<S>>) -> Self {
+        Self {
+            name: "pre".into(),
+            kind: ContainerNodeKind::CodeBlock,
+            attrs: None,
+            children,
+            handle: DomHandle::new_unset(),
+        }
+    }
+
     pub fn append_child(&mut self, mut child: DomNode<S>) -> DomHandle {
         assert!(self.handle.is_set());
 
@@ -184,7 +195,11 @@ where
         self.children.last_mut()
     }
 
-    pub fn insert_child(&mut self, index: usize, node: DomNode<S>) {
+    pub fn insert_child(
+        &mut self,
+        index: usize,
+        node: DomNode<S>,
+    ) -> &DomNode<S> {
         assert!(self.handle.is_set());
         assert!(index <= self.children().len());
 
@@ -194,6 +209,8 @@ where
             let new_handle = self.handle.child_handle(i);
             self.children[i].set_handle(new_handle);
         }
+
+        self.children.get(index).unwrap()
     }
 
     pub fn handle(&self) -> DomHandle {
@@ -266,7 +283,7 @@ where
     pub(crate) fn is_block_node(&self) -> bool {
         use ContainerNodeKind::*;
 
-        matches!(self.kind, Generic | List)
+        matches!(self.kind, Generic | List | CodeBlock)
     }
 
     pub fn text_len(&self) -> usize {
@@ -321,7 +338,10 @@ where
 
     /// Creates a container with the same kind & attributes
     /// as self, with given children and an unset handle.
-    fn clone_with_children(&self, children: Vec<DomNode<S>>) -> Self {
+    pub(crate) fn clone_with_new_children(
+        &self,
+        children: Vec<DomNode<S>>,
+    ) -> Self {
         Self {
             name: self.name.clone(),
             kind: self.kind.clone(),
@@ -369,7 +389,7 @@ where
         let result = self.find_slice_location(position);
 
         match result {
-            ControlFlow::Continue(_) => self.clone_with_children(vec![]),
+            ControlFlow::Continue(_) => self.clone_with_new_children(vec![]),
             ControlFlow::Break((current_loc, child_index, should_slice)) => {
                 let mut removed_children = Vec::new();
                 let index_to_remove: usize;
@@ -387,7 +407,7 @@ where
                     removed_children
                         .push(self.children.remove(index_to_remove));
                 }
-                self.clone_with_children(removed_children)
+                self.clone_with_new_children(removed_children)
             }
         }
     }
@@ -401,7 +421,7 @@ where
         let result = self.find_slice_location(position);
 
         match result {
-            ControlFlow::Continue(_) => self.clone_with_children(vec![]),
+            ControlFlow::Continue(_) => self.clone_with_new_children(vec![]),
             ControlFlow::Break((current_loc, child_index, should_slice)) => {
                 let mut removed_children = Vec::new();
                 if should_slice {
@@ -414,7 +434,7 @@ where
                 for i in (0..child_index).rev() {
                     removed_children.insert(0, self.children.remove(i));
                 }
-                self.clone_with_children(removed_children)
+                self.clone_with_new_children(removed_children)
             }
         }
     }
@@ -605,6 +625,10 @@ where
 
             ListItem => {
                 fmt_list_item(self, buffer, &options)?;
+            }
+
+            CodeBlock => {
+                fmt_code_block(self, buffer, &options)?;
             }
         };
 
@@ -922,6 +946,22 @@ where
             S: UnicodeString,
         {
             fmt_children(this, buffer, options)?;
+
+            Ok(())
+        }
+
+        #[inline(always)]
+        fn fmt_code_block<S>(
+            this: &ContainerNode<S>,
+            buffer: &mut S,
+            options: &MarkdownOptions,
+        ) -> Result<(), MarkdownError<S>>
+        where
+            S: UnicodeString,
+        {
+            buffer.push("```\n");
+            fmt_children(this, buffer, &options)?;
+            buffer.push("\n```\n");
 
             Ok(())
         }

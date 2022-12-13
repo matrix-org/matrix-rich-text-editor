@@ -93,7 +93,7 @@ where
         }
     }
 
-    fn join_format_nodes_at_level(
+    pub(crate) fn join_format_nodes_at_level(
         &mut self,
         handle: &DomHandle,
         level: usize,
@@ -316,7 +316,7 @@ where
     /// Deletes [from_handle] node appending its children nodes to [to_handle].
     /// Returns a tuple of the index where the children where inserted inside [to_handle] and a
     /// HashMap mapping the old handle of each moved children to its new one.
-    fn move_children_and_delete_parent(
+    pub(crate) fn move_children_and_delete_parent(
         &mut self,
         from_handle: &DomHandle,
         to_handle: &DomHandle,

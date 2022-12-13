@@ -80,6 +80,10 @@ where
         DomNode::Container(ContainerNode::new_list_item(children))
     }
 
+    pub fn new_code_block(children: Vec<DomNode<S>>) -> DomNode<S> {
+        DomNode::Container(ContainerNode::new_code_block(children))
+    }
+
     pub fn handle(&self) -> DomHandle {
         match self {
             DomNode::Container(n) => n.handle(),
@@ -351,6 +355,7 @@ pub enum DomNodeKind {
     Link,
     ListItem,
     List,
+    CodeBlock,
 }
 
 impl DomNodeKind {
@@ -365,7 +370,16 @@ impl DomNodeKind {
             ContainerNodeKind::List => DomNodeKind::List,
             ContainerNodeKind::ListItem => DomNodeKind::ListItem,
             ContainerNodeKind::Generic => DomNodeKind::Generic,
+            ContainerNodeKind::CodeBlock => DomNodeKind::CodeBlock,
         }
+    }
+
+    pub fn is_structure_kind(&self) -> bool {
+        matches!(self, Self::List | Self::ListItem)
+    }
+
+    pub fn is_block_kind(&self) -> bool {
+        matches!(self, Self::Generic | Self::List | Self::CodeBlock)
     }
 }
 

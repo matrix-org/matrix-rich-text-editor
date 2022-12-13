@@ -15,6 +15,7 @@
 use strum::IntoEnumIterator;
 
 use crate::action_state::ActionState;
+use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind};
 use crate::dom::{DomLocation, Range};
 use crate::menu_state::MenuStateUpdate;
@@ -164,6 +165,7 @@ where
                     ListType::Unordered => Some(ComposerAction::UnorderedList),
                 }
             }
+            ContainerNodeKind::CodeBlock => Some(ComposerAction::CodeBlock),
             _ => None,
         }
     }
@@ -196,16 +198,7 @@ where
         if !self.can_unindent(locations) {
             disabled_actions.insert(UnIndent);
         }
-        let contains_inline_code_node = locations
-            .iter()
-            .find(|l| {
-                self.state
-                    .dom
-                    .lookup_node(&l.node_handle)
-                    .is_formatting_node_of_type(&InlineFormatType::InlineCode)
-            })
-            .is_some();
-        if contains_inline_code_node {
+        if contains_inline_code(locations) {
             // Remove the rest of inline formatting options
             disabled_actions.extend(vec![
                 ComposerAction::Bold,
@@ -214,7 +207,22 @@ where
                 ComposerAction::StrikeThrough,
                 ComposerAction::Link,
             ])
+        } else if contains_code_block(locations) {
+            disabled_actions.extend(vec![ComposerAction::InlineCode])
         }
         disabled_actions
     }
+}
+
+fn contains_inline_code(locations: &Vec<DomLocation>) -> bool {
+    locations.iter().any(|l| {
+        matches!(
+            l.kind,
+            DomNodeKind::Formatting(InlineFormatType::InlineCode)
+        )
+    })
+}
+
+fn contains_code_block(locations: &Vec<DomLocation>) -> bool {
+    locations.iter().any(|l| l.kind == DomNodeKind::CodeBlock)
 }

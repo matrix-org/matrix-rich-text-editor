@@ -228,6 +228,13 @@ impl Range {
     pub fn is_empty(&self) -> bool {
         self.locations.is_empty()
     }
+
+    pub fn contains(&self, handle: &DomHandle) -> bool {
+        self.locations
+            .iter()
+            .find(|l| l.node_handle == *handle)
+            .is_some()
+    }
 }
 
 impl IntoIterator for Range {
