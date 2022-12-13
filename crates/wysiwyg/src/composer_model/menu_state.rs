@@ -17,6 +17,7 @@ use strum::IntoEnumIterator;
 use crate::action_state::ActionState;
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind};
+use crate::dom::range::DomLocationPosition;
 use crate::dom::{DomLocation, Range};
 use crate::menu_state::MenuStateUpdate;
 use crate::ComposerAction::{Indent, UnIndent};
@@ -92,7 +93,9 @@ where
             range
                 .leaves()
                 // do not need locations after the cursor for next logic
-                .filter(|loc| loc.position < range.end())
+                .filter(|loc| {
+                    !(loc.relative_position() == DomLocationPosition::After)
+                })
                 .fold(
                     // Init with reversed_actions from the first leave.
                     self.compute_reversed_actions(&l.node_handle),
