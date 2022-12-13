@@ -46,11 +46,71 @@ fn edit_link_in_empty_selection_at_start_of_a_link() {
 }
 
 #[test]
-fn edit_link_in_empty_selection() {
+fn edit_link_in_partial_selection_edits_whole_link() {
+    let mut model = cm("<a href=\"https://element.io\">lin{k_t}|ext</a>");
+    model.edit_link(utf16("https://matrix.org"), utf16("new_text"));
+    assert_eq!(
+        model.state.dom.to_string(),
+        "<a href=\"https://matrix.org\">new_text</a>"
+    )
+}
+
+#[test]
+fn edit_link_in_complete_selection() {
+    let mut model = cm("{<a href=\"https://element.io\">link_text</a>}|");
+    model.edit_link(utf16("https://matrix.org"), utf16("new_text"));
+    assert_eq!(
+        model.state.dom.to_string(),
+        "<a href=\"https://matrix.org\">new_text</a>"
+    )
+}
+
+#[test]
+fn edit_link_and_undo() {
+    let mut model = cm("<a href=\"https://element.io\">test_link</a>|");
+    model.edit_link(utf16("https://matrix.org"), utf16("test_link_edited"));
+    model.undo();
+    assert_eq!(tx(&model), "<a href=\"https://element.io\">test_link|</a>");
+}
+
+#[test]
+fn edit_link_without_link() {
     // This use case should never happen but in case it would...
     let mut model = cm("test|");
     model.edit_link(utf16("https://element.io"), utf16("test_link_edited"));
     assert_eq!(tx(&model), "test|");
+}
+
+#[test]
+fn edit_link_without_link_in_selection() {
+    let mut model = cm("before {middle}| after");
+    model.edit_link(utf16("https://matrix.org"), utf16("new_text"));
+    assert_eq!(
+        model.state.dom.to_string(),
+        "before <a href=\"https://matrix.org\">new_text</a> after"
+    )
+}
+
+#[test]
+fn edit_link_and_non_link_text() {
+    let mut model =
+        cm("{non_link_text<a href=\"https://element.io\">link_text</a>}|");
+    model.edit_link(utf16("https://matrix.org"), utf16("new_text"));
+    assert_eq!(
+        model.state.dom.to_string(),
+        "non_link_text<a href=\"https://matrix.org\">new_text</a>"
+    )
+}
+
+#[test]
+fn edit_link_in_formatting() {
+    let mut model =
+            cm("<u><i>non_link_</i>{<b>text<a href=\"https://element.io\">link_text</a></b></u>}|");
+    model.edit_link(utf16("https://matrix.org"), utf16("new_text"));
+    assert_eq!(
+            model.state.dom.to_string(),
+            "<u><i>non_link_</i><b>text<a href=\"https://matrix.org\">new_text</a></b></u>"
+        )
 }
 
 #[test]
@@ -61,6 +121,14 @@ fn create_link_wraps_selection_in_link_tag() {
         model.state.dom.to_string(),
         "<a href=\"https://element.io\">hello</a> world"
     );
+}
+
+#[test]
+fn create_link_and_undo() {
+    let mut model = cm("{hello}| world");
+    model.create_link(utf16("https://element.io"));
+    model.undo();
+    assert_eq!(model.state.dom.to_string(), "hello world");
 }
 
 #[test]
@@ -125,59 +193,6 @@ fn create_link_in_multiple_leaves_of_formatted_text_with_link() {
     assert_eq!(
         model.state.dom.to_string(),
         "<i><a href=\"https://matrix.org\">test_italic</a><b><a href=\"https://matrix.org\">test_italic_bold</a></b></i>"
-    )
-}
-
-#[test]
-fn edit_link() {
-    let mut model = cm("{<a href=\"https://element.io\">link_text</a>}|");
-    model.edit_link(utf16("https://matrix.org"), utf16("new_text"));
-    assert_eq!(
-        model.state.dom.to_string(),
-        "<a href=\"https://matrix.org\">new_text</a>"
-    )
-}
-
-#[test]
-fn edit_link_and_non_link_text() {
-    let mut model =
-        cm("{non_link_text<a href=\"https://element.io\">link_text</a>}|");
-    model.edit_link(utf16("https://matrix.org"), utf16("new_text"));
-    assert_eq!(
-        model.state.dom.to_string(),
-        "non_link_text<a href=\"https://matrix.org\">new_text</a>"
-    )
-}
-
-#[test]
-fn edit_link_and_formatted_text() {
-    let mut model =
-            cm("{<u><i>non_link_</i><b>text<a href=\"https://element.io\">link_text</a></b></u>}|");
-    model.edit_link(utf16("https://matrix.org"), utf16("new_text"));
-    assert_eq!(
-            model.state.dom.to_string(),
-            "<u><i>non_link_</i><b>text<a href=\"https://matrix.org\">new_text</a></b></u>"
-        )
-}
-
-#[test]
-fn edit_link_in_formatting() {
-    let mut model =
-            cm("<u><i>non_link_</i>{<b>text<a href=\"https://element.io\">link_text</a></b></u>}|");
-    model.edit_link(utf16("https://matrix.org"), utf16("new_text"));
-    assert_eq!(
-            model.state.dom.to_string(),
-            "<u><i>non_link_</i><b>text<a href=\"https://matrix.org\">new_text</a></b></u>"
-        )
-}
-
-#[test]
-fn edit_link_without_link() {
-    let mut model = cm("before {middle}| after");
-    model.edit_link(utf16("https://matrix.org"), utf16("new_text"));
-    assert_eq!(
-        model.state.dom.to_string(),
-        "before <a href=\"https://matrix.org\">new_text</a> after"
     )
 }
 
