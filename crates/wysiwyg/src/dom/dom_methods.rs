@@ -486,7 +486,7 @@ where
                             removed_nodes.insert(
                                 0,
                                 DomNode::Container(
-                                    c.copy_with_new_children(Vec::new()),
+                                    c.clone_with_new_children(Vec::new()),
                                 ),
                             );
                         }

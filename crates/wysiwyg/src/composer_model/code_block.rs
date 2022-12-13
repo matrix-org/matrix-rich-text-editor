@@ -157,7 +157,7 @@ where
                     self.state.dom.lookup_node(&cur_sub_handle)
                 {
                     cur_container.append_child(DomNode::Container(
-                        container.copy_with_new_children(Vec::new()),
+                        container.clone_with_new_children(Vec::new()),
                     ));
                 }
             }
@@ -421,7 +421,7 @@ where
                 for c in container.children() {
                     children.push(Self::format_node_for_code_block(c));
                 }
-                DomNode::Container(container.copy_with_new_children(children))
+                DomNode::Container(container.clone_with_new_children(children))
             }
         }
     }
