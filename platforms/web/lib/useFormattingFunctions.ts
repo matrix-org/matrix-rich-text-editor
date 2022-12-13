@@ -18,6 +18,7 @@ import { RefObject, useMemo } from 'react';
 
 import { BlockType, FormattingFunctions } from './types';
 import { sendWysiwygInputEvent } from './useListeners';
+import { LinkEvent } from './useListeners/types';
 
 export function useFormattingFunctions(
     editorRef: RefObject<HTMLElement | null>,
@@ -27,7 +28,10 @@ export function useFormattingFunctions(
         // Safari does not keep the inputType in an input event
         // when the input event is fired manually, so we send a custom event
         // and we do not use the browser input event handling
-        const sendEvent = (blockType: BlockType, data?: string) =>
+        const sendEvent = (
+            blockType: BlockType,
+            data?: string | LinkEvent['data'],
+        ) =>
             editorRef.current &&
             sendWysiwygInputEvent(
                 editorRef.current,
@@ -48,6 +52,8 @@ export function useFormattingFunctions(
             inlineCode: () => sendEvent('formatInlineCode'),
             clear: () => sendEvent('clear'),
             insertText: (text: string) => sendEvent('insertText', text),
+            link: (link: string, text: string) =>
+                sendEvent('insertLink', { link, text }),
         };
     }, [editorRef]);
 

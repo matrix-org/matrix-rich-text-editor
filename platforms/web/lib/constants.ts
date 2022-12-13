@@ -25,4 +25,5 @@ export const ACTION_TYPES = [
     'unorderedList',
     'inlineCode',
     'clear',
+    'link',
 ] as const;

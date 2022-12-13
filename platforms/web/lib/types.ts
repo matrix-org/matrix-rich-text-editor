@@ -15,12 +15,17 @@ limitations under the License.
 */
 
 import { ACTION_TYPES } from './constants';
+import { LinkEvent } from './useListeners/types';
 
 export type BlockType = InputEvent['inputType'] | 'formatInlineCode' | 'clear';
 
 export type WysiwygInputEvent =
     | ClipboardEvent
-    | (InputEvent & { inputType: BlockType; data?: string | null });
+    | LinkEvent
+    | (InputEvent & {
+          inputType: BlockType;
+          data?: string | null;
+      });
 
 export type ActionTypes = typeof ACTION_TYPES[number];
 
@@ -28,8 +33,12 @@ export type ActionState = 'enabled' | 'reversed' | 'disabled';
 
 export type AllActionStates = Record<ActionTypes, ActionState>;
 
-export type FormattingFunctions = Record<ActionTypes, () => void> & {
+export type FormattingFunctions = Record<
+    Exclude<ActionTypes, 'link'>,
+    () => void
+> & {
     insertText: (text: string) => void;
+    link: (link: string, text: string) => void;
 };
 
 export type Wysiwyg = {
