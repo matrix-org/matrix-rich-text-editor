@@ -46,7 +46,7 @@ where
     Generic, // E.g. the root node (the containing div)
     Formatting(InlineFormatType),
     Link(S),
-    List,
+    List(ListType),
     ListItem,
     CodeBlock,
 }
@@ -105,7 +105,7 @@ where
     pub fn new_list(list_type: ListType, children: Vec<DomNode<S>>) -> Self {
         Self {
             name: list_type.tag().into(),
-            kind: ContainerNodeKind::List,
+            kind: ContainerNodeKind::List(list_type),
             attrs: None,
             children,
             handle: DomHandle::new_unset(),
@@ -250,23 +250,17 @@ where
     }
 
     pub fn is_list(&self) -> bool {
-        matches!(self.kind, ContainerNodeKind::List)
+        matches!(self.kind, ContainerNodeKind::List(_))
     }
 
-    pub(crate) fn is_list_of_type(&self, list_type: ListType) -> bool {
-        match self.kind {
-            ContainerNodeKind::List => {
-                return ListType::try_from(self.name().to_owned()).unwrap()
-                    == list_type;
-            }
-            _ => false,
-        }
+    pub(crate) fn is_list_of_type(&self, list_type: &ListType) -> bool {
+        matches!(&self.kind, ContainerNodeKind::List(f) if f == list_type)
     }
 
     pub(crate) fn is_structure_node(&self) -> bool {
         use ContainerNodeKind::*;
 
-        matches!(self.kind, List | ListItem)
+        matches!(self.kind, List(_) | ListItem)
     }
 
     pub(crate) fn is_formatting_node(&self) -> bool {
@@ -283,7 +277,7 @@ where
     pub(crate) fn is_block_node(&self) -> bool {
         use ContainerNodeKind::*;
 
-        matches!(self.kind, Generic | List | CodeBlock)
+        matches!(self.kind, Generic | List(_) | CodeBlock)
     }
 
     pub fn text_len(&self) -> usize {
@@ -312,8 +306,9 @@ where
 
     pub(crate) fn set_list_type(&mut self, list_type: ListType) {
         match self.kind {
-            ContainerNodeKind::List => {
+            ContainerNodeKind::List(_) => {
                 self.name = list_type.tag().into();
+                self.kind = ContainerNodeKind::List(list_type);
             }
             _ => panic!(
                 "Setting list type to a non-list container is not allowed"
@@ -619,7 +614,7 @@ where
                 fmt_link(self, buffer, &options, url)?;
             }
 
-            List => {
+            List(_) => {
                 fmt_list(self, buffer, &options)?;
             }
 
@@ -960,7 +955,7 @@ where
             S: UnicodeString,
         {
             buffer.push("```\n");
-            fmt_children(this, buffer, &options)?;
+            fmt_children(this, buffer, options)?;
             buffer.push("\n```\n");
 
             Ok(())

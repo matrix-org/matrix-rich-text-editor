@@ -224,7 +224,7 @@ where
     pub(crate) fn can_push(&self, other_node: &DomNode<S>) -> bool {
         match (self, other_node) {
             (DomNode::Container(c1), DomNode::Container(c2)) => {
-                c1.kind() == c2.kind() && !c1.is_list_item() && !c1.is_list()
+                c1.kind() == c2.kind() && !c1.is_list_item()
             }
             (DomNode::Text(_), DomNode::Text(t2)) => {
                 !t2.data().to_string().starts_with(char::zwsp())
@@ -367,7 +367,7 @@ impl DomNodeKind {
                 DomNodeKind::Formatting(f.clone())
             }
             ContainerNodeKind::Link(_) => DomNodeKind::Link,
-            ContainerNodeKind::List => DomNodeKind::List,
+            ContainerNodeKind::List(_) => DomNodeKind::List,
             ContainerNodeKind::ListItem => DomNodeKind::ListItem,
             ContainerNodeKind::Generic => DomNodeKind::Generic,
             ContainerNodeKind::CodeBlock => DomNodeKind::CodeBlock,

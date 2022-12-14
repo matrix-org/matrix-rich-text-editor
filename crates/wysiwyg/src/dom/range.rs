@@ -375,7 +375,7 @@ mod test {
         let r = range_of(
             "\
             <ul><li>{a</li><li>b</li></ul>\
-            <ul><li>c</li><li>d</li><li>e</li></ul>fgh}|",
+            <ol><li>c</li><li>d</li><li>e</li></ol>fgh}|",
         );
 
         assert_eq!(
