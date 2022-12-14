@@ -62,16 +62,25 @@ extension NSAttributedString {
     /// - Parameters:
     ///   - color: the new UIColor to update the attributed string
     ///   - linkColor: the new UIColor for links inside the attributed string
+    ///   - codeBackgroundColor: the new UIColor for the background of code blocks
     /// - Returns: a new attributed string with the same content and attributes, but its foregroundColor is changed
-    func changeColor(to color: UIColor, linkColor: UIColor) -> NSAttributedString {
+    func changeColor(to color: UIColor, linkColor: UIColor, codeBackgroundColor: UIColor) -> NSAttributedString {
         let mutableAttributed = NSMutableAttributedString(attributedString: self)
         mutableAttributed.addAttributes(
             [.foregroundColor: color], range: NSRange(location: 0, length: mutableAttributed.length)
         )
+        
         // This fixes an iOS bug where if some text is typed after a link, and then a whitespace is added the link color is overridden.
         mutableAttributed.enumerateAttribute(.link, in: NSRange(location: 0, length: mutableAttributed.length)) { value, range, _ in
             if value != nil {
                 mutableAttributed.addAttributes([.foregroundColor: linkColor], range: range)
+            }
+        }
+        
+        // Adding background to inline code
+        mutableAttributed.enumerateTypedAttribute(.font) { (font: UIFont, range: NSRange, _: UnsafeMutablePointer<ObjCBool>) in
+            if font.familyName == "Courier" {
+                mutableAttributed.addAttributes([.backgroundColor: codeBackgroundColor], range: range)
             }
         }
         let newSelf = NSAttributedString(attributedString: mutableAttributed)
