@@ -237,10 +237,25 @@ impl Range {
         self.locations.iter().filter(|loc| loc.is_leaf())
     }
 
-    pub fn top_level_locations(&self) -> impl Iterator<Item = &DomLocation> {
+    pub fn top_level_depth(&self) -> usize {
         self.locations
             .iter()
-            .filter(|l| l.node_handle.raw().len() == 1)
+            .map(|l| l.node_handle.depth())
+            .min()
+            .expect("Should always have at least one set handle")
+    }
+
+    pub fn locations_at_depth(
+        &self,
+        depth: usize,
+    ) -> impl Iterator<Item = &DomLocation> {
+        self.locations
+            .iter()
+            .filter(move |l| l.node_handle.depth() == depth)
+    }
+
+    pub fn top_level_locations(&self) -> impl Iterator<Item = &DomLocation> {
+        self.locations_at_depth(self.top_level_depth())
     }
 
     pub fn is_cursor(&self) -> bool {
