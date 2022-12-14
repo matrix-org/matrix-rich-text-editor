@@ -52,7 +52,7 @@ export function useFormattingFunctions(
             inlineCode: () => sendEvent('formatInlineCode'),
             clear: () => sendEvent('clear'),
             insertText: (text: string) => sendEvent('insertText', text),
-            link: (link: string, text: string) =>
+            link: (link: string, text?: string) =>
                 sendEvent('insertLink', { link, text }),
         };
     }, [editorRef]);

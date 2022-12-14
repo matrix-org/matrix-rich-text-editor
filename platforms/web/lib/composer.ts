@@ -113,11 +113,11 @@ export function processInput(
             return action(composerModel.unordered_list(), 'unordered_list');
         case 'insertLink':
             if (isLinkEvent(event)) {
+                const { text, link } = event.data;
                 return action(
-                    composerModel.set_link_with_text(
-                        event.data.link,
-                        event.data.text,
-                    ),
+                    text
+                        ? composerModel.set_link_with_text(link, text)
+                        : composerModel.set_link(link),
                     'insertLink',
                 );
             }

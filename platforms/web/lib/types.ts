@@ -38,7 +38,7 @@ export type FormattingFunctions = Record<
     () => void
 > & {
     insertText: (text: string) => void;
-    link: (link: string, text: string) => void;
+    link: (link: string, text?: string) => void;
 };
 
 export type Wysiwyg = {
