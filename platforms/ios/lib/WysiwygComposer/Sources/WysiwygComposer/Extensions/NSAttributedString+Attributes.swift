@@ -78,7 +78,7 @@ extension NSAttributedString {
         }
         
         // Adding background to inline code
-        mutableAttributed.enumerateTypedAttribute(.font) { (font: UIFont, range: NSRange, _: UnsafeMutablePointer<ObjCBool>) in
+        mutableAttributed.enumerateTypedAttribute(.font) { (font: UIFont, range, _) in
             if font.familyName == "Courier" {
                 mutableAttributed.addAttributes([.backgroundColor: codeBackgroundColor], range: range)
             }
