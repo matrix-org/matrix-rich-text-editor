@@ -218,3 +218,46 @@ describe('insertText', () => {
         );
     });
 });
+
+describe('link', () => {
+    let buttonLink: HTMLButtonElement;
+    let buttonLinkWithText: HTMLButtonElement;
+    let textbox: HTMLDivElement;
+
+    beforeEach(async () => {
+        render(<Editor />);
+        textbox = screen.getByRole('textbox');
+        await waitFor(() =>
+            expect(textbox).toHaveAttribute('contentEditable', 'true'),
+        );
+        buttonLink = screen.getByRole('button', { name: 'link' });
+        buttonLinkWithText = screen.getByRole('button', {
+            name: 'link with text',
+        });
+    });
+
+    it('Should insert the link with text', async () => {
+        // When
+        await act(() => userEvent.click(buttonLinkWithText));
+
+        // Then
+        await waitFor(() =>
+            expect(textbox).toContainHTML('<a href="my link">my text</a>'),
+        );
+    });
+
+    it('Should transform the selected text into link', async () => {
+        // When
+        fireEvent.input(textbox, {
+            data: 'foobar',
+            inputType: 'insertText',
+        });
+        select(textbox, 0, 6);
+        await act(() => userEvent.click(buttonLink));
+
+        // Then
+        await waitFor(() =>
+            expect(textbox).toContainHTML('<a href="my link">foobar</a>'),
+        );
+    });
+});
