@@ -35,8 +35,12 @@ where
     }
 
     fn add_code_block(&mut self) -> ComposerUpdate<S> {
+        fn new_line_break<S: UnicodeString>() -> DomNode<S> {
+            DomNode::new_text("\n".into())
+        }
         let (s, e) = self.safe_selection();
         let Some(wrap_result) = self.find_nodes_to_wrap_in_block(s, e) else {
+            // No suitable nodes found to be wrapped inside the code block. The Dom should be empty
             self.state.dom.append_at_end_of_document(DomNode::new_code_block(vec![DomNode::new_empty_text()]));
             return self.create_update_replace_all();
         };
@@ -104,9 +108,7 @@ where
                                     .is_last_in_parent(&node.handle());
 
                             if needs_to_add_line_break {
-                                cur_container.append_child(DomNode::new_text(
-                                    "\n".into(),
-                                ));
+                                cur_container.append_child(new_line_break());
                                 if is_before {
                                     self.state.start += 1;
                                     self.state.end += 1;
@@ -129,9 +131,7 @@ where
                         List => {
                             // Add line break before the List if it's not at the start
                             if node.handle().index_in_parent() > 0 {
-                                cur_container.append_child(DomNode::new_text(
-                                    "\n".into(),
-                                ));
+                                cur_container.append_child(new_line_break());
                                 if is_before {
                                     self.state.start += 1;
                                 }
@@ -146,6 +146,13 @@ where
                 // We already copied everything we needed to the sub-tree, delete the original nodes
                 for i in (idx_start..=idx_end).rev() {
                     self.state.dom.remove(&parent_handle.child_handle(i));
+                }
+
+                // If it has a trailing line break at the end, remove it
+                if let Some(DomNode::Text(text_node)) =
+                    cur_container.last_child_mut()
+                {
+                    text_node.remove_trailing_line_break();
                 }
             } else {
                 // For every depth level, just copy any ancestor node with no children
@@ -351,11 +358,11 @@ where
                             text_start = text_end;
                         }
                     }
+                    // We moved to a new line
                     if text_start != text_end {
-                        let text_to_add =
-                            text_node.data()[text_start..text_end].to_owned();
-                        nodes_to_add
-                            .push(DomNode::new_text(S::from(text_to_add)));
+                        nodes_to_add.push(DomNode::Text(
+                            text_node.clone_with_range(text_start..text_end),
+                        ));
                         nodes_to_add.push(DomNode::new_line_break());
                         if text_end <= start_in_block {
                             selection_offset_start += 1;
@@ -583,7 +590,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<ul><li><pre>Some text <b>and bold&nbsp;|</b><i>and italic</i>\n</pre></li></ul>"
+            "<ul><li><pre>Some text <b>and bold&nbsp;|</b><i>and italic</i></pre></li></ul>"
         );
     }
 
@@ -595,7 +602,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<ul><li>Some text <b>and bold&nbsp;</b><br /><pre><i>and| italic</i>\n</pre></li></ul>"
+            "<ul><li>Some text <b>and bold&nbsp;</b><br /><pre><i>and| italic</i></pre></li></ul>"
         );
     }
 
@@ -604,7 +611,7 @@ mod test {
         let mut model =
             cm("<ul><li>{First item</li><li>Second}| item</li></ul>");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>{First item\nSecond}| item\n</pre>");
+        assert_eq!(tx(&model), "<pre>{First item\nSecond}| item</pre>");
     }
 
     #[test]
@@ -612,7 +619,7 @@ mod test {
         let mut model =
             cm("<ul><li>{First item</li><li>Second item</li></ul>Some text<ul><li>Third}| item</li><li>Fourth one</li></ul>");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>{First item\nSecond item\nSome text\nThird}| item\nFourth one\n</pre>");
+        assert_eq!(tx(&model), "<pre>{First item\nSecond item\nSome text\nThird}| item\nFourth one</pre>");
     }
 
     #[test]
@@ -620,10 +627,7 @@ mod test {
         let mut model =
             cm("{Text <ul><li>First item</li><li>Second}| item</li></ul>");
         model.code_block();
-        assert_eq!(
-            tx(&model),
-            "<pre>{Text \nFirst item\nSecond}| item\n</pre>"
-        );
+        assert_eq!(tx(&model), "<pre>{Text \nFirst item\nSecond}| item</pre>");
     }
 
     #[test]

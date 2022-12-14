@@ -179,6 +179,7 @@ where
                 }
             }
         }
+
         if has_previous_line_break {
             let DomNode::Container(sub_tree) = self.state.dom.split_sub_tree(&leaf.node_handle, leaf.start_offset - selection_offset, block_location.node_handle.depth()) else {
                 panic!("Sub tree must start from a container node");
@@ -210,7 +211,18 @@ where
             self.state.end = self.state.start;
             self.create_update_replace_all()
         } else {
-            if let DomNode::Text(text_node) =
+            let DomNode::Container(block) = self.state.dom.lookup_node(&block_location.node_handle) else {
+                panic!("Parent must be a block node");
+            };
+            if block.children().is_empty() {
+                self.state.dom.insert_at(
+                    &leaf.node_handle,
+                    DomNode::new_text("\n\n".into()),
+                );
+                self.state.start += 2;
+                self.state.end = self.state.start;
+                self.create_update_replace_all()
+            } else if let DomNode::Text(text_node) =
                 self.state.dom.lookup_node_mut(&leaf.node_handle)
             {
                 let mut new_data = text_node.data().to_owned();
