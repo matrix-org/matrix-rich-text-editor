@@ -14,7 +14,7 @@
 
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::nodes::dom_node::DomNodeKind;
-use std::cmp::Ordering;
+use std::cmp::{min, Ordering};
 
 /// Represents the relative position of a DomLocation towards
 /// the range start and end.
@@ -151,6 +151,14 @@ impl DomLocation {
         start_offset == 0
     }
 
+    pub fn starts_inside(&self) -> bool {
+        self.start_offset > 0
+    }
+
+    pub fn ends_inside(&self) -> bool {
+        self.end_offset < self.length
+    }
+
     /// Whether the selection completely covers this location
     pub fn is_covered(&self) -> bool {
         self.is_start() && self.is_end()
@@ -254,8 +262,21 @@ impl Range {
             .filter(move |l| l.node_handle.depth() == depth)
     }
 
+    pub fn locations_from_depth(
+        &self,
+        depth: usize,
+    ) -> impl Iterator<Item = &DomLocation> {
+        self.locations
+            .iter()
+            .filter(move |l| l.node_handle.depth() > depth)
+    }
+
     pub fn top_level_locations(&self) -> impl Iterator<Item = &DomLocation> {
         self.locations_at_depth(self.top_level_depth())
+    }
+
+    pub fn node_handles(&self) -> impl DoubleEndedIterator<Item = &DomHandle> {
+        self.locations.iter().map(|l| &l.node_handle)
     }
 
     pub fn is_cursor(&self) -> bool {
@@ -273,6 +294,22 @@ impl Range {
 
     pub fn contains(&self, handle: &DomHandle) -> bool {
         self.locations.iter().any(|l| l.node_handle == *handle)
+    }
+
+    pub fn shared_parent(&self) -> DomHandle {
+        let mut shared_path = vec![];
+        let min_leaf_path = self.leaves().min().unwrap().node_handle.raw();
+        let max_leaf_path = self.leaves().max().unwrap().node_handle.raw();
+
+        for i in 0..min(min_leaf_path.len() - 1, max_leaf_path.len() - 1) {
+            if min_leaf_path[i] != max_leaf_path[i] {
+                break;
+            }
+
+            shared_path.push(min_leaf_path[i]);
+        }
+
+        DomHandle::from_raw(shared_path)
     }
 }
 
@@ -470,6 +507,24 @@ mod test {
         range.locations.iter().for_each(|l| {
             assert!(l.relative_position() == DomLocationPosition::Inside)
         })
+    }
+
+    #[test]
+    fn range_shared_parent() {
+        let range = range_of("<em><strong><b>{a</b>b}|</strong></em>");
+        assert_eq!(range.shared_parent(), DomHandle::from_raw(vec![0, 0]));
+    }
+
+    #[test]
+    fn range_shared_parent_flat() {
+        let range = range_of("{ab}|");
+        assert_eq!(range.shared_parent(), DomHandle::from_raw(vec![]));
+    }
+
+    #[test]
+    fn range_shared_parent_deep_flat() {
+        let range = range_of("<em><strong>{ab}|</strong></em>");
+        assert_eq!(range.shared_parent(), DomHandle::from_raw(vec![0, 0]));
     }
 
     fn range_of(model: &str) -> Range {

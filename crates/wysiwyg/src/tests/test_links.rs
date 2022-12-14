@@ -14,6 +14,7 @@
 
 use crate::tests::testutils_composer_model::{cm, tx};
 use crate::tests::testutils_conversion::utf16;
+use crate::Location;
 
 #[test]
 fn set_link_to_empty_selection_at_end_of_alink() {

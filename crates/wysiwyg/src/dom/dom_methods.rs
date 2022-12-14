@@ -17,7 +17,7 @@
 
 use crate::dom::nodes::ContainerNodeKind;
 use crate::dom::unicode_string::UnicodeStr;
-use crate::{DomHandle, DomNode, UnicodeString};
+use crate::{DomHandle, DomNode, ToHtml, UnicodeString};
 
 use super::action_list::{DomAction, DomActionList};
 use super::nodes::dom_node::DomNodeKind;
@@ -434,6 +434,73 @@ where
         self.assert_invariants();
     }
 
+    /// Returns two new subtrees as the result of splitting the Dom symetrically without mutating
+    /// itself. Also returns the new handles of node that was split.
+    ///
+    /// Only returns nodes that are modified by the split and ignores any nodes which were not
+    /// either split or contain a node that was split.
+    pub(crate) fn split_new_sub_trees(
+        &self,
+        from_handle: &DomHandle,
+        offset: usize,
+        depth: usize,
+    ) -> (DomNode<S>, DomHandle, DomNode<S>, DomHandle) {
+        let mut clone = self.clone();
+        let right = clone.split_sub_tree(from_handle, offset, depth);
+
+        // Remove unmodified children of the right split
+        // TODO: create a utility for this
+        let mut right = DomNode::Container(ContainerNode::new(
+            S::default(),
+            ContainerNodeKind::Generic,
+            None,
+            vec![right
+                .as_container()
+                .unwrap()
+                .children()
+                .first()
+                .unwrap()
+                .clone()],
+        ));
+        right.set_handle(DomHandle::root());
+
+        // Remove unmodified children of the left split
+        // TODO: create a utility for this
+        let mut left = DomNode::Container(ContainerNode::new(
+            S::default(),
+            ContainerNodeKind::Generic,
+            None,
+            vec![clone
+                .lookup_node(&from_handle.sub_handle_up_to(depth))
+                .as_container()
+                .unwrap()
+                .children()
+                .last()
+                .unwrap()
+                .clone()],
+        ));
+        left.set_handle(DomHandle::root());
+
+        // Reset the root unmodified siblings were removed
+        let mut right_handle =
+            from_handle.sub_handle_down_from(depth).raw().to_owned();
+        right_handle[0] = 0;
+        let right_handle = DomHandle::from_raw(right_handle);
+
+        let mut left_handle =
+            from_handle.sub_handle_down_from(depth).raw().to_owned();
+        left_handle[0] = 0;
+        let left_handle = DomHandle::from_raw(left_handle);
+
+        (left, left_handle, right, right_handle)
+    }
+
+    /// Splits the tree at a given node into two parts. The first part stays in the tree and this
+    /// function returns the second part.
+    ///
+    /// * `from_handle` - the position of the node to split.
+    /// * `offset` - the position within the given node to split.
+    /// * `depth` - the depth within the original tree at which to make the returned tree's root
     pub(crate) fn split_sub_tree(
         &mut self,
         from_handle: &DomHandle,
@@ -498,13 +565,14 @@ where
                             {
                                 // Do nothing
                             } else {
-                                let left_data =
-                                    text_node.data()[..offset].to_owned();
-                                let right_data =
+                                // TODO: Figure out how to make this all less verbose
+                                let to_remove =
                                     text_node.data()[offset..].to_owned();
-                                text_node.set_data(left_data);
+                                let to_keep =
+                                    text_node.data()[..offset].to_owned();
+                                text_node.set_data(to_keep);
                                 removed_nodes
-                                    .insert(0, DomNode::new_text(right_data));
+                                    .insert(0, DomNode::new_text(to_remove));
                             }
                         }
                         _ => {
@@ -632,6 +700,7 @@ fn adjust_handles_for_delete(
 mod test {
     use crate::dom::DomHandle;
     use crate::tests::testutils_composer_model::{cm, tx};
+    use crate::tests::testutils_conversion::utf16;
     use crate::ToHtml;
 
     use super::*;
@@ -702,6 +771,7 @@ mod test {
             2,
             0,
         );
+        assert_eq!(model.state.dom.to_html(), "Text<b>bo</b>");
         assert_eq!(ret.to_html().to_string(), "<b>ld</b><i>italic</i>");
     }
 
@@ -713,6 +783,7 @@ mod test {
             2,
             0,
         );
+        assert_eq!(model.state.dom.to_html(), "<u>Text<b>bo</b></u>");
         assert_eq!(ret.to_html().to_string(), "<u><b>ld</b><i>italic</i></u>");
     }
 
@@ -724,6 +795,7 @@ mod test {
             2,
             1,
         );
+        assert_eq!(model.state.dom.to_html(), "<u>Text<b>bo</b></u>");
         assert_eq!(ret.to_html().to_string(), "<b>ld</b><i>italic</i>")
     }
 
@@ -737,6 +809,10 @@ mod test {
             &DomHandle::from_raw(vec![0, 1, 0, 0]),
             offset,
             depth,
+        );
+        assert_eq!(
+            model.state.dom.to_html(),
+            "<ul><li>Text</li><li><b>bo</b></li></ul>"
         );
         assert_eq!(
             ret.to_html().to_string(),
@@ -755,17 +831,53 @@ mod test {
             offset,
             depth,
         );
+        assert_eq!(
+            model.state.dom.to_html(),
+            "<ul><li>Text</li><li><b>bo</b></li></ul>"
+        );
         assert_eq!(ret.to_html().to_string(), "<li><b>ld</b><i>italic</i></li>")
     }
 
     #[test]
-    fn split_dom_with_partial_handle() {
+    fn split_dom_with_parent_handle() {
         let mut model = cm("<u>Text|<b>bold</b><i>italic</i></u>");
         let ret = model.state.dom.split_sub_tree(
-            &DomHandle::from_raw(vec![0, 1]),
+            &DomHandle::from_raw(vec![0, 1]), // Handle of <b>
             2,
             0,
         );
+        assert_eq!(model.state.dom.to_html(), "<u>Text<b>bo</b></u>");
         assert_eq!(ret.to_html().to_string(), "<u><b>ld</b><i>italic</i></u>");
+    }
+
+    #[test]
+    fn split_new_sub_trees() {
+        let model = cm("Text|<b>bold</b><i>italic</i>");
+        let (left, left_handle, right, right_handle) = model
+            .state
+            .dom
+            .split_new_sub_trees(&DomHandle::from_raw(vec![1, 0]), 2, 0);
+        assert_eq!(right.to_html(), "<b>ld</b>");
+        assert_eq!(right_handle, DomHandle::from_raw(vec![0, 0]));
+        assert_eq!(right.lookup_node(&right_handle).to_html(), "ld");
+        assert_eq!(left.to_html(), "<b>bo</b>");
+        assert_eq!(left_handle, DomHandle::from_raw(vec![0, 0]));
+        assert_eq!(left.lookup_node(&left_handle).to_html(), "bo");
+    }
+
+    #[test]
+    fn split_new_sub_trees_at_depth() {
+        let model = cm("<u>Text|<b>bold</b><i>italic</i></u>");
+        let (left, left_handle, right, right_handle) = model
+            .state
+            .dom
+            .split_new_sub_trees(&DomHandle::from_raw(vec![0, 1, 0]), 2, 1);
+        println!("RIGHT: {:?}", right);
+        assert_eq!(right.to_html(), "<b>ld</b>");
+        assert_eq!(right_handle, DomHandle::from_raw(vec![0, 0]));
+        assert_eq!(right.lookup_node(&right_handle).to_html(), "ld");
+        assert_eq!(left.to_html(), "<b>bo</b>");
+        assert_eq!(left_handle, DomHandle::from_raw(vec![0, 0]));
+        assert_eq!(left.lookup_node(&left_handle).to_html(), "bo");
     }
 }

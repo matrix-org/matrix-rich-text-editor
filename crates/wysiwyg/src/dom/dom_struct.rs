@@ -216,44 +216,7 @@ where
     /// Find the node based on its handle.
     /// Panics if the handle is unset or invalid
     pub fn lookup_node(&self, node_handle: &DomHandle) -> &DomNode<S> {
-        fn nth_child<S>(element: &ContainerNode<S>, idx: usize) -> &DomNode<S>
-        where
-            S: UnicodeString,
-        {
-            element.children().get(idx).unwrap_or_else(|| {
-                panic!(
-                    "Handle is invalid: it refers to a child index ({}) which \
-                is too large for the number of children in this node ({:?}).",
-                    idx, element
-                )
-            })
-        }
-
-        let mut node = &self.document;
-        if !node_handle.is_set() {
-            panic!(
-                "Attempting to lookup a node using an unset DomHandle ({:?})",
-                node_handle.raw()
-            );
-        }
-        for idx in node_handle.raw() {
-            node = match node {
-                DomNode::Container(n) => nth_child(n, *idx),
-                DomNode::LineBreak(_) => panic!(
-                    "Handle is invalid: refers to the child of a line break, \
-                    but line breaks cannot have children."
-                ),
-                DomNode::Text(_) => panic!(
-                    "Handle {:?} is invalid: refers to the child of a text node, \
-                    but text nodes cannot have children.", node_handle
-                ),
-                DomNode::Zwsp(_) => panic!(
-                    "Handle {:?} is invalid: refers to the child of a zwsp node, \
-                    but zwsp nodes cannot have children.", node_handle
-                ),
-            }
-        }
-        node
+        &self.document_node().lookup_node(node_handle)
     }
 
     /// Find the node based on its handle and returns a mutable reference.

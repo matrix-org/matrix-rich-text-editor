@@ -22,6 +22,7 @@ pub mod dom_struct;
 pub mod find_extended_range;
 pub mod find_range;
 pub mod find_result;
+pub mod insert_parent;
 pub mod iter;
 pub mod join_nodes;
 pub mod nodes;
