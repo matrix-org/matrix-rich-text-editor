@@ -357,6 +357,35 @@ where
         first_child.add_leading_zwsp()
     }
 
+    /// Remove leading ZWSP char from this container.
+    /// Returns false if no updates was done.
+    /// e.g. first text-like node is a line break
+    /// or a text node that doesn't start with a ZWSP.
+    pub fn remove_leading_zwsp(&mut self) -> bool {
+        let Some(first_child) = self.children.get_mut(0) else {
+            return false;
+        };
+        first_child.remove_leading_zwsp()
+    }
+
+    pub fn replace_leading_zwsp_with_linebreak(&mut self) -> bool {
+        let Some(first_child) = self.children.get_mut(0) else {
+            return false;
+        };
+        match first_child {
+            DomNode::Container(c) => c.replace_leading_zwsp_with_linebreak(),
+            DomNode::Text(t) => {
+                if t.remove_leading_zwsp() {
+                    self.children.insert(0, DomNode::new_line_break());
+                    true
+                } else {
+                    false
+                }
+            }
+            DomNode::LineBreak(_) => false,
+        }
+    }
+
     /// Push content of the given container node into self. Panics
     /// if given container node is not of the same kind.
     pub(crate) fn push(&mut self, other_node: &mut ContainerNode<S>) {

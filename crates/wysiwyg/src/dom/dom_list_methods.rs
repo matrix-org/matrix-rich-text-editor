@@ -15,7 +15,9 @@
 //! Methods on Dom that modify its contents and are guaranteed to conform to
 //! our invariants e.g. no empty text nodes, no adjacent text nodes.
 
-use crate::{DomHandle, DomNode, ListType, ToHtml, UnicodeString};
+use core::panic;
+
+use crate::{DomHandle, DomNode, ListType, UnicodeString};
 
 use super::nodes::ContainerNode;
 use super::Dom;
@@ -28,12 +30,7 @@ where
         &mut self,
         list_type: ListType,
         handles: Vec<&DomHandle>,
-        offset_before: usize,
-        _offset_after: usize,
-    ) -> (usize, usize) {
-        let offset_before_correction = if offset_before == 0 { 0 } else { 1 };
-        // Always equal to 1 ?
-        let offset_after_correction = 1;
+    ) {
         let first_handle = handles[0];
         let mut removed_nodes = Vec::new();
         for handle in handles.iter().rev() {
@@ -48,15 +45,9 @@ where
         let mut line_break_positions = list_item.line_break_positions();
 
         while let Some(position) = line_break_positions.pop() {
-            println!("{}", list_item.to_html());
-            let prev_length = list_item.text_len();
             let mut sliced = list_item.slice_after(position);
-            assert!(list_item.text_len() == position);
-            println!("{}", list_item.to_html());
-            assert!(sliced.text_len() == prev_length - position);
             sliced.slice_before(1);
             sliced.add_leading_zwsp();
-            assert!(sliced.text_len() == prev_length - position);
             list_items.insert(0, DomNode::Container(sliced));
         }
 
@@ -67,8 +58,37 @@ where
 
         let list = ContainerNode::new_list(list_type, list_items);
         self.insert_at(first_handle, DomNode::Container(list));
+    }
 
-        (offset_before_correction, offset_after_correction)
+    pub fn remove_list(&mut self, handle: &DomHandle) {
+        let list = self.remove(handle);
+        let mut nodes_to_insert = Vec::new();
+        let DomNode::Container(mut list) = list else {
+            panic!("List ndoe is not a container")
+        };
+        while !list.children().is_empty() {
+            let list_item = list.remove_child(0);
+            let DomNode::Container(mut list_item) = list_item else {
+                panic!("List item is not a container")
+            };
+            if nodes_to_insert.is_empty() {
+                list_item.remove_leading_zwsp();
+            } else {
+                list_item.replace_leading_zwsp_with_linebreak();
+            }
+
+            while !list_item.children().is_empty() {
+                nodes_to_insert.push(list_item.remove_child(0));
+            }
+        }
+
+        nodes_to_insert.reverse();
+
+        for node in nodes_to_insert {
+            self.insert_at(handle, node);
+        }
+
+        self.join_nodes_in_container(&handle.parent_handle());
     }
 }
 
@@ -88,12 +108,41 @@ mod test {
                 &DomHandle::from_raw(vec![1]),
                 &DomHandle::from_raw(vec![2]),
             ],
-            0,
-            0,
         );
         assert_eq!(
              tx(&model),
              "<ol><li>~abc<strong>de<em>f</em></strong></li><li><strong><em>~gh</em>i</strong>jk|l</li></ol>",
-        )
+        );
+
+        model.state.dom.remove_list(&DomHandle::from_raw(vec![0]));
+
+        assert_eq!(tx(&model), "abc<strong>de<em>f<br />gh</em>i</strong>jkl|",);
+    }
+
+    #[test]
+    fn wrap_and_remove_lists() {
+        list_roundtrips("abc<strong>de<em>f<br />gh</em>i</strong>jkl|");
+        list_roundtrips("abc|");
+        list_roundtrips("<br />abc<br />|");
+        list_roundtrips("<em>ab|c</em>");
+        list_roundtrips("<br /><br /><br /><br />|");
+        list_roundtrips("<br /><br /><br /><strong><br />|</strong>");
+    }
+
+    fn list_roundtrips(text: &str) {
+        let mut model = cm(text);
+        let (s, e) = model.safe_selection();
+        let range = model.state.dom.find_extended_range(s, e);
+        let handles: Vec<&DomHandle> = range
+            .top_level_locations()
+            .map(|l| &l.node_handle)
+            .collect();
+        let first_handle = handles[0].clone();
+        model
+            .state
+            .dom
+            .wrap_nodes_in_list(ListType::Ordered, handles);
+        model.state.dom.remove_list(&first_handle);
+        assert_eq!(tx(&model), text);
     }
 }

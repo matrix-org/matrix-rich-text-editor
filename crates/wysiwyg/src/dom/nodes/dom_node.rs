@@ -220,6 +220,18 @@ where
         }
     }
 
+    /// Remove leading ZWSP char from this node.
+    /// Returns false if no updates was done.
+    /// e.g. first text-like node is a line break
+    /// or a text node that doesn't start with a ZWSP.
+    pub fn remove_leading_zwsp(&mut self) -> bool {
+        match self {
+            DomNode::Container(c) => c.remove_leading_zwsp(),
+            DomNode::Text(t) => t.remove_leading_zwsp(),
+            DomNode::LineBreak(_) => false,
+        }
+    }
+
     /// Returns true if given node can be pushed into self without any specific change.
     pub(crate) fn can_push(&self, other_node: &DomNode<S>) -> bool {
         match (self, other_node) {
