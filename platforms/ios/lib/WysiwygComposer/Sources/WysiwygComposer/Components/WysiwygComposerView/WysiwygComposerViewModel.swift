@@ -214,6 +214,11 @@ public extension WysiwygComposerViewModel {
         guard !plainTextMode else {
             return true
         }
+        
+        // This fixes a bug where the attributed string keeps link and inline code formatting when they are the last formatting to be deleted
+        if textView.attributedText.length == 0 {
+            textView.typingAttributes = defaultTextAttributes
+        }
 
         let update: ComposerUpdate
         let shouldAcceptChange: Bool
