@@ -15,6 +15,7 @@
 use std::collections::HashMap;
 use std::ops::AddAssign;
 
+use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::{ContainerNode, DomNode};
 use crate::dom::range::DomLocationPosition;
 use crate::dom::to_raw_text::ToRawText;
@@ -201,8 +202,10 @@ where
             } else {
                 self.create_list(list_type, range)
             }
+        } else if range.locations.iter().any(|l| l.kind == DomNodeKind::List) {
+            // TODO: handle cases where a list is already present in the extended selection.
+            panic!("Partially creating/removing list is not handled yet")
         } else {
-            // TODO: handle other cases
             self.create_list_from_range(list_type, range)
         }
     }
