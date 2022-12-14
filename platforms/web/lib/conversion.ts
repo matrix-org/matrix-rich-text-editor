@@ -20,7 +20,6 @@ import {
     new_composer_model,
 } from '../generated/wysiwyg.js';
 
-// const backslash = String.fromCharCode(0x005c);
 export function richToPlain(richText: string) {
     if (richText.length === 0) {
         return '';
