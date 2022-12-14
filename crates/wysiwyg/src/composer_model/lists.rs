@@ -172,7 +172,7 @@ where
         let range = self.state.dom.find_extended_range(s, e);
 
         if range.is_empty() {
-            self.create_list(list_type, range)
+            self.create_empty_list(list_type)
         } else {
             self.toggle_list_range(list_type, range)
         }
@@ -183,31 +183,57 @@ where
         list_type: ListType,
         range: Range,
     ) -> ComposerUpdate<S> {
-        let leaves: Vec<&DomLocation> = range.leaves().collect();
-        if leaves.len() == 1 {
-            let handle = &leaves[0].node_handle;
-
-            let parent_list_item_handle =
-                self.state.dom.find_parent_list_item_or_self(handle);
-            if let Some(list_item_handle) = parent_list_item_handle {
-                let list = self.state.dom.parent(&list_item_handle);
-                if list.is_list_of_type(&list_type) {
-                    self.move_list_item_content_to_list_parent(
-                        &list_item_handle,
-                    )
-                } else {
-                    let list_node_handle = list.handle();
-                    self.update_list_type(&list_node_handle, list_type)
-                }
+        if range
+            .locations
+            .iter()
+            // FIXME: filtering positions that are before start, these shouldn't be returned from a > 0 range
+            .filter(|l| !(l.relative_position() == DomLocationPosition::Before))
+            .any(|l| l.kind == DomNodeKind::List)
+        {
+            let leaves: Vec<&DomLocation> = range.leaves().collect();
+            if leaves.len() == 1 {
+                let handle = &leaves[0].node_handle;
+                self.single_leave_list_toggle(list_type, handle)
             } else {
-                self.create_list(list_type, range)
+                // TODO: handle cases where a list is already present in the extended selection.
+                panic!("Partially creating/removing list is not handled yet")
             }
-        } else if range.locations.iter().any(|l| l.kind == DomNodeKind::List) {
-            // TODO: handle cases where a list is already present in the extended selection.
-            panic!("Partially creating/removing list is not handled yet")
         } else {
             self.create_list_from_range(list_type, range)
         }
+    }
+
+    // FIXME: remove this function when toggle_list_range handles updating/removing
+    fn single_leave_list_toggle(
+        &mut self,
+        list_type: ListType,
+        handle: &DomHandle,
+    ) -> ComposerUpdate<S> {
+        let parent_list_item_handle =
+            self.state.dom.find_parent_list_item_or_self(handle);
+        if let Some(list_item_handle) = parent_list_item_handle {
+            let list = self.state.dom.parent(&list_item_handle);
+            if list.is_list_of_type(&list_type) {
+                self.move_list_item_content_to_list_parent(&list_item_handle)
+            } else {
+                let list_node_handle = list.handle();
+                self.update_list_type(&list_node_handle, list_type)
+            }
+        } else {
+            unreachable!("No list in range. Should have been catched by toggle_list_range")
+        }
+    }
+
+    fn create_empty_list(&mut self, list_type: ListType) -> ComposerUpdate<S> {
+        self.state.dom.append_at_end_of_document(DomNode::new_list(
+            list_type,
+            vec![DomNode::Container(ContainerNode::new_list_item(vec![
+                DomNode::new_text(S::zwsp()),
+            ]))],
+        ));
+        self.state.start.add_assign(1);
+        self.state.end.add_assign(1);
+        self.create_update_replace_all()
     }
 
     fn create_list_from_range(
@@ -286,29 +312,6 @@ where
             list.set_list_type(list_type);
         }
         self.create_update_replace_all()
-    }
-
-    fn create_list(
-        &mut self,
-        list_type: ListType,
-        range: Range,
-    ) -> ComposerUpdate<S> {
-        // Store current Dom
-        self.push_state_to_history();
-
-        if range.is_empty() {
-            self.state.dom.append_at_end_of_document(DomNode::new_list(
-                list_type,
-                vec![DomNode::Container(ContainerNode::new_list_item(vec![
-                    DomNode::new_text(S::zwsp()),
-                ]))],
-            ));
-            self.state.start.add_assign(1);
-            self.state.end.add_assign(1);
-            self.create_update_replace_all()
-        } else {
-            self.create_list_from_range(list_type, range)
-        }
     }
 
     fn slice_list_item(
