@@ -217,6 +217,7 @@ where
         let end_correction;
         let handles: Vec<&DomHandle> = range
             .top_level_locations()
+            // FIXME: filtering positions that are before start, these shouldn't be returned from a > 0 range
             .filter(|l| !(l.relative_position() == DomLocationPosition::Before))
             .map(|l| &l.node_handle)
             .collect();
