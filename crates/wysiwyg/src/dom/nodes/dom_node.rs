@@ -232,6 +232,16 @@ where
         }
     }
 
+    /// Returns whether this node, or it's first text-like
+    /// child starts with a ZWSP.
+    pub fn has_leading_zwsp(&self) -> bool {
+        match self {
+            DomNode::Container(c) => c.has_leading_zwsp(),
+            DomNode::Text(t) => t.data().to_string().starts_with(char::zwsp()),
+            DomNode::LineBreak(_) => false,
+        }
+    }
+
     /// Returns true if given node can be pushed into self without any specific change.
     pub(crate) fn can_push(&self, other_node: &DomNode<S>) -> bool {
         match (self, other_node) {

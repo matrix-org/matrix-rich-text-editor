@@ -58,6 +58,10 @@ where
 
         let list = ContainerNode::new_list(list_type, list_items);
         self.insert_at(first_handle, DomNode::Container(list));
+
+        if first_handle.has_parent() {
+            self.join_nodes_in_container(&first_handle.parent_handle());
+        }
     }
 
     pub fn remove_list(&mut self, handle: &DomHandle) {

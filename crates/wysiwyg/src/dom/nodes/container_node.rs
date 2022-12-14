@@ -368,6 +368,15 @@ where
         first_child.remove_leading_zwsp()
     }
 
+    /// Returns whether this continer first text-like
+    /// child starts with a ZWSP.
+    pub fn has_leading_zwsp(&self) -> bool {
+        let Some(first_child) = self.children.get(0) else {
+            return false;
+        };
+        first_child.has_leading_zwsp()
+    }
+
     pub fn replace_leading_zwsp_with_linebreak(&mut self) -> bool {
         let Some(first_child) = self.children.get_mut(0) else {
             return false;
