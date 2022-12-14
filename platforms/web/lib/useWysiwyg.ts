@@ -22,6 +22,8 @@ import { useComposerModel } from './useComposerModel';
 import { useListeners } from './useListeners';
 import { useTestCases } from './useTestCases';
 
+export { richToPlain, plainToRich } from './conversion';
+
 function useEditorFocus(
     editorRef: RefObject<HTMLElement | null>,
     isAutoFocusEnabled = false,
