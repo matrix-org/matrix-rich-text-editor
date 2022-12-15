@@ -524,7 +524,7 @@ impl DomHandle {
         }
     }
 
-    /// Returns our tagname, or "-text-" if we are a text node.
+    /// Returns our tagname, or "-text-"/"-zwsp-" if we are a text/zwsp node.
     /// Panics if we are not a valid reference (because the model has changed
     /// since we were created, or because you passed in a different model
     /// from the one that created us.)
@@ -534,7 +534,7 @@ impl DomHandle {
             wysiwyg::DomNode::Container(node) => node.name().to_string(),
             wysiwyg::DomNode::LineBreak(node) => node.name().to_string(),
             wysiwyg::DomNode::Text(_) => String::from("-text-"),
-            wysiwyg::DomNode::Zwsp(_) => String::from("-text-"),
+            wysiwyg::DomNode::Zwsp(_) => String::from("-zwsp-"),
         }
     }
 }
