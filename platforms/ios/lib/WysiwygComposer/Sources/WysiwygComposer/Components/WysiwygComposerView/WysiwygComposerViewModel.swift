@@ -127,7 +127,7 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
                 maxExpandedHeight: CGFloat = 300,
                 textColor: UIColor = .label,
                 linkColor: UIColor = .link,
-                codeBackgroundColor: UIColor = .systemGray) {
+                codeBackgroundColor: UIColor = .systemGray5) {
         self.minHeight = minHeight
         self.maxCompressedHeight = maxCompressedHeight
         self.maxExpandedHeight = maxExpandedHeight
