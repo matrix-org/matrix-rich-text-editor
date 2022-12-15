@@ -47,6 +47,6 @@ private extension HTMLParser {
     /// - Parameter htmlFragment: HTML fragment
     /// - Returns: HTML body
     static func generateHtmlBodyWithStyle(htmlFragment: String) -> String {
-        "<html><head><style>body {font-family:-apple-system;font:-apple-system-body;}</style></head><body>\(htmlFragment)</body></html>"
+        "<html><head><style type='text/css'>body {font-family:-apple-system;font:-apple-system-body;}a{text-decoration:none; }</style></head><body>\(htmlFragment)</body></html>"
     }
 }
