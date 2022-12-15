@@ -30,6 +30,7 @@ final class HTMLParser {
     ///   - html: HTML to parse
     ///   - encoding: string encoding to use
     ///   - textColor: text color to apply to the result string
+    ///   - codeBackgroundColor: color to apply to the background of code blocks
     /// - Returns: an attributed string representation of the HTML content
     static func parse(html: String,
                       encoding: String.Encoding = .utf16,
@@ -46,7 +47,9 @@ final class HTMLParser {
 private extension HTMLParser {
     /// Generate an HTML body with standard style from given fragment.
     ///
-    /// - Parameter htmlFragment: HTML fragment
+    /// - Parameters:
+    ///    - htmlFragment: HTML fragment
+    ///    - codeBackgroundColorHex: the background color for code blocks as hex
     /// - Returns: HTML body
     static func generateHtmlBodyWithStyle(htmlFragment: String, codeBackgroundColorHex: String) -> String {
         """

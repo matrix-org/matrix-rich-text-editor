@@ -62,7 +62,6 @@ extension NSAttributedString {
     /// - Parameters:
     ///   - color: the new UIColor to update the attributed string
     ///   - linkColor: the new UIColor for links inside the attributed string
-    ///   - codeBackgroundColor: the new UIColor for the background of code blocks
     /// - Returns: a new attributed string with the same content and attributes, but its foregroundColor is changed
     func changeColor(to color: UIColor, linkColor: UIColor) -> NSAttributedString {
         let mutableAttributed = NSMutableAttributedString(attributedString: self)
