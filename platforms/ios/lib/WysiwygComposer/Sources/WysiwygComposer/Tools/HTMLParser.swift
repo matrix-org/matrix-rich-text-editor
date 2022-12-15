@@ -36,9 +36,9 @@ final class HTMLParser {
                       textColor: UIColor,
                       linkColor: UIColor,
                       codeBackgroundColor: UIColor) throws -> NSAttributedString {
-        let htmlWithStyle = generateHtmlBodyWithStyle(htmlFragment: html)
+        let htmlWithStyle = generateHtmlBodyWithStyle(htmlFragment: html, codeBackgroundColorHex: codeBackgroundColor.toHexString())
         let attributed = try NSAttributedString(html: htmlWithStyle)
-            .changeColor(to: textColor, linkColor: linkColor, codeBackgroundColor: codeBackgroundColor)
+            .changeColor(to: textColor, linkColor: linkColor)
         return attributed
     }
 }
@@ -48,7 +48,24 @@ private extension HTMLParser {
     ///
     /// - Parameter htmlFragment: HTML fragment
     /// - Returns: HTML body
-    static func generateHtmlBodyWithStyle(htmlFragment: String) -> String {
-        "<html><head><style>body {font-family:-apple-system;font:-apple-system-body;}</style></head><body>\(htmlFragment)</body></html>"
+    static func generateHtmlBodyWithStyle(htmlFragment: String, codeBackgroundColorHex: String) -> String {
+        """
+        <html>\
+        <head>\
+        <style>\
+        body{\
+        font-family:-apple-system;\
+        font:-apple-system-body;\
+        }\
+        code{\
+        font-family:Menlo,monospace;\
+        font-size:inherit;\
+        background:\(codeBackgroundColorHex);\
+        }\
+        </style>\
+        </head>\
+        <body>\(htmlFragment)</body>\
+        </html>
+        """
     }
 }
