@@ -71,7 +71,7 @@ extension NSAttributedString {
         // This fixes an iOS bug where if some text is typed after a link, and then a whitespace is added the link color is overridden.
         mutableAttributed.enumerateAttribute(.link, in: NSRange(location: 0, length: mutableAttributed.length)) { value, range, _ in
             if value != nil {
-                mutableAttributed.addAttributes([.foregroundColor: UIColor.systemBlue], range: range)
+                mutableAttributed.addAttributes([.foregroundColor: linkColor], range: range)
             }
         }
         let newSelf = NSAttributedString(attributedString: mutableAttributed)

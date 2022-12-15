@@ -87,6 +87,7 @@ enum ComposerAction {
     "UnorderedList",
     "Indent",
     "UnIndent",
+    "CodeBlock",
 };
 
 enum ActionState {

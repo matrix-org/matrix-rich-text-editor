@@ -190,7 +190,7 @@ where
                 self.state.dom.find_parent_list_item_or_self(handle);
             if let Some(list_item_handle) = parent_list_item_handle {
                 let list = self.state.dom.parent(&list_item_handle);
-                if list.is_list_of_type(list_type.clone()) {
+                if list.is_list_of_type(&list_type) {
                     self.move_list_item_content_to_list_parent(
                         &list_item_handle,
                     )
@@ -302,7 +302,7 @@ where
                     let previous_node =
                         self.state.dom.lookup_node_mut(&previous_handle);
                     if let DomNode::Container(previous) = previous_node {
-                        if previous.is_list_of_type(list_type.clone()) {
+                        if previous.is_list_of_type(&list_type) {
                             previous.append_child(list_item);
                             let parent = self.state.dom.parent_mut(handle);
                             parent.remove_child(index_in_parent);
@@ -442,7 +442,7 @@ where
             let parent_list_type = if let DomNode::Container(list) =
                 self.state.dom.lookup_node(parent_handle)
             {
-                if list.is_list_of_type(ListType::Ordered) {
+                if list.is_list_of_type(&ListType::Ordered) {
                     ListType::Ordered
                 } else {
                     ListType::Unordered
@@ -510,7 +510,7 @@ where
                 {
                     sub_node.insert_child(0, removed_list_item);
                 }
-            } else if into_node.is_list_of_type(parent_list_type.clone()) {
+            } else if into_node.is_list_of_type(parent_list_type) {
                 into_node.insert_child(at_index, removed_list_item);
             } else {
                 let new_list = DomNode::new_list(
@@ -535,8 +535,7 @@ where
                     .get_child_mut(prev_sibling.children().len() - 1)
                     .unwrap()
                 {
-                    if prev_sibling_last_item.is_list_of_type(list_type.clone())
-                    {
+                    if prev_sibling_last_item.is_list_of_type(list_type) {
                         return Some(prev_sibling_last_item);
                     }
                 }

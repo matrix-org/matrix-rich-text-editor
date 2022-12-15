@@ -55,7 +55,7 @@ where
                 // Nodes to be added to the Dom, might contain both TextNodes and LineBreaks
                 let mut nodes_to_add = Vec::new();
                 // Iterate the leaves backwards to avoid modifying the previous Dom structure
-                for leaf in leaves.into_iter().rev() {
+                for leaf in leaves.iter().rev() {
                     // Find the immediate child of the common ancestor containing this leaf as its descendant
                     let ancestor_child_handle = leaf
                         .node_handle
@@ -79,7 +79,7 @@ where
                         DomNode::LineBreak(_) => {
                             nodes_to_add.extend(
                                 self.process_line_break_for_inline_code(
-                                    &leaf, &cur_text,
+                                    leaf, &cur_text,
                                 ),
                             );
                             // Update insertion point and reset text
@@ -122,7 +122,7 @@ where
         location: &DomLocation,
         ancestor_child_handle: &DomHandle,
     ) -> (S, Option<DomHandle>) {
-        let mut insert_text_at = None;
+        let insert_text_at;
         // Get the selected text from the TextNode
         let text = text_node.data()[location.start_offset..location.end_offset]
             .to_owned();
@@ -153,6 +153,20 @@ where
             };
             let text = text_node.data()[location.end_offset..].to_owned();
             dom.replace(handle, vec![DomNode::new_text(text)]);
+        } else {
+            insert_text_at = Some(ancestor_child_handle.next_sibling());
+
+            let prev_text =
+                text_node.data()[..location.start_offset].to_owned();
+            let next_text = text_node.data()[location.end_offset..].to_owned();
+            let mut text_nodes = Vec::new();
+            if !prev_text.is_empty() {
+                text_nodes.push(DomNode::new_text(prev_text));
+            }
+            if !next_text.is_empty() {
+                text_nodes.push(DomNode::new_text(next_text));
+            }
+            dom.replace(handle, text_nodes);
         }
 
         (text, insert_text_at)

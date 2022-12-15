@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::ops::ControlFlow;
+
 use crate::char::CharExt;
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
@@ -44,8 +46,9 @@ where
     Generic, // E.g. the root node (the containing div)
     Formatting(InlineFormatType),
     Link(S),
-    List,
+    List(ListType),
     ListItem,
+    CodeBlock,
 }
 
 impl<S> ContainerNode<S>
@@ -102,7 +105,7 @@ where
     pub fn new_list(list_type: ListType, children: Vec<DomNode<S>>) -> Self {
         Self {
             name: list_type.tag().into(),
-            kind: ContainerNodeKind::List,
+            kind: ContainerNodeKind::List(list_type),
             attrs: None,
             children,
             handle: DomHandle::new_unset(),
@@ -113,6 +116,16 @@ where
         Self {
             name: "li".into(),
             kind: ContainerNodeKind::ListItem,
+            attrs: None,
+            children,
+            handle: DomHandle::new_unset(),
+        }
+    }
+
+    pub fn new_code_block(children: Vec<DomNode<S>>) -> Self {
+        Self {
+            name: "pre".into(),
+            kind: ContainerNodeKind::CodeBlock,
             attrs: None,
             children,
             handle: DomHandle::new_unset(),
@@ -182,7 +195,11 @@ where
         self.children.last_mut()
     }
 
-    pub fn insert_child(&mut self, index: usize, node: DomNode<S>) {
+    pub fn insert_child(
+        &mut self,
+        index: usize,
+        node: DomNode<S>,
+    ) -> &DomNode<S> {
         assert!(self.handle.is_set());
         assert!(index <= self.children().len());
 
@@ -192,6 +209,8 @@ where
             let new_handle = self.handle.child_handle(i);
             self.children[i].set_handle(new_handle);
         }
+
+        self.children.get(index).unwrap()
     }
 
     pub fn handle(&self) -> DomHandle {
@@ -231,23 +250,17 @@ where
     }
 
     pub fn is_list(&self) -> bool {
-        matches!(self.kind, ContainerNodeKind::List)
+        matches!(self.kind, ContainerNodeKind::List(_))
     }
 
-    pub(crate) fn is_list_of_type(&self, list_type: ListType) -> bool {
-        match self.kind {
-            ContainerNodeKind::List => {
-                return ListType::try_from(self.name().to_owned()).unwrap()
-                    == list_type;
-            }
-            _ => false,
-        }
+    pub(crate) fn is_list_of_type(&self, list_type: &ListType) -> bool {
+        matches!(&self.kind, ContainerNodeKind::List(f) if f == list_type)
     }
 
     pub(crate) fn is_structure_node(&self) -> bool {
         use ContainerNodeKind::*;
 
-        matches!(self.kind, List | ListItem)
+        matches!(self.kind, List(_) | ListItem)
     }
 
     pub(crate) fn is_formatting_node(&self) -> bool {
@@ -264,7 +277,7 @@ where
     pub(crate) fn is_block_node(&self) -> bool {
         use ContainerNodeKind::*;
 
-        matches!(self.kind, Generic | List)
+        matches!(self.kind, Generic | List(_) | CodeBlock)
     }
 
     pub fn text_len(&self) -> usize {
@@ -293,8 +306,9 @@ where
 
     pub(crate) fn set_list_type(&mut self, list_type: ListType) {
         match self.kind {
-            ContainerNodeKind::List => {
+            ContainerNodeKind::List(_) => {
                 self.name = list_type.tag().into();
+                self.kind = ContainerNodeKind::List(list_type);
             }
             _ => panic!(
                 "Setting list type to a non-list container is not allowed"
@@ -317,6 +331,32 @@ where
         Some(link)
     }
 
+    /// Creates a container with the same kind & attributes
+    /// as self, with given children and an unset handle.
+    pub(crate) fn clone_with_new_children(
+        &self,
+        children: Vec<DomNode<S>>,
+    ) -> Self {
+        Self {
+            name: self.name.clone(),
+            kind: self.kind.clone(),
+            attrs: self.attrs.clone(),
+            children,
+            handle: DomHandle::new_unset(),
+        }
+    }
+
+    /// Add a leading ZWSP char to this container.
+    /// Returns false if no updates was done.
+    /// e.g. first text-like node is a line break
+    /// or a text node that already starts with a ZWSP.
+    pub fn add_leading_zwsp(&mut self) -> bool {
+        let Some(first_child) = self.children.get_mut(0) else {
+            return false;
+        };
+        first_child.add_leading_zwsp()
+    }
+
     /// Push content of the given container node into self. Panics
     /// if given container node is not of the same kind.
     pub(crate) fn push(&mut self, other_node: &mut ContainerNode<S>) {
@@ -333,6 +373,108 @@ where
             let child = other_node.remove_child(0);
             self.append_child(child);
         }
+    }
+
+    /// Slice this container after given position.
+    /// Returns a new container of the same kind with the
+    /// removed content, with both nodes keeping
+    /// expected hierarchy.
+    pub fn slice_after(&mut self, position: usize) -> ContainerNode<S> {
+        assert!(position <= self.text_len());
+        let result = self.find_slice_location(position);
+
+        match result {
+            ControlFlow::Continue(_) => self.clone_with_new_children(vec![]),
+            ControlFlow::Break((current_loc, child_index, should_slice)) => {
+                let mut removed_children = Vec::new();
+                let index_to_remove: usize;
+                if should_slice {
+                    index_to_remove = child_index + 1;
+                    let sliced = self
+                        .get_child_mut(child_index)
+                        .unwrap()
+                        .slice_after(position - current_loc);
+                    removed_children.push(sliced);
+                } else {
+                    index_to_remove = child_index;
+                }
+                while self.children.len() > index_to_remove {
+                    removed_children
+                        .push(self.children.remove(index_to_remove));
+                }
+                self.clone_with_new_children(removed_children)
+            }
+        }
+    }
+
+    /// Slice this container before given position.
+    /// Returns a new container of the same kind with the
+    /// removed content, with both nodes keeping
+    /// expected hierarchy.
+    pub fn slice_before(&mut self, position: usize) -> ContainerNode<S> {
+        assert!(position <= self.text_len());
+        let result = self.find_slice_location(position);
+
+        match result {
+            ControlFlow::Continue(_) => self.clone_with_new_children(vec![]),
+            ControlFlow::Break((current_loc, child_index, should_slice)) => {
+                let mut removed_children = Vec::new();
+                if should_slice {
+                    let sliced = self
+                        .get_child_mut(child_index)
+                        .unwrap()
+                        .slice_before(position - current_loc);
+                    removed_children.push(sliced);
+                }
+                for i in (0..child_index).rev() {
+                    removed_children.insert(0, self.children.remove(i));
+                }
+                self.clone_with_new_children(removed_children)
+            }
+        }
+    }
+
+    fn find_slice_location(
+        &self,
+        position: usize,
+    ) -> ControlFlow<(usize, usize, bool), usize> {
+        self.children.iter().enumerate().try_fold(
+            0,
+            |current_loc, (index, child)| {
+                let child_length = child.text_len();
+                if current_loc + child_length <= position {
+                    ControlFlow::Continue(current_loc + child_length)
+                } else if current_loc < position {
+                    ControlFlow::Break((current_loc, index, true))
+                } else {
+                    ControlFlow::Break((current_loc, index, false))
+                }
+            },
+        )
+    }
+
+    /// Returns the positions of linebreaks inside container.
+    pub fn line_break_positions(&self) -> Vec<usize> {
+        let mut current_offset = 0;
+        let mut positions: Vec<usize> = Vec::new();
+        for child in self.children() {
+            match child {
+                DomNode::Container(c) => {
+                    let mut child_positions: Vec<usize> = c
+                        .line_break_positions()
+                        .iter()
+                        .map(|p| p + current_offset)
+                        .collect();
+                    positions.append(&mut child_positions);
+                }
+                DomNode::Text(_) => {}
+                DomNode::LineBreak(_) => {
+                    positions.push(current_offset);
+                }
+            }
+            current_offset += child.text_len();
+        }
+        positions
     }
 }
 
@@ -472,12 +614,16 @@ where
                 fmt_link(self, buffer, &options, url)?;
             }
 
-            List => {
+            List(_) => {
                 fmt_list(self, buffer, &options)?;
             }
 
             ListItem => {
                 fmt_list_item(self, buffer, &options)?;
+            }
+
+            CodeBlock => {
+                fmt_code_block(self, buffer, &options)?;
             }
         };
 
@@ -798,6 +944,22 @@ where
 
             Ok(())
         }
+
+        #[inline(always)]
+        fn fmt_code_block<S>(
+            this: &ContainerNode<S>,
+            buffer: &mut S,
+            options: &MarkdownOptions,
+        ) -> Result<(), MarkdownError<S>>
+        where
+            S: UnicodeString,
+        {
+            buffer.push("```\n");
+            fmt_children(this, buffer, options)?;
+            buffer.push("\n```\n");
+
+            Ok(())
+        }
     }
 }
 
@@ -896,6 +1058,14 @@ mod test {
     }
 
     #[test]
+    fn adding_zwsp_to_container() {
+        let mut bold = create_container_with_nested_children();
+        assert!(bold.add_leading_zwsp());
+        assert_eq!(bold.to_html(), "<strong><em>\u{200b}abc</em>def</strong>");
+        assert!(!bold.add_leading_zwsp());
+    }
+
+    #[test]
     fn pushing_container_of_same_kind() {
         let mut c1 =
             format_container_with_handle(InlineFormatType::Bold, &[0, 0]);
@@ -925,6 +1095,58 @@ mod test {
             format_container_with_handle(InlineFormatType::Italic, &[0, 1]);
         c2.append_child(text_node("def"));
         c1.push(&mut c2);
+    }
+
+    #[test]
+    fn slicing_container_before() {
+        let mut bold = create_container_with_nested_children();
+        let mut before = bold.slice_before(2);
+        assert_eq!(before.to_html(), "<strong><em>ab</em></strong>");
+        assert_eq!(bold.to_html(), "<strong><em>c</em>def</strong>");
+        // Just need any set handle, we're detached from any DOM.
+        before.set_handle(DomHandle::root());
+        before.push(&mut bold);
+        assert_eq!(before.to_html(), "<strong><em>abc</em>def</strong>")
+    }
+
+    #[test]
+    fn slicing_container_after() {
+        let mut container = create_container_with_nested_children();
+        let mut after = container.slice_after(2);
+        assert_eq!(after.to_html(), "<strong><em>c</em>def</strong>");
+        assert_eq!(container.to_html(), "<strong><em>ab</em></strong>");
+        // Just need any set handle, we're detached from any DOM.
+        after.set_handle(DomHandle::root());
+        container.push(&mut after);
+        assert_eq!(container.to_html(), "<strong><em>abc</em>def</strong>")
+    }
+
+    #[test]
+    fn slicing_container_on_edge_does_nothing() {
+        let mut container = create_container_with_nested_children();
+        container.slice_before(0);
+        container.slice_after(6);
+        assert_eq!(container.to_html(), "<strong><em>abc</em>def</strong>")
+    }
+
+    #[test]
+    #[should_panic]
+    fn slicing_after_edge_panics() {
+        let mut container = create_container_with_nested_children();
+        container.slice_after(42);
+    }
+
+    /// Result HTML is "<strong><em>abc</em>def</strong>".
+    fn create_container_with_nested_children() -> ContainerNode<Utf16String> {
+        let mut bold =
+            format_container_with_handle(InlineFormatType::Bold, &[0]);
+        let mut italic =
+            format_container_with_handle(InlineFormatType::Italic, &[0]);
+        italic.append_child(text_node("abc"));
+        bold.append_child(DomNode::Container(italic));
+        bold.append_child(text_node("def"));
+        assert_eq!(bold.to_html(), "<strong><em>abc</em>def</strong>");
+        bold
     }
 
     fn container_with_handle<'a>(

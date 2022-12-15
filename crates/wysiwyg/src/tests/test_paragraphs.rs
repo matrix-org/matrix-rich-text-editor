@@ -178,3 +178,76 @@ fn backspace_merges_formatting_nodes() {
     model.backspace();
     assert_eq!(tx(&model), "<b>a|b</b>");
 }
+
+#[test]
+fn enter_in_code_block_in_text_node_adds_line_break_as_text() {
+    let mut model = cm("<pre>Test|</pre>");
+    model.enter();
+    assert_eq!(tx(&model), "<pre>Test\n|</pre>")
+}
+
+#[test]
+fn enter_in_code_block_at_start_adds_the_line_break() {
+    let mut model = cm("<pre>|Test</pre>");
+    model.enter();
+    assert_eq!(tx(&model), "<pre>\n|Test</pre>")
+}
+
+#[test]
+fn enter_in_code_block_at_start_with_previous_line_break_moves_it_outside_the_code_block(
+) {
+    // The initial line break will be removed, so it's the same as having a single line break at the start
+    let mut model = cm("<pre>\n\n|Test</pre>");
+    model.enter();
+    assert_eq!(tx(&model), "<br />|<pre>Test</pre>")
+}
+
+#[test]
+fn enter_in_code_block_at_start_with_a_line_break_after_it_adds_another_one() {
+    // The initial line break will be removed, so it's the same as having a single line break at the start
+    let mut model = cm("<pre>\n|\nTest</pre>");
+    model.enter();
+    assert_eq!(tx(&model), "<pre>\n|\nTest</pre>")
+}
+
+#[test]
+fn enter_in_code_block_after_line_break_at_end_ends_code_block() {
+    let mut model = cm("<pre>Test\n|</pre>");
+    model.enter();
+    assert_eq!(tx(&model), "<pre>Test</pre><br />|")
+}
+
+#[test]
+fn enter_in_code_block_after_line_break_in_middle_splits_code_block() {
+    let mut model = cm("<pre>Test\n|code blocks</pre>");
+    model.enter();
+    assert_eq!(tx(&model), "<pre>Test</pre><br />|<pre>code blocks</pre>")
+}
+
+#[test]
+fn enter_in_code_block_after_nested_line_break_in_middle_splits_code_block() {
+    let mut model = cm("<pre><b><i>Test\n|code blocks</i></b></pre>");
+    model.enter();
+    assert_eq!(tx(&model), "<pre><b><i>Test</i></b></pre><br />|<pre><b><i>code blocks</i></b></pre>")
+}
+
+#[test]
+fn backspace_at_start_of_code_block_removes_previous_text() {
+    let mut model = cm("Test <pre>|code</pre>");
+    model.backspace();
+    assert_eq!(tx(&model), "Test|<pre>code</pre>");
+}
+
+#[test]
+fn backspace_at_end_of_code_block_deletes_its_last_character() {
+    let mut model = cm("Test <pre>code</pre>| and more");
+    model.backspace();
+    assert_eq!(tx(&model), "Test <pre>cod|</pre> and more");
+}
+
+#[test]
+fn backspace_emptying_code_block_removes_it() {
+    let mut model = cm("Test <pre>c|</pre>");
+    model.backspace();
+    assert_eq!(tx(&model), "Test&nbsp;|");
+}

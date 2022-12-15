@@ -15,7 +15,9 @@
 use strum::IntoEnumIterator;
 
 use crate::action_state::ActionState;
+use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind};
+use crate::dom::range::DomLocationPosition;
 use crate::dom::{DomLocation, Range};
 use crate::menu_state::MenuStateUpdate;
 use crate::ComposerAction::{Indent, UnIndent};
@@ -91,7 +93,9 @@ where
             range
                 .leaves()
                 // do not need locations after the cursor for next logic
-                .filter(|loc| loc.position < range.end())
+                .filter(|loc| {
+                    !(loc.relative_position() == DomLocationPosition::After)
+                })
                 .fold(
                     // Init with reversed_actions from the first leave.
                     self.compute_reversed_actions(&l.node_handle),
@@ -156,14 +160,11 @@ where
                 }
             },
             ContainerNodeKind::Link(_) => Some(ComposerAction::Link),
-            ContainerNodeKind::List => {
-                let list_type =
-                    ListType::try_from(container.name().to_owned()).unwrap();
-                match list_type {
-                    ListType::Ordered => Some(ComposerAction::OrderedList),
-                    ListType::Unordered => Some(ComposerAction::UnorderedList),
-                }
-            }
+            ContainerNodeKind::List(list_type) => match list_type {
+                ListType::Ordered => Some(ComposerAction::OrderedList),
+                ListType::Unordered => Some(ComposerAction::UnorderedList),
+            },
+            ContainerNodeKind::CodeBlock => Some(ComposerAction::CodeBlock),
             _ => None,
         }
     }
@@ -196,16 +197,7 @@ where
         if !self.can_unindent(locations) {
             disabled_actions.insert(UnIndent);
         }
-        let contains_inline_code_node = locations
-            .iter()
-            .find(|l| {
-                self.state
-                    .dom
-                    .lookup_node(&l.node_handle)
-                    .is_formatting_node_of_type(&InlineFormatType::InlineCode)
-            })
-            .is_some();
-        if contains_inline_code_node {
+        if contains_inline_code(locations) {
             // Remove the rest of inline formatting options
             disabled_actions.extend(vec![
                 ComposerAction::Bold,
@@ -214,7 +206,22 @@ where
                 ComposerAction::StrikeThrough,
                 ComposerAction::Link,
             ])
+        } else if contains_code_block(locations) {
+            disabled_actions.extend(vec![ComposerAction::InlineCode])
         }
         disabled_actions
     }
+}
+
+fn contains_inline_code(locations: &[DomLocation]) -> bool {
+    locations.iter().any(|l| {
+        matches!(
+            l.kind,
+            DomNodeKind::Formatting(InlineFormatType::InlineCode)
+        )
+    })
+}
+
+fn contains_code_block(locations: &[DomLocation]) -> bool {
+    locations.iter().any(|l| l.kind == DomNodeKind::CodeBlock)
 }

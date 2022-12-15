@@ -80,6 +80,10 @@ where
         DomNode::Container(ContainerNode::new_list_item(children))
     }
 
+    pub fn new_code_block(children: Vec<DomNode<S>>) -> DomNode<S> {
+        DomNode::Container(ContainerNode::new_code_block(children))
+    }
+
     pub fn handle(&self) -> DomHandle {
         match self {
             DomNode::Container(n) => n.handle(),
@@ -204,11 +208,23 @@ where
         }
     }
 
+    /// Add a leading ZWSP char to this node.
+    /// Returns false if no updates was done.
+    /// e.g. first text-like node is a line break
+    /// or a text node that already starts with a ZWSP.
+    pub fn add_leading_zwsp(&mut self) -> bool {
+        match self {
+            DomNode::Container(c) => c.add_leading_zwsp(),
+            DomNode::Text(t) => t.add_leading_zwsp(),
+            DomNode::LineBreak(_) => false,
+        }
+    }
+
     /// Returns true if given node can be pushed into self without any specific change.
     pub(crate) fn can_push(&self, other_node: &DomNode<S>) -> bool {
         match (self, other_node) {
             (DomNode::Container(c1), DomNode::Container(c2)) => {
-                c1.kind() == c2.kind() && !c1.is_list_item() && !c1.is_list()
+                c1.kind() == c2.kind() && !c1.is_list_item()
             }
             (DomNode::Text(_), DomNode::Text(t2)) => {
                 !t2.data().to_string().starts_with(char::zwsp())
@@ -229,6 +245,34 @@ where
             }
             DomNode::Text(t) => t.push(other_node.as_text().unwrap()),
             _ => unreachable!(),
+        }
+    }
+
+    /// Slice this node after given position.
+    /// Returns a new node of the same kind with the
+    /// removed content, with both nodes keeping
+    /// expected hierarchy.
+    pub fn slice_after(&mut self, position: usize) -> Self {
+        match self {
+            DomNode::Container(c) => {
+                DomNode::Container(c.slice_after(position))
+            }
+            DomNode::Text(t) => DomNode::Text(t.slice_after(position)),
+            DomNode::LineBreak(_) => panic!("Can't slice a linebreak"),
+        }
+    }
+
+    /// Slice this node before given position.
+    /// Returns a new node of the same kind with the
+    /// removed content, with both nodes keeping
+    /// expected hierarchy.
+    pub fn slice_before(&mut self, position: usize) -> Self {
+        match self {
+            DomNode::Container(c) => {
+                DomNode::Container(c.slice_before(position))
+            }
+            DomNode::Text(t) => DomNode::Text(t.slice_before(position)),
+            DomNode::LineBreak(_) => panic!("Can't slice a linebreak"),
         }
     }
 }
@@ -311,6 +355,7 @@ pub enum DomNodeKind {
     Link,
     ListItem,
     List,
+    CodeBlock,
 }
 
 impl DomNodeKind {
@@ -322,10 +367,19 @@ impl DomNodeKind {
                 DomNodeKind::Formatting(f.clone())
             }
             ContainerNodeKind::Link(_) => DomNodeKind::Link,
-            ContainerNodeKind::List => DomNodeKind::List,
+            ContainerNodeKind::List(_) => DomNodeKind::List,
             ContainerNodeKind::ListItem => DomNodeKind::ListItem,
             ContainerNodeKind::Generic => DomNodeKind::Generic,
+            ContainerNodeKind::CodeBlock => DomNodeKind::CodeBlock,
         }
+    }
+
+    pub fn is_structure_kind(&self) -> bool {
+        matches!(self, Self::List | Self::ListItem)
+    }
+
+    pub fn is_block_kind(&self) -> bool {
+        matches!(self, Self::Generic | Self::List | Self::CodeBlock)
     }
 }
 
@@ -333,7 +387,7 @@ impl DomNodeKind {
 mod test {
     use widestring::Utf16String;
 
-    use crate::{DomHandle, DomNode, InlineFormatType, UnicodeString};
+    use crate::{DomHandle, DomNode, InlineFormatType, ToHtml, UnicodeString};
 
     #[test]
     fn pushing_nodes_of_same_kind() {
@@ -396,6 +450,46 @@ mod test {
             &[0, 1],
         );
         n1.push(&mut n2);
+    }
+
+    #[test]
+    fn slicing_node() {
+        let mut node = format_container_with_nested_children();
+        let mut before = node.slice_before(4);
+        assert_eq!(before.to_html(), "<del><em>abc</em>d</del>");
+        assert_eq!(node.to_html(), "<del>ef</del>");
+        before.push(&mut node);
+        assert_eq!(before.to_html(), "<del><em>abc</em>def</del>");
+    }
+
+    #[test]
+    fn slicing_node_on_edge_removes_nothing() {
+        let mut node = format_container_with_nested_children();
+        node.slice_after(6);
+        node.slice_before(0);
+        assert_eq!(node.to_html(), "<del><em>abc</em>def</del>")
+    }
+
+    #[test]
+    #[should_panic]
+    fn slicing_over_edge_panics() {
+        let mut node = format_container_with_nested_children();
+        node.slice_after(42);
+        assert_eq!(node.to_html(), "<del><em>abc</em>def</del>");
+    }
+
+    /// Result HTML is "<del><em>abc</em>def</del>".
+    fn format_container_with_nested_children() -> DomNode<Utf16String> {
+        let italic = format_container_with_handle_and_children(
+            InlineFormatType::Italic,
+            vec![text_node("abc")],
+            &[0, 0],
+        );
+        format_container_with_handle_and_children(
+            InlineFormatType::StrikeThrough,
+            vec![italic, text_node("def")],
+            &[0, 0],
+        )
     }
 
     fn format_container_with_handle_and_children<'a>(

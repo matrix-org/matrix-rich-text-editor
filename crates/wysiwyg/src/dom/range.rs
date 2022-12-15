@@ -16,6 +16,19 @@ use crate::dom::dom_handle::DomHandle;
 use crate::dom::nodes::dom_node::DomNodeKind;
 use std::cmp::Ordering;
 
+/// Represents the relative position of a DomLocation towards
+/// the range start and end.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum DomLocationPosition {
+    /// Targeted node is before the start of the range (and at the border).
+    Before,
+    /// Targeted node is after the end of the range (and at the border).
+    After,
+    /// Targeted node is at least partially within the
+    /// range, or cursor is strictly inside the node.
+    Inside,
+}
+
 /// Represents a part of a Range.
 /// This is made up of a node (we hold a handle to it), and which part of
 /// that node is within the range.
@@ -86,9 +99,17 @@ impl DomLocation {
     /// True if this is a node which is not a container i.e. a text node or
     /// a text-like node like a line break.
     pub fn is_leaf(&self) -> bool {
-        match self.kind {
-            DomNodeKind::Text | DomNodeKind::LineBreak => true,
-            _ => false,
+        matches!(self.kind, DomNodeKind::Text | DomNodeKind::LineBreak)
+    }
+
+    /// Returns the relative position of this DomLocation towards the range.
+    pub fn relative_position(&self) -> DomLocationPosition {
+        if self.start_offset == self.length {
+            DomLocationPosition::Before
+        } else if self.end_offset == 0 {
+            DomLocationPosition::After
+        } else {
+            DomLocationPosition::Inside
         }
     }
 
@@ -163,7 +184,7 @@ impl Ord for DomLocation {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Range {
     pub locations: Vec<DomLocation>,
 }
@@ -228,6 +249,10 @@ impl Range {
     pub fn is_empty(&self) -> bool {
         self.locations.is_empty()
     }
+
+    pub fn contains(&self, handle: &DomHandle) -> bool {
+        self.locations.iter().any(|l| l.node_handle == *handle)
+    }
 }
 
 impl IntoIterator for Range {
@@ -245,7 +270,7 @@ mod test {
         dom::DomLocation, tests::testutils_composer_model::cm, DomHandle,
     };
 
-    use super::Range;
+    use super::{DomLocationPosition, Range};
 
     #[test]
     fn range_start_and_end_for_cursor_at_beginning() {
@@ -350,7 +375,7 @@ mod test {
         let r = range_of(
             "\
             <ul><li>{a</li><li>b</li></ul>\
-            <ul><li>c</li><li>d</li><li>e</li></ul>fgh}|",
+            <ol><li>c</li><li>d</li><li>e</li></ol>fgh}|",
         );
 
         assert_eq!(
@@ -375,7 +400,7 @@ mod test {
         let model = cm("<em>abcd|</em>");
         let (s, e) = model.safe_selection();
         let range = model.state.dom.find_range(s, e);
-        assert_eq!(range.locations[1].position_is_end_of_list_item(4), false);
+        assert!(!range.locations[1].position_is_end_of_list_item(4));
     }
 
     #[test]
@@ -383,7 +408,7 @@ mod test {
         let model = cm("<ol><li>abcd|</li></ol>");
         let (s, e) = model.safe_selection();
         let range = model.state.dom.find_range(s, e);
-        assert_eq!(range.locations[1].position_is_end_of_list_item(2), false);
+        assert!(!range.locations[1].position_is_end_of_list_item(2));
     }
 
     #[test]
@@ -391,7 +416,39 @@ mod test {
         let model = cm("<ol><li>abcd|</li></ol>");
         let (s, e) = model.safe_selection();
         let range = model.state.dom.find_range(s, e);
-        assert_eq!(range.locations[1].position_is_end_of_list_item(4), true);
+        assert!(range.locations[1].position_is_end_of_list_item(4));
+    }
+
+    #[test]
+    fn node_on_border_is_before_or_after_cursor() {
+        let range = range_of("<strong>abc</strong>|def");
+        let strong_loc = range.locations.first().unwrap();
+        assert!(strong_loc.relative_position() == DomLocationPosition::Before);
+        let def_loc = range.locations.last().unwrap();
+        assert!(def_loc.relative_position() == DomLocationPosition::After);
+    }
+
+    #[test]
+    fn partially_contained_node_is_inside_of_range() {
+        let range = range_of("<strong>abc</strong>{de}|f");
+        let def_loc = range.locations.last().unwrap();
+        assert!(def_loc.relative_position() == DomLocationPosition::Inside);
+    }
+
+    #[test]
+    fn cursor_is_inside_all_nodes() {
+        let range = range_of("<em><strong>ab|cd</strong></em>");
+        range.locations.iter().for_each(|l| {
+            assert!(l.relative_position() == DomLocationPosition::Inside)
+        })
+    }
+
+    #[test]
+    fn selection_is_inside_all_nodes() {
+        let range = range_of("<em><strong>{ab}|cd</strong></em>");
+        range.locations.iter().for_each(|l| {
+            assert!(l.relative_position() == DomLocationPosition::Inside)
+        })
     }
 
     fn range_of(model: &str) -> Range {

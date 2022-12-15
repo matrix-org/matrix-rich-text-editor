@@ -113,7 +113,11 @@ where
 
     /// Inserts the given [node] at the [node_handle] position, moving the node at that position
     /// forward, if any.
-    pub fn insert_at(&mut self, node_handle: &DomHandle, node: DomNode<S>) {
+    pub fn insert_at(
+        &mut self,
+        node_handle: &DomHandle,
+        node: DomNode<S>,
+    ) -> &DomNode<S> {
         let parent = self.parent_mut(node_handle);
         let index = node_handle.index_in_parent();
         parent.insert_child(index, node)
@@ -143,7 +147,7 @@ where
             return vec![]
         };
         let ret = self.replace(node_handle, parent.children().clone());
-        self.join_nodes_in_parent(&node_handle.parent_handle());
+        self.join_nodes_in_container(&node_handle.parent_handle());
         ret
     }
 
@@ -188,7 +192,7 @@ where
         if handle.has_parent() {
             let parent = self.parent(handle);
             let parent_handle = parent.handle();
-            if *parent.kind() == ContainerNodeKind::List {
+            if parent.is_list() {
                 return Some(parent_handle);
             } else if parent_handle.has_parent() {
                 return self.find_closest_list_ancestor(&parent_handle);
@@ -391,6 +395,87 @@ where
             parent
         } else {
             panic!("Parent node was not a container!");
+        }
+    }
+
+    /// Checks if the passed [handle] exists in the DOM.
+    pub fn contains(&self, handle: &DomHandle) -> bool {
+        let mut current = self.document();
+        let path_len = handle.raw().len();
+        for i in 0..=path_len {
+            let sub_handle = handle.sub_handle_up_to(i);
+            if sub_handle.is_root() {
+                continue;
+            } else if let Some(node) =
+                current.children().get(sub_handle.index_in_parent())
+            {
+                if let DomNode::Container(node) = node {
+                    current = node;
+                } else if i != path_len {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+        true
+    }
+
+    /// Checks if the passed handle is the last one in its parent.
+    pub fn is_last_in_parent(&self, handle: &DomHandle) -> bool {
+        return self.parent(handle).children().len()
+            == handle.index_in_parent() + 1;
+    }
+
+    /// Gets the previous sibling of the node if exists.
+    pub fn prev_sibling(&self, handle: &DomHandle) -> Option<&DomNode<S>> {
+        if handle.index_in_parent() == 0 {
+            return None;
+        }
+        let prev_handle = handle.prev_sibling();
+        if self.contains(&prev_handle) {
+            Some(self.lookup_node(&prev_handle))
+        } else {
+            None
+        }
+    }
+
+    /// Gets the previous sibling of the node if exists as a mut ref.
+    pub fn prev_sibling_mut(
+        &mut self,
+        handle: &DomHandle,
+    ) -> Option<&mut DomNode<S>> {
+        if handle.index_in_parent() == 0 {
+            return None;
+        }
+        let prev_handle = handle.prev_sibling();
+        if self.contains(&prev_handle) {
+            Some(self.lookup_node_mut(&prev_handle))
+        } else {
+            None
+        }
+    }
+
+    /// Gets the next sibling of the node if exists.
+    pub fn next_sibling(&self, handle: &DomHandle) -> Option<&DomNode<S>> {
+        let next_handle = handle.next_sibling();
+        if self.contains(&next_handle) {
+            Some(self.lookup_node(&next_handle))
+        } else {
+            None
+        }
+    }
+
+    /// Gets the next sibling of the node if exists as a mut ref.
+    pub fn next_sibling_mut(
+        &mut self,
+        handle: &DomHandle,
+    ) -> Option<&mut DomNode<S>> {
+        let next_handle = handle.next_sibling();
+        if self.contains(&next_handle) {
+            Some(self.lookup_node_mut(&next_handle))
+        } else {
+            None
         }
     }
 }
@@ -698,6 +783,29 @@ mod test {
         let res =
             d.find_parent_list_item_or_self(&DomHandle::from_raw(vec![1]));
         assert!(res.is_none(), "Should not have found a list parent!")
+    }
+
+    #[test]
+    fn node_exists_returns_true_if_exists() {
+        let d = cm("<ul><li>b<strong>c</strong></li></ul>d|").state.dom;
+        let handle = DomHandle::from_raw(vec![0, 0, 1, 0]);
+        assert!(d.contains(&handle));
+    }
+
+    #[test]
+    fn node_exists_returns_false_if_child_does_not_exist() {
+        let d = cm("<ul><li>b<strong>c</strong></li></ul>d|").state.dom;
+        // Last level doesn't exist, [0, 0, 1, 0] is a leaf node
+        let handle = DomHandle::from_raw(vec![0, 0, 1, 0, 2]);
+        assert!(!d.contains(&handle));
+    }
+
+    #[test]
+    fn node_exists_returns_false_if_sibling_does_not_exist() {
+        let d = cm("<ul><li>b<strong>c</strong></li></ul>d|").state.dom;
+        // Last level doesn't exist, [0, 0, 1] does not have 6 children
+        let handle = DomHandle::from_raw(vec![0, 0, 1, 5]);
+        assert!(!d.contains(&handle));
     }
 
     const NO_CHILDREN: &Vec<DomNode<Utf16String>> = &Vec::new();

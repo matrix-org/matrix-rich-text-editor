@@ -16,7 +16,7 @@
 
 import Foundation
 
-public enum WysiwygLinkOperation {
+public enum WysiwygLinkOperation: Equatable {
     case setLink(urlString: String)
     case createLink(urlString: String, text: String)
     case removeLinks

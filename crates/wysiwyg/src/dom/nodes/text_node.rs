@@ -23,6 +23,7 @@ use crate::dom::to_tree::ToTree;
 use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt, UnicodeStringExt};
 use crate::dom::UnicodeString;
 use html_escape;
+use std::ops::Range;
 
 // categories of character for backspace/delete word
 #[derive(PartialEq, Eq, Debug)]
@@ -106,6 +107,19 @@ where
         }
     }
 
+    pub fn remove_trailing_line_break(&mut self) -> bool {
+        if self.data.chars().last() == Some('\n') {
+            self.data.pop_last();
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn clone_with_range(&self, range: Range<usize>) -> TextNode<S> {
+        TextNode::from(self.data[range].to_owned())
+    }
+
     /// This gets the character at the cursor offset, considering the
     /// direction of travel
     fn char_at_offset(
@@ -157,6 +171,26 @@ where
             text_data.push(other_text_data.to_owned());
         }
         self.set_data(text_data);
+    }
+
+    /// Slice this text node after given position.
+    /// Returns a new text node of the same kind with the
+    /// removed content.
+    pub fn slice_after(&mut self, position: usize) -> TextNode<S> {
+        assert!(position <= self.data.len());
+        let data_after = self.data[position..].to_owned();
+        self.set_data(self.data[..position].to_owned());
+        TextNode::from(data_after)
+    }
+
+    /// Slice this text node before given position.
+    /// Returns a new text node of the same kind with the
+    /// removed content.
+    pub fn slice_before(&mut self, position: usize) -> TextNode<S> {
+        assert!(position <= self.data.len());
+        let data_before = self.data[..position].to_owned();
+        self.set_data(self.data[position..].to_owned());
+        TextNode::from(data_before)
     }
 }
 
@@ -336,5 +370,30 @@ mod test {
         let t2 = TextNode::from(Utf16String::zwsp());
         t1.push(&t2);
         assert_eq!(t1, TextNode::from(utf16("abc")));
+    }
+
+    #[test]
+    fn slicing_text_node() {
+        let mut text = TextNode::from(utf16("abcdefghi"));
+        let after = text.slice_after(6);
+        let mut before = text.slice_before(3);
+        before.push(&text);
+        before.push(&after);
+        assert_eq!(before.data, "abcdefghi")
+    }
+
+    #[test]
+    fn slicing_text_node_on_edge_does_nothing() {
+        let mut text = TextNode::from(utf16("abcdefghi"));
+        text.slice_after(9);
+        text.slice_before(0);
+        assert_eq!(text.data, "abcdefghi")
+    }
+
+    #[test]
+    #[should_panic]
+    fn slicing_after_edge_panics() {
+        let mut text = TextNode::from(utf16("abcdefghi"));
+        text.slice_after(42);
     }
 }

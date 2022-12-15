@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::DomNodeKind::ListItem;
 use crate::dom::nodes::DomNode;
-use crate::dom::unicode_string::UnicodeStrExt;
+use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
 use crate::dom::{DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
 
@@ -87,31 +88,151 @@ where
                     );
                     self.create_update_replace_all()
                 } else {
-                    let current_cursor_global_location =
-                        leaf.position + leaf.start_offset;
                     let handle = &leaf.node_handle;
-                    let parent_list_item_handle =
-                        self.state.dom.find_parent_list_item_or_self(handle);
+                    let ancestor_block_location = range
+                        .locations
+                        .iter()
+                        .filter(|l| {
+                            l.kind.is_block_kind()
+                                && l.node_handle
+                                    .is_ancestor_of(&leaf.node_handle)
+                        })
+                        .max();
 
-                    match parent_list_item_handle {
-                        Some(handle) => {
-                            let list_item_end_offset = range
-                                .locations
-                                .into_iter()
-                                .find(|loc| loc.kind == ListItem)
-                                .unwrap()
-                                .end_offset;
-                            self.do_enter_in_list(
-                                &handle,
-                                current_cursor_global_location,
-                                list_item_end_offset,
-                            )
-                        }
-                        None => {
-                            self.do_enter_in_text(handle, leaf.start_offset)
-                        }
+                    if let Some(ancestor_block_location) =
+                        ancestor_block_location
+                    {
+                        self.enter_with_zero_selection_in_block_node(
+                            leaf,
+                            ancestor_block_location,
+                            &range,
+                        )
+                    } else {
+                        self.do_enter_in_text(handle, leaf.start_offset)
                     }
                 }
+            }
+        }
+    }
+
+    fn enter_with_zero_selection_in_block_node(
+        &mut self,
+        leaf: &DomLocation,
+        block_ancestor_loc: &DomLocation,
+        range: &Range,
+    ) -> ComposerUpdate<S> {
+        match block_ancestor_loc.kind {
+            DomNodeKind::List => {
+                // Find ListItem that's an ancestor of the leaf and a child of the List node
+                let list_item = range
+                    .locations
+                    .iter()
+                    .find(|l| {
+                        block_ancestor_loc
+                            .node_handle
+                            .is_ancestor_of(&l.node_handle)
+                            && l.node_handle.is_ancestor_of(&leaf.node_handle)
+                            && l.kind == ListItem
+                    })
+                    .unwrap();
+                let current_cursor_global_location =
+                    leaf.position + leaf.start_offset;
+                self.do_enter_in_list(
+                    &list_item.node_handle,
+                    current_cursor_global_location,
+                    list_item.end_offset,
+                )
+            }
+            DomNodeKind::CodeBlock => {
+                self.do_enter_in_code_block(leaf, block_ancestor_loc)
+            }
+            _ => panic!("Enter not implemented for this block node!"),
+        }
+    }
+
+    fn do_enter_in_code_block(
+        &mut self,
+        leaf: &DomLocation,
+        block_location: &DomLocation,
+    ) -> ComposerUpdate<S> {
+        let mut has_previous_line_break = false;
+        let mut selection_offset = 0;
+        if leaf.start_offset > 0 {
+            if let DomNode::Text(text_node) =
+                self.state.dom.lookup_node_mut(&leaf.node_handle)
+            {
+                let prev_offset = leaf.start_offset - 1;
+                let prev_char =
+                    text_node.data().chars().nth(prev_offset).clone();
+                if let Some(prev_char) = prev_char {
+                    if prev_char == '\n' {
+                        // Remove line break, we'll add another one outside the code block
+                        let mut new_data = text_node.data().to_owned();
+                        new_data.remove_at(prev_offset);
+                        text_node.set_data(new_data);
+                        // Adjust selection too
+                        self.state.start -= 1;
+                        self.state.end = self.state.start;
+                        has_previous_line_break = true;
+                        selection_offset += 1;
+                    }
+                }
+            }
+        }
+
+        if has_previous_line_break {
+            let DomNode::Container(sub_tree) = self.state.dom.split_sub_tree(&leaf.node_handle, leaf.start_offset - selection_offset, block_location.node_handle.depth()) else {
+                panic!("Sub tree must start from a container node");
+            };
+            let DomNode::Container(block) = self.state.dom.lookup_node_mut(&block_location.node_handle) else {
+                panic!("Parent must be a block node");
+            };
+            if block.children().is_empty() {
+                self.state.dom.replace(
+                    &block_location.node_handle,
+                    vec![
+                        DomNode::new_line_break(),
+                        DomNode::new_code_block(sub_tree.children().clone()),
+                    ],
+                );
+            } else {
+                let next_handle = block_location.node_handle.next_sibling();
+                if !sub_tree.children().is_empty() {
+                    self.state.dom.insert_at(
+                        &next_handle,
+                        DomNode::new_code_block(sub_tree.children().clone()),
+                    );
+                }
+                self.state
+                    .dom
+                    .insert_at(&next_handle, DomNode::new_line_break());
+            }
+            self.state.start += 1;
+            self.state.end = self.state.start;
+            self.create_update_replace_all()
+        } else {
+            let DomNode::Container(block) = self.state.dom.lookup_node(&block_location.node_handle) else {
+                panic!("Parent must be a block node");
+            };
+            if block.children().is_empty() {
+                self.state.dom.insert_at(
+                    &leaf.node_handle,
+                    DomNode::new_text("\n\n".into()),
+                );
+                self.state.start += 2;
+                self.state.end = self.state.start;
+                self.create_update_replace_all()
+            } else if let DomNode::Text(text_node) =
+                self.state.dom.lookup_node_mut(&leaf.node_handle)
+            {
+                let mut new_data = text_node.data().to_owned();
+                new_data.insert(leaf.start_offset, &S::from("\n"));
+                text_node.set_data(new_data);
+                self.state.start += 1;
+                self.state.end = self.state.start;
+                self.create_update_replace_all()
+            } else {
+                ComposerUpdate::keep()
             }
         }
     }
@@ -189,6 +310,7 @@ where
 #[cfg(test)]
 mod test {
     use std::collections::HashMap;
+
     use widestring::Utf16String;
 
     use crate::action_state::ActionState;
@@ -228,6 +350,7 @@ mod test {
             (ComposerAction::UnorderedList, ActionState::Enabled),
             (ComposerAction::Indent, ActionState::Disabled),
             (ComposerAction::UnIndent, ActionState::Disabled),
+            (ComposerAction::CodeBlock, ActionState::Enabled),
         ])
     }
 }

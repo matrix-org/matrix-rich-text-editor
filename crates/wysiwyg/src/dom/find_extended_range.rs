@@ -15,6 +15,7 @@
 use crate::{DomHandle, UnicodeString};
 
 use super::nodes::dom_node::DomNodeKind;
+use super::range::DomLocationPosition;
 use super::{find_range, Dom, DomLocation, Range};
 
 impl<S> Dom<S>
@@ -38,7 +39,9 @@ where
         let range = find_range::find_range(self, start, end);
         let leaves: Vec<&DomLocation> = range
             .leaves()
-            .filter(|loc| loc.position < range.end())
+            .filter(|loc| {
+                !(loc.relative_position() == DomLocationPosition::After)
+            })
             .collect();
         if leaves.is_empty() {
             return (start, end);

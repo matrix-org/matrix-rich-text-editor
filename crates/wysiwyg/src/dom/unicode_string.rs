@@ -47,6 +47,8 @@ pub trait UnicodeString:
     type Str: UnicodeStr<CodeUnit = Self::CodeUnit, Owned = Self> + ?Sized;
 
     fn insert(&mut self, idx: usize, s: &Self::Str);
+    fn remove_at(&mut self, idx: usize);
+    fn pop_last(&mut self) -> Option<char>;
 
     /// Creates a new unicode string consisting of a single ZWSP.
     fn zwsp() -> Self {
@@ -82,6 +84,12 @@ impl UnicodeString for String {
     fn insert(&mut self, idx: usize, s: &Self::Str) {
         self.insert_str(idx, s);
     }
+    fn remove_at(&mut self, idx: usize) {
+        self.remove(idx);
+    }
+    fn pop_last(&mut self) -> Option<char> {
+        self.pop()
+    }
 }
 
 impl UnicodeStr for str {
@@ -104,6 +112,12 @@ impl UnicodeString for Utf16String {
     fn insert(&mut self, idx: usize, s: &Self::Str) {
         self.insert_utfstr(idx, s);
     }
+    fn remove_at(&mut self, idx: usize) {
+        self.remove(idx);
+    }
+    fn pop_last(&mut self) -> Option<char> {
+        self.pop()
+    }
 }
 
 impl UnicodeStr for Utf16Str {
@@ -125,6 +139,12 @@ impl UnicodeString for Utf32String {
 
     fn insert(&mut self, idx: usize, s: &Self::Str) {
         self.insert_utfstr(idx, s);
+    }
+    fn remove_at(&mut self, idx: usize) {
+        self.remove(idx);
+    }
+    fn pop_last(&mut self) -> Option<char> {
+        self.pop()
     }
 }
 
