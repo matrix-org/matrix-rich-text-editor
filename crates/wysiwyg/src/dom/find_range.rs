@@ -108,6 +108,7 @@ where
             locations
                 .extend(process_container_node(dom, n, start, end, offset));
         }
+        DomNode::Zwsp(_) => todo!(),
     }
     locations
 }

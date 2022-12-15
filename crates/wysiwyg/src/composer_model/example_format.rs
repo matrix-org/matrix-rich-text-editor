@@ -19,7 +19,7 @@ use widestring::Utf16String;
 
 use crate::char::CharExt;
 use crate::composer_model::menu_state::MenuStateComputeType;
-use crate::dom::nodes::{LineBreakNode, TextNode};
+use crate::dom::nodes::{LineBreakNode, TextNode, ZwspNode};
 use crate::dom::parser::parse;
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::DomLocation;
@@ -215,6 +215,20 @@ impl SelectionWriter {
             for (str, i) in strings_to_add.into_iter().rev() {
                 // Index 1 in line breaks is actually at the end of the '<br />'
                 let i = if i == 0 { 0 } else { 6 };
+                buf.insert(pos + i, &S::from(str));
+            }
+        }
+    }
+
+    pub fn write_selection_zwsp_node<S: UnicodeString>(
+        &mut self,
+        buf: &mut S,
+        pos: usize,
+        node: &ZwspNode<S>,
+    ) {
+        if let Some(loc) = self.locations.get(&node.handle()) {
+            let strings_to_add = self.state.advance(loc, node.data().len());
+            for (str, i) in strings_to_add.into_iter().rev() {
                 buf.insert(pos + i, &S::from(str));
             }
         }
