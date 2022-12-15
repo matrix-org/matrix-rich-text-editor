@@ -40,7 +40,7 @@ final class HTMLParser {
                       codeBackgroundColor: UIColor) throws -> NSAttributedString {
         let htmlWithStyle = generateHtmlBodyWithStyle(htmlFragment: html, codeBackgroundColorHex: codeBackgroundColor.toHexString())
         let attributed = try NSAttributedString(html: htmlWithStyle)
-            .changeColor(to: textColor, linkColor: linkColor)
+            .changeColor(to: textColor, linkColor: linkColor, codeBackgroundColor: codeBackgroundColor)
         return attributed
     }
 }
