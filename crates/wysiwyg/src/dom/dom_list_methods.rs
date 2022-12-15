@@ -86,12 +86,7 @@ where
             }
         }
 
-        nodes_to_insert.reverse();
-
-        for node in nodes_to_insert {
-            self.insert_at(handle, node);
-        }
-
+        self.insert(handle, nodes_to_insert);
         self.join_nodes_in_container(&handle.parent_handle());
     }
 }
