@@ -68,7 +68,7 @@ where
         let list = self.remove(handle);
         let mut nodes_to_insert = Vec::new();
         let DomNode::Container(mut list) = list else {
-            panic!("List ndoe is not a container")
+            panic!("List node is not a container")
         };
         while !list.children().is_empty() {
             let list_item = list.remove_child(0);
