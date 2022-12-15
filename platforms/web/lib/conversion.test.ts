@@ -14,43 +14,66 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import init from '../generated/wysiwyg';
-import { richToPlain, plainToRich } from './conversion';
+import {
+    richToPlain,
+    plainToRich,
+    plainToMarkdown,
+    markdownToPlain,
+} from './conversion';
 
-const testCases = [
-    { rich: 'plain', plain: 'plain' },
-    { rich: '<strong>bold</strong>', plain: '__bold__' },
-    { rich: '<em>italic</em>', plain: '*italic*' },
-    { rich: '<u>underline</u>', plain: '<u>underline</u>' },
-    { rich: '<del>strike</del>', plain: '~~strike~~' },
-];
+describe('Rich text <=> plain text', () => {
+    const testCases = [
+        { rich: '', plain: '' },
+        { rich: 'plain', plain: 'plain' },
+        { rich: '<strong>bold</strong>', plain: '__bold__' },
+        { rich: '<em>italic</em>', plain: '*italic*' },
+        { rich: '<u>underline</u>', plain: '<u>underline</u>' },
+        { rich: '<del>strike</del>', plain: '~~strike~~' },
+    ];
+    const mappedTestCases = testCases.map(({ rich, plain }) => [rich, plain]);
 
-beforeAll(async () => {
-    await init();
+    test.each(mappedTestCases)(
+        'rich: `%s` - plain: `%s`',
+        async (rich, plain) => {
+            const convertedRichText = await plainToRich(plain);
+            const convertedPlainText = await richToPlain(rich);
+
+            expect(convertedRichText).toBe(rich);
+            expect(convertedPlainText).toBe(plain);
+        },
+    );
+
+    it('converts linebreaks for display rich => plain', async () => {
+        const richText = 'multi<br />line';
+        const convertedPlainText = await richToPlain(richText);
+        const expectedPlainText = `multi\nline`;
+
+        expect(convertedPlainText).toBe(expectedPlainText);
+    });
+
+    it('converts linebreaks for display plain => rich', async () => {
+        const plainText = 'multi\nline';
+        const convertedRichText = await plainToRich(plainText);
+        const expectedRichText = 'multi<br />line';
+
+        expect(convertedRichText).toBe(expectedRichText);
+    });
 });
 
-const mappedTestCases = testCases.map(({ rich, plain }) => [rich, plain]);
+describe('Plain text <=> markdown', () => {
+    it('converts linebreaks for plain => markdown', () => {
+        const plain = 'multi\nline';
+        const convertedMarkdown = plainToMarkdown(plain);
+        const expectedMarkdown = `multi<br />\nline`;
 
-test.each(mappedTestCases)('rich: `%s` - plain: `%s`', (rich, plain) => {
-    const convertedRichText = plainToRich(plain);
-    const convertedPlainText = richToPlain(rich);
+        expect(convertedMarkdown).toBe(expectedMarkdown);
+    });
 
-    expect(convertedRichText).toBe(rich);
-    expect(convertedPlainText).toBe(plain);
-});
+    it('converts linebreaks for markdown => plain', () => {
+        const markdown = 'multi\\\nline';
+        const convertedPlainText = markdownToPlain(markdown);
+        const expectedPlainText = 'multi\nline';
 
-it('converts linebreaks for display rich => plain', () => {
-    const richText = 'multi<br />line';
-    const convertedPlainText = richToPlain(richText);
-    const expectedPlainText = `multi\nline`;
-
-    expect(convertedPlainText).toBe(expectedPlainText);
-});
-
-it('converts linebreaks for display plain => rich', () => {
-    const plainText = 'multi\nline';
-    const convertedRichText = plainToRich(plainText);
-    const expectedRichText = 'multi<br />line';
-
-    expect(convertedRichText).toBe(expectedRichText);
+        expect(convertedPlainText).toBe(expectedPlainText);
+    });
 });
