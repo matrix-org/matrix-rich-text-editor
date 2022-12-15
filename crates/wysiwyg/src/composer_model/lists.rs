@@ -228,7 +228,7 @@ where
         self.state.dom.append_at_end_of_document(DomNode::new_list(
             list_type,
             vec![DomNode::Container(ContainerNode::new_list_item(vec![
-                DomNode::new_text(S::zwsp()),
+                DomNode::new_zwsp(),
             ]))],
         ));
         self.state.start.add_assign(1);
@@ -321,26 +321,19 @@ where
         location: usize,
         list_item_end_offset: usize,
     ) {
-        let list_item = self.state.dom.lookup_node(list_item_handle);
-        let list_item_text_length = list_item.text_len();
-        let list_item_clone = list_item.clone();
+        let list_item = self.state.dom.lookup_node_mut(list_item_handle);
+        let mut slice = list_item.slice_after(list_item_end_offset);
+        slice.as_container_mut().unwrap().add_leading_zwsp();
         let list = self.state.dom.lookup_node_mut(list_handle);
-        if let DomNode::Container(list) = list {
+        let DomNode::Container(list) = list else { panic!("List node is not a container") };
+        if slice.text_len() == 0 {
             list.insert_child(
                 list_item_handle.index_in_parent() + 1,
-                list_item_clone,
+                DomNode::new_list_item(vec![DomNode::new_zwsp()]),
             );
+        } else {
+            list.insert_child(list_item_handle.index_in_parent() + 1, slice);
         }
-        self.do_replace_text_in(
-            S::default(),
-            location,
-            location + (list_item_text_length - list_item_end_offset),
-        );
-        self.do_replace_text_in(
-            S::zwsp(),
-            location,
-            location + list_item_end_offset,
-        );
         self.state.start = Location::from(location + 1);
         self.state.end = Location::from(location + 1);
     }
@@ -372,7 +365,7 @@ where
                 if insert_trailing_text_node {
                     let parent = self.state.dom.parent_mut(list_handle);
                     // TODO: should probably append a paragraph instead
-                    parent.append_child(DomNode::new_text(S::zwsp()));
+                    parent.append_child(DomNode::new_zwsp());
                     let new_location = Location::from(
                         current_cursor_global_location - li_len + 1,
                     );

@@ -80,33 +80,6 @@ where
             .all(|c| matches!(c, ' ' | '\x09'..='\x0d'))
     }
 
-    /// Add a leading ZWSP to the text node if it doesn't already
-    /// has one. Return true if the operation is executed.
-    pub fn add_leading_zwsp(&mut self) -> bool {
-        let text = self.data.to_string();
-        if !text.starts_with(char::zwsp()) {
-            let mut new_text = S::zwsp();
-            new_text.push(self.data());
-            self.set_data(new_text);
-            true
-        } else {
-            false
-        }
-    }
-
-    /// Remove a leading ZWSP from the text node if it has one.
-    /// Return true if the operation is executed.
-    pub fn remove_leading_zwsp(&mut self) -> bool {
-        let mut text = self.data().to_string();
-        if text.starts_with(char::zwsp()) {
-            text.remove(0);
-            self.set_data(text.into());
-            true
-        } else {
-            false
-        }
-    }
-
     pub fn remove_trailing_line_break(&mut self) -> bool {
         if self.data.chars().last() == Some('\n') {
             self.data.pop_last();
