@@ -20,3 +20,8 @@ export type FormatBlockEvent = CustomEvent<{
     blockType: BlockType;
     data?: string;
 }>;
+
+export type LinkEvent = Omit<InputEvent, 'data'> & {
+    inputType: 'insertLink';
+    data: { link: string; text?: string };
+};

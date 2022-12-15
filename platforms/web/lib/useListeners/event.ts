@@ -32,6 +32,7 @@ import {
 import { TestUtilities } from '../useTestCases/types';
 import { AllActionStates } from '../types';
 import { mapToAllActionStates } from './utils';
+import { LinkEvent } from './types';
 
 /**
  * Send a custom event named wysiwygInput
@@ -45,7 +46,7 @@ export function sendWysiwygInputEvent(
     editor: HTMLElement,
     blockType: BlockType,
     e?: ReactMouseEvent<HTMLElement, MouseEvent> | KeyboardEvent,
-    data?: string,
+    data?: string | LinkEvent['data'],
 ) {
     e?.preventDefault();
     e?.stopPropagation();

@@ -21,6 +21,7 @@ import {
     Wysiwyg,
     FormattingFunctions,
 } from './types';
+import { isClipboardEvent, isLinkEvent } from './useListeners/assert';
 import { TestUtilities } from './useTestCases/types';
 
 function processEvent(
@@ -54,7 +55,7 @@ export function processInput(
         return;
     }
 
-    if (event instanceof ClipboardEvent) {
+    if (isClipboardEvent(event)) {
         const data = event.clipboardData?.getData('text/plain') ?? '';
         return action(composerModel.replace_text(data), 'paste');
     }
@@ -110,6 +111,17 @@ export function processInput(
             break;
         case 'insertUnorderedList':
             return action(composerModel.unordered_list(), 'unordered_list');
+        case 'insertLink':
+            if (isLinkEvent(event)) {
+                const { text, link } = event.data;
+                return action(
+                    text
+                        ? composerModel.set_link_with_text(link, text)
+                        : composerModel.set_link(link),
+                    'insertLink',
+                );
+            }
+            break;
         case 'sendMessage':
             // We create this event type when the user presses Ctrl+Enter.
             // We don't do anythign here, but the user may want to hook in

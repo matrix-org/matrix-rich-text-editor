@@ -14,10 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { LinkEvent } from './types';
+
 export function isInputEvent(e: Event): e is InputEvent {
     return 'inputType' in e;
 }
 
 export function isClipboardEvent(e: Event): e is ClipboardEvent {
     return 'clipboardData' in e;
+}
+
+export function isLinkEvent(e: Event): e is LinkEvent {
+    return isInputEvent(e) && e.inputType == 'insertLink';
 }
