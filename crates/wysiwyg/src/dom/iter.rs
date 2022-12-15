@@ -93,7 +93,7 @@ where
         iter.next()
     }
 
-    /// Return the handle of the previous node in the DOM, if exists, in depth-first order.
+    /// Return the handle of the next node in the DOM, if exists, in depth-first order.
     pub fn next_handle(&mut self, handle: &DomHandle) -> Option<DomHandle> {
         let mut iter = self.iter_from_handle(handle);
         iter.next(); // Current node

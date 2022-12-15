@@ -36,6 +36,7 @@ struct Composer: View {
                     focused: $focused,
                     viewModel: viewModel
                 )
+                .tintColor(.green)
                 .placeholder("Placeholder", color: .gray)
                 .frame(height: viewModel.idealHeight)
                 .padding(.horizontal, 12)

@@ -123,8 +123,20 @@ where
         parent.insert_child(index, node)
     }
 
+    /// Insert given [nodes] in order at the [node_handle] position,
+    /// moving the node at that position forward, if any.
+    pub fn insert(
+        &mut self,
+        node_handle: &DomHandle,
+        nodes: Vec<DomNode<S>>,
+    ) -> Vec<DomHandle> {
+        let parent = self.parent_mut(node_handle);
+        let index = node_handle.index_in_parent();
+        parent.insert_children(index, nodes)
+    }
+
     /// Replaces the node at [node_handle] with the list of [nodes]. Returns the list of new handles
-    /// added to the Dom for these nodes.
+    /// added to the Dom for moved nodes.
     pub fn replace(
         &mut self,
         node_handle: &DomHandle,

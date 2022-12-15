@@ -63,6 +63,7 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     public var linkColor: UIColor {
         didSet {
             // In case of a color change, this will refresh the attributed text
+            textView.linkTextAttributes[.foregroundColor] = linkColor
             let update = model.setContentFromHtml(html: content.html)
             applyUpdate(update)
             updateTextView()
@@ -134,6 +135,7 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         self.textColor = textColor
         self.linkColor = linkColor
         self.codeBackgroundColor = codeBackgroundColor
+        textView.linkTextAttributes[.foregroundColor] = linkColor
         model = newComposerModel()
         // Publish composer empty state.
         $attributedContent.sink { [unowned self] content in

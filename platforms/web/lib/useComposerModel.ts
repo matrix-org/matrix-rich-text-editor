@@ -32,7 +32,7 @@ let initFinished = false;
 /**
  * Initialise the WASM module, or do nothing if it is already initialised.
  */
-async function initOnce() {
+export async function initOnce() {
     if (initFinished) {
         return Promise.resolve();
     }

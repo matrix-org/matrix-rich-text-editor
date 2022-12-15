@@ -33,6 +33,7 @@ describe('createDefaultActionStates', () => {
             redo: 'enabled',
             orderedList: 'enabled',
             unorderedList: 'enabled',
+            link: 'enabled',
         });
     });
 });

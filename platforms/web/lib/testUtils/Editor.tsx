@@ -34,8 +34,8 @@ export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
     });
 
     const keys = Object.keys(wysiwyg).filter(
-        (key) => key !== 'insertText',
-    ) as Array<Exclude<keyof typeof wysiwyg, 'insertText'>>;
+        (key) => key !== 'insertText' && key !== 'link',
+    ) as Array<Exclude<keyof typeof wysiwyg, 'insertText' | 'link'>>;
     return (
         <>
             {keys.map((key) => (
@@ -53,6 +53,15 @@ export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
                 onClick={() => wysiwyg.insertText('add new words')}
             >
                 insertText
+            </button>
+            <button type="button" onClick={() => wysiwyg.link('my link')}>
+                link
+            </button>
+            <button
+                type="button"
+                onClick={() => wysiwyg.link('my link', 'my text')}
+            >
+                link with text
             </button>
             <div
                 ref={(node) => {

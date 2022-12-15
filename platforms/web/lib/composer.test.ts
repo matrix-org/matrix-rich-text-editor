@@ -38,6 +38,7 @@ const formattingFunctions: FormattingFunctions = {
     inlineCode: () => {},
     clear: () => {},
     insertText: (text: string) => {},
+    link: (link: string, text?: string) => {},
 };
 
 let replacedWithText: string | null = null;

@@ -57,6 +57,9 @@ private extension HTMLParser {
         font-family:-apple-system;\
         font:-apple-system-body;\
         }\
+        a{\
+        text-decoration:none;\
+        }\
         code{\
         font-family:Menlo,monospace;\
         font-size:inherit;\

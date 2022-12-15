@@ -156,17 +156,15 @@ where
         ret
     }
 
-    pub fn replace_child(
+    /// Insert an array of children [nodes] at given [index].
+    /// Returns new handles for moved nodes.
+    pub fn insert_children(
         &mut self,
         index: usize,
         nodes: Vec<DomNode<S>>,
     ) -> Vec<DomHandle> {
-        assert!(self.handle.is_set());
-        assert!(index < self.children().len());
-
         let mut handles = Vec::new();
 
-        self.children.remove(index);
         let mut current_index = index;
         for mut node in nodes {
             let child_handle = self.handle.child_handle(current_index);
@@ -181,6 +179,20 @@ where
             handles.push(new_handle);
         }
         handles
+    }
+
+    /// Replace child at given [index] with an array of children [nodes].
+    /// Returns new handles for moved nodes.
+    pub fn replace_child(
+        &mut self,
+        index: usize,
+        nodes: Vec<DomNode<S>>,
+    ) -> Vec<DomHandle> {
+        assert!(self.handle.is_set());
+        assert!(index < self.children().len());
+
+        self.children.remove(index);
+        self.insert_children(index, nodes)
     }
 
     pub fn get_child_mut(&mut self, idx: usize) -> Option<&mut DomNode<S>> {
@@ -355,6 +367,44 @@ where
             return false;
         };
         first_child.add_leading_zwsp()
+    }
+
+    /// Remove leading ZWSP char from this container.
+    /// Returns false if no updates was done.
+    /// e.g. first text-like node is a line break
+    /// or a text node that doesn't start with a ZWSP.
+    pub fn remove_leading_zwsp(&mut self) -> bool {
+        let Some(first_child) = self.children.get_mut(0) else {
+            return false;
+        };
+        first_child.remove_leading_zwsp()
+    }
+
+    /// Returns whether this continer first text-like
+    /// child starts with a ZWSP.
+    pub fn has_leading_zwsp(&self) -> bool {
+        let Some(first_child) = self.children.get(0) else {
+            return false;
+        };
+        first_child.has_leading_zwsp()
+    }
+
+    pub fn replace_leading_zwsp_with_linebreak(&mut self) -> bool {
+        let Some(first_child) = self.children.get_mut(0) else {
+            return false;
+        };
+        match first_child {
+            DomNode::Container(c) => c.replace_leading_zwsp_with_linebreak(),
+            DomNode::Text(t) => {
+                if t.remove_leading_zwsp() {
+                    self.children.insert(0, DomNode::new_line_break());
+                    true
+                } else {
+                    false
+                }
+            }
+            DomNode::LineBreak(_) => false,
+        }
     }
 
     /// Push content of the given container node into self. Panics
@@ -1020,6 +1070,53 @@ mod test {
     }
 
     #[test]
+    fn inserting_children_updates_the_relevant_handles() {
+        let mut node = container_with_handle(&[4, 5, 4]);
+
+        node.append_child(text_node("0"));
+        node.append_child(text_node("2"));
+        node.append_child(text_node("3"));
+
+        // Insert three new children before the second node
+        let moved_handles = node.insert_children(
+            1,
+            vec![text_node("1a"), text_node("1b"), text_node("1c")],
+        );
+
+        let text_node0 = &node.children[0];
+        let text_node1a = &node.children[1];
+        let text_node1b = &node.children[2];
+        let text_node1c = &node.children[3];
+        let text_node2 = &node.children[4];
+        let text_node3 = &node.children[5];
+
+        // The new nodes got inserted in the right places
+        assert_eq!(text_node0.to_html(), utf16("0"));
+        assert_eq!(text_node1a.to_html(), utf16("1a"));
+        assert_eq!(text_node1b.to_html(), utf16("1b"));
+        assert_eq!(text_node1c.to_html(), utf16("1c"));
+        assert_eq!(text_node2.to_html(), utf16("2"));
+        assert_eq!(text_node3.to_html(), utf16("3"));
+
+        assert_eq!(text_node0.handle().raw(), &[4, 5, 4, 0]);
+
+        // The new children got inserted with the right handles
+        assert_eq!(text_node1a.handle().raw(), &[4, 5, 4, 1]);
+        assert_eq!(text_node1b.handle().raw(), &[4, 5, 4, 2]);
+        assert_eq!(text_node1c.handle().raw(), &[4, 5, 4, 3]);
+
+        // The previous node 2 & 3 were updated because it has moved to the right
+        assert_eq!(text_node2.handle().raw(), &[4, 5, 4, 4]);
+        assert_eq!(text_node3.handle().raw(), &[4, 5, 4, 5]);
+
+        // Returned vec matches moved handles.
+        assert_eq!(
+            moved_handles,
+            vec![text_node2.handle(), text_node3.handle()]
+        );
+    }
+
+    #[test]
     fn replacing_child_updates_the_relevant_handles() {
         let mut node = container_with_handle(&[4, 5, 4]);
 
@@ -1028,7 +1125,7 @@ mod test {
         node.append_child(text_node("2"));
 
         // Replace the middle child with three new ones
-        node.replace_child(
+        let moved_handles = node.replace_child(
             1,
             vec![text_node("1a"), text_node("1b"), text_node("1c")],
         );
@@ -1055,6 +1152,9 @@ mod test {
 
         // The previous node 2 was updated because it has moved to the right
         assert_eq!(text_node2.handle().raw(), &[4, 5, 4, 4]);
+
+        // Returned vec matches moved handles.
+        assert_eq!(moved_handles, vec![text_node2.handle()]);
     }
 
     #[test]
