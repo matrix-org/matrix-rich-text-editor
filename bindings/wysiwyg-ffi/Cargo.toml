@@ -7,7 +7,7 @@ description = "Swift and Kotlin bindings for wysiwyg-rust"
 keywords = ["matrix", "chat", "messaging", "composer", "wysiwyg"]
 license = "Apache-2.0"
 name = "uniffi-wysiwyg-composer"
-version = "0.10.0"
+version = "0.11.0"
 rust-version = "1.65"
 
 [lib]
