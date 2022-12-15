@@ -218,4 +218,41 @@ final class WysiwygComposerTests: XCTestCase {
             """
         )
     }
+    
+    func testInlineCode() {
+        let composer = newComposerModel()
+        _ = composer.inlineCode()
+        _ = composer.replaceText(newText: "code")
+        XCTAssertEqual(
+            composer.toTree(),
+            """
+            
+            └>code
+              └>\"code\"
+            
+            """
+        )
+    }
+    
+    func testInlineCodeWithFormatting() {
+        let composer = newComposerModel()
+        _ = composer.bold()
+        _ = composer.replaceText(newText: "bold")
+        // This should get ignored
+        _ = composer.italic()
+        _ = composer.inlineCode()
+        _ = composer.replaceText(newText: "code")
+        print(composer.toTree())
+        XCTAssertEqual(
+            composer.toTree(),
+            """
+            
+            ├>strong
+            │ └>"bold"
+            └>code
+              └>"code"
+            
+            """
+        )
+    }
 }

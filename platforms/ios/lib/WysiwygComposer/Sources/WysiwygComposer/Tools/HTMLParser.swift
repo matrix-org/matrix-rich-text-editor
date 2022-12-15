@@ -30,13 +30,17 @@ final class HTMLParser {
     ///   - html: HTML to parse
     ///   - encoding: string encoding to use
     ///   - textColor: text color to apply to the result string
+    ///   - linkColor: text color to apply to the links
+    ///   - codeBackgroundColor: color to apply to the background of code blocks
     /// - Returns: an attributed string representation of the HTML content
     static func parse(html: String,
                       encoding: String.Encoding = .utf16,
                       textColor: UIColor,
-                      linkColor: UIColor) throws -> NSAttributedString {
-        let htmlWithStyle = generateHtmlBodyWithStyle(htmlFragment: html)
-        let attributed = try NSAttributedString(html: htmlWithStyle).changeColor(to: textColor, linkColor: linkColor)
+                      linkColor: UIColor,
+                      codeBackgroundColor: UIColor) throws -> NSAttributedString {
+        let htmlWithStyle = generateHtmlBodyWithStyle(htmlFragment: html, codeBackgroundColorHex: codeBackgroundColor.toHexString())
+        let attributed = try NSAttributedString(html: htmlWithStyle)
+            .changeColor(to: textColor, linkColor: linkColor, codeBackgroundColor: codeBackgroundColor)
         return attributed
     }
 }
@@ -44,9 +48,31 @@ final class HTMLParser {
 private extension HTMLParser {
     /// Generate an HTML body with standard style from given fragment.
     ///
-    /// - Parameter htmlFragment: HTML fragment
+    /// - Parameters:
+    ///    - htmlFragment: HTML fragment
+    ///    - codeBackgroundColorHex: the background color for code blocks as hex
     /// - Returns: HTML body
-    static func generateHtmlBodyWithStyle(htmlFragment: String) -> String {
-        "<html><head><style type='text/css'>body {font-family:-apple-system;font:-apple-system-body;}a{text-decoration:none; }</style></head><body>\(htmlFragment)</body></html>"
+    static func generateHtmlBodyWithStyle(htmlFragment: String, codeBackgroundColorHex: String) -> String {
+        """
+        <html>\
+        <head>\
+        <style>\
+        body{\
+        font-family:-apple-system;\
+        font:-apple-system-body;\
+        }\
+        a{\
+        text-decoration:none;\
+        }\
+        code{\
+        font-family:Menlo,monospace;\
+        font-size:inherit;\
+        background:\(codeBackgroundColorHex);\
+        }\
+        </style>\
+        </head>\
+        <body>\(htmlFragment)</body>\
+        </html>
+        """
     }
 }
