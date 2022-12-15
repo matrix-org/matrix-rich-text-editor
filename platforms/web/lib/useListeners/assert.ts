@@ -25,5 +25,5 @@ export function isClipboardEvent(e: Event): e is ClipboardEvent {
 }
 
 export function isLinkEvent(e: Event): e is LinkEvent {
-    return 'inputType' in e && e.inputType == 'insertLink';
+    return isInputEvent(e) && e.inputType == 'insertLink';
 }

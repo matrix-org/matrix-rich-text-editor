@@ -238,7 +238,7 @@ describe('link', () => {
 
     it('Should insert the link with text', async () => {
         // When
-        await act(() => userEvent.click(buttonLinkWithText));
+        userEvent.click(buttonLinkWithText);
 
         // Then
         await waitFor(() =>
@@ -253,7 +253,7 @@ describe('link', () => {
             inputType: 'insertText',
         });
         select(textbox, 0, 6);
-        await act(() => userEvent.click(buttonLink));
+        userEvent.click(buttonLink);
 
         // Then
         await waitFor(() =>
