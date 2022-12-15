@@ -343,6 +343,63 @@ fn replacing_cross_list_item_selection_with_text_containing_newline_works() {
     assert_eq!(tx(&model), "<ul><li>~aghi</li><li>~jkl|f</li></ul>");
 }
 
+#[test]
+fn creating_list_from_multiline_selection() {
+    let mut model = cm("{abc<br />def}|");
+    model.ordered_list();
+    assert_eq!(tx(&model), "<ol><li>{~abc</li><li>~def}|</li></ol>")
+}
+
+#[test]
+fn creating_list_from_multiline_selection_with_formatting() {
+    let mut model = cm("{a<strong>b</strong>c<br />def}|");
+    model.ordered_list();
+    assert_eq!(
+        tx(&model),
+        "<ol><li>{~a<strong>b</strong>c</li><li>~def}|</li></ol>"
+    )
+}
+
+#[test]
+fn creating_list_from_multiline_selection_with_leading_formatting() {
+    let mut model = cm("{<strong>ab</strong>c<br />def}|");
+    model.ordered_list();
+    assert_eq!(
+        tx(&model),
+        "<ol><li><strong>{~ab</strong>c</li><li>~def}|</li></ol>"
+    )
+}
+
+#[test]
+fn creating_list_from_multiline_selection_with_trailing_formatting() {
+    let mut model = cm("{abc<br />d<strong>ef</strong>}|");
+    model.ordered_list();
+    assert_eq!(
+        tx(&model),
+        "<ol><li>{~abc</li><li>~d<strong>ef}|</strong></li></ol>"
+    )
+}
+
+#[test]
+fn creating_list_from_multiline_selection_with_cross_trailing_formatting() {
+    let mut model = cm("{abc<br />d<strong>e}|f</strong>");
+    model.ordered_list();
+    assert_eq!(
+        tx(&model),
+        "<ol><li>{~abc</li><li>~d<strong>e}|f</strong></li></ol>"
+    )
+}
+
+#[test]
+fn creating_list_from_multiline_selection_with_cross_leading_formatting() {
+    let mut model = cm("a<em>b{c</em><br />def}|");
+    model.ordered_list();
+    assert_eq!(
+        tx(&model),
+        "<ol><li>~a<em>b{c</em></li><li>~def}|</li></ol>"
+    )
+}
+
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
     model.replace_text(utf16(new_text));
 }

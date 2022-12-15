@@ -15,10 +15,11 @@
 use std::collections::HashMap;
 use std::ops::AddAssign;
 
-use crate::char::CharExt;
+use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::{ContainerNode, DomNode};
+use crate::dom::range::DomLocationPosition;
 use crate::dom::to_raw_text::ToRawText;
-use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
+use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, ListType, Location, UnicodeString};
 
@@ -168,10 +169,10 @@ where
 
     fn toggle_list(&mut self, list_type: ListType) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
-        let range = self.state.dom.find_range(s, e);
+        let range = self.state.dom.find_extended_range(s, e);
 
         if range.is_empty() {
-            self.create_list(list_type)
+            self.create_empty_list(list_type)
         } else {
             self.toggle_list_range(list_type, range)
         }
@@ -182,28 +183,94 @@ where
         list_type: ListType,
         range: Range,
     ) -> ComposerUpdate<S> {
-        let leaves: Vec<&DomLocation> = range.leaves().collect();
-        if leaves.len() == 1 {
-            let handle = &leaves[0].node_handle;
-
-            let parent_list_item_handle =
-                self.state.dom.find_parent_list_item_or_self(handle);
-            if let Some(list_item_handle) = parent_list_item_handle {
-                let list = self.state.dom.parent(&list_item_handle);
-                if list.is_list_of_type(&list_type) {
-                    self.move_list_item_content_to_list_parent(
-                        &list_item_handle,
-                    )
-                } else {
-                    let list_node_handle = list.handle();
-                    self.update_list_type(&list_node_handle, list_type)
-                }
+        if range
+            .locations
+            .iter()
+            // FIXME: filtering positions that are before start, these shouldn't be returned from a > 0 range
+            .filter(|l| !(l.relative_position() == DomLocationPosition::Before))
+            .any(|l| l.kind == DomNodeKind::List)
+        {
+            let leaves: Vec<&DomLocation> = range.leaves().collect();
+            if leaves.len() == 1 {
+                let handle = &leaves[0].node_handle;
+                self.single_leave_list_toggle(list_type, handle)
             } else {
-                self.create_list(list_type)
+                // TODO: handle cases where a list is already present in the extended selection.
+                panic!("Partially creating/removing list is not handled yet")
             }
         } else {
-            panic!("Can't toggle list in complex object models yet")
+            self.create_list_from_range(list_type, range)
         }
+    }
+
+    // FIXME: remove this function when toggle_list_range handles updating/removing
+    fn single_leave_list_toggle(
+        &mut self,
+        list_type: ListType,
+        handle: &DomHandle,
+    ) -> ComposerUpdate<S> {
+        let parent_list_item_handle =
+            self.state.dom.find_parent_list_item_or_self(handle);
+        if let Some(list_item_handle) = parent_list_item_handle {
+            let list = self.state.dom.parent(&list_item_handle);
+            if list.is_list_of_type(&list_type) {
+                self.move_list_item_content_to_list_parent(&list_item_handle)
+            } else {
+                let list_node_handle = list.handle();
+                self.update_list_type(&list_node_handle, list_type)
+            }
+        } else {
+            unreachable!("No list in range. Should have been catched by toggle_list_range")
+        }
+    }
+
+    fn create_empty_list(&mut self, list_type: ListType) -> ComposerUpdate<S> {
+        self.state.dom.append_at_end_of_document(DomNode::new_list(
+            list_type,
+            vec![DomNode::Container(ContainerNode::new_list_item(vec![
+                DomNode::new_text(S::zwsp()),
+            ]))],
+        ));
+        self.state.start.add_assign(1);
+        self.state.end.add_assign(1);
+        self.create_update_replace_all()
+    }
+
+    fn create_list_from_range(
+        &mut self,
+        list_type: ListType,
+        range: Range,
+    ) -> ComposerUpdate<S> {
+        let (s, e) = self.safe_selection();
+        let start_correction;
+        let end_correction;
+        let handles: Vec<&DomHandle> = range
+            .top_level_locations()
+            // FIXME: filtering positions that are before start, these shouldn't be returned from a > 0 range
+            .filter(|l| !(l.relative_position() == DomLocationPosition::Before))
+            .map(|l| &l.node_handle)
+            .collect();
+
+        let first_handle = handles[0];
+        let first_node = self.state.dom.lookup_node(first_handle);
+        // It's expected to add a ZWSP for each line break + an additional leading ZWSP.
+        // end_correction is always 1, start_correction is 1 only if the start is located
+        // strictly after the first char of the range. If a leading ZWSP is already present,
+        // e.g. the node following another list both corrections are 0.
+        if first_node.has_leading_zwsp() {
+            start_correction = 0;
+            end_correction = 0;
+        } else {
+            start_correction = usize::from(s - range.start() > 0);
+            end_correction = 1;
+        }
+
+        self.state.dom.wrap_nodes_in_list(list_type, handles);
+        self.select(
+            Location::from(s + start_correction),
+            Location::from(e + end_correction),
+        );
+        self.create_update_replace_all()
     }
 
     fn move_list_item_content_to_list_parent(
@@ -245,90 +312,6 @@ where
             list.set_list_type(list_type);
         }
         self.create_update_replace_all()
-    }
-
-    fn create_list(&mut self, list_type: ListType) -> ComposerUpdate<S> {
-        // Store current Dom
-        self.push_state_to_history();
-        let (s, e) = self.safe_selection();
-        let range = self.state.dom.find_range(s, e);
-
-        if range.is_empty() {
-            self.state.dom.append_at_end_of_document(DomNode::new_list(
-                list_type,
-                vec![DomNode::Container(ContainerNode::new_list_item(vec![
-                    DomNode::new_text(S::zwsp()),
-                ]))],
-            ));
-            self.state.start.add_assign(1);
-            self.state.end.add_assign(1);
-            self.create_update_replace_all()
-        } else {
-            self.create_list_range(list_type, range)
-        }
-    }
-
-    fn create_list_range(
-        &mut self,
-        list_type: ListType,
-        range: Range,
-    ) -> ComposerUpdate<S> {
-        let leaves: Vec<&DomLocation> = range.leaves().collect();
-        if leaves.len() == 1 {
-            let handle = &leaves[0].node_handle;
-            let node = self.state.dom.lookup_node(handle);
-            if let DomNode::Text(t) = node {
-                let text = t.data();
-                let index_in_parent = handle.index_in_parent();
-                let add_zwsp = !text.to_string().starts_with(char::zwsp());
-                let list_item =
-                    DomNode::Container(ContainerNode::new_list_item(vec![
-                        DomNode::new_text(if add_zwsp {
-                            let mut owned_text = S::zwsp();
-                            owned_text.push(text);
-                            owned_text
-                        } else {
-                            text.to_owned()
-                        }),
-                    ]));
-
-                if add_zwsp {
-                    self.state.start.add_assign(1);
-                    self.state.end.add_assign(1);
-                }
-
-                if index_in_parent > 0 {
-                    let previous_handle = handle.prev_sibling();
-                    let previous_node =
-                        self.state.dom.lookup_node_mut(&previous_handle);
-                    if let DomNode::Container(previous) = previous_node {
-                        if previous.is_list_of_type(&list_type) {
-                            previous.append_child(list_item);
-                            let parent = self.state.dom.parent_mut(handle);
-                            parent.remove_child(index_in_parent);
-                            return self.create_update_replace_all();
-                        }
-                    }
-                }
-
-                self.replace_node_with_new_list(handle, list_type, list_item);
-                self.create_update_replace_all()
-            } else {
-                panic!("Can't create a list from a non-text node")
-            }
-        } else {
-            panic!("Can't create ordered list in complex object models yet")
-        }
-    }
-
-    fn replace_node_with_new_list(
-        &mut self,
-        handle: &DomHandle,
-        list_type: ListType,
-        list_item: DomNode<S>,
-    ) {
-        let list_node = DomNode::new_list(list_type, vec![list_item]);
-        self.state.dom.replace(handle, vec![list_node]);
     }
 
     fn slice_list_item(
