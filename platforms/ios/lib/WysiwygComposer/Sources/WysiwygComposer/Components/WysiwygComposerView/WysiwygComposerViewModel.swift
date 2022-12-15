@@ -116,12 +116,16 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
                 maxCompressedHeight: CGFloat = 200,
                 maxExpandedHeight: CGFloat = 300,
                 textColor: UIColor = .label,
-                linkColor: UIColor = .link) {
+                linkColor: UIColor = .link,
+                shouldUnderlineLinks: Bool = false) {
         self.minHeight = minHeight
         self.maxCompressedHeight = maxCompressedHeight
         self.maxExpandedHeight = maxExpandedHeight
         self.textColor = textColor
         self.linkColor = linkColor
+        if !shouldUnderlineLinks {
+            textView.linkTextAttributes[.underlineStyle] = 0
+        }
         model = newComposerModel()
         // Publish composer empty state.
         $attributedContent.sink { [unowned self] content in
