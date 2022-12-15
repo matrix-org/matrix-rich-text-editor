@@ -26,9 +26,10 @@ extension UIColor {
         let hexValue: Int
         if shouldIncludeAlpha {
             hexValue = Int(r * 255) << 24 | Int(g * 255) << 16 | Int(b * 255) << 8 | Int(a * 255) << 0
+            return String(format: "#%08x", hexValue)
         } else {
             hexValue = Int(r * 255) << 16 | Int(g * 255) << 8 | Int(b * 255) << 0
+            return String(format: "#%06x", hexValue)
         }
-        return String(format: "#%06x", hexValue)
     }
 }

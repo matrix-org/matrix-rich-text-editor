@@ -204,6 +204,20 @@ class WysiwygUITests: XCTestCase {
             """
         )
     }
+    
+    func testTypingInlineCodeDisablesOtherFormatters() {
+        button(.inlineCodeButton).tap()
+        textView.typeTextCharByChar("code")
+        let reactiveButtonsIdentifiers: [WysiwygSharedAccessibilityIdentifier] = [
+            .boldButton,
+            .italicButton,
+            .strikeThroughButton,
+            .linkButton,
+        ]
+        for identifier in reactiveButtonsIdentifiers {
+            XCTAssertFalse(button(identifier).isEnabled)
+        }
+    }
 }
 
 private extension WysiwygUITests {
