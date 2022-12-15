@@ -19,30 +19,54 @@ import {
     // eslint-disable-next-line camelcase
     new_composer_model,
 } from '../generated/wysiwyg.js';
+import { initOnce } from './useComposerModel.js';
 
-export function richToPlain(richText: string) {
+// in plain text, newlines will be represented as \n if input
+// by the user pressing enter, so we want to convert these to
+// valid markdown before parsing by MarkdownHTMLParser::to_html
+export const plainToMarkdown = (plainText: string) =>
+    plainText.replaceAll(/\n/g, '<br />\n');
+
+// in plain text, markdown newlines (displays '\' character followed by
+// a newline character) will be represented as \n for display as the
+// display box can not interpret markdown
+export const markdownToPlain = (markdown: string) =>
+    markdown.replaceAll(/\\/g, '');
+
+export async function richToPlain(richText: string) {
     if (richText.length === 0) {
         return '';
     }
+
+    // this function could be called before initialising the WASM
+    // so we need to try to initialise
+    await initOnce();
+
+    // the rich text in the web model is html so set the model with it
     const model = new_composer_model();
     model.set_content_from_html(richText);
 
-    // in plain text, newlines will be represented as \n for display
-    // as the display box can not interpret markdown
+    // transform the markdown to plain text for display
     const markdown = model.get_content_as_markdown();
-    const plainText = markdown.replaceAll(/\\/g, '');
+    const plainText = markdownToPlain(markdown);
 
     return plainText;
 }
 
-export function plainToRich(plainText: string) {
+export async function plainToRich(plainText: string) {
     if (plainText.length === 0) {
         return '';
     }
-    // in plain text, newlines will be represented as \n if input
-    // by the user pressing enter, so we want to convert these to
-    // valid markdown for parsing by MarkdownHTMLParser::to_html
-    const markdown = plainText.replaceAll(/\n/g, '<br />\n');
+
+    // this function could be called before initialising the WASM
+    // so we need to try to initialise
+    await initOnce();
+
+    // convert the plain text into markdown so that we can use it to
+    // set the model
+    const markdown = plainToMarkdown(plainText);
+
+    // set the model and return the rich text
     const model = new_composer_model();
     model.set_content_from_markdown(markdown);
     const richText = model.get_content_as_html();
