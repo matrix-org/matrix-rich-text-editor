@@ -15,6 +15,7 @@
 use std::cmp::min;
 use std::collections::HashSet;
 
+use crate::char::CharExt;
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::DomNodeKind::*;
 use crate::dom::nodes::{ContainerNodeKind, DomNode};
@@ -41,7 +42,9 @@ where
         let (s, e) = self.safe_selection();
         let Some(wrap_result) = self.find_nodes_to_wrap_in_block(s, e) else {
             // No suitable nodes found to be wrapped inside the code block. The Dom should be empty
-            self.state.dom.append_at_end_of_document(DomNode::new_code_block(vec![DomNode::new_empty_text()]));
+            self.state.dom.append_at_end_of_document(DomNode::new_code_block(vec![DomNode::new_text(S::zwsp())]));
+            self.state.start += 1;
+            self.state.end += 1;
             return self.create_update_replace_all();
         };
         let parent_handle = wrap_result.ancestor_handle;
@@ -181,12 +184,39 @@ where
         self.state.dom.insert_at(&insert_at_handle, code_block);
 
         // Merge any nodes that need it
-        self.merge_adjacent_code_blocks(&insert_at_handle);
+        let new_code_block_handle =
+            self.merge_adjacent_code_blocks(&insert_at_handle);
+
+        // Add ZWSP to start of the code block node if needed
+        let needs_zwsp = if let Some(DomNode::Text(first_text_node)) = self
+            .state
+            .dom
+            .iter_from_handle(&new_code_block_handle)
+            .find(|n| n.is_text_node())
+        {
+            let first_char = first_text_node.data().chars().next();
+            if let Some(first_char) = first_char {
+                !first_char.is_zwsp()
+            } else {
+                true
+            }
+        } else {
+            true
+        };
+
+        if needs_zwsp {
+            let DomNode::Container(result_code_block) = self.state.dom.lookup_node_mut(&new_code_block_handle) else {
+                panic!("Result code block handle must refer to a container node");
+            };
+            result_code_block.insert_child(0, DomNode::new_text(S::zwsp()));
+            self.state.start += 1;
+            self.state.end += 1;
+        }
 
         self.create_update_replace_all()
     }
 
-    fn merge_adjacent_code_blocks(&mut self, handle: &DomHandle) {
+    fn merge_adjacent_code_blocks(&mut self, handle: &DomHandle) -> DomHandle {
         let mut handle = handle.clone();
         // If there is a next code block, add its contents to the current one and remove it
         if let Some(next_code_block_handle) = self
@@ -219,6 +249,8 @@ where
 
         // Join any nodes inside the current code block
         self.state.dom.join_nodes_in_container(&handle);
+
+        handle
     }
 
     fn find_nodes_to_wrap_in_block(
@@ -300,6 +332,10 @@ where
                 // We should wrap their parent List instead
                 min_depth -= 1;
             }
+            // Will wrap an empty text node at the end of the editor
+            if first.handle == last.handle && first.kind == LineBreak {
+                return None;
+            }
             let idx_start = first.handle.raw()[min_depth];
             let idx_end = last.handle.raw()[min_depth];
             let ancestor_handle = first.handle.sub_handle_up_to(min_depth);
@@ -341,22 +377,33 @@ where
                     let mut text_start: usize = 0;
                     let mut text_end = text_start;
                     let data = text_node.data();
+                    let mut is_first_char = true;
                     for char in data.chars() {
-                        text_end += data.char_len(&char);
-                        if char == '\n' {
-                            let text_to_add =
-                                data[text_start..text_end - 1].to_owned();
-                            nodes_to_add
-                                .push(DomNode::new_text(S::from(text_to_add)));
-                            nodes_to_add.push(DomNode::new_line_break());
-                            if text_end <= start_in_block {
-                                selection_offset_start += 1;
+                        // Remove leading ZWSP
+                        if is_first_char && char.is_zwsp() {
+                            text_start += 1;
+                            text_end += 1;
+                            self.state.start -= 1;
+                            self.state.end -= 1;
+                        } else {
+                            text_end += data.char_len(&char);
+                            if char == '\n' {
+                                let text_to_add =
+                                    data[text_start..text_end - 1].to_owned();
+                                nodes_to_add.push(DomNode::new_text(S::from(
+                                    text_to_add,
+                                )));
+                                nodes_to_add.push(DomNode::new_line_break());
+                                if text_end <= start_in_block {
+                                    selection_offset_start += 1;
+                                }
+                                if text_end <= end_in_block {
+                                    selection_offset_end += 1;
+                                }
+                                text_start = text_end;
                             }
-                            if text_end <= end_in_block {
-                                selection_offset_end += 1;
-                            }
-                            text_start = text_end;
                         }
+                        is_first_char = false;
                     }
                     // We moved to a new line
                     if text_start != text_end {
@@ -542,14 +589,14 @@ mod test {
     fn add_code_block_to_empty_dom() {
         let mut model = cm("|");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>|</pre>");
+        assert_eq!(tx(&model), "<pre>~|</pre>");
     }
 
     #[test]
     fn add_code_block_to_simple_text() {
         let mut model = cm("Some text|");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>Some text|</pre>");
+        assert_eq!(tx(&model), "<pre>~Some text|</pre>");
     }
 
     #[test]
@@ -558,7 +605,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<pre>Some text| <b>and bold&nbsp;</b><i>and italic</i></pre>"
+            "<pre>~Some text| <b>and bold&nbsp;</b><i>and italic</i></pre>"
         );
     }
 
@@ -568,7 +615,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<pre>Some text| <b>and bold&nbsp;</b></pre><br /><i>and italic</i>"
+            "<pre>~Some text| <b>and bold&nbsp;</b></pre><br /><i>and italic</i>"
         );
     }
 
@@ -578,7 +625,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "Some text <br /><pre><b>and bold&nbsp;</b><i>and |italic</i></pre>"
+            "Some text <br /><pre>~<b>and bold&nbsp;</b><i>and |italic</i></pre>"
         );
     }
 
@@ -590,7 +637,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<ul><li><pre>Some text <b>and bold&nbsp;|</b><i>and italic</i></pre></li></ul>"
+            "<ul><li><pre>~Some text <b>and bold&nbsp;|</b><i>and italic</i></pre></li></ul>"
         );
     }
 
@@ -602,7 +649,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<ul><li>Some text <b>and bold&nbsp;</b><br /><pre><i>and| italic</i></pre></li></ul>"
+            "<ul><li>Some text <b>and bold&nbsp;</b><br /><pre>~<i>and| italic</i></pre></li></ul>"
         );
     }
 
@@ -611,7 +658,7 @@ mod test {
         let mut model =
             cm("<ul><li>{First item</li><li>Second}| item</li></ul>");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>{First item\nSecond}| item</pre>");
+        assert_eq!(tx(&model), "<pre>~{First item\nSecond}| item</pre>");
     }
 
     #[test]
@@ -619,7 +666,7 @@ mod test {
         let mut model =
             cm("<ul><li>{First item</li><li>Second item</li></ul>Some text<ul><li>Third}| item</li><li>Fourth one</li></ul>");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>{First item\nSecond item\nSome text\nThird}| item\nFourth one</pre>");
+        assert_eq!(tx(&model), "<pre>~{First item\nSecond item\nSome text\nThird}| item\nFourth one</pre>");
     }
 
     #[test]
@@ -627,14 +674,14 @@ mod test {
         let mut model =
             cm("{Text <ul><li>First item</li><li>Second}| item</li></ul>");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>{Text \nFirst item\nSecond}| item</pre>");
+        assert_eq!(tx(&model), "<pre>~{Text \nFirst item\nSecond}| item</pre>");
     }
 
     #[test]
     fn add_code_block_to_existing_code_block() {
         let mut model = cm("{Text <pre>code}|</pre>");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>{Text code}|</pre>");
+        assert_eq!(tx(&model), "<pre>~{Text code}|</pre>");
     }
 
     #[test]
@@ -643,7 +690,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<pre>{Text <b>code}|</b><i> and italic</i></pre>"
+            "<pre>~{Text <b>code}|</b><i> and italic</i></pre>"
         );
     }
 
@@ -653,7 +700,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<b>Text<br /></b><pre><b><i>{in italic}|</i></b></pre>"
+            "<b>Text<br /></b><pre>~<b><i>{in italic}|</i></b></pre>"
         );
     }
 
@@ -663,13 +710,13 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<u><b>Text<br /></b></u><pre><u><b><i>{in italic}|</i></b></u></pre>"
+            "<u><b>Text<br /></b></u><pre>~<u><b><i>{in italic}|</i></b></u></pre>"
         );
     }
 
     #[test]
     fn remove_code_block_moves_its_children_out() {
-        let mut model = cm("Text <pre><b>code|</b><i> and italic</i></pre>");
+        let mut model = cm("Text <pre>~<b>code|</b><i> and italic</i></pre>");
         model.code_block();
         assert_eq!(
             tx(&model),
@@ -692,5 +739,12 @@ mod test {
             tx(&model),
             "Text <br />wi{th<br />line<br />brea}|ks<br />"
         );
+    }
+
+    #[test]
+    fn test_creating_code_block_at_the_end_of_editor() {
+        let mut model = cm("Test<br/>|");
+        model.code_block();
+        assert_eq!(tx(&model), "Test<br /><pre>~|</pre>");
     }
 }
