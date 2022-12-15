@@ -16,7 +16,7 @@ use crate::char::CharExt;
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::nodes::{
-    ContainerNode, ContainerNodeKind, LineBreakNode, TextNode,
+    ContainerNode, ContainerNodeKind, LineBreakNode, TextNode, ZwspNode,
 };
 use crate::dom::to_html::ToHtml;
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
@@ -34,6 +34,7 @@ where
     Container(ContainerNode<S>), // E.g. html, div
     Text(TextNode<S>),
     LineBreak(LineBreakNode<S>),
+    Zwsp(ZwspNode<S>),
 }
 
 impl<S> DomNode<S>
@@ -50,6 +51,10 @@ where
 
     pub fn new_line_break() -> DomNode<S> {
         DomNode::LineBreak(LineBreakNode::default())
+    }
+
+    pub fn new_zwsp() -> DomNode<S> {
+        DomNode::Zwsp(ZwspNode::default())
     }
 
     pub fn new_formatting(
@@ -89,6 +94,7 @@ where
             DomNode::Container(n) => n.handle(),
             DomNode::LineBreak(n) => n.handle(),
             DomNode::Text(n) => n.handle(),
+            DomNode::Zwsp(n) => n.handle(),
         }
     }
 
@@ -97,6 +103,7 @@ where
             DomNode::Container(n) => n.set_handle(handle),
             DomNode::LineBreak(n) => n.set_handle(handle),
             DomNode::Text(n) => n.set_handle(handle),
+            DomNode::Zwsp(n) => n.set_handle(handle),
         }
     }
 
@@ -105,6 +112,7 @@ where
             DomNode::Text(n) => n.data().len(),
             DomNode::LineBreak(n) => n.text_len(),
             DomNode::Container(n) => n.text_len(),
+            DomNode::Zwsp(n) => n.data().len(),
         }
     }
 
@@ -205,6 +213,7 @@ where
             DomNode::Text(_) => DomNodeKind::Text,
             DomNode::LineBreak(_) => DomNodeKind::LineBreak,
             DomNode::Container(n) => DomNodeKind::from_container_kind(n.kind()),
+            DomNode::Zwsp(_) => DomNodeKind::Zwsp,
         }
     }
 
@@ -217,6 +226,7 @@ where
             DomNode::Container(c) => c.add_leading_zwsp(),
             DomNode::Text(t) => t.add_leading_zwsp(),
             DomNode::LineBreak(_) => false,
+            DomNode::Zwsp(_) => false,
         }
     }
 
@@ -229,6 +239,7 @@ where
             DomNode::Container(c) => c.remove_leading_zwsp(),
             DomNode::Text(t) => t.remove_leading_zwsp(),
             DomNode::LineBreak(_) => false,
+            DomNode::Zwsp(_) => todo!(),
         }
     }
 
@@ -239,6 +250,7 @@ where
             DomNode::Container(c) => c.has_leading_zwsp(),
             DomNode::Text(t) => t.data().to_string().starts_with(char::zwsp()),
             DomNode::LineBreak(_) => false,
+            DomNode::Zwsp(_) => true,
         }
     }
 
@@ -281,6 +293,7 @@ where
             }
             DomNode::Text(t) => DomNode::Text(t.slice_after(position)),
             DomNode::LineBreak(_) => panic!("Can't slice a linebreak"),
+            DomNode::Zwsp(_) => panic!("Can't slice a zwsp"),
         }
     }
 
@@ -295,6 +308,7 @@ where
             }
             DomNode::Text(t) => DomNode::Text(t.slice_before(position)),
             DomNode::LineBreak(_) => panic!("Can't slice a linebreak"),
+            DomNode::Zwsp(_) => panic!("Can't slice a zwsp"),
         }
     }
 }
@@ -319,6 +333,9 @@ where
             DomNode::Text(s) => {
                 s.fmt_html(buf, selection_writer, is_last_node_in_parent)
             }
+            DomNode::Zwsp(s) => {
+                s.fmt_html(buf, selection_writer, is_last_node_in_parent)
+            }
         }
     }
 }
@@ -332,6 +349,7 @@ where
             DomNode::Container(n) => n.to_raw_text(),
             DomNode::LineBreak(n) => n.to_raw_text(),
             DomNode::Text(n) => n.to_raw_text(),
+            DomNode::Zwsp(n) => n.to_raw_text(),
         }
     }
 }
@@ -345,6 +363,7 @@ where
             DomNode::Container(n) => n.to_tree_display(continuous_positions),
             DomNode::LineBreak(n) => n.to_tree_display(continuous_positions),
             DomNode::Text(n) => n.to_tree_display(continuous_positions),
+            DomNode::Zwsp(n) => n.to_tree_display(continuous_positions),
         }
     }
 }
@@ -364,6 +383,7 @@ where
             }
             DomNode::Text(text) => text.fmt_markdown(buffer, options),
             DomNode::LineBreak(node) => node.fmt_markdown(buffer, options),
+            DomNode::Zwsp(zwsp) => zwsp.fmt_markdown(buffer, options),
         }
     }
 }
@@ -378,6 +398,7 @@ pub enum DomNodeKind {
     ListItem,
     List,
     CodeBlock,
+    Zwsp,
 }
 
 impl DomNodeKind {

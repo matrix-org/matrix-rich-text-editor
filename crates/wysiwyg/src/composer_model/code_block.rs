@@ -477,6 +477,7 @@ where
                 }
                 DomNode::Container(container.clone_with_new_children(children))
             }
+            DomNode::Zwsp(_) => todo!(),
         }
     }
 }

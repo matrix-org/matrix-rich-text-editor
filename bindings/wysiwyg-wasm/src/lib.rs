@@ -475,7 +475,7 @@ pub struct DomHandle {
 
 #[wasm_bindgen]
 impl DomHandle {
-    /// Returns "container", "line_break" or "text" depending on the type of
+    /// Returns "container", "line_break", "text" or "zwsp" depending on the type of
     /// node we refer to.
     /// Panics if we are not a valid reference (because the model has changed
     /// since we were created, or because you passed in a different model
@@ -486,6 +486,7 @@ impl DomHandle {
             wysiwyg::DomNode::Container(_) => "container",
             wysiwyg::DomNode::LineBreak(_) => "line_break",
             wysiwyg::DomNode::Text(_) => "text",
+            wysiwyg::DomNode::Zwsp(_) => "zwsp",
         })
     }
 
@@ -519,6 +520,7 @@ impl DomHandle {
             wysiwyg::DomNode::Container(_) => String::from(""),
             wysiwyg::DomNode::LineBreak(_) => String::from(""),
             wysiwyg::DomNode::Text(node) => node.data().to_string(),
+            wysiwyg::DomNode::Zwsp(node) => node.data().to_string(),
         }
     }
 
@@ -532,6 +534,7 @@ impl DomHandle {
             wysiwyg::DomNode::Container(node) => node.name().to_string(),
             wysiwyg::DomNode::LineBreak(node) => node.name().to_string(),
             wysiwyg::DomNode::Text(_) => String::from("-text-"),
+            wysiwyg::DomNode::Zwsp(_) => String::from("-text-"),
         }
     }
 }

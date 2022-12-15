@@ -386,6 +386,7 @@ where
 
                     first_text_node = false;
                 }
+                DomNode::Zwsp(_) => todo!(),
             }
         }
         action_list

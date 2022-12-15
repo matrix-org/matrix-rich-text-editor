@@ -404,6 +404,7 @@ where
                 }
             }
             DomNode::LineBreak(_) => false,
+            DomNode::Zwsp(_) => todo!(),
         }
     }
 
@@ -521,6 +522,7 @@ where
                 DomNode::LineBreak(_) => {
                     positions.push(current_offset);
                 }
+                DomNode::Zwsp(_) => todo!(),
             }
             current_offset += child.text_len();
         }
@@ -909,6 +911,8 @@ where
                     DomNode::Text(_) => {
                         return Err(MarkdownError::InvalidListItem(None))
                     }
+
+                    DomNode::Zwsp(_) => todo!(),
                 };
 
                 // What's the current indentation, for this specific list only.
