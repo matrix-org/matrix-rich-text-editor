@@ -44,6 +44,8 @@ where
         let mut list_items = Vec::new();
         let mut line_break_positions = list_item.line_break_positions();
 
+        // Slice the list item on each line break position from last to
+        // first position and create a new list item for each slice.
         while let Some(position) = line_break_positions.pop() {
             let mut sliced = list_item.slice_after(position);
             sliced.slice_before(1);
