@@ -25,94 +25,97 @@ where
 {
     pub(crate) fn add_inline_code(&mut self) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
-        let format = InlineFormatType::InlineCode;
 
         if s == e {
-            self.toggle_zero_length_format(&format);
+            self.state.toggled_format_types =
+                vec![InlineFormatType::InlineCode];
             ComposerUpdate::update_menu_state(
                 self.compute_menu_state(MenuStateComputeType::KeepIfUnchanged),
             )
         } else {
-            let range = self.state.dom.find_range(s, e);
-            let leaves: Vec<&DomLocation> = range.leaves().collect();
-            // We'll iterate through the leaves finding their closest structural node ancestor and
-            // grouping these leaves based on the handles of these ancestors.
-            let structure_ancestors = self
-                .group_leaves_by_closest_structure_ancestors(leaves.clone());
+            self.add_inline_code_in(s, e);
+            self.create_update_replace_all()
+        }
+    }
 
-            // Order those ancestors (important to avoid node replacement & conflicts of handles)
-            let mut keys: Vec<&DomHandle> =
-                structure_ancestors.keys().collect();
-            keys.sort();
+    pub(crate) fn add_inline_code_in(&mut self, start: usize, end: usize) {
+        let range = self.state.dom.find_range(start, end);
+        let leaves: Vec<&DomLocation> = range.leaves().collect();
+        // We'll iterate through the leaves finding their closest structural node ancestor and
+        // grouping these leaves based on the handles of these ancestors.
+        let structure_ancestors =
+            self.group_leaves_by_closest_structure_ancestors(leaves.clone());
 
-            // Iterate through them backwards, replacing their descendant leaves as needed
-            for ancestor_handle in keys.into_iter().rev() {
-                let leaves = structure_ancestors.get(ancestor_handle).unwrap();
-                // We'll store the text contents of the removed formatted nodes here
-                let mut cur_text = S::default();
-                // Where we'll insert the result of merging the text contents
-                let mut insert_text_at: Option<DomHandle> = None;
-                // Nodes to be added to the Dom, might contain both TextNodes and LineBreaks
-                let mut nodes_to_add = Vec::new();
-                // Iterate the leaves backwards to avoid modifying the previous Dom structure
-                for leaf in leaves.iter().rev() {
-                    // Find the immediate child of the common ancestor containing this leaf as its descendant
-                    let ancestor_child_handle = leaf
-                        .node_handle
-                        .sub_handle_up_to(ancestor_handle.raw().len() + 1);
+        // Order those ancestors (important to avoid node replacement & conflicts of handles)
+        let mut keys: Vec<&DomHandle> = structure_ancestors.keys().collect();
+        keys.sort();
 
-                    let node =
-                        self.state.dom.lookup_node(&leaf.node_handle).clone();
-                    match node {
-                        DomNode::Text(text_node) => {
-                            let (text, pos) = self
-                                .process_text_node_for_inline_code(
-                                    &text_node,
-                                    leaf,
-                                    &ancestor_child_handle,
-                                );
-                            // Add the selected text to the current text holder
-                            cur_text.insert(0, &text);
-                            // Update insertion position for the inline code node
-                            insert_text_at = pos;
-                        }
-                        DomNode::LineBreak(_) => {
-                            nodes_to_add.extend(
-                                self.process_line_break_for_inline_code(
-                                    leaf, &cur_text,
-                                ),
+        // Iterate through them backwards, replacing their descendant leaves as needed
+        for ancestor_handle in keys.into_iter().rev() {
+            let leaves = structure_ancestors.get(ancestor_handle).unwrap();
+            // We'll store the text contents of the removed formatted nodes here
+            let mut cur_text = S::default();
+            // Where we'll insert the result of merging the text contents
+            let mut insert_text_at: Option<DomHandle> = None;
+            // Nodes to be added to the Dom, might contain both TextNodes and LineBreaks
+            let mut nodes_to_add = Vec::new();
+            // Iterate the leaves backwards to avoid modifying the previous Dom structure
+            for leaf in leaves.iter().rev() {
+                // Find the immediate child of the common ancestor containing this leaf as its descendant
+                let ancestor_child_handle = leaf
+                    .node_handle
+                    .sub_handle_up_to(ancestor_handle.raw().len() + 1);
+
+                let node =
+                    self.state.dom.lookup_node(&leaf.node_handle).clone();
+                match node {
+                    DomNode::Text(text_node) => {
+                        let (text, pos) = self
+                            .process_text_node_for_inline_code(
+                                &text_node,
+                                leaf,
+                                &ancestor_child_handle,
                             );
-                            // Update insertion point and reset text
-                            insert_text_at = Some(ancestor_child_handle);
-                            cur_text = S::default();
-                        }
-                        _ => panic!(
-                            "Leaf should be either a line break or a text node"
-                        ),
+                        // Add the selected text to the current text holder
+                        cur_text.insert(0, &text);
+                        // Update insertion position for the inline code node
+                        insert_text_at = pos;
                     }
-                }
-
-                // Insert the nodes into the Dom inside an inline code node
-                if let Some(insert_text_at) = insert_text_at {
-                    // If there is still some collected text add it to he list of nodes to insert
-                    if !cur_text.is_empty() {
-                        nodes_to_add.insert(0, DomNode::new_text(cur_text));
+                    DomNode::LineBreak(_) => {
+                        nodes_to_add.extend(
+                            self.process_line_break_for_inline_code(
+                                leaf, &cur_text,
+                            ),
+                        );
+                        // Update insertion point and reset text
+                        insert_text_at = Some(ancestor_child_handle);
+                        cur_text = S::default();
                     }
-
-                    // Insert the inline code node
-                    self.state.dom.insert_at(
-                        &insert_text_at,
-                        DomNode::new_formatting(
-                            InlineFormatType::InlineCode,
-                            nodes_to_add,
-                        ),
-                    );
-
-                    // Merge inline code nodes for clean up
-                    self.merge_formatting_node_with_siblings(&insert_text_at);
+                    _ => panic!(
+                        "Leaf should be either a line break or a text node"
+                    ),
                 }
             }
-            self.create_update_replace_all()
+
+            // Insert the nodes into the Dom inside an inline code node
+            if let Some(insert_text_at) = insert_text_at {
+                // If there is still some collected text add it to he list of nodes to insert
+                if !cur_text.is_empty() {
+                    nodes_to_add.insert(0, DomNode::new_text(cur_text));
+                }
+
+                // Insert the inline code node
+                self.state.dom.insert_at(
+                    &insert_text_at,
+                    DomNode::new_formatting(
+                        InlineFormatType::InlineCode,
+                        nodes_to_add,
+                    ),
+                );
+
+                // Merge inline code nodes for clean up
+                self.merge_formatting_node_with_siblings(&insert_text_at);
+            }
         }
     }
 
@@ -146,7 +149,9 @@ where
         } else if location.is_end() {
             // This node is at the end of the selection and not completely
             // covered, split it and set the insertion point to be before it.
-            insert_text_at = if ancestor_child_handle.index_in_parent() > 0 {
+            insert_text_at = if location.node_handle == *ancestor_child_handle {
+                Some(ancestor_child_handle.clone())
+            } else if ancestor_child_handle.index_in_parent() > 0 {
                 Some(ancestor_child_handle.prev_sibling())
             } else {
                 Some(ancestor_child_handle.clone())
@@ -345,5 +350,21 @@ mod test {
         model.inline_code();
         model.replace_text(" plain text".into());
         assert_eq!(tx(&model), "<code>code</code> plain text|");
+    }
+
+    #[test]
+    fn test_creating_inline_code_inside_format_node() {
+        let mut model = cm("<i>Test |</i>");
+        model.inline_code();
+        model.replace_text("code".into());
+        assert_eq!(tx(&model), "<i>Test&nbsp;</i><code>code|</code>");
+    }
+
+    #[test]
+    fn test_enabling_and_disabling_inline_code_then_adding_text() {
+        let mut model = cm("<i>Test </i><code>code|</code>");
+        model.inline_code();
+        model.replace_text(" plain".into());
+        assert_eq!(tx(&model), "<i>Test&nbsp;</i><code>code</code> plain|");
     }
 }

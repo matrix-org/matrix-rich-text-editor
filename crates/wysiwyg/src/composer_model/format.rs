@@ -128,8 +128,12 @@ where
         format: &InlineFormatType,
     ) {
         assert!(start != end);
-        let range = self.state.dom.find_range(start, end);
-        self.format_several_nodes(&range, format);
+        if *format == InlineFormatType::InlineCode {
+            self.add_inline_code_in(start, end);
+        } else {
+            let range = self.state.dom.find_range(start, end);
+            self.format_several_nodes(&range, format);
+        }
     }
 
     fn unformat(&mut self, format: InlineFormatType) -> ComposerUpdate<S> {
@@ -295,6 +299,7 @@ where
         let mut action_list = DomActionList::default();
         let mut sorted_locations = locations;
         sorted_locations.sort();
+
         // Go through the locations in reverse order to prevent Dom modification issues
         for loc in sorted_locations.into_iter().rev() {
             let mut loc = loc.clone();
