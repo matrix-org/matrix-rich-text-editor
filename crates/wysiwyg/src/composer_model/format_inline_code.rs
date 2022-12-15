@@ -367,4 +367,15 @@ mod test {
         model.replace_text(" plain".into());
         assert_eq!(tx(&model), "<i>Test&nbsp;</i><code>code</code> plain|");
     }
+
+    #[test]
+    fn test_inline_code_disables_current_formatting() {
+        let mut model = cm("|");
+        model.bold();
+        model.replace_text("bold".into());
+        model.italic();
+        model.inline_code();
+        model.replace_text("code".into());
+        assert_eq!(tx(&model), "<strong>bold</strong><code>code|</code>");
+    }
 }
