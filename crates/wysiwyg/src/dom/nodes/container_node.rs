@@ -918,11 +918,9 @@ where
                         )))
                     }
 
-                    DomNode::Text(_) => {
+                    DomNode::Text(_) | DomNode::Zwsp(_) => {
                         return Err(MarkdownError::InvalidListItem(None))
                     }
-
-                    DomNode::Zwsp(_) => todo!(),
                 };
 
                 // What's the current indentation, for this specific list only.

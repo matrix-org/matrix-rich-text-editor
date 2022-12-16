@@ -390,9 +390,8 @@ where
                             if char == '\n' {
                                 let text_to_add =
                                     data[text_start..text_end - 1].to_owned();
-                                nodes_to_add.push(DomNode::new_text(S::from(
-                                    text_to_add,
-                                )));
+                                nodes_to_add
+                                    .push(DomNode::new_text(text_to_add));
                                 nodes_to_add.push(DomNode::new_line_break());
                                 if text_end <= start_in_block {
                                     selection_offset_start += 1;
@@ -466,7 +465,7 @@ where
         match node {
             DomNode::LineBreak(_) => {
                 let mut text_node = DomNode::new_text("\n".into());
-                text_node.set_handle(node.handle().clone());
+                text_node.set_handle(node.handle());
                 text_node
             }
             DomNode::Text(_) => node.clone(),
@@ -477,6 +476,7 @@ where
                 }
                 DomNode::Container(container.clone_with_new_children(children))
             }
+            // TODO: handle code block for zwsp nodes
             DomNode::Zwsp(_) => todo!(),
         }
     }
