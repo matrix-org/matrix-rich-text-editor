@@ -231,8 +231,7 @@ where
 {
     fn to_tree_display(&self, continuous_positions: Vec<usize>) -> S {
         let mut description = S::from("\"");
-        let text = &self.data.to_string().replace(char::zwsp(), "~");
-        description.push(text.as_str());
+        description.push(self.data.clone());
         description.push('"');
         return self.tree_line(
             description,

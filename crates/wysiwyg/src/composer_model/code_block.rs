@@ -42,7 +42,7 @@ where
         let (s, e) = self.safe_selection();
         let Some(wrap_result) = self.find_nodes_to_wrap_in_block(s, e) else {
             // No suitable nodes found to be wrapped inside the code block. The Dom should be empty
-            self.state.dom.append_at_end_of_document(DomNode::new_code_block(vec![DomNode::new_text(S::zwsp())]));
+            self.state.dom.append_at_end_of_document(DomNode::new_code_block(vec![DomNode::new_zwsp()]));
             self.state.start += 1;
             self.state.end += 1;
             return self.create_update_replace_all();
@@ -208,7 +208,7 @@ where
             let DomNode::Container(result_code_block) = self.state.dom.lookup_node_mut(&new_code_block_handle) else {
                 panic!("Result code block handle must refer to a container node");
             };
-            result_code_block.insert_child(0, DomNode::new_text(S::zwsp()));
+            result_code_block.insert_child(0, DomNode::new_zwsp());
             self.state.start += 1;
             self.state.end += 1;
         }

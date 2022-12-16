@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::char::CharExt;
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::nodes::{
@@ -238,9 +237,7 @@ where
             (DomNode::Container(c1), DomNode::Container(c2)) => {
                 c1.kind() == c2.kind() && !c1.is_list_item()
             }
-            (DomNode::Text(_), DomNode::Text(t2)) => {
-                !t2.data().to_string().starts_with(char::zwsp())
-            }
+            (DomNode::Text(_), DomNode::Text(_)) => true,
             _ => false,
         }
     }
