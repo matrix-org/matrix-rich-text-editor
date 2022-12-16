@@ -124,6 +124,17 @@ public struct WysiwygComposerView: UIViewRepresentable {
         public func textViewDidEndEditing(_ textView: UITextView) {
             focused.wrappedValue = false
         }
+        
+        public func textView(_ textView: UITextView,
+                             shouldInteractWith URL: URL,
+                             in characterRange: NSRange,
+                             interaction: UITextItemInteraction) -> Bool {
+            guard interaction == .invokeDefaultAction else {
+                return true
+            }
+            textView.selectedRange = characterRange
+            return false
+        }
     }
 }
 
