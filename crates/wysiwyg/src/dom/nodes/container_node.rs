@@ -370,8 +370,11 @@ where
             DomNode::Container(c) => c.add_leading_zwsp(),
             DomNode::Zwsp(_) => false,
             _ => {
-                self.children.insert(0, DomNode::new_zwsp());
-                //self.insert_child(0, DomNode::new_zwsp());
+                if self.handle().is_set() {
+                    self.insert_child(0, DomNode::new_zwsp());
+                } else {
+                    self.children.insert(0, DomNode::new_zwsp());
+                }
                 true
             }
         }
@@ -388,7 +391,11 @@ where
         match first_child {
             DomNode::Container(c) => c.remove_leading_zwsp(),
             DomNode::Zwsp(_) => {
-                self.children.remove(0);
+                if self.handle().is_set() {
+                    self.remove_child(0);
+                } else {
+                    self.children.remove(0);
+                }
                 true
             }
             _ => false,
