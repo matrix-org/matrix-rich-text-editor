@@ -19,9 +19,11 @@ use crate::char::CharExt;
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::DomNodeKind::*;
 use crate::dom::nodes::{ContainerNodeKind, DomNode};
-use crate::dom::unicode_string::UnicodeStr;
+use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
 use crate::dom::{DomHandle, DomLocation, Range};
-use crate::{ComposerAction, ComposerModel, ComposerUpdate, UnicodeString};
+use crate::{
+    ComposerAction, ComposerModel, ComposerUpdate, ToHtml, UnicodeString,
+};
 
 impl<S> ComposerModel<S>
 where
@@ -57,161 +59,186 @@ where
 
         let mut code_block: DomNode<S> = DomNode::new_code_block(Vec::new());
         code_block.set_handle(DomHandle::root());
-        let mut nodes_visited = HashSet::new();
+        // let mut nodes_visited = HashSet::new();
         let start_handle = parent_handle.child_handle(idx_start);
         let up_to_handle = parent_handle.child_handle(idx_end + 1);
         let ancestor_to_split = self.find_ancestor_to_split(&start_handle);
         let start_depth = ancestor_to_split.depth();
-        let mut path: Vec<usize> = Vec::new();
-        // We'll build a new sub-tree with the contents of the code block, then insert it
-        for depth in start_depth..start_handle.depth() {
-            let mut cur_child = &mut code_block;
-            for i in path.iter() {
-                if let DomNode::Container(c) = cur_child {
-                    cur_child = c.get_child_mut(*i).unwrap();
-                }
-            }
 
-            let DomNode::Container(cur_container) = cur_child else { break; };
-            let path_len = parent_handle.depth();
-            if depth == path_len {
-                let iter = self.state.dom.iter_from_handle(&start_handle);
-                for node in iter {
-                    let parent = self.state.dom.parent(&node.handle());
+        let mut subtree = self.state.dom.split_sub_tree(
+            &start_handle,
+            0,
+            ancestor_to_split.depth(),
+            Some(up_to_handle.clone()),
+        );
 
-                    if node.handle() == up_to_handle {
-                        break;
-                    }
+        let cur_html = self.state.dom.to_html().to_string();
+        let subtree_html = subtree.to_html().to_string();
 
-                    let is_in_selection = range.contains(&node.handle());
-                    let is_before = node.handle() <= first_leaf.node_handle
-                        && !is_in_selection;
-                    let is_after = node.handle() > last_leaf.node_handle
-                        && !is_in_selection;
+        let Some(subtree_container) = subtree.as_container_mut() else {
+            panic!("Subtree must be a container");
+        };
 
-                    match node.kind() {
-                        Text | Formatting(_) | Link | LineBreak => {
-                            nodes_visited.insert(node.handle());
-                            if nodes_visited
-                                .contains(&node.handle().parent_handle())
-                            {
-                                continue;
-                            }
-                            cur_container.append_child(
-                                Self::format_node_for_code_block(node),
-                            );
+        let mut children: Vec<DomNode<S>> = Vec::new();
+        while !subtree_container.children().is_empty() {
+            let mut last_child = subtree_container
+                .remove_child(subtree_container.children().len() - 1);
 
-                            let needs_to_add_line_break = node.kind()
-                                != LineBreak
-                                && *parent.kind()
-                                    == ContainerNodeKind::ListItem
-                                && self
-                                    .state
-                                    .dom
-                                    .is_last_in_parent(&node.handle());
-
-                            if needs_to_add_line_break {
-                                cur_container.append_child(new_line_break());
-                                if is_before {
-                                    self.state.start += 1;
-                                    self.state.end += 1;
-                                }
-                                if !is_after {
-                                    if let Some(location) =
-                                        range.locations.iter().find(|l| {
-                                            l.node_handle == node.handle()
-                                        })
-                                    {
-                                        if location.is_covered() {
-                                            self.state.end += 1;
-                                        }
-                                    } else {
-                                        self.state.end += 1;
-                                    }
-                                }
-                            }
-                        }
-                        List => {
-                            // Add line break before the List if it's not at the start
-                            if node.handle().index_in_parent() > 0 {
-                                cur_container.append_child(new_line_break());
-                                if is_before {
-                                    self.state.start += 1;
-                                }
-                                if !is_after {
-                                    self.state.end += 1;
-                                }
-                            }
-                        }
-                        _ => {}
-                    }
-                }
-                // We already copied everything we needed to the sub-tree, delete the original nodes
-                for i in (idx_start..=idx_end).rev() {
-                    self.state.dom.remove(&parent_handle.child_handle(i));
-                }
-
-                // If it has a trailing line break at the end, remove it
-                if let Some(DomNode::Text(text_node)) =
-                    cur_container.last_child_mut()
-                {
-                    text_node.remove_trailing_line_break();
-                }
-            } else {
-                // For every depth level, just copy any ancestor node with no children
-                // to re-create the sub-tree
-                let cur_sub_handle = start_handle.sub_handle_up_to(depth + 1);
-                let index_at_depth = cur_sub_handle.index_in_parent();
-                path.push(index_at_depth);
-                if let DomNode::Container(container) =
-                    self.state.dom.lookup_node(&cur_sub_handle)
-                {
-                    cur_container.append_child(DomNode::Container(
-                        container.clone_with_new_children(Vec::new()),
-                    ));
-                }
-            }
+            let mut new_children = self.format_node_for_code_block(
+                &last_child,
+                &range,
+                &first_leaf,
+                &last_leaf,
+            );
+            new_children.extend(children);
+            children = new_children;
         }
 
-        let insert_at_handle =
+        // let mut path: Vec<usize> = Vec::new();
+        // // We'll build a new sub-tree with the contents of the code block, then insert it
+        // for depth in start_depth..start_handle.depth() {
+        //     let mut cur_child = &mut code_block;
+        //     for i in path.iter() {
+        //         if let DomNode::Container(c) = cur_child {
+        //             cur_child = c.get_child_mut(*i).unwrap();
+        //         }
+        //     }
+        //
+        //     let DomNode::Container(cur_container) = cur_child else { break; };
+        //     let path_len = parent_handle.depth();
+        //     if depth == path_len {
+        //         let iter = self.state.dom.iter_from_handle(&start_handle);
+        //         for node in iter {
+        //             let parent = self.state.dom.parent(&node.handle());
+        //
+        //             if node.handle() == up_to_handle {
+        //                 break;
+        //             }
+        //
+        //             let is_in_selection = range.contains(&node.handle());
+        //             let is_before = node.handle() <= first_leaf.node_handle
+        //                 && !is_in_selection;
+        //             let is_after = node.handle() > last_leaf.node_handle
+        //                 && !is_in_selection;
+        //
+        //             match node.kind() {
+        //                 Text | Formatting(_) | Link | LineBreak => {
+        //                     nodes_visited.insert(node.handle());
+        //                     if nodes_visited
+        //                         .contains(&node.handle().parent_handle())
+        //                     {
+        //                         continue;
+        //                     }
+        //                     cur_container.append_child(
+        //                         Self::format_node_for_code_block(node),
+        //                     );
+        //
+        //                     let needs_to_add_line_break = node.kind()
+        //                         != LineBreak
+        //                         && *parent.kind()
+        //                             == ContainerNodeKind::ListItem
+        //                         && self
+        //                             .state
+        //                             .dom
+        //                             .is_last_in_parent(&node.handle());
+        //
+        //                     if needs_to_add_line_break {
+        //                         cur_container.append_child(new_line_break());
+        //                         if is_before {
+        //                             self.state.start += 1;
+        //                             self.state.end += 1;
+        //                         }
+        //                         if !is_after {
+        //                             if let Some(location) =
+        //                                 range.locations.iter().find(|l| {
+        //                                     l.node_handle == node.handle()
+        //                                 })
+        //                             {
+        //                                 if location.is_covered() {
+        //                                     self.state.end += 1;
+        //                                 }
+        //                             } else {
+        //                                 self.state.end += 1;
+        //                             }
+        //                         }
+        //                     }
+        //                 }
+        //                 List => {
+        //                     // Add line break before the List if it's not at the start
+        //                     if node.handle().index_in_parent() > 0 {
+        //                         cur_container.append_child(new_line_break());
+        //                         if is_before {
+        //                             self.state.start += 1;
+        //                         }
+        //                         if !is_after {
+        //                             self.state.end += 1;
+        //                         }
+        //                     }
+        //                 }
+        //                 _ => {}
+        //             }
+        //         }
+        //         // We already copied everything we needed to the sub-tree, delete the original nodes
+        //         for i in (idx_start..=idx_end).rev() {
+        //             self.state.dom.remove(&parent_handle.child_handle(i));
+        //         }
+        //
+        //         // If it has a trailing line break at the end, remove it
+        //         if let Some(DomNode::Text(text_node)) =
+        //             cur_container.last_child_mut()
+        //         {
+        //             text_node.remove_trailing_line_break();
+        //         }
+        //     } else {
+        //         // For every depth level, just copy any ancestor node with no children
+        //         // to re-create the sub-tree
+        //         let cur_sub_handle = start_handle.sub_handle_up_to(depth + 1);
+        //         let index_at_depth = cur_sub_handle.index_in_parent();
+        //         path.push(index_at_depth);
+        //         if let DomNode::Container(container) =
+        //             self.state.dom.lookup_node(&cur_sub_handle)
+        //         {
+        //             cur_container.append_child(DomNode::Container(
+        //                 container.clone_with_new_children(Vec::new()),
+        //             ));
+        //         }
+        //     }
+        // }
+
+        let mut insert_at_handle =
             start_handle.sub_handle_up_to(ancestor_to_split.depth() + 1);
-        let insert_at_handle =
-            if idx_start > 0 && self.state.dom.contains(&insert_at_handle) {
-                insert_at_handle.next_sibling()
-            } else {
-                insert_at_handle
-            };
+        if !parent_handle.is_root()
+            && parent_handle.index_in_parent() > 0
+            && self.state.dom.contains(&insert_at_handle)
+        {
+            insert_at_handle = insert_at_handle.next_sibling();
+        }
+        // if insert_at_handle == parent_handle?
+        // let insert_at_handle = if parent_handle.raw().iter().any(|i| *i != 0) {
+        //     insert_at_handle.next_sibling()
+        // } else {
+        //     insert_at_handle
+        // };
+        let code_block = DomNode::new_code_block(children);
         self.state.dom.insert_at(&insert_at_handle, code_block);
 
         // Merge any nodes that need it
         let new_code_block_handle =
             self.merge_adjacent_code_blocks(&insert_at_handle);
 
-        // Add ZWSP to start of the code block node if needed
-        let needs_zwsp = if let Some(DomNode::Text(first_text_node)) = self
+        if let Some(merged_code_block_container) = self
             .state
             .dom
-            .iter_from_handle(&new_code_block_handle)
-            .find(|n| n.is_text_node())
+            .lookup_node_mut(&new_code_block_handle)
+            .as_container_mut()
         {
-            let first_char = first_text_node.data().chars().next();
-            if let Some(first_char) = first_char {
-                !first_char.is_zwsp()
-            } else {
-                true
+            if merged_code_block_container.add_leading_zwsp() {
+                self.state.start += 1;
+                self.state.end += 1;
             }
-        } else {
-            true
-        };
-
-        if needs_zwsp {
-            let DomNode::Container(result_code_block) = self.state.dom.lookup_node_mut(&new_code_block_handle) else {
-                panic!("Result code block handle must refer to a container node");
-            };
-            result_code_block.insert_child(0, DomNode::new_text(S::zwsp()));
-            self.state.start += 1;
-            self.state.end += 1;
         }
+
+        // TODO: add initial ZWSP
 
         self.create_update_replace_all()
     }
@@ -348,20 +375,71 @@ where
         self.create_update_replace_all()
     }
 
-    pub(crate) fn format_node_for_code_block(node: &DomNode<S>) -> DomNode<S> {
+    pub(crate) fn format_node_for_code_block(
+        &mut self,
+        node: &DomNode<S>,
+        range: &Range,
+        first_leaf: &DomLocation,
+        last_leaf: &DomLocation,
+    ) -> Vec<DomNode<S>> {
+        let is_in_selection = range.contains(&node.handle());
+        let is_before =
+            node.handle() <= first_leaf.node_handle && !is_in_selection;
+        let is_after =
+            node.handle() > last_leaf.node_handle && !is_in_selection;
         match node {
             DomNode::LineBreak(_) => {
                 let mut text_node = DomNode::new_text("\n".into());
                 text_node.set_handle(node.handle().clone());
-                text_node
+                vec![text_node]
             }
-            DomNode::Text(_) => node.clone(),
+            DomNode::Text(_) => vec![node.clone()],
             DomNode::Container(container) => {
                 let mut children = Vec::new();
                 for c in container.children() {
-                    children.push(Self::format_node_for_code_block(c));
+                    children.extend(self.format_node_for_code_block(
+                        c, range, first_leaf, last_leaf,
+                    ));
                 }
-                DomNode::Container(container.clone_with_new_children(children))
+                if matches!(
+                    container.kind(),
+                    ContainerNodeKind::List(_)
+                        | ContainerNodeKind::ListItem
+                        | ContainerNodeKind::CodeBlock
+                ) {
+                    if container.is_list() {
+                        // Add line break before the List if it's not at the start
+                        if node.handle().index_in_parent() > 0 {
+                            children.insert(0, DomNode::new_text("\n".into()));
+                            if is_before {
+                                self.state.start += 1;
+                            }
+                            if !is_after {
+                                self.state.end += 1;
+                            }
+                        }
+                        // // Remove last line break at end of list
+                        // if let Some(DomNode::Text(text_node)) = children.last()
+                        // {
+                        //     if text_node.data().to_owned() == "\n".into() {
+                        //         children.pop();
+                        //     }
+                        // }
+                    } else if container.is_list_item() {
+                        children.push(DomNode::new_text("\n".into()));
+                        if is_before {
+                            self.state.start += 1;
+                        }
+                        if !is_after {
+                            self.state.end += 1;
+                        }
+                    }
+                    children
+                } else {
+                    vec![DomNode::Container(
+                        container.clone_with_new_children(children),
+                    )]
+                }
             }
             DomNode::Zwsp(_) => todo!(),
         }
@@ -427,14 +505,17 @@ mod test {
 
     #[test]
     fn find_ranges_to_wrap_list_item_with_line_breaks() {
-        let model = cm(
+        let mut model = cm(
             "<ul><li>Some text <b>and bold </b><br/><i>and| italic</i></li></ul>",
         );
         let (s, e) = model.safe_selection();
         let ret = model.find_nodes_to_wrap_in_block(s, e).unwrap();
-        assert_eq!(ret.ancestor_handle, DomHandle::from_raw(vec![0, 0]));
-        assert_eq!(ret.idx_start, 3);
-        assert_eq!(ret.idx_end, 3);
+        // assert_eq!(ret.ancestor_handle, DomHandle::from_raw(vec![0, 0]));
+        // assert_eq!(ret.idx_start, 3);
+        // assert_eq!(ret.idx_end, 3);
+
+        model.code_block();
+        assert_eq!(tx(&model), "");
     }
 
     #[test]
@@ -500,7 +581,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "Some text <br /><pre>~<b>and bold&nbsp;</b><i>and |italic</i></pre>"
+            "Some text <br /><pre><b>~and bold&nbsp;</b><i>and |italic</i></pre>"
         );
     }
 
@@ -524,7 +605,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<ul><li>Some text <b>and bold&nbsp;</b><br /><pre>~<i>and| italic</i></pre></li></ul>"
+            "<ul><li>Some text <b>and bold&nbsp;</b><br /><pre><i>~and| italic</i></pre></li></ul>"
         );
     }
 
@@ -575,7 +656,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<b>Text<br /></b><pre>~<b><i>{in italic}|</i></b></pre>"
+            "<b>Text<br /></b><pre><b><i>~{in italic}|</i></b></pre>"
         );
     }
 
@@ -585,7 +666,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<u><b>Text<br /></b></u><pre>~<u><b><i>{in italic}|</i></b></u></pre>"
+            "<u><b>Text<br /></b></u><pre><u><b><i>~{in italic}|</i></b></u></pre>"
         );
     }
 

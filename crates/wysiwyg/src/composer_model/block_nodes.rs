@@ -131,8 +131,7 @@ where
         &self,
         handle: &DomHandle,
     ) -> DomHandle {
-        let path_len = handle.depth();
-        if path_len <= 1 {
+        if handle.depth() <= 1 {
             DomHandle::root()
         } else {
             for i in (0..handle.depth()).rev() {
