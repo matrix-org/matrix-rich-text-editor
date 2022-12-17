@@ -253,101 +253,6 @@ where
         handle
     }
 
-    fn find_nodes_to_wrap_in_block(
-        &self,
-        start: usize,
-        end: usize,
-    ) -> Option<WrapSearchResult> {
-        let dom = &self.state.dom;
-        let range = dom.find_range(start, end);
-        let leaves: Vec<&DomLocation> = range.leaves().collect();
-        if leaves.is_empty() {
-            None
-        } else {
-            let first_leaf = leaves.first().unwrap();
-            let last_leaf = leaves.last().unwrap();
-            let rev_iter = dom.iter_from_handle(&first_leaf.node_handle).rev();
-            let iter = dom.iter_from_handle(&last_leaf.node_handle);
-            let mut nodes_to_cover = (
-                HandleWithKind {
-                    handle: first_leaf.node_handle.clone(),
-                    kind: first_leaf.kind.clone(),
-                },
-                HandleWithKind {
-                    handle: last_leaf.node_handle.clone(),
-                    kind: last_leaf.kind.clone(),
-                },
-            );
-            // If we have a selection inside a single ListItem we only want to wrap its contents.
-            // However, if the selection covers several list items, we should split its parent List
-            // and wrap their contents instead.
-            let selection_contains_several_list_items = range
-                .locations
-                .iter()
-                .filter(|l| l.kind == ListItem)
-                .count()
-                > 1;
-            for node in rev_iter {
-                if !node.is_block_node()
-                    && node.kind() != LineBreak
-                    && (node.kind() != ListItem
-                        || selection_contains_several_list_items)
-                {
-                    nodes_to_cover.0 = HandleWithKind {
-                        handle: node.handle(),
-                        kind: node.kind().clone(),
-                    };
-                } else {
-                    break;
-                }
-            }
-
-            for node in iter {
-                if !node.is_block_node()
-                    && node.kind() != LineBreak
-                    && (node.kind() != ListItem
-                        || selection_contains_several_list_items)
-                {
-                    nodes_to_cover.1 = HandleWithKind {
-                        handle: node.handle(),
-                        kind: node.kind().clone(),
-                    };
-                } else {
-                    break;
-                }
-            }
-
-            let (first, last) = nodes_to_cover;
-            let max_depth = min(first.handle.depth(), last.handle.depth());
-            let mut min_depth = 0;
-            for i in min_depth..max_depth {
-                min_depth = i;
-                if first.handle.raw()[i] != last.handle.raw()[i] {
-                    break;
-                }
-            }
-            if (first.kind == ListItem || last.kind == ListItem)
-                && min_depth > 0
-            {
-                // We should wrap their parent List instead
-                min_depth -= 1;
-            }
-            // Will wrap an empty text node at the end of the editor
-            if first.handle == last.handle && first.kind == LineBreak {
-                return None;
-            }
-            let idx_start = first.handle.raw()[min_depth];
-            let idx_end = last.handle.raw()[min_depth];
-            let ancestor_handle = first.handle.sub_handle_up_to(min_depth);
-            Some(WrapSearchResult {
-                ancestor_handle,
-                idx_start,
-                idx_end,
-                range,
-            })
-        }
-    }
-
     fn remove_code_block(&mut self) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
@@ -443,25 +348,6 @@ where
         self.create_update_replace_all()
     }
 
-    fn find_ancestor_to_split(&self, handle: &DomHandle) -> DomHandle {
-        let path_len = handle.depth();
-        if path_len <= 1 {
-            DomHandle::root()
-        } else {
-            for i in (0..handle.depth()).rev() {
-                let ancestor_handle = handle.sub_handle_up_to(i);
-                let ancestor = self.state.dom.lookup_node(&ancestor_handle);
-                match ancestor.kind() {
-                    Generic | List | ListItem | CodeBlock => {
-                        return ancestor_handle
-                    }
-                    _ => continue,
-                }
-            }
-            panic!("Should never reach this point, one of the parents surely can be split.");
-        }
-    }
-
     pub(crate) fn format_node_for_code_block(node: &DomNode<S>) -> DomNode<S> {
         match node {
             DomNode::LineBreak(_) => {
@@ -480,18 +366,6 @@ where
             DomNode::Zwsp(_) => todo!(),
         }
     }
-}
-
-struct HandleWithKind {
-    handle: DomHandle,
-    kind: DomNodeKind,
-}
-
-struct WrapSearchResult {
-    ancestor_handle: DomHandle,
-    idx_start: usize,
-    idx_end: usize,
-    range: Range,
 }
 
 #[cfg(test)]

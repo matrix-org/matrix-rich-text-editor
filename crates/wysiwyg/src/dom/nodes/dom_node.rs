@@ -89,6 +89,10 @@ where
         DomNode::Container(ContainerNode::new_code_block(children))
     }
 
+    pub fn new_quote(children: Vec<DomNode<S>>) -> DomNode<S> {
+        DomNode::Container(ContainerNode::new_quote(children))
+    }
+
     pub fn handle(&self) -> DomHandle {
         match self {
             DomNode::Container(n) => n.handle(),
@@ -177,6 +181,10 @@ where
 
     pub(crate) fn is_list_item(&self) -> bool {
         matches!(self, Self::Container(container) if container.is_list_item())
+    }
+
+    pub(crate) fn is_empty_list_item(&self) -> bool {
+        matches!(self, Self::Container(container) if container.is_empty_list_item())
     }
 
     #[allow(dead_code)]
@@ -398,6 +406,7 @@ pub enum DomNodeKind {
     ListItem,
     List,
     CodeBlock,
+    Quote,
     Zwsp,
 }
 
@@ -414,6 +423,7 @@ impl DomNodeKind {
             ContainerNodeKind::ListItem => DomNodeKind::ListItem,
             ContainerNodeKind::Generic => DomNodeKind::Generic,
             ContainerNodeKind::CodeBlock => DomNodeKind::CodeBlock,
+            ContainerNodeKind::Quote => DomNodeKind::Quote,
         }
     }
 

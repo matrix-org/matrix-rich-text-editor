@@ -77,6 +77,29 @@ where
         self.document().children()
     }
 
+    pub fn last_node_handle(&self) -> DomHandle {
+        let mut found = false;
+        let mut cur_handle = DomHandle::root();
+        while !found {
+            if let DomNode::Container(container) = self.lookup_node(&cur_handle)
+            {
+                if !container.children().is_empty() {
+                    cur_handle =
+                        cur_handle.child_handle(container.children().len() - 1);
+                } else {
+                    // Empty container node.
+                    // We might reach this line if we use the function while we are editing the Dom.
+
+                    found = true;
+                }
+            } else {
+                // Leaf node
+                found = true;
+            }
+        }
+        cur_handle
+    }
+
     #[cfg(all(feature = "js", target_arch = "wasm32"))]
     pub(crate) fn take_children(self) -> Vec<DomNode<S>> {
         if let DomNode::Container(container) = self.document {

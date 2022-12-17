@@ -396,6 +396,7 @@ pub enum ComposerAction {
     Indent,
     UnIndent,
     CodeBlock,
+    Quote,
 }
 
 impl ComposerAction {
@@ -414,6 +415,7 @@ impl ComposerAction {
             wysiwyg::ComposerAction::Indent => Self::Indent,
             wysiwyg::ComposerAction::UnIndent => Self::UnIndent,
             wysiwyg::ComposerAction::CodeBlock => Self::CodeBlock,
+            wysiwyg::ComposerAction::Quote => Self::Quote,
         }
     }
 }
@@ -434,6 +436,7 @@ impl From<&ComposerAction> for wysiwyg::ComposerAction {
             ComposerAction::Indent => Self::Indent,
             ComposerAction::UnIndent => Self::UnIndent,
             ComposerAction::CodeBlock => Self::CodeBlock,
+            ComposerAction::Quote => Self::Quote,
         }
     }
 }

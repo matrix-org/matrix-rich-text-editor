@@ -181,7 +181,7 @@ where
         }
 
         if has_previous_line_break {
-            let DomNode::Container(sub_tree) = self.state.dom.split_sub_tree(&leaf.node_handle, leaf.start_offset - selection_offset, block_location.node_handle.depth()) else {
+            let DomNode::Container(sub_tree) = self.state.dom.split_sub_tree(&leaf.node_handle, leaf.start_offset - selection_offset, block_location.node_handle.depth(), None) else {
                 panic!("Sub tree must start from a container node");
             };
             let DomNode::Container(block) = self.state.dom.lookup_node_mut(&block_location.node_handle) else {
@@ -318,6 +318,7 @@ mod test {
     use crate::tests::testutils_composer_model::cm;
     use crate::tests::testutils_conversion::utf16;
     use crate::{ComposerAction, ComposerUpdate, Location, MenuState};
+    use strum::IntoEnumIterator;
 
     #[test]
     fn composer_update_contains_escaped_html() {
@@ -337,20 +338,18 @@ mod test {
     }
 
     fn indent_unindent_redo_disabled() -> HashMap<ComposerAction, ActionState> {
-        HashMap::from([
-            (ComposerAction::Bold, ActionState::Enabled),
-            (ComposerAction::Italic, ActionState::Enabled),
-            (ComposerAction::StrikeThrough, ActionState::Enabled),
-            (ComposerAction::Underline, ActionState::Enabled),
-            (ComposerAction::InlineCode, ActionState::Enabled),
-            (ComposerAction::Link, ActionState::Enabled),
-            (ComposerAction::Undo, ActionState::Enabled),
-            (ComposerAction::Redo, ActionState::Disabled),
-            (ComposerAction::OrderedList, ActionState::Enabled),
-            (ComposerAction::UnorderedList, ActionState::Enabled),
-            (ComposerAction::Indent, ActionState::Disabled),
-            (ComposerAction::UnIndent, ActionState::Disabled),
-            (ComposerAction::CodeBlock, ActionState::Enabled),
-        ])
+        let actions = ComposerAction::iter().map(|action| {
+            if matches!(
+                action,
+                ComposerAction::Redo
+                    | ComposerAction::Indent
+                    | ComposerAction::UnIndent
+            ) {
+                (action, ActionState::Disabled)
+            } else {
+                (action, ActionState::Enabled)
+            }
+        });
+        HashMap::from_iter(actions)
     }
 }

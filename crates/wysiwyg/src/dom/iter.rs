@@ -60,6 +60,15 @@ where
         DomNodeIterator::over(self, self.lookup_node(handle))
     }
 
+    /// Return an iterator over all handles of the DOM from the passed handle,
+    /// depth-first order (including self).
+    pub fn handle_iter_from<'a>(
+        &'a self,
+        handle: &'a DomHandle,
+    ) -> DomHandleIterator<S> {
+        DomHandleIterator::over(self, handle)
+    }
+
     /// Return an iterator over all text nodes of the DOM from the passed node,
     /// depth-first order (including self).
     pub fn iter_text_from<'a>(
@@ -148,9 +157,17 @@ pub struct DomNodeIterator<'a, S>
 where
     S: UnicodeString,
 {
+    dom: &'a Dom<S>,
+    handle_iterator: DomHandleIterator<'a, S>,
+}
+
+pub struct DomHandleIterator<'a, S>
+where
+    S: UnicodeString,
+{
     started: bool,
     dom: &'a Dom<S>,
-    current: Option<&'a DomNode<S>>,
+    current: Option<DomHandle>,
     visited: HashSet<DomHandle>,
 }
 
@@ -160,24 +177,57 @@ where
 {
     fn over(dom: &'a Dom<S>, dom_node: &'a DomNode<S>) -> Self {
         Self {
+            dom,
+            handle_iterator: DomHandleIterator::over(dom, &dom_node.handle()),
+        }
+    }
+}
+
+impl<'a, S> Iterator for DomNodeIterator<'a, S>
+where
+    S: UnicodeString,
+{
+    type Item = &'a DomNode<S>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.handle_iterator
+            .next()
+            .map(|h| self.dom.lookup_node(&h))
+    }
+}
+
+impl<'a, S> DoubleEndedIterator for DomNodeIterator<'a, S>
+where
+    S: UnicodeString,
+{
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.handle_iterator
+            .next_back()
+            .map(|h| self.dom.lookup_node(&h))
+    }
+}
+
+impl<'a, S> DomHandleIterator<'a, S>
+where
+    S: UnicodeString,
+{
+    fn over(dom: &'a Dom<S>, handle: &DomHandle) -> Self {
+        Self {
             started: false,
             dom,
-            current: Some(dom_node),
+            current: Some(handle.clone()),
             visited: HashSet::new(),
         }
     }
 
-    fn next_sibling_or_parent(
-        &self,
-        handle: &DomHandle,
-    ) -> Option<&'a DomNode<S>> {
+    fn next_sibling_or_parent(&self, handle: &DomHandle) -> Option<DomHandle> {
         let parent = self.dom.lookup_node(&handle.parent_handle());
         let DomNode::Container(c) = parent else {
             panic!("Parent node must be a container");
         };
         let idx = handle.index_in_parent() + 1;
         if idx < c.children().len() {
-            c.children().get(idx)
+            c.children().get(idx).map(|n| n.handle())
         } else if parent.handle().has_parent() {
             self.next_sibling_or_parent(&parent.handle())
         } else {
@@ -188,24 +238,24 @@ where
     fn prev_sibling_or_parent(
         &mut self,
         handle: &DomHandle,
-    ) -> Option<&'a DomNode<S>> {
+    ) -> Option<DomHandle> {
         let parent = self.dom.lookup_node(&handle.parent_handle());
         let DomNode::Container(c) = parent else {
             panic!("Parent node must be a container");
         };
         let idx = handle.index_in_parent();
         if idx > 0 {
-            c.children().get(idx - 1)
+            c.children().get(idx - 1).map(|n| n.handle())
         } else if parent.handle().has_parent() {
             if !self.visited.contains(&parent.handle()) {
                 self.visited.insert(parent.handle());
-                Some(parent)
+                Some(parent.handle())
             } else {
                 self.prev_sibling_or_parent(&parent.handle())
             }
         } else if !self.visited.contains(&parent.handle()) {
             self.visited.insert(parent.handle());
-            Some(parent)
+            Some(parent.handle())
         } else {
             None
         }
@@ -227,67 +277,69 @@ where
     }
 }
 
-impl<'a, S> Iterator for DomNodeIterator<'a, S>
+impl<'a, S> Iterator for DomHandleIterator<'a, S>
 where
     S: UnicodeString,
 {
-    type Item = &'a DomNode<S>;
+    type Item = DomHandle;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let Some(current) = self.current else {
+        let Some(current) = self.current.clone() else {
             return None;
         };
         if self.started {
-            let cur_handle = current.handle();
-            if let DomNode::Container(c) = current {
-                if !self.visited.contains(&c.handle().child_handle(0)) {
-                    self.current = c.children().first();
+            if let DomNode::Container(c) = self.dom.lookup_node(&current) {
+                let first_child_handle = current.child_handle(0);
+                if !c.children().is_empty()
+                    && !self.visited.contains(&first_child_handle)
+                {
+                    self.current = Some(first_child_handle);
                 } else {
-                    self.current = self.next_sibling_or_parent(&cur_handle);
+                    self.current = self.next_sibling_or_parent(&current);
                 }
-            } else if cur_handle.has_parent() {
-                self.current = self.next_sibling_or_parent(&cur_handle);
+            } else if current.has_parent() {
+                self.current = self.next_sibling_or_parent(&current);
             }
         } else {
             self.started = true;
         }
-        self.visited.insert(current.handle());
-        self.current
+        self.visited.insert(current);
+        self.current.clone()
     }
 }
 
-impl<'a, S> DoubleEndedIterator for DomNodeIterator<'a, S>
+impl<'a, S> DoubleEndedIterator for DomHandleIterator<'a, S>
 where
     S: UnicodeString,
 {
     fn next_back(&mut self) -> Option<Self::Item> {
-        let Some(current) = self.current else {
+        let Some(current) = self.current.clone() else {
             return None;
         };
         if self.started {
-            let cur_handle = current.handle();
-            if let DomNode::Container(c) = current {
+            if let DomNode::Container(c) = self.dom.lookup_node(&current) {
                 // Don't go deeper if the current container node has been visited
-                if !self.visited.contains(&cur_handle)
+                if !self.visited.contains(&current)
                     && !c.children().is_empty()
                     && !self
                         .visited
                         .contains(&c.children().last().unwrap().handle())
                 {
-                    self.current = c.children().last();
-                } else if cur_handle.has_parent() {
-                    self.current = self.prev_sibling_or_parent(&cur_handle);
+                    self.current =
+                        Some(current.child_handle(c.children().len() - 1));
+                } else if current.has_parent() {
+                    self.current = self.prev_sibling_or_parent(&current);
                 } else {
                     self.current = None;
                 }
-            } else if cur_handle.has_parent() {
-                self.current = self.prev_sibling_or_parent(&cur_handle);
+            } else if current.has_parent() {
+                self.current = self.prev_sibling_or_parent(&current);
             }
         } else {
             self.started = true;
         }
-        self.visited.insert(current.handle());
-        self.current
+        self.visited.insert(current);
+        self.current.clone()
     }
 }
 

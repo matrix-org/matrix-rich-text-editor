@@ -17,7 +17,7 @@
 
 use crate::dom::nodes::ContainerNodeKind;
 use crate::dom::unicode_string::UnicodeStr;
-use crate::{DomHandle, DomNode, UnicodeString};
+use crate::{DomHandle, DomNode, ToHtml, UnicodeString};
 
 use super::action_list::{DomAction, DomActionList};
 use super::nodes::dom_node::DomNodeKind;
@@ -439,6 +439,7 @@ where
         from_handle: &DomHandle,
         offset: usize,
         depth: usize,
+        up_to_handle: Option<DomHandle>,
     ) -> DomNode<S> {
         // Create new 'root' node to contain the split sub-tree
         let mut new_subtree = DomNode::Container(ContainerNode::new(
@@ -456,8 +457,17 @@ where
             depth,
             offset,
             from_handle,
+            up_to_handle,
             &mut new_subtree,
         );
+
+        let cur_html = self.to_html().to_string();
+        let subtree_html = new_subtree.to_html().to_string();
+
+        let keep_empty_list_items =
+            new_subtree.iter_subtree().find(|n| n.is_list()).is_none();
+        self.remove_empty_container_nodes(keep_empty_list_items);
+
         new_subtree
     }
 
@@ -468,6 +478,7 @@ where
         min_depth: usize,
         offset: usize,
         handle: &DomHandle,
+        up_to_handle: Option<DomHandle>,
         result: &'a mut DomNode<S>,
     ) {
         let mut path = path;
@@ -477,7 +488,18 @@ where
         let cur_subtree = self.lookup_node_mut(&cur_handle);
         let mut removed_nodes = Vec::new();
         if let DomNode::Container(container) = cur_subtree {
-            for idx in (index_in_parent..container.children().len()).rev() {
+            let max_index = if let Some(up_to_handle) = up_to_handle.clone() {
+                if up_to_handle.has_parent()
+                    && up_to_handle.parent_handle() == cur_handle
+                {
+                    up_to_handle.index_in_parent()
+                } else {
+                    container.children().len()
+                }
+            } else {
+                container.children().len()
+            };
+            for idx in (index_in_parent..max_index).rev() {
                 if idx == index_in_parent {
                     let child = container.get_child_mut(idx).unwrap();
                     match child {
@@ -542,8 +564,28 @@ where
                 min_depth,
                 offset,
                 handle,
+                up_to_handle.clone(),
                 new_subtree_at_prev_level,
             );
+        }
+    }
+
+    fn remove_empty_container_nodes(&mut self, keep_empty_list_items: bool) {
+        let last_handle_in_dom = self.last_node_handle();
+        let handles_in_reverse: Vec<DomHandle> =
+            self.handle_iter_from(&last_handle_in_dom).rev().collect();
+        for handle in handles_in_reverse {
+            let mut needs_removal = false;
+            if let DomNode::Container(container) = self.lookup_node(&handle) {
+                if container.children().is_empty()
+                    && !(keep_empty_list_items && container.is_list_item())
+                {
+                    needs_removal = true;
+                }
+            }
+            if needs_removal && !handle.is_root() {
+                self.remove(&handle);
+            }
         }
     }
 }
@@ -701,6 +743,7 @@ mod test {
             &DomHandle::from_raw(vec![1, 0]),
             2,
             0,
+            None,
         );
         assert_eq!(ret.to_html().to_string(), "<b>ld</b><i>italic</i>");
     }
@@ -712,6 +755,7 @@ mod test {
             &DomHandle::from_raw(vec![0, 1, 0]),
             2,
             0,
+            None,
         );
         assert_eq!(ret.to_html().to_string(), "<u><b>ld</b><i>italic</i></u>");
     }
@@ -723,6 +767,7 @@ mod test {
             &DomHandle::from_raw(vec![0, 1, 0]),
             2,
             1,
+            None,
         );
         assert_eq!(ret.to_html().to_string(), "<b>ld</b><i>italic</i>")
     }
@@ -737,6 +782,7 @@ mod test {
             &DomHandle::from_raw(vec![0, 1, 0, 0]),
             offset,
             depth,
+            None,
         );
         assert_eq!(
             ret.to_html().to_string(),
@@ -754,6 +800,7 @@ mod test {
             &DomHandle::from_raw(vec![0, 1, 0, 0]),
             offset,
             depth,
+            None,
         );
         assert_eq!(ret.to_html().to_string(), "<li><b>ld</b><i>italic</i></li>")
     }
@@ -765,6 +812,7 @@ mod test {
             &DomHandle::from_raw(vec![0, 1]),
             2,
             0,
+            None,
         );
         assert_eq!(ret.to_html().to_string(), "<u><b>ld</b><i>italic</i></u>");
     }

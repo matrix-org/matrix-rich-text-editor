@@ -135,6 +135,14 @@ mod sys {
             DomNode::Container(ContainerNode::new_code_block(Vec::new()))
         }
 
+        /// Create a quote node
+        fn new_quote<S>() -> DomNode<S>
+        where
+            S: UnicodeString,
+        {
+            DomNode::Container(ContainerNode::new_quote(Vec::new()))
+        }
+
         /// Copy all panode's information into node (now we know it's a container).
         fn convert_container<S>(
             padom: &PaDom,
@@ -166,6 +174,10 @@ mod sys {
                 }
                 "pre" => {
                     node.append_child(new_code_block());
+                    convert_children(padom, child, node.last_child_mut());
+                }
+                "blockquote" => {
+                    node.append_child(new_quote());
                     convert_children(padom, child, node.last_child_mut());
                 }
                 "html" => {

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 pub mod base;
+pub mod block_nodes;
 pub mod code_block;
 pub mod delete_text;
 pub mod example_format;
@@ -21,6 +22,7 @@ mod format_inline_code;
 pub mod hyperlinks;
 pub mod lists;
 pub mod menu_state;
+pub mod quotes;
 pub mod replace_text;
 pub mod selection;
 pub mod undo_redo;
