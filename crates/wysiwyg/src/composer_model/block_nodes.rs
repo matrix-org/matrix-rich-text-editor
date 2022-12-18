@@ -47,20 +47,11 @@ where
                     kind: last_leaf.kind.clone(),
                 },
             );
-            // If we have a selection inside a single ListItem we only want to wrap its contents.
-            // However, if the selection covers several list items, we should split its parent List
-            // and wrap their contents instead.
-            let selection_contains_several_list_items = range
-                .locations
-                .iter()
-                .filter(|l| l.kind == ListItem)
-                .count()
-                > 1;
             for node in rev_iter {
                 if !node.is_block_node()
                     && node.kind() != LineBreak
                     && (node.kind() != ListItem
-                        || selection_contains_several_list_items)
+                        || range.contains(&node.handle()))
                 {
                     if node.is_leaf() {
                         nodes_to_cover.0 = HandleWithKind {
@@ -77,7 +68,7 @@ where
                 if !node.is_block_node()
                     && node.kind() != LineBreak
                     && (node.kind() != ListItem
-                        || selection_contains_several_list_items)
+                        || range.contains(&node.handle()))
                 {
                     if node.is_leaf() {
                         nodes_to_cover.1 = HandleWithKind {
@@ -91,7 +82,14 @@ where
             }
 
             let (first, last) = nodes_to_cover;
-            let max_depth = min(first.handle.depth(), last.handle.depth());
+            let first_ancestor_to_split =
+                self.find_ancestor_to_split(&first.handle);
+            let last_ancestor_to_split =
+                self.find_ancestor_to_split(&first.handle);
+            let max_depth = min(
+                first_ancestor_to_split.depth(),
+                last_ancestor_to_split.depth(),
+            );
             let mut min_depth = 0;
             for i in min_depth..max_depth {
                 min_depth = i;
@@ -105,23 +103,20 @@ where
                 self.state.dom.find_parent_list_item_or_self(&last.handle);
             if first_list_item.is_some()
                 && last_list_item.is_some()
-                && first_list_item != last_list_item
-                && min_depth > 0
+                && first_list_item == last_list_item
             {
-                // We should wrap their parent List instead
-                min_depth -= 1;
+                // We should wrap the list item instead
+                min_depth += 1;
             }
             // Will wrap an empty text node at the end of the editor
             if first.handle == last.handle && first.kind == LineBreak {
                 return None;
             }
-            let idx_start = first.handle.raw()[min_depth];
-            let idx_end = last.handle.raw()[min_depth];
             let ancestor_handle = first.handle.sub_handle_up_to(min_depth);
             Some(WrapSearchResult {
                 ancestor_handle,
-                idx_start,
-                idx_end,
+                start_handle: first.handle,
+                end_handle: last.handle,
                 range,
             })
         }
@@ -148,8 +143,8 @@ where
 
 pub(crate) struct WrapSearchResult {
     pub(crate) ancestor_handle: DomHandle,
-    pub(crate) idx_start: usize,
-    pub(crate) idx_end: usize,
+    pub(crate) start_handle: DomHandle,
+    pub(crate) end_handle: DomHandle,
     pub(crate) range: Range,
 }
 

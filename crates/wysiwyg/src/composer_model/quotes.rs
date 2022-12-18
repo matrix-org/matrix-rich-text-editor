@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::dom::nodes::dom_node::DomNodeKind::Quote;
+use crate::dom::nodes::dom_node::DomNodeKind::{Generic, Quote};
 use crate::dom::DomLocation;
 use crate::{
     ComposerAction, ComposerModel, ComposerUpdate, DomHandle, DomNode, ToHtml,
@@ -42,41 +42,58 @@ where
         };
 
         let parent_handle = wrap_result.ancestor_handle;
-        let idx_start = wrap_result.idx_start;
-        let idx_end = wrap_result.idx_end;
 
-        let start_handle = parent_handle.child_handle(idx_start);
-        let up_to_handle = parent_handle.child_handle(idx_end + 1);
-        let ancestor_to_split = self.find_ancestor_to_split(&start_handle);
+        let start_handle = wrap_result.start_handle;
+        let end_handle = wrap_result.end_handle;
 
         let mut subtree = self.state.dom.split_sub_tree(
             &start_handle,
             0,
-            ancestor_to_split.depth(),
-            Some(up_to_handle),
+            0,
+            parent_handle.depth(),
+            Some(end_handle),
         );
         let dom_html = self.state.dom.to_html().to_string();
         let subtree_html = subtree.to_html().to_string();
-        let subtree_container = subtree.as_container_mut().unwrap();
-        if subtree_container.add_leading_zwsp() {
-            self.state.start += 1;
-            self.state.end += 1;
+        if let Some(subtree_container) = subtree.as_container_mut() {
+            if subtree_container.add_leading_zwsp() {
+                self.state.start += 1;
+                self.state.end += 1;
+            }
         }
 
-        let insert_at_handle =
-            start_handle.sub_handle_up_to(ancestor_to_split.depth() + 1);
-        let insert_at_handle =
-            if idx_start > 0 && self.state.dom.contains(&insert_at_handle) {
-                insert_at_handle.next_sibling()
+        let start_handle_is_start_at_depth =
+            start_handle.raw().iter().all(|i| *i == 0);
+        let mut insert_at_handle =
+            if subtree.is_block_node() && subtree.kind() != Generic {
+                start_handle.sub_handle_up_to(parent_handle.depth())
             } else {
-                insert_at_handle
+                start_handle.sub_handle_up_to(parent_handle.depth() + 1)
             };
+        if !start_handle_is_start_at_depth
+            && self.state.dom.contains(&insert_at_handle)
+        {
+            insert_at_handle = insert_at_handle.next_sibling();
+        } else if self.state.dom.document().children().is_empty() {
+            insert_at_handle = self.state.dom.document_handle().child_handle(0);
+        }
 
-        let quote_node =
-            DomNode::new_quote(subtree_container.children().clone());
+        if self.state.dom.document().children().is_empty() {
+            insert_at_handle = self.state.dom.document_handle().child_handle(0);
+        }
+        let quote_node = if subtree.is_block_node() && subtree.kind() != Generic
+        {
+            DomNode::new_quote(vec![subtree])
+        } else if let Some(subtree_container) = subtree.as_container_mut() {
+            DomNode::new_quote(subtree_container.children().clone())
+        } else {
+            panic!("Subtree node must be a container");
+        };
         self.state.dom.insert_at(&insert_at_handle, quote_node);
 
-        self.state.dom.join_nodes_in_container(&ancestor_to_split);
+        self.state.dom.join_nodes_in_container(&parent_handle);
+
+        self.state.dom.remove_empty_container_nodes(false);
 
         self.create_update_replace_all()
     }

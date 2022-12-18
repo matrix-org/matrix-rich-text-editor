@@ -100,9 +100,13 @@ impl DomHandle {
 
     /// Return this handle's position within its parent.
     /// Panics if this handle is unset
-    /// Panics if we have no parent (i.e. this handle is the root)
+    /// Returns 0 if we have no parent (i.e. this handle is the root)
     pub fn index_in_parent(&self) -> usize {
-        *self.raw().last().expect("Root handle has no parent!")
+        if self.is_root() {
+            0
+        } else {
+            *self.raw().last().expect("Root handle has no parent!")
+        }
     }
 
     /// Return the underlying path used to represent this handle.

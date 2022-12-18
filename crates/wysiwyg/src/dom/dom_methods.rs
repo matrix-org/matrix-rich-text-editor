@@ -17,7 +17,9 @@
 
 use crate::dom::nodes::ContainerNodeKind;
 use crate::dom::unicode_string::UnicodeStr;
-use crate::{DomHandle, DomNode, ToHtml, UnicodeString};
+use crate::{DomHandle, DomNode, ToHtml, ToTree, UnicodeString};
+use std::cmp::max;
+use std::ops::Deref;
 
 use super::action_list::{DomAction, DomActionList};
 use super::nodes::dom_node::DomNodeKind;
@@ -437,144 +439,174 @@ where
     pub(crate) fn split_sub_tree(
         &mut self,
         from_handle: &DomHandle,
-        offset: usize,
+        start_offset: usize,
+        end_offset: usize,
         depth: usize,
-        up_to_handle: Option<DomHandle>,
+        to_handle: Option<DomHandle>,
     ) -> DomNode<S> {
-        // Create new 'root' node to contain the split sub-tree
-        let mut new_subtree = DomNode::Container(ContainerNode::new(
-            S::default(),
-            ContainerNodeKind::Generic,
-            None,
-            Vec::new(),
-        ));
-        new_subtree.set_handle(DomHandle::root());
-
-        let path = from_handle.sub_handle_up_to(depth).raw().clone();
-        self.split_sub_tree_at(
-            path,
-            from_handle.raw()[depth],
-            depth,
-            offset,
+        let cur_handle = from_handle.sub_handle_up_to(depth);
+        let mut subtree_children = self.split_sub_tree_at_index(
+            cur_handle,
+            start_offset,
+            end_offset,
             from_handle,
-            up_to_handle,
-            &mut new_subtree,
+            to_handle,
         );
 
-        let cur_html = self.to_html().to_string();
-        let subtree_html = new_subtree.to_html().to_string();
+        // Create new 'root' node to contain the split sub-tree
+        let new_subtree = subtree_children.remove(0);
 
         let keep_empty_list_items =
             new_subtree.iter_subtree().find(|n| n.is_list()).is_none();
         self.remove_empty_container_nodes(keep_empty_list_items);
 
+        let cur_html = self.to_html().to_string();
+        let subtree_html = new_subtree.to_html().to_string();
+
         new_subtree
     }
 
-    fn split_sub_tree_at<'a>(
+    fn split_sub_tree_at_index<'a>(
         &'a mut self,
-        path: Vec<usize>,
-        index_in_parent: usize,
-        min_depth: usize,
-        offset: usize,
-        handle: &DomHandle,
-        up_to_handle: Option<DomHandle>,
-        result: &'a mut DomNode<S>,
-    ) {
-        let mut path = path;
-        let cur_handle = DomHandle::from_raw(path.clone());
-        path.push(index_in_parent);
-        let mut has_next_level = false;
-        let cur_subtree = self.lookup_node_mut(&cur_handle);
-        let mut removed_nodes = Vec::new();
-        if let DomNode::Container(container) = cur_subtree {
-            let max_index = if let Some(up_to_handle) = up_to_handle.clone() {
-                if up_to_handle.has_parent()
-                    && up_to_handle.parent_handle() == cur_handle
-                {
-                    up_to_handle.index_in_parent()
-                } else {
-                    container.children().len()
-                }
-            } else {
-                container.children().len()
-            };
-            for idx in (index_in_parent..max_index).rev() {
-                if idx == index_in_parent {
-                    let child = container.get_child_mut(idx).unwrap();
-                    match child {
-                        DomNode::Container(c) => {
-                            has_next_level = true;
-                            removed_nodes.insert(
-                                0,
-                                DomNode::Container(
-                                    c.clone_with_new_children(Vec::new()),
-                                ),
-                            );
-                        }
-                        DomNode::Text(text_node) => {
-                            if offset == 0 {
-                                removed_nodes
-                                    .insert(0, container.remove_child(idx));
-                            } else if offset >= text_node.data().chars().count()
-                            {
-                                // Do nothing
-                            } else {
-                                let left_data =
-                                    text_node.data()[..offset].to_owned();
-                                let right_data =
-                                    text_node.data()[offset..].to_owned();
-                                text_node.set_data(left_data);
-                                removed_nodes
-                                    .insert(0, DomNode::new_text(right_data));
-                            }
-                        }
-                        _ => {
-                            removed_nodes.insert(0, child.clone());
-                        }
-                    }
-                } else {
-                    removed_nodes.insert(0, container.remove_child(idx));
-                }
-            }
-        }
-        let mut new_subtree_at_prev_level = result;
-        if (path.len() - min_depth) > 1 {
-            if let DomNode::Container(c) = new_subtree_at_prev_level {
-                new_subtree_at_prev_level = c.get_child_mut(0).unwrap();
-            }
-        }
-        if let DomNode::Container(new_subtree) = new_subtree_at_prev_level {
-            if !removed_nodes.is_empty() {
-                for node in removed_nodes {
-                    new_subtree.append_child(node);
-                }
-            }
+        cur_handle: DomHandle,
+        start_offset: usize,
+        end_offset: usize,
+        from_handle: &'a DomHandle,
+        to_handle: Option<DomHandle>,
+    ) -> Vec<DomNode<S>> {
+        let mut nodes = Vec::new();
+
+        let html = self.to_html().to_string();
+        let mut is_container_node = false;
+        let mut is_text_node = false;
+        {
+            let node = self.lookup_node(&cur_handle);
+            is_container_node = node.is_container_node();
+            is_text_node = node.is_text_node();
         }
 
-        if has_next_level {
-            let index_at_level = if path.len() < handle.depth() {
-                handle.raw()[path.len()]
+        if is_container_node {
+            nodes.extend(self.split_sub_tree_at_container(
+                cur_handle,
+                start_offset,
+                end_offset,
+                from_handle,
+                to_handle,
+            ));
+        } else if is_text_node {
+            nodes.extend(self.split_sub_tree_at_text_node(
+                cur_handle,
+                start_offset,
+                end_offset,
+                from_handle,
+                to_handle,
+            ));
+        } else {
+            nodes.push(self.remove(&cur_handle));
+        }
+
+        nodes
+    }
+
+    fn split_sub_tree_at_container<'a>(
+        &'a mut self,
+        cur_handle: DomHandle,
+        start_offset: usize,
+        end_offset: usize,
+        from_handle: &'a DomHandle,
+        to_handle: Option<DomHandle>,
+    ) -> Vec<DomNode<S>> {
+        let depth = cur_handle.depth();
+        let min_child_index: usize =
+            if is_ancestor_or_self(&cur_handle, from_handle) {
+                sub_handle_up_to_or_none(from_handle, depth + 1)
+                    .map_or(0, |h| h.index_in_parent())
             } else {
                 0
             };
-            self.split_sub_tree_at(
-                path,
-                index_at_level,
-                min_depth,
-                offset,
-                handle,
-                up_to_handle.clone(),
-                new_subtree_at_prev_level,
+        let max_child_index = if let DomNode::Container(container) =
+            self.lookup_node(&cur_handle)
+        {
+            let child_count = container.children().len();
+            to_handle.clone().map_or(child_count, |to_handle| {
+                if is_ancestor_or_self(&cur_handle, &to_handle) {
+                    sub_handle_up_to_or_none(&to_handle, depth + 1)
+                        .map_or(child_count, |h| h.index_in_parent() + 1)
+                } else {
+                    child_count
+                }
+            })
+        } else {
+            usize::MAX
+        };
+
+        let mut child_nodes = Vec::new();
+        for i in (min_child_index..max_child_index).rev() {
+            let child_path = cur_handle.child_handle(i);
+            let mut new_children = self.split_sub_tree_at_index(
+                child_path,
+                start_offset,
+                end_offset,
+                from_handle,
+                to_handle.clone(),
             );
+            new_children.extend(child_nodes);
+            child_nodes = new_children;
         }
+        let container = self
+            .lookup_node_mut(&cur_handle)
+            .as_container_mut()
+            .unwrap();
+        vec![DomNode::Container(
+            container.clone_with_new_children(child_nodes),
+        )]
     }
 
-    fn remove_empty_container_nodes(&mut self, keep_empty_list_items: bool) {
+    fn split_sub_tree_at_text_node<'a>(
+        &'a mut self,
+        cur_handle: DomHandle,
+        start_offset: usize,
+        end_offset: usize,
+        from_handle: &'a DomHandle,
+        to_handle: Option<DomHandle>,
+    ) -> Vec<DomNode<S>> {
+        let mut nodes = Vec::new();
+        let DomNode::Text(text_node) = self.lookup_node_mut(&cur_handle) else {
+            panic!("Found node must be a TextNode");
+        };
+        if (cur_handle == *from_handle
+            || (from_handle.is_ancestor_of(&cur_handle)
+                && cur_handle.index_in_parent() == 0))
+            && (1..text_node.data().chars().count()).contains(&start_offset)
+        {
+            let left_data = text_node.data()[..start_offset].to_owned();
+            let right_data = text_node.data()[start_offset..].to_owned();
+            text_node.set_data(left_data);
+            nodes.push(DomNode::new_text(right_data));
+        } else if to_handle.is_some()
+            && cur_handle == to_handle.unwrap()
+            && (1..text_node.data().chars().count()).contains(&end_offset)
+        {
+            let left_data = text_node.data()[..end_offset].to_owned();
+            let right_data = text_node.data()[end_offset..].to_owned();
+            text_node.set_data(left_data);
+            nodes.push(DomNode::new_text(right_data));
+        } else {
+            nodes.push(self.remove(&cur_handle));
+        }
+        nodes
+    }
+
+    pub(crate) fn remove_empty_container_nodes(
+        &mut self,
+        keep_empty_list_items: bool,
+    ) {
         let last_handle_in_dom = self.last_node_handle();
         let handles_in_reverse: Vec<DomHandle> =
             self.handle_iter_from(&last_handle_in_dom).rev().collect();
         for handle in handles_in_reverse {
+            let cur_html = self.to_html().to_string();
+            let tree = self.to_tree().to_string();
             let mut needs_removal = false;
             if let DomNode::Container(container) = self.lookup_node(&handle) {
                 if container.children().is_empty()
@@ -624,6 +656,20 @@ fn first_shrinkable_link_node_handle(range: &Range) -> Option<DomHandle> {
 
 fn not_root(handle: &DomHandle) -> bool {
     !handle.is_root()
+}
+
+fn sub_handle_up_to_or_none(
+    handle: &DomHandle,
+    depth: usize,
+) -> Option<DomHandle> {
+    if handle.depth() >= depth {
+        Some(handle.sub_handle_up_to(depth))
+    } else {
+        None
+    }
+}
+fn is_ancestor_or_self(ancestor: &DomHandle, handle: &DomHandle) -> bool {
+    ancestor.is_ancestor_of(handle) || ancestor == handle
 }
 
 fn adjust_handles_for_delete(
@@ -743,6 +789,7 @@ mod test {
             &DomHandle::from_raw(vec![1, 0]),
             2,
             0,
+            0,
             None,
         );
         assert_eq!(ret.to_html().to_string(), "<b>ld</b><i>italic</i>");
@@ -755,6 +802,7 @@ mod test {
             &DomHandle::from_raw(vec![0, 1, 0]),
             2,
             0,
+            0,
             None,
         );
         assert_eq!(ret.to_html().to_string(), "<u><b>ld</b><i>italic</i></u>");
@@ -766,6 +814,7 @@ mod test {
         let ret = model.state.dom.split_sub_tree(
             &DomHandle::from_raw(vec![0, 1, 0]),
             2,
+            0,
             1,
             None,
         );
@@ -777,10 +826,11 @@ mod test {
         let mut model =
             cm("<ul><li>Text|</li><li><b>bold</b><i>italic</i></li></ul>");
         let depth = 0;
-        let offset = 2;
+        let start_offset = 2;
         let ret = model.state.dom.split_sub_tree(
             &DomHandle::from_raw(vec![0, 1, 0, 0]),
-            offset,
+            start_offset,
+            0,
             depth,
             None,
         );
@@ -795,10 +845,11 @@ mod test {
         let mut model =
             cm("<ul><li>Text|</li><li><b>bold</b><i>italic</i></li></ul>");
         let depth = 1;
-        let offset = 2;
+        let start_offset = 2;
         let ret = model.state.dom.split_sub_tree(
             &DomHandle::from_raw(vec![0, 1, 0, 0]),
-            offset,
+            start_offset,
+            0,
             depth,
             None,
         );
@@ -811,6 +862,7 @@ mod test {
         let ret = model.state.dom.split_sub_tree(
             &DomHandle::from_raw(vec![0, 1]),
             2,
+            0,
             0,
             None,
         );
