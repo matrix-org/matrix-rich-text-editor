@@ -111,6 +111,10 @@ extension NSAttributedString {
 
         let prefixes = listPrefixesRanges(shouldIgnoreTrailingNewline: shouldIgnoreTrailingNewline)
         var actualIndex: Int = attributedIndex
+        
+        if !prefixes.isEmpty {
+            actualIndex += 1
+        }
 
         for listPrefix in prefixes {
             if listPrefix.upperBound <= attributedIndex {
@@ -135,7 +139,11 @@ extension NSAttributedString {
                             shouldIgnoreTrailingNewline: Bool = true) throws -> Int {
         let prefixes = listPrefixesRanges(shouldIgnoreTrailingNewline: shouldIgnoreTrailingNewline)
         var actualIndex: Int = htmlIndex
-
+        
+        if !prefixes.isEmpty {
+            actualIndex -= 1
+        }
+        
         for listPrefix in prefixes {
             if listPrefix.location < actualIndex {
                 actualIndex += listPrefix.length
