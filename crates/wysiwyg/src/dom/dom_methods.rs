@@ -450,21 +450,14 @@ where
 
         // Remove unmodified children of the right split
         // TODO: create a utility for this
-        let mut right = DomNode::Container(ContainerNode::new(
-            S::default(),
-            ContainerNodeKind::Generic,
-            None,
-            vec![right
-                .as_container()
-                .unwrap()
-                .children()
-                .first()
-                .unwrap()
-                .clone()],
-        ));
+        let right = right.as_container().unwrap();
+        let mut right = DomNode::Container({
+            let children = vec![right.children().first().unwrap().clone()];
+            right.clone_with_new_children(children)
+        });
         right.set_handle(DomHandle::root());
 
-        // Remove unmodified children of the left split
+        // Remove unmodified children of the left split and apply a generic container
         // TODO: create a utility for this
         let mut left = DomNode::Container(ContainerNode::new(
             S::default(),
