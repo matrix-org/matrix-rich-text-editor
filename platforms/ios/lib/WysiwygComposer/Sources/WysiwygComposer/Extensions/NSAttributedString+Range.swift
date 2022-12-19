@@ -84,7 +84,7 @@ extension NSAttributedString {
     /// - Returns: an array of matching ranges
     func numberedListPrefixesRanges(in range: NSRange? = nil,
                                     shouldIgnoreTrailingNewline: Bool = true) -> [NSRange] {
-        let pattern = shouldIgnoreTrailingNewline ? "[\\n]?\\t\\d+\\.\\t" : "\\t\\d\\.\\t"
+        let pattern = shouldIgnoreTrailingNewline ? "[\\n]?\\t\\d+\\.\\t" : "\\t\\d+\\.\\t"
         let actualRange = range ?? .init(location: 0, length: length)
         // swiftlint:disable:next force_try
         let regex = try! NSRegularExpression(pattern: pattern)
