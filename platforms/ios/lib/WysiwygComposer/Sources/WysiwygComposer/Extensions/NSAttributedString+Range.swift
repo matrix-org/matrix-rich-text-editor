@@ -112,12 +112,13 @@ extension NSAttributedString {
         let prefixes = listPrefixesRanges(shouldIgnoreTrailingNewline: shouldIgnoreTrailingNewline)
         var actualIndex: Int = attributedIndex
 
+        // the -1 (which is actully a + 1 after the sign change) accounts for the ZWSP
         for listPrefix in prefixes {
             if listPrefix.upperBound <= attributedIndex {
-                actualIndex -= listPrefix.length
+                actualIndex -= listPrefix.length - 1
             } else if listPrefix.contains(attributedIndex),
                       character(at: attributedIndex)?.isNewline == false {
-                actualIndex -= (attributedIndex - listPrefix.location)
+                actualIndex -= (attributedIndex - listPrefix.location) - 1
             }
         }
 
@@ -135,7 +136,12 @@ extension NSAttributedString {
                             shouldIgnoreTrailingNewline: Bool = true) throws -> Int {
         let prefixes = listPrefixesRanges(shouldIgnoreTrailingNewline: shouldIgnoreTrailingNewline)
         var actualIndex: Int = htmlIndex
-
+        
+        // if at least one list exists we want to always have a new line start from the start of the new bullet
+        if !prefixes.isEmpty {
+            actualIndex -= 1
+        }
+        
         for listPrefix in prefixes {
             if listPrefix.location < actualIndex {
                 actualIndex += listPrefix.length
@@ -149,10 +155,10 @@ extension NSAttributedString {
             }
         }
 
-        guard actualIndex <= length else {
-            throw AttributedRangeError
-                .outOfBoundsHtmlIndex(index: htmlIndex)
-        }
+//        guard actualIndex <= length else {
+//            throw AttributedRangeError
+//                .outOfBoundsHtmlIndex(index: htmlIndex)
+//        }
 
         return actualIndex
     }
