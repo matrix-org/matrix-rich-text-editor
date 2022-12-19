@@ -215,7 +215,7 @@ where
         start,
         end,
         offset,
-        DomNodeKind::Text,
+        DomNodeKind::Zwsp,
     )
 }
 

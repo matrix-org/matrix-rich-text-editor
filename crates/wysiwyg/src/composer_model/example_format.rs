@@ -696,7 +696,7 @@ mod test {
         assert_eq!(model.state.start, 1);
         assert_eq!(model.state.end, 1);
 
-        if let DomNode::Text(node) = &model.state.dom.document().children()[0] {
+        if let DomNode::Zwsp(node) = &model.state.dom.document().children()[0] {
             assert_eq!(node.data(), Utf16String::zwsp());
         } else {
             panic!("Expected a text node!");

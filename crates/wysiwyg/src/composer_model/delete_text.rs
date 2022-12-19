@@ -163,8 +163,7 @@ where
         match self.state.dom.lookup_node_mut(&location.node_handle) {
             // we should never be passed a container
             DomNode::Container(_) => ComposerUpdate::keep(),
-            // TODO: handle delete word for zwsp nodes
-            DomNode::Zwsp(_) => todo!(),
+            DomNode::Zwsp(_) => ComposerUpdate::keep(),
             DomNode::LineBreak(_) => {
                 // for a linebreak, remove it if we started the operation from the whitespace
                 // char type, otherwise keep it

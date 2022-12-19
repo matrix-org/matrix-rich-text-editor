@@ -191,7 +191,15 @@ where
             .any(|l| l.kind == DomNodeKind::List)
         {
             let leaves: Vec<&DomLocation> = range.leaves().collect();
-            if leaves.len() == 1 {
+            let leaves_without_zwsp: Vec<_> = leaves
+                .iter()
+                .filter(|l| l.kind != DomNodeKind::Zwsp)
+                .collect();
+            // FIXME: Workaround for toggling list when only ZWSP is selected
+            if leaves_without_zwsp.len() == 1 {
+                let handle = &leaves_without_zwsp[0].node_handle;
+                self.single_leave_list_toggle(list_type, handle)
+            } else if leaves.len() == 1 {
                 let handle = &leaves[0].node_handle;
                 self.single_leave_list_toggle(list_type, handle)
             } else {
@@ -598,7 +606,7 @@ where
         locations
             .iter()
             .filter_map(|l| {
-                if l.is_leaf() {
+                if l.is_leaf() && l.kind != DomNodeKind::Zwsp {
                     Some(l.node_handle.clone())
                 } else {
                     None

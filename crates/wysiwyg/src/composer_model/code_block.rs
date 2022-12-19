@@ -377,32 +377,21 @@ where
                     let mut text_start: usize = 0;
                     let mut text_end = text_start;
                     let data = text_node.data();
-                    let mut is_first_char = true;
                     for char in data.chars() {
-                        // Remove leading ZWSP
-                        if is_first_char && char.is_zwsp() {
-                            text_start += 1;
-                            text_end += 1;
-                            self.state.start -= 1;
-                            self.state.end -= 1;
-                        } else {
-                            text_end += data.char_len(&char);
-                            if char == '\n' {
-                                let text_to_add =
-                                    data[text_start..text_end - 1].to_owned();
-                                nodes_to_add
-                                    .push(DomNode::new_text(text_to_add));
-                                nodes_to_add.push(DomNode::new_line_break());
-                                if text_end <= start_in_block {
-                                    selection_offset_start += 1;
-                                }
-                                if text_end <= end_in_block {
-                                    selection_offset_end += 1;
-                                }
-                                text_start = text_end;
+                        text_end += data.char_len(&char);
+                        if char == '\n' {
+                            let text_to_add =
+                                data[text_start..text_end - 1].to_owned();
+                            nodes_to_add.push(DomNode::new_text(text_to_add));
+                            nodes_to_add.push(DomNode::new_line_break());
+                            if text_end <= start_in_block {
+                                selection_offset_start += 1;
                             }
+                            if text_end <= end_in_block {
+                                selection_offset_end += 1;
+                            }
+                            text_start = text_end;
                         }
-                        is_first_char = false;
                     }
                     // We moved to a new line
                     if text_start != text_end {
@@ -417,6 +406,10 @@ where
                             selection_offset_end += 1;
                         }
                     }
+                }
+                DomNode::Zwsp(_) => {
+                    self.state.start -= 1;
+                    self.state.end -= 1;
                 }
                 // Just move the node out
                 _ => nodes_to_add.push(child.clone()),
