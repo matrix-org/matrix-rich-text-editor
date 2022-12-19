@@ -179,6 +179,8 @@ fn backspace_merges_formatting_nodes() {
     assert_eq!(tx(&model), "<b>a|b</b>");
 }
 
+// TODO: add ZWSP chars to all 'enter' tests
+
 #[test]
 fn enter_in_code_block_in_text_node_adds_line_break_as_text() {
     let mut model = cm("<pre>Test|</pre>");
@@ -200,6 +202,15 @@ fn enter_in_code_block_at_start_with_previous_line_break_moves_it_outside_the_co
     let mut model = cm("<pre>\n\n|Test</pre>");
     model.enter();
     assert_eq!(tx(&model), "<br />|<pre>Test</pre>")
+}
+
+#[test]
+fn enter_in_code_block_at_start_with_previous_line_break_moves_it_outside_the_code_block_with_text_around(
+) {
+    // The initial line break will be removed, so it's the same as having a single line break at the start
+    let mut model = cm("ASDA<pre>\n\n|Test</pre>ASD");
+    model.enter();
+    assert_eq!(tx(&model), "ASDA<br />|<pre>Test</pre>ASD")
 }
 
 #[test]

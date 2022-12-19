@@ -16,8 +16,11 @@ use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::DomNodeKind::ListItem;
 use crate::dom::nodes::DomNode;
 use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
-use crate::dom::{DomLocation, Range};
-use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
+use crate::dom::{Dom, DomLocation, Range};
+use crate::{
+    ComposerModel, ComposerUpdate, DomHandle, Location, ToHtml, ToRawText,
+    ToTree, UnicodeString,
+};
 
 impl<S> ComposerModel<S>
 where
@@ -180,41 +183,94 @@ where
             }
         }
 
+        // If there was a previous line break, we need to split the code block and add the line break
         if has_previous_line_break {
-            let DomNode::Container(sub_tree) = self.state.dom.split_sub_tree(&leaf.node_handle, leaf.start_offset - selection_offset, 0, block_location.node_handle.depth(), None) else {
+            let sub_tree = self.state.dom.split_sub_tree(
+                &leaf.node_handle,
+                leaf.start_offset - selection_offset,
+                0,
+                block_location.node_handle.depth(),
+                None,
+            );
+            let DomNode::Container(sub_tree_container) = &sub_tree else {
                 panic!("Sub tree must start from a container node");
             };
-            let DomNode::Container(block) = self.state.dom.lookup_node_mut(&block_location.node_handle) else {
-                panic!("Parent must be a block node");
-            };
-            if block.children().is_empty() {
-                self.state.dom.replace(
-                    &block_location.node_handle,
-                    vec![
-                        DomNode::new_line_break(),
-                        DomNode::new_code_block(sub_tree.children().clone()),
-                    ],
-                );
-            } else {
-                let next_handle = block_location.node_handle.next_sibling();
-                if !sub_tree.children().is_empty() {
-                    self.state.dom.insert_at(
-                        &next_handle,
-                        DomNode::new_code_block(sub_tree.children().clone()),
+            let dom_html = self.state.dom.to_html().to_string();
+            let dom_tree = self.state.dom.to_tree().to_string();
+            let subtree_html = sub_tree_container.to_html().to_string();
+            let new_line_at_end = leaf.is_start();
+            fn insert_code_block<S: UnicodeString>(
+                dom: &mut Dom<S>,
+                sub_tree: DomNode<S>,
+                at_handle: &DomHandle,
+                new_line_at_end: bool,
+            ) {
+                dom.insert_at(&at_handle, sub_tree);
+                let insert_new_line_at = if new_line_at_end {
+                    at_handle.next_sibling()
+                } else {
+                    at_handle.clone()
+                };
+                dom.insert_at(&insert_new_line_at, DomNode::new_line_break());
+            }
+            if self.state.dom.contains(&block_location.node_handle) {
+                if let DomNode::Container(block) =
+                    self.state.dom.lookup_node_mut(&block_location.node_handle)
+                {
+                    if block.children().is_empty() {
+                        self.state.dom.replace(
+                            &block_location.node_handle,
+                            vec![
+                                DomNode::new_line_break(),
+                                DomNode::new_code_block(
+                                    sub_tree_container.children().clone(),
+                                ),
+                            ],
+                        );
+                    } else {
+                        let next_handle =
+                            block_location.node_handle.next_sibling();
+                        if !sub_tree_container.children().is_empty() {
+                            self.state.dom.insert_at(
+                                &next_handle,
+                                DomNode::new_code_block(
+                                    sub_tree_container.children().clone(),
+                                ),
+                            );
+                        }
+                        self.state
+                            .dom
+                            .insert_at(&next_handle, DomNode::new_line_break());
+                    }
+                } else {
+                    // Insert the whole code block at its old DomHandle
+                    insert_code_block(
+                        &mut self.state.dom,
+                        sub_tree,
+                        &block_location.node_handle,
+                        new_line_at_end,
                     );
                 }
-                self.state
-                    .dom
-                    .insert_at(&next_handle, DomNode::new_line_break());
+            } else {
+                // Insert the whole code block at its old DomHandle
+                insert_code_block(
+                    &mut self.state.dom,
+                    sub_tree,
+                    &block_location.node_handle,
+                    new_line_at_end,
+                );
             }
             self.state.start += 1;
             self.state.end = self.state.start;
             self.create_update_replace_all()
         } else {
+            // Otherwise, just add a ('\n') line break
             let DomNode::Container(block) = self.state.dom.lookup_node(&block_location.node_handle) else {
                 panic!("Parent must be a block node");
             };
             if block.children().is_empty() {
+                // If it's the first character, we need to add 2 line breaks instead, since the
+                // first one will be automatically removed by any HTML parser
                 self.state.dom.insert_at(
                     &leaf.node_handle,
                     DomNode::new_text("\n\n".into()),
@@ -225,6 +281,7 @@ where
             } else if let DomNode::Text(text_node) =
                 self.state.dom.lookup_node_mut(&leaf.node_handle)
             {
+                // Just add the line break and move the selection
                 let mut new_data = text_node.data().to_owned();
                 new_data.insert(leaf.start_offset, &S::from("\n"));
                 text_node.set_data(new_data);

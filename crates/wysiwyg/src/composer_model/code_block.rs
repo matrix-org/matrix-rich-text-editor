@@ -94,6 +94,15 @@ where
             children = new_children;
         }
 
+        // TODO: improve detection? Not sure if trailing line break will always be at the top level
+        if let Some(DomNode::Text(text_node)) = children.last_mut() {
+            if text_node.to_html().to_string().ends_with('\n') {
+                let data = text_node.data();
+                let new_data = data[..data.len() - 1].to_owned();
+                text_node.set_data(new_data);
+            }
+        }
+
         let start_handle_is_start_at_depth =
             start_handle.raw().iter().all(|i| *i == 0);
         let mut insert_at_handle =
@@ -305,17 +314,10 @@ where
                             if is_before {
                                 self.state.start += 1;
                             }
-                            if !is_after {
-                                self.state.end += 1;
-                            }
+                            // if !is_after {
+                            //     self.state.end += 1;
+                            // }
                         }
-                        // // Remove last line break at end of list
-                        // if let Some(DomNode::Text(text_node)) = children.last()
-                        // {
-                        //     if text_node.data().to_owned() == "\n".into() {
-                        //         children.pop();
-                        //     }
-                        // }
                     } else if container.is_list_item() {
                         children.push(DomNode::new_text("\n".into()));
                         if is_before {
@@ -513,7 +515,7 @@ mod test {
         let mut model =
             cm("<ul><li>{First item</li><li>Second item</li></ul>Some text<ul><li>Third}| item</li><li>Fourth one</li></ul>");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>~{First item\nSecond item\nSome text\nThird}| item\nFourth one</pre>");
+        assert_eq!(tx(&model), "<pre>~{First item\nSecond item\nSome text\nThird}| item</pre><ul><li>Fourth one</li></ul>");
     }
 
     #[test]

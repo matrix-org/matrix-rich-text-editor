@@ -391,7 +391,7 @@ where
         first_child.remove_leading_zwsp()
     }
 
-    /// Returns whether this continer first text-like
+    /// Returns whether this container first text-like
     /// child starts with a ZWSP.
     pub fn has_leading_zwsp(&self) -> bool {
         let Some(first_child) = self.children.get(0) else {

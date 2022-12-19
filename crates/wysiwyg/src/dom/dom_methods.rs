@@ -605,8 +605,6 @@ where
         let handles_in_reverse: Vec<DomHandle> =
             self.handle_iter_from(&last_handle_in_dom).rev().collect();
         for handle in handles_in_reverse {
-            let cur_html = self.to_html().to_string();
-            let tree = self.to_tree().to_string();
             let mut needs_removal = false;
             if let DomNode::Container(container) = self.lookup_node(&handle) {
                 if container.children().is_empty()
@@ -614,6 +612,13 @@ where
                 {
                     needs_removal = true;
                 }
+                // TODO: un-comment when ZwspNode is ready
+                // else if container.is_block_node()
+                //     && container.children().len() == 1
+                //     && container.has_leading_zwsp()
+                // {
+                //     needs_removal = true;
+                // }
             }
             if needs_removal && !handle.is_root() {
                 self.remove(&handle);
@@ -818,7 +823,7 @@ mod test {
             1,
             None,
         );
-        assert_eq!(ret.to_html().to_string(), "<b>ld</b><i>italic</i>")
+        assert_eq!(ret.to_html().to_string(), "<u><b>ld</b><i>italic</i></u>")
     }
 
     #[test]
@@ -853,7 +858,10 @@ mod test {
             depth,
             None,
         );
-        assert_eq!(ret.to_html().to_string(), "<li><b>ld</b><i>italic</i></li>")
+        assert_eq!(
+            ret.to_html().to_string(),
+            "<ul><li><b>ld</b><i>italic</i></li></ul>"
+        )
     }
 
     #[test]
