@@ -70,23 +70,20 @@ where
                 let (left, left_handle, right, right_handle) =
                     self.split_new_sub_trees(node, offset, shared_depth);
 
-                let mut inner = if location.ends_inside() {
-                    left.clone()
+                let mut outers = if location.ends_inside() {
+                    vec![right.lookup_node(&right_handle).clone()]
                 } else {
-                    right.clone()
+                    vec![left.lookup_node(&left_handle).clone()]
                 };
 
-                let outers =
-                    if location.ends_inside() && location.starts_inside() {
-                        let outer = right.lookup_node(&right_handle).clone();
-                        let offset = location.start_offset;
-                        let before = inner.slice_before(offset);
-                        vec![before, outer]
-                    } else if location.ends_inside() {
-                        vec![right.lookup_node(&right_handle).clone()]
-                    } else {
-                        vec![left.lookup_node(&left_handle).clone()]
-                    };
+                let mut inner =
+                    if location.ends_inside() { left } else { right };
+
+                if location.ends_inside() && location.starts_inside() {
+                    let offset = location.start_offset;
+                    let before = inner.slice_before(offset);
+                    outers.insert(0, before)
+                }
 
                 container.insert_child(0, inner);
                 self.replace(node, outers);
