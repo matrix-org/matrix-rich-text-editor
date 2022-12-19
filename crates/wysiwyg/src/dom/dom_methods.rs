@@ -17,7 +17,7 @@
 
 use crate::dom::nodes::ContainerNodeKind;
 use crate::dom::unicode_string::UnicodeStr;
-use crate::{DomHandle, DomNode, ToHtml, UnicodeString};
+use crate::{DomHandle, DomNode, UnicodeString};
 
 use super::action_list::{DomAction, DomActionList};
 use super::nodes::dom_node::DomNodeKind;
@@ -481,7 +481,7 @@ where
         ));
         left.set_handle(DomHandle::root());
 
-        // Reset the root unmodified siblings were removed
+        // Reset the handle roots after unmodified siblings were removed
         let mut right_handle =
             from_handle.sub_handle_down_from(depth).raw().to_owned();
         right_handle[0] = 0;
@@ -565,14 +565,13 @@ where
                             {
                                 // Do nothing
                             } else {
-                                // TODO: Figure out how to make this all less verbose
-                                let to_remove =
-                                    text_node.data()[offset..].to_owned();
-                                let to_keep =
+                                let left_data =
                                     text_node.data()[..offset].to_owned();
-                                text_node.set_data(to_keep);
+                                let right_data =
+                                    text_node.data()[offset..].to_owned();
+                                text_node.set_data(left_data);
                                 removed_nodes
-                                    .insert(0, DomNode::new_text(to_remove));
+                                    .insert(0, DomNode::new_text(right_data));
                             }
                         }
                         _ => {
@@ -700,7 +699,6 @@ fn adjust_handles_for_delete(
 mod test {
     use crate::dom::DomHandle;
     use crate::tests::testutils_composer_model::{cm, tx};
-    use crate::tests::testutils_conversion::utf16;
     use crate::ToHtml;
 
     use super::*;
@@ -872,7 +870,6 @@ mod test {
             .state
             .dom
             .split_new_sub_trees(&DomHandle::from_raw(vec![0, 1, 0]), 2, 1);
-        println!("RIGHT: {:?}", right);
         assert_eq!(right.to_html(), "<b>ld</b>");
         assert_eq!(right_handle, DomHandle::from_raw(vec![0, 0]));
         assert_eq!(right.lookup_node(&right_handle).to_html(), "ld");
