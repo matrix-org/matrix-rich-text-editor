@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::char::CharExt;
 use crate::composer_model::delete_text::Direction;
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
@@ -29,7 +28,6 @@ use std::ops::Range;
 #[derive(PartialEq, Eq, Debug)]
 pub enum CharType {
     Whitespace,
-    ZWSP,
     Punctuation,
     Other,
 }
@@ -174,8 +172,6 @@ fn get_char_type(c: char) -> CharType {
     // and then everything else is treated as the same type
     if c.is_whitespace() {
         CharType::Whitespace
-    } else if c.is_zwsp() {
-        CharType::ZWSP
     } else if c.is_ascii_punctuation() {
         CharType::Punctuation
     } else {
@@ -259,7 +255,6 @@ where
 mod test {
     use widestring::Utf16String;
 
-    use crate::char::CharExt;
     use crate::composer_model::delete_text::Direction;
     use crate::dom::nodes::text_node::CharType;
     use crate::tests::testutils_conversion::utf16;
@@ -273,11 +268,6 @@ mod test {
         assert_eq!(get_char_type('\u{0020}'), CharType::Whitespace);
         // no break space
         assert_eq!(get_char_type('\u{00A0}'), CharType::Whitespace);
-    }
-
-    #[test]
-    fn get_char_type_for_zwsp() {
-        assert_eq!(get_char_type(char::zwsp()), CharType::ZWSP);
     }
 
     #[test]
