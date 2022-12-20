@@ -1,0 +1,28 @@
+name: Publish-iOS
+
+jobs:
+  ios:
+    name: Publish to SwiftPM Repo
+    runs-on: macos-12
+    steps:
+      - name: 🧮 Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.65
+          profile: minimal
+          override: true
+          
+      - name: Install targets
+        run: |
+          rustup target add aarch64-apple-ios
+          rustup target add aarch64-apple-ios-sim
+          rustup target add x86_64-apple-ios
+          
+      - name: Set XCode 14.2
+        run: sudo xcode-select -switch /Applications/Xcode_14.2.app
+          
+      - name: Release iOS
+        run: ./release_ios.sh
