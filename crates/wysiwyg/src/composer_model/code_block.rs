@@ -131,7 +131,9 @@ where
             .lookup_node_mut(&new_code_block_handle)
             .as_container_mut()
         {
-            if merged_code_block_container.add_leading_zwsp() {
+            if !merged_code_block_container.has_leading_zwsp() {
+                merged_code_block_container
+                    .insert_child(0, DomNode::new_zwsp());
                 self.state.start += 1;
                 self.state.end += 1;
             }
@@ -507,7 +509,7 @@ mod test {
         let mut model =
             cm("<ul><li>{First item</li><li>Second item</li></ul>Some text<ul><li>Third}| item</li><li>Fourth one</li></ul>");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>~{First item\nSecond item\nSome text\nThird}| item\nFourth one</pre>");
+        assert_eq!(tx(&model), "<pre>~{First item\nSecond item\nSome text\nThird}| item</pre><ul><li>Fourth one</li></ul>");
     }
 
     #[test]

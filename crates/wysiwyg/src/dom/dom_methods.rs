@@ -484,7 +484,7 @@ where
         self.assert_invariants();
     }
 
-    /// Returns two new subtrees as the result of splitting the Dom symetrically without mutating
+    /// Returns two new subtrees as the result of splitting the Dom symmetrically without mutating
     /// itself. Also returns the new handles of node that was split.
     ///
     /// Only returns nodes that are modified by the split and ignores any nodes which were not
@@ -496,14 +496,19 @@ where
         depth: usize,
     ) -> (DomNode<S>, DomHandle, DomNode<S>, DomHandle) {
         let mut clone = self.clone();
-        let right = clone.split_sub_tree(from_handle, offset, depth);
+        let right = clone.split_sub_tree(from_handle, offset, 0, depth, None);
 
         // Remove unmodified children of the right split
         // TODO: create a utility for this
         let right = right.as_container().unwrap();
         let mut right = DomNode::Container({
             let children = vec![right.children().first().unwrap().clone()];
-            right.clone_with_new_children(children)
+            ContainerNode::new(
+                S::default(),
+                ContainerNodeKind::Generic,
+                None,
+                children,
+            )
         });
         right.set_handle(DomHandle::root());
 
@@ -934,7 +939,7 @@ mod test {
             None,
         );
         assert_eq!(ret.to_html().to_string(), "<u><b>ld</b><i>italic</i></u>");
-        assert_eq!(ret.to_html().to_string(), "<b>ld</b><i>italic</i>");
+        assert_eq!(ret.to_html().to_string(), "<u><b>ld</b><i>italic</i></u>");
     }
 
     #[test]
@@ -977,7 +982,10 @@ mod test {
             ret.to_html().to_string(),
             "<ul><li><b>ld</b><i>italic</i></li></ul>"
         );
-        assert_eq!(ret.to_html().to_string(), "<li><b>ld</b><i>italic</i></li>")
+        assert_eq!(
+            ret.to_html().to_string(),
+            "<ul><li><b>ld</b><i>italic</i></li></ul>"
+        )
     }
 
     #[test]
