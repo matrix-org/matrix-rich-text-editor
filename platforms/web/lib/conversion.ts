@@ -21,17 +21,31 @@ import {
 } from '../generated/wysiwyg.js';
 import { initOnce } from './useComposerModel.js';
 
-// in plain text, newlines will be represented as \n if input
-// by the user pressing enter, so we want to convert these to
-// valid markdown before parsing by MarkdownHTMLParser::to_html
-export const plainToMarkdown = (plainText: string) =>
-    plainText.replaceAll(/\n/g, '<br />\n');
+// In plain text there, due to cursor positioning, ending at a linebreak will
+// include an extra \n, so trim that off if required.
+// We replace the remaining \n with valid markdown before
+// parsing by MarkdownHTMLParser::to_html.
+export const plainToMarkdown = (plainText: string) => {
+    let markdown = plainText;
+    if (markdown.endsWith('\n')) {
+        // manually remove the final linebreak
+        markdown = markdown.slice(0, -1);
+    }
+    return markdown.replaceAll(/\n/g, '<br />');
+};
 
-// in plain text, markdown newlines (displays '\' character followed by
+// In plain text, markdown newlines (displays '\' character followed by
 // a newline character) will be represented as \n for display as the
-// display box can not interpret markdown
-export const markdownToPlain = (markdown: string) =>
-    markdown.replaceAll(/\\/g, '');
+// display box can not interpret markdown.
+// We also may need to manually add a \n to account for trailing newlines.
+export const markdownToPlain = (markdown: string) => {
+    let plainText = markdown;
+    if (plainText.endsWith('\n')) {
+        // for cursor positioning we need to manually add another linebreak
+        plainText = `${plainText}\n`;
+    }
+    return plainText.replaceAll(/\\/g, '');
+};
 
 export async function richToPlain(richText: string) {
     if (richText.length === 0) {
