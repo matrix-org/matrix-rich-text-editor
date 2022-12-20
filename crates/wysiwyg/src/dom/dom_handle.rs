@@ -90,6 +90,16 @@ impl DomHandle {
         DomHandle::from_raw(new_path.to_vec())
     }
 
+    /// Returns a DomHandle with the 'sub-path' down to the passed 'depth'.
+    /// i.e.: a DomHandle with path `[0, 1, 2, 3]` with `at_depth(2)` will return a DomHandle
+    /// with path `[3]`.
+    pub fn sub_handle_down_from(&self, depth: usize) -> DomHandle {
+        assert!(&self.path.is_some());
+        let path = self.path.clone().unwrap();
+        let (_, new_path) = path.split_at(depth);
+        DomHandle::from_raw(new_path.to_vec())
+    }
+
     /// Return true if this handle has a parent i.e. it is not the root. If
     /// this returns true, it is safe to call index_in_parent() and
     /// parent_handle().

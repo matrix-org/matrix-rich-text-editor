@@ -165,8 +165,7 @@ where
                 self.state.dom.lookup_node_mut(&leaf.node_handle)
             {
                 let prev_offset = leaf.start_offset - 1;
-                let prev_char =
-                    text_node.data().chars().nth(prev_offset).clone();
+                let prev_char = text_node.data().chars().nth(prev_offset);
                 if let Some(prev_char) = prev_char {
                     if prev_char == '\n' {
                         // Remove line break, we'll add another one outside the code block
@@ -341,12 +340,12 @@ where
         // If the inserted text contains newlines, slice it and
         // insert each slice while simulating calls to the
         // enter function in betweeen.
-        if text_string.contains("\n") {
-            let mut slices = text_string.split("\n").peekable();
+        if text_string.contains('\n') {
+            let mut slices = text_string.split('\n').peekable();
             while let Some(slice) = slices.next() {
                 let (s, e) = self.safe_selection();
                 self.do_replace_text_in(S::from(slice), s, e);
-                if !slices.peek().is_none() {
+                if slices.peek().is_some() {
                     self.do_enter();
                 }
             }

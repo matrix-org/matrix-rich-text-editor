@@ -44,7 +44,7 @@ where
         let (s, e) = self.safe_selection();
         let Some(wrap_result) = self.find_nodes_to_wrap_in_block(s, e) else {
             // No suitable nodes found to be wrapped inside the code block. The Dom should be empty
-            self.state.dom.append_at_end_of_document(DomNode::new_code_block(vec![DomNode::new_text(S::zwsp())]));
+            self.state.dom.append_at_end_of_document(DomNode::new_code_block(vec![DomNode::new_zwsp()]));
             self.state.start += 1;
             self.state.end += 1;
             return self.create_update_replace_all();
@@ -209,33 +209,21 @@ where
                     let mut text_start: usize = 0;
                     let mut text_end = text_start;
                     let data = text_node.data();
-                    let mut is_first_char = true;
                     for char in data.chars() {
-                        // Remove leading ZWSP
-                        if is_first_char && char.is_zwsp() {
-                            text_start += 1;
-                            text_end += 1;
-                            self.state.start -= 1;
-                            self.state.end -= 1;
-                        } else {
-                            text_end += data.char_len(&char);
-                            if char == '\n' {
-                                let text_to_add =
-                                    data[text_start..text_end - 1].to_owned();
-                                nodes_to_add.push(DomNode::new_text(S::from(
-                                    text_to_add,
-                                )));
-                                nodes_to_add.push(DomNode::new_line_break());
-                                if text_end <= start_in_block {
-                                    selection_offset_start += 1;
-                                }
-                                if text_end <= end_in_block {
-                                    selection_offset_end += 1;
-                                }
-                                text_start = text_end;
+                        text_end += data.char_len(&char);
+                        if char == '\n' {
+                            let text_to_add =
+                                data[text_start..text_end - 1].to_owned();
+                            nodes_to_add.push(DomNode::new_text(text_to_add));
+                            nodes_to_add.push(DomNode::new_line_break());
+                            if text_end <= start_in_block {
+                                selection_offset_start += 1;
                             }
+                            if text_end <= end_in_block {
+                                selection_offset_end += 1;
+                            }
+                            text_start = text_end;
                         }
-                        is_first_char = false;
                     }
                     // We moved to a new line
                     if text_start != text_end {
@@ -250,6 +238,10 @@ where
                             selection_offset_end += 1;
                         }
                     }
+                }
+                DomNode::Zwsp(_) => {
+                    self.state.start -= 1;
+                    self.state.end -= 1;
                 }
                 // Just move the node out
                 _ => nodes_to_add.push(child.clone()),
@@ -474,7 +466,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "Some text <br /><pre><b>~and bold&nbsp;</b><i>and |italic</i></pre>"
+            "Some text <br /><pre>~<b>and bold&nbsp;</b><i>and |italic</i></pre>"
         );
     }
 
@@ -498,7 +490,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<ul><li>Some text <b>and bold&nbsp;</b><br /><pre><i>~and| italic</i></pre></li></ul>"
+            "<ul><li>Some text <b>and bold&nbsp;</b><br /><pre>~<i>and| italic</i></pre></li></ul>"
         );
     }
 
@@ -515,7 +507,7 @@ mod test {
         let mut model =
             cm("<ul><li>{First item</li><li>Second item</li></ul>Some text<ul><li>Third}| item</li><li>Fourth one</li></ul>");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>~{First item\nSecond item\nSome text\nThird}| item</pre><ul><li>Fourth one</li></ul>");
+        assert_eq!(tx(&model), "<pre>~{First item\nSecond item\nSome text\nThird}| item\nFourth one</pre>");
     }
 
     #[test]
@@ -549,7 +541,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<b>Text<br /></b><pre><b><i>~{in italic}|</i></b></pre>"
+            "<b>Text<br /></b><pre>~<b><i>{in italic}|</i></b></pre>"
         );
     }
 
@@ -559,7 +551,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<u><b>Text<br /></b></u><pre><u><b><i>~{in italic}|</i></b></u></pre>"
+            "<u><b>Text<br /></b></u><pre>~<u><b><i>{in italic}|</i></b></u></pre>"
         );
     }
 

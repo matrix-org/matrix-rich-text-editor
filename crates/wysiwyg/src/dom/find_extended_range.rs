@@ -213,15 +213,19 @@ mod test {
         assert!(!dom.is_last_child_of_list(&DomHandle::from_raw(vec![1, 0])));
         // The second list item is the last child of a list
         assert!(dom.is_last_child_of_list(&DomHandle::from_raw(vec![1, 1])));
-        // "~g" is not the last child of a list
+        // ZWSP is not the last child of a list
         assert!(!dom.is_last_child_of_list(&DomHandle::from_raw(vec![1, 1, 0])));
+        // "g" is not the last child of a list
+        assert!(!dom.is_last_child_of_list(&DomHandle::from_raw(vec![1, 1, 1])));
         // The strong node is the last child of a list
-        assert!(dom.is_last_child_of_list(&DomHandle::from_raw(vec![1, 1, 1])));
+        assert!(dom.is_last_child_of_list(&DomHandle::from_raw(vec![1, 1, 2])));
         // "hi" is the last child of a list
         assert!(
-            dom.is_last_child_of_list(&DomHandle::from_raw(vec![1, 1, 1, 0]))
+            dom.is_last_child_of_list(&DomHandle::from_raw(vec![1, 1, 2, 0]))
         );
-        // "~jkl" is not the last child of a list
+        // ZWSP is not the last child of a list
         assert!(!dom.is_last_child_of_list(&DomHandle::from_raw(vec![2])));
+        // jkl is not the last child of a list
+        assert!(!dom.is_last_child_of_list(&DomHandle::from_raw(vec![3])));
     }
 }
