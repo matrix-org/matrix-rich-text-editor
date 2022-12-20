@@ -18,7 +18,7 @@ use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub enum Direction {
     Forwards,
     Backwards,
@@ -102,7 +102,7 @@ where
                     let selection_start_in_str = s - loc.position;
                     Self::find_next_char_len(
                         selection_start_in_str,
-                        &text_node.data(),
+                        text_node.data(),
                     ) as isize
                 } else {
                     1
@@ -141,13 +141,6 @@ where
             Some(arguments) => {
                 // here we have a non-split cursor, a single location, and a textlike node
                 let (location, start_type) = arguments;
-
-                // if the first type is a zwsp, we are dealing with empty list items
-                if start_type == CharType::ZWSP {
-                    // TODO implement list behaviour
-                    return ComposerUpdate::keep();
-                }
-
                 self.remove_word(start_type, direction, location)
             }
         }
@@ -163,7 +156,7 @@ where
         match self.state.dom.lookup_node_mut(&location.node_handle) {
             // we should never be passed a container
             DomNode::Container(_) => ComposerUpdate::keep(),
-            DomNode::Zwsp(_) => todo!(),
+            DomNode::Zwsp(_) => ComposerUpdate::keep(),
             DomNode::LineBreak(_) => {
                 // for a linebreak, remove it if we started the operation from the whitespace
                 // char type, otherwise keep it
@@ -301,7 +294,7 @@ where
             DomNode::Text(text_node) => {
                 text_node.char_type_at_offset(location.start_offset, direction)
             }
-            DomNode::Zwsp(_) => todo!(),
+            DomNode::Zwsp(_) => None,
         }
     }
 
@@ -359,7 +352,7 @@ where
                     let selection_end_in_str = e - loc.position;
                     Self::find_previous_char_len(
                         selection_end_in_str,
-                        &text_node.data(),
+                        text_node.data(),
                     ) as isize
                 } else {
                     1

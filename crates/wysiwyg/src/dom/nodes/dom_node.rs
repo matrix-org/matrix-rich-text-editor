@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::char::CharExt;
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::nodes::{
@@ -136,10 +135,14 @@ where
         matches!(self, Self::LineBreak(..))
     }
 
+    pub fn is_zwsp(&self) -> bool {
+        matches!(self, Self::Zwsp(..))
+    }
+
     /// Returns `true` if thie dom node is not a container i.e. a text node or
     /// a text-like node like a line break.
     pub fn is_leaf(&self) -> bool {
-        self.is_text_node() || self.is_line_break()
+        self.is_text_node() || self.is_line_break() || self.is_zwsp()
     }
 
     pub fn is_structure_node(&self) -> bool {
@@ -217,38 +220,12 @@ where
         }
     }
 
-    /// Add a leading ZWSP char to this node.
-    /// Returns false if no updates was done.
-    /// e.g. first text-like node is a line break
-    /// or a text node that already starts with a ZWSP.
-    pub fn add_leading_zwsp(&mut self) -> bool {
-        match self {
-            DomNode::Container(c) => c.add_leading_zwsp(),
-            DomNode::Text(t) => t.add_leading_zwsp(),
-            DomNode::LineBreak(_) => false,
-            DomNode::Zwsp(_) => false,
-        }
-    }
-
-    /// Remove leading ZWSP char from this node.
-    /// Returns false if no updates was done.
-    /// e.g. first text-like node is a line break
-    /// or a text node that doesn't start with a ZWSP.
-    pub fn remove_leading_zwsp(&mut self) -> bool {
-        match self {
-            DomNode::Container(c) => c.remove_leading_zwsp(),
-            DomNode::Text(t) => t.remove_leading_zwsp(),
-            DomNode::LineBreak(_) => false,
-            DomNode::Zwsp(_) => todo!(),
-        }
-    }
-
     /// Returns whether this node, or it's first text-like
     /// child starts with a ZWSP.
     pub fn has_leading_zwsp(&self) -> bool {
         match self {
             DomNode::Container(c) => c.has_leading_zwsp(),
-            DomNode::Text(t) => t.data().to_string().starts_with(char::zwsp()),
+            DomNode::Text(_) => false,
             DomNode::LineBreak(_) => false,
             DomNode::Zwsp(_) => true,
         }
@@ -260,9 +237,7 @@ where
             (DomNode::Container(c1), DomNode::Container(c2)) => {
                 c1.kind() == c2.kind() && !c1.is_list_item()
             }
-            (DomNode::Text(_), DomNode::Text(t2)) => {
-                !t2.data().to_string().starts_with(char::zwsp())
-            }
+            (DomNode::Text(_), DomNode::Text(_)) => true,
             _ => false,
         }
     }
@@ -310,6 +285,49 @@ where
             DomNode::LineBreak(_) => panic!("Can't slice a linebreak"),
             DomNode::Zwsp(_) => panic!("Can't slice a zwsp"),
         }
+    }
+
+    /// Find the node based on its handle.
+    /// Panics if the handle is unset or invalid
+    pub fn lookup_node(&self, node_handle: &DomHandle) -> &DomNode<S> {
+        fn nth_child<S>(element: &ContainerNode<S>, idx: usize) -> &DomNode<S>
+        where
+            S: UnicodeString,
+        {
+            element.children().get(idx).unwrap_or_else(|| {
+                panic!(
+                    "Handle is invalid: it refers to a child index ({}) which \
+                is too large for the number of children in this node ({:?}).",
+                    idx, element
+                )
+            })
+        }
+
+        let mut node = self;
+        if !node_handle.is_set() {
+            panic!(
+                "Attempting to lookup a node using an unset DomHandle ({:?})",
+                node_handle.raw()
+            );
+        }
+        for idx in node_handle.raw() {
+            node = match node {
+                DomNode::Container(n) => nth_child(n, *idx),
+                DomNode::LineBreak(_) => panic!(
+                    "Handle is invalid: refers to the child of a line break, \
+                    but line breaks cannot have children."
+                ),
+                DomNode::Text(_) => panic!(
+                    "Handle {:?} is invalid: refers to the child of a text node, \
+                    but text nodes cannot have children.", node_handle
+                ),
+                DomNode::Zwsp(_) => panic!(
+                    "Handle {:?} is invalid: refers to the child of a zwsp node, \
+                    but zwsp nodes cannot have children.", node_handle
+                ),
+            }
+        }
+        node
     }
 }
 

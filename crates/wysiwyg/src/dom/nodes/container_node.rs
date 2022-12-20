@@ -366,7 +366,18 @@ where
         let Some(first_child) = self.children.get_mut(0) else {
             return false;
         };
-        first_child.add_leading_zwsp()
+        match first_child {
+            DomNode::Container(c) => c.add_leading_zwsp(),
+            DomNode::Zwsp(_) => false,
+            _ => {
+                if self.handle().is_set() {
+                    self.insert_child(0, DomNode::new_zwsp());
+                } else {
+                    self.children.insert(0, DomNode::new_zwsp());
+                }
+                true
+            }
+        }
     }
 
     /// Remove leading ZWSP char from this container.
@@ -377,7 +388,18 @@ where
         let Some(first_child) = self.children.get_mut(0) else {
             return false;
         };
-        first_child.remove_leading_zwsp()
+        match first_child {
+            DomNode::Container(c) => c.remove_leading_zwsp(),
+            DomNode::Zwsp(_) => {
+                if self.handle().is_set() {
+                    self.remove_child(0);
+                } else {
+                    self.children.remove(0);
+                }
+                true
+            }
+            _ => false,
+        }
     }
 
     /// Returns whether this continer first text-like
@@ -395,16 +417,12 @@ where
         };
         match first_child {
             DomNode::Container(c) => c.replace_leading_zwsp_with_linebreak(),
-            DomNode::Text(t) => {
-                if t.remove_leading_zwsp() {
-                    self.children.insert(0, DomNode::new_line_break());
-                    true
-                } else {
-                    false
-                }
-            }
+            DomNode::Text(_) => false,
             DomNode::LineBreak(_) => false,
-            DomNode::Zwsp(_) => todo!(),
+            DomNode::Zwsp(_) => {
+                self.children[0] = DomNode::new_line_break();
+                true
+            }
         }
     }
 
@@ -518,11 +536,10 @@ where
                         .collect();
                     positions.append(&mut child_positions);
                 }
-                DomNode::Text(_) => {}
                 DomNode::LineBreak(_) => {
                     positions.push(current_offset);
                 }
-                DomNode::Zwsp(_) => todo!(),
+                _ => {}
             }
             current_offset += child.text_len();
         }
@@ -908,11 +925,9 @@ where
                         )))
                     }
 
-                    DomNode::Text(_) => {
+                    DomNode::Text(_) | DomNode::Zwsp(_) => {
                         return Err(MarkdownError::InvalidListItem(None))
                     }
-
-                    DomNode::Zwsp(_) => todo!(),
                 };
 
                 // What's the current indentation, for this specific list only.

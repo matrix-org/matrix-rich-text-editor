@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::char::CharExt;
 use crate::composer_model::delete_text::Direction;
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
@@ -29,7 +28,6 @@ use std::ops::Range;
 #[derive(PartialEq, Eq, Debug)]
 pub enum CharType {
     Whitespace,
-    ZWSP,
     Punctuation,
     Other,
 }
@@ -78,33 +76,6 @@ where
         self.data
             .chars()
             .all(|c| matches!(c, ' ' | '\x09'..='\x0d'))
-    }
-
-    /// Add a leading ZWSP to the text node if it doesn't already
-    /// has one. Return true if the operation is executed.
-    pub fn add_leading_zwsp(&mut self) -> bool {
-        let text = self.data.to_string();
-        if !text.starts_with(char::zwsp()) {
-            let mut new_text = S::zwsp();
-            new_text.push(self.data());
-            self.set_data(new_text);
-            true
-        } else {
-            false
-        }
-    }
-
-    /// Remove a leading ZWSP from the text node if it has one.
-    /// Return true if the operation is executed.
-    pub fn remove_leading_zwsp(&mut self) -> bool {
-        let mut text = self.data().to_string();
-        if text.starts_with(char::zwsp()) {
-            text.remove(0);
-            self.set_data(text.into());
-            true
-        } else {
-            false
-        }
     }
 
     pub fn remove_trailing_line_break(&mut self) -> bool {
@@ -201,8 +172,6 @@ fn get_char_type(c: char) -> CharType {
     // and then everything else is treated as the same type
     if c.is_whitespace() {
         CharType::Whitespace
-    } else if c.is_zwsp() {
-        CharType::ZWSP
     } else if c.is_ascii_punctuation() {
         CharType::Punctuation
     } else {
@@ -258,8 +227,7 @@ where
 {
     fn to_tree_display(&self, continuous_positions: Vec<usize>) -> S {
         let mut description = S::from("\"");
-        let text = &self.data.to_string().replace(char::zwsp(), "~");
-        description.push(text.as_str());
+        description.push(self.data.clone());
         description.push('"');
         return self.tree_line(
             description,
@@ -287,7 +255,6 @@ where
 mod test {
     use widestring::Utf16String;
 
-    use crate::char::CharExt;
     use crate::composer_model::delete_text::Direction;
     use crate::dom::nodes::text_node::CharType;
     use crate::tests::testutils_conversion::utf16;
@@ -301,11 +268,6 @@ mod test {
         assert_eq!(get_char_type('\u{0020}'), CharType::Whitespace);
         // no break space
         assert_eq!(get_char_type('\u{00A0}'), CharType::Whitespace);
-    }
-
-    #[test]
-    fn get_char_type_for_zwsp() {
-        assert_eq!(get_char_type(char::zwsp()), CharType::ZWSP);
     }
 
     #[test]
