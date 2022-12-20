@@ -413,6 +413,26 @@ where
         }
     }
 
+    /// Remove leading Line break char from this container.
+    /// Returns false if no updates was done.
+    pub fn remove_leading_line_break(&mut self) -> bool {
+        let Some(first_child) = self.children.get_mut(0) else {
+            return false;
+        };
+        match first_child {
+            DomNode::Container(c) => c.remove_leading_line_break(),
+            DomNode::LineBreak(_) => {
+                if self.handle().is_set() {
+                    self.remove_child(0);
+                } else {
+                    self.children.remove(0);
+                }
+                true
+            }
+            _ => false,
+        }
+    }
+
     /// Returns whether this container first text-like
     /// child starts with a ZWSP.
     pub fn has_leading_zwsp(&self) -> bool {
@@ -512,6 +532,14 @@ where
                 self.clone_with_new_children(removed_children)
             }
         }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.children.is_empty()
+    }
+
+    pub fn only_contains_zwsp(&self) -> bool {
+        self.children.len() == 1 && self.children[0].is_zwsp()
     }
 
     fn find_slice_location(

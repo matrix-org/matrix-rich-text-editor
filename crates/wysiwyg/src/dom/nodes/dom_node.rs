@@ -450,7 +450,10 @@ impl DomNodeKind {
     }
 
     pub fn is_block_kind(&self) -> bool {
-        matches!(self, Self::Generic | Self::List | Self::CodeBlock)
+        matches!(
+            self,
+            Self::Generic | Self::List | Self::CodeBlock | Self::Quote
+        )
     }
 }
 

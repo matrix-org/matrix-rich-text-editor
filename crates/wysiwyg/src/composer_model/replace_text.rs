@@ -149,6 +149,9 @@ where
             DomNodeKind::CodeBlock => {
                 self.do_enter_in_code_block(leaf, block_ancestor_loc)
             }
+            DomNodeKind::Quote => {
+                self.do_enter_in_quote(leaf, block_ancestor_loc)
+            }
             _ => panic!("Enter not implemented for this block node!"),
         }
     }
@@ -289,6 +292,83 @@ where
                 ComposerUpdate::keep()
             }
         }
+    }
+
+    fn do_enter_in_quote(
+        &mut self,
+        leaf: &DomLocation,
+        block_location: &DomLocation,
+    ) -> ComposerUpdate<S> {
+        let has_previous_line_break = leaf.kind == DomNodeKind::LineBreak;
+
+        if has_previous_line_break {
+            let mut sub_tree = self.state.dom.split_sub_tree_from(
+                &leaf.node_handle,
+                leaf.start_offset,
+                block_location.node_handle.depth(),
+            );
+            sub_tree.set_handle(DomHandle::root());
+            let DomNode::Container(sub_tree_container) = &mut sub_tree else {
+                panic!("Sub tree must start from a container node");
+            };
+
+            let dom_html = self.state.dom.to_html().to_string();
+            let sub_tree_html = sub_tree_container.to_html().to_string();
+
+            let insert_at = if block_location.start_offset > 0 {
+                block_location.node_handle.next_sibling()
+            } else {
+                block_location.node_handle.clone()
+            };
+
+            // We don't need the leading line break in the extracted half of the block quote
+            if sub_tree_container.remove_leading_line_break() {
+                self.state.start -= 1;
+                self.state.end -= 1;
+            }
+
+            if !sub_tree_container.is_empty()
+                && !sub_tree_container.only_contains_zwsp()
+            {
+                if !sub_tree_container.has_leading_zwsp() {
+                    sub_tree_container.insert_child(0, DomNode::new_zwsp());
+                    self.state.start += 1;
+                    self.state.end += 1;
+                }
+                self.state.dom.insert_at(
+                    &insert_at,
+                    DomNode::new_quote(sub_tree_container.children().clone()),
+                );
+                self.state
+                    .dom
+                    .insert_at(&insert_at, DomNode::new_line_break());
+            } else {
+                self.state.dom.insert_at(
+                    &block_location.node_handle.next_sibling(),
+                    DomNode::new_line_break(),
+                );
+                self.state.start += 1;
+                self.state.end += 1;
+            }
+
+            if let DomNode::Container(quote_block) =
+                self.state.dom.lookup_node(&block_location.node_handle)
+            {
+                if quote_block.only_contains_zwsp() {
+                    self.state.start -= 1;
+                    self.state.end -= 1;
+                    self.state.dom.remove(&block_location.node_handle);
+                } else if quote_block.is_empty() {
+                    self.state.dom.remove(&block_location.node_handle);
+                }
+            }
+        } else {
+            self.do_enter_in_text(&leaf.node_handle, leaf.start_offset);
+        }
+
+        self.state.dom.remove_empty_container_nodes(false);
+
+        self.create_update_replace_all()
     }
 
     fn enter_with_zero_length_selection_and_empty_text_nodes(
