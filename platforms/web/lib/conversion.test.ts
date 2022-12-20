@@ -61,18 +61,39 @@ describe('Rich text <=> plain text', () => {
 });
 
 describe('Plain text <=> markdown', () => {
-    it('converts linebreaks for plain => markdown', () => {
+    it('converts single linebreak for plain => markdown', () => {
         const plain = 'multi\nline';
         const convertedMarkdown = plainToMarkdown(plain);
-        const expectedMarkdown = `multi<br />\nline`;
+        const expectedMarkdown = `multi<br />line`;
 
         expect(convertedMarkdown).toBe(expectedMarkdown);
     });
 
-    it('converts linebreaks for markdown => plain', () => {
+    it('converts multiple linebreak for plain => markdown', () => {
+        // nb for correct display, there will be one br tag less
+        // than \n at the end
+        const plain = 'multiple\nline\n\nbreaks\n\n\n';
+        const convertedMarkdown = plainToMarkdown(plain);
+        const expectedMarkdown =
+            'multiple<br />line<br /><br />breaks<br /><br />';
+
+        expect(convertedMarkdown).toBe(expectedMarkdown);
+    });
+
+    it('converts single linebreak for markdown => plain', () => {
         const markdown = 'multi\\\nline';
         const convertedPlainText = markdownToPlain(markdown);
         const expectedPlainText = 'multi\nline';
+
+        expect(convertedPlainText).toBe(expectedPlainText);
+    });
+
+    it('converts multiple linebreak for markdown => plain', () => {
+        // nb for correct display, there will be one \n more
+        // than \\\n at the end
+        const markdown = 'multiple\\\nline\\\n\\\nbreaks\\\n\\\n\\\n';
+        const convertedPlainText = markdownToPlain(markdown);
+        const expectedPlainText = 'multiple\nline\n\nbreaks\n\n\n\n';
 
         expect(convertedPlainText).toBe(expectedPlainText);
     });
