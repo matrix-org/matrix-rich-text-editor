@@ -141,13 +141,6 @@ where
             Some(arguments) => {
                 // here we have a non-split cursor, a single location, and a textlike node
                 let (location, start_type) = arguments;
-
-                // if the first type is a zwsp, we are dealing with empty list items
-                if start_type == CharType::ZWSP {
-                    // TODO implement list behaviour
-                    return ComposerUpdate::keep();
-                }
-
                 self.remove_word(start_type, direction, location)
             }
         }
@@ -301,7 +294,7 @@ where
             DomNode::Text(text_node) => {
                 text_node.char_type_at_offset(location.start_offset, direction)
             }
-            DomNode::Zwsp(_) => Some(CharType::ZWSP),
+            DomNode::Zwsp(_) => None,
         }
     }
 
