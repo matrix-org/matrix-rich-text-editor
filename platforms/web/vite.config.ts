@@ -30,6 +30,7 @@ export default defineConfig({
         dts({
             include: [
                 'lib/useWysiwyg.ts',
+                'lib/conversion.ts',
                 'lib/types.ts',
                 'lib/constants.ts',
                 'lib/useListeners/types.ts',
