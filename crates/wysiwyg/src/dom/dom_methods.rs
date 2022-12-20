@@ -17,9 +17,7 @@
 
 use crate::dom::nodes::ContainerNodeKind;
 use crate::dom::unicode_string::UnicodeStr;
-use crate::{DomHandle, DomNode, ToHtml, ToTree, UnicodeString};
-use std::cmp::max;
-use std::ops::Deref;
+use crate::{DomHandle, DomNode, ToHtml, UnicodeString};
 
 use super::action_list::{DomAction, DomActionList};
 use super::nodes::dom_node::DomNodeKind;
@@ -496,7 +494,7 @@ where
         depth: usize,
     ) -> (DomNode<S>, DomHandle, DomNode<S>, DomHandle) {
         let mut clone = self.clone();
-        let right = clone.split_sub_tree(from_handle, offset, 0, depth, None);
+        let right = clone.split_sub_tree_from(from_handle, offset, depth);
 
         // Remove unmodified children of the right split
         // TODO: create a utility for this
@@ -543,19 +541,61 @@ where
         (left, left_handle, right, right_handle)
     }
 
-    /// Splits the tree at a given node into two parts. The first part stays in the tree and this
-    /// function returns the second part.
+    /// Splits the current tree at the given handle, returning the 'right' side of the split tree, after the given handle to the end of the Dom.
+    /// The 'left' part will remain in the Dom.
     ///
-    /// * `from_handle` - the position of the node to split.
-    /// * `offset` - the position within the given node to split.
+    /// * `from_handle` - the position of the first node to extract.
+    /// * `start_offset` - the position within the given first node to split.
     /// * `depth` - the depth within the original tree at which to make the returned tree's root
-    pub(crate) fn split_sub_tree(
+    pub(crate) fn split_sub_tree_from(
         &mut self,
         from_handle: &DomHandle,
         start_offset: usize,
+        depth: usize,
+    ) -> DomNode<S> {
+        self.split_sub_tree(from_handle, start_offset, None, usize::MAX, depth)
+    }
+
+    /// Extract the tree between the given 2 handles, splitting the Dom in 2 parts. The previous and next parts stays in the tree and this
+    /// function returns the extracted sub-tree.
+    ///
+    /// * `from_handle` - the position of the first node to extract.
+    /// * `start_offset` - the position within the given first node to split.
+    /// * `to_handle` - the position of the last node to extract.
+    /// * `end_offset` - the position within the given last node to split. If if should cover the whole node, use `usize::MAX`.
+    /// * `depth` - the depth within the original tree at which to make the returned tree's root
+    pub(crate) fn split_sub_tree_between(
+        &mut self,
+        from_handle: &DomHandle,
+        start_offset: usize,
+        to_handle: &DomHandle,
         end_offset: usize,
         depth: usize,
+    ) -> DomNode<S> {
+        self.split_sub_tree(
+            from_handle,
+            start_offset,
+            Some(to_handle.clone()),
+            end_offset,
+            depth,
+        )
+    }
+
+    /// Extract the tree between the given 2 handles if `to_handle` is not `None`.
+    /// Otherwise, splits the Dom into 2 parts, extracting this second part and returning it.
+    ///
+    /// * `from_handle` - the position of the first node to extract.
+    /// * `start_offset` - the position within the given first node to split.
+    /// * `to_handle` - the position of the last node to extract, if any. Use `None` otherwise.
+    /// * `end_offset` - the position within the given last node to split. If if should cover the whole node, use `usize::MAX`.
+    /// * `depth` - the depth within the original tree at which to make the returned tree's root
+    pub fn split_sub_tree(
+        &mut self,
+        from_handle: &DomHandle,
+        start_offset: usize,
         to_handle: Option<DomHandle>,
+        end_offset: usize,
+        depth: usize,
     ) -> DomNode<S> {
         let cur_handle = from_handle.sub_handle_up_to(depth);
         let mut subtree_children = self.split_sub_tree_at_index(
@@ -903,12 +943,10 @@ mod test {
     #[test]
     fn split_dom_simple() {
         let mut model = cm("Text|<b>bold</b><i>italic</i>");
-        let ret = model.state.dom.split_sub_tree(
+        let ret = model.state.dom.split_sub_tree_from(
             &DomHandle::from_raw(vec![1, 0]),
             2,
             0,
-            0,
-            None,
         );
         assert_eq!(model.state.dom.to_html(), "Text<b>bo</b>");
         assert_eq!(ret.to_html().to_string(), "<b>ld</b><i>italic</i>");
@@ -917,12 +955,10 @@ mod test {
     #[test]
     fn split_dom_with_nested_formatting() {
         let mut model = cm("<u>Text|<b>bold</b><i>italic</i></u>");
-        let ret = model.state.dom.split_sub_tree(
+        let ret = model.state.dom.split_sub_tree_from(
             &DomHandle::from_raw(vec![0, 1, 0]),
             2,
             0,
-            0,
-            None,
         );
         assert_eq!(model.state.dom.to_html(), "<u>Text<b>bo</b></u>");
         assert_eq!(ret.to_html().to_string(), "<u><b>ld</b><i>italic</i></u>");
@@ -931,12 +967,10 @@ mod test {
     #[test]
     fn split_dom_with_nested_formatting_at_sub_level() {
         let mut model = cm("<u>Text|<b>bold</b><i>italic</i></u>");
-        let ret = model.state.dom.split_sub_tree(
+        let ret = model.state.dom.split_sub_tree_from(
             &DomHandle::from_raw(vec![0, 1, 0]),
             2,
-            0,
             1,
-            None,
         );
         assert_eq!(ret.to_html().to_string(), "<u><b>ld</b><i>italic</i></u>");
         assert_eq!(ret.to_html().to_string(), "<u><b>ld</b><i>italic</i></u>");
@@ -948,12 +982,10 @@ mod test {
             cm("<ul><li>Text|</li><li><b>bold</b><i>italic</i></li></ul>");
         let depth = 0;
         let start_offset = 2;
-        let ret = model.state.dom.split_sub_tree(
+        let ret = model.state.dom.split_sub_tree_from(
             &DomHandle::from_raw(vec![0, 1, 0, 0]),
             start_offset,
-            0,
             depth,
-            None,
         );
         assert_eq!(
             model.state.dom.to_html(),
@@ -971,12 +1003,10 @@ mod test {
             cm("<ul><li>Text|</li><li><b>bold</b><i>italic</i></li></ul>");
         let depth = 1;
         let start_offset = 2;
-        let ret = model.state.dom.split_sub_tree(
+        let ret = model.state.dom.split_sub_tree_from(
             &DomHandle::from_raw(vec![0, 1, 0, 0]),
             start_offset,
-            0,
             depth,
-            None,
         );
         assert_eq!(
             ret.to_html().to_string(),
@@ -991,12 +1021,10 @@ mod test {
     #[test]
     fn split_dom_with_partial_handle() {
         let mut model = cm("<u>Text|<b>bold</b><i>italic</i></u>");
-        let ret = model.state.dom.split_sub_tree(
+        let ret = model.state.dom.split_sub_tree_from(
             &DomHandle::from_raw(vec![0, 1]), // Handle of <b>
             2,
             0,
-            0,
-            None,
         );
         assert_eq!(model.state.dom.to_html(), "<u>Text<b>bo</b></u>");
         assert_eq!(ret.to_html().to_string(), "<u><b>ld</b><i>italic</i></u>");

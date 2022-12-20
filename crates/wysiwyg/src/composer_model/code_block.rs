@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::cmp::min;
-use std::collections::HashSet;
-
 use crate::char::CharExt;
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::DomNodeKind::*;
@@ -63,12 +60,12 @@ where
         // let up_to_handle = parent_handle.child_handle(idx_end + 1);
         // let ancestor_to_split = self.find_ancestor_to_split(&start_handle);
 
-        let mut subtree = self.state.dom.split_sub_tree(
+        let mut subtree = self.state.dom.split_sub_tree_between(
             &start_handle,
             0,
-            0,
+            &end_handle,
+            usize::MAX,
             parent_handle.depth(),
-            Some(end_handle.clone()),
         );
         subtree.set_handle(DomHandle::root());
 
@@ -218,12 +215,6 @@ where
                                 data[text_start..text_end - 1].to_owned();
                             nodes_to_add.push(DomNode::new_text(text_to_add));
                             nodes_to_add.push(DomNode::new_line_break());
-                            if text_end <= start_in_block {
-                                selection_offset_start += 1;
-                            }
-                            if text_end <= end_in_block {
-                                selection_offset_end += 1;
-                            }
                             text_start = text_end;
                         }
                     }
@@ -308,9 +299,6 @@ where
                             if is_before {
                                 self.state.start += 1;
                             }
-                            // if !is_after {
-                            //     self.state.end += 1;
-                            // }
                         }
                     } else if container.is_list_item() {
                         children.push(DomNode::new_text("\n".into()));
@@ -328,7 +316,12 @@ where
                     )]
                 }
             }
-            DomNode::Zwsp(_) => todo!(),
+            DomNode::Zwsp(_) => {
+                // We removed a ZWSP, fix the selection
+                self.state.start -= 1;
+                self.state.end -= 1;
+                Vec::new()
+            }
         }
     }
 }
@@ -475,7 +468,7 @@ mod test {
     #[test]
     fn add_code_block_to_list_item() {
         let mut model = cm(
-            "<ul><li>Some text <b>and bold </b><i>|and italic</i></li></ul>",
+            "<ul><li>~Some text <b>and bold </b><i>|and italic</i></li></ul>",
         );
         model.code_block();
         assert_eq!(
@@ -487,19 +480,19 @@ mod test {
     #[test]
     fn add_code_block_to_list_item_with_line_breaks() {
         let mut model = cm(
-            "<ul><li>Some text <b>and bold </b><br/><i>and| italic</i></li></ul>",
+            "<ul><li>~Some text <b>and bold </b><br/><i>and| italic</i></li></ul>",
         );
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<ul><li>Some text <b>and bold&nbsp;</b><br /><pre>~<i>and| italic</i></pre></li></ul>"
+            "<ul><li>~Some text <b>and bold&nbsp;</b><br /><pre>~<i>and| italic</i></pre></li></ul>"
         );
     }
 
     #[test]
     fn add_code_block_to_several_list_items() {
         let mut model =
-            cm("<ul><li>{First item</li><li>Second}| item</li></ul>");
+            cm("<ul><li>~{First item</li><li>~Second}| item</li></ul>");
         model.code_block();
         assert_eq!(tx(&model), "<pre>~{First item\nSecond}| item</pre>");
     }
@@ -507,29 +500,29 @@ mod test {
     #[test]
     fn add_code_block_to_several_lists() {
         let mut model =
-            cm("<ul><li>{First item</li><li>Second item</li></ul>Some text<ul><li>Third}| item</li><li>Fourth one</li></ul>");
+            cm("<ul><li>~{First item</li><li>~Second item</li></ul>Some text<ul><li>~Third}| item</li><li>~Fourth one</li></ul>");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>~{First item\nSecond item\nSome text\nThird}| item</pre><ul><li>Fourth one</li></ul>");
+        assert_eq!(tx(&model), "<pre>~{First item\nSecond item\nSome text\nThird}| item</pre><ul><li>~Fourth one</li></ul>");
     }
 
     #[test]
     fn add_code_block_to_list_and_external_nodes() {
         let mut model =
-            cm("{Text <ul><li>First item</li><li>Second}| item</li></ul>");
+            cm("{Text <ul><li>~First item</li><li>~Second}| item</li></ul>");
         model.code_block();
         assert_eq!(tx(&model), "<pre>~{Text \nFirst item\nSecond}| item</pre>");
     }
 
     #[test]
     fn add_code_block_to_existing_code_block() {
-        let mut model = cm("{Text <pre>code}|</pre>");
+        let mut model = cm("{Text <pre>~code}|</pre>");
         model.code_block();
         assert_eq!(tx(&model), "<pre>~{Text code}|</pre>");
     }
 
     #[test]
     fn add_code_block_to_existing_code_block_partially_selected() {
-        let mut model = cm("{Text <pre><b>code}|</b><i> and italic</i></pre>");
+        let mut model = cm("{Text <pre>~<b>code}|</b><i> and italic</i></pre>");
         model.code_block();
         assert_eq!(
             tx(&model),
@@ -569,14 +562,14 @@ mod test {
 
     #[test]
     fn remove_code_block_moves_its_children_and_restores_line_breaks() {
-        let mut model = cm("Text <pre>with|\nline\nbreaks</pre>");
+        let mut model = cm("Text <pre>~with|\nline\nbreaks</pre>");
         model.code_block();
         assert_eq!(tx(&model), "Text <br />with|<br />line<br />breaks<br />");
     }
 
     #[test]
     fn remove_code_block_moves_its_children_and_keeps_selection_in_place() {
-        let mut model = cm("Text <pre>wi{th\nline\nbrea}|ks</pre>");
+        let mut model = cm("Text <pre>~wi{th\nline\nbrea}|ks</pre>");
         model.code_block();
         assert_eq!(
             tx(&model),

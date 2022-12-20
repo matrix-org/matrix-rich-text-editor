@@ -18,8 +18,8 @@ use crate::dom::nodes::DomNode;
 use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
 use crate::dom::{Dom, DomLocation, Range};
 use crate::{
-    ComposerModel, ComposerUpdate, DomHandle, Location, ToHtml, ToRawText,
-    ToTree, UnicodeString,
+    ComposerModel, ComposerUpdate, DomHandle, Location, ToHtml, ToTree,
+    UnicodeString,
 };
 
 impl<S> ComposerModel<S>
@@ -184,12 +184,10 @@ where
 
         // If there was a previous line break, we need to split the code block and add the line break
         if has_previous_line_break {
-            let sub_tree = self.state.dom.split_sub_tree(
+            let sub_tree = self.state.dom.split_sub_tree_from(
                 &leaf.node_handle,
                 leaf.start_offset - selection_offset,
-                0,
                 block_location.node_handle.depth(),
-                None,
             );
             let DomNode::Container(sub_tree_container) = &sub_tree else {
                 panic!("Sub tree must start from a container node");
