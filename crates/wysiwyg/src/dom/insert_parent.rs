@@ -28,7 +28,10 @@ where
         // - Set the new node's handle to the start of the range
         // - Get the mutable container node to move the selected range into
         let new_handle: DomHandle = range.node_handles().min().unwrap().clone();
-        let new_handle = if range.leaves().min().unwrap().is_covered() {
+        let first_leaf = range.leaves().min().unwrap();
+        let new_handle = if first_leaf.is_covered()
+            || (first_leaf.ends_inside() && first_leaf.is_end())
+        {
             new_handle
         } else {
             // If the first leaf in the range is completely covered, then leave space
@@ -117,6 +120,34 @@ mod test {
             .insert_parent(&range, DomNode::new_link(utf16("link"), vec![]));
 
         assert_eq!(model.state.dom.to_html(), r#"A<a href="link">B</a>C"#)
+    }
+
+    #[test]
+    fn insert_parent_flat_start() {
+        let mut model = cm("{AB}|C");
+        let (start, end) = model.safe_selection();
+        let range = model.state.dom.find_range(start, end);
+
+        model
+            .state
+            .dom
+            .insert_parent(&range, DomNode::new_link(utf16("link"), vec![]));
+
+        assert_eq!(model.state.dom.to_html(), r#"<a href="link">AB</a>C"#)
+    }
+
+    #[test]
+    fn insert_parent_flat_end() {
+        let mut model = cm("A{BC}|");
+        let (start, end) = model.safe_selection();
+        let range = model.state.dom.find_range(start, end);
+
+        model
+            .state
+            .dom
+            .insert_parent(&range, DomNode::new_link(utf16("link"), vec![]));
+
+        assert_eq!(model.state.dom.to_html(), r#"A<a href="link">BC</a>"#)
     }
 
     #[test]
