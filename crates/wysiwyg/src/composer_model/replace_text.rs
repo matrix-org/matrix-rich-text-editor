@@ -18,8 +18,7 @@ use crate::dom::nodes::DomNode;
 use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
 use crate::dom::{Dom, DomLocation, Range};
 use crate::{
-    ComposerModel, ComposerUpdate, DomHandle, Location, ToHtml, ToTree,
-    UnicodeString,
+    ComposerModel, ComposerUpdate, DomHandle, Location, UnicodeString,
 };
 
 impl<S> ComposerModel<S>
@@ -195,9 +194,6 @@ where
             let DomNode::Container(sub_tree_container) = &sub_tree else {
                 panic!("Sub tree must start from a container node");
             };
-            let dom_html = self.state.dom.to_html().to_string();
-            let dom_tree = self.state.dom.to_tree().to_string();
-            let subtree_html = sub_tree_container.to_html().to_string();
             let new_line_at_end = leaf.is_start();
             fn insert_code_block<S: UnicodeString>(
                 dom: &mut Dom<S>,
@@ -311,9 +307,6 @@ where
             let DomNode::Container(sub_tree_container) = &mut sub_tree else {
                 panic!("Sub tree must start from a container node");
             };
-
-            let dom_html = self.state.dom.to_html().to_string();
-            let sub_tree_html = sub_tree_container.to_html().to_string();
 
             let insert_at = if block_location.start_offset > 0 {
                 block_location.node_handle.next_sibling()

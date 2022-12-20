@@ -13,9 +13,8 @@
 // limitations under the License.
 
 use crate::dom::nodes::dom_node::DomNodeKind::{Generic, Quote};
-use crate::dom::DomLocation;
 use crate::{
-    ComposerAction, ComposerModel, ComposerUpdate, DomHandle, DomNode, ToHtml,
+    ComposerAction, ComposerModel, ComposerUpdate, DomHandle, DomNode,
     UnicodeString,
 };
 
@@ -53,9 +52,8 @@ where
             usize::MAX,
             parent_handle.depth(),
         );
+        // Needed to be able to add children
         subtree.set_handle(DomHandle::root());
-        let dom_html = self.state.dom.to_html().to_string();
-        let subtree_html = subtree.to_html().to_string();
 
         let start_handle_is_start_at_depth =
             start_handle.raw().iter().all(|i| *i == 0);

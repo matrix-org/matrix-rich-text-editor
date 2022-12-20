@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::char::CharExt;
-use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::DomNodeKind::*;
 use crate::dom::nodes::{ContainerNodeKind, DomNode};
 use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
@@ -35,9 +33,6 @@ where
     }
 
     fn add_code_block(&mut self) -> ComposerUpdate<S> {
-        fn new_line_break<S: UnicodeString>() -> DomNode<S> {
-            DomNode::new_text("\n".into())
-        }
         let (s, e) = self.safe_selection();
         let Some(wrap_result) = self.find_nodes_to_wrap_in_block(s, e) else {
             // No suitable nodes found to be wrapped inside the code block. The Dom should be empty
@@ -49,7 +44,6 @@ where
         let parent_handle = wrap_result.ancestor_handle;
         let start_handle = wrap_result.start_handle;
         let end_handle = wrap_result.end_handle;
-        let up_to_handle = end_handle.next_sibling();
         let range = wrap_result.range;
         let leaves: Vec<&DomLocation> = range.leaves().collect();
         let first_leaf = leaves.first().unwrap();
@@ -62,10 +56,8 @@ where
             usize::MAX,
             parent_handle.depth(),
         );
+        // Needed to be able to add children
         subtree.set_handle(DomHandle::root());
-
-        let cur_html = self.state.dom.to_html().to_string();
-        let subtree_html = subtree.to_html().to_string();
 
         let Some(subtree_container) = subtree.as_container_mut() else {
             panic!("Subtree must be a container");
@@ -73,7 +65,7 @@ where
 
         let mut children: Vec<DomNode<S>> = Vec::new();
         while !subtree_container.children().is_empty() {
-            let mut last_child = subtree_container
+            let last_child = subtree_container
                 .remove_child(subtree_container.children().len() - 1);
 
             let mut new_children = self.format_node_for_code_block(
@@ -299,11 +291,34 @@ where
                             self.state.end += 1;
                         }
                     } else if *container.kind() == ContainerNodeKind::Quote {
-                        if container.handle().index_in_parent() == 0 {
-                            children.push(DomNode::new_text("\n".into()));
-                        } else {
-                            self.state.start += 1;
-                            children.insert(0, DomNode::new_text("\n".into()));
+                        let added_at_start =
+                            if container.handle().index_in_parent() == 0 {
+                                children.push(DomNode::new_text("\n".into()));
+                                false
+                            } else {
+                                children
+                                    .insert(0, DomNode::new_text("\n".into()));
+                                true
+                            };
+                        if is_in_selection {
+                            let location = range
+                                .locations
+                                .iter()
+                                .find(|l| l.node_handle == container.handle())
+                                .unwrap();
+                            if location.starts_inside()
+                                && location.ends_inside()
+                            {
+                                // Do nothing
+                            } else if location.starts_inside() {
+                                if added_at_start {
+                                    self.state.start += 1;
+                                }
+                                self.state.end += 1;
+                            } else if location.ends_inside() {
+                                self.state.start += 1;
+                                self.state.end += 1;
+                            }
                         }
                     }
                     children
@@ -382,7 +397,7 @@ mod test {
 
     #[test]
     fn find_ranges_to_wrap_list_item_with_line_breaks() {
-        let mut model = cm(
+        let model = cm(
             "<ul><li>Some text <b>and bold </b><br/><i>and| italic</i></li></ul>",
         );
         let (s, e) = model.safe_selection();
@@ -390,9 +405,6 @@ mod test {
         assert_eq!(ret.ancestor_handle, DomHandle::from_raw(vec![0, 0]));
         // assert_eq!(ret.idx_start, 3);
         // assert_eq!(ret.idx_end, 3);
-
-        // model.code_block();
-        // assert_eq!(tx(&model), "");
     }
 
     #[test]

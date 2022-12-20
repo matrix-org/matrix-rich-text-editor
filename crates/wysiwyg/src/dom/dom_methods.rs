@@ -17,7 +17,7 @@
 
 use crate::dom::nodes::ContainerNodeKind;
 use crate::dom::unicode_string::UnicodeStr;
-use crate::{DomHandle, DomNode, ToHtml, UnicodeString};
+use crate::{DomHandle, DomNode, UnicodeString};
 
 use super::action_list::{DomAction, DomActionList};
 use super::nodes::dom_node::DomNodeKind;
@@ -613,9 +613,6 @@ where
             new_subtree.iter_subtree().find(|n| n.is_list()).is_none();
         self.remove_empty_container_nodes(keep_empty_list_items);
 
-        let cur_html = self.to_html().to_string();
-        let subtree_html = new_subtree.to_html().to_string();
-
         new_subtree
     }
 
@@ -629,9 +626,8 @@ where
     ) -> Vec<DomNode<S>> {
         let mut nodes = Vec::new();
 
-        let html = self.to_html().to_string();
-        let mut is_container_node = false;
-        let mut is_text_node = false;
+        let is_container_node: bool;
+        let is_text_node: bool;
         {
             let node = self.lookup_node(&cur_handle);
             is_container_node = node.is_container_node();

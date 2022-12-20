@@ -1,4 +1,4 @@
-use crate::{DomHandle, DomNode, ToHtml, UnicodeString};
+use crate::{DomHandle, DomNode, UnicodeString};
 
 use super::{Dom, Range};
 
@@ -70,8 +70,6 @@ where
                 let (left, left_handle, right, right_handle) =
                     self.split_new_sub_trees(handle, offset, shared_depth);
 
-                let left_html = left.to_html().to_string();
-                let right_html = right.to_html().to_string();
                 let mut outers = if location.ends_inside() {
                     vec![right.lookup_node(&right_handle).clone()]
                 } else {
@@ -81,8 +79,6 @@ where
                 let mut inner =
                     if location.ends_inside() { left } else { right };
 
-                let outer_html = outers.first().unwrap().to_html().to_string();
-                let inner_html = inner.to_html().to_string();
                 if location.ends_inside() && location.starts_inside() {
                     let offset = location.start_offset;
                     let before = inner.slice_before(offset);
