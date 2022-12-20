@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+options=':t'
+while getopts $options option; do
+  case "$option" in
+    t) TAG=$OPTARG;;
+  esac
+done
+
 BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
 
 #if [ $BRANCH_NAME == "main" ]; then 
@@ -33,4 +40,8 @@ cd $REPO_PATH
 git checkout -b $RELEASE_BRANCH
 git add .
 git commit -m "release $last_commit"
+if [ -z ${TAG+x} ];
+then 
+  git tag $TAG
+fi
 git push origin $RELEASE_BRANCH
