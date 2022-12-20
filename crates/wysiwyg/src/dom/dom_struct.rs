@@ -117,10 +117,10 @@ where
         &mut self,
         node_handle: &DomHandle,
         node: DomNode<S>,
-    ) -> &DomNode<S> {
+    ) -> DomHandle {
         let parent = self.parent_mut(node_handle);
         let index = node_handle.index_in_parent();
-        parent.insert_child(index, node)
+        parent.insert_child(index, node).handle()
     }
 
     /// Insert given [nodes] in order at the [node_handle] position,

@@ -8,7 +8,11 @@ where
 {
     #[allow(dead_code)]
     /// Insert a node and make this node the parent of a given range.
-    pub fn insert_parent(&mut self, range: &Range, mut new_node: DomNode<S>) {
+    pub fn insert_parent(
+        &mut self,
+        range: &Range,
+        mut new_node: DomNode<S>,
+    ) -> DomHandle {
         #[cfg(any(test, feature = "assert-invariants"))]
         self.assert_invariants();
 
@@ -94,10 +98,12 @@ where
         }
 
         // Insert the new container into the DOM
-        self.insert_at(&new_handle, new_node);
+        let inserted = self.insert_at(&new_handle, new_node);
 
         #[cfg(any(test, feature = "assert-invariants"))]
         self.assert_invariants();
+
+        inserted
     }
 }
 
