@@ -21,7 +21,7 @@ import {
 } from '../generated/wysiwyg.js';
 import { initOnce } from './useComposerModel.js';
 
-// In plain text there, due to cursor positioning, ending at a linebreak will
+// In plain text, due to cursor positioning, ending at a linebreak will
 // include an extra \n, so trim that off if required.
 // We replace the remaining \n with valid markdown before
 // parsing by MarkdownHTMLParser::to_html.
