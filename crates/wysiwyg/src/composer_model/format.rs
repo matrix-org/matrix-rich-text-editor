@@ -74,10 +74,9 @@ where
                 self.state.dom.find_structure_ancestor(&leaf.node_handle);
             // Get the closest ancestor path or the root one (empty Vec) if there is none
             let ancestor_handle =
-                first_structure_ancestor.unwrap_or(DomHandle::root());
-            let list = structure_ancestors
-                .entry(ancestor_handle)
-                .or_insert(Vec::new());
+                first_structure_ancestor.unwrap_or_else(DomHandle::root);
+            let list: &mut Vec<DomLocation> =
+                structure_ancestors.entry(ancestor_handle).or_default();
             // Add the DomHandle of the leaf to the list of grouped handles by this ancestor
             list.push(leaf.clone());
         }
@@ -218,7 +217,7 @@ where
         format: &InlineFormatType,
     ) {
         let selection_type =
-            self.check_format_selection_type(&range.locations, &format);
+            self.check_format_selection_type(&range.locations, format);
         match selection_type {
             FormatSelectionType::Remove => {} // TODO: actually implement this
             FormatSelectionType::Extend => self
@@ -447,6 +446,7 @@ where
      * Returns the number of characters added, which will either be 0 or 1.
      */
     fn insert_zwspace_if_needed(node: &mut DomNode<S>) -> isize {
+        // TODO: remove this or replace with a zwsp node if needed
         if let DomNode::Text(text) = node {
             if text.data().is_empty() {
                 text.set_data(S::zwsp());

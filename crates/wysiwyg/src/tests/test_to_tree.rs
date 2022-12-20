@@ -51,6 +51,7 @@ fn multiple_tags_nested_inside_one_produce_tree() {
 }
 
 #[test]
+#[ignore] // TODO: HTML parser doesn't handle creating zwsp node for now
 fn tree_display_converts_zwsp() {
     let model = cm("<ol><li>ab</li><li>\u{200b}cd|</li></ol>");
     assert_eq!(

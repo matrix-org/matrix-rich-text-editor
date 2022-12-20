@@ -35,6 +35,7 @@ mod sys {
     use super::super::PaNodeContainer;
     use super::super::{PaDom, PaDomCreationError, PaDomCreator};
     use super::*;
+    use crate::char::CharExt;
     use crate::dom::nodes::{ContainerNode, DomNode};
     use crate::ListType;
 
@@ -198,9 +199,19 @@ mod sys {
                         panic!("Found a document inside a document!")
                     }
                     PaDomNode::Text(text) => {
-                        node.append_child(DomNode::new_text(
-                            text.content.as_str().into(),
-                        ));
+                        let text_nodes: Vec<_> =
+                            text.content.split(char::zwsp()).collect();
+                        let text_nodes_len = text_nodes.len();
+                        for (i, str) in text_nodes.into_iter().enumerate() {
+                            if !str.is_empty() {
+                                node.append_child(DomNode::new_text(
+                                    str.into(),
+                                ));
+                            }
+                            if i + 1 < text_nodes_len {
+                                node.append_child(DomNode::new_zwsp());
+                            }
+                        }
                     }
                 }
             }

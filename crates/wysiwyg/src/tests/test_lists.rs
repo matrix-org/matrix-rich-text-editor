@@ -171,9 +171,9 @@ fn entering_mid_text_node_with_leading_formatting() {
 
 #[test]
 fn entering_mid_text_node_with_trailing_formatting() {
-    let mut model = cm("<ol><li>ab<strong>~c|def</strong></li></ol>");
+    let mut model = cm("<ol><li>~ab<strong>c|def</strong></li></ol>");
     model.enter();
-    assert_eq!(tx(&model), "<ol><li>ab<strong>~c</strong></li><li>~|<strong>def</strong></li></ol>")
+    assert_eq!(tx(&model), "<ol><li>~ab<strong>c</strong></li><li><strong>~|def</strong></li></ol>")
 }
 
 #[test]

@@ -302,11 +302,11 @@ where
         let start = range.start();
         let end = range.end();
 
-        for loc in range.into_iter() {
+        for loc in range.leaves() {
             let mut node = self.lookup_node_mut(&loc.node_handle);
             match &mut node {
                 DomNode::Container(_) => {
-                    // Nothing to do for container nodes
+                    panic!("Leaves shouldn't have containers")
                 }
                 DomNode::LineBreak(_) => {
                     match (loc.start_offset, loc.end_offset) {
@@ -321,13 +321,12 @@ where
                         }
                         (0, 0) => {
                             if !new_text.is_empty() {
-                                let node =
-                                    DomNode::new_text(new_text.clone());
                                 action_list.push(DomAction::add_node(
                                     loc.node_handle.parent_handle(),
                                     loc.node_handle.index_in_parent(),
-                                    node,
+                                    DomNode::new_text(new_text.clone()),
                                 ));
+                                first_text_node = false;
                             }
                         }
                         _ => panic!(
@@ -351,6 +350,7 @@ where
                                 loc.node_handle.index_in_parent() + 1,
                                 DomNode::new_text(new_text.clone()),
                             ));
+                            first_text_node = false;
                         }
                     }
                 }
@@ -363,8 +363,9 @@ where
                         && loc.end_offset == old_data.len()
                         && !first_text_node
                     {
-                        action_list
-                            .push(DomAction::remove_node(loc.node_handle));
+                        action_list.push(DomAction::remove_node(
+                            loc.node_handle.clone(),
+                        ));
                     } else {
                         // Otherwise, delete the selected text
                         let mut new_data =
@@ -377,8 +378,9 @@ where
 
                         new_data.push(&old_data[loc.end_offset..]);
                         if new_data.is_empty() {
-                            action_list
-                                .push(DomAction::remove_node(loc.node_handle));
+                            action_list.push(DomAction::remove_node(
+                                loc.node_handle.clone(),
+                            ));
                         } else {
                             node.set_data(new_data);
                         }
@@ -386,7 +388,53 @@ where
 
                     first_text_node = false;
                 }
-                DomNode::Zwsp(_) => todo!(),
+                DomNode::Zwsp(_) => {
+                    // FIXME: zwsp might not be handled in the same way as linebreak in some cases.
+                    match (loc.start_offset, loc.end_offset) {
+                        (0, 1) => {
+                            // Whole zwsp is selected, delete it
+                            action_list.push(DomAction::remove_node(
+                                loc.node_handle.clone(),
+                            ));
+                        }
+                        (1, 1) => {
+                            // Cursor is after zwsp, no need to delete
+                        }
+                        (0, 0) => {
+                            if !new_text.is_empty() {
+                                action_list.push(DomAction::add_node(
+                                    loc.node_handle.parent_handle(),
+                                    loc.node_handle.index_in_parent(),
+                                    DomNode::new_text(new_text.clone()),
+                                ));
+                                first_text_node = false;
+                            }
+                        }
+                        _ => panic!(
+                            "Tried to insert text into a zwsp with offset != 0 or 1. \
+                            Start offset: {}, end offset: {}",
+                            loc.start_offset,
+                            loc.end_offset,
+                        ),
+                    }
+                    if start >= loc.position && end == loc.position + 1 {
+                        // NOTE: if you add something else to `action_list` you will
+                        // probably break our assumptions in the method that
+                        // calls this one!
+                        // We are assuming we only add nodes AFTER all the
+                        // deleted nodes. (That is true in this case, because
+                        // we are checking that the selection ends inside this
+                        // zwsp.)
+                        if !new_text.is_empty() {
+                            action_list.push(DomAction::add_node(
+                                loc.node_handle.parent_handle(),
+                                loc.node_handle.index_in_parent() + 1,
+                                DomNode::new_text(new_text.clone()),
+                            ));
+                            first_text_node = false;
+                        }
+                    }
+                }
             }
         }
         action_list
