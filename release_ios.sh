@@ -40,8 +40,7 @@ cd $REPO_PATH
 git checkout -b $RELEASE_BRANCH
 git add .
 git commit -m "release $last_commit"
-if [ -z ${TAG+x} ];
-then 
+if ["$TAG"]; then 
   git tag $TAG
 fi
 git push origin $RELEASE_BRANCH
