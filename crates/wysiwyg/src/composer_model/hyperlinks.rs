@@ -13,10 +13,13 @@
 // limitations under the License.
 
 use crate::dom::nodes::dom_node::DomNodeKind;
+use crate::dom::nodes::ContainerNodeKind;
 use crate::dom::nodes::{ContainerNodeKind::Link, DomNode};
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{DomLocation, Range};
-use crate::{ComposerModel, ComposerUpdate, LinkAction, UnicodeString};
+use crate::{
+    ComposerModel, ComposerUpdate, DomHandle, LinkAction, UnicodeString,
+};
 
 impl<S> ComposerModel<S>
 where
@@ -58,9 +61,63 @@ where
 
     pub fn set_link(&mut self, link: S) -> ComposerUpdate<S> {
         self.push_state_to_history();
-        let (s, e) = self.safe_selection();
-        let range = self.state.dom.find_range(s, e);
-        self.set_link_range(range, link)
+        let (mut s, mut e) = self.safe_selection();
+
+        let mut range = self.state.dom.find_range(s, e);
+
+        // Find container link that completely covers the range
+        if let Some(link) = self.find_parent_links(&range) {
+            // If found, update the range to the container link bounds
+            range = self.state.dom.find_range_by_node(&link);
+            (s, e) = (range.start(), range.end());
+        }
+
+        if s == e {
+            return ComposerUpdate::keep();
+        }
+
+        let inserted = self
+            .state
+            .dom
+            .insert_parent(&range, DomNode::new_link(link, vec![]));
+
+        // Ensure no duplication by deleting any links contained within the new link
+        self.delete_child_links(&inserted);
+
+        self.create_update_replace_all()
+    }
+
+    fn delete_child_links(&mut self, node_handle: &DomHandle) {
+        let node = self.state.dom.lookup_node(node_handle);
+
+        for handle in node
+            .iter_containers()
+            .filter(|n| matches!(n.kind(), ContainerNodeKind::Link(_)))
+            .map(|n| n.handle())
+            .filter(|h| *h != *node_handle)
+            .collect::<Vec<_>>()
+            .into_iter()
+            .rev()
+        {
+            self.state.dom.remove_and_keep_children(&handle);
+        }
+    }
+
+    fn find_parent_links(&mut self, range: &Range) -> Option<DomHandle> {
+        let mut parent_handle = range.shared_parent();
+        while !parent_handle.is_root() {
+            let node = self.state.dom.lookup_node(&parent_handle);
+            let container = match node {
+                DomNode::Container(container) => container,
+                _ => continue,
+            };
+            if matches!(container.kind(), ContainerNodeKind::Link(_)) {
+                return Some(node.handle());
+            }
+            parent_handle = parent_handle.parent_handle();
+        }
+
+        None
     }
 
     fn set_link_range(&mut self, range: Range, link: S) -> ComposerUpdate<S> {

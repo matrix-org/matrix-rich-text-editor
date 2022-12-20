@@ -23,6 +23,8 @@ use crate::dom::{
 };
 use crate::ToHtml;
 
+use super::FindResult;
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Dom<S>
 where
@@ -174,6 +176,22 @@ where
     /// selected. The returned range lists all the Dom nodes involved.
     pub fn find_range(&self, start: usize, end: usize) -> Range {
         find_range::find_range(self, start, end)
+    }
+
+    pub fn find_range_by_node(&self, node_handle: &DomHandle) -> Range {
+        let result = find_range::find_pos(self, &node_handle, 0, usize::MAX);
+
+        let locations = match result {
+            FindResult::Found(locations) => locations,
+            _ => panic!("Node does not exist"),
+        };
+
+        let leaves = locations.iter().filter(|l| l.is_leaf());
+
+        let s = leaves.clone().map(|l| l.position).min().unwrap();
+        let e = leaves.clone().map(|l| l.position + l.length).max().unwrap();
+
+        self.find_range(s, e)
     }
 
     pub(crate) fn document_handle(&self) -> DomHandle {

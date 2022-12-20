@@ -310,9 +310,24 @@ impl Range {
             }
 
             shared_path.push(min_leaf_path[i]);
+
+            let location =
+                self.find_location(&DomHandle::from_raw(shared_path.clone()));
+
+            if location.is_covered() {
+                shared_path.pop();
+                break;
+            }
         }
 
         DomHandle::from_raw(shared_path)
+    }
+
+    fn find_location(&self, node_handle: &DomHandle) -> &DomLocation {
+        self.locations
+            .iter()
+            .find(|l| *l.node_handle.raw() == *node_handle.raw())
+            .unwrap()
     }
 }
 
@@ -514,8 +529,8 @@ mod test {
 
     #[test]
     fn range_shared_parent() {
-        let range = range_of("<em><strong><b>{a</b>b}|</strong></em>");
-        assert_eq!(range.shared_parent(), DomHandle::from_raw(vec![0, 0]));
+        let range = range_of("<em><strong><b>{a</b>b}|</strong>c</em>");
+        assert_eq!(range.shared_parent(), DomHandle::from_raw(vec![0]));
     }
 
     #[test]
@@ -527,7 +542,7 @@ mod test {
     #[test]
     fn range_shared_parent_deep_flat() {
         let range = range_of("<em><strong>{ab}|</strong></em>");
-        assert_eq!(range.shared_parent(), DomHandle::from_raw(vec![0, 0]));
+        assert_eq!(range.shared_parent(), DomHandle::from_raw(vec![]));
     }
 
     fn range_of(model: &str) -> Range {

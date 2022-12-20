@@ -291,6 +291,23 @@ mod test {
     }
 
     #[test]
+    fn insert_parent_includes_covered_shared_parent_nodes() {
+        let mut model = cm("<i><em>{A<b>B</b><u>C</u>}|</em>D</i>");
+        let (start, end) = model.safe_selection();
+        let range = model.state.dom.find_range(start, end);
+
+        model
+            .state
+            .dom
+            .insert_parent(&range, DomNode::new_link(utf16("link"), vec![]));
+
+        assert_eq!(
+            model.state.dom.to_html(),
+            r#"<i><a href="link"><em>A<b>B</b><u>C</u></em></a>D</i>"#
+        )
+    }
+
+    #[test]
     #[should_panic]
     fn insert_parent_panics_if_new_is_not_container() {
         let mut model = cm("{X}|");

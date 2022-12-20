@@ -60,7 +60,7 @@ fn set_link_in_multiple_leaves_of_formatted_text() {
     model.set_link(utf16("https://element.io"));
     assert_eq!(
         model.state.dom.to_string(),
-        "<i><a href=\"https://element.io\">test_italic</a><b><a href=\"https://element.io\">test_italic_bold</a></b></i>"
+        "<a href=\"https://element.io\"><i>test_italic<b>test_italic_bold</b></i></a>"
     )
 }
 
@@ -70,7 +70,7 @@ fn set_link_in_multiple_leaves_of_formatted_text_partially_covered() {
     model.set_link(utf16("https://element.io"));
     assert_eq!(
         model.state.dom.to_string(),
-        "<i>test_it<a href=\"https://element.io\">alic</a><b><a href=\"https://element.io\">test_ital</a>ic_bold</b></i>"
+        "<i>test_it<a href=\"https://element.io\">alic<b>test_ital</b></a><b>ic_bold</b></i>"
     )
 }
 
@@ -80,7 +80,7 @@ fn set_link_in_multiple_leaves_of_formatted_text_partially_covered_2() {
     model.set_link(utf16("https://element.io"));
     assert_eq!(
         model.state.dom.to_string(),
-        "<i><u>test_it<a href=\"https://element.io\">alic_underline</a></u><a href=\"https://element.io\">test_italic</a><b><a href=\"https://element.io\">test_ital</a>ic_bold</b></i>"
+        "<i><u>test_it</u><a href=\"https://element.io\"><u>alic_underline</u>test_italic<b>test_ital</b></a><b>ic_bold</b></i>"
     )
 }
 
@@ -111,7 +111,7 @@ fn set_link_in_text_and_already_linked_text() {
     model.set_link(utf16("https://matrix.org"));
     assert_eq!(
         model.state.dom.to_string(),
-        "<a href=\"https://matrix.org\">non_link_text</a><a href=\"https://matrix.org\">link_text</a>"
+        "<a href=\"https://matrix.org\">non_link_textlink_text</a>"
     )
 }
 
@@ -121,8 +121,45 @@ fn set_link_in_multiple_leaves_of_formatted_text_with_link() {
     model.set_link(utf16("https://matrix.org"));
     assert_eq!(
         model.state.dom.to_string(),
-        "<i><a href=\"https://matrix.org\">test_italic</a><b><a href=\"https://matrix.org\">test_italic_bold</a></b></i>"
+        "<a href=\"https://matrix.org\"><i>test_italic<b>test_italic_bold</b></i></a>"
     )
+}
+
+#[test]
+fn set_link_partially_highlighted_inside_a_link_and_starting_inside() {
+    let mut model = cm("<a href=\"https://element.io\">test_{link</a> test}|");
+    model.set_link(utf16("https://matrix.org"));
+    assert_eq!(
+        tx(&model),
+        r#"<a href="https://element.io">test_</a><a href="https://matrix.org">{link test}|</a>"#
+    );
+}
+
+#[test]
+fn set_link_partially_highlighted_inside_a_link_and_starting_before() {
+    let mut model = cm("{test <a href=\"https://element.io\">test}|_link</a>");
+    model.set_link(utf16("https://matrix.org"));
+    assert_eq!(
+        tx(&model),
+        r#"<a href="https://matrix.org">{test test}|</a><a href="https://element.io">_link</a>"#
+    );
+}
+
+#[test]
+fn set_link_highlighted_inside_a_link() {
+    let mut model = cm("<a href=\"https://element.io\">test {test}| test</a>");
+    model.set_link(utf16("https://matrix.org"));
+    assert_eq!(
+        tx(&model),
+        r#"<a href="https://matrix.org">test {test}| test</a>"#
+    );
+}
+
+#[test]
+fn set_link_around_links() {
+    let mut model = cm(r#"{X <a href="linkA">A</a> <a href="linkB">B</a> Y}|"#);
+    model.set_link(utf16("https://matrix.org"));
+    assert_eq!(tx(&model), r#"<a href="https://matrix.org">{X A B Y}|</a>"#);
 }
 
 #[test]
