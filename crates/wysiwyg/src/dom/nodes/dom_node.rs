@@ -186,6 +186,7 @@ where
         matches!(self, Self::Container(container) if container.is_list_item())
     }
 
+    #[allow(dead_code)]
     pub(crate) fn is_empty_list_item(&self) -> bool {
         matches!(self, Self::Container(container) if container.is_empty_list_item())
     }
