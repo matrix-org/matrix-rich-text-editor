@@ -3,7 +3,7 @@
 options=':t'
 while getopts $options option; do
   case "$option" in
-    t) TAG="$OPTARG";;
+    t) TAG=$OPTARG;;
   esac
 done
 
