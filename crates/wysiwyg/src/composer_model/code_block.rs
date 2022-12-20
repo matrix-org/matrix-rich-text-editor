@@ -55,11 +55,6 @@ where
         let first_leaf = leaves.first().unwrap();
         let last_leaf = leaves.last().unwrap();
 
-        // let mut nodes_visited = HashSet::new();
-        // let start_handle = parent_handle.child_handle(idx_start);
-        // let up_to_handle = parent_handle.child_handle(idx_end + 1);
-        // let ancestor_to_split = self.find_ancestor_to_split(&start_handle);
-
         let mut subtree = self.state.dom.split_sub_tree_between(
             &start_handle,
             0,
@@ -286,12 +281,7 @@ where
                         c, range, first_leaf, last_leaf,
                     ));
                 }
-                if matches!(
-                    container.kind(),
-                    ContainerNodeKind::List(_)
-                        | ContainerNodeKind::ListItem
-                        | ContainerNodeKind::CodeBlock
-                ) {
+                if container.is_block_node() || container.is_list_item() {
                     if container.is_list() {
                         // Add line break before the List if it's not at the start
                         if node.handle().index_in_parent() > 0 {
@@ -307,6 +297,13 @@ where
                         }
                         if !is_after {
                             self.state.end += 1;
+                        }
+                    } else if *container.kind() == ContainerNodeKind::Quote {
+                        if container.handle().index_in_parent() == 0 {
+                            children.push(DomNode::new_text("\n".into()));
+                        } else {
+                            self.state.start += 1;
+                            children.insert(0, DomNode::new_text("\n".into()));
                         }
                     }
                     children
@@ -548,6 +545,27 @@ mod test {
             tx(&model),
             "<u><b>Text<br /></b></u><pre>~<u><b><i>{in italic}|</i></b></u></pre>"
         );
+    }
+
+    #[test]
+    fn add_code_block_to_quote() {
+        let mut model = cm("<blockquote>~Quot|e</blockquote>");
+        model.code_block();
+        assert_eq!(tx(&model), "<pre>~Quot|e</pre>");
+    }
+
+    #[test]
+    fn add_code_block_to_quote_text_before() {
+        let mut model = cm("Te{xt <blockquote>~Quot}|e</blockquote>");
+        model.code_block();
+        assert_eq!(tx(&model), "<pre>~Te{xt \nQuot}|e</pre>");
+    }
+
+    #[test]
+    fn add_code_block_to_quote_text_after() {
+        let mut model = cm("<blockquote>~Quo{te</blockquote>Te}|xt");
+        model.code_block();
+        assert_eq!(tx(&model), "<pre>~Quo{te\nTe}|xt</pre>");
     }
 
     #[test]
