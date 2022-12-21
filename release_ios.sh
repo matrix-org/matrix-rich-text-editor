@@ -48,11 +48,12 @@ git add .
 git commit -m "release $last_commit"
 if [ "$TAG" != "" ]; then
   echo "found a tag $TAG"]
-  PR_NAME=${TAG}
+  BRANCH_NAME="release_$TAG"
   git tag $TAG
 else
   echo "tag not found"
-  PR_NAME=${RELEASE_BRANCH}
+  BRANCH_NAME=${RELEASE_BRANCH}
 fi
-git push origin $PR_NAME
+git push origin $BRANCH_NAME
+# if you have github cli installed you can also create the PR automatically
 gh pr create -f
