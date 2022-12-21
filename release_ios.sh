@@ -54,6 +54,6 @@ else
   echo "tag not found"
   BRANCH_NAME=${RELEASE_BRANCH}
 fi
-git push origin $BRANCH_NAME
+git push origin $RELEASE_BRANCH:$BRANCH_NAME
 # if you have github cli installed you can also create the PR automatically
-gh pr create -R matrix-org/matrix-wysiwyg-composer-swift -H $BRANCH_NAME -B main -f
+gh pr create -R matrix-org/matrix-wysiwyg-composer-swift -H $BRANCH_NAME -B main -t $BRANCH_NAME -b $BRANCH_NAME
