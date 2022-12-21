@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  TAG: ${{ github.head_ref }}
+  GH_TOKEN: ${{ secrets.SWIFTPM_GH_TOKEN }}
   GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx4096m -Dfile.encoding=UTF-8 -XX:+HeapDumpOnOutOfMemoryError" -Dkotlin.daemon.jvm.options="-Xmx2560m" -Dkotlin.incremental=false
   CI_GRADLE_ARG_PROPERTIES: --stacktrace -PpreDexEnable=false --max-workers 4 --no-daemon
   ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
@@ -17,6 +17,36 @@ env:
   ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
 
 jobs:
+  ios:
+    name: Publish to SwiftPM Repo
+    runs-on: macos-12
+    steps:
+      - name: 🧮 Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.65
+          profile: minimal
+          override: true
+          
+      - name: Install targets
+        run: |
+          rustup target add aarch64-apple-ios
+          rustup target add aarch64-apple-ios-sim
+          rustup target add x86_64-apple-ios
+          
+      - name: Set XCode 14.2
+        run: sudo xcode-select -switch /Applications/Xcode_14.2.app
+
+      - uses: de-vri-es/setup-git-credentials@v2
+        with:
+          credentials: ${{secrets.GIT_CREDENTIALS}}
+          
+      - name: Release iOS
+        run: ./release_ios.sh -t ${{ github.head_ref }}
+
   android:
     name: Publish to maven
     runs-on: ubuntu-latest # No need for macos-latest if there are no UI tests
@@ -57,6 +87,7 @@ jobs:
         with:
           build-root-directory: platforms/android
           arguments: closeAndReleaseRepository
+          
   npm:
     name: Publish to npm
     runs-on: ubuntu-latest

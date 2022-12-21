@@ -14,12 +14,12 @@ done
 
 BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
 
-#if [ $BRANCH_NAME == "main" ]; then 
-#  echo "On main branch."
-#else 
-#  echo "Not on main branch. Exiting..."
-#  exit 1
-#fi
+if [ $BRANCH_NAME == "main" ]; then 
+  echo "On main branch."
+else 
+  echo "Not on main branch. Exiting..."
+  exit 1
+fi
 
 if [ -z "$(git status --porcelain)" ]; then 
   echo "Working directory is clean."
