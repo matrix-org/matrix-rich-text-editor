@@ -77,6 +77,8 @@ where
         self.document().children()
     }
 
+    /// Returns the last node handle of the Dom. It's useful for reverse iterators that should start
+    /// at the end of the Dom.
     pub fn last_node_handle(&self) -> DomHandle {
         let mut found = false;
         let mut cur_handle = DomHandle::root();

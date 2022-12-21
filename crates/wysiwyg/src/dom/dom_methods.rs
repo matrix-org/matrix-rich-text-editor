@@ -755,19 +755,19 @@ where
             self.handle_iter_from(&last_handle_in_dom).rev().collect();
         for handle in handles_in_reverse {
             let mut needs_removal = false;
+            if !self.contains(&handle) {
+                continue;
+            }
             if let DomNode::Container(container) = self.lookup_node(&handle) {
                 if container.children().is_empty()
                     && !(keep_empty_list_items && container.is_list_item())
                 {
                     needs_removal = true;
+                } else if container.is_block_node()
+                    && container.only_contains_zwsp()
+                {
+                    needs_removal = true;
                 }
-                // TODO: un-comment when ZwspNode is ready
-                // else if container.is_block_node()
-                //     && container.children().len() == 1
-                //     && container.has_leading_zwsp()
-                // {
-                //     needs_removal = true;
-                // }
             }
             if needs_removal && !handle.is_root() {
                 self.remove(&handle);

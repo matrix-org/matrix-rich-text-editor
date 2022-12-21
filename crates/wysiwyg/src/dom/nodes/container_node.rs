@@ -412,7 +412,7 @@ where
     }
 
     /// Remove leading Line break char from this container.
-    /// Returns false if no updates was done.
+    /// Returns false if no updates were done.
     pub fn remove_leading_line_break(&mut self) -> bool {
         let Some(first_child) = self.children.get_mut(0) else {
             return false;
@@ -532,10 +532,12 @@ where
         }
     }
 
+    /// Returns true if the ContainerNode has no children.
     pub fn is_empty(&self) -> bool {
         self.children.is_empty()
     }
 
+    /// Returns true if the ContainerNode only has 1 child, and it's a ZwspNode.
     pub fn only_contains_zwsp(&self) -> bool {
         self.children.len() == 1 && self.children[0].is_zwsp()
     }

@@ -186,14 +186,16 @@ where
 
         // If there was a previous line break, we need to split the code block and add the line break
         if has_previous_line_break {
-            let sub_tree = self.state.dom.split_sub_tree_from(
+            let mut sub_tree = self.state.dom.split_sub_tree_from(
                 &leaf.node_handle,
                 leaf.start_offset - selection_offset,
                 block_location.node_handle.depth(),
             );
-            let DomNode::Container(sub_tree_container) = &sub_tree else {
+            sub_tree.set_handle(DomHandle::root());
+            let DomNode::Container(sub_tree_container) = &mut sub_tree else {
                 panic!("Sub tree must start from a container node");
             };
+
             let new_line_at_end = leaf.is_start();
             fn insert_code_block<S: UnicodeString>(
                 dom: &mut Dom<S>,
@@ -209,11 +211,17 @@ where
                 };
                 dom.insert_at(&insert_new_line_at, DomNode::new_line_break());
             }
+
+            if !sub_tree_container.has_leading_zwsp() {
+                sub_tree_container.insert_child(0, DomNode::new_zwsp());
+            }
+
             if self.state.dom.contains(&block_location.node_handle) {
                 if let DomNode::Container(block) =
                     self.state.dom.lookup_node_mut(&block_location.node_handle)
                 {
-                    if block.children().is_empty() {
+                    if block.children().is_empty() || block.only_contains_zwsp()
+                    {
                         self.state.dom.replace(
                             &block_location.node_handle,
                             vec![
@@ -256,8 +264,11 @@ where
                     new_line_at_end,
                 );
             }
-            self.state.start += 1;
-            self.state.end = self.state.start;
+            // Fix selection if it was after the first possible line break
+            if block_location.start_offset > 2 {
+                self.state.start += 1;
+                self.state.end = self.state.start;
+            }
             self.create_update_replace_all()
         } else {
             // Otherwise, just add a ('\n') line break
@@ -284,6 +295,16 @@ where
                 self.state.start += 1;
                 self.state.end = self.state.start;
                 self.create_update_replace_all()
+            } else if let DomNode::Zwsp(_) =
+                self.state.dom.lookup_node(&leaf.node_handle)
+            {
+                let text_node = DomNode::new_text("\n".into());
+                self.state
+                    .dom
+                    .insert_at(&leaf.node_handle.next_sibling(), text_node);
+                self.state.start += 1;
+                self.state.end = self.state.start;
+                self.create_update_replace_all()
             } else {
                 ComposerUpdate::keep()
             }
@@ -298,21 +319,29 @@ where
         let has_previous_line_break = leaf.kind == DomNodeKind::LineBreak;
 
         if has_previous_line_break {
+            // If there was a previous line break we should split the quote in 2 parts, adding a
+            // line break between them.
             let mut sub_tree = self.state.dom.split_sub_tree_from(
                 &leaf.node_handle,
                 leaf.start_offset,
                 block_location.node_handle.depth(),
             );
+            // Needed to be able to add children
             sub_tree.set_handle(DomHandle::root());
             let DomNode::Container(sub_tree_container) = &mut sub_tree else {
                 panic!("Sub tree must start from a container node");
             };
 
-            let insert_at = if block_location.start_offset > 0 {
-                block_location.node_handle.next_sibling()
-            } else {
-                block_location.node_handle.clone()
-            };
+            let insert_at =
+                if self.state.dom.contains(&block_location.node_handle) {
+                    if block_location.start_offset > 0 {
+                        block_location.node_handle.next_sibling()
+                    } else {
+                        block_location.node_handle.clone()
+                    }
+                } else {
+                    block_location.node_handle.clone()
+                };
 
             // We don't need the leading line break in the extracted half of the block quote
             if sub_tree_container.remove_leading_line_break() {
@@ -323,10 +352,14 @@ where
             if !sub_tree_container.is_empty()
                 && !sub_tree_container.only_contains_zwsp()
             {
+                // If the sub-tree is not empty, insert it along with a line break before it
                 if !sub_tree_container.has_leading_zwsp() {
                     sub_tree_container.insert_child(0, DomNode::new_zwsp());
-                    self.state.start += 1;
-                    self.state.end += 1;
+                    // Don't modify selection if we're inserting it at the same position as the old block
+                    if insert_at != block_location.node_handle {
+                        self.state.start += 1;
+                        self.state.end += 1;
+                    }
                 }
                 self.state.dom.insert_at(
                     &insert_at,
@@ -336,30 +369,22 @@ where
                     .dom
                     .insert_at(&insert_at, DomNode::new_line_break());
             } else {
-                self.state.dom.insert_at(
-                    &block_location.node_handle.next_sibling(),
-                    DomNode::new_line_break(),
-                );
-                self.state.start += 1;
-                self.state.end += 1;
-            }
-
-            if let DomNode::Container(quote_block) =
-                self.state.dom.lookup_node(&block_location.node_handle)
-            {
-                if quote_block.only_contains_zwsp() {
-                    self.state.start -= 1;
-                    self.state.end -= 1;
-                    self.state.dom.remove(&block_location.node_handle);
-                } else if quote_block.is_empty() {
-                    self.state.dom.remove(&block_location.node_handle);
-                }
+                // If the sub-tree is empty, just add the line break
+                let insert_at =
+                    if self.state.dom.contains(&block_location.node_handle) {
+                        self.state.start += 1;
+                        self.state.end += 1;
+                        block_location.node_handle.next_sibling()
+                    } else {
+                        block_location.node_handle.clone()
+                    };
+                self.state
+                    .dom
+                    .insert_at(&insert_at, DomNode::new_line_break());
             }
         } else {
             self.do_enter_in_text(&leaf.node_handle, leaf.start_offset);
         }
-
-        self.state.dom.remove_empty_container_nodes(false);
 
         self.create_update_replace_all()
     }
