@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-TAG=""
-
 while getopts ":t:" option; do
    case "${option}" in
       t) # Enter a name
