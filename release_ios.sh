@@ -47,7 +47,10 @@ cd $REPO_PATH
 git checkout -b $RELEASE_BRANCH
 git add .
 git commit -m "release $last_commit"
-if [ $HAS_TAG ]; then 
+if [ $HAS_TAG ]; then
+  echo "found a tag $TAG"
   git tag $TAG
+else
+  echo "tag not found"
 fi
 git push origin $RELEASE_BRANCH
