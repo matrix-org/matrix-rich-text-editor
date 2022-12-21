@@ -55,4 +55,4 @@ else
   PR_NAME=${RELEASE_BRANCH}
 fi
 git push origin $PR_NAME
-git request-pull $PR_NAME git@github.com:matrix-org/matrix-wysiwyg-composer-swift.git main
+git request-pull main git@github.com:matrix-org/matrix-wysiwyg-composer-swift.git $PR_NAME
