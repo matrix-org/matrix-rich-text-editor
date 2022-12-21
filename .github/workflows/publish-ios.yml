@@ -2,9 +2,6 @@ name: Publish-iOS
 
 on: [push, workflow_dispatch]
 
-env:
-  GH_TOKEN: ${{ secrets.SWIFTPM_GH_TOKEN }}
-
 jobs:
   ios:
     name: Publish to SwiftPM Repo
@@ -29,8 +26,9 @@ jobs:
       - name: Set XCode 14.2
         run: sudo xcode-select -switch /Applications/Xcode_14.2.app
 
-      - name: Set GH Username
-        run: git config --global user.name "Velin92"
+      - uses: de-vri-es/setup-git-credentials@v2
+        with:
+          credentials: ${{secrets.GIT_CREDENTIALS}}
           
       - name: Release iOS
         run: ./release_ios.sh
