@@ -56,4 +56,4 @@ else
 fi
 git push origin $BRANCH_NAME
 # if you have github cli installed you can also create the PR automatically
-gh pr create -f
+gh pr create -B main -t $BRANCH_NAME -b $RELEASE_BRANCH
