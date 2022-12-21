@@ -189,7 +189,7 @@ where
         let leaves = locations.iter().filter(|l| l.is_leaf());
 
         let s = leaves.clone().map(|l| l.position).min().unwrap();
-        let e = leaves.clone().map(|l| l.position + l.length).max().unwrap();
+        let e = leaves.map(|l| l.position + l.length).max().unwrap();
 
         self.find_range(s, e)
     }
