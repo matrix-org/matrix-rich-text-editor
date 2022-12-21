@@ -179,7 +179,7 @@ where
     }
 
     pub fn find_range_by_node(&self, node_handle: &DomHandle) -> Range {
-        let result = find_range::find_pos(self, &node_handle, 0, usize::MAX);
+        let result = find_range::find_pos(self, node_handle, 0, usize::MAX);
 
         let locations = match result {
             FindResult::Found(locations) => locations,
@@ -820,6 +820,25 @@ mod test {
         // Last level doesn't exist, [0, 0, 1] does not have 6 children
         let handle = DomHandle::from_raw(vec![0, 0, 1, 5]);
         assert!(!d.contains(&handle));
+    }
+
+    #[test]
+    fn find_range_by_node() {
+        let d = cm("<b><u>Hello, <i>world|</i></u></b>").state.dom;
+        let range_by_node =
+            d.find_range_by_node(&DomHandle::from_raw(vec![0, 0, 0]));
+        let actual_range = d.find_range(0, 7);
+
+        assert_eq!(range_by_node, actual_range);
+    }
+
+    #[test]
+    fn find_range_by_node_root() {
+        let d = cm("<b><u>Hello, <i>world|</i></u></b>").state.dom;
+        let range_by_node = d.find_range_by_node(&DomHandle::root());
+        let actual_range = d.find_range(0, 12);
+
+        assert_eq!(range_by_node, actual_range);
     }
 
     const NO_CHILDREN: &Vec<DomNode<Utf16String>> = &Vec::new();
