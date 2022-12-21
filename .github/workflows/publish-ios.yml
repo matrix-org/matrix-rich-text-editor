@@ -3,7 +3,7 @@ name: Publish-iOS
 on: [push, workflow_dispatch]
 
 env:
-  GH_TOKEN: ${{ github.token }}
+  GH_TOKEN: ${{ secrets.SWIFTPM_GH_TOKEN }}
 
 jobs:
   ios:
