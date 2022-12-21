@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
 
-options=':t'
-while getopts $options option; do
-  case "$option" in
-    t) TAG=$OPTARG;;
-  esac
+HAS_TAG=$false
+TAG=""
+
+while getopts ":t:" option; do
+   case $option in
+      t) # Enter a name
+          HAS_TAG=$true
+          TAG=$OPTARG;;
+     \?) # Invalid option
+          echo "Error: Invalid option"
+          exit;;
+   esac
 done
 
 BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
@@ -40,7 +47,7 @@ cd $REPO_PATH
 git checkout -b $RELEASE_BRANCH
 git add .
 git commit -m "release $last_commit"
-if [ -z "$TAG" ]; then 
+if [ $HAS_TAG ]; then 
   git tag $TAG
 fi
 git push origin $RELEASE_BRANCH
