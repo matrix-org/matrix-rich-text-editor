@@ -66,7 +66,7 @@ where
         let mut range = self.state.dom.find_range(s, e);
 
         // Find container link that completely covers the range
-        if let Some(link) = self.find_parent_links(&range) {
+        if let Some(link) = self.find_closest_ancestor_link(&range) {
             // If found, update the range to the container link bounds
             range = self.state.dom.find_range_by_node(&link);
             (s, e) = (range.start(), range.end());
@@ -103,7 +103,10 @@ where
         }
     }
 
-    fn find_parent_links(&mut self, range: &Range) -> Option<DomHandle> {
+    fn find_closest_ancestor_link(
+        &mut self,
+        range: &Range,
+    ) -> Option<DomHandle> {
         let mut parent_handle = range.shared_parent_outside();
         while !parent_handle.is_root() {
             let node = self.state.dom.lookup_node(&parent_handle);
