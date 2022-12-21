@@ -7,6 +7,7 @@ on:
   workflow_dispatch:
 
 env:
+  TAG: ${{ github.head_ref }}
   GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx4096m -Dfile.encoding=UTF-8 -XX:+HeapDumpOnOutOfMemoryError" -Dkotlin.daemon.jvm.options="-Xmx2560m" -Dkotlin.incremental=false
   CI_GRADLE_ARG_PROPERTIES: --stacktrace -PpreDexEnable=false --max-workers 4 --no-daemon
   ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
