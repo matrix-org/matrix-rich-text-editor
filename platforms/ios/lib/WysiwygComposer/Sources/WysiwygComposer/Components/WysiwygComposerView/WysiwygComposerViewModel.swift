@@ -274,7 +274,6 @@ public extension WysiwygComposerViewModel {
     func select(range: NSRange) {
         do {
             guard let text = textView.attributedText else { return }
-            // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
             let htmlSelection = try text.htmlRange(from: range)
             Logger.viewModel.logDebug(["Sel(att): \(range)",
                                        "Sel: \(htmlSelection)",
@@ -379,7 +378,6 @@ private extension WysiwygComposerViewModel {
             )
             // FIXME: handle error for out of bounds index
             let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
-            // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
             let textSelection = try attributed.attributedRange(from: htmlSelection)
             attributedContent = WysiwygComposerAttributedContent(text: attributed, selection: textSelection)
             Logger.viewModel.logDebug(["Sel(att): \(textSelection)",
@@ -403,7 +401,6 @@ private extension WysiwygComposerViewModel {
     func applySelect(start: UInt32, end: UInt32) {
         do {
             let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
-            // FIXME: temporary workaround as trailing newline should be ignored but are now replacing ZWSP from Rust model
             let textSelection = try attributedContent.text.attributedRange(from: htmlSelection)
             attributedContent.selection = textSelection
             Logger.viewModel.logDebug(["Sel(att): \(textSelection)",

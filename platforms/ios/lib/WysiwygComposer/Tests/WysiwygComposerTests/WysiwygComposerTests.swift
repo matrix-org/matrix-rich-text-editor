@@ -17,7 +17,6 @@
 @testable import WysiwygComposer
 import XCTest
 
-// FIXME: replace ZWSP with another solution
 private enum Constants {
     static let zwsp = "\u{200B}"
 }
