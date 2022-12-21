@@ -47,9 +47,12 @@ git checkout -b $RELEASE_BRANCH
 git add .
 git commit -m "release $last_commit"
 if [ "$TAG" != "" ]; then
-  echo "found a tag $TAG"
+  echo "found a tag $TAG"]
+  PR_NAME = "release_$TAG"
   git tag $TAG
 else
   echo "tag not found"
+  PR_NAME = ${RELEASE_BRANCH}
 fi
-git push origin $RELEASE_BRANCH
+git push origin $PR_NAME
+git request-pull $PR_NAME git@github.com:matrix-org/matrix-wysiwyg-composer-swift.git main
