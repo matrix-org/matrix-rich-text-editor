@@ -355,7 +355,6 @@ where
 #[cfg(test)]
 mod test {
     use crate::tests::testutils_composer_model::{cm, tx};
-    use crate::DomHandle;
 
     #[test]
     fn add_code_block_to_empty_dom() {

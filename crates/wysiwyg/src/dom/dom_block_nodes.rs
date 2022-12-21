@@ -174,8 +174,8 @@ mod test {
         let (s, e) = model.safe_selection();
         let ret = model.state.dom.find_nodes_to_wrap_in_block(s, e).unwrap();
         assert_eq!(ret.ancestor_handle, DomHandle::from_raw(Vec::new()));
-        // assert_eq!(ret.idx_start, 0);
-        // assert_eq!(ret.idx_end, 2);
+        assert_eq!(ret.start_handle, DomHandle::from_raw(vec![0]));
+        assert_eq!(ret.end_handle, DomHandle::from_raw(vec![2, 0]));
     }
 
     #[test]
@@ -184,8 +184,8 @@ mod test {
         let (s, e) = model.safe_selection();
         let ret = model.state.dom.find_nodes_to_wrap_in_block(s, e).unwrap();
         assert_eq!(ret.ancestor_handle, DomHandle::from_raw(Vec::new()));
-        // assert_eq!(ret.idx_start, 0);
-        // assert_eq!(ret.idx_end, 1);
+        assert_eq!(ret.start_handle, DomHandle::from_raw(vec![0]));
+        assert_eq!(ret.end_handle, DomHandle::from_raw(vec![1, 0]));
     }
 
     #[test]
@@ -194,8 +194,8 @@ mod test {
         let (s, e) = model.safe_selection();
         let ret = model.state.dom.find_nodes_to_wrap_in_block(s, e).unwrap();
         assert_eq!(ret.ancestor_handle, DomHandle::from_raw(Vec::new()));
-        // assert_eq!(ret.idx_start, 2);
-        // assert_eq!(ret.idx_end, 3);
+        assert_eq!(ret.start_handle, DomHandle::from_raw(vec![2, 0]));
+        assert_eq!(ret.end_handle, DomHandle::from_raw(vec![3, 0]));
     }
 
     #[test]
@@ -206,8 +206,8 @@ mod test {
         let (s, e) = model.safe_selection();
         let ret = model.state.dom.find_nodes_to_wrap_in_block(s, e).unwrap();
         assert_eq!(ret.ancestor_handle, DomHandle::from_raw(vec![0, 0]));
-        // assert_eq!(ret.idx_start, 0);
-        // assert_eq!(ret.idx_end, 2);
+        assert_eq!(ret.start_handle, DomHandle::from_raw(vec![0, 0, 0]));
+        assert_eq!(ret.end_handle, DomHandle::from_raw(vec![0, 0, 2, 0]));
     }
 
     #[test]
@@ -218,8 +218,8 @@ mod test {
         let (s, e) = model.safe_selection();
         let ret = model.state.dom.find_nodes_to_wrap_in_block(s, e).unwrap();
         assert_eq!(ret.ancestor_handle, DomHandle::from_raw(vec![0, 0]));
-        // assert_eq!(ret.idx_start, 3);
-        // assert_eq!(ret.idx_end, 3);
+        assert_eq!(ret.start_handle, DomHandle::from_raw(vec![0, 0, 3, 0]));
+        assert_eq!(ret.end_handle, DomHandle::from_raw(vec![0, 0, 3, 0]));
     }
 
     #[test]
@@ -228,8 +228,8 @@ mod test {
         let (s, e) = model.safe_selection();
         let ret = model.state.dom.find_nodes_to_wrap_in_block(s, e).unwrap();
         assert_eq!(ret.ancestor_handle, DomHandle::from_raw(vec![0]));
-        // assert_eq!(ret.idx_start, 0);
-        // assert_eq!(ret.idx_end, 0);
+        assert_eq!(ret.start_handle, DomHandle::from_raw(vec![0, 0, 0]));
+        assert_eq!(ret.end_handle, DomHandle::from_raw(vec![0, 1, 0]));
     }
 
     #[test]
@@ -239,8 +239,8 @@ mod test {
         let (s, e) = model.safe_selection();
         let ret = model.state.dom.find_nodes_to_wrap_in_block(s, e).unwrap();
         assert_eq!(ret.ancestor_handle, DomHandle::from_raw(Vec::new()));
-        // assert_eq!(ret.idx_start, 0);
-        // assert_eq!(ret.idx_end, 1);
+        assert_eq!(ret.start_handle, DomHandle::from_raw(vec![0]));
+        assert_eq!(ret.end_handle, DomHandle::from_raw(vec![1, 1, 0]));
     }
 }
 
