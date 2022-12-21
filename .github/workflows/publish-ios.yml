@@ -2,6 +2,9 @@ name: Publish-iOS
 
 on: [push, workflow_dispatch]
 
+env:
+  GH_TOKEN: ${{ secrets.SWIFTPM_GH_TOKEN }}
+
 jobs:
   ios:
     name: Publish to SwiftPM Repo
