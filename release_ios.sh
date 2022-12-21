@@ -48,7 +48,7 @@ git add .
 git commit -m "release $last_commit"
 if [ "$TAG" != "" ]; then
   echo "found a tag $TAG"]
-  PR_NAME="release_$TAG"
+  PR_NAME=${TAG}
   git tag $TAG
 else
   echo "tag not found"
