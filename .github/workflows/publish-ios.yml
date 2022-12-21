@@ -28,6 +28,9 @@ jobs:
           
       - name: Set XCode 14.2
         run: sudo xcode-select -switch /Applications/Xcode_14.2.app
+
+      - name: Set GH Username
+        run: git config --global user.name "Velin92"
           
       - name: Release iOS
         run: ./release_ios.sh
