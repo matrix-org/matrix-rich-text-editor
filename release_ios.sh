@@ -1,18 +1,15 @@
 #!/usr/bin/env bash
 
-HAS_TAG=$false
 TAG=""
 
 while getopts ":t:" option; do
    case "${option}" in
       t) # Enter a name
-          HAS_TAG=$true
           TAG=${OPTARG}
           echo "Added a tag $TAG";;
      \?) # Invalid option
           echo "Error: Invalid option"
           exit;;
-      *)  echo "Executed"
    esac
 done
 
@@ -49,7 +46,7 @@ cd $REPO_PATH
 git checkout -b $RELEASE_BRANCH
 git add .
 git commit -m "release $last_commit"
-if [ $HAS_TAG ]; then
+if [ -z "$HAS_TAG" ]; then
   echo "found a tag $TAG"
   git tag $TAG
 else
