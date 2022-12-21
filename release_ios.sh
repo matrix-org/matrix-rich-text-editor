@@ -7,7 +7,8 @@ while getopts ":t:" option; do
    case $option in
       t) # Enter a name
           HAS_TAG=$true
-          TAG=$OPTARG;;
+          TAG=$OPTARG
+          echo "Added a tag $TAG";;
      \?) # Invalid option
           echo "Error: Invalid option"
           exit;;
