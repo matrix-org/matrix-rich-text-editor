@@ -38,8 +38,11 @@ WYSIWYG_COMPOSER_PATH="platforms/ios/lib/WysiwygComposer/"
 rm -rf $BUILD_DIR
 mkdir $BUILD_DIR
 git clone https://github.com/matrix-org/matrix-wysiwyg-composer-swift.git $REPO_PATH
+echo "clone executed"
 git fetch
+echo "fetch executed"
 git checkout main
+echo "checkout main"
 rsync -a --delete --exclude=".git" $WYSIWYG_COMPOSER_PATH $REPO_PATH
 last_commit=$(git rev-parse --short HEAD);
 RELEASE_BRANCH="release_$last_commit"
@@ -47,6 +50,7 @@ cd $REPO_PATH
 git checkout -b $RELEASE_BRANCH
 git add .
 git commit -m "release $last_commit"
+echo "commit"
 if [ "$TAG" != "" ]; then
   echo "found a tag $TAG"]
   BRANCH_NAME="release_$TAG"
@@ -56,5 +60,6 @@ else
   BRANCH_NAME=${RELEASE_BRANCH}
 fi
 git push origin $RELEASE_BRANCH:$BRANCH_NAME
+echo "pushed the branch on remote"
 # if you have github cli installed you can also create the PR automatically
 gh pr create -R matrix-org/matrix-wysiwyg-composer-swift -H $BRANCH_NAME -B main -t $BRANCH_NAME -b $BRANCH_NAME
