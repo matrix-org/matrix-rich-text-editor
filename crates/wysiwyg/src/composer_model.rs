@@ -13,7 +13,6 @@
 // limitations under the License.
 
 pub mod base;
-pub mod block_nodes;
 pub mod code_block;
 pub mod delete_text;
 pub mod example_format;

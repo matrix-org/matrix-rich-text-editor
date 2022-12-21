@@ -13,6 +13,7 @@
 // limitations under the License.
 
 pub mod action_list;
+pub mod dom_block_nodes;
 pub mod dom_creation_error;
 pub mod dom_handle;
 pub mod dom_invariants;
