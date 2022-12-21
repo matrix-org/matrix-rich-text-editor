@@ -38,6 +38,7 @@ WYSIWYG_COMPOSER_PATH="platforms/ios/lib/WysiwygComposer/"
 rm -rf $BUILD_DIR
 mkdir $BUILD_DIR
 git clone https://github.com/matrix-org/matrix-wysiwyg-composer-swift.git $REPO_PATH
+git fetch
 git checkout main
 rsync -a --delete --exclude=".git" $WYSIWYG_COMPOSER_PATH $REPO_PATH
 last_commit=$(git rev-parse --short HEAD);
