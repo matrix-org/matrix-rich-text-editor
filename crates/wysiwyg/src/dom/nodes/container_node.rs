@@ -17,7 +17,7 @@ use std::ops::ControlFlow;
 use crate::char::CharExt;
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
-use crate::dom::nodes::dom_node::DomNode;
+use crate::dom::nodes::dom_node::{DomNode, DomNodeKind};
 use crate::dom::to_html::ToHtml;
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_raw_text::ToRawText;
@@ -298,9 +298,7 @@ where
     }
 
     pub(crate) fn is_block_node(&self) -> bool {
-        use ContainerNodeKind::*;
-
-        matches!(self.kind, Generic | List(_) | CodeBlock | Quote)
+        DomNodeKind::from_container_kind(&self.kind).is_block_kind()
     }
 
     pub fn text_len(&self) -> usize {
