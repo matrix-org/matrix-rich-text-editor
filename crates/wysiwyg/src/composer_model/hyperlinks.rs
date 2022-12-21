@@ -104,7 +104,7 @@ where
     }
 
     fn find_parent_links(&mut self, range: &Range) -> Option<DomHandle> {
-        let mut parent_handle = range.shared_parent();
+        let mut parent_handle = range.shared_parent_outside();
         while !parent_handle.is_root() {
             let node = self.state.dom.lookup_node(&parent_handle);
             let container = match node {

@@ -299,7 +299,25 @@ impl Range {
         self.locations.iter().any(|l| l.node_handle == *handle)
     }
 
+    /// Returns the deepest node that is a parent to all leaves within the
+    /// range and is not completely covered by the selection.
+    pub fn shared_parent_outside(&self) -> DomHandle {
+        self.find_shared_parent(false)
+    }
+
+    /// Returns the deepest node that is a parent to all leaves within the
+    /// range. May include nodes that are completely covered by the selection.
     pub fn shared_parent(&self) -> DomHandle {
+        self.find_shared_parent(true)
+    }
+
+    /// Returns the deepest node that is a parent to all leaves within the
+    /// range.
+    ///
+    /// * `allow_covered_nodes` - if true, the node may be covered by the  
+    /// selection (i.e. matches the selection).
+    ///     
+    fn find_shared_parent(&self, allow_covered_nodes: bool) -> DomHandle {
         let mut shared_path = vec![];
         let min_leaf_path = self.leaves().min().unwrap().node_handle.raw();
         let max_leaf_path = self.leaves().max().unwrap().node_handle.raw();
@@ -311,12 +329,14 @@ impl Range {
 
             shared_path.push(min_leaf_path[i]);
 
-            let location =
-                self.find_location(&DomHandle::from_raw(shared_path.clone()));
+            if !allow_covered_nodes {
+                let location = self
+                    .find_location(&DomHandle::from_raw(shared_path.clone()));
 
-            if location.is_covered() {
-                shared_path.pop();
-                break;
+                if location.is_covered() {
+                    shared_path.pop();
+                    break;
+                }
             }
         }
 
@@ -530,7 +550,13 @@ mod test {
     #[test]
     fn range_shared_parent() {
         let range = range_of("<em><strong><b>{a</b>b}|</strong>c</em>");
-        assert_eq!(range.shared_parent(), DomHandle::from_raw(vec![0]));
+        assert_eq!(range.shared_parent(), DomHandle::from_raw(vec![0, 0]));
+    }
+
+    #[test]
+    fn range_shared_parent_outside() {
+        let range = range_of("<em><strong><b>{a</b>b}|</strong>c</em>");
+        assert_eq!(range.shared_parent_outside(), DomHandle::from_raw(vec![0]));
     }
 
     #[test]
@@ -540,9 +566,21 @@ mod test {
     }
 
     #[test]
+    fn range_shared_parent_flat_outside() {
+        let range = range_of("{ab}|");
+        assert_eq!(range.shared_parent_outside(), DomHandle::from_raw(vec![]));
+    }
+
+    #[test]
     fn range_shared_parent_deep_flat() {
         let range = range_of("<em><strong>{ab}|</strong></em>");
-        assert_eq!(range.shared_parent(), DomHandle::from_raw(vec![]));
+        assert_eq!(range.shared_parent(), DomHandle::from_raw(vec![0, 0]));
+    }
+
+    #[test]
+    fn range_shared_parent_deep_flat_outside() {
+        let range = range_of("<em><strong>{ab}|</strong></em>");
+        assert_eq!(range.shared_parent_outside(), DomHandle::from_raw(vec![]));
     }
 
     fn range_of(model: &str) -> Range {

@@ -25,7 +25,7 @@ where
         }
         // Check if the range has shared ancestry. The new parent node should not contain
         // these nodes, so filter them from the range.
-        let shared_depth = range.shared_parent().depth();
+        let shared_depth = range.shared_parent_outside().depth();
         let range = Range::new(range.locations_from_depth(shared_depth));
 
         // Prepare the new parent node to have the selected range moved into it:
