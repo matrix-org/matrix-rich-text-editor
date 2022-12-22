@@ -13,6 +13,7 @@ while getopts ":t:" option; do
 done
 
 BRANCH_NAME=$(git branch --show-current)
+echo "branch name: ${BRANCH_NAME}"
 
 if [ "$BRANCH_NAME" == "main" ]; then 
   echo "On main branch."
