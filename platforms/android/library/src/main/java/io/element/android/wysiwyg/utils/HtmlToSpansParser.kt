@@ -18,6 +18,7 @@ import io.element.android.wysiwyg.spans.InlineCodeSpan
 import io.element.android.wysiwyg.spans.LinkSpan
 import io.element.android.wysiwyg.spans.OrderedListSpan
 import io.element.android.wysiwyg.spans.UnorderedListSpan
+import io.element.android.wysiwyg.spans.QuoteSpan
 import org.ccil.cowan.tagsoup.Parser
 import org.xml.sax.Attributes
 import org.xml.sax.ContentHandler
@@ -43,6 +44,7 @@ internal class HtmlToSpansParser(
     object OrderedListBlock
     object UnorderedListBlock
     object CodeBlock
+    object Quote
     data class ListItem(val ordered: Boolean, val order: Int? = null)
 
     private val parser = Parser().also { it.contentHandler = this }
@@ -118,6 +120,9 @@ internal class HtmlToSpansParser(
             "pre" -> {
                 text.setSpan(CodeBlock, text.length, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
             }
+            "blockquote" -> {
+                text.setSpan(Quote, text.length, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            }
         }
     }
 
@@ -175,6 +180,31 @@ internal class HtmlToSpansParser(
                 addLineBreak(text.length, isExtra = true)
 
                 text.setSpan(codeSpan, start, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            }
+            "blockquote" -> {
+                val last = getLast<Quote>() ?: return
+                var start = text.getSpanStart(last)
+                text.removeSpan(last)
+
+                if (start > 0) {
+                    if (text[start] == '\u200B') {
+                        text.replace(start, start + 1, "\n")
+                    } else {
+                        text.insert(start, "\n")
+                    }
+                    start++
+                }
+
+                val quoteSpan = QuoteSpan(
+                    indicatorColor = 0xC0A0A0A0.toInt(),
+                    indicatorWidth = (4 * resourcesProvider.getDisplayMetrics().density).toInt(),
+                    indicatorPadding = (6 * resourcesProvider.getDisplayMetrics().density).toInt(),
+                    margin = (10 * resourcesProvider.getDisplayMetrics().density).toInt(),
+                )
+
+                addLineBreak(text.length, isExtra = true)
+
+                text.setSpan(quoteSpan, start, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
             }
         }
     }
@@ -276,6 +306,7 @@ internal class HtmlToSpansParser(
 
             // Blocks
             CodeBlockSpan::class.java,
+            QuoteSpan::class.java,
         )
 
         fun Editable.removeFormattingSpans() =

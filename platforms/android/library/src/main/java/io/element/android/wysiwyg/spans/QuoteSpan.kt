@@ -1,56 +1,53 @@
 package io.element.android.wysiwyg.spans
 
-import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Rect
 import android.os.Parcel
 import android.text.Layout
-import android.text.ParcelableSpan
 import android.text.TextPaint
-import android.text.style.BackgroundColorSpan
 import android.text.style.LeadingMarginSpan
 import android.text.style.MetricAffectingSpan
-import android.text.style.ParagraphStyle
-import android.text.style.TypefaceSpan
-import android.text.style.UpdateAppearance
-import androidx.core.content.ContextCompat
 
 /**
- * Code block (```some code``` in Markdown, <pre> in HTML) Span that applies a monospaced font style
- * and adds a background color to a whole paragraph.
+ * Quote ("> a quote" in Markdown, <blockquote> in HTML) Span that applies margin and an indicator
+ * on the start of the paragraph.
  */
-class CodeBlockSpan : MetricAffectingSpan, LeadingMarginSpan, UpdateAppearance {
+class QuoteSpan : MetricAffectingSpan, LeadingMarginSpan {
 
-    private val monoTypefaceSpan: TypefaceSpan
-    private val backgroundColor: Int
+    private val indicatorColor: Int
+    private val indicatorWidth: Int
+    private val indicatorPadding: Int
     private val margin: Int
 
     private val paint = Paint()
     private var rect = Rect()
 
-    constructor(backgroundColor: Int, margin: Int): super() {
-        monoTypefaceSpan = TypefaceSpan("monospace")
+    constructor(
+        indicatorColor: Int,
+        indicatorWidth: Int,
+        indicatorPadding: Int,
+        margin: Int
+    ): super() {
         this.margin = margin
-        this.backgroundColor = backgroundColor
+        this.indicatorWidth = indicatorWidth
+        this.indicatorPadding = indicatorPadding
+        this.indicatorColor = indicatorColor
     }
 
     constructor(parcel: Parcel): super() {
-        monoTypefaceSpan = requireNotNull(parcel.readParcelable(TypefaceSpan::class.java.classLoader))
-        backgroundColor = parcel.readInt()
+        indicatorColor = parcel.readInt()
+        indicatorWidth = parcel.readInt()
+        indicatorPadding = parcel.readInt()
         margin = parcel.readInt()
     }
 
-    override fun updateDrawState(tp: TextPaint) {
-        monoTypefaceSpan.updateDrawState(tp)
-    }
+    override fun updateDrawState(tp: TextPaint) {}
 
-    override fun updateMeasureState(textPaint: TextPaint) {
-        monoTypefaceSpan.updateMeasureState(textPaint)
-    }
+    override fun updateMeasureState(textPaint: TextPaint) {}
 
     override fun getLeadingMargin(first: Boolean): Int {
-        return margin
+        return margin + indicatorWidth + indicatorPadding
     }
 
     override fun drawLeadingMargin(
@@ -68,7 +65,7 @@ class CodeBlockSpan : MetricAffectingSpan, LeadingMarginSpan, UpdateAppearance {
         layout: Layout?
     ) {
         paint.style = Paint.Style.FILL
-        paint.color = backgroundColor
+        paint.color = indicatorColor
 
         val left: Int
         val right: Int
@@ -76,10 +73,10 @@ class CodeBlockSpan : MetricAffectingSpan, LeadingMarginSpan, UpdateAppearance {
         if (dir > 0) {
             // Left to right
             left = x + margin
-            right = c.width
+            right = x + margin + indicatorWidth
         } else {
             // Right to left
-            left = x + margin - c.width
+            left = x + margin - c.width - indicatorWidth
             right = x + margin
         }
 

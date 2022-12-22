@@ -281,6 +281,14 @@ class EditorEditText : TextInputEditText {
         return true
     }
 
+    fun toggleQuote(): Boolean {
+        val result = viewModel.processInput(EditorInputAction.Quote)
+            ?: return false
+        setTextFromComposerUpdate(result)
+        setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
+        return true
+    }
+
     fun undo() {
         val result = viewModel.processInput(EditorInputAction.Undo) ?: return
 
