@@ -40,12 +40,17 @@ jobs:
       - name: Set XCode 14.2
         run: sudo xcode-select -switch /Applications/Xcode_14.2.app
 
-      - uses: de-vri-es/setup-git-credentials@v2
+      - name: Set SwiftPM Repo credentials
+        uses: de-vri-es/setup-git-credentials@v2
         with:
           credentials: ${{secrets.GIT_CREDENTIALS}}
+
+      - name: Get tag
+        id: tag
+        uses: dawidd6/action-get-tag@v1
           
       - name: Release iOS
-        run: ./release_ios.sh -t ${{ github.head_ref }}
+        run: ./release_ios.sh -t ${{ steps.tag.outputs.tag }}
 
   android:
     name: Publish to maven
