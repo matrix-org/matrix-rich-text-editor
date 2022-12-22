@@ -14,7 +14,7 @@ done
 
 BRANCH_NAME=$(git branch --show-current)
 
-if [ "$BRANCH_NAME" = "main" ]; then 
+if [ "$BRANCH_NAME" == "main" ]; then 
   echo "On main branch."
 else 
   echo "Not on main branch. Exiting..."
