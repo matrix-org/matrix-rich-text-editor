@@ -73,7 +73,7 @@ cd platforms/android && ./gradlew publish closeAndReleaseRepository`
 ```
   
 ### Swift/iOS:
-When a tag is uploaded the `./release_ios.sh` will be called with the `-t <version>` (where `<version>` will be the provided tag).
+When a tag is uploaded the `./release_ios.sh` script will be called with the `-t <version>` (where `<version>` will be the provided tag).
 This will open a PR against [the swift package repo](https://github.com/matrix-org/matrix-wysiwyg-composer-swift) with the latest changes.
 Remember to manually check and merge the PR that will get opened on the [SWIFTPM Repo PR list](https://github.com/matrix-org/matrix-wysiwyg-composer-swift/pulls), and provide as commit for the merge the same name of the branch/PR.
 

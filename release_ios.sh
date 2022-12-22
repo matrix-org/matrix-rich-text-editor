@@ -58,4 +58,4 @@ else
 fi
 git push origin $RELEASE_BRANCH:$REMOTE_BRANCH_NAME
 # if you have github cli installed this will create the PR automatically
-gh pr create -B main -H $REMOTE_BRANCH_NAME -r matrix.org/professional-services-uk -t $REMOTE_BRANCH_NAME -b $BODY
+gh pr create -B main -H $REMOTE_BRANCH_NAME -r matrix.org/professional-services-uk -t $REMOTE_BRANCH_NAME -b "$BODY"
