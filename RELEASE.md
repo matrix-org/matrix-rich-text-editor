@@ -73,10 +73,15 @@ cd platforms/android && ./gradlew publish closeAndReleaseRepository`
 ```
   
 ### Swift/iOS:
-This should be done automatically when a tag is uploaded however these are the steps to do it manually:
+When a tag is uploaded the `./release_ios.sh` will be called with the `-t <version_number>` (where `<version_number>` will be the provided tag).
+This will open a PR against [the swift package repo](https://github.com/matrix-org/matrix-wysiwyg-composer-swift) with the latest changes.
+Remember to manually check and merge the PR that will get opened on the [SWIFTPM Repo PR list](https://github.com/matrix-org/matrix-wysiwyg-composer-swift/pulls), and provide as commit for the merge the same name of the branch/PR.
 
-Running `./release_ios.sh` which will open a PR against [the swift package repo](https://github.com/matrix-org/matrix-wysiwyg-composer-swift) with the latest commit from main.
-This will not create a new release version for SWIFTPM but rather, a new revision of the package.
-To instead add a new version run `./release_ios.sh -t <version_number>` which will add a tag to the PR on the SWIFTPM repo, hence releasing a new version.
+Example: 
+1. The branch and PR name will always be something like release_v_X.Y.Z
+2. When clicking Merge customise the commit message to only include as title the same name release_v_X.Y.Z
+3. This will trigger on merge a [workflow](https://github.com/matrix-org/matrix-wysiwyg-composer-swift/blob/main/.github/workflows/tag_on_release.yml) that will automatically tag main with the release value of X.Y.Z
 
-Regardless of the release happening manually or automatically, remember to manually check and merge the PR that will get opened on the [SWIFTPM Repo PR lst](https://github.com/matrix-org/matrix-wysiwyg-composer-swift/pulls).
+You can also manually do a revision release by just running `./release_ios.sh` on main which will not create a release PR but a revision PR that can have any commit message after the merge.
+
+Instead for full manual release just run `./release_ios.sh -t <version>` and follow the example steps above.

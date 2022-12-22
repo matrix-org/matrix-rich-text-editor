@@ -49,11 +49,11 @@ git add .
 git commit -m "release $last_commit"
 if [ "$TAG" != "" ]; then
   echo "found a tag $TAG"]
-  REMOTE_BRANCH_NAME="release_version_$TAG"
+  REMOTE_BRANCH_NAME="release_v_$TAG"
 else
   echo "tag not found"
   REMOTE_BRANCH_NAME=${RELEASE_BRANCH}
 fi
 git push origin $RELEASE_BRANCH:$REMOTE_BRANCH_NAME
 # if you have github cli installed this will create the PR automatically
-gh pr create -H $REMOTE_BRANCH_NAME -r matrix.org/professional-services-uk -f
+gh pr create -B main -H $REMOTE_BRANCH_NAME -r matrix.org/professional-services-uk -t $REMOTE_BRANCH_NAME -b ""
