@@ -1,5 +1,21 @@
 # Changelog
 
+# [0.13.0] - 2022-12-22
+
+### Added
+
+- Common: Add TS types to exports for new conversion functions
+- Common: Add ability for links to wrap existing elements
+
+### Changed
+
+- Common: Change RELEASE.md to reflect changes to iOS build script
+- iOS: Change iOS build script to increase automation
+
+### Fixed
+
+- Common: Fix edge case performance in `model.state.dom.insert_parent`
+
 # [0.12.0] - 2022-12-20
 
 ### Added
