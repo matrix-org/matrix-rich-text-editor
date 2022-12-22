@@ -78,3 +78,5 @@ This should be done automatically when a tag is uploaded however these are the s
 Running `./release_ios.sh` which will open a PR against [the swift package repo](https://github.com/matrix-org/matrix-wysiwyg-composer-swift) with the latest commit from main.
 This will not create a new release version for SWIFTPM but rather, a new revision of the package.
 To instead add a new version run `./release_ios.sh -t <version_number>` which will add a tag to the PR on the SWIFTPM repo, hence releasing a new version.
+
+Regardless if the release happens manually or automatically, remember to manually check and merge the PR will get opened on the [SWIFTPM Repo PR lst](https://github.com/matrix-org/matrix-wysiwyg-composer-swift/pulls)
