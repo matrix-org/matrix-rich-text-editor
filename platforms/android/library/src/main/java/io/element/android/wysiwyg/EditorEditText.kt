@@ -273,6 +273,14 @@ class EditorEditText : TextInputEditText {
         return true
     }
 
+    fun toggleCodeBlock(): Boolean {
+        val result = viewModel.processInput(EditorInputAction.CodeBlock)
+            ?: return false
+        setTextFromComposerUpdate(result)
+        setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
+        return true
+    }
+
     fun undo() {
         val result = viewModel.processInput(EditorInputAction.Undo) ?: return
 
@@ -374,7 +382,9 @@ class EditorEditText : TextInputEditText {
 
     private fun setSelectionFromComposerUpdate(start: Int, end: Int = start) {
         val (newStart, newEnd) = EditorIndexMapper.fromComposerToEditor(start, end, editableText)
-        setSelection(newStart, newEnd)
+        if (newStart in editableText.indices && newEnd in 0..editableText.length) {
+            setSelection(newStart, newEnd)
+        }
     }
 }
 

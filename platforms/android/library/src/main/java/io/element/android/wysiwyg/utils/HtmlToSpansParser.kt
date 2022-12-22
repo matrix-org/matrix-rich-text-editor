@@ -1,7 +1,10 @@
 package io.element.android.wysiwyg.utils
 
 import android.graphics.Typeface
-import android.text.*
+import android.text.Editable
+import android.text.SpannableString
+import android.text.SpannableStringBuilder
+import android.text.Spanned
 import android.text.style.ParagraphStyle
 import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
@@ -9,6 +12,7 @@ import android.text.style.UnderlineSpan
 import androidx.core.text.getSpans
 import io.element.android.wysiwyg.BuildConfig
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
+import io.element.android.wysiwyg.spans.CodeBlockSpan
 import io.element.android.wysiwyg.spans.ExtraCharacterSpan
 import io.element.android.wysiwyg.spans.InlineCodeSpan
 import io.element.android.wysiwyg.spans.LinkSpan
@@ -38,6 +42,7 @@ internal class HtmlToSpansParser(
     data class Hyperlink(val link: String)
     object OrderedListBlock
     object UnorderedListBlock
+    object CodeBlock
     data class ListItem(val ordered: Boolean, val order: Int? = null)
 
     private val parser = Parser().also { it.contentHandler = this }
@@ -110,6 +115,9 @@ internal class HtmlToSpansParser(
                 }
                 text.setSpan(newItem, text.length, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
             }
+            "pre" -> {
+                text.setSpan(CodeBlock, text.length, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            }
         }
     }
 
@@ -145,6 +153,36 @@ internal class HtmlToSpansParser(
                 text.setSpan(span, start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 text.removeSpan(last)
             }
+            "pre" -> {
+                val last = getLast<CodeBlock>() ?: return
+                var start = text.getSpanStart(last)
+                text.removeSpan(last)
+
+                if (start > 0) {
+                    if (text[start] == '\u200B') {
+                        text.replace(start, start + 1, "\n")
+                    } else {
+                        text.insert(start, "\n")
+                    }
+                    start++
+                }
+
+                val codeSpan = CodeBlockSpan(
+                    0xC0A0A0A0.toInt(),
+                    (10 * resourcesProvider.getDisplayMetrics().density).toInt()
+                )
+
+                addLineBreak(text.length, isExtra = true)
+
+                text.setSpan(codeSpan, start, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            }
+        }
+    }
+
+    private fun addLineBreak(pos: Int, isExtra: Boolean) {
+        text.insert(pos, "\n")
+        if (isExtra) {
+            text.setSpan(ExtraCharacterSpan(), pos+1, pos+1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
         }
     }
 
@@ -233,7 +271,11 @@ internal class HtmlToSpansParser(
             // Lists
             UnorderedListSpan::class.java,
             OrderedListSpan::class.java,
+
             ExtraCharacterSpan::class.java,
+
+            // Blocks
+            CodeBlockSpan::class.java,
         )
 
         fun Editable.removeFormattingSpans() =

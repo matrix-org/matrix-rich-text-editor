@@ -62,6 +62,9 @@ class RichTextEditor : LinearLayout {
             formatInlineCodeButton.setOnClickListener {
                 richTextEditText.toggleInlineFormat(InlineFormat.InlineCode)
             }
+            formatCodeBlockButton.setOnClickListener {
+                richTextEditText.toggleCodeBlock()
+            }
             addLinkButton.setOnClickListener {
                 val linkAction = richTextEditText.getLinkAction() ?: return@setOnClickListener
                 when(linkAction) {

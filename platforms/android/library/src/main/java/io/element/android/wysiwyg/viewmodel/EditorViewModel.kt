@@ -80,6 +80,7 @@ internal class EditorViewModel(
                 is EditorInputAction.Redo -> composer?.redo()
                 is EditorInputAction.ToggleList ->
                     if (action.ordered) composer?.orderedList() else composer?.unorderedList()
+                is EditorInputAction.CodeBlock -> composer?.codeBlock()
             }
         }.onFailure { error ->
             rustErrorCollector?.onRustError(error)
