@@ -13,7 +13,7 @@ while getopts ":t:" option; do
 done
 
 if [ "$TAG" == "" ]; then
-BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+  BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
   if [ $BRANCH_NAME == "main" ]; then 
     echo "On main branch."
   else 
@@ -49,12 +49,13 @@ git add .
 git commit -m "release $last_commit"
 if [ "$TAG" != "" ]; then
   echo "found a tag $TAG"]
-  REMOTE_BRANCH_NAME="release_$TAG"
-  git tag $TAG
+  REMOTE_BRANCH_NAME="release_v_$TAG"
+  BODY="Remember when merging to substitute the default commit message with the branch/PR name to perform auto-tag on main"
 else
   echo "tag not found"
   REMOTE_BRANCH_NAME=${RELEASE_BRANCH}
+  BODY=""
 fi
 git push origin $RELEASE_BRANCH:$REMOTE_BRANCH_NAME
 # if you have github cli installed this will create the PR automatically
-gh pr create -r matrix.org/professional-services-uk -f
+gh pr create -B main -H $REMOTE_BRANCH_NAME -r matrix.org/professional-services-uk -t $REMOTE_BRANCH_NAME -b "$BODY"
