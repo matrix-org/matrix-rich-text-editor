@@ -13,7 +13,7 @@ while getopts ":t:" option; do
 done
 
 if [ "$TAG" == "" ]; then
-BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+  BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
   if [ $BRANCH_NAME == "main" ]; then 
     echo "On main branch."
   else 
@@ -57,4 +57,4 @@ else
 fi
 git push origin $RELEASE_BRANCH:$REMOTE_BRANCH_NAME
 # if you have github cli installed this will create the PR automatically
-gh pr create -r matrix.org/professional-services-uk -f
+gh pr create -H $REMOTE_BRANCH_NAME -r matrix.org/professional-services-uk -f
