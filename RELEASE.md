@@ -73,11 +73,8 @@ cd platforms/android && ./gradlew publish closeAndReleaseRepository`
 ```
   
 ### Swift/iOS:
-  Run `./release_ios.sh` which will open a PR against
-  [the swift package repo](https://github.com/matrix-org/matrix-wysiwyg-composer-swift)
-  with the latest from main
+This should be done automatically when a tag is uploaded however these are the steps to do it manually:
 
-TODO: automate all of this using a single github workflow that triggers when we
-create a github release.
-
-TODO: update release_io.sh to handle tags/releases
+Running `./release_ios.sh` which will open a PR against [the swift package repo](https://github.com/matrix-org/matrix-wysiwyg-composer-swift) with the latest commit from main.
+This will not create a new release version for SWIFTPM but rather, a new revision of the package.
+To instead add a new version run `./release_ios.sh -t <version_number>` which will add a tag to the PR on the SWIFTPM repo, hence releasing a new version.
