@@ -33,8 +33,8 @@ jobs:
         rustup target add aarch64-apple-ios-sim
         rustup target add x86_64-apple-ios
 
-    - name: Set XCode 14.1
-      run: sudo xcode-select -switch /Applications/Xcode_14.1.app
+    - name: Set XCode 14.2
+      run: sudo xcode-select -switch /Applications/Xcode_14.2.app
 
     - name: Build framework & bindings
       run: make ios
