@@ -12,7 +12,7 @@ while getopts ":t:" option; do
    esac
 done
 
-BRANCH_NAME=$(git symbolic-ref --short HEAD)
+BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
 echo "branch name: ${BRANCH_NAME}"
 
 if [ $BRANCH_NAME == "main" ]; then 
