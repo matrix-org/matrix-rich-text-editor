@@ -79,7 +79,7 @@ Remember to manually check the PR that will get opened on the [SWIFTPM Repo PR l
 
 Example: 
 1. The branch and PR name will always be something like release_v_X.Y.Z
-2. When clicking Merge customise the commit message to only include as title the same name release_v_X.Y.Z
+2. When clicking Merge customise the commit message to only include as title the same name release_v_X.Y.Z (substitute the "Merge pull request..." default commit message and put only the pr/branch name)
 3. This will trigger on merge a [workflow](https://github.com/matrix-org/matrix-wysiwyg-composer-swift/blob/main/.github/workflows/tag_on_release.yml) that will automatically tag main with the release value of X.Y.Z
 
 You can also manually do a revision release by just running `./release_ios.sh` on main which will not create a release PR but a revision PR that can have any commit message after the merge.

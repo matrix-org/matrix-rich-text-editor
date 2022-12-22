@@ -50,7 +50,7 @@ git commit -m "release $last_commit"
 if [ "$TAG" != "" ]; then
   echo "found a tag $TAG"]
   REMOTE_BRANCH_NAME="release_v_$TAG"
-  BODY="Remember when merging to have the commit message match the branch/PR name"
+  BODY="Remember when merging to substitute the default commit message with the branch/PR name to perform auto-tag on main"
 else
   echo "tag not found"
   REMOTE_BRANCH_NAME=${RELEASE_BRANCH}
