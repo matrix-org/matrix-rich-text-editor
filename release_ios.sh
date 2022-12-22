@@ -12,10 +12,10 @@ while getopts ":t:" option; do
    esac
 done
 
-BRANCH_NAME="$(git branch --show-current)"
+BRANCH_NAME=$(git symbolic-ref --short HEAD)
 echo "branch name: ${BRANCH_NAME}"
 
-if [ "$BRANCH_NAME" == "main" ]; then 
+if [ $BRANCH_NAME == "main" ]; then 
   echo "On main branch."
 else 
   echo "Not on main branch. Exiting..."
