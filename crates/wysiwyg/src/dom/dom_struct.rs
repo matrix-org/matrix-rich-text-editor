@@ -23,6 +23,8 @@ use crate::dom::{
 };
 use crate::ToHtml;
 
+use super::FindResult;
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Dom<S>
 where
@@ -142,10 +144,10 @@ where
         &mut self,
         node_handle: &DomHandle,
         node: DomNode<S>,
-    ) -> &DomNode<S> {
+    ) -> DomHandle {
         let parent = self.parent_mut(node_handle);
         let index = node_handle.index_in_parent();
-        parent.insert_child(index, node)
+        parent.insert_child(index, node).handle()
     }
 
     /// Insert given [nodes] in order at the [node_handle] position,
@@ -199,6 +201,22 @@ where
     /// selected. The returned range lists all the Dom nodes involved.
     pub fn find_range(&self, start: usize, end: usize) -> Range {
         find_range::find_range(self, start, end)
+    }
+
+    pub fn find_range_by_node(&self, node_handle: &DomHandle) -> Range {
+        let result = find_range::find_pos(self, node_handle, 0, usize::MAX);
+
+        let locations = match result {
+            FindResult::Found(locations) => locations,
+            _ => panic!("Node does not exist"),
+        };
+
+        let leaves = locations.iter().filter(|l| l.is_leaf());
+
+        let s = leaves.clone().map(|l| l.position).min().unwrap();
+        let e = leaves.map(|l| l.position + l.length).max().unwrap();
+
+        self.find_range(s, e)
     }
 
     pub(crate) fn document_handle(&self) -> DomHandle {
@@ -827,6 +845,25 @@ mod test {
         // Last level doesn't exist, [0, 0, 1] does not have 6 children
         let handle = DomHandle::from_raw(vec![0, 0, 1, 5]);
         assert!(!d.contains(&handle));
+    }
+
+    #[test]
+    fn find_range_by_node() {
+        let d = cm("<b><u>Hello, <i>world|</i></u></b>").state.dom;
+        let range_by_node =
+            d.find_range_by_node(&DomHandle::from_raw(vec![0, 0, 0]));
+        let actual_range = d.find_range(0, 7);
+
+        assert_eq!(range_by_node, actual_range);
+    }
+
+    #[test]
+    fn find_range_by_node_root() {
+        let d = cm("<b><u>Hello, <i>world|</i></u></b>").state.dom;
+        let range_by_node = d.find_range_by_node(&DomHandle::root());
+        let actual_range = d.find_range(0, 12);
+
+        assert_eq!(range_by_node, actual_range);
     }
 
     const NO_CHILDREN: &Vec<DomNode<Utf16String>> = &Vec::new();

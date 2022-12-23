@@ -8,7 +8,11 @@ where
 {
     #[allow(dead_code)]
     /// Insert a node and make this node the parent of a given range.
-    pub fn insert_parent(&mut self, range: &Range, mut new_node: DomNode<S>) {
+    pub fn insert_parent(
+        &mut self,
+        range: &Range,
+        mut new_node: DomNode<S>,
+    ) -> DomHandle {
         #[cfg(any(test, feature = "assert-invariants"))]
         self.assert_invariants();
 
@@ -21,14 +25,17 @@ where
         }
         // Check if the range has shared ancestry. The new parent node should not contain
         // these nodes, so filter them from the range.
-        let shared_depth = range.shared_parent().depth();
+        let shared_depth = range.shared_parent_outside().depth();
         let range = Range::new(range.locations_from_depth(shared_depth));
 
         // Prepare the new parent node to have the selected range moved into it:
         // - Set the new node's handle to the start of the range
         // - Get the mutable container node to move the selected range into
         let new_handle: DomHandle = range.node_handles().min().unwrap().clone();
-        let new_handle = if range.leaves().min().unwrap().is_covered() {
+        let first_leaf = range.leaves().min().unwrap();
+        let new_handle = if first_leaf.is_covered()
+            || (first_leaf.ends_inside() && first_leaf.is_end())
+        {
             new_handle
         } else {
             // If the first leaf in the range is completely covered, then leave space
@@ -91,10 +98,12 @@ where
         }
 
         // Insert the new container into the DOM
-        self.insert_at(&new_handle, new_node);
+        let inserted = self.insert_at(&new_handle, new_node);
 
         #[cfg(any(test, feature = "assert-invariants"))]
         self.assert_invariants();
+
+        inserted
     }
 }
 
@@ -117,6 +126,34 @@ mod test {
             .insert_parent(&range, DomNode::new_link(utf16("link"), vec![]));
 
         assert_eq!(model.state.dom.to_html(), r#"A<a href="link">B</a>C"#)
+    }
+
+    #[test]
+    fn insert_parent_flat_start() {
+        let mut model = cm("{AB}|C");
+        let (start, end) = model.safe_selection();
+        let range = model.state.dom.find_range(start, end);
+
+        model
+            .state
+            .dom
+            .insert_parent(&range, DomNode::new_link(utf16("link"), vec![]));
+
+        assert_eq!(model.state.dom.to_html(), r#"<a href="link">AB</a>C"#)
+    }
+
+    #[test]
+    fn insert_parent_flat_end() {
+        let mut model = cm("A{BC}|");
+        let (start, end) = model.safe_selection();
+        let range = model.state.dom.find_range(start, end);
+
+        model
+            .state
+            .dom
+            .insert_parent(&range, DomNode::new_link(utf16("link"), vec![]));
+
+        assert_eq!(model.state.dom.to_html(), r#"A<a href="link">BC</a>"#)
     }
 
     #[test]
@@ -250,6 +287,23 @@ mod test {
         assert_eq!(
             model.state.dom.to_html(),
             r#"<u>U</u><i><em>XX<a href="link">A<b>B</b><u>C</u></a><u>YY</u></em></i><u>W</u>"#
+        )
+    }
+
+    #[test]
+    fn insert_parent_includes_covered_shared_parent_nodes() {
+        let mut model = cm("<i><em>{A<b>B</b><u>C</u>}|</em>D</i>");
+        let (start, end) = model.safe_selection();
+        let range = model.state.dom.find_range(start, end);
+
+        model
+            .state
+            .dom
+            .insert_parent(&range, DomNode::new_link(utf16("link"), vec![]));
+
+        assert_eq!(
+            model.state.dom.to_html(),
+            r#"<i><a href="link"><em>A<b>B</b><u>C</u></em></a>D</i>"#
         )
     }
 

@@ -1,5 +1,40 @@
 # Changelog
 
+# [0.13.0] - 2022-12-22
+
+### Added
+
+- Common: Add TS types to exports for new conversion functions
+- Common: Add ability for links to wrap existing elements
+
+### Changed
+
+- Common: Change RELEASE.md to reflect changes to iOS build script
+- iOS: Change iOS build script to increase automation
+
+### Fixed
+
+- Common: Fix edge case performance in `model.state.dom.insert_parent`
+
+# [0.12.0] - 2022-12-20
+
+### Added
+
+- Common: Add support for ZWSP in code blocks
+- Common: Add conversion functions to convert between rich and plain text
+- Common: Add `insert_parent` DOM method
+- iOS: Show background colour of inline code in the composer
+
+### Changed
+
+- Common: Change uses of ZWSP to be new DomNode type
+- Common: Change `CharType` enum to remove ZWSP
+- iOS: Change tapping on a link to highlight the link, not open it
+
+### Fixed
+
+- Common: Fix disabling inline code then typing not reordering nodes
+
 # [0.11.0] - 2022-12-15
 
 ### Added

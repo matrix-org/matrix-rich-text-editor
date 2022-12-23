@@ -299,7 +299,34 @@ impl Range {
         self.locations.iter().any(|l| l.node_handle == *handle)
     }
 
+    pub(crate) fn find_location(
+        &self,
+        node_handle: &DomHandle,
+    ) -> Option<&DomLocation> {
+        self.locations
+            .iter()
+            .find(|l| *l.node_handle.raw() == *node_handle.raw())
+    }
+
+    /// Returns the deepest node that is a parent to all leaves within the
+    /// range and is not completely covered by the selection.
+    pub fn shared_parent_outside(&self) -> DomHandle {
+        self.find_shared_parent(false)
+    }
+
+    /// Returns the deepest node that is a parent to all leaves within the
+    /// range. May include nodes that are completely covered by the selection.
     pub fn shared_parent(&self) -> DomHandle {
+        self.find_shared_parent(true)
+    }
+
+    /// Returns the deepest node that is a parent to all leaves within the
+    /// range.
+    ///
+    /// * `allow_covered_nodes` - if true, the node may be covered by the  
+    /// selection (i.e. matches the selection).
+    ///     
+    fn find_shared_parent(&self, allow_covered_nodes: bool) -> DomHandle {
         let mut shared_path = vec![];
         let min_leaf_path = self.leaves().min().unwrap().node_handle.raw();
         let max_leaf_path = self.leaves().max().unwrap().node_handle.raw();
@@ -310,6 +337,17 @@ impl Range {
             }
 
             shared_path.push(min_leaf_path[i]);
+
+            if !allow_covered_nodes {
+                let location = self
+                    .find_location(&DomHandle::from_raw(shared_path.clone()))
+                    .expect("Handle was built from leaf node subhandles");
+
+                if location.is_covered() {
+                    shared_path.pop();
+                    break;
+                }
+            }
         }
 
         DomHandle::from_raw(shared_path)
@@ -328,7 +366,9 @@ impl IntoIterator for Range {
 #[cfg(test)]
 mod test {
     use crate::{
-        dom::DomLocation, tests::testutils_composer_model::cm, DomHandle,
+        dom::{nodes::dom_node::DomNodeKind, DomLocation},
+        tests::testutils_composer_model::cm,
+        DomHandle, InlineFormatType,
     };
 
     use super::{DomLocationPosition, Range};
@@ -514,8 +554,14 @@ mod test {
 
     #[test]
     fn range_shared_parent() {
-        let range = range_of("<em><strong><b>{a</b>b}|</strong></em>");
+        let range = range_of("<em><strong><b>{a</b>b}|</strong>c</em>");
         assert_eq!(range.shared_parent(), DomHandle::from_raw(vec![0, 0]));
+    }
+
+    #[test]
+    fn range_shared_parent_outside() {
+        let range = range_of("<em><strong><b>{a</b>b}|</strong>c</em>");
+        assert_eq!(range.shared_parent_outside(), DomHandle::from_raw(vec![0]));
     }
 
     #[test]
@@ -525,9 +571,45 @@ mod test {
     }
 
     #[test]
+    fn range_shared_parent_flat_outside() {
+        let range = range_of("{ab}|");
+        assert_eq!(range.shared_parent_outside(), DomHandle::from_raw(vec![]));
+    }
+
+    #[test]
     fn range_shared_parent_deep_flat() {
         let range = range_of("<em><strong>{ab}|</strong></em>");
         assert_eq!(range.shared_parent(), DomHandle::from_raw(vec![0, 0]));
+    }
+
+    #[test]
+    fn range_shared_parent_deep_flat_outside() {
+        let range = range_of("<em><strong>{ab}|</strong></em>");
+        assert_eq!(range.shared_parent_outside(), DomHandle::from_raw(vec![]));
+    }
+
+    #[test]
+    fn range_find_location() {
+        let range = range_of("<em><strong>{ab}|</strong></em>");
+        let handle = DomHandle::from_raw(vec![0, 0]);
+
+        let location = range.find_location(&handle).unwrap();
+
+        let expected_kind = DomNodeKind::Formatting(InlineFormatType::Bold);
+        assert_eq!(
+            *location,
+            DomLocation::new(handle, 0, 0, 2, 2, expected_kind)
+        );
+    }
+
+    #[test]
+    fn range_find_location_none() {
+        let range = range_of("<em><strong>{ab}|</strong></em>");
+        let handle = DomHandle::from_raw(vec![1, 0]);
+
+        let location = range.find_location(&handle);
+
+        assert!(location.is_none());
     }
 
     fn range_of(model: &str) -> Range {
