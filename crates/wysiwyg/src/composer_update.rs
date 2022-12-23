@@ -37,8 +37,8 @@ where
 
     pub fn update_menu_state(menu_state: MenuState) -> Self {
         Self {
+            menu_state,
             text_update: TextUpdate::<S>::Keep,
-            menu_state: menu_state,
         }
     }
 

@@ -14,7 +14,7 @@
 
 use crate::{dom::UnicodeString, Location};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TextUpdate<S>
 where
     S: UnicodeString,
@@ -24,7 +24,7 @@ where
     Select(Selection),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReplaceAll<S>
 where
     S: UnicodeString,
@@ -34,7 +34,7 @@ where
     pub end: Location,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Selection {
     pub start: Location,
     pub end: Location,
