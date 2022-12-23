@@ -462,7 +462,6 @@ impl DomChildren {
         }
     }
 
-    // Clippy suggests that this name is ambiguous
     pub fn next_child(&mut self) -> Option<DomHandle> {
         self.inner.pop_front()
     }
