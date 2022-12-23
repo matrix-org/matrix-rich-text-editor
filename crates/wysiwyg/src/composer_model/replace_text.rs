@@ -160,6 +160,22 @@ where
         leaf: &DomLocation,
         block_location: &DomLocation,
     ) -> ComposerUpdate<S> {
+        // Helper function since we have to repeat this code twice
+        fn insert_code_block<S: UnicodeString>(
+            dom: &mut Dom<S>,
+            sub_tree: DomNode<S>,
+            at_handle: &DomHandle,
+            new_line_at_end: bool,
+        ) {
+            dom.insert_at(&at_handle, sub_tree);
+            let insert_new_line_at = if new_line_at_end {
+                at_handle.next_sibling()
+            } else {
+                at_handle.clone()
+            };
+            dom.insert_at(&insert_new_line_at, DomNode::new_line_break());
+        }
+
         let mut has_previous_line_break = false;
         let mut selection_offset = 0;
         if leaf.start_offset > 0 {
@@ -197,21 +213,6 @@ where
             };
 
             let new_line_at_end = leaf.is_start();
-            fn insert_code_block<S: UnicodeString>(
-                dom: &mut Dom<S>,
-                sub_tree: DomNode<S>,
-                at_handle: &DomHandle,
-                new_line_at_end: bool,
-            ) {
-                dom.insert_at(&at_handle, sub_tree);
-                let insert_new_line_at = if new_line_at_end {
-                    at_handle.next_sibling()
-                } else {
-                    at_handle.clone()
-                };
-                dom.insert_at(&insert_new_line_at, DomNode::new_line_break());
-            }
-
             if !sub_tree_container.has_leading_zwsp() {
                 sub_tree_container.insert_child(0, DomNode::new_zwsp());
             }
