@@ -15,7 +15,7 @@
 use crate::dom::UnicodeString;
 use crate::{Location, MenuState, ReplaceAll, Selection, TextUpdate};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ComposerUpdate<S>
 where
     S: UnicodeString,
