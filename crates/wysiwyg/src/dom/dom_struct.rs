@@ -445,7 +445,7 @@ where
             let sub_handle = handle.sub_handle_up_to(i);
             if sub_handle.is_root() {
                 continue;
-            } else if let Some(node) =
+            } else if let Some::<&DomNode<S>>(node) =
                 current.children().get(sub_handle.index_in_parent())
             {
                 if let DomNode::Container(node) = node {
