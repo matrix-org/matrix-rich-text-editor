@@ -41,6 +41,15 @@ where
     pub(crate) action_states: HashMap<ComposerAction, ActionState>,
 }
 
+impl<S> Default for ComposerModel<S>
+where
+    S: UnicodeString,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<S> ComposerModel<S>
 where
     S: UnicodeString,
