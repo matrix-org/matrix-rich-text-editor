@@ -77,6 +77,12 @@ pub struct ComposerModel {
     inner: wysiwyg::ComposerModel<Utf16String>,
 }
 
+impl Default for ComposerModel {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[wasm_bindgen]
 impl ComposerModel {
     pub fn new() -> Self {
@@ -457,7 +463,7 @@ impl DomChildren {
     }
 
     // Clippy suggests that this name is ambiguous
-    pub fn next(&mut self) -> Option<DomHandle> {
+    pub fn next_child(&mut self) -> Option<DomHandle> {
         self.inner.pop_front()
     }
 }
