@@ -43,6 +43,33 @@ final class WysiwygComposerViewSnapshotTests: XCTestCase {
         )
     }
     
+    func testPlainTextContent() throws {
+        viewModel.setHtmlContent("Test")
+        assertSnapshot(
+            matching: hostingController,
+            as: .image(on: .iPhone13),
+            record: isRecord
+        )
+    }
+    
+    func testInlineCodeContent() throws {
+        viewModel.setHtmlContent("<code>test</code>")
+        assertSnapshot(
+            matching: hostingController,
+            as: .image(on: .iPhone13),
+            record: isRecord
+        )
+    }
+    
+    func testLinkContent() throws {
+        viewModel.setHtmlContent("<a href=\"https://element.io\">test</a>")
+        assertSnapshot(
+            matching: hostingController,
+            as: .image(on: .iPhone13),
+            record: isRecord
+        )
+    }
+    
     override func tearDownWithError() throws {
         try super.tearDownWithError()
         hostingController = nil
