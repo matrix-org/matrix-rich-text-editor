@@ -14,6 +14,12 @@ let package = Package(
             targets: ["WysiwygComposer"]
         ),
     ],
+    dependencies: [
+        .package(
+            url: "https://github.com/pointfreeco/swift-snapshot-testing",
+            from: "1.10.0"
+        ),
+    ],
     targets: [
         .binaryTarget(
             name: "WysiwygComposerFFI",
@@ -27,7 +33,10 @@ let package = Package(
         ),
         .testTarget(
             name: "WysiwygComposerTests",
-            dependencies: ["WysiwygComposer"]
+            dependencies: [
+                "WysiwygComposer",
+                .product(name: "SnapshotTesting", package: "swift-snapshot-testing"),
+            ]
         ),
     ]
 )

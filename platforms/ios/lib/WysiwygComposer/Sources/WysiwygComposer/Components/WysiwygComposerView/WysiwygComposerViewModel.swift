@@ -152,7 +152,8 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         
         $idealHeight
             .removeDuplicates()
-            .sink { [unowned self] _ in
+            .sink { [weak self] _ in
+                guard let self = self else { return }
                 // Improves a lot the user experience by keeping the selected range always visible when there are changes in the size.
                 DispatchQueue.main.async {
                     self.textView.scrollRangeToVisible(self.textView.selectedRange)
