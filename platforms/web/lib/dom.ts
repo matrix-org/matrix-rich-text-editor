@@ -65,7 +65,7 @@ export function refreshComposerView(
         list.className = `group_${idCounter % 10}`;
         const children = node.children(composerModel);
         let child: DomHandle | undefined;
-        while ((child = children.next())) {
+        while ((child = children.next_child())) {
             const nodeType: string = child.node_type(composerModel);
             if (nodeType === 'container') {
                 const id = idCounter;
