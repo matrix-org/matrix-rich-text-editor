@@ -33,7 +33,8 @@ where
     fn add_quote(&mut self) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
         let Some(wrap_result) = self.state.dom.find_nodes_to_wrap_in_block(s, e) else {
-            // No suitable nodes found to be wrapped inside the quote. The Dom should be empty
+            // No nodes to be wrapped found.
+            // Adding an empty Quote block with an a single ZWSP
             self.state.dom.append_at_end_of_document(DomNode::new_quote(vec![DomNode::new_text(S::zwsp())]));
             self.state.start += 1;
             self.state.end += 1;
