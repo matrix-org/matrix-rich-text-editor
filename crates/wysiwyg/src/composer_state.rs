@@ -39,3 +39,17 @@ where
         }
     }
 }
+
+impl<S> Default for ComposerState<S>
+where
+    S: UnicodeString,
+{
+    fn default() -> Self {
+        Self {
+            dom: Dom::new(Vec::new()),
+            start: Location::from(0),
+            end: Location::from(0),
+            toggled_format_types: Vec::new(),
+        }
+    }
+}
