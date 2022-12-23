@@ -47,15 +47,15 @@ where
 
         // Remove the selected nodes from the DOM and add them to the new container
         for location in range.locations.iter().rev() {
-            let node = &location.node_handle;
+            let handle = &location.node_handle;
 
             // If the location is covered, it can be moved to the container.
             if location.is_covered() {
                 // Ignore children of covered nodes which are moved in their parents.
-                if node.depth() != shared_depth + 1 {
+                if handle.depth() != shared_depth + 1 {
                     continue;
                 }
-                let node = self.remove(node);
+                let node = self.remove(handle);
                 container.insert_child(0, node);
             }
             // ... else handle partially covered nodes
@@ -64,7 +64,7 @@ where
                 // and add the end part to the new container.
                 // If the leaf is partially included at the end of the range, split the tree and
                 // add the start part to the new container.
-                if !self.lookup_node(node).is_leaf() {
+                if !self.lookup_node(handle).is_leaf() {
                     continue;
                 }
 
@@ -75,7 +75,7 @@ where
                 };
 
                 let (left, left_handle, right, right_handle) =
-                    self.split_new_sub_trees(node, offset, shared_depth);
+                    self.split_new_sub_trees(handle, offset, shared_depth);
 
                 let mut outers = if location.ends_inside() {
                     vec![right.lookup_node(&right_handle).clone()]
@@ -93,7 +93,7 @@ where
                 }
 
                 container.insert_child(0, inner);
-                self.replace(node, outers);
+                self.replace(handle, outers);
             }
         }
 

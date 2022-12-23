@@ -165,6 +165,7 @@ where
                 ListType::Unordered => Some(ComposerAction::UnorderedList),
             },
             ContainerNodeKind::CodeBlock => Some(ComposerAction::CodeBlock),
+            ContainerNodeKind::Quote => Some(ComposerAction::Quote),
             _ => None,
         }
     }

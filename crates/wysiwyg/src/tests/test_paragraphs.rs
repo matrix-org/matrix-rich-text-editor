@@ -181,54 +181,112 @@ fn backspace_merges_formatting_nodes() {
 
 #[test]
 fn enter_in_code_block_in_text_node_adds_line_break_as_text() {
-    let mut model = cm("<pre>Test|</pre>");
+    let mut model = cm("<pre>~Test|</pre>");
     model.enter();
-    assert_eq!(tx(&model), "<pre>Test\n|</pre>")
+    assert_eq!(tx(&model), "<pre>~Test\n|</pre>")
 }
 
 #[test]
 fn enter_in_code_block_at_start_adds_the_line_break() {
-    let mut model = cm("<pre>|Test</pre>");
+    let mut model = cm("<pre>~|Test</pre>");
     model.enter();
-    assert_eq!(tx(&model), "<pre>\n|Test</pre>")
+    assert_eq!(tx(&model), "<pre>~\n|Test</pre>")
 }
 
 #[test]
 fn enter_in_code_block_at_start_with_previous_line_break_moves_it_outside_the_code_block(
 ) {
     // The initial line break will be removed, so it's the same as having a single line break at the start
-    let mut model = cm("<pre>\n\n|Test</pre>");
+    let mut model = cm("<pre>\n~\n|Test</pre>");
     model.enter();
-    assert_eq!(tx(&model), "<br />|<pre>Test</pre>")
+    assert_eq!(tx(&model), "<br />|<pre>~Test</pre>")
+}
+
+#[test]
+fn enter_in_code_block_at_start_with_previous_line_break_moves_it_outside_the_code_block_with_text_around(
+) {
+    // The initial line break will be removed, so it's the same as having a single line break at the start
+    let mut model = cm("ASDA<pre>\n~\n|Test</pre>ASD");
+    model.enter();
+    assert_eq!(tx(&model), "ASDA<br />|<pre>~Test</pre>ASD")
 }
 
 #[test]
 fn enter_in_code_block_at_start_with_a_line_break_after_it_adds_another_one() {
     // The initial line break will be removed, so it's the same as having a single line break at the start
-    let mut model = cm("<pre>\n|\nTest</pre>");
+    let mut model = cm("<pre>\n~|\nTest</pre>");
     model.enter();
-    assert_eq!(tx(&model), "<pre>\n|\nTest</pre>")
+    assert_eq!(tx(&model), "<pre>~\n|\nTest</pre>")
 }
 
 #[test]
 fn enter_in_code_block_after_line_break_at_end_ends_code_block() {
-    let mut model = cm("<pre>Test\n|</pre>");
+    let mut model = cm("<pre>~Test\n|</pre>");
     model.enter();
-    assert_eq!(tx(&model), "<pre>Test</pre><br />|")
+    assert_eq!(tx(&model), "<pre>~Test</pre><br />|")
 }
 
 #[test]
 fn enter_in_code_block_after_line_break_in_middle_splits_code_block() {
-    let mut model = cm("<pre>Test\n|code blocks</pre>");
+    let mut model = cm("<pre>~Test\n|code blocks</pre>");
     model.enter();
-    assert_eq!(tx(&model), "<pre>Test</pre><br />|<pre>code blocks</pre>")
+    assert_eq!(tx(&model), "<pre>~Test</pre><br />|<pre>~code blocks</pre>")
 }
 
 #[test]
 fn enter_in_code_block_after_nested_line_break_in_middle_splits_code_block() {
-    let mut model = cm("<pre><b><i>Test\n|code blocks</i></b></pre>");
+    let mut model = cm("<pre>~<b><i>Test\n|code blocks</i></b></pre>");
     model.enter();
-    assert_eq!(tx(&model), "<pre><b><i>Test</i></b></pre><br />|<pre><b><i>code blocks</i></b></pre>")
+    assert_eq!(tx(&model), "<pre>~<b><i>Test</i></b></pre><br />|<pre>~<b><i>code blocks</i></b></pre>")
+}
+
+#[test]
+fn simple_enter_in_quote() {
+    let mut model = cm("<blockquote>~Left|Right</blockquote>");
+    model.enter();
+    assert_eq!(tx(&model), "<blockquote>~Left<br />|Right</blockquote>");
+}
+
+#[test]
+fn double_enter_in_quote() {
+    let mut model = cm("<blockquote>~Left<br />|Right</blockquote>");
+    model.enter();
+    assert_eq!(
+        tx(&model),
+        "<blockquote>~Left</blockquote><br />|<blockquote>~Right</blockquote>"
+    );
+}
+
+#[test]
+fn double_enter_in_quote_at_start_when_empty() {
+    let mut model = cm("<blockquote>~<br />|</blockquote>");
+    model.enter();
+    assert_eq!(tx(&model), "<br />|");
+}
+
+#[test]
+fn double_enter_in_quote_at_start_when_not_empty() {
+    let mut model = cm("<blockquote>~<br />|Text</blockquote>");
+    model.enter();
+    assert_eq!(tx(&model), "<br />|<blockquote>~Text</blockquote>");
+}
+
+#[test]
+fn double_enter_in_quote_at_end_when_not_empty() {
+    let mut model = cm("<blockquote>~Text<br />|</blockquote>");
+    model.enter();
+    assert_eq!(tx(&model), "<blockquote>~Text</blockquote><br />|");
+}
+
+#[test]
+fn double_enter_in_quote_in_nested_nodes() {
+    let mut model =
+        cm("<blockquote>~<b><i>Left<br />|Right</i></b></blockquote>");
+    model.enter();
+    assert_eq!(
+        tx(&model),
+        "<blockquote>~<b><i>Left</i></b></blockquote><br />|<blockquote>~<b><i>Right</i></b></blockquote>"
+    );
 }
 
 #[test]

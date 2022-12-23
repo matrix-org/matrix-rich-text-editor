@@ -16,8 +16,10 @@ use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::DomNodeKind::ListItem;
 use crate::dom::nodes::DomNode;
 use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
-use crate::dom::{DomLocation, Range};
-use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
+use crate::dom::{Dom, DomLocation, Range};
+use crate::{
+    ComposerModel, ComposerUpdate, DomHandle, Location, UnicodeString,
+};
 
 impl<S> ComposerModel<S>
 where
@@ -146,6 +148,9 @@ where
             DomNodeKind::CodeBlock => {
                 self.do_enter_in_code_block(leaf, block_ancestor_loc)
             }
+            DomNodeKind::Quote => {
+                self.do_enter_in_quote(leaf, block_ancestor_loc)
+            }
             _ => panic!("Enter not implemented for this block node!"),
         }
     }
@@ -155,6 +160,22 @@ where
         leaf: &DomLocation,
         block_location: &DomLocation,
     ) -> ComposerUpdate<S> {
+        // Helper function since we have to repeat this code twice
+        fn insert_code_block<S: UnicodeString>(
+            dom: &mut Dom<S>,
+            sub_tree: DomNode<S>,
+            at_handle: &DomHandle,
+            new_line_at_end: bool,
+        ) {
+            dom.insert_at(&at_handle, sub_tree);
+            let insert_new_line_at = if new_line_at_end {
+                at_handle.next_sibling()
+            } else {
+                at_handle.clone()
+            };
+            dom.insert_at(&insert_new_line_at, DomNode::new_line_break());
+        }
+
         let mut has_previous_line_break = false;
         let mut selection_offset = 0;
         if leaf.start_offset > 0 {
@@ -179,41 +200,85 @@ where
             }
         }
 
+        // If there was a previous line break, we need to split the code block and add the line break
         if has_previous_line_break {
-            let DomNode::Container(sub_tree) = self.state.dom.split_sub_tree(&leaf.node_handle, leaf.start_offset - selection_offset, block_location.node_handle.depth()) else {
+            let mut sub_tree = self.state.dom.split_sub_tree_from(
+                &leaf.node_handle,
+                leaf.start_offset - selection_offset,
+                block_location.node_handle.depth(),
+            );
+            sub_tree.set_handle(DomHandle::root());
+            let DomNode::Container(sub_tree_container) = &mut sub_tree else {
                 panic!("Sub tree must start from a container node");
             };
-            let DomNode::Container(block) = self.state.dom.lookup_node_mut(&block_location.node_handle) else {
-                panic!("Parent must be a block node");
-            };
-            if block.children().is_empty() {
-                self.state.dom.replace(
-                    &block_location.node_handle,
-                    vec![
-                        DomNode::new_line_break(),
-                        DomNode::new_code_block(sub_tree.children().clone()),
-                    ],
-                );
-            } else {
-                let next_handle = block_location.node_handle.next_sibling();
-                if !sub_tree.children().is_empty() {
-                    self.state.dom.insert_at(
-                        &next_handle,
-                        DomNode::new_code_block(sub_tree.children().clone()),
+
+            let new_line_at_end = leaf.is_start();
+            if !sub_tree_container.has_leading_zwsp() {
+                sub_tree_container.insert_child(0, DomNode::new_zwsp());
+            }
+
+            if self.state.dom.contains(&block_location.node_handle) {
+                if let DomNode::Container(block) =
+                    self.state.dom.lookup_node_mut(&block_location.node_handle)
+                {
+                    if block.children().is_empty() || block.only_contains_zwsp()
+                    {
+                        self.state.dom.replace(
+                            &block_location.node_handle,
+                            vec![
+                                DomNode::new_line_break(),
+                                DomNode::new_code_block(
+                                    sub_tree_container.children().clone(),
+                                ),
+                            ],
+                        );
+                    } else {
+                        let next_handle =
+                            block_location.node_handle.next_sibling();
+                        if !sub_tree_container.children().is_empty() {
+                            self.state.dom.insert_at(
+                                &next_handle,
+                                DomNode::new_code_block(
+                                    sub_tree_container.children().clone(),
+                                ),
+                            );
+                        }
+                        self.state
+                            .dom
+                            .insert_at(&next_handle, DomNode::new_line_break());
+                    }
+                } else {
+                    // Insert the whole code block at its old DomHandle
+                    insert_code_block(
+                        &mut self.state.dom,
+                        sub_tree,
+                        &block_location.node_handle,
+                        new_line_at_end,
                     );
                 }
-                self.state
-                    .dom
-                    .insert_at(&next_handle, DomNode::new_line_break());
+            } else {
+                // Insert the whole code block at its old DomHandle
+                insert_code_block(
+                    &mut self.state.dom,
+                    sub_tree,
+                    &block_location.node_handle,
+                    new_line_at_end,
+                );
             }
-            self.state.start += 1;
-            self.state.end = self.state.start;
+            // Fix selection if it was after the first possible line break
+            if block_location.start_offset > 2 {
+                self.state.start += 1;
+                self.state.end = self.state.start;
+            }
             self.create_update_replace_all()
         } else {
+            // Otherwise, just add a ('\n') line break
             let DomNode::Container(block) = self.state.dom.lookup_node(&block_location.node_handle) else {
                 panic!("Parent must be a block node");
             };
             if block.children().is_empty() {
+                // If it's the first character, we need to add 2 line breaks instead, since the
+                // first one will be automatically removed by any HTML parser
                 self.state.dom.insert_at(
                     &leaf.node_handle,
                     DomNode::new_text("\n\n".into()),
@@ -224,9 +289,20 @@ where
             } else if let DomNode::Text(text_node) =
                 self.state.dom.lookup_node_mut(&leaf.node_handle)
             {
+                // Just add the line break and move the selection
                 let mut new_data = text_node.data().to_owned();
                 new_data.insert(leaf.start_offset, &S::from("\n"));
                 text_node.set_data(new_data);
+                self.state.start += 1;
+                self.state.end = self.state.start;
+                self.create_update_replace_all()
+            } else if let DomNode::Zwsp(_) =
+                self.state.dom.lookup_node(&leaf.node_handle)
+            {
+                let text_node = DomNode::new_text("\n".into());
+                self.state
+                    .dom
+                    .insert_at(&leaf.node_handle.next_sibling(), text_node);
                 self.state.start += 1;
                 self.state.end = self.state.start;
                 self.create_update_replace_all()
@@ -234,6 +310,84 @@ where
                 ComposerUpdate::keep()
             }
         }
+    }
+
+    fn do_enter_in_quote(
+        &mut self,
+        leaf: &DomLocation,
+        block_location: &DomLocation,
+    ) -> ComposerUpdate<S> {
+        let has_previous_line_break = leaf.kind == DomNodeKind::LineBreak;
+
+        if has_previous_line_break {
+            // If there was a previous line break we should split the quote in 2 parts, adding a
+            // line break between them.
+            let mut sub_tree = self.state.dom.split_sub_tree_from(
+                &leaf.node_handle,
+                leaf.start_offset,
+                block_location.node_handle.depth(),
+            );
+            // Needed to be able to add children
+            sub_tree.set_handle(DomHandle::root());
+            let DomNode::Container(sub_tree_container) = &mut sub_tree else {
+                panic!("Sub tree must start from a container node");
+            };
+
+            let insert_at =
+                if self.state.dom.contains(&block_location.node_handle) {
+                    if block_location.start_offset > 0 {
+                        block_location.node_handle.next_sibling()
+                    } else {
+                        block_location.node_handle.clone()
+                    }
+                } else {
+                    block_location.node_handle.clone()
+                };
+
+            // We don't need the leading line break in the extracted half of the block quote
+            if sub_tree_container.remove_leading_line_break() {
+                self.state.start -= 1;
+                self.state.end -= 1;
+            }
+
+            if !sub_tree_container.is_empty()
+                && !sub_tree_container.only_contains_zwsp()
+            {
+                // If the sub-tree is not empty, insert it along with a line break before it
+                if !sub_tree_container.has_leading_zwsp() {
+                    sub_tree_container.insert_child(0, DomNode::new_zwsp());
+                    // Don't modify selection if we're inserting it at the same position as the old block
+                    if insert_at != block_location.node_handle {
+                        self.state.start += 1;
+                        self.state.end += 1;
+                    }
+                }
+                self.state.dom.insert_at(
+                    &insert_at,
+                    DomNode::new_quote(sub_tree_container.children().clone()),
+                );
+                self.state
+                    .dom
+                    .insert_at(&insert_at, DomNode::new_line_break());
+            } else {
+                // If the sub-tree is empty, just add the line break
+                let insert_at =
+                    if self.state.dom.contains(&block_location.node_handle) {
+                        self.state.start += 1;
+                        self.state.end += 1;
+                        block_location.node_handle.next_sibling()
+                    } else {
+                        block_location.node_handle.clone()
+                    };
+                self.state
+                    .dom
+                    .insert_at(&insert_at, DomNode::new_line_break());
+            }
+        } else {
+            self.do_enter_in_text(&leaf.node_handle, leaf.start_offset);
+        }
+
+        self.create_update_replace_all()
     }
 
     fn enter_with_zero_length_selection_and_empty_text_nodes(
@@ -317,6 +471,7 @@ mod test {
     use crate::tests::testutils_composer_model::cm;
     use crate::tests::testutils_conversion::utf16;
     use crate::{ComposerAction, ComposerUpdate, Location, MenuState};
+    use strum::IntoEnumIterator;
 
     #[test]
     fn composer_update_contains_escaped_html() {
@@ -336,20 +491,18 @@ mod test {
     }
 
     fn indent_unindent_redo_disabled() -> HashMap<ComposerAction, ActionState> {
-        HashMap::from([
-            (ComposerAction::Bold, ActionState::Enabled),
-            (ComposerAction::Italic, ActionState::Enabled),
-            (ComposerAction::StrikeThrough, ActionState::Enabled),
-            (ComposerAction::Underline, ActionState::Enabled),
-            (ComposerAction::InlineCode, ActionState::Enabled),
-            (ComposerAction::Link, ActionState::Enabled),
-            (ComposerAction::Undo, ActionState::Enabled),
-            (ComposerAction::Redo, ActionState::Disabled),
-            (ComposerAction::OrderedList, ActionState::Enabled),
-            (ComposerAction::UnorderedList, ActionState::Enabled),
-            (ComposerAction::Indent, ActionState::Disabled),
-            (ComposerAction::UnIndent, ActionState::Disabled),
-            (ComposerAction::CodeBlock, ActionState::Enabled),
-        ])
+        let actions = ComposerAction::iter().map(|action| {
+            if matches!(
+                action,
+                ComposerAction::Redo
+                    | ComposerAction::Indent
+                    | ComposerAction::UnIndent
+            ) {
+                (action, ActionState::Disabled)
+            } else {
+                (action, ActionState::Enabled)
+            }
+        });
+        HashMap::from_iter(actions)
     }
 }

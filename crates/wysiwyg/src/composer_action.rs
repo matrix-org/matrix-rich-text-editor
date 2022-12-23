@@ -29,4 +29,5 @@ pub enum ComposerAction {
     Indent,
     UnIndent,
     CodeBlock,
+    Quote,
 }

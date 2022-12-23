@@ -101,6 +101,7 @@ mod test {
             (ComposerAction::Undo, ActionState::Enabled),
             (ComposerAction::UnorderedList, ActionState::Enabled),
             (ComposerAction::CodeBlock, ActionState::Enabled),
+            (ComposerAction::Quote, ActionState::Enabled),
         ])
     }
 
@@ -120,6 +121,7 @@ mod test {
             (ComposerAction::Undo, ActionState::Disabled),
             (ComposerAction::UnorderedList, ActionState::Enabled),
             (ComposerAction::CodeBlock, ActionState::Enabled),
+            (ComposerAction::Quote, ActionState::Enabled),
         ])
     }
 }

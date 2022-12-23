@@ -88,6 +88,7 @@ enum ComposerAction {
     "Indent",
     "UnIndent",
     "CodeBlock",
+    "Quote",
 };
 
 enum ActionState {

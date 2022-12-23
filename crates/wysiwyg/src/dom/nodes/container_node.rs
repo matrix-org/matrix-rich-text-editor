@@ -17,7 +17,7 @@ use std::ops::ControlFlow;
 use crate::char::CharExt;
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
-use crate::dom::nodes::dom_node::DomNode;
+use crate::dom::nodes::dom_node::{DomNode, DomNodeKind};
 use crate::dom::to_html::ToHtml;
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_raw_text::ToRawText;
@@ -49,6 +49,7 @@ where
     List(ListType),
     ListItem,
     CodeBlock,
+    Quote,
 }
 
 impl<S> ContainerNode<S>
@@ -126,6 +127,16 @@ where
         Self {
             name: "pre".into(),
             kind: ContainerNodeKind::CodeBlock,
+            attrs: None,
+            children,
+            handle: DomHandle::new_unset(),
+        }
+    }
+
+    pub fn new_quote(children: Vec<DomNode<S>>) -> Self {
+        Self {
+            name: "blockquote".into(),
+            kind: ContainerNodeKind::Quote,
             attrs: None,
             children,
             handle: DomHandle::new_unset(),
@@ -287,9 +298,7 @@ where
     }
 
     pub(crate) fn is_block_node(&self) -> bool {
-        use ContainerNodeKind::*;
-
-        matches!(self.kind, Generic | List(_) | CodeBlock)
+        DomNodeKind::from_container_kind(&self.kind).is_block_kind()
     }
 
     pub fn text_len(&self) -> usize {
@@ -402,7 +411,27 @@ where
         }
     }
 
-    /// Returns whether this continer first text-like
+    /// Remove leading Line break char from this container.
+    /// Returns false if no updates were done.
+    pub fn remove_leading_line_break(&mut self) -> bool {
+        let Some(first_child) = self.children.get_mut(0) else {
+            return false;
+        };
+        match first_child {
+            DomNode::Container(c) => c.remove_leading_line_break(),
+            DomNode::LineBreak(_) => {
+                if self.handle().is_set() {
+                    self.remove_child(0);
+                } else {
+                    self.children.remove(0);
+                }
+                true
+            }
+            _ => false,
+        }
+    }
+
+    /// Returns whether this container first text-like
     /// child starts with a ZWSP.
     pub fn has_leading_zwsp(&self) -> bool {
         let Some(first_child) = self.children.get(0) else {
@@ -501,6 +530,16 @@ where
                 self.clone_with_new_children(removed_children)
             }
         }
+    }
+
+    /// Returns true if the ContainerNode has no children.
+    pub fn is_empty(&self) -> bool {
+        self.children.is_empty()
+    }
+
+    /// Returns true if the ContainerNode only has 1 child, and it's a ZwspNode.
+    pub fn only_contains_zwsp(&self) -> bool {
+        self.children.len() == 1 && self.children[0].is_zwsp()
     }
 
     fn find_slice_location(
@@ -693,6 +732,10 @@ where
 
             CodeBlock => {
                 fmt_code_block(self, buffer, &options)?;
+            }
+
+            Quote => {
+                fmt_quote(self, buffer, &options)?;
             }
         };
 
@@ -1026,6 +1069,22 @@ where
             buffer.push("```\n");
             fmt_children(this, buffer, options)?;
             buffer.push("\n```\n");
+
+            Ok(())
+        }
+
+        #[inline(always)]
+        fn fmt_quote<S>(
+            this: &ContainerNode<S>,
+            buffer: &mut S,
+            options: &MarkdownOptions,
+        ) -> Result<(), MarkdownError<S>>
+        where
+            S: UnicodeString,
+        {
+            buffer.push("> ");
+            fmt_children(this, buffer, options)?;
+            buffer.push("\n");
 
             Ok(())
         }
