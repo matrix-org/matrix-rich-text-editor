@@ -87,21 +87,12 @@ where
             }
         }
 
-        let start_handle_is_start_at_depth =
-            start_handle.raw().iter().all(|i| *i == 0);
-        let mut insert_at_handle =
-            if subtree.is_block_node() && subtree.kind() != Generic {
-                start_handle.sub_handle_up_to(parent_handle.depth())
-            } else {
-                start_handle.sub_handle_up_to(parent_handle.depth() + 1)
-            };
-        if !start_handle_is_start_at_depth
-            && self.state.dom.contains(&insert_at_handle)
-        {
-            insert_at_handle = insert_at_handle.next_sibling();
-        } else if self.state.dom.document().children().is_empty() {
-            insert_at_handle = self.state.dom.document_handle().child_handle(0);
-        }
+        let insert_at_handle =
+            self.state.dom.find_insert_handle_for_extracted_block_node(
+                &start_handle,
+                &parent_handle,
+                &subtree,
+            );
         let code_block = DomNode::new_code_block(children);
         self.state.dom.insert_at(&insert_at_handle, code_block);
 
