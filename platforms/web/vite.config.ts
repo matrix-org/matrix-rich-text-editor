@@ -18,6 +18,7 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 import dts from 'vite-plugin-dts';
+import { getBabelOutputPlugin } from '@rollup/plugin-babel';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -36,6 +37,46 @@ export default defineConfig({
                 'lib/useListeners/types.ts',
             ],
             rollupTypes: true,
+        }),
+        /**
+         * See https://github.com/vitejs/vite/issues/1639#issuecomment-1254671542
+         *
+         * Running Babel on the generated code:
+         *  https://github.com/rollup/plugins/blob/master/packages/babel/README.md#running-babel-on-the-generated-code
+         *
+         * Transforming ES6+ syntax to ES5 is not supported yet,
+         *  there are two ways to do:
+         *  https://github.com/evanw/esbuild/issues/1010#issuecomment-803865232
+         * We choose to run Babel on the output files after esbuild.
+         *
+         * @vitejs/plugin-legacy does not support library mode:
+         *  https://github.com/vitejs/vite/issues/1639
+         */
+        getBabelOutputPlugin({
+            allowAllFormats: true,
+            presets: [
+                [
+                    '@babel/preset-env',
+                    {
+                        useBuiltIns: false, // Default：false
+                        // Exclude transforms that make all code slower
+                        exclude: ['transform-typeof-symbol'],
+                        // https://babeljs.io/docs/en/babel-preset-env#modules
+                        modules: false,
+                    },
+                ],
+            ],
+            plugins: [
+                /**
+                 * Extract the helper function.
+                 */
+              [
+                    '@babel/plugin-transform-runtime',
+                    {
+                        corejs: false,
+                    },
+                ],
+            ],
         }),
     ],
     test: {

@@ -34,8 +34,8 @@
     "node": ">= 10"
   },
   "scripts": {
-    "dev-build": "WASM_BINDGEN_WEAKREF=1 wasm-pack build --profiling --target web --out-name wysiwyg --out-dir ./pkg",
-    "build": "RUSTFLAGS='-C opt-level=s' WASM_BINDGEN_WEAKREF=1 wasm-pack build --release --target web --out-name wysiwyg --out-dir ./pkg",
+    "dev-build": "wasm-pack build --profiling --target web --out-name wysiwyg --out-dir ./pkg",
+    "build": "RUSTFLAGS='-C opt-level=s' wasm-pack build --release --target web --out-name wysiwyg --out-dir ./pkg",
     "test": "jest --verbose",
     "doc": "typedoc --tsconfig ."
   }
