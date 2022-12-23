@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::dom::nodes::dom_node::DomNodeKind::*;
-use crate::dom::nodes::{ContainerNodeKind, DomNode};
+use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode};
 use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
 use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{
@@ -260,12 +260,6 @@ where
         last_leaf: &DomLocation,
     ) -> Vec<DomNode<S>> {
         // TODO: try to diff node positions and offsets in a more straightforward way
-        // These checks are used to verify if the changes in the Dom should also move the selection
-        let is_in_selection = range.contains(&node.handle());
-        let is_before =
-            node.handle() <= first_leaf.node_handle && !is_in_selection;
-        let is_after =
-            node.handle() > last_leaf.node_handle && !is_in_selection;
         match node {
             DomNode::LineBreak(_) => {
                 // Just turn them into line break characters
@@ -274,80 +268,96 @@ where
                 vec![text_node]
             }
             DomNode::Text(_) => vec![node.clone()],
-            DomNode::Container(container) => {
-                let mut children = Vec::new();
-                // We process each child node
-                for c in container.children() {
-                    children.extend(self.format_node_for_code_block(
-                        c, range, first_leaf, last_leaf,
-                    ));
-                }
-                // Then post-process the containers to add line breaks and move selection if needed
-                if container.is_block_node() || container.is_list_item() {
-                    if container.is_list() {
-                        // Add line break before the List if it's not at the start
-                        if node.handle().index_in_parent() > 0 {
-                            children.insert(0, DomNode::new_text("\n".into()));
-                            if is_before {
-                                self.state.start += 1;
-                            }
-                        }
-                    } else if container.is_list_item() {
-                        // Every list item adds a line break at the end
-                        // So "<ul><li>Item A</li><li>Item B</li></ul>End"
-                        // Will become: "<pre>Item A\nItem B\nEnd</pre>"
-                        children.push(DomNode::new_text("\n".into()));
-                        if is_before {
-                            self.state.start += 1;
-                        }
-                        if !is_after {
-                            self.state.end += 1;
-                        }
-                    } else if *container.kind() == ContainerNodeKind::Quote {
-                        // We add a new line where it's needed
-                        let added_at_start =
-                            if container.handle().index_in_parent() == 0 {
-                                children.push(DomNode::new_text("\n".into()));
-                                false
-                            } else {
-                                children
-                                    .insert(0, DomNode::new_text("\n".into()));
-                                true
-                            };
-                        if is_in_selection {
-                            let location = range
-                                .locations
-                                .iter()
-                                .find(|l| l.node_handle == container.handle())
-                                .unwrap();
-                            if location.starts_inside()
-                                && location.ends_inside()
-                            {
-                                // Do nothing
-                            } else if location.starts_inside() {
-                                if added_at_start {
-                                    self.state.start += 1;
-                                }
-                                self.state.end += 1;
-                            } else if location.ends_inside() {
-                                self.state.start += 1;
-                                self.state.end += 1;
-                            }
-                        }
-                    }
-                    children
-                } else {
-                    vec![DomNode::Container(
-                        container.clone_with_new_children(children),
-                    )]
-                }
-            }
+            DomNode::Container(container) => self
+                .format_container_node_for_code_block(
+                    container, range, first_leaf, last_leaf,
+                ),
             DomNode::Zwsp(_) => {
                 // We remove the ZWSP, then fix the selection
                 self.state.start -= 1;
                 self.state.end -= 1;
                 Vec::new()
             }
+        }
+    }
+
+    fn format_container_node_for_code_block(
+        &mut self,
+        container: &ContainerNode<S>,
+        range: &Range,
+        first_leaf: &DomLocation,
+        last_leaf: &DomLocation,
+    ) -> Vec<DomNode<S>> {
+        let mut children = Vec::new();
+
+        // These checks are used to verify if the changes in the Dom should also move the selection
+        let handle = container.handle();
+        let is_in_selection = range.contains(&handle);
+        let is_before = handle <= first_leaf.node_handle && !is_in_selection;
+        let is_after = handle > last_leaf.node_handle && !is_in_selection;
+
+        // We process each child node
+        for c in container.children() {
+            children.extend(
+                self.format_node_for_code_block(
+                    c, range, first_leaf, last_leaf,
+                ),
+            );
+        }
+        // Then post-process the containers to add line breaks and move selection if needed
+        if container.is_block_node() || container.is_list_item() {
+            if container.is_list() {
+                // Add line break before the List if it's not at the start
+                if handle.index_in_parent() > 0 {
+                    children.insert(0, DomNode::new_text("\n".into()));
+                    if is_before {
+                        self.state.start += 1;
+                    }
+                }
+            } else if container.is_list_item() {
+                // Every list item adds a line break at the end
+                // So "<ul><li>Item A</li><li>Item B</li></ul>End"
+                // Will become: "<pre>Item A\nItem B\nEnd</pre>"
+                children.push(DomNode::new_text("\n".into()));
+                if is_before {
+                    self.state.start += 1;
+                }
+                if !is_after {
+                    self.state.end += 1;
+                }
+            } else if *container.kind() == ContainerNodeKind::Quote {
+                // We add a new line where it's needed
+                let added_at_start = if handle.index_in_parent() == 0 {
+                    children.push(DomNode::new_text("\n".into()));
+                    false
+                } else {
+                    children.insert(0, DomNode::new_text("\n".into()));
+                    true
+                };
+                if is_in_selection {
+                    let location = range
+                        .locations
+                        .iter()
+                        .find(|l| l.node_handle == handle)
+                        .unwrap();
+                    if location.starts_inside() && location.ends_inside() {
+                        // Do nothing
+                    } else if location.starts_inside() {
+                        if added_at_start {
+                            self.state.start += 1;
+                        }
+                        self.state.end += 1;
+                    } else if location.ends_inside() {
+                        self.state.start += 1;
+                        self.state.end += 1;
+                    }
+                }
+            }
+            children
+        } else {
+            vec![DomNode::Container(
+                container.clone_with_new_children(children),
+            )]
         }
     }
 }
