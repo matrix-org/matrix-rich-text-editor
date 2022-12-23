@@ -22,7 +22,7 @@ use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
 use crate::dom::unicode_string::UnicodeStrExt;
-use crate::dom::UnicodeString;
+use crate::dom::{self, UnicodeString};
 use crate::{InlineFormatType, ListType};
 
 #[derive(Clone, Debug, PartialEq)]
@@ -34,6 +34,12 @@ where
     Text(TextNode<S>),
     LineBreak(LineBreakNode<S>),
     Zwsp(ZwspNode<S>),
+}
+
+impl<S: dom::unicode_string::UnicodeString> Default for DomNode<S> {
+    fn default() -> DomNode<S> {
+        Self::Text(TextNode::from(S::default()))
+    }
 }
 
 impl<S> DomNode<S>
