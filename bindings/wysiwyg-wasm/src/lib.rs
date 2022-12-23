@@ -73,14 +73,9 @@ impl IntoFfi for &HashMap<wysiwyg::ComposerAction, wysiwyg::ActionState> {
 }
 
 #[wasm_bindgen]
+#[derive(Default)]
 pub struct ComposerModel {
     inner: wysiwyg::ComposerModel<Utf16String>,
-}
-
-impl Default for ComposerModel {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 #[wasm_bindgen]

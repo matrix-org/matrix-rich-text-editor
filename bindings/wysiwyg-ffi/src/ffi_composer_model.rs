@@ -9,14 +9,9 @@ use crate::ffi_link_actions::LinkAction;
 use crate::into_ffi::IntoFfi;
 use crate::{ActionState, ComposerAction};
 
+#[derive(Default)]
 pub struct ComposerModel {
     inner: Mutex<wysiwyg::ComposerModel<Utf16String>>,
-}
-
-impl Default for ComposerModel {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl ComposerModel {
