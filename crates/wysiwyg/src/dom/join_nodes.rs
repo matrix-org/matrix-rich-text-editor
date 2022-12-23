@@ -305,7 +305,7 @@ where
     ) -> Option<DomHandle> {
         let parent = self.parent(handle);
         if parent.is_structure_node() {
-            Some(parent.handle().clone())
+            Some(parent.handle())
         } else if parent.handle().has_parent() {
             self.find_structure_ancestor(&parent.handle())
         } else {

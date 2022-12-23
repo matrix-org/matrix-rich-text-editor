@@ -259,7 +259,7 @@ where
     /// Find the node based on its handle.
     /// Panics if the handle is unset or invalid
     pub fn lookup_node(&self, node_handle: &DomHandle) -> &DomNode<S> {
-        &self.document_node().lookup_node(node_handle)
+        self.document_node().lookup_node(node_handle)
     }
 
     /// Find the node based on its handle and returns a mutable reference.

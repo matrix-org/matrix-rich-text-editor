@@ -48,7 +48,7 @@ where
             );
             // Walk backwards from the first leaf until we find the prev line break or block node
             for node in rev_iter {
-                if self.should_include_in_nodes_to_wrap(&node, &range) {
+                if self.should_include_in_nodes_to_wrap(node, &range) {
                     if node.is_leaf() {
                         nodes_to_cover.0 = HandleWithKind {
                             handle: node.handle(),
@@ -62,7 +62,7 @@ where
 
             // Walk forwards from the first leaf until we find the next line break or block node
             for node in iter {
-                if self.should_include_in_nodes_to_wrap(&node, &range) {
+                if self.should_include_in_nodes_to_wrap(node, &range) {
                     if node.is_leaf() {
                         nodes_to_cover.1 = HandleWithKind {
                             handle: node.handle(),
@@ -86,7 +86,8 @@ where
                 last_ancestor_to_split.depth(),
             );
             let mut min_depth = 0;
-            for i in min_depth..max_depth {
+            let start_depth = min_depth;
+            for i in start_depth..max_depth {
                 min_depth = i;
                 if first.handle.raw()[i] != last.handle.raw()[i] {
                     break;
