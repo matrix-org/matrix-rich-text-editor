@@ -23,7 +23,7 @@ use crate::{
 };
 use std::collections::HashMap;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct ComposerModel<S>
 where
     S: UnicodeString,
@@ -39,15 +39,6 @@ where
 
     /// The states of the buttons for each action e.g. bold, undo
     pub(crate) action_states: HashMap<ComposerAction, ActionState>,
-}
-
-impl<S> Default for ComposerModel<S>
-where
-    S: UnicodeString,
-{
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl<S> ComposerModel<S>

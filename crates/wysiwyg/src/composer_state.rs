@@ -15,7 +15,7 @@
 use crate::dom::{Dom, UnicodeString};
 use crate::{InlineFormatType, Location};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Default)]
 pub struct ComposerState<S>
 where
     S: UnicodeString,
@@ -37,14 +37,5 @@ where
             end: Location::from(0),
             toggled_format_types: Vec::new(),
         }
-    }
-}
-
-impl<S> Default for ComposerState<S>
-where
-    S: UnicodeString,
-{
-    fn default() -> Self {
-        Self::new()
     }
 }

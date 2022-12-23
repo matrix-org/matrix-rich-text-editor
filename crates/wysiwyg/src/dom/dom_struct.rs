@@ -25,7 +25,7 @@ use crate::ToHtml;
 
 use super::FindResult;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Default)]
 pub struct Dom<S>
 where
     S: UnicodeString,
