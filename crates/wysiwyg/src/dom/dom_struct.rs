@@ -38,12 +38,8 @@ where
     S: UnicodeString,
 {
     pub fn new(top_level_items: Vec<DomNode<S>>) -> Self {
-        let mut document = ContainerNode::new(
-            S::default(),
-            ContainerNodeKind::Generic,
-            None,
-            top_level_items,
-        );
+        let mut document = ContainerNode::default();
+        document.append_children(top_level_items);
         document.set_handle(DomHandle::from_raw(Vec::new()));
 
         Self {
