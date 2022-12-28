@@ -38,7 +38,7 @@ where
 
 impl<S: dom::unicode_string::UnicodeString> Default for DomNode<S> {
     fn default() -> DomNode<S> {
-        Self::Text(TextNode::from(S::default()))
+        Self::Container(ContainerNode::default())
     }
 }
 

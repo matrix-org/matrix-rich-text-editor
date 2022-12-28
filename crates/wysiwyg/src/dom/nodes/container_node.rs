@@ -23,7 +23,7 @@ use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
 use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
-use crate::dom::UnicodeString;
+use crate::dom::{self, UnicodeString};
 use crate::{InlineFormatType, ListType};
 
 #[derive(Clone, Debug, PartialEq)]
@@ -50,6 +50,12 @@ where
     ListItem,
     CodeBlock,
     Quote,
+}
+
+impl<S: dom::unicode_string::UnicodeString> Default for ContainerNode<S> {
+    fn default() -> ContainerNode<S> {
+        Self::new(S::default(), ContainerNodeKind::Generic, None, Vec::new())
+    }
 }
 
 impl<S> ContainerNode<S>
