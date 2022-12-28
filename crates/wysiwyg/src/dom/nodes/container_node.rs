@@ -54,7 +54,16 @@ where
 
 impl<S: dom::unicode_string::UnicodeString> Default for ContainerNode<S> {
     fn default() -> ContainerNode<S> {
-        Self::new(S::default(), ContainerNodeKind::Generic, None, Vec::new())
+        // implementation here is as per pub fn new in dom_struct.rs
+        let mut document = Self::new(
+            S::default(),
+            ContainerNodeKind::Generic,
+            None,
+            Vec::new(),
+        );
+
+        document.set_handle(DomHandle::from_raw(Vec::new()));
+        document
     }
 }
 
