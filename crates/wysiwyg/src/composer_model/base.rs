@@ -47,7 +47,7 @@ where
 {
     pub fn new() -> Self {
         let mut instance = Self {
-            state: ComposerState::new(),
+            state: ComposerState::default(),
             previous_states: Vec::new(),
             next_states: Vec::new(),
             action_states: HashMap::new(), // TODO: Calculate state based on ComposerState
