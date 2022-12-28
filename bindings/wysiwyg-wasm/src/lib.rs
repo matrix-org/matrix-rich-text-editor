@@ -73,6 +73,7 @@ impl IntoFfi for &HashMap<wysiwyg::ComposerAction, wysiwyg::ActionState> {
 }
 
 #[wasm_bindgen]
+#[derive(Default)]
 pub struct ComposerModel {
     inner: wysiwyg::ComposerModel<Utf16String>,
 }
@@ -456,8 +457,7 @@ impl DomChildren {
         }
     }
 
-    // Clippy suggests that this name is ambiguous
-    pub fn next(&mut self) -> Option<DomHandle> {
+    pub fn next_child(&mut self) -> Option<DomHandle> {
         self.inner.pop_front()
     }
 }

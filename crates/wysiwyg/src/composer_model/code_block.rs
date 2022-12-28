@@ -71,8 +71,8 @@ where
             let mut new_children = self.format_node_for_code_block(
                 &last_child,
                 &range,
-                &first_leaf,
-                &last_leaf,
+                first_leaf,
+                last_leaf,
             );
             new_children.extend(children);
             children = new_children;
@@ -255,7 +255,7 @@ where
             DomNode::LineBreak(_) => {
                 // Just turn them into line break characters
                 let mut text_node = DomNode::new_text("\n".into());
-                text_node.set_handle(node.handle().clone());
+                text_node.set_handle(node.handle());
                 vec![text_node]
             }
             DomNode::Text(_) => vec![node.clone()],
@@ -375,7 +375,7 @@ where
             true
         };
         if is_in_selection {
-            let location = range.find_location(&handle).unwrap();
+            let location = range.find_location(handle).unwrap();
             if location.starts_inside() && location.ends_inside() {
                 // Do nothing
             } else if location.starts_inside() {

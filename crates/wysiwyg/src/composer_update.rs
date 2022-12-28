@@ -15,7 +15,7 @@
 use crate::dom::UnicodeString;
 use crate::{Location, MenuState, ReplaceAll, Selection, TextUpdate};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ComposerUpdate<S>
 where
     S: UnicodeString,
@@ -37,8 +37,8 @@ where
 
     pub fn update_menu_state(menu_state: MenuState) -> Self {
         Self {
+            menu_state,
             text_update: TextUpdate::<S>::Keep,
-            menu_state: menu_state,
         }
     }
 

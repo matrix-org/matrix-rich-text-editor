@@ -23,7 +23,7 @@ use crate::{
 };
 use std::collections::HashMap;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct ComposerModel<S>
 where
     S: UnicodeString,

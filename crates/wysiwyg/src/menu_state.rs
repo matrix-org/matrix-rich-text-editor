@@ -16,13 +16,13 @@ use crate::action_state::ActionState;
 use crate::ComposerAction;
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MenuState {
     Keep,
     Update(MenuStateUpdate),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MenuStateUpdate {
     pub action_states: HashMap<ComposerAction, ActionState>,
 }

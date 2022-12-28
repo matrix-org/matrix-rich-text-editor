@@ -25,7 +25,7 @@ use crate::ToHtml;
 
 use super::FindResult;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Default)]
 pub struct Dom<S>
 where
     S: UnicodeString,
@@ -259,7 +259,7 @@ where
     /// Find the node based on its handle.
     /// Panics if the handle is unset or invalid
     pub fn lookup_node(&self, node_handle: &DomHandle) -> &DomNode<S> {
-        &self.document_node().lookup_node(node_handle)
+        self.document_node().lookup_node(node_handle)
     }
 
     /// Find the node based on its handle and returns a mutable reference.
@@ -445,7 +445,7 @@ where
             let sub_handle = handle.sub_handle_up_to(i);
             if sub_handle.is_root() {
                 continue;
-            } else if let Some(node) =
+            } else if let Some::<&DomNode<S>>(node) =
                 current.children().get(sub_handle.index_in_parent())
             {
                 if let DomNode::Container(node) = node {

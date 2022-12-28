@@ -14,7 +14,7 @@
 
 use strum_macros::AsRefStr;
 
-#[derive(AsRefStr, Clone, Debug, PartialEq)]
+#[derive(AsRefStr, Clone, Debug, PartialEq, Eq)]
 pub enum ActionState {
     Enabled,
     Reversed,

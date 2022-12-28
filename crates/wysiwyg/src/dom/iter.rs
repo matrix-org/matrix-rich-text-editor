@@ -75,7 +75,7 @@ where
         &'a self,
         node: &'a DomNode<S>,
     ) -> impl Iterator<Item = &TextNode<S>> {
-        self.iter_from(&node).filter_map(DomNode::as_text)
+        self.iter_from(node).filter_map(DomNode::as_text)
     }
 
     /// Return the previous node in the DOM, if exists, in depth-first order.
@@ -270,7 +270,7 @@ where
         Self {
             started: false,
             ancestors: vec![NodeAndChildIndex {
-                node: &dom_node,
+                node: dom_node,
                 child_index: 0,
             }],
         }
@@ -526,7 +526,7 @@ mod test {
         let dom = cm(EXAMPLE_HTML).state.dom;
         let first_child = dom.children().first().unwrap();
         let text_nodes: Vec<String> =
-            dom.iter_from(&first_child).map(node_txt).collect();
+            dom.iter_from(first_child).map(node_txt).collect();
 
         assert_eq!(
             text_nodes,
@@ -644,7 +644,7 @@ mod test {
         // Start from the last <b> tag.
         let last_child = dom.children().last().unwrap();
         let text_nodes: Vec<String> =
-            dom.iter_from(&last_child).rev().map(node_txt).collect();
+            dom.iter_from(last_child).rev().map(node_txt).collect();
 
         assert_eq!(
             text_nodes,

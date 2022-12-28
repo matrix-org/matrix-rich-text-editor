@@ -15,7 +15,7 @@
 use crate::dom::{Dom, UnicodeString};
 use crate::{InlineFormatType, Location};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Default)]
 pub struct ComposerState<S>
 where
     S: UnicodeString,

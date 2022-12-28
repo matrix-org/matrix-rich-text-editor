@@ -610,7 +610,7 @@ where
         let new_subtree = subtree_children.remove(0);
 
         let keep_empty_list_items =
-            new_subtree.iter_subtree().find(|n| n.is_list()).is_none();
+            !new_subtree.iter_subtree().any(|n| n.is_list());
         self.remove_empty_container_nodes(keep_empty_list_items);
 
         new_subtree
@@ -759,12 +759,16 @@ where
                 continue;
             }
             if let DomNode::Container(container) = self.lookup_node(&handle) {
-                if container.children().is_empty()
-                    && !(keep_empty_list_items && container.is_list_item())
-                {
-                    needs_removal = true;
-                } else if container.is_block_node()
-                    && container.only_contains_zwsp()
+                let children_are_empty = container.children().is_empty();
+
+                let is_list_item_and_keep_empty_list_items =
+                    keep_empty_list_items && container.is_list_item();
+
+                let is_block_with_only_zwsp =
+                    container.is_block_node() && container.only_contains_zwsp();
+
+                if children_are_empty && !is_list_item_and_keep_empty_list_items
+                    || is_block_with_only_zwsp
                 {
                     needs_removal = true;
                 }

@@ -175,7 +175,7 @@ impl ComposerModel<Utf16String> {
             assert!(selection_writer.is_selection_written());
         }
         let mut html = buf.to_string();
-        if html == "" {
+        if html.is_empty() {
             html = String::from("|");
         }
 

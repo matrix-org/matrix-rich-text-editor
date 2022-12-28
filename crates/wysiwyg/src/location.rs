@@ -14,7 +14,7 @@
 
 use std::ops;
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Default)]
 pub struct Location(usize);
 
 impl From<usize> for Location {

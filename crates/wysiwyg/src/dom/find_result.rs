@@ -14,7 +14,7 @@
 
 use crate::dom::range::DomLocation;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum FindResult {
     Found(Vec<DomLocation>),
     NotFound,

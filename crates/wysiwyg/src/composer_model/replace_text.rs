@@ -167,7 +167,7 @@ where
             at_handle: &DomHandle,
             new_line_at_end: bool,
         ) {
-            dom.insert_at(&at_handle, sub_tree);
+            dom.insert_at(at_handle, sub_tree);
             let insert_new_line_at = if new_line_at_end {
                 at_handle.next_sibling()
             } else {
