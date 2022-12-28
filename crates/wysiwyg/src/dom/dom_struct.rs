@@ -15,7 +15,7 @@
 use std::fmt::Display;
 
 use crate::composer_model::example_format::SelectionWriter;
-use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode};
+use crate::dom::nodes::{ContainerNode, DomNode};
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{
