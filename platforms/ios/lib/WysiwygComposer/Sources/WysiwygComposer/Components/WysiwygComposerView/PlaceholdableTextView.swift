@@ -35,7 +35,7 @@ public class PlaceholdableTextView: UITextView {
         }
     }
     
-    var placeholderFont = UIFont.preferredFont(forTextStyle: .subheadline) {
+    var placeholderFont = UIFont.preferredFont(forTextStyle: .body) {
         didSet {
             setNeedsDisplay()
         }
