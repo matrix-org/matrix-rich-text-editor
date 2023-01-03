@@ -85,6 +85,18 @@ where
         iter.next_back()
     }
 
+    /// Return the previous leaf node in the DOM, if exists, in depth-first order.
+    pub fn prev_leaf(&mut self, handle: &DomHandle) -> Option<&DomNode<S>> {
+        let mut iter = self.iter_from_handle(handle);
+        iter.next_back(); // Current node
+        while let Some(prev) = iter.next_back() {
+            if prev.is_leaf() {
+                return Some(prev);
+            }
+        }
+        None
+    }
+
     /// Return the handle of the previous node in the DOM, if exists, in depth-first order.
     pub fn prev_handle(&mut self, handle: &DomHandle) -> Option<DomHandle> {
         let mut iter = self.iter_from_handle(handle);
@@ -100,6 +112,18 @@ where
         let mut iter = self.iter_from_handle(handle);
         iter.next(); // Current node
         iter.next()
+    }
+
+    /// Return the next leaf node in the DOM, if exists, in depth-first order.
+    pub fn next_leaf(&mut self, handle: &DomHandle) -> Option<&DomNode<S>> {
+        let mut iter = self.iter_from_handle(handle);
+        iter.next(); // Current node
+        while let Some(prev) = iter.next() {
+            if prev.is_leaf() {
+                return Some(prev);
+            }
+        }
+        None
     }
 
     /// Return the handle of the next node in the DOM, if exists, in depth-first order.

@@ -48,7 +48,9 @@ where
         }
 
         // Clean up any adjacent text nodes
-        merge_if_adjacent_text_nodes(parent, last_index - 1);
+        if last_index > 0 {
+            merge_if_adjacent_text_nodes(parent, last_index - 1);
+        }
         if index > 0 {
             merge_if_adjacent_text_nodes(parent, index - 1);
         }

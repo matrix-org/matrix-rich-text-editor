@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use crate::dom::nodes::dom_node::DomNodeKind::{Generic, Quote};
+use crate::dom::DomLocation;
 use crate::{
     ComposerAction, ComposerModel, ComposerUpdate, DomHandle, DomNode,
     UnicodeString,
@@ -35,7 +36,19 @@ where
         let Some(wrap_result) = self.state.dom.find_nodes_to_wrap_in_block(s, e) else {
             // No nodes to be wrapped found.
             // Adding an empty Quote block with an a single ZWSP
-            self.state.dom.append_at_end_of_document(DomNode::new_quote(vec![DomNode::new_text(S::zwsp())]));
+            let range = self.state.dom.find_range(s, e);
+            let leaves: Vec<&DomLocation> = range.leaves().collect();
+            if leaves.is_empty() {
+                self.state.dom.append_at_end_of_document(DomNode::new_quote(vec![DomNode::new_zwsp()]));
+            } else {
+                let first_leaf_loc = leaves.first().unwrap();
+                let insert_at = if first_leaf_loc.is_start() {
+                    first_leaf_loc.node_handle.next_sibling()
+                } else {
+                    first_leaf_loc.node_handle.clone()
+                };
+                self.state.dom.insert_at(&insert_at, DomNode::new_quote(vec![DomNode::new_zwsp()]));
+            }
             self.state.start += 1;
             self.state.end += 1;
             return self.create_update_replace_all();
@@ -303,5 +316,14 @@ mod test {
         let mut model = cm("<blockquote>~<pre>~Some| code</pre></blockquote>");
         model.quote();
         assert_eq!(tx(&model), "<pre>~Some| code</pre>");
+    }
+
+    #[test]
+    fn create_and_remove_quote() {
+        let mut model = cm("|");
+        model.quote();
+        assert_eq!(tx(&model), "<blockquote>~|</blockquote>");
+        model.quote();
+        assert_eq!(tx(&model), "|");
     }
 }
