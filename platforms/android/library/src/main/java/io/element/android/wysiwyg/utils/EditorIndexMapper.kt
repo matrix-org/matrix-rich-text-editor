@@ -7,6 +7,7 @@ import io.element.android.wysiwyg.spans.ExtraCharacterSpan
 import kotlin.math.absoluteValue
 import kotlin.math.min
 import uniffi.wysiwyg_composer.ComposerModel
+import kotlin.math.max
 
 /**
  * The indexes in the [Editable] text and [ComposerModel] may differ if we take into account
@@ -44,10 +45,8 @@ object EditorIndexMapper {
         // Invalid indexes
         if (start < 0 || end < 0) return null
 
-        val extraCharactersBeforeStart = editableText.getSpans<ExtraCharacterSpan>(0, start)
-            .sumOf { editableText.getSpanLength(it) }
-        val extraCharactersDuring = editableText.getSpans<ExtraCharacterSpan>(start, end)
-            .sumOf { editableText.getSpanLength(it) }
+        val extraCharactersBeforeStart = editableText.getTotalSpanLengthInRange<ExtraCharacterSpan>(0, start)
+        val extraCharactersDuring = editableText.getTotalSpanLengthInRange<ExtraCharacterSpan>(start, end)
 
         val newStart = (start - extraCharactersBeforeStart).toUInt()
         val newEnd = (end - (extraCharactersBeforeStart + extraCharactersDuring)).toUInt()
@@ -80,6 +79,12 @@ object EditorIndexMapper {
 
 }
 
-private fun Spanned.getSpanLength(span: Any): Int {
-    return (getSpanEnd(span) - getSpanStart(span)).absoluteValue
-}
+private inline fun <reified T: Any> Spanned.getTotalSpanLengthInRange(start: Int, end: Int): Int =
+    getSpans<T>(start, end)
+        .sumOf { span ->
+            // Ignore any part of the span not within the range
+            val clampedStart = max(start, getSpanStart(span))
+            val clampedEnd = min(end, getSpanEnd(span))
+
+            (clampedEnd - clampedStart).absoluteValue
+        }
