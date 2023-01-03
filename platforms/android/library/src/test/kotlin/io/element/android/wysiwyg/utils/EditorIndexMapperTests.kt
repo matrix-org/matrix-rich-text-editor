@@ -64,6 +64,24 @@ class EditorIndexMapperTests {
     }
     //endregion
 
+    // region Index at/before an extra character
+    @Test
+    fun `given an index before an extra character, when using fromEditorToComposer, then the indexes have an offset`() {
+        val index = 22
+        val (newStart, newEnd) = EditorIndexMapper.fromEditorToComposer(index, index, editableText)!!
+        Assert.assertEquals(index, newStart.toInt())
+        Assert.assertEquals(index, newEnd.toInt())
+    }
+
+    @Test
+    fun `given an index at an extra character, when using fromEditorToComposer, then the indexes have an offset`() {
+        val index = 23
+        val (newStart, newEnd) = EditorIndexMapper.fromEditorToComposer(index, index, editableText)!!
+        Assert.assertEquals(index, newStart.toInt())
+        Assert.assertEquals(index, newEnd.toInt())
+    }
+    // endregion
+
     // region Index after an extra character
     @Test
     fun `given an index with an extra character before it, when using fromComposerToEditor, then the indexes have an offset`() {
@@ -79,6 +97,14 @@ class EditorIndexMapperTests {
         val (newStart, newEnd) = EditorIndexMapper.fromEditorToComposer(index, index, editableText)!!
         Assert.assertEquals(index-1, newStart.toInt())
         Assert.assertEquals(index-1, newEnd.toInt())
+    }
+
+    @Test
+    fun `given an index with an extra character immediately before it, when using fromEditorToComposer, then the indexes have an offset`() {
+        val index = 24
+        val (newStart, newEnd) = EditorIndexMapper.fromEditorToComposer(index, index, editableText)!!
+        Assert.assertEquals(index - 1, newStart.toInt())
+        Assert.assertEquals(index - 1, newEnd.toInt())
     }
     // endregion
 
