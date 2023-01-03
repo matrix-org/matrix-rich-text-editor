@@ -308,6 +308,20 @@ fn inserting_a_new_line_and_text_before_a_new_line_works() {
     assert_eq!(tx(&model), "Test|<br /><br />");
 }
 
+#[test]
+fn insert_text_between_line_breaks() {
+    let mut model = cm("A<br />|<br />B");
+    model.replace_text(utf16("C"));
+    assert_eq!(tx(&model), "A<br />C|<br />B");
+}
+
+#[test]
+fn insert_text_between_line_breaks_in_format_node() {
+    let mut model = cm("A<br /><b>|<br />B</b>");
+    model.replace_text(utf16("C"));
+    assert_eq!(tx(&model), "A<br /><b>C|<br />B</b>");
+}
+
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
     model.replace_text(utf16(new_text));
 }
