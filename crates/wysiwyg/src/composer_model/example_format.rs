@@ -671,7 +671,7 @@ mod test {
     fn tx_formats_empty_model() {
         let model: ComposerModel<Utf16String> =
             ComposerModel::from_state(ComposerState {
-                dom: Dom::new(Vec::new()),
+                dom: Dom::default(),
                 start: Location::from(1),
                 end: Location::from(1),
                 toggled_format_types: Vec::new(),

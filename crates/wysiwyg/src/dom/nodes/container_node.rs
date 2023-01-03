@@ -168,6 +168,12 @@ where
         child_handle
     }
 
+    pub fn append_children(&mut self, children: Vec<DomNode<S>>) {
+        for child in children {
+            self.append_child(child);
+        }
+    }
+
     pub fn remove_child(&mut self, index: usize) -> DomNode<S> {
         assert!(self.handle.is_set());
         assert!(index < self.children().len());

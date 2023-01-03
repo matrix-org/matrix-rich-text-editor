@@ -32,9 +32,9 @@ where
 {
     pub fn new() -> Self {
         Self {
-            dom: Dom::new(Vec::new()),
-            start: Location::from(0),
-            end: Location::from(0),
+            dom: Dom::default(),
+            start: Location::default(),
+            end: Location::default(),
             toggled_format_types: Vec::new(),
         }
     }
