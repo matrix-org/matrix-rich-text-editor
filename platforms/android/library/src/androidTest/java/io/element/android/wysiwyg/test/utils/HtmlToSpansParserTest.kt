@@ -1,10 +1,10 @@
 package io.element.android.wysiwyg.test.utils
 
-import android.text.TextUtils
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.element.android.wysiwyg.utils.AndroidResourcesProvider
 import io.element.android.wysiwyg.utils.HtmlToSpansParser
+import io.element.android.wysiwyg.utils.ZWSP
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.Test
@@ -42,12 +42,12 @@ class HtmlToSpansParserTest {
     fun testLists() {
         val html = """
             <ol>
-                <li>ordered1</li>
-                <li>ordered2</li>
+                <li>${ZWSP}ordered1</li>
+                <li>${ZWSP}ordered2</li>
             </ol>
-            <ul>
-                <li>bullet1</li>
-                <li>bullet2</li>
+            <ul> 
+                <li>${ZWSP}bullet1</li>
+                <li>${ZWSP}bullet2</li>
             </ul>
         """.trimIndent()
         val spanned = convertHtml(html)
@@ -56,13 +56,12 @@ class HtmlToSpansParserTest {
         assertThat(
             spanned.dumpSpans(), equalTo(
                 listOf(
-                    "\u200B: io.element.android.wysiwyg.spans.ExtraCharacterSpan (0-1) fl=#33",
-                    "\u200Bordered1: io.element.android.wysiwyg.spans.OrderedListSpan (0-9) fl=#33",
+                    "${ZWSP}ordered1: io.element.android.wysiwyg.spans.OrderedListSpan (0-9) fl=#33",
                     "\n: io.element.android.wysiwyg.spans.ExtraCharacterSpan (9-10) fl=#33",
-                    "ordered2: io.element.android.wysiwyg.spans.OrderedListSpan (10-18) fl=#33",
-                    "bullet1: android.text.style.BulletSpan (19-26) fl=#33",
-                    "\n: io.element.android.wysiwyg.spans.ExtraCharacterSpan (26-27) fl=#33",
-                    "bullet2: android.text.style.BulletSpan (27-34) fl=#33"
+                    "${ZWSP}ordered2: io.element.android.wysiwyg.spans.OrderedListSpan (10-19) fl=#33",
+                    "${ZWSP}bullet1: android.text.style.BulletSpan (20-28) fl=#33",
+                    "\n: io.element.android.wysiwyg.spans.ExtraCharacterSpan (28-29) fl=#33",
+                    "${ZWSP}bullet2: android.text.style.BulletSpan (29-37) fl=#33"
                 )
             )
         )

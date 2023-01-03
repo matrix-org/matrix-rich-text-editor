@@ -1,10 +1,7 @@
 package io.element.android.wysiwyg.utils
 
 import android.graphics.Typeface
-import android.text.Editable
-import android.text.SpannableString
-import android.text.SpannableStringBuilder
-import android.text.Spanned
+import android.text.*
 import android.text.style.BulletSpan
 import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
@@ -34,7 +31,7 @@ import kotlin.math.roundToInt
 internal class HtmlToSpansParser(
     private val resourcesProvider: ResourcesProvider,
     private val html: String,
-): ContentHandler {
+) : ContentHandler {
 
     data class Hyperlink(val link: String)
     object OrderedListBlock
@@ -69,7 +66,7 @@ internal class HtmlToSpansParser(
     }
 
     override fun characters(ch: CharArray, start: Int, length: Int) {
-        for (i in start until start+length) {
+        for (i in start until start + length) {
             val char = ch[i]
             text.append(char)
         }
@@ -97,7 +94,8 @@ internal class HtmlToSpansParser(
                 text.setSpan(mark, text.length, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
             }
             "li" -> {
-                val lastListBlock = getLast<OrderedListBlock>() ?: getLast<UnorderedListBlock>() ?: return
+                val lastListBlock =
+                    getLast<OrderedListBlock>() ?: getLast<UnorderedListBlock>() ?: return
                 val start = text.getSpanStart(lastListBlock)
                 val newItem = when (lastListBlock) {
                     is OrderedListBlock -> {
@@ -129,23 +127,17 @@ internal class HtmlToSpansParser(
             }
             "li" -> {
                 val last = getLast<ListItem>() ?: return
-                val start = text.getSpanStart(last)
-                var lineBreakAdded = false
+                var start = text.getSpanStart(last)
                 // We only add line breaks *after* a previous <li> element if there is not already a line break
-                if (start == 0) {
-                    val extraZeroWidthSpan = SpannableString("\u200b").apply {
-                        setSpan(ExtraCharacterSpan(), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                    }
-                    text.insert(0, extraZeroWidthSpan)
-                } else if (start > 0 && start <= text.length && text[start-1] != '\n') {
-                    // We add a line break and an zero width character to actually display the list item
+                if (start > 0 && start <= text.length && text[start - 1] != '\n') {
+                    // We add a line break to actually display the list item
                     val extraLineBreakSpan = SpannableString("\n").apply {
                         setSpan(ExtraCharacterSpan(), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                     }
                     text.insert(start, extraLineBreakSpan)
-                    lineBreakAdded = true
+                    start += 1
                 }
-                val newStart = if (lineBreakAdded) start+1 else start
+
                 // TODO: provide gap width, typeface and textSize somehow
                 val gapWidth = (10f * resourcesProvider.getDisplayMetrics().density).roundToInt()
                 val span = if (last.ordered) {
@@ -155,7 +147,7 @@ internal class HtmlToSpansParser(
                 } else {
                     BulletSpan(gapWidth)
                 }
-                text.setSpan(span, newStart, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                text.setSpan(span, start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 text.removeSpan(last)
             }
         }
@@ -181,6 +173,7 @@ internal class HtmlToSpansParser(
         val hyperlink = Hyperlink(url)
         text.setSpan(hyperlink, text.length, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
     }
+
     private fun handleHyperlinkEnd() {
         val last = getLast<Hyperlink>() ?: return
         val span = LinkSpan(last.link)
@@ -196,12 +189,12 @@ internal class HtmlToSpansParser(
         text.removeSpan(lastTag)
     }
 
-    private inline fun <reified T: Any> getLast(from: Int = 0, to: Int = text.length): T? {
+    private inline fun <reified T : Any> getLast(from: Int = 0, to: Int = text.length): T? {
         val spans = text.getSpans<T>(from, to)
         return spans.lastOrNull()
     }
 
-    private fun <T: Any> getLast(kind: Class<T>, from: Int = 0, to: Int = text.length): T? {
+    private fun <T : Any> getLast(kind: Class<T>, from: Int = 0, to: Int = text.length): T? {
         val spans = text.getSpans(from, to, kind)
         return spans.lastOrNull()
     }
