@@ -394,16 +394,19 @@ where
             DomNode::Container(c) => c.add_leading_zwsp(),
             DomNode::Zwsp(_) => false,
             DomNode::Text(t) => {
-                if handle_is_set {
-                    if t.data().is_empty() {
+                match (handle_is_set, t.data().is_empty()) {
+                    (true, true) => {
                         self.replace_child(0, vec![DomNode::new_zwsp()]);
-                    } else {
+                    }
+                    (true, false) => {
                         self.insert_child(0, DomNode::new_zwsp());
                     }
-                } else if t.data().is_empty() {
-                    self.children[0] = DomNode::new_zwsp();
-                } else {
-                    self.children.insert(0, DomNode::new_zwsp());
+                    (false, true) => {
+                        self.children[0] = DomNode::new_zwsp();
+                    }
+                    (false, false) => {
+                        self.children.insert(0, DomNode::new_zwsp());
+                    }
                 }
                 true
             }
