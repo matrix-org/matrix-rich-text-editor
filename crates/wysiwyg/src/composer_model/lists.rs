@@ -263,13 +263,16 @@ where
         let first_node = self.state.dom.lookup_node(first_handle);
         // It's expected to add a ZWSP for each line break + an additional leading ZWSP.
         // end_correction is always 1, start_correction is 1 only if the start is located
-        // strictly after the first char of the range. If a leading ZWSP is already present,
-        // e.g. the node following another list both corrections are 0.
+        // strictly after the first char of the range (or if we are creating a list from an
+        // empty text node, in that case the first node text_len is 0). If a leading ZWSP
+        // is already present, e.g. the node following another list both corrections are 0.
         if first_node.has_leading_zwsp() {
             start_correction = 0;
             end_correction = 0;
         } else {
-            start_correction = usize::from(s - range.start() > 0);
+            start_correction = usize::from(
+                s - range.start() > 0 || first_node.text_len() == 0,
+            );
             end_correction = 1;
         }
 

@@ -107,7 +107,11 @@ impl DomLocation {
 
     /// Returns the relative position of this DomLocation towards the range.
     pub fn relative_position(&self) -> DomLocationPosition {
-        if self.start_offset == self.length {
+        if self.length == 0 {
+            // Note: this should only trigger on an initial/single empty text node.
+            // Other nodes are not allowed to have a length of 0.
+            DomLocationPosition::Inside
+        } else if self.start_offset == self.length {
             DomLocationPosition::Before
         } else if self.end_offset == 0 {
             DomLocationPosition::After

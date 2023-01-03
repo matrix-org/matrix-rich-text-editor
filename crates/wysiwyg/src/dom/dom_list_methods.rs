@@ -53,7 +53,9 @@ where
             list_items.insert(0, DomNode::Container(sliced));
         }
 
-        if list_item.text_len() > 0 {
+        // Create a list item if we have a non-empty part remaining, or
+        // if it's the only part we have (empty list case).
+        if list_item.text_len() > 0 || list_items.is_empty() {
             list_item.add_leading_zwsp();
             list_items.insert(0, DomNode::Container(list_item));
         }

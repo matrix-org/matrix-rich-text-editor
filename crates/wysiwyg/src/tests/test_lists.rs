@@ -400,6 +400,15 @@ fn creating_list_from_multiline_selection_with_cross_leading_formatting() {
     )
 }
 
+#[test]
+fn backspacing_in_empty_list_then_creating_a_new_list() {
+    let mut model = cm("<ol><li>~|</li></ol>");
+    model.backspace();
+    assert_eq!(tx(&model), "|");
+    model.unordered_list();
+    assert_eq!(tx(&model), "<ul><li>~|</li></ul>");
+}
+
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
     model.replace_text(utf16(new_text));
 }
