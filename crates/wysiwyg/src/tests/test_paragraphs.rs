@@ -286,6 +286,18 @@ fn double_enter_in_quote_at_end_when_not_empty() {
 }
 
 #[test]
+fn double_enter_in_code_block_when_empty_removes_it_and_adds_new_line() {
+    let mut model = cm("|");
+    model.code_block();
+    model.enter();
+    assert_eq!(tx(&model), "<pre>~\n|</pre>");
+    model.enter();
+    assert_eq!(tx(&model), "<br />|");
+    model.replace_text("asd".into());
+    assert_eq!(tx(&model), "<br />asd|");
+}
+
+#[test]
 fn double_enter_in_quote_in_nested_nodes() {
     let mut model =
         cm("<blockquote>~<b><i>Left<br />|Right</i></b></blockquote>");

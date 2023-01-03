@@ -178,6 +178,7 @@ where
 
         let mut has_previous_line_break = false;
         let mut selection_offset = 0;
+        let mut code_block_is_empty = false;
         if leaf.start_offset > 0 {
             if let DomNode::Text(text_node) =
                 self.state.dom.lookup_node_mut(&leaf.node_handle)
@@ -189,6 +190,9 @@ where
                         // Remove line break, we'll add another one outside the code block
                         let mut new_data = text_node.data().to_owned();
                         new_data.remove_at(prev_offset);
+                        if new_data.is_empty() {
+                            code_block_is_empty = true;
+                        }
                         text_node.set_data(new_data);
                         // Adjust selection too
                         self.state.start -= 1;
@@ -200,8 +204,13 @@ where
             }
         }
 
-        // If there was a previous line break, we need to split the code block and add the line break
-        if has_previous_line_break {
+        if code_block_is_empty {
+            self.state.dom.replace(
+                &block_location.node_handle,
+                vec![DomNode::new_line_break()],
+            );
+            self.create_update_replace_all()
+        } else if has_previous_line_break {
             let mut sub_tree = self.state.dom.split_sub_tree_from(
                 &leaf.node_handle,
                 leaf.start_offset - selection_offset,
