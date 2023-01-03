@@ -66,7 +66,7 @@ object EditorIndexMapper {
         var consumed = 0
         var i = 0
         while (index > consumed) {
-            val spans = editableText.getSpans<ExtraCharacterSpan>(start = i, end = i)
+            val spans = editableText.getSpans<ExtraCharacterSpan>(start = i, end = i+1)
             if (spans.isEmpty()) {
                 consumed++
                 i++
@@ -74,7 +74,9 @@ object EditorIndexMapper {
                 i += spans.count()
             }
         }
-        val extra = editableText.getSpans<ExtraCharacterSpan>(start = index, end = index).count()
+        val extra = if (index != i) {
+            editableText.getSpans<ExtraCharacterSpan>(start = index, end = index).count()
+        } else 0
         return i + extra
     }
 
