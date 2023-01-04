@@ -702,7 +702,7 @@ where
         if (cur_handle == *from_handle
             || (from_handle.is_ancestor_of(&cur_handle)
                 && cur_handle.index_in_parent() == 0))
-            && (1..text_node.data().chars().count() + 1).contains(&start_offset)
+            && (1..=text_node.data().chars().count()).contains(&start_offset)
         {
             let left_data = text_node.data()[..start_offset].to_owned();
             let right_data = text_node.data()[start_offset..].to_owned();
@@ -712,7 +712,7 @@ where
             }
         } else if to_handle.is_some()
             && cur_handle == to_handle.unwrap()
-            && (1..text_node.data().chars().count() + 1).contains(&end_offset)
+            && (1..=text_node.data().chars().count()).contains(&end_offset)
         {
             let left_data = text_node.data()[..end_offset].to_owned();
             let right_data = text_node.data()[end_offset..].to_owned();
