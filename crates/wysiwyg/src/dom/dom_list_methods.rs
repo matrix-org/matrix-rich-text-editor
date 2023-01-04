@@ -98,20 +98,16 @@ where
         &mut self,
         handle: &DomHandle,
         start: usize,
-        end: usize,
+        count: usize,
     ) {
         let list = self.lookup_node_mut(handle);
         let DomNode::Container(list) = list else {
             panic!("List is not a container")
         };
-        let list_length = list.children().len();
-        let extract_length = end - start + 1;
 
-        if extract_length == list_length {
-            self.remove_list(handle);
-        } else if start == 0 {
+        if start == 0 {
             let mut nodes_to_insert = Vec::new();
-            for _index in start..=end {
+            for _index in start..start + count {
                 let list_item = list.remove_child(start);
                 let DomNode::Container(mut list_item) = list_item else {
                     panic!("List item is not a container")
@@ -123,10 +119,16 @@ where
                 }
                 nodes_to_insert.append(&mut list_item.take_children());
             }
-            self.insert(handle, nodes_to_insert);
+            if list.children().is_empty() {
+                // Replace the list if it became empty.
+                self.replace(handle, nodes_to_insert);
+            } else {
+                // Otherwise insert before.
+                self.insert(handle, nodes_to_insert);
+            }
         } else {
             let mut nodes_to_insert = Vec::new();
-            for _index in start..=end {
+            for _index in start..start + count {
                 let list_item = list.remove_child(start);
                 let DomNode::Container(mut list_item) = list_item else {
                     panic!("List item is not a container")
@@ -198,7 +200,7 @@ mod test {
         );
         assert_eq!(ds(&dom), "<ol><li>~abc</li><li>~def</li></ol>");
 
-        dom.extract_list_items(&DomHandle::from_raw(vec![0]), 0, 0);
+        dom.extract_list_items(&DomHandle::from_raw(vec![0]), 0, 1);
         assert_eq!(ds(&dom), "abc<ol><li>~def</li></ol>");
     }
 
@@ -220,7 +222,7 @@ mod test {
             "<ol><li>~abc</li><li>~def</li><li>~ghi</li></ol>"
         );
 
-        dom.extract_list_items(&DomHandle::from_raw(vec![0]), 0, 1);
+        dom.extract_list_items(&DomHandle::from_raw(vec![0]), 0, 2);
         assert_eq!(ds(&dom), "abc<br />def<ol><li>~ghi</li></ol>");
     }
 
@@ -326,7 +328,7 @@ mod test {
         );
         assert_eq!(ds(&dom), "<ol><li>~abc</li></ol>");
 
-        dom.extract_list_items(&DomHandle::from_raw(vec![0]), 0, 0);
+        dom.extract_list_items(&DomHandle::from_raw(vec![0]), 0, 1);
         assert_eq!(ds(&dom), "abc");
     }
 
@@ -348,7 +350,7 @@ mod test {
             "<ol><li>~abc</li><li>~def</li><li>~ghi</li></ol>"
         );
 
-        dom.extract_list_items(&DomHandle::from_raw(vec![0]), 0, 2);
+        dom.extract_list_items(&DomHandle::from_raw(vec![0]), 0, 3);
         assert_eq!(ds(&dom), "abc<br />def<br />ghi");
     }
 
