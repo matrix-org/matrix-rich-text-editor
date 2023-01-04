@@ -386,6 +386,9 @@ where
     /// Returns false if no updates was done.
     /// e.g. first text-like node is already a ZWSP.
     pub fn add_leading_zwsp(&mut self) -> bool {
+        // Note: handle might not be set in cases where we are transforming a node
+        // that is detached from the DOM. In that case it's fine to transform it
+        // without worrying about handles.
         let handle_is_set = self.handle().is_set();
         let Some(first_child) = self.children.get_mut(0) else {
             return false;
@@ -432,6 +435,9 @@ where
         match first_child {
             DomNode::Container(c) => c.remove_leading_zwsp(),
             DomNode::Zwsp(_) => {
+                // Note: handle might not be set in cases where we are transforming a node
+                // that is detached from the DOM. In that case it's fine to transform it
+                // without worrying about handles.
                 if self.handle().is_set() {
                     self.remove_child(0);
                 } else {
