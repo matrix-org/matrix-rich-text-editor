@@ -79,29 +79,11 @@ where
     ///
     /// * `handle` - the list handle.
     pub fn extract_from_list(&mut self, handle: &DomHandle) {
-        let list = self.remove(handle);
-        let mut nodes_to_insert = Vec::new();
-        let DomNode::Container(mut list) = list else {
-            panic!("List node is not a container")
+        let list = self.lookup_node(handle);
+        let DomNode::Container(list) = list else {
+            panic!("List is not a container")
         };
-        while !list.children().is_empty() {
-            let list_item = list.remove_child(0);
-            let DomNode::Container(mut list_item) = list_item else {
-                panic!("List item is not a container")
-            };
-            if nodes_to_insert.is_empty() {
-                list_item.remove_leading_zwsp();
-            } else {
-                list_item.replace_leading_zwsp_with_linebreak();
-            }
-
-            while !list_item.children().is_empty() {
-                nodes_to_insert.push(list_item.remove_child(0));
-            }
-        }
-
-        self.insert(handle, nodes_to_insert);
-        self.join_nodes_in_container(&handle.parent_handle());
+        self.extract_list_items(handle, 0, list.children().len());
     }
 
     /// Extract items from the list at given handle and positions
@@ -168,6 +150,7 @@ where
 
             self.insert(&handle.next_sibling(), nodes_to_insert);
         }
+        self.join_nodes_in_container(&handle.parent_handle());
     }
 }
 
