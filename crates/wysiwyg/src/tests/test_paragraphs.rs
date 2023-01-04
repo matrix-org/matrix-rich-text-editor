@@ -328,3 +328,14 @@ fn backspace_emptying_code_block_removes_it() {
     model.backspace();
     assert_eq!(tx(&model), "Test&nbsp;|");
 }
+
+#[test]
+fn double_enter_in_code_block_middle() {
+    let mut model = cm("<pre>~asd|asd</pre>");
+    model.enter();
+    assert_eq!(tx(&model), "<pre>~asd\n|asd</pre>");
+    model.enter();
+    assert_eq!(tx(&model), "<pre>~asd</pre><br />|<pre>~asd</pre>");
+    model.replace_text("A".into());
+    assert_eq!(tx(&model), "<pre>~asd</pre><br />A|<pre>~asd</pre>");
+}

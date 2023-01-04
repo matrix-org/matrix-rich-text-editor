@@ -301,9 +301,6 @@ where
         let mut action_list = DomActionList::default();
         let mut first_text_node = true;
 
-        let start = range.start();
-        let end = range.end();
-
         for loc in range.leaves() {
             let mut node = self.lookup_node_mut(&loc.node_handle);
             match &mut node {
@@ -311,9 +308,6 @@ where
                     panic!("Leaves shouldn't have containers")
                 }
                 DomNode::LineBreak(_) => {
-                    // Workaround to avoid adding the same text twice when on a boundary between
-                    // 2 line breaks
-                    Self::remove_prev_added_action(&mut action_list, &new_text);
                     match (loc.start_offset, loc.end_offset) {
                         (0, 1) => {
                             // Whole line break is selected, delete it
@@ -340,23 +334,6 @@ where
                             loc.start_offset,
                             loc.end_offset,
                         ),
-                    }
-                    if start >= loc.position && end == loc.position + 1 {
-                        // NOTE: if you add something else to `action_list` you will
-                        // probably break our assumptions in the method that
-                        // calls this one!
-                        // We are assuming we only add nodes AFTER all the
-                        // deleted nodes. (That is true in this case, because
-                        // we are checking that the selection ends inside this
-                        // line break.)
-                        if !new_text.is_empty() {
-                            action_list.push(DomAction::add_node(
-                                loc.node_handle.parent_handle(),
-                                loc.node_handle.index_in_parent() + 1,
-                                DomNode::new_text(new_text.clone()),
-                            ));
-                            first_text_node = false;
-                        }
                     }
                 }
                 DomNode::Text(node) => {
@@ -394,10 +371,8 @@ where
                     first_text_node = false;
                 }
                 DomNode::Zwsp(_) => {
-                    // Workaround to avoid adding the same text twice when on a boundary between
-                    // 2 ZWSP nodes
-                    Self::remove_prev_added_action(&mut action_list, &new_text);
                     // FIXME: zwsp might not be handled in the same way as linebreak in some cases.
+                    let insert_at = loc.node_handle.parent_handle();
                     match (loc.start_offset, loc.end_offset) {
                         (0, 1) => {
                             // Whole zwsp is selected, delete it
@@ -411,8 +386,8 @@ where
                         (0, 0) => {
                             if !new_text.is_empty() {
                                 action_list.push(DomAction::add_node(
-                                    loc.node_handle.parent_handle(),
-                                    loc.node_handle.index_in_parent(),
+                                    insert_at.parent_handle(),
+                                    insert_at.index_in_parent(),
                                     DomNode::new_text(new_text.clone()),
                                 ));
                                 first_text_node = false;
@@ -425,54 +400,20 @@ where
                             loc.end_offset,
                         ),
                     }
-                    if start >= loc.position && end == loc.position + 1 {
-                        // NOTE: if you add something else to `action_list` you will
-                        // probably break our assumptions in the method that
-                        // calls this one!
-                        // We are assuming we only add nodes AFTER all the
-                        // deleted nodes. (That is true in this case, because
-                        // we are checking that the selection ends inside this
-                        // zwsp.)
-                        if !new_text.is_empty() {
-                            action_list.push(DomAction::add_node(
-                                loc.node_handle.parent_handle(),
-                                loc.node_handle.index_in_parent() + 1,
-                                DomNode::new_text(new_text.clone()),
-                            ));
-                            first_text_node = false;
-                        }
-                    }
                 }
             }
         }
-        action_list
-    }
 
-    // FIXME: this is a workaround to avoid inserting the same text twice when selection is between 2 line breaks/ZWSP nodes.
-    // Example: `<br />|<br />` would become `<br />A|A<br />` when adding "A".
-    // If we tried to check if it's already added to not add it twice, we'd end up with `<br />|A<br />`, which is not what we want either.
-    fn remove_prev_added_action(
-        action_list: &mut DomActionList<S>,
-        new_text: &S::Str,
-    ) {
-        if let Some((idx, _)) =
-            action_list
-                .actions()
-                .iter()
-                .enumerate()
-                .find(|(_, action)| match action {
-                    DomAction::Add(add) => {
-                        if let DomNode::Text(text_node) = &add.node {
-                            text_node.data() == new_text
-                        } else {
-                            false
-                        }
-                    }
-                    _ => false,
-                })
-        {
-            action_list.remove(idx);
+        // If text wasn't added in any previous iteration, just append it next to the last leaf
+        if first_text_node && !new_text.is_empty() {
+            let last_leaf = range.leaves().last().unwrap();
+            action_list.push(DomAction::add_node(
+                last_leaf.node_handle.parent_handle(),
+                last_leaf.node_handle.index_in_parent() + 1,
+                DomNode::new_text(new_text.clone()),
+            ));
         }
+        action_list
     }
 
     fn merge_adjacent_text_nodes_after_replace(
