@@ -26,6 +26,11 @@ impl<S> Dom<S>
 where
     S: UnicodeString,
 {
+    /// Wrap nodes at given handles into a new list. Line breaks
+    /// are converted into a new list item starting with a ZWSP node.
+    ///
+    /// * `list_type` - the type of list to create (ordered/unordered).
+    /// * `handles` - vec containing all the node handles.
     pub fn wrap_nodes_in_list(
         &mut self,
         list_type: ListType,
@@ -68,43 +73,103 @@ where
         }
     }
 
-    pub fn remove_list(&mut self, handle: &DomHandle) {
-        let list = self.remove(handle);
-        let mut nodes_to_insert = Vec::new();
-        let DomNode::Container(mut list) = list else {
-            panic!("List node is not a container")
+    /// Extract all items from the list at given handle and move
+    /// them appropriately into the DOM. Extracted list items are
+    /// separated by line breaks.
+    ///
+    /// * `handle` - the list handle.
+    pub fn extract_from_list(&mut self, handle: &DomHandle) {
+        let list = self.lookup_node(handle);
+        let DomNode::Container(list) = list else {
+            panic!("List is not a container")
         };
-        while !list.children().is_empty() {
-            let list_item = list.remove_child(0);
-            let DomNode::Container(mut list_item) = list_item else {
-                panic!("List item is not a container")
-            };
-            if nodes_to_insert.is_empty() {
-                list_item.remove_leading_zwsp();
+        self.extract_list_items(handle, 0, list.children().len());
+    }
+
+    /// Extract items from the list at given handle and positions
+    /// and move them appropriately into the DOM. Extracted list
+    /// items are separated by line breaks.
+    ///
+    /// * `handle` - the list handle.
+    /// * `child_index` - child index at which the extraction should start.
+    /// * `count` - number of children that should be extracted.
+    pub fn extract_list_items(
+        &mut self,
+        handle: &DomHandle,
+        child_index: usize,
+        count: usize,
+    ) {
+        let list = self.lookup_node_mut(handle);
+        let DomNode::Container(list) = list else {
+            panic!("List is not a container")
+        };
+
+        if child_index == 0 {
+            let mut nodes_to_insert = Vec::new();
+            for _index in child_index..child_index + count {
+                let list_item = list.remove_child(child_index);
+                let DomNode::Container(mut list_item) = list_item else {
+                    panic!("List item is not a container")
+                };
+                if nodes_to_insert.is_empty() {
+                    list_item.remove_leading_zwsp();
+                } else {
+                    list_item.replace_leading_zwsp_with_linebreak();
+                }
+                nodes_to_insert.append(&mut list_item.take_children());
+            }
+            if list.children().is_empty() {
+                // Replace the list if it became empty.
+                self.replace(handle, nodes_to_insert);
             } else {
-                list_item.replace_leading_zwsp_with_linebreak();
+                // Otherwise insert before.
+                self.insert(handle, nodes_to_insert);
+            }
+        } else {
+            let mut nodes_to_insert = Vec::new();
+            for _index in child_index..child_index + count {
+                let list_item = list.remove_child(child_index);
+                let DomNode::Container(mut list_item) = list_item else {
+                    panic!("List item is not a container")
+                };
+                if !nodes_to_insert.is_empty() {
+                    list_item.replace_leading_zwsp_with_linebreak();
+                }
+                nodes_to_insert.append(&mut list_item.take_children());
             }
 
-            while !list_item.children().is_empty() {
-                nodes_to_insert.push(list_item.remove_child(0));
+            // Extract further list items to a new list, if any.
+            if list.children().len() > child_index {
+                let new_list_children = list.take_children_after(child_index);
+                let new_list = DomNode::new_list(
+                    list.get_list_type().expect("Node is not a list").clone(),
+                    new_list_children,
+                );
+                nodes_to_insert.push(new_list);
             }
+
+            self.insert(&handle.next_sibling(), nodes_to_insert);
         }
-
-        self.insert(handle, nodes_to_insert);
         self.join_nodes_in_container(&handle.parent_handle());
     }
 }
 
 #[cfg(test)]
 mod test {
+    use widestring::Utf16String;
+
+    use crate::char::CharExt;
+    use crate::dom::Dom;
     use crate::tests::testutils_composer_model::{cm, tx};
 
     use crate::{DomHandle, ListType};
 
     #[test]
     fn wrap_consecutive_nodes_in_list() {
-        let mut model = cm("abc<strong>de<em>f<br />gh</em>i</strong>jkl|");
-        model.state.dom.wrap_nodes_in_list(
+        let mut dom = cm("abc<strong>de<em>f<br />gh</em>i</strong>jkl|")
+            .state
+            .dom;
+        dom.wrap_nodes_in_list(
             ListType::Ordered,
             vec![
                 &DomHandle::from_raw(vec![0]),
@@ -113,13 +178,180 @@ mod test {
             ],
         );
         assert_eq!(
-             tx(&model),
-             "<ol><li>~abc<strong>de<em>f</em></strong></li><li><strong><em>~gh</em>i</strong>jk|l</li></ol>",
+            ds(&dom),
+            "<ol><li>~abc<strong>de<em>f</em></strong></li><li><strong><em>~gh</em>i</strong>jkl</li></ol>",
         );
 
-        model.state.dom.remove_list(&DomHandle::from_raw(vec![0]));
+        dom.extract_from_list(&DomHandle::from_raw(vec![0]));
 
-        assert_eq!(tx(&model), "abc<strong>de<em>f<br />gh</em>i</strong>jkl|",);
+        assert_eq!(ds(&dom), "abc<strong>de<em>f<br />gh</em>i</strong>jkl",);
+    }
+
+    #[test]
+    fn extract_first_list_item() {
+        let mut dom = cm("abc<br />def|").state.dom;
+        dom.wrap_nodes_in_list(
+            ListType::Ordered,
+            vec![
+                &DomHandle::from_raw(vec![0]),
+                &DomHandle::from_raw(vec![1]),
+                &DomHandle::from_raw(vec![2]),
+            ],
+        );
+        assert_eq!(ds(&dom), "<ol><li>~abc</li><li>~def</li></ol>");
+
+        dom.extract_list_items(&DomHandle::from_raw(vec![0]), 0, 1);
+        assert_eq!(ds(&dom), "abc<ol><li>~def</li></ol>");
+    }
+
+    #[test]
+    fn extract_first_list_items() {
+        let mut dom = cm("abc<br />def<br />ghi|").state.dom;
+        dom.wrap_nodes_in_list(
+            ListType::Ordered,
+            vec![
+                &DomHandle::from_raw(vec![0]),
+                &DomHandle::from_raw(vec![1]),
+                &DomHandle::from_raw(vec![2]),
+                &DomHandle::from_raw(vec![3]),
+                &DomHandle::from_raw(vec![4]),
+            ],
+        );
+        assert_eq!(
+            ds(&dom),
+            "<ol><li>~abc</li><li>~def</li><li>~ghi</li></ol>"
+        );
+
+        dom.extract_list_items(&DomHandle::from_raw(vec![0]), 0, 2);
+        assert_eq!(ds(&dom), "abc<br />def<ol><li>~ghi</li></ol>");
+    }
+
+    #[test]
+    fn extract_last_list_item() {
+        let mut dom = cm("abc<br />def|").state.dom;
+        dom.wrap_nodes_in_list(
+            ListType::Ordered,
+            vec![
+                &DomHandle::from_raw(vec![0]),
+                &DomHandle::from_raw(vec![1]),
+                &DomHandle::from_raw(vec![2]),
+            ],
+        );
+        assert_eq!(ds(&dom), "<ol><li>~abc</li><li>~def</li></ol>");
+
+        dom.extract_list_items(&DomHandle::from_raw(vec![0]), 1, 1);
+        assert_eq!(ds(&dom), "<ol><li>~abc</li></ol>~def");
+    }
+
+    #[test]
+    fn extract_last_list_items() {
+        let mut dom = cm("abc<br />def<br />ghi|").state.dom;
+        dom.wrap_nodes_in_list(
+            ListType::Ordered,
+            vec![
+                &DomHandle::from_raw(vec![0]),
+                &DomHandle::from_raw(vec![1]),
+                &DomHandle::from_raw(vec![2]),
+                &DomHandle::from_raw(vec![3]),
+                &DomHandle::from_raw(vec![4]),
+            ],
+        );
+        assert_eq!(
+            ds(&dom),
+            "<ol><li>~abc</li><li>~def</li><li>~ghi</li></ol>"
+        );
+
+        dom.extract_list_items(&DomHandle::from_raw(vec![0]), 1, 2);
+        assert_eq!(ds(&dom), "<ol><li>~abc</li></ol>~def<br />ghi");
+    }
+
+    #[test]
+    fn extract_middle_list_item() {
+        let mut dom = cm("abc<br />def<br />ghi<br />jkl|").state.dom;
+        dom.wrap_nodes_in_list(
+            ListType::Ordered,
+            vec![
+                &DomHandle::from_raw(vec![0]),
+                &DomHandle::from_raw(vec![1]),
+                &DomHandle::from_raw(vec![2]),
+                &DomHandle::from_raw(vec![3]),
+                &DomHandle::from_raw(vec![4]),
+                &DomHandle::from_raw(vec![5]),
+                &DomHandle::from_raw(vec![6]),
+            ],
+        );
+        assert_eq!(
+            ds(&dom),
+            "<ol><li>~abc</li><li>~def</li><li>~ghi</li><li>~jkl</li></ol>"
+        );
+
+        dom.extract_list_items(&DomHandle::from_raw(vec![0]), 1, 1);
+        assert_eq!(
+            ds(&dom),
+            "<ol><li>~abc</li></ol>~def<ol><li>~ghi</li><li>~jkl</li></ol>"
+        );
+    }
+
+    #[test]
+    fn extract_middle_list_items() {
+        let mut dom = cm("abc<br />def<br />ghi<br />jkl|").state.dom;
+        dom.wrap_nodes_in_list(
+            ListType::Ordered,
+            vec![
+                &DomHandle::from_raw(vec![0]),
+                &DomHandle::from_raw(vec![1]),
+                &DomHandle::from_raw(vec![2]),
+                &DomHandle::from_raw(vec![3]),
+                &DomHandle::from_raw(vec![4]),
+                &DomHandle::from_raw(vec![5]),
+                &DomHandle::from_raw(vec![6]),
+            ],
+        );
+        assert_eq!(
+            ds(&dom),
+            "<ol><li>~abc</li><li>~def</li><li>~ghi</li><li>~jkl</li></ol>"
+        );
+
+        dom.extract_list_items(&DomHandle::from_raw(vec![0]), 1, 2);
+        assert_eq!(
+            ds(&dom),
+            "<ol><li>~abc</li></ol>~def<br />ghi<ol><li>~jkl</li></ol>"
+        );
+    }
+
+    #[test]
+    fn extract_single_list_item() {
+        let mut dom = cm("abc|").state.dom;
+        dom.wrap_nodes_in_list(
+            ListType::Ordered,
+            vec![&DomHandle::from_raw(vec![0])],
+        );
+        assert_eq!(ds(&dom), "<ol><li>~abc</li></ol>");
+
+        dom.extract_list_items(&DomHandle::from_raw(vec![0]), 0, 1);
+        assert_eq!(ds(&dom), "abc");
+    }
+
+    #[test]
+    fn extract_entire_list() {
+        let mut dom = cm("abc<br />def<br />ghi|").state.dom;
+        dom.wrap_nodes_in_list(
+            ListType::Ordered,
+            vec![
+                &DomHandle::from_raw(vec![0]),
+                &DomHandle::from_raw(vec![1]),
+                &DomHandle::from_raw(vec![2]),
+                &DomHandle::from_raw(vec![3]),
+                &DomHandle::from_raw(vec![4]),
+            ],
+        );
+        assert_eq!(
+            ds(&dom),
+            "<ol><li>~abc</li><li>~def</li><li>~ghi</li></ol>"
+        );
+
+        dom.extract_list_items(&DomHandle::from_raw(vec![0]), 0, 3);
+        assert_eq!(ds(&dom), "abc<br />def<br />ghi");
     }
 
     #[test]
@@ -145,7 +377,14 @@ mod test {
             .state
             .dom
             .wrap_nodes_in_list(ListType::Ordered, handles);
-        model.state.dom.remove_list(&first_handle);
+        model.state.dom.extract_from_list(&first_handle);
         assert_eq!(tx(&model), text);
+    }
+
+    // TODO: move this to a more globally usable location if needed
+    fn ds(dom: &Dom<Utf16String>) -> String {
+        dom.to_string()
+            .replace(char::zwsp(), "~")
+            .replace('\u{A0}', "&nbsp;")
     }
 }

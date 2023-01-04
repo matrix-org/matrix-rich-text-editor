@@ -280,9 +280,15 @@ where
         &self.children
     }
 
-    #[cfg(all(feature = "js", target_arch = "wasm32"))]
     pub(crate) fn take_children(self) -> Vec<DomNode<S>> {
         self.children
+    }
+
+    pub(crate) fn take_children_after(
+        &mut self,
+        position: usize,
+    ) -> Vec<DomNode<S>> {
+        return self.children.drain(position..self.children.len()).collect();
     }
 
     pub fn kind(&self) -> &ContainerNodeKind<S> {
@@ -343,6 +349,13 @@ where
                 raw_text.is_empty() || raw_text == char::zwsp().to_string()
             }
             _ => false,
+        }
+    }
+
+    pub(crate) fn get_list_type(&mut self) -> Option<&ListType> {
+        match &self.kind {
+            ContainerNodeKind::List(t) => Some(t),
+            _ => None,
         }
     }
 
