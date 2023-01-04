@@ -126,6 +126,63 @@ where
             self.insert(&list_handle.next_sibling(), to_insert);
         }
     }
+
+    pub fn extract_list_items(
+        &mut self,
+        handle: &DomHandle,
+        start: usize,
+        end: usize,
+    ) {
+        let list = self.lookup_node_mut(handle);
+        let DomNode::Container(list) = list else {
+            panic!("List is not a container")
+        };
+        let list_length = list.children().len();
+        let extract_length = end - start + 1;
+
+        if extract_length == list_length {
+            self.remove_list(handle);
+        } else if start == 0 {
+            let mut nodes_to_insert = Vec::new();
+            for _index in start..=end {
+                let list_item = list.remove_child(start);
+                let DomNode::Container(mut list_item) = list_item else {
+                    panic!("List item is not a container")
+                };
+                if nodes_to_insert.is_empty() {
+                    list_item.remove_leading_zwsp();
+                } else {
+                    list_item.replace_leading_zwsp_with_linebreak();
+                }
+                nodes_to_insert.append(&mut list_item.take_children());
+            }
+            self.insert(handle, nodes_to_insert);
+        } else {
+            let mut nodes_to_insert = Vec::new();
+            for _index in start..=end {
+                let list_item = list.remove_child(start);
+                let DomNode::Container(mut list_item) = list_item else {
+                    panic!("List item is not a container")
+                };
+                if !nodes_to_insert.is_empty() {
+                    list_item.replace_leading_zwsp_with_linebreak();
+                }
+                nodes_to_insert.append(&mut list_item.take_children());
+            }
+
+            // Extract further list items to a new list, if any.
+            if list.children().len() > start {
+                let new_list_children = list.take_children_after(start);
+                let new_list = DomNode::new_list(
+                    list.get_list_type().expect("Node is not a list").clone(),
+                    new_list_children,
+                );
+                nodes_to_insert.push(new_list);
+            }
+
+            self.insert(&handle.next_sibling(), nodes_to_insert);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -179,6 +236,28 @@ mod test {
     }
 
     #[test]
+    fn extract_first_list_items() {
+        let mut dom = cm("abc<br />def<br />ghi|").state.dom;
+        dom.wrap_nodes_in_list(
+            ListType::Ordered,
+            vec![
+                &DomHandle::from_raw(vec![0]),
+                &DomHandle::from_raw(vec![1]),
+                &DomHandle::from_raw(vec![2]),
+                &DomHandle::from_raw(vec![3]),
+                &DomHandle::from_raw(vec![4]),
+            ],
+        );
+        assert_eq!(
+            ds(&dom),
+            "<ol><li>~abc</li><li>~def</li><li>~ghi</li></ol>"
+        );
+
+        dom.extract_list_items(&DomHandle::from_raw(vec![0]), 0, 1);
+        assert_eq!(ds(&dom), "abc<br />def<ol><li>~ghi</li></ol>");
+    }
+
+    #[test]
     fn extract_last_list_item() {
         let mut dom = cm("abc<br />def|").state.dom;
         dom.wrap_nodes_in_list(
@@ -193,6 +272,28 @@ mod test {
 
         dom.extract_list_item(&DomHandle::from_raw(vec![0, 1]));
         assert_eq!(ds(&dom), "<ol><li>~abc</li></ol>~def");
+    }
+
+    #[test]
+    fn extract_last_list_items() {
+        let mut dom = cm("abc<br />def<br />ghi|").state.dom;
+        dom.wrap_nodes_in_list(
+            ListType::Ordered,
+            vec![
+                &DomHandle::from_raw(vec![0]),
+                &DomHandle::from_raw(vec![1]),
+                &DomHandle::from_raw(vec![2]),
+                &DomHandle::from_raw(vec![3]),
+                &DomHandle::from_raw(vec![4]),
+            ],
+        );
+        assert_eq!(
+            ds(&dom),
+            "<ol><li>~abc</li><li>~def</li><li>~ghi</li></ol>"
+        );
+
+        dom.extract_list_items(&DomHandle::from_raw(vec![0]), 1, 2);
+        assert_eq!(ds(&dom), "<ol><li>~abc</li></ol>~def<br />ghi");
     }
 
     #[test]
@@ -223,6 +324,33 @@ mod test {
     }
 
     #[test]
+    fn extract_middle_list_items() {
+        let mut dom = cm("abc<br />def<br />ghi<br />jkl|").state.dom;
+        dom.wrap_nodes_in_list(
+            ListType::Ordered,
+            vec![
+                &DomHandle::from_raw(vec![0]),
+                &DomHandle::from_raw(vec![1]),
+                &DomHandle::from_raw(vec![2]),
+                &DomHandle::from_raw(vec![3]),
+                &DomHandle::from_raw(vec![4]),
+                &DomHandle::from_raw(vec![5]),
+                &DomHandle::from_raw(vec![6]),
+            ],
+        );
+        assert_eq!(
+            ds(&dom),
+            "<ol><li>~abc</li><li>~def</li><li>~ghi</li><li>~jkl</li></ol>"
+        );
+
+        dom.extract_list_items(&DomHandle::from_raw(vec![0]), 1, 2);
+        assert_eq!(
+            ds(&dom),
+            "<ol><li>~abc</li></ol>~def<br />ghi<ol><li>~jkl</li></ol>"
+        );
+    }
+
+    #[test]
     fn extract_single_list_item() {
         let mut dom = cm("abc|").state.dom;
         dom.wrap_nodes_in_list(
@@ -233,6 +361,28 @@ mod test {
 
         dom.extract_list_item(&DomHandle::from_raw(vec![0, 0]));
         assert_eq!(ds(&dom), "abc");
+    }
+
+    #[test]
+    fn extract_entire_list() {
+        let mut dom = cm("abc<br />def<br />ghi|").state.dom;
+        dom.wrap_nodes_in_list(
+            ListType::Ordered,
+            vec![
+                &DomHandle::from_raw(vec![0]),
+                &DomHandle::from_raw(vec![1]),
+                &DomHandle::from_raw(vec![2]),
+                &DomHandle::from_raw(vec![3]),
+                &DomHandle::from_raw(vec![4]),
+            ],
+        );
+        assert_eq!(
+            ds(&dom),
+            "<ol><li>~abc</li><li>~def</li><li>~ghi</li></ol>"
+        );
+
+        dom.extract_list_items(&DomHandle::from_raw(vec![0]), 0, 2);
+        assert_eq!(ds(&dom), "abc<br />def<br />ghi");
     }
 
     #[test]
