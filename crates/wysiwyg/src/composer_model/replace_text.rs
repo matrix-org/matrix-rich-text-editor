@@ -190,9 +190,6 @@ where
                         // Remove line break, we'll add another one outside the code block
                         let mut new_data = text_node.data().to_owned();
                         new_data.remove_at(prev_offset);
-                        if new_data.is_empty() {
-                            code_block_is_empty = true;
-                        }
                         text_node.set_data(new_data);
                         // Adjust selection too
                         self.state.start -= 1;
@@ -200,6 +197,16 @@ where
                         has_previous_line_break = true;
                         selection_offset += 1;
                     }
+                }
+            }
+            if has_previous_line_break {
+                let block =
+                    self.state.dom.lookup_node(&block_location.node_handle);
+                let block_len = block.text_len();
+                if block_len == 0
+                    || (block_len == 1 && block.has_leading_zwsp())
+                {
+                    code_block_is_empty = true;
                 }
             }
         }
@@ -299,6 +306,9 @@ where
                 );
                 self.state.start += 2;
                 self.state.end = self.state.start;
+                self.state
+                    .dom
+                    .join_nodes_in_container(&block_location.node_handle);
                 self.create_update_replace_all()
             } else if let DomNode::Text(text_node) =
                 self.state.dom.lookup_node_mut(&leaf.node_handle)
@@ -309,6 +319,9 @@ where
                 text_node.set_data(new_data);
                 self.state.start += 1;
                 self.state.end = self.state.start;
+                self.state
+                    .dom
+                    .join_nodes_in_container(&block_location.node_handle);
                 self.create_update_replace_all()
             } else if let DomNode::Zwsp(_) =
                 self.state.dom.lookup_node(&leaf.node_handle)
@@ -319,6 +332,9 @@ where
                     .insert_at(&leaf.node_handle.next_sibling(), text_node);
                 self.state.start += 1;
                 self.state.end = self.state.start;
+                self.state
+                    .dom
+                    .join_nodes_in_container(&block_location.node_handle);
                 self.create_update_replace_all()
             } else {
                 ComposerUpdate::keep()

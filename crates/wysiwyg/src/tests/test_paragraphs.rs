@@ -197,9 +197,15 @@ fn enter_in_code_block_at_start_adds_the_line_break() {
 fn enter_in_code_block_at_start_with_previous_line_break_moves_it_outside_the_code_block(
 ) {
     // The initial line break will be removed, so it's the same as having a single line break at the start
-    let mut model = cm("<pre>\n~\n|Test</pre>");
+    let mut model = cm("|");
+    model.code_block();
+    model.replace_text("Test".into());
+    model.select(1.into(), 1.into());
+    assert_eq!(tx(&model), "<pre>~|Test</pre>");
     model.enter();
-    assert_eq!(tx(&model), "<br />|<pre>~Test</pre>")
+    assert_eq!(tx(&model), "<pre>~\n|Test</pre>");
+    model.enter();
+    assert_eq!(tx(&model), "<br />|<pre>~Test</pre>");
 }
 
 #[test]
@@ -289,6 +295,7 @@ fn double_enter_in_quote_at_end_when_not_empty() {
 fn double_enter_in_code_block_when_empty_removes_it_and_adds_new_line() {
     let mut model = cm("|");
     model.code_block();
+    assert_eq!(tx(&model), "<pre>~|</pre>");
     model.enter();
     assert_eq!(tx(&model), "<pre>~\n|</pre>");
     model.enter();
