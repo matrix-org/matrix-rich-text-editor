@@ -241,6 +241,13 @@ fn enter_in_code_block_after_nested_line_break_in_middle_splits_code_block() {
 }
 
 #[test]
+fn enter_in_code_block_after_line_break_at_end() {
+    let mut model = cm("<pre>~<b>Bold</b> plain\n|</pre>");
+    model.enter();
+    assert_eq!(tx(&model), "<pre>~<b>Bold</b> plain</pre><br />|")
+}
+
+#[test]
 fn simple_enter_in_quote() {
     let mut model = cm("<blockquote>~Left|Right</blockquote>");
     model.enter();

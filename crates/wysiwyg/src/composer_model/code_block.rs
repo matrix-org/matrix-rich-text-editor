@@ -394,6 +394,7 @@ where
 #[cfg(test)]
 mod test {
     use crate::tests::testutils_composer_model::{cm, tx};
+    use crate::tests::testutils_conversion::utf16;
 
     #[test]
     fn add_code_block_to_empty_dom() {
@@ -577,5 +578,19 @@ mod test {
         let mut model = cm("Test<br/>|");
         model.code_block();
         assert_eq!(tx(&model), "Test<br /><pre>~|</pre>");
+    }
+
+    #[test]
+    fn text_insertion() {
+        let mut model = cm("A<br />|<br />B");
+        model.replace_text(utf16("C"));
+        assert_eq!(tx(&model), "A<br />C|<br />B");
+    }
+
+    #[test]
+    fn text_insertion_nested() {
+        let mut model = cm("A<br /><b>|<br />B</b>");
+        model.replace_text(utf16("C"));
+        assert_eq!(tx(&model), "A<br /><b>C|<br />B</b>");
     }
 }

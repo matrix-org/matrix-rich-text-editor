@@ -142,6 +142,9 @@ impl<S: UnicodeString> DomActionList<S> {
     pub fn push(&mut self, action: DomAction<S>) {
         self.actions.push(action);
     }
+    pub fn remove(&mut self, idx: usize) -> DomAction<S> {
+        self.actions.remove(idx)
+    }
 
     #[allow(dead_code)]
     pub fn replace_actions(&mut self, new_actions: Vec<DomAction<S>>) {

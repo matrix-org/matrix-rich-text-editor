@@ -213,7 +213,10 @@ where
             };
 
             let new_line_at_end = leaf.is_start();
-            if !sub_tree_container.has_leading_zwsp() {
+
+            if !sub_tree_container.is_empty()
+                && !sub_tree_container.has_leading_zwsp()
+            {
                 sub_tree_container.insert_child(0, DomNode::new_zwsp());
             }
 
@@ -235,7 +238,9 @@ where
                     } else {
                         let next_handle =
                             block_location.node_handle.next_sibling();
-                        if !sub_tree_container.children().is_empty() {
+                        if !sub_tree_container.is_empty()
+                            && !sub_tree_container.only_contains_zwsp()
+                        {
                             self.state.dom.insert_at(
                                 &next_handle,
                                 DomNode::new_code_block(

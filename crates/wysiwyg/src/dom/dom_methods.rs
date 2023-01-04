@@ -309,6 +309,7 @@ where
                     panic!("Leaves shouldn't have containers")
                 }
                 DomNode::LineBreak(_) => {
+                    Self::remove_prev_added_action(&mut action_list, &new_text);
                     match (loc.start_offset, loc.end_offset) {
                         (0, 1) => {
                             // Whole line break is selected, delete it
@@ -389,6 +390,7 @@ where
                     first_text_node = false;
                 }
                 DomNode::Zwsp(_) => {
+                    Self::remove_prev_added_action(&mut action_list, &new_text);
                     // FIXME: zwsp might not be handled in the same way as linebreak in some cases.
                     match (loc.start_offset, loc.end_offset) {
                         (0, 1) => {
@@ -438,6 +440,30 @@ where
             }
         }
         action_list
+    }
+
+    fn remove_prev_added_action(
+        action_list: &mut DomActionList<S>,
+        new_text: &S::Str,
+    ) {
+        if let Some((idx, _)) =
+            action_list
+                .actions()
+                .iter()
+                .enumerate()
+                .find(|(_, action)| match action {
+                    DomAction::Add(add) => {
+                        if let DomNode::Text(text_node) = &add.node {
+                            text_node.data() == new_text
+                        } else {
+                            false
+                        }
+                    }
+                    _ => false,
+                })
+        {
+            action_list.remove(idx);
+        }
     }
 
     fn merge_adjacent_text_nodes_after_replace(
@@ -726,20 +752,24 @@ where
         if (cur_handle == *from_handle
             || (from_handle.is_ancestor_of(&cur_handle)
                 && cur_handle.index_in_parent() == 0))
-            && (1..text_node.data().chars().count()).contains(&start_offset)
+            && (1..text_node.data().chars().count() + 1).contains(&start_offset)
         {
             let left_data = text_node.data()[..start_offset].to_owned();
             let right_data = text_node.data()[start_offset..].to_owned();
             text_node.set_data(left_data);
-            nodes.push(DomNode::new_text(right_data));
+            if !right_data.is_empty() {
+                nodes.push(DomNode::new_text(right_data));
+            }
         } else if to_handle.is_some()
             && cur_handle == to_handle.unwrap()
-            && (1..text_node.data().chars().count()).contains(&end_offset)
+            && (1..text_node.data().chars().count() + 1).contains(&end_offset)
         {
             let left_data = text_node.data()[..end_offset].to_owned();
             let right_data = text_node.data()[end_offset..].to_owned();
             text_node.set_data(left_data);
-            nodes.push(DomNode::new_text(right_data));
+            if !right_data.is_empty() {
+                nodes.push(DomNode::new_text(right_data));
+            }
         } else {
             nodes.push(self.remove(&cur_handle));
         }
@@ -1058,5 +1088,12 @@ mod test {
         assert_eq!(left.to_html(), "<b>bo</b>");
         assert_eq!(left_handle, DomHandle::from_raw(vec![0, 0]));
         assert_eq!(left.lookup_node(&left_handle).to_html(), "bo");
+    }
+
+    #[test]
+    fn replace_text_with_code_block() {
+        let mut model = cm("<pre>~Te{st</pre>AA}|BB");
+        model.delete();
+        assert_eq!(tx(&model), "<pre>~Te|</pre>BB");
     }
 }
