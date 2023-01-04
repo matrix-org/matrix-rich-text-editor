@@ -52,7 +52,7 @@ where
             // TODO: should probably also get inside here if our selection
             // only contains a zero-wdith space.
             let range = self.state.dom.find_range(s, e);
-            self.backspace_single_cursor(range, e)
+            self.backspace_single_cursor(range)
         } else {
             self.do_backspace()
         }
@@ -298,11 +298,7 @@ where
         }
     }
 
-    fn backspace_single_cursor(
-        &mut self,
-        range: Range,
-        end_position: usize,
-    ) -> ComposerUpdate<S> {
+    fn backspace_single_cursor(&mut self, range: Range) -> ComposerUpdate<S> {
         // Find the first leaf node in this selection - note there
         // should only be one because s == e, so we don't have a
         // selection that spans multiple leaves.
@@ -316,7 +312,7 @@ where
                 .dom
                 .find_parent_list_item_or_self(&leaf.node_handle);
             if let Some(parent_handle) = parent_list_item_handle {
-                self.do_backspace_in_list(&parent_handle, end_position)
+                self.do_backspace_in_list(&parent_handle)
             } else {
                 self.do_backspace()
             }

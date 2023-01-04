@@ -452,7 +452,15 @@ where
             return false;
         };
         match first_child {
-            DomNode::Container(c) => c.remove_leading_zwsp(),
+            DomNode::Container(c) => {
+                // Remove the entire container if all it contains is the ZWSP.
+                if c.text_len() == 1 && c.has_leading_zwsp() {
+                    self.remove_child(0);
+                    true
+                } else {
+                    c.remove_leading_zwsp()
+                }
+            }
             DomNode::Zwsp(_) => {
                 // Note: handle might not be set in cases where we are transforming a node
                 // that is detached from the DOM. In that case it's fine to transform it
