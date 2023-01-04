@@ -319,7 +319,7 @@ where
                             // Cursor is after line break, no need to delete
                         }
                         (0, 0) => {
-                            if !new_text.is_empty() {
+                            if first_text_node && !new_text.is_empty() {
                                 action_list.push(DomAction::add_node(
                                     loc.node_handle.parent_handle(),
                                     loc.node_handle.index_in_parent(),
@@ -384,7 +384,7 @@ where
                             // Cursor is after zwsp, no need to delete
                         }
                         (0, 0) => {
-                            if !new_text.is_empty() {
+                            if first_text_node && !new_text.is_empty() {
                                 action_list.push(DomAction::add_node(
                                     insert_at.parent_handle(),
                                     insert_at.index_in_parent(),

@@ -330,7 +330,7 @@ fn backspace_emptying_code_block_removes_it() {
 }
 
 #[test]
-fn double_enter_in_code_block_middle() {
+fn double_enter_in_code_block_middle_and_insert_text() {
     let mut model = cm("<pre>~asd|asd</pre>");
     model.enter();
     assert_eq!(tx(&model), "<pre>~asd\n|asd</pre>");
@@ -338,4 +338,6 @@ fn double_enter_in_code_block_middle() {
     assert_eq!(tx(&model), "<pre>~asd</pre><br />|<pre>~asd</pre>");
     model.replace_text("A".into());
     assert_eq!(tx(&model), "<pre>~asd</pre><br />A|<pre>~asd</pre>");
+    model.replace_text("S".into());
+    assert_eq!(tx(&model), "<pre>~asd</pre><br />AS|<pre>~asd</pre>");
 }
