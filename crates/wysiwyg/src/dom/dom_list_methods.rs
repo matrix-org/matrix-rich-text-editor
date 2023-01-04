@@ -26,6 +26,11 @@ impl<S> Dom<S>
 where
     S: UnicodeString,
 {
+    /// Wrap nodes at given handles into a new list. Line breaks
+    /// are converted into a new list item starting with a ZWSP node.
+    ///
+    /// * `list_type` - the type of list to create (ordered/unordered).
+    /// * `handles` - vec containing all the node handles.
     pub fn wrap_nodes_in_list(
         &mut self,
         list_type: ListType,
@@ -68,7 +73,12 @@ where
         }
     }
 
-    pub fn remove_list(&mut self, handle: &DomHandle) {
+    /// Extract all items from the list at given handle and move
+    /// them appropriately into the DOM. Extracted list items are
+    /// separated by line breaks.
+    ///
+    /// * `handle` - the list handle.
+    pub fn extract_from_list(&mut self, handle: &DomHandle) {
         let list = self.remove(handle);
         let mut nodes_to_insert = Vec::new();
         let DomNode::Container(mut list) = list else {
@@ -94,6 +104,13 @@ where
         self.join_nodes_in_container(&handle.parent_handle());
     }
 
+    /// Extract items from the list at given handle and positions
+    /// and move them appropriately into the DOM. Extracted list
+    /// items are separated by line breaks.
+    ///
+    /// * `handle` - the list handle.
+    /// * `start` - child index at which the extraction should start.
+    /// * `count` - number of children that should be extracted.
     pub fn extract_list_items(
         &mut self,
         handle: &DomHandle,
@@ -182,7 +199,7 @@ mod test {
             "<ol><li>~abc<strong>de<em>f</em></strong></li><li><strong><em>~gh</em>i</strong>jkl</li></ol>",
         );
 
-        dom.remove_list(&DomHandle::from_raw(vec![0]));
+        dom.extract_from_list(&DomHandle::from_raw(vec![0]));
 
         assert_eq!(ds(&dom), "abc<strong>de<em>f<br />gh</em>i</strong>jkl",);
     }
@@ -377,7 +394,7 @@ mod test {
             .state
             .dom
             .wrap_nodes_in_list(ListType::Ordered, handles);
-        model.state.dom.remove_list(&first_handle);
+        model.state.dom.extract_from_list(&first_handle);
         assert_eq!(tx(&model), text);
     }
 
