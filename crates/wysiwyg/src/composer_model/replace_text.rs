@@ -178,6 +178,7 @@ where
 
         let mut has_previous_line_break = false;
         let mut selection_offset = 0;
+        let mut code_block_is_empty = false;
         if leaf.start_offset > 0 {
             if let DomNode::Text(text_node) =
                 self.state.dom.lookup_node_mut(&leaf.node_handle)
@@ -198,10 +199,25 @@ where
                     }
                 }
             }
+            if has_previous_line_break {
+                let block =
+                    self.state.dom.lookup_node(&block_location.node_handle);
+                let block_len = block.text_len();
+                if block_len == 0
+                    || (block_len == 1 && block.has_leading_zwsp())
+                {
+                    code_block_is_empty = true;
+                }
+            }
         }
 
-        // If there was a previous line break, we need to split the code block and add the line break
-        if has_previous_line_break {
+        if code_block_is_empty {
+            self.state.dom.replace(
+                &block_location.node_handle,
+                vec![DomNode::new_line_break()],
+            );
+            self.create_update_replace_all()
+        } else if has_previous_line_break {
             let mut sub_tree = self.state.dom.split_sub_tree_from(
                 &leaf.node_handle,
                 leaf.start_offset - selection_offset,
@@ -213,7 +229,10 @@ where
             };
 
             let new_line_at_end = leaf.is_start();
-            if !sub_tree_container.has_leading_zwsp() {
+
+            if !sub_tree_container.is_empty()
+                && !sub_tree_container.has_leading_zwsp()
+            {
                 sub_tree_container.insert_child(0, DomNode::new_zwsp());
             }
 
@@ -235,7 +254,9 @@ where
                     } else {
                         let next_handle =
                             block_location.node_handle.next_sibling();
-                        if !sub_tree_container.children().is_empty() {
+                        if !sub_tree_container.is_empty()
+                            && !sub_tree_container.only_contains_zwsp()
+                        {
                             self.state.dom.insert_at(
                                 &next_handle,
                                 DomNode::new_code_block(
@@ -279,35 +300,19 @@ where
             if block.children().is_empty() {
                 // If it's the first character, we need to add 2 line breaks instead, since the
                 // first one will be automatically removed by any HTML parser
-                self.state.dom.insert_at(
-                    &leaf.node_handle,
-                    DomNode::new_text("\n\n".into()),
-                );
-                self.state.start += 2;
-                self.state.end = self.state.start;
-                self.create_update_replace_all()
-            } else if let DomNode::Text(text_node) =
-                self.state.dom.lookup_node_mut(&leaf.node_handle)
-            {
-                // Just add the line break and move the selection
-                let mut new_data = text_node.data().to_owned();
-                new_data.insert(leaf.start_offset, &S::from("\n"));
-                text_node.set_data(new_data);
-                self.state.start += 1;
-                self.state.end = self.state.start;
-                self.create_update_replace_all()
-            } else if let DomNode::Zwsp(_) =
-                self.state.dom.lookup_node(&leaf.node_handle)
-            {
-                let text_node = DomNode::new_text("\n".into());
-                self.state
-                    .dom
-                    .insert_at(&leaf.node_handle.next_sibling(), text_node);
-                self.state.start += 1;
-                self.state.end = self.state.start;
-                self.create_update_replace_all()
+                self.replace_text("\n\n".into())
             } else {
-                ComposerUpdate::keep()
+                let cursor_pos = leaf.position + leaf.start_offset;
+                // I'd call `self.state.replace_text` here too, but we'd end up calling
+                // this same code recursively
+                self.state.dom.replace_text_in(
+                    "\n".into(),
+                    cursor_pos,
+                    cursor_pos,
+                );
+                self.state.start += 1;
+                self.state.end = self.state.start;
+                self.create_update_replace_all()
             }
         }
     }

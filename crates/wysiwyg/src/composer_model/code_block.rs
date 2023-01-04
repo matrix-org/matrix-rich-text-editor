@@ -35,8 +35,20 @@ where
     fn add_code_block(&mut self) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
         let Some(wrap_result) = self.state.dom.find_nodes_to_wrap_in_block(s, e) else {
-            // No suitable nodes found to be wrapped inside the code block. The Dom should be empty
-            self.state.dom.append_at_end_of_document(DomNode::new_code_block(vec![DomNode::new_zwsp()]));
+            // No suitable nodes found to be wrapped inside the code block. Add an empty block.
+            let range = self.state.dom.find_range(s, e);
+            let leaves: Vec<&DomLocation> = range.leaves().collect();
+            if leaves.is_empty() {
+                self.state.dom.append_at_end_of_document(DomNode::new_code_block(vec![DomNode::new_zwsp()]));
+            } else {
+                let first_leaf_loc = leaves.first().unwrap();
+                let insert_at = if first_leaf_loc.is_start() {
+                    first_leaf_loc.node_handle.next_sibling()
+                } else {
+                   first_leaf_loc.node_handle.clone()
+                };
+                self.state.dom.insert_at(&insert_at, DomNode::new_code_block(vec![DomNode::new_zwsp()]));
+            }
             self.state.start += 1;
             self.state.end += 1;
             return self.create_update_replace_all();
@@ -168,11 +180,23 @@ where
         let end_in_block = code_block_location.end_offset;
         let mut selection_offset_start = 0;
         let mut selection_offset_end = 0;
-        self.state.start += 1;
-        self.state.end += 1;
 
-        // If we remove the whole code block, we should start by adding a line break
-        let mut nodes_to_add = vec![DomNode::new_line_break()];
+        // If we remove the whole code block and it's not the first child, we should start by adding a line break
+        let has_previous_line_break = self
+            .state
+            .dom
+            .prev_leaf(&code_block_location.node_handle)
+            .map_or(false, |n| n.is_line_break());
+        let mut nodes_to_add =
+            if code_block_location.node_handle.index_in_parent() > 0
+                && !has_previous_line_break
+            {
+                self.state.start += 1;
+                self.state.end += 1;
+                vec![DomNode::new_line_break()]
+            } else {
+                Vec::new()
+            };
         // Just remove everything
         let DomNode::Container(block) =
             self.state.dom.lookup_node(&code_block_location.node_handle) else
@@ -219,9 +243,14 @@ where
             }
         }
 
+        let has_next_line_break = self
+            .state
+            .dom
+            .next_leaf(&code_block_location.node_handle)
+            .map_or(false, |n| n.is_line_break());
         // Add a final line break if needed
         if let Some(last_node) = nodes_to_add.last() {
-            if last_node.kind() != LineBreak {
+            if last_node.kind() != LineBreak && !has_next_line_break {
                 nodes_to_add.push(DomNode::new_line_break());
             }
         }
@@ -577,5 +606,32 @@ mod test {
         let mut model = cm("Test<br/>|");
         model.code_block();
         assert_eq!(tx(&model), "Test<br /><pre>~|</pre>");
+    }
+
+    #[test]
+    fn creating_and_removing_code_block_works() {
+        let mut model = cm("|");
+        model.code_block();
+        assert_eq!(tx(&model), "<pre>~|</pre>");
+        model.code_block();
+        assert_eq!(tx(&model), "|");
+    }
+
+    #[test]
+    fn removing_code_block_doesnt_add_extra_line_break_at_start() {
+        let mut model = cm("<br />|");
+        model.code_block();
+        assert_eq!(tx(&model), "<br /><pre>~|</pre>");
+        model.code_block();
+        assert_eq!(tx(&model), "<br />|");
+    }
+
+    #[test]
+    fn removing_code_block_doesnt_add_extra_line_break_at_end() {
+        let mut model = cm("|<br />");
+        model.code_block();
+        assert_eq!(tx(&model), "<pre>~|</pre><br />");
+        model.code_block();
+        assert_eq!(tx(&model), "|<br />");
     }
 }

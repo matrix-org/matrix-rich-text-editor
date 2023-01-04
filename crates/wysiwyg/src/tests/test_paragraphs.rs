@@ -197,9 +197,15 @@ fn enter_in_code_block_at_start_adds_the_line_break() {
 fn enter_in_code_block_at_start_with_previous_line_break_moves_it_outside_the_code_block(
 ) {
     // The initial line break will be removed, so it's the same as having a single line break at the start
-    let mut model = cm("<pre>\n~\n|Test</pre>");
+    let mut model = cm("|");
+    model.code_block();
+    model.replace_text("Test".into());
+    model.select(1.into(), 1.into());
+    assert_eq!(tx(&model), "<pre>~|Test</pre>");
     model.enter();
-    assert_eq!(tx(&model), "<br />|<pre>~Test</pre>")
+    assert_eq!(tx(&model), "<pre>~\n|Test</pre>");
+    model.enter();
+    assert_eq!(tx(&model), "<br />|<pre>~Test</pre>");
 }
 
 #[test]
@@ -241,6 +247,13 @@ fn enter_in_code_block_after_nested_line_break_in_middle_splits_code_block() {
 }
 
 #[test]
+fn enter_in_code_block_after_line_break_at_end() {
+    let mut model = cm("<pre>~<b>Bold</b> plain\n|</pre>");
+    model.enter();
+    assert_eq!(tx(&model), "<pre>~<b>Bold</b> plain</pre><br />|")
+}
+
+#[test]
 fn simple_enter_in_quote() {
     let mut model = cm("<blockquote>~Left|Right</blockquote>");
     model.enter();
@@ -279,6 +292,19 @@ fn double_enter_in_quote_at_end_when_not_empty() {
 }
 
 #[test]
+fn double_enter_in_code_block_when_empty_removes_it_and_adds_new_line() {
+    let mut model = cm("|");
+    model.code_block();
+    assert_eq!(tx(&model), "<pre>~|</pre>");
+    model.enter();
+    assert_eq!(tx(&model), "<pre>~\n|</pre>");
+    model.enter();
+    assert_eq!(tx(&model), "<br />|");
+    model.replace_text("asd".into());
+    assert_eq!(tx(&model), "<br />asd|");
+}
+
+#[test]
 fn double_enter_in_quote_in_nested_nodes() {
     let mut model =
         cm("<blockquote>~<b><i>Left<br />|Right</i></b></blockquote>");
@@ -308,4 +334,17 @@ fn backspace_emptying_code_block_removes_it() {
     let mut model = cm("Test <pre>c|</pre>");
     model.backspace();
     assert_eq!(tx(&model), "Test&nbsp;|");
+}
+
+#[test]
+fn double_enter_in_code_block_middle_and_insert_text() {
+    let mut model = cm("<pre>~asd|asd</pre>");
+    model.enter();
+    assert_eq!(tx(&model), "<pre>~asd\n|asd</pre>");
+    model.enter();
+    assert_eq!(tx(&model), "<pre>~asd</pre><br />|<pre>~asd</pre>");
+    model.replace_text("A".into());
+    assert_eq!(tx(&model), "<pre>~asd</pre><br />A|<pre>~asd</pre>");
+    model.replace_text("S".into());
+    assert_eq!(tx(&model), "<pre>~asd</pre><br />AS|<pre>~asd</pre>");
 }

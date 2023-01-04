@@ -154,6 +154,16 @@ impl ComposerModel {
         ))
     }
 
+    pub fn code_block(self: &Arc<Self>) -> Arc<ComposerUpdate> {
+        Arc::new(ComposerUpdate::from(
+            self.inner.lock().unwrap().code_block(),
+        ))
+    }
+
+    pub fn quote(self: &Arc<Self>) -> Arc<ComposerUpdate> {
+        Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().quote()))
+    }
+
     pub fn ordered_list(self: &Arc<Self>) -> Arc<ComposerUpdate> {
         Arc::new(ComposerUpdate::from(
             self.inner.lock().unwrap().ordered_list(),
