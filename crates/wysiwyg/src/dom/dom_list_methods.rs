@@ -106,7 +106,11 @@ where
 
         if index_in_parent == 0 {
             list_item.remove_leading_zwsp();
-            self.insert(&list_handle, list_item.take_children());
+            if list.children().is_empty() {
+                self.replace(&list_handle, list_item.take_children());
+            } else {
+                self.insert(&list_handle, list_item.take_children());
+            }
         } else {
             let mut to_insert = list_item.take_children();
             let new_list_children = list.take_children_after(index_in_parent);
@@ -216,6 +220,19 @@ mod test {
             ds(&dom),
             "<ol><li>~abc</li></ol>~def<ol><li>~ghi</li><li>~jkl</li></ol>"
         );
+    }
+
+    #[test]
+    fn extract_single_list_item() {
+        let mut dom = cm("abc|").state.dom;
+        dom.wrap_nodes_in_list(
+            ListType::Ordered,
+            vec![&DomHandle::from_raw(vec![0])],
+        );
+        assert_eq!(ds(&dom), "<ol><li>~abc</li></ol>");
+
+        dom.extract_list_item(&DomHandle::from_raw(vec![0, 0]));
+        assert_eq!(ds(&dom), "abc");
     }
 
     #[test]
