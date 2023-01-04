@@ -212,7 +212,7 @@ internal class HtmlToSpansParser(
     private fun addLineBreak(pos: Int, isExtra: Boolean) {
         text.insert(pos, "\n")
         if (isExtra) {
-            text.setSpan(ExtraCharacterSpan(), pos+1, pos+1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            text.setSpan(ExtraCharacterSpan(), pos, pos+1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
         }
     }
 
