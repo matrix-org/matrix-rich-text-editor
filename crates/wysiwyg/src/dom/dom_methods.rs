@@ -311,6 +311,8 @@ where
                     panic!("Leaves shouldn't have containers")
                 }
                 DomNode::LineBreak(_) => {
+                    // Workaround to avoid adding the same text twice when on a boundary between
+                    // 2 line breaks
                     Self::remove_prev_added_action(&mut action_list, &new_text);
                     match (loc.start_offset, loc.end_offset) {
                         (0, 1) => {
@@ -392,6 +394,8 @@ where
                     first_text_node = false;
                 }
                 DomNode::Zwsp(_) => {
+                    // Workaround to avoid adding the same text twice when on a boundary between
+                    // 2 ZWSP nodes
                     Self::remove_prev_added_action(&mut action_list, &new_text);
                     // FIXME: zwsp might not be handled in the same way as linebreak in some cases.
                     match (loc.start_offset, loc.end_offset) {
@@ -444,6 +448,9 @@ where
         action_list
     }
 
+    // FIXME: this is a workaround to avoid inserting the same text twice when selection is between 2 line breaks/ZWSP nodes.
+    // Example: `<br />|<br />` would become `<br />A|A<br />` when adding "A".
+    // If we tried to check if it's already added to not add it twice, we'd end up with `<br />|A<br />`, which is not what we want either.
     fn remove_prev_added_action(
         action_list: &mut DomActionList<S>,
         new_text: &S::Str,
