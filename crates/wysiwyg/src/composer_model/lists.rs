@@ -125,7 +125,6 @@ where
     pub(crate) fn do_enter_in_list(
         &mut self,
         list_item_handle: &DomHandle,
-        current_cursor_global_location: usize,
         list_item_end_offset: usize,
     ) -> ComposerUpdate<S> {
         // Store current Dom
@@ -144,12 +143,11 @@ where
             } else {
                 // Pressing enter in a non-empty list item splits this item
                 // into two.
-                self.slice_list_item(
-                    &list_handle,
-                    list_item_handle,
-                    current_cursor_global_location,
-                    list_item_end_offset,
-                );
+                self.state
+                    .dom
+                    .slice_list_item(list_item_handle, list_item_end_offset);
+                // Slicing always adds a single ZWSP.
+                self.increment_selection(1);
             }
             self.create_update_replace_all()
         } else {
@@ -278,30 +276,6 @@ where
             list.set_list_type(list_type);
         }
         self.create_update_replace_all()
-    }
-
-    fn slice_list_item(
-        &mut self,
-        list_handle: &DomHandle,
-        list_item_handle: &DomHandle,
-        location: usize,
-        list_item_end_offset: usize,
-    ) {
-        let list_item = self.state.dom.lookup_node_mut(list_item_handle);
-        let mut slice = list_item.slice_after(list_item_end_offset);
-        slice.as_container_mut().unwrap().add_leading_zwsp();
-        let list = self.state.dom.lookup_node_mut(list_handle);
-        let DomNode::Container(list) = list else { panic!("List node is not a container") };
-        if slice.text_len() == 0 {
-            list.insert_child(
-                list_item_handle.index_in_parent() + 1,
-                DomNode::new_list_item(vec![DomNode::new_zwsp()]),
-            );
-        } else {
-            list.insert_child(list_item_handle.index_in_parent() + 1, slice);
-        }
-        self.state.start = Location::from(location + 1);
-        self.state.end = Location::from(location + 1);
     }
 
     pub(crate) fn can_indent_handle(&self, handle: &DomHandle) -> bool {
