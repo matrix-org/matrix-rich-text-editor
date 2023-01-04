@@ -10,10 +10,10 @@ import io.element.android.wysiwyg.test.utils.dumpSpans
 import io.element.android.wysiwyg.utils.AndroidHtmlConverter
 import io.element.android.wysiwyg.utils.AndroidResourcesProvider
 import io.element.android.wysiwyg.utils.HtmlToSpansParser
+import io.element.android.wysiwyg.utils.ZWSP
 import io.element.android.wysiwyg.viewmodel.EditorViewModel
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
-import org.junit.Ignore
 import org.junit.Test
 import uniffi.wysiwyg_composer.newComposerModel
 
@@ -48,7 +48,7 @@ class InterceptInputConnectionIntegrationTest {
 
     @Test
     fun testComposeBoldText() {
-        viewModel.processInput(EditorInputAction.ApplyInlineFormat(InlineFormat.Bold))
+        simulateInput(EditorInputAction.ApplyInlineFormat(InlineFormat.Bold))
         inputConnection.setComposingText("hello", 1)
 
         assertThat(textView.text.toString(), equalTo("hello"))
@@ -70,7 +70,7 @@ class InterceptInputConnectionIntegrationTest {
 
     @Test
     fun testEditStyledText() {
-        viewModel.processInput(EditorInputAction.ApplyInlineFormat(InlineFormat.Bold))
+        simulateInput(EditorInputAction.ApplyInlineFormat(InlineFormat.Bold))
         inputConnection.setComposingText("hello", 1)
         assertThat(textView.text.toString(), equalTo("hello"))
         inputConnection.setComposingText("world", 1)
@@ -87,7 +87,7 @@ class InterceptInputConnectionIntegrationTest {
 
     @Test
     fun testEditUnderlinedText() {
-        viewModel.processInput(EditorInputAction.ApplyInlineFormat(InlineFormat.Underline))
+        simulateInput(EditorInputAction.ApplyInlineFormat(InlineFormat.Underline))
         inputConnection.setComposingText("hello", 1)
         assertThat(textView.text.toString(), equalTo("hello"))
         inputConnection.setComposingText("world", 1)
@@ -136,23 +136,21 @@ class InterceptInputConnectionIntegrationTest {
         )
     }
 
-    @Ignore("Lists are being refactored at the moment")
     @Test
     fun testComposeOrderedListByWholeWord() {
-        viewModel.processInput(EditorInputAction.ToggleList(ordered = true))
+        simulateInput(EditorInputAction.ToggleList(ordered = true))
         inputConnection.setComposingText("hello", 1)
 
-        assertThat(textView.text.toString(), equalTo("\u200Bhello"))
+        assertThat(textView.text.toString(), equalTo("${ZWSP}hello"))
         assertThat(
             textView.text.dumpSpans(), equalTo(
                 listOf(
-                    "\u200Bhello: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
-                    "\u200Bhello: android.text.method.TextKeyListener (0-6) fl=#18",
-                    "\u200Bhello: android.widget.Editor.SpanController (0-6) fl=#18",
+                    "${ZWSP}hello: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
+                    "${ZWSP}hello: android.text.method.TextKeyListener (0-6) fl=#18",
+                    "${ZWSP}hello: android.widget.Editor.SpanController (0-6) fl=#18",
                     ": android.text.Selection.START (6-6) fl=#546",
                     ": android.text.Selection.END (6-6) fl=#34",
-                    "\u200B: io.element.android.wysiwyg.spans.ExtraCharacterSpan (0-1) fl=#33",
-                    "\u200Bhello: io.element.android.wysiwyg.spans.OrderedListSpan (0-6) fl=#33",
+                    "${ZWSP}hello: io.element.android.wysiwyg.spans.OrderedListSpan (0-6) fl=#33",
                     "hello: android.text.style.UnderlineSpan (1-6) fl=#289",
                     "hello: android.view.inputmethod.ComposingText (1-6) fl=#289",
                 )
@@ -160,27 +158,25 @@ class InterceptInputConnectionIntegrationTest {
         )
     }
 
-    @Ignore("Lists are being refactored at the moment")
     @Test
     fun testComposeUnorderedListLetterByLetter() {
-        viewModel.processInput(EditorInputAction.ToggleList(ordered = false))
+        simulateInput(EditorInputAction.ToggleList(ordered = false))
         inputConnection.setComposingText("h", 1)
         inputConnection.setComposingText("he", 1)
         inputConnection.setComposingText("hel", 1)
         inputConnection.setComposingText("hell", 1)
         inputConnection.setComposingText("hello", 1)
 
-        assertThat(textView.text.toString(), equalTo("\u200Bhello"))
+        assertThat(textView.text.toString(), equalTo("${ZWSP}hello"))
         assertThat(
             textView.text.dumpSpans(), equalTo(
                 listOf(
-                    "\u200Bhello: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
-                    "\u200Bhello: android.text.method.TextKeyListener (0-6) fl=#18",
-                    "\u200Bhello: android.widget.Editor.SpanController (0-6) fl=#18",
+                    "${ZWSP}hello: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
+                    "${ZWSP}hello: android.text.method.TextKeyListener (0-6) fl=#18",
+                    "${ZWSP}hello: android.widget.Editor.SpanController (0-6) fl=#18",
                     ": android.text.Selection.START (6-6) fl=#546",
                     ": android.text.Selection.END (6-6) fl=#34",
-                    "\u200B: io.element.android.wysiwyg.spans.ExtraCharacterSpan (0-1) fl=#33",
-                    "\u200Bhello: android.text.style.BulletSpan (0-6) fl=#33",
+                    "${ZWSP}hello: android.text.style.BulletSpan (0-6) fl=#33",
                     "hello: android.text.style.UnderlineSpan (1-6) fl=#289",
                     "hello: android.view.inputmethod.ComposingText (1-6) fl=#289",
                 )
@@ -188,23 +184,21 @@ class InterceptInputConnectionIntegrationTest {
         )
     }
 
-    @Ignore("Lists are being refactored at the moment")
     @Test
     fun testComposeUnorderedListByWholeWord() {
-        viewModel.processInput(EditorInputAction.ToggleList(ordered = false))
+        simulateInput(EditorInputAction.ToggleList(ordered = false))
         inputConnection.setComposingText("hello", 1)
 
-        assertThat(textView.text.toString(), equalTo("\u200Bhello"))
+        assertThat(textView.text.toString(), equalTo("${ZWSP}hello"))
         assertThat(
             textView.text.dumpSpans(), equalTo(
                 listOf(
-                    "\u200Bhello: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
-                    "\u200Bhello: android.text.method.TextKeyListener (0-6) fl=#18",
-                    "\u200Bhello: android.widget.Editor.SpanController (0-6) fl=#18",
+                    "${ZWSP}hello: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
+                    "${ZWSP}hello: android.text.method.TextKeyListener (0-6) fl=#18",
+                    "${ZWSP}hello: android.widget.Editor.SpanController (0-6) fl=#18",
                     ": android.text.Selection.START (6-6) fl=#546",
                     ": android.text.Selection.END (6-6) fl=#34",
-                    "\u200B: io.element.android.wysiwyg.spans.ExtraCharacterSpan (0-1) fl=#33",
-                    "\u200Bhello: android.text.style.BulletSpan (0-6) fl=#33",
+                    "${ZWSP}hello: android.text.style.BulletSpan (0-6) fl=#33",
                     "hello: android.text.style.UnderlineSpan (1-6) fl=#289",
                     "hello: android.view.inputmethod.ComposingText (1-6) fl=#289",
                 )
@@ -212,27 +206,25 @@ class InterceptInputConnectionIntegrationTest {
         )
     }
 
-    @Ignore("Lists are being refactored at the moment")
     @Test
     fun testComposeOrderedListLetterByLetter() {
-        viewModel.processInput(EditorInputAction.ToggleList(ordered = true))
+        simulateInput(EditorInputAction.ToggleList(ordered = true))
         inputConnection.setComposingText("h", 1)
         inputConnection.setComposingText("he", 1)
         inputConnection.setComposingText("hel", 1)
         inputConnection.setComposingText("hell", 1)
         inputConnection.setComposingText("hello", 1)
 
-        assertThat(textView.text.toString(), equalTo("\u200Bhello"))
+        assertThat(textView.text.toString(), equalTo("${ZWSP}hello"))
         assertThat(
             textView.text.dumpSpans(), equalTo(
                 listOf(
-                    "\u200Bhello: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
-                    "\u200Bhello: android.text.method.TextKeyListener (0-6) fl=#18",
-                    "\u200Bhello: android.widget.Editor.SpanController (0-6) fl=#18",
+                    "${ZWSP}hello: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
+                    "${ZWSP}hello: android.text.method.TextKeyListener (0-6) fl=#18",
+                    "${ZWSP}hello: android.widget.Editor.SpanController (0-6) fl=#18",
                     ": android.text.Selection.START (6-6) fl=#546",
                     ": android.text.Selection.END (6-6) fl=#34",
-                    "\u200B: io.element.android.wysiwyg.spans.ExtraCharacterSpan (0-1) fl=#33",
-                    "\u200Bhello: io.element.android.wysiwyg.spans.OrderedListSpan (0-6) fl=#33",
+                    "${ZWSP}hello: io.element.android.wysiwyg.spans.OrderedListSpan (0-6) fl=#33",
                     "hello: android.text.style.UnderlineSpan (1-6) fl=#289",
                     "hello: android.view.inputmethod.ComposingText (1-6) fl=#289",
                 )
@@ -240,24 +232,22 @@ class InterceptInputConnectionIntegrationTest {
         )
     }
 
-    @Ignore("Lists are being refactored at the moment")
     @Test
     fun testComposeOrderedListLetterWithEmoji() {
-        viewModel.processInput(EditorInputAction.ToggleList(ordered = true))
+        simulateInput(EditorInputAction.ToggleList(ordered = true))
         inputConnection.setComposingText("😋", 1)
         inputConnection.setComposingText("😋😋", 1)
 
-        assertThat(textView.text.toString(), equalTo("\u200B😋😋"))
+        assertThat(textView.text.toString(), equalTo("${ZWSP}😋😋"))
         assertThat(
             textView.text.dumpSpans(), equalTo(
                 listOf(
-                    "\u200B😋😋: android.widget.TextView.ChangeWatcher (0-5) fl=#6553618",
-                    "\u200B😋😋: android.text.method.TextKeyListener (0-5) fl=#18",
-                    "\u200B😋😋: android.widget.Editor.SpanController (0-5) fl=#18",
+                    "${ZWSP}😋😋: android.widget.TextView.ChangeWatcher (0-5) fl=#6553618",
+                    "${ZWSP}😋😋: android.text.method.TextKeyListener (0-5) fl=#18",
+                    "${ZWSP}😋😋: android.widget.Editor.SpanController (0-5) fl=#18",
                     ": android.text.Selection.START (5-5) fl=#546",
                     ": android.text.Selection.END (5-5) fl=#34",
-                    "\u200B: io.element.android.wysiwyg.spans.ExtraCharacterSpan (0-1) fl=#33",
-                    "\u200B😋😋: io.element.android.wysiwyg.spans.OrderedListSpan (0-5) fl=#33",
+                    "${ZWSP}😋😋: io.element.android.wysiwyg.spans.OrderedListSpan (0-5) fl=#33",
                     "😋😋: android.text.style.UnderlineSpan (1-5) fl=#289",
                     "😋😋: android.view.inputmethod.ComposingText (1-5) fl=#289",
                 )
@@ -285,13 +275,10 @@ class InterceptInputConnectionIntegrationTest {
     @Test
     fun testIncrementalCommitWithDisabledFormattingKeepsItDisabledAfterWhitespace() {
         // Set initial text
-        val initialText = viewModel.processInput(
+        simulateInput(
             EditorInputAction.ReplaceAllHtml("<strong>test</strong>")
-        )?.text
-        textView.setText(initialText)
-        // Disable bold at end of string
-        textView.setSelection(4)
-        viewModel.processInput(EditorInputAction.ApplyInlineFormat(InlineFormat.Bold))
+        )
+        simulateInput(EditorInputAction.ApplyInlineFormat(InlineFormat.Bold))
         // Autocomplete 'test' -> 'test '
         inputConnection.setComposingRegion(0, 4)
         inputConnection.commitText("test ", 1)
@@ -300,4 +287,10 @@ class InterceptInputConnectionIntegrationTest {
 
         assertThat(viewModel.getHtml(), equalTo("<strong>test</strong> whitespaces"))
     }
+
+    private fun simulateInput(editorInputAction: EditorInputAction) =
+        viewModel.processInput(editorInputAction)?.let { (text, selection) ->
+            textView.setText(text)
+            textView.setSelection(selection.first, selection.last)
+        }
 }
