@@ -65,7 +65,7 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
         composerModel,
     );
 
-    const formattingFunctions = useFormattingFunctions(ref);
+    const formattingFunctions = useFormattingFunctions(ref, composerModel);
 
     const { content, actionStates } = useListeners(
         ref,

@@ -39,6 +39,8 @@ const formattingFunctions: FormattingFunctions = {
     clear: () => {},
     insertText: (text: string) => {},
     link: (link: string, text?: string) => {},
+    removeLinks: () => {},
+    getLink: () => '',
 };
 
 let replacedWithText: string | null = null;

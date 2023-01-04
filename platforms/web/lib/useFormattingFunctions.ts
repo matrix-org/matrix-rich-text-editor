@@ -19,9 +19,11 @@ import { RefObject, useMemo } from 'react';
 import { BlockType, FormattingFunctions } from './types';
 import { sendWysiwygInputEvent } from './useListeners';
 import { LinkEvent } from './useListeners/types';
+import { ComposerModel } from '../generated/wysiwyg';
 
 export function useFormattingFunctions(
     editorRef: RefObject<HTMLElement | null>,
+    composerModel: ComposerModel | null,
 ) {
     const formattingFunctions = useMemo<FormattingFunctions>(() => {
         // The formatting action like inline code doesn't have an input type
@@ -54,8 +56,11 @@ export function useFormattingFunctions(
             insertText: (text: string) => sendEvent('insertText', text),
             link: (link: string, text?: string) =>
                 sendEvent('insertLink', { link, text }),
+            removeLinks: () => sendEvent('removeLinks'),
+            getLink: () =>
+                composerModel?.get_link_action()?.edit_link?.link || '',
         };
-    }, [editorRef]);
+    }, [editorRef, composerModel]);
 
     return formattingFunctions;
 }
