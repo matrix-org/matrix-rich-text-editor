@@ -300,44 +300,19 @@ where
             if block.children().is_empty() {
                 // If it's the first character, we need to add 2 line breaks instead, since the
                 // first one will be automatically removed by any HTML parser
-                self.state.dom.insert_at(
-                    &leaf.node_handle,
-                    DomNode::new_text("\n\n".into()),
-                );
-                self.state.start += 2;
-                self.state.end = self.state.start;
-                self.state
-                    .dom
-                    .join_nodes_in_container(&block_location.node_handle);
-                self.create_update_replace_all()
-            } else if let DomNode::Text(text_node) =
-                self.state.dom.lookup_node_mut(&leaf.node_handle)
-            {
-                // Just add the line break and move the selection
-                let mut new_data = text_node.data().to_owned();
-                new_data.insert(leaf.start_offset, &S::from("\n"));
-                text_node.set_data(new_data);
-                self.state.start += 1;
-                self.state.end = self.state.start;
-                self.state
-                    .dom
-                    .join_nodes_in_container(&block_location.node_handle);
-                self.create_update_replace_all()
-            } else if let DomNode::Zwsp(_) =
-                self.state.dom.lookup_node(&leaf.node_handle)
-            {
-                let text_node = DomNode::new_text("\n".into());
-                self.state
-                    .dom
-                    .insert_at(&leaf.node_handle.next_sibling(), text_node);
-                self.state.start += 1;
-                self.state.end = self.state.start;
-                self.state
-                    .dom
-                    .join_nodes_in_container(&block_location.node_handle);
-                self.create_update_replace_all()
+                self.replace_text("\n\n".into())
             } else {
-                ComposerUpdate::keep()
+                let cursor_pos = leaf.position + leaf.start_offset;
+                // I'd call `self.state.replace_text` here too, but we'd end up calling
+                // this same code recursively
+                self.state.dom.replace_text_in(
+                    "\n".into(),
+                    cursor_pos,
+                    cursor_pos,
+                );
+                self.state.start += 1;
+                self.state.end = self.state.start;
+                self.create_update_replace_all()
             }
         }
     }
