@@ -91,12 +91,12 @@ where
     /// items are separated by line breaks.
     ///
     /// * `handle` - the list handle.
-    /// * `start` - child index at which the extraction should start.
+    /// * `child_index` - child index at which the extraction should start.
     /// * `count` - number of children that should be extracted.
     pub fn extract_list_items(
         &mut self,
         handle: &DomHandle,
-        start: usize,
+        child_index: usize,
         count: usize,
     ) {
         let list = self.lookup_node_mut(handle);
@@ -104,10 +104,10 @@ where
             panic!("List is not a container")
         };
 
-        if start == 0 {
+        if child_index == 0 {
             let mut nodes_to_insert = Vec::new();
-            for _index in start..start + count {
-                let list_item = list.remove_child(start);
+            for _index in child_index..child_index + count {
+                let list_item = list.remove_child(child_index);
                 let DomNode::Container(mut list_item) = list_item else {
                     panic!("List item is not a container")
                 };
@@ -127,8 +127,8 @@ where
             }
         } else {
             let mut nodes_to_insert = Vec::new();
-            for _index in start..start + count {
-                let list_item = list.remove_child(start);
+            for _index in child_index..child_index + count {
+                let list_item = list.remove_child(child_index);
                 let DomNode::Container(mut list_item) = list_item else {
                     panic!("List item is not a container")
                 };
@@ -139,8 +139,8 @@ where
             }
 
             // Extract further list items to a new list, if any.
-            if list.children().len() > start {
-                let new_list_children = list.take_children_after(start);
+            if list.children().len() > child_index {
+                let new_list_children = list.take_children_after(child_index);
                 let new_list = DomNode::new_list(
                     list.get_list_type().expect("Node is not a list").clone(),
                     new_list_children,
