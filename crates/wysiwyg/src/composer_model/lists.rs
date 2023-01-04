@@ -13,7 +13,6 @@
 // limitations under the License.
 
 use std::collections::HashMap;
-use std::ops::AddAssign;
 
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::{ContainerNode, DomNode};
@@ -169,13 +168,14 @@ where
 
     fn toggle_list(&mut self, list_type: ListType) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
-        let range = self.state.dom.find_extended_range(s, e);
-
-        if range.is_empty() {
-            self.create_empty_list(list_type)
-        } else {
-            self.toggle_list_range(list_type, range)
+        // If the DOM is empty, create an initial text node that will be used to create the list afterwards.
+        if self.state.dom.children().is_empty() {
+            self.state
+                .dom
+                .append_at_end_of_document(DomNode::new_empty_text());
         }
+        let range = self.state.dom.find_extended_range(s, e);
+        self.toggle_list_range(list_type, range)
     }
 
     fn toggle_list_range(
@@ -230,18 +230,6 @@ where
         } else {
             unreachable!("No list in range. Should have been catched by toggle_list_range")
         }
-    }
-
-    fn create_empty_list(&mut self, list_type: ListType) -> ComposerUpdate<S> {
-        self.state.dom.append_at_end_of_document(DomNode::new_list(
-            list_type,
-            vec![DomNode::Container(ContainerNode::new_list_item(vec![
-                DomNode::new_zwsp(),
-            ]))],
-        ));
-        self.state.start.add_assign(1);
-        self.state.end.add_assign(1);
-        self.create_update_replace_all()
     }
 
     fn create_list_from_range(

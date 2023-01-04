@@ -390,17 +390,37 @@ where
 
     /// Add a leading ZWSP char to this container.
     /// Returns false if no updates was done.
-    /// e.g. first text-like node is a line break
-    /// or a text node that already starts with a ZWSP.
+    /// e.g. first text-like node is already a ZWSP.
     pub fn add_leading_zwsp(&mut self) -> bool {
+        // Note: handle might not be set in cases where we are transforming a node
+        // that is detached from the DOM. In that case it's fine to transform it
+        // without worrying about handles.
+        let handle_is_set = self.handle().is_set();
         let Some(first_child) = self.children.get_mut(0) else {
             return false;
         };
         match first_child {
             DomNode::Container(c) => c.add_leading_zwsp(),
             DomNode::Zwsp(_) => false,
-            _ => {
-                if self.handle().is_set() {
+            DomNode::Text(t) => {
+                match (handle_is_set, t.data().is_empty()) {
+                    (true, true) => {
+                        self.replace_child(0, vec![DomNode::new_zwsp()]);
+                    }
+                    (true, false) => {
+                        self.insert_child(0, DomNode::new_zwsp());
+                    }
+                    (false, true) => {
+                        self.children[0] = DomNode::new_zwsp();
+                    }
+                    (false, false) => {
+                        self.children.insert(0, DomNode::new_zwsp());
+                    }
+                }
+                true
+            }
+            DomNode::LineBreak(_) => {
+                if handle_is_set {
                     self.insert_child(0, DomNode::new_zwsp());
                 } else {
                     self.children.insert(0, DomNode::new_zwsp());
@@ -421,6 +441,9 @@ where
         match first_child {
             DomNode::Container(c) => c.remove_leading_zwsp(),
             DomNode::Zwsp(_) => {
+                // Note: handle might not be set in cases where we are transforming a node
+                // that is detached from the DOM. In that case it's fine to transform it
+                // without worrying about handles.
                 if self.handle().is_set() {
                     self.remove_child(0);
                 } else {
