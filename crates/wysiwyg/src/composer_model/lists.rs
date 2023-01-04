@@ -222,7 +222,12 @@ where
         if let Some(list_item_handle) = parent_list_item_handle {
             let list = self.state.dom.parent(&list_item_handle);
             if list.is_list_of_type(&list_type) {
-                self.move_list_item_content_to_list_parent(&list_item_handle)
+                self.state.dom.extract_list_items(
+                    &list_item_handle.parent_handle(),
+                    list_item_handle.index_in_parent(),
+                    1,
+                );
+                self.create_update_replace_all()
             } else {
                 let list_node_handle = list.handle();
                 self.update_list_type(&list_node_handle, list_type)
@@ -281,35 +286,6 @@ where
             Location::from(s + start_correction),
             Location::from(e + end_correction),
         );
-        self.create_update_replace_all()
-    }
-
-    fn move_list_item_content_to_list_parent(
-        &mut self,
-        list_item_handle: &DomHandle,
-    ) -> ComposerUpdate<S> {
-        let list_item_node = self.state.dom.lookup_node(list_item_handle);
-        if let DomNode::Container(list_item) = list_item_node {
-            let list_item_children = list_item.children().clone();
-            let list_handle = list_item_handle.parent_handle();
-            let list_index_in_parent = list_handle.index_in_parent();
-            let list_parent = self.state.dom.parent_mut(&list_handle);
-            for child in list_item_children.iter().rev() {
-                list_parent
-                    .insert_child(list_index_in_parent + 1, child.clone());
-            }
-
-            let list_item_index_in_parent = list_item_handle.index_in_parent();
-            let list_node = self.state.dom.lookup_node_mut(&list_handle);
-            if let DomNode::Container(list) = list_node {
-                list.remove_child(list_item_index_in_parent);
-            } else {
-                panic!("List node is not a container")
-            }
-        } else {
-            panic!("List item is not a container")
-        }
-
         self.create_update_replace_all()
     }
 
