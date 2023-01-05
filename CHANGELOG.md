@@ -1,5 +1,18 @@
 # Changelog
 
+# [0.14.0] - 2022-01-05
+
+### Added
+
+- Web: Add removeLinks and getLinks method
+- iOS/Android: Code block & quote bindings
+
+### Fixed
+
+- Common: Code block & quote fixes
+- Common: List behavior improvements
+- Android: Fix special character handling
+
 # [0.13.0] - 2022-12-22
 
 ### Added
