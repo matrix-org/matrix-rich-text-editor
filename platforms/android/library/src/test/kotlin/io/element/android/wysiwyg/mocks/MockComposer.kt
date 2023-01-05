@@ -122,4 +122,5 @@ class MockComposer {
     fun givenGetContentAsMarkdown(
         markdown: String = ""
     ) = every { instance.getContentAsMarkdown() } returns markdown
+
 }
