@@ -14,18 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { forwardRef } from 'react';
+import { forwardRef, MutableRefObject } from 'react';
 
-import { InputEventProcessor } from '../types';
+import { FormattingFunctions, InputEventProcessor } from '../types';
 import { useWysiwyg } from '../useWysiwyg';
 
 interface EditorProps {
     initialContent?: string;
     inputEventProcessor?: InputEventProcessor;
+    actionsRef?: MutableRefObject<FormattingFunctions | null>;
 }
 
 export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
-    { initialContent, inputEventProcessor }: EditorProps,
+    { initialContent, inputEventProcessor, actionsRef }: EditorProps,
     forwardRef,
 ) {
     const { ref, isWysiwygReady, wysiwyg, actionStates, content } = useWysiwyg({
@@ -33,9 +34,20 @@ export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
         inputEventProcessor,
     });
 
+    if (actionsRef) actionsRef.current = wysiwyg;
+
     const keys = Object.keys(wysiwyg).filter(
-        (key) => key !== 'insertText' && key !== 'link',
-    ) as Array<Exclude<keyof typeof wysiwyg, 'insertText' | 'link'>>;
+        (key) =>
+            key !== 'insertText' &&
+            key !== 'link' &&
+            key !== 'removeLinks' &&
+            key !== 'getLink',
+    ) as Array<
+        Exclude<
+            keyof typeof wysiwyg,
+            'insertText' | 'link' | 'removeLinks' | 'getLink'
+        >
+    >;
     return (
         <>
             {keys.map((key) => (
@@ -62,6 +74,9 @@ export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
                 onClick={() => wysiwyg.link('my link', 'my text')}
             >
                 link with text
+            </button>
+            <button type="button" onClick={() => wysiwyg.removeLinks()}>
+                remove links
             </button>
             <div
                 ref={(node) => {

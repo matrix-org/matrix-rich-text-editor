@@ -22,9 +22,11 @@ import {
     waitFor,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { createRef, MutableRefObject } from 'react';
 
 import { Editor } from './testUtils/Editor';
 import { select } from './testUtils/selection';
+import { FormattingFunctions } from './types';
 
 describe.each([
     [
@@ -220,25 +222,26 @@ describe('insertText', () => {
 });
 
 describe('link', () => {
-    let buttonLink: HTMLButtonElement;
-    let buttonLinkWithText: HTMLButtonElement;
-    let textbox: HTMLDivElement;
-
-    beforeEach(async () => {
-        render(<Editor />);
-        textbox = screen.getByRole('textbox');
+    async function renderEditor(
+        initialContent?: string,
+        ref?: MutableRefObject<FormattingFunctions | null>,
+    ) {
+        render(<Editor initialContent={initialContent} actionsRef={ref} />);
+        const textbox: HTMLDivElement = screen.getByRole('textbox');
         await waitFor(() =>
             expect(textbox).toHaveAttribute('contentEditable', 'true'),
         );
-        buttonLink = screen.getByRole('button', { name: 'link' });
-        buttonLinkWithText = screen.getByRole('button', {
-            name: 'link with text',
-        });
-    });
+        return textbox;
+    }
 
     it('Should insert the link with text', async () => {
         // When
-        userEvent.click(buttonLinkWithText);
+        const textbox = await renderEditor();
+        await userEvent.click(
+            screen.getByRole('button', {
+                name: 'link with text',
+            }),
+        );
 
         // Then
         await waitFor(() =>
@@ -248,16 +251,40 @@ describe('link', () => {
 
     it('Should transform the selected text into link', async () => {
         // When
-        fireEvent.input(textbox, {
-            data: 'foobar',
-            inputType: 'insertText',
-        });
+        const textbox = await renderEditor('foobar');
         select(textbox, 0, 6);
-        userEvent.click(buttonLink);
+        await userEvent.click(screen.getByRole('button', { name: 'link' }));
 
         // Then
         await waitFor(() =>
             expect(textbox).toContainHTML('<a href="my link">foobar</a>'),
+        );
+    });
+
+    it('Should remove the link', async () => {
+        // When
+        const textbox = await renderEditor('<a href="my link">foobar</a>');
+        select(textbox, 0, 6);
+        await userEvent.click(
+            screen.getByRole('button', { name: 'remove links' }),
+        );
+
+        // Then
+        await waitFor(() => expect(textbox).toContainHTML('foobar'));
+    });
+
+    it('Should get the link', async () => {
+        // When
+        const actionsRef = createRef<FormattingFunctions>();
+        const textbox = await renderEditor(
+            '<a href="my link">foobar</a>',
+            actionsRef,
+        );
+        select(textbox, 0, 6);
+
+        // Then
+        await waitFor(() =>
+            expect(actionsRef.current?.getLink()).toBe('my link'),
         );
     });
 });

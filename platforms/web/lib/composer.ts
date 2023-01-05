@@ -122,6 +122,8 @@ export function processInput(
                 );
             }
             break;
+        case 'removeLinks':
+            return action(composerModel.remove_links(), 'remove_links');
         case 'sendMessage':
             // We create this event type when the user presses Ctrl+Enter.
             // We don't do anythign here, but the user may want to hook in
