@@ -14,6 +14,7 @@ class MockComposer {
     init {
         givenCurrentDomState()
         givenActionStates()
+        givenDummyToExampleFormat()
     }
 
     fun givenCurrentDomState(
@@ -123,4 +124,5 @@ class MockComposer {
         markdown: String = ""
     ) = every { instance.getContentAsMarkdown() } returns markdown
 
+    fun givenDummyToExampleFormat() = every { instance.toExampleFormat() } returns ""
 }
