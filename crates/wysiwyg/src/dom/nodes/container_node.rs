@@ -405,42 +405,37 @@ where
     /// Returns false if no updates was done.
     /// e.g. first text-like node is already a ZWSP.
     pub fn add_leading_zwsp(&mut self) -> bool {
-        fn insert_zwsp<S>(container: &mut ContainerNode<S>, handle_is_set: bool)
+        // Note: handle might not be set in cases where we are transforming a node
+        // that is detached from the DOM. In that case it's fine to transform it
+        // without worrying about handles.
+        fn insert_zwsp<S>(container: &mut ContainerNode<S>)
         where
             S: UnicodeString,
         {
-            if handle_is_set {
+            if container.handle().is_set() {
                 container.insert_child(0, DomNode::new_zwsp());
             } else {
                 container.children.insert(0, DomNode::new_zwsp());
             }
         }
 
-        // Note: handle might not be set in cases where we are transforming a node
-        // that is detached from the DOM. In that case it's fine to transform it
-        // without worrying about handles.
-        let handle_is_set = self.handle().is_set();
         let Some(first_child) = self.children.get_mut(0) else {
-            insert_zwsp(self, handle_is_set);
+            insert_zwsp(self);
             return true;
         };
         match first_child {
             DomNode::Container(c) => c.add_leading_zwsp(),
             DomNode::Zwsp(_) => false,
-            DomNode::Text(t) => {
-                if t.data().is_empty() {
-                    if handle_is_set {
-                        self.replace_child(0, vec![DomNode::new_zwsp()]);
-                    } else {
-                        self.children[0] = DomNode::new_zwsp();
-                    }
+            DomNode::Text(t) if t.data().is_empty() => {
+                if self.handle().is_set() {
+                    self.replace_child(0, vec![DomNode::new_zwsp()]);
                 } else {
-                    insert_zwsp(self, handle_is_set);
+                    self.children[0] = DomNode::new_zwsp();
                 }
                 true
             }
-            DomNode::LineBreak(_) => {
-                insert_zwsp(self, handle_is_set);
+            DomNode::Text(_) | DomNode::LineBreak(_) => {
+                insert_zwsp(self);
                 true
             }
         }
