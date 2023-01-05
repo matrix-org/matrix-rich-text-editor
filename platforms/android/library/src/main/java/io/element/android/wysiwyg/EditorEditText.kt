@@ -11,6 +11,8 @@ import android.text.Selection
 import android.text.Spannable
 import android.text.SpannableStringBuilder
 import android.util.AttributeSet
+import android.util.TypedValue.COMPLEX_UNIT_DIP
+import android.util.TypedValue.applyDimension
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.inputmethod.EditorInfo
@@ -32,12 +34,20 @@ import uniffi.wysiwyg_composer.newComposerModel
 class EditorEditText : TextInputEditText {
 
     private var inputConnection: InterceptInputConnection? = null
+
+    private lateinit var styleConfig: StyleConfig
+
     private val viewModel: EditorViewModel by viewModel(
         viewModelInitializer = {
             val applicationContext = context.applicationContext as Application
             val resourcesProvider = AndroidResourcesProvider(applicationContext)
             val htmlConverter = AndroidHtmlConverter(
-                provideHtmlToSpansParser = { html -> HtmlToSpansParser(resourcesProvider, html) },
+                provideHtmlToSpansParser = { html ->
+                    HtmlToSpansParser(
+                        resourcesProvider, html,
+                        styleConfig = styleConfig
+                    )
+                },
             )
             val composer = if (!isInEditMode) newComposerModel() else null
             EditorViewModel(composer, htmlConverter)
@@ -55,7 +65,31 @@ class EditorEditText : TextInputEditText {
 
     constructor(context: Context) : super(context)
 
-    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
+        context.theme.obtainStyledAttributes(
+            attrs,
+            R.styleable.EditorEditText,
+            0, 0
+        ).apply {
+            // Default attributes
+            var bulletGapWidth =
+                applyDimension(COMPLEX_UNIT_DIP, 4f, context.resources.displayMetrics)
+            var bulletRadius =
+                applyDimension(COMPLEX_UNIT_DIP, 2f, context.resources.displayMetrics)
+
+            try {
+                bulletGapWidth =
+                    getDimension(R.styleable.EditorEditText_bulletGap, bulletGapWidth)
+                bulletRadius = getDimension(R.styleable.EditorEditText_bulletRadius, bulletRadius)
+            } finally {
+                styleConfig = StyleConfig(
+                    bulletGapWidth = bulletGapWidth,
+                    bulletRadius = bulletRadius,
+                )
+                recycle()
+            }
+        }
+    }
 
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) :
             super(context, attrs, defStyleAttr)

@@ -2,7 +2,7 @@ package io.element.android.wysiwyg.utils
 
 import android.graphics.Typeface
 import android.text.*
-import android.text.style.BulletSpan
+import android.text.style.ParagraphStyle
 import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
@@ -13,6 +13,7 @@ import io.element.android.wysiwyg.spans.ExtraCharacterSpan
 import io.element.android.wysiwyg.spans.InlineCodeSpan
 import io.element.android.wysiwyg.spans.LinkSpan
 import io.element.android.wysiwyg.spans.OrderedListSpan
+import io.element.android.wysiwyg.spans.UnorderedListSpan
 import org.ccil.cowan.tagsoup.Parser
 import org.xml.sax.Attributes
 import org.xml.sax.ContentHandler
@@ -31,6 +32,7 @@ import kotlin.math.roundToInt
 internal class HtmlToSpansParser(
     private val resourcesProvider: ResourcesProvider,
     private val html: String,
+    private val styleConfig: StyleConfig,
 ) : ContentHandler {
 
     data class Hyperlink(val link: String)
@@ -138,15 +140,8 @@ internal class HtmlToSpansParser(
                     start += 1
                 }
 
-                // TODO: provide gap width, typeface and textSize somehow
-                val gapWidth = (10f * resourcesProvider.getDisplayMetrics().density).roundToInt()
-                val span = if (last.ordered) {
-                    val typeface = Typeface.defaultFromStyle(Typeface.NORMAL)
-                    val textSize = 16f * resourcesProvider.getDisplayMetrics().scaledDensity
-                    OrderedListSpan(typeface, textSize, last.order ?: 1, gapWidth)
-                } else {
-                    BulletSpan(gapWidth)
-                }
+                val span = createListSpan(last = last)
+
                 text.setSpan(span, start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 text.removeSpan(last)
             }
@@ -189,6 +184,20 @@ internal class HtmlToSpansParser(
         text.removeSpan(lastTag)
     }
 
+    private fun createListSpan(last: ListItem): ParagraphStyle {
+        val gapWidth = styleConfig.bulletGapWidth.roundToInt()
+        val bulletRadius = styleConfig.bulletRadius.roundToInt()
+
+        return if (last.ordered) {
+            // TODO: provide typeface and textSize somehow
+            val typeface = Typeface.defaultFromStyle(Typeface.NORMAL)
+            val textSize = 16f * resourcesProvider.getDisplayMetrics().scaledDensity
+            OrderedListSpan(typeface, textSize, last.order ?: 1, gapWidth)
+        } else {
+            UnorderedListSpan(gapWidth, bulletRadius)
+        }
+    }
+
     private inline fun <reified T : Any> getLast(from: Int = 0, to: Int = text.length): T? {
         val spans = text.getSpans<T>(from, to)
         return spans.lastOrNull()
@@ -222,7 +231,7 @@ internal class HtmlToSpansParser(
             LinkSpan::class.java,
 
             // Lists
-            BulletSpan::class.java,
+            UnorderedListSpan::class.java,
             OrderedListSpan::class.java,
             ExtraCharacterSpan::class.java,
         )
