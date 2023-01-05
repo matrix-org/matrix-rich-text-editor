@@ -46,6 +46,7 @@ interface ComposerModel {
     ComposerUpdate code_block();
     ComposerUpdate quote();
     string to_tree();
+    string to_example_format();
     ComposerState get_current_dom_state();
     record<ComposerAction, ActionState> action_states();
     LinkAction get_link_action();

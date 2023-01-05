@@ -17,9 +17,5 @@ fun ComposerState.dump() = "'${html.string()}' | Start: $start | End: $end"
  * Log the current state of the editor in the Rust code.
  */
 fun ComposerModelInterface.log() = if (LOG_ENABLED) {
-    Timber.d(
-        getCurrentDomState().dump()
-            // To visualize zero-width spaces easily
-            .replace("\u200b", "~")
-    )
+    Timber.d(toExampleFormat())
 } else Unit
