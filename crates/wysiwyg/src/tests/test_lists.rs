@@ -409,6 +409,28 @@ fn backspacing_in_empty_list_then_creating_a_new_list() {
     assert_eq!(tx(&model), "<ul><li>~|</li></ul>");
 }
 
+#[test]
+fn toggle_list_then_type_text() {
+    let mut model = cm("|");
+    model.unordered_list();
+    model.unordered_list();
+    replace_text(&mut model, "A");
+    model.backspace();
+    model.unordered_list();
+    assert_eq!(tx(&model), "<ul><li>~|</li></ul>");
+}
+
+#[test]
+fn multiple_list_toggle() {
+    let mut model = cm("|");
+    model.ordered_list();
+    assert_eq!(tx(&model), "<ol><li>~|</li></ol>");
+    model.ordered_list();
+    assert_eq!(tx(&model), "|");
+    model.ordered_list();
+    assert_eq!(tx(&model), "<ol><li>~|</li></ol>");
+}
+
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
     model.replace_text(utf16(new_text));
 }
