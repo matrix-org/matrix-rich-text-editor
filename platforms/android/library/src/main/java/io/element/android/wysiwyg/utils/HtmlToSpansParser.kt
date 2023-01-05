@@ -164,7 +164,7 @@ internal class HtmlToSpansParser(
                 text.removeSpan(last)
 
                 if (start > 0) {
-                    if (text[start] == '\u200B') {
+                    if (text[start] == ZWSP) {
                         text.replace(start, start + 1, "\n")
                     } else {
                         text.insert(start, "\n")
@@ -177,7 +177,7 @@ internal class HtmlToSpansParser(
                     (10 * resourcesProvider.getDisplayMetrics().density).toInt()
                 )
 
-                addLineBreak(text.length, isExtra = true)
+                addZWSP(text.length, isExtra = true)
 
                 text.setSpan(codeSpan, start, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
             }
@@ -202,7 +202,7 @@ internal class HtmlToSpansParser(
                     margin = (10 * resourcesProvider.getDisplayMetrics().density).toInt(),
                 )
 
-                addLineBreak(text.length, isExtra = true)
+                addZWSP(text.length, isExtra = true)
 
                 text.setSpan(quoteSpan, start, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
             }
@@ -211,6 +211,13 @@ internal class HtmlToSpansParser(
 
     private fun addLineBreak(pos: Int, isExtra: Boolean) {
         text.insert(pos, "\n")
+        if (isExtra) {
+            text.setSpan(ExtraCharacterSpan(), pos, pos+1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+        }
+    }
+
+    private fun addZWSP(pos: Int, isExtra: Boolean) {
+        text.insert(pos, "$ZWSP")
         if (isExtra) {
             text.setSpan(ExtraCharacterSpan(), pos, pos+1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
         }
