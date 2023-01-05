@@ -4,6 +4,7 @@ import android.app.Application
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import androidx.test.core.app.ApplicationProvider
+import io.element.android.wysiwyg.fakes.fakeStyleConfig
 import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.test.utils.dumpSpans
@@ -26,7 +27,8 @@ class InterceptInputConnectionIntegrationTest {
             provideHtmlToSpansParser = { html ->
                 HtmlToSpansParser(
                     AndroidResourcesProvider(app),
-                    html
+                    html,
+                    fakeStyleConfig,
                 )
             },
         )
@@ -176,7 +178,7 @@ class InterceptInputConnectionIntegrationTest {
                     "${ZWSP}hello: android.widget.Editor.SpanController (0-6) fl=#18",
                     ": android.text.Selection.START (6-6) fl=#546",
                     ": android.text.Selection.END (6-6) fl=#34",
-                    "${ZWSP}hello: android.text.style.BulletSpan (0-6) fl=#33",
+                    "${ZWSP}hello: io.element.android.wysiwyg.spans.UnorderedListSpan (0-6) fl=#33",
                     "hello: android.text.style.UnderlineSpan (1-6) fl=#289",
                     "hello: android.view.inputmethod.ComposingText (1-6) fl=#289",
                 )
@@ -198,7 +200,7 @@ class InterceptInputConnectionIntegrationTest {
                     "${ZWSP}hello: android.widget.Editor.SpanController (0-6) fl=#18",
                     ": android.text.Selection.START (6-6) fl=#546",
                     ": android.text.Selection.END (6-6) fl=#34",
-                    "${ZWSP}hello: android.text.style.BulletSpan (0-6) fl=#33",
+                    "${ZWSP}hello: io.element.android.wysiwyg.spans.UnorderedListSpan (0-6) fl=#33",
                     "hello: android.text.style.UnderlineSpan (1-6) fl=#289",
                     "hello: android.view.inputmethod.ComposingText (1-6) fl=#289",
                 )
