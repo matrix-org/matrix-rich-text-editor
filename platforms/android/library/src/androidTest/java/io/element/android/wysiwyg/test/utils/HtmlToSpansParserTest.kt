@@ -1,8 +1,10 @@
 package io.element.android.wysiwyg.test.utils
 
+import android.app.Application
+import android.text.Spanned
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.element.android.wysiwyg.fakes.fakeStyleConfig
+import io.element.android.wysiwyg.fakes.createFakeStyleConfig
 import io.element.android.wysiwyg.utils.AndroidResourcesProvider
 import io.element.android.wysiwyg.utils.HtmlToSpansParser
 import io.element.android.wysiwyg.utils.ZWSP
@@ -96,10 +98,12 @@ class HtmlToSpansParserTest {
         )
     }
 
-    private fun convertHtml(html: String) =
-        HtmlToSpansParser(
-            resourcesProvider = AndroidResourcesProvider(application = ApplicationProvider.getApplicationContext()),
+    private fun convertHtml(html: String): Spanned {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        return HtmlToSpansParser(
+            resourcesProvider = AndroidResourcesProvider(application = app),
             html = html,
-            styleConfig = fakeStyleConfig,
+            styleConfig = createFakeStyleConfig(app),
         ).convert()
+    }
 }

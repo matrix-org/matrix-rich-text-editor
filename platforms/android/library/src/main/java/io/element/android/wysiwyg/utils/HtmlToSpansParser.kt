@@ -9,11 +9,8 @@ import android.text.style.UnderlineSpan
 import androidx.core.text.getSpans
 import io.element.android.wysiwyg.BuildConfig
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
-import io.element.android.wysiwyg.spans.ExtraCharacterSpan
-import io.element.android.wysiwyg.spans.InlineCodeSpan
+import io.element.android.wysiwyg.spans.*
 import io.element.android.wysiwyg.spans.LinkSpan
-import io.element.android.wysiwyg.spans.OrderedListSpan
-import io.element.android.wysiwyg.spans.UnorderedListSpan
 import org.ccil.cowan.tagsoup.Parser
 import org.xml.sax.Attributes
 import org.xml.sax.ContentHandler
@@ -153,13 +150,12 @@ internal class HtmlToSpansParser(
     }
 
     private fun handleFormatEndTag(format: InlineFormat) {
-        val span = when (format) {
+        val span: Any = when (format) {
             InlineFormat.Bold -> StyleSpan(Typeface.BOLD)
             InlineFormat.Italic -> StyleSpan(Typeface.ITALIC)
             InlineFormat.Underline -> UnderlineSpan()
             InlineFormat.StrikeThrough -> StrikethroughSpan()
-            InlineFormat.InlineCode ->
-                InlineCodeSpan(resourcesProvider.getColor(android.R.color.darker_gray))
+            InlineFormat.InlineCode -> InlineCodeSpan()
         }
         setSpanFromMark(format, span)
     }
