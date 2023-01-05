@@ -42,14 +42,10 @@ extension NSAttributedString {
     ///
     /// - Parameters:
     ///   - range: the range on which the elements should be detected. Entire range if omitted
-    ///   - shouldIgnoreTrailingNewline: whether newline at the end of a list item should be ignored
     /// - Returns: an array of matching ranges
-    func listPrefixesRanges(in range: NSRange? = nil,
-                            shouldIgnoreTrailingNewline: Bool = true) -> [NSRange] {
-        let numberedPrefixes = numberedListPrefixesRanges(in: range,
-                                                          shouldIgnoreTrailingNewline: shouldIgnoreTrailingNewline)
-        let bulletedPrefixes = bulletedListPrefixesRanges(in: range,
-                                                          shouldIgnoreTrailingNewline: shouldIgnoreTrailingNewline)
+    func listPrefixesRanges(in range: NSRange? = nil) -> [NSRange] {
+        let numberedPrefixes = numberedListPrefixesRanges(in: range)
+        let bulletedPrefixes = bulletedListPrefixesRanges(in: range)
 
         return (numberedPrefixes + bulletedPrefixes)
             .sorted(by: { $0.location < $1.location })
@@ -61,11 +57,9 @@ extension NSAttributedString {
     ///
     /// - Parameters:
     ///   - range: the range on which the elements should be detected. Entire range if omitted
-    ///   - shouldIgnoreTrailingNewline: whether newline at the end of a list item should be ignored
     /// - Returns: an array of matching ranges
-    func bulletedListPrefixesRanges(in range: NSRange? = nil,
-                                    shouldIgnoreTrailingNewline: Bool = true) -> [NSRange] {
-        let pattern = shouldIgnoreTrailingNewline ? "[\\n]?\\t•\\t" : "\\t•\\t"
+    func bulletedListPrefixesRanges(in range: NSRange? = nil) -> [NSRange] {
+        let pattern = "\\t•\\t"
         let actualRange = range ?? .init(location: 0, length: length)
         // swiftlint:disable:next force_try
         let regex = try! NSRegularExpression(pattern: pattern)
@@ -80,11 +74,9 @@ extension NSAttributedString {
     ///
     /// - Parameters:
     ///   - range: the range on which the elements should be detected. Entire range if omitted
-    ///   - shouldIgnoreTrailingNewline: whether newline at the end of a list item should be ignored
     /// - Returns: an array of matching ranges
-    func numberedListPrefixesRanges(in range: NSRange? = nil,
-                                    shouldIgnoreTrailingNewline: Bool = true) -> [NSRange] {
-        let pattern = shouldIgnoreTrailingNewline ? "[\\n]?\\t\\d+\\.\\t" : "\\t\\d\\.\\t"
+    func numberedListPrefixesRanges(in range: NSRange? = nil) -> [NSRange] {
+        let pattern = "\\t\\d+\\.\\t"
         let actualRange = range ?? .init(location: 0, length: length)
         // swiftlint:disable:next force_try
         let regex = try! NSRegularExpression(pattern: pattern)
@@ -100,17 +92,23 @@ extension NSAttributedString {
     ///
     /// - Parameters:
     ///   - attributedIndex: the index inside the attributed representation
-    ///   - shouldIgnoreTrailingNewline: whether newline at the end of a list item should be ignored
     /// - Returns: the index inside the HTML raw text
-    func htmlPosition(at attributedIndex: Int,
-                      shouldIgnoreTrailingNewline: Bool = true) throws -> Int {
+    func htmlPosition(at attributedIndex: Int) throws -> Int {
         guard attributedIndex <= length else {
             throw AttributedRangeError
                 .outOfBoundsAttributedIndex(index: attributedIndex)
         }
 
-        let prefixes = listPrefixesRanges(shouldIgnoreTrailingNewline: shouldIgnoreTrailingNewline)
+        let prefixes = listPrefixesRanges()
         var actualIndex: Int = attributedIndex
+        
+        guard actualIndex > 0 else {
+            return actualIndex
+        }
+        
+        if !prefixes.isEmpty {
+            actualIndex += 1
+        }
 
         for listPrefix in prefixes {
             if listPrefix.upperBound <= attributedIndex {
@@ -129,13 +127,19 @@ extension NSAttributedString {
     ///
     /// - Parameters:
     ///   - htmlIndex: the index inside the HTML raw text
-    ///   - shouldIgnoreTrailingNewline: whether newline at the end of a list item should be ignored
     /// - Returns: the index inside the attributed representation
-    func attributedPosition(at htmlIndex: Int,
-                            shouldIgnoreTrailingNewline: Bool = true) throws -> Int {
-        let prefixes = listPrefixesRanges(shouldIgnoreTrailingNewline: shouldIgnoreTrailingNewline)
+    func attributedPosition(at htmlIndex: Int) throws -> Int {
+        let prefixes = listPrefixesRanges()
         var actualIndex: Int = htmlIndex
-
+        
+        guard actualIndex > 0 else {
+            return actualIndex
+        }
+        
+        if !prefixes.isEmpty {
+            actualIndex -= 1
+        }
+        
         for listPrefix in prefixes {
             if listPrefix.location < actualIndex {
                 actualIndex += listPrefix.length
@@ -162,14 +166,10 @@ extension NSAttributedString {
     ///
     /// - Parameters:
     ///   - attributedRange: the range inside the attributed representation
-    ///   - shouldIgnoreTrailingNewline: whether newline at the end of a list item should be ignored
     /// - Returns: the range inside the HTML raw text
-    func htmlRange(from attributedRange: NSRange,
-                   shouldIgnoreTrailingNewline: Bool = true) throws -> NSRange {
-        let start = try htmlPosition(at: attributedRange.location,
-                                     shouldIgnoreTrailingNewline: shouldIgnoreTrailingNewline)
-        let end = try htmlPosition(at: attributedRange.upperBound,
-                                   shouldIgnoreTrailingNewline: shouldIgnoreTrailingNewline)
+    func htmlRange(from attributedRange: NSRange) throws -> NSRange {
+        let start = try htmlPosition(at: attributedRange.location)
+        let end = try htmlPosition(at: attributedRange.upperBound)
         return NSRange(location: start, length: end - start)
     }
 
@@ -178,14 +178,10 @@ extension NSAttributedString {
     ///
     /// - Parameters:
     ///   - htmlRange: the range inside the HTML raw text
-    ///   - shouldIgnoreTrailingNewline: whether newline at the end of a list item should be ignored
     /// - Returns: the range inside the attributed representation
-    func attributedRange(from htmlRange: NSRange,
-                         shouldIgnoreTrailingNewline: Bool = true) throws -> NSRange {
-        let start = try attributedPosition(at: htmlRange.location,
-                                           shouldIgnoreTrailingNewline: shouldIgnoreTrailingNewline)
-        let end = try attributedPosition(at: htmlRange.upperBound,
-                                         shouldIgnoreTrailingNewline: shouldIgnoreTrailingNewline)
+    func attributedRange(from htmlRange: NSRange) throws -> NSRange {
+        let start = try attributedPosition(at: htmlRange.location)
+        let end = try attributedPosition(at: htmlRange.upperBound)
         return NSRange(location: start, length: end - start)
     }
 }

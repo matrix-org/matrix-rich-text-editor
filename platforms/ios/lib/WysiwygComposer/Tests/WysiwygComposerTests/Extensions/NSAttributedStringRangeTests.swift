@@ -18,8 +18,10 @@
 import XCTest
 
 final class NSAttributedStringRangeTests: XCTestCase {
+    let zwsp = "\u{200B}"
+    
     func testAttributedNumberedLists() throws {
-        let html = "<ol><li>Item 1</li><li>Item 2</li></ol>Some Text"
+        let html = "<ol><li>\(zwsp)Item 1</li><li>\(zwsp)Item 2</li></ol>Some Text"
         let attributed = try NSAttributedString(html: html)
         // A textual representation of the numbered list is displayed
         XCTAssertEqual(attributed.string,
@@ -27,71 +29,73 @@ final class NSAttributedStringRangeTests: XCTestCase {
         // Ranges that are not part of the raw HTML text (excluding tags) are detected
         XCTAssertEqual(attributed.listPrefixesRanges(),
                        [NSRange(location: 0, length: 4),
-                        NSRange(location: 10, length: 5)])
+                        NSRange(location: 11, length: 4)])
         // Converting back and forth from HTML to attributed postions
-        XCTAssertEqual(try attributed.attributedPosition(at: 0), 4)
-        XCTAssertEqual(try attributed.attributedPosition(at: 7), 16)
-        XCTAssertEqual(try attributed.htmlPosition(at: 16), 7)
-        XCTAssertEqual(try attributed.htmlPosition(at: 4), 0)
+        XCTAssertEqual(try attributed.htmlPosition(at: 4), 1)
+        XCTAssertEqual(try attributed.attributedPosition(at: 1), 4)
+        XCTAssertEqual(try attributed.htmlPosition(at: 10), 7)
+        XCTAssertEqual(try attributed.attributedPosition(at: 7), 10)
+        XCTAssertEqual(try attributed.htmlPosition(at: 15), 8)
+        XCTAssertEqual(try attributed.attributedPosition(at: 8), 15)
 
         // Attributed index inside a prefix should return a valid index in the HTML raw text
-        XCTAssertEqual(attributed.character(at: 10), "\n")
-        XCTAssertEqual(try attributed.htmlPosition(at: 10), 6)
         XCTAssertEqual(attributed.character(at: 11), "\t")
-        XCTAssertEqual(try attributed.htmlPosition(at: 11), 6)
+        XCTAssertEqual(try attributed.htmlPosition(at: 11), 8)
+        XCTAssertEqual(attributed.character(at: 12), "2")
+        XCTAssertEqual(try attributed.htmlPosition(at: 12), 8)
 
         // Converting back and forth from HTML to attributed ranges
-        // Both expected range for "tem 1"
-        let htmlRange = NSRange(location: 1, length: 5)
-        let attributedRange = NSRange(location: 5, length: 5)
+        // Both expected range for "Item 1"
+        let htmlRange = NSRange(location: 1, length: 6)
+        let attributedRange = NSRange(location: 4, length: 6)
         XCTAssertEqual(try attributed.attributedRange(from: htmlRange),
                        attributedRange)
         XCTAssertEqual(try attributed.htmlRange(from: attributedRange),
                        htmlRange)
         XCTAssertEqual(attributed.attributedSubstring(from: attributedRange).string,
-                       "tem 1")
+                       "Item 1")
 
         // Cross list items range
         let crossHtmlRange = NSRange(location: 1, length: 8)
-        let crossAttributedRange = NSRange(location: 5, length: 13)
+        let crossAttributedRange = NSRange(location: 4, length: 12)
         XCTAssertEqual(try attributed.attributedRange(from: crossHtmlRange),
                        crossAttributedRange)
         XCTAssertEqual(try attributed.htmlRange(from: crossAttributedRange),
                        crossHtmlRange)
         XCTAssertEqual(attributed.attributedSubstring(from: crossAttributedRange).string,
-                       "tem 1\n\t2.\tIte")
+                       "Item 1\n\t2.\tI")
     }
 
     func testAttributedBulletedLists() throws {
-        let html = "<ul><li>Item 1</li><li>Item 2</li></ul>Some Text"
+        let html = "<ul><li>\(zwsp)Item 1</li><li>\(zwsp)Item 2</li></ul>Some Text"
         let attributed = try NSAttributedString(html: html)
         XCTAssertEqual(attributed.string,
                        "\t•\tItem 1\n\t•\tItem 2\nSome Text")
         XCTAssertEqual(attributed.listPrefixesRanges(),
                        [NSRange(location: 0, length: 3),
-                        NSRange(location: 9, length: 4)])
-        XCTAssertEqual(try attributed.attributedPosition(at: 0), 3)
-        XCTAssertEqual(try attributed.attributedPosition(at: 7), 14)
-        XCTAssertEqual(try attributed.htmlPosition(at: 14), 7)
-        XCTAssertEqual(try attributed.htmlPosition(at: 4), 1)
+                        NSRange(location: 10, length: 3)])
+        XCTAssertEqual(try attributed.attributedPosition(at: 1), 3)
+        XCTAssertEqual(try attributed.attributedPosition(at: 8), 13)
+        XCTAssertEqual(try attributed.htmlPosition(at: 13), 8)
+        XCTAssertEqual(try attributed.htmlPosition(at: 3), 1)
     }
 
     func testMultipleAttributedLists() throws {
-        let html = "<ol><li>Item 1</li><li>Item 2</li></ol><ul><li>Item 1</li><li>Item 2</li></ul>"
+        let html = "<ol><li>\(zwsp)Item 1</li><li>\(zwsp)Item 2</li></ol><ul><li>\(zwsp)Item 1</li><li>\(zwsp)Item 2</li></ul>"
         let attributed = try NSAttributedString(html: html)
         XCTAssertEqual(attributed.string,
                        "\t1.\tItem 1\n\t2.\tItem 2\n\t•\tItem 1\n\t•\tItem 2\n")
         XCTAssertEqual(attributed.listPrefixesRanges(),
                        [NSRange(location: 0, length: 4),
-                        NSRange(location: 10, length: 5),
-                        NSRange(location: 21, length: 4),
-                        NSRange(location: 31, length: 4)])
-        XCTAssertEqual(try attributed.attributedPosition(at: 14), 27)
-        XCTAssertEqual(try attributed.htmlPosition(at: 27), 14)
+                        NSRange(location: 11, length: 4),
+                        NSRange(location: 22, length: 3),
+                        NSRange(location: 32, length: 3)])
+        XCTAssertEqual(try attributed.attributedPosition(at: 14), 21)
+        XCTAssertEqual(try attributed.htmlPosition(at: 21), 14)
         XCTAssertEqual(try attributed.attributedRange(from: .init(location: 0, length: 12)),
-                       NSRange(location: 4, length: 17))
+                       NSRange(location: 0, length: 19))
         XCTAssertEqual(try attributed.htmlRange(from: .init(location: 4, length: 17)),
-                       NSRange(location: 0, length: 12))
+                       NSRange(location: 1, length: 13))
     }
 
     func testMultipleDigitsNumberedLists() throws {
