@@ -168,14 +168,8 @@ where
         slice.as_container_mut().unwrap().add_leading_zwsp();
         let list = self.lookup_node_mut(&handle.parent_handle());
         let DomNode::Container(list) = list else { panic!("List node is not a container") };
-        if slice.text_len() == 0 {
-            list.insert_child(
-                handle.index_in_parent() + 1,
-                DomNode::new_list_item(vec![DomNode::new_zwsp()]),
-            );
-        } else {
-            list.insert_child(handle.index_in_parent() + 1, slice);
-        }
+        list.insert_child(handle.index_in_parent() + 1, slice);
+        self.join_nodes_in_container(&handle.parent_handle());
     }
 }
 
