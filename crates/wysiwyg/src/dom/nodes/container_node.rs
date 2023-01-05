@@ -408,36 +408,34 @@ where
         // Note: handle might not be set in cases where we are transforming a node
         // that is detached from the DOM. In that case it's fine to transform it
         // without worrying about handles.
-        let handle_is_set = self.handle().is_set();
+        fn insert_zwsp<S>(container: &mut ContainerNode<S>)
+        where
+            S: UnicodeString,
+        {
+            if container.handle().is_set() {
+                container.insert_child(0, DomNode::new_zwsp());
+            } else {
+                container.children.insert(0, DomNode::new_zwsp());
+            }
+        }
+
         let Some(first_child) = self.children.get_mut(0) else {
-            return false;
+            insert_zwsp(self);
+            return true;
         };
         match first_child {
             DomNode::Container(c) => c.add_leading_zwsp(),
             DomNode::Zwsp(_) => false,
-            DomNode::Text(t) => {
-                match (handle_is_set, t.data().is_empty()) {
-                    (true, true) => {
-                        self.replace_child(0, vec![DomNode::new_zwsp()]);
-                    }
-                    (true, false) => {
-                        self.insert_child(0, DomNode::new_zwsp());
-                    }
-                    (false, true) => {
-                        self.children[0] = DomNode::new_zwsp();
-                    }
-                    (false, false) => {
-                        self.children.insert(0, DomNode::new_zwsp());
-                    }
+            DomNode::Text(t) if t.data().is_empty() => {
+                if self.handle().is_set() {
+                    self.replace_child(0, vec![DomNode::new_zwsp()]);
+                } else {
+                    self.children[0] = DomNode::new_zwsp();
                 }
                 true
             }
-            DomNode::LineBreak(_) => {
-                if handle_is_set {
-                    self.insert_child(0, DomNode::new_zwsp());
-                } else {
-                    self.children.insert(0, DomNode::new_zwsp());
-                }
+            DomNode::Text(_) | DomNode::LineBreak(_) => {
+                insert_zwsp(self);
                 true
             }
         }
@@ -452,7 +450,15 @@ where
             return false;
         };
         match first_child {
-            DomNode::Container(c) => c.remove_leading_zwsp(),
+            DomNode::Container(c) => {
+                // Remove the entire container if all it contains is the ZWSP.
+                if c.text_len() == 1 && c.has_leading_zwsp() {
+                    self.remove_child(0);
+                    true
+                } else {
+                    c.remove_leading_zwsp()
+                }
+            }
             DomNode::Zwsp(_) => {
                 // Note: handle might not be set in cases where we are transforming a node
                 // that is detached from the DOM. In that case it's fine to transform it

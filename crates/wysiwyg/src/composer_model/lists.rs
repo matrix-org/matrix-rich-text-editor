@@ -17,8 +17,6 @@ use std::collections::HashMap;
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::{ContainerNode, DomNode};
 use crate::dom::range::DomLocationPosition;
-use crate::dom::to_raw_text::ToRawText;
-use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, ListType, Location, UnicodeString};
 
@@ -89,24 +87,18 @@ where
     pub(crate) fn do_backspace_in_list(
         &mut self,
         parent_handle: &DomHandle,
-        location: usize,
     ) -> ComposerUpdate<S> {
         let parent_node = self.state.dom.lookup_node(parent_handle);
         let list_node_handle = parent_node.handle().parent_handle();
         if let DomNode::Container(parent) = parent_node {
             if parent.is_empty_list_item() {
-                // Store current Dom
-                self.push_state_to_history();
-                self.remove_list_item(
+                self.state.dom.extract_list_items(
                     &list_node_handle,
-                    location,
                     parent_handle.index_in_parent(),
-                    false,
+                    1,
                 );
-                self.create_update_replace_all()
-            } else {
-                self.do_backspace()
             }
+            self.do_backspace()
         } else {
             panic!("No list item found")
         }
@@ -133,7 +125,6 @@ where
     pub(crate) fn do_enter_in_list(
         &mut self,
         list_item_handle: &DomHandle,
-        current_cursor_global_location: usize,
         list_item_end_offset: usize,
     ) -> ComposerUpdate<S> {
         // Store current Dom
@@ -144,21 +135,19 @@ where
             if list_item_node.is_empty_list_item() {
                 // Pressing enter in an empty list item means you want to
                 // end the list.
-                self.remove_list_item(
+                self.state.dom.extract_list_items(
                     &list_handle,
-                    current_cursor_global_location,
                     list_item_handle.index_in_parent(),
-                    true,
+                    1,
                 );
             } else {
                 // Pressing enter in a non-empty list item splits this item
                 // into two.
-                self.slice_list_item(
-                    &list_handle,
-                    list_item_handle,
-                    current_cursor_global_location,
-                    list_item_end_offset,
-                );
+                self.state
+                    .dom
+                    .slice_list_item(list_item_handle, list_item_end_offset);
+                // Slicing always adds a single ZWSP.
+                self.increment_selection(1);
             }
             self.create_update_replace_all()
         } else {
@@ -287,73 +276,6 @@ where
             list.set_list_type(list_type);
         }
         self.create_update_replace_all()
-    }
-
-    fn slice_list_item(
-        &mut self,
-        list_handle: &DomHandle,
-        list_item_handle: &DomHandle,
-        location: usize,
-        list_item_end_offset: usize,
-    ) {
-        let list_item = self.state.dom.lookup_node_mut(list_item_handle);
-        let mut slice = list_item.slice_after(list_item_end_offset);
-        slice.as_container_mut().unwrap().add_leading_zwsp();
-        let list = self.state.dom.lookup_node_mut(list_handle);
-        let DomNode::Container(list) = list else { panic!("List node is not a container") };
-        if slice.text_len() == 0 {
-            list.insert_child(
-                list_item_handle.index_in_parent() + 1,
-                DomNode::new_list_item(vec![DomNode::new_zwsp()]),
-            );
-        } else {
-            list.insert_child(list_item_handle.index_in_parent() + 1, slice);
-        }
-        self.state.start = Location::from(location + 1);
-        self.state.end = Location::from(location + 1);
-    }
-
-    fn remove_list_item(
-        &mut self,
-        list_handle: &DomHandle,
-        current_cursor_global_location: usize,
-        li_index: usize,
-        insert_trailing_text_node: bool,
-    ) {
-        let list_node = self.state.dom.lookup_node_mut(list_handle);
-        if let DomNode::Container(list) = list_node {
-            let list_len = list.to_raw_text().len();
-            let li_len = list.children()[li_index].to_raw_text().len();
-            if list.children().len() == 1 {
-                // TODO: handle list items outside of lists
-                let parent = self.state.dom.parent_mut(list_handle);
-                parent.remove_child(list_handle.index_in_parent());
-                if parent.children().is_empty() {
-                    parent.append_child(DomNode::new_text(S::default()));
-                }
-                let new_location =
-                    Location::from(current_cursor_global_location - list_len);
-                self.state.start = new_location;
-                self.state.end = new_location;
-            } else {
-                list.remove_child(li_index);
-                if insert_trailing_text_node {
-                    let parent = self.state.dom.parent_mut(list_handle);
-                    // TODO: should probably append a paragraph instead
-                    parent.append_child(DomNode::new_zwsp());
-                    let new_location = Location::from(
-                        current_cursor_global_location - li_len + 1,
-                    );
-                    self.state.start = new_location;
-                    self.state.end = new_location;
-                } else {
-                    let new_location =
-                        Location::from(current_cursor_global_location - li_len);
-                    self.state.start = new_location;
-                    self.state.end = new_location;
-                }
-            }
-        }
     }
 
     pub(crate) fn can_indent_handle(&self, handle: &DomHandle) -> bool {

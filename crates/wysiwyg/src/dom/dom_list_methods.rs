@@ -152,6 +152,25 @@ where
         }
         self.join_nodes_in_container(&handle.parent_handle());
     }
+
+    /// Slice list item at given handle and offset. A ZWSP node
+    /// is added at the beginning of the created list item.
+    ///
+    /// * `handle` - the list item handle.
+    /// * `offset` - offset at which the list item should be sliced
+    pub(crate) fn slice_list_item(
+        &mut self,
+        handle: &DomHandle,
+        offset: usize,
+    ) {
+        let list_item = self.lookup_node_mut(handle);
+        let mut slice = list_item.slice_after(offset);
+        slice.as_container_mut().unwrap().add_leading_zwsp();
+        let list = self.lookup_node_mut(&handle.parent_handle());
+        let DomNode::Container(list) = list else { panic!("List node is not a container") };
+        list.insert_child(handle.index_in_parent() + 1, slice);
+        self.join_nodes_in_container(&handle.parent_handle());
+    }
 }
 
 #[cfg(test)]
@@ -352,6 +371,22 @@ mod test {
 
         dom.extract_list_items(&DomHandle::from_raw(vec![0]), 0, 3);
         assert_eq!(ds(&dom), "abc<br />def<br />ghi");
+    }
+
+    #[test]
+    fn slice_list_item() {
+        let mut dom = cm("<em>abcd</em>ef|").state.dom;
+        dom.wrap_nodes_in_list(
+            ListType::Ordered,
+            vec![&DomHandle::from_raw(vec![0]), &DomHandle::from_raw(vec![1])],
+        );
+        assert_eq!(ds(&dom), "<ol><li><em>~abcd</em>ef</li></ol>");
+
+        dom.slice_list_item(&DomHandle::from_raw(vec![0, 0]), 4);
+        assert_eq!(
+            ds(&dom),
+            "<ol><li><em>~abc</em></li><li><em>~d</em>ef</li></ol>"
+        );
     }
 
     #[test]

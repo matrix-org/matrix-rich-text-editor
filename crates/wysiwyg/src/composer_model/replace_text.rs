@@ -137,11 +137,8 @@ where
                             && l.kind == ListItem
                     })
                     .unwrap();
-                let current_cursor_global_location =
-                    leaf.position + leaf.start_offset;
                 self.do_enter_in_list(
                     &list_item.node_handle,
-                    current_cursor_global_location,
                     list_item.end_offset,
                 )
             }
