@@ -426,16 +426,16 @@ where
         match first_child {
             DomNode::Container(c) => c.add_leading_zwsp(),
             DomNode::Zwsp(_) => false,
-            DomNode::Text(t) if t.data().is_empty() => {
+            DomNode::Text(t) if !t.data().is_empty() => {
+                insert_zwsp(self);
+                true
+            }
+            DomNode::Text(_) | DomNode::LineBreak(_) => {
                 if self.handle().is_set() {
                     self.replace_child(0, vec![DomNode::new_zwsp()]);
                 } else {
                     self.children[0] = DomNode::new_zwsp();
                 }
-                true
-            }
-            DomNode::Text(_) | DomNode::LineBreak(_) => {
-                insert_zwsp(self);
                 true
             }
         }
@@ -495,7 +495,16 @@ where
     }
 
     /// Returns whether this container first text-like
-    /// child starts with a ZWSP.
+    /// child is a line break.
+    pub fn has_leading_line_break(&self) -> bool {
+        let Some(first_child) = self.children.get(0) else {
+            return false;
+        };
+        first_child.has_leading_line_break()
+    }
+
+    /// Returns whether this container first text-like
+    /// child is a ZWSP.
     pub fn has_leading_zwsp(&self) -> bool {
         let Some(first_child) = self.children.get(0) else {
             return false;

@@ -236,7 +236,18 @@ where
     }
 
     /// Returns whether this node, or it's first text-like
-    /// child starts with a ZWSP.
+    /// child is a line break.
+    pub fn has_leading_line_break(&self) -> bool {
+        match self {
+            DomNode::Container(c) => c.has_leading_line_break(),
+            DomNode::Text(_) => false,
+            DomNode::LineBreak(_) => true,
+            DomNode::Zwsp(_) => false,
+        }
+    }
+
+    /// Returns whether this node, or it's first text-like
+    /// child is a ZWSP.
     pub fn has_leading_zwsp(&self) -> bool {
         match self {
             DomNode::Container(c) => c.has_leading_zwsp(),

@@ -431,6 +431,16 @@ fn multiple_list_toggle() {
     assert_eq!(tx(&model), "<ol><li>~|</li></ol>");
 }
 
+#[test]
+fn new_list_after_linebreak() {
+    let mut model = cm("start|");
+    model.enter();
+    assert_eq!(tx(&model), "start<br />|");
+
+    model.unordered_list();
+    assert_eq!(tx(&model), "start<ul><li>~|</li></ul>");
+}
+
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
     model.replace_text(utf16(new_text));
 }

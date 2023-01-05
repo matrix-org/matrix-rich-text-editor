@@ -248,7 +248,10 @@ where
         // strictly after the first char of the range (or if we are creating a list from an
         // empty text node, in that case the first node text_len is 0). If a leading ZWSP
         // is already present, e.g. the node following another list both corrections are 0.
-        if first_node.has_leading_zwsp() {
+        // If a leading line break is present it's gonna be replaced by the first ZWSP, so the
+        // correction should be 0 too.
+        if first_node.has_leading_zwsp() || first_node.has_leading_line_break()
+        {
             start_correction = 0;
             end_correction = 0;
         } else {
