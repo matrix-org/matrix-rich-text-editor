@@ -41,7 +41,7 @@ import android.text.Spanned
  * @param drawableMid the drawable used to draw for whole line
  * @param drawableRight the drawable used to draw right edge of the background
  */
-class InlineBgHelper<T>(
+internal class InlineBgHelper<T>(
     private val spanType: Class<T>,
     val horizontalPadding: Int,
     val verticalPadding: Int,
@@ -50,6 +50,7 @@ class InlineBgHelper<T>(
     drawableMid: Drawable,
     drawableRight: Drawable,
 ) {
+    private var cache = mutableMapOf<SpanPosition, DrawPosition>()
 
     private val singleLineRenderer: InlineBgRenderer by lazy {
         SingleLineRenderer(
@@ -77,24 +78,62 @@ class InlineBgHelper<T>(
      * @param layout Layout that contains the text
      */
     fun draw(canvas: Canvas, text: Spanned, layout: Layout) {
-        // ideally the calculations here should be cached since they are not cheap. However, proper
-        // invalidation of the cache is required whenever anything related to text has changed.
-        val spans = text.getSpans(0, text.length, spanType)
-        spans.forEach { span ->
-            val spanStart = text.getSpanStart(span)
-            val spanEnd = text.getSpanEnd(span)
-            val startLine = layout.getLineForOffset(spanStart)
-            val endLine = layout.getLineForOffset(spanEnd)
+        val spanPositions = getSpanPositions(text)
+        val drawPositions = getOrCalculateDrawPositions(layout, spanPositions)
 
-            // start can be on the left or on the right depending on the language direction.
-            val startOffset = (layout.getPrimaryHorizontal(spanStart)
-                    + -1 * layout.getParagraphDirection(startLine) * horizontalPadding).toInt()
-            // end can be on the left or on the right depending on the language direction.
-            val endOffset = (layout.getPrimaryHorizontal(spanEnd)
-                    + layout.getParagraphDirection(endLine) * horizontalPadding).toInt()
-
-            val renderer = if (startLine == endLine) singleLineRenderer else multiLineRenderer
-            renderer.draw(canvas, layout, startLine, endLine, startOffset, endOffset)
+        drawPositions.forEach {
+            val renderer = if (it.startLine == it.endLine) singleLineRenderer else multiLineRenderer
+            renderer.draw(canvas, layout, it.startLine, it.endLine, it.startOffset, it.endOffset)
         }
     }
+
+    private fun getSpanPositions(text: Spanned): Set<SpanPosition> {
+        val spans = text.getSpans(0, text.length, spanType)
+        return spans.map { SpanPosition(text.getSpanStart(it), text.getSpanEnd(it)) }.toSet()
+    }
+
+    /**
+     * Calculate the positions at which to draw backgrounds if they are not already cached
+     */
+    private fun getOrCalculateDrawPositions(
+        layout: Layout,
+        spanPositions: Set<SpanPosition>
+    ): Collection<DrawPosition> {
+        // Remove old positions
+        cache = cache.filterKeys { spanPositions.contains(it) }.toMutableMap()
+
+        // Calculate draw positions for any new keys
+        spanPositions.forEach { spanPosition ->
+            cache.getOrPut(spanPosition) { calculateDrawPosition(layout, spanPosition) }
+        }
+
+        return cache.values
+    }
+
+    private fun calculateDrawPosition(layout: Layout, spanPosition: SpanPosition): DrawPosition {
+        val (spanStart, spanEnd) = spanPosition
+        val startLine = layout.getLineForOffset(spanStart)
+        val endLine = layout.getLineForOffset(spanEnd)
+
+        // start can be on the left or on the right depending on the language direction.
+        val startOffset = (layout.getPrimaryHorizontal(spanStart)
+                + -1 * layout.getParagraphDirection(startLine) * horizontalPadding).toInt()
+        // end can be on the left or on the right depending on the language direction.
+        val endOffset = (layout.getPrimaryHorizontal(spanEnd)
+                + layout.getParagraphDirection(endLine) * horizontalPadding).toInt()
+
+        return DrawPosition(startLine, endLine, startOffset, endOffset)
+    }
 }
+
+private data class SpanPosition(
+    val spanStart: Int,
+    val spanEnd: Int,
+)
+
+private data class DrawPosition(
+    val startLine: Int,
+    val endLine: Int,
+    val startOffset: Int,
+    val endOffset: Int,
+)
