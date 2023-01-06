@@ -147,7 +147,7 @@ where
                     .dom
                     .slice_list_item(list_item_handle, list_item_end_offset);
                 // Slicing always adds a single ZWSP.
-                self.increment_selection(1);
+                self.offset_selection(1);
             }
             self.create_update_replace_all()
         } else {
@@ -187,10 +187,10 @@ where
             // FIXME: Workaround for toggling list when only ZWSP is selected
             if leaves_without_zwsp.len() == 1 {
                 let handle = &leaves_without_zwsp[0].node_handle;
-                self.single_leave_list_toggle(list_type, handle)
+                self.single_leaf_list_toggle(list_type, handle)
             } else if leaves.len() == 1 {
                 let handle = &leaves[0].node_handle;
-                self.single_leave_list_toggle(list_type, handle)
+                self.single_leaf_list_toggle(list_type, handle)
             } else {
                 // TODO: handle cases where a list is already present in the extended selection.
                 panic!("Partially creating/removing list is not handled yet")
@@ -201,7 +201,7 @@ where
     }
 
     // FIXME: remove this function when toggle_list_range handles updating/removing
-    fn single_leave_list_toggle(
+    fn single_leaf_list_toggle(
         &mut self,
         list_type: ListType,
         handle: &DomHandle,
@@ -211,6 +211,13 @@ where
         if let Some(list_item_handle) = parent_list_item_handle {
             let list = self.state.dom.parent(&list_item_handle);
             if list.is_list_of_type(&list_type) {
+                if list.children().len() == 1 {
+                    // ZWSP is removed, selection should be decremented
+                    // In single leaf case, selection is always inside so
+                    // both start and end should be decremented.
+                    self.offset_selection(-1);
+                }
+
                 self.state.dom.extract_list_items(
                     &list_item_handle.parent_handle(),
                     list_item_handle.index_in_parent(),

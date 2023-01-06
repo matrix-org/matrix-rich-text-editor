@@ -14,7 +14,7 @@
 
 use widestring::Utf16String;
 
-use crate::tests::testutils_composer_model::{cm, tx};
+use crate::tests::testutils_composer_model::{cm, sel, tx};
 use crate::tests::testutils_conversion::utf16;
 
 use crate::ComposerModel;
@@ -439,6 +439,16 @@ fn new_list_after_linebreak() {
 
     model.unordered_list();
     assert_eq!(tx(&model), "start<ul><li>~|</li></ul>");
+}
+
+#[test]
+fn toggling_list_updates_selection() {
+    let mut model = cm("Test|");
+    assert_eq!(model.get_selection(), sel(4, 4));
+    model.ordered_list();
+    assert_eq!(model.get_selection(), sel(5, 5));
+    model.ordered_list();
+    assert_eq!(model.get_selection(), sel(4, 4));
 }
 
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
