@@ -77,8 +77,8 @@ where
         s == e
     }
 
-    /// Increment both the start and the end of the selection by given isize.
-    pub(crate) fn increment_selection(&mut self, rhs: isize) {
+    /// Offset both the start and the end of the selection by given isize.
+    pub(crate) fn offset_selection(&mut self, rhs: isize) {
         self.state.start.add_assign(rhs);
         self.state.end.add_assign(rhs);
     }

@@ -14,7 +14,7 @@
 
 use widestring::Utf16String;
 
-use crate::ComposerModel;
+use crate::{ComposerModel, Location};
 
 /// Short wrapper around [ComposerModel::from_example_format].
 pub fn cm(text: &str) -> ComposerModel<Utf16String> {
@@ -24,6 +24,10 @@ pub fn cm(text: &str) -> ComposerModel<Utf16String> {
 /// Short wrapper around [ComposerModel::to_example_format].
 pub fn tx(model: &ComposerModel<Utf16String>) -> String {
     model.to_example_format()
+}
+
+pub(crate) fn sel(start: usize, end: usize) -> (Location, Location) {
+    (Location::from(start), Location::from(end))
 }
 
 pub(crate) fn restore_whitespace(text: &str) -> String {
