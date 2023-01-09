@@ -769,21 +769,7 @@ where
         let parent = self.parent(&handle);
         let child_count = parent.children().len();
 
-        if node.handle().index_in_parent() + 1 == child_count {
-            let mut cur = parent;
-            while !cur.is_block_node() {
-                cur = self.parent(&parent.handle());
-            }
-            if cur.handle().is_root() {
-                // No ancestor is block node, this one must add a line break
-                true
-            } else {
-                // Some ancestor was a block node, that one will add the line break
-                false
-            }
-        } else {
-            true
-        }
+        node.handle().index_in_parent() + 1 < child_count
     }
 }
 

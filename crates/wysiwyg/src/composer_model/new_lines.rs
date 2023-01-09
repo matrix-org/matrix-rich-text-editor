@@ -149,27 +149,20 @@ mod test {
     }
 
     #[test]
-    fn adds_line_break_with_single_paragraph_returns_true() {
-        let model = cm("<p>|A</p>");
-        assert!(model
-            .state
-            .dom
-            .adds_line_break(&DomHandle::from_raw(vec![0])));
+    fn adds_line_break_with_simple_paragraphs() {
+        let model = cm("<p>|A</p><p>test</p>");
+        let dom = model.state.dom;
+        assert!(dom.adds_line_break(&DomHandle::from_raw(vec![0])));
+        assert!(!dom.adds_line_break(&DomHandle::from_raw(vec![1])));
     }
 
     #[test]
-    fn adds_line_break_with_nested_paragraph_returns_false() {
-        let model = cm("<blockquote><p>|A</p></blockquote>");
-        // The paragraph won't add the extra line break
-        assert!(model
-            .state
-            .dom
-            .adds_line_break(&DomHandle::from_raw(vec![0, 0]))
-            .not());
-        // The quote will add the extra line break
-        assert!(model
-            .state
-            .dom
-            .adds_line_break(&DomHandle::from_raw(vec![0])));
+    fn adds_line_break_with_nested_block_nodes() {
+        let model = cm("<blockquote><p>|A</p></blockquote><p>test</p>");
+        let dom = model.state.dom;
+        // The internal paragraph won't add the extra line break as it's the last child
+        assert!(!dom.adds_line_break(&DomHandle::from_raw(vec![0, 0])));
+        // The quote will add the extra line break since it has a sibling node
+        assert!(dom.adds_line_break(&DomHandle::from_raw(vec![0])));
     }
 }
