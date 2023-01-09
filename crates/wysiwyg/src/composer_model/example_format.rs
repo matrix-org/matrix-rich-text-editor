@@ -15,15 +15,18 @@
 use std::collections::HashMap;
 use std::ops::Not;
 
-use widestring::Utf16String;
+use widestring::ustr::CharsUtf16;
+use widestring::{Utf16Str, Utf16String};
 
 use crate::char::CharExt;
 use crate::composer_model::menu_state::MenuStateComputeType;
 use crate::dom::nodes::{ContainerNode, LineBreakNode, TextNode, ZwspNode};
 use crate::dom::parser::parse;
-use crate::dom::unicode_string::UnicodeStrExt;
+use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
 use crate::dom::DomLocation;
-use crate::{ComposerModel, DomHandle, Location, ToHtml, UnicodeString};
+use crate::{
+    ComposerModel, DomHandle, DomNode, Location, ToHtml, UnicodeString,
+};
 
 impl ComposerModel<Utf16String> {
     /// Convenience function to allow working with ComposerModel instances
@@ -81,45 +84,106 @@ impl ComposerModel<Utf16String> {
     /// ```
     pub fn from_example_format(text: &str) -> Self {
         let text = text.replace('~', &char::zwsp().to_string());
-        let text_u16 = Utf16String::from_str(&text).into_vec();
 
-        let curs = find_char(&text_u16, "|").unwrap_or_else(|| {
-            panic!(
-                "ComposerModel text did not contain a '|' symbol: '{}'",
-                String::from_utf16(&text_u16)
-                    .expect("ComposerModel text was not UTF-16")
-            )
-        });
-
-        let s = find_char(&text_u16, "{");
-        let e = find_char(&text_u16, "}");
+        let mut curs = None;
+        let mut start = None;
+        let mut end = None;
 
         let mut model = ComposerModel::new();
         model.state.dom = parse(&text).unwrap();
 
+        let mut offset = 0;
+        let mut needs_add_line_break = false;
+        for node in model.state.dom.iter() {
+            match node {
+                DomNode::Container(container) => {
+                    if model.state.dom.adds_line_break(&container.handle()) {
+                        needs_add_line_break = true;
+                        continue;
+                    }
+                }
+                DomNode::Text(text_node) => {
+                    let start_pos = offset;
+                    let data: &Utf16Str = text_node.data();
+                    for ch in data.chars() {
+                        if ch == '{' {
+                            start = Some(SelectionLocation::new(
+                                node.handle(),
+                                start_pos,
+                                offset - start_pos,
+                            ));
+                        } else if ch == '}' {
+                            end = Some(SelectionLocation::new(
+                                node.handle(),
+                                start_pos,
+                                offset - start_pos,
+                            ));
+                        } else if ch == '|' {
+                            curs = Some(SelectionLocation::new(
+                                node.handle(),
+                                start_pos,
+                                offset - start_pos,
+                            ));
+                        }
+                        offset += data.char_len(&ch);
+                    }
+                }
+                _ => {
+                    offset += node.text_len();
+                }
+            }
+            if needs_add_line_break
+                && model.state.dom.is_last_in_parent(&node.handle())
+                && !node.is_container_node()
+            {
+                needs_add_line_break = false;
+                offset += 1;
+            }
+        }
+        assert!(!needs_add_line_break);
+        let Some(curs) = curs else {
+            panic!("Selection not found");
+        };
+
         fn delete_range(
             model: &mut ComposerModel<Utf16String>,
-            p1: usize,
-            p2: usize,
+            loc: &SelectionLocation,
+            len: usize,
         ) {
-            model.do_replace_text_in(Utf16String::new(), p1, p2);
+            let mut needs_deletion = false;
+            if let DomNode::Text(text_node) =
+                model.state.dom.lookup_node_mut(&loc.handle)
+            {
+                if text_node.data().len() == len {
+                    needs_deletion = true;
+                } else {
+                    text_node.replace_range(
+                        Utf16String::new(),
+                        loc.offset,
+                        loc.offset + len,
+                    );
+                }
+            }
+            if needs_deletion {
+                model.state.dom.remove(&loc.handle);
+            }
         }
 
-        if let (Some(s), Some(e)) = (s, e) {
-            if curs == e + 1 {
+        if let (Some(s), Some(e)) = (start, end) {
+            if curs.index_in_dom() == e.index_in_dom() + 1 {
                 // Cursor after end: foo{bar}|baz
                 // The { made an extra codeunit - move the end back 1
-                delete_range(&mut model, s, s + 1);
-                delete_range(&mut model, e - 1, e + 1);
-                model.state.start = Location::from(s);
-                model.state.end = Location::from(e - 1);
-            } else if curs == s - 1 {
+                delete_range(&mut model, &e, 2);
+                delete_range(&mut model, &s, 1);
+                model.state.start = Location::from(s.index_in_dom());
+                model.state.end = Location::from(e.index_in_dom() - 1);
+            } else if curs.index_in_dom() + 1 == s.index_in_dom() {
                 // Cursor before beginning: foo|{bar}baz
                 // The |{ made an extra 2 codeunits - move the end back 2
-                delete_range(&mut model, s - 1, s + 1);
-                delete_range(&mut model, e - 2, e - 1);
-                model.state.start = Location::from(e - 2);
-                model.state.end = Location::from(curs);
+                delete_range(&mut model, &e, 1);
+                delete_range(&mut model, &curs, 2);
+                model.state.start = Location::from(e.index_in_dom() - 2);
+                model.state.end = Location::from(curs.index_in_dom());
             } else {
                 panic!(
                     "The cursor ('|') must always be directly before or after \
@@ -128,9 +192,9 @@ impl ComposerModel<Utf16String> {
                 );
             }
         } else {
-            delete_range(&mut model, curs, curs + 1);
-            model.state.start = Location::from(curs);
-            model.state.end = Location::from(curs);
+            delete_range(&mut model, &curs, 1);
+            model.state.start = Location::from(curs.index_in_dom());
+            model.state.end = Location::from(curs.index_in_dom());
         }
         model.compute_menu_state(MenuStateComputeType::KeepIfUnchanged);
         model.state.dom.explicitly_assert_invariants();
@@ -181,6 +245,26 @@ impl ComposerModel<Utf16String> {
 
         // Replace characters with visible ones
         html.replace(char::zwsp(), "~").replace('\u{A0}', "&nbsp;")
+    }
+}
+
+struct SelectionLocation {
+    handle: DomHandle,
+    pos: usize,
+    offset: usize,
+}
+
+impl SelectionLocation {
+    fn new(handle: DomHandle, pos: usize, offset: usize) -> Self {
+        Self {
+            handle,
+            pos,
+            offset,
+        }
+    }
+
+    fn index_in_dom(&self) -> usize {
+        self.pos + self.offset
     }
 }
 
@@ -260,76 +344,6 @@ fn utf16_code_unit(s: &str) -> u16 {
     ret.push_str(s);
     assert_eq!(ret.len(), 1);
     ret.into_vec()[0]
-}
-
-/// Find a single utf16 code unit (needle) in haystack
-fn find_char(haystack: &[u16], needle: &str) -> Option<usize> {
-    let mut skip_count = 0; // How many tag characters we have seen
-    let mut in_tag = false; // Are we in a tag now?
-
-    // Track the contents of the tag we are inside, so we know whether we've
-    // seen a br tag.
-    let mut tag_contents: Vec<u16> = Vec::new();
-    let mut parent_tag_contents: Vec<u16> = Vec::new();
-    let mut pos_from_close_tag = 0;
-    let mut is_closing_tag = false;
-
-    let needle = utf16_code_unit(needle);
-    let open = utf16_code_unit("<");
-    let close = utf16_code_unit(">");
-    let space = utf16_code_unit(" ");
-    let forward_slash = utf16_code_unit("/");
-    let line_break = utf16_code_unit("\n");
-
-    let br_tag = Utf16String::from_str("br").into_vec();
-    let pre_tag = Utf16String::from_str("pre").into_vec();
-    let p_tag = Utf16String::from_str("p").into_vec();
-
-    for (i, &ch) in haystack.iter().enumerate() {
-        if ch == needle {
-            return Some(i - skip_count);
-        } else if ch == open {
-            in_tag = true;
-        } else if ch == close {
-            // Skip this character (>), unless we've found a br tag, in which
-            // case the whole tag will be worth 1 code unit, so we don't
-            // increase skip count.
-            if tag_contents != br_tag {
-                skip_count += 1;
-            }
-            // TODO: apply to all block nodes
-            if is_closing_tag && tag_contents == p_tag {
-                skip_count -= 1;
-            }
-            in_tag = false;
-            pos_from_close_tag = 0;
-            parent_tag_contents = tag_contents.clone();
-            tag_contents.clear();
-            is_closing_tag = false;
-        } else {
-            if pos_from_close_tag == 0
-                && parent_tag_contents == pre_tag
-                && ch == line_break
-            {
-                skip_count += 1;
-            }
-
-            pos_from_close_tag += 1;
-        }
-        if in_tag {
-            skip_count += 1;
-
-            // Track what's inside this tag, but ignore spaces and slashes
-            if !(ch == open || ch == space || ch == forward_slash) {
-                tag_contents.push(ch);
-            }
-
-            if ch == forward_slash {
-                is_closing_tag = true;
-            }
-        }
-    }
-    None
 }
 
 #[derive(Debug)]

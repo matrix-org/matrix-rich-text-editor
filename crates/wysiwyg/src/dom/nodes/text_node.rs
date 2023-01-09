@@ -64,6 +64,13 @@ where
         self.data = data;
     }
 
+    pub fn replace_range(&mut self, data: S, start: usize, end: usize) {
+        let mut new_data = self.data[..start].to_owned();
+        new_data.push(data);
+        new_data.push(self.data[end..].to_owned());
+        self.data = new_data;
+    }
+
     pub fn handle(&self) -> DomHandle {
         self.handle.clone()
     }

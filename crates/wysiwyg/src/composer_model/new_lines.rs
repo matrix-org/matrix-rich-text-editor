@@ -149,6 +149,12 @@ mod test {
     }
 
     #[test]
+    fn selection_in_paragraphs_roundtrips_2() {
+        let model = cm("<blockquote><p>A</p><p>|B</p></blockquote>");
+        assert_eq!(tx(&model), "<blockquote><p>A</p><p>|B</p></blockquote>");
+    }
+
+    #[test]
     fn adds_line_break_with_simple_paragraphs() {
         let model = cm("<p>|A</p><p>test</p>");
         let dom = model.state.dom;
