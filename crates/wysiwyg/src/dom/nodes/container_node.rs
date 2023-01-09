@@ -50,6 +50,7 @@ where
     ListItem,
     CodeBlock,
     Quote,
+    Paragraph,
 }
 
 impl<S: dom::unicode_string::UnicodeString> Default for ContainerNode<S> {
@@ -85,6 +86,16 @@ where
             name,
             kind,
             attrs,
+            children,
+            handle: DomHandle::new_unset(),
+        }
+    }
+
+    pub fn new_paragraph(children: Vec<DomNode<S>>) -> Self {
+        Self {
+            name: "p".into(),
+            kind: ContainerNodeKind::Paragraph,
+            attrs: None,
             children,
             handle: DomHandle::new_unset(),
         }
@@ -809,6 +820,10 @@ where
             Quote => {
                 fmt_quote(self, buffer, &options)?;
             }
+
+            Paragraph => {
+                fmt_paragraph(self, buffer, &options)?;
+            }
         };
 
         return Ok(());
@@ -1147,6 +1162,22 @@ where
 
         #[inline(always)]
         fn fmt_quote<S>(
+            this: &ContainerNode<S>,
+            buffer: &mut S,
+            options: &MarkdownOptions,
+        ) -> Result<(), MarkdownError<S>>
+        where
+            S: UnicodeString,
+        {
+            buffer.push("> ");
+            fmt_children(this, buffer, options)?;
+            buffer.push("\n");
+
+            Ok(())
+        }
+
+        #[inline(always)]
+        fn fmt_paragraph<S>(
             this: &ContainerNode<S>,
             buffer: &mut S,
             options: &MarkdownOptions,

@@ -144,6 +144,14 @@ mod sys {
             DomNode::Container(ContainerNode::new_quote(Vec::new()))
         }
 
+        /// Create a paragraph
+        fn new_paragraph<S>() -> DomNode<S>
+        where
+            S: UnicodeString,
+        {
+            DomNode::Container(ContainerNode::new_paragraph(Vec::new()))
+        }
+
         /// Copy all panode's information into node (now we know it's a container).
         fn convert_container<S>(
             padom: &PaDom,
@@ -185,6 +193,10 @@ mod sys {
                     // Skip the html tag - add its children to the
                     // current node directly.
                     convert(padom, child, node);
+                }
+                "p" => {
+                    node.append_child(new_paragraph());
+                    convert_children(padom, child, node.last_child_mut());
                 }
                 _ => {
                     // Ignore tags we don't recognise
@@ -331,6 +343,11 @@ mod sys {
         fn parse_quote() {
             assert_that!("foo <blockquote>~A quote</blockquote> bar")
                 .roundtrips();
+        }
+
+        #[test]
+        fn parse_paragraph() {
+            assert_that!("foo <p>A paragraph</p> bar").roundtrips();
         }
     }
 }

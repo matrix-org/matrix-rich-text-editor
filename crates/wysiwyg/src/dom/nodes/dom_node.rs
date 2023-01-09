@@ -98,6 +98,10 @@ where
         DomNode::Container(ContainerNode::new_quote(children))
     }
 
+    pub fn new_paragraph(children: Vec<DomNode<S>>) -> DomNode<S> {
+        DomNode::Container(ContainerNode::new_paragraph(children))
+    }
+
     pub fn handle(&self) -> DomHandle {
         match self {
             DomNode::Container(n) => n.handle(),
@@ -444,6 +448,7 @@ pub enum DomNodeKind {
     CodeBlock,
     Quote,
     Zwsp,
+    Paragraph,
 }
 
 impl DomNodeKind {
@@ -460,6 +465,7 @@ impl DomNodeKind {
             ContainerNodeKind::Generic => DomNodeKind::Generic,
             ContainerNodeKind::CodeBlock => DomNodeKind::CodeBlock,
             ContainerNodeKind::Quote => DomNodeKind::Quote,
+            ContainerNodeKind::Paragraph => DomNodeKind::Paragraph,
         }
     }
 
@@ -470,7 +476,11 @@ impl DomNodeKind {
     pub fn is_block_kind(&self) -> bool {
         matches!(
             self,
-            Self::Generic | Self::List | Self::CodeBlock | Self::Quote
+            Self::Generic
+                | Self::List
+                | Self::CodeBlock
+                | Self::Quote
+                | Self::Paragraph
         )
     }
 }
