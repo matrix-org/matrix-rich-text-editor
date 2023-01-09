@@ -164,15 +164,6 @@ internal class HtmlToSpansParser(
                 val start = addLeadingLineBreakIfNeeded(text.getSpanStart(last))
                 text.removeSpan(last)
 
-                if (start > 0) {
-                    if (text[start] == ZWSP) {
-                        text.replace(start, start + 1, "\n")
-                    } else {
-                        text.insert(start, "\n")
-                    }
-                    start++
-                }
-
                 val codeSpan = CodeBlockSpan(
                     0xC0A0A0A0.toInt(),
                     10.dpToPx().toInt(),
@@ -186,15 +177,6 @@ internal class HtmlToSpansParser(
                 val last = getLast<Quote>() ?: return
                 val start = addLeadingLineBreakIfNeeded(text.getSpanStart(last))
                 text.removeSpan(last)
-
-                if (start > 0) {
-                    if (text[start] == '\u200B') {
-                        text.replace(start, start + 1, "\n")
-                    } else {
-                        text.insert(start, "\n")
-                    }
-                    start++
-                }
 
                 val quoteSpan = QuoteSpan(
                     indicatorColor = 0xC0A0A0A0.toInt(),
