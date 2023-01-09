@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use crate::dom::nodes::dom_node::DomNodeKind;
+use crate::dom::nodes::ContainerNodeKind::Paragraph;
 use crate::dom::nodes::{ContainerNode, DomNode, LineBreakNode, TextNode};
 use crate::dom::range::DomLocation;
 use crate::dom::unicode_string::UnicodeStrExt;
@@ -140,7 +141,12 @@ where
         }
     }
     // If container node is completely selected, include it
-    let container_end = *offset;
+    let mut container_end = *offset;
+    // TODO: change it to checking if node is block node
+    if matches!(node.kind(), Paragraph) {
+        container_end += 1;
+        *offset = container_end;
+    }
     let container_node_len = container_end - container_start;
     // We never want to return the root node
     if container_end >= start

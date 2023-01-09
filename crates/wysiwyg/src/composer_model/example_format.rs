@@ -19,7 +19,7 @@ use widestring::Utf16String;
 
 use crate::char::CharExt;
 use crate::composer_model::menu_state::MenuStateComputeType;
-use crate::dom::nodes::{LineBreakNode, TextNode, ZwspNode};
+use crate::dom::nodes::{ContainerNode, LineBreakNode, TextNode, ZwspNode};
 use crate::dom::parser::parse;
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::DomLocation;
@@ -163,8 +163,8 @@ impl ComposerModel<Utf16String> {
             doc_length,
         );
         let locations = range
-            .leaves()
-            .into_iter()
+            .locations
+            .iter()
             .map(|l| (l.node_handle.clone(), l.clone()))
             .collect();
         let mut selection_writer = SelectionWriter { state, locations };
@@ -234,6 +234,20 @@ impl SelectionWriter {
         }
     }
 
+    pub fn write_selection_block_node<S: UnicodeString>(
+        &mut self,
+        buf: &mut S,
+        pos: usize,
+        node: &ContainerNode<S>,
+    ) {
+        if let Some(loc) = self.locations.get(&node.handle()) {
+            let strings_to_add = self.state.advance(loc, 1);
+            for (str, i) in strings_to_add.into_iter().rev() {
+                buf.insert(pos + i, &S::from(str));
+            }
+        }
+    }
+
     pub fn is_selection_written(&self) -> bool {
         self.state.done_first
     }
@@ -258,6 +272,7 @@ fn find_char(haystack: &[u16], needle: &str) -> Option<usize> {
     let mut tag_contents: Vec<u16> = Vec::new();
     let mut parent_tag_contents: Vec<u16> = Vec::new();
     let mut pos_from_close_tag = 0;
+    let mut is_closing_tag = false;
 
     let needle = utf16_code_unit(needle);
     let open = utf16_code_unit("<");
@@ -268,6 +283,7 @@ fn find_char(haystack: &[u16], needle: &str) -> Option<usize> {
 
     let br_tag = Utf16String::from_str("br").into_vec();
     let pre_tag = Utf16String::from_str("pre").into_vec();
+    let p_tag = Utf16String::from_str("p").into_vec();
 
     for (i, &ch) in haystack.iter().enumerate() {
         if ch == needle {
@@ -281,10 +297,15 @@ fn find_char(haystack: &[u16], needle: &str) -> Option<usize> {
             if tag_contents != br_tag {
                 skip_count += 1;
             }
+            // TODO: apply to all block nodes
+            if is_closing_tag && tag_contents == p_tag {
+                skip_count -= 1;
+            }
             in_tag = false;
             pos_from_close_tag = 0;
             parent_tag_contents = tag_contents.clone();
             tag_contents.clear();
+            is_closing_tag = false;
         } else {
             if pos_from_close_tag == 0
                 && parent_tag_contents == pre_tag
@@ -292,6 +313,7 @@ fn find_char(haystack: &[u16], needle: &str) -> Option<usize> {
             {
                 skip_count += 1;
             }
+
             pos_from_close_tag += 1;
         }
         if in_tag {
@@ -300,6 +322,10 @@ fn find_char(haystack: &[u16], needle: &str) -> Option<usize> {
             // Track what's inside this tag, but ignore spaces and slashes
             if !(ch == open || ch == space || ch == forward_slash) {
                 tag_contents.push(ch);
+            }
+
+            if ch == forward_slash {
+                is_closing_tag = true;
             }
         }
     }

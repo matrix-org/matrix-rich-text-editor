@@ -104,12 +104,14 @@ where
 mod test {
     use crate::dom::nodes::dom_node::DomNodeKind;
     use crate::tests::testutils_composer_model::{cm, tx};
+    use crate::DomHandle;
+    use std::ops::Not;
 
     #[test]
     fn test_new_line_in_plain_text() {
         let mut model = cm("Test| lines");
         model.new_line();
-        assert_eq!(tx(&model), "<p>Test</p><p> |lines</p>");
+        assert_eq!(tx(&model), "<p>Test</p><p>| lines</p>");
     }
 
     #[test]
@@ -130,13 +132,44 @@ mod test {
     fn test_new_line_in_formatted_text() {
         let mut model = cm("<b>Test| lines</b>");
         model.new_line();
-        assert_eq!(tx(&model), "<p><b>Test</b></p><p><b> |lines</b></p>");
+        assert_eq!(tx(&model), "<p><b>Test</b></p><p><b>| lines</b></p>");
     }
 
     #[test]
     fn test_new_line_in_paragraph() {
         let mut model = cm("<p>Test| lines</p>");
         model.new_line();
-        assert_eq!(tx(&model), "<p>Test</p><p> |lines</p>");
+        assert_eq!(tx(&model), "<p>Test</p><p>| lines</p>");
+    }
+
+    #[test]
+    fn selection_in_paragraphs_roundtrips() {
+        let model = cm("<p>A</p><p>|B</p>");
+        assert_eq!(tx(&model), "<p>A</p><p>|B</p>");
+    }
+
+    #[test]
+    fn adds_line_break_with_single_paragraph_returns_true() {
+        let model = cm("<p>|A</p>");
+        assert!(model
+            .state
+            .dom
+            .adds_line_break(&DomHandle::from_raw(vec![0])));
+    }
+
+    #[test]
+    fn adds_line_break_with_nested_paragraph_returns_false() {
+        let model = cm("<blockquote><p>|A</p></blockquote>");
+        // The paragraph won't add the extra line break
+        assert!(model
+            .state
+            .dom
+            .adds_line_break(&DomHandle::from_raw(vec![0, 0]))
+            .not());
+        // The quote will add the extra line break
+        assert!(model
+            .state
+            .dom
+            .adds_line_break(&DomHandle::from_raw(vec![0])));
     }
 }

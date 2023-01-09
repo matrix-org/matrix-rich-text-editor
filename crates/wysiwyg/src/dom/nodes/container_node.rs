@@ -698,6 +698,9 @@ where
         }
 
         if let Some(w) = selection_writer {
+            if self.is_block_node() && self.is_empty() {
+                w.write_selection_block_node(formatter, formatter.len(), &self)
+            }
             for (i, child) in self.children.iter().enumerate() {
                 let is_last = self.children().len() == i + 1;
                 child.fmt_html(formatter, Some(w), is_last);

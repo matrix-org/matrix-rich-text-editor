@@ -758,6 +758,33 @@ where
             }
         }
     }
+
+    pub fn adds_line_break(&self, handle: &DomHandle) -> bool {
+        let node = self.lookup_node(&handle);
+        let is_block_node = node.is_block_node();
+        if !is_block_node || handle.is_root() {
+            return false;
+        }
+
+        let parent = self.parent(&handle);
+        let child_count = parent.children().len();
+
+        if node.handle().index_in_parent() + 1 == child_count {
+            let mut cur = parent;
+            while !cur.is_block_node() {
+                cur = self.parent(&parent.handle());
+            }
+            if cur.handle().is_root() {
+                // No ancestor is block node, this one must add a line break
+                true
+            } else {
+                // Some ancestor was a block node, that one will add the line break
+                false
+            }
+        } else {
+            true
+        }
+    }
 }
 
 /// Look at the children of parent at index and index + 1. If they are both
