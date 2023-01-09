@@ -19,6 +19,7 @@ import Foundation
 import OSLog
 import UIKit
 
+// swiftlint:disable file_length
 /// Main view model for the composer. Forwards actions to the Rust model and publishes resulting states.
 public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, ObservableObject {
     // MARK: - Public
