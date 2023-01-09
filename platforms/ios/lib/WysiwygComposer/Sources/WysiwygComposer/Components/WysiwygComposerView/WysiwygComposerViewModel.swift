@@ -79,6 +79,16 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
             updateTextView()
         }
     }
+
+    /// The color that will be used for the background of quotes
+    public var quoteBackgroundColor: UIColor {
+        didSet {
+            // In case of a color change, this will refresh the attributed text
+            let update = model.setContentFromHtml(html: content.html)
+            applyUpdate(update)
+            updateTextView()
+        }
+    }
     
     /// The current max allowed height for the textView when maximised
     public var maxExpandedHeight: CGFloat {
@@ -128,13 +138,16 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
                 maxExpandedHeight: CGFloat = 300,
                 textColor: UIColor = .label,
                 linkColor: UIColor = .link,
-                codeBackgroundColor: UIColor = .systemGray5) {
+                codeBackgroundColor: UIColor = .systemGray5,
+                quoteBackgroundColor: UIColor = .systemGray4) {
         self.minHeight = minHeight
         self.maxCompressedHeight = maxCompressedHeight
         self.maxExpandedHeight = maxExpandedHeight
         self.textColor = textColor
         self.linkColor = linkColor
         self.codeBackgroundColor = codeBackgroundColor
+        self.quoteBackgroundColor = quoteBackgroundColor
+
         textView.linkTextAttributes[.foregroundColor] = linkColor
         model = newComposerModel()
         // Publish composer empty state.
@@ -375,7 +388,8 @@ private extension WysiwygComposerViewModel {
                 html: html,
                 textColor: textColor,
                 linkColor: linkColor,
-                codeBackgroundColor: codeBackgroundColor
+                codeBackgroundColor: codeBackgroundColor,
+                quoteBackgroundColor: quoteBackgroundColor
             )
             // FIXME: handle error for out of bounds index
             let htmlSelection = NSRange(location: Int(start), length: Int(end - start))

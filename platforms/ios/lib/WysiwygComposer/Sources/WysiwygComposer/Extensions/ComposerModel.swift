@@ -15,6 +15,7 @@
 //
 
 extension ComposerModel {
+    // swiftlint:disable cyclomatic_complexity
     /// Apply given action to the composer model.
     ///
     /// - Parameters:
@@ -40,6 +41,10 @@ extension ComposerModel {
             update = orderedList()
         case .unorderedList:
             update = unorderedList()
+        case .codeBlock:
+            update = codeBlock()
+        case .quote:
+            update = quote()
         default:
             return nil
         }

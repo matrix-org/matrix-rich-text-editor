@@ -37,8 +37,11 @@ final class HTMLParser {
                       encoding: String.Encoding = .utf16,
                       textColor: UIColor,
                       linkColor: UIColor,
-                      codeBackgroundColor: UIColor) throws -> NSAttributedString {
-        let htmlWithStyle = generateHtmlBodyWithStyle(htmlFragment: html, codeBackgroundColorHex: codeBackgroundColor.toHexString())
+                      codeBackgroundColor: UIColor,
+                      quoteBackgroundColor: UIColor) throws -> NSAttributedString {
+        let htmlWithStyle = generateHtmlBodyWithStyle(htmlFragment: html,
+                                                      codeBackgroundColorHex: codeBackgroundColor.toHexString(),
+                                                      quoteBackgroundColorHex: quoteBackgroundColor.toHexString())
         let attributed = try NSAttributedString(html: htmlWithStyle)
             .changeColor(to: textColor, linkColor: linkColor, codeBackgroundColor: codeBackgroundColor)
         return attributed
@@ -51,8 +54,11 @@ private extension HTMLParser {
     /// - Parameters:
     ///    - htmlFragment: HTML fragment
     ///    - codeBackgroundColorHex: the background color for code blocks as hex
+    ///    - quoteBackgroundColorHex: the background color for quotes as hex
     /// - Returns: HTML body
-    static func generateHtmlBodyWithStyle(htmlFragment: String, codeBackgroundColorHex: String) -> String {
+    static func generateHtmlBodyWithStyle(htmlFragment: String,
+                                          codeBackgroundColorHex: String,
+                                          quoteBackgroundColorHex: String) -> String {
         """
         <html>\
         <head>\
@@ -68,6 +74,16 @@ private extension HTMLParser {
         font-family:Menlo,monospace;\
         font-size:inherit;\
         background:\(codeBackgroundColorHex);\
+        }\
+        pre{\
+        font-family:Menlo,monospace;\
+        font-size:inherit;\
+        background:\(codeBackgroundColorHex);\
+        }\
+        blockquote{\
+        font-family:-apple-system;\
+        font:-apple-system-body;\
+        background:\(quoteBackgroundColorHex);\
         }\
         </style>\
         </head>\
