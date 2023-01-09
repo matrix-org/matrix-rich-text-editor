@@ -175,7 +175,7 @@ internal class HtmlToSpansParser(
 
                 val codeSpan = CodeBlockSpan(
                     0xC0A0A0A0.toInt(),
-                    (10 * resourcesProvider.getDisplayMetrics().density).toInt()
+                    10.dpToPx().toInt(),
                 )
 
                 addZWSP(text.length, isExtra = true)
@@ -198,9 +198,9 @@ internal class HtmlToSpansParser(
 
                 val quoteSpan = QuoteSpan(
                     indicatorColor = 0xC0A0A0A0.toInt(),
-                    indicatorWidth = (4 * resourcesProvider.getDisplayMetrics().density).toInt(),
-                    indicatorPadding = (6 * resourcesProvider.getDisplayMetrics().density).toInt(),
-                    margin = (10 * resourcesProvider.getDisplayMetrics().density).toInt(),
+                    indicatorWidth = 4.dpToPx().toInt(),
+                    indicatorPadding = 6.dpToPx().toInt(),
+                    margin = 10.dpToPx().toInt(),
                 )
 
                 addZWSP(text.length, isExtra = true)
@@ -267,7 +267,7 @@ internal class HtmlToSpansParser(
         return if (last.ordered) {
             // TODO: provide typeface and textSize somehow
             val typeface = Typeface.defaultFromStyle(Typeface.NORMAL)
-            val textSize = 16f * resourcesProvider.getDisplayMetrics().scaledDensity
+            val textSize = 16.dpToPx()
             OrderedListSpan(typeface, textSize, last.order ?: 1, gapWidth)
         } else {
             UnorderedListSpan(gapWidth, bulletRadius)
@@ -282,6 +282,10 @@ internal class HtmlToSpansParser(
     private fun <T : Any> getLast(kind: Class<T>, from: Int = 0, to: Int = text.length): T? {
         val spans = text.getSpans(from, to, kind)
         return spans.lastOrNull()
+    }
+
+    private fun Int.dpToPx(): Float {
+        return resourcesProvider.dpToPx(this)
     }
 
     companion object FormattingSpans {
