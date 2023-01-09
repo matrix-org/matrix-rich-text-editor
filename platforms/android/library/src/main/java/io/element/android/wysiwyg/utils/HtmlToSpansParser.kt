@@ -178,7 +178,7 @@ internal class HtmlToSpansParser(
                     10.dpToPx().toInt(),
                 )
 
-                addZWSP(text.length, isExtra = true)
+                addZWSP(text.length)
 
                 text.setSpan(codeSpan, start, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
             }
@@ -203,25 +203,16 @@ internal class HtmlToSpansParser(
                     margin = 10.dpToPx().toInt(),
                 )
 
-                addZWSP(text.length, isExtra = true)
+                addZWSP(text.length)
 
                 text.setSpan(quoteSpan, start, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
             }
         }
     }
 
-    private fun addLineBreak(pos: Int, isExtra: Boolean) {
-        text.insert(pos, "\n")
-        if (isExtra) {
-            text.setSpan(ExtraCharacterSpan(), pos, pos+1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-        }
-    }
-
-    private fun addZWSP(pos: Int, isExtra: Boolean) {
+    private fun addZWSP(pos: Int) {
         text.insert(pos, "$ZWSP")
-        if (isExtra) {
-            text.setSpan(ExtraCharacterSpan(), pos, pos+1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-        }
+        text.setSpan(ExtraCharacterSpan(), pos, pos+1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
     }
 
     private fun handleFormatStartTag(format: InlineFormat) {
