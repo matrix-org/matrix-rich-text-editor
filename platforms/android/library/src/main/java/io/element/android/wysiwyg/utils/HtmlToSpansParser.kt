@@ -161,7 +161,7 @@ internal class HtmlToSpansParser(
             }
             "pre" -> {
                 val last = getLast<CodeBlock>() ?: return
-                var start = text.getSpanStart(last)
+                val start = addLeadingLineBreakIfNeeded(text.getSpanStart(last))
                 text.removeSpan(last)
 
                 if (start > 0) {
@@ -184,7 +184,7 @@ internal class HtmlToSpansParser(
             }
             "blockquote" -> {
                 val last = getLast<Quote>() ?: return
-                var start = text.getSpanStart(last)
+                val start = addLeadingLineBreakIfNeeded(text.getSpanStart(last))
                 text.removeSpan(last)
 
                 if (start > 0) {
@@ -208,6 +208,17 @@ internal class HtmlToSpansParser(
                 text.setSpan(quoteSpan, start, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
             }
         }
+    }
+
+    private fun addLeadingLineBreakIfNeeded(start: Int): Int {
+        return if (start > 0) {
+            if (text[start] == ZWSP) {
+                text.replace(start, start + 1, "\n")
+            } else {
+                text.insert(start, "\n")
+            }
+            start + 1
+        } else start
     }
 
     private fun addZWSP(pos: Int) {
