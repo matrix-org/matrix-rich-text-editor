@@ -20,7 +20,7 @@ import androidx.core.content.ContextCompat
  * Code block (```some code``` in Markdown, <pre> in HTML) Span that applies a monospaced font style
  * and adds a background color to a whole paragraph.
  */
-class CodeBlockSpan : MetricAffectingSpan, LeadingMarginSpan, UpdateAppearance {
+internal class CodeBlockSpan : MetricAffectingSpan, LeadingMarginSpan, UpdateAppearance {
 
     private val monoTypefaceSpan: TypefaceSpan
     private val backgroundColor: Int

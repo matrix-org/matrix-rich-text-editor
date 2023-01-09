@@ -40,12 +40,13 @@ internal class HtmlToSpansParser(
     private val styleConfig: StyleConfig,
 ) : ContentHandler {
 
-    data class Hyperlink(val link: String)
-    object OrderedListBlock
-    object UnorderedListBlock
-    object CodeBlock
-    object Quote
-    data class ListItem(val ordered: Boolean, val order: Int? = null)
+    // Spans created to be used as 'marks' while parsing
+    private data class Hyperlink(val link: String)
+    private object OrderedListBlock
+    private object UnorderedListBlock
+    private object CodeBlock
+    private object Quote
+    private data class ListItem(val ordered: Boolean, val order: Int? = null)
 
     private val parser = Parser().also { it.contentHandler = this }
     private val text = SpannableStringBuilder()
