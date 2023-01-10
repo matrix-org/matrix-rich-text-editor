@@ -3,7 +3,7 @@ package io.element.android.wysiwyg.test.utils
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.element.android.wysiwyg.fakes.fakeStyleConfig
-import io.element.android.wysiwyg.utils.AndroidResourcesProvider
+import io.element.android.wysiwyg.utils.AndroidResourcesHelper
 import io.element.android.wysiwyg.utils.HtmlToSpansParser
 import io.element.android.wysiwyg.utils.ZWSP
 import org.hamcrest.MatcherAssert.assertThat
@@ -98,7 +98,7 @@ class HtmlToSpansParserTest {
 
     private fun convertHtml(html: String) =
         HtmlToSpansParser(
-            resourcesProvider = AndroidResourcesProvider(application = ApplicationProvider.getApplicationContext()),
+            resourcesHelper = AndroidResourcesHelper(application = ApplicationProvider.getApplicationContext()),
             html = html,
             styleConfig = fakeStyleConfig,
         ).convert()

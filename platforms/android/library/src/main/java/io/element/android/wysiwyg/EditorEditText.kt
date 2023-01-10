@@ -40,7 +40,7 @@ class EditorEditText : TextInputEditText {
     private val viewModel: EditorViewModel by viewModel(
         viewModelInitializer = {
             val applicationContext = context.applicationContext as Application
-            val resourcesProvider = AndroidResourcesProvider(applicationContext)
+            val resourcesProvider = AndroidResourcesHelper(applicationContext)
             val htmlConverter = AndroidHtmlConverter(
                 provideHtmlToSpansParser = { html ->
                     HtmlToSpansParser(

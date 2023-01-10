@@ -35,7 +35,7 @@ import kotlin.math.roundToInt
  * to create [ExtraCharacterSpan] spans to work properly.
  */
 internal class HtmlToSpansParser(
-    private val resourcesProvider: ResourcesProvider,
+    private val resourcesHelper: ResourcesHelper,
     private val html: String,
     private val styleConfig: StyleConfig,
 ) : ContentHandler {
@@ -219,7 +219,7 @@ internal class HtmlToSpansParser(
             InlineFormat.Underline -> UnderlineSpan()
             InlineFormat.StrikeThrough -> StrikethroughSpan()
             InlineFormat.InlineCode ->
-                InlineCodeSpan(resourcesProvider.getColor(android.R.color.darker_gray))
+                InlineCodeSpan(resourcesHelper.getColor(android.R.color.darker_gray))
         }
         setSpanFromMark(format, span)
     }
@@ -269,7 +269,7 @@ internal class HtmlToSpansParser(
     }
 
     private fun Int.dpToPx(): Float {
-        return resourcesProvider.dpToPx(this)
+        return resourcesHelper.dpToPx(this)
     }
 
     companion object FormattingSpans {

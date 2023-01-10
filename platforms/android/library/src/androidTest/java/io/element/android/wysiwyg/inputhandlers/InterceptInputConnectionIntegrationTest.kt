@@ -9,13 +9,12 @@ import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.test.utils.dumpSpans
 import io.element.android.wysiwyg.utils.AndroidHtmlConverter
-import io.element.android.wysiwyg.utils.AndroidResourcesProvider
+import io.element.android.wysiwyg.utils.AndroidResourcesHelper
 import io.element.android.wysiwyg.utils.HtmlToSpansParser
 import io.element.android.wysiwyg.utils.ZWSP
 import io.element.android.wysiwyg.viewmodel.EditorViewModel
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
-import org.junit.Ignore
 import org.junit.Test
 import uniffi.wysiwyg_composer.newComposerModel
 
@@ -27,7 +26,7 @@ class InterceptInputConnectionIntegrationTest {
         htmlConverter = AndroidHtmlConverter(
             provideHtmlToSpansParser = { html ->
                 HtmlToSpansParser(
-                    AndroidResourcesProvider(app),
+                    AndroidResourcesHelper(app),
                     html,
                     fakeStyleConfig,
                 )
