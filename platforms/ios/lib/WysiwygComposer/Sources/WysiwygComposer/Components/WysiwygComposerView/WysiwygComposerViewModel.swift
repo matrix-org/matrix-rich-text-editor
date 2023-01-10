@@ -25,7 +25,15 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     // MARK: - Public
 
     /// The textView with placeholder support that the model manages
-    public private(set) var textView = PlaceholdableTextView()
+    public private(set) var textView = {
+        let layoutManager = NSLayoutManager()
+        let textStorage = NSTextStorage()
+        let textContainer = NSTextContainer()
+        textStorage.addLayoutManager(layoutManager)
+        layoutManager.addTextContainer(textContainer)
+        return PlaceholdableTextView(frame: .zero, textContainer: textContainer)
+    }()
+
     /// The composer minimal height.
     public let minHeight: CGFloat
     /// Published object for the composer attributed content.
