@@ -26,6 +26,9 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
 
     /// The textView with placeholder support that the model manages
     public private(set) var textView = {
+        // Default text container have a slightly different behaviour
+        // than what iOS would use if textContainer is nil, this
+        // fixes issues with background color not working on nealine characters.
         let layoutManager = NSLayoutManager()
         let textStorage = NSTextStorage()
         let textContainer = NSTextContainer()
