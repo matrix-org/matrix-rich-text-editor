@@ -255,6 +255,7 @@ impl Range {
     pub fn top_level_depth(&self) -> usize {
         self.locations
             .iter()
+            .filter(|l| !l.node_handle.is_root())
             .map(|l| l.node_handle.depth())
             .min()
             .expect("Should always have at least one set handle")
@@ -291,7 +292,7 @@ impl Range {
     }
 
     pub fn is_selection(&self) -> bool {
-        self.start() == self.end()
+        self.start() != self.end()
     }
 
     // TODO: remove all uses of this when we guarantee that Dom is never empty
