@@ -74,6 +74,6 @@ This will push a branch named release_v_X.Y.Z on the [the swift package repo](ht
 Remember to manually check, approve and merge the PR that will get opened on the [SWIFTPM Repo PR list](https://github.com/matrix-org/matrix-wysiwyg-composer-swift/pulls).
 Once merged a [workflow](https://github.com/matrix-org/matrix-wysiwyg-composer-swift/blob/main/.github/workflows/tag_on_release.yml) will automatically add a tag with the X.Y.Z release value that was provided, so there is no need to manually tag the main branch after the merge is succesfull.
 
-You can also manually do a revision release by just running `./release_ios.sh` on main which will not create a release PR but a revision PR that can have any commit message after the merge.
+You can also manually do a revision release by just running `./release_ios.sh` on main which will not create a release PR but a revision PR.
 
 Instead for full manual release just run `./release_ios.sh -t <version>`.
