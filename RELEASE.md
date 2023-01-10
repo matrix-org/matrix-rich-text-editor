@@ -35,11 +35,7 @@ Then:
 * `git push -u origin version-X.Y.Z`
 
 Get the PR reviewed and merged to `main`.
-
-* `git tag X.Y.Z`
-* Now push your tag to the repo `git push X.Y.Z`.
-
-TODO: automate tag creation when the `version-X.Y.Z` branch is merged.
+A workflow will automatically add the tag on main with the version provided in the branch name.
 
 ## 4. Create the packages
 
