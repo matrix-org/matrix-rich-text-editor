@@ -40,7 +40,7 @@ mkdir $BUILD_DIR
 git clone https://github.com/matrix-org/matrix-wysiwyg-composer-swift.git $REPO_PATH
 git fetch
 git checkout main
-rsync -a --delete --exclude=".git" $WYSIWYG_COMPOSER_PATH $REPO_PATH
+rsync -a --delete --exclude=".git" --exclude=".github" --exclude="README.md" $WYSIWYG_COMPOSER_PATH $REPO_PATH
 last_commit=$(git rev-parse --short HEAD);
 RELEASE_BRANCH="release_$last_commit"
 cd $REPO_PATH

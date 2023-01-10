@@ -217,6 +217,10 @@ impl ComposerModel {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().unindent()))
     }
 
+    pub fn to_example_format(self: &Arc<Self>) -> String {
+        self.inner.lock().unwrap().to_example_format().to_string()
+    }
+
     pub fn to_tree(self: &Arc<Self>) -> String {
         self.inner.lock().unwrap().to_tree().to_string()
     }

@@ -321,6 +321,17 @@ mod sys {
         fn parse_br_tag() {
             assert_that!("<br />").roundtrips();
         }
+
+        #[test]
+        fn parse_code_block() {
+            assert_that!("foo <pre>~Some code</pre> bar").roundtrips();
+        }
+
+        #[test]
+        fn parse_quote() {
+            assert_that!("foo <blockquote>~A quote</blockquote> bar")
+                .roundtrips();
+        }
     }
 }
 
@@ -432,6 +443,22 @@ mod js {
                     "LI" => {
                         dom.append_child(DomNode::Container(
                             ContainerNode::new_list_item(
+                                convert(node.child_nodes())?.take_children(),
+                            ),
+                        ));
+                    }
+
+                    "PRE" => {
+                        dom.append_child(DomNode::Container(
+                            ContainerNode::new_code_block(
+                                convert(node.child_nodes())?.take_children(),
+                            ),
+                        ));
+                    }
+
+                    "BLOCKQUOTE" => {
+                        dom.append_child(DomNode::Container(
+                            ContainerNode::new_quote(
                                 convert(node.child_nodes())?.take_children(),
                             ),
                         ));
@@ -554,6 +581,16 @@ mod js {
         #[wasm_bindgen_test]
         fn ol() {
             roundtrip("foo <ol><li>item1</li><li>item2</li></ol> bar");
+        }
+
+        #[wasm_bindgen_test]
+        fn pre() {
+            roundtrip("foo <pre>~Some code</pre> bar");
+        }
+
+        #[wasm_bindgen_test]
+        fn blockquote() {
+            roundtrip("foo <blockquote>~Some code</blockquote> bar");
         }
     }
 }

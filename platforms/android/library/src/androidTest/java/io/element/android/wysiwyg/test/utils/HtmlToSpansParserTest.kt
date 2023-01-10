@@ -5,7 +5,7 @@ import android.text.Spanned
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.element.android.wysiwyg.fakes.createFakeStyleConfig
-import io.element.android.wysiwyg.utils.AndroidResourcesProvider
+import io.element.android.wysiwyg.utils.AndroidResourcesHelper
 import io.element.android.wysiwyg.utils.HtmlToSpansParser
 import io.element.android.wysiwyg.utils.ZWSP
 import org.hamcrest.MatcherAssert.assertThat
@@ -101,7 +101,7 @@ class HtmlToSpansParserTest {
     private fun convertHtml(html: String): Spanned {
         val app = ApplicationProvider.getApplicationContext<Application>()
         return HtmlToSpansParser(
-            resourcesProvider = AndroidResourcesProvider(application = app),
+            resourcesHelper = AndroidResourcesHelper(application = app),
             html = html,
             styleConfig = createFakeStyleConfig(),
         ).convert()
