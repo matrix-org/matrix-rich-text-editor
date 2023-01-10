@@ -13,7 +13,6 @@
 // limitations under the License.
 
 use crate::dom::nodes::dom_node::DomNodeKind;
-use crate::dom::nodes::ContainerNodeKind::Paragraph;
 use crate::dom::nodes::{ContainerNode, DomNode, LineBreakNode, TextNode};
 use crate::dom::range::DomLocation;
 use crate::dom::unicode_string::UnicodeStrExt;
@@ -149,10 +148,7 @@ where
     }
     let container_node_len = container_end - container_start;
     // We never want to return the root node
-    if container_end >= start
-        && container_start <= end
-        && !node.handle().is_root()
-    {
+    if container_end >= start && container_start <= end {
         let start_offset = max(start, container_start) - container_start;
         let end_offset = min(end, container_end) - container_start;
         results.push(DomLocation {
