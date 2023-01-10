@@ -20,7 +20,7 @@ where
 {
     cfg_if::cfg_if! {
         if #[cfg(feature = "sys")] {
-            sys::parse(html)
+            sys::HtmlParser::default().parse(html)
         } else if #[cfg(all(feature = "js", target_arch = "wasm32"))] {
             js::parse(html)
         } else {
@@ -36,36 +36,182 @@ mod sys {
     use super::super::{PaDom, PaDomCreationError, PaDomCreator};
     use super::*;
     use crate::char::CharExt;
+    use crate::dom::nodes::dom_node::DomNodeKind;
     use crate::dom::nodes::{ContainerNode, DomNode};
     use crate::ListType;
 
-    pub(super) fn parse<S>(html: &str) -> Result<Dom<S>, DomCreationError<S>>
-    where
-        S: UnicodeString,
-    {
-        PaDomCreator::parse(html)
-            .map(padom_to_dom)
-            .map_err(padom_creation_error_to_dom_creation_error)
+    pub(super) struct HtmlParser {
+        current_path: Vec<DomNodeKind>,
     }
+    impl HtmlParser {
+        pub(super) fn default() -> Self {
+            Self {
+                current_path: Vec::new(),
+            }
+        }
 
-    /// Convert a [PaDom] into a [Dom].
-    ///
-    /// [PaDom] is purely used within the parsing process (using html5ever) - in it,
-    /// parents refer to their children by handles, and all the nodes are owned in
-    /// a big list held by the PaDom itself. PaDoms may also contain garbage nodes
-    /// that were created during parsing but are no longer needed. A garbage
-    /// collection method was written for testing and is inside padom_creator's
-    /// test code. The conversion process here ignores garbage nodes, so they do
-    /// not appear in the final Dom.
-    ///
-    /// [Dom] is for general use. Parent nodes own their children, and Dom may be
-    /// cloned, compared, and converted into an HTML string.
-    fn padom_to_dom<S>(padom: PaDom) -> Dom<S>
-    where
-        S: UnicodeString,
-    {
+        pub(super) fn parse<S>(
+            &mut self,
+            html: &str,
+        ) -> Result<Dom<S>, DomCreationError<S>>
+        where
+            S: UnicodeString,
+        {
+            PaDomCreator::parse(html)
+                .map(|pa_dom| self.padom_to_dom(pa_dom))
+                .map_err(|err| {
+                    self.padom_creation_error_to_dom_creation_error(err)
+                })
+        }
+
+        /// Convert a [PaDom] into a [Dom].
+        ///
+        /// [PaDom] is purely used within the parsing process (using html5ever) - in it,
+        /// parents refer to their children by handles, and all the nodes are owned in
+        /// a big list held by the PaDom itself. PaDoms may also contain garbage nodes
+        /// that were created during parsing but are no longer needed. A garbage
+        /// collection method was written for testing and is inside padom_creator's
+        /// test code. The conversion process here ignores garbage nodes, so they do
+        /// not appear in the final Dom.
+        ///
+        /// [Dom] is for general use. Parent nodes own their children, and Dom may be
+        /// cloned, compared, and converted into an HTML string.
+        fn padom_to_dom<S>(&mut self, padom: PaDom) -> Dom<S>
+        where
+            S: UnicodeString,
+        {
+            let mut ret = Dom::new(Vec::new());
+            let doc = ret.document_mut();
+
+            if let PaDomNode::Document(padoc) = padom.get_document() {
+                self.convert(&padom, padoc, doc)
+            } else {
+                panic!("Document was not a document!");
+            }
+
+            ret
+        }
+
+        /// Copy all panode's information into node.
+        fn convert<S>(
+            &mut self,
+            padom: &PaDom,
+            panode: &PaNodeContainer,
+            node: &mut ContainerNode<S>,
+        ) where
+            S: UnicodeString,
+        {
+            for child_handle in &panode.children {
+                let child = padom.get_node(child_handle);
+                match child {
+                    PaDomNode::Container(child) => {
+                        self.convert_container(padom, child, node);
+                    }
+                    PaDomNode::Document(_) => {
+                        panic!("Found a document inside a document!")
+                    }
+                    PaDomNode::Text(text) => {
+                        // Special case for code block, translate '\n' into paragraphs
+                        if self.current_path.contains(&DomNodeKind::CodeBlock) {
+                            let text_nodes: Vec<_> =
+                                text.content.split('\n').collect();
+                            // let text_nodes_len = text_nodes.len();
+                            // for (i, str) in text_nodes.into_iter().enumerate() {
+                            for str in text_nodes.into_iter() {
+                                if !str.is_empty() {
+                                    let text_node =
+                                        DomNode::new_text(str.into());
+                                    node.append_child(DomNode::new_paragraph(
+                                        vec![text_node],
+                                    ));
+                                }
+                                // if i + 1 < text_nodes_len {
+                                //     node.append_child(DomNode::new_line_break());
+                                // }
+                            }
+                        } else {
+                            node.append_child(DomNode::new_text(
+                                text.content.clone().into(),
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+
+        /// Copy all panode's information into node (now we know it's a container).
+        fn convert_container<S>(
+            &mut self,
+            padom: &PaDom,
+            child: &PaNodeContainer,
+            node: &mut ContainerNode<S>,
+        ) where
+            S: UnicodeString,
+        {
+            let cur_path_idx = self.current_path.len();
+            let tag = child.name.local.as_ref();
+            match tag {
+                "b" | "code" | "del" | "em" | "i" | "strong" | "u" => {
+                    let formatting_node = Self::new_formatting(tag);
+                    self.current_path.push(formatting_node.kind());
+                    node.append_child(formatting_node);
+                    self.convert_children(padom, child, node.last_child_mut());
+                    self.current_path.remove(cur_path_idx);
+                }
+                "br" => {
+                    node.append_child(Self::new_line_break());
+                }
+                "ol" | "ul" => {
+                    self.current_path.push(DomNodeKind::List);
+                    node.append_child(Self::new_list(tag));
+                    self.convert_children(padom, child, node.last_child_mut());
+                    self.current_path.remove(cur_path_idx);
+                }
+                "li" => {
+                    self.current_path.push(DomNodeKind::ListItem);
+                    node.append_child(Self::new_list_item());
+                    self.convert_children(padom, child, node.last_child_mut());
+                    self.current_path.remove(cur_path_idx);
+                }
+                "a" => {
+                    self.current_path.push(DomNodeKind::Link);
+                    node.append_child(Self::new_link(child));
+                    self.convert_children(padom, child, node.last_child_mut());
+                    self.current_path.remove(cur_path_idx);
+                }
+                "pre" => {
+                    self.current_path.push(DomNodeKind::CodeBlock);
+                    node.append_child(Self::new_code_block());
+                    self.convert_children(padom, child, node.last_child_mut());
+                    self.current_path.remove(cur_path_idx);
+                }
+                "blockquote" => {
+                    self.current_path.push(DomNodeKind::Quote);
+                    node.append_child(Self::new_quote());
+                    self.convert_children(padom, child, node.last_child_mut());
+                    self.current_path.remove(cur_path_idx);
+                }
+                "html" => {
+                    // Skip the html tag - add its children to the
+                    // current node directly.
+                    self.convert(padom, child, node);
+                }
+                "p" => {
+                    self.current_path.push(DomNodeKind::Paragraph);
+                    node.append_child(Self::new_paragraph());
+                    self.convert_children(padom, child, node.last_child_mut());
+                    self.current_path.remove(cur_path_idx);
+                }
+                _ => {
+                    // Ignore tags we don't recognise
+                    // We should log - see internal task PSU-741
+                }
+            };
+        }
+
         /// Recurse into panode's children and convert them too
         fn convert_children<S>(
+            &mut self,
             padom: &PaDom,
             child: &PaNodeContainer,
             new_node: Option<&mut DomNode<S>>,
@@ -73,7 +219,7 @@ mod sys {
             S: UnicodeString,
         {
             if let DomNode::Container(new_node) = new_node.unwrap() {
-                convert(padom, child, new_node);
+                self.convert(padom, child, new_node);
             } else {
                 panic!("Container became non-container!");
             }
@@ -152,116 +298,17 @@ mod sys {
             DomNode::Container(ContainerNode::new_paragraph(Vec::new()))
         }
 
-        /// Copy all panode's information into node (now we know it's a container).
-        fn convert_container<S>(
-            padom: &PaDom,
-            child: &PaNodeContainer,
-            node: &mut ContainerNode<S>,
-        ) where
+        fn padom_creation_error_to_dom_creation_error<S>(
+            &mut self,
+            e: PaDomCreationError,
+        ) -> DomCreationError<S>
+        where
             S: UnicodeString,
         {
-            let tag = child.name.local.as_ref();
-            match tag {
-                "b" | "code" | "del" | "em" | "i" | "strong" | "u" => {
-                    node.append_child(new_formatting(tag));
-                    convert_children(padom, child, node.last_child_mut());
-                }
-                "br" => {
-                    node.append_child(new_line_break());
-                }
-                "ol" | "ul" => {
-                    node.append_child(new_list(tag));
-                    convert_children(padom, child, node.last_child_mut());
-                }
-                "li" => {
-                    node.append_child(new_list_item());
-                    convert_children(padom, child, node.last_child_mut());
-                }
-                "a" => {
-                    node.append_child(new_link(child));
-                    convert_children(padom, child, node.last_child_mut());
-                }
-                "pre" => {
-                    node.append_child(new_code_block());
-                    convert_children(padom, child, node.last_child_mut());
-                }
-                "blockquote" => {
-                    node.append_child(new_quote());
-                    convert_children(padom, child, node.last_child_mut());
-                }
-                "html" => {
-                    // Skip the html tag - add its children to the
-                    // current node directly.
-                    convert(padom, child, node);
-                }
-                "p" => {
-                    node.append_child(new_paragraph());
-                    convert_children(padom, child, node.last_child_mut());
-                }
-                _ => {
-                    // Ignore tags we don't recognise
-                    // We should log - see internal task PSU-741
-                }
-            };
-        }
-
-        /// Copy all panode's information into node.
-        fn convert<S>(
-            padom: &PaDom,
-            panode: &PaNodeContainer,
-            node: &mut ContainerNode<S>,
-        ) where
-            S: UnicodeString,
-        {
-            for child_handle in &panode.children {
-                let child = padom.get_node(child_handle);
-                match child {
-                    PaDomNode::Container(child) => {
-                        convert_container(padom, child, node);
-                    }
-                    PaDomNode::Document(_) => {
-                        panic!("Found a document inside a document!")
-                    }
-                    PaDomNode::Text(text) => {
-                        let text_nodes: Vec<_> =
-                            text.content.split(char::zwsp()).collect();
-                        let text_nodes_len = text_nodes.len();
-                        for (i, str) in text_nodes.into_iter().enumerate() {
-                            if !str.is_empty() {
-                                node.append_child(DomNode::new_text(
-                                    str.into(),
-                                ));
-                            }
-                            if i + 1 < text_nodes_len {
-                                node.append_child(DomNode::new_zwsp());
-                            }
-                        }
-                    }
-                }
+            DomCreationError {
+                dom: self.padom_to_dom(e.dom),
+                parse_errors: e.parse_errors,
             }
-        }
-
-        let mut ret = Dom::new(Vec::new());
-        let doc = ret.document_mut();
-
-        if let PaDomNode::Document(padoc) = padom.get_document() {
-            convert(&padom, padoc, doc)
-        } else {
-            panic!("Document was not a document!");
-        }
-
-        ret
-    }
-
-    fn padom_creation_error_to_dom_creation_error<S>(
-        e: PaDomCreationError,
-    ) -> DomCreationError<S>
-    where
-        S: UnicodeString,
-    {
-        DomCreationError {
-            dom: padom_to_dom(e.dom),
-            parse_errors: e.parse_errors,
         }
     }
 
