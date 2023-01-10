@@ -1,5 +1,18 @@
 # Changelog
 
+# [0.15.0] - 2022-01-10
+
+### Added
+- Common: Add parsing of code blocks and quotes to the WASM HTML parser
+- iOS: Add attributed string to html mapping for lists with ZWSP
+- Android: Add inline code formatting
+- Android: Make bullet size configurable
+- Android: Add code blocks & quotes to the example app
+
+### Fixed
+- Common: Fix creating lists with a leading line break
+- Common: Fix selection state after toggling off list
+
 # [0.14.0] - 2022-01-05
 
 ### Added
