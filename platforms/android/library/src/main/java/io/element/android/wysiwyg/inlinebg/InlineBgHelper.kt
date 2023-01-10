@@ -118,7 +118,7 @@ internal class InlineBgHelper<T>(
 
         // start can be on the left or on the right depending on the language direction.
         val startOffset = (layout.getPrimaryHorizontal(spanStart)
-                + -1 * layout.getParagraphDirection(startLine) * horizontalPadding).toInt()
+                - layout.getParagraphDirection(startLine) * horizontalPadding).toInt()
         // end can be on the left or on the right depending on the language direction.
         val endOffset = (layout.getPrimaryHorizontal(spanEnd)
                 + layout.getParagraphDirection(endLine) * horizontalPadding).toInt()
