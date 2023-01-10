@@ -584,11 +584,6 @@ where
 
         // Create new 'root' node to contain the split sub-tree
         let new_subtree = subtree_children.remove(0);
-
-        let keep_empty_list_items =
-            !new_subtree.iter_subtree().any(|n| n.is_list());
-        self.remove_empty_container_nodes(keep_empty_list_items);
-
         new_subtree
     }
 
@@ -642,6 +637,7 @@ where
         to_handle: Option<DomHandle>,
     ) -> Vec<DomNode<S>> {
         let depth = cur_handle.depth();
+        let mut child_count = 0;
         let min_child_index: usize =
             if is_ancestor_or_self(&cur_handle, from_handle) {
                 sub_handle_up_to_or_none(from_handle, depth + 1)
@@ -652,7 +648,7 @@ where
         let max_child_index = if let DomNode::Container(container) =
             self.lookup_node(&cur_handle)
         {
-            let child_count = container.children().len();
+            child_count = container.children().len();
             to_handle.clone().map_or(child_count, |to_handle| {
                 if is_ancestor_or_self(&cur_handle, &to_handle) {
                     sub_handle_up_to_or_none(&to_handle, depth + 1)
@@ -678,13 +674,28 @@ where
             new_children.extend(child_nodes);
             child_nodes = new_children;
         }
-        let container = self
-            .lookup_node_mut(&cur_handle)
-            .as_container_mut()
-            .unwrap();
-        vec![DomNode::Container(
-            container.clone_with_new_children(child_nodes),
-        )]
+
+        let result: Vec<DomNode<S>>;
+        let mut needs_to_remove_container = false;
+        if let DomNode::Container(container) = self.lookup_node(&cur_handle) {
+            if !container.handle().is_root()
+                && container.is_empty()
+                && child_count > 0
+            {
+                needs_to_remove_container = true;
+            }
+            result = vec![DomNode::Container(
+                container.clone_with_new_children(child_nodes),
+            )]
+        } else {
+            result = Vec::new();
+        }
+
+        if needs_to_remove_container {
+            self.remove(&cur_handle);
+        }
+
+        result
     }
 
     fn split_sub_tree_at_text_node<'a>(
