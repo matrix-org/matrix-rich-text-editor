@@ -12,7 +12,6 @@ jobs:
     if: ${{ github.event.pull_request.merged == true && startsWith( github.head_ref, 'version-' ) }}
     runs-on: ubuntu-latest
     steps:
-    steps:
       - name: 🧮 Checkout code
         uses: actions/checkout@v3
 
