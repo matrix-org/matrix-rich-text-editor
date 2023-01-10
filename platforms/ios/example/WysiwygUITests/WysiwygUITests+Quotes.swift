@@ -1,5 +1,5 @@
 //
-// Copyright 2022 The Matrix.org Foundation C.I.C
+// Copyright 2023 The Matrix.org Foundation C.I.C
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,16 +14,23 @@
 // limitations under the License.
 //
 
-@testable import WysiwygComposer
 import XCTest
 
-final class WysiwygComposerTests: XCTestCase {
-    func testComposerEmptyState() {
-        let model = newComposerModel()
-        XCTAssertEqual(model.getContentAsHtml(), "")
-        XCTAssertEqual(model.getContentAsMarkdown(), "")
-        let state = model.getCurrentDomState()
-        XCTAssertEqual(state.start, 0)
-        XCTAssertEqual(state.end, 0)
+extension WysiwygUITests {
+    func testQuote() throws {
+        // Type something into composer.
+        textView.typeTextCharByChar("Some text")
+        button(.quoteButton).tap()
+        // FIXME: iOS automatically adds an extra line break even if not in the model
+        assertTextViewContent("Some text\n")
+
+        button(.showTreeButton).tap()
+        assertTreeEquals(
+            """
+            └>blockquote
+              ├>~
+              └>"Some text"
+            """
+        )
     }
 }

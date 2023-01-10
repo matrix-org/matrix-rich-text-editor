@@ -19,4 +19,5 @@ enum TestConstants {
     /// String is actually 6 char long "abc🎉🎉👩🏿‍🚀" and represents 14 UTF-16 code units (3+2+2+7)
     static let testStringWithEmojis = "abc🎉\u{1f389}\u{1F469}\u{1F3FF}\u{200D}\u{1F680}"
     static let testStringAfterBackspace = "abc🎉🎉"
+    static let zwsp = "\u{200B}"
 }

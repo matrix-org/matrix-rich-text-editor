@@ -19,12 +19,24 @@ import Foundation
 import OSLog
 import UIKit
 
+// swiftlint:disable file_length
 /// Main view model for the composer. Forwards actions to the Rust model and publishes resulting states.
 public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, ObservableObject {
     // MARK: - Public
 
     /// The textView with placeholder support that the model manages
-    public private(set) var textView = PlaceholdableTextView()
+    public private(set) var textView = {
+        // Default text container have a slightly different behaviour
+        // than what iOS would use if textContainer is nil, this
+        // fixes issues with background color not working on nealine characters.
+        let layoutManager = NSLayoutManager()
+        let textStorage = NSTextStorage()
+        let textContainer = NSTextContainer()
+        textStorage.addLayoutManager(layoutManager)
+        layoutManager.addTextContainer(textContainer)
+        return PlaceholdableTextView(frame: .zero, textContainer: textContainer)
+    }()
+
     /// The composer minimal height.
     public let minHeight: CGFloat
     /// Published object for the composer attributed content.
@@ -72,6 +84,16 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     
     /// The color that will be used for the background of code blocks
     public var codeBackgroundColor: UIColor {
+        didSet {
+            // In case of a color change, this will refresh the attributed text
+            let update = model.setContentFromHtml(html: content.html)
+            applyUpdate(update)
+            updateTextView()
+        }
+    }
+
+    /// The color that will be used for the background of quotes
+    public var quoteBackgroundColor: UIColor {
         didSet {
             // In case of a color change, this will refresh the attributed text
             let update = model.setContentFromHtml(html: content.html)
@@ -128,13 +150,16 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
                 maxExpandedHeight: CGFloat = 300,
                 textColor: UIColor = .label,
                 linkColor: UIColor = .link,
-                codeBackgroundColor: UIColor = .systemGray5) {
+                codeBackgroundColor: UIColor = .systemGray5,
+                quoteBackgroundColor: UIColor = .systemGray4) {
         self.minHeight = minHeight
         self.maxCompressedHeight = maxCompressedHeight
         self.maxExpandedHeight = maxExpandedHeight
         self.textColor = textColor
         self.linkColor = linkColor
         self.codeBackgroundColor = codeBackgroundColor
+        self.quoteBackgroundColor = quoteBackgroundColor
+
         textView.linkTextAttributes[.foregroundColor] = linkColor
         model = newComposerModel()
         // Publish composer empty state.
@@ -375,7 +400,8 @@ private extension WysiwygComposerViewModel {
                 html: html,
                 textColor: textColor,
                 linkColor: linkColor,
-                codeBackgroundColor: codeBackgroundColor
+                codeBackgroundColor: codeBackgroundColor,
+                quoteBackgroundColor: quoteBackgroundColor
             )
             // FIXME: handle error for out of bounds index
             let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
