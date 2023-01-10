@@ -25,9 +25,12 @@ extension WysiwygUITests {
             .italicButton,
             .strikeThroughButton,
             .linkButton,
+            // FIXME: this should contain other incompatible buttons when Rust is ready
         ]
         for identifier in reactiveButtonsIdentifiers {
             XCTAssertFalse(button(identifier).isEnabled)
         }
+        // Inline code is enabled
+        XCTAssertTrue(button(.inlineCodeButton).isEnabled)
     }
 }
