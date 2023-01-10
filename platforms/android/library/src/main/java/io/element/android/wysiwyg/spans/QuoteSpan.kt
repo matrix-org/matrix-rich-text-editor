@@ -13,7 +13,7 @@ import android.text.style.MetricAffectingSpan
  * Quote ("> a quote" in Markdown, <blockquote> in HTML) Span that applies margin and an indicator
  * on the start of the paragraph.
  */
-internal class QuoteSpan : MetricAffectingSpan, LeadingMarginSpan {
+class QuoteSpan : MetricAffectingSpan, LeadingMarginSpan {
 
     private val indicatorColor: Int
     private val indicatorWidth: Int
