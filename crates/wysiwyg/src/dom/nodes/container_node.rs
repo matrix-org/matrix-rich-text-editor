@@ -685,11 +685,10 @@ where
             formatter.push(name);
             if let Some(attrs) = &self.attrs {
                 for attr in attrs {
-                    formatter.push(' ');
                     let (attr_name, value) = attr;
+                    formatter.push(' ');
                     formatter.push(&**attr_name);
-                    formatter.push('=');
-                    formatter.push('"');
+                    formatter.push("=\"");
                     formatter.push(&**value);
                     formatter.push('"');
                 }
@@ -713,8 +712,7 @@ where
         }
 
         if !name.is_empty() {
-            formatter.push('<');
-            formatter.push('/');
+            formatter.push("</");
             formatter.push(name);
             formatter.push('>');
         }

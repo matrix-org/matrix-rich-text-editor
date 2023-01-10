@@ -18,7 +18,7 @@ use crate::dom::to_html::ToHtml;
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
-use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
+use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt, UnicodeStringExt};
 use crate::dom::UnicodeString;
 use std::marker::PhantomData;
 
@@ -80,11 +80,7 @@ where
         _: bool,
     ) {
         let cur_pos = buf.len();
-        buf.push('<');
-        buf.push(self.name());
-        buf.push(' ');
-        buf.push('/');
-        buf.push('>');
+        buf.push(S::from("<br />"));
         if let Some(sel_writer) = selection_writer {
             sel_writer.write_selection_line_break_node(buf, cur_pos, self);
         }
