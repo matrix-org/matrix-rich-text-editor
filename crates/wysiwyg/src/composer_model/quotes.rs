@@ -77,20 +77,18 @@ where
             );
         let quote_node = if subtree.is_block_node() && subtree.kind() != Generic
         {
-            self.state.start += 1;
-            self.state.end += 1;
-            DomNode::new_quote(vec![DomNode::new_zwsp(), subtree])
-        } else if let Some(subtree_container) = subtree.as_container_mut() {
-            if !subtree_container
+            DomNode::new_quote(vec![subtree])
+        } else if let DomNode::Container(subtree_container) = subtree {
+            let needs_paragraph = subtree_container
                 .children()
-                .first()
-                .map_or(false, |n| n.is_zwsp())
-            {
-                subtree_container.insert_child(0, DomNode::new_zwsp());
-                self.state.start += 1;
-                self.state.end += 1;
-            }
-            DomNode::new_quote(subtree_container.children().clone())
+                .iter()
+                .any(|n| !n.is_block_node());
+            let children = if needs_paragraph {
+                vec![DomNode::new_paragraph(subtree_container.take_children())]
+            } else {
+                subtree_container.take_children()
+            };
+            DomNode::new_quote(children)
         } else {
             panic!("Subtree node must be a container");
         };
@@ -163,7 +161,10 @@ mod test {
     fn apply_quote_to_formatted_text() {
         let mut model = cm("<i>Some text|</i>");
         model.quote();
-        assert_eq!(tx(&model), "<blockquote>~<i>Some text|</i></blockquote>")
+        assert_eq!(
+            tx(&model),
+            "<blockquote><p><i>Some text|</i></p></blockquote>"
+        )
     }
 
     #[test]
@@ -172,7 +173,7 @@ mod test {
         model.quote();
         assert_eq!(
             tx(&model),
-            "<blockquote>~<i><b>Some text|</b></i></blockquote>"
+            "<blockquote><p><i><b>Some text|</b></i></p></blockquote>"
         )
     }
 
@@ -182,7 +183,7 @@ mod test {
         model.quote();
         assert_eq!(
             tx(&model),
-            "<blockquote>~Plain text and <i><b>Some formatted text|</b></i></blockquote>"
+            "<blockquote><p>Plain text and <i><b>Some formatted text|</b></i></p></blockquote>"
         )
     }
 
@@ -244,7 +245,7 @@ mod test {
         model.quote();
         assert_eq!(
             tx(&model),
-            "<blockquote>~<b>Some |text</b></blockquote><b><br />Next line</b>"
+            "<blockquote><p><b>Some |text</b></p></blockquote><b><br />Next line</b>"
         )
     }
 

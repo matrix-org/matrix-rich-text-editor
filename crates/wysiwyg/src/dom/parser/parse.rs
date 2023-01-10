@@ -35,7 +35,6 @@ mod sys {
     use super::super::PaNodeContainer;
     use super::super::{PaDom, PaDomCreationError, PaDomCreator};
     use super::*;
-    use crate::char::CharExt;
     use crate::dom::nodes::dom_node::DomNodeKind;
     use crate::dom::nodes::{ContainerNode, DomNode};
     use crate::ListType;
