@@ -367,6 +367,32 @@ internal class EditorViewModelTest {
     }
 
     @Test
+    fun `when process code block, it returns a text update`() {
+        composer.givenToggleCodeBlock(composerStateUpdate)
+
+        val result = viewModel.processInput(EditorInputAction.CodeBlock)
+
+        verify {
+            composer.instance.codeBlock()
+            actionsStatesCallback(actionStates)
+        }
+        assertThat(result, equalTo(replaceTextResult))
+    }
+
+    @Test
+    fun `when process quote, it returns a text update`() {
+        composer.givenToggleQuote(composerStateUpdate)
+
+        val result = viewModel.processInput(EditorInputAction.Quote)
+
+        verify {
+            composer.instance.quote()
+            actionsStatesCallback(actionStates)
+        }
+        assertThat(result, equalTo(replaceTextResult))
+    }
+
+    @Test
     fun `given formatted text, getHtml function returns formatted HTML`() {
         composer.givenGetContentAsHtml(htmlParagraphs)
 

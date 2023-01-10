@@ -1,7 +1,10 @@
 package io.element.android.wysiwyg.utils
 
 import android.graphics.Typeface
-import android.text.*
+import android.text.Editable
+import android.text.SpannableString
+import android.text.SpannableStringBuilder
+import android.text.Spanned
 import android.text.style.ParagraphStyle
 import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
@@ -9,11 +12,13 @@ import android.text.style.UnderlineSpan
 import androidx.core.text.getSpans
 import io.element.android.wysiwyg.BuildConfig
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
+import io.element.android.wysiwyg.spans.CodeBlockSpan
 import io.element.android.wysiwyg.spans.ExtraCharacterSpan
 import io.element.android.wysiwyg.spans.InlineCodeSpan
 import io.element.android.wysiwyg.spans.LinkSpan
 import io.element.android.wysiwyg.spans.OrderedListSpan
 import io.element.android.wysiwyg.spans.UnorderedListSpan
+import io.element.android.wysiwyg.spans.QuoteSpan
 import org.ccil.cowan.tagsoup.Parser
 import org.xml.sax.Attributes
 import org.xml.sax.ContentHandler
@@ -30,15 +35,18 @@ import kotlin.math.roundToInt
  * to create [ExtraCharacterSpan] spans to work properly.
  */
 internal class HtmlToSpansParser(
-    private val resourcesProvider: ResourcesProvider,
+    private val resourcesHelper: ResourcesHelper,
     private val html: String,
     private val styleConfig: StyleConfig,
 ) : ContentHandler {
 
-    data class Hyperlink(val link: String)
-    object OrderedListBlock
-    object UnorderedListBlock
-    data class ListItem(val ordered: Boolean, val order: Int? = null)
+    // Spans created to be used as 'marks' while parsing
+    private data class Hyperlink(val link: String)
+    private object OrderedListBlock
+    private object UnorderedListBlock
+    private object CodeBlock
+    private object Quote
+    private data class ListItem(val ordered: Boolean, val order: Int? = null)
 
     private val parser = Parser().also { it.contentHandler = this }
     private val text = SpannableStringBuilder()
@@ -110,6 +118,12 @@ internal class HtmlToSpansParser(
                 }
                 text.setSpan(newItem, text.length, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
             }
+            "pre" -> {
+                text.setSpan(CodeBlock, text.length, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            }
+            "blockquote" -> {
+                text.setSpan(Quote, text.length, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            }
         }
     }
 
@@ -145,7 +159,53 @@ internal class HtmlToSpansParser(
                 text.setSpan(span, start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 text.removeSpan(last)
             }
+            "pre" -> {
+                val last = getLast<CodeBlock>() ?: return
+                val start = addLeadingLineBreakIfNeeded(text.getSpanStart(last))
+                text.removeSpan(last)
+
+                val codeSpan = CodeBlockSpan(
+                    0xC0A0A0A0.toInt(),
+                    10.dpToPx().toInt(),
+                )
+
+                addZWSP(text.length)
+
+                text.setSpan(codeSpan, start, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            }
+            "blockquote" -> {
+                val last = getLast<Quote>() ?: return
+                val start = addLeadingLineBreakIfNeeded(text.getSpanStart(last))
+                text.removeSpan(last)
+
+                val quoteSpan = QuoteSpan(
+                    indicatorColor = 0xC0A0A0A0.toInt(),
+                    indicatorWidth = 4.dpToPx().toInt(),
+                    indicatorPadding = 6.dpToPx().toInt(),
+                    margin = 10.dpToPx().toInt(),
+                )
+
+                addZWSP(text.length)
+
+                text.setSpan(quoteSpan, start, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            }
         }
+    }
+
+    private fun addLeadingLineBreakIfNeeded(start: Int): Int {
+        return if (start > 0) {
+            if (text[start] == ZWSP) {
+                text.replace(start, start + 1, "\n")
+            } else {
+                text.insert(start, "\n")
+            }
+            start + 1
+        } else start
+    }
+
+    private fun addZWSP(pos: Int) {
+        text.insert(pos, "$ZWSP")
+        text.setSpan(ExtraCharacterSpan(), pos, pos+1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
     }
 
     private fun handleFormatStartTag(format: InlineFormat) {
@@ -159,7 +219,7 @@ internal class HtmlToSpansParser(
             InlineFormat.Underline -> UnderlineSpan()
             InlineFormat.StrikeThrough -> StrikethroughSpan()
             InlineFormat.InlineCode ->
-                InlineCodeSpan(resourcesProvider.getColor(android.R.color.darker_gray))
+                InlineCodeSpan(resourcesHelper.getColor(android.R.color.darker_gray))
         }
         setSpanFromMark(format, span)
     }
@@ -191,7 +251,7 @@ internal class HtmlToSpansParser(
         return if (last.ordered) {
             // TODO: provide typeface and textSize somehow
             val typeface = Typeface.defaultFromStyle(Typeface.NORMAL)
-            val textSize = 16f * resourcesProvider.getDisplayMetrics().scaledDensity
+            val textSize = 16.dpToPx()
             OrderedListSpan(typeface, textSize, last.order ?: 1, gapWidth)
         } else {
             UnorderedListSpan(gapWidth, bulletRadius)
@@ -206,6 +266,10 @@ internal class HtmlToSpansParser(
     private fun <T : Any> getLast(kind: Class<T>, from: Int = 0, to: Int = text.length): T? {
         val spans = text.getSpans(from, to, kind)
         return spans.lastOrNull()
+    }
+
+    private fun Int.dpToPx(): Float {
+        return resourcesHelper.dpToPx(this)
     }
 
     companion object FormattingSpans {
@@ -233,7 +297,12 @@ internal class HtmlToSpansParser(
             // Lists
             UnorderedListSpan::class.java,
             OrderedListSpan::class.java,
+
             ExtraCharacterSpan::class.java,
+
+            // Blocks
+            CodeBlockSpan::class.java,
+            QuoteSpan::class.java,
         )
 
         fun Editable.removeFormattingSpans() =

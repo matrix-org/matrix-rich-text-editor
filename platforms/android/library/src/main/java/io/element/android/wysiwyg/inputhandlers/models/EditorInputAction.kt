@@ -52,6 +52,10 @@ internal sealed interface EditorInputAction {
      */
     data class ApplyInlineFormat(val format: InlineFormat): EditorInputAction
 
+    object CodeBlock: EditorInputAction
+
+    object Quote: EditorInputAction
+
     /**
      * Un-does the previous action, restoring the previous editor state.
      */

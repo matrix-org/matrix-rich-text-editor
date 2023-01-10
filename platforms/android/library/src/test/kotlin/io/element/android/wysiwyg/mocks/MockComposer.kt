@@ -14,6 +14,7 @@ class MockComposer {
     init {
         givenCurrentDomState()
         givenActionStates()
+        givenDummyToExampleFormat()
     }
 
     fun givenCurrentDomState(
@@ -111,6 +112,14 @@ class MockComposer {
         update: ComposerUpdate = MockComposerUpdateFactory.create(),
     ) = every { instance.unorderedList() } returns update
 
+    fun givenToggleCodeBlock(
+        update: ComposerUpdate = MockComposerUpdateFactory.create(),
+    ) = every { instance.codeBlock() } returns update
+
+    fun givenToggleQuote(
+        update: ComposerUpdate = MockComposerUpdateFactory.create(),
+    ) = every { instance.quote() } returns update
+
     fun givenErrorInUpdateSelection(
         throwable: Throwable = IllegalStateException("Invalid selection range"),
     ) = every { instance.select(any(), any()) } throws throwable
@@ -123,4 +132,5 @@ class MockComposer {
         markdown: String = ""
     ) = every { instance.getContentAsMarkdown() } returns markdown
 
+    fun givenDummyToExampleFormat() = every { instance.toExampleFormat() } returns ""
 }
