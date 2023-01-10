@@ -5,25 +5,28 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Context.CLIPBOARD_SERVICE
+import android.graphics.Canvas
 import android.os.Build
 import android.os.Parcelable
 import android.text.Selection
 import android.text.Spannable
 import android.text.SpannableStringBuilder
+import android.text.Spanned
 import android.util.AttributeSet
-import android.util.TypedValue.COMPLEX_UNIT_DIP
-import android.util.TypedValue.applyDimension
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
+import androidx.core.graphics.withTranslation
 import androidx.lifecycle.*
 import com.google.android.material.textfield.TextInputEditText
+import io.element.android.wysiwyg.inlinebg.InlineBgHelper
 import io.element.android.wysiwyg.inputhandlers.InterceptInputConnection
 import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.inputhandlers.models.LinkAction
 import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
+import io.element.android.wysiwyg.spans.InlineCodeSpan
 import io.element.android.wysiwyg.utils.*
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
 import io.element.android.wysiwyg.viewmodel.EditorViewModel
@@ -36,6 +39,7 @@ class EditorEditText : TextInputEditText {
     private var inputConnection: InterceptInputConnection? = null
 
     private lateinit var styleConfig: StyleConfig
+    private lateinit var inlineCodeBgHelper: InlineBgHelper<InlineCodeSpan>
 
     private val viewModel: EditorViewModel by viewModel(
         viewModelInitializer = {
@@ -66,29 +70,17 @@ class EditorEditText : TextInputEditText {
     constructor(context: Context) : super(context)
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-        context.theme.obtainStyledAttributes(
-            attrs,
-            R.styleable.EditorEditText,
-            0, 0
-        ).apply {
-            // Default attributes
-            var bulletGapWidth =
-                applyDimension(COMPLEX_UNIT_DIP, 4f, context.resources.displayMetrics)
-            var bulletRadius =
-                applyDimension(COMPLEX_UNIT_DIP, 2f, context.resources.displayMetrics)
 
-            try {
-                bulletGapWidth =
-                    getDimension(R.styleable.EditorEditText_bulletGap, bulletGapWidth)
-                bulletRadius = getDimension(R.styleable.EditorEditText_bulletRadius, bulletRadius)
-            } finally {
-                styleConfig = StyleConfig(
-                    bulletGapWidth = bulletGapWidth,
-                    bulletRadius = bulletRadius,
-                )
-                recycle()
-            }
-        }
+        styleConfig = EditorEditTextAttributeReader(context, attrs).styleConfig
+        inlineCodeBgHelper = InlineBgHelper(
+            spanType = InlineCodeSpan::class.java,
+            horizontalPadding = styleConfig.inlineCodeHorizontalPadding,
+            verticalPadding = styleConfig.inlineCodeVerticalPadding,
+            drawable = styleConfig.inlineCodeSingleLineBg,
+            drawableLeft = styleConfig.inlineCodeMultiLineBgLeft,
+            drawableMid = styleConfig.inlineCodeMultiLineBgMid,
+            drawableRight = styleConfig.inlineCodeMultiLineBgRight
+        )
     }
 
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) :
@@ -379,6 +371,16 @@ class EditorEditText : TextInputEditText {
         val result = viewModel.processInput(EditorInputAction.ReplaceAllMarkdown(markdown)) ?: return
         setTextFromComposerUpdate(result)
         setSelectionFromComposerUpdate(result.selection.last)
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        // need to draw bg first so that text can be on top during super.onDraw()
+        if (text is Spanned && layout != null) {
+            canvas.withTranslation(totalPaddingLeft.toFloat(), totalPaddingTop.toFloat()) {
+                inlineCodeBgHelper.draw(canvas, text as Spanned, layout)
+            }
+        }
+        super.onDraw(canvas)
     }
 
     private fun setTextFromComposerUpdate(result: ReplaceTextResult) {

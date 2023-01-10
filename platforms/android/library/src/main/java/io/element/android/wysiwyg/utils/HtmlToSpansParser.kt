@@ -213,13 +213,12 @@ internal class HtmlToSpansParser(
     }
 
     private fun handleFormatEndTag(format: InlineFormat) {
-        val span = when (format) {
+        val span: Any = when (format) {
             InlineFormat.Bold -> StyleSpan(Typeface.BOLD)
             InlineFormat.Italic -> StyleSpan(Typeface.ITALIC)
             InlineFormat.Underline -> UnderlineSpan()
             InlineFormat.StrikeThrough -> StrikethroughSpan()
-            InlineFormat.InlineCode ->
-                InlineCodeSpan(resourcesHelper.getColor(android.R.color.darker_gray))
+            InlineFormat.InlineCode -> InlineCodeSpan()
         }
         setSpanFromMark(format, span)
     }

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="EditorEditText">
+        <item name="bulletGap">2dp</item>
+        <item name="bulletRadius">2dp</item>
+        <item name="inlineCodeHorizontalPadding">2dp</item>
+        <item name="inlineCodeVerticalPadding">0dp</item>
+        <item name="inlineCodeSingleLineBg">@drawable/inline_code_single_line_bg</item>
+        <item name="inlineCodeMultiLineBgLeft">@drawable/inline_code_multi_line_bg_left</item>
+        <item name="inlineCodeMultiLineBgMid">@drawable/inline_code_multi_line_bg_mid</item>
+        <item name="inlineCodeMultiLineBgRight">@drawable/inline_code_multi_line_bg_right</item>
+    </style>
+</resources>

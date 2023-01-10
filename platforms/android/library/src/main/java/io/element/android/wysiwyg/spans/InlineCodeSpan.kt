@@ -1,51 +1,15 @@
 package io.element.android.wysiwyg.spans
 
-import android.content.Context
-import android.os.Parcel
-import android.text.ParcelableSpan
-import android.text.TextPaint
-import android.text.style.BackgroundColorSpan
-import android.text.style.MetricAffectingSpan
 import android.text.style.TypefaceSpan
-import android.text.style.UpdateAppearance
-import androidx.core.content.ContextCompat
 
 /**
- * Inline code (`some code` in Markdown, <code> in HTML) Span that applies a monospaced font style
- * and adds a background color.
+ * Inline code (`some code` in Markdown, <code> in HTML) Span that applies a monospaced font style.
+ *
+ * Note that this span does not apply a background style; it simply tells the TextView where to
+ * apply an inline background.
+ *
+ * See [io.element.android.wysiwyg.inlinebg.InlineBgRenderer], based on the official Google sample:
+ * - https://medium.com/androiddevelopers/drawing-a-rounded-corner-background-on-text-5a610a95af5
+ * - https://github.com/googlearchive/android-text/tree/996fdb65bbfbb786c3ca4e4e40b30509067201fc/RoundedBackground-Kotlin
  */
-class InlineCodeSpan : MetricAffectingSpan, UpdateAppearance, ParcelableSpan {
-
-    private val monoTypefaceSpan: TypefaceSpan
-    private val backgroundColorSpan: BackgroundColorSpan
-
-    constructor(backgroundColor: Int): super() {
-        monoTypefaceSpan = TypefaceSpan("monospace")
-        backgroundColorSpan = BackgroundColorSpan(backgroundColor)
-    }
-
-    constructor(parcel: Parcel): super() {
-        monoTypefaceSpan = requireNotNull(parcel.readParcelable(TypefaceSpan::class.java.classLoader))
-        backgroundColorSpan = requireNotNull(parcel.readParcelable(BackgroundColorSpan::class.java.classLoader))
-    }
-
-    override fun updateDrawState(tp: TextPaint) {
-        monoTypefaceSpan.updateDrawState(tp)
-        backgroundColorSpan.updateDrawState(tp)
-    }
-
-    override fun updateMeasureState(textPaint: TextPaint) {
-        monoTypefaceSpan.updateMeasureState(textPaint)
-    }
-
-    fun getSpanTypeIdInternal(): Int = 1000
-
-    override fun describeContents(): Int = 0
-
-    override fun writeToParcel(dest: Parcel?, flags: Int) {
-        dest?.writeParcelable(monoTypefaceSpan, flags)
-        dest?.writeParcelable(backgroundColorSpan, flags)
-    }
-
-    override fun getSpanTypeId(): Int = getSpanTypeIdInternal()
-}
+internal class InlineCodeSpan: TypefaceSpan("monospace")

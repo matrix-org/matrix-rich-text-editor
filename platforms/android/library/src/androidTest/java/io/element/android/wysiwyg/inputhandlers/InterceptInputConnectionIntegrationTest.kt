@@ -4,7 +4,7 @@ import android.app.Application
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import androidx.test.core.app.ApplicationProvider
-import io.element.android.wysiwyg.fakes.fakeStyleConfig
+import io.element.android.wysiwyg.fakes.createFakeStyleConfig
 import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.test.utils.dumpSpans
@@ -28,7 +28,7 @@ class InterceptInputConnectionIntegrationTest {
                 HtmlToSpansParser(
                     AndroidResourcesHelper(app),
                     html,
-                    fakeStyleConfig,
+                    createFakeStyleConfig(),
                 )
             },
         )
