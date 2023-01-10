@@ -78,6 +78,15 @@ final class WysiwygComposerViewSnapshotTests: XCTestCase {
             record: isRecord
         )
     }
+
+    func testQuoteContent() throws {
+        viewModel.setHtmlContent("<blockquote>Some quote with<br /><br /><br /><br />line breaks inside")
+        assertSnapshot(
+            matching: hostingController,
+            as: .image(on: .iPhone13),
+            record: isRecord
+        )
+    }
     
     override func tearDownWithError() throws {
         try super.tearDownWithError()
