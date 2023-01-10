@@ -15,7 +15,6 @@
 use std::collections::HashMap;
 use std::ops::Not;
 
-use widestring::ustr::CharsUtf16;
 use widestring::{Utf16Str, Utf16String};
 
 use crate::char::CharExt;
@@ -325,9 +324,12 @@ impl SelectionWriter {
         node: &ContainerNode<S>,
     ) {
         if let Some(loc) = self.locations.get(&node.handle()) {
+            if loc.is_start() {
+                return;
+            }
             let strings_to_add = self.state.advance(loc, 1);
-            for (str, i) in strings_to_add.into_iter().rev() {
-                buf.insert(pos + i, &S::from(str));
+            for (str, _) in strings_to_add.into_iter().rev() {
+                buf.insert(pos, &S::from(str));
             }
         }
     }
