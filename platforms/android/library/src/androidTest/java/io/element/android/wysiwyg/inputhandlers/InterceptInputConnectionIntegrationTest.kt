@@ -28,7 +28,7 @@ class InterceptInputConnectionIntegrationTest {
                 HtmlToSpansParser(
                     AndroidResourcesProvider(app),
                     html,
-                    createFakeStyleConfig(app),
+                    createFakeStyleConfig(),
                 )
             },
         )

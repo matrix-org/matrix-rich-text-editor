@@ -103,7 +103,7 @@ class HtmlToSpansParserTest {
         return HtmlToSpansParser(
             resourcesProvider = AndroidResourcesProvider(application = app),
             html = html,
-            styleConfig = createFakeStyleConfig(app),
+            styleConfig = createFakeStyleConfig(),
         ).convert()
     }
 }
