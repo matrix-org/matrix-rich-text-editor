@@ -40,10 +40,20 @@ where
     pub fn new(top_level_items: Vec<DomNode<S>>) -> Self {
         let mut document = ContainerNode::default();
         document.append_children(top_level_items);
-        document.set_handle(DomHandle::from_raw(Vec::new()));
+        document.set_handle(DomHandle::root());
 
         Self {
             document: DomNode::Container(document),
+        }
+    }
+
+    pub fn new_with_root(root_node: DomNode<S>) -> Self {
+        assert!(root_node.is_container_node());
+        let mut root_node = root_node;
+        root_node.set_handle(DomHandle::root());
+
+        Self {
+            document: root_node,
         }
     }
 

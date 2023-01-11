@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use crate::dom::nodes::dom_node::DomNodeKind::{Generic, Quote};
+use crate::dom::nodes::ContainerNodeKind;
 use crate::dom::DomLocation;
 use crate::{
     ComposerAction, ComposerModel, ComposerUpdate, DomHandle, DomNode,
@@ -66,31 +67,31 @@ where
             usize::MAX,
             parent_handle.depth(),
         );
-        // Needed to be able to add children
-        subtree.set_handle(DomHandle::root());
 
         let insert_at_handle =
             self.state.dom.find_insert_handle_for_extracted_block_node(
                 &start_handle,
                 &parent_handle,
-                &subtree,
+                &subtree.document_node(),
             );
-        let quote_node = if subtree.is_block_node() && subtree.kind() != Generic
+        let subtree_container = subtree.document_mut();
+        let quote_node = if subtree_container.is_block_node()
+            && !matches!(subtree_container.kind(), ContainerNodeKind::Generic)
         {
-            DomNode::new_quote(vec![subtree])
-        } else if let DomNode::Container(subtree_container) = subtree {
+            DomNode::new_quote(subtree_container.remove_children())
+        } else {
             let needs_paragraph = subtree_container
                 .children()
                 .iter()
                 .any(|n| !n.is_block_node());
             let children = if needs_paragraph {
-                vec![DomNode::new_paragraph(subtree_container.take_children())]
+                vec![DomNode::new_paragraph(
+                    subtree_container.remove_children(),
+                )]
             } else {
-                subtree_container.take_children()
+                subtree_container.remove_children()
             };
             DomNode::new_quote(children)
-        } else {
-            panic!("Subtree node must be a container");
         };
         self.state.dom.insert_at(&insert_at_handle, quote_node);
 

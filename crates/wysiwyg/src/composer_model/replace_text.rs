@@ -222,10 +222,7 @@ where
                 leaf.start_offset - selection_offset,
                 block_location.node_handle.depth(),
             );
-            sub_tree.set_handle(DomHandle::root());
-            let DomNode::Container(sub_tree_container) = &mut sub_tree else {
-                panic!("Sub tree must start from a container node");
-            };
+            let sub_tree_container = sub_tree.document_mut();
 
             let new_line_at_end = leaf.is_start();
 
@@ -271,7 +268,7 @@ where
                     // Insert the whole code block at its old DomHandle
                     insert_code_block(
                         &mut self.state.dom,
-                        sub_tree,
+                        sub_tree.remove(&DomHandle::root()),
                         &block_location.node_handle,
                         new_line_at_end,
                     );
@@ -280,7 +277,7 @@ where
                 // Insert the whole code block at its old DomHandle
                 insert_code_block(
                     &mut self.state.dom,
-                    sub_tree,
+                    sub_tree.remove(&DomHandle::root()),
                     &block_location.node_handle,
                     new_line_at_end,
                 );
@@ -380,11 +377,7 @@ where
                 leaf.start_offset,
                 block_location.node_handle.depth(),
             );
-            // Needed to be able to add children
-            sub_tree.set_handle(DomHandle::root());
-            let DomNode::Container(sub_tree_container) = sub_tree else {
-                panic!("Sub tree must start from a container node");
-            };
+            let sub_tree_container = sub_tree.document_mut();
 
             let insert_at =
                 if self.state.dom.contains(&block_location.node_handle) {
@@ -404,7 +397,7 @@ where
             if !sub_tree_container.is_empty() {
                 self.state.dom.insert_at(
                     &insert_at.next_sibling(),
-                    DomNode::new_quote(sub_tree_container.take_children()),
+                    DomNode::new_quote(sub_tree_container.remove_children()),
                 );
             }
         } else {

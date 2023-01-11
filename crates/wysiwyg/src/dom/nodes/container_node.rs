@@ -295,6 +295,10 @@ where
         self.children
     }
 
+    pub(crate) fn remove_children(&mut self) -> Vec<DomNode<S>> {
+        self.children.drain(..).collect()
+    }
+
     pub(crate) fn take_children_after(
         &mut self,
         position: usize,

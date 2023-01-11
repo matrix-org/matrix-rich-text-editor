@@ -68,12 +68,7 @@ where
             usize::MAX,
             parent_handle.depth(),
         );
-        // Needed to be able to add children
-        subtree.set_handle(DomHandle::root());
-
-        let Some(subtree_container) = subtree.as_container_mut() else {
-            panic!("Subtree must be a container");
-        };
+        let subtree_container = subtree.document_mut();
 
         let mut children: Vec<DomNode<S>> = Vec::new();
         while !subtree_container.children().is_empty() {
@@ -103,7 +98,7 @@ where
             self.state.dom.find_insert_handle_for_extracted_block_node(
                 &start_handle,
                 &parent_handle,
-                &subtree,
+                &subtree.document_node(),
             );
         let code_block = DomNode::new_code_block(children);
         self.state.dom.insert_at(&insert_at_handle, code_block);

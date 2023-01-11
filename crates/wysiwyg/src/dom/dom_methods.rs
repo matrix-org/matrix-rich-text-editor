@@ -470,21 +470,11 @@ where
         depth: usize,
     ) -> (DomNode<S>, DomHandle, DomNode<S>, DomHandle) {
         let mut clone = self.clone();
-        let right = clone.split_sub_tree_from(from_handle, offset, depth);
+        let mut right = clone.split_sub_tree_from(from_handle, offset, depth);
 
         // Remove unmodified children of the right split
         // TODO: create a utility for this
-        let right = right.as_container().unwrap();
-        let mut right = DomNode::Container({
-            let children = vec![right.children().first().unwrap().clone()];
-            ContainerNode::new(
-                S::default(),
-                ContainerNodeKind::Generic,
-                None,
-                children,
-            )
-        });
-        right.set_handle(DomHandle::root());
+        let right = right.remove(&DomHandle::root());
 
         // Remove unmodified children of the left split and apply a generic container
         // TODO: create a utility for this
@@ -528,7 +518,7 @@ where
         from_handle: &DomHandle,
         start_offset: usize,
         depth: usize,
-    ) -> DomNode<S> {
+    ) -> Dom<S> {
         self.split_sub_tree(from_handle, start_offset, None, usize::MAX, depth)
     }
 
@@ -547,7 +537,7 @@ where
         to_handle: &DomHandle,
         end_offset: usize,
         depth: usize,
-    ) -> DomNode<S> {
+    ) -> Dom<S> {
         self.split_sub_tree(
             from_handle,
             start_offset,
@@ -572,7 +562,7 @@ where
         to_handle: Option<DomHandle>,
         end_offset: usize,
         depth: usize,
-    ) -> DomNode<S> {
+    ) -> Dom<S> {
         let cur_handle = from_handle.sub_handle_up_to(depth);
         let mut subtree_children = self.split_sub_tree_at_index(
             cur_handle,
@@ -584,7 +574,7 @@ where
 
         // Create new 'root' node to contain the split sub-tree
         let new_subtree = subtree_children.remove(0);
-        new_subtree
+        Dom::new_with_root(new_subtree)
     }
 
     fn split_sub_tree_at_index<'a>(

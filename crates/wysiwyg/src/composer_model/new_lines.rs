@@ -90,15 +90,12 @@ where
                 usize::MAX,
                 block_node_handle.depth(),
             );
-            sub_tree.set_handle(DomHandle::root());
-            let DomNode::Container(sub_tree_container) = sub_tree else {
-                panic!("Sub tree must be a container node");
-            };
+            let sub_tree_container = sub_tree.document_mut();
 
             let cur_block_node_was_removed =
                 !self.state.dom.contains(&block_node_handle);
 
-            let mut children = sub_tree_container.take_children();
+            let mut children = sub_tree_container.remove_children();
             let new_paragraph =
                 if children.first().map_or(false, |n| n.kind() == Paragraph) {
                     children.remove(0)
@@ -173,11 +170,7 @@ where
                 0,
                 ancestor_block_location.node_handle.depth(),
             );
-            // Needed to be able to add children
-            sub_tree.set_handle(DomHandle::root());
-            let DomNode::Container(sub_tree_container) = &sub_tree else {
-                panic!("Sub tree must start from a container node");
-            };
+            let sub_tree_container = &mut sub_tree.document();
 
             let insert_at = if self
                 .state
@@ -194,7 +187,9 @@ where
             };
 
             if !sub_tree_container.is_empty() {
-                self.state.dom.insert_at(&insert_at, sub_tree);
+                self.state
+                    .dom
+                    .insert_at(&insert_at, sub_tree.remove(&DomHandle::root()));
             }
 
             self.state
