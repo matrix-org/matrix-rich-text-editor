@@ -15,7 +15,7 @@
 use crate::composer_model::delete_text::Direction;
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
-use crate::dom::to_html::ToHtml;
+use crate::dom::to_html::{ToHtml, ToHtmlState};
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
@@ -194,7 +194,7 @@ where
         &self,
         buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        is_last_node_in_parent: bool,
+        state: ToHtmlState,
     ) {
         let cur_pos = buf.len();
         let string = self.data.to_string();
@@ -204,7 +204,7 @@ where
             // `a     b` to `a\u{A0}\u{A0}\u{A0}\u{A0} b`, which will render
             // exactly as five spaces like in the input.
             .replace("  ", "\u{A0}\u{A0}");
-        if is_last_node_in_parent
+        if state.is_last_node_in_parent
             && escaped.chars().next_back().map_or(false, |c| c == ' ')
         {
             // If this is the last node and it ends in a space, replace that

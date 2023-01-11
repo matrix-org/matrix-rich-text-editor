@@ -24,12 +24,27 @@ where
         &self,
         buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        is_last_node_in_parent: bool,
+        state: ToHtmlState,
     );
 
     fn to_html(&self) -> S {
         let mut buf = S::default();
-        self.fmt_html(&mut buf, None, false);
+        self.fmt_html(&mut buf, None, ToHtmlState::default());
         buf
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct ToHtmlState {
+    pub is_inside_code_block: bool,
+    pub is_last_node_in_parent: bool,
+}
+
+impl Default for ToHtmlState {
+    fn default() -> Self {
+        Self {
+            is_inside_code_block: false,
+            is_last_node_in_parent: false,
+        }
     }
 }

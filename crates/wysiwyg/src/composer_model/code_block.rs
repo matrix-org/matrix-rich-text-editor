@@ -418,6 +418,25 @@ where
 #[cfg(test)]
 mod test {
     use crate::tests::testutils_composer_model::{cm, tx};
+    use indoc::indoc;
+
+    #[test]
+    fn code_block_roundtrips() {
+        let mut model = cm("<pre>Test|\nCode</pre>");
+        // <pre> internally works as any other block node, with paragraphs
+        let tree = model.to_tree().to_string();
+        let expected_tree = indoc! { r#"
+        
+            └>pre
+              ├>p
+              │ └>"Test"
+              └>p
+                └>"Code"
+        "#};
+        assert_eq!(tree, expected_tree);
+        // But it gets translated back to the proper HTML output
+        assert_eq!(tx(&model), "<pre>Test|\nCode</pre>");
+    }
 
     #[test]
     fn add_code_block_to_empty_dom() {

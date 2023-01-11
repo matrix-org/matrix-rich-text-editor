@@ -21,6 +21,7 @@ use crate::char::CharExt;
 use crate::composer_model::menu_state::MenuStateComputeType;
 use crate::dom::nodes::{ContainerNode, LineBreakNode, TextNode, ZwspNode};
 use crate::dom::parser::parse;
+use crate::dom::to_html::ToHtmlState;
 use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
 use crate::dom::DomLocation;
 use crate::{
@@ -231,7 +232,11 @@ impl ComposerModel<Utf16String> {
             .map(|l| (l.node_handle.clone(), l.clone()))
             .collect();
         let mut selection_writer = SelectionWriter { state, locations };
-        root.fmt_html(&mut buf, Some(&mut selection_writer), false);
+        root.fmt_html(
+            &mut buf,
+            Some(&mut selection_writer),
+            ToHtmlState::default(),
+        );
         if range.is_empty().not() {
             // we should always have written at least the start of the selection
             // ({ or |) by now.

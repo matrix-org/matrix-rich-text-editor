@@ -18,7 +18,7 @@ use crate::char::CharExt;
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::nodes::dom_node::{DomNode, DomNodeKind};
-use crate::dom::to_html::ToHtml;
+use crate::dom::to_html::{ToHtml, ToHtmlState};
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
@@ -681,44 +681,71 @@ where
         &self,
         formatter: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        _: bool,
+        state: ToHtmlState,
     ) {
-        let name = self.name();
-        if !name.is_empty() {
-            formatter.push('<');
-            formatter.push(name);
-            if let Some(attrs) = &self.attrs {
-                for attr in attrs {
-                    let (attr_name, value) = attr;
-                    formatter.push(' ');
-                    formatter.push(&**attr_name);
-                    formatter.push("=\"");
-                    formatter.push(&**value);
-                    formatter.push('"');
-                }
+        if matches!(self.kind, ContainerNodeKind::Paragraph)
+            && state.is_inside_code_block
+        {
+            self.fmt_children_html(formatter, selection_writer, state);
+            if !state.is_last_node_in_parent {
+                formatter.push('\n');
             }
-            formatter.push('>');
-        }
+        } else {
+            let name = self.name();
+            if !name.is_empty() {
+                formatter.push('<');
+                formatter.push(name);
+                if let Some(attrs) = &self.attrs {
+                    for attr in attrs {
+                        let (attr_name, value) = attr;
+                        formatter.push(' ');
+                        formatter.push(&**attr_name);
+                        formatter.push("=\"");
+                        formatter.push(&**value);
+                        formatter.push('"');
+                    }
+                }
+                formatter.push('>');
+            }
 
+            let mut state = state;
+            if matches!(self.kind, ContainerNodeKind::CodeBlock) {
+                state.is_inside_code_block = true;
+            }
+
+            self.fmt_children_html(formatter, selection_writer, state);
+
+            if !name.is_empty() {
+                formatter.push("</");
+                formatter.push(name);
+                formatter.push('>');
+            }
+        }
+    }
+}
+
+impl<S: UnicodeString> ContainerNode<S> {
+    fn fmt_children_html(
+        &self,
+        formatter: &mut S,
+        selection_writer: Option<&mut SelectionWriter>,
+        mut state: ToHtmlState,
+    ) {
         if let Some(w) = selection_writer {
             if self.is_block_node() && self.is_empty() {
                 w.write_selection_block_node(formatter, formatter.len(), &self)
             }
             for (i, child) in self.children.iter().enumerate() {
                 let is_last = self.children().len() == i + 1;
-                child.fmt_html(formatter, Some(w), is_last);
+                state.is_last_node_in_parent = is_last;
+                child.fmt_html(formatter, Some(w), state);
             }
         } else {
             for (i, child) in self.children.iter().enumerate() {
                 let is_last = self.children().len() == i + 1;
-                child.fmt_html(formatter, None, is_last);
+                state.is_last_node_in_parent = is_last;
+                child.fmt_html(formatter, None, state);
             }
-        }
-
-        if !name.is_empty() {
-            formatter.push("</");
-            formatter.push(name);
-            formatter.push('>');
         }
     }
 }

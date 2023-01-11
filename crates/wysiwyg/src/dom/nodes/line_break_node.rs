@@ -14,7 +14,7 @@
 
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
-use crate::dom::to_html::ToHtml;
+use crate::dom::to_html::{ToHtml, ToHtmlState};
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
@@ -77,7 +77,7 @@ where
         &self,
         buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        _: bool,
+        _: ToHtmlState,
     ) {
         let cur_pos = buf.len();
         buf.push(S::from("<br />"));

@@ -16,6 +16,7 @@ use std::fmt::Display;
 
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::nodes::{ContainerNode, DomNode};
+use crate::dom::to_html::ToHtmlState;
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{
@@ -535,10 +536,9 @@ where
         &self,
         buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        is_last_node_in_parent: bool,
+        state: ToHtmlState,
     ) {
-        self.document
-            .fmt_html(buf, selection_writer, is_last_node_in_parent)
+        self.document.fmt_html(buf, selection_writer, state)
     }
 }
 

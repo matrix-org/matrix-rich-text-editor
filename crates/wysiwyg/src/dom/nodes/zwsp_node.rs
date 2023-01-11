@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use crate::composer_model::example_format::SelectionWriter;
+use crate::dom::to_html::ToHtmlState;
 use crate::dom::to_markdown::MarkdownOptions;
 use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use crate::{
@@ -70,7 +71,7 @@ where
         &self,
         buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        _: bool,
+        _: ToHtmlState,
     ) {
         let cur_pos = buf.len();
         buf.push(self.data());

@@ -17,7 +17,7 @@ use crate::dom::dom_handle::DomHandle;
 use crate::dom::nodes::{
     ContainerNode, ContainerNodeKind, LineBreakNode, TextNode, ZwspNode,
 };
-use crate::dom::to_html::ToHtml;
+use crate::dom::to_html::{ToHtml, ToHtmlState};
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
@@ -369,21 +369,13 @@ where
         &self,
         buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        is_last_node_in_parent: bool,
+        state: ToHtmlState,
     ) {
         match self {
-            DomNode::Container(s) => {
-                s.fmt_html(buf, selection_writer, is_last_node_in_parent)
-            }
-            DomNode::LineBreak(s) => {
-                s.fmt_html(buf, selection_writer, is_last_node_in_parent)
-            }
-            DomNode::Text(s) => {
-                s.fmt_html(buf, selection_writer, is_last_node_in_parent)
-            }
-            DomNode::Zwsp(s) => {
-                s.fmt_html(buf, selection_writer, is_last_node_in_parent)
-            }
+            DomNode::Container(s) => s.fmt_html(buf, selection_writer, state),
+            DomNode::LineBreak(s) => s.fmt_html(buf, selection_writer, state),
+            DomNode::Text(s) => s.fmt_html(buf, selection_writer, state),
+            DomNode::Zwsp(s) => s.fmt_html(buf, selection_writer, state),
         }
     }
 }
