@@ -344,7 +344,10 @@ where
     }
 
     pub fn text_len(&self) -> usize {
-        self.children.iter().map(|child| child.text_len()).sum()
+        let extra: usize = if self.is_block_node() { 1 } else { 0 };
+        let children_len: usize =
+            self.children.iter().map(|child| child.text_len()).sum();
+        children_len + extra
     }
 
     pub fn new_link(url: S, children: Vec<DomNode<S>>) -> Self {
@@ -729,20 +732,23 @@ impl<S: UnicodeString> ContainerNode<S> {
         &self,
         formatter: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        mut state: ToHtmlState,
+        state: ToHtmlState,
     ) {
         if let Some(w) = selection_writer {
-            if self.is_block_node() && self.is_empty() {
-                w.write_selection_block_node(formatter, formatter.len(), &self)
-            }
             for (i, child) in self.children.iter().enumerate() {
                 let is_last = self.children().len() == i + 1;
+                let mut state = state.clone();
                 state.is_last_node_in_parent = is_last;
+                let child_handle = child.handle();
                 child.fmt_html(formatter, Some(w), state);
+            }
+            if self.is_block_node() {
+                w.write_selection_block_node(formatter, formatter.len(), &self)
             }
         } else {
             for (i, child) in self.children.iter().enumerate() {
                 let is_last = self.children().len() == i + 1;
+                let mut state = state.clone();
                 state.is_last_node_in_parent = is_last;
                 child.fmt_html(formatter, None, state);
             }
