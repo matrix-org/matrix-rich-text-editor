@@ -88,26 +88,28 @@ where
     /// Returns the last node handle of the Dom. It's useful for reverse iterators that should start
     /// at the end of the Dom.
     pub fn last_node_handle(&self) -> DomHandle {
-        let mut found = false;
-        let mut cur_handle = DomHandle::root();
-        while !found {
-            if let DomNode::Container(container) = self.lookup_node(&cur_handle)
-            {
-                if !container.children().is_empty() {
-                    cur_handle =
-                        cur_handle.child_handle(container.children().len() - 1);
-                } else {
-                    // Empty container node.
-                    // We might reach this line if we use the function while we are editing the Dom.
+        self.last_node_handle_in_sub_tree(&DomHandle::root())
+    }
 
-                    found = true;
-                }
+    pub fn last_node_handle_in_sub_tree(
+        &self,
+        handle: &DomHandle,
+    ) -> DomHandle {
+        if let DomNode::Container(container) = self.lookup_node(&handle) {
+            if !container.children().is_empty() {
+                let cur_handle =
+                    handle.child_handle(container.children().len() - 1);
+                self.last_node_handle_in_sub_tree(&cur_handle)
             } else {
-                // Leaf node
-                found = true;
+                // Empty container node.
+                // We might reach this line if we use the function while we are editing the Dom.
+
+                handle.clone()
             }
+        } else {
+            // Leaf node
+            handle.clone()
         }
-        cur_handle
     }
 
     #[cfg(all(feature = "js", target_arch = "wasm32"))]

@@ -36,8 +36,9 @@ mod sys {
     use super::super::{PaDom, PaDomCreationError, PaDomCreator};
     use super::*;
     use crate::dom::nodes::dom_node::DomNodeKind;
-    use crate::dom::nodes::{ContainerNode, DomNode};
-    use crate::ListType;
+    use crate::dom::nodes::dom_node::DomNodeKind::CodeBlock;
+    use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode};
+    use crate::{DomHandle, ListType, ToHtml};
 
     pub(super) struct HtmlParser {
         current_path: Vec<DomNodeKind>,
@@ -57,7 +58,10 @@ mod sys {
             S: UnicodeString,
         {
             PaDomCreator::parse(html)
-                .map(|pa_dom| self.padom_to_dom(pa_dom))
+                .map(|pa_dom| {
+                    let mut dom = self.padom_to_dom(pa_dom);
+                    Self::post_process_code_blocks(dom)
+                })
                 .map_err(|err| {
                     self.padom_creation_error_to_dom_creation_error(err)
                 })
@@ -87,7 +91,6 @@ mod sys {
             } else {
                 panic!("Document was not a document!");
             }
-
             ret
         }
 
@@ -306,17 +309,76 @@ mod sys {
                 parse_errors: e.parse_errors,
             }
         }
+
+        fn post_process_code_blocks<S: UnicodeString>(
+            mut dom: Dom<S>,
+        ) -> Dom<S> {
+            let code_block_handles = Self::find_code_block_handles(&dom);
+            for handle in code_block_handles.iter().rev() {
+                dom = Self::post_process_code_blocks_lines(dom, &handle);
+            }
+            dom
+        }
+
+        fn find_code_block_handles<S: UnicodeString>(
+            dom: &Dom<S>,
+        ) -> Vec<DomHandle> {
+            dom.iter()
+                .filter(|n| n.kind() == CodeBlock)
+                .map(|n| n.handle())
+                .collect()
+        }
+
+        fn post_process_code_blocks_lines<S: UnicodeString>(
+            mut dom: Dom<S>,
+            handle: &DomHandle,
+        ) -> Dom<S> {
+            assert_eq!(dom.lookup_node(&handle).kind(), CodeBlock);
+            let last_handle = dom.last_node_handle_in_sub_tree(&handle);
+            let mut next_handle = last_handle.clone();
+            let mut children = Vec::new();
+            let mut line_break_handles = Vec::new();
+            for node in dom.iter_from_handle(&last_handle).rev() {
+                if node.is_line_break() || node.handle() == *handle {
+                    line_break_handles.push(next_handle.clone());
+                }
+                next_handle = node.handle();
+                if node.handle().depth() <= handle.depth() {
+                    break;
+                }
+            }
+
+            for line_break_handle in line_break_handles {
+                let mut sub_tree = dom.split_sub_tree_from(
+                    &line_break_handle,
+                    0,
+                    handle.depth(),
+                );
+                if line_break_handle.index_in_parent() > 0 {
+                    // Remove line break too
+                    dom.remove(&line_break_handle.prev_sibling());
+                }
+                let node = DomNode::new_paragraph(
+                    sub_tree.document_mut().remove_children(),
+                );
+                children.insert(0, node);
+            }
+            dom.insert_at(&handle, DomNode::new_code_block(children));
+            dom
+        }
     }
 
     #[cfg(test)]
     mod test {
+        use crate::dom::parser::parse::sys::HtmlParser;
+        use crate::dom::Dom;
         use speculoos::{assert_that, AssertionFailure, Spec};
         use widestring::Utf16String;
 
         use crate::tests::testutils_composer_model::restore_whitespace;
         use crate::ToHtml;
 
-        use super::parse;
+        use super::*;
 
         trait Roundtrips<T> {
             fn roundtrips(&self);
@@ -380,6 +442,30 @@ mod sys {
         #[test]
         fn parse_code_block() {
             assert_that!("foo <pre>~Some code</pre> bar").roundtrips();
+        }
+
+        #[test]
+        fn parse_code_block_post_processes_it() {
+            let mut parser = HtmlParser::default();
+            let html = "<pre><b>Test\nCode</b></pre>";
+            let dom: Dom<Utf16String> = PaDomCreator::parse(html)
+                .map(|pa_dom| parser.padom_to_dom(pa_dom))
+                .ok()
+                .unwrap();
+            // First, line breaks are added as placeholders for paragraphs
+            assert_eq!(
+                dom.to_html().to_string(),
+                "<pre><b>Test<br />Code</b></pre>"
+            );
+            // Then these line breaks are post-processed and we get the actual paragraphs
+            let dom = HtmlParser::post_process_code_blocks_lines(
+                dom,
+                &DomHandle::from_raw(vec![0]),
+            );
+            assert_eq!(
+                dom.to_html().to_string(),
+                "<pre><p><b>Test</b></p><p><b>Code</b></p></pre>"
+            );
         }
 
         #[test]
