@@ -55,6 +55,7 @@ where
     pub(crate) fn assert_invariants(&self) {
         self.assert_no_empty_text_nodes();
         self.assert_no_adjacent_text_nodes();
+        self.assert_exactly_one_generic_container();
 
         // We probably want some more asserts like these:
         // self.assert_document_node_is_a_container();
@@ -99,13 +100,33 @@ where
             }
         }
     }
+
+    /// Check there is only one generic container and that it is the root node
+    #[cfg(any(test, feature = "assert-invariants"))]
+    fn assert_exactly_one_generic_container(&self) {
+        use super::nodes::ContainerNodeKind;
+
+        let generic_nodes = self
+            .iter_containers()
+            .filter(|n| matches!(n.kind(), ContainerNodeKind::Generic));
+        let handles = generic_nodes.map(|n| n.handle()).collect::<Vec<_>>();
+
+        if handles.len() > 1 {
+            let first = handles.into_iter().find(|h| !h.is_root());
+            panic!(
+                "More than one generic container node found. Handle: {:?}\n{}",
+                first.unwrap().raw(),
+                self.to_tree()
+            );
+        }
+    }
 }
 
 #[cfg(test)]
 mod test {
     use widestring::Utf16String;
 
-    use crate::dom::nodes::TextNode;
+    use crate::dom::nodes::{ContainerNode, TextNode};
     use crate::dom::Dom;
     use crate::{DomNode, InlineFormatType};
 
@@ -138,6 +159,19 @@ mod test {
                 vec![DomNode::Text(TextNode::from(Utf16String::from("a")))],
             ),
             DomNode::Text(TextNode::from(Utf16String::from("b"))),
+        ]);
+
+        dom.assert_invariants();
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "More than one generic container node found. Handle: [1]"
+    )]
+    fn multiple_generic_containers_fails_invariants() {
+        let dom = Dom::new(vec![
+            DomNode::Text(TextNode::from(Utf16String::from("a"))),
+            DomNode::Container(ContainerNode::default()),
         ]);
 
         dom.assert_invariants();
