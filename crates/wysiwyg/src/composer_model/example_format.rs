@@ -330,10 +330,7 @@ impl SelectionWriter {
         node: &ContainerNode<S>,
     ) {
         if let Some(loc) = self.locations.get(&node.handle()) {
-            if loc.is_start() {
-                self.state.advance(loc, 1);
-                return;
-            } else if loc.node_handle.is_root() {
+            if loc.is_start() || loc.node_handle.is_root() {
                 return;
             }
             let strings_to_add = self.state.advance(loc, 1);
@@ -419,7 +416,7 @@ impl SelectionWritingState {
             // If this is the first location we have visited, update our start
             // position to the start of this location.
             self.current_pos = if location.kind.is_block_kind() {
-                location.position + location.length - code_units
+                location.position + location.length - 1
             } else {
                 location.position
             };
@@ -443,6 +440,10 @@ impl SelectionWritingState {
         // Remember that we have passed them, so we don't repeat
         self.done_first = self.done_first || do_first;
         self.done_last = self.done_last || do_last;
+
+        if self.done_first && self.done_last {
+            dbg!("Here");
+        }
 
         let mut ret = Vec::new();
 

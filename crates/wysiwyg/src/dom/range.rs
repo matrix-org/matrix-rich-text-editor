@@ -248,6 +248,10 @@ impl Range {
             .unwrap_or(0)
     }
 
+    pub fn has_leaves(&self) -> bool {
+        self.locations.iter().find(|l| l.is_leaf()).is_some()
+    }
+
     pub fn leaves(&self) -> impl Iterator<Item = &DomLocation> {
         self.locations.iter().filter(|loc| loc.is_leaf())
     }
@@ -544,9 +548,9 @@ mod test {
     #[test]
     fn node_on_border_is_before_or_after_cursor() {
         let range = range_of("<strong>abc</strong>|def");
-        let strong_loc = range.locations.first().unwrap();
+        let strong_loc = range.locations.get(0).unwrap();
         assert!(strong_loc.relative_position() == DomLocationPosition::Before);
-        let def_loc = range.locations.last().unwrap();
+        let def_loc = range.locations.get(2).unwrap();
         assert!(def_loc.relative_position() == DomLocationPosition::After);
     }
 

@@ -115,6 +115,12 @@ where
             intersection
         } else if self.state.dom.document().children().is_empty() {
             HashSet::from_iter(toggled_format_actions.into_iter())
+        } else if let Some(block_location) = range.deepest_block_node(None) {
+            if block_location.node_handle.is_root() {
+                HashSet::new()
+            } else {
+                self.compute_reversed_actions(&block_location.node_handle)
+            }
         } else {
             HashSet::new()
         }

@@ -188,7 +188,7 @@ where
             if !sub_tree_container.is_empty() {
                 self.state
                     .dom
-                    .insert_at(&insert_at, sub_tree.remove(&DomHandle::root()));
+                    .insert_at(&insert_at, sub_tree.take_document());
             }
 
             self.state
@@ -315,5 +315,12 @@ mod test {
             tx(&model),
             "<blockquote><p>First</p></blockquote><p>|</p><blockquote><p>Second</p></blockquote>"
         );
+    }
+
+    #[test]
+    fn write_text_in_empty_paragraph() {
+        let mut model = cm("<p>|</p>");
+        model.replace_text("Testing".into());
+        assert_eq!(tx(&model), "<p>Testing|</p>");
     }
 }

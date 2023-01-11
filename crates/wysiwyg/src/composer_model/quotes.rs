@@ -39,8 +39,9 @@ where
             // Adding an empty Quote block with an a single ZWSP
             let range = self.state.dom.find_range(s, e);
             let leaves: Vec<&DomLocation> = range.leaves().collect();
+            let node = DomNode::new_quote(vec![DomNode::new_paragraph(Vec::new())]);
             if leaves.is_empty() {
-                self.state.dom.append_at_end_of_document(DomNode::new_quote(vec![DomNode::new_zwsp()]));
+                self.state.dom.append_at_end_of_document(node);
             } else {
                 let first_leaf_loc = leaves.first().unwrap();
                 let insert_at = if first_leaf_loc.is_start() {
@@ -48,10 +49,8 @@ where
                 } else {
                     first_leaf_loc.node_handle.clone()
                 };
-                self.state.dom.insert_at(&insert_at, DomNode::new_quote(vec![DomNode::new_zwsp()]));
+                self.state.dom.insert_at(&insert_at, node);
             }
-            self.state.start += 1;
-            self.state.end += 1;
             return self.create_update_replace_all();
         };
 
@@ -155,7 +154,7 @@ mod test {
     fn apply_quote_to_simple_text() {
         let mut model = cm("Some text|");
         model.quote();
-        assert_eq!(tx(&model), "<blockquote>~Some text|</blockquote>")
+        assert_eq!(tx(&model), "<blockquote><p>Some text|</p></blockquote>")
     }
 
     #[test]
@@ -221,22 +220,22 @@ mod test {
     }
 
     #[test]
-    fn apply_quote_to_simple_text_with_line_breaks() {
-        let mut model = cm("Some |text<br />Next line");
+    fn apply_quote_to_simple_text_with_paragraphs() {
+        let mut model = cm("<p>Some |text</p><p>Next line</p>");
         model.quote();
         assert_eq!(
             tx(&model),
-            "<blockquote>~Some |text</blockquote><br />Next line"
+            "<blockquote><p>Some |text</p></blockquote><p>Next line</p>"
         )
     }
 
     #[test]
     fn apply_quote_to_several_nodes_with_line_breaks() {
-        let mut model = cm("Some {text<br /><b>Next}| line</b>");
+        let mut model = cm("<p>Some {text</p><p><b>Next}| line</b></p>");
         model.quote();
         assert_eq!(
             tx(&model),
-            "<blockquote>~Some {text<br /><b>Next}| line</b></blockquote>"
+            "<blockquote><p>Some {text</p><p><b>Next}| line</b></p></blockquote>"
         )
     }
 
@@ -274,33 +273,34 @@ mod test {
 
     #[test]
     fn apply_quote_to_code_block() {
-        let mut model = cm("<pre>~Some| code</pre>");
+        let mut model = cm("<pre>Some| code</pre>");
         model.quote();
-        assert_eq!(
-            tx(&model),
-            "<blockquote>~<pre>~Some| code</pre></blockquote>"
-        )
+        assert_eq!(tx(&model), "<blockquote><pre>Some| code</pre></blockquote>")
     }
 
     #[test]
     fn remove_quote_with_simple_text() {
-        let mut model = cm("<blockquote>~Text|</blockquote>");
+        let mut model = cm("<blockquote><p>Text|</p></blockquote>");
         model.quote();
-        assert_eq!(tx(&model), "Text|");
+        assert_eq!(tx(&model), "<p>Text|</p>");
     }
 
     #[test]
     fn remove_quote_with_simple_text_with_adjacent_nodes() {
-        let mut model = cm("<blockquote>~Text|</blockquote> with plain text");
+        let mut model =
+            cm("<blockquote><p>Text|</p></blockquote><p>with plain text</p>");
         model.quote();
-        assert_eq!(tx(&model), "Text| with plain text");
+        assert_eq!(tx(&model), "<p>Text|</p><p>with plain text</p>");
     }
 
     #[test]
     fn remove_quote_with_nested_formatted_text() {
-        let mut model = cm("<blockquote>~<b><i>Text|<br /> Some other text</i></b></blockquote>");
+        let mut model = cm("<blockquote><p><b><i>Text|</i></b></p><p><b><i>Some other text</i></b></p></blockquote>");
         model.quote();
-        assert_eq!(tx(&model), "<b><i>Text|<br /> Some other text</i></b>");
+        assert_eq!(
+            tx(&model),
+            "<p><b><i>Text|</i></b></p><p><b><i>Some other text</i></b></p>"
+        );
     }
 
     #[test]
@@ -315,17 +315,17 @@ mod test {
 
     #[test]
     fn remove_quote_containing_code_block() {
-        let mut model = cm("<blockquote>~<pre>~Some| code</pre></blockquote>");
+        let mut model = cm("<blockquote><pre>Some| code</pre></blockquote>");
         model.quote();
-        assert_eq!(tx(&model), "<pre>~Some| code</pre>");
+        assert_eq!(tx(&model), "<pre>Some| code</pre>");
     }
 
     #[test]
     fn create_and_remove_quote() {
         let mut model = cm("|");
         model.quote();
-        assert_eq!(tx(&model), "<blockquote>~|</blockquote>");
+        assert_eq!(tx(&model), "<blockquote><p>|</p></blockquote>");
         model.quote();
-        assert_eq!(tx(&model), "|");
+        assert_eq!(tx(&model), "<p>|</p>");
     }
 }

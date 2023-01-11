@@ -39,8 +39,9 @@ where
             // No suitable nodes found to be wrapped inside the code block. Add an empty block.
             let range = self.state.dom.find_range(s, e);
             let leaves: Vec<&DomLocation> = range.leaves().collect();
+            let node = DomNode::new_code_block(vec![DomNode::new_paragraph(Vec::new())]);
             if leaves.is_empty() {
-                self.state.dom.append_at_end_of_document(DomNode::new_code_block(Vec::new()));
+                self.state.dom.append_at_end_of_document(node);
             } else {
                 let first_leaf_loc = leaves.first().unwrap();
                 let insert_at = if first_leaf_loc.is_start() {
@@ -48,7 +49,7 @@ where
                 } else {
                    first_leaf_loc.node_handle.clone()
                 };
-                self.state.dom.insert_at(&insert_at, DomNode::new_code_block(Vec::new()));
+                self.state.dom.insert_at(&insert_at, node);
             }
             return self.create_update_replace_all();
         };
@@ -511,23 +512,5 @@ mod test {
         assert_eq!(tx(&model), "<pre>|</pre>");
         model.code_block();
         assert_eq!(tx(&model), "<p>|</p>");
-    }
-
-    #[test]
-    fn removing_code_block_doesnt_add_extra_line_break_at_start() {
-        let mut model = cm("<br />|");
-        model.code_block();
-        assert_eq!(tx(&model), "<br /><pre>~|</pre>");
-        model.code_block();
-        assert_eq!(tx(&model), "<br />|");
-    }
-
-    #[test]
-    fn removing_code_block_doesnt_add_extra_line_break_at_end() {
-        let mut model = cm("|<br />");
-        model.code_block();
-        assert_eq!(tx(&model), "<pre>~|</pre><br />");
-        model.code_block();
-        assert_eq!(tx(&model), "|<br />");
     }
 }
