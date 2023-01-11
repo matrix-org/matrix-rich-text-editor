@@ -117,7 +117,13 @@ export function useListeners(
         editorNode.addEventListener('wysiwygInput', onWysiwygInput);
 
         const onKeyDown = (e: KeyboardEvent) => {
-            handleKeyDown(e, editorNode);
+            handleKeyDown(
+                e,
+                editorNode,
+                composerModel,
+                formattingFunctions,
+                inputEventProcessor,
+            );
         };
         editorNode.addEventListener('keydown', onKeyDown);
 
