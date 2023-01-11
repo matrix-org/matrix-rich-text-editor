@@ -110,23 +110,20 @@ mod sys {
                         panic!("Found a document inside a document!")
                     }
                     PaDomNode::Text(text) => {
-                        // Special case for code block, translate '\n' into paragraphs
+                        // Special case for code block, translate '\n' into <br /> nodes
                         if self.current_path.contains(&DomNodeKind::CodeBlock) {
                             let text_nodes: Vec<_> =
                                 text.content.split('\n').collect();
-                            // let text_nodes_len = text_nodes.len();
-                            // for (i, str) in text_nodes.into_iter().enumerate() {
-                            for str in text_nodes.into_iter() {
+                            let text_nodes_len = text_nodes.len();
+                            for (i, str) in text_nodes.into_iter().enumerate() {
                                 if !str.is_empty() {
                                     let text_node =
                                         DomNode::new_text(str.into());
-                                    node.append_child(DomNode::new_paragraph(
-                                        vec![text_node],
-                                    ));
+                                    node.append_child(text_node);
                                 }
-                                // if i + 1 < text_nodes_len {
-                                //     node.append_child(DomNode::new_line_break());
-                                // }
+                                if i + 1 < text_nodes_len {
+                                    node.append_child(DomNode::new_line_break());
+                                }
                             }
                         } else {
                             node.append_child(DomNode::new_text(
