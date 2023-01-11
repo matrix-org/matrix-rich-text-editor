@@ -19,6 +19,10 @@ let package = Package(
             url: "https://github.com/pointfreeco/swift-snapshot-testing",
             from: "1.10.0"
         ),
+        .package(
+            url: "https://github.com/Cocoanetics/DTCoreText",
+            from: "1.6.27"
+        ),
     ],
     targets: [
         .binaryTarget(
@@ -29,6 +33,7 @@ let package = Package(
             name: "WysiwygComposer",
             dependencies: [
                 .target(name: "WysiwygComposerFFI"),
+                .product(name: "DTCoreText", package: "DTCoreText"),
             ]
         ),
         .testTarget(
