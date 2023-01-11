@@ -27,6 +27,8 @@ export type WysiwygInputEvent =
           data?: string | null;
       });
 
+export type WysiwygEvent = WysiwygInputEvent | KeyboardEvent;
+
 export type ActionTypes = typeof ACTION_TYPES[number];
 
 export type ActionState = 'enabled' | 'reversed' | 'disabled';
@@ -49,6 +51,6 @@ export type Wysiwyg = {
 };
 
 export type InputEventProcessor = (
-    event: WysiwygInputEvent,
+    event: WysiwygEvent,
     wysiwyg: Wysiwyg,
-) => WysiwygInputEvent | null;
+) => WysiwygEvent | null;
