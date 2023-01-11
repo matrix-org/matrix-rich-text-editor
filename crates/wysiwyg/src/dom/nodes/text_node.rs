@@ -199,17 +199,20 @@ where
         let cur_pos = buf.len();
         let string = self.data.to_string();
 
-        let mut escaped = html_escape::encode_text(&string)
-            // Replace all pairs of spaces with non-breaking ones. Transforms
-            // `a     b` to `a\u{A0}\u{A0}\u{A0}\u{A0} b`, which will render
-            // exactly as five spaces like in the input.
-            .replace("  ", "\u{A0}\u{A0}");
-        if state.is_last_node_in_parent
-            && escaped.chars().next_back().map_or(false, |c| c == ' ')
-        {
-            // If this is the last node and it ends in a space, replace that
-            // space with a non-breaking one.
-            escaped.replace_range(escaped.len() - 1.., "\u{A0}");
+        let mut escaped = html_escape::encode_text(&string).to_string();
+        // Replace all pairs of spaces with non-breaking ones. Transforms
+        // `a     b` to `a\u{A0}\u{A0}\u{A0}\u{A0} b`, which will render
+        // exactly as five spaces like in the input.
+        if !state.is_inside_code_block {
+            escaped = escaped.replace("  ", "\u{A0}\u{A0}");
+
+            if state.is_last_node_in_parent
+                && escaped.chars().next_back().map_or(false, |c| c == ' ')
+            {
+                // If this is the last node and it ends in a space, replace that
+                // space with a non-breaking one.
+                escaped.replace_range(escaped.len() - 1.., "\u{A0}");
+            }
         }
         buf.push(escaped.as_str());
 
