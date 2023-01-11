@@ -37,8 +37,8 @@ mod sys {
     use super::*;
     use crate::dom::nodes::dom_node::DomNodeKind;
     use crate::dom::nodes::dom_node::DomNodeKind::CodeBlock;
-    use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode};
-    use crate::{DomHandle, ListType, ToHtml};
+    use crate::dom::nodes::{ContainerNode, DomNode};
+    use crate::{DomHandle, ListType};
 
     pub(super) struct HtmlParser {
         current_path: Vec<DomNodeKind>,

@@ -754,7 +754,7 @@ impl<S: UnicodeString> ContainerNode<S> {
                 state.is_last_node_in_parent = is_last;
                 child.fmt_html(formatter, Some(w), state);
             }
-            if self.is_block_node() && !state.is_last_node_in_parent {
+            if self.is_block_node() {
                 w.write_selection_block_node(formatter, formatter.len(), &self)
             }
         } else {

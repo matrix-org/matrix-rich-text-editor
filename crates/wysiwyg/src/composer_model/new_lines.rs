@@ -1,7 +1,7 @@
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::DomNodeKind::{Generic, Paragraph};
-use crate::dom::{DomLocation, Range};
-use crate::{ComposerModel, DomHandle, DomNode, UnicodeString};
+use crate::dom::DomLocation;
+use crate::{ComposerModel, DomNode, UnicodeString};
 
 impl<S> ComposerModel<S>
 where
@@ -164,12 +164,12 @@ where
 
             // Remove existing empty paragraph
             self.state.dom.remove(&paragraph_location.node_handle);
-            let mut sub_tree = self.state.dom.split_sub_tree_from(
+            let sub_tree = self.state.dom.split_sub_tree_from(
                 &paragraph_location.node_handle,
                 0,
                 ancestor_block_location.node_handle.depth(),
             );
-            let sub_tree_container = &mut sub_tree.document();
+            let sub_tree_container = &sub_tree.document();
 
             let insert_at = if self
                 .state
@@ -194,8 +194,6 @@ where
             self.state
                 .dom
                 .insert_at(&insert_at, DomNode::new_paragraph(Vec::new()));
-
-            self.state.advance_selection();
         }
     }
 }

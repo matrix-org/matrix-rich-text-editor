@@ -14,12 +14,8 @@
 
 use crate::dom::nodes::dom_node::DomNodeKind::*;
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode};
-use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
 use crate::dom::{DomHandle, DomLocation, Range};
-use crate::{
-    ComposerAction, ComposerModel, ComposerUpdate, ToHtml, ToTree,
-    UnicodeString,
-};
+use crate::{ComposerAction, ComposerModel, ComposerUpdate, UnicodeString};
 
 impl<S> ComposerModel<S>
 where
@@ -41,7 +37,13 @@ where
             let leaves: Vec<&DomLocation> = range.leaves().collect();
             let node = DomNode::new_code_block(vec![DomNode::new_paragraph(Vec::new())]);
             if leaves.is_empty() {
-                self.state.dom.append_at_end_of_document(node);
+                if let Some(deepest_block_location) = range.deepest_block_node(None) {
+                    let block_node = self.state.dom.remove(&deepest_block_location.node_handle);
+                    let node = DomNode::new_code_block(vec![block_node]);
+                    self.state.dom.insert_at(&deepest_block_location.node_handle, node);
+                } else {
+                    self.state.dom.append_at_end_of_document(node);
+                }
             } else {
                 let first_leaf_loc = leaves.first().unwrap();
                 let insert_at = if first_leaf_loc.is_start() {
@@ -70,10 +72,6 @@ where
         );
         let subtree_container = subtree.document_mut();
 
-        let html = self.state.dom.to_html().to_string();
-        let sub_tree_html = subtree_container.to_html().to_string();
-        let sub_tree_tree = subtree_container.to_tree().to_string();
-
         let mut children: Vec<DomNode<S>> = Vec::new();
         while !subtree_container.children().is_empty() {
             let last_child = subtree_container
@@ -98,16 +96,8 @@ where
         let code_block = DomNode::new_code_block(children);
         self.state.dom.insert_at(&insert_at_handle, code_block);
 
-        let tree = self.state.dom.to_tree().to_string();
-        let html = self.state.dom.to_html().to_string();
-
         // Merge any nodes that need it
-        let new_code_block_handle =
-            self.merge_adjacent_code_blocks(&insert_at_handle);
-
-        let new_html = self.state.dom.to_html().to_string();
-
-        // self.state.dom.remove_empty_container_nodes(false);
+        self.merge_adjacent_code_blocks(&insert_at_handle);
 
         self.create_update_replace_all()
     }
@@ -193,13 +183,6 @@ where
         last_leaf: &DomLocation,
     ) -> Vec<DomNode<S>> {
         let mut children = Vec::new();
-
-        // These checks are used to verify if the changes in the Dom should also move the selection
-        let handle = container.handle();
-        let is_in_selection = range.contains(&handle);
-        let is_before = handle <= first_leaf.node_handle && !is_in_selection;
-        let is_after = handle > last_leaf.node_handle && !is_in_selection;
-
         // We process each child node
         for c in container.children() {
             children.extend(
@@ -330,27 +313,18 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<pre>~Some text| <b>and bold&nbsp;</b><i>and italic</i></pre>"
+            "<pre>Some text| <b>and bold </b><i>and italic</i></pre>"
         );
     }
 
     #[test]
-    fn add_code_block_to_several_nodes_with_line_break_at_end() {
-        let mut model = cm("Some text| <b>and bold </b><br/><i>and italic</i>");
+    fn add_code_block_to_several_nodes_in_single_paragraph() {
+        let mut model =
+            cm("<p>Some text| <b>and bold </b></p><p><i>and italic</i></p>");
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<pre>~Some text| <b>and bold&nbsp;</b></pre><br /><i>and italic</i>"
-        );
-    }
-
-    #[test]
-    fn add_code_block_to_several_nodes_with_line_break_at_start() {
-        let mut model = cm("Some text <br/><b>and bold </b><i>and |italic</i>");
-        model.code_block();
-        assert_eq!(
-            tx(&model),
-            "Some text <br /><pre>~<b>and bold&nbsp;</b><i>and |italic</i></pre>"
+            "<pre>Some text| <b>and bold </b></pre><p><i>and italic</i></p>"
         );
     }
 
@@ -404,20 +378,20 @@ mod test {
 
     #[test]
     fn add_code_block_to_existing_code_block() {
-        let mut model = cm("<p>{Text </p><pre>code}|</pre>");
+        let mut model = cm("<p>{Text</p><pre>code}|</pre>");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>{Text code}|</pre>");
+        assert_eq!(tx(&model), "<pre>{Text\ncode}|</pre>");
     }
 
     #[test]
     fn add_code_block_to_existing_code_block_partially_selected() {
         let mut model =
-            cm("<p>{Text </p><pre><b>code}|</b><i> and italic</i></pre>");
+            cm("<p>{Text</p><pre><b>code}|</b><i> and italic</i></pre>");
         model.code_block();
         let tree = model.to_tree().to_string();
         assert_eq!(
             tx(&model),
-            "<pre>{Text \n<b>code}|</b><i> and italic</i></pre>"
+            "<pre>{Text\n<b>code}|</b><i> and italic</i></pre>"
         );
     }
 

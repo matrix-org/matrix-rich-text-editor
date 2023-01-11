@@ -13,11 +13,9 @@
 // limitations under the License.
 
 use crate::dom::nodes::dom_node::DomNodeKind::{Generic, Quote};
-use crate::dom::nodes::ContainerNodeKind;
 use crate::dom::DomLocation;
 use crate::{
-    ComposerAction, ComposerModel, ComposerUpdate, DomHandle, DomNode,
-    UnicodeString,
+    ComposerAction, ComposerModel, ComposerUpdate, DomNode, UnicodeString,
 };
 
 impl<S> ComposerModel<S>
@@ -41,7 +39,13 @@ where
             let leaves: Vec<&DomLocation> = range.leaves().collect();
             let node = DomNode::new_quote(vec![DomNode::new_paragraph(Vec::new())]);
             if leaves.is_empty() {
-                self.state.dom.append_at_end_of_document(node);
+                if let Some(deepest_block_location) = range.deepest_block_node(None) {
+                    let block_node = self.state.dom.remove(&deepest_block_location.node_handle);
+                    let node = DomNode::new_quote(vec![block_node]);
+                    self.state.dom.insert_at(&deepest_block_location.node_handle, node);
+                } else {
+                    self.state.dom.append_at_end_of_document(node);
+                }
             } else {
                 let first_leaf_loc = leaves.first().unwrap();
                 let insert_at = if first_leaf_loc.is_start() {
@@ -73,12 +77,12 @@ where
                 &parent_handle,
                 &subtree.document_node(),
             );
-        let subtree_container = subtree.document_mut();
-        let quote_node = if subtree_container.is_block_node()
-            && !matches!(subtree_container.kind(), ContainerNodeKind::Generic)
+        let quote_node = if subtree.document_node().is_block_node()
+            && subtree.document_node().kind() != Generic
         {
-            DomNode::new_quote(subtree_container.remove_children())
+            DomNode::new_quote(vec![subtree.take_document()])
         } else {
+            let subtree_container = subtree.document_mut();
             let needs_paragraph = subtree_container
                 .children()
                 .iter()
@@ -105,8 +109,6 @@ where
         }
 
         self.state.dom.join_nodes_in_container(&parent_handle);
-
-        self.state.dom.remove_empty_container_nodes(false);
 
         self.create_update_replace_all()
     }
@@ -147,7 +149,7 @@ mod test {
     fn apply_quote_to_empty_dom() {
         let mut model = cm("|");
         model.quote();
-        assert_eq!(tx(&model), "<blockquote>~|</blockquote>")
+        assert_eq!(tx(&model), "<blockquote><p>|</p></blockquote>")
     }
 
     #[test]

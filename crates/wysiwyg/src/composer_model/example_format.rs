@@ -19,7 +19,6 @@ use widestring::{Utf16Str, Utf16String};
 
 use crate::char::CharExt;
 use crate::composer_model::menu_state::MenuStateComputeType;
-use crate::dom::nodes::ContainerNodeKind::Generic;
 use crate::dom::nodes::{ContainerNode, LineBreakNode, TextNode, ZwspNode};
 use crate::dom::parser::parse;
 use crate::dom::to_html::ToHtmlState;
@@ -330,7 +329,7 @@ impl SelectionWriter {
         node: &ContainerNode<S>,
     ) {
         if let Some(loc) = self.locations.get(&node.handle()) {
-            if loc.is_start() || loc.node_handle.is_root() {
+            if (loc.length > 0 && loc.is_start()) || loc.node_handle.is_root() {
                 return;
             }
             let strings_to_add = self.state.advance(loc, 1);
@@ -412,16 +411,7 @@ impl SelectionWritingState {
         location: &DomLocation,
         code_units: usize,
     ) -> Vec<(&'static str, usize)> {
-        if self.current_pos == 0 {
-            // If this is the first location we have visited, update our start
-            // position to the start of this location.
-            self.current_pos = if location.kind.is_block_kind() {
-                location.position + location.length - 1
-            } else {
-                location.position
-            };
-        }
-        self.current_pos += code_units;
+        self.current_pos = location.position + code_units;
 
         // If we just passed first, write out {
         let mut do_first = !self.done_first && self.first < self.current_pos;
@@ -440,10 +430,6 @@ impl SelectionWritingState {
         // Remember that we have passed them, so we don't repeat
         self.done_first = self.done_first || do_first;
         self.done_last = self.done_last || do_last;
-
-        if self.done_first && self.done_last {
-            dbg!("Here");
-        }
 
         let mut ret = Vec::new();
 

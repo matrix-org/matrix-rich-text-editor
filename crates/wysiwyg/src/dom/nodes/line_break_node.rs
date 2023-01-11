@@ -18,7 +18,7 @@ use crate::dom::to_html::{ToHtml, ToHtmlState};
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
-use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt, UnicodeStringExt};
+use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use crate::dom::UnicodeString;
 use std::marker::PhantomData;
 
