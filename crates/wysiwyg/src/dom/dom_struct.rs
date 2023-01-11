@@ -57,6 +57,14 @@ where
         }
     }
 
+    pub fn into_container(self) -> ContainerNode<S> {
+        if let DomNode::Container(ret) = self.document {
+            ret
+        } else {
+            panic!("Document should always be a Container!")
+        }
+    }
+
     pub fn document_mut(&mut self) -> &mut ContainerNode<S> {
         // Would be nice if we could avoid this, but it is really convenient
         // in several places to be able to treat document as a DomNode.
@@ -69,6 +77,10 @@ where
 
     pub fn document_node(&self) -> &DomNode<S> {
         &self.document
+    }
+
+    pub fn take_document_node(self) -> DomNode<S> {
+        self.document
     }
 
     pub fn children(&self) -> &Vec<DomNode<S>> {

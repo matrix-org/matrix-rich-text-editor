@@ -88,11 +88,15 @@ where
 
                 if location.ends_inside() && location.starts_inside() {
                     let offset = location.start_offset;
-                    let before = inner.slice_before(offset);
-                    outers.insert(0, before)
+                    let before = inner
+                        .document_mut()
+                        .slice_before(offset)
+                        .take_children();
+                    outers.splice(0..0, before);
                 }
+                let inner_children = inner.into_container().take_children();
 
-                container.insert_child(0, inner);
+                container.insert_children(0, inner_children);
                 self.replace(handle, outers);
             }
         }
