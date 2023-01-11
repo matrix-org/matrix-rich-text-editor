@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.16.0] - 2022-01-11
+
+### Added
+
+- Web: InputEventProcessor is called on keyDown event
+- iOS: Add Quote/code blocks integration
+
 # [0.15.0] - 2022-01-10
 
 ### Added
