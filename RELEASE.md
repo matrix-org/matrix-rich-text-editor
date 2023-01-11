@@ -77,3 +77,4 @@ Once merged a [workflow](https://github.com/matrix-org/matrix-wysiwyg-composer-s
 You can also manually do a revision release by just running `./release_ios.sh` on main which will not create a release PR but a revision PR.
 
 Instead for full manual release just run `./release_ios.sh -t <version>`.
+
