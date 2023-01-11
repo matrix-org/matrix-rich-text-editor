@@ -26,17 +26,16 @@ where
             self.replace_text(S::default());
         }
 
-        let block_location = Self::deepest_block_node(&range, None).expect(
+        let block_location = range.deepest_block_node(None).expect(
             "No block node selected (at least the root one should be here)",
         );
 
         let first_leaf = range.leaves().next();
         match block_location.kind {
             Paragraph => {
-                let ancestor_block_location = Self::deepest_block_node(
-                    &range,
-                    Some(block_location.node_handle.clone()),
-                );
+                let ancestor_block_location = range.deepest_block_node(Some(
+                    block_location.node_handle.clone(),
+                ));
                 if let Some(ancestor_block_location) = ancestor_block_location {
                     if ancestor_block_location.kind != Generic {
                         self.do_new_line_in_block_node(
@@ -198,23 +197,6 @@ where
 
             self.state.advance_selection();
         }
-    }
-
-    fn deepest_block_node(
-        range: &Range,
-        ancestor_of: Option<DomHandle>,
-    ) -> Option<&DomLocation> {
-        range
-            .locations
-            .iter()
-            .filter(|l| {
-                let mut found = true;
-                if let Some(ancestor_of) = &ancestor_of {
-                    found = l.node_handle.is_ancestor_of(ancestor_of);
-                }
-                found && (l.kind.is_block_kind() || l.kind.is_structure_kind())
-            })
-            .max()
     }
 }
 

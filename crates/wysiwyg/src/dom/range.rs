@@ -357,6 +357,22 @@ impl Range {
 
         DomHandle::from_raw(shared_path)
     }
+
+    pub(crate) fn deepest_block_node(
+        &self,
+        ancestor_of: Option<DomHandle>,
+    ) -> Option<&DomLocation> {
+        self.locations
+            .iter()
+            .filter(|l| {
+                let mut found = true;
+                if let Some(ancestor_of) = &ancestor_of {
+                    found = l.node_handle.is_ancestor_of(ancestor_of);
+                }
+                found && (l.kind.is_block_kind() || l.kind.is_structure_kind())
+            })
+            .max()
+    }
 }
 
 impl IntoIterator for Range {
