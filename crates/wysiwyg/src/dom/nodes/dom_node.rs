@@ -265,7 +265,9 @@ where
     pub(crate) fn can_push(&self, other_node: &DomNode<S>) -> bool {
         match (self, other_node) {
             (DomNode::Container(c1), DomNode::Container(c2)) => {
-                c1.kind() == c2.kind() && !c1.is_list_item()
+                c1.kind() == c2.kind()
+                    && !c1.is_list_item()
+                    && !matches!(c1.kind(), ContainerNodeKind::Paragraph)
             }
             (DomNode::Text(_), DomNode::Text(_)) => true,
             _ => false,
