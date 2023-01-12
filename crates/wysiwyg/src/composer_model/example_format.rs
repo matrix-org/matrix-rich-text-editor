@@ -23,7 +23,7 @@ use crate::dom::nodes::{ContainerNode, LineBreakNode, TextNode, ZwspNode};
 use crate::dom::parser::parse;
 use crate::dom::to_html::ToHtmlState;
 use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
-use crate::dom::DomLocation;
+use crate::dom::{Dom, DomLocation};
 use crate::{
     ComposerModel, DomHandle, DomNode, Location, ToHtml, UnicodeString,
 };
@@ -85,62 +85,15 @@ impl ComposerModel<Utf16String> {
     pub fn from_example_format(text: &str) -> Self {
         let text = text.replace('~', &char::zwsp().to_string());
 
-        let mut curs = None;
-        let mut start = None;
-        let mut end = None;
-
         let mut model = ComposerModel::new();
         model.state.dom = parse(&text).unwrap();
 
         let mut offset = 0;
-        let mut needs_add_line_break = false;
-        for node in model.state.dom.iter() {
-            match node {
-                DomNode::Container(container) => {
-                    if model.state.dom.adds_line_break(&container.handle()) {
-                        needs_add_line_break = true;
-                        continue;
-                    }
-                }
-                DomNode::Text(text_node) => {
-                    let start_pos = offset;
-                    let data: &Utf16Str = text_node.data();
-                    for ch in data.chars() {
-                        if ch == '{' {
-                            start = Some(SelectionLocation::new(
-                                node.handle(),
-                                start_pos,
-                                offset - start_pos,
-                            ));
-                        } else if ch == '}' {
-                            end = Some(SelectionLocation::new(
-                                node.handle(),
-                                start_pos,
-                                offset - start_pos,
-                            ));
-                        } else if ch == '|' {
-                            curs = Some(SelectionLocation::new(
-                                node.handle(),
-                                start_pos,
-                                offset - start_pos,
-                            ));
-                        }
-                        offset += data.char_len(&ch);
-                    }
-                }
-                _ => {
-                    offset += node.text_len();
-                }
-            }
-            if needs_add_line_break
-                && model.state.dom.is_last_in_parent(&node.handle())
-                && !node.is_container_node()
-            {
-                needs_add_line_break = false;
-                offset += 1;
-            }
-        }
-        assert!(!needs_add_line_break);
+        let (start, end, curs) = Self::find_selection_in(
+            &model.state.dom,
+            model.state.dom.document_node(),
+            &mut offset,
+        );
         let Some(curs) = curs else {
             panic!("Selection not found");
         };
@@ -200,6 +153,75 @@ impl ComposerModel<Utf16String> {
         model.state.dom.explicitly_assert_invariants();
 
         model
+    }
+
+    fn find_selection_in(
+        model: &Dom<Utf16String>,
+        node: &DomNode<Utf16String>,
+        offset: &mut usize,
+    ) -> (
+        Option<SelectionLocation>,
+        Option<SelectionLocation>,
+        Option<SelectionLocation>,
+    ) {
+        let mut start = None;
+        let mut end = None;
+        let mut curs = None;
+        match node {
+            DomNode::Container(container) => {
+                for child in container.children() {
+                    let (new_start, new_end, new_curs) =
+                        Self::find_selection_in(&model, &child, offset);
+                    if start.is_none() {
+                        start = new_start;
+                    }
+                    if end.is_none() {
+                        end = new_end;
+                    }
+                    if curs.is_none() {
+                        curs = new_curs;
+                    }
+                    if model.adds_line_break(&child.handle()) {
+                        *offset += 1;
+                    }
+                    if start.is_none() && end.is_none() && curs.is_some() {
+                        break;
+                    } else if start.is_some() && end.is_some() {
+                        break;
+                    }
+                }
+            }
+            DomNode::Text(text_node) => {
+                let start_pos = *offset;
+                let data: &Utf16Str = text_node.data();
+                for ch in data.chars() {
+                    if ch == '{' {
+                        start = Some(SelectionLocation::new(
+                            node.handle(),
+                            start_pos,
+                            *offset - start_pos,
+                        ));
+                    } else if ch == '}' {
+                        end = Some(SelectionLocation::new(
+                            node.handle(),
+                            start_pos,
+                            *offset - start_pos,
+                        ));
+                    } else if ch == '|' {
+                        curs = Some(SelectionLocation::new(
+                            node.handle(),
+                            start_pos,
+                            *offset - start_pos,
+                        ));
+                    }
+                    *offset += data.char_len(&ch);
+                }
+            }
+            _ => {
+                *offset += node.text_len();
+            }
+        }
+        (start, end, curs)
     }
 
     /// Convert this model to an ASCII-art style representation to be used
@@ -417,9 +439,14 @@ impl SelectionWritingState {
         let mut do_first = !self.done_first && self.first < self.current_pos;
 
         // If we just passed last or we're at the end, write out }
-        let do_last = !self.done_last
+        let do_last_in_inline = !location.kind.is_block_kind()
             && (self.last <= self.current_pos
                 || self.current_pos == self.length);
+        let do_last_in_block = location.kind.is_block_kind()
+            && !location.node_handle.is_root()
+            && self.last < self.current_pos;
+        let do_last =
+            !self.done_last && (do_last_in_inline || do_last_in_block);
 
         // In some weird circumstances with empty text nodes, we might
         // do_last when we haven't done_first, so make sure we do_first too.
@@ -504,8 +531,7 @@ mod test {
         // We have one text node with one character
         let mut state = SelectionWritingState::new(0, 1, 1);
         let handle = DomHandle::from_raw(vec![0]);
-        let location =
-            DomLocation::new(handle, 0, 0, 1, 1, DomNodeKind::Generic);
+        let location = DomLocation::new(handle, 0, 0, 1, 1, DomNodeKind::Text);
 
         // When we advance
         let strings_to_add = state.advance(&location, 1);
@@ -730,19 +756,6 @@ mod test {
             model.get_content_as_html(),
             utf16("a<i>bcd<b>ef\u{1F4A9}g</b>hi</i>")
         );
-    }
-
-    #[test]
-    fn cm_converts_tilda_to_zero_width_space() {
-        let model = cm("~|");
-        assert_eq!(model.state.start, 1);
-        assert_eq!(model.state.end, 1);
-
-        if let DomNode::Zwsp(node) = &model.state.dom.document().children()[0] {
-            assert_eq!(node.data(), Utf16String::zwsp());
-        } else {
-            panic!("Expected a text node!");
-        }
     }
 
     #[test]
