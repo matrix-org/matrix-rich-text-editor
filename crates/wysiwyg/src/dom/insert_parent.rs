@@ -77,15 +77,20 @@ where
                 let (left, left_handle, right, right_handle) =
                     self.split_new_sub_trees(handle, offset, shared_depth);
 
+                // `outers` are the new subtrees outside the given range
                 let mut outers = if location.ends_inside() {
                     vec![right.lookup_node(&right_handle).clone()]
                 } else {
                     vec![left.lookup_node(&left_handle).clone()]
                 };
 
+                // `inner` is the new subtree within the given range
                 let mut inner =
                     if location.ends_inside() { left } else { right };
 
+                // If the range both starts and ends inside this leaf then
+                // split the leaf again. We've already split the end off so
+                // now we need to split the start.
                 if location.ends_inside() && location.starts_inside() {
                     let offset = location.start_offset;
                     let before = inner
