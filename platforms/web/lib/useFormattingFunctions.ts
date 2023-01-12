@@ -59,6 +59,7 @@ export function useFormattingFunctions(
             removeLinks: () => sendEvent('removeLinks'),
             getLink: () =>
                 composerModel?.get_link_action()?.edit_link?.link || '',
+            codeBlock: () => sendEvent('insertCodeBlock'),
         };
     }, [editorRef, composerModel]);
 
