@@ -529,9 +529,11 @@ where
             let mut slices = text_string.split('\n').peekable();
             while let Some(slice) = slices.next() {
                 let (s, e) = self.safe_selection();
-                self.do_replace_text_in(S::from(slice), s, e);
+                if !slice.is_empty() {
+                    self.do_replace_text_in(S::from(slice), s, e);
+                }
                 if slices.peek().is_some() {
-                    self.new_line();
+                    self.do_new_line();
                 }
             }
         } else {

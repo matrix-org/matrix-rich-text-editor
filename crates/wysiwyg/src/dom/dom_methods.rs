@@ -374,16 +374,13 @@ where
                     }
                     _ => panic!("Unknown type of leaf node found"),
                 }
-            } else if loc.length == 0
-                && loc.kind.is_block_kind()
-                && first_text_node
-            {
+            } else if loc.length == 0 && loc.kind.is_block_kind() {
                 // Empty block node
                 if new_text.is_empty() {
                     action_list
                         .push(DomAction::remove_node(loc.node_handle.clone()));
                     first_text_node = false;
-                } else {
+                } else if first_text_node {
                     match loc.kind {
                         Paragraph | ListItem => {
                             let text_node = DomNode::new_text(new_text.clone());
