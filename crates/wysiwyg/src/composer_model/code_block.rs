@@ -70,9 +70,9 @@ where
             usize::MAX,
             parent_handle.depth(),
         );
-        let subtree_container = subtree.document_mut();
 
         let mut children: Vec<DomNode<S>> = Vec::new();
+        let subtree_container = subtree.document_mut();
         while !subtree_container.children().is_empty() {
             let last_child = subtree_container
                 .remove_child(subtree_container.children().len() - 1);
@@ -93,8 +93,16 @@ where
                 &parent_handle,
                 &subtree.document_node(),
             );
+
         let code_block = DomNode::new_code_block(children);
-        self.state.dom.insert_at(&insert_at_handle, code_block);
+        if subtree.document_node().kind() == ListItem {
+            self.state.dom.insert_at(
+                &insert_at_handle,
+                DomNode::new_list_item(vec![code_block]),
+            );
+        } else {
+            self.state.dom.insert_at(&insert_at_handle, code_block);
+        }
 
         // Merge any nodes that need it
         self.merge_adjacent_code_blocks(&insert_at_handle);
@@ -277,7 +285,7 @@ mod test {
 
     #[test]
     fn code_block_roundtrips() {
-        let mut model = cm("<pre>Test|\nCode</pre>");
+        let model = cm("<pre>Test|\nCode</pre>");
         // <pre> internally works as any other block node, with paragraphs
         let tree = model.to_tree().to_string();
         let expected_tree = indoc! { r#"
@@ -331,49 +339,50 @@ mod test {
     #[test]
     fn add_code_block_to_list_item() {
         let mut model = cm(
-            "<ul><li>~Some text <b>and bold </b><i>|and italic</i></li></ul>",
+            "<ul><li>Some text <b>and bold </b><i>|and italic</i></li></ul>",
         );
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<ul><li><pre>~Some text <b>and bold&nbsp;|</b><i>and italic</i></pre></li></ul>"
+            "<ul><li><pre>Some text <b>and bold |</b><i>and italic</i></pre></li></ul>"
         );
     }
 
     #[test]
     fn add_code_block_to_list_item_with_line_breaks() {
         let mut model = cm(
-            "<ul><li>~Some text <b>and bold </b><br/><i>and| italic</i></li></ul>",
+            "<ul><li>Some text <b>and bold </b><br/><i>and| italic</i></li></ul>",
         );
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<ul><li>~Some text <b>and bold&nbsp;</b><br /><pre>~<i>and| italic</i></pre></li></ul>"
+            "<ul><li>Some text <b>and bold&nbsp;</b><br /><pre>~<i>and| italic</i></pre></li></ul>"
         );
     }
 
     #[test]
     fn add_code_block_to_several_list_items() {
         let mut model =
-            cm("<ul><li>~{First item</li><li>~Second}| item</li></ul>");
+            cm("<ul><li>{First item</li><li>Second}| item</li></ul>");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>~{First item\nSecond}| item</pre>");
+        assert_eq!(tx(&model), "<pre>{First item\nSecond}| item</pre>");
     }
 
     #[test]
     fn add_code_block_to_several_lists() {
         let mut model =
-            cm("<ul><li>~{First item</li><li>~Second item</li></ul>Some text<ul><li>~Third}| item</li><li>~Fourth one</li></ul>");
+            cm("<ul><li>{First item</li><li>Second item</li></ul><p>Some text</p><ul><li>Third}| item</li><li>Fourth one</li></ul>");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>~{First item\nSecond item\nSome text\nThird}| item</pre><ul><li>~Fourth one</li></ul>");
+        assert_eq!(tx(&model), "<pre>{First item\nSecond item\nSome text\nThird}| item</pre><ul><li>Fourth one</li></ul>");
     }
 
     #[test]
     fn add_code_block_to_list_and_external_nodes() {
-        let mut model =
-            cm("{Text <ul><li>~First item</li><li>~Second}| item</li></ul>");
+        let mut model = cm(
+            "<p>{Text</p><ul><li>First item</li><li>Second}| item</li></ul>",
+        );
         model.code_block();
-        assert_eq!(tx(&model), "<pre>~{Text \nFirst item\nSecond}| item</pre>");
+        assert_eq!(tx(&model), "<pre>{Text\nFirst item\nSecond}| item</pre>");
     }
 
     #[test]

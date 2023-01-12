@@ -58,11 +58,11 @@ fn removing_list_item() {
 
     let mut model = cm("<ol><li>|</li></ol>");
     model.new_line();
-    assert_eq!(tx(&model), "|");
+    assert_eq!(tx(&model), "<p>|</p>");
 
-    let mut model = cm("<ol><li>~|</li></ol>");
+    let mut model = cm("<ol><li>|</li></ol>");
     model.backspace();
-    assert_eq!(tx(&model), "|");
+    assert_eq!(tx(&model), "<p>|</p>");
 }
 
 #[test]
@@ -430,17 +430,8 @@ fn new_list_after_linebreak() {
     assert_eq!(tx(&model), "start<br />|");
 
     model.unordered_list();
-    assert_eq!(tx(&model), "start<ul><li>~|</li></ul>");
-}
-
-#[test]
-fn toggling_list_updates_selection() {
-    let mut model = cm("Test|");
-    assert_eq!(model.get_selection(), sel(4, 4));
-    model.ordered_list();
-    assert_eq!(model.get_selection(), sel(5, 5));
-    model.ordered_list();
-    assert_eq!(model.get_selection(), sel(4, 4));
+    // TODO: make 'start' be contained into a paragraph
+    assert_eq!(tx(&model), "<p>start</p><ul><li>|</li></ul>");
 }
 
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {

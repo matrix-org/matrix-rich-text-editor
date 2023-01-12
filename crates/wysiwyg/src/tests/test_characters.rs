@@ -277,22 +277,22 @@ fn typing_html_does_not_break_anything() {
 fn newline_characters_insert_br_tags() {
     let mut model = cm("|");
     replace_text(&mut model, "abc\ndef\nghi");
-    assert_eq!(tx(&model), "abc<br />def<br />ghi|");
+    assert_eq!(tx(&model), "<p>abc</p><p>def</p><p>ghi|</p>");
 }
 
 #[test]
 fn leading_and_trailing_newline_characters_insert_br_tags() {
     let mut model = cm("|");
     replace_text(&mut model, "\nabc");
-    assert_eq!(tx(&model), "<br />abc|");
+    assert_eq!(tx(&model), "<p>abc|</p>");
 
     let mut model = cm("|");
     replace_text(&mut model, "abc\n");
-    assert_eq!(tx(&model), "abc<br />|");
+    assert_eq!(tx(&model), "<p>abc</p><p>|</p>");
 
     let mut model = cm("|");
     replace_text(&mut model, "\nabc\n");
-    assert_eq!(tx(&model), "<br />abc<br />|");
+    assert_eq!(tx(&model), "<p>abc</p><p>|</p>");
 }
 
 #[test]

@@ -15,11 +15,10 @@
 use std::collections::HashMap;
 
 use crate::dom::nodes::dom_node::DomNodeKind;
-use crate::dom::nodes::dom_node::DomNodeKind::{Generic, ListItem};
 use crate::dom::nodes::{ContainerNode, DomNode};
 use crate::dom::range::DomLocationPosition;
 use crate::dom::{DomHandle, DomLocation, Range};
-use crate::{ComposerModel, ComposerUpdate, ListType, Location, UnicodeString};
+use crate::{ComposerModel, ComposerUpdate, ListType, UnicodeString};
 
 impl<S> ComposerModel<S>
 where
@@ -167,18 +166,37 @@ where
         list_type: ListType,
         range: Range,
     ) -> ComposerUpdate<S> {
-        if range
-            .locations
-            .iter()
-            // FIXME: filtering positions that are before start, these shouldn't be returned from a > 0 range
-            .filter(|l| l.relative_position() != DomLocationPosition::Before)
-            .any(|l| l.kind == DomNodeKind::List)
+        let list_loc_in_range =
+            range.locations.iter().find(|l| l.kind == DomNodeKind::List);
+        let list_is_before_selection = list_loc_in_range.map_or(false, |l| {
+            l.relative_position() == DomLocationPosition::Before
+        });
+        let list_is_last_node_in_selection =
+            if let Some(list_loc) = list_loc_in_range {
+                !range.contains(&list_loc.node_handle.next_sibling())
+            } else {
+                false
+            };
+        if list_loc_in_range.is_some()
+            && (!list_is_before_selection || list_is_last_node_in_selection)
         {
             let leaves: Vec<&DomLocation> = range.leaves().collect();
             // FIXME: Workaround for toggling list when only ZWSP is selected
             if leaves.len() == 1 {
                 let handle = &leaves[0].node_handle;
                 self.single_leaf_list_toggle(list_type, handle)
+            } else if let Some(block_location) = range.deepest_block_node(None)
+            {
+                if block_location.length == 0 {
+                    self.single_leaf_list_toggle(
+                        list_type,
+                        &block_location.node_handle,
+                    )
+                } else {
+                    panic!(
+                        "This block location can't be turned into a list item"
+                    )
+                }
             } else {
                 // TODO: handle cases where a list is already present in the extended selection.
                 panic!("Partially creating/removing list is not handled yet")
@@ -321,7 +339,6 @@ where
                     &parent_list_type,
                 );
             }
-            self.state.start -= 1;
         }
     }
 

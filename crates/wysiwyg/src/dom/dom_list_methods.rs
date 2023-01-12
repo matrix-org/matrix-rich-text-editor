@@ -17,7 +17,6 @@
 
 use core::panic;
 
-use crate::dom::nodes::dom_node::DomNodeKind::Paragraph;
 use crate::{DomHandle, DomNode, ListType, UnicodeString};
 
 use super::nodes::ContainerNode;
@@ -49,35 +48,43 @@ where
         for handle in handles.iter().rev() {
             removed_nodes.push(self.remove(handle));
         }
-        // If there is only 1 children and it's a paragraph, add its contents instead
-        if removed_nodes.len() == 1 && removed_nodes[0].kind() == Paragraph {
-            let paragraph_children = removed_nodes
-                .remove(0)
-                .as_container_mut()
-                .unwrap()
-                .remove_children();
-            removed_nodes.extend(paragraph_children);
-        }
         removed_nodes.reverse();
 
-        let mut list_item = ContainerNode::new_list_item(removed_nodes);
-        // Set an arbitrary handle allows us to transform this while detached from DOM.
-        list_item.set_handle(DomHandle::root());
         let mut list_items = Vec::new();
-        let mut line_break_positions = list_item.line_break_positions();
+        if removed_nodes.iter().all(|n| n.is_block_node()) {
+            for block_node in removed_nodes {
+                let DomNode::Container(block_node) = block_node else {
+                    panic!("Block node must be a container node")
+                };
+                let children = block_node.take_children();
+                let list_item = DomNode::new_list_item(children);
+                list_items.push(list_item);
+            }
+        } else {
+            let mut list_item = ContainerNode::new_list_item(removed_nodes);
+            // Set an arbitrary handle allows us to transform this while detached from DOM.
+            list_item.set_handle(DomHandle::root());
+            let mut line_break_positions = list_item.line_break_positions();
 
-        // Slice the list item on each line break position from last to
-        // first position and create a new list item for each slice.
-        while let Some(position) = line_break_positions.pop() {
-            let mut sliced = list_item.slice_after(position);
-            sliced.slice_before(1);
-            list_items.insert(0, DomNode::Container(sliced));
-        }
+            // Slice the list item on each line break position from last to
+            // first position and create a new list item for each slice.
+            while let Some(position) = line_break_positions.pop() {
+                let mut sliced = list_item.slice_after(position);
+                sliced.slice_before(1);
+                if sliced.children().len() == 1
+                    && sliced.children()[0].is_line_break()
+                {
+                    list_items.insert(0, DomNode::new_list_item(Vec::new()));
+                } else {
+                    list_items.insert(0, DomNode::Container(sliced));
+                }
+            }
 
-        // Create a list item if we have a non-empty part remaining, or
-        // if it's the only part we have (empty list case).
-        if list_item.text_len() > 0 || list_items.is_empty() {
-            list_items.insert(0, DomNode::Container(list_item));
+            // Create a list item if we have a non-empty part remaining, or
+            // if it's the only part we have (empty list case).
+            if list_item.text_len() > 0 || list_items.is_empty() {
+                list_items.insert(0, DomNode::Container(list_item));
+            }
         }
 
         let list = ContainerNode::new_list(list_type, list_items);
@@ -130,16 +137,16 @@ where
             panic!("List is not a container")
         };
 
+        let mut nodes_to_insert = Vec::new();
+        for _index in child_index..child_index + count {
+            let list_item = list.remove_child(child_index);
+            let DomNode::Container(list_item) = list_item else {
+                panic!("List item is not a container")
+            };
+            let children = list_item.take_children();
+            nodes_to_insert.append(&mut wrap_children(children));
+        }
         if child_index == 0 {
-            let mut nodes_to_insert = Vec::new();
-            for _index in child_index..child_index + count {
-                let list_item = list.remove_child(child_index);
-                let DomNode::Container(mut list_item) = list_item else {
-                    panic!("List item is not a container")
-                };
-                let children = list_item.take_children();
-                nodes_to_insert.append(&mut wrap_children(children));
-            }
             if list.children().is_empty() {
                 // Replace the list if it became empty.
                 self.replace(handle, nodes_to_insert);
@@ -148,16 +155,6 @@ where
                 self.insert(handle, nodes_to_insert);
             }
         } else {
-            let mut nodes_to_insert = Vec::new();
-            for _index in child_index..child_index + count {
-                let list_item = list.remove_child(child_index);
-                let DomNode::Container(mut list_item) = list_item else {
-                    panic!("List item is not a container")
-                };
-                let children = list_item.take_children();
-                nodes_to_insert.append(&mut wrap_children(children));
-            }
-
             // Extract further list items to a new list, if any.
             if list.children().len() > child_index {
                 let new_list_children = list.take_children_after(child_index);
@@ -184,8 +181,7 @@ where
         offset: usize,
     ) {
         let list_item = self.lookup_node_mut(handle);
-        let mut slice = list_item.slice_after(offset);
-        slice.as_container_mut().unwrap().add_leading_zwsp();
+        let slice = list_item.slice_after(offset);
         let list = self.lookup_node_mut(&handle.parent_handle());
         let DomNode::Container(list) = list else { panic!("List node is not a container") };
         list.insert_child(handle.index_in_parent() + 1, slice);
@@ -201,7 +197,7 @@ mod test {
     use crate::dom::Dom;
     use crate::tests::testutils_composer_model::{cm, tx};
 
-    use crate::{DomHandle, ListType};
+    use crate::{DomHandle, ListType, ToHtml};
 
     #[test]
     fn wrap_consecutive_nodes_in_list() {
@@ -218,12 +214,12 @@ mod test {
         );
         assert_eq!(
             ds(&dom),
-            "<ol><li>~abc<strong>de<em>f</em></strong></li><li><strong><em>~gh</em>i</strong>jkl</li></ol>",
+            "<ol><li>abc<strong>de<em>f</em></strong></li><li><strong><em>gh</em>i</strong>jkl</li></ol>",
         );
 
         dom.extract_from_list(&DomHandle::from_raw(vec![0]));
 
-        assert_eq!(ds(&dom), "abc<strong>de<em>f<br />gh</em>i</strong>jkl",);
+        assert_eq!(ds(&dom), "<p>abc<strong>de<em>f</em></strong></p><p><strong><em>gh</em>i</strong>jkl</p>",);
     }
 
     #[test]
@@ -237,10 +233,10 @@ mod test {
                 &DomHandle::from_raw(vec![2]),
             ],
         );
-        assert_eq!(ds(&dom), "<ol><li>~abc</li><li>~def</li></ol>");
+        assert_eq!(ds(&dom), "<ol><li>abc</li><li>def</li></ol>");
 
         dom.extract_list_items(&DomHandle::from_raw(vec![0]), 0, 1);
-        assert_eq!(ds(&dom), "abc<ol><li>~def</li></ol>");
+        assert_eq!(ds(&dom), "<p>abc</p><ol><li>def</li></ol>");
     }
 
     #[test]
@@ -256,13 +252,10 @@ mod test {
                 &DomHandle::from_raw(vec![4]),
             ],
         );
-        assert_eq!(
-            ds(&dom),
-            "<ol><li>~abc</li><li>~def</li><li>~ghi</li></ol>"
-        );
+        assert_eq!(ds(&dom), "<ol><li>abc</li><li>def</li><li>ghi</li></ol>");
 
         dom.extract_list_items(&DomHandle::from_raw(vec![0]), 0, 2);
-        assert_eq!(ds(&dom), "abc<br />def<ol><li>~ghi</li></ol>");
+        assert_eq!(ds(&dom), "<p>abc</p><p>def</p><ol><li>ghi</li></ol>");
     }
 
     #[test]
@@ -276,10 +269,10 @@ mod test {
                 &DomHandle::from_raw(vec![2]),
             ],
         );
-        assert_eq!(ds(&dom), "<ol><li>~abc</li><li>~def</li></ol>");
+        assert_eq!(ds(&dom), "<ol><li>abc</li><li>def</li></ol>");
 
         dom.extract_list_items(&DomHandle::from_raw(vec![0]), 1, 1);
-        assert_eq!(ds(&dom), "<ol><li>~abc</li></ol>~def");
+        assert_eq!(ds(&dom), "<ol><li>abc</li></ol><p>def</p>");
     }
 
     #[test]
@@ -295,13 +288,10 @@ mod test {
                 &DomHandle::from_raw(vec![4]),
             ],
         );
-        assert_eq!(
-            ds(&dom),
-            "<ol><li>~abc</li><li>~def</li><li>~ghi</li></ol>"
-        );
+        assert_eq!(ds(&dom), "<ol><li>abc</li><li>def</li><li>ghi</li></ol>");
 
         dom.extract_list_items(&DomHandle::from_raw(vec![0]), 1, 2);
-        assert_eq!(ds(&dom), "<ol><li>~abc</li></ol>~def<br />ghi");
+        assert_eq!(ds(&dom), "<ol><li>abc</li></ol><p>def</p><p>ghi</p>");
     }
 
     #[test]
@@ -321,13 +311,13 @@ mod test {
         );
         assert_eq!(
             ds(&dom),
-            "<ol><li>~abc</li><li>~def</li><li>~ghi</li><li>~jkl</li></ol>"
+            "<ol><li>abc</li><li>def</li><li>ghi</li><li>jkl</li></ol>"
         );
 
         dom.extract_list_items(&DomHandle::from_raw(vec![0]), 1, 1);
         assert_eq!(
             ds(&dom),
-            "<ol><li>~abc</li></ol>~def<ol><li>~ghi</li><li>~jkl</li></ol>"
+            "<ol><li>abc</li></ol><p>def</p><ol><li>ghi</li><li>jkl</li></ol>"
         );
     }
 
@@ -348,13 +338,13 @@ mod test {
         );
         assert_eq!(
             ds(&dom),
-            "<ol><li>~abc</li><li>~def</li><li>~ghi</li><li>~jkl</li></ol>"
+            "<ol><li>abc</li><li>def</li><li>ghi</li><li>jkl</li></ol>"
         );
 
         dom.extract_list_items(&DomHandle::from_raw(vec![0]), 1, 2);
         assert_eq!(
             ds(&dom),
-            "<ol><li>~abc</li></ol>~def<br />ghi<ol><li>~jkl</li></ol>"
+            "<ol><li>abc</li></ol><p>def</p><p>ghi</p><ol><li>jkl</li></ol>"
         );
     }
 
@@ -365,10 +355,10 @@ mod test {
             ListType::Ordered,
             vec![&DomHandle::from_raw(vec![0])],
         );
-        assert_eq!(ds(&dom), "<ol><li>~abc</li></ol>");
+        assert_eq!(ds(&dom), "<ol><li>abc</li></ol>");
 
         dom.extract_list_items(&DomHandle::from_raw(vec![0]), 0, 1);
-        assert_eq!(ds(&dom), "abc");
+        assert_eq!(ds(&dom), "<p>abc</p>");
     }
 
     #[test]
@@ -384,13 +374,10 @@ mod test {
                 &DomHandle::from_raw(vec![4]),
             ],
         );
-        assert_eq!(
-            ds(&dom),
-            "<ol><li>~abc</li><li>~def</li><li>~ghi</li></ol>"
-        );
+        assert_eq!(ds(&dom), "<ol><li>abc</li><li>def</li><li>ghi</li></ol>");
 
         dom.extract_list_items(&DomHandle::from_raw(vec![0]), 0, 3);
-        assert_eq!(ds(&dom), "abc<br />def<br />ghi");
+        assert_eq!(ds(&dom), "<p>abc</p><p>def</p><p>ghi</p>");
     }
 
     #[test]
@@ -400,12 +387,12 @@ mod test {
             ListType::Ordered,
             vec![&DomHandle::from_raw(vec![0]), &DomHandle::from_raw(vec![1])],
         );
-        assert_eq!(ds(&dom), "<ol><li><em>~abcd</em>ef</li></ol>");
+        assert_eq!(ds(&dom), "<ol><li><em>abcd</em>ef</li></ol>");
 
-        dom.slice_list_item(&DomHandle::from_raw(vec![0, 0]), 4);
+        dom.slice_list_item(&DomHandle::from_raw(vec![0, 0]), 3);
         assert_eq!(
             ds(&dom),
-            "<ol><li><em>~abc</em></li><li><em>~d</em>ef</li></ol>"
+            "<ol><li><em>abc</em></li><li><em>d</em>ef</li></ol>"
         );
     }
 
@@ -413,12 +400,13 @@ mod test {
     fn wrap_and_remove_lists() {
         // Note: creating a list might consume e.g. a line break and not restore it
         // It's probably not worth it to fix these roundtrips as this wouldn't happen with paragraphs.
-        list_roundtrips("abc<strong>de<em>f<br />gh</em>i</strong>jkl|");
-        list_roundtrips("abc|");
-        //list_roundtrips("<br />abc<br />|");
-        list_roundtrips("<em>ab|c</em>");
-        //list_roundtrips("<br /><br /><br /><br />|");
-        //list_roundtrips("<br /><br /><br /><strong><br />|</strong>");
+        list_roundtrips(
+            "<p>abc<strong>de<em>f</em></strong></p><p><strong><em>gh</em>i</strong>jkl|</p>",
+        );
+        list_roundtrips("<p>abc|</p>");
+        list_roundtrips("<p></p><p>abc</p><p>|</p>");
+        list_roundtrips("<p><em>ab|c</em></p>");
+        list_roundtrips("<p>{</p><p>}|</p>");
     }
 
     fn list_roundtrips(text: &str) {
@@ -434,6 +422,7 @@ mod test {
             .state
             .dom
             .wrap_nodes_in_list(ListType::Ordered, handles);
+        let html = tx(&model);
         model.state.dom.extract_from_list(&first_handle);
         assert_eq!(tx(&model), text);
     }

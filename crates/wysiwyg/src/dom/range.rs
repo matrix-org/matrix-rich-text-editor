@@ -456,8 +456,8 @@ mod test {
             <ul><li>a</li><li>b</li></ul>\
             <ul><li>c</li><li>d|</li><li>e</li></ul>",
         );
-        assert_eq!(r.start(), 4);
-        assert_eq!(r.end(), 4);
+        assert_eq!(r.start(), 7);
+        assert_eq!(r.end(), 7);
     }
 
     #[test]
@@ -468,8 +468,8 @@ mod test {
             <ul><li>c</li><li>{d</li><li>e}|</li></ul>",
         );
 
-        assert_eq!(r.start(), 3);
-        assert_eq!(r.end(), 5);
+        assert_eq!(r.start(), 6);
+        assert_eq!(r.end(), 9);
     }
 
     #[test]
@@ -480,8 +480,8 @@ mod test {
             <ul><li>c</li><li>d</li><li>e|</li></ul>",
         );
 
-        assert_eq!(r.start(), 5);
-        assert_eq!(r.end(), 5);
+        assert_eq!(r.start(), 9);
+        assert_eq!(r.end(), 9);
     }
 
     #[test]
@@ -492,8 +492,8 @@ mod test {
             <ul><li>c</li><li>d</li><li>e</li></ul>fgh|",
         );
 
-        assert_eq!(r.start(), 8);
-        assert_eq!(r.end(), 8);
+        assert_eq!(r.start(), 13);
+        assert_eq!(r.end(), 13);
     }
 
     #[test]

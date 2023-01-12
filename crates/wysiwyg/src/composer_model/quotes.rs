@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::dom::nodes::dom_node::DomNodeKind::{Generic, Quote};
+use crate::dom::nodes::dom_node::DomNodeKind::{Generic, ListItem, Quote};
 use crate::dom::DomLocation;
 use crate::{
     ComposerAction, ComposerModel, ComposerUpdate, DomNode, UnicodeString,
@@ -77,8 +77,10 @@ where
                 &parent_handle,
                 &subtree.document_node(),
             );
-        let quote_node = if subtree.document_node().is_block_node()
-            && subtree.document_node().kind() != Generic
+        let subtree_root_kind = subtree.document_node().kind();
+        let quote_node = if subtree_root_kind.is_block_kind()
+            && subtree_root_kind != Generic
+            && subtree_root_kind != ListItem
         {
             DomNode::new_quote(vec![subtree.take_document()])
         } else {
@@ -96,16 +98,14 @@ where
             };
             DomNode::new_quote(children)
         };
-        self.state.dom.insert_at(&insert_at_handle, quote_node);
 
-        let parent = self.state.dom.parent_mut(&insert_at_handle);
-        // If quote was added to a list item and we removed the leading ZWSP, add it again
-        if parent.is_list_item()
-            && !parent.children().first().map_or(false, |n| n.is_zwsp())
-        {
-            parent.insert_child(0, DomNode::new_zwsp());
-            self.state.start += 1;
-            self.state.end += 1;
+        if subtree_root_kind == ListItem {
+            self.state.dom.insert_at(
+                &insert_at_handle,
+                DomNode::new_list_item(vec![quote_node]),
+            );
+        } else {
+            self.state.dom.insert_at(&insert_at_handle, quote_node);
         }
 
         self.state.dom.join_nodes_in_container(&parent_handle);
@@ -191,22 +191,22 @@ mod test {
 
     #[test]
     fn apply_quote_to_single_list_item() {
-        let mut model = cm("<ul><li>~List item|</li></ul>");
+        let mut model = cm("<ul><li>List item|</li></ul>");
         model.quote();
         assert_eq!(
             tx(&model),
-            "<ul><li>~<blockquote>~List item|</blockquote></li></ul>"
+            "<ul><li><blockquote><p>List item|</p></blockquote></li></ul>"
         )
     }
 
     #[test]
     fn apply_quote_to_list() {
         let mut model =
-            cm("<ul><li>~First {item</li><li>~Second}| item</li></ul>");
+            cm("<ul><li>First {item</li><li>Second}| item</li></ul>");
         model.quote();
         assert_eq!(
             tx(&model),
-            "<blockquote>~<ul><li>~First {item</li><li>~Second}| item</li></ul></blockquote>"
+            "<blockquote><ul><li>First {item</li><li>Second}| item</li></ul></blockquote>"
         )
     }
 
@@ -265,11 +265,11 @@ mod test {
     #[test]
     fn apply_quote_to_several_list_items_with_formatted_text_and_line_breaks() {
         let mut model =
-            cm("<ul><li>~<b>Some {text<br />Next line</b></li><li>~<i>Second}| item</i></li><li>~Third item</li></ul>");
+            cm("<ul><li><b>Some {text<br />Next line</b></li><li><i>Second}| item</i></li><li>Third item</li></ul>");
         model.quote();
         assert_eq!(
             tx(&model),
-            "<blockquote>~<ul><li>~<b>Some {text<br />Next line</b></li><li>~<i>Second}| item</i></li></ul></blockquote><ul><li>~Third item</li></ul>"
+            "<blockquote><ul><li><b>Some {text<br />Next line</b></li><li><i>Second}| item</i></li></ul></blockquote><ul><li>Third item</li></ul>"
         )
     }
 
@@ -307,11 +307,11 @@ mod test {
 
     #[test]
     fn remove_quote_with_list() {
-        let mut model = cm("<blockquote>~<b><i>Text|</i></b><ul><li>~Fist item</li></ul></blockquote>");
+        let mut model = cm("<blockquote><p><b><i>Text|</i></b></p><ul><li>Fist item</li></ul></blockquote>");
         model.quote();
         assert_eq!(
             tx(&model),
-            "<b><i>Text|</i></b><ul><li>~Fist item</li></ul>"
+            "<p><b><i>Text|</i></b></p><ul><li>Fist item</li></ul>"
         );
     }
 
