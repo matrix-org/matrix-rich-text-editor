@@ -22,14 +22,13 @@ so the NPM packaging can find it.
 To change the current version, run the script:
 
 ```shell
-./update-version.sh VERSION_NUMBER
+./update_version.sh VERSION_NUMBER
 ```
 
 This will change the version number across the Rust, Web and Android projects.
 
 Then:
 * `make web` to update .lock files
-* (For iOS the release script uses the git tag, so nothing to do I think.)
 * `git checkout -b version-X.Y.Z`
 * `git commit -a -m "Version X.Y.Z"`
 * `git push -u origin version-X.Y.Z`
@@ -77,3 +76,4 @@ Once merged a [workflow](https://github.com/matrix-org/matrix-wysiwyg-composer-s
 You can also manually do a revision release by just running `./release_ios.sh` on main which will not create a release PR but a revision PR.
 
 Instead for full manual release just run `./release_ios.sh -t <version>`.
+

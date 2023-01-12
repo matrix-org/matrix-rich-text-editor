@@ -27,7 +27,7 @@ import listUnorderedImage from './images/list_unordered.svg';
 import listOrderedImage from './images/list_ordered.svg';
 import inlineCodeImage from './images/inline_code.svg';
 import codeBlockImage from './images/code_block.svg';
-import { Wysiwyg, WysiwygInputEvent } from '../lib/types';
+import { Wysiwyg, WysiwygEvent } from '../lib/types';
 
 type ButtonProps = {
     onClick: MouseEventHandler<HTMLButtonElement>;
@@ -57,16 +57,17 @@ function App() {
     const [enterToSend, setEnterToSend] = useState(true);
 
     const inputEventProcessor = (
-        e: WysiwygInputEvent,
+        e: WysiwygEvent,
         wysiwyg: Wysiwyg,
-    ): WysiwygInputEvent | null => {
+    ): WysiwygEvent | null => {
         if (e instanceof ClipboardEvent) {
             return e;
         }
 
         if (
-            (enterToSend && e.inputType === 'insertParagraph') ||
-            e.inputType === 'sendMessage'
+            !(e instanceof KeyboardEvent) &&
+            ((enterToSend && e.inputType === 'insertParagraph') ||
+                e.inputType === 'sendMessage')
         ) {
             if (debug.testRef.current) {
                 debug.traceAction(null, 'send', `${wysiwyg.content()}`);

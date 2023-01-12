@@ -17,7 +17,7 @@ limitations under the License.
 import { MouseEvent as ReactMouseEvent } from 'react';
 
 import { ComposerModel, MenuStateUpdate } from '../../generated/wysiwyg';
-import { processInput } from '../composer';
+import { processEvent, processInput } from '../composer';
 import {
     getCurrentSelection,
     refreshComposerView,
@@ -60,7 +60,12 @@ export function sendWysiwygInputEvent(
  * @param {KeyboardEvent} e
  * @returns {BlockType | null}
  */
-function getInputFromKeyDown(e: KeyboardEvent): BlockType | null {
+function getInputFromKeyDown(
+    e: KeyboardEvent,
+    composerModel: ComposerModel,
+    formattingFunctions: FormattingFunctions,
+    inputEventProcessor?: InputEventProcessor,
+): BlockType | null {
     if (e.shiftKey && e.altKey) {
         switch (e.key) {
             case '5':
@@ -87,6 +92,14 @@ function getInputFromKeyDown(e: KeyboardEvent): BlockType | null {
         }
     }
 
+    processEvent(
+        e,
+        {
+            actions: formattingFunctions,
+            content: () => composerModel.get_content_as_html(),
+        },
+        inputEventProcessor,
+    );
     return null;
 }
 
@@ -95,8 +108,19 @@ function getInputFromKeyDown(e: KeyboardEvent): BlockType | null {
  * @param {KeyboardEvent} e
  * @param {HTMLElement} editor
  */
-export function handleKeyDown(e: KeyboardEvent, editor: HTMLElement) {
-    const inputType = getInputFromKeyDown(e);
+export function handleKeyDown(
+    e: KeyboardEvent,
+    editor: HTMLElement,
+    composerModel: ComposerModel,
+    formattingFunctions: FormattingFunctions,
+    inputEventProcessor?: InputEventProcessor,
+) {
+    const inputType = getInputFromKeyDown(
+        e,
+        composerModel,
+        formattingFunctions,
+        inputEventProcessor,
+    );
     if (inputType) {
         sendWysiwygInputEvent(editor, inputType, e);
     }

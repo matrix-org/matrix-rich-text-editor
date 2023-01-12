@@ -57,6 +57,14 @@ where
         }
     }
 
+    pub fn into_container(self) -> ContainerNode<S> {
+        if let DomNode::Container(ret) = self.document {
+            ret
+        } else {
+            panic!("Document should always be a Container!")
+        }
+    }
+
     pub fn document_mut(&mut self) -> &mut ContainerNode<S> {
         // Would be nice if we could avoid this, but it is really convenient
         // in several places to be able to treat document as a DomNode.
@@ -69,6 +77,18 @@ where
 
     pub fn document_node(&self) -> &DomNode<S> {
         &self.document
+    }
+
+    pub fn into_document_node(self) -> DomNode<S> {
+        self.document
+    }
+
+    pub fn into_node(mut self, handle: &DomHandle) -> DomNode<S> {
+        if handle.is_root() {
+            self.into_document_node()
+        } else {
+            self.remove(handle)
+        }
     }
 
     pub fn children(&self) -> &Vec<DomNode<S>> {
@@ -589,7 +609,7 @@ mod test {
     use crate::dom::nodes::TextNode;
     use crate::tests::testutils_composer_model::cm;
     use crate::tests::testutils_conversion::utf16;
-    use crate::tests::testutils_dom::{a, b, dom, i, i_c, tn};
+    use crate::tests::testutils_dom::{a, b, dom, handle, i, i_c, tn};
 
     use super::*;
 
@@ -723,6 +743,18 @@ mod test {
     #[test]
     fn empty_tag_serialises() {
         assert_eq!(dom(&[b(&[]),]).to_string(), "<b></b>");
+    }
+
+    #[test]
+    fn into_node() {
+        assert!(dom(&[tn("foo")]).into_node(&handle(vec![0])).is_text_node())
+    }
+
+    #[test]
+    fn into_node_from_root() {
+        assert!(dom(&[tn("foo")])
+            .into_node(&handle(vec![]))
+            .is_container_node())
     }
 
     #[test]

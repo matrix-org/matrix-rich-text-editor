@@ -16,6 +16,7 @@ use widestring::Utf16String;
 
 use crate::dom::nodes::DomNode;
 use crate::dom::Dom;
+use crate::DomHandle;
 
 use crate::tests::testutils_conversion::utf16;
 
@@ -57,4 +58,8 @@ fn clone_children<'a>(
 
 pub fn tn(data: &str) -> DomNode<Utf16String> {
     DomNode::new_text(utf16(data))
+}
+
+pub fn handle(raw_path: Vec<usize>) -> DomHandle {
+    DomHandle::from_raw(raw_path)
 }
