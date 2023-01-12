@@ -22,8 +22,7 @@
             android:background="?colorSurface"
             android:singleLine="false"
             app:bulletRadius="4dp"
-            app:bulletGap="8dp"
-            />
+            app:bulletGap="8dp" />
 
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -115,6 +114,26 @@
                     android:backgroundTint="@drawable/editor_menu_bg_selector"
                     android:contentDescription="Inline code"
                     android:src="@drawable/ic_code"
+                    app:tint="@drawable/editor_menu_text_selector" />
+
+                <ImageButton
+                    android:id="@+id/formatCodeBlockButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"
+                    android:backgroundTint="@drawable/editor_menu_bg_selector"
+                    android:contentDescription="Code block"
+                    android:src="@drawable/ic_code_block"
+                    app:tint="@drawable/editor_menu_text_selector" />
+
+                <ImageButton
+                    android:id="@+id/formatQuoteButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"
+                    android:backgroundTint="@drawable/editor_menu_bg_selector"
+                    android:contentDescription="Quote"
+                    android:src="@drawable/ic_quote"
                     app:tint="@drawable/editor_menu_text_selector" />
 
                 <ImageButton

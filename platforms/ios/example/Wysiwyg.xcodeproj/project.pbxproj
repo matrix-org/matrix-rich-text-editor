@@ -13,6 +13,12 @@
 		A6472CAF2886CF840021A0E8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A6472CAE2886CF840021A0E8 /* Assets.xcassets */; };
 		A6472CB22886CF840021A0E8 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A6472CB12886CF840021A0E8 /* Preview Assets.xcassets */; };
 		A6472CC62886CF840021A0E8 /* WysiwygUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6472CC52886CF840021A0E8 /* WysiwygUITests.swift */; };
+		A64AB13E296C732500F08494 /* WysiwygUITests+Typing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A64AB13D296C732500F08494 /* WysiwygUITests+Typing.swift */; };
+		A64AB140296C73CE00F08494 /* WysiwygUITests+Links.swift in Sources */ = {isa = PBXBuildFile; fileRef = A64AB13F296C73CE00F08494 /* WysiwygUITests+Links.swift */; };
+		A64AB142296C744200F08494 /* WysiwygUITests+InlineCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A64AB141296C744200F08494 /* WysiwygUITests+InlineCode.swift */; };
+		A64AB144296C747C00F08494 /* WysiwygUITests+Format.swift in Sources */ = {isa = PBXBuildFile; fileRef = A64AB143296C747C00F08494 /* WysiwygUITests+Format.swift */; };
+		A64AB146296C759A00F08494 /* WysiwygUITests+Quotes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A64AB145296C759A00F08494 /* WysiwygUITests+Quotes.swift */; };
+		A64AB148296C769000F08494 /* WysiwygUITests+CodeBlocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = A64AB147296C769000F08494 /* WysiwygUITests+CodeBlocks.swift */; };
 		A68E713C291D34A50023CC04 /* View+Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157428C0E95C00C8E727 /* View+Accessibility.swift */; };
 		A68E7140291D40710023CC04 /* WysiwygSharedConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A68E713F291D40710023CC04 /* WysiwygSharedConstants.swift */; };
 		A68E7141291D40710023CC04 /* WysiwygSharedConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A68E713F291D40710023CC04 /* WysiwygSharedConstants.swift */; };
@@ -44,6 +50,12 @@
 		A6472CB12886CF840021A0E8 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		A6472CC12886CF840021A0E8 /* WysiwygUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WysiwygUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A6472CC52886CF840021A0E8 /* WysiwygUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygUITests.swift; sourceTree = "<group>"; };
+		A64AB13D296C732500F08494 /* WysiwygUITests+Typing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WysiwygUITests+Typing.swift"; sourceTree = "<group>"; };
+		A64AB13F296C73CE00F08494 /* WysiwygUITests+Links.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WysiwygUITests+Links.swift"; sourceTree = "<group>"; };
+		A64AB141296C744200F08494 /* WysiwygUITests+InlineCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WysiwygUITests+InlineCode.swift"; sourceTree = "<group>"; };
+		A64AB143296C747C00F08494 /* WysiwygUITests+Format.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WysiwygUITests+Format.swift"; sourceTree = "<group>"; };
+		A64AB145296C759A00F08494 /* WysiwygUITests+Quotes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WysiwygUITests+Quotes.swift"; sourceTree = "<group>"; };
+		A64AB147296C769000F08494 /* WysiwygUITests+CodeBlocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WysiwygUITests+CodeBlocks.swift"; sourceTree = "<group>"; };
 		A68E713F291D40710023CC04 /* WysiwygSharedConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygSharedConstants.swift; sourceTree = "<group>"; };
 		A6C2157428C0E95C00C8E727 /* View+Accessibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Accessibility.swift"; sourceTree = "<group>"; };
 		A6C2157828C0F62000C8E727 /* WysiwygActionToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygActionToolbar.swift; sourceTree = "<group>"; };
@@ -118,6 +130,12 @@
 			isa = PBXGroup;
 			children = (
 				A6472CC52886CF840021A0E8 /* WysiwygUITests.swift */,
+				A64AB147296C769000F08494 /* WysiwygUITests+CodeBlocks.swift */,
+				A64AB143296C747C00F08494 /* WysiwygUITests+Format.swift */,
+				A64AB141296C744200F08494 /* WysiwygUITests+InlineCode.swift */,
+				A64AB13F296C73CE00F08494 /* WysiwygUITests+Links.swift */,
+				A64AB145296C759A00F08494 /* WysiwygUITests+Quotes.swift */,
+				A64AB13D296C732500F08494 /* WysiwygUITests+Typing.swift */,
 			);
 			path = WysiwygUITests;
 			sourceTree = "<group>";
@@ -332,9 +350,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A64AB13E296C732500F08494 /* WysiwygUITests+Typing.swift in Sources */,
 				A6472CC62886CF840021A0E8 /* WysiwygUITests.swift in Sources */,
+				A64AB140296C73CE00F08494 /* WysiwygUITests+Links.swift in Sources */,
 				A68E7141291D40710023CC04 /* WysiwygSharedConstants.swift in Sources */,
+				A64AB144296C747C00F08494 /* WysiwygUITests+Format.swift in Sources */,
 				A68E713C291D34A50023CC04 /* View+Accessibility.swift in Sources */,
+				A64AB146296C759A00F08494 /* WysiwygUITests+Quotes.swift in Sources */,
+				A64AB142296C744200F08494 /* WysiwygUITests+InlineCode.swift in Sources */,
+				A64AB148296C769000F08494 /* WysiwygUITests+CodeBlocks.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

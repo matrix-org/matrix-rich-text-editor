@@ -28,6 +28,23 @@ describe('inputEventProcessor', () => {
         await waitFor(() =>
             expect(textbox).toHaveAttribute('contentEditable', 'true'),
         );
+        inputEventProcessor.mockReset();
+    });
+
+    it('Should call inputEventProcess on keydown', async () => {
+        // When
+        fireEvent.keyDown(textbox, { key: 'A', code: 'KeyA' });
+
+        await waitFor(() => {
+            expect(inputEventProcessor).toBeCalledTimes(1);
+            expect(inputEventProcessor).toBeCalledWith(
+                new KeyboardEvent('keyDown', {
+                    key: 'A',
+                    code: 'KeyA',
+                }),
+                expect.anything(),
+            );
+        });
     });
 
     /**

@@ -23,6 +23,7 @@ extension NSAttributedString {
     ///   - index: the attributed string index to lookup
     /// - Returns: the character at given location
     func character(at index: Int) -> Character? {
+        guard index < length else { return nil }
         let substring = attributedSubstring(from: .init(location: index, length: 1))
         return substring.string.first
     }
@@ -56,6 +57,15 @@ extension NSAttributedString {
         let font = attribute(.font, at: index, effectiveRange: nil) as? UIFont
         return font?.fontDescriptor.symbolicTraits ?? []
     }
+
+    /// Check if all characters from given range are newlines.
+    ///
+    /// - Parameters:
+    ///   - range: the range to check for newlines
+    /// - Returns: true if all characters are newlines, false otherwise
+    func isAllNewlines(in range: NSRange) -> Bool {
+        (range.location..<range.upperBound).allSatisfy { self.character(at: $0)?.isNewline == true }
+    }
     
     /// Changes the attribute of foregroundColor for the whole attributed string
     ///
@@ -85,6 +95,28 @@ extension NSAttributedString {
                 mutableAttributed.addAttributes([.backgroundColor: codeBackgroundColor], range: range)
             }
         }
+
+        // Fix quotes middle newlines not having the required background by manually applying it.
+        // Right ow this doesn't handle multiple occurences of quotes or code blocks that are only
+        // separated by newlines since we can't distinguish text from within a quote block and regular
+        // text at the moment when we are at the attributed string level.
+        // FIXME: improve this to handle recoloring better.
+        var previous: (color: UIColor, range: NSRange)?
+        mutableAttributed.enumerateTypedAttribute(.backgroundColor) { (color: UIColor, range, _) in
+            if let previous = previous,
+               color == previous.color,
+               let midrange = NSRange(between: previous.range, and: range),
+               isAllNewlines(in: midrange) {
+                mutableAttributed.addAttribute(.backgroundColor, value: color, range: midrange)
+            }
+
+            if mutableAttributed.character(at: range.upperBound)?.isNewline == true {
+                previous = (color, range)
+            } else {
+                previous = nil
+            }
+        }
+
         let newSelf = NSAttributedString(attributedString: mutableAttributed)
         return newSelf
     }

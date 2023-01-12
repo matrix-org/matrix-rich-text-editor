@@ -1,0 +1,33 @@
+name: Tag Release
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - 'main'
+
+jobs:
+  tag_release:
+    if: ${{ github.event.pull_request.merged == true && startsWith( github.head_ref, 'version-' ) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🧮 Checkout code
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.PAT }}
+
+      - name: Get Version
+        uses: mad9000/actions-find-and-replace-string@3
+        id: get-version
+        with:
+          source: ${{ github.head_ref }}
+          find: 'version-'
+          replace: ''
+
+      - name: Add Tag
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          github_token: ${{ secrets.PAT }}
+          custom_tag: ${{steps.get-version.outputs.value}}
+          tag_prefix: ''

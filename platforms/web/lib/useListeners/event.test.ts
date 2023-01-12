@@ -18,6 +18,7 @@ limitations under the License.
 import init, { new_composer_model } from '../../generated/wysiwyg';
 import { extractActionStates, handleKeyDown } from './event';
 import { FormatBlockEvent } from './types';
+import { FormattingFunctions } from '../types';
 
 beforeAll(async () => {
     await init();
@@ -71,7 +72,9 @@ describe('handleKeyDown', () => {
             }) as EventListener);
         });
 
-        handleKeyDown(event, elem);
+        const model = new_composer_model();
+
+        handleKeyDown(event, elem, model, {} as FormattingFunctions);
         expect(await result).toBe(expected);
     });
 });

@@ -20,17 +20,18 @@ import {
     InputEventProcessor,
     Wysiwyg,
     FormattingFunctions,
+    WysiwygEvent,
 } from './types';
 import { isClipboardEvent, isLinkEvent } from './useListeners/assert';
 import { TestUtilities } from './useTestCases/types';
 
-function processEvent(
-    e: WysiwygInputEvent,
+export function processEvent<T extends WysiwygEvent>(
+    e: T,
     wysiwyg: Wysiwyg,
     inputEventProcessor?: InputEventProcessor,
-): WysiwygInputEvent | null {
+): T | null {
     if (inputEventProcessor) {
-        return inputEventProcessor(e, wysiwyg);
+        return inputEventProcessor(e, wysiwyg) as T | null;
     } else {
         return e;
     }

@@ -59,18 +59,7 @@ struct WysiwygActionToolbar: View {
         }
         switch linkAction {
         case .create:
-            actions.append(.textAction(
-                title: "Ok",
-                textFieldsData: [
-                    .init(
-                        accessibilityIdentifier: .linkUrlTextField,
-                        placeholder: "URL",
-                        defaultValue: nil
-                    ),
-                ],
-                action: singleTextAction
-            )
-            )
+            actions.append(createAction(singleTextAction: singleTextAction))
             return AlertConfig(title: createLinkTitle, actions: actions)
         case .createWithText:
             let doubleTextAction: ([String]) -> Void = { strings in
@@ -79,38 +68,11 @@ struct WysiwygActionToolbar: View {
                 viewModel.select(range: linkAttributedRange)
                 viewModel.applyLinkOperation(.createLink(urlString: urlString, text: text))
             }
-            actions.append(.textAction(
-                title: "Ok",
-                textFieldsData: [
-                    .init(
-                        accessibilityIdentifier: .linkUrlTextField,
-                        placeholder: "URL",
-                        defaultValue: nil
-                    ),
-                    .init(
-                        accessibilityIdentifier: .linkTextTextField,
-                        placeholder: "Text",
-                        defaultValue: nil
-                    ),
-                ],
-                action: doubleTextAction
-            )
-            )
+            actions.append(createWithTextAction(doubleTextAction: doubleTextAction))
             return AlertConfig(title: createLinkTitle, actions: actions)
         case let .edit(link):
             let editLinktitle = "Edit Link"
-            actions.append(.textAction(
-                title: "Ok",
-                textFieldsData: [
-                    .init(
-                        accessibilityIdentifier: .linkUrlTextField,
-                        placeholder: "URL",
-                        defaultValue: link
-                    ),
-                ],
-                action: singleTextAction
-            )
-            )
+            actions.append(editTextAction(singleTextAction: singleTextAction, link: link))
             let removeAction = {
                 viewModel.select(range: linkAttributedRange)
                 viewModel.applyLinkOperation(.removeLinks)
@@ -120,5 +82,54 @@ struct WysiwygActionToolbar: View {
         case .none:
             return AlertConfig(title: "", actions: actions)
         }
+    }
+}
+
+private extension WysiwygActionToolbar {
+    private func createAction(singleTextAction: @escaping ([String]) -> Void) -> AlertConfig.Action {
+        .textAction(
+            title: "Ok",
+            textFieldsData: [
+                .init(
+                    accessibilityIdentifier: .linkUrlTextField,
+                    placeholder: "URL",
+                    defaultValue: nil
+                ),
+            ],
+            action: singleTextAction
+        )
+    }
+
+    private func createWithTextAction(doubleTextAction: @escaping ([String]) -> Void) -> AlertConfig.Action {
+        .textAction(
+            title: "Ok",
+            textFieldsData: [
+                .init(
+                    accessibilityIdentifier: .linkUrlTextField,
+                    placeholder: "URL",
+                    defaultValue: nil
+                ),
+                .init(
+                    accessibilityIdentifier: .linkTextTextField,
+                    placeholder: "Text",
+                    defaultValue: nil
+                ),
+            ],
+            action: doubleTextAction
+        )
+    }
+
+    private func editTextAction(singleTextAction: @escaping ([String]) -> Void, link: String) -> AlertConfig.Action {
+        .textAction(
+            title: "Ok",
+            textFieldsData: [
+                .init(
+                    accessibilityIdentifier: .linkUrlTextField,
+                    placeholder: "URL",
+                    defaultValue: link
+                ),
+            ],
+            action: singleTextAction
+        )
     }
 }

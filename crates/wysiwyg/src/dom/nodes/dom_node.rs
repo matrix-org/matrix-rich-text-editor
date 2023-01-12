@@ -222,6 +222,14 @@ where
         }
     }
 
+    pub(crate) fn into_container(self) -> Option<ContainerNode<S>> {
+        if let Self::Container(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
     pub(crate) fn as_container_mut(&mut self) -> Option<&mut ContainerNode<S>> {
         if let Self::Container(v) = self {
             Some(v)

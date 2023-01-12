@@ -20,7 +20,7 @@ import WysiwygComposer
 extension WysiwygAction: CaseIterable, Identifiable {
     public static var allCases: [WysiwygAction] = [
         .bold, .italic, .strikeThrough, .underline, .inlineCode,
-        .link, .undo, .redo, .orderedList, .unorderedList,
+        .link, .undo, .redo, .orderedList, .unorderedList, .codeBlock, .quote,
     ]
 
     public var id: String {
@@ -72,6 +72,10 @@ extension WysiwygAction: CaseIterable, Identifiable {
             return .orderedListButton
         case .unorderedList:
             return .unorderedListButton
+        case .codeBlock:
+            return .codeBlockButton
+        case .quote:
+            return .quoteButton
         }
     }
 
@@ -98,6 +102,10 @@ extension WysiwygAction: CaseIterable, Identifiable {
             return "list.number"
         case .unorderedList:
             return "list.bullet"
+        case .codeBlock:
+            return "note.text"
+        case .quote:
+            return "text.quote"
         }
     }
 }
@@ -125,6 +133,10 @@ private extension WysiwygAction {
             return .orderedList
         case .unorderedList:
             return .unorderedList
+        case .codeBlock:
+            return .codeBlock
+        case .quote:
+            return .quote
         }
     }
 }

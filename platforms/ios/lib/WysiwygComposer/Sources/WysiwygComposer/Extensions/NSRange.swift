@@ -19,4 +19,16 @@ import Foundation
 public extension NSRange {
     /// Returns a range at starting location, i.e. {0, 0}.
     static let zero = Self(location: 0, length: 0)
+
+    /// Init a range that is located between the two provided ranges.
+    /// Fails if the second range starts before the end of the first range.
+    ///
+    /// - Parameters:
+    ///   - range1: range before the range to create
+    ///   - range2: range after the range to create
+    init?(between range1: NSRange, and range2: NSRange) {
+        guard range1.upperBound <= range2.location else { return nil }
+
+        self.init(location: range1.upperBound, length: range2.location - range1.upperBound)
+    }
 }

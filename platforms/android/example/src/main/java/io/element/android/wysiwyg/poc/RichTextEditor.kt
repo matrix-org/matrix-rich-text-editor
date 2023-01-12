@@ -62,6 +62,12 @@ class RichTextEditor : LinearLayout {
             formatInlineCodeButton.setOnClickListener {
                 richTextEditText.toggleInlineFormat(InlineFormat.InlineCode)
             }
+            formatCodeBlockButton.setOnClickListener {
+                richTextEditText.toggleCodeBlock()
+            }
+            formatQuoteButton.setOnClickListener {
+                richTextEditText.toggleQuote()
+            }
             addLinkButton.setOnClickListener {
                 val linkAction = richTextEditText.getLinkAction() ?: return@setOnClickListener
                 when(linkAction) {
@@ -107,6 +113,8 @@ class RichTextEditor : LinearLayout {
             updateActionStateFor(redoButton, ComposerAction.REDO, actionStates)
             updateActionStateFor(orderedListButton, ComposerAction.ORDERED_LIST, actionStates)
             updateActionStateFor(unorderedListButton, ComposerAction.UNORDERED_LIST, actionStates)
+            updateActionStateFor(formatCodeBlockButton, ComposerAction.CODE_BLOCK, actionStates)
+            updateActionStateFor(formatQuoteButton, ComposerAction.QUOTE, actionStates)
         }
     }
 
