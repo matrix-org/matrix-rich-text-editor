@@ -1,7 +1,6 @@
-use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::DomNodeKind::{Generic, ListItem, Paragraph};
 use crate::dom::DomLocation;
-use crate::{ComposerModel, DomHandle, DomNode, ToHtml, UnicodeString};
+use crate::{ComposerModel, DomHandle, DomNode, UnicodeString};
 
 impl<S> ComposerModel<S>
 where
@@ -12,12 +11,15 @@ where
         self.do_new_line();
     }
 
-    fn do_new_line(&mut self) {
+    pub(crate) fn do_new_line(&mut self) {
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
 
-        // No selection, just exit
+        // No selection, add a paragraph to the Dom and exit
         if range.locations.is_empty() {
+            self.state
+                .dom
+                .append_at_end_of_document(DomNode::new_paragraph(Vec::new()));
             return;
         }
 
@@ -30,8 +32,6 @@ where
             "No block node selected (at least the root one should be here)",
         );
         let block_handle = block_location.node_handle.clone();
-
-        let html = self.state.dom.to_html().to_string();
 
         // TODO: what if a block node was removed and the next one has the same type?
         // If we the block node was removed, just insert an empty paragraph
