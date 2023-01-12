@@ -23,10 +23,10 @@ import redoImage from './images/redo.svg';
 import italicImage from './images/italic.svg';
 import underlineImage from './images/underline.svg';
 import strikeTroughImage from './images/strike_through.svg';
-import listUnorderedImage from './images/list-unordered.svg';
-import listOrderedImage from './images/list-ordered.svg';
-import inlineCodeImage from './images/inline_code2.svg'; // *2 variants are only the inner part of the svg
-import codeBlockImage from './images/code_block2.svg';
+import listUnorderedImage from './images/list_unordered.svg';
+import listOrderedImage from './images/list_ordered.svg';
+import inlineCodeImage from './images/inline_code.svg';
+import codeBlockImage from './images/code_block.svg';
 import { Wysiwyg, WysiwygInputEvent } from '../lib/types';
 
 type ButtonProps = {
