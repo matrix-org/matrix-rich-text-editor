@@ -351,7 +351,7 @@ impl SelectionWriter {
         node: &ContainerNode<S>,
     ) {
         if let Some(loc) = self.locations.get(&node.handle()) {
-            if (loc.length > 0 && loc.is_start()) || loc.node_handle.is_root() {
+            if !node.is_empty() || loc.node_handle.is_root() {
                 return;
             }
             let strings_to_add = self.state.advance(loc, 1);
