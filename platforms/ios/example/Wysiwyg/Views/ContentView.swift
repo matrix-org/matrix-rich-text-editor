@@ -22,7 +22,7 @@ import WysiwygComposer
 struct ContentView: View {
     /// A composer content "saved" and displayed upon hitting the send button.
     @State private var sentMessage: WysiwygComposerContent?
-    @State private var tree: String?
+    @State private var showTree = true
     /// View model for the composer.
     @StateObject private var viewModel = WysiwygComposerViewModel(
         minHeight: WysiwygSharedConstants.composerMinHeight,
@@ -48,13 +48,13 @@ struct ContentView: View {
         }
         .disabled(viewModel.isContentEmpty)
         .accessibilityIdentifier(.sendButton)
-        Button("Show tree") {
-            tree = viewModel.treeRepresentation()
+        Button(showTree ? "Hide tree" : "Show tree") {
+            showTree.toggle()
         }
         .accessibilityIdentifier(.showTreeButton)
         ScrollView {
-            if let tree = tree {
-                Text(tree)
+            if showTree {
+                Text(viewModel.treeRepresentation())
                     .accessibilityIdentifier(.treeText)
                     .font(.system(size: 11.0, weight: .regular, design: .monospaced))
                     .multilineTextAlignment(.leading)
