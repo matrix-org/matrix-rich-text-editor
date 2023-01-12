@@ -1,5 +1,11 @@
 # Changelog
 
+# [0.17.0] - 2022-01-12
+
+### Added
+
+- Common: Fixed a bug that created links with generic empty nodes in some cases
+
 # [0.16.0] - 2022-01-11
 
 ### Added
