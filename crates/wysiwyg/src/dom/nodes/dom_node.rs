@@ -472,6 +472,7 @@ impl DomNodeKind {
             self,
             Self::Generic
                 | Self::List
+                | Self::ListItem
                 | Self::CodeBlock
                 | Self::Quote
                 | Self::Paragraph

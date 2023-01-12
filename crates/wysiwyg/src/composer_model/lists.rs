@@ -15,6 +15,7 @@
 use std::collections::HashMap;
 
 use crate::dom::nodes::dom_node::DomNodeKind;
+use crate::dom::nodes::dom_node::DomNodeKind::{Generic, ListItem};
 use crate::dom::nodes::{ContainerNode, DomNode};
 use crate::dom::range::DomLocationPosition;
 use crate::dom::{DomHandle, DomLocation, Range};
@@ -157,12 +158,6 @@ where
 
     fn toggle_list(&mut self, list_type: ListType) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
-        // If the DOM is empty, create an initial text node that will be used to create the list afterwards.
-        if self.state.dom.children().is_empty() {
-            self.state
-                .dom
-                .append_at_end_of_document(DomNode::new_empty_text());
-        }
         let range = self.state.dom.find_extended_range(s, e);
         self.toggle_list_range(list_type, range)
     }
@@ -176,19 +171,12 @@ where
             .locations
             .iter()
             // FIXME: filtering positions that are before start, these shouldn't be returned from a > 0 range
-            .filter(|l| !(l.relative_position() == DomLocationPosition::Before))
+            .filter(|l| l.relative_position() != DomLocationPosition::Before)
             .any(|l| l.kind == DomNodeKind::List)
         {
             let leaves: Vec<&DomLocation> = range.leaves().collect();
-            let leaves_without_zwsp: Vec<_> = leaves
-                .iter()
-                .filter(|l| l.kind != DomNodeKind::Zwsp)
-                .collect();
             // FIXME: Workaround for toggling list when only ZWSP is selected
-            if leaves_without_zwsp.len() == 1 {
-                let handle = &leaves_without_zwsp[0].node_handle;
-                self.single_leaf_list_toggle(list_type, handle)
-            } else if leaves.len() == 1 {
+            if leaves.len() == 1 {
                 let handle = &leaves[0].node_handle;
                 self.single_leaf_list_toggle(list_type, handle)
             } else {
@@ -238,41 +226,13 @@ where
         list_type: ListType,
         range: Range,
     ) -> ComposerUpdate<S> {
-        let (s, e) = self.safe_selection();
-        let start_correction;
-        let end_correction;
         let handles: Vec<&DomHandle> = range
             .top_level_locations()
             // FIXME: filtering positions that are before start, these shouldn't be returned from a > 0 range
             .filter(|l| !(l.relative_position() == DomLocationPosition::Before))
             .map(|l| &l.node_handle)
             .collect();
-
-        let first_handle = handles[0];
-        let first_node = self.state.dom.lookup_node(first_handle);
-        // It's expected to add a ZWSP for each line break + an additional leading ZWSP.
-        // end_correction is always 1, start_correction is 1 only if the start is located
-        // strictly after the first char of the range (or if we are creating a list from an
-        // empty text node, in that case the first node text_len is 0). If a leading ZWSP
-        // is already present, e.g. the node following another list both corrections are 0.
-        // If a leading line break is present it's gonna be replaced by the first ZWSP, so the
-        // correction should be 0 too.
-        if first_node.has_leading_zwsp() || first_node.has_leading_line_break()
-        {
-            start_correction = 0;
-            end_correction = 0;
-        } else {
-            start_correction = usize::from(
-                s - range.start() > 0 || first_node.text_len() == 0,
-            );
-            end_correction = 1;
-        }
-
         self.state.dom.wrap_nodes_in_list(list_type, handles);
-        self.select(
-            Location::from(s + start_correction),
-            Location::from(e + end_correction),
-        );
         self.create_update_replace_all()
     }
 
@@ -361,6 +321,7 @@ where
                     &parent_list_type,
                 );
             }
+            self.state.start -= 1;
         }
     }
 
@@ -445,6 +406,7 @@ where
                 for handle in handles.iter().rev() {
                     self.unindent_single_handle(handle, &into_handle, at_index);
                 }
+                self.state.advance_selection();
             } else {
                 panic!("Current list should have another list ancestor");
             }

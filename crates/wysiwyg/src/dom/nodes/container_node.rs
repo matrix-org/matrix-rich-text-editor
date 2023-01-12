@@ -375,10 +375,7 @@ where
 
     pub fn is_empty_list_item(&self) -> bool {
         match self.kind {
-            ContainerNodeKind::ListItem => {
-                let raw_text = self.to_raw_text().to_string();
-                raw_text.is_empty() || raw_text == char::zwsp().to_string()
-            }
+            ContainerNodeKind::ListItem => self.is_empty(),
             _ => false,
         }
     }

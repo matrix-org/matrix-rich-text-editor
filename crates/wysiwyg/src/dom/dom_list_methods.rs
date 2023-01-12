@@ -17,6 +17,7 @@
 
 use core::panic;
 
+use crate::dom::nodes::dom_node::DomNodeKind::Paragraph;
 use crate::{DomHandle, DomNode, ListType, UnicodeString};
 
 use super::nodes::ContainerNode;
@@ -36,10 +37,26 @@ where
         list_type: ListType,
         handles: Vec<&DomHandle>,
     ) {
+        if handles.is_empty() {
+            let empty_list_item = DomNode::new_list_item(Vec::new());
+            let list = DomNode::new_list(list_type, vec![empty_list_item]);
+            self.append_at_end_of_document(list);
+            return;
+        }
+
         let first_handle = handles[0];
         let mut removed_nodes = Vec::new();
         for handle in handles.iter().rev() {
             removed_nodes.push(self.remove(handle));
+        }
+        // If there is only 1 children and it's a paragraph, add its contents instead
+        if removed_nodes.len() == 1 && removed_nodes[0].kind() == Paragraph {
+            let paragraph_children = removed_nodes
+                .remove(0)
+                .as_container_mut()
+                .unwrap()
+                .remove_children();
+            removed_nodes.extend(paragraph_children);
         }
         removed_nodes.reverse();
 
@@ -54,14 +71,12 @@ where
         while let Some(position) = line_break_positions.pop() {
             let mut sliced = list_item.slice_after(position);
             sliced.slice_before(1);
-            sliced.add_leading_zwsp();
             list_items.insert(0, DomNode::Container(sliced));
         }
 
         // Create a list item if we have a non-empty part remaining, or
         // if it's the only part we have (empty list case).
         if list_item.text_len() > 0 || list_items.is_empty() {
-            list_item.add_leading_zwsp();
             list_items.insert(0, DomNode::Container(list_item));
         }
 
@@ -99,6 +114,17 @@ where
         child_index: usize,
         count: usize,
     ) {
+        fn wrap_children<S: UnicodeString>(
+            children: Vec<DomNode<S>>,
+        ) -> Vec<DomNode<S>> {
+            if children.is_empty()
+                || children.iter().any(|n| !n.is_block_node())
+            {
+                vec![DomNode::new_paragraph(children)]
+            } else {
+                children
+            }
+        }
         let list = self.lookup_node_mut(handle);
         let DomNode::Container(list) = list else {
             panic!("List is not a container")
@@ -111,12 +137,8 @@ where
                 let DomNode::Container(mut list_item) = list_item else {
                     panic!("List item is not a container")
                 };
-                if nodes_to_insert.is_empty() {
-                    list_item.remove_leading_zwsp();
-                } else {
-                    list_item.replace_leading_zwsp_with_linebreak();
-                }
-                nodes_to_insert.append(&mut list_item.take_children());
+                let children = list_item.take_children();
+                nodes_to_insert.append(&mut wrap_children(children));
             }
             if list.children().is_empty() {
                 // Replace the list if it became empty.
@@ -132,10 +154,8 @@ where
                 let DomNode::Container(mut list_item) = list_item else {
                     panic!("List item is not a container")
                 };
-                if !nodes_to_insert.is_empty() {
-                    list_item.replace_leading_zwsp_with_linebreak();
-                }
-                nodes_to_insert.append(&mut list_item.take_children());
+                let children = list_item.take_children();
+                nodes_to_insert.append(&mut wrap_children(children));
             }
 
             // Extract further list items to a new list, if any.

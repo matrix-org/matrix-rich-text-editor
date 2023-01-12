@@ -156,11 +156,11 @@ mod test {
     }
 
     #[test]
-    fn find_extended_selection_stops_at_list_location() {
-        let dom = cm("<ol><li>~abc</li><li>~def</li></ol>~ghi<br />jkl|")
+    fn find_extended_selection_stops_at_paragraph() {
+        let dom = cm("<ol><li>abc</li><li>def</li></ol><p>ghi</p><p>jkl|</p>")
             .state
             .dom;
-        assert_eq!(dom.find_extended_selection(9, 10), (8, 13));
+        assert_eq!(dom.find_extended_selection(9, 10), (8, 11));
     }
 
     #[test]
@@ -184,25 +184,24 @@ mod test {
 
     #[test]
     fn find_extended_selection_on_list_border_stops() {
-        let dom = cm("abc<ol><li>~def</li></ol>~ghi|").state.dom;
+        let dom = cm("abc<ol><li>def</li></ol>ghi|").state.dom;
         assert_eq!(dom.find_extended_selection(3, 3), (0, 3));
-        assert_eq!(dom.find_extended_selection(7, 7), (3, 7));
-        assert_eq!(dom.find_extended_selection(8, 8), (7, 11));
+        assert_eq!(dom.find_extended_selection(6, 6), (3, 6));
+        assert_eq!(dom.find_extended_selection(8, 8), (7, 10));
     }
 
     #[test]
     fn find_extended_selection_from_last_list_item_stops_end_of_list() {
-        let dom =
-            cm("<ol><li>~abc</li><li><strong>~de</strong>f</li></ol>~ghi|")
-                .state
-                .dom;
-        assert_eq!(dom.find_extended_selection(6, 6), (4, 8));
+        let dom = cm("<ol><li>abc</li><li><strong>de</strong>f</li></ol>ghi|")
+            .state
+            .dom;
+        assert_eq!(dom.find_extended_selection(6, 6), (4, 7));
     }
 
     #[test]
     fn test_is_last_child_of_list() {
         let dom =
-            cm("abc<ol><li>~def</li><li>~g<strong>hi</strong></li></ol>~jkl|")
+            cm("abc<ol><li>def</li><li>~g<strong>hi</strong></li></ol>jkl|")
                 .state
                 .dom;
         // "abc" is not the last child of a list
@@ -213,19 +212,15 @@ mod test {
         assert!(!dom.is_last_child_of_list(&DomHandle::from_raw(vec![1, 0])));
         // The second list item is the last child of a list
         assert!(dom.is_last_child_of_list(&DomHandle::from_raw(vec![1, 1])));
-        // ZWSP is not the last child of a list
-        assert!(!dom.is_last_child_of_list(&DomHandle::from_raw(vec![1, 1, 0])));
         // "g" is not the last child of a list
-        assert!(!dom.is_last_child_of_list(&DomHandle::from_raw(vec![1, 1, 1])));
+        assert!(!dom.is_last_child_of_list(&DomHandle::from_raw(vec![1, 1, 0])));
         // The strong node is the last child of a list
-        assert!(dom.is_last_child_of_list(&DomHandle::from_raw(vec![1, 1, 2])));
+        assert!(dom.is_last_child_of_list(&DomHandle::from_raw(vec![1, 1, 1])));
         // "hi" is the last child of a list
         assert!(
-            dom.is_last_child_of_list(&DomHandle::from_raw(vec![1, 1, 2, 0]))
+            dom.is_last_child_of_list(&DomHandle::from_raw(vec![1, 1, 1, 0]))
         );
-        // ZWSP is not the last child of a list
-        assert!(!dom.is_last_child_of_list(&DomHandle::from_raw(vec![2])));
         // jkl is not the last child of a list
-        assert!(!dom.is_last_child_of_list(&DomHandle::from_raw(vec![3])));
+        assert!(!dom.is_last_child_of_list(&DomHandle::from_raw(vec![2])));
     }
 }

@@ -262,7 +262,7 @@ impl Range {
             .filter(|l| !l.node_handle.is_root())
             .map(|l| l.node_handle.depth())
             .min()
-            .expect("Should always have at least one set handle")
+            .unwrap_or(0)
     }
 
     pub fn locations_at_depth(

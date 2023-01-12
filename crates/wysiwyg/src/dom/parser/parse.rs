@@ -441,7 +441,7 @@ mod sys {
 
         #[test]
         fn parse_code_block() {
-            assert_that!("foo <pre>~Some code</pre> bar").roundtrips();
+            assert_that!("foo <pre>Some code</pre> bar").roundtrips();
         }
 
         #[test]
@@ -464,7 +464,7 @@ mod sys {
             );
             assert_eq!(
                 dom.to_html().to_string(),
-                "<pre><p><b>Test</b></p><p><b>Code</b></p></pre>"
+                "<pre><b>Test</b>\n<b>Code</b></pre>"
             );
         }
 

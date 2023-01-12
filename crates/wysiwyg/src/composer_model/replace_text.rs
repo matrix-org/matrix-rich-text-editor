@@ -531,7 +531,7 @@ where
                 let (s, e) = self.safe_selection();
                 self.do_replace_text_in(S::from(slice), s, e);
                 if slices.peek().is_some() {
-                    self.do_enter();
+                    self.new_line();
                 }
             }
         } else {

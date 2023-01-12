@@ -1,7 +1,7 @@
 use crate::dom::nodes::dom_node::DomNodeKind;
-use crate::dom::nodes::dom_node::DomNodeKind::{Generic, Paragraph};
+use crate::dom::nodes::dom_node::DomNodeKind::{Generic, ListItem, Paragraph};
 use crate::dom::DomLocation;
-use crate::{ComposerModel, DomNode, UnicodeString};
+use crate::{ComposerModel, DomHandle, DomNode, ToHtml, UnicodeString};
 
 impl<S> ComposerModel<S>
 where
@@ -23,19 +23,51 @@ where
 
         // If the selection covered several characters, remove them first
         if range.is_selection() {
-            self.replace_text(S::default());
+            self.do_replace_text(S::default());
         }
 
         let block_location = range.deepest_block_node(None).expect(
             "No block node selected (at least the root one should be here)",
         );
+        let block_handle = block_location.node_handle.clone();
+
+        let html = self.state.dom.to_html().to_string();
+
+        // TODO: what if a block node was removed and the next one has the same type?
+        // If we the block node was removed, just insert an empty paragraph
+        if !self.state.dom.contains(&block_handle)
+            || self.state.dom.lookup_node(&block_handle).kind()
+                != block_location.kind
+        {
+            let mut insert_at = block_handle.clone();
+            loop {
+                let has_prev = insert_at.index_in_parent() > 0;
+                if self.state.dom.contains(&insert_at)
+                    || (has_prev
+                        && self.state.dom.contains(&insert_at.prev_sibling()))
+                {
+                    break;
+                }
+                if insert_at.has_parent() {
+                    insert_at = insert_at.parent_handle();
+                } else {
+                    break;
+                }
+            }
+            let paragraph = DomNode::new_paragraph(Vec::new());
+            if insert_at == DomHandle::root() {
+                self.state.dom.append_at_end_of_document(paragraph);
+            } else {
+                self.state.dom.insert_at(&block_handle, paragraph);
+            }
+            return;
+        }
 
         let first_leaf = range.leaves().next();
         match block_location.kind {
             Paragraph => {
-                let ancestor_block_location = range.deepest_block_node(Some(
-                    block_location.node_handle.clone(),
-                ));
+                let ancestor_block_location =
+                    range.deepest_block_node(Some(block_handle.clone()));
                 if let Some(ancestor_block_location) = ancestor_block_location {
                     if ancestor_block_location.kind != Generic {
                         self.do_new_line_in_block_node(
@@ -53,7 +85,57 @@ where
                     self.do_new_line_in_paragraph(first_leaf, &block_location);
                 }
             }
-            DomNodeKind::Generic => {
+            ListItem => {
+                let list_item_is_empty = self
+                    .state
+                    .dom
+                    .lookup_node(&block_location.node_handle)
+                    .is_empty_list_item();
+                if list_item_is_empty {
+                    let list_handle =
+                        block_location.node_handle.parent_handle();
+                    // Add new paragraph after the list
+                    self.state.dom.insert_at(
+                        &list_handle.next_sibling(),
+                        DomNode::new_paragraph(Vec::new()),
+                    );
+                    // And remove the current list item
+                    self.state.dom.remove(&block_location.node_handle);
+                    // If list becomes empty, remove it too
+                    if self
+                        .state
+                        .dom
+                        .lookup_node(&list_handle)
+                        .as_container()
+                        .unwrap()
+                        .is_empty()
+                    {
+                        self.state.dom.remove(&list_handle);
+                    }
+                } else {
+                    if block_location.start_offset == 0 {
+                        self.state.dom.insert_at(
+                            &block_location.node_handle,
+                            DomNode::new_list_item(Vec::new()),
+                        );
+                    } else {
+                        let first_leaf = first_leaf.unwrap();
+                        let mut sub_tree = self.state.dom.split_sub_tree_from(
+                            &first_leaf.node_handle,
+                            first_leaf.start_offset,
+                            block_location.node_handle.depth(),
+                        );
+                        let children =
+                            sub_tree.document_mut().remove_children();
+                        self.state.dom.insert_at(
+                            &block_location.node_handle.next_sibling(),
+                            DomNode::new_list_item(children),
+                        );
+                        self.state.advance_selection();
+                    }
+                }
+            }
+            Generic => {
                 self.do_new_line_in_paragraph(first_leaf, &block_location);
             }
             _ => panic!("Unexpected kind block node with inline contents"),

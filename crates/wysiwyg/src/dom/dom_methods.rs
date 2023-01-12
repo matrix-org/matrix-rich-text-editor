@@ -15,7 +15,7 @@
 //! Methods on Dom that modify its contents and are guaranteed to conform to
 //! our invariants e.g. no empty text nodes, no adjacent text nodes.
 
-use crate::dom::nodes::dom_node::DomNodeKind::Paragraph;
+use crate::dom::nodes::dom_node::DomNodeKind::{ListItem, Paragraph};
 use crate::dom::nodes::ContainerNodeKind;
 use crate::dom::unicode_string::UnicodeStr;
 use crate::{DomHandle, DomNode, UnicodeString};
@@ -302,8 +302,8 @@ where
         let mut action_list = DomActionList::default();
         let mut first_text_node = true;
 
-        if range.has_leaves() {
-            for loc in range.leaves() {
+        for loc in range.locations.iter() {
+            if loc.is_leaf() {
                 let mut node = self.lookup_node_mut(&loc.node_handle);
                 match &mut node {
                     DomNode::Container(_) => {
@@ -372,63 +372,44 @@ where
 
                         first_text_node = false;
                     }
-                    DomNode::Zwsp(_) => {
-                        // FIXME: zwsp might not be handled in the same way as linebreak in some cases.
-                        let insert_at = loc.node_handle.parent_handle();
-                        match (loc.start_offset, loc.end_offset) {
-                            (0, 1) => {
-                                // Whole zwsp is selected, delete it
-                                action_list.push(DomAction::remove_node(
-                                    loc.node_handle.clone(),
-                                ));
-                            }
-                            (1, 1) => {
-                                // Cursor is after zwsp, no need to delete
-                            }
-                            (0, 0) => {
-                                if first_text_node && !new_text.is_empty() {
-                                    action_list.push(DomAction::add_node(
-                                        insert_at.parent_handle(),
-                                        insert_at.index_in_parent(),
-                                        DomNode::new_text(new_text.clone()),
-                                    ));
-                                    first_text_node = false;
-                                }
-                            }
-                            _ => panic!(
-                                "Tried to insert text into a zwsp with offset != 0 or 1. \
-                            Start offset: {}, end offset: {}",
-                                loc.start_offset,
-                                loc.end_offset,
-                            ),
-                        }
+                    _ => panic!("Unknown type of leaf node found"),
+                }
+            } else if loc.length == 0
+                && loc.kind.is_block_kind()
+                && first_text_node
+            {
+                // Empty block node
+                if new_text.is_empty() {
+                    action_list
+                        .push(DomAction::remove_node(loc.node_handle.clone()));
+                    first_text_node = false;
+                } else {
+                    match loc.kind {
+                        Paragraph | ListItem => {
+                            let text_node = DomNode::new_text(new_text.clone());
+                            action_list.push(DomAction::add_node(
+                                loc.node_handle.clone(),
+                                0,
+                                text_node,
+                            ));
+                            first_text_node = false;
+                        },
+                        _ => panic!("A block node that can't contain inline nodes was selected, text can't be added to it."),
                     }
                 }
             }
-
-            // If text wasn't added in any previous iteration, just append it next to the last leaf
-            if first_text_node && !new_text.is_empty() {
-                let last_leaf = range.leaves().last().unwrap();
-                action_list.push(DomAction::add_node(
-                    last_leaf.node_handle.parent_handle(),
-                    last_leaf.node_handle.index_in_parent() + 1,
-                    DomNode::new_text(new_text.clone()),
-                ));
-            }
-        } else if let Some(block_location) = range.deepest_block_node(None) {
-            if block_location.kind == Paragraph {
-                let text_node = DomNode::new_text(new_text);
-                action_list.push(DomAction::add_node(
-                    block_location.node_handle.clone(),
-                    0,
-                    text_node,
-                ));
-            } else {
-                panic!("A block node that can't contain inline nodes was selected, text can't be added to it.");
-            }
-        } else {
-            panic!("Tried to replace_text with no selection");
         }
+
+        // If text wasn't added in any previous iteration, just append it next to the last leaf
+        if first_text_node && !new_text.is_empty() {
+            let last_leaf = range.leaves().last().unwrap();
+            action_list.push(DomAction::add_node(
+                last_leaf.node_handle.parent_handle(),
+                last_leaf.node_handle.index_in_parent() + 1,
+                DomNode::new_text(new_text.clone()),
+            ));
+        }
+
         action_list
     }
 
