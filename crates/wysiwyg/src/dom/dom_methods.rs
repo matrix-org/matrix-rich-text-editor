@@ -15,7 +15,6 @@
 //! Methods on Dom that modify its contents and are guaranteed to conform to
 //! our invariants e.g. no empty text nodes, no adjacent text nodes.
 
-use crate::dom::nodes::ContainerNodeKind;
 use crate::dom::unicode_string::UnicodeStr;
 use crate::{DomHandle, DomNode, UnicodeString};
 
@@ -468,40 +467,21 @@ where
         from_handle: &DomHandle,
         offset: usize,
         depth: usize,
-    ) -> (DomNode<S>, DomHandle, DomNode<S>, DomHandle) {
+    ) -> (Dom<S>, DomHandle, Dom<S>, DomHandle) {
         let mut clone = self.clone();
         let right = clone.split_sub_tree_from(from_handle, offset, depth);
 
         // Remove unmodified children of the right split
-        // TODO: create a utility for this
-        let right = right.as_container().unwrap();
-        let mut right = DomNode::Container({
-            let children = vec![right.children().first().unwrap().clone()];
-            ContainerNode::new(
-                S::default(),
-                ContainerNodeKind::Generic,
-                None,
-                children,
-            )
-        });
-        right.set_handle(DomHandle::root());
+        let mut right = right.into_container().unwrap().take_children();
+        right.truncate(1);
 
-        // Remove unmodified children of the left split and apply a generic container
-        // TODO: create a utility for this
-        let mut left = DomNode::Container(ContainerNode::new(
-            S::default(),
-            ContainerNodeKind::Generic,
-            None,
-            vec![clone
-                .lookup_node(&from_handle.sub_handle_up_to(depth))
-                .as_container()
-                .unwrap()
-                .children()
-                .last()
-                .unwrap()
-                .clone()],
-        ));
-        left.set_handle(DomHandle::root());
+        // Remove unmodified children of the left split
+        let mut left = clone
+            .into_node(&from_handle.sub_handle_up_to(depth))
+            .into_container()
+            .unwrap()
+            .take_children();
+        let left = left.split_off(left.len() - 1);
 
         // Reset the handle roots after unmodified siblings were removed
         let mut right_handle =
@@ -514,7 +494,7 @@ where
         left_handle[0] = 0;
         let left_handle = DomHandle::from_raw(left_handle);
 
-        (left, left_handle, right, right_handle)
+        (Dom::new(left), left_handle, Dom::new(right), right_handle)
     }
 
     /// Splits the current tree at the given handle, returning the 'right' side of the split tree, after the given handle to the end of the Dom.
