@@ -25,6 +25,8 @@ import underlineImage from './images/underline.svg';
 import strikeTroughImage from './images/strike_through.svg';
 import listUnorderedImage from './images/list-unordered.svg';
 import listOrderedImage from './images/list-ordered.svg';
+import inlineCodeImage from './images/inline_code2.svg'; // *2 variants are only the inner part of the svg
+import codeBlockImage from './images/code_block2.svg';
 import { Wysiwyg, WysiwygInputEvent } from '../lib/types';
 
 type ButtonProps = {
@@ -142,8 +144,14 @@ function App() {
                         <Button
                             onClick={wysiwyg.inlineCode}
                             alt="inline code"
-                            imagePath={listOrderedImage}
+                            imagePath={inlineCodeImage}
                             state={actionStates.inlineCode}
+                        />
+                        <Button
+                            onClick={wysiwyg.codeBlock}
+                            alt="code block"
+                            imagePath={codeBlockImage}
+                            state={actionStates.codeBlock}
                         />
                         <button type="button" onClick={(_e) => wysiwyg.clear()}>
                             clear
