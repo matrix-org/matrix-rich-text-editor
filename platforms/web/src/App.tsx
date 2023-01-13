@@ -23,8 +23,10 @@ import redoImage from './images/redo.svg';
 import italicImage from './images/italic.svg';
 import underlineImage from './images/underline.svg';
 import strikeTroughImage from './images/strike_through.svg';
-import listUnorderedImage from './images/list-unordered.svg';
-import listOrderedImage from './images/list-ordered.svg';
+import listUnorderedImage from './images/list_unordered.svg';
+import listOrderedImage from './images/list_ordered.svg';
+import inlineCodeImage from './images/inline_code.svg';
+import codeBlockImage from './images/code_block.svg';
 import { Wysiwyg, WysiwygEvent } from '../lib/types';
 
 type ButtonProps = {
@@ -143,8 +145,14 @@ function App() {
                         <Button
                             onClick={wysiwyg.inlineCode}
                             alt="inline code"
-                            imagePath={listOrderedImage}
+                            imagePath={inlineCodeImage}
                             state={actionStates.inlineCode}
+                        />
+                        <Button
+                            onClick={wysiwyg.codeBlock}
+                            alt="code block"
+                            imagePath={codeBlockImage}
+                            state={actionStates.codeBlock}
                         />
                         <button type="button" onClick={(_e) => wysiwyg.clear()}>
                             clear
