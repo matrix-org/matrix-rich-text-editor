@@ -20,6 +20,7 @@ use crate::dom::{DomLocation, Range};
 use crate::{
     ComposerModel, ComposerUpdate, DomHandle, LinkAction, UnicodeString,
 };
+use url::{ParseError, Url};
 
 impl<S> ComposerModel<S>
 where
@@ -56,7 +57,8 @@ where
         self.do_replace_text(text.clone());
         e += text.len();
         let range = self.state.dom.find_range(s, e);
-        self.set_link_range(range, link)
+        let new_link = self.add_http_scheme(&link);
+        self.set_link_range(range, new_link)
     }
 
     pub fn set_link(&mut self, link: S) -> ComposerUpdate<S> {
@@ -85,6 +87,24 @@ where
         self.delete_child_links(&inserted);
 
         self.create_update_replace_all()
+    }
+
+    fn add_http_scheme<'a>(&'a mut self, link: &'a S) -> S {
+        let mut new_link = link.clone();
+
+        match Url::parse(link.to_string().as_str()) {
+            Ok(url) => url,
+            Err(ParseError::RelativeUrlWithoutBase) => {
+                new_link.insert(0, &S::from("http://"));
+                return new_link;
+            }
+            Err(_error) => {
+                return new_link;
+            }
+        };
+
+        // The link is valid, modifications are not needed
+        new_link
     }
 
     fn delete_child_links(&mut self, node_handle: &DomHandle) {

@@ -439,3 +439,40 @@ fn set_link_with_text_within_a_link() {
         "<a href=\"https://element.io\">testadded_link|_link</a>"
     );
 }
+
+#[test]
+fn set_link_without_http_scheme_and_www() {
+    let mut model = cm("|");
+    model.set_link_with_text(utf16("element.io"), utf16("added_link"));
+    assert_eq!(tx(&model), "<a href=\"http://element.io\">added_link|</a>");
+}
+
+#[test]
+fn set_link_without_http_scheme() {
+    let mut model = cm("|");
+    model.set_link_with_text(utf16("www.element.io"), utf16("added_link"));
+    assert_eq!(
+        tx(&model),
+        "<a href=\"http://www.element.io\">added_link|</a>"
+    );
+}
+
+#[test]
+fn set_link_do_not_change_scheme_for_http() {
+    let mut model = cm("|");
+    model.set_link_with_text(
+        utf16("http://www.element.io"),
+        utf16("added_link"),
+    );
+    assert_eq!(
+        tx(&model),
+        "<a href=\"http://www.element.io\">added_link|</a>"
+    );
+}
+
+#[test]
+fn set_link_do_not_change_scheme_for_udp() {
+    let mut model = cm("|");
+    model.set_link_with_text(utf16("udp://element.io"), utf16("added_link"));
+    assert_eq!(tx(&model), "<a href=\"udp://element.io\">added_link|</a>");
+}
