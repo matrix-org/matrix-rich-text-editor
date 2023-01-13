@@ -16,7 +16,7 @@ limitations under the License.
 
 import { ComposerModel } from '../generated/wysiwyg';
 import { processInput } from './composer';
-import { FormattingFunctions, WysiwygInputEvent } from './types';
+import { FormattingFunctions } from './types';
 
 const mockComposerModel = {
     replace_text: vi.fn(),
@@ -27,7 +27,7 @@ const mockAction = vi.fn();
 
 const mockFormattingFunctions = {} as unknown as FormattingFunctions;
 
-function inpEv(inputType: string, data: string): InputEvent {
+function inpEv(inputType: string, data?: string): InputEvent {
     return new InputEvent('InputEvent', { data, inputType });
 }
 
@@ -139,7 +139,7 @@ describe('processInput', () => {
         // When we process the input
         processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
 
-        // Then replace_text and mockAction have been called correctly;
+        // Then code_block and mockAction have been called correctly;
         expect(mockComposerModel.code_block).toHaveBeenCalledTimes(1);
         expect(mockAction).toHaveBeenCalledWith(undefined, 'code_block');
     });
