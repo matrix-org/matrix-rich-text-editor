@@ -40,7 +40,7 @@ jobs:
       run: yarn lint
     - name: Test with coverage
       working-directory: platforms/web
-      run: yarn coverage
+      run: yarn coverage --watch false
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
