@@ -8,7 +8,7 @@ import android.text.style.TypefaceSpan
  * Note that this span does not apply a background style; it simply tells the TextView where to
  * apply an inline background.
  *
- * See [io.element.android.wysiwyg.inlinebg.InlineBgRenderer], based on the official Google sample:
+ * See [io.element.android.wysiwyg.inlinebg.SpanBackgroundRenderer], based on the official Google sample:
  * - https://medium.com/androiddevelopers/drawing-a-rounded-corner-background-on-text-5a610a95af5
  * - https://github.com/googlearchive/android-text/tree/996fdb65bbfbb786c3ca4e4e40b30509067201fc/RoundedBackground-Kotlin
  */

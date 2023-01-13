@@ -30,7 +30,7 @@ import kotlin.math.min
  * @param horizontalPadding the padding to be applied to left & right of the background
  * @param verticalPadding the padding to be applied to top & bottom of the background
  */
-internal abstract class InlineBgRenderer(
+internal abstract class SpanBackgroundRenderer(
         val horizontalPadding: Int,
         val verticalPadding: Int
 ) {
@@ -88,7 +88,7 @@ internal class SingleLineRenderer(
     horizontalPadding: Int,
     verticalPadding: Int,
     val drawable: Drawable
-) : InlineBgRenderer(horizontalPadding, verticalPadding) {
+) : SpanBackgroundRenderer(horizontalPadding, verticalPadding) {
 
     override fun draw(
         canvas: Canvas,
@@ -124,7 +124,7 @@ internal class MultiLineRenderer(
     val drawableLeft: Drawable,
     val drawableMid: Drawable,
     val drawableRight: Drawable
-) : InlineBgRenderer(horizontalPadding, verticalPadding) {
+) : SpanBackgroundRenderer(horizontalPadding, verticalPadding) {
 
     override fun draw(
         canvas: Canvas,

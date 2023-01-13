@@ -9,5 +9,8 @@
         <item name="inlineCodeMultiLineBgLeft">@drawable/inline_code_multi_line_bg_left</item>
         <item name="inlineCodeMultiLineBgMid">@drawable/inline_code_multi_line_bg_mid</item>
         <item name="inlineCodeMultiLineBgRight">@drawable/inline_code_multi_line_bg_right</item>
+        <item name="codeBlockLeadingMargin">10dp</item>
+        <item name="codeBlockVerticalPadding">4dp</item>
+        <item name="codeBlockBackgroundDrawable">@drawable/code_block_bg</item>
     </style>
 </resources>
