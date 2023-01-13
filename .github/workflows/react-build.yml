@@ -21,6 +21,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Rust & Cargo cache
+      uses: Swatinem/rust-cache@v2
     - name: Build WASM bindings
       run: make web
     - name: Use Node.js ${{ matrix.node-version }}
