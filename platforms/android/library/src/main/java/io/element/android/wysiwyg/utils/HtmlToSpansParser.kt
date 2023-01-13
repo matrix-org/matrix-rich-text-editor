@@ -164,10 +164,7 @@ internal class HtmlToSpansParser(
                 val start = addLeadingLineBreakIfNeeded(text.getSpanStart(last))
                 text.removeSpan(last)
 
-                val codeSpan = CodeBlockSpan(
-                    0xC0A0A0A0.toInt(),
-                    10.dpToPx().toInt(),
-                )
+                val codeSpan = CodeBlockSpan(styleConfig.codeBlockLeadingMargin, styleConfig.codeBlockVerticalPadding)
 
                 addZWSP(text.length)
 

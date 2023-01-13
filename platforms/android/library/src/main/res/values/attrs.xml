@@ -9,5 +9,8 @@
         <attr name="inlineCodeMultiLineBgLeft" format="reference"/>
         <attr name="inlineCodeMultiLineBgMid" format="reference"/>
         <attr name="inlineCodeMultiLineBgRight" format="reference"/>
+        <attr name="codeBlockLeadingMargin" format="dimension" />
+        <attr name="codeBlockVerticalPadding" format="dimension" />
+        <attr name="codeBlockBackgroundDrawable" format="reference" />
     </declare-styleable>
 </resources>

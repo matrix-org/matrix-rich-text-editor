@@ -20,6 +20,7 @@ import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.text.Layout
 import android.text.Spanned
+import io.element.android.wysiwyg.spans.BlockSpan
 
 /**
  * Helper class to draw multi-line rounded background to certain parts of a text. The start/end
@@ -42,32 +43,40 @@ import android.text.Spanned
  * @param drawableMid the drawable used to draw for whole line
  * @param drawableRight the drawable used to draw right edge of the background
  */
-internal class InlineBgHelper<T>(
+internal class SpanBackgroundHelper<T>(
     private val spanType: Class<T>,
     val horizontalPadding: Int,
     val verticalPadding: Int,
-    drawable: Drawable,
-    drawableLeft: Drawable,
-    drawableMid: Drawable,
-    drawableRight: Drawable,
+    drawable: Drawable? = null,
+    drawableLeft: Drawable? = null,
+    drawableMid: Drawable? = null,
+    drawableRight: Drawable? = null,
 ) {
     private var cache = mutableMapOf<SpanPosition, DrawPosition>()
 
-    private val singleLineRenderer: InlineBgRenderer by lazy {
+    private val singleLineRenderer: SpanBackgroundRenderer by lazy {
         SingleLineRenderer(
             horizontalPadding = horizontalPadding,
             verticalPadding = verticalPadding,
-            drawable = drawable
+            drawable = requireNotNull(drawable),
         )
     }
 
-    private val multiLineRenderer: InlineBgRenderer by lazy {
+    private val multiLineRenderer: SpanBackgroundRenderer by lazy {
         MultiLineRenderer(
             horizontalPadding = horizontalPadding,
             verticalPadding = verticalPadding,
-            drawableLeft = drawableLeft,
-            drawableMid = drawableMid,
-            drawableRight = drawableRight
+            drawableLeft = requireNotNull(drawableLeft),
+            drawableMid = requireNotNull(drawableMid),
+            drawableRight = requireNotNull(drawableRight),
+        )
+    }
+
+    private val blockRenderer: SpanBackgroundRenderer by lazy {
+        BlockRenderer(
+            horizontalPadding = horizontalPadding,
+            verticalPadding = verticalPadding,
+            drawable = requireNotNull(drawable),
         )
     }
 
@@ -83,7 +92,11 @@ internal class InlineBgHelper<T>(
         val drawPositions = getOrCalculateDrawPositions(layout, spanPositions)
 
         drawPositions.forEach {
-            val renderer = if (it.startLine == it.endLine) singleLineRenderer else multiLineRenderer
+            val renderer = if (BlockSpan::class.java.isAssignableFrom(spanType)) {
+                blockRenderer
+            } else {
+                if (it.startLine == it.endLine) singleLineRenderer else multiLineRenderer
+            }
             renderer.draw(canvas, layout, it.startLine, it.endLine, it.startOffset, it.endOffset)
         }
     }
@@ -127,12 +140,12 @@ internal class InlineBgHelper<T>(
     }
 }
 
-private data class SpanPosition(
+internal data class SpanPosition(
     val spanStart: Int,
     val spanEnd: Int,
 )
 
-private data class DrawPosition(
+internal data class DrawPosition(
     val startLine: Int,
     val endLine: Int,
     val startOffset: Int,
