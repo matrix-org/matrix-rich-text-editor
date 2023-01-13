@@ -132,9 +132,7 @@ describe('processInput', () => {
     });
 
     it('handles insertCodeBlock with code_block', () => {
-        const e = new InputEvent('insertCodeBlock', {
-            inputType: 'insertCodeBlock',
-        });
+        const e = inpEv('insertCodeBlock');
 
         // When we process the input
         processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
