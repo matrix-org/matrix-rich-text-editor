@@ -29,6 +29,7 @@ wasm-bindgen = { version = "0.2.83", default-features = false, optional = true }
 web-sys = { version = "0.3.60", default-features = false, features = ["Document", "DomParser", "HtmlElement", "Node", "NodeList", "SupportedType"], optional = true }
 widestring = "1.0.2"
 url="2.3.1"
+regex = "1.7.1"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 speculoos = "0.9"

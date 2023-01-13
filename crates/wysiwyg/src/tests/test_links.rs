@@ -476,3 +476,26 @@ fn set_link_do_not_change_scheme_for_udp() {
     model.set_link_with_text(utf16("udp://element.io"), utf16("added_link"));
     assert_eq!(tx(&model), "<a href=\"udp://element.io\">added_link|</a>");
 }
+
+#[test]
+fn set_link_do_not_change_scheme_for_mail() {
+    let mut model = cm("|");
+    model.set_link_with_text(
+        utf16("mailto:mymail@mail.com"),
+        utf16("added_link"),
+    );
+    assert_eq!(
+        tx(&model),
+        "<a href=\"mailto:mymail@mail.com\">added_link|</a>"
+    );
+}
+
+#[test]
+fn set_link_add_mail_scheme() {
+    let mut model = cm("|");
+    model.set_link_with_text(utf16("mymail@mail.com"), utf16("added_link"));
+    assert_eq!(
+        tx(&model),
+        "<a href=\"mailto:mymail@mail.com\">added_link|</a>"
+    );
+}

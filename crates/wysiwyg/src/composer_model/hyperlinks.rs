@@ -20,6 +20,7 @@ use crate::dom::{DomLocation, Range};
 use crate::{
     ComposerModel, ComposerUpdate, DomHandle, LinkAction, UnicodeString,
 };
+use regex::Regex;
 use url::{ParseError, Url};
 
 impl<S> ComposerModel<S>
@@ -91,11 +92,20 @@ where
 
     fn add_http_scheme<'a>(&'a mut self, link: &'a S) -> S {
         let mut new_link = link.clone();
+        let string = link.to_string();
+        let str = string.as_str();
 
-        match Url::parse(link.to_string().as_str()) {
+        match Url::parse(str) {
             Ok(url) => url,
             Err(ParseError::RelativeUrlWithoutBase) => {
-                new_link.insert(0, &S::from("http://"));
+                let re = Regex::new(r"^[\w.]+@([\w-]+\.)+[\w-]{2,4}$").unwrap();
+                let is_email = re.is_match(str);
+
+                if is_email {
+                    new_link.insert(0, &S::from("mailto:"));
+                } else {
+                    new_link.insert(0, &S::from("http://"));
+                }
                 return new_link;
             }
             Err(_error) => {
