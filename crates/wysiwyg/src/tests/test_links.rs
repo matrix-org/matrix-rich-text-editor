@@ -499,3 +499,13 @@ fn set_link_add_mail_scheme() {
         "<a href=\"mailto:mymail@mail.com\">added_link|</a>"
     );
 }
+
+#[test]
+fn set_link_add_mail_scheme_with_plus() {
+    let mut model = cm("|");
+    model.set_link_with_text(utf16("mymail+01@mail.com"), utf16("added_link"));
+    assert_eq!(
+        tx(&model),
+        "<a href=\"mailto:mymail+01@mail.com\">added_link|</a>"
+    );
+}

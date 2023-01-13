@@ -20,7 +20,7 @@ use crate::dom::{DomLocation, Range};
 use crate::{
     ComposerModel, ComposerUpdate, DomHandle, LinkAction, UnicodeString,
 };
-use regex::Regex;
+use email_address::*;
 use url::{ParseError, Url};
 
 impl<S> ComposerModel<S>
@@ -98,8 +98,7 @@ where
         match Url::parse(str) {
             Ok(url) => url,
             Err(ParseError::RelativeUrlWithoutBase) => {
-                let re = Regex::new(r"^[\w.]+@([\w-]+\.)+[\w-]{2,4}$").unwrap();
-                let is_email = re.is_match(str);
+                let is_email = EmailAddress::is_valid(str);
 
                 if is_email {
                     new_link.insert(0, &S::from("mailto:"));
@@ -108,7 +107,7 @@ where
                 }
                 return new_link;
             }
-            Err(_error) => {
+            Err(_) => {
                 return new_link;
             }
         };
