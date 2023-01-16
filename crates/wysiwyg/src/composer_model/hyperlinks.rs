@@ -38,14 +38,14 @@ where
                 return LinkAction::Edit(link);
             }
         }
-        if s == e || self.is_empty_selection(range) {
+        if s == e || self.is_blank_selection(range) {
             LinkAction::CreateWithText
         } else {
             LinkAction::Create
         }
     }
 
-    fn is_empty_selection(&self, range: Range) -> bool {
+    fn is_blank_selection(&self, range: Range) -> bool {
         for leaf in range.leaves() {
             if leaf.kind == Zwsp || leaf.kind == LineBreak {
                 continue;

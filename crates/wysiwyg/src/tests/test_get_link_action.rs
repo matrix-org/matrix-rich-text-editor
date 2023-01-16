@@ -121,61 +121,61 @@ fn get_link_action_from_selection_that_contains_multiple_links_partially_in_diff
 }
 
 #[test]
-fn get_link_action_on_empty_selection() {
+fn get_link_action_on_blank_selection() {
     let model = cm("{   }|");
     assert_eq!(model.get_link_action(), LinkAction::CreateWithText)
 }
 
 #[test]
-fn set_link_with_text_on_empty_selection_after_text() {
+fn set_link_with_text_on_blank_selection_after_text() {
     let model = cm("test{   }|");
     assert_eq!(model.get_link_action(), LinkAction::CreateWithText)
 }
 
 #[test]
-fn set_link_with_text_on_empty_selection_before_text() {
+fn set_link_with_text_on_blank_selection_before_text() {
     let model = cm("{   }|test");
     assert_eq!(model.get_link_action(), LinkAction::CreateWithText)
 }
 
 #[test]
-fn get_link_action_on_empty_selection_between_texts() {
+fn get_link_action_on_blank_selection_between_texts() {
     let model = cm("test{   }|test");
     assert_eq!(model.get_link_action(), LinkAction::CreateWithText)
 }
 
 #[test]
-fn get_link_action_on_empty_selection_in_container() {
+fn get_link_action_on_blank_selection_in_container() {
     let model = cm("<b>test{   }| test</b>");
     assert_eq!(model.get_link_action(), LinkAction::CreateWithText)
 }
 
 #[test]
-fn get_link_action_on_empty_selection_with_line_break() {
+fn get_link_action_on_blank_selection_with_line_break() {
     let model = cm("test{  <br> }|test");
     assert_eq!(model.get_link_action(), LinkAction::CreateWithText)
 }
 
 #[test]
-fn get_link_action_on_empty_selection_with_zwsp() {
+fn get_link_action_on_blank_selection_with_zwsp() {
     let model = cm("test{  ~ }|test");
     assert_eq!(model.get_link_action(), LinkAction::CreateWithText)
 }
 
 #[test]
-fn get_link_action_on_empty_selection_with_different_containers() {
+fn get_link_action_on_blank_selection_with_different_containers() {
     let model = cm("<b>test_bold{ </b><br>  ~  <i> }|test_italic</i>");
     assert_eq!(model.get_link_action(), LinkAction::CreateWithText)
 }
 
 #[test]
-fn get_link_action_on_empty_selection_with_different_types_of_whitespaces() {
+fn get_link_action_on_blank_selection_with_different_types_of_whitespaces() {
     let model = cm("test { \t \n \r }| test");
     assert_eq!(model.get_link_action(), LinkAction::CreateWithText)
 }
 
 #[test]
-fn get_link_action_on_empty_selection_after_a_link() {
+fn get_link_action_on_blank_selection_after_a_link() {
     let model = cm("<a href=\"https://element.io\">test</a>{  }|");
     // This is the correct behaviour because the end of a link should be considered part of the link itself
     assert_eq!(
