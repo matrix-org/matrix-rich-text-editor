@@ -139,7 +139,7 @@ describe('processInput', () => {
                 expect(method).toHaveBeenCalledWith(...composerArguments);
             }
             expect(mockAction).toHaveBeenCalledWith(
-                undefined,
+                undefined, // output from the jest mock in mockComposerModel
                 composerMethod,
                 ...actionArguments,
             );
