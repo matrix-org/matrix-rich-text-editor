@@ -92,7 +92,6 @@ where
     }
 
     fn add_http_scheme(&mut self, link: &mut S) {
-        //   let mut new_link = link.clone();
         let string = link.to_string();
         let str = string.as_str();
 
