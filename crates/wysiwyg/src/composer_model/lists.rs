@@ -597,7 +597,7 @@ mod tests {
     fn indent_list_item_works() {
         let mut model = cm("<ul><li>First item</li><li>Second item</li><li>Third item|</li></ul>");
         model.indent_list_item_handles(&vec![DomHandle::from_raw(vec![0, 1])]);
-        assert_eq!(tx(&model), "<ul><li>First item<ul><li>Second item</li></ul></li><li>Third item|</li></ul>");
+        assert_eq!(tx(&model), "<ul><li><p>First item</p><ul><li>Second item</li></ul></li><li>Third item|</li></ul>");
     }
 
     #[test]
@@ -616,23 +616,27 @@ mod tests {
 
     #[test]
     fn can_unindent_simple_case_works() {
-        let model = cm("<ul><li>First item<ul><li>{Second item</li><li>Third item}|</li></ul></li></ul>");
+        let model = cm("<ul><li><p>First item</p><ul><li>{Second item</li><li>Third item}|</li></ul></li></ul>");
         let locations = get_range_locations(&model);
-        assert!(model.can_unindent(&locations));
+        let top_most_list_item_locations =
+            model.find_top_most_list_item_locations(&locations);
+        assert!(model.can_unindent(&top_most_list_item_locations));
     }
 
     #[test]
     fn can_unindent_with_only_one_list_level_fails() {
         let model = cm("<ul><li>First item</li><li>{Second item</li><li>Third item}|</li></ul>");
         let locations = get_range_locations(&model);
-        assert!(!model.can_unindent(&locations));
+        let top_most_list_item_locations =
+            model.find_top_most_list_item_locations(&locations);
+        assert!(!model.can_unindent(&top_most_list_item_locations));
     }
 
     #[test]
     fn unindent_handles_simple_case_works() {
         let mut model =
-            cm("<ul><li>First item<ul><li>{Second item}|</li></ul></li></ul>");
-        let handles = vec![DomHandle::from_raw(vec![0, 0, 1, 0, 0])];
+            cm("<ul><li><p>First item</p><ul><li>{Second item}|</li></ul></li></ul>");
+        let handles = vec![DomHandle::from_raw(vec![0, 0, 1, 0])];
         model.unindent_handles(&handles);
         assert_eq!(
             tx(&model),

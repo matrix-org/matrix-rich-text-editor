@@ -323,10 +323,11 @@ fn backspace_at_start_of_code_block_removes_previous_text() {
 }
 
 #[test]
-fn backspace_at_end_of_code_block_deletes_its_last_character() {
-    let mut model = cm("Test <pre>code</pre>| and more");
+fn backspace_at_end_of_code_block_adds_the_content_of_the_next_block_node_to_it(
+) {
+    let mut model = cm("<p>Test</p><pre>code</pre><p>|and more</p>");
     model.backspace();
-    assert_eq!(tx(&model), "Test <pre>cod|</pre> and more");
+    assert_eq!(tx(&model), "<p>Test</p><pre>code|\nand more</pre>");
 }
 
 #[test]
