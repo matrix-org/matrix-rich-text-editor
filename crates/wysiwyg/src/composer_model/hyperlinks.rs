@@ -20,6 +20,8 @@ use crate::dom::{DomLocation, Range};
 use crate::{
     ComposerModel, ComposerUpdate, DomHandle, LinkAction, UnicodeString,
 };
+use email_address::*;
+use url::{ParseError, Url};
 
 impl<S> ComposerModel<S>
 where
@@ -44,7 +46,7 @@ where
 
     pub fn set_link_with_text(
         &mut self,
-        link: S,
+        mut link: S,
         text: S,
     ) -> ComposerUpdate<S> {
         let (s, mut e) = self.safe_selection();
@@ -56,15 +58,17 @@ where
         self.do_replace_text(text.clone());
         e += text.len();
         let range = self.state.dom.find_range(s, e);
+        self.add_http_scheme(&mut link);
         self.set_link_range(range, link)
     }
 
-    pub fn set_link(&mut self, link: S) -> ComposerUpdate<S> {
+    pub fn set_link(&mut self, mut link: S) -> ComposerUpdate<S> {
         self.push_state_to_history();
         let (mut s, mut e) = self.safe_selection();
 
         let mut range = self.state.dom.find_range(s, e);
 
+        self.add_http_scheme(&mut link);
         // Find container link that completely covers the range
         if let Some(link) = self.find_closest_ancestor_link(&range) {
             // If found, update the range to the container link bounds
@@ -85,6 +89,25 @@ where
         self.delete_child_links(&inserted);
 
         self.create_update_replace_all()
+    }
+
+    fn add_http_scheme(&mut self, link: &mut S) {
+        let string = link.to_string();
+        let str = string.as_str();
+
+        match Url::parse(str) {
+            Ok(_) => {}
+            Err(ParseError::RelativeUrlWithoutBase) => {
+                let is_email = EmailAddress::is_valid(str);
+
+                if is_email {
+                    link.insert(0, &S::from("mailto:"));
+                } else {
+                    link.insert(0, &S::from("https://"));
+                };
+            }
+            Err(_) => {}
+        };
     }
 
     fn delete_child_links(&mut self, node_handle: &DomHandle) {

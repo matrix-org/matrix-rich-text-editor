@@ -245,7 +245,9 @@ describe('link', () => {
 
         // Then
         await waitFor(() =>
-            expect(textbox).toContainHTML('<a href="my link">my text</a>'),
+            expect(textbox).toContainHTML(
+                '<a href="https://mylink.com">my text</a>',
+            ),
         );
     });
 
@@ -257,13 +259,17 @@ describe('link', () => {
 
         // Then
         await waitFor(() =>
-            expect(textbox).toContainHTML('<a href="my link">foobar</a>'),
+            expect(textbox).toContainHTML(
+                '<a href="https://mylink.com">foobar</a>',
+            ),
         );
     });
 
     it('Should remove the link', async () => {
         // When
-        const textbox = await renderEditor('<a href="my link">foobar</a>');
+        const textbox = await renderEditor(
+            '<a href="https://mylink.com">foobar</a>',
+        );
         select(textbox, 0, 6);
         await userEvent.click(
             screen.getByRole('button', { name: 'remove links' }),
@@ -277,14 +283,14 @@ describe('link', () => {
         // When
         const actionsRef = createRef<FormattingFunctions>();
         const textbox = await renderEditor(
-            '<a href="my link">foobar</a>',
+            '<a href="https://mylink.com">foobar</a>',
             actionsRef,
         );
         select(textbox, 0, 6);
 
         // Then
         await waitFor(() =>
-            expect(actionsRef.current?.getLink()).toBe('my link'),
+            expect(actionsRef.current?.getLink()).toBe('https://mylink.com'),
         );
     });
 });
