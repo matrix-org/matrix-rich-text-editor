@@ -808,6 +808,20 @@ fn html_delete_word_does_not_move_outside_list_item() {
 }
 
 #[test]
+fn backspace_between_block_nodes() {
+    let mut model = cm("<p>First</p><p>|Second</p>");
+    model.backspace();
+    assert_eq!(tx(&model), "<p>First|Second</p>");
+}
+
+#[test]
+fn backspace_between_nested_block_nodes() {
+    let mut model = cm("<p>First</p><blockquote><p>|Second</p></blockquote>");
+    model.backspace();
+    assert_eq!(tx(&model), "<p>First|Second</p>");
+}
+
+#[test]
 // TODO: remove these tests when implementing list behaviour
 fn html_backspace_word_does_not_change_model() {
     let mut model = cm("<ol><li>~|</li></ol>");

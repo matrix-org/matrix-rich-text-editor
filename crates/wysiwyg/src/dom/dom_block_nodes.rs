@@ -97,9 +97,9 @@ where
             // Workaround for list items, if the closest list item ancestors for the first and last
             // nodes are the same one, we want to select the contents of the list item instead.
             let first_list_item =
-                self.find_parent_list_item_or_self(&first.handle);
+                self.find_ancestor_list_item_or_self(&first.handle);
             let last_list_item =
-                self.find_parent_list_item_or_self(&last.handle);
+                self.find_ancestor_list_item_or_self(&last.handle);
             if first_list_item.is_some()
                 && last_list_item.is_some()
                 && first_list_item == last_list_item

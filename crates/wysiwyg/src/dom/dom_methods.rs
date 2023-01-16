@@ -17,6 +17,7 @@
 
 use crate::dom::nodes::dom_node::DomNodeKind::{ListItem, Paragraph};
 use crate::dom::unicode_string::UnicodeStr;
+use crate::dom::DomLocation;
 use crate::{DomHandle, DomNode, UnicodeString};
 
 use super::action_list::{DomAction, DomActionList};
@@ -89,8 +90,77 @@ where
 
         self.merge_adjacent_text_nodes_after_replace(range, deleted_handles);
 
+        if start != end {
+            let (start_block, end_block) =
+                self.top_most_block_nodes_in_boundary(start);
+            if let (Some(start_block_loc), Some(end_block_loc)) =
+                (start_block, end_block)
+            {
+                if start_block_loc != end_block_loc {
+                    let mut end_block = self.remove(&end_block_loc.node_handle);
+                    let DomNode::Container(mut end_block) = end_block else {
+                        panic!("Ending block node must be a container node")
+                    };
+                    let removed_items = end_block.take_children();
+                    if let DomNode::Container(start_block) =
+                        self.lookup_node_mut(&start_block_loc.node_handle)
+                    {
+                        // Merge contents in `start_block`
+                        start_block.append_children(removed_items);
+                    } else {
+                        panic!("Starting block node must be a container node");
+                    }
+
+                    if end_block_loc.node_handle.has_parent() {
+                        self.remove_empty_nodes_recursively(
+                            &end_block_loc.node_handle.parent_handle(),
+                        );
+                    }
+
+                    self.join_nodes_in_container(&start_block_loc.node_handle);
+                }
+            }
+        }
         #[cfg(any(test, feature = "assert-invariants"))]
         self.assert_invariants();
+    }
+
+    fn top_most_block_nodes_in_boundary(
+        &self,
+        selection_pos: usize,
+    ) -> (Option<DomLocation>, Option<DomLocation>) {
+        let range = self.find_range(selection_pos, selection_pos + 1);
+        let mut start = None;
+        let mut end = None;
+        let mut sorted_locations = range.locations;
+        sorted_locations.sort();
+        for location in sorted_locations {
+            if location.kind.is_block_kind() {
+                if location.is_start() {
+                    start = Some(location.clone());
+                } else if location.is_end() {
+                    end = Some(location.clone());
+                }
+            }
+        }
+        (start, end)
+    }
+
+    fn remove_empty_nodes_recursively(&mut self, handle: &DomHandle) {
+        let needs_removal = if let DomNode::Container(container) =
+            self.lookup_node_mut(&handle)
+        {
+            container.is_empty()
+        } else {
+            false
+        };
+        if needs_removal {
+            self.remove(&handle);
+        }
+
+        if handle.has_parent() {
+            self.remove_empty_nodes_recursively(&handle.parent_handle());
+        }
     }
 
     /// Deletes the given [to_delete] nodes and then removes any given parent nodes that became
@@ -233,6 +303,7 @@ where
                 self.join_nodes_in_container(&ancestor_handle);
             }
         }
+
         deleted_handles
     }
 
@@ -302,97 +373,96 @@ where
         let mut first_text_node = true;
 
         for loc in range.locations.iter() {
-            if loc.is_leaf() {
-                let mut node = self.lookup_node_mut(&loc.node_handle);
-                match &mut node {
-                    DomNode::Container(_) => {
-                        panic!("Leaves shouldn't have containers")
-                    }
-                    DomNode::LineBreak(_) => {
-                        match (loc.start_offset, loc.end_offset) {
-                            (0, 1) => {
-                                // Whole line break is selected, delete it
-                                action_list.push(DomAction::remove_node(
-                                    loc.node_handle.clone(),
-                                ));
-                            }
-                            (1, 1) => {
-                                // Cursor is after line break, no need to delete
-                            }
-                            (0, 0) => {
-                                if first_text_node && !new_text.is_empty() {
+            let mut node = self.lookup_node_mut(&loc.node_handle);
+            match &mut node {
+                DomNode::Container(_) => {
+                    if loc.length == 0 && loc.kind.is_block_kind() {
+                        // Empty block node
+                        if new_text.is_empty() {
+                            action_list.push(DomAction::remove_node(
+                                loc.node_handle.clone(),
+                            ));
+                            first_text_node = false;
+                        } else if first_text_node {
+                            match loc.kind {
+                                Paragraph | ListItem => {
+                                    let text_node = DomNode::new_text(new_text.clone());
                                     action_list.push(DomAction::add_node(
-                                        loc.node_handle.parent_handle(),
-                                        loc.node_handle.index_in_parent(),
-                                        DomNode::new_text(new_text.clone()),
+                                        loc.node_handle.clone(),
+                                        0,
+                                        text_node,
                                     ));
                                     first_text_node = false;
-                                }
+                                },
+                                _ => panic!("A block node that can't contain inline nodes was selected, text can't be added to it."),
                             }
-                            _ => panic!(
-                                "Tried to insert text into a line break with offset != 0 or 1. \
-                            Start offset: {}, end offset: {}",
-                                loc.start_offset,
-                                loc.end_offset,
-                            ),
                         }
                     }
-                    DomNode::Text(node) => {
-                        let old_data = node.data();
+                }
+                DomNode::LineBreak(_) => {
+                    match (loc.start_offset, loc.end_offset) {
+                        (0, 1) => {
+                            // Whole line break is selected, delete it
+                            action_list.push(DomAction::remove_node(
+                                loc.node_handle.clone(),
+                            ));
+                        }
+                        (1, 1) => {
+                            // Cursor is after line break, no need to delete
+                        }
+                        (0, 0) => {
+                            if first_text_node && !new_text.is_empty() {
+                                action_list.push(DomAction::add_node(
+                                    loc.node_handle.parent_handle(),
+                                    loc.node_handle.index_in_parent(),
+                                    DomNode::new_text(new_text.clone()),
+                                ));
+                                first_text_node = false;
+                            }
+                        }
+                        _ => panic!(
+                            "Tried to insert text into a line break with offset != 0 or 1. \
+                            Start offset: {}, end offset: {}",
+                            loc.start_offset,
+                            loc.end_offset,
+                        ),
+                    }
+                }
+                DomNode::Text(node) => {
+                    let old_data = node.data();
 
-                        // If this is not the first node, and the selections spans
-                        // it, delete it.
-                        if loc.start_offset == 0
-                            && loc.end_offset == old_data.len()
-                            && !first_text_node
-                        {
+                    // If this is not the first node, and the selections spans
+                    // it, delete it.
+                    if loc.start_offset == 0
+                        && loc.end_offset == old_data.len()
+                        && !first_text_node
+                    {
+                        action_list.push(DomAction::remove_node(
+                            loc.node_handle.clone(),
+                        ));
+                    } else {
+                        // Otherwise, delete the selected text
+                        let mut new_data =
+                            old_data[..loc.start_offset].to_owned();
+
+                        // and replace with the new content
+                        if first_text_node {
+                            new_data.push(new_text.deref());
+                        }
+
+                        new_data.push(&old_data[loc.end_offset..]);
+                        if new_data.is_empty() {
                             action_list.push(DomAction::remove_node(
                                 loc.node_handle.clone(),
                             ));
                         } else {
-                            // Otherwise, delete the selected text
-                            let mut new_data =
-                                old_data[..loc.start_offset].to_owned();
-
-                            // and replace with the new content
-                            if first_text_node {
-                                new_data.push(new_text.deref());
-                            }
-
-                            new_data.push(&old_data[loc.end_offset..]);
-                            if new_data.is_empty() {
-                                action_list.push(DomAction::remove_node(
-                                    loc.node_handle.clone(),
-                                ));
-                            } else {
-                                node.set_data(new_data);
-                            }
+                            node.set_data(new_data);
                         }
+                    }
 
-                        first_text_node = false;
-                    }
-                    _ => panic!("Unknown type of leaf node found"),
-                }
-            } else if loc.length == 0 && loc.kind.is_block_kind() {
-                // Empty block node
-                if new_text.is_empty() {
-                    action_list
-                        .push(DomAction::remove_node(loc.node_handle.clone()));
                     first_text_node = false;
-                } else if first_text_node {
-                    match loc.kind {
-                        Paragraph | ListItem => {
-                            let text_node = DomNode::new_text(new_text.clone());
-                            action_list.push(DomAction::add_node(
-                                loc.node_handle.clone(),
-                                0,
-                                text_node,
-                            ));
-                            first_text_node = false;
-                        },
-                        _ => panic!("A block node that can't contain inline nodes was selected, text can't be added to it."),
-                    }
                 }
+                _ => panic!("Unknown type of leaf node found"),
             }
         }
 

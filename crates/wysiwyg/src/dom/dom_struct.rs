@@ -256,7 +256,7 @@ where
         self.document.handle()
     }
 
-    pub fn find_parent_list_item_or_self(
+    pub fn find_ancestor_list_item_or_self(
         &self,
         child_handle: &DomHandle,
     ) -> Option<DomHandle> {
@@ -267,7 +267,7 @@ where
         }
 
         if child_handle.has_parent() {
-            self.find_parent_list_item_or_self(&child_handle.parent_handle())
+            self.find_ancestor_list_item_or_self(&child_handle.parent_handle())
         } else {
             None
         }
@@ -835,8 +835,10 @@ mod test {
     #[test]
     fn find_parent_list_item_or_self_finds_our_parent() {
         let d = cm("|a<ul><li>b</li></ul>").state.dom;
-        let res = d
-            .find_parent_list_item_or_self(&DomHandle::from_raw(vec![1, 0, 0]));
+        let res =
+            d.find_ancestor_list_item_or_self(&DomHandle::from_raw(vec![
+                1, 0, 0,
+            ]));
         let res = res.expect("Should have found a list parent!");
         assert_eq!(res.into_raw(), vec![1, 0]);
     }
@@ -845,7 +847,7 @@ mod test {
     fn find_parent_list_item_or_self_finds_ourself() {
         let d = cm("|a<ul><li>b</li></ul>").state.dom;
         let res =
-            d.find_parent_list_item_or_self(&DomHandle::from_raw(vec![1, 0]));
+            d.find_ancestor_list_item_or_self(&DomHandle::from_raw(vec![1, 0]));
         let res = res.expect("Should have found a list parent!");
         assert_eq!(res.into_raw(), vec![1, 0]);
     }
@@ -853,9 +855,10 @@ mod test {
     #[test]
     fn find_parent_list_item_or_self_finds_our_grandparent() {
         let d = cm("|<ul><li>b<strong>c</strong></li></ul>d").state.dom;
-        let res = d.find_parent_list_item_or_self(&DomHandle::from_raw(vec![
-            0, 0, 1, 0,
-        ]));
+        let res =
+            d.find_ancestor_list_item_or_self(&DomHandle::from_raw(vec![
+                0, 0, 1, 0,
+            ]));
         let res = res.expect("Should have found a list parent!");
         assert_eq!(res.into_raw(), vec![0, 0]);
     }
@@ -864,7 +867,7 @@ mod test {
     fn find_parent_list_item_or_self_returns_none_when_not_in_a_list() {
         let d = cm("|<ul><li>b<strong>c</strong></li></ul>d").state.dom;
         let res =
-            d.find_parent_list_item_or_self(&DomHandle::from_raw(vec![1]));
+            d.find_ancestor_list_item_or_self(&DomHandle::from_raw(vec![1]));
         assert!(res.is_none(), "Should not have found a list parent!")
     }
 

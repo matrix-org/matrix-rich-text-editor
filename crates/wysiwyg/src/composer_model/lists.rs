@@ -125,7 +125,9 @@ where
         let list_item_handles: Vec<DomHandle> = leaves_and_empty_block_nodes
             .into_iter()
             .filter_map(|l| {
-                self.state.dom.find_parent_list_item_or_self(&l.node_handle)
+                self.state
+                    .dom
+                    .find_ancestor_list_item_or_self(&l.node_handle)
             })
             .collect();
         // Find what is the top most level of all of those list handles
@@ -276,7 +278,7 @@ where
         handle: &DomHandle,
     ) -> ComposerUpdate<S> {
         let parent_list_item_handle =
-            self.state.dom.find_parent_list_item_or_self(handle);
+            self.state.dom.find_ancestor_list_item_or_self(handle);
         if let Some(list_item_handle) = parent_list_item_handle {
             let list = self.state.dom.parent(&list_item_handle);
             if list.is_list_of_type(&list_type) {
