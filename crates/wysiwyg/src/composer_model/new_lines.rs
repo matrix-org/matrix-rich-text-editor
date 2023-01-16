@@ -1,6 +1,6 @@
 use crate::dom::nodes::dom_node::DomNodeKind::{Generic, ListItem, Paragraph};
 use crate::dom::DomLocation;
-use crate::{ComposerModel, DomHandle, DomNode, UnicodeString};
+use crate::{ComposerModel, DomNode, UnicodeString};
 
 impl<S> ComposerModel<S>
 where
@@ -55,7 +55,7 @@ where
                 }
             }
             let paragraph = DomNode::new_paragraph(Vec::new());
-            if insert_at == DomHandle::root() {
+            if insert_at.is_root() {
                 self.state.dom.append_at_end_of_document(paragraph);
             } else {
                 self.state.dom.insert_at(&block_handle, paragraph);

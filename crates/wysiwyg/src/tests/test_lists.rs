@@ -62,7 +62,7 @@ fn removing_list_item() {
 
     let mut model = cm("<ol><li>|</li></ol>");
     model.backspace();
-    assert_eq!(tx(&model), "<p>|</p>");
+    assert_eq!(tx(&model), "|");
 }
 
 #[test]

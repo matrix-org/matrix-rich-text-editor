@@ -15,7 +15,7 @@
 //! Methods on Dom that modify its contents and are guaranteed to conform to
 //! our invariants e.g. no empty text nodes, no adjacent text nodes.
 
-use crate::dom::nodes::dom_node::DomNodeKind::{ListItem, Paragraph};
+use crate::dom::nodes::dom_node::DomNodeKind::{Generic, ListItem, Paragraph};
 use crate::dom::unicode_string::UnicodeStr;
 use crate::dom::DomLocation;
 use crate::{DomHandle, DomNode, UnicodeString};
@@ -65,6 +65,8 @@ where
         self.assert_invariants();
 
         let range = self.find_range(start, end);
+        let (start_block, end_block) =
+            self.top_most_block_nodes_in_range(&range);
         let deleted_handles = if range.is_empty() {
             if !new_text.is_empty() {
                 self.append_at_end_of_document(DomNode::new_text(new_text));
@@ -90,15 +92,25 @@ where
 
         self.merge_adjacent_text_nodes_after_replace(range, deleted_handles);
 
-        if start != end {
+        // If text was replaced, not inserted
+        let needs_to_merge_block_nodes =
+            if let (Some(start_block), Some(end_block)) =
+                (start_block, end_block)
+            {
+                start_block != end_block
+            } else {
+                false
+            };
+        if start != end && needs_to_merge_block_nodes {
             let (start_block, end_block) =
                 self.top_most_block_nodes_in_boundary(start);
             if let (Some(start_block_loc), Some(end_block_loc)) =
                 (start_block, end_block)
             {
+                // If there are adjacent block nodes as a result of replacing text
                 if start_block_loc != end_block_loc {
-                    let mut end_block = self.remove(&end_block_loc.node_handle);
-                    let DomNode::Container(mut end_block) = end_block else {
+                    let end_block = self.remove(&end_block_loc.node_handle);
+                    let DomNode::Container(end_block) = end_block else {
                         panic!("Ending block node must be a container node")
                     };
                     let removed_items = end_block.take_children();
@@ -129,14 +141,22 @@ where
         &self,
         selection_pos: usize,
     ) -> (Option<DomLocation>, Option<DomLocation>) {
-        let range = self.find_range(selection_pos, selection_pos + 1);
+        let range = self.find_range(selection_pos + 1, selection_pos + 1);
+        self.top_most_block_nodes_in_range(&range)
+    }
+
+    fn top_most_block_nodes_in_range(
+        &self,
+        range: &Range,
+    ) -> (Option<DomLocation>, Option<DomLocation>) {
         let mut start = None;
         let mut end = None;
-        let mut sorted_locations = range.locations;
+        let mut sorted_locations = range.locations.clone();
         sorted_locations.sort();
         for location in sorted_locations {
             if location.kind.is_block_kind() {
-                if location.is_start() {
+                if location.is_start() && location.end_offset == location.length
+                {
                     start = Some(location.clone());
                 } else if location.is_end() {
                     end = Some(location.clone());
@@ -178,26 +198,26 @@ where
         let mut deleted = Vec::new();
 
         // Delete in reverse order to avoid invalidating handles
-        to_delete.reverse();
+        to_delete.sort();
 
         // We repeatedly delete to ensure anything that became empty because
         // of deletions is itself deleted.
         while !to_delete.is_empty() {
-            // Keep a list of things we will delete next time around the loop
-            let mut new_to_delete = Vec::new();
-
-            for handle in to_delete.into_iter().filter(not_root) {
-                let index_in_parent = handle.index_in_parent();
-                let parent = self.parent_mut(&handle);
-                parent.remove_child(index_in_parent);
-                adjust_handles_for_delete(&mut new_to_delete, &handle);
-                deleted.push(handle);
-                if parent.children().is_empty() {
-                    new_to_delete.push(parent.handle());
-                }
+            let handle = to_delete.pop().unwrap();
+            if handle.is_root() {
+                continue;
             }
 
-            to_delete = new_to_delete;
+            self.remove(&handle);
+            deleted.push(handle.clone());
+            let parent = self.parent(&handle);
+            let parent_handle = parent.handle();
+            if parent.children().is_empty()
+                && !to_delete.contains(&parent_handle)
+                && !deleted.contains(&parent_handle)
+            {
+                to_delete.push(parent_handle);
+            }
         }
         deleted
     }
@@ -376,7 +396,10 @@ where
             let mut node = self.lookup_node_mut(&loc.node_handle);
             match &mut node {
                 DomNode::Container(_) => {
-                    if loc.length == 0 && loc.kind.is_block_kind() {
+                    if loc.length == 0
+                        && loc.kind.is_block_kind()
+                        && loc.kind != Generic
+                    {
                         // Empty block node
                         if new_text.is_empty() {
                             action_list.push(DomAction::remove_node(
@@ -827,10 +850,6 @@ fn first_shrinkable_link_node_handle(range: &Range) -> Option<DomHandle> {
     Some(link_loc.node_handle.clone())
 }
 
-fn not_root(handle: &DomHandle) -> bool {
-    !handle.is_root()
-}
-
 fn sub_handle_up_to_or_none(
     handle: &DomHandle,
     depth: usize,
@@ -845,95 +864,11 @@ fn is_ancestor_or_self(ancestor: &DomHandle, handle: &DomHandle) -> bool {
     ancestor.is_ancestor_of(handle) || ancestor == handle
 }
 
-fn adjust_handles_for_delete(
-    handles: &mut Vec<DomHandle>,
-    deleted: &DomHandle,
-) {
-    let mut indices_in_handles_to_delete = Vec::new();
-    let mut handles_to_replace = Vec::new();
-
-    let parent = deleted.parent_handle();
-    for (i, handle) in handles.iter().enumerate() {
-        if deleted.is_ancestor_of(handle) {
-            // We are the deleted node (or a descendant of it)
-            indices_in_handles_to_delete.push(i);
-        } else if parent.is_ancestor_of(handle) {
-            // We are a sibling of the deleted node (or a descendant of one)
-
-            // If we're after a deleted node, reduce our index
-            let mut child_index = handle.raw()[parent.raw().len()];
-            let deleted_index = *deleted.raw().last().unwrap();
-            if child_index > deleted_index {
-                child_index -= 1;
-            }
-
-            // Create a handle with the adjusted index (but missing anything
-            // after the delete node's length).
-            let mut new_handle = parent.child_handle(child_index);
-
-            // Add back the rest of our original handle, unadjusted
-            for h in &handle.raw()[deleted.raw().len()..] {
-                new_handle = new_handle.child_handle(*h);
-            }
-            handles_to_replace.push((i, new_handle));
-        }
-    }
-
-    for (i, new_handle) in handles_to_replace {
-        handles[i] = new_handle;
-    }
-
-    indices_in_handles_to_delete.reverse();
-    for i in indices_in_handles_to_delete {
-        handles.remove(i);
-    }
-}
-
 #[cfg(test)]
 mod test {
     use crate::dom::DomHandle;
     use crate::tests::testutils_composer_model::{cm, tx};
     use crate::ToHtml;
-
-    use super::*;
-
-    #[test]
-    fn can_adjust_handles_when_removing_nodes() {
-        let mut handles = vec![
-            DomHandle::from_raw(vec![1, 2, 3]), // Ignored because before
-            DomHandle::from_raw(vec![2, 3, 4, 5]), // Deleted because inside
-            DomHandle::from_raw(vec![3, 4, 5]), // Adjusted because after
-            DomHandle::from_raw(vec![3]),       // Adjusted because after
-        ];
-
-        let to_delete = DomHandle::from_raw(vec![2]);
-
-        adjust_handles_for_delete(&mut handles, &to_delete);
-
-        assert_eq!(*handles[0].raw(), vec![1, 2, 3]);
-        assert_eq!(*handles[1].raw(), vec![2, 4, 5]);
-        assert_eq!(*handles[2].raw(), vec![2]);
-        assert_eq!(handles.len(), 3);
-    }
-
-    #[test]
-    fn can_adjust_handles_when_removing_nested_nodes() {
-        let mut handles = vec![
-            DomHandle::from_raw(vec![0, 9, 1, 2, 3]),
-            DomHandle::from_raw(vec![0, 9, 2, 3, 4, 5]),
-            DomHandle::from_raw(vec![0, 9, 3, 4, 5]),
-            DomHandle::from_raw(vec![0, 9, 3]),
-        ];
-
-        let to_delete = DomHandle::from_raw(vec![0, 9, 2]);
-
-        adjust_handles_for_delete(&mut handles, &to_delete);
-
-        assert_eq!(*handles[0].raw(), vec![0, 9, 1, 2, 3]);
-        assert_eq!(*handles[1].raw(), vec![0, 9, 2, 4, 5]);
-        assert_eq!(*handles[2].raw(), vec![0, 9, 2]);
-        assert_eq!(handles.len(), 3);
-    }
 
     #[test]
     fn delete_nodes_refuses_to_delete_root() {
