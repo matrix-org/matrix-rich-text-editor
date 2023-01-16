@@ -67,7 +67,7 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
 
     const formattingFunctions = useFormattingFunctions(ref, composerModel);
 
-    const { content, actionStates } = useListeners(
+    const { content, actionStates, areListenersReady } = useListeners(
         ref,
         modelRef,
         composerModel,
@@ -81,7 +81,7 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
 
     return {
         ref,
-        isWysiwygReady: Boolean(composerModel),
+        isWysiwygReady: areListenersReady,
         wysiwyg: formattingFunctions,
         content,
         actionStates,
