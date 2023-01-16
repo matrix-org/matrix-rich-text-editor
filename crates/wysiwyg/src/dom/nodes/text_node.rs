@@ -78,6 +78,12 @@ where
             .all(|c| matches!(c, ' ' | '\x09'..='\x0d'))
     }
 
+    pub fn is_blank_in_range(&self, range: Range<usize>) -> bool {
+        self.data[range]
+            .chars()
+            .all(|c| matches!(c, ' ' | '\x09'..='\x0d'))
+    }
+
     pub fn remove_trailing_line_break(&mut self) -> bool {
         if self.data.chars().last() == Some('\n') {
             self.data.pop_last();
@@ -132,6 +138,8 @@ where
     pub fn is_empty(&self) -> bool {
         self.data().len() != 0
     }
+
+    /// Check if the textNode contains only whitespaces
 
     /// Push content of the given text node into self. If given
     /// node is empty or a single ZWSP, nothing is pushed.
