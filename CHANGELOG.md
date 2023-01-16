@@ -1,5 +1,18 @@
 # Changelog
 
+# [0.18.0] - 2022-01-16
+
+### Added
+
+- Web: Add code blocks
+- iOS: Add live document tree to example app
+- Android: Add code block styling
+- Android: Add helpers for inline code styling
+
+### Changed
+
+- Common: Default to https:// or mailto: for links without schemes
+
 # [0.17.0] - 2022-01-12
 
 ### Added
