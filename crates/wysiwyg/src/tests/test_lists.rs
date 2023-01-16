@@ -14,7 +14,7 @@
 
 use widestring::Utf16String;
 
-use crate::tests::testutils_composer_model::{cm, sel, tx};
+use crate::tests::testutils_composer_model::{cm, tx};
 use crate::tests::testutils_conversion::utf16;
 
 use crate::ComposerModel;
@@ -285,16 +285,16 @@ fn indent_several_list_items_complex_case_works() {
 #[test]
 fn indent_several_list_items_with_sub_levels_works() {
     let mut model = cm(
-        "<ul><li><p>First item</p><ul><li><p>Second item</p><ul><li>Third item</li><li>{Fourth item</li></ul></li><li>Fifth item}|</li></ul></li></ul>",
+        "<ul><li><p>First item</p><ul><li>Second item</li><li><p>{Third item</p><ul><li>Fourth item</li><li>Fifth item}|</li></ul></li></ul></li></ul>",
     );
     model.indent();
-    assert_eq!(tx(&model), "<ul><li><p>First item</p><ul><li><p>Second item</p><ul><li><p>Third item</p><ul><li>{Fourth item</li></ul></li><li>Fifth item}|</li></ul></li></ul></li></ul>");
+    assert_eq!(tx(&model), "<ul><li><p>First item</p><ul><li><p>Second item</p><ul><li><p>{Third item</p><ul><li>Fourth item</li><li>Fifth item}|</li></ul></li></ul></li></ul></li></ul>");
 }
 
 #[test]
 fn un_indent_several_items_works() {
     let mut model =
-        cm("<ul><li>First item<ul><li>{Second item</li><li>Third item}|</li></ul></li></ul>");
+        cm("<ul><li><p>First item</p><ul><li>{Second item</li><li>Third item}|</li></ul></li></ul>");
     model.unindent();
     assert_eq!(
         tx(&model),
@@ -305,22 +305,33 @@ fn un_indent_several_items_works() {
 #[test]
 fn un_indent_nested_lists_works() {
     let mut model =
-        cm("<ul><li>First item<ul><li>{Second item<ul><li>Third item}|</li></ul></li></ul></li></ul>");
+        cm("<ul><li><p>First item</p><ul><li><p>{Second item</p><ul><li>Third item}|</li></ul></li></ul></li></ul>");
     model.unindent();
     assert_eq!(
         tx(&model),
-        "<ul><li>First item</li><li>{Second item<ul><li>Third item}|</li></ul></li></ul>"
+        "<ul><li>First item</li><li><p>{Second item</p><ul><li>Third item}|</li></ul></li></ul>"
+    )
+}
+
+#[test]
+fn un_indent_middle_list_item_works() {
+    let mut model =
+        cm("<ul><li><p>First item</p><ul><li>Second item</li><li>{Third item}|</li><li>Fourth item</li></ul></li></ul>");
+    model.unindent();
+    assert_eq!(
+        tx(&model),
+        "<ul><li><p>First item</p><ul><li>Second item</li></ul></li><li><p>{Third item}|</p><ul><li>Fourth item</li></ul></li></ul>"
     )
 }
 
 #[test]
 fn un_indent_nested_lists_with_remnants_works() {
     let mut model =
-        cm("<ul><li>First item<ul><li>{Second item<ul><li>Third item</li><li>Fourth item}|</li><li>Fifth item</li></ul></li></ul></li></ul>");
+        cm("<ul><li><p>First item</p><ul><li><p>Second item</p><ul><li>{Third item</li><li>Fourth item}|</li><li>Fifth item</li></ul></li></ul></li></ul>");
     model.unindent();
     assert_eq!(
         tx(&model),
-        "<ul><li>First item</li><li>{Second item<ul><li>Third item</li><li>Fourth item}|<ul><li>Fifth item</li></ul></li></ul></li></ul>"
+        "<ul><li><p>First item</p><ul><li>Second item</li><li>{Third item</li><li><p>Fourth item}|</p><ul><li>Fifth item</li></ul></li></ul></li></ul>"
     )
 }
 
