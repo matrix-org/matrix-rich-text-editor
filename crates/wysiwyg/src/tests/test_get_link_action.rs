@@ -119,3 +119,15 @@ fn get_link_action_from_selection_that_contains_multiple_links_partially_in_diff
         LinkAction::Edit(utf16("https://element.io"))
     )
 }
+
+#[test]
+fn get_link_action_on_empty_selection() {
+    let model = cm("{   }|");
+    assert_eq!(model.get_link_action(), LinkAction::CreateWithText)
+}
+
+#[test]
+fn get_link_action_on_empty_selection_between_texts() {
+    let model = cm("test{   }|test");
+    assert_eq!(model.get_link_action(), LinkAction::CreateWithText)
+}

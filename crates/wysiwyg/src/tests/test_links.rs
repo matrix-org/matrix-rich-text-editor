@@ -414,11 +414,65 @@ fn set_link_with_text_in_container() {
 }
 
 #[test]
-fn set_link_with_text_on_selection() {
-    // This use case should never happen, but just in case it would, nothing will happen.
-    let mut model = cm("{test}|");
+fn set_link_with_text_on_empty_selection() {
+    let mut model = cm("{   }|");
     model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
-    assert_eq!(tx(&model), "{test}|");
+    assert_eq!(tx(&model), "<a href=\"https://element.io\">added_link|</a>");
+}
+
+#[test]
+fn set_link_with_text_on_empty_selection_after_text() {
+    let mut model = cm("test{   }|");
+    model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
+    assert_eq!(
+        tx(&model),
+        "test<a href=\"https://element.io\">added_link|</a>"
+    );
+}
+
+#[test]
+fn set_link_with_text_on_empty_selection_between_texts() {
+    let mut model = cm("test{   }|test");
+    model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
+    // this one does not work returns:
+    // "<b>test_bold<a href=\"https://element.io\">added_link|</a></b><i><a href=\"https://element.io\">test_i</a>talic</i>"
+    // probably this shift is caused by the removal of the intermediate text_node with whitespaces
+    // and requires to update the set_link_range
+    assert_eq!(
+        tx(&model),
+        "test<a href=\"https://element.io\">added_link|</a>test"
+    );
+}
+
+#[test]
+fn set_link_with_text_on_empty_selection_in_container() {
+    let mut model = cm("<b>test{   }|</b>");
+    model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
+    assert_eq!(
+        tx(&model),
+        "<b>test<a href=\"https://element.io\">added_link|</a></b>"
+    );
+}
+
+#[test]
+fn set_link_with_text_on_empty_selection_with_line_break() {
+    let mut model = cm("test{  <br> }|");
+    model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
+    assert_eq!(
+        tx(&model),
+        "<b>test<a href=\"https://element.io\">added_link|</a></b>"
+    );
+}
+
+#[test]
+fn set_link_with_text_on_empty_selection_with_different_containers() {
+    let mut model = cm("<b>test_bold{ </b><br>   <i> }|test_italic</i>");
+    model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
+    // this one does not work returns:
+    // "<b>test_bold<a href=\"https://element.io\">added_link|</a></b><i><a href=\"https://element.io\">test_i</a>talic</i>"
+    // probably this shift is caused by the removal of the intermediate text_node with whitespaces
+    // and requires to update the set_link_range
+    assert_eq!(tx(&model), "<b>test_bold<a href=\"https://element.io\">added_link|</a></b><i>test_italic</i>");
 }
 
 #[test]
