@@ -40,6 +40,63 @@ function inpEv(inputType: string, data?: string): InputEvent {
 
 const consoleErrorSpy = vi.spyOn(console, 'error');
 
+// regular test cases
+const testCases = [
+    {
+        eventType: 'insertText',
+        eventArguments: ['goo'],
+        composerMethod: 'replace_text',
+        composerArguments: ['goo'],
+        actionArguments: ['goo'],
+    },
+    {
+        eventType: 'insertCompositionText',
+        eventArguments: ['gar'],
+        composerMethod: 'replace_text',
+        composerArguments: ['gar'],
+        actionArguments: ['gar'],
+    },
+    {
+        eventType: 'insertFromComposition',
+        eventArguments: ['gaz'],
+        composerMethod: 'replace_text',
+        composerArguments: ['gaz'],
+        actionArguments: ['gaz'],
+    },
+    {
+        eventType: 'insertCodeBlock',
+        composerMethod: 'code_block',
+    },
+    {
+        eventType: 'deleteWordBackward',
+        composerMethod: 'backspace_word',
+    },
+    {
+        eventType: 'deleteWordForward',
+        composerMethod: 'delete_word',
+    },
+    {
+        eventType: 'deleteByCut',
+        composerMethod: 'delete',
+    },
+    {
+        eventType: 'formatInlineCode',
+        composerMethod: 'inline_code',
+    },
+    {
+        eventType: 'insertOrderedList',
+        composerMethod: 'ordered_list',
+    },
+    {
+        eventType: 'insertUnorderedList',
+        composerMethod: 'unordered_list',
+    },
+    {
+        eventType: 'insertLineBreak',
+        composerMethod: 'enter',
+    },
+];
+
 describe('processInput', () => {
     beforeEach(() => {
         vi.resetAllMocks();
@@ -49,10 +106,46 @@ describe('processInput', () => {
         vi.restoreAllMocks();
     });
 
+    it.each(testCases)(
+        'handles $eventType with $composerMethod',
+        ({
+            eventType,
+            eventArguments = [],
+            composerMethod,
+            composerArguments,
+            actionArguments = [],
+        }) => {
+            // generate the event
+            const e = inpEv(eventType, ...eventArguments);
+
+            // process the input using the new event
+            processInput(
+                e,
+                mockComposerModel,
+                mockAction,
+                mockFormattingFunctions,
+            );
+
+            // check the calls to the composerModel and the action function
+            expect(mockComposerModel[composerMethod]).toHaveBeenCalledTimes(1);
+            if (composerArguments) {
+                expect(mockComposerModel[composerMethod]).toHaveBeenCalledWith(
+                    ...composerArguments,
+                );
+            }
+            expect(mockAction).toHaveBeenCalledWith(
+                undefined,
+                composerMethod,
+                ...actionArguments,
+            );
+        },
+    );
+
+    // special cases
     it('returns early if inputEventProcessor returns null', () => {
         const mockInputEventProcessor = vi.fn().mockReturnValue(null);
 
-        processInput(
+        const returnValue = processInput(
             new InputEvent('some event'),
             mockComposerModel,
             mockAction,
@@ -60,195 +153,67 @@ describe('processInput', () => {
             mockInputEventProcessor,
         );
 
+        expect(returnValue).not.toBeDefined();
         expect(mockAction).not.toHaveBeenCalled();
     });
 
-    it('handles clipboard events with replace_text', () => {
-        const clipboardContent = 'clipboard data';
-        const e = new ClipboardEvent('some clipboard event');
-        const mockGetter = vi.fn().mockReturnValue(clipboardContent);
+    it('handles truthy and falsy data from clipboard with replace_text', () => {
+        const sampleContent = ['clipboardData', null];
 
-        // We can't easily generate the correct type here, so disable ts
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        e.clipboardData = { getData: mockGetter };
+        sampleContent.forEach((clipboardContent) => {
+            const e = new ClipboardEvent('some clipboard event');
+            const mockGetter = vi.fn().mockReturnValue(clipboardContent);
 
-        processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
+            // We can't easily generate the correct type here, so disable ts
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            e.clipboardData = { getData: mockGetter };
 
-        expect(mockGetter).toHaveBeenCalledTimes(1);
-        expect(mockComposerModel.replace_text).toHaveBeenCalledWith(
-            clipboardContent,
-        );
-        expect(mockAction).toHaveBeenCalledWith(undefined, 'paste');
-    });
+            processInput(
+                e,
+                mockComposerModel,
+                mockAction,
+                mockFormattingFunctions,
+            );
 
-    it('handles falsy clipboard events with replace_text', () => {
-        const clipboardContent = null;
-        const e = new ClipboardEvent('some clipboard event');
-        const mockGetter = vi.fn().mockReturnValue(clipboardContent);
-
-        // We can't easily generate the correct type here, so disable ts
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        e.clipboardData = { getData: mockGetter };
-
-        processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
-
-        expect(mockGetter).toHaveBeenCalledTimes(1);
-        expect(mockComposerModel.replace_text).toHaveBeenCalledWith('');
-        expect(mockAction).toHaveBeenCalledWith(undefined, 'paste');
-    });
-
-    it('handles insertText with replace_text', () => {
-        const e = inpEv('insertText', 'goo');
-
-        // When we process the input
-        processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
-
-        // Then replace_text and mockAction have been called correctly;
-        expect(mockComposerModel.replace_text).toHaveBeenCalledWith('goo');
-        expect(mockAction).toHaveBeenCalledWith(
-            undefined,
-            'replace_text',
-            'goo',
-        );
-    });
-
-    it('handles insertCompositionText with replace_text', () => {
-        const e = inpEv('insertCompositionText', 'gar');
-
-        // When we process the input
-        processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
-
-        // Then replace_text and mockAction have been called correctly;
-        expect(mockComposerModel.replace_text).toHaveBeenCalledWith('gar');
-        expect(mockAction).toHaveBeenCalledWith(
-            undefined,
-            'replace_text',
-            'gar',
-        );
-    });
-
-    it('handles insertFromComposition with replace_text', () => {
-        const e = inpEv('insertFromComposition', 'gaz');
-
-        // When we process the input
-        processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
-
-        // Then replace_text and mockAction have been called correctly;
-        expect(mockComposerModel.replace_text).toHaveBeenCalledWith('gaz');
-        expect(mockAction).toHaveBeenCalledWith(
-            undefined,
-            'replace_text',
-            'gaz',
-        );
-    });
-
-    it('handles insertCodeBlock with code_block', () => {
-        const e = inpEv('insertCodeBlock');
-
-        // When we process the input
-        processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
-
-        // Then code_block and mockAction have been called correctly;
-        expect(mockComposerModel.code_block).toHaveBeenCalledTimes(1);
-        expect(mockAction).toHaveBeenCalledWith(undefined, 'code_block');
-    });
-
-    it('handles deleteWordBackward with backspace_word', () => {
-        const e = inpEv('deleteWordBackward');
-
-        // When we process the input
-        processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
-
-        // Then code_block and mockAction have been called correctly;
-        expect(mockComposerModel.backspace_word).toHaveBeenCalledTimes(1);
-        expect(mockAction).toHaveBeenCalledWith(undefined, 'backspace_word');
-    });
-
-    it('handles deleteWordForward with delete_word', () => {
-        const e = inpEv('deleteWordForward');
-
-        // When we process the input
-        processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
-
-        // Then code_block and mockAction have been called correctly;
-        expect(mockComposerModel.delete_word).toHaveBeenCalledTimes(1);
-        expect(mockAction).toHaveBeenCalledWith(undefined, 'delete_word');
-    });
-
-    it('handles deleteByCut with delete', () => {
-        const e = inpEv('deleteByCut');
-
-        // When we process the input
-        processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
-
-        // Then code_block and mockAction have been called correctly;
-        expect(mockComposerModel.delete).toHaveBeenCalledTimes(1);
-        expect(mockAction).toHaveBeenCalledWith(undefined, 'delete');
-    });
-
-    it('handles formatInlineCode with inline_code', () => {
-        const e = inpEv('formatInlineCode');
-
-        // When we process the input
-        processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
-
-        // Then code_block and mockAction have been called correctly;
-        expect(mockComposerModel.inline_code).toHaveBeenCalledTimes(1);
-        expect(mockAction).toHaveBeenCalledWith(undefined, 'inline_code');
+            expect(mockGetter).toHaveBeenCalledTimes(1);
+            expect(mockComposerModel.replace_text).toHaveBeenCalledWith(
+                // falsy values are defaulted to empty string
+                clipboardContent || '',
+            );
+            expect(mockAction).toHaveBeenCalledWith(undefined, 'paste');
+        });
     });
 
     it('handles insertFromPaste without calling action', () => {
         const e = inpEv('insertFromPaste');
 
         // When we process the input
-        processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
+        const returnValue = processInput(
+            e,
+            mockComposerModel,
+            mockAction,
+            mockFormattingFunctions,
+        );
 
-        // Then code_block and mockAction have been called correctly;
+        // Then mockAction have is not called
+        expect(returnValue).not.toBeDefined();
         expect(mockAction).not.toHaveBeenCalled();
-    });
-
-    it('handles insertOrderedList with ordered_list', () => {
-        const e = inpEv('insertOrderedList');
-
-        // When we process the input
-        processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
-
-        // Then code_block and mockAction have been called correctly;
-        expect(mockComposerModel.ordered_list).toHaveBeenCalledTimes(1);
-        expect(mockAction).toHaveBeenCalledWith(undefined, 'ordered_list');
-    });
-
-    it('handles insertUnorderedList with unordered_list', () => {
-        const e = inpEv('insertUnorderedList');
-
-        // When we process the input
-        processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
-
-        // Then code_block and mockAction have been called correctly;
-        expect(mockComposerModel.unordered_list).toHaveBeenCalledTimes(1);
-        expect(mockAction).toHaveBeenCalledWith(undefined, 'unordered_list');
-    });
-
-    it('handles insertLineBreak with enter', () => {
-        const e = inpEv('insertLineBreak');
-
-        // When we process the input
-        processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
-
-        // Then code_block and mockAction have been called correctly;
-        expect(mockComposerModel.enter).toHaveBeenCalledTimes(1);
-        expect(mockAction).toHaveBeenCalledWith(undefined, 'enter');
     });
 
     it('hits the break statement in insert text if input data is falsy', () => {
         const e = inpEv('insertText', '');
 
         // When we process the input
-        processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
+        const returnValue = processInput(
+            e,
+            mockComposerModel,
+            mockAction,
+            mockFormattingFunctions,
+        );
 
-        // Then code_block and mockAction have been called correctly;
+        // Then mockAction have is not called
+        expect(returnValue).not.toBeDefined();
         expect(mockAction).not.toHaveBeenCalled();
     });
 
@@ -263,12 +228,12 @@ describe('processInput', () => {
             mockFormattingFunctions,
         );
 
-        // Then code_block and mockAction have been called correctly;
+        // Then mockAction is not called and we get null back
         expect(mockAction).not.toHaveBeenCalled();
         expect(returnValue).toBe(null);
     });
 
-    it('errors and returns null when unknown event is used', () => {
+    it('logs errors and returns null when unknown event is used', () => {
         const eventType = 'aNewEventType';
         const e = inpEv(eventType);
 
@@ -280,11 +245,12 @@ describe('processInput', () => {
             mockFormattingFunctions,
         );
 
-        // Then code_block and mockAction have been called correctly;
+        // Then mockAction is not called, we get null back and there is an error
+        // displayed in the console
         expect(mockAction).not.toHaveBeenCalled();
+        expect(returnValue).toBe(null);
         expect(consoleErrorSpy).toHaveBeenCalledWith(
             `Unknown input type: ${eventType}`,
         );
-        expect(returnValue).toBe(null);
     });
 });
