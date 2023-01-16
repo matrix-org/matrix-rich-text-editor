@@ -18,6 +18,7 @@ import { ComposerModel } from '../generated/wysiwyg';
 import { processInput } from './composer';
 import { FormattingFunctions } from './types';
 
+// mocks and spies
 const mockComposerModel = {
     replace_text: vi.fn(),
     code_block: vi.fn(),
@@ -34,14 +35,18 @@ const mockAction = vi.fn();
 
 const mockFormattingFunctions = {} as unknown as FormattingFunctions;
 
-function inpEv(inputType: string, data?: string): InputEvent {
-    return new InputEvent('InputEvent', { data, inputType });
-}
-
 const consoleErrorSpy = vi.spyOn(console, 'error');
 
 // regular test cases
-const testCases = [
+type testCase = {
+    eventType: string;
+    eventArguments?: string[];
+    composerMethod: keyof typeof ComposerModel.prototype;
+    composerArguments?: unknown[];
+    actionArguments?: unknown[];
+};
+
+const testCases: testCase[] = [
     {
         eventType: 'insertText',
         eventArguments: ['goo'],
@@ -127,11 +132,11 @@ describe('processInput', () => {
             );
 
             // check the calls to the composerModel and the action function
-            expect(mockComposerModel[composerMethod]).toHaveBeenCalledTimes(1);
+            const method = mockComposerModel[composerMethod];
+
+            expect(method).toHaveBeenCalledTimes(1);
             if (composerArguments) {
-                expect(mockComposerModel[composerMethod]).toHaveBeenCalledWith(
-                    ...composerArguments,
-                );
+                expect(method).toHaveBeenCalledWith(...composerArguments);
             }
             expect(mockAction).toHaveBeenCalledWith(
                 undefined,
@@ -254,3 +259,8 @@ describe('processInput', () => {
         );
     });
 });
+
+// util functions
+function inpEv(inputType: string, data?: string): InputEvent {
+    return new InputEvent('InputEvent', { data, inputType });
+}
