@@ -104,7 +104,8 @@ internal class SingleLineRenderer(
         // the language direction
         val left = min(startOffset, endOffset)
         val right = max(startOffset, endOffset)
-        drawable.setBounds(left, lineTop, right, lineBottom)
+        val width = canvas.width
+        drawable.setBounds(max(left, 0), lineTop, min(right, width), lineBottom)
         drawable.draw(canvas)
     }
 }
@@ -182,11 +183,12 @@ internal class MultiLineRenderer(
      * @param bottom bottom coordinate for the background
      */
     private fun drawStart(canvas: Canvas, start: Int, top: Int, end: Int, bottom: Int) {
+        val width = canvas.width
         if (start > end) {
-            drawableRight.setBounds(end, top, start, bottom)
+            drawableRight.setBounds(max(end, 0), top, min(start, width), bottom)
             drawableRight.draw(canvas)
         } else {
-            drawableLeft.setBounds(start, top, end, bottom)
+            drawableLeft.setBounds(max(start, 0), top, min(end, width), bottom)
             drawableLeft.draw(canvas)
         }
     }
@@ -201,11 +203,12 @@ internal class MultiLineRenderer(
      * @param bottom bottom coordinate for the background
      */
     private fun drawEnd(canvas: Canvas, start: Int, top: Int, end: Int, bottom: Int) {
+        val width = canvas.width
         if (start > end) {
-            drawableLeft.setBounds(end, top, start, bottom)
+            drawableLeft.setBounds(max(end, 0), top, min(start, width), bottom)
             drawableLeft.draw(canvas)
         } else {
-            drawableRight.setBounds(start, top, end, bottom)
+            drawableRight.setBounds(max(start, 0), top, min(end, width), bottom)
             drawableRight.draw(canvas)
         }
     }

@@ -1,24 +1,32 @@
 package io.element.android.wysiwyg.utils
 
 import android.graphics.drawable.Drawable
-import androidx.annotation.ColorInt
 import androidx.annotation.Px
 
 internal data class StyleConfig(
-    // Unordered list
+    val bulletList: BulletListStyleConfig,
+
+    val inlineCode: InlineCodeStyleConfig,
+
+    val codeBlock: CodeBlockStyleConfig
+)
+
+data class BulletListStyleConfig(
     @Px val bulletGapWidth: Float,
     @Px val bulletRadius: Float,
+)
 
-    // Inline code
-    @Px val inlineCodeHorizontalPadding: Int,
-    @Px val inlineCodeVerticalPadding: Int,
-    val inlineCodeSingleLineBg: Drawable,
-    val inlineCodeMultiLineBgLeft: Drawable,
-    val inlineCodeMultiLineBgMid: Drawable,
-    val inlineCodeMultiLineBgRight: Drawable,
+data class InlineCodeStyleConfig(
+    @Px val horizontalPadding: Int,
+    @Px val verticalPadding: Int,
+    val singleLineBg: Drawable,
+    val multiLineBgLeft: Drawable,
+    val multiLineBgMid: Drawable,
+    val multiLineBgRight: Drawable,
+)
 
-    // Code blocks
-    @Px val codeBlockLeadingMargin: Int,
-    @Px val codeBlockVerticalPadding: Int,
-    val codeBlockBackgroundDrawable: Drawable,
+data class CodeBlockStyleConfig(
+    @Px val leadingMargin: Int,
+    @Px val verticalPadding: Int,
+    val backgroundDrawable: Drawable,
 )
