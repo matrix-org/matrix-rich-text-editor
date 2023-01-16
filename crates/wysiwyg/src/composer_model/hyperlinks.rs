@@ -72,10 +72,10 @@ where
         link: S,
         text: S,
     ) -> ComposerUpdate<S> {
-        let (s, mut e) = self.safe_selection();
+        let (s, _) = self.safe_selection();
         self.push_state_to_history();
         self.do_replace_text(text.clone());
-        e += text.len();
+        let e = s + text.len();
         let range = self.state.dom.find_range(s, e);
         self.set_link_range(range, link)
     }

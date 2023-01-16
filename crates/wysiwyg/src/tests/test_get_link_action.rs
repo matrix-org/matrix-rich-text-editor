@@ -127,6 +127,18 @@ fn get_link_action_on_empty_selection() {
 }
 
 #[test]
+fn set_link_with_text_on_empty_selection_after_text() {
+    let model = cm("test{   }|");
+    assert_eq!(model.get_link_action(), LinkAction::CreateWithText)
+}
+
+#[test]
+fn set_link_with_text_on_empty_selection_before_text() {
+    let model = cm("{   }|test");
+    assert_eq!(model.get_link_action(), LinkAction::CreateWithText)
+}
+
+#[test]
 fn get_link_action_on_empty_selection_between_texts() {
     let model = cm("test{   }|test");
     assert_eq!(model.get_link_action(), LinkAction::CreateWithText)
