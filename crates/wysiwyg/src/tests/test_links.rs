@@ -452,11 +452,11 @@ fn set_link_with_text_on_empty_selection_between_texts() {
 
 #[test]
 fn set_link_with_text_on_empty_selection_in_container() {
-    let mut model = cm("<b>test{   }|</b>");
+    let mut model = cm("<b>test{   }| test</b>");
     model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
     assert_eq!(
         tx(&model),
-        "<b>test<a href=\"https://element.io\">added_link|</a></b>"
+        "<b>test<a href=\"https://element.io\">added_link|</a> test</b>"
     );
 }
 
@@ -472,7 +472,7 @@ fn set_link_with_text_on_empty_selection_with_line_break() {
 
 #[test]
 fn set_link_with_text_on_empty_selection_with_different_containers() {
-    let mut model = cm("<b>test_bold{ </b><br>   <i> }|test_italic</i>");
+    let mut model = cm("<b>test_bold{ </b><br>  ~ <i> }|test_italic</i>");
     model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
     assert_eq!(tx(&model), "<b>test_bold<a href=\"https://element.io\">added_link|</a></b><i>test_italic</i>");
 }

@@ -143,3 +143,43 @@ fn get_link_action_on_empty_selection_between_texts() {
     let model = cm("test{   }|test");
     assert_eq!(model.get_link_action(), LinkAction::CreateWithText)
 }
+
+#[test]
+fn get_link_action_on_empty_selection_in_container() {
+    let model = cm("<b>test{   }| test</b>");
+    assert_eq!(model.get_link_action(), LinkAction::CreateWithText)
+}
+
+#[test]
+fn get_link_action_on_empty_selection_with_line_break() {
+    let model = cm("test{  <br> }|test");
+    assert_eq!(model.get_link_action(), LinkAction::CreateWithText)
+}
+
+#[test]
+fn get_link_action_on_empty_selection_with_zwsp() {
+    let model = cm("test{  ~ }|test");
+    assert_eq!(model.get_link_action(), LinkAction::CreateWithText)
+}
+
+#[test]
+fn get_link_action_on_empty_selection_with_different_containers() {
+    let model = cm("<b>test_bold{ </b><br>  ~  <i> }|test_italic</i>");
+    assert_eq!(model.get_link_action(), LinkAction::CreateWithText)
+}
+
+#[test]
+fn get_link_action_on_empty_selection_with_different_types_of_whitespaces() {
+    let model = cm("test { \t \n \r }| test");
+    assert_eq!(model.get_link_action(), LinkAction::CreateWithText)
+}
+
+#[test]
+fn get_link_action_on_empty_selection_after_a_link() {
+    let model = cm("<a href=\"https://element.io\">test</a>{  }|");
+    // This is the correct behaviour because the end of a link should be considered part of the link itself
+    assert_eq!(
+        model.get_link_action(),
+        LinkAction::Edit(utf16("https://element.io"))
+    )
+}
