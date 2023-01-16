@@ -21,6 +21,13 @@ import { FormattingFunctions } from './types';
 const mockComposerModel = {
     replace_text: vi.fn(),
     code_block: vi.fn(),
+    backspace_word: vi.fn(),
+    delete_word: vi.fn(),
+    delete: vi.fn(),
+    inline_code: vi.fn(),
+    ordered_list: vi.fn(),
+    unordered_list: vi.fn(),
+    enter: vi.fn(),
 } as unknown as ComposerModel;
 
 const mockAction = vi.fn();
@@ -31,9 +38,15 @@ function inpEv(inputType: string, data?: string): InputEvent {
     return new InputEvent('InputEvent', { data, inputType });
 }
 
+const consoleErrorSpy = vi.spyOn(console, 'error');
+
 describe('processInput', () => {
     beforeEach(() => {
         vi.resetAllMocks();
+    });
+
+    afterAll(() => {
+        vi.restoreAllMocks();
     });
 
     it('returns early if inputEventProcessor returns null', () => {
@@ -140,5 +153,138 @@ describe('processInput', () => {
         // Then code_block and mockAction have been called correctly;
         expect(mockComposerModel.code_block).toHaveBeenCalledTimes(1);
         expect(mockAction).toHaveBeenCalledWith(undefined, 'code_block');
+    });
+
+    it('handles deleteWordBackward with backspace_word', () => {
+        const e = inpEv('deleteWordBackward');
+
+        // When we process the input
+        processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
+
+        // Then code_block and mockAction have been called correctly;
+        expect(mockComposerModel.backspace_word).toHaveBeenCalledTimes(1);
+        expect(mockAction).toHaveBeenCalledWith(undefined, 'backspace_word');
+    });
+
+    it('handles deleteWordForward with delete_word', () => {
+        const e = inpEv('deleteWordForward');
+
+        // When we process the input
+        processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
+
+        // Then code_block and mockAction have been called correctly;
+        expect(mockComposerModel.delete_word).toHaveBeenCalledTimes(1);
+        expect(mockAction).toHaveBeenCalledWith(undefined, 'delete_word');
+    });
+
+    it('handles deleteByCut with delete', () => {
+        const e = inpEv('deleteByCut');
+
+        // When we process the input
+        processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
+
+        // Then code_block and mockAction have been called correctly;
+        expect(mockComposerModel.delete).toHaveBeenCalledTimes(1);
+        expect(mockAction).toHaveBeenCalledWith(undefined, 'delete');
+    });
+
+    it('handles formatInlineCode with inline_code', () => {
+        const e = inpEv('formatInlineCode');
+
+        // When we process the input
+        processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
+
+        // Then code_block and mockAction have been called correctly;
+        expect(mockComposerModel.inline_code).toHaveBeenCalledTimes(1);
+        expect(mockAction).toHaveBeenCalledWith(undefined, 'inline_code');
+    });
+
+    it('handles insertFromPaste without calling action', () => {
+        const e = inpEv('insertFromPaste');
+
+        // When we process the input
+        processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
+
+        // Then code_block and mockAction have been called correctly;
+        expect(mockAction).not.toHaveBeenCalled();
+    });
+
+    it('handles insertOrderedList with ordered_list', () => {
+        const e = inpEv('insertOrderedList');
+
+        // When we process the input
+        processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
+
+        // Then code_block and mockAction have been called correctly;
+        expect(mockComposerModel.ordered_list).toHaveBeenCalledTimes(1);
+        expect(mockAction).toHaveBeenCalledWith(undefined, 'ordered_list');
+    });
+
+    it('handles insertUnorderedList with unordered_list', () => {
+        const e = inpEv('insertUnorderedList');
+
+        // When we process the input
+        processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
+
+        // Then code_block and mockAction have been called correctly;
+        expect(mockComposerModel.unordered_list).toHaveBeenCalledTimes(1);
+        expect(mockAction).toHaveBeenCalledWith(undefined, 'unordered_list');
+    });
+
+    it('handles insertLineBreak with enter', () => {
+        const e = inpEv('insertLineBreak');
+
+        // When we process the input
+        processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
+
+        // Then code_block and mockAction have been called correctly;
+        expect(mockComposerModel.enter).toHaveBeenCalledTimes(1);
+        expect(mockAction).toHaveBeenCalledWith(undefined, 'enter');
+    });
+
+    it('hits the break statement in insert text if input data is falsy', () => {
+        const e = inpEv('insertText', '');
+
+        // When we process the input
+        processInput(e, mockComposerModel, mockAction, mockFormattingFunctions);
+
+        // Then code_block and mockAction have been called correctly;
+        expect(mockAction).not.toHaveBeenCalled();
+    });
+
+    it('returns null from a send message event', () => {
+        const e = inpEv('sendMessage');
+
+        // When we process the input
+        const returnValue = processInput(
+            e,
+            mockComposerModel,
+            mockAction,
+            mockFormattingFunctions,
+        );
+
+        // Then code_block and mockAction have been called correctly;
+        expect(mockAction).not.toHaveBeenCalled();
+        expect(returnValue).toBe(null);
+    });
+
+    it('errors and returns null when unknown event is used', () => {
+        const eventType = 'aNewEventType';
+        const e = inpEv(eventType);
+
+        // When we process the input
+        const returnValue = processInput(
+            e,
+            mockComposerModel,
+            mockAction,
+            mockFormattingFunctions,
+        );
+
+        // Then code_block and mockAction have been called correctly;
+        expect(mockAction).not.toHaveBeenCalled();
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+            `Unknown input type: ${eventType}`,
+        );
+        expect(returnValue).toBe(null);
     });
 });
