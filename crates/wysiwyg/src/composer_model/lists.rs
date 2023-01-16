@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::collections::HashMap;
-
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::DomNodeKind::Paragraph;
 use crate::dom::nodes::{ContainerNode, DomNode};
@@ -429,28 +427,6 @@ where
         self.state.dom.join_nodes_in_container(&insert_into_handle);
     }
 
-    fn get_last_list_node_in_list_item(
-        &mut self,
-        handle: &DomHandle,
-        list_type: &ListType,
-    ) -> Option<&mut ContainerNode<S>> {
-        if let DomNode::Container(prev_sibling) =
-            self.state.dom.lookup_node_mut(handle)
-        {
-            if !prev_sibling.children().is_empty() {
-                if let DomNode::Container(prev_sibling_last_item) = prev_sibling
-                    .get_child_mut(prev_sibling.children().len() - 1)
-                    .unwrap()
-                {
-                    if prev_sibling_last_item.is_list_of_type(list_type) {
-                        return Some(prev_sibling_last_item);
-                    }
-                }
-            }
-        }
-        None
-    }
-
     fn unindent_locations(&mut self, locations: &[DomLocation]) {
         let handles: Vec<DomHandle> = locations
             .into_iter()
@@ -577,28 +553,6 @@ where
             .insert(&insert_into_handle, removed_list_items);
 
         self.state.dom.join_nodes_in_container(&insert_into_handle);
-    }
-
-    fn group_sorted_handles_by_list_parent(
-        handles: &[DomHandle],
-    ) -> Vec<(DomHandle, Vec<DomHandle>)> {
-        let mut by_list: HashMap<DomHandle, Vec<DomHandle>> = HashMap::new();
-        for handle in handles.iter() {
-            // If it's a leaf node, it should be Text > ListItem > List
-            let list_handle = handle.parent_handle().parent_handle();
-            if let Some(list) = by_list.get_mut(&list_handle) {
-                list.push(handle.clone());
-            } else {
-                by_list.insert(list_handle, vec![handle.clone()]);
-            }
-        }
-
-        let mut by_list_sorted: Vec<(DomHandle, Vec<DomHandle>)> = by_list
-            .iter()
-            .map(|(h, l)| (h.clone(), l.clone()))
-            .collect();
-        by_list_sorted.sort();
-        by_list_sorted
     }
 }
 

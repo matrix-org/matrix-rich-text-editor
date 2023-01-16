@@ -16,7 +16,6 @@
 //! our invariants e.g. no empty text nodes, no adjacent text nodes.
 
 use crate::dom::nodes::dom_node::DomNodeKind::{ListItem, Paragraph};
-use crate::dom::nodes::ContainerNodeKind;
 use crate::dom::unicode_string::UnicodeStr;
 use crate::{DomHandle, DomNode, UnicodeString};
 
@@ -464,7 +463,7 @@ where
         depth: usize,
     ) -> (Dom<S>, DomHandle, Dom<S>, DomHandle) {
         let mut clone = self.clone();
-        let mut right = clone.split_sub_tree_from(from_handle, offset, depth);
+        let right = clone.split_sub_tree_from(from_handle, offset, depth);
 
         // Remove unmodified children of the right split
         let mut right = right.into_container().take_children();
@@ -710,39 +709,6 @@ where
             nodes.push(self.remove(&cur_handle));
         }
         nodes
-    }
-
-    pub(crate) fn remove_empty_container_nodes(
-        &mut self,
-        keep_empty_list_items: bool,
-    ) {
-        let last_handle_in_dom = self.last_node_handle();
-        let handles_in_reverse: Vec<DomHandle> =
-            self.handle_iter_from(&last_handle_in_dom).rev().collect();
-        for handle in handles_in_reverse {
-            let mut needs_removal = false;
-            if !self.contains(&handle) {
-                continue;
-            }
-            if let DomNode::Container(container) = self.lookup_node(&handle) {
-                let children_are_empty = container.children().is_empty();
-
-                let is_list_item_and_keep_empty_list_items =
-                    keep_empty_list_items && container.is_list_item();
-
-                let is_block_with_only_zwsp =
-                    container.is_block_node() && container.only_contains_zwsp();
-
-                if children_are_empty && !is_list_item_and_keep_empty_list_items
-                    || is_block_with_only_zwsp
-                {
-                    needs_removal = true;
-                }
-            }
-            if needs_removal && !handle.is_root() {
-                self.remove(&handle);
-            }
-        }
     }
 
     pub fn adds_line_break(&self, handle: &DomHandle) -> bool {

@@ -197,7 +197,7 @@ mod test {
     use crate::dom::Dom;
     use crate::tests::testutils_composer_model::{cm, tx};
 
-    use crate::{DomHandle, ListType, ToHtml};
+    use crate::{DomHandle, ListType};
 
     #[test]
     fn wrap_consecutive_nodes_in_list() {
@@ -422,7 +422,6 @@ mod test {
             .state
             .dom
             .wrap_nodes_in_list(ListType::Ordered, handles);
-        let html = tx(&model);
         model.state.dom.extract_from_list(&first_handle);
         assert_eq!(tx(&model), text);
     }

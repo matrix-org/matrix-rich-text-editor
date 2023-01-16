@@ -366,15 +366,6 @@ impl SelectionWriter {
     }
 }
 
-/// Return the UTF-16 code unit for a character
-/// Panics if s is more than one code unit long.
-fn utf16_code_unit(s: &str) -> u16 {
-    let mut ret = Utf16String::new();
-    ret.push_str(s);
-    assert_eq!(ret.len(), 1);
-    ret.into_vec()[0]
-}
-
 #[derive(Debug)]
 struct SelectionWritingState {
     // Counts how far through the whole document we have got (code units)
@@ -519,10 +510,7 @@ mod test {
     use crate::dom::{parser, Dom, DomLocation};
     use crate::tests::testutils_composer_model::{cm, restore_whitespace, tx};
     use crate::tests::testutils_conversion::utf16;
-    use crate::{
-        ComposerModel, ComposerState, DomHandle, DomNode, Location,
-        UnicodeString,
-    };
+    use crate::{ComposerModel, ComposerState, DomHandle, Location};
 
     use super::SelectionWritingState;
 

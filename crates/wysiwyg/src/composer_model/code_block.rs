@@ -212,70 +212,6 @@ where
             )]
         }
     }
-
-    fn format_list_for_code_block(
-        &mut self,
-        handle: &DomHandle,
-        is_before: bool,
-        children: &mut Vec<DomNode<S>>,
-    ) {
-        // Add line break before the List if it's not at the start
-        if handle.index_in_parent() > 0 {
-            children.insert(0, DomNode::new_text("\n".into()));
-            if is_before {
-                self.state.start += 1;
-            }
-        }
-    }
-
-    fn format_list_item_for_code_block(
-        &mut self,
-        is_before: bool,
-        is_after: bool,
-        children: &mut Vec<DomNode<S>>,
-    ) {
-        // Every list item adds a line break at the end
-        // So "<ul><li>Item A</li><li>Item B</li></ul>End"
-        // Will become: "<pre>Item A\nItem B\nEnd</pre>"
-        children.push(DomNode::new_text("\n".into()));
-        if is_before {
-            self.state.start += 1;
-        }
-        if !is_after {
-            self.state.end += 1;
-        }
-    }
-
-    fn format_quote_for_code_block(
-        &mut self,
-        handle: &DomHandle,
-        range: &Range,
-        is_in_selection: bool,
-        children: &mut Vec<DomNode<S>>,
-    ) {
-        // We add a new line where it's needed
-        let added_at_start = if handle.index_in_parent() == 0 {
-            children.push(DomNode::new_text("\n".into()));
-            false
-        } else {
-            children.insert(0, DomNode::new_text("\n".into()));
-            true
-        };
-        if is_in_selection {
-            let location = range.find_location(handle).unwrap();
-            if location.starts_inside() && location.ends_inside() {
-                // Do nothing
-            } else if location.starts_inside() {
-                if added_at_start {
-                    self.state.start += 1;
-                }
-                self.state.end += 1;
-            } else if location.ends_inside() {
-                self.state.start += 1;
-                self.state.end += 1;
-            }
-        }
-    }
 }
 
 #[cfg(test)]
@@ -397,7 +333,6 @@ mod test {
         let mut model =
             cm("<p>{Text</p><pre><b>code}|</b><i> and italic</i></pre>");
         model.code_block();
-        let tree = model.to_tree().to_string();
         assert_eq!(
             tx(&model),
             "<pre>{Text\n<b>code}|</b><i> and italic</i></pre>"

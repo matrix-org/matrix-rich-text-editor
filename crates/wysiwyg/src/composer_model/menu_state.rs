@@ -198,10 +198,12 @@ where
         locations: &Vec<DomLocation>,
     ) -> HashSet<ComposerAction> {
         let mut disabled_actions = HashSet::new();
-        if !self.can_indent(locations) {
+        let top_most_list_locations =
+            self.find_top_most_list_item_locations(&locations);
+        if !self.can_indent(&top_most_list_locations) {
             disabled_actions.insert(Indent);
         }
-        if !self.can_unindent(locations) {
+        if !self.can_unindent(&top_most_list_locations) {
             disabled_actions.insert(UnIndent);
         }
         if contains_inline_code(locations) {

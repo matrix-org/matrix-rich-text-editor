@@ -59,7 +59,7 @@ mod sys {
         {
             PaDomCreator::parse(html)
                 .map(|pa_dom| {
-                    let mut dom = self.padom_to_dom(pa_dom);
+                    let dom = self.padom_to_dom(pa_dom);
                     Self::post_process_code_blocks(dom)
                 })
                 .map_err(|err| {
