@@ -58,8 +58,8 @@ where
         self.do_replace_text(text.clone());
         e += text.len();
         let range = self.state.dom.find_range(s, e);
-        let new_link = self.add_http_scheme(&link);
-        self.set_link_range(range, new_link)
+        let link = self.add_http_scheme(&link);
+        self.set_link_range(range, link)
     }
 
     pub fn set_link(&mut self, link: S) -> ComposerUpdate<S> {
@@ -68,6 +68,7 @@ where
 
         let mut range = self.state.dom.find_range(s, e);
 
+        let link = self.add_http_scheme(&link);
         // Find container link that completely covers the range
         if let Some(link) = self.find_closest_ancestor_link(&range) {
             // If found, update the range to the container link bounds
