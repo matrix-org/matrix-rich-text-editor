@@ -68,13 +68,13 @@ export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
             </button>
             <button
                 type="button"
-                onClick={() => wysiwyg.link('http://mylink.com')}
+                onClick={() => wysiwyg.link('https://mylink.com')}
             >
                 link
             </button>
             <button
                 type="button"
-                onClick={() => wysiwyg.link('http://mylink.com', 'my text')}
+                onClick={() => wysiwyg.link('https://mylink.com', 'my text')}
             >
                 link with text
             </button>

@@ -246,7 +246,7 @@ describe('link', () => {
         // Then
         await waitFor(() =>
             expect(textbox).toContainHTML(
-                '<a href="http://mylink.com">my text</a>',
+                '<a href="https://mylink.com">my text</a>',
             ),
         );
     });
@@ -260,7 +260,7 @@ describe('link', () => {
         // Then
         await waitFor(() =>
             expect(textbox).toContainHTML(
-                '<a href="http://mylink.com">foobar</a>',
+                '<a href="https://mylink.com">foobar</a>',
             ),
         );
     });
@@ -268,7 +268,7 @@ describe('link', () => {
     it('Should remove the link', async () => {
         // When
         const textbox = await renderEditor(
-            '<a href="http://mylink.com">foobar</a>',
+            '<a href="https://mylink.com">foobar</a>',
         );
         select(textbox, 0, 6);
         await userEvent.click(
@@ -283,14 +283,14 @@ describe('link', () => {
         // When
         const actionsRef = createRef<FormattingFunctions>();
         const textbox = await renderEditor(
-            '<a href="http://mylink.com">foobar</a>',
+            '<a href="https://mylink.com">foobar</a>',
             actionsRef,
         );
         select(textbox, 0, 6);
 
         // Then
         await waitFor(() =>
-            expect(actionsRef.current?.getLink()).toBe('http://mylink.com'),
+            expect(actionsRef.current?.getLink()).toBe('https://mylink.com'),
         );
     });
 });

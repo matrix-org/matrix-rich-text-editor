@@ -104,7 +104,7 @@ where
                 if is_email {
                     new_link.insert(0, &S::from("mailto:"));
                 } else {
-                    new_link.insert(0, &S::from("http://"));
+                    new_link.insert(0, &S::from("https://"));
                 }
                 return new_link;
             }

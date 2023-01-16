@@ -444,7 +444,7 @@ fn set_link_with_text_within_a_link() {
 fn set_link_without_http_scheme_and_www() {
     let mut model = cm("|");
     model.set_link_with_text(utf16("element.io"), utf16("added_link"));
-    assert_eq!(tx(&model), "<a href=\"http://element.io\">added_link|</a>");
+    assert_eq!(tx(&model), "<a href=\"https://element.io\">added_link|</a>");
 }
 
 #[test]
@@ -453,7 +453,7 @@ fn set_link_without_http_scheme() {
     model.set_link_with_text(utf16("www.element.io"), utf16("added_link"));
     assert_eq!(
         tx(&model),
-        "<a href=\"http://www.element.io\">added_link|</a>"
+        "<a href=\"https://www.element.io\">added_link|</a>"
     );
 }
 
@@ -461,12 +461,12 @@ fn set_link_without_http_scheme() {
 fn set_link_do_not_change_scheme_for_http() {
     let mut model = cm("|");
     model.set_link_with_text(
-        utf16("http://www.element.io"),
+        utf16("https://www.element.io"),
         utf16("added_link"),
     );
     assert_eq!(
         tx(&model),
-        "<a href=\"http://www.element.io\">added_link|</a>"
+        "<a href=\"https://www.element.io\">added_link|</a>"
     );
 }
 
@@ -514,5 +514,5 @@ fn set_link_add_mail_scheme_with_plus() {
 fn set_link_with_selection_add_http_scheme() {
     let mut model = cm("<a href=\"https://matrix.org\">test_link</a>|");
     model.set_link(utf16("element.io"));
-    assert_eq!(tx(&model), "<a href=\"http://element.io\">test_link|</a>");
+    assert_eq!(tx(&model), "<a href=\"https://element.io\">test_link|</a>");
 }
