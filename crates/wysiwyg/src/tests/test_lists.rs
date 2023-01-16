@@ -267,10 +267,10 @@ fn creating_a_new_list_immediately_after_an_old_one_joins_them() {
 #[test]
 fn indent_several_list_items_simple_case_works() {
     let mut model = cm(
-        "<ul><li>First item</li><li>{Second item</li><li>~Third item}|</li></ul>",
+        "<ul><li>First item</li><li>{Second item</li><li>Third item}|</li></ul>",
     );
     model.indent();
-    assert_eq!(tx(&model), "<ul><li>First item<ul><li>{Second item</li><li>~Third item}|</li></ul></li></ul>");
+    assert_eq!(tx(&model), "<ul><li><p>First item</p><ul><li>{Second item</li><li>Third item}|</li></ul></li></ul>");
 }
 
 #[test]
@@ -279,16 +279,16 @@ fn indent_several_list_items_complex_case_works() {
         "<ul><li>First item</li><li>{Second item</li><li>Third item</li><li>Fourth item}|</li></ul>",
     );
     model.indent();
-    assert_eq!(tx(&model), "<ul><li>First item<ul><li>{Second item</li><li>Third item</li><li>Fourth item}|</li></ul></li></ul>");
+    assert_eq!(tx(&model), "<ul><li><p>First item</p><ul><li>{Second item</li><li>Third item</li><li>Fourth item}|</li></ul></li></ul>");
 }
 
 #[test]
 fn indent_several_list_items_with_sub_levels_works() {
     let mut model = cm(
-        "<ul><li>First item<ul><li>Second item<ul><li>Third item</li><li>{Fourth item</li></ul></li><li>Fifth item}|</li></ul></li></ul>",
+        "<ul><li><p>First item</p><ul><li><p>Second item</p><ul><li>Third item</li><li>{Fourth item</li></ul></li><li>Fifth item}|</li></ul></li></ul>",
     );
     model.indent();
-    assert_eq!(tx(&model), "<ul><li>First item<ul><li>Second item<ul><li>Third item<ul><li>{Fourth item</li></ul></li><li>Fifth item}|</li></ul></li></ul></li></ul>");
+    assert_eq!(tx(&model), "<ul><li><p>First item</p><ul><li><p>Second item</p><ul><li><p>Third item</p><ul><li>{Fourth item</li></ul></li><li>Fifth item}|</li></ul></li></ul></li></ul>");
 }
 
 #[test]

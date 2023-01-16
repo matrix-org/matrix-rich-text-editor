@@ -379,7 +379,7 @@ where
         }
     }
 
-    pub(crate) fn get_list_type(&mut self) -> Option<&ListType> {
+    pub(crate) fn get_list_type(&self) -> Option<&ListType> {
         match &self.kind {
             ContainerNodeKind::List(t) => Some(t),
             _ => None,
