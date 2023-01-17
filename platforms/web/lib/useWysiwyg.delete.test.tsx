@@ -14,13 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {
-    act,
-    fireEvent,
-    render,
-    screen,
-    waitFor,
-} from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { Editor } from './testUtils/Editor';
@@ -44,7 +38,7 @@ describe('delete content', () => {
             data: 'foo',
             inputType: 'insertText',
         });
-        await act(() => userEvent.type(textbox, '{enter}'));
+        await userEvent.type(textbox, '{enter}');
         fireEvent.input(textbox, {
             data: 'bar',
             inputType: 'insertText',
@@ -54,7 +48,7 @@ describe('delete content', () => {
     it('Should delete the content when using clear button', async () => {
         // When
         await fillContent();
-        userEvent.click(clearButton);
+        await userEvent.click(clearButton);
 
         // Then
         await waitFor(() => expect(textbox).toHaveTextContent(/^$/));
@@ -63,8 +57,9 @@ describe('delete content', () => {
     it('Should delete one character when using backspace', async () => {
         // When
         await fillContent();
+
         select(textbox, 2, 2);
-        userEvent.type(textbox, '{backspace}');
+        await userEvent.type(textbox, '{backspace}');
 
         // Then
         await waitFor(() => {
@@ -76,8 +71,9 @@ describe('delete content', () => {
     it('Should delete the selection when using backspace', async () => {
         // When
         await fillContent();
+
         select(textbox, 2, 5);
-        userEvent.type(textbox, '{backspace}');
+        await userEvent.type(textbox, '{backspace}');
 
         // Then
         await waitFor(() => {

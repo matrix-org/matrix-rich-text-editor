@@ -48,6 +48,8 @@ export function useListeners(
         actionStates: createDefaultActionStates(),
     });
 
+    const [areListenersReady, setAreListenersReady] = useState(false);
+
     useEffect(() => {
         if (composerModel) {
             setState({
@@ -143,7 +145,10 @@ export function useListeners(
         };
         document.addEventListener('selectionchange', onSelectionChange);
 
+        setAreListenersReady(true);
+
         return () => {
+            setAreListenersReady(false);
             editorNode.removeEventListener('input', onInput);
             editorNode.removeEventListener('paste', onPaste);
             editorNode.removeEventListener('wysiwygInput', onWysiwygInput);
@@ -160,5 +165,5 @@ export function useListeners(
         setState,
     ]);
 
-    return state;
+    return { areListenersReady, ...state };
 }
