@@ -98,11 +98,43 @@ fn backspacing_trailing_part_of_a_list_item() {
 }
 
 #[test]
-#[ignore] // TODO: fix replace_text for cases where a list item contains formatting
-fn backspacing_trailing_part_of_a_list_item_with_formatting() {
-    let mut model = cm("<ol><li><strong>~abc{d</strong>ef}|</li><li><strong>~abcd</strong>ef</li></ol>");
+fn backspacing_the_whole_list() {
+    let mut model = cm(
+        "<p>Text</p><ul><li>{First</li><li>Second}|</li></ul><p>More text</p>",
+    );
     model.backspace();
-    assert_eq!(tx(&model), "<ol><li><strong>~abc|</strong></li><li><strong>~abcd</strong>ef</li></ol>")
+    assert_eq!(tx(&model), "<p>Text</p><p>|More text</p>");
+}
+
+#[test]
+fn backspacing_through_several_list_items() {
+    let mut model = cm("<p>Text</p><ul><li>Fi{rst</li><li>Seco}|nd</li></ul>");
+    model.backspace();
+    assert_eq!(tx(&model), "<p>Text</p><ul><li>Fi|nd</li></ul>");
+}
+
+#[test]
+fn backspacing_at_start_of_first_list_item_adds_it_to_previous_block_node_if_exists(
+) {
+    let mut model = cm("<p>Text</p><ul><li>|First</li><li>Second</li></ul>");
+    model.backspace();
+    assert_eq!(tx(&model), "<p>Text|First</p><ul><li>Second</li></ul>");
+}
+
+#[test]
+fn backspacing_at_start_of_first_list_item_extracts_it_if_no_previous_block_node_exists(
+) {
+    let mut model = cm("<ul><li>|First</li><li>Second</li></ul>");
+    model.backspace();
+    assert_eq!(tx(&model), "<p>|First</p><ul><li>Second</li></ul>");
+}
+
+#[test]
+// #[ignore] // TODO: fix replace_text for cases where a list item contains formatting
+fn backspacing_trailing_part_of_a_list_item_with_formatting() {
+    let mut model = cm("<ol><li><strong>abc{d</strong>ef}|</li><li><strong>abcd</strong>ef</li></ol>");
+    model.backspace();
+    assert_eq!(tx(&model), "<ol><li><strong>abc|</strong></li><li><strong>abcd</strong>ef</li></ol>")
 }
 
 #[test]

@@ -151,15 +151,17 @@ where
 
     pub(crate) fn do_backspace_in_list(
         &mut self,
-        parent_handle: &DomHandle,
+        list_item_handle: &DomHandle,
     ) -> ComposerUpdate<S> {
-        let parent_node = self.state.dom.lookup_node(parent_handle);
-        let list_node_handle = parent_node.handle().parent_handle();
-        if let DomNode::Container(parent) = parent_node {
-            if parent.is_empty_list_item() {
+        let list_item_node = self.state.dom.lookup_node(list_item_handle);
+        let list_node_handle = list_item_node.handle().parent_handle();
+        if let DomNode::Container(list_item) = list_item_node {
+            if list_item.is_empty_list_item()
+                || list_item_handle.index_in_parent() == 0
+            {
                 self.state.dom.extract_list_items(
                     &list_node_handle,
-                    parent_handle.index_in_parent(),
+                    list_item_handle.index_in_parent(),
                     1,
                 );
             }

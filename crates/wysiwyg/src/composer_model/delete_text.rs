@@ -311,8 +311,8 @@ where
                 .state
                 .dom
                 .find_ancestor_list_item_or_self(&leaf.node_handle);
-            if let Some(parent_handle) = parent_list_item_handle {
-                self.do_backspace_in_list(&parent_handle)
+            if let Some(list_item_handle) = parent_list_item_handle {
+                self.do_backspace_in_list(&list_item_handle)
             } else {
                 self.do_backspace()
             }

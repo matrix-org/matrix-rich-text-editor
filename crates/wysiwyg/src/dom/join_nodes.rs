@@ -369,7 +369,10 @@ where
         mut locations: impl Iterator<Item = &'a DomLocation>,
     ) -> Option<DomHandle> {
         locations.find_map(|loc| {
-            if let DomNode::Text(_) = self.lookup_node(&loc.node_handle) {
+            if !self.contains(&loc.node_handle) {
+                None
+            } else if let DomNode::Text(_) = self.lookup_node(&loc.node_handle)
+            {
                 Some(loc.node_handle.clone())
             } else {
                 None

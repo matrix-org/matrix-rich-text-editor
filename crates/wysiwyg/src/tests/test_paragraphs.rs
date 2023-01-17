@@ -151,17 +151,6 @@ fn test_replace_text_in_first_line_with_line_break() {
     assert_eq!(tx(&model), "<br />|<br />BBB");
 }
 
-#[ignore] // TODO: backspace_merges_empty_text_nodes
-#[test]
-fn backspace_merges_empty_text_nodes() {
-    let mut model = cm("a<br />|");
-    model.backspace();
-    assert_eq!(tx(&model), "a|");
-    // The two text nodes were merged
-    assert_eq!(model.state.dom.document().children().len(), 1);
-}
-
-#[ignore] // TODO: backspace_merges_text_nodes
 #[test]
 fn backspace_merges_text_nodes() {
     let mut model = cm("a<br />|b");
@@ -171,7 +160,6 @@ fn backspace_merges_text_nodes() {
     assert_eq!(model.state.dom.document().children().len(), 1);
 }
 
-#[ignore] // TODO: backspace_merges_formatting_nodes
 #[test]
 fn backspace_merges_formatting_nodes() {
     let mut model = cm("<b>a</b><br />|<b>b</b>");

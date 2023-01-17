@@ -20,6 +20,7 @@ use crate::dom::{Dom, DomLocation, Range};
 use crate::{
     ComposerModel, ComposerUpdate, DomHandle, Location, UnicodeString,
 };
+use std::cmp::min;
 
 impl<S> ComposerModel<S>
 where
@@ -522,6 +523,9 @@ where
         end: usize,
     ) -> ComposerUpdate<S> {
         let text_string = new_text.to_string();
+        // If passed start, end don't match the model's state, we can't fix them
+        let (s, e) = self.safe_selection();
+        let needs_to_recalculate_selection = s == start && e == end;
         // If the inserted text contains newlines, slice it and
         // insert each slice while simulating calls to the
         // enter function in betweeen.
@@ -540,6 +544,12 @@ where
             let len = new_text.len();
             self.state.dom.replace_text_in(new_text, start, end);
             self.apply_pending_formats(start, start + len);
+            let start = if needs_to_recalculate_selection {
+                let (new_start, _) = self.safe_selection();
+                min(start, new_start)
+            } else {
+                start
+            };
             self.state.start = Location::from(start + len);
             self.state.end = self.state.start;
         }
