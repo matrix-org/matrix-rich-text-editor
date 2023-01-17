@@ -101,6 +101,10 @@ const testCases: testCase[] = [
         eventType: 'insertLineBreak',
         composerMethod: 'enter',
     },
+    {
+        eventType: 'insertQuote',
+        composerMethod: 'quote',
+    },
 ];
 
 describe('processInput', () => {
