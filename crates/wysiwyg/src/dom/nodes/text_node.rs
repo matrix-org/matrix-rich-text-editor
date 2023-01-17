@@ -72,12 +72,15 @@ where
         self.handle = handle;
     }
 
+    /// Returns true if the text_node contains only blank characters
     pub fn is_blank(&self) -> bool {
         self.data
             .chars()
             .all(|c| matches!(c, ' ' | '\x09'..='\x0d'))
     }
 
+    /// Returns true if the text_node contains only blank characters
+    /// in the specified range
     pub fn is_blank_in_range(&self, range: Range<usize>) -> bool {
         self.data[range]
             .chars()
@@ -138,8 +141,6 @@ where
     pub fn is_empty(&self) -> bool {
         self.data().len() != 0
     }
-
-    /// Check if the textNode contains only whitespaces
 
     /// Push content of the given text node into self. If given
     /// node is empty or a single ZWSP, nothing is pushed.
