@@ -43,7 +43,7 @@ import io.element.android.wysiwyg.spans.BlockSpan
  * @param drawableMid the drawable used to draw for whole line
  * @param drawableRight the drawable used to draw right edge of the background
  */
-internal class SpanBackgroundHelper<T>(
+class SpanBackgroundHelper<T>(
     private val spanType: Class<T>,
     val horizontalPadding: Int,
     val verticalPadding: Int,
