@@ -821,13 +821,13 @@ mod test {
     #[test]
     fn selection_across_lists_with_whitespace_roundtrips() {
         assert_that!(
-            "<ol>
-                <li>1{1</li>
-                <li>22</li>
-            </ol>
-            <ol>
-                <li>33</li>
-                <li>4}|4</li>
+            "<ol>\
+                <li>1{1</li>\
+                <li>22</li>\
+            </ol>\
+            <ol>\
+                <li>33</li>\
+                <li>4}|4</li>\
             </ol>"
         )
         .roundtrips();

@@ -185,39 +185,31 @@ fn replacing_within_a_list_replaces_characters() {
 
 #[test]
 fn replacing_across_list_items_deletes_intervening_ones() {
-    let mut model = cm("<ol>
-            <li>1{1</li>
-            <li>22</li>
-            <li>3}|3</li>
-            <li>44</li>
+    let mut model = cm("<ol>\
+            <li>1{1</li>\
+            <li>22</li>\
+            <li>3}|3</li>\
+            <li>44</li>\
         </ol>");
     replace_text(&mut model, "Z");
     assert_eq!(
         restore_whitespace(&tx(&model)),
-        "<ol>
-            <li>1Z|3</li>
-            <li>44</li>
-        </ol>"
+        "<ol><li>1Z|3</li><li>44</li></ol>"
     );
 }
 
 #[test]
 fn replacing_across_lists_joins_them() {
-    let mut model = cm("<ol>
-            <li>1{1</li>
-            <li>22</li>
-        </ol>
-        <ol>
-            <li>33</li>
-            <li>4}|4</li>
+    let mut model = cm("<ol>\
+            <li>1{1</li>\
+            <li>22</li>\
+        </ol>\
+        <ol>\
+            <li>33</li>\
+            <li>4}|4</li>\
         </ol>");
     replace_text(&mut model, "Z");
-    assert_eq!(
-        restore_whitespace(&tx(&model)),
-        "<ol>
-            <li>1Z|4</li>
-        </ol>"
-    );
+    assert_eq!(restore_whitespace(&tx(&model)), "<ol><li>1Z|4</li></ol>");
 }
 
 #[test]

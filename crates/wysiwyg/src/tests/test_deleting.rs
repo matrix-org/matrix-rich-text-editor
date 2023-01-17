@@ -162,44 +162,34 @@ fn deleting_across_list_items_joins_them() {
 
 #[test]
 fn deleting_across_lists_joins_them() {
-    let mut model = cm("<ol>
-            <li>1{1</li>
-            <li>22</li>
-        </ol>
-        <ol>
-            <li>33</li>
-            <li>4}|4</li>
+    let mut model = cm("<ol>\
+            <li>1{1</li>\
+            <li>22</li>\
+        </ol>\
+        <ol>\
+            <li>33</li>\
+            <li>4}|4</li>\
         </ol>");
     model.delete();
-    assert_eq!(
-        restore_whitespace(&tx(&model)),
-        "<ol>
-            <li>1|4</li>
-        </ol>"
-    );
+    assert_eq!(restore_whitespace(&tx(&model)), "<ol><li>1|4</li></ol>");
     model.state.dom.explicitly_assert_invariants();
 }
 
 #[test]
 fn deleting_across_lists_joins_them_nested() {
-    let mut model = cm("<ol>
-            <li>1{1</li>
-            <li>22</li>
-            <ol>
-                <li>55</li>
-            </ol>
-        </ol>
-        <ol>
-            <li>33</li>
-            <li>4}|4</li>
+    let mut model = cm("<ol>\
+            <li>1{1</li>\
+            <li>22</li>\
+            <ol>\
+                <li>55</li>\
+            </ol>\
+        </ol>\
+        <ol>\
+            <li>33</li>\
+            <li>4}|4</li>\
         </ol>");
     model.delete();
-    assert_eq!(
-        restore_whitespace(&tx(&model)),
-        "<ol>
-            <li>1|4</li>
-        </ol>"
-    );
+    assert_eq!(restore_whitespace(&tx(&model)), "<ol><li>1|4</li></ol>");
     model.state.dom.explicitly_assert_invariants();
 }
 

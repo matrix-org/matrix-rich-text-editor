@@ -64,9 +64,10 @@ where
         #[cfg(any(test, feature = "assert-invariants"))]
         self.assert_invariants();
 
+        let extra_len = new_text.len() + 1;
         let range = self.find_range(start, end);
         let (start_block, end_block) =
-            self.top_most_block_nodes_in_range(&range);
+            self.top_most_block_nodes_in_range(start, &range);
         let deleted_handles = if range.is_empty() {
             if !new_text.is_empty() {
                 self.append_at_end_of_document(DomNode::new_text(new_text));
@@ -90,20 +91,22 @@ where
             self.replace_multiple_nodes(&range, new_text)
         };
 
-        self.merge_adjacent_text_nodes_after_replace(range, deleted_handles);
-
         // If text was replaced, not inserted
         let needs_to_merge_block_nodes =
             if let (Some(start_block), Some(end_block)) =
                 (start_block, end_block)
             {
                 start_block != end_block
+                    && !deleted_handles.contains(&start_block.node_handle)
+                    && !deleted_handles.contains(&end_block.node_handle)
             } else {
                 false
             };
+        self.merge_adjacent_text_nodes_after_replace(range, deleted_handles);
+
         if start != end && needs_to_merge_block_nodes {
             let (start_block, end_block) =
-                self.top_most_block_nodes_in_boundary(start);
+                self.top_most_block_nodes_in_boundary(start, extra_len);
             if let (Some(start_block_loc), Some(end_block_loc)) =
                 (start_block, end_block)
             {
@@ -140,13 +143,15 @@ where
     fn top_most_block_nodes_in_boundary(
         &self,
         selection_pos: usize,
+        length: usize,
     ) -> (Option<DomLocation>, Option<DomLocation>) {
-        let range = self.find_range(selection_pos + 1, selection_pos + 1);
-        self.top_most_block_nodes_in_range(&range)
+        let range = self.find_range(selection_pos, selection_pos + length);
+        self.top_most_block_nodes_in_range(selection_pos, &range)
     }
 
     fn top_most_block_nodes_in_range(
         &self,
+        start_pos: usize,
         range: &Range,
     ) -> (Option<DomLocation>, Option<DomLocation>) {
         let mut start = None;
@@ -155,8 +160,7 @@ where
         sorted_locations.sort();
         for location in sorted_locations {
             if location.kind.is_block_kind() {
-                if location.is_start() && location.end_offset == location.length
-                {
+                if location.is_start() && location.index_in_dom() == start_pos {
                     start = Some(location.clone());
                 } else if location.is_end() {
                     end = Some(location.clone());
@@ -303,14 +307,7 @@ where
                     // range, after the in-between characters have been
                     // deleted, and the new characters have been inserted.
                     let new_pos = range.start() + len + 1;
-
-                    // join_nodes only requires that the first location in
-                    // the supplied range has a valid handle.
-                    // We think it's OK to pass in a range where later
-                    // locations have been deleted.
-                    // TODO: can we just pass in this handle, to avoid the
-                    // ambiguity here?
-                    self.join_nodes(range, new_pos);
+                    self.join_format_nodes_at_index(new_pos);
                 }
             }
         } else if let Some(first_leave) = range.leaves().next() {

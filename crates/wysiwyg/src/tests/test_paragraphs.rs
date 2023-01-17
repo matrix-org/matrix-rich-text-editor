@@ -315,7 +315,7 @@ fn backspace_at_end_of_code_block_adds_the_content_of_the_next_block_node_to_it(
 ) {
     let mut model = cm("<p>Test</p><pre>code</pre><p>|and more</p>");
     model.backspace();
-    assert_eq!(tx(&model), "<p>Test</p><pre>code|\nand more</pre>");
+    assert_eq!(tx(&model), "<p>Test</p><pre>code|and more</pre>");
 }
 
 #[test]

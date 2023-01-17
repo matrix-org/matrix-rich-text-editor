@@ -99,9 +99,13 @@ fn backspacing_trailing_part_of_a_list_item() {
 
 #[test]
 fn backspacing_the_whole_list() {
-    let mut model = cm(
-        "<p>Text</p><ul><li>{First</li><li>Second}|</li></ul><p>More text</p>",
-    );
+    let mut model = cm("\
+        <p>Text</p>\
+        <ul>\
+            <li>{First</li>\
+            <li>Second}|</li>\
+        </ul>\
+        <p>More text</p>");
     model.backspace();
     assert_eq!(tx(&model), "<p>Text</p><p>|More text</p>");
 }
