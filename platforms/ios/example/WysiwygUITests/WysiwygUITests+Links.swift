@@ -28,7 +28,7 @@ extension WysiwygUITests {
         app.buttons["Ok"].tap()
         assertTreeEquals(
             """
-            └>a "url"
+            └>a "https://url"
               └>"text"
             """
         )
@@ -41,7 +41,7 @@ extension WysiwygUITests {
         app.buttons["Ok"].tap()
         assertTreeEquals(
             """
-            └>a "new_url"
+            └>a "https://new_url"
               └>"text"
             """
         )
@@ -72,7 +72,7 @@ extension WysiwygUITests {
         app.buttons["Ok"].tap()
         assertTreeEquals(
             """
-            └>a "url"
+            └>a "https://url"
               └>"text"
             """
         )
