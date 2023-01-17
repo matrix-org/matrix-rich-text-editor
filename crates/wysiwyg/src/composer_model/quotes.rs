@@ -213,11 +213,11 @@ mod test {
     #[test]
     fn apply_quote_to_list_and_formatted_text() {
         let mut model =
-            cm("Plain text <b>bold {text</b><ul><li>~First item</li><li>~Second}| item</li></ul>");
+            cm("<p>Plain text <b>bold {text</b></p><ul><li>First item</li><li>Second}| item</li></ul>");
         model.quote();
         assert_eq!(
             tx(&model),
-            "<blockquote>~Plain text <b>bold {text</b><ul><li>~First item</li><li>~Second}| item</li></ul></blockquote>"
+            "<blockquote><p>Plain text <b>bold {text</b></p><ul><li>First item</li><li>Second}| item</li></ul></blockquote>"
         )
     }
 
@@ -253,12 +253,13 @@ mod test {
 
     #[test]
     fn apply_quote_to_single_list_item_with_formatted_text_and_line_breaks() {
-        let mut model =
-            cm("<ul><li>~<b>Some |text<br />Next line</b></li></ul>");
+        let mut model = cm(
+            "<ul><li><p><b>Some |text</b></p><p><b>Next line</b></p></li></ul>",
+        );
         model.quote();
         assert_eq!(
             tx(&model),
-            "<ul><li>~<blockquote>~<b>Some |text</b></blockquote><b><br />Next line</b></li></ul>"
+            "<ul><li><blockquote><p><b>Some |text</b></p></blockquote><p><b>Next line</b></p></li></ul>"
         )
     }
 

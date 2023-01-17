@@ -287,12 +287,12 @@ mod test {
     #[test]
     fn add_code_block_to_list_item_with_line_breaks() {
         let mut model = cm(
-            "<ul><li>Some text <b>and bold </b><br/><i>and| italic</i></li></ul>",
+            "<ul><li><p>Some text <b>and bold </b></p><p><i>and| italic</i></p></li></ul>",
         );
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<ul><li>Some text <b>and bold&nbsp;</b><br /><pre>~<i>and| italic</i></pre></li></ul>"
+            "<ul><li><p>Some text <b>and bold&nbsp;</b></p><pre><i>and| italic</i></pre></li></ul>"
         );
     }
 

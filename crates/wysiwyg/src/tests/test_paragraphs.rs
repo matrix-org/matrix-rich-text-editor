@@ -320,9 +320,9 @@ fn backspace_at_end_of_code_block_adds_the_content_of_the_next_block_node_to_it(
 
 #[test]
 fn backspace_emptying_code_block_removes_it() {
-    let mut model = cm("Test <pre>c|</pre>");
+    let mut model = cm("<p>Test</p><pre>|</pre>");
     model.backspace();
-    assert_eq!(tx(&model), "Test&nbsp;|");
+    assert_eq!(tx(&model), "<p>Test|</p>");
 }
 
 #[test]

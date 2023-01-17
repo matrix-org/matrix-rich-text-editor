@@ -201,7 +201,6 @@ fn entering_mid_text_node_with_multiple_formatting() {
 }
 
 #[test]
-#[ignore] // TODO: see `backspacing_trailing_part_of_a_list_item_with_formatting`
 fn entering_mid_text_node_with_leading_formatting() {
     let mut model = cm("<ol><li><strong>abc|d</strong>ef</li></ol>");
     model.new_line();
