@@ -4,6 +4,10 @@
 
 - Common: Blank selections allow the user to create links with text
 
+### Fixed
+
+- Web: Fix isWysiwygReady
+
 # [0.18.0] - 2022-01-16
 
 ### Added
