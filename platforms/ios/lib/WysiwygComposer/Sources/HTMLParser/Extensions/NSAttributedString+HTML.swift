@@ -17,11 +17,11 @@
 import Foundation
 
 /// Describe an error occurring during HTML string build.
-enum BuildHtmlAttributedError: LocalizedError, Equatable {
+public enum BuildHtmlAttributedError: LocalizedError, Equatable {
     /// Encoding data from raw HTML input failed.
     case dataError(encoding: String.Encoding)
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case let .dataError(encoding: encoding):
             return "Unable to encode string with: \(encoding.description) rawValue: \(encoding.rawValue)"
@@ -29,7 +29,7 @@ enum BuildHtmlAttributedError: LocalizedError, Equatable {
     }
 }
 
-extension NSAttributedString {
+public extension NSAttributedString {
     /// Init with HTML string.
     ///
     /// - Parameters:

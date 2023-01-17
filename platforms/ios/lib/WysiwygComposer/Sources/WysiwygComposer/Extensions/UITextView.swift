@@ -33,7 +33,14 @@ extension UITextView {
             // avoids an issue with autocapitalization.
             self.selectedRange = .zero
             self.selectedRange = content.selection
+
+            self.drawBackgroundStyleLayers()
         }
+    }
+
+    override open func draw(_ rect: CGRect) {
+        super.draw(rect)
+        drawBackgroundStyleLayers()
     }
 }
 

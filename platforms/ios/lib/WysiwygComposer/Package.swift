@@ -33,7 +33,20 @@ let package = Package(
             name: "WysiwygComposer",
             dependencies: [
                 .target(name: "WysiwygComposerFFI"),
+                .target(name: "HTMLParser"),
+            ]
+        ),
+        .target(
+            name: "DTCoreTextExtended",
+            dependencies: [
                 .product(name: "DTCoreText", package: "DTCoreText"),
+            ]
+        ),
+        .target(
+            name: "HTMLParser",
+            dependencies: [
+                .product(name: "DTCoreText", package: "DTCoreText"),
+                .target(name: "DTCoreTextExtended"),
             ]
         ),
         .testTarget(

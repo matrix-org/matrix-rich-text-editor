@@ -16,6 +16,7 @@
 
 import Combine
 import Foundation
+import HTMLParser
 import OSLog
 import UIKit
 
@@ -150,7 +151,10 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
                 maxExpandedHeight: CGFloat = 300,
                 textColor: UIColor = .label,
                 linkColor: UIColor = .link,
-                codeBackgroundColor: UIColor = .systemGray5,
+                codeBackgroundColor: UIColor = UIColor(red: 244 / 255,
+                                                       green: 246 / 255,
+                                                       blue: 250 / 255,
+                                                       alpha: 1.0),
                 quoteBackgroundColor: UIColor = .systemGray4) {
         self.minHeight = minHeight
         self.maxCompressedHeight = maxCompressedHeight
