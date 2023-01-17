@@ -542,7 +542,7 @@ mod test {
         let model = cm("<ol><li>abcd|</li></ol>");
         let (s, e) = model.safe_selection();
         let range = model.state.dom.find_range(s, e);
-        assert!(range.locations[1].position_is_end_of_list_item(4));
+        assert!(range.locations[1].position_is_end_of_list_item(5));
     }
 
     #[test]

@@ -283,10 +283,7 @@ where
     ) -> Option<CharType> {
         let node = self.state.dom.lookup_node(&location.node_handle);
         match node {
-            DomNode::Container(_) => {
-                // we should never get a container type
-                panic!("get_char_type_from_location")
-            }
+            DomNode::Container(_) => None,
             DomNode::LineBreak(_) => {
                 // we have to treat linebreaks as chars, this type fits best
                 Some(CharType::Whitespace)
@@ -302,7 +299,9 @@ where
         // Find the first leaf node in this selection - note there
         // should only be one because s == e, so we don't have a
         // selection that spans multiple leaves.
-        let first_leaf = range.locations.iter().find(|loc| loc.is_leaf());
+        let first_leaf = range.locations.iter().find(|loc| {
+            loc.is_leaf() || (loc.kind.is_block_kind() && loc.length == 1)
+        });
         if let Some(leaf) = first_leaf {
             // We are backspacing inside a text node with no
             // selection - we might need special behaviour, if

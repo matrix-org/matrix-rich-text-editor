@@ -97,6 +97,7 @@ where
                 (start_block, end_block)
             {
                 start_block != end_block
+                    && start_block.start_offset != start_block.length
                     && !deleted_handles.contains(&start_block.node_handle)
                     && !deleted_handles.contains(&end_block.node_handle)
             } else {
@@ -212,13 +213,15 @@ where
                 continue;
             }
 
-            self.remove(&handle);
+            let cur_node = self.remove(&handle);
             deleted.push(handle.clone());
             let parent = self.parent(&handle);
             let parent_handle = parent.handle();
             if parent.children().is_empty()
                 && !to_delete.contains(&parent_handle)
                 && !deleted.contains(&parent_handle)
+                && (!parent.is_block_node()
+                    || (cur_node.is_block_node() && parent.is_block_node()))
             {
                 to_delete.push(parent_handle);
             }
@@ -393,29 +396,33 @@ where
             let mut node = self.lookup_node_mut(&loc.node_handle);
             match &mut node {
                 DomNode::Container(_) => {
-                    if loc.length == 0
-                        && loc.kind.is_block_kind()
-                        && loc.kind != Generic
-                    {
-                        // Empty block node
-                        if new_text.is_empty() {
+                    if loc.kind.is_block_kind() && loc.kind != Generic {
+                        if loc.length == 1 {
+                            // Empty block node
+                            if new_text.is_empty() {
+                                action_list.push(DomAction::remove_node(
+                                    loc.node_handle.clone(),
+                                ));
+                                first_text_node = false;
+                            } else if first_text_node {
+                                match loc.kind {
+                                    Paragraph | ListItem => {
+                                        let text_node = DomNode::new_text(new_text.clone());
+                                        action_list.push(DomAction::add_node(
+                                            loc.node_handle.clone(),
+                                            0,
+                                            text_node,
+                                        ));
+                                        first_text_node = false;
+                                    },
+                                    _ => panic!("A block node that can't contain inline nodes was selected, text can't be added to it."),
+                                }
+                            }
+                        } else if loc.is_covered() {
                             action_list.push(DomAction::remove_node(
                                 loc.node_handle.clone(),
                             ));
                             first_text_node = false;
-                        } else if first_text_node {
-                            match loc.kind {
-                                Paragraph | ListItem => {
-                                    let text_node = DomNode::new_text(new_text.clone());
-                                    action_list.push(DomAction::add_node(
-                                        loc.node_handle.clone(),
-                                        0,
-                                        text_node,
-                                    ));
-                                    first_text_node = false;
-                                },
-                                _ => panic!("A block node that can't contain inline nodes was selected, text can't be added to it."),
-                            }
                         }
                     }
                 }
@@ -486,14 +493,28 @@ where
             }
         }
 
+        let mut sorted_locations = range.locations.clone();
+        sorted_locations.sort();
+
         // If text wasn't added in any previous iteration, just append it next to the last leaf
         if first_text_node && !new_text.is_empty() {
-            let last_leaf = range.leaves().last().unwrap();
-            action_list.push(DomAction::add_node(
-                last_leaf.node_handle.parent_handle(),
-                last_leaf.node_handle.index_in_parent() + 1,
-                DomNode::new_text(new_text.clone()),
-            ));
+            if let Some(last_leaf) = range.leaves().last() {
+                action_list.push(DomAction::add_node(
+                    last_leaf.node_handle.parent_handle(),
+                    last_leaf.node_handle.index_in_parent() + 1,
+                    DomNode::new_text(new_text.clone()),
+                ));
+            } else if let Some(block_node) = sorted_locations
+                .into_iter()
+                .rev()
+                .find(|l| l.kind.is_block_kind())
+            {
+                action_list.push(DomAction::add_node(
+                    block_node.node_handle.clone(),
+                    0,
+                    DomNode::new_text(new_text.clone()),
+                ));
+            }
         }
 
         action_list

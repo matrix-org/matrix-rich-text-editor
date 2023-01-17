@@ -254,7 +254,7 @@ where
                 self.single_leaf_list_toggle(list_type, handle)
             } else if let Some(block_location) = range.deepest_block_node(None)
             {
-                if block_location.length == 0 {
+                if block_location.length == 1 {
                     self.single_leaf_list_toggle(
                         list_type,
                         &block_location.node_handle,

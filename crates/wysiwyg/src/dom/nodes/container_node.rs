@@ -343,22 +343,13 @@ where
     }
 
     pub fn text_len(&self) -> usize {
-        let child_count = self.children.len();
         let children_len: usize =
             self.children.iter().map(|child| child.text_len()).sum();
         let block_nodes_extra: usize = self
             .children
             .iter()
-            .map(|child| {
-                if child.is_block_node()
-                    && child.handle().index_in_parent() + 1 < child_count
-                {
-                    1
-                } else {
-                    0
-                }
-            })
-            .sum();
+            .filter(|child| child.is_block_node())
+            .count();
         children_len + block_nodes_extra
     }
 
