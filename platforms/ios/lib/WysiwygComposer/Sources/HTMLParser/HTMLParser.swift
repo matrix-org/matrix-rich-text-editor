@@ -92,6 +92,8 @@ public final class HTMLParser {
         // This fixes an iOS bug where if some text is typed after a link, and then a whitespace is added the link color is overridden.
         mutableAttributedString.enumerateAttribute(.link, in: NSRange(location: 0, length: mutableAttributedString.length)) { value, range, _ in
             if value != nil {
+                mutableAttributedString.removeAttribute(.underlineStyle, range: range)
+                mutableAttributedString.removeAttribute(.underlineColor, range: range)
                 mutableAttributedString.addAttributes([.foregroundColor: linkColor], range: range)
             }
         }
