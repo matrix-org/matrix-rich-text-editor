@@ -27,6 +27,7 @@ import listUnorderedImage from './images/list_unordered.svg';
 import listOrderedImage from './images/list_ordered.svg';
 import inlineCodeImage from './images/inline_code.svg';
 import codeBlockImage from './images/code_block.svg';
+import quoteImage from './images/quote.svg';
 import { Wysiwyg, WysiwygEvent } from '../lib/types';
 
 type ButtonProps = {
@@ -141,6 +142,12 @@ function App() {
                             alt="list ordered"
                             imagePath={listOrderedImage}
                             state={actionStates.orderedList}
+                        />
+                        <Button
+                            onClick={wysiwyg.quote}
+                            alt="quote"
+                            imagePath={quoteImage}
+                            state={actionStates.quote}
                         />
                         <Button
                             onClick={wysiwyg.inlineCode}

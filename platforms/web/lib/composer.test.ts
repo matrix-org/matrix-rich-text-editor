@@ -28,6 +28,7 @@ const mockComposerModel = {
     inline_code: vi.fn(),
     ordered_list: vi.fn(),
     unordered_list: vi.fn(),
+    quote: vi.fn(),
     enter: vi.fn(),
 } as unknown as ComposerModel;
 

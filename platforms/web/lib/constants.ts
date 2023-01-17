@@ -27,4 +27,5 @@ export const ACTION_TYPES = [
     'clear',
     'link',
     'codeBlock',
+    'quote',
 ] as const;
