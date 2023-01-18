@@ -25,17 +25,6 @@ let package = Package(
         ),
     ],
     targets: [
-        .binaryTarget(
-            name: "WysiwygComposerFFI",
-            path: "WysiwygComposerFFI.xcframework"
-        ),
-        .target(
-            name: "WysiwygComposer",
-            dependencies: [
-                .target(name: "WysiwygComposerFFI"),
-                .target(name: "HTMLParser"),
-            ]
-        ),
         .target(
             name: "DTCoreTextExtended",
             dependencies: [
@@ -47,6 +36,23 @@ let package = Package(
             dependencies: [
                 .product(name: "DTCoreText", package: "DTCoreText"),
                 .target(name: "DTCoreTextExtended"),
+            ]
+        ),
+        .binaryTarget(
+            name: "WysiwygComposerFFI",
+            path: "WysiwygComposerFFI.xcframework"
+        ),
+        .target(
+            name: "WysiwygComposer",
+            dependencies: [
+                .target(name: "WysiwygComposerFFI"),
+                .target(name: "HTMLParser"),
+            ]
+        ),
+        .testTarget(
+            name: "HTMLParserTests",
+            dependencies: [
+                "HTMLParser",
             ]
         ),
         .testTarget(

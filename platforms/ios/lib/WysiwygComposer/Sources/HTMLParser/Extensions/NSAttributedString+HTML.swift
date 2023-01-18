@@ -15,6 +15,7 @@
 //
 
 import Foundation
+import UIKit
 
 /// Describe an error occurring during HTML string build.
 public enum BuildHtmlAttributedError: LocalizedError, Equatable {
@@ -36,11 +37,11 @@ public extension NSAttributedString {
     ///   - html: Raw HTML string.
     ///   - encoding: Character encoding to use. Default: .utf16.
     convenience init(html: String, encoding: String.Encoding = .utf16) throws {
-        guard let data = html.data(using: encoding, allowLossyConversion: false) else {
-            throw BuildHtmlAttributedError.dataError(encoding: encoding)
-        }
-        try self.init(data: data,
-                      options: [.documentType: NSAttributedString.DocumentType.html],
-                      documentAttributes: nil)
+        let attributed = try HTMLParser.parse(html: html,
+                                              encoding: .utf16,
+                                              textColor: UIColor.label,
+                                              linkColor: UIColor.link,
+                                              codeBackgroundColor: UIColor.secondarySystemBackground)
+        self.init(attributedString: attributed)
     }
 }

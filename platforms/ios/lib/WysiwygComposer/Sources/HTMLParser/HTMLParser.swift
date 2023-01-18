@@ -24,7 +24,6 @@ public final class HTMLParser {
     private init() { }
 
     private static var codeBackgroundColor: UIColor!
-    private static var quoteBackgroundColor: UIColor!
 
     // MARK: - Internal
 
@@ -39,11 +38,9 @@ public final class HTMLParser {
     /// - Returns: an attributed string representation of the HTML content
     public static func parse(html: String,
                              encoding: String.Encoding = .utf16,
-                             textColor: UIColor,
-                             linkColor: UIColor,
-                             codeBackgroundColor: UIColor,
-                             quoteBackgroundColor: UIColor) throws -> NSAttributedString {
-        self.quoteBackgroundColor = quoteBackgroundColor
+                             textColor: UIColor = UIColor.label,
+                             linkColor: UIColor = UIColor.link,
+                             codeBackgroundColor: UIColor = UIColor.tertiarySystemBackground) throws -> NSAttributedString {
         self.codeBackgroundColor = codeBackgroundColor
 
         guard !html.isEmpty else {
@@ -53,7 +50,7 @@ public final class HTMLParser {
         // Fixes additionnal unrequired "\n" inserted by DTCoreText
         var html = html
         html = "<span>" + html + "</span>"
-        guard let data = html.data(using: .utf8) else {
+        guard let data = html.data(using: encoding) else {
             throw BuildHtmlAttributedError.dataError(encoding: encoding)
         }
 

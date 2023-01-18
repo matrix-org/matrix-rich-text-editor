@@ -404,8 +404,7 @@ private extension WysiwygComposerViewModel {
                 html: html,
                 textColor: textColor,
                 linkColor: linkColor,
-                codeBackgroundColor: codeBackgroundColor,
-                quoteBackgroundColor: quoteBackgroundColor
+                codeBackgroundColor: codeBackgroundColor
             )
             // FIXME: handle error for out of bounds index
             let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
