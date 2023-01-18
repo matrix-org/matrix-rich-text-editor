@@ -19,13 +19,43 @@ import UIKit
 
 /// Provides tools to parse from HTML to NSAttributedString with a standard style.
 public final class HTMLParser {
+    // MARK: - Internal
+
+    internal static var style: HTMLParserStyle = .standard
+
     // MARK: - Private
+
+    private static var defaultCSS: String {
+        """
+        blockquote {
+            background-color: \(BackgroundStyle.quote.tempHexColor));
+            display: block;
+        }
+        pre {
+            background-color: \(BackgroundStyle.codeBlock.tempHexColor);
+            display: inline;
+            font-family: monospace;
+            white-space: pre;
+            -coretext-fontname: Menlo-Regular;
+            font-size: inherit;
+        }
+        code {
+            background-color: \(BackgroundStyle.inlineCode.tempHexColor);
+            display: inline;
+            font-family: monospace;
+            white-space: pre;
+            -coretext-fontname: Menlo-Regular;
+            font-size: inherit;
+        }
+        h1,h2,h3 {
+            font-size: 1.2em;
+        }
+        """
+    }
 
     private init() { }
 
-    private static var codeBackgroundColor: UIColor!
-
-    // MARK: - Internal
+    // MARK: - Public
 
     /// Parse given HTML to NSAttributedString with a standard style.
     ///
@@ -38,10 +68,8 @@ public final class HTMLParser {
     /// - Returns: an attributed string representation of the HTML content
     public static func parse(html: String,
                              encoding: String.Encoding = .utf16,
-                             textColor: UIColor = UIColor.label,
-                             linkColor: UIColor = UIColor.link,
-                             codeBackgroundColor: UIColor = UIColor.tertiarySystemBackground) throws -> NSAttributedString {
-        self.codeBackgroundColor = codeBackgroundColor
+                             parserStyle: HTMLParserStyle = .standard) throws -> NSAttributedString {
+        style = parserStyle
 
         guard !html.isEmpty else {
             return NSAttributedString(string: "")
@@ -83,7 +111,7 @@ public final class HTMLParser {
         // removeDTCoreTextArtifacts(mutableAttributedString)
 
         mutableAttributedString.addAttributes(
-            [.foregroundColor: textColor], range: NSRange(location: 0, length: mutableAttributedString.length)
+            [.foregroundColor: style.textColor], range: NSRange(location: 0, length: mutableAttributedString.length)
         )
 
         // This fixes an iOS bug where if some text is typed after a link, and then a whitespace is added the link color is overridden.
@@ -94,46 +122,18 @@ public final class HTMLParser {
             if value != nil {
                 mutableAttributedString.removeAttribute(.underlineStyle, range: range)
                 mutableAttributedString.removeAttribute(.underlineColor, range: range)
-                mutableAttributedString.addAttributes([.foregroundColor: linkColor], range: range)
+                mutableAttributedString.addAttributes([.foregroundColor: style.linkColor], range: range)
             }
         }
 
         mutableAttributedString.applyQuoteBackgroundStyle()
         mutableAttributedString.applyCodeBlockBackgroundStyle()
-        mutableAttributedString.applyInlineCodeBackgroundStyle(codeBackgroundColor: codeBackgroundColor)
+        mutableAttributedString.applyInlineCodeBackgroundStyle(codeBackgroundColor: style.codeBackgroundColor)
 
         mutableAttributedString.addAttribute(.paragraphStyle,
                                              value: NSParagraphStyle.default,
                                              range: .init(location: 0, length: mutableAttributedString.length))
 
         return mutableAttributedString
-    }
-
-    private static var defaultCSS: String {
-        """
-        blockquote {
-            background-color: \(BackgroundStyle.quote.tempHexColor));
-            display: block;
-        }
-        pre {
-            background-color: \(BackgroundStyle.codeBlock.tempHexColor);
-            display: inline;
-            font-family: monospace;
-            white-space: pre;
-            -coretext-fontname: Menlo-Regular;
-            font-size: inherit;
-        }
-        code {
-            background-color: \(BackgroundStyle.inlineCode.tempHexColor);
-            display: inline;
-            font-family: monospace;
-            white-space: pre;
-            -coretext-fontname: Menlo-Regular;
-            font-size: inherit;
-        }
-        h1,h2,h3 {
-            font-size: 1.2em;
-        }
-        """
     }
 }

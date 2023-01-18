@@ -52,9 +52,9 @@ private final class BackgroundStyleLayer: CALayer {
 
         self.frame = frame
         backgroundColor = style.backgroundColor.cgColor
-        borderWidth = style.borderWidth
+        borderWidth = HTMLParser.style.borderWidth
         borderColor = style.borderColor.cgColor
-        cornerRadius = style.cornerRadius
+        cornerRadius = HTMLParser.style.cornerRadius
     }
 
     required init?(coder: NSCoder) {

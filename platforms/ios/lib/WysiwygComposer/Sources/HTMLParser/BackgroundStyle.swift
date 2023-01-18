@@ -21,19 +21,6 @@ internal enum BackgroundStyle {
     case codeBlock
     case quote
 
-    init?(tempHexColor: String) {
-        switch tempHexColor {
-        case Self.inlineCode.tempHexColor:
-            self = .inlineCode
-        case Self.codeBlock.tempHexColor:
-            self = .codeBlock
-        case Self.quote.tempHexColor:
-            self = .quote
-        default:
-            return nil
-        }
-    }
-
     var tempColor: UIColor {
         switch self {
         case .inlineCode:
@@ -49,27 +36,21 @@ internal enum BackgroundStyle {
         tempColor.toHexString()
     }
 
-    // TODO: should be configurable
     var backgroundColor: UIColor {
-        UIColor(red: 244 / 255,
-                green: 246 / 255,
-                blue: 250 / 255,
-                alpha: 1.0)
+        switch self {
+        case .inlineCode, .codeBlock:
+            return HTMLParser.style.codeBackgroundColor
+        case .quote:
+            return HTMLParser.style.quoteBackgroundColor
+        }
     }
 
-    // quinary content
     var borderColor: UIColor {
-        UIColor(red: 227 / 255,
-                green: 232 / 255,
-                blue: 240 / 255,
-                alpha: 1.0)
-    }
-
-    var borderWidth: CGFloat {
-        1.0
-    }
-
-    var cornerRadius: CGFloat {
-        4.0
+        switch self {
+        case .inlineCode, .codeBlock:
+            return HTMLParser.style.codeBorderColor
+        case .quote:
+            return HTMLParser.style.quoteBorderColor
+        }
     }
 }
