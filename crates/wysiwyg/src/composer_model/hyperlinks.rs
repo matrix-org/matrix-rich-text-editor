@@ -101,13 +101,18 @@ where
             return ComposerUpdate::keep();
         }
 
-        let inserted = self
-            .state
-            .dom
-            .insert_parent(&range, DomNode::new_link(link, vec![]));
-
-        // Ensure no duplication by deleting any links contained within the new link
-        self.delete_child_links(&inserted);
+        if range.locations.iter().any(|location| {
+            location.kind.is_structure_kind() || location.kind.is_block_kind()
+        }) {
+            return self.set_link_range(range, link);
+        } else {
+            let inserted = self
+                .state
+                .dom
+                .insert_parent(&range, DomNode::new_link(link, vec![]));
+            // Ensure no duplication by deleting any links contained within the new link
+            self.delete_child_links(&inserted);
+        }
 
         self.create_update_replace_all()
     }
