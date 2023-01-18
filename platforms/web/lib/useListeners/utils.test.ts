@@ -35,6 +35,7 @@ describe('createDefaultActionStates', () => {
             unorderedList: 'enabled',
             link: 'enabled',
             codeBlock: 'enabled',
+            quote: 'enabled',
         });
     });
 });
