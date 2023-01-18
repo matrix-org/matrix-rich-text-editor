@@ -19,7 +19,7 @@ import SwiftUI
 @testable import WysiwygComposer
 import XCTest
 
-final class SnapshotTests: XCTestCase {
+class SnapshotTests: XCTestCase {
     let isRecord = false
     
     var viewModel: WysiwygComposerViewModel!
@@ -32,32 +32,6 @@ final class SnapshotTests: XCTestCase {
         let composerView = WysiwygComposerView(focused: binding, viewModel: viewModel)
             .placeholder("Placeholder")
         hostingController = UIHostingController(rootView: composerView)
-    }
-    
-    func testClearState() throws {
-        assertSnapshot(
-            matching: hostingController,
-            as: .image(on: .iPhone13),
-            record: isRecord
-        )
-    }
-    
-    func testPlainTextContent() throws {
-        viewModel.setHtmlContent("Test")
-        assertSnapshot(
-            matching: hostingController,
-            as: .image(on: .iPhone13),
-            record: isRecord
-        )
-    }
-    
-    func testLinkContent() throws {
-        viewModel.setHtmlContent("<a href=\"https://element.io\">test</a>")
-        assertSnapshot(
-            matching: hostingController,
-            as: .image(on: .iPhone13),
-            record: isRecord
-        )
     }
     
     override func tearDownWithError() throws {

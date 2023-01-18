@@ -15,9 +15,8 @@
 //
 
 import SnapshotTesting
-@testable import WysiwygComposer
 
-extension SnapshotTests {
+final class BlocksSnapshotTests: SnapshotTests {
     func testInlineCodeContent() throws {
         viewModel.setHtmlContent("<code>test</code>")
         assertSnapshot(
@@ -47,7 +46,21 @@ extension SnapshotTests {
 
     func testMultipleBlocksContent() throws {
         viewModel.setHtmlContent(
-            "<blockquote>Some\nmulti-line\nquote</blockquote><br />Some text<br /><br /><pre>A\n\tcode\nblock</pre><br /><br />Some <code>inline</code> code"
+            """
+            <blockquote>Some
+            multi-line
+            quote</blockquote>\
+            <br />\
+            Some text\
+            <br />\
+            <br />\
+            <pre>A
+            \tcode
+            block</pre>\
+            <br />\
+            <br />\
+            Some <code>inline</code> code
+            """
         )
         assertSnapshot(
             matching: hostingController,
