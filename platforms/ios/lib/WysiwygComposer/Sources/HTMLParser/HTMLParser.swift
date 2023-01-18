@@ -62,9 +62,7 @@ public final class HTMLParser {
     /// - Parameters:
     ///   - html: HTML to parse
     ///   - encoding: string encoding to use
-    ///   - textColor: text color to apply to the result string
-    ///   - linkColor: text color to apply to the links
-    ///   - codeBackgroundColor: color to apply to the background of code blocks
+    ///   - parserStyle: style to apply for HTML parsing
     /// - Returns: an attributed string representation of the HTML content
     public static func parse(html: String,
                              encoding: String.Encoding = .utf16,
@@ -94,21 +92,11 @@ public final class HTMLParser {
             throw BuildHtmlAttributedError.dataError(encoding: encoding)
         }
 
-        builder.willFlushCallback = { _ in
-            // element?.sanitize(font: defaultFont)
-        }
-
         guard let attributedString = builder.generatedAttributedString() else {
             throw BuildHtmlAttributedError.dataError(encoding: encoding)
         }
 
         let mutableAttributedString = NSMutableAttributedString(attributedString: attributedString)
-        // removeDefaultForegroundColor(mutableAttributedString)
-        // addLinks(mutableAttributedString)
-        // removeLinkColors(mutableAttributedString)
-        // replaceMarkedBlockquotes(mutableAttributedString)
-        // replaceMarkedCodeBlocks(mutableAttributedString)
-        // removeDTCoreTextArtifacts(mutableAttributedString)
 
         mutableAttributedString.addAttributes(
             [.foregroundColor: style.textColor], range: NSRange(location: 0, length: mutableAttributedString.length)
@@ -130,6 +118,7 @@ public final class HTMLParser {
         mutableAttributedString.applyCodeBlockBackgroundStyle()
         mutableAttributedString.applyInlineCodeBackgroundStyle(codeBackgroundColor: style.codeBackgroundColor)
 
+        // FIXME: This solution might not fit for everything.
         mutableAttributedString.addAttribute(.paragraphStyle,
                                              value: NSParagraphStyle.default,
                                              range: .init(location: 0, length: mutableAttributedString.length))
