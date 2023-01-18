@@ -31,14 +31,11 @@ public extension UITextView {
             }
 
             let glyphRange = layoutManager.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
-            let rect = layoutManager.boundingRect(forGlyphRange: glyphRange, in: self.textContainer)
-            let styleLayer = BackgroundStyleLayer()
+            let rect = layoutManager
+                .boundingRect(forGlyphRange: glyphRange, in: self.textContainer)
+                .extendHorizontally(in: frame)
 
-            styleLayer.frame = rect
-            styleLayer.backgroundColor = style.backgroundColor.cgColor
-            styleLayer.borderWidth = style.borderWidth
-            styleLayer.borderColor = style.borderColor.cgColor
-            styleLayer.cornerRadius = style.cornerRadius
+            let styleLayer = BackgroundStyleLayer(style: style, frame: rect)
 
             layer.sublayers?[0].insertSublayer(styleLayer, at: UInt32(layer.sublayers?.count ?? 0))
         }
@@ -62,5 +59,11 @@ private final class BackgroundStyleLayer: CALayer {
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
+    }
+}
+
+extension CGRect {
+    func extendHorizontally(in frame: CGRect) -> CGRect {
+        CGRect(x: frame.minX, y: minY, width: frame.width, height: height)
     }
 }

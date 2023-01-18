@@ -20,4 +20,6 @@ import Foundation
 extension NSAttributedString.Key {
     static let DTTextBlocks: NSAttributedString.Key = .init(rawValue: DTTextBlocksAttribute)
     static let backgroundStyle: NSAttributedString.Key = .init(rawValue: "BackgroundStyleAttributeKey")
+    static let DTField: NSAttributedString.Key = .init(rawValue: DTFieldAttribute)
+    static let DTTextLists: NSAttributedString.Key = .init(rawValue: DTTextListsAttribute)
 }

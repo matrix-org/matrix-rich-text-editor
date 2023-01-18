@@ -102,6 +102,10 @@ public final class HTMLParser {
         mutableAttributedString.applyCodeBlockBackgroundStyle()
         mutableAttributedString.applyInlineCodeBackgroundStyle(codeBackgroundColor: codeBackgroundColor)
 
+        mutableAttributedString.addAttribute(.paragraphStyle,
+                                             value: NSParagraphStyle.default,
+                                             range: .init(location: 0, length: mutableAttributedString.length))
+
         return mutableAttributedString
     }
 

@@ -21,16 +21,10 @@ extension NSMutableAttributedString {
     /// Sets the background style for detected quote within the attributed string.
     func applyQuoteBackgroundStyle() {
         enumerateTypedAttribute(.paragraphStyle) { (style: NSParagraphStyle, range: NSRange, _) in
-            guard
-                style.headIndent == 25,
-                let newStyle = style.mutableCopy() as? NSMutableParagraphStyle else { return }
-
-            newStyle.headIndent = 0
-            newStyle.firstLineHeadIndent = 0
-            newStyle.paragraphSpacing = 0
-            addAttribute(.paragraphStyle, value: newStyle, range: range)
-            addAttribute(.backgroundStyle, value: BackgroundStyle.quote, range: range)
-            removeAttribute(.backgroundColor, range: range)
+            if style.headIndent == 25 {
+                addAttribute(.backgroundStyle, value: BackgroundStyle.quote, range: range)
+                removeAttribute(.backgroundColor, range: range)
+            }
         }
     }
 
