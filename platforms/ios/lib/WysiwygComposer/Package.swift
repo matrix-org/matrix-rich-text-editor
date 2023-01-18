@@ -59,6 +59,12 @@ let package = Package(
             name: "WysiwygComposerTests",
             dependencies: [
                 "WysiwygComposer",
+            ]
+        ),
+        .testTarget(
+            name: "WysiwygComposerSnapshotTests",
+            dependencies: [
+                "WysiwygComposer",
                 .product(name: "SnapshotTesting", package: "swift-snapshot-testing"),
             ]
         ),

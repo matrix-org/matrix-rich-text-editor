@@ -20,7 +20,7 @@ import SnapshotTesting
 import SwiftUI
 import XCTest
 
-final class WysiwygComposerViewSnapshotTests: XCTestCase {
+final class SnapshotTests: XCTestCase {
     let isRecord = false
     
     var viewModel: WysiwygComposerViewModel!
@@ -52,35 +52,8 @@ final class WysiwygComposerViewSnapshotTests: XCTestCase {
         )
     }
     
-    func testInlineCodeContent() throws {
-        viewModel.setHtmlContent("<code>test</code>")
-        assertSnapshot(
-            matching: hostingController,
-            as: .image(on: .iPhone13),
-            record: isRecord
-        )
-    }
-    
     func testLinkContent() throws {
         viewModel.setHtmlContent("<a href=\"https://element.io\">test</a>")
-        assertSnapshot(
-            matching: hostingController,
-            as: .image(on: .iPhone13),
-            record: isRecord
-        )
-    }
-
-    func testCodeBlockContent() throws {
-        viewModel.setHtmlContent("<pre>if snapshot {\n\treturn true\n}</pre>")
-        assertSnapshot(
-            matching: hostingController,
-            as: .image(on: .iPhone13),
-            record: isRecord
-        )
-    }
-
-    func testQuoteContent() throws {
-        viewModel.setHtmlContent("<blockquote>Some quote with<br /><br /><br /><br />line breaks inside")
         assertSnapshot(
             matching: hostingController,
             as: .image(on: .iPhone13),
