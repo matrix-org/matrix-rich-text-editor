@@ -604,9 +604,9 @@ mod tests {
 
     #[test]
     fn indent_list_item_to_previous_works() {
-        let mut model = cm("<ul><li>First item<ul><li>Second item</li></ul></li><li>Third item|</li></ul>");
+        let mut model = cm("<ul><li><p>First item</p><ul><li>Second item</li></ul></li><li>Third item|</li></ul>");
         model.indent_list_item_handles(&vec![DomHandle::from_raw(vec![0, 1])]);
-        assert_eq!(tx(&model), "<ul><li>First item<ul><li>Second item</li><li>Third item|</li></ul></li></ul>");
+        assert_eq!(tx(&model), "<ul><li><p>First item</p><ul><li>Second item</li><li>Third item|</li></ul></li></ul>");
     }
 
     #[test]

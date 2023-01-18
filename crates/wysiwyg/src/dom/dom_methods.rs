@@ -562,6 +562,77 @@ where
         self.assert_invariants();
     }
 
+    pub(crate) fn ensure_child_nodes_are_all_block_or_all_inline(
+        &mut self,
+        container_handle: &DomHandle,
+    ) {
+        let DomNode::Container(container) = self.lookup_node_mut(&container_handle) else {
+            return;
+        };
+
+        let all_nodes_are_inline =
+            container.children().iter().all(|n| !n.is_block_node());
+        if all_nodes_are_inline {
+            return;
+        }
+        let all_nodes_are_block =
+            container.children().iter().all(|n| n.is_block_node());
+        if all_nodes_are_block {
+            return;
+        }
+
+        let mut wrap_start = usize::MAX;
+        let mut wrap_end = container.children().len();
+        let mut to_wrap = Vec::new();
+
+        // Find ranges to wrap into paragraphs
+        for (idx, child) in container.children().iter().enumerate().rev() {
+            if !child.is_block_node() {
+                wrap_start = idx;
+            } else {
+                if wrap_start != usize::MAX {
+                    to_wrap.push((wrap_start, wrap_end));
+                    wrap_start = usize::MAX;
+                }
+                wrap_end = idx;
+            }
+        }
+        if wrap_start != usize::MAX {
+            to_wrap.push((wrap_start, wrap_end));
+        }
+
+        // Do wrap them
+        for (start, end) in to_wrap {
+            let mut removed = Vec::new();
+            for idx in (start..end).rev() {
+                removed.insert(0, container.remove_child(idx));
+            }
+            let paragraph = DomNode::new_paragraph(removed);
+            container.insert_child(start, paragraph);
+        }
+    }
+
+    pub(crate) fn ensure_child_nodes_are_all_block_or_all_inline_recursively(
+        &mut self,
+        handle: &DomHandle,
+    ) {
+        if !self.lookup_node(&handle).is_block_node() {
+            return;
+        }
+        self.ensure_child_nodes_are_all_block_or_all_inline(&handle);
+        let child_count = self
+            .lookup_node(&handle)
+            .as_container()
+            .map_or(0, |c| c.children().len());
+        if child_count > 0 {
+            for idx in 0..child_count {
+                self.ensure_child_nodes_are_all_block_or_all_inline_recursively(
+                    &handle.child_handle(idx),
+                );
+            }
+        }
+    }
+
     /// Returns two new subtrees as the result of splitting the Dom symmetrically without mutating
     /// itself. Also returns the new handles of node that was split.
     ///
@@ -1029,9 +1100,9 @@ mod test {
     }
 
     #[test]
-    fn replace_text_with_code_block() {
-        let mut model = cm("<pre>~Te{st</pre>AA}|BB");
+    fn delete_text_at_end_of_code_block_appends_next_content() {
+        let mut model = cm("<pre>Te{st</pre>AA}|BB");
         model.delete();
-        assert_eq!(tx(&model), "<pre>~Te|</pre>BB");
+        assert_eq!(tx(&model), "<pre>Te|BB</pre>");
     }
 }

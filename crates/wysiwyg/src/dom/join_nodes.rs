@@ -147,7 +147,7 @@ where
         handle: &DomHandle,
     ) -> Option<DomHandle> {
         let parent = self.parent(handle);
-        if parent.is_structure_node() {
+        if parent.is_structure_node() || parent.is_block_node() {
             Some(parent.handle())
         } else if parent.handle().has_parent() {
             self.find_structure_ancestor(&parent.handle())

@@ -56,6 +56,7 @@ where
         self.assert_no_empty_text_nodes();
         self.assert_no_adjacent_text_nodes();
         self.assert_exactly_one_generic_container();
+        self.assert_all_nodes_in_containers_are_block_or_inline();
 
         // We probably want some more asserts like these:
         // self.assert_document_node_is_a_container();
@@ -118,6 +119,19 @@ where
                 first.unwrap().raw(),
                 self.to_tree()
             );
+        }
+    }
+
+    #[cfg(any(test, feature = "assert-invariants"))]
+    fn assert_all_nodes_in_containers_are_block_or_inline(&self) {
+        for container in self.iter_containers() {
+            let all_nodes_are_inline =
+                container.children().iter().all(|n| !n.is_block_node());
+            let all_nodes_are_block =
+                container.children().iter().all(|n| n.is_block_node());
+            if !all_nodes_are_inline && !all_nodes_are_block {
+                panic!("All nodes in {:?} must be either inline nodes or block nodes", container.handle().clone());
+            }
         }
     }
 }

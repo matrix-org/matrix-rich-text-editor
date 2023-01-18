@@ -178,8 +178,8 @@ where
 
 #[cfg(test)]
 mod test {
-    use crate::tests::testutils_composer_model::cm;
-    use crate::DomHandle;
+    use crate::tests::testutils_composer_model::{cm, restore_whitespace};
+    use crate::{DomHandle, ToHtml};
 
     #[test]
     fn find_ranges_to_wrap_simple_text() {
@@ -259,10 +259,14 @@ mod test {
     fn find_ranges_to_wrap_list_and_external_nodes() {
         let model =
             cm("{Text <ul><li>First item</li><li>Second}| item</li></ul>");
+        assert_eq!(
+            restore_whitespace(&model.state.dom.to_html().to_string()),
+            "<p>Text </p><ul><li>First item</li><li>Second item</li></ul>"
+        );
         let (s, e) = model.safe_selection();
         let ret = model.state.dom.find_nodes_to_wrap_in_block(s, e).unwrap();
         assert_eq!(ret.ancestor_handle, DomHandle::from_raw(Vec::new()));
-        assert_eq!(ret.start_handle, DomHandle::from_raw(vec![0]));
+        assert_eq!(ret.start_handle, DomHandle::from_raw(vec![0, 0]));
         assert_eq!(ret.end_handle, DomHandle::from_raw(vec![1, 1, 0]));
     }
 }

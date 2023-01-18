@@ -441,7 +441,8 @@ mod sys {
 
         #[test]
         fn parse_code_block() {
-            assert_that!("foo <pre>Some code</pre> bar").roundtrips();
+            assert_that!("<p>foo</p><pre>Some code</pre><p>bar</p>")
+                .roundtrips();
         }
 
         #[test]
@@ -470,13 +471,15 @@ mod sys {
 
         #[test]
         fn parse_quote() {
-            assert_that!("foo <blockquote>~A quote</blockquote> bar")
-                .roundtrips();
+            assert_that!(
+                "<p>foo</p><blockquote>A quote</blockquote><p>bar</p>"
+            )
+            .roundtrips();
         }
 
         #[test]
         fn parse_paragraph() {
-            assert_that!("foo <p>A paragraph</p> bar").roundtrips();
+            assert_that!("<p>foo</p><p>A paragraph</p><p>bar</p>").roundtrips();
         }
     }
 }

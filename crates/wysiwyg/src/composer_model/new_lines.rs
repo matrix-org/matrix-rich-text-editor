@@ -70,11 +70,22 @@ where
                     range.deepest_block_node(Some(block_handle.clone()));
                 if let Some(ancestor_block_location) = ancestor_block_location {
                     if ancestor_block_location.kind != Generic {
-                        self.do_new_line_in_block_node(
-                            first_leaf,
-                            &block_location,
-                            &ancestor_block_location,
-                        );
+                        let empty_paragraph_loc = range
+                            .locations
+                            .iter()
+                            .find(|l| l.kind == Paragraph && l.length == 1);
+
+                        if block_location.is_empty() {
+                            self.do_new_line_in_block_node(
+                                &block_location,
+                                &ancestor_block_location,
+                            );
+                        } else {
+                            self.do_new_line_in_paragraph(
+                                first_leaf,
+                                &block_location,
+                            );
+                        }
                     } else {
                         self.do_new_line_in_paragraph(
                             first_leaf,
@@ -227,56 +238,56 @@ where
 
     fn do_new_line_in_block_node(
         &mut self,
-        first_leaf: Option<&DomLocation>,
-        paragraph_location: &DomLocation,
+        empty_paragraph_location: &DomLocation,
         ancestor_block_location: &DomLocation,
     ) {
-        if first_leaf.is_some() {
-            self.do_new_line_in_paragraph(first_leaf, paragraph_location);
+        // let needs_to_exit_block =
+        //     if let Some(handle) = paragraph_location.node_handle {
+        //         self.needs_to_exit_block(
+        //             &ancestor_block_location.node_handle,
+        //             &handle,
+        //         )
+        //     } else {
+        //         false
+        //     };
+
+        let block_handle = &ancestor_block_location.node_handle;
+        // Remove existing empty paragraph
+        self.state.dom.remove(&empty_paragraph_location.node_handle);
+        let sub_tree = self.state.dom.split_sub_tree_from(
+            &empty_paragraph_location.node_handle,
+            0,
+            ancestor_block_location.node_handle.depth(),
+        );
+        let sub_tree_container = &sub_tree.document();
+
+        let block_node_was_removed = !self.state.dom.contains(block_handle);
+        let block_node_became_empty = if block_node_was_removed {
+            false
         } else {
-            // let needs_to_exit_block =
-            //     if let Some(handle) = paragraph_location.node_handle {
-            //         self.needs_to_exit_block(
-            //             &ancestor_block_location.node_handle,
-            //             &handle,
-            //         )
-            //     } else {
-            //         false
-            //     };
+            self.state.dom.lookup_node(block_handle).is_empty()
+        };
+        if block_node_became_empty {
+            self.state.dom.remove(block_handle);
+        }
 
-            // Remove existing empty paragraph
-            self.state.dom.remove(&paragraph_location.node_handle);
-            let sub_tree = self.state.dom.split_sub_tree_from(
-                &paragraph_location.node_handle,
-                0,
-                ancestor_block_location.node_handle.depth(),
-            );
-            let sub_tree_container = &sub_tree.document();
+        let insert_at = if block_node_became_empty || block_node_was_removed {
+            block_handle.clone()
+        } else if ancestor_block_location.start_offset > 0 {
+            block_handle.next_sibling()
+        } else {
+            block_handle.clone()
+        };
 
-            let insert_at = if self
-                .state
-                .dom
-                .contains(&ancestor_block_location.node_handle)
-            {
-                if ancestor_block_location.start_offset > 0 {
-                    ancestor_block_location.node_handle.next_sibling()
-                } else {
-                    ancestor_block_location.node_handle.clone()
-                }
-            } else {
-                ancestor_block_location.node_handle.clone()
-            };
-
-            if !sub_tree_container.is_empty() {
-                self.state
-                    .dom
-                    .insert_at(&insert_at, sub_tree.take_document());
-            }
-
+        if !sub_tree_container.is_empty() {
             self.state
                 .dom
-                .insert_at(&insert_at, DomNode::new_paragraph(Vec::new()));
+                .insert_at(&insert_at, sub_tree.take_document());
         }
+
+        self.state
+            .dom
+            .insert_at(&insert_at, DomNode::new_paragraph(Vec::new()));
     }
 }
 

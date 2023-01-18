@@ -276,7 +276,7 @@ fn moving_list_item_content_out() {
 
 #[test]
 fn appending_new_list_to_previous() {
-    let mut model = cm("<ol><li>ab</li></ol>cd|");
+    let mut model = cm("<ol><li>ab</li></ol><p>cd|</p>");
     model.ordered_list();
     assert_eq!(tx(&model), "<ol><li>ab</li><li>cd|</li></ol>");
 }
@@ -472,8 +472,8 @@ fn multiple_list_toggle() {
 #[test]
 fn new_list_after_linebreak() {
     let mut model = cm("start|");
-    model.enter();
-    assert_eq!(tx(&model), "start<br />|");
+    model.new_line();
+    assert_eq!(tx(&model), "<p>start</p><p>|</p>");
 
     model.unordered_list();
     // TODO: make 'start' be contained into a paragraph

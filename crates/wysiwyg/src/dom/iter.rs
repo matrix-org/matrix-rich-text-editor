@@ -418,8 +418,10 @@ mod test {
             <li>b<strong>c</strong></li>\
             <li>foo</li>\
         </ul>\
-        <i>d</i>e|<br />\
-        <b>x</b>";
+        <p>\
+            <i>d</i>e|<br />\
+            <b>x</b>\
+        </p>";
 
     #[test]
     fn can_walk_all_nodes() {
@@ -429,8 +431,8 @@ mod test {
         assert_eq!(
             text_nodes,
             vec![
-                "", "ul", "li", "'b'", "strong", "'c'", "li", "'foo'", "i",
-                "'d'", "'e'", "br", "b", "'x'"
+                "", "ul", "li", "'b'", "strong", "'c'", "li", "'foo'", "p",
+                "i", "'d'", "'e'", "br", "b", "'x'"
             ]
         );
     }
@@ -451,9 +453,9 @@ mod test {
     #[test]
     fn can_walk_all_nodes_of_a_middle_subtree() {
         let dom = cm(EXAMPLE_HTML).state.dom;
-        let second_child = &dom.children()[1];
+        let sub_tree = dom.lookup_node(&DomHandle::from_raw(vec![1, 0]));
         let text_nodes: Vec<String> =
-            second_child.iter_subtree().map(node_txt).collect();
+            sub_tree.iter_subtree().map(node_txt).collect();
 
         assert_eq!(text_nodes, vec!["i", "'d'"])
     }
@@ -461,9 +463,9 @@ mod test {
     #[test]
     fn can_walk_all_nodes_of_a_trailing_subtree() {
         let dom = cm(EXAMPLE_HTML).state.dom;
-        let last_child = dom.children().last().unwrap();
+        let sub_tree = dom.lookup_node(&DomHandle::from_raw(vec![1, 3]));
         let text_nodes: Vec<String> =
-            last_child.iter_subtree().map(node_txt).collect();
+            sub_tree.iter_subtree().map(node_txt).collect();
 
         assert_eq!(text_nodes, vec!["b", "'x'"])
     }
@@ -508,8 +510,8 @@ mod test {
     #[test]
     fn can_walk_all_text_nodes_of_a_middle_subtree() {
         let dom = cm(EXAMPLE_HTML).state.dom;
-        let second_child = &dom.children()[1];
-        let text_nodes: Vec<String> = second_child
+        let sub_tree = &dom.lookup_node(&DomHandle::from_raw(vec![1, 0]));
+        let text_nodes: Vec<String> = sub_tree
             .iter_text_in_subtree()
             .map(|text| text.data().to_string())
             .collect();
@@ -520,8 +522,8 @@ mod test {
     #[test]
     fn can_walk_all_text_nodes_of_a_trailing_subtree() {
         let dom = cm(EXAMPLE_HTML).state.dom;
-        let last_child = dom.children().last().unwrap();
-        let text_nodes: Vec<String> = last_child
+        let sub_tree = &dom.lookup_node(&DomHandle::from_raw(vec![1, 3]));
+        let text_nodes: Vec<String> = sub_tree
             .iter_text_in_subtree()
             .map(|text| text.data().to_string())
             .collect();
@@ -555,8 +557,8 @@ mod test {
         assert_eq!(
             text_nodes,
             vec![
-                "ul", "li", "'b'", "strong", "'c'", "li", "'foo'", "i", "'d'",
-                "'e'", "br", "b", "'x'"
+                "ul", "li", "'b'", "strong", "'c'", "li", "'foo'", "p", "i",
+                "'d'", "'e'", "br", "b", "'x'"
             ]
         )
     }
@@ -570,7 +572,9 @@ mod test {
 
         assert_eq!(
             text_nodes,
-            vec!["'c'", "li", "'foo'", "i", "'d'", "'e'", "br", "b", "'x'"]
+            vec![
+                "'c'", "li", "'foo'", "p", "i", "'d'", "'e'", "br", "b", "'x'"
+            ]
         )
     }
 
@@ -583,8 +587,8 @@ mod test {
         assert_eq!(
             text_nodes,
             vec![
-                "", "ul", "li", "'b'", "strong", "'c'", "li", "'foo'", "i",
-                "'d'", "'e'", "br", "b", "'x'"
+                "", "ul", "li", "'b'", "strong", "'c'", "li", "'foo'", "p",
+                "i", "'d'", "'e'", "br", "b", "'x'"
             ]
         )
     }
@@ -592,7 +596,7 @@ mod test {
     #[test]
     fn can_walk_all_nodes_of_the_tree_from_last_node_in_dom() {
         let dom = cm(EXAMPLE_HTML).state.dom;
-        let handle = DomHandle::from_raw(vec![4, 0]);
+        let handle = dom.last_node_handle();
         let text_nodes: Vec<String> =
             dom.iter_from_handle(&handle).map(node_txt).collect();
 
@@ -602,15 +606,15 @@ mod test {
     #[test]
     fn can_walk_all_nodes_of_the_tree_from_last_node_in_dom_reversed() {
         let dom = cm(EXAMPLE_HTML).state.dom;
-        let handle = DomHandle::from_raw(vec![4, 0]);
+        let handle = dom.last_node_handle();
         let text_nodes: Vec<String> =
             dom.iter_from_handle(&handle).rev().map(node_txt).collect();
 
         assert_eq!(
             text_nodes,
             vec![
-                "'x'", "b", "br", "'e'", "i", "'d'", "ul", "li", "'foo'", "li",
-                "strong", "'c'", "'b'", "",
+                "'x'", "b", "br", "'e'", "i", "'d'", "p", "ul", "li", "'foo'",
+                "li", "strong", "'c'", "'b'", "",
             ]
         )
     }
@@ -640,7 +644,7 @@ mod test {
     }
 
     #[test]
-    fn can_walk_all_nodes_of_the_tree_from_a_leaf_node_reversed() {
+    fn can_walk_all_nodes_of_the_tree_from_a_deep_leaf_node_reversed() {
         let dom = cm(EXAMPLE_HTML).state.dom;
         let handle = DomHandle::from_raw(vec![0, 0, 1, 0]);
         let text_nodes: Vec<String> =
@@ -650,7 +654,7 @@ mod test {
     }
 
     #[test]
-    fn can_walk_all_nodes_of_the_tree_from_a_leaf_node_reversed_2() {
+    fn can_walk_all_nodes_of_the_tree_from_a_middle_leaf_node_reversed() {
         let dom = cm(EXAMPLE_HTML).state.dom;
         let handle = DomHandle::from_raw(vec![0, 1, 0]);
         let text_nodes: Vec<String> =
@@ -666,14 +670,15 @@ mod test {
     fn can_walk_all_nodes_of_the_tree_from_a_node_reversed() {
         let dom = cm(EXAMPLE_HTML).state.dom;
         // Start from the last <b> tag.
-        let last_child = dom.children().last().unwrap();
+        let handle = DomHandle::from_raw(vec![1, 3]);
+        let last_child = dom.lookup_node(&handle);
         let text_nodes: Vec<String> =
             dom.iter_from(last_child).rev().map(node_txt).collect();
 
         assert_eq!(
             text_nodes,
             vec![
-                "b", "br", "'e'", "i", "'d'", "ul", "li", "'foo'", "li",
+                "b", "br", "'e'", "i", "'d'", "p", "ul", "li", "'foo'", "li",
                 "strong", "'c'", "'b'", ""
             ]
         )
@@ -689,7 +694,7 @@ mod test {
 
         assert_eq!(
             container_nodes,
-            vec!["", "ul", "li", "strong", "li", "i", "b"]
+            vec!["", "ul", "li", "strong", "li", "p", "i", "b"]
         );
     }
 

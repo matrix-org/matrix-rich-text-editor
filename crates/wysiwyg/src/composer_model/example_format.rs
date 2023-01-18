@@ -150,6 +150,12 @@ impl ComposerModel<Utf16String> {
             model.state.end = Location::from(curs.index_in_dom());
         }
         model.compute_menu_state(MenuStateComputeType::KeepIfUnchanged);
+        model
+            .state
+            .dom
+            .ensure_child_nodes_are_all_block_or_all_inline_recursively(
+                &DomHandle::root(),
+            );
         model.state.dom.explicitly_assert_invariants();
 
         model
@@ -838,8 +844,8 @@ mod test {
         assert_that!(
             "\
             <ul>\
-                <li>First item<ul>\
-                    <li>{Second item<ul>\
+                <li><p>First item</p><ul>\
+                    <li><p>{Second item</p><ul>\
                         <li>Third item</li>\
                         <li>Fourth item}|</li>\
                         <li>Fifth item</li>\

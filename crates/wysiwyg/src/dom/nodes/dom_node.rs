@@ -369,6 +369,14 @@ where
         }
         node
     }
+
+    pub fn is_empty(&self) -> bool {
+        match self {
+            DomNode::Container(container) => container.is_empty(),
+            DomNode::Text(text_node) => text_node.data().is_empty(),
+            _ => false,
+        }
+    }
 }
 
 impl<S> ToHtml<S> for DomNode<S>

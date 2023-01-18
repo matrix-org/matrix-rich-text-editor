@@ -185,6 +185,15 @@ impl DomLocation {
 
         is_list_item && position_is_at_end_of_location
     }
+
+    /// Checks if the node referenced by this DomLocation is empty.
+    pub fn is_empty(&self) -> bool {
+        if self.kind.is_block_kind() {
+            self.length == 1
+        } else {
+            self.length > 0
+        }
+    }
 }
 
 impl PartialOrd<Self> for DomLocation {
@@ -501,7 +510,7 @@ mod test {
         let r = range_of(
             "\
             <ul><li>{a</li><li>b</li></ul>\
-            <ol><li>c</li><li>d</li><li>e</li></ol>fgh}|",
+            <ol><li>c</li><li>d</li><li>e</li></ol><p>fgh}|</p>",
         );
 
         assert_eq!(
@@ -515,7 +524,7 @@ mod test {
                 DomHandle::from_raw(vec![1, 0, 0]), // c
                 DomHandle::from_raw(vec![1, 1, 0]), // d
                 DomHandle::from_raw(vec![1, 2, 0]), // e
-                DomHandle::from_raw(vec![2]),       // fgh
+                DomHandle::from_raw(vec![2, 0]),    // fgh
             ]
         );
     }

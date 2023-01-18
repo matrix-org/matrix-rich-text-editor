@@ -15,7 +15,6 @@
 use crate::{DomHandle, UnicodeString};
 
 use super::nodes::dom_node::DomNodeKind;
-use super::range::DomLocationPosition;
 use super::{find_range, Dom, DomLocation, Range};
 
 impl<S> Dom<S>
@@ -37,12 +36,7 @@ where
         end: usize,
     ) -> (usize, usize) {
         let range = find_range::find_range(self, start, end);
-        let leaves: Vec<&DomLocation> = range
-            .leaves()
-            .filter(|loc| {
-                !(loc.relative_position() == DomLocationPosition::After)
-            })
-            .collect();
+        let leaves: Vec<&DomLocation> = range.leaves().collect();
         if leaves.is_empty() {
             return (start, end);
         }
@@ -178,16 +172,16 @@ mod test {
 
     #[test]
     fn find_extended_selection_stops_inside_list() {
-        let dom = cm("abc<ol><li>~def|</li></ol>").state.dom;
-        assert_eq!(dom.find_extended_selection(4, 4), (3, 7));
+        let dom = cm("<p>abc</p><ol><li>def|</li></ol>").state.dom;
+        assert_eq!(dom.find_extended_selection(4, 4), (4, 7));
     }
 
     #[test]
     fn find_extended_selection_on_list_border_stops() {
-        let dom = cm("abc<ol><li>def</li></ol>ghi|").state.dom;
+        let dom = cm("<p>abc</p><ol><li>def</li></ol>ghi|").state.dom;
         assert_eq!(dom.find_extended_selection(3, 3), (0, 3));
-        assert_eq!(dom.find_extended_selection(6, 6), (3, 6));
-        assert_eq!(dom.find_extended_selection(8, 8), (7, 10));
+        assert_eq!(dom.find_extended_selection(7, 7), (4, 7));
+        assert_eq!(dom.find_extended_selection(8, 8), (8, 11));
     }
 
     #[test]
