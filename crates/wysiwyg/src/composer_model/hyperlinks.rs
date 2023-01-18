@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::collections::HashSet;
+
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::{
     DomNodeKind::LineBreak, DomNodeKind::Text, DomNodeKind::Zwsp,
@@ -101,17 +103,41 @@ where
             return ComposerUpdate::keep();
         }
 
-        if range.locations.iter().any(|location| {
-            location.kind.is_structure_kind() || location.kind.is_block_kind()
-        }) {
-            return self.set_link_range(range, link);
-        } else {
-            let inserted = self
-                .state
-                .dom
-                .insert_parent(&range, DomNode::new_link(link, vec![]));
-            // Ensure no duplication by deleting any links contained within the new link
-            self.delete_child_links(&inserted);
+        let mut split_points: HashSet<usize> = HashSet::new();
+        split_points.insert(s);
+        split_points.insert(e);
+
+        for location in range.locations.iter() {
+            if location.kind.is_block_kind()
+                || location.kind.is_structure_kind()
+            {
+                if location.position > s {
+                    split_points.insert(location.position);
+                }
+                let end = location.position + location.length;
+                if end < e {
+                    split_points.insert(end);
+                }
+            }
+        }
+
+        let mut ordered_split_points: Vec<usize> =
+            split_points.into_iter().collect();
+        ordered_split_points.sort();
+
+        for (index, point) in ordered_split_points.iter().enumerate().rev() {
+            if index <= ordered_split_points.len() - 2 {
+                let point = *point;
+                let range = self
+                    .state
+                    .dom
+                    .find_range(point, ordered_split_points[index + 1]);
+                let inserted = self.state.dom.insert_parent(
+                    &range,
+                    DomNode::new_link(link.clone(), vec![]),
+                );
+                self.delete_child_links(&inserted);
+            }
         }
 
         self.create_update_replace_all()

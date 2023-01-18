@@ -603,17 +603,11 @@ fn set_link_accross_list_items_with_container() {
     );
 }
 
-//<ul><li>tes<a href=\"https://element.io\">{t</a><b><a href=\"https://element.io\">test_bold</a></b></li><li><i><a href=\"https://element.io\">test_}|</a>italic</i></li></ul>
 #[test]
 fn set_link_across_list_items_with_multiple_inline_formattings_selected() {
-    let mut model = cm("<ul>\
-        <li>\
-            tes{t<b>test_bold</b>\
-        </li>\
-        <li>\
-            <i>test_}|italic</i>\
-        </li>\
-    </ul>");
+    let mut model = cm(
+        "<ul><li>tes{t<b>test_bold</b></li><li><i>test_}|italic</i></li></ul>",
+    );
     model.set_link("https://element.io".into());
     assert_eq!(
         tx(&model),
@@ -622,7 +616,7 @@ fn set_link_across_list_items_with_multiple_inline_formattings_selected() {
                 tes<a href=\"https://element.io\">{t<b>test_bold</b></a>\
             </li>\
             <li>\
-                <i><a href=\"https://element.io\">test_}</a>|italic</i>\
+                <i><a href=\"https://element.io\">test_}|</a>italic</i>\
             </li>\
         </ul>"
     );
@@ -640,3 +634,5 @@ fn set_link_accross_quote() {
         <a href=\"https://element.io\"> test}|</a>"
     );
 }
+
+// <a href=\"https://element.io\"> test</a><blockquote><a href=\"https://element.io\">{test_block_</a>quote}|</blockquote>
