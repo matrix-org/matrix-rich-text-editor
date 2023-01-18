@@ -14,10 +14,9 @@
 // limitations under the License.
 //
 
-@testable import WysiwygComposer
-
 import SnapshotTesting
 import SwiftUI
+@testable import WysiwygComposer
 import XCTest
 
 final class SnapshotTests: XCTestCase {

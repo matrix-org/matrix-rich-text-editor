@@ -14,12 +14,13 @@
 // limitations under the License.
 //
 
+import Foundation
 import SnapshotTesting
 @testable import WysiwygComposer
 
 extension SnapshotTests {
-    func testInlineCodeContent() throws {
-        viewModel.setHtmlContent("<code>test</code>")
+    func testOrderedListContent() throws {
+        viewModel.setHtmlContent("<ol><li>Item 1</li><li>Item 2</li></ol>Standard text")
         assertSnapshot(
             matching: hostingController,
             as: .image(on: .iPhone13),
@@ -27,8 +28,8 @@ extension SnapshotTests {
         )
     }
 
-    func testCodeBlockContent() throws {
-        viewModel.setHtmlContent("<pre>if snapshot {\n\treturn true\n}</pre>")
+    func testUnorderedListContent() throws {
+        viewModel.setHtmlContent("<ul><li>Item 1</li><li>Item 2</li></ul>Standard text")
         assertSnapshot(
             matching: hostingController,
             as: .image(on: .iPhone13),
@@ -36,18 +37,12 @@ extension SnapshotTests {
         )
     }
 
-    func testQuoteContent() throws {
-        viewModel.setHtmlContent("<blockquote>Some quote with<br /><br /><br /><br />line breaks inside")
-        assertSnapshot(
-            matching: hostingController,
-            as: .image(on: .iPhone13),
-            record: isRecord
-        )
-    }
-
-    func testMultipleBlocksContent() throws {
+    func testMultipleListsContent() throws {
         viewModel.setHtmlContent(
-            "<blockquote>Some\nmulti-line\nquote</blockquote><br />Some text<br /><br /><pre>A\n\tcode\nblock</pre><br /><br />Some <code>inline</code> code"
+            """
+            <ol><li>Item 1</li><li>Item2</li></ol>\
+            <ul><li>Item 1</li><li>Item2</li></ul>
+            """
         )
         assertSnapshot(
             matching: hostingController,
