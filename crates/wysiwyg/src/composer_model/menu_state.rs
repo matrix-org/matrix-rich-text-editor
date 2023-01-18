@@ -208,7 +208,12 @@ where
                 ComposerAction::Link,
             ])
         } else if contains_code_block(locations) {
-            disabled_actions.extend(vec![ComposerAction::InlineCode])
+            disabled_actions.extend(vec![
+                ComposerAction::InlineCode,
+                ComposerAction::OrderedList,
+                ComposerAction::UnorderedList,
+                ComposerAction::Quote,
+            ])
         }
         disabled_actions
     }
