@@ -69,7 +69,7 @@ final class NSAttributedStringRangeTests: XCTestCase {
 
     func testAttributedBulletedLists() throws {
         let html = "<ul><li>Item 1</li><li>Item 2</li></ul>Some Text"
-        let attributed = try NSAttributedString(html: html)
+        let attributed = try HTMLParser.parse(html: html)
         XCTAssertEqual(attributed.string,
                        "\t•\tItem 1\n\t•\tItem 2\nSome Text")
         XCTAssertEqual(attributed.listPrefixesRanges(),
@@ -83,7 +83,7 @@ final class NSAttributedStringRangeTests: XCTestCase {
 
     func testMultipleAttributedLists() throws {
         let html = "<ol><li>Item 1</li><li>Item 2</li></ol><ul><li>Item 1</li><li>Item 2</li></ul>"
-        let attributed = try NSAttributedString(html: html)
+        let attributed = try HTMLParser.parse(html: html)
         XCTAssertEqual(attributed.string,
                        "\t1.\tItem 1\n\t2.\tItem 2\n\t•\tItem 1\n\t•\tItem 2\n")
         XCTAssertEqual(attributed.listPrefixesRanges(),
@@ -112,14 +112,14 @@ final class NSAttributedStringRangeTests: XCTestCase {
             html.append(contentsOf: "<li>abcd</li>")
         }
         html.append(contentsOf: "</ol>")
-        let attributed = try NSAttributedString(html: html)
+        let attributed = try HTMLParser.parse(html: html)
         XCTAssertEqual(attributed.listPrefixesRanges().count,
                        19)
     }
 
     func testOutOfBoundsIndexes() throws {
         let html = "<ol><li>Item 1</li><li>Item 2</li></ol>Some Text"
-        let attributed = try NSAttributedString(html: html)
+        let attributed = try HTMLParser.parse(html: html)
         // Out of bounds indexes return errors
         do {
             _ = try attributed.attributedPosition(at: 40)

@@ -1,5 +1,5 @@
 //
-// Copyright 2022 The Matrix.org Foundation C.I.C
+// Copyright 2023 The Matrix.org Foundation C.I.C
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
 //
 
 import Foundation
-import UIKit
 
 /// Describe an error occurring during HTML string build.
 public enum BuildHtmlAttributedError: LocalizedError, Equatable {
@@ -27,21 +26,5 @@ public enum BuildHtmlAttributedError: LocalizedError, Equatable {
         case let .dataError(encoding: encoding):
             return "Unable to encode string with: \(encoding.description) rawValue: \(encoding.rawValue)"
         }
-    }
-}
-
-public extension NSAttributedString {
-    /// Init with HTML string.
-    ///
-    /// - Parameters:
-    ///   - html: Raw HTML string.
-    ///   - encoding: Character encoding to use. Default: .utf16.
-    convenience init(html: String, encoding: String.Encoding = .utf16) throws {
-        let attributed = try HTMLParser.parse(html: html,
-                                              encoding: .utf16,
-                                              textColor: UIColor.label,
-                                              linkColor: UIColor.link,
-                                              codeBackgroundColor: UIColor.secondarySystemBackground)
-        self.init(attributedString: attributed)
     }
 }
