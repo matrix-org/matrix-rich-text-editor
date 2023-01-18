@@ -22,15 +22,15 @@
 
 #pragma mark - UIFont DTCoreText fix
 
-@interface UIFont (vc_DTCoreTextFix)
+@interface UIFont (mx_DTCoreTextFix)
 
-+ (UIFont *)vc_fixedFontWithCTFont:(CTFontRef)ctFont;
++ (UIFont *)mx_fixedFontWithCTFont:(CTFontRef)ctFont;
 
 @end
 
-@implementation UIFont (vc_DTCoreTextFix)
+@implementation UIFont (mx_DTCoreTextFix)
 
-+ (UIFont *)vc_fixedFontWithCTFont:(CTFontRef)ctFont {
++ (UIFont *)mx_fixedFontWithCTFont:(CTFontRef)ctFont {
     NSString *fontName = (__bridge_transfer NSString *)CTFontCopyName(ctFont, kCTFontPostScriptNameKey);
 
     CGFloat fontSize = CTFontGetSize(ctFont);
@@ -68,7 +68,7 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wundeclared-selector"
         SEL originalSelector = @selector(fontWithCTFont:); // DTCoreText method we're overriding
-        SEL ourSelector = @selector(vc_fixedFontWithCTFont:); // Use custom implementation
+        SEL ourSelector = @selector(mx_fixedFontWithCTFont:); // Use custom implementation
 #pragma clang diagnostic pop
         
         Method originalMethod = class_getClassMethod(originalClass, originalSelector);
