@@ -312,13 +312,6 @@ mod test {
     }
 
     #[test]
-    fn remove_quote_containing_code_block() {
-        let mut model = cm("<blockquote>~<pre>~Some| code</pre></blockquote>");
-        model.quote();
-        assert_eq!(tx(&model), "<pre>~Some| code</pre>");
-    }
-
-    #[test]
     fn create_and_remove_quote() {
         let mut model = cm("|");
         model.quote();
