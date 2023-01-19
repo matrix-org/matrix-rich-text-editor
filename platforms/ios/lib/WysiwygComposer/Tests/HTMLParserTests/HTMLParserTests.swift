@@ -50,21 +50,21 @@ final class HTMLParserTests: XCTestCase {
     func testCodeBlockBackgroundStyleIsApplied() throws {
         let html = "<pre>code block</pre>"
         let attributed = try HTMLParser.parse(html: html)
-        XCTAssertEqual(attributed.attribute(.backgroundStyle, at: 0, effectiveRange: nil) as? BackgroundStyle,
-                       BackgroundStyle.codeBlock)
+        XCTAssertEqual(attributed.attribute(.backgroundStyle, at: 0, effectiveRange: nil) as? BackgroundType,
+                       BackgroundType.codeBlock)
     }
 
     func testQuoteBackgroundStyleIsApplied() throws {
         let html = "<blockquote>quote</blockquote>some text"
         let attributed = try HTMLParser.parse(html: html)
-        XCTAssertEqual(attributed.attribute(.backgroundStyle, at: 0, effectiveRange: nil) as? BackgroundStyle,
-                       BackgroundStyle.quote)
+        XCTAssertEqual(attributed.attribute(.backgroundStyle, at: 0, effectiveRange: nil) as? BackgroundType,
+                       BackgroundType.quote)
     }
 
     func testInlineCodeBackgroundColorIsApplied() throws {
         let html = "<code>inline code</code>"
         let attributed = try HTMLParser.parse(html: html)
         XCTAssertEqual(attributed.backgroundColor(at: 0),
-                       BackgroundStyle.inlineCode.backgroundColor)
+                       BackgroundType.inlineCode.backgroundColor(for: .standard))
     }
 }

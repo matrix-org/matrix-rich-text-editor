@@ -67,6 +67,10 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         didSet {
             // In case of a color change, this will refresh the attributed text
             textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
+            textView.postDrawOperations = { [weak self] tView in
+                guard let self = self else { return }
+                tView.drawBackgroundStyleLayers(style: self.parserStyle)
+            }
             let update = model.setContentFromHtml(html: content.html)
             applyUpdate(update)
             updateTextView()
@@ -126,6 +130,9 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         self.parserStyle = parserStyle
 
         textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
+        textView.postDrawOperations = { tView in
+            tView.drawBackgroundStyleLayers(style: parserStyle)
+        }
         model = newComposerModel()
         // Publish composer empty state.
         $attributedContent.sink { [unowned self] content in
@@ -251,7 +258,7 @@ public extension WysiwygComposerViewModel {
         case let .update(newState):
             if newState[.link] != actionStates[.link] {
                 applyUpdate(update, skipTextViewUpdate: true)
-                textView.apply(attributedContent)
+                textView.apply(attributedContent, style: parserStyle)
                 updateCompressedHeightIfNeeded()
                 return false
             }
@@ -259,6 +266,7 @@ public extension WysiwygComposerViewModel {
         }
         
         applyUpdate(update, skipTextViewUpdate: shouldAcceptChange)
+
         return shouldAcceptChange
     }
 
@@ -334,7 +342,7 @@ private extension WysiwygComposerViewModel {
             // Note: this makes replaceAll act like .keep on cases where we expect the text
             // view to be properly updated by the system.
             if !skipTextViewUpdate {
-                textView.apply(attributedContent)
+                textView.apply(attributedContent, style: parserStyle)
                 updateCompressedHeightIfNeeded()
             }
         case let .select(startUtf16Codeunit: start,
@@ -361,7 +369,7 @@ private extension WysiwygComposerViewModel {
     func applyReplaceAll(codeUnits: [UInt16], start: UInt32, end: UInt32) {
         do {
             let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count)
-            let attributed = try HTMLParser.parse(html: html, parserStyle: parserStyle)
+            let attributed = try HTMLParser.parse(html: html, style: parserStyle)
             // FIXME: handle error for out of bounds index
             let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
             let textSelection = try attributed.attributedRange(from: htmlSelection)
@@ -455,7 +463,7 @@ private extension WysiwygComposerViewModel {
             case StringDifferError.tooComplicated,
                  StringDifferError.insertionsDontMatchRemovals:
                 // Restore from the model, as otherwise the composer will enter a broken state
-                textView.apply(attributedContent)
+                textView.apply(attributedContent, style: parserStyle)
                 updateCompressedHeightIfNeeded()
                 Logger.viewModel.logError(["Reconciliate failed, content has been restored from the model"],
                                           functionName: #function)
@@ -475,7 +483,7 @@ private extension WysiwygComposerViewModel {
     func applyPendingFormatsIfNeeded() {
         guard hasPendingFormats else { return }
 
-        textView.apply(attributedContent)
+        textView.apply(attributedContent, style: parserStyle)
         updateCompressedHeightIfNeeded()
         hasPendingFormats = false
     }

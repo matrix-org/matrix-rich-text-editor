@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 
+import HTMLParser
 import UIKit
 
 extension UITextView {
@@ -24,7 +25,8 @@ extension UITextView {
     ///
     /// - Parameters:
     ///   - content: Content to apply.
-    func apply(_ content: WysiwygComposerAttributedContent) {
+    ///   - style: HTML parser style.
+    func apply(_ content: WysiwygComposerAttributedContent, style: HTMLParserStyle) {
         guard content.text != attributedText || content.selection != selectedRange else { return }
 
         performWithoutDelegate {
@@ -34,13 +36,8 @@ extension UITextView {
             self.selectedRange = .zero
             self.selectedRange = content.selection
 
-            self.drawBackgroundStyleLayers()
+            self.drawBackgroundStyleLayers(style: style)
         }
-    }
-
-    override open func draw(_ rect: CGRect) {
-        super.draw(rect)
-        drawBackgroundStyleLayers()
     }
 }
 

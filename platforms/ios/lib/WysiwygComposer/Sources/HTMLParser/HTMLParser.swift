@@ -19,20 +19,16 @@ import UIKit
 
 /// Provides tools to parse from HTML to NSAttributedString with a standard style.
 public final class HTMLParser {
-    // MARK: - Internal
-
-    internal static var style: HTMLParserStyle = .standard
-
     // MARK: - Private
 
     private static var defaultCSS: String {
         """
         blockquote {
-            background-color: \(BackgroundStyle.quote.tempHexColor);
+            background-color: \(BackgroundType.quote.tempHexColor);
             display: block;
         }
         pre {
-            background-color: \(BackgroundStyle.codeBlock.tempHexColor);
+            background-color: \(BackgroundType.codeBlock.tempHexColor);
             display: block;
             font-family: monospace;
             white-space: pre;
@@ -40,7 +36,7 @@ public final class HTMLParser {
             font-size: inherit;
         }
         code {
-            background-color: \(BackgroundStyle.inlineCode.tempHexColor);
+            background-color: \(BackgroundType.inlineCode.tempHexColor);
             display: inline;
             font-family: monospace;
             white-space: pre;
@@ -62,13 +58,11 @@ public final class HTMLParser {
     /// - Parameters:
     ///   - html: HTML to parse
     ///   - encoding: string encoding to use
-    ///   - parserStyle: style to apply for HTML parsing
+    ///   - style: style to apply for HTML parsing
     /// - Returns: an attributed string representation of the HTML content
     public static func parse(html: String,
                              encoding: String.Encoding = .utf16,
-                             parserStyle: HTMLParserStyle = .standard) throws -> NSAttributedString {
-        style = parserStyle
-
+                             style: HTMLParserStyle = .standard) throws -> NSAttributedString {
         guard !html.isEmpty else {
             return NSAttributedString(string: "")
         }

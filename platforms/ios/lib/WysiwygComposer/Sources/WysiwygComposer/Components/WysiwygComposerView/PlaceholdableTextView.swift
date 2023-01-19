@@ -40,6 +40,8 @@ public class PlaceholdableTextView: UITextView {
             setNeedsDisplay()
         }
     }
+
+    var postDrawOperations: ((UITextView) -> Void)?
     
     override public init(frame: CGRect, textContainer: NSTextContainer?) {
         super.init(frame: frame, textContainer: textContainer)
@@ -53,6 +55,8 @@ public class PlaceholdableTextView: UITextView {
     
     override public func draw(_ rect: CGRect) {
         super.draw(rect)
+
+        postDrawOperations?(self)
         
         guard shouldShowPlaceholder, let placeholder = placeholder else {
             return

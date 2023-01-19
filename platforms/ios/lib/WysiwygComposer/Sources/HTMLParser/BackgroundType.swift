@@ -16,12 +16,13 @@
 
 import UIKit
 
-/// Defines a type of background style for a specific HTML element.
-enum BackgroundStyle {
+/// Defines a type of background for a specific HTML element.
+enum BackgroundType {
     case inlineCode
     case codeBlock
     case quote
 
+    /// Temporary color used to detect the range of the HTML element inside the attributed string.
     var tempColor: UIColor {
         switch self {
         case .inlineCode:
@@ -33,25 +34,36 @@ enum BackgroundStyle {
         }
     }
 
+    /// Temporary color for the HTML element background, as hex.
     var tempHexColor: String {
         tempColor.toHexString()
     }
 
-    var backgroundColor: UIColor {
+    /// Background color for the HTML element.
+    ///
+    /// - Parameters:
+    ///   - style: Style for HTML parsing
+    /// - Returns: the background color
+    func backgroundColor(for style: HTMLParserStyle) -> UIColor {
         switch self {
         case .inlineCode, .codeBlock:
-            return HTMLParser.style.codeBackgroundColor
+            return style.codeBackgroundColor
         case .quote:
-            return HTMLParser.style.quoteBackgroundColor
+            return style.quoteBackgroundColor
         }
     }
 
-    var borderColor: UIColor {
+    /// Border color for the HTML element.
+    ///
+    /// - Parameters:
+    ///   - style: Style for HTML parsing
+    /// - Returns: the border color
+    func borderColor(for style: HTMLParserStyle) -> UIColor {
         switch self {
         case .inlineCode, .codeBlock:
-            return HTMLParser.style.codeBorderColor
+            return style.codeBorderColor
         case .quote:
-            return HTMLParser.style.quoteBorderColor
+            return style.quoteBorderColor
         }
     }
 }

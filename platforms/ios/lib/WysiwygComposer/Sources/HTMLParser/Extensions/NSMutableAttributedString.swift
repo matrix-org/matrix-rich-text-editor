@@ -24,10 +24,10 @@ extension NSMutableAttributedString {
             guard let textBlock = value.firstObject as? DTTextBlock else { return }
 
             switch textBlock.backgroundColor {
-            case BackgroundStyle.codeBlock.tempColor:
-                addAttribute(.backgroundStyle, value: BackgroundStyle.codeBlock, range: range)
-            case BackgroundStyle.quote.tempColor:
-                addAttribute(.backgroundStyle, value: BackgroundStyle.quote, range: range)
+            case BackgroundType.codeBlock.tempColor:
+                addAttribute(.backgroundStyle, value: BackgroundType.codeBlock, range: range)
+            case BackgroundType.quote.tempColor:
+                addAttribute(.backgroundStyle, value: BackgroundType.quote, range: range)
             default:
                 break
             }
@@ -40,7 +40,7 @@ extension NSMutableAttributedString {
     ///   - codeBackgroundColor: the background color that should be applied to inline code
     func applyInlineCodeBackgroundStyle(codeBackgroundColor: UIColor) {
         enumerateTypedAttribute(.backgroundColor) { (color: UIColor, range: NSRange, _) in
-            guard color.toHexString() == BackgroundStyle.inlineCode.tempHexColor else { return }
+            guard color.toHexString() == BackgroundType.inlineCode.tempHexColor else { return }
 
             // Note: for now inline code just uses standard NSAttributedString background color
             // to avoid issues where it spans accross multiple lines.

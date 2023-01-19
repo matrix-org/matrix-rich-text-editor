@@ -17,15 +17,19 @@
 import UIKit
 
 public extension UITextView {
-    func drawBackgroundStyleLayers() {
+    /// Draw layers for all the HTML elements that require special background.
+    ///
+    /// - Parameters:
+    ///   - style: Style for HTML parsing
+    func drawBackgroundStyleLayers(style: HTMLParserStyle) {
         layer
             .sublayers?[0]
             .sublayers?
             .compactMap { $0 as? BackgroundStyleLayer }
             .forEach { $0.removeFromSuperlayer() }
 
-        attributedText.enumerateTypedAttribute(.backgroundStyle) { (style: BackgroundStyle, range: NSRange, _) in
-            guard style != .inlineCode else {
+        attributedText.enumerateTypedAttribute(.backgroundStyle) { (backgroundType: BackgroundType, range: NSRange, _) in
+            guard backgroundType != .inlineCode else {
                 // Not handled here
                 return
             }
@@ -35,7 +39,7 @@ public extension UITextView {
                 .boundingRect(forGlyphRange: glyphRange, in: self.textContainer)
                 .extendHorizontally(in: frame)
 
-            let styleLayer = BackgroundStyleLayer(style: style, frame: rect)
+            let styleLayer = BackgroundStyleLayer(backgroundType: backgroundType, style: style, frame: rect)
 
             layer.sublayers?[0].insertSublayer(styleLayer, at: UInt32(layer.sublayers?.count ?? 0))
         }
@@ -47,14 +51,14 @@ private final class BackgroundStyleLayer: CALayer {
         super.init()
     }
 
-    init(style: BackgroundStyle, frame: CGRect) {
+    init(backgroundType: BackgroundType, style: HTMLParserStyle, frame: CGRect) {
         super.init()
 
         self.frame = frame
-        backgroundColor = style.backgroundColor.cgColor
-        borderWidth = HTMLParser.style.borderWidth
-        borderColor = style.borderColor.cgColor
-        cornerRadius = HTMLParser.style.cornerRadius
+        backgroundColor = backgroundType.backgroundColor(for: style).cgColor
+        borderWidth = style.borderWidth
+        borderColor = backgroundType.borderColor(for: style).cgColor
+        cornerRadius = style.cornerRadius
     }
 
     required init?(coder: NSCoder) {
