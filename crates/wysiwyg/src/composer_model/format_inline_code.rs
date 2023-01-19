@@ -341,7 +341,6 @@ mod test {
         );
     }
 
-    // TODO: might need to re-visit it if we add ZWSP at the end of inline code tags,
     // otherwise this test should actually follow the same behaviour as those in `test_formatting.rs`
     // for 'unformatting_...'.
     #[test]

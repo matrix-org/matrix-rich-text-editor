@@ -156,7 +156,6 @@ where
         match self.state.dom.lookup_node_mut(&location.node_handle) {
             // we should never be passed a container
             DomNode::Container(_) => ComposerUpdate::keep(),
-            DomNode::Zwsp(_) => ComposerUpdate::keep(),
             DomNode::LineBreak(_) => {
                 // for a linebreak, remove it if we started the operation from the whitespace
                 // char type, otherwise keep it
@@ -291,7 +290,6 @@ where
             DomNode::Text(text_node) => {
                 text_node.char_type_at_offset(location.start_offset, direction)
             }
-            DomNode::Zwsp(_) => None,
         }
     }
 

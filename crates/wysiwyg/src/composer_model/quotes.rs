@@ -34,7 +34,7 @@ where
         let (s, e) = self.safe_selection();
         let Some(wrap_result) = self.state.dom.find_nodes_to_wrap_in_block(s, e) else {
             // No nodes to be wrapped found.
-            // Adding an empty Quote block with an a single ZWSP
+            // Adding an empty Quote block with a paragraph
             let range = self.state.dom.find_range(s, e);
             let leaves: Vec<&DomLocation> = range.leaves().collect();
             let node = DomNode::new_quote(vec![DomNode::new_paragraph(Vec::new())]);
@@ -119,19 +119,6 @@ where
         let Some(quote_location) = range.locations.iter().find(|l| l.kind == Quote) else {
             return ComposerUpdate::keep();
         };
-
-        if let DomNode::Container(quote_container) =
-            self.state.dom.lookup_node_mut(&quote_location.node_handle)
-        {
-            if quote_container.remove_leading_zwsp()
-                && quote_location.index_in_dom() <= s
-            {
-                self.state.start -= 1;
-                self.state.end -= 1;
-            }
-        } else {
-            panic!("Quote node must be a container node");
-        }
 
         self.state
             .dom

@@ -26,8 +26,7 @@ impl<S> Dom<S>
 where
     S: UnicodeString,
 {
-    /// Wrap nodes at given handles into a new list. Line breaks
-    /// are converted into a new list item starting with a ZWSP node.
+    /// Wrap nodes at given handles into a new list.
     ///
     /// * `list_type` - the type of list to create (ordered/unordered).
     /// * `handles` - vec containing all the node handles.
@@ -170,9 +169,7 @@ where
         self.join_nodes_in_container(&handle.parent_handle());
     }
 
-    /// Slice list item at given handle and offset. A ZWSP node
-    /// is added at the beginning of the created list item.
-    ///
+    /// Slice list item at given handle and offset.
     /// * `handle` - the list item handle.
     /// * `offset` - offset at which the list item should be sliced
     pub(crate) fn slice_list_item(
@@ -193,10 +190,10 @@ where
 mod test {
     use widestring::Utf16String;
 
-    use crate::char::CharExt;
     use crate::dom::Dom;
     use crate::tests::testutils_composer_model::{cm, tx};
 
+    use crate::char::CharExt;
     use crate::{DomHandle, ListType};
 
     #[test]
@@ -428,8 +425,6 @@ mod test {
 
     // TODO: move this to a more globally usable location if needed
     fn ds(dom: &Dom<Utf16String>) -> String {
-        dom.to_string()
-            .replace(char::zwsp(), "~")
-            .replace('\u{A0}', "&nbsp;")
+        dom.to_string().replace(char::nbsp(), "&nbsp;")
     }
 }

@@ -20,8 +20,6 @@ use crate::dom::{Dom, DomHandle, FindResult, Range};
 use crate::UnicodeString;
 use std::cmp::{max, min};
 
-use super::nodes::ZwspNode;
-
 pub fn find_range<S>(dom: &Dom<S>, start: usize, end: usize) -> Range
 where
     S: UnicodeString,
@@ -110,11 +108,6 @@ where
             locations
                 .extend(process_container_node(dom, n, start, end, offset));
         }
-        DomNode::Zwsp(n) => {
-            if let Some(location) = process_zwsp_node(n, start, end, offset) {
-                locations.push(location);
-            }
-        }
     }
     locations
 }
@@ -201,25 +194,6 @@ where
         end,
         offset,
         DomNodeKind::LineBreak,
-    )
-}
-
-fn process_zwsp_node<S>(
-    node: &ZwspNode<S>,
-    start: usize,
-    end: usize,
-    offset: &mut usize,
-) -> Option<DomLocation>
-where
-    S: UnicodeString,
-{
-    process_textlike_node(
-        node.handle(),
-        node.data().len(),
-        start,
-        end,
-        offset,
-        DomNodeKind::Zwsp,
     )
 }
 

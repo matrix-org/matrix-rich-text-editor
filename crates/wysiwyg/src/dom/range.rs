@@ -99,10 +99,7 @@ impl DomLocation {
     /// True if this is a node which is not a container i.e. a text node or
     /// a text-like node like a line break.
     pub fn is_leaf(&self) -> bool {
-        matches!(
-            self.kind,
-            DomNodeKind::Text | DomNodeKind::LineBreak | DomNodeKind::Zwsp
-        )
+        self.kind.is_leaf_kind()
     }
 
     /// Returns the relative position of this DomLocation towards the range.

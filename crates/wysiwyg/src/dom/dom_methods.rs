@@ -489,7 +489,6 @@ where
 
                     first_text_node = false;
                 }
-                _ => panic!("Unknown type of leaf node found"),
             }
         }
 

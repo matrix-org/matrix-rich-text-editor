@@ -419,79 +419,6 @@ where
         }
     }
 
-    /// Add a leading ZWSP char to this container.
-    /// Returns false if no updates was done.
-    /// e.g. first text-like node is already a ZWSP.
-    pub fn add_leading_zwsp(&mut self) -> bool {
-        // Note: handle might not be set in cases where we are transforming a node
-        // that is detached from the DOM. In that case it's fine to transform it
-        // without worrying about handles.
-        fn insert_zwsp<S>(container: &mut ContainerNode<S>)
-        where
-            S: UnicodeString,
-        {
-            if container.handle().is_set() {
-                container.insert_child(0, DomNode::new_zwsp());
-            } else {
-                container.children.insert(0, DomNode::new_zwsp());
-            }
-        }
-
-        let Some(first_child) = self.children.get_mut(0) else {
-            insert_zwsp(self);
-            return true;
-        };
-        match first_child {
-            DomNode::Container(c) => c.add_leading_zwsp(),
-            DomNode::Zwsp(_) => false,
-            DomNode::Text(t) if !t.data().is_empty() => {
-                insert_zwsp(self);
-                true
-            }
-            DomNode::Text(_) | DomNode::LineBreak(_) => {
-                if self.handle().is_set() {
-                    self.replace_child(0, vec![DomNode::new_zwsp()]);
-                } else {
-                    self.children[0] = DomNode::new_zwsp();
-                }
-                true
-            }
-        }
-    }
-
-    /// Remove leading ZWSP char from this container.
-    /// Returns false if no updates was done.
-    /// e.g. first text-like node is a line break
-    /// or a text node that doesn't start with a ZWSP.
-    pub fn remove_leading_zwsp(&mut self) -> bool {
-        let Some(first_child) = self.children.get_mut(0) else {
-            return false;
-        };
-        match first_child {
-            DomNode::Container(c) => {
-                // Remove the entire container if all it contains is the ZWSP.
-                if c.text_len() == 1 && c.has_leading_zwsp() {
-                    self.remove_child(0);
-                    true
-                } else {
-                    c.remove_leading_zwsp()
-                }
-            }
-            DomNode::Zwsp(_) => {
-                // Note: handle might not be set in cases where we are transforming a node
-                // that is detached from the DOM. In that case it's fine to transform it
-                // without worrying about handles.
-                if self.handle().is_set() {
-                    self.remove_child(0);
-                } else {
-                    self.children.remove(0);
-                }
-                true
-            }
-            _ => false,
-        }
-    }
-
     /// Remove leading Line break char from this container.
     /// Returns false if no updates were done.
     pub fn remove_leading_line_break(&mut self) -> bool {
@@ -519,30 +446,6 @@ where
             return false;
         };
         first_child.has_leading_line_break()
-    }
-
-    /// Returns whether this container first text-like
-    /// child is a ZWSP.
-    pub fn has_leading_zwsp(&self) -> bool {
-        let Some(first_child) = self.children.get(0) else {
-            return false;
-        };
-        first_child.has_leading_zwsp()
-    }
-
-    pub fn replace_leading_zwsp_with_linebreak(&mut self) -> bool {
-        let Some(first_child) = self.children.get_mut(0) else {
-            return false;
-        };
-        match first_child {
-            DomNode::Container(c) => c.replace_leading_zwsp_with_linebreak(),
-            DomNode::Text(_) => false,
-            DomNode::LineBreak(_) => false,
-            DomNode::Zwsp(_) => {
-                self.children[0] = DomNode::new_line_break();
-                true
-            }
-        }
     }
 
     /// Push content of the given container node into self. Panics
@@ -625,11 +528,6 @@ where
     /// Returns true if the ContainerNode has no children.
     pub fn is_empty(&self) -> bool {
         self.children.is_empty()
-    }
-
-    /// Returns true if the ContainerNode only has 1 child, and it's a ZwspNode.
-    pub fn only_contains_zwsp(&self) -> bool {
-        self.children.len() == 1 && self.children[0].is_zwsp()
     }
 
     fn find_slice_location(
@@ -1092,7 +990,7 @@ where
                         )))
                     }
 
-                    DomNode::Text(_) | DomNode::Zwsp(_) => {
+                    DomNode::Text(_) => {
                         return Err(MarkdownError::InvalidListItem(None))
                     }
                 };
@@ -1371,14 +1269,6 @@ mod test {
 
         // Returned vec matches moved handles.
         assert_eq!(moved_handles, vec![text_node2.handle()]);
-    }
-
-    #[test]
-    fn adding_zwsp_to_container() {
-        let mut bold = create_container_with_nested_children();
-        assert!(bold.add_leading_zwsp());
-        assert_eq!(bold.to_html(), "<strong><em>\u{200b}abc</em>def</strong>");
-        assert!(!bold.add_leading_zwsp());
     }
 
     #[test]

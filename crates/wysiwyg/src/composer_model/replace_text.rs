@@ -200,12 +200,13 @@ where
                 }
             }
             if has_previous_line_break {
-                let block =
-                    self.state.dom.lookup_node(&block_location.node_handle);
-                let block_len = block.text_len();
-                if block_len == 0
-                    || (block_len == 1 && block.has_leading_zwsp())
-                {
+                let block = self
+                    .state
+                    .dom
+                    .lookup_node(&block_location.node_handle)
+                    .as_container()
+                    .unwrap();
+                if block.is_empty() {
                     code_block_is_empty = true;
                 }
             }
@@ -227,18 +228,11 @@ where
 
             let new_line_at_end = leaf.is_start();
 
-            if !sub_tree_container.is_empty()
-                && !sub_tree_container.has_leading_zwsp()
-            {
-                sub_tree_container.insert_child(0, DomNode::new_zwsp());
-            }
-
             if self.state.dom.contains(&block_location.node_handle) {
                 if let DomNode::Container(block) =
                     self.state.dom.lookup_node_mut(&block_location.node_handle)
                 {
-                    if block.children().is_empty() || block.only_contains_zwsp()
-                    {
+                    if block.is_empty() {
                         self.state.dom.replace(
                             &block_location.node_handle,
                             vec![
@@ -251,9 +245,7 @@ where
                     } else {
                         let next_handle =
                             block_location.node_handle.next_sibling();
-                        if !sub_tree_container.is_empty()
-                            && !sub_tree_container.only_contains_zwsp()
-                        {
+                        if !sub_tree_container.is_empty() {
                             self.state.dom.insert_at(
                                 &next_handle,
                                 DomNode::new_code_block(
@@ -405,77 +397,6 @@ where
             // TODO: use internal version once we've created it
             self.new_line();
         }
-
-        // let has_previous_line_break = leaf.kind == DomNodeKind::LineBreak;
-        //
-        // if has_previous_line_break {
-        //     // If there was a previous line break we should split the quote in 2 parts, adding a
-        //     // line break between them.
-        //     let mut sub_tree = self.state.dom.split_sub_tree_from(
-        //         &leaf.node_handle,
-        //         leaf.start_offset,
-        //         block_location.node_handle.depth(),
-        //     );
-        //     // Needed to be able to add children
-        //     sub_tree.set_handle(DomHandle::root());
-        //     let DomNode::Container(sub_tree_container) = &mut sub_tree else {
-        //         panic!("Sub tree must start from a container node");
-        //     };
-        //
-        //     let insert_at =
-        //         if self.state.dom.contains(&block_location.node_handle) {
-        //             if block_location.start_offset > 0 {
-        //                 block_location.node_handle.next_sibling()
-        //             } else {
-        //                 block_location.node_handle.clone()
-        //             }
-        //         } else {
-        //             block_location.node_handle.clone()
-        //         };
-        //
-        //     // We don't need the leading line break in the extracted half of the block quote
-        //     if sub_tree_container.remove_leading_line_break() {
-        //         self.state.start -= 1;
-        //         self.state.end -= 1;
-        //     }
-        //
-        //     if !sub_tree_container.is_empty()
-        //         && !sub_tree_container.only_contains_zwsp()
-        //     {
-        //         // If the sub-tree is not empty, insert it along with a line break before it
-        //         if !sub_tree_container.has_leading_zwsp() {
-        //             sub_tree_container.insert_child(0, DomNode::new_zwsp());
-        //             // Don't modify selection if we're inserting it at the same position as the old block
-        //             if insert_at != block_location.node_handle {
-        //                 self.state.start += 1;
-        //                 self.state.end += 1;
-        //             }
-        //         }
-        //         self.state.dom.insert_at(
-        //             &insert_at,
-        //             DomNode::new_quote(sub_tree_container.children().clone()),
-        //         );
-        //         self.state
-        //             .dom
-        //             .insert_at(&insert_at, DomNode::new_line_break());
-        //     } else {
-        //         // If the sub-tree is empty, just add the line break
-        //         let insert_at =
-        //             if self.state.dom.contains(&block_location.node_handle) {
-        //                 self.state.start += 1;
-        //                 self.state.end += 1;
-        //                 block_location.node_handle.next_sibling()
-        //             } else {
-        //                 block_location.node_handle.clone()
-        //             };
-        //         self.state
-        //             .dom
-        //             .insert_at(&insert_at, DomNode::new_line_break());
-        //     }
-        // } else {
-        //     self.do_enter_in_text(&leaf.node_handle, leaf.start_offset);
-        // }
-
         self.create_update_replace_all()
     }
 

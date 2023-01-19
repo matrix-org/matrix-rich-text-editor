@@ -19,7 +19,7 @@ use widestring::{Utf16Str, Utf16String};
 
 use crate::char::CharExt;
 use crate::composer_model::menu_state::MenuStateComputeType;
-use crate::dom::nodes::{ContainerNode, LineBreakNode, TextNode, ZwspNode};
+use crate::dom::nodes::{ContainerNode, LineBreakNode, TextNode};
 use crate::dom::parser::parse;
 use crate::dom::to_html::ToHtmlState;
 use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
@@ -57,14 +57,6 @@ impl ComposerModel<Utf16String> {
     /// The characters `{`, `}` or `|` must not appear anywhere else in the
     /// text.
     ///
-    /// Any occurrence of the `~` character is replaced with the Unicode
-    /// code point U+200B ZERO WIDTH SPACE inside from_example_format.
-    /// Similarly, when converting back using [to_example_format], any
-    /// ZERO WIDTH SPACE is replaced by `~`. This allows test cases to use
-    /// zero-width spaces without being very confusing. (Zero-width spaces
-    /// are used in various places in the model to allow the selection cursor
-    /// to be positioned e.g. inside an empty tag.)
-    ///
     /// HTML works, so `AA<b>B|B</b>CC` means a text node containing `AA`,
     /// followed by a bold node containing a text node containing `BB`,
     /// followed by a text node containing `CC`, with a selection starting and
@@ -83,8 +75,6 @@ impl ComposerModel<Utf16String> {
     /// assert_eq!(model.to_example_format(), "a{abbc}|c");
     /// ```
     pub fn from_example_format(text: &str) -> Self {
-        let text = text.replace('~', &char::zwsp().to_string());
-
         let mut model = ComposerModel::new();
         model.state.dom = parse(&text).unwrap();
 
@@ -274,7 +264,7 @@ impl ComposerModel<Utf16String> {
         }
 
         // Replace characters with visible ones
-        html.replace(char::zwsp(), "~").replace('\u{A0}', "&nbsp;")
+        html.replace(char::nbsp(), "&nbsp;")
     }
 }
 
@@ -329,20 +319,6 @@ impl SelectionWriter {
             for (str, i) in strings_to_add.into_iter().rev() {
                 // Index 1 in line breaks is actually at the end of the '<br />'
                 let i = if i == 0 { 0 } else { 6 };
-                buf.insert(pos + i, &S::from(str));
-            }
-        }
-    }
-
-    pub fn write_selection_zwsp_node<S: UnicodeString>(
-        &mut self,
-        buf: &mut S,
-        pos: usize,
-        node: &ZwspNode<S>,
-    ) {
-        if let Some(loc) = self.locations.get(&node.handle()) {
-            let strings_to_add = self.state.advance(loc, node.data().len());
-            for (str, i) in strings_to_add.into_iter().rev() {
                 buf.insert(pos + i, &S::from(str));
             }
         }

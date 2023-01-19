@@ -264,13 +264,7 @@ where
 
         // Remove formatting nodes.
         for loc in formatting_locations {
-            let node = self.state.dom.lookup_node(&loc.node_handle);
-            if node.has_only_placeholder_text_child() {
-                self.state.end = self.state.start;
-                self.state.dom.replace(&loc.node_handle, vec![]);
-            } else {
-                self.state.dom.remove_and_keep_children(&loc.node_handle);
-            }
+            self.state.dom.remove_and_keep_children(&loc.node_handle);
         }
 
         // Reformat slices.
@@ -322,14 +316,12 @@ where
                     // Node only partially covered by selection, we need
                     // to split into 2 or 3 nodes and add them to the
                     // parent.
-                    let (before, mut middle, after) =
+                    let (before, middle, after) =
                         Self::split_text_node_by_offsets(&loc, node);
 
                     if let Some(after) = after {
                         parent.insert_child(index, after);
                     }
-                    self.state.end +=
-                        Self::insert_zwspace_if_needed(&mut middle);
                     let middle =
                         DomNode::new_formatting(format.clone(), vec![middle]);
                     parent.insert_child(index, middle);
@@ -435,27 +427,6 @@ where
             }
         } else {
             (None, None)
-        }
-    }
-
-    /**
-     * If the supplied node is a text node with zero length, modify it to
-     * contain a zero width space and return 1.
-     * Otherwise, return 0 and don't modify anything.
-     *
-     * Returns the number of characters added, which will either be 0 or 1.
-     */
-    fn insert_zwspace_if_needed(node: &mut DomNode<S>) -> isize {
-        // TODO: remove this or replace with a zwsp node if needed
-        if let DomNode::Text(text) = node {
-            if text.data().is_empty() {
-                text.set_data(S::zwsp());
-                1
-            } else {
-                0
-            }
-        } else {
-            0
         }
     }
 
@@ -630,11 +601,11 @@ mod test {
 
     #[test]
     fn unformat_across_list_items_removes_tag() {
-        let mut model = cm("<ol><li><strong>{abc</strong></li><li><strong>~def}|</strong></li></ol>");
+        let mut model = cm("<ol><li><strong>{abc</strong></li><li><strong>def}|</strong></li></ol>");
         model.unformat(InlineFormatType::Bold);
         assert_eq!(
             model.state.dom.to_string(),
-            "<ol><li>abc</li><li>\u{200b}def</li></ol>"
+            "<ol><li>abc</li><li>def</li></ol>"
         );
     }
 

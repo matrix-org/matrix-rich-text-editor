@@ -140,12 +140,11 @@ where
         self.data().len() != 0
     }
 
-    /// Push content of the given text node into self. If given
-    /// node is empty or a single ZWSP, nothing is pushed.
+    /// Push content of the given text node into self.
     pub(crate) fn push(&mut self, other_node: &TextNode<S>) {
         let mut text_data = self.data().to_owned();
         let other_text_data = other_node.data();
-        if !other_text_data.is_empty() && other_text_data != "\u{200B}" {
+        if !other_text_data.is_empty() {
             text_data.push(other_text_data.to_owned());
         }
         self.set_data(text_data);
@@ -263,12 +262,11 @@ where
 }
 #[cfg(test)]
 mod test {
-    use widestring::Utf16String;
+    use crate::char::CharExt;
 
     use crate::composer_model::delete_text::Direction;
     use crate::dom::nodes::text_node::CharType;
     use crate::tests::testutils_conversion::utf16;
-    use crate::UnicodeString;
 
     use super::{get_char_type, TextNode};
 
@@ -277,7 +275,7 @@ mod test {
         // space
         assert_eq!(get_char_type('\u{0020}'), CharType::Whitespace);
         // no break space
-        assert_eq!(get_char_type('\u{00A0}'), CharType::Whitespace);
+        assert_eq!(get_char_type(char::nbsp()), CharType::Whitespace);
     }
 
     #[test]
@@ -332,14 +330,6 @@ mod test {
     fn pushing_empty_text_node_does_nothing() {
         let mut t1 = TextNode::from(utf16("abc"));
         let t2 = TextNode::from(utf16(""));
-        t1.push(&t2);
-        assert_eq!(t1, TextNode::from(utf16("abc")));
-    }
-
-    #[test]
-    fn pushing_zwsp_text_node_does_nothing() {
-        let mut t1 = TextNode::from(utf16("abc"));
-        let t2 = TextNode::from(Utf16String::zwsp());
         t1.push(&t2);
         assert_eq!(t1, TextNode::from(utf16("abc")));
     }

@@ -15,7 +15,7 @@
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::nodes::{
-    ContainerNode, ContainerNodeKind, LineBreakNode, TextNode, ZwspNode,
+    ContainerNode, ContainerNodeKind, LineBreakNode, TextNode,
 };
 use crate::dom::to_html::{ToHtml, ToHtmlState};
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
@@ -33,7 +33,6 @@ where
     Container(ContainerNode<S>), // E.g. html, div
     Text(TextNode<S>),
     LineBreak(LineBreakNode<S>),
-    Zwsp(ZwspNode<S>),
 }
 
 impl<S: dom::unicode_string::UnicodeString> Default for DomNode<S> {
@@ -56,10 +55,6 @@ where
 
     pub fn new_line_break() -> DomNode<S> {
         DomNode::LineBreak(LineBreakNode::default())
-    }
-
-    pub fn new_zwsp() -> DomNode<S> {
-        DomNode::Zwsp(ZwspNode::default())
     }
 
     pub fn new_formatting(
@@ -107,7 +102,6 @@ where
             DomNode::Container(n) => n.handle(),
             DomNode::LineBreak(n) => n.handle(),
             DomNode::Text(n) => n.handle(),
-            DomNode::Zwsp(n) => n.handle(),
         }
     }
 
@@ -116,7 +110,6 @@ where
             DomNode::Container(n) => n.set_handle(handle),
             DomNode::LineBreak(n) => n.set_handle(handle),
             DomNode::Text(n) => n.set_handle(handle),
-            DomNode::Zwsp(n) => n.set_handle(handle),
         }
     }
 
@@ -125,7 +118,6 @@ where
             DomNode::Text(n) => n.data().len(),
             DomNode::LineBreak(n) => n.text_len(),
             DomNode::Container(n) => n.text_len(),
-            DomNode::Zwsp(n) => n.data().len(),
         }
     }
 
@@ -149,14 +141,10 @@ where
         matches!(self, Self::LineBreak(..))
     }
 
-    pub fn is_zwsp(&self) -> bool {
-        matches!(self, Self::Zwsp(..))
-    }
-
     /// Returns `true` if thie dom node is not a container i.e. a text node or
     /// a text-like node like a line break.
     pub fn is_leaf(&self) -> bool {
-        self.is_text_node() || self.is_line_break() || self.is_zwsp()
+        self.is_text_node() || self.is_line_break()
     }
 
     pub fn is_structure_node(&self) -> bool {
@@ -172,20 +160,6 @@ where
         format_type: &InlineFormatType,
     ) -> bool {
         matches!(self, DomNode::Container(n) if n.is_formatting_node_of_type(format_type))
-    }
-
-    pub(crate) fn is_placeholder_text_node(&self) -> bool {
-        matches!(self, DomNode::Text(n) if n.data().len() == 1 && n.data() == "\u{200b}")
-    }
-
-    pub(crate) fn has_only_placeholder_text_child(&self) -> bool {
-        match self {
-            DomNode::Container(n) => {
-                n.children().len() == 1
-                    && n.children().first().unwrap().is_placeholder_text_node()
-            }
-            _ => false,
-        }
     }
 
     pub(crate) fn is_block_node(&self) -> bool {
@@ -243,7 +217,6 @@ where
             DomNode::Text(_) => DomNodeKind::Text,
             DomNode::LineBreak(_) => DomNodeKind::LineBreak,
             DomNode::Container(n) => DomNodeKind::from_container_kind(n.kind()),
-            DomNode::Zwsp(_) => DomNodeKind::Zwsp,
         }
     }
 
@@ -254,18 +227,6 @@ where
             DomNode::Container(c) => c.has_leading_line_break(),
             DomNode::Text(_) => false,
             DomNode::LineBreak(_) => true,
-            DomNode::Zwsp(_) => false,
-        }
-    }
-
-    /// Returns whether this node, or it's first text-like
-    /// child is a ZWSP.
-    pub fn has_leading_zwsp(&self) -> bool {
-        match self {
-            DomNode::Container(c) => c.has_leading_zwsp(),
-            DomNode::Text(_) => false,
-            DomNode::LineBreak(_) => false,
-            DomNode::Zwsp(_) => true,
         }
     }
 
@@ -308,7 +269,6 @@ where
             }
             DomNode::Text(t) => DomNode::Text(t.slice_after(position)),
             DomNode::LineBreak(_) => panic!("Can't slice a linebreak"),
-            DomNode::Zwsp(_) => panic!("Can't slice a zwsp"),
         }
     }
 
@@ -323,7 +283,6 @@ where
             }
             DomNode::Text(t) => DomNode::Text(t.slice_before(position)),
             DomNode::LineBreak(_) => panic!("Can't slice a linebreak"),
-            DomNode::Zwsp(_) => panic!("Can't slice a zwsp"),
         }
     }
 
@@ -361,10 +320,6 @@ where
                     "Handle {:?} is invalid: refers to the child of a text node, \
                     but text nodes cannot have children.", node_handle
                 ),
-                DomNode::Zwsp(_) => panic!(
-                    "Handle {:?} is invalid: refers to the child of a zwsp node, \
-                    but zwsp nodes cannot have children.", node_handle
-                ),
             }
         }
         node
@@ -393,7 +348,6 @@ where
             DomNode::Container(s) => s.fmt_html(buf, selection_writer, state),
             DomNode::LineBreak(s) => s.fmt_html(buf, selection_writer, state),
             DomNode::Text(s) => s.fmt_html(buf, selection_writer, state),
-            DomNode::Zwsp(s) => s.fmt_html(buf, selection_writer, state),
         }
     }
 }
@@ -407,7 +361,6 @@ where
             DomNode::Container(n) => n.to_raw_text(),
             DomNode::LineBreak(n) => n.to_raw_text(),
             DomNode::Text(n) => n.to_raw_text(),
-            DomNode::Zwsp(n) => n.to_raw_text(),
         }
     }
 }
@@ -421,7 +374,6 @@ where
             DomNode::Container(n) => n.to_tree_display(continuous_positions),
             DomNode::LineBreak(n) => n.to_tree_display(continuous_positions),
             DomNode::Text(n) => n.to_tree_display(continuous_positions),
-            DomNode::Zwsp(n) => n.to_tree_display(continuous_positions),
         }
     }
 }
@@ -441,7 +393,6 @@ where
             }
             DomNode::Text(text) => text.fmt_markdown(buffer, options),
             DomNode::LineBreak(node) => node.fmt_markdown(buffer, options),
-            DomNode::Zwsp(zwsp) => zwsp.fmt_markdown(buffer, options),
         }
     }
 }
@@ -457,7 +408,6 @@ pub enum DomNodeKind {
     List,
     CodeBlock,
     Quote,
-    Zwsp,
     Paragraph,
 }
 
@@ -493,6 +443,10 @@ impl DomNodeKind {
                 | Self::Quote
                 | Self::Paragraph
         )
+    }
+
+    pub fn is_leaf_kind(&self) -> bool {
+        matches!(self, Self::Text | Self::LineBreak)
     }
 }
 

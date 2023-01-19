@@ -332,10 +332,6 @@ where
                     "Handle is invalid: refers to the child of a text node, \
                     but text nodes cannot have children."
                 ),
-                DomNode::Zwsp(_) => panic!(
-                    "Handle is invalid: refers to the child of a zwsp node, \
-                    but zwsp nodes cannot have children."
-                ),
             }
         }
 
@@ -390,19 +386,6 @@ where
                     Where::After
                 } else {
                     Where::During
-                }
-            }
-            DomNode::Zwsp(_) => {
-                if offset == 0 {
-                    Where::Before
-                } else if offset == 1 {
-                    Where::After
-                } else {
-                    panic!(
-                        "Attempting to insert a new line into a zwsp node, but offset wasn't \
-                        either 0 or 1: {}",
-                        offset
-                    );
                 }
             }
         };
@@ -923,7 +906,6 @@ mod test {
             DomNode::Text(_) => {
                 panic!("We expected an Element, but found Text")
             }
-            DomNode::Zwsp(_) => NO_CHILDREN,
         }
     }
 }
