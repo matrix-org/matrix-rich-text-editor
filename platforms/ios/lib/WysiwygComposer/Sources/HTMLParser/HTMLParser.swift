@@ -67,9 +67,6 @@ public final class HTMLParser {
             return NSAttributedString(string: "")
         }
 
-        // Fixes additionnal unrequired "\n" inserted by DTCoreText
-        var html = html
-        html = "<span>" + html + "</span>"
         guard let data = html.data(using: encoding) else {
             throw BuildHtmlAttributedError.dataError(encoding: encoding)
         }
@@ -116,6 +113,7 @@ public final class HTMLParser {
                                              value: NSParagraphStyle.default,
                                              range: .init(location: 0, length: mutableAttributedString.length))
 
+        mutableAttributedString.deleteCharacters(in: NSRange(location: mutableAttributedString.length - 1, length: 1))
         return mutableAttributedString
     }
 }
