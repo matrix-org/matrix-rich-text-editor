@@ -16,7 +16,8 @@
 
 import UIKit
 
-internal enum BackgroundStyle {
+/// Defines a type of background style for a specific HTML element.
+enum BackgroundStyle {
     case inlineCode
     case codeBlock
     case quote
