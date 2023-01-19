@@ -38,7 +38,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
         self.viewModel = viewModel
     }
     
-    public func makeUIView(context: Context) -> PlaceholdableTextView {
+    public func makeUIView(context: Context) -> WysiwygTextView {
         let textView = viewModel.textView
         
         textView.accessibilityIdentifier = "WysiwygComposer"
@@ -60,7 +60,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
         return textView
     }
 
-    public func updateUIView(_ uiView: PlaceholdableTextView, context: Context) {
+    public func updateUIView(_ uiView: WysiwygTextView, context: Context) {
         uiView.tintColor = UIColor(tintColor)
         uiView.placeholderColor = UIColor(placeholderColor)
         uiView.placeholder = placeholder

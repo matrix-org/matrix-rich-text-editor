@@ -24,11 +24,11 @@ public final class HTMLParser {
     private static var defaultCSS: String {
         """
         blockquote {
-            background-color: \(BackgroundType.quote.tempHexColor);
+            background-color: \(TempColor.quote.toHexString());
             display: block;
         }
         pre {
-            background-color: \(BackgroundType.codeBlock.tempHexColor);
+            background-color: \(TempColor.codeBlock.toHexString());
             display: block;
             font-family: monospace;
             white-space: pre;
@@ -36,7 +36,7 @@ public final class HTMLParser {
             font-size: inherit;
         }
         code {
-            background-color: \(BackgroundType.inlineCode.tempHexColor);
+            background-color: \(TempColor.inlineCode.toHexString());
             display: inline;
             font-family: monospace;
             white-space: pre;
@@ -108,7 +108,7 @@ public final class HTMLParser {
             }
         }
 
-        mutableAttributedString.applyBackgroundStyles()
+        mutableAttributedString.applyBackgroundStyles(style: style)
         mutableAttributedString.applyInlineCodeBackgroundStyle(codeBackgroundColor: style.codeBackgroundColor)
 
         // FIXME: This solution might not fit for everything.

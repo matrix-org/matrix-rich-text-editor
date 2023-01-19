@@ -19,6 +19,8 @@ import UIKit
 
 /// Describe style for the HTML parser.
 public struct HTMLParserStyle {
+    // MARK: - Public
+
     public static let standard = HTMLParserStyle(
         textColor: UIColor.label,
         linkColor: UIColor.link,
@@ -46,6 +48,22 @@ public struct HTMLParserStyle {
     public var borderWidth: CGFloat
     /// Corner radius for custom backgrounds.
     public var cornerRadius: CGFloat
+
+    // MARK: - Internal
+
+    var codeBlockBackgroundStyle: BackgroundStyle {
+        BackgroundStyle(backgroundColor: codeBackgroundColor,
+                        borderColor: codeBorderColor,
+                        borderWidth: borderWidth,
+                        cornerRadius: cornerRadius)
+    }
+
+    var quoteBackgroundStyle: BackgroundStyle {
+        BackgroundStyle(backgroundColor: quoteBackgroundColor,
+                        borderColor: quoteBorderColor,
+                        borderWidth: borderWidth,
+                        cornerRadius: cornerRadius)
+    }
 
     public init(textColor: UIColor,
                 linkColor: UIColor,

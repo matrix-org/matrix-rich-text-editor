@@ -14,10 +14,43 @@
 // limitations under the License.
 //
 
-import HTMLParser
 import UIKit
 
-extension UITextView {
+public class WysiwygTextView: UITextView {
+    var shouldShowPlaceholder = true {
+        didSet {
+            setNeedsDisplay()
+        }
+    }
+    
+    var placeholder: String? {
+        didSet {
+            setNeedsDisplay()
+        }
+    }
+    
+    var placeholderColor: UIColor = .placeholderText {
+        didSet {
+            setNeedsDisplay()
+        }
+    }
+    
+    var placeholderFont = UIFont.preferredFont(forTextStyle: .body) {
+        didSet {
+            setNeedsDisplay()
+        }
+    }
+
+    override public init(frame: CGRect, textContainer: NSTextContainer?) {
+        super.init(frame: frame, textContainer: textContainer)
+        contentMode = .redraw
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        contentMode = .redraw
+    }
+
     /// Apply given content to the text view. This will temporary disrupt the text view
     /// delegate in order to avoid having multiple unnecessary selection frowarded to
     /// the model. This is especially useful since setting the attributed text automatically
@@ -25,8 +58,7 @@ extension UITextView {
     ///
     /// - Parameters:
     ///   - content: Content to apply.
-    ///   - style: HTML parser style.
-    func apply(_ content: WysiwygComposerAttributedContent, style: HTMLParserStyle) {
+    func apply(_ content: WysiwygComposerAttributedContent) {
         guard content.text != attributedText || content.selection != selectedRange else { return }
 
         performWithoutDelegate {
@@ -35,13 +67,30 @@ extension UITextView {
             // avoids an issue with autocapitalization.
             self.selectedRange = .zero
             self.selectedRange = content.selection
-
-            self.drawBackgroundStyleLayers(style: style)
         }
+    }
+    
+    override public func draw(_ rect: CGRect) {
+        super.draw(rect)
+
+        drawBackgroundStyleLayers()
+
+        guard shouldShowPlaceholder, let placeholder = placeholder else {
+            return
+        }
+        
+        let attributes: [NSAttributedString.Key: Any] = [.foregroundColor: placeholderColor, .font: placeholderFont]
+        
+        let frame = rect.inset(by: .init(top: textContainerInset.top,
+                                         left: textContainerInset.left + textContainer.lineFragmentPadding,
+                                         bottom: textContainerInset.bottom,
+                                         right: textContainerInset.right))
+        
+        placeholder.draw(in: frame, withAttributes: attributes)
     }
 }
 
-private extension UITextView {
+private extension WysiwygTextView {
     /// Perform an action while temporary removing the text view delegate.
     ///
     /// - Parameters:

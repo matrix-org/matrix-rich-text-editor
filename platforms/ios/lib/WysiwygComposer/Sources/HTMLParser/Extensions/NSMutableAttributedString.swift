@@ -19,15 +19,18 @@ import UIKit
 
 extension NSMutableAttributedString {
     /// Sets the background style for detected quote & code blocks within the attributed string.
-    func applyBackgroundStyles() {
+    ///
+    /// - Parameters:
+    ///   - style: Style for HTML parsing.
+    func applyBackgroundStyles(style: HTMLParserStyle) {
         enumerateTypedAttribute(.DTTextBlocks) { (value: NSArray, range: NSRange, _) in
             guard let textBlock = value.firstObject as? DTTextBlock else { return }
 
             switch textBlock.backgroundColor {
-            case BackgroundType.codeBlock.tempColor:
-                addAttribute(.backgroundStyle, value: BackgroundType.codeBlock, range: range)
-            case BackgroundType.quote.tempColor:
-                addAttribute(.backgroundStyle, value: BackgroundType.quote, range: range)
+            case TempColor.codeBlock:
+                addAttribute(.backgroundStyle, value: style.codeBlockBackgroundStyle, range: range)
+            case TempColor.quote:
+                addAttribute(.backgroundStyle, value: style.quoteBackgroundStyle, range: range)
             default:
                 break
             }
@@ -40,7 +43,7 @@ extension NSMutableAttributedString {
     ///   - codeBackgroundColor: the background color that should be applied to inline code
     func applyInlineCodeBackgroundStyle(codeBackgroundColor: UIColor) {
         enumerateTypedAttribute(.backgroundColor) { (color: UIColor, range: NSRange, _) in
-            guard color.toHexString() == BackgroundType.inlineCode.tempHexColor else { return }
+            guard color == TempColor.inlineCode else { return }
 
             // Note: for now inline code just uses standard NSAttributedString background color
             // to avoid issues where it spans accross multiple lines.
