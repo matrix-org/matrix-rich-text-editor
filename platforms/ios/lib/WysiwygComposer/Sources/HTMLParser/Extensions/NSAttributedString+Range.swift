@@ -17,13 +17,13 @@
 import Foundation
 
 /// Describe an eror occuring during HTML to attributed ranges manipulation.
-enum AttributedRangeError: LocalizedError, Equatable {
+public enum AttributedRangeError: LocalizedError, Equatable {
     /// Index is out of expected HTML bounds.
     case outOfBoundsHtmlIndex(index: Int)
     /// Index is out of attributed bounds.
     case outOfBoundsAttributedIndex(index: Int)
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case let .outOfBoundsHtmlIndex(index: index):
             return "Provided HTML index is out of expected bounds (\(index))"
@@ -34,7 +34,33 @@ enum AttributedRangeError: LocalizedError, Equatable {
 }
 
 extension NSAttributedString {
-    // MARK: - List prefixes detection
+    // MARK: - Public
+
+    /// Computes range inside the HTML raw text from the
+    /// range inside the attributed representation.
+    ///
+    /// - Parameters:
+    ///   - attributedRange: the range inside the attributed representation
+    /// - Returns: the range inside the HTML raw text
+    public func htmlRange(from attributedRange: NSRange) throws -> NSRange {
+        let start = try htmlPosition(at: attributedRange.location)
+        let end = try htmlPosition(at: attributedRange.upperBound)
+        return NSRange(location: start, length: end - start)
+    }
+
+    /// Computes a range inside the attributed representation from
+    /// the range inside the HTML raw text.
+    ///
+    /// - Parameters:
+    ///   - htmlRange: the range inside the HTML raw text
+    /// - Returns: the range inside the attributed representation
+    public func attributedRange(from htmlRange: NSRange) throws -> NSRange {
+        let start = try attributedPosition(at: htmlRange.location)
+        let end = try attributedPosition(at: htmlRange.upperBound)
+        return NSRange(location: start, length: end - start)
+    }
+
+    // MARK: - Internal
 
     /// Compute an array of all detected occurences of bulleted lists and
     /// numbered lists prefixes. ("1.", "•", ... with included tabulations and newline
@@ -44,48 +70,18 @@ extension NSAttributedString {
     ///   - range: the range on which the elements should be detected. Entire range if omitted
     /// - Returns: an array of matching ranges
     func listPrefixesRanges(in range: NSRange? = nil) -> [NSRange] {
-        let numberedPrefixes = numberedListPrefixesRanges(in: range)
-        let bulletedPrefixes = bulletedListPrefixesRanges(in: range)
+        let enumRange = range ?? .init(location: 0, length: length)
+        var ranges = [NSRange]()
 
-        return (numberedPrefixes + bulletedPrefixes)
-            .sorted(by: { $0.location < $1.location })
+        enumerateAttribute(.DTField,
+                           in: enumRange) { (attr: Any?, range: NSRange, _) in
+            if attr != nil {
+                ranges.append(range)
+            }
+        }
+
+        return ranges
     }
-
-    /// Compute an array of all detected occurences of bulleted lists
-    /// prefixes. ("•" with included tabulations and newline
-    /// that are not represented in the HTML raw text).
-    ///
-    /// - Parameters:
-    ///   - range: the range on which the elements should be detected. Entire range if omitted
-    /// - Returns: an array of matching ranges
-    func bulletedListPrefixesRanges(in range: NSRange? = nil) -> [NSRange] {
-        let pattern = "\\t•\\t"
-        let actualRange = range ?? .init(location: 0, length: length)
-        // swiftlint:disable:next force_try
-        let regex = try! NSRegularExpression(pattern: pattern)
-        return regex
-            .matches(in: string, range: actualRange)
-            .map(\.range)
-    }
-
-    /// Compute an array of all detected occurences of numbered lists
-    /// prefixes. ("1.", "2.", ... with included tabulations and newline
-    /// that are not represented in the HTML raw text).
-    ///
-    /// - Parameters:
-    ///   - range: the range on which the elements should be detected. Entire range if omitted
-    /// - Returns: an array of matching ranges
-    func numberedListPrefixesRanges(in range: NSRange? = nil) -> [NSRange] {
-        let pattern = "\\t\\d+\\.\\t"
-        let actualRange = range ?? .init(location: 0, length: length)
-        // swiftlint:disable:next force_try
-        let regex = try! NSRegularExpression(pattern: pattern)
-        return regex
-            .matches(in: string, range: actualRange)
-            .map(\.range)
-    }
-
-    // MARK: - Indexes computation
 
     /// Computes index inside the HTML raw text from the index
     /// inside the attributed representation.
@@ -135,7 +131,7 @@ extension NSAttributedString {
         guard actualIndex > 0 else {
             return actualIndex
         }
-        
+
         if !prefixes.isEmpty {
             actualIndex -= 1
         }
@@ -159,35 +155,5 @@ extension NSAttributedString {
         }
 
         return actualIndex
-    }
-
-    /// Computes range inside the HTML raw text from the
-    /// range inside the attributed representation.
-    ///
-    /// - Parameters:
-    ///   - attributedRange: the range inside the attributed representation
-    /// - Returns: the range inside the HTML raw text
-    func htmlRange(from attributedRange: NSRange) throws -> NSRange {
-        let start = try htmlPosition(at: attributedRange.location)
-        let end = try htmlPosition(at: attributedRange.upperBound)
-        return NSRange(location: start, length: end - start)
-    }
-
-    /// Computes a range inside the attributed representation from
-    /// the range inside the HTML raw text.
-    ///
-    /// - Parameters:
-    ///   - htmlRange: the range inside the HTML raw text
-    /// - Returns: the range inside the attributed representation
-    func attributedRange(from htmlRange: NSRange) throws -> NSRange {
-        let start = try attributedPosition(at: htmlRange.location)
-        let end = try attributedPosition(at: htmlRange.upperBound)
-        return NSRange(location: start, length: end - start)
-    }
-}
-
-private extension Array where Element == NSRange {
-    func containsIndex(_ index: Int) -> Bool {
-        contains { $0.location <= index && $0.upperBound >= index }
     }
 }

@@ -221,6 +221,7 @@ where
                 ComposerAction::OrderedList,
                 ComposerAction::UnorderedList,
                 ComposerAction::Quote,
+                ComposerAction::Link,
             ])
         }
         disabled_actions

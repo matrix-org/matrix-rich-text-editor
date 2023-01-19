@@ -14,23 +14,11 @@
 // limitations under the License.
 //
 
-import XCTest
+import UIKit
 
-extension WysiwygUITests {
-    func testQuote() throws {
-        // Type something into composer.
-        textView.typeTextCharByChar("Some text")
-        button(.quoteButton).tap()
-        // FIXME: iOS/DTCoreText automatically adds an extra line break even if not in the model
-        assertTextViewContent("​Some text \n")
-
-        // FIXME: an unwanted space is added into the model
-        assertTreeEquals(
-            """
-            └>blockquote
-              ├>~
-              └>"Some text "
-            """
-        )
-    }
+/// Temporary color used to detect the range of the HTML element inside the attributed string.
+enum TempColor {
+    static let inlineCode: UIColor = .red
+    static let codeBlock: UIColor = .green
+    static let quote: UIColor = .blue
 }

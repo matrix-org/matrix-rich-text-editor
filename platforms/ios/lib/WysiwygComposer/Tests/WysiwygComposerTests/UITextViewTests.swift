@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 
+import HTMLParser
 import UIKit
 @testable import WysiwygComposer
 import XCTest
@@ -21,7 +22,7 @@ import XCTest
 final class UITextViewTests: XCTestCase {
     func testTextViewUTF16Encoding() throws {
         let textView = UITextView()
-        textView.attributedText = try NSAttributedString(html: TestConstants.testStringWithEmojis)
+        textView.attributedText = try HTMLParser.parse(html: TestConstants.testStringWithEmojis)
         // Selection is at the end of the text, with a UTF-16 length of 14.
         XCTAssertEqual(textView.selectedRange, NSRange(location: 14, length: 0))
         // Text count what is perceived as character.

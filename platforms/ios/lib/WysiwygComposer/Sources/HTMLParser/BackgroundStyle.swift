@@ -14,19 +14,16 @@
 // limitations under the License.
 //
 
-@testable import WysiwygComposer
-import XCTest
+import UIKit
 
-final class NSRangeTests: XCTestCase {
-    func testCreateRangeInBetween() {
-        XCTAssertEqual(
-            NSRange(between: .init(location: 0, length: 3), and: .init(location: 6, length: 12)),
-            NSRange(location: 3, length: 3)
-        )
-        XCTAssertEqual(
-            NSRange(between: .init(location: 3, length: 3), and: .init(location: 6, length: 12)),
-            NSRange(location: 6, length: 0)
-        )
-        XCTAssertNil(NSRange(between: .init(location: 6, length: 12), and: .init(location: 3, length: 3)))
-    }
+/// Defines a custom background style for an attributed string element.
+struct BackgroundStyle: Equatable {
+    /// Background color of the element.
+    let backgroundColor: UIColor
+    /// Border color of the  element.
+    let borderColor: UIColor
+    /// Border width of the element.
+    let borderWidth: CGFloat
+    /// Corner radius of the element
+    let cornerRadius: CGFloat
 }
