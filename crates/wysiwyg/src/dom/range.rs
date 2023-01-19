@@ -186,9 +186,10 @@ impl DomLocation {
     /// Checks if the node referenced by this DomLocation is empty.
     pub fn is_empty(&self) -> bool {
         if self.kind.is_block_kind() {
-            self.length == 1
+            // Block nodes should always have at least length 1
+            self.length <= 1
         } else {
-            self.length > 0
+            self.length == 0
         }
     }
 }
