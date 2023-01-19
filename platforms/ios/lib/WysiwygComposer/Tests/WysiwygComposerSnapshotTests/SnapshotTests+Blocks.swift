@@ -48,9 +48,9 @@ final class BlocksSnapshotTests: SnapshotTests {
         viewModel.setHtmlContent(
             """
             <blockquote>Some<br />multi-line<br />quote</blockquote>\
-            <br />Some text<br /><br />
+            <br />Some text<br />&nbsp;
             <pre>A\n\tcode\nblock</pre>\
-            <br /><br />Some <code>inline</code> code
+            <br />Some <code>inline</code> code
             """
         )
         assertSnapshot(

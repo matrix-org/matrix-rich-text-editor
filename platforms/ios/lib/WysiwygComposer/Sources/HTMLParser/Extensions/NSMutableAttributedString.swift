@@ -18,24 +18,19 @@ import DTCoreText
 import UIKit
 
 extension NSMutableAttributedString {
-    /// Sets the background style for detected quote within the attributed string.
-    func applyQuoteBackgroundStyle() {
-        enumerateTypedAttribute(.paragraphStyle) { (style: NSParagraphStyle, range: NSRange, _) in
-            if style.headIndent == 25 {
+    /// Sets the background style for detected quote & code blocks within the attributed string.
+    func applyBackgroundStyles() {
+        enumerateTypedAttribute(.DTTextBlocks) { (value: NSArray, range: NSRange, _) in
+            guard let textBlock = value.firstObject as? DTTextBlock else { return }
+
+            switch textBlock.backgroundColor {
+            case BackgroundStyle.codeBlock.tempColor:
+                addAttribute(.backgroundStyle, value: BackgroundStyle.codeBlock, range: range)
+            case BackgroundStyle.quote.tempColor:
                 addAttribute(.backgroundStyle, value: BackgroundStyle.quote, range: range)
-                removeAttribute(.backgroundColor, range: range)
+            default:
+                break
             }
-        }
-    }
-
-    /// Sets the background style for detected code blocks within the attributed string.
-    func applyCodeBlockBackgroundStyle() {
-        enumerateTypedAttribute(.font) { (font: UIFont, range: NSRange, _) in
-            guard font.isMonospace,
-                  backgroundColor(at: range.location).toHexString() == BackgroundStyle.codeBlock.tempHexColor else { return }
-
-            addAttribute(.backgroundStyle, value: BackgroundStyle.codeBlock, range: range)
-            removeAttribute(.backgroundColor, range: range)
         }
     }
 

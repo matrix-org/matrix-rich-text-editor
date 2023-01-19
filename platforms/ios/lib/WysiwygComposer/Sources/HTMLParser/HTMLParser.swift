@@ -28,12 +28,12 @@ public final class HTMLParser {
     private static var defaultCSS: String {
         """
         blockquote {
-            background-color: \(BackgroundStyle.quote.tempHexColor));
+            background-color: \(BackgroundStyle.quote.tempHexColor);
             display: block;
         }
         pre {
             background-color: \(BackgroundStyle.codeBlock.tempHexColor);
-            display: inline;
+            display: block;
             font-family: monospace;
             white-space: pre;
             -coretext-fontname: Menlo-Regular;
@@ -114,8 +114,7 @@ public final class HTMLParser {
             }
         }
 
-        mutableAttributedString.applyQuoteBackgroundStyle()
-        mutableAttributedString.applyCodeBlockBackgroundStyle()
+        mutableAttributedString.applyBackgroundStyles()
         mutableAttributedString.applyInlineCodeBackgroundStyle(codeBackgroundColor: style.codeBackgroundColor)
 
         // FIXME: This solution might not fit for everything.

@@ -24,11 +24,11 @@ internal enum BackgroundStyle {
     var tempColor: UIColor {
         switch self {
         case .inlineCode:
-            return UIColor.systemBlue
+            return UIColor.blue
         case .codeBlock:
-            return UIColor.systemGreen
+            return UIColor.green
         case .quote:
-            return UIColor.systemRed
+            return UIColor.red
         }
     }
 
