@@ -8,9 +8,11 @@
 
 ### Changed
 
-- Common: Disable lists, inline coe and links inside code blocks
+- Common: Disable lists, inline code and links inside code blocks
 
 # [0.19.0] - 2022-01-17
+
+### Changed
 
 - Common: Blank selections allow the user to create links with text
 
