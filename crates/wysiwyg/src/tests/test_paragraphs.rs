@@ -35,13 +35,12 @@ fn pressing_enter_after_replacing_with_empty_html() {
 }
 
 #[test]
-#[ignore] // TODO: crashes on double empty text node, should be fixed by backspace_merges_text_nodes
 fn pressing_enter_after_backspacing_a_line_break() {
     let mut model = cm("|");
-    model.enter();
+    model.new_line();
     model.backspace();
-    model.enter();
-    assert_eq!(tx(&model), "<br />|");
+    model.new_line();
+    assert_eq!(tx(&model), "<p>|</p>");
 }
 
 #[test]
@@ -238,7 +237,7 @@ fn enter_in_code_block_after_line_break_at_end_exits_it() {
 #[test]
 fn simple_enter_in_quote_adds_new_paragraph() {
     let mut model = cm("<blockquote><p>Left|Right</p></blockquote>");
-    model.enter();
+    model.new_line();
     assert_eq!(
         tx(&model),
         "<blockquote><p>Left</p><p>|Right</p></blockquote>"

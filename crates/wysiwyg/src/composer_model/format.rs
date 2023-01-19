@@ -653,7 +653,6 @@ mod test {
     }
 
     #[test]
-    #[ignore = "Once we re-write the way we handle formatting for empty selection we can restore it"]
     fn format_and_unformat_empty_selection() {
         let mut model = cm("AAA |");
         model.bold();

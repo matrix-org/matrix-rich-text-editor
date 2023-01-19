@@ -828,14 +828,12 @@ fn html_delete_word_does_not_change_model() {
 }
 
 #[test]
-#[ignore] // TODO: implement comprehensive list behaviour
 fn html_backspace_word_for_single_empty_list_item() {
     let mut model = cm("<ol><li>|</li></ol>");
     model.backspace_word();
     assert_eq!(restore_whitespace(&tx(&model)), "<ol><li>|</li></ol>");
 }
 #[test]
-#[ignore] // TODO: implement comprehensive list behaviour
 fn html_delete_word_for_single_empty_list_item() {
     let mut model = cm("<ol><li>|</li></ol>");
     model.delete_word();
@@ -843,7 +841,6 @@ fn html_delete_word_for_single_empty_list_item() {
 }
 
 #[test]
-#[ignore] // TODO: implement comprehensive list behaviour
 fn html_backspace_word_for_empty_list_item() {
     let mut model = cm("<ol><li>1</li><li>|</li><li>123</li></ol>");
     model.backspace_word();
@@ -853,7 +850,6 @@ fn html_backspace_word_for_empty_list_item() {
     );
 }
 #[test]
-#[ignore] // TODO: implement comprehensive list behaviour
 fn html_delete_word_for_empty_list_item() {
     let mut model = cm("<ol><li>1</li><li>|</li><li>123</li></ol>");
     model.delete_word();
