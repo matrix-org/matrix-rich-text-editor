@@ -130,7 +130,7 @@ where
             let all_nodes_are_block =
                 container.children().iter().all(|n| n.is_block_node());
             if !all_nodes_are_inline && !all_nodes_are_block {
-                panic!("All nodes in {:?} must be either inline nodes or block nodes", container.handle().clone());
+                panic!("All child nodes of handle {:?} must be either inline nodes or block nodes:\n{}", container.handle().clone(), container.to_tree().to_string());
             }
         }
     }

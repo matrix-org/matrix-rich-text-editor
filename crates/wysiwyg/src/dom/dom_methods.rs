@@ -562,7 +562,31 @@ where
         self.assert_invariants();
     }
 
-    pub(crate) fn ensure_child_nodes_are_all_block_or_all_inline(
+    /// Recursively visit container nodes, looking for block nodes and, if they contain a
+    /// mix of inline node and block nodes, wraps the inline nodes into paragraphs so only block
+    /// nodes remain. If the container only has inline nodes or block nodes, nothing is done.
+    pub(crate) fn wrap_inline_nodes_into_paragraphs_if_needed(
+        &mut self,
+        handle: &DomHandle,
+    ) {
+        if !self.lookup_node(&handle).is_block_node() {
+            return;
+        }
+        self.wrap_inline_nodes_into_paragraphs_at_container(&handle);
+        let child_count = self
+            .lookup_node(&handle)
+            .as_container()
+            .map_or(0, |c| c.children().len());
+        if child_count > 0 {
+            for idx in 0..child_count {
+                self.wrap_inline_nodes_into_paragraphs_if_needed(
+                    &handle.child_handle(idx),
+                );
+            }
+        }
+    }
+
+    fn wrap_inline_nodes_into_paragraphs_at_container(
         &mut self,
         container_handle: &DomHandle,
     ) {
@@ -609,27 +633,6 @@ where
             }
             let paragraph = DomNode::new_paragraph(removed);
             container.insert_child(start, paragraph);
-        }
-    }
-
-    pub(crate) fn ensure_child_nodes_are_all_block_or_all_inline_recursively(
-        &mut self,
-        handle: &DomHandle,
-    ) {
-        if !self.lookup_node(&handle).is_block_node() {
-            return;
-        }
-        self.ensure_child_nodes_are_all_block_or_all_inline(&handle);
-        let child_count = self
-            .lookup_node(&handle)
-            .as_container()
-            .map_or(0, |c| c.children().len());
-        if child_count > 0 {
-            for idx in 0..child_count {
-                self.ensure_child_nodes_are_all_block_or_all_inline_recursively(
-                    &handle.child_handle(idx),
-                );
-            }
         }
     }
 

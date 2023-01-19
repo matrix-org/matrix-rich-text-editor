@@ -153,9 +153,7 @@ impl ComposerModel<Utf16String> {
         model
             .state
             .dom
-            .ensure_child_nodes_are_all_block_or_all_inline_recursively(
-                &DomHandle::root(),
-            );
+            .wrap_inline_nodes_into_paragraphs_if_needed(&DomHandle::root());
         model.state.dom.explicitly_assert_invariants();
 
         model

@@ -16,10 +16,11 @@ use crate::action_state::ActionState;
 use crate::composer_model::menu_state::MenuStateComputeType;
 use crate::composer_state::ComposerState;
 use crate::dom::parser::parse;
-use crate::dom::UnicodeString;
+use crate::dom::{Dom, UnicodeString};
 use crate::markdown_html_parser::MarkdownHTMLParser;
 use crate::{
-    ComposerAction, ComposerUpdate, Location, ToHtml, ToMarkdown, ToTree,
+    ComposerAction, ComposerUpdate, DomHandle, Location, ToHtml, ToMarkdown,
+    ToTree,
 };
 use std::collections::HashMap;
 
@@ -84,6 +85,7 @@ where
             action_states: HashMap::new(), // TODO: Calculate state based on ComposerState
         };
         model.compute_menu_state(MenuStateComputeType::AlwaysUpdate);
+        Self::post_process_dom(&mut model.state.dom);
         model
     }
 
@@ -100,6 +102,7 @@ where
                 self.state.end = self.state.start;
                 self.previous_states.clear();
                 self.next_states.clear();
+                Self::post_process_dom(&mut self.state.dom);
                 self.create_update_replace_all_with_menu_state()
             }
             Err(e) => {
@@ -110,6 +113,11 @@ where
                 self.create_update_replace_all_with_menu_state()
             }
         }
+    }
+
+    fn post_process_dom(dom: &mut Dom<S>) {
+        dom.wrap_inline_nodes_into_paragraphs_if_needed(&DomHandle::root());
+        dom.explicitly_assert_invariants();
     }
 
     pub fn set_content_from_markdown(

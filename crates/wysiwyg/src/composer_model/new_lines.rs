@@ -70,11 +70,6 @@ where
                     range.deepest_block_node(Some(block_handle.clone()));
                 if let Some(ancestor_block_location) = ancestor_block_location {
                     if ancestor_block_location.kind != Generic {
-                        let empty_paragraph_loc = range
-                            .locations
-                            .iter()
-                            .find(|l| l.kind == Paragraph && l.length == 1);
-
                         if block_location.is_empty() {
                             self.do_new_line_in_block_node(
                                 &block_location,
