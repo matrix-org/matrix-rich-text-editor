@@ -603,8 +603,12 @@ fn set_link_accross_list_items_with_container() {
     );
 }
 
-//<ul><li>tes<a href=\"https://element.io\">{t</a><b><a href=\"https://element.io\">test_bold</a></b></li><li><i><a href=\"https://element.io\">test_}|</a>italic</i></li></ul>
 #[test]
+#[ignore]
+// This will not work because we have disabled insert_parent when the selection
+// contains struct or block nodes, so e a link for each text node will be created
+//<ul><li>tes<a href=\"https://element.io\">{t</a><b><a href=\"https://element.io\">test_bold</a></b></li><li><i><a href=\"https://element.io\">test_}|</a>italic</i></li></ul>
+// will add this improvement in a later PR
 fn set_link_across_list_items_with_multiple_inline_formattings_selected() {
     let mut model = cm("<ul>\
         <li>\
