@@ -14,11 +14,14 @@
 // limitations under the License.
 //
 
-import UIKit
+import CoreGraphics
 
-extension UIFont {
-    /// Return true if the font is a Monospace font.
-    var isMonospace: Bool {
-        fontDescriptor.symbolicTraits.contains(.traitMonoSpace)
+extension CGRect {
+    /// Return a copy of the rect extended to the leading and trailing borders of given frame.
+    ///
+    /// - Parameters:
+    ///   - frame: frame to extend into.
+    func extendHorizontally(in frame: CGRect) -> CGRect {
+        CGRect(x: frame.minX, y: minY, width: frame.width, height: height)
     }
 }

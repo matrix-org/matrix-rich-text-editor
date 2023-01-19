@@ -57,9 +57,3 @@ private final class BackgroundStyleLayer: CALayer {
         super.init(coder: coder)
     }
 }
-
-extension CGRect {
-    func extendHorizontally(in frame: CGRect) -> CGRect {
-        CGRect(x: frame.minX, y: minY, width: frame.width, height: height)
-    }
-}

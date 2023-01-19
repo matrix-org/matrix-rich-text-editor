@@ -34,7 +34,33 @@ public enum AttributedRangeError: LocalizedError, Equatable {
 }
 
 extension NSAttributedString {
-    // MARK: - List prefixes detection
+    // MARK: - Public
+
+    /// Computes range inside the HTML raw text from the
+    /// range inside the attributed representation.
+    ///
+    /// - Parameters:
+    ///   - attributedRange: the range inside the attributed representation
+    /// - Returns: the range inside the HTML raw text
+    public func htmlRange(from attributedRange: NSRange) throws -> NSRange {
+        let start = try htmlPosition(at: attributedRange.location)
+        let end = try htmlPosition(at: attributedRange.upperBound)
+        return NSRange(location: start, length: end - start)
+    }
+
+    /// Computes a range inside the attributed representation from
+    /// the range inside the HTML raw text.
+    ///
+    /// - Parameters:
+    ///   - htmlRange: the range inside the HTML raw text
+    /// - Returns: the range inside the attributed representation
+    public func attributedRange(from htmlRange: NSRange) throws -> NSRange {
+        let start = try attributedPosition(at: htmlRange.location)
+        let end = try attributedPosition(at: htmlRange.upperBound)
+        return NSRange(location: start, length: end - start)
+    }
+
+    // MARK: - Internal
 
     /// Compute an array of all detected occurences of bulleted lists and
     /// numbered lists prefixes. ("1.", "•", ... with included tabulations and newline
@@ -56,8 +82,6 @@ extension NSAttributedString {
 
         return ranges
     }
-
-    // MARK: - Indexes computation
 
     /// Computes index inside the HTML raw text from the index
     /// inside the attributed representation.
@@ -131,35 +155,5 @@ extension NSAttributedString {
         }
 
         return actualIndex
-    }
-
-    /// Computes range inside the HTML raw text from the
-    /// range inside the attributed representation.
-    ///
-    /// - Parameters:
-    ///   - attributedRange: the range inside the attributed representation
-    /// - Returns: the range inside the HTML raw text
-    public func htmlRange(from attributedRange: NSRange) throws -> NSRange {
-        let start = try htmlPosition(at: attributedRange.location)
-        let end = try htmlPosition(at: attributedRange.upperBound)
-        return NSRange(location: start, length: end - start)
-    }
-
-    /// Computes a range inside the attributed representation from
-    /// the range inside the HTML raw text.
-    ///
-    /// - Parameters:
-    ///   - htmlRange: the range inside the HTML raw text
-    /// - Returns: the range inside the attributed representation
-    public func attributedRange(from htmlRange: NSRange) throws -> NSRange {
-        let start = try attributedPosition(at: htmlRange.location)
-        let end = try attributedPosition(at: htmlRange.upperBound)
-        return NSRange(location: start, length: end - start)
-    }
-}
-
-private extension Array where Element == NSRange {
-    func containsIndex(_ index: Int) -> Bool {
-        contains { $0.location <= index && $0.upperBound >= index }
     }
 }
