@@ -112,8 +112,10 @@ public final class HTMLParser {
         mutableAttributedString.addAttribute(.paragraphStyle,
                                              value: NSParagraphStyle.default,
                                              range: .init(location: 0, length: mutableAttributedString.length))
-
-        mutableAttributedString.deleteCharacters(in: NSRange(location: mutableAttributedString.length - 1, length: 1))
+        
+        if html.hasSuffix("</p>") {
+            mutableAttributedString.deleteCharacters(in: NSRange(location: mutableAttributedString.length - 1, length: 1))
+        }
         return mutableAttributedString
     }
 }
