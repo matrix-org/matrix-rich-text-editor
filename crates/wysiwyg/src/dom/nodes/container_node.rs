@@ -1222,9 +1222,7 @@ where
         where
             S: UnicodeString,
         {
-            buffer.push("> ");
             fmt_children(this, buffer, options)?;
-            buffer.push("\n");
 
             Ok(())
         }
