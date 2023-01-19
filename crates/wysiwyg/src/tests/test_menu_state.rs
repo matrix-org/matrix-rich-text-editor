@@ -203,6 +203,7 @@ fn code_block_disables_expected_formatting_functions() {
     assert!(model.action_is_disabled(ComposerAction::OrderedList));
     assert!(model.action_is_disabled(ComposerAction::UnorderedList));
     assert!(model.action_is_disabled(ComposerAction::Quote));
+    assert!(model.action_is_disabled(ComposerAction::Link));
 }
 
 fn assert_formatting_actions_and_links_are_disabled(
