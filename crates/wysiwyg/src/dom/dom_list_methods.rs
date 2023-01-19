@@ -172,6 +172,7 @@ where
     /// Slice list item at given handle and offset.
     /// * `handle` - the list item handle.
     /// * `offset` - offset at which the list item should be sliced
+    #[allow(dead_code)]
     pub(crate) fn slice_list_item(
         &mut self,
         handle: &DomHandle,

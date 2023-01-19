@@ -134,7 +134,6 @@ where
     }
     // If container node is completely selected, include it
     let mut container_end = *offset;
-    // TODO: change it to checking if node is block node
     if node.is_block_node() && !node.handle().is_root() {
         container_end += 1;
         if !dom.is_last_in_parent(&node.handle()) {

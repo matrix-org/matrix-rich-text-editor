@@ -298,7 +298,7 @@ where
         // should only be one because s == e, so we don't have a
         // selection that spans multiple leaves.
         let first_leaf = range.locations.iter().find(|loc| {
-            loc.is_leaf() || (loc.kind.is_block_kind() && loc.length == 1)
+            loc.is_leaf() || (loc.kind.is_block_kind() && loc.is_empty())
         });
         if let Some(leaf) = first_leaf {
             // We are backspacing inside a text node with no

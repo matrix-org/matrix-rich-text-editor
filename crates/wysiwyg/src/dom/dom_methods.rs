@@ -397,7 +397,7 @@ where
             match &mut node {
                 DomNode::Container(_) => {
                     if loc.kind.is_block_kind() && loc.kind != Generic {
-                        if loc.length == 1 {
+                        if loc.is_empty() {
                             // Empty block node
                             if new_text.is_empty() {
                                 action_list.push(DomAction::remove_node(

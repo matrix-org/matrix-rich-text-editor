@@ -189,37 +189,6 @@ where
         self.create_update_replace_all()
     }
 
-    pub(crate) fn do_enter_in_list(
-        &mut self,
-        list_item_handle: &DomHandle,
-        list_item_end_offset: usize,
-    ) -> ComposerUpdate<S> {
-        // Store current Dom
-        self.push_state_to_history();
-        let list_item_node = self.state.dom.lookup_node(list_item_handle);
-        let list_handle = list_item_node.handle().parent_handle();
-        if let DomNode::Container(list_item_node) = list_item_node {
-            if list_item_node.is_empty_list_item() {
-                // Pressing enter in an empty list item means you want to
-                // end the list.
-                self.state.dom.extract_list_items(
-                    &list_handle,
-                    list_item_handle.index_in_parent(),
-                    1,
-                );
-            } else {
-                // Pressing enter in a non-empty list item splits this item
-                // into two.
-                self.state
-                    .dom
-                    .slice_list_item(list_item_handle, list_item_end_offset);
-            }
-            self.create_update_replace_all()
-        } else {
-            panic!("No list item found")
-        }
-    }
-
     fn toggle_list(&mut self, list_type: ListType) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_extended_range(s, e);
@@ -327,12 +296,13 @@ where
     pub(crate) fn can_unindent_handle(&self, handle: &DomHandle) -> bool {
         // Check that there are at least 2 ancestor lists
         if let Some(closest_list_handle) =
-            self.state.dom.find_closest_list_ancestor(handle)
+            self.find_closest_ancestor_of_kind(handle, DomNodeKind::List)
         {
-            self.state
-                .dom
-                .find_closest_list_ancestor(&closest_list_handle)
-                .is_some()
+            self.find_closest_ancestor_of_kind(
+                &closest_list_handle,
+                DomNodeKind::List,
+            )
+            .is_some()
         } else {
             false
         }

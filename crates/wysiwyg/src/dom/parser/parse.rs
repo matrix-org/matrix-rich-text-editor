@@ -363,6 +363,17 @@ mod sys {
                 );
                 children.insert(0, node);
             }
+
+            let needs_removal = if dom.contains(&handle) {
+                let block = dom.lookup_node(&handle);
+                block.kind() == CodeBlock && block.is_empty()
+            } else {
+                false
+            };
+            if needs_removal {
+                dom.remove(&handle);
+            }
+
             dom.insert_at(&handle, DomNode::new_code_block(children));
             dom
         }

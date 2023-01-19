@@ -168,16 +168,16 @@ fn backspace_merges_formatting_nodes() {
 
 #[test]
 fn enter_in_code_block_in_text_node_adds_line_break_as_text() {
-    let mut model = cm("<pre>~Test|</pre>");
-    model.enter();
-    assert_eq!(tx(&model), "<pre>~Test\n|</pre>")
+    let mut model = cm("<pre>Test|</pre>");
+    model.new_line();
+    assert_eq!(tx(&model), "<pre>Test\n|</pre>")
 }
 
 #[test]
 fn enter_in_code_block_at_start_adds_the_line_break() {
-    let mut model = cm("<pre>~|Test</pre>");
-    model.enter();
-    assert_eq!(tx(&model), "<pre>~\n|Test</pre>")
+    let mut model = cm("<pre>|Test</pre>");
+    model.new_line();
+    assert_eq!(tx(&model), "<pre>\n|Test</pre>")
 }
 
 #[test]
@@ -208,9 +208,12 @@ fn enter_in_code_block_at_start_with_previous_line_break_moves_it_outside_the_co
 #[test]
 fn enter_in_code_block_at_start_with_a_line_break_after_it_adds_another_one() {
     // The initial line break will be removed, so it's the same as having a single line break at the start
-    let mut model = cm("<pre>\n~|\nTest</pre>");
-    model.enter();
-    assert_eq!(tx(&model), "<pre>~\n|\nTest</pre>")
+    let mut model = cm("\
+    <pre>\n\
+        \n|Test\
+    </pre>");
+    model.new_line();
+    assert_eq!(tx(&model), "<pre>\n\n|Test</pre>")
 }
 
 #[test]

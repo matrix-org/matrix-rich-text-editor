@@ -294,6 +294,7 @@ where
         self.children
     }
 
+    /// Removes all children from the container and returns them
     pub(crate) fn remove_children(&mut self) -> Vec<DomNode<S>> {
         self.children.drain(..).collect()
     }

@@ -369,6 +369,9 @@ impl Range {
         DomHandle::from_raw(shared_path)
     }
 
+    /// Returns the block node in this `Range` that's deepest in the tree.
+    ///
+    /// If `ancestor_of` is passed, the result must also be an ancestor of the provided `Handle`.
     pub(crate) fn deepest_block_node(
         &self,
         ancestor_of: Option<DomHandle>,

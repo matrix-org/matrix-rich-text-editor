@@ -34,6 +34,8 @@ where
     }
 }
 
+/// State of the HTML generation at every `fmt_html` call, usually used to pass info from ancestor
+/// nodes to their descendants.
 #[derive(Copy, Clone)]
 pub struct ToHtmlState {
     pub is_inside_code_block: bool,

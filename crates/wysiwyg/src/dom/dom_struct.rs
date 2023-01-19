@@ -48,6 +48,8 @@ where
         }
     }
 
+    /// Creates a new Dom using the passed `root_node` as its root document. This `root_node` must
+    /// be a container node.
     pub fn new_with_root(root_node: DomNode<S>) -> Self {
         assert!(root_node.is_container_node());
         let mut root_node = root_node;
@@ -112,6 +114,17 @@ where
         self.last_node_handle_in_sub_tree(&DomHandle::root())
     }
 
+    /// Returns the node handle of the sub-tree, searching recursively. It's specially useful when
+    /// we want to iterate through the sub-tree in reverse order.
+    ///
+    /// Example, in this sub-tree:
+    /// ```text
+    /// ├>b
+    /// │ └>"Bold"
+    /// └>i
+    ///   └>"Italic"
+    /// ```
+    /// This method will return `[1, 0]`, `"Italic"`.
     pub fn last_node_handle_in_sub_tree(
         &self,
         handle: &DomHandle,
@@ -124,7 +137,6 @@ where
             } else {
                 // Empty container node.
                 // We might reach this line if we use the function while we are editing the Dom.
-
                 handle.clone()
             }
         } else {
@@ -226,6 +238,9 @@ where
         parent.remove_child(index)
     }
 
+    /// Returns the root document of this Dom.
+    ///
+    /// **Note**: this call moves the Dom, so it becomes unusable.
     pub fn take_document(self) -> DomNode<S> {
         self.document
     }
@@ -271,22 +286,6 @@ where
         } else {
             None
         }
-    }
-
-    pub(crate) fn find_closest_list_ancestor(
-        &self,
-        handle: &DomHandle,
-    ) -> Option<DomHandle> {
-        if handle.has_parent() {
-            let parent = self.parent(handle);
-            let parent_handle = parent.handle();
-            if parent.is_list() {
-                return Some(parent_handle);
-            } else if parent_handle.has_parent() {
-                return self.find_closest_list_ancestor(&parent_handle);
-            }
-        }
-        None
     }
 
     /// Find the node based on its handle.
