@@ -26,7 +26,7 @@ fn creating_ordered_list_and_writing() {
     assert_eq!(tx(&model), "<ol><li>|</li></ol>");
     replace_text(&mut model, "abcd");
     assert_eq!(tx(&model), "<ol><li>abcd|</li></ol>");
-    model.new_line();
+    model.enter();
     assert_eq!(tx(&model), "<ol><li>abcd</li><li>|</li></ol>");
     replace_text(&mut model, "efgh");
     assert_eq!(tx(&model), "<ol><li>abcd</li><li>efgh|</li></ol>");
@@ -49,7 +49,7 @@ fn can_create_list_in_empty_model() {
 #[test]
 fn removing_list_item() {
     let mut model = cm("<ol><li>abcd</li><li>|</li></ol>");
-    model.new_line();
+    model.enter();
     assert_eq!(tx(&model), "<ol><li>abcd</li></ol><p>|</p>");
 
     let mut model = cm("<ol><li>abcd</li><li>|</li></ol>");
@@ -57,7 +57,7 @@ fn removing_list_item() {
     assert_eq!(tx(&model), "<ol><li>abcd|</li></ol>");
 
     let mut model = cm("<ol><li>|</li></ol>");
-    model.new_line();
+    model.enter();
     assert_eq!(tx(&model), "<p>|</p>");
 
     let mut model = cm("<ol><li>|</li></ol>");
@@ -144,49 +144,49 @@ fn backspacing_trailing_part_of_a_list_item_with_formatting() {
 #[test]
 fn entering_with_entire_selection_in_one_node_deletes_list() {
     let mut model = cm("<ol><li>{abcd}|</li></ol>");
-    model.new_line();
+    model.enter();
     assert_eq!(tx(&model), "<p>|</p>");
 }
 
 #[test]
 fn entering_with_entire_selection_across_multiple_nodes_deletes_list() {
     let mut model = cm("<ol><li>{abcd</li><li>}|</li></ol>");
-    model.new_line();
+    model.enter();
     assert_eq!(tx(&model), "<p>|</p>");
 }
 
 #[test]
 fn entering_with_entire_selection_with_formatting() {
     let mut model = cm("<ol><li><b>{abcd}|</b></li></ol>");
-    model.new_line();
+    model.enter();
     assert_eq!(tx(&model), "<p>|</p>");
 }
 
 #[test]
 fn entering_with_subsequent_items() {
     let mut model = cm("<ol><li>abcd|</li><li>ef</li></ol>");
-    model.new_line();
+    model.enter();
     assert_eq!(tx(&model), "<ol><li>abcd</li><li>|</li><li>ef</li></ol>")
 }
 
 #[test]
 fn entering_mid_text_node() {
     let mut model = cm("<ol><li>ab|gh</li></ol>");
-    model.new_line();
+    model.enter();
     assert_eq!(tx(&model), "<ol><li>ab</li><li>|gh</li></ol>");
 }
 
 #[test]
 fn entering_mid_text_node_with_subsequent_items() {
     let mut model = cm("<ol><li>ab|cd</li><li>ef</li></ol>");
-    model.new_line();
+    model.enter();
     assert_eq!(tx(&model), "<ol><li>ab</li><li>|cd</li><li>ef</li></ol>")
 }
 
 #[test]
 fn entering_mid_text_node_with_formatting() {
     let mut model = cm("<ol><li><strong>abc|def</strong></li></ol>");
-    model.new_line();
+    model.enter();
     assert_eq!(
         tx(&model),
         "<ol><li><strong>abc</strong></li><li><strong>|def</strong></li></ol>"
@@ -196,14 +196,14 @@ fn entering_mid_text_node_with_formatting() {
 #[test]
 fn entering_mid_text_node_with_multiple_formatting() {
     let mut model = cm("<ol><li><em><strong>abc|def</strong></em></li></ol>");
-    model.new_line();
+    model.enter();
     assert_eq!(tx(&model), "<ol><li><em><strong>abc</strong></em></li><li><em><strong>|def</strong></em></li></ol>")
 }
 
 #[test]
 fn entering_mid_text_node_with_leading_formatting() {
     let mut model = cm("<ol><li><strong>abc|d</strong>ef</li></ol>");
-    model.new_line();
+    model.enter();
     assert_eq!(
         tx(&model),
         "<ol><li><strong>abc</strong></li><li><strong>|d</strong>ef</li></ol>"
@@ -213,7 +213,7 @@ fn entering_mid_text_node_with_leading_formatting() {
 #[test]
 fn entering_mid_text_node_with_trailing_formatting() {
     let mut model = cm("<ol><li>ab<strong>c|def</strong></li></ol>");
-    model.new_line();
+    model.enter();
     assert_eq!(
         tx(&model),
         "<ol><li>ab<strong>c</strong></li><li><strong>|def</strong></li></ol>"
@@ -223,7 +223,7 @@ fn entering_mid_text_node_with_trailing_formatting() {
 #[test]
 fn entering_mid_text_node_with_selection() {
     let mut model = cm("<ol><li>ab{cdef}|gh</li></ol>");
-    model.new_line();
+    model.enter();
     assert_eq!(tx(&model), "<ol><li>ab</li><li>|gh</li></ol>");
 }
 
@@ -231,14 +231,14 @@ fn entering_mid_text_node_with_selection() {
 fn removing_list() {
     let mut model = cm("|");
     model.ordered_list();
-    model.new_line();
+    model.enter();
     assert_eq!(tx(&model), "<p>|</p>");
 }
 
 #[test]
 fn removing_trailing_list_item_with_enter() {
     let mut model = cm("<ol><li>abc</li><li>|</li></ol>");
-    model.new_line();
+    model.enter();
     assert_eq!(tx(&model), "<ol><li>abc</li></ol><p>|</p>")
 }
 
@@ -252,7 +252,7 @@ fn removing_trailing_list_item_with_list_toggle() {
 #[test]
 fn removing_trailing_list_item_then_replace_text() {
     let mut model = cm("<ol><li>abc</li><li>|</li></ol>");
-    model.new_line();
+    model.enter();
     assert_eq!(tx(&model), "<ol><li>abc</li></ol><p>|</p>");
     replace_text(&mut model, "def");
     assert_eq!(tx(&model), "<ol><li>abc</li></ol><p>def|</p>");
@@ -292,8 +292,8 @@ fn creating_list_of_different_type_doesnt_merge() {
 fn creating_a_new_list_immediately_after_an_old_one_joins_them() {
     let mut model = cm("abc|");
     model.unordered_list();
-    model.new_line();
-    model.new_line();
+    model.enter();
+    model.enter();
     model.replace_text(Utf16String::from_str("def"));
     model.unordered_list();
     assert_eq!(tx(&model), "<ul><li>abc</li><li>def|</li></ul>");
@@ -472,7 +472,7 @@ fn multiple_list_toggle() {
 #[test]
 fn new_list_after_linebreak() {
     let mut model = cm("start|");
-    model.new_line();
+    model.enter();
     assert_eq!(tx(&model), "<p>start</p><p>|</p>");
 
     model.unordered_list();

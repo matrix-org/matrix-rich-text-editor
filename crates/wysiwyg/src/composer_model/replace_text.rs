@@ -44,12 +44,13 @@ where
         self.do_replace_text_in(new_text, start, end)
     }
 
-    pub fn enter(&mut self) -> ComposerUpdate<S> {
+    #[deprecated(since = "0.20.0")]
+    pub fn add_line_break(&mut self) -> ComposerUpdate<S> {
         self.push_state_to_history();
-        self.do_enter()
+        self.do_add_line_break()
     }
 
-    fn do_enter(&mut self) -> ComposerUpdate<S> {
+    fn do_add_line_break(&mut self) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
 
         if s == e {
@@ -58,7 +59,7 @@ where
         } else {
             // Clear selection then enter.
             self.do_replace_text_in("".into(), s, e);
-            self.do_enter()
+            self.do_add_line_break()
         }
     }
 
@@ -199,7 +200,7 @@ where
                     self.do_replace_text_in(S::from(slice), s, e);
                 }
                 if slices.peek().is_some() {
-                    self.do_new_line();
+                    self.do_enter();
                 }
             }
         } else {

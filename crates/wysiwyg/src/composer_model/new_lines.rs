@@ -1,17 +1,18 @@
 use crate::dom::nodes::dom_node::DomNodeKind::{Generic, ListItem, Paragraph};
 use crate::dom::DomLocation;
-use crate::{ComposerModel, DomNode, UnicodeString};
+use crate::{ComposerModel, ComposerUpdate, DomNode, UnicodeString};
 
 impl<S> ComposerModel<S>
 where
     S: UnicodeString,
 {
-    pub fn new_line(&mut self) {
+    /// Adds a new line break by creating a paragraph.
+    pub fn enter(&mut self) -> ComposerUpdate<S> {
         self.push_state_to_history();
-        self.do_new_line();
+        self.do_enter()
     }
 
-    pub(crate) fn do_new_line(&mut self) {
+    pub(crate) fn do_enter(&mut self) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
 
@@ -20,7 +21,7 @@ where
             self.state
                 .dom
                 .append_at_end_of_document(DomNode::new_paragraph(Vec::new()));
-            return;
+            return self.create_update_replace_all();
         }
 
         // If the selection covered several characters, remove them first
@@ -60,7 +61,7 @@ where
             } else {
                 self.state.dom.insert_at(&block_handle, paragraph);
             }
-            return;
+            return self.create_update_replace_all();
         }
 
         let first_leaf = range.leaves().next();
@@ -146,6 +147,7 @@ where
             }
             _ => panic!("Unexpected kind block node with inline contents"),
         }
+        self.create_update_replace_all()
     }
 
     fn do_new_line_in_paragraph(
@@ -294,35 +296,35 @@ mod test {
     #[test]
     fn test_new_line_in_plain_text() {
         let mut model = cm("Test| lines");
-        model.new_line();
+        model.enter();
         assert_eq!(tx(&model), "<p>Test</p><p>| lines</p>");
     }
 
     #[test]
     fn test_new_line_at_start() {
         let mut model = cm("|Test lines");
-        model.new_line();
+        model.enter();
         assert_eq!(tx(&model), "<p></p><p>|Test lines</p>");
     }
 
     #[test]
     fn test_new_line_at_end() {
         let mut model = cm("Test lines|");
-        model.new_line();
+        model.enter();
         assert_eq!(tx(&model), "<p>Test lines</p><p>|</p>");
     }
 
     #[test]
     fn test_new_line_in_formatted_text() {
         let mut model = cm("<b>Test| lines</b>");
-        model.new_line();
+        model.enter();
         assert_eq!(tx(&model), "<p><b>Test</b></p><p><b>| lines</b></p>");
     }
 
     #[test]
     fn test_new_line_in_paragraph() {
         let mut model = cm("<p>Test| lines</p>");
-        model.new_line();
+        model.enter();
         assert_eq!(tx(&model), "<p>Test</p><p>| lines</p>");
     }
 
@@ -359,36 +361,36 @@ mod test {
     #[test]
     fn add_line_at_start_of_paragraph() {
         let mut model = cm("<p>|Test</p>");
-        model.new_line();
+        model.enter();
         assert_eq!(tx(&model), "<p></p><p>|Test</p>");
         model.select(0.into(), 0.into());
         assert_eq!(tx(&model), "<p>|</p><p>Test</p>");
-        model.new_line();
+        model.enter();
         assert_eq!(tx(&model), "<p></p><p>|</p><p>Test</p>");
     }
 
     #[test]
     fn add_line_at_start_of_empty_paragraph() {
         let mut model = cm("<p>|</p><p>Test</p>");
-        model.new_line();
+        model.enter();
         assert_eq!(tx(&model), "<p></p><p>|</p><p>Test</p>");
     }
 
     #[test]
     fn repeated_line_breaks_in_quote_split_it() {
         let mut model = cm("<blockquote><p>First|Second</p></blockquote>");
-        model.new_line();
+        model.enter();
         assert_eq!(
             tx(&model),
             "<blockquote><p>First</p><p>|Second</p></blockquote>"
         );
-        model.new_line();
+        model.enter();
         assert_eq!(
             tx(&model),
             "<blockquote><p>First</p><p></p><p>|Second</p></blockquote>"
         );
         model.select(6.into(), 6.into());
-        model.new_line();
+        model.enter();
         assert_eq!(tx(&model), "<blockquote><p>First</p></blockquote><p>|</p><blockquote><p>Second</p></blockquote>");
     }
 
@@ -396,7 +398,7 @@ mod test {
     fn line_break_in_quote_splits_quote() {
         let mut model =
             cm("<blockquote><p>First</p><p>|</p><p>Second</p></blockquote>");
-        model.new_line();
+        model.enter();
         assert_eq!(
             tx(&model),
             "<blockquote><p>First</p></blockquote><p>|</p><blockquote><p>Second</p></blockquote>"

@@ -128,7 +128,16 @@ fn undoing_restores_toggled_format_types() {
 }
 
 #[test]
-fn can_undo_enter() {
+#[allow(deprecated)]
+fn can_undo_adding_line_break() {
+    let mut model = cm("Test|");
+    model.add_line_break();
+    model.undo();
+    assert_eq!(tx(&model), "Test|");
+}
+
+#[test]
+fn can_undo_pressing_enter() {
     let mut model = cm("Test|");
     model.enter();
     model.undo();
@@ -164,9 +173,11 @@ fn deleting_a_selection_with_enter_only_adds_one_to_undo_stack() {
 fn undoing_enter_only_undoes_one() {
     let mut model = cm("Test|");
     model.enter();
+    assert_eq!(tx(&model), "<p>Test</p><p>|</p>");
     model.enter();
+    assert_eq!(tx(&model), "<p>Test</p><p></p><p>|</p>");
     model.undo();
-    assert_eq!(tx(&model), "Test<br />|");
+    assert_eq!(tx(&model), "<p>Test</p><p>|</p>");
 }
 
 #[test]

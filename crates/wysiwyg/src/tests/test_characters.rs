@@ -288,12 +288,13 @@ fn leading_and_trailing_newline_characters_insert_br_tags() {
 }
 
 #[test]
-fn inserting_a_new_line_and_text_before_a_new_line_works() {
+#[allow(deprecated)]
+fn inserting_a_line_break_and_text_before_a_line_break_works() {
     let mut model = cm("|{AAA}");
-    model.enter();
+    model.add_line_break();
     model.select(Location::from(0), Location::from(0));
     // Inserting a line break at index 0 (no text node before it) can cause issues
-    model.enter();
+    model.add_line_break();
     model.select(Location::from(0), Location::from(0));
     // Inserting text before a line break with no text node before it is a special case too
     model.replace_text("Test".into());

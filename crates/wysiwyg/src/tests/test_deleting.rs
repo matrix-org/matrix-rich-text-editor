@@ -58,18 +58,20 @@ fn backspacing_a_backwards_selection_deletes_it() {
 }
 
 #[test]
-fn backspacing_a_lone_newline_deletes_it() {
+#[allow(deprecated)]
+fn backspacing_a_lone_line_break_deletes_it() {
     let mut model = ComposerModel::new();
-    model.enter();
+    model.add_line_break();
     model.backspace();
     assert_eq!(tx(&model), "|");
     model.state.dom.explicitly_assert_invariants();
 }
 
 #[test]
-fn backspacing_a_newline_deletes_it() {
+#[allow(deprecated)]
+fn backspacing_a_line_break_deletes_it() {
     let mut model = cm("abc|");
-    let update = model.enter();
+    let update = model.add_line_break();
 
     let replace_all = match update.text_update {
         TextUpdate::Keep => panic!("expected ReplaceAll"),
