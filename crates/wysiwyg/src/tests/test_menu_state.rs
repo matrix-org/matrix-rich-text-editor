@@ -190,15 +190,29 @@ fn formatting_is_disabled_when_selection_covers_inline_code_node_and_others() {
 }
 
 #[test]
-fn inline_code_is_disabled_when_selection_intersects_with_code_block() {
-    let model = cm("<pre>Some {code</pre> and}| text");
+fn clicking_code_block_disables_expected_formatting_functions() {
+    let mut model = cm("|");
+    model.code_block();
     assert!(model.action_is_disabled(ComposerAction::InlineCode));
+    assert!(model.action_is_disabled(ComposerAction::OrderedList));
+    assert!(model.action_is_disabled(ComposerAction::UnorderedList));
+    assert!(model.action_is_disabled(ComposerAction::Quote));
+    assert!(model.action_is_disabled(ComposerAction::Link));
 }
 
 #[test]
-fn code_block_disables_expected_formatting_functions() {
-    let mut model = cm("|");
-    model.code_block();
+fn code_block_disables_expected_formatting_functions_with_cursor() {
+    let model = cm("<pre>Some code| as text</pre> and text");
+    assert!(model.action_is_disabled(ComposerAction::InlineCode));
+    assert!(model.action_is_disabled(ComposerAction::OrderedList));
+    assert!(model.action_is_disabled(ComposerAction::UnorderedList));
+    assert!(model.action_is_disabled(ComposerAction::Quote));
+    assert!(model.action_is_disabled(ComposerAction::Link));
+}
+
+#[test]
+fn code_block_disables_expected_formatting_functions_with_selection() {
+    let model = cm("<pre>Some {code as text</pre> and}| text");
     assert!(model.action_is_disabled(ComposerAction::InlineCode));
     assert!(model.action_is_disabled(ComposerAction::OrderedList));
     assert!(model.action_is_disabled(ComposerAction::UnorderedList));
