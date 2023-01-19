@@ -88,6 +88,10 @@ export function processInput(
             return action(composerModel.redo(), 'redo');
         case 'historyUndo':
             return action(composerModel.undo(), 'undo');
+        case 'insertCodeBlock':
+            return action(composerModel.code_block(), 'code_block');
+        case 'insertQuote':
+            return action(composerModel.quote(), 'quote');
         case 'insertFromPaste':
             // Paste is already handled by catching the 'paste' event, which
             // results in a ClipboardEvent, handled above. Ideally, we would

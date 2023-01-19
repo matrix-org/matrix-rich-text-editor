@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use crate::dom::nodes::dom_node::DomNodeKind;
+use crate::dom::nodes::dom_node::{DomNodeKind::LineBreak, DomNodeKind::Text};
 use crate::dom::nodes::ContainerNodeKind;
 use crate::dom::nodes::{ContainerNodeKind::Link, DomNode};
 use crate::dom::unicode_string::UnicodeStrExt;
@@ -20,6 +21,8 @@ use crate::dom::{DomLocation, Range};
 use crate::{
     ComposerModel, ComposerUpdate, DomHandle, LinkAction, UnicodeString,
 };
+use email_address::*;
+use url::{ParseError, Url};
 
 impl<S> ComposerModel<S>
 where
@@ -28,43 +31,63 @@ where
     pub fn get_link_action(&self) -> LinkAction<S> {
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
-        for loc in range.locations {
+        for loc in range.locations.iter() {
             if loc.kind == DomNodeKind::Link {
                 let node = self.state.dom.lookup_node(&loc.node_handle);
                 let link = node.as_container().unwrap().get_link().unwrap();
                 return LinkAction::Edit(link);
             }
         }
-        if s == e {
+        if s == e || self.is_blank_selection(range) {
             LinkAction::CreateWithText
         } else {
             LinkAction::Create
         }
     }
 
+    fn is_blank_selection(&self, range: Range) -> bool {
+        for leaf in range.leaves() {
+            if leaf.kind == LineBreak {
+                continue;
+            } else if leaf.kind == Text {
+                let text_node = self
+                    .state
+                    .dom
+                    .lookup_node(&leaf.node_handle)
+                    .as_text()
+                    .unwrap();
+                let selection_range = leaf.start_offset..leaf.end_offset;
+                if !text_node.is_blank_in_range(selection_range) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+        true
+    }
+
     pub fn set_link_with_text(
         &mut self,
-        link: S,
+        mut link: S,
         text: S,
     ) -> ComposerUpdate<S> {
-        let (s, mut e) = self.safe_selection();
-        if s != e {
-            // This function is made to be used only when s == e
-            return ComposerUpdate::keep();
-        }
+        let (s, _) = self.safe_selection();
         self.push_state_to_history();
         self.do_replace_text(text.clone());
-        e += text.len();
+        let e = s + text.len();
         let range = self.state.dom.find_range(s, e);
+        self.add_http_scheme(&mut link);
         self.set_link_range(range, link)
     }
 
-    pub fn set_link(&mut self, link: S) -> ComposerUpdate<S> {
+    pub fn set_link(&mut self, mut link: S) -> ComposerUpdate<S> {
         self.push_state_to_history();
         let (mut s, mut e) = self.safe_selection();
 
         let mut range = self.state.dom.find_range(s, e);
 
+        self.add_http_scheme(&mut link);
         // Find container link that completely covers the range
         if let Some(link) = self.find_closest_ancestor_link(&range) {
             // If found, update the range to the container link bounds
@@ -85,6 +108,25 @@ where
         self.delete_child_links(&inserted);
 
         self.create_update_replace_all()
+    }
+
+    fn add_http_scheme(&mut self, link: &mut S) {
+        let string = link.to_string();
+        let str = string.as_str();
+
+        match Url::parse(str) {
+            Ok(_) => {}
+            Err(ParseError::RelativeUrlWithoutBase) => {
+                let is_email = EmailAddress::is_valid(str);
+
+                if is_email {
+                    link.insert(0, &S::from("mailto:"));
+                } else {
+                    link.insert(0, &S::from("https://"));
+                };
+            }
+            Err(_) => {}
+        };
     }
 
     fn delete_child_links(&mut self, node_handle: &DomHandle) {

@@ -203,8 +203,16 @@ impl ComposerModel {
         ComposerUpdate::from(self.inner.underline())
     }
 
+    pub fn quote(&mut self) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.quote())
+    }
+
     pub fn inline_code(&mut self) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.inline_code())
+    }
+
+    pub fn code_block(&mut self) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.code_block())
     }
 
     pub fn undo(&mut self) -> ComposerUpdate {

@@ -164,10 +164,7 @@ internal class HtmlToSpansParser(
                 val start = addLeadingLineBreakIfNeeded(text.getSpanStart(last))
                 text.removeSpan(last)
 
-                val codeSpan = CodeBlockSpan(
-                    0xC0A0A0A0.toInt(),
-                    10.dpToPx().toInt(),
-                )
+                val codeSpan = CodeBlockSpan(styleConfig.codeBlock.leadingMargin, styleConfig.codeBlock.verticalPadding)
 
                 addZWSP(text.length)
 
@@ -244,8 +241,8 @@ internal class HtmlToSpansParser(
     }
 
     private fun createListSpan(last: ListItem): ParagraphStyle {
-        val gapWidth = styleConfig.bulletGapWidth.roundToInt()
-        val bulletRadius = styleConfig.bulletRadius.roundToInt()
+        val gapWidth = styleConfig.bulletList.bulletGapWidth.roundToInt()
+        val bulletRadius = styleConfig.bulletList.bulletRadius.roundToInt()
 
         return if (last.ordered) {
             // TODO: provide typeface and textSize somehow

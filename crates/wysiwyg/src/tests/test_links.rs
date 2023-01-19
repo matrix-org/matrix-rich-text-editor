@@ -414,11 +414,67 @@ fn set_link_with_text_in_container() {
 }
 
 #[test]
-fn set_link_with_text_on_selection() {
-    // This use case should never happen, but just in case it would, nothing will happen.
-    let mut model = cm("{test}|");
+fn set_link_with_text_on_blank_selection() {
+    let mut model = cm("{   }|");
     model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
-    assert_eq!(tx(&model), "{test}|");
+    assert_eq!(tx(&model), "<a href=\"https://element.io\">added_link|</a>");
+}
+
+#[test]
+fn set_link_with_text_on_blank_selection_after_text() {
+    let mut model = cm("test{   }|");
+    model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
+    assert_eq!(
+        tx(&model),
+        "test<a href=\"https://element.io\">added_link|</a>"
+    );
+}
+
+#[test]
+fn set_link_with_text_on_blank_selection_before_text() {
+    let mut model = cm("{   }|test");
+    model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
+    assert_eq!(
+        tx(&model),
+        "<a href=\"https://element.io\">added_link|</a>test"
+    );
+}
+
+#[test]
+fn set_link_with_text_on_blank_selection_between_texts() {
+    let mut model = cm("test{   }|test");
+    model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
+    assert_eq!(
+        tx(&model),
+        "test<a href=\"https://element.io\">added_link|</a>test"
+    );
+}
+
+#[test]
+fn set_link_with_text_on_blank_selection_in_container() {
+    let mut model = cm("<b>test{   }| test</b>");
+    model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
+    assert_eq!(
+        tx(&model),
+        "<b>test<a href=\"https://element.io\">added_link|</a> test</b>"
+    );
+}
+
+#[test]
+fn set_link_with_text_on_blank_selection_with_line_break() {
+    let mut model = cm("test{  <br> }|test");
+    model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
+    assert_eq!(
+        tx(&model),
+        "test<a href=\"https://element.io\">added_link|</a>test"
+    );
+}
+
+#[test]
+fn set_link_with_text_on_blank_selection_with_different_containers() {
+    let mut model = cm("<b>test_bold{ </b><br>  ~ <i> }|test_italic</i>");
+    model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
+    assert_eq!(tx(&model), "<b>test_bold<a href=\"https://element.io\">added_link|</a></b><i>test_italic</i>");
 }
 
 #[test]
@@ -438,4 +494,81 @@ fn set_link_with_text_within_a_link() {
         tx(&model),
         "<a href=\"https://element.io\">testadded_link|_link</a>"
     );
+}
+
+#[test]
+fn set_link_without_http_scheme_and_www() {
+    let mut model = cm("|");
+    model.set_link_with_text(utf16("element.io"), utf16("added_link"));
+    assert_eq!(tx(&model), "<a href=\"https://element.io\">added_link|</a>");
+}
+
+#[test]
+fn set_link_without_http_scheme() {
+    let mut model = cm("|");
+    model.set_link_with_text(utf16("www.element.io"), utf16("added_link"));
+    assert_eq!(
+        tx(&model),
+        "<a href=\"https://www.element.io\">added_link|</a>"
+    );
+}
+
+#[test]
+fn set_link_do_not_change_scheme_for_http() {
+    let mut model = cm("|");
+    model.set_link_with_text(
+        utf16("https://www.element.io"),
+        utf16("added_link"),
+    );
+    assert_eq!(
+        tx(&model),
+        "<a href=\"https://www.element.io\">added_link|</a>"
+    );
+}
+
+#[test]
+fn set_link_do_not_change_scheme_for_udp() {
+    let mut model = cm("|");
+    model.set_link_with_text(utf16("udp://element.io"), utf16("added_link"));
+    assert_eq!(tx(&model), "<a href=\"udp://element.io\">added_link|</a>");
+}
+
+#[test]
+fn set_link_do_not_change_scheme_for_mail() {
+    let mut model = cm("|");
+    model.set_link_with_text(
+        utf16("mailto:mymail@mail.com"),
+        utf16("added_link"),
+    );
+    assert_eq!(
+        tx(&model),
+        "<a href=\"mailto:mymail@mail.com\">added_link|</a>"
+    );
+}
+
+#[test]
+fn set_link_add_mail_scheme() {
+    let mut model = cm("|");
+    model.set_link_with_text(utf16("mymail@mail.com"), utf16("added_link"));
+    assert_eq!(
+        tx(&model),
+        "<a href=\"mailto:mymail@mail.com\">added_link|</a>"
+    );
+}
+
+#[test]
+fn set_link_add_mail_scheme_with_plus() {
+    let mut model = cm("|");
+    model.set_link_with_text(utf16("mymail+01@mail.com"), utf16("added_link"));
+    assert_eq!(
+        tx(&model),
+        "<a href=\"mailto:mymail+01@mail.com\">added_link|</a>"
+    );
+}
+
+#[test]
+fn set_link_with_selection_add_http_scheme() {
+    let mut model = cm("<a href=\"https://matrix.org\">test_link</a>|");
+    model.set_link(utf16("element.io"));
+    assert_eq!(tx(&model), "<a href=\"https://element.io\">test_link|</a>");
 }

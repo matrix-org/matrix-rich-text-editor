@@ -21,7 +21,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Build WASM bindings
+    - name: Rust & Cargo cache
+      uses: Swatinem/rust-cache@v2
+    - name: Build
       run: make web
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v3
@@ -29,9 +31,6 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'yarn'
         cache-dependency-path: platforms/web/yarn.lock
-    - name: Build
-      working-directory: platforms/web
-      run: yarn install
     - name: Typescript check
       working-directory: platforms/web
       run: yarn tsc
@@ -40,7 +39,7 @@ jobs:
       run: yarn lint
     - name: Test with coverage
       working-directory: platforms/web
-      run: yarn coverage
+      run: yarn test
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:

@@ -246,8 +246,9 @@ class EditorEditTextInputTests {
             .perform(ImeActions.setSelection(2, 6))
             .perform(EditorActions.insertLink("Element", "https://element.io"))
             .check(matches(TextViewMatcher {
-                it.editableText.getSpans<LinkSpan>().isEmpty()
+                it.editableText.getSpans<LinkSpan>().isNotEmpty()
             }))
+            .check(matches(withText("a Element to set")))
     }
 
     @Test

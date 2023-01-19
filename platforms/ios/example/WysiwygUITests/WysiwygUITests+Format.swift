@@ -32,7 +32,6 @@ extension WysiwygUITests {
         // Bolding doesn't change text and we can't test text attributes from this context.
         assertTextViewContent("Some bold text")
 
-        button(.showTreeButton).tap()
         assertTreeEquals(
             """
             ├>"Some bold "

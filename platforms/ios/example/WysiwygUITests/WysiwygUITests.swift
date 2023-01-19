@@ -96,7 +96,7 @@ internal extension WysiwygUITests {
     ///
     /// - Parameter content: the tree content to assert, must be provided without newlines at the start and at the end.
     func assertTreeEquals(_ content: String) {
-        button(.showTreeButton).tap()
+        sleep(1)
         XCTAssertEqual(staticText(.treeText).label, "\n\(content)\n")
     }
 }

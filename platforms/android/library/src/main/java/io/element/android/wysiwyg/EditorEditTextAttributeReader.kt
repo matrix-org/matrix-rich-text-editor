@@ -5,6 +5,9 @@ import android.util.AttributeSet
 import androidx.core.content.res.getDimensionOrThrow
 import androidx.core.content.res.getDimensionPixelSizeOrThrow
 import androidx.core.content.res.getDrawableOrThrow
+import io.element.android.wysiwyg.utils.BulletListStyleConfig
+import io.element.android.wysiwyg.utils.CodeBlockStyleConfig
+import io.element.android.wysiwyg.utils.InlineCodeStyleConfig
 import io.element.android.wysiwyg.utils.StyleConfig
 
 internal class EditorEditTextAttributeReader(context: Context, attrs: AttributeSet?) {
@@ -18,14 +21,23 @@ internal class EditorEditTextAttributeReader(context: Context, attrs: AttributeS
             R.style.EditorEditText
         )
         styleConfig = StyleConfig(
-            bulletGapWidth = typedArray.getDimensionOrThrow(R.styleable.EditorEditText_bulletGap),
-            bulletRadius = typedArray.getDimensionOrThrow(R.styleable.EditorEditText_bulletRadius),
-            inlineCodeHorizontalPadding = typedArray.getDimensionPixelSizeOrThrow(R.styleable.EditorEditText_inlineCodeHorizontalPadding),
-            inlineCodeVerticalPadding = typedArray.getDimensionPixelSizeOrThrow(R.styleable.EditorEditText_inlineCodeVerticalPadding),
-            inlineCodeSingleLineBg = typedArray.getDrawableOrThrow(R.styleable.EditorEditText_inlineCodeSingleLineBg),
-            inlineCodeMultiLineBgLeft = typedArray.getDrawableOrThrow(R.styleable.EditorEditText_inlineCodeMultiLineBgLeft),
-            inlineCodeMultiLineBgMid = typedArray.getDrawableOrThrow(R.styleable.EditorEditText_inlineCodeMultiLineBgMid),
-            inlineCodeMultiLineBgRight = typedArray.getDrawableOrThrow(R.styleable.EditorEditText_inlineCodeMultiLineBgRight),
+            bulletList = BulletListStyleConfig(
+                bulletGapWidth = typedArray.getDimensionOrThrow(R.styleable.EditorEditText_bulletGap),
+                bulletRadius = typedArray.getDimensionOrThrow(R.styleable.EditorEditText_bulletRadius),
+            ),
+            inlineCode = InlineCodeStyleConfig(
+                horizontalPadding = typedArray.getDimensionPixelSizeOrThrow(R.styleable.EditorEditText_inlineCodeHorizontalPadding),
+                verticalPadding = typedArray.getDimensionPixelSizeOrThrow(R.styleable.EditorEditText_inlineCodeVerticalPadding),
+                singleLineBg = typedArray.getDrawableOrThrow(R.styleable.EditorEditText_inlineCodeSingleLineBg),
+                multiLineBgLeft = typedArray.getDrawableOrThrow(R.styleable.EditorEditText_inlineCodeMultiLineBgLeft),
+                multiLineBgMid = typedArray.getDrawableOrThrow(R.styleable.EditorEditText_inlineCodeMultiLineBgMid),
+                multiLineBgRight = typedArray.getDrawableOrThrow(R.styleable.EditorEditText_inlineCodeMultiLineBgRight),
+            ),
+            codeBlock = CodeBlockStyleConfig(
+                leadingMargin = typedArray.getDimensionPixelSizeOrThrow(R.styleable.EditorEditText_codeBlockLeadingMargin),
+                verticalPadding = typedArray.getDimensionPixelSizeOrThrow(R.styleable.EditorEditText_codeBlockVerticalPadding),
+                backgroundDrawable = typedArray.getDrawableOrThrow(R.styleable.EditorEditText_codeBlockBackgroundDrawable),
+            )
         )
         typedArray.recycle()
     }

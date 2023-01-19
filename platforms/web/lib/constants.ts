@@ -26,4 +26,6 @@ export const ACTION_TYPES = [
     'inlineCode',
     'clear',
     'link',
+    'codeBlock',
+    'quote',
 ] as const;

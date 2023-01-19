@@ -79,8 +79,17 @@ where
         self.handle = handle;
     }
 
+    /// Returns true if the text_node contains only blank characters
     pub fn is_blank(&self) -> bool {
         self.data
+            .chars()
+            .all(|c| matches!(c, ' ' | '\x09'..='\x0d'))
+    }
+
+    /// Returns true if the text_node contains only blank characters
+    /// in the specified range
+    pub fn is_blank_in_range(&self, range: Range<usize>) -> bool {
+        self.data[range]
             .chars()
             .all(|c| matches!(c, ' ' | '\x09'..='\x0d'))
     }

@@ -37,7 +37,7 @@ extension WysiwygComposerTests {
         let composer = newComposerModel()
         _ = composer.setLinkWithText(link: link, text: "test")
         let action = composer.getLinkAction()
-        XCTAssertEqual(action, .edit(link: link))
+        XCTAssertEqual(action, .edit(link: "https://\(link)"))
     }
 
     func testSetLinkWithText() {
@@ -47,7 +47,35 @@ extension WysiwygComposerTests {
             composer.toTree(),
             """
 
-            └>a \"link\"
+            └>a \"https://link\"
+              └>\"text\"
+
+            """
+        )
+    }
+    
+    func testSetLinkWithTextWithIncludedScheme() {
+        let composer = newComposerModel()
+        _ = composer.setLinkWithText(link: "http://link", text: "text")
+        XCTAssertEqual(
+            composer.toTree(),
+            """
+
+            └>a \"http://link\"
+              └>\"text\"
+
+            """
+        )
+    }
+    
+    func testSetMailLinkWithText() {
+        let composer = newComposerModel()
+        _ = composer.setLinkWithText(link: "test@element.io", text: "text")
+        XCTAssertEqual(
+            composer.toTree(),
+            """
+
+            └>a \"mailto:test@element.io\"
               └>\"text\"
 
             """
@@ -63,7 +91,7 @@ extension WysiwygComposerTests {
             composer.toTree(),
             """
 
-            └>a \"link\"
+            └>a \"https://link\"
               └>\"text\"
 
             """
@@ -77,7 +105,7 @@ extension WysiwygComposerTests {
             composer.toTree(),
             """
 
-            └>a \"link\"
+            └>a \"https://link\"
               └>\"text\"
 
             """

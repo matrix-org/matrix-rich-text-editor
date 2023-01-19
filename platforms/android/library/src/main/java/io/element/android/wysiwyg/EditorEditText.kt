@@ -20,12 +20,14 @@ import android.view.inputmethod.InputConnection
 import androidx.core.graphics.withTranslation
 import androidx.lifecycle.*
 import com.google.android.material.textfield.TextInputEditText
-import io.element.android.wysiwyg.inlinebg.InlineBgHelper
+import io.element.android.wysiwyg.inlinebg.SpanBackgroundHelper
+import io.element.android.wysiwyg.inlinebg.SpanBackgroundHelperFactory
 import io.element.android.wysiwyg.inputhandlers.InterceptInputConnection
 import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.inputhandlers.models.LinkAction
 import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
+import io.element.android.wysiwyg.spans.CodeBlockSpan
 import io.element.android.wysiwyg.spans.InlineCodeSpan
 import io.element.android.wysiwyg.utils.*
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
@@ -39,7 +41,12 @@ class EditorEditText : TextInputEditText {
     private var inputConnection: InterceptInputConnection? = null
 
     private lateinit var styleConfig: StyleConfig
-    private lateinit var inlineCodeBgHelper: InlineBgHelper<InlineCodeSpan>
+    private val inlineCodeBgHelper: SpanBackgroundHelper<InlineCodeSpan> by lazy {
+        SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(styleConfig.inlineCode)
+    }
+    private val codeBlockBgHelper: SpanBackgroundHelper<CodeBlockSpan> by lazy {
+        SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(styleConfig.codeBlock)
+    }
 
     private val viewModel: EditorViewModel by viewModel(
         viewModelInitializer = {
@@ -70,17 +77,7 @@ class EditorEditText : TextInputEditText {
     constructor(context: Context) : super(context)
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-
         styleConfig = EditorEditTextAttributeReader(context, attrs).styleConfig
-        inlineCodeBgHelper = InlineBgHelper(
-            spanType = InlineCodeSpan::class.java,
-            horizontalPadding = styleConfig.inlineCodeHorizontalPadding,
-            verticalPadding = styleConfig.inlineCodeVerticalPadding,
-            drawable = styleConfig.inlineCodeSingleLineBg,
-            drawableLeft = styleConfig.inlineCodeMultiLineBgLeft,
-            drawableMid = styleConfig.inlineCodeMultiLineBgMid,
-            drawableRight = styleConfig.inlineCodeMultiLineBgRight
-        )
     }
 
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) :
@@ -378,6 +375,7 @@ class EditorEditText : TextInputEditText {
         if (text is Spanned && layout != null) {
             canvas.withTranslation(totalPaddingLeft.toFloat(), totalPaddingTop.toFloat()) {
                 inlineCodeBgHelper.draw(canvas, text as Spanned, layout)
+                codeBlockBgHelper.draw(canvas, text as Spanned, layout)
             }
         }
         super.onDraw(canvas)

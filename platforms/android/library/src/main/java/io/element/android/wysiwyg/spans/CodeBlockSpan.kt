@@ -1,45 +1,30 @@
 package io.element.android.wysiwyg.spans
 
-import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
-import android.graphics.Rect
-import android.os.Parcel
 import android.text.Layout
-import android.text.ParcelableSpan
+import android.text.Spanned
 import android.text.TextPaint
-import android.text.style.BackgroundColorSpan
 import android.text.style.LeadingMarginSpan
+import android.text.style.LineBackgroundSpan
+import android.text.style.LineHeightSpan
 import android.text.style.MetricAffectingSpan
-import android.text.style.ParagraphStyle
 import android.text.style.TypefaceSpan
 import android.text.style.UpdateAppearance
-import androidx.core.content.ContextCompat
+import androidx.annotation.ColorInt
+import androidx.annotation.Px
+import kotlin.math.roundToInt
 
 /**
  * Code block (```some code``` in Markdown, <pre> in HTML) Span that applies a monospaced font style
- * and adds a background color to a whole paragraph.
+ * and adds an extra padding to the top and bottom of the paragraph.
  */
-class CodeBlockSpan : MetricAffectingSpan, LeadingMarginSpan, UpdateAppearance {
+class CodeBlockSpan(
+    @Px private val leadingMargin: Int,
+    @Px private val verticalPadding: Int,
+) : MetricAffectingSpan(), BlockSpan, LeadingMarginSpan, LineHeightSpan, UpdateAppearance {
 
-    private val monoTypefaceSpan: TypefaceSpan
-    private val backgroundColor: Int
-    private val margin: Int
-
-    private val paint = Paint()
-    private var rect = Rect()
-
-    constructor(backgroundColor: Int, margin: Int): super() {
-        monoTypefaceSpan = TypefaceSpan("monospace")
-        this.margin = margin
-        this.backgroundColor = backgroundColor
-    }
-
-    constructor(parcel: Parcel): super() {
-        monoTypefaceSpan = requireNotNull(parcel.readParcelable(TypefaceSpan::class.java.classLoader))
-        backgroundColor = parcel.readInt()
-        margin = parcel.readInt()
-    }
+    private val monoTypefaceSpan = TypefaceSpan("monospace")
 
     override fun updateDrawState(tp: TextPaint) {
         monoTypefaceSpan.updateDrawState(tp)
@@ -50,7 +35,29 @@ class CodeBlockSpan : MetricAffectingSpan, LeadingMarginSpan, UpdateAppearance {
     }
 
     override fun getLeadingMargin(first: Boolean): Int {
-        return margin
+        return leadingMargin
+    }
+
+    override fun chooseHeight(
+        text: CharSequence,
+        start: Int,
+        end: Int,
+        spanStart: Int,
+        lineHeight: Int,
+        fm: Paint.FontMetricsInt,
+    ) {
+        val spanned = text as Spanned
+        val spanEnd = spanned.getSpanEnd(this)
+        // Add top padding to first line if needed
+        if (start == spanStart) {
+            fm.ascent -= verticalPadding
+            fm.top -= verticalPadding
+        }
+        // Add bottom padding to last line if needed
+        if (end >= spanEnd) {
+            fm.descent += verticalPadding
+            fm.bottom += verticalPadding
+        }
     }
 
     override fun drawLeadingMargin(
@@ -66,24 +73,5 @@ class CodeBlockSpan : MetricAffectingSpan, LeadingMarginSpan, UpdateAppearance {
         end: Int,
         first: Boolean,
         layout: Layout?
-    ) {
-        paint.style = Paint.Style.FILL
-        paint.color = backgroundColor
-
-        val left: Int
-        val right: Int
-
-        if (dir > 0) {
-            // Left to right
-            left = x + margin
-            right = c.width
-        } else {
-            // Right to left
-            left = x + margin - c.width
-            right = x + margin
-        }
-
-        rect = Rect(left, top, right, bottom)
-        c.drawRect(rect, paint)
-    }
+    ) = Unit
 }

@@ -24,7 +24,6 @@ extension WysiwygUITests {
         // FIXME: iOS automatically adds an extra line break even if not in the model
         assertTextViewContent("​Some text\n")
 
-        button(.showTreeButton).tap()
         assertTreeEquals(
             """
             └>pre
