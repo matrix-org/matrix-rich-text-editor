@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::dom::nodes::dom_node::DomNodeKind::ListItem;
 use crate::dom::nodes::text_node::CharType;
 use crate::dom::nodes::{DomNode, TextNode};
 use crate::dom::unicode_string::UnicodeStrExt;
@@ -301,15 +302,17 @@ where
             loc.is_leaf() || (loc.kind.is_block_kind() && loc.is_empty())
         });
         if let Some(leaf) = first_leaf {
-            // We are backspacing inside a text node with no
+            // We are backspacing inside a text node with cursor
             // selection - we might need special behaviour, if
             // we are at the start of a list item.
-            let parent_list_item_handle = self
-                .state
-                .dom
-                .find_ancestor_list_item_or_self(&leaf.node_handle);
-            if let Some(list_item_handle) = parent_list_item_handle {
-                self.do_backspace_in_list(&list_item_handle)
+            let parent_list_item_loc = range
+                .deepest_node_of_kind(ListItem, Some(leaf.node_handle.clone()));
+            if let Some(list_item_loc) = parent_list_item_loc {
+                if list_item_loc.start_offset == 0 {
+                    self.do_backspace_in_list(&list_item_loc.node_handle)
+                } else {
+                    self.do_backspace()
+                }
             } else {
                 self.do_backspace()
             }

@@ -480,6 +480,13 @@ fn new_list_after_linebreak() {
     assert_eq!(tx(&model), "<p>start</p><ul><li>|</li></ul>");
 }
 
+#[test]
+fn backspace_text_in_list_item() {
+    let mut model = cm("<p>test</p><ol><li>looks good|</li></ol>");
+    model.backspace();
+    assert_eq!(tx(&model), "<p>test</p><ol><li>looks goo|</li></ol>")
+}
+
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
     model.replace_text(utf16(new_text));
 }
