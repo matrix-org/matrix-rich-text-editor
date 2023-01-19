@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 
+import HTMLParser
 @testable import WysiwygComposer
 import XCTest
 
@@ -36,7 +37,7 @@ extension WysiwygComposerTests {
             XCTAssertEqual(start, 8)
             XCTAssertEqual(end, 12)
             // Constructed attributed string sets bold on the selected range.
-            let attributed = try NSAttributedString(html: html)
+            let attributed = try HTMLParser.parse(html: html)
             attributed.enumerateTypedAttribute(.font, in: .init(location: 8, length: 4)) { (font: UIFont, range, _) in
                 XCTAssertEqual(range, .init(location: 8, length: 4))
                 XCTAssertTrue(font.fontDescriptor.symbolicTraits.contains(.traitBold))

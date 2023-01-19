@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-@testable import WysiwygComposer
+@testable import HTMLParser
 import XCTest
 
 final class NSAttributedStringTests: XCTestCase {

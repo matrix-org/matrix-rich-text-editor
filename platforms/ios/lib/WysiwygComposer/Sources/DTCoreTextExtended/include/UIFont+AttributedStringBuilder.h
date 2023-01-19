@@ -1,5 +1,5 @@
 //
-// Copyright 2022 The Matrix.org Foundation C.I.C
+// Copyright 2022 New Vector Ltd
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,9 +14,14 @@
 // limitations under the License.
 //
 
-import Foundation
+@import UIKit;
 
-public extension NSRange {
-    /// Returns a range at starting location, i.e. {0, 0}.
-    static let zero = Self(location: 0, length: 0)
-}
+NS_ASSUME_NONNULL_BEGIN
+
+@interface UIFont(DTCoreTextFix)
+
+// Fix DTCoreText iOS 13 issue (https://github.com/Cocoanetics/DTCoreText/issues/1168)
+
+@end
+
+NS_ASSUME_NONNULL_END

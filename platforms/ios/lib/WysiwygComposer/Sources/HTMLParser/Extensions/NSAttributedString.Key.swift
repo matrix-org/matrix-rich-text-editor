@@ -14,23 +14,12 @@
 // limitations under the License.
 //
 
-import XCTest
+import DTCoreText
+import Foundation
 
-extension WysiwygUITests {
-    func testQuote() throws {
-        // Type something into composer.
-        textView.typeTextCharByChar("Some text")
-        button(.quoteButton).tap()
-        // FIXME: iOS/DTCoreText automatically adds an extra line break even if not in the model
-        assertTextViewContent("​Some text \n")
-
-        // FIXME: an unwanted space is added into the model
-        assertTreeEquals(
-            """
-            └>blockquote
-              ├>~
-              └>"Some text "
-            """
-        )
-    }
+extension NSAttributedString.Key {
+    static let DTTextBlocks: NSAttributedString.Key = .init(rawValue: DTTextBlocksAttribute)
+    static let backgroundStyle: NSAttributedString.Key = .init(rawValue: "BackgroundStyleAttributeKey")
+    static let DTField: NSAttributedString.Key = .init(rawValue: DTFieldAttribute)
+    static let DTTextLists: NSAttributedString.Key = .init(rawValue: DTTextListsAttribute)
 }

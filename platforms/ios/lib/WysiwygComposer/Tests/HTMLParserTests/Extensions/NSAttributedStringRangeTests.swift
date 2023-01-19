@@ -1,5 +1,5 @@
 //
-// Copyright 2022 The Matrix.org Foundation C.I.C
+// Copyright 2023 The Matrix.org Foundation C.I.C
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,22 +14,23 @@
 // limitations under the License.
 //
 
-@testable import WysiwygComposer
+@testable import HTMLParser
 import XCTest
 
 final class NSAttributedStringRangeTests: XCTestCase {
-    let zwsp = "\u{200B}"
-    
     func testAttributedNumberedLists() throws {
-        let html = "<ol><li>\(zwsp)Item 1</li><li>\(zwsp)Item 2</li></ol>Some Text"
-        let attributed = try NSAttributedString(html: html)
+        let html = "<ol><li>Item 1</li><li>Item 2</li></ol>Some Text"
+        let attributed = try HTMLParser.parse(html: html)
+
         // A textual representation of the numbered list is displayed
         XCTAssertEqual(attributed.string,
                        "\t1.\tItem 1\n\t2.\tItem 2\nSome Text")
+
         // Ranges that are not part of the raw HTML text (excluding tags) are detected
         XCTAssertEqual(attributed.listPrefixesRanges(),
                        [NSRange(location: 0, length: 4),
                         NSRange(location: 11, length: 4)])
+
         // Converting back and forth from HTML to attributed postions
         XCTAssertEqual(try attributed.htmlPosition(at: 4), 1)
         XCTAssertEqual(try attributed.attributedPosition(at: 1), 4)
@@ -67,8 +68,8 @@ final class NSAttributedStringRangeTests: XCTestCase {
     }
 
     func testAttributedBulletedLists() throws {
-        let html = "<ul><li>\(zwsp)Item 1</li><li>\(zwsp)Item 2</li></ul>Some Text"
-        let attributed = try NSAttributedString(html: html)
+        let html = "<ul><li>Item 1</li><li>Item 2</li></ul>Some Text"
+        let attributed = try HTMLParser.parse(html: html)
         XCTAssertEqual(attributed.string,
                        "\t•\tItem 1\n\t•\tItem 2\nSome Text")
         XCTAssertEqual(attributed.listPrefixesRanges(),
@@ -81,8 +82,8 @@ final class NSAttributedStringRangeTests: XCTestCase {
     }
 
     func testMultipleAttributedLists() throws {
-        let html = "<ol><li>\(zwsp)Item 1</li><li>\(zwsp)Item 2</li></ol><ul><li>\(zwsp)Item 1</li><li>\(zwsp)Item 2</li></ul>"
-        let attributed = try NSAttributedString(html: html)
+        let html = "<ol><li>Item 1</li><li>Item 2</li></ol><ul><li>Item 1</li><li>Item 2</li></ul>"
+        let attributed = try HTMLParser.parse(html: html)
         XCTAssertEqual(attributed.string,
                        "\t1.\tItem 1\n\t2.\tItem 2\n\t•\tItem 1\n\t•\tItem 2\n")
         XCTAssertEqual(attributed.listPrefixesRanges(),
@@ -99,19 +100,26 @@ final class NSAttributedStringRangeTests: XCTestCase {
     }
 
     func testMultipleDigitsNumberedLists() throws {
+        // Note: DTCoreText won't display most prefixes after 19 because of DTListItemHTMLElement
+        //
+        // // if the non-whitespace characters are too wide then we omit the prefix
+        // if ((width+5.0)>_margins.left)
+        // {
+        //     return nil;
+        // }
         var html = "<ol>"
-        for _ in 1...100 {
+        for _ in 1...19 {
             html.append(contentsOf: "<li>abcd</li>")
         }
         html.append(contentsOf: "</ol>")
-        let attributed = try NSAttributedString(html: html)
+        let attributed = try HTMLParser.parse(html: html)
         XCTAssertEqual(attributed.listPrefixesRanges().count,
-                       100)
+                       19)
     }
 
     func testOutOfBoundsIndexes() throws {
         let html = "<ol><li>Item 1</li><li>Item 2</li></ol>Some Text"
-        let attributed = try NSAttributedString(html: html)
+        let attributed = try HTMLParser.parse(html: html)
         // Out of bounds indexes return errors
         do {
             _ = try attributed.attributedPosition(at: 40)
