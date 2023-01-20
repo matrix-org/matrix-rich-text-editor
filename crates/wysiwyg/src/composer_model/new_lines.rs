@@ -16,11 +16,15 @@ where
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
 
-        // No selection, add a paragraph to the Dom and exit
+        // No selection, add two paragraphs to the Dom and exit:
+        // 1st paragraph was the one we were in (although it was a 'virtual' one).
+        // 2nd one is the one we just created.
         if range.locations.is_empty() {
-            self.state
-                .dom
-                .append_at_end_of_document(DomNode::new_paragraph(Vec::new()));
+            self.state.dom.document_mut().append_children(vec![
+                DomNode::new_paragraph(Vec::new()),
+                DomNode::new_paragraph(Vec::new()),
+            ]);
+            self.state.advance_selection();
             return self.create_update_replace_all();
         }
 
@@ -292,6 +296,13 @@ where
 mod test {
     use crate::tests::testutils_composer_model::{cm, tx};
     use crate::DomHandle;
+
+    #[test]
+    fn test_new_line_in_empty_dom() {
+        let mut model = cm("|");
+        model.enter();
+        assert_eq!(tx(&model), "<p></p><p>|</p>");
+    }
 
     #[test]
     fn test_new_line_in_plain_text() {

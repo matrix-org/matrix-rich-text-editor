@@ -276,7 +276,7 @@ fn newline_characters_insert_br_tags() {
 fn leading_and_trailing_newline_characters_insert_br_tags() {
     let mut model = cm("|");
     replace_text(&mut model, "\nabc");
-    assert_eq!(tx(&model), "<p>abc|</p>");
+    assert_eq!(tx(&model), "<p></p><p>abc|</p>");
 
     let mut model = cm("|");
     replace_text(&mut model, "abc\n");
@@ -284,7 +284,7 @@ fn leading_and_trailing_newline_characters_insert_br_tags() {
 
     let mut model = cm("|");
     replace_text(&mut model, "\nabc\n");
-    assert_eq!(tx(&model), "<p>abc</p><p>|</p>");
+    assert_eq!(tx(&model), "<p></p><p>abc</p><p>|</p>");
 }
 
 #[test]

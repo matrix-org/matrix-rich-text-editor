@@ -38,8 +38,20 @@ where
             let node = DomNode::new_code_block(vec![DomNode::new_paragraph(Vec::new())]);
             if leaves.is_empty() {
                 if let Some(deepest_block_location) = range.deepest_block_node(None) {
-                    let block_node = self.state.dom.remove(&deepest_block_location.node_handle);
-                    let node = DomNode::new_code_block(vec![block_node]);
+                    let mut block_node = self.state.dom.remove(&deepest_block_location.node_handle);
+                    let node = if block_node.is_list_item() {
+                        let list_item = block_node.as_container_mut().unwrap();
+                        let children = list_item.remove_children();
+                        let children = if children.iter().all(|c| !c.is_block_node()) {
+                            vec![DomNode::new_paragraph(children)]
+                        } else {
+                            children
+                        };
+                        list_item.append_child(DomNode::new_code_block(children));
+                        block_node
+                    } else {
+                        DomNode::new_code_block(vec![block_node])
+                    };
                     self.state.dom.insert_at(&deepest_block_location.node_handle, node);
                 } else {
                     self.state.dom.append_at_end_of_document(node);
@@ -430,5 +442,24 @@ mod test {
         assert_eq!(tx(&model), "<pre>|</pre>");
         model.code_block();
         assert_eq!(tx(&model), "<p>|</p>");
+    }
+
+    #[test]
+    fn add_code_block_to_empty_list_item() {
+        let mut model = cm("<ul><li>|</li></ul>");
+        model.code_block();
+        assert_eq!(tx(&model), "<ul><li><pre>|</pre></li></ul>");
+        assert_eq!(
+            model.to_tree().to_string(),
+            indoc! {
+                r#"
+                
+                └>ul
+                  └>li
+                    └>pre
+                      └>p
+                "#
+            }
+        );
     }
 }

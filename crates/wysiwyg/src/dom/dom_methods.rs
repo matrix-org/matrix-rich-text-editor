@@ -16,6 +16,7 @@
 //! our invariants e.g. no empty text nodes, no adjacent text nodes.
 
 use crate::dom::nodes::dom_node::DomNodeKind::{Generic, ListItem, Paragraph};
+use crate::dom::range::DomLocationPosition::After;
 use crate::dom::unicode_string::UnicodeStr;
 use crate::dom::DomLocation;
 use crate::{DomHandle, DomNode, UnicodeString};
@@ -397,7 +398,7 @@ where
             match &mut node {
                 DomNode::Container(_) => {
                     if loc.kind.is_block_kind() && loc.kind != Generic {
-                        if loc.is_empty() {
+                        if loc.is_empty() && loc.relative_position() == After {
                             // Empty block node
                             if new_text.is_empty() {
                                 action_list.push(DomAction::remove_node(
@@ -418,7 +419,7 @@ where
                                     _ => panic!("A block node that can't contain inline nodes was selected, text can't be added to it."),
                                 }
                             }
-                        } else if loc.is_covered() {
+                        } else if !loc.is_empty() && loc.is_covered() {
                             action_list.push(DomAction::remove_node(
                                 loc.node_handle.clone(),
                             ));
