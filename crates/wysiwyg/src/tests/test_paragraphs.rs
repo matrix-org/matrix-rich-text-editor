@@ -390,7 +390,7 @@ fn new_line_at_end_of_link_does_not_extend_it() {
             </b>\
         </p>\
         <p>\
-            <b></b>\
+            <b>|</b>\
         </p>"
     );
 }

@@ -640,8 +640,12 @@ impl<S: UnicodeString> ContainerNode<S> {
                 state.is_last_node_in_parent = is_last;
                 child.fmt_html(formatter, Some(w), state);
             }
-            if self.is_block_node() {
-                w.write_selection_block_node(formatter, formatter.len(), &self)
+            if self.is_empty() {
+                w.write_selection_empty_container(
+                    formatter,
+                    formatter.len(),
+                    &self,
+                )
             }
         } else {
             for (i, child) in self.children.iter().enumerate() {
