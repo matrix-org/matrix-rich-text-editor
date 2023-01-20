@@ -18,16 +18,16 @@
 import XCTest
 
 private enum Constants {
-    static let resultHtml = "<blockquote>​Some quote<br />More text</blockquote><br />"
+    static let resultHtml = "<blockquote><p>Some quote</p><p>More text</p></blockquote><p></p>"
     static let resultTree =
         """
 
         ├>blockquote
-        │ ├>~
-        │ ├>"Some quote"
-        │ ├>br
-        │ └>"More text"
-        └>br
+        │ ├>p
+        │ │ └>"Some quote"
+        │ └>p
+        │   └>"More text"
+        └>p
 
         """
 }
