@@ -20,7 +20,7 @@ import UIKit
 /// Provides tools to parse from HTML to NSAttributedString with a standard style.
 public final class HTMLParser {
     // MARK: - Private
-
+    
     private static var defaultCSS: String {
         """
         blockquote {
@@ -48,11 +48,11 @@ public final class HTMLParser {
         }
         """
     }
-
+    
     private init() { }
-
+    
     // MARK: - Public
-
+    
     /// Parse given HTML to NSAttributedString with a standard style.
     ///
     /// - Parameters:
@@ -66,33 +66,33 @@ public final class HTMLParser {
         guard !html.isEmpty else {
             return NSAttributedString(string: "")
         }
-
+        
         guard let data = html.data(using: encoding) else {
             throw BuildHtmlAttributedError.dataError(encoding: encoding)
         }
-
+        
         let defaultFont = UIFont.preferredFont(forTextStyle: .body)
-
+        
         let parsingOptions: [String: Any] = [
             DTUseiOS6Attributes: true,
             DTDefaultFontDescriptor: defaultFont.fontDescriptor,
             DTDefaultStyleSheet: DTCSSStylesheet(styleBlock: defaultCSS) as Any,
         ]
-
+        
         guard let builder = DTHTMLAttributedStringBuilder(html: data, options: parsingOptions, documentAttributes: nil) else {
             throw BuildHtmlAttributedError.dataError(encoding: encoding)
         }
-
+        
         guard let attributedString = builder.generatedAttributedString() else {
             throw BuildHtmlAttributedError.dataError(encoding: encoding)
         }
-
+        
         let mutableAttributedString = NSMutableAttributedString(attributedString: attributedString)
-
+        
         mutableAttributedString.addAttributes(
             [.foregroundColor: style.textColor], range: NSRange(location: 0, length: mutableAttributedString.length)
         )
-
+        
         // This fixes an iOS bug where if some text is typed after a link, and then a whitespace is added the link color is overridden.
         mutableAttributedString.enumerateAttribute(
             .link,
@@ -104,10 +104,10 @@ public final class HTMLParser {
                 mutableAttributedString.addAttributes([.foregroundColor: style.linkColor], range: range)
             }
         }
-
+        
         mutableAttributedString.applyBackgroundStyles(style: style)
         mutableAttributedString.applyInlineCodeBackgroundStyle(codeBackgroundColor: style.codeBackgroundColor)
-
+        
         // FIXME: This solution might not fit for everything.
         mutableAttributedString.addAttribute(.paragraphStyle,
                                              value: NSParagraphStyle.default,
@@ -121,12 +121,12 @@ public final class HTMLParser {
         // DTCoreText always adds a \n at the end of the document, which we need to remove
         // however it does not add it if </code> </a> are the last nodes.
         // Also we don't want to remove if a blockquote or a codeblock have more than one paragraph
-        if !html.hasSuffix("</code>"),
+        if mutableAttributedString.string.last == "\n",
+           !html.hasSuffix("</code>"),
            !html.hasSuffix("</a>"),
            !html.hasSuffix("</p><p></p></blockquote>"),
            // Is this intended or is it an html bug?
-           !html.hasSuffix("\n</pre>"),
-           mutableAttributedString.string.last == "\n" {
+           !html.hasSuffix("\n</pre>") {
             mutableAttributedString.deleteCharacters(in: NSRange(location: mutableAttributedString.length - 1, length: 1))
         }
     }
