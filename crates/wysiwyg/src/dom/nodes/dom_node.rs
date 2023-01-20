@@ -90,6 +90,16 @@ where
     }
 
     pub fn new_quote(children: Vec<DomNode<S>>) -> DomNode<S> {
+        let all_block_nodes = if children.is_empty() {
+            false
+        } else {
+            children.iter().all(|c| c.is_block_node())
+        };
+        let children = if !all_block_nodes {
+            vec![DomNode::new_paragraph(children)]
+        } else {
+            children
+        };
         DomNode::Container(ContainerNode::new_quote(children))
     }
 
