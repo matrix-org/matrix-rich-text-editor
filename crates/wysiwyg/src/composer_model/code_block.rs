@@ -42,6 +42,11 @@ where
                     let node = if block_node.is_list_item() {
                         let list_item = block_node.as_container_mut().unwrap();
                         let children = list_item.remove_children();
+                        let children = if children.iter().all(|c| !c.is_block_node()) {
+                            vec![DomNode::new_paragraph(children)]
+                        } else {
+                            children
+                        };
                         list_item.append_child(DomNode::new_code_block(children));
                         block_node
                     } else {
@@ -443,6 +448,18 @@ mod test {
     fn add_code_block_to_empty_list_item() {
         let mut model = cm("<ul><li>|</li></ul>");
         model.code_block();
-        assert_eq!(tx(&model), "<ul><li><pre>|</pre></li></ul>")
+        assert_eq!(tx(&model), "<ul><li><pre>|</pre></li></ul>");
+        assert_eq!(
+            model.to_tree().to_string(),
+            indoc! {
+                r#"
+                
+                └>ul
+                  └>li
+                    └>pre
+                      └>p
+                "#
+            }
+        );
     }
 }
