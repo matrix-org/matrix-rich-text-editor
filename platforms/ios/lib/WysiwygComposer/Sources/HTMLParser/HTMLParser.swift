@@ -113,8 +113,11 @@ public final class HTMLParser {
                                              value: NSParagraphStyle.default,
                                              range: .init(location: 0, length: mutableAttributedString.length))
         
-        // removing trailing newline
-        mutableAttributedString.deleteCharacters(in: NSRange(location: mutableAttributedString.length - 1, length: 1))
+        // DTCoreText always adds a \n at the end of the document, which we need to remove
+        // however it does not add it if </code> or </a> are the last nodes.
+        if !html.hasSuffix("</code>"), !html.hasSuffix("</a>") {
+            mutableAttributedString.deleteCharacters(in: NSRange(location: mutableAttributedString.length - 1, length: 1))
+        }
         return mutableAttributedString
     }
 }
