@@ -1,5 +1,7 @@
-use crate::dom::nodes::dom_node::DomNodeKind::{Generic, ListItem, Paragraph};
-use crate::dom::DomLocation;
+use crate::dom::nodes::dom_node::DomNodeKind::{
+    Generic, Link, ListItem, Paragraph,
+};
+use crate::dom::{Dom, DomLocation};
 use crate::{ComposerModel, ComposerUpdate, DomNode, UnicodeString};
 
 impl<S> ComposerModel<S>
@@ -183,6 +185,7 @@ where
                 usize::MAX,
                 block_node_handle.depth(),
             );
+            pre_process_sub_tree(&mut sub_tree);
             let sub_tree_container = sub_tree.document_mut();
 
             let cur_block_node_was_removed =
@@ -242,24 +245,15 @@ where
         empty_paragraph_location: &DomLocation,
         ancestor_block_location: &DomLocation,
     ) {
-        // let needs_to_exit_block =
-        //     if let Some(handle) = paragraph_location.node_handle {
-        //         self.needs_to_exit_block(
-        //             &ancestor_block_location.node_handle,
-        //             &handle,
-        //         )
-        //     } else {
-        //         false
-        //     };
-
         let block_handle = &ancestor_block_location.node_handle;
         // Remove existing empty paragraph
         self.state.dom.remove(&empty_paragraph_location.node_handle);
-        let sub_tree = self.state.dom.split_sub_tree_from(
+        let mut sub_tree = self.state.dom.split_sub_tree_from(
             &empty_paragraph_location.node_handle,
             0,
             ancestor_block_location.node_handle.depth(),
         );
+        pre_process_sub_tree(&mut sub_tree);
         let sub_tree_container = &sub_tree.document();
 
         let block_node_was_removed = !self.state.dom.contains(block_handle);
@@ -290,6 +284,13 @@ where
             .dom
             .insert_at(&insert_at, DomNode::new_paragraph(Vec::new()));
     }
+}
+
+fn pre_process_sub_tree<S: UnicodeString>(sub_tree: &mut Dom<S>) {
+    // Links are a special case, if they we split them at their last index, they'll generate empty
+    // link nodes in the sub_tree, but we don't want that as links shouldn't grow when we add text
+    // to its last index
+    sub_tree.remove_nodes_matching(&|n| n.kind() == Link && n.is_empty());
 }
 
 #[cfg(test)]

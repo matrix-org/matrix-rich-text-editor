@@ -362,3 +362,35 @@ fn backspace_after_several_empty_paragraphs_deletes_only_one() {
     model.backspace();
     assert_eq!(tx(&model), "<p></p><p>|</p>");
 }
+
+#[test]
+fn new_line_at_start_of_link_does_not_extend_it() {
+    let mut model = cm("<b><a href='test'>|Test</a></b>");
+    model.enter();
+    assert_eq!(
+        tx(&model),
+        "<p></p>\
+        <p>\
+            <b>\
+                <a href=\"test\">|Test</a>\
+            </b>\
+        </p>"
+    );
+}
+
+#[test]
+fn new_line_at_end_of_link_does_not_extend_it() {
+    let mut model = cm("<b><a href='test'>Test|</a></b>");
+    model.enter();
+    assert_eq!(
+        tx(&model),
+        "<p>\
+            <b>\
+                <a href=\"test\">Test</a>\
+            </b>\
+        </p>\
+        <p>\
+            <b></b>\
+        </p>"
+    );
+}

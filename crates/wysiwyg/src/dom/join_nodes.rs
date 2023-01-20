@@ -185,8 +185,7 @@ where
             panic!("Destination node must be a ContainerNode");
         }
 
-        let parent = self.parent_mut(from_handle);
-        parent.remove_child(from_handle.index_in_parent());
+        self.remove(&from_handle);
 
         (ret, moved_handles)
     }
