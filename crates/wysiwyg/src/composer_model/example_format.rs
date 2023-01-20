@@ -324,7 +324,7 @@ impl SelectionWriter {
         }
     }
 
-    pub fn write_selection_block_node<S: UnicodeString>(
+    pub fn write_selection_empty_container<S: UnicodeString>(
         &mut self,
         buf: &mut S,
         pos: usize,

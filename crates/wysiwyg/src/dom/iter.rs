@@ -245,6 +245,9 @@ where
     }
 
     fn next_sibling_or_parent(&self, handle: &DomHandle) -> Option<DomHandle> {
+        if !handle.has_parent() {
+            return None;
+        }
         let parent = self.dom.lookup_node(&handle.parent_handle());
         let DomNode::Container(c) = parent else {
             panic!("Parent node must be a container");
@@ -263,6 +266,9 @@ where
         &mut self,
         handle: &DomHandle,
     ) -> Option<DomHandle> {
+        if !handle.has_parent() {
+            return None;
+        }
         let parent = self.dom.lookup_node(&handle.parent_handle());
         let DomNode::Container(c) = parent else {
             panic!("Parent node must be a container");

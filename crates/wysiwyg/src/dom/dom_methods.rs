@@ -908,6 +908,30 @@ where
 
         node.handle().index_in_parent() + 1 < child_count
     }
+
+    pub(crate) fn remove_nodes_matching(
+        &mut self,
+        condition: &dyn Fn(&DomNode<S>) -> bool,
+    ) {
+        let mut cur = self.last_node_handle();
+        loop {
+            if cur.is_root() {
+                break;
+            }
+
+            let needs_removal = {
+                let node = self.lookup_node(&cur);
+                condition(&node)
+            };
+
+            if needs_removal {
+                self.remove_and_keep_children(&cur);
+                cur = cur.parent_handle();
+            } else {
+                cur = self.prev_node(&cur).unwrap().handle();
+            }
+        }
+    }
 }
 
 /// Look at the children of parent at index and index + 1. If they are both
