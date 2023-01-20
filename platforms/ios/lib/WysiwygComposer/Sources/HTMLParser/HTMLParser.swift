@@ -113,11 +113,21 @@ public final class HTMLParser {
                                              value: NSParagraphStyle.default,
                                              range: .init(location: 0, length: mutableAttributedString.length))
         
+        removeTrailingNewlineIfNeeded(from: mutableAttributedString, given: html)
+        return mutableAttributedString
+    }
+    
+    private static func removeTrailingNewlineIfNeeded(from mutableAttributedString: NSMutableAttributedString, given html: String) {
         // DTCoreText always adds a \n at the end of the document, which we need to remove
-        // but not for <code> and <a> nodes
-        if mutableAttributedString.string.last == "\n" {
+        // however it does not add it if </code> </a> are the last nodes.
+        // Also we don't want to remove if a blockquote or a codeblock have more than one paragraph
+        if !html.hasSuffix("</code>"),
+           !html.hasSuffix("</a>"),
+           !html.hasSuffix("</p><p></p></blockquote>"),
+           // Is this intended or is it an html bug?
+           !html.hasSuffix("\n</pre>"),
+           mutableAttributedString.string.last == "\n" {
             mutableAttributedString.deleteCharacters(in: NSRange(location: mutableAttributedString.length - 1, length: 1))
         }
-        return mutableAttributedString
     }
 }
