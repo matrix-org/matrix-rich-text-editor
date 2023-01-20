@@ -113,9 +113,8 @@ public final class HTMLParser {
                                              value: NSParagraphStyle.default,
                                              range: .init(location: 0, length: mutableAttributedString.length))
         
-        if html.hasSuffix("</p>") {
-            mutableAttributedString.deleteCharacters(in: NSRange(location: mutableAttributedString.length - 1, length: 1))
-        }
+        // removing trailing newline
+        mutableAttributedString.deleteCharacters(in: NSRange(location: mutableAttributedString.length - 1, length: 1))
         return mutableAttributedString
     }
 }

@@ -192,8 +192,6 @@ public extension WysiwygComposerViewModel {
             textView.attributedText = NSAttributedString(string: "", attributes: defaultTextAttributes)
         } else {
             applyUpdate(model.clear())
-            // REMOVE ME: THIS SHOULD BE DONE FROM THE RUST SIDE
-            setHtmlContent("<p></p>")
         }
     }
 

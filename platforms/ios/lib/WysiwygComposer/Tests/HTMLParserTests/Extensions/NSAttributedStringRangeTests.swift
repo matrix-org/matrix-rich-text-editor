@@ -85,7 +85,7 @@ final class NSAttributedStringRangeTests: XCTestCase {
         let html = "<ol><li>Item 1</li><li>Item 2</li></ol><ul><li>Item 1</li><li>Item 2</li></ul>"
         let attributed = try HTMLParser.parse(html: html)
         XCTAssertEqual(attributed.string,
-                       "\t1.\tItem 1\n\t2.\tItem 2\n\t•\tItem 1\n\t•\tItem 2\n")
+                       "\t1.\tItem 1\n\t2.\tItem 2\n\t•\tItem 1\n\t•\tItem 2")
         XCTAssertEqual(attributed.listPrefixesRanges(),
                        [NSRange(location: 0, length: 4),
                         NSRange(location: 11, length: 4),

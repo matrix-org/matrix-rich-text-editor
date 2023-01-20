@@ -97,7 +97,7 @@ extension NSAttributedString {
 
         let prefixes = listPrefixesRanges()
         var actualIndex: Int = attributedIndex
-
+        
         for listPrefix in prefixes {
             if listPrefix.upperBound <= attributedIndex {
                 actualIndex -= listPrefix.length
@@ -119,7 +119,7 @@ extension NSAttributedString {
     func attributedPosition(at htmlIndex: Int) throws -> Int {
         let prefixes = listPrefixesRanges()
         var actualIndex: Int = htmlIndex
-        
+                
         for listPrefix in prefixes {
             if listPrefix.location < actualIndex {
                 actualIndex += listPrefix.length
@@ -132,7 +132,7 @@ extension NSAttributedString {
                 }
             }
         }
-
+                        
         guard actualIndex <= length else {
             throw AttributedRangeError
                 .outOfBoundsHtmlIndex(index: htmlIndex)
