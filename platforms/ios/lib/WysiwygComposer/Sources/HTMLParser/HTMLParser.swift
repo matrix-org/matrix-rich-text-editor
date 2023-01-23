@@ -125,7 +125,7 @@ public final class HTMLParser {
         if mutableAttributedString.string.last == "\n",
            !html.hasSuffix("</code>"),
            !html.hasSuffix("</a>"),
-           !html.hasSuffix("<p></p></blockquote>"),
+           !html.hasSuffix("</p><p></p></blockquote>"),
            !html.hasSuffix("</ul><p></p></blockquote>"),
            !html.hasSuffix("</ol><p></p></blockquote>"),
            !html.hasSuffix("\n</pre>") {
