@@ -572,3 +572,75 @@ fn set_link_with_selection_add_http_scheme() {
     model.set_link(utf16("element.io"));
     assert_eq!(tx(&model), "<a href=\"https://element.io\">test_link|</a>");
 }
+
+#[test]
+fn set_link_accross_list_items() {
+    let mut model = cm("<ul><li>Te{st</li><li>Bo}|ld</li></ul>");
+    model.set_link("https://element.io".into());
+    assert_eq!(
+        tx(&model),
+        "<ul>\
+            <li>Te<a href=\"https://element.io\">{st</a></li>\
+            <li><a href=\"https://element.io\">Bo}|</a>ld</li>\
+        </ul>"
+    );
+}
+
+#[test]
+fn set_link_accross_list_items_with_container() {
+    let mut model = cm("<ul><li><b>Te{st</b></li><li><b>Bo}|ld</b></li></ul>");
+    model.set_link("https://element.io".into());
+    assert_eq!(
+        tx(&model),
+        "<ul>\
+            <li>\
+            <b>Te<a href=\"https://element.io\">{st</a></b>\
+            </li>\
+            <li>\
+            <b><a href=\"https://element.io\">Bo}|</a>ld</b>\
+            </li>\
+        </ul>"
+    );
+}
+
+#[test]
+#[ignore]
+// This will not work because we have disabled insert_parent when the selection
+// contains struct or block nodes, so e a link for each text node will be created
+//<ul><li>tes<a href=\"https://element.io\">{t</a><b><a href=\"https://element.io\">test_bold</a></b></li><li><i><a href=\"https://element.io\">test_}|</a>italic</i></li></ul>
+// will add this improvement in a later PR
+fn set_link_across_list_items_with_multiple_inline_formattings_selected() {
+    let mut model = cm("<ul>\
+        <li>\
+            tes{t<b>test_bold</b>\
+        </li>\
+        <li>\
+            <i>test_}|italic</i>\
+        </li>\
+    </ul>");
+    model.set_link("https://element.io".into());
+    assert_eq!(
+        tx(&model),
+        "<ul>\
+            <li>\
+                tes<a href=\"https://element.io\">{t<b>test_bold</b></a>\
+            </li>\
+            <li>\
+                <i><a href=\"https://element.io\">test_}</a>|italic</i>\
+            </li>\
+        </ul>"
+    );
+}
+
+#[test]
+fn set_link_accross_quote() {
+    let mut model = cm("<blockquote>test_{block_quote</blockquote> test}|");
+    model.set_link("https://element.io".into());
+    assert_eq!(
+        tx(&model),
+        "<blockquote>\
+            test_<a href=\"https://element.io\">{block_quote</a>\
+        </blockquote>\
+        <p><a href=\"https://element.io\"> test}|</a></p>"
+    );
+}
