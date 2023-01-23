@@ -40,11 +40,11 @@ fn adding_line_break_after_replacing_with_empty_html() {
 fn pressing_enter_after_backspacing_a_paragraph() {
     let mut model = cm("|");
     model.enter();
-    assert_eq!(tx(&model), "<p></p><p>|</p>");
+    assert_eq!(tx(&model), "<p>&nbsp;</p><p>|</p>");
     model.backspace();
     assert_eq!(tx(&model), "<p>|</p>");
     model.enter();
-    assert_eq!(tx(&model), "<p></p><p>|</p>");
+    assert_eq!(tx(&model), "<p>&nbsp;</p><p>|</p>");
 }
 
 #[test]
@@ -353,14 +353,14 @@ fn text_typed_after_line_break_goes_into_last_paragraph() {
     model.enter();
     model.select(1.into(), 1.into());
     model.replace_text("Test".into());
-    assert_eq!(tx(&model), "<p></p><p>Test|</p>");
+    assert_eq!(tx(&model), "<p>&nbsp;</p><p>Test|</p>");
 }
 
 #[test]
 fn backspace_after_several_empty_paragraphs_deletes_only_one() {
-    let mut model = cm("<p></p><p></p><p>|</p>");
+    let mut model = cm("<p>&nbsp;</p><p>&nbsp;</p><p>|</p>");
     model.backspace();
-    assert_eq!(tx(&model), "<p></p><p>|</p>");
+    assert_eq!(tx(&model), "<p>&nbsp;</p><p>|</p>");
 }
 
 #[test]
@@ -369,7 +369,7 @@ fn new_line_at_start_of_link_does_not_extend_it() {
     model.enter();
     assert_eq!(
         tx(&model),
-        "<p></p>\
+        "<p>&nbsp;</p>\
         <p>\
             <b>\
                 <a href=\"test\">|Test</a>\

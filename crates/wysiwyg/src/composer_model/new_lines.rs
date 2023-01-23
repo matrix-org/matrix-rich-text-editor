@@ -294,7 +294,7 @@ mod test {
     fn test_new_line_in_empty_dom() {
         let mut model = cm("|");
         model.enter();
-        assert_eq!(tx(&model), "<p></p><p>|</p>");
+        assert_eq!(tx(&model), "<p>&nbsp;</p><p>|</p>");
     }
 
     #[test]
@@ -308,7 +308,7 @@ mod test {
     fn test_new_line_at_start() {
         let mut model = cm("|Test lines");
         model.enter();
-        assert_eq!(tx(&model), "<p></p><p>|Test lines</p>");
+        assert_eq!(tx(&model), "<p>&nbsp;</p><p>|Test lines</p>");
     }
 
     #[test]
@@ -366,18 +366,18 @@ mod test {
     fn add_line_at_start_of_paragraph() {
         let mut model = cm("<p>|Test</p>");
         model.enter();
-        assert_eq!(tx(&model), "<p></p><p>|Test</p>");
+        assert_eq!(tx(&model), "<p>&nbsp;</p><p>|Test</p>");
         model.select(0.into(), 0.into());
         assert_eq!(tx(&model), "<p>|</p><p>Test</p>");
         model.enter();
-        assert_eq!(tx(&model), "<p></p><p>|</p><p>Test</p>");
+        assert_eq!(tx(&model), "<p>&nbsp;</p><p>|</p><p>Test</p>");
     }
 
     #[test]
     fn add_line_at_start_of_empty_paragraph() {
         let mut model = cm("<p>|</p><p>Test</p>");
         model.enter();
-        assert_eq!(tx(&model), "<p></p><p>|</p><p>Test</p>");
+        assert_eq!(tx(&model), "<p>&nbsp;</p><p>|</p><p>Test</p>");
     }
 
     #[test]
@@ -391,7 +391,7 @@ mod test {
         model.enter();
         assert_eq!(
             tx(&model),
-            "<blockquote><p>First</p><p></p><p>|Second</p></blockquote>"
+            "<blockquote><p>First</p><p>&nbsp;</p><p>|Second</p></blockquote>"
         );
         model.select(6.into(), 6.into());
         model.enter();

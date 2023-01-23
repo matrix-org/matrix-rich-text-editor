@@ -175,7 +175,7 @@ fn undoing_enter_only_undoes_one() {
     model.enter();
     assert_eq!(tx(&model), "<p>Test</p><p>|</p>");
     model.enter();
-    assert_eq!(tx(&model), "<p>Test</p><p></p><p>|</p>");
+    assert_eq!(tx(&model), "<p>Test</p><p>&nbsp;</p><p>|</p>");
     model.undo();
     assert_eq!(tx(&model), "<p>Test</p><p>|</p>");
 }
