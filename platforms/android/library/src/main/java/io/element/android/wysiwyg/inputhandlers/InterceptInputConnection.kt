@@ -110,12 +110,8 @@ internal class InterceptInputConnection(
             val newText = result.text.subSequence(start, start + (text?.length ?: 0))
 
             // Calculate the new composition range.
-            // If the composer has inserted a zero width whitespace as a list delimiter,
-            // shift the composition indices so that it is not included.
             val compositionStart = start
-                .let { if (newText.startsWith("\u200b")) it + 1 else it }
             val compositionEnd = (newText.length + start)
-                .let { if (newText.startsWith("\u200b")) it + 1 else it }
 
             // Here we restore the background color spans from the IME input. This seems to be
             // important for Japanese input.

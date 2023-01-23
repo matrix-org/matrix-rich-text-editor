@@ -6,7 +6,7 @@ import io.element.android.wysiwyg.utils.CodeBlockStyleConfig
 import io.element.android.wysiwyg.utils.InlineCodeStyleConfig
 
 object SpanBackgroundHelperFactory {
-    fun createInlineCodeBackgroundHelper(styleConfig: InlineCodeStyleConfig): SpanBackgroundHelper<InlineCodeSpan> {
+    fun createInlineCodeBackgroundHelper(styleConfig: InlineCodeStyleConfig): SpanBackgroundHelper {
         return SpanBackgroundHelper(
             spanType = InlineCodeSpan::class.java,
             horizontalPadding = styleConfig.horizontalPadding,
@@ -18,7 +18,7 @@ object SpanBackgroundHelperFactory {
         )
     }
 
-    fun createCodeBlockBackgroundHelper(styleConfig: CodeBlockStyleConfig): SpanBackgroundHelper<CodeBlockSpan> {
+    fun createCodeBlockBackgroundHelper(styleConfig: CodeBlockStyleConfig): SpanBackgroundHelper {
         return SpanBackgroundHelper(
             spanType = CodeBlockSpan::class.java,
             horizontalPadding = 0,

@@ -16,7 +16,7 @@ import io.element.android.wysiwyg.utils.*
  */
 class EditorStyledTextView : AppCompatTextView {
     private lateinit var inlineCodeStyleConfig: InlineCodeStyleConfig
-    private val inlineCodeBgHelper: SpanBackgroundHelper<InlineCodeSpan> by lazy {
+    private val inlineCodeBgHelper: SpanBackgroundHelper by lazy {
         SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(inlineCodeStyleConfig)
     }
 
