@@ -385,13 +385,13 @@ impl Range {
     /// If `ancestor_of` is passed, the result must also be an ancestor of the provided `Handle`.
     pub(crate) fn deepest_block_node(
         &self,
-        ancestor_of: Option<DomHandle>,
+        ancestor_of: Option<&DomHandle>,
     ) -> Option<&DomLocation> {
         self.locations
             .iter()
             .filter(|l| {
                 let mut found = true;
-                if let Some(ancestor_of) = &ancestor_of {
+                if let Some(ancestor_of) = ancestor_of {
                     found = l.node_handle.is_ancestor_of(ancestor_of);
                 }
                 found && (l.kind.is_block_kind() || l.kind.is_structure_kind())
@@ -402,13 +402,13 @@ impl Range {
     pub(crate) fn deepest_node_of_kind(
         &self,
         kind: DomNodeKind,
-        ancestor_of: Option<DomHandle>,
+        ancestor_of: Option<&DomHandle>,
     ) -> Option<&DomLocation> {
         self.locations
             .iter()
             .filter(|l| {
                 let mut found = true;
-                if let Some(ancestor_of) = &ancestor_of {
+                if let Some(ancestor_of) = ancestor_of {
                     found = l.node_handle.is_ancestor_of(ancestor_of);
                 }
                 found && l.kind == kind

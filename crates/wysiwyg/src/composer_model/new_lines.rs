@@ -74,20 +74,15 @@ where
         match block_location.kind {
             Paragraph => {
                 let ancestor_block_location =
-                    range.deepest_block_node(Some(block_handle.clone()));
+                    range.deepest_block_node(Some(&block_handle));
                 if let Some(ancestor_block_location) = ancestor_block_location {
-                    if ancestor_block_location.kind != Generic {
-                        if block_location.is_empty() {
-                            self.do_new_line_in_block_node(
-                                block_location,
-                                ancestor_block_location,
-                            );
-                        } else {
-                            self.do_new_line_in_paragraph(
-                                first_leaf,
-                                block_location,
-                            );
-                        }
+                    if ancestor_block_location.kind != Generic
+                        && block_location.is_empty()
+                    {
+                        self.do_new_line_in_block_node(
+                            block_location,
+                            ancestor_block_location,
+                        );
                     } else {
                         self.do_new_line_in_paragraph(
                             first_leaf,

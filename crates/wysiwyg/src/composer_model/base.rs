@@ -98,11 +98,11 @@ where
         match dom {
             Ok(dom) => {
                 self.state.dom = dom;
-                self.state.start = Location::from(self.state.dom.text_len());
-                self.state.end = self.state.start;
                 self.previous_states.clear();
                 self.next_states.clear();
                 Self::post_process_dom(&mut self.state.dom);
+                self.state.start = Location::from(self.state.dom.text_len());
+                self.state.end = self.state.start;
                 self.create_update_replace_all_with_menu_state()
             }
             Err(e) => {
