@@ -43,8 +43,8 @@ import io.element.android.wysiwyg.spans.BlockSpan
  * @param drawableMid the drawable used to draw for whole line
  * @param drawableRight the drawable used to draw right edge of the background
  */
-class SpanBackgroundHelper<T>(
-    private val spanType: Class<T>,
+class SpanBackgroundHelper(
+    private val spanType: Class<*>,
     val horizontalPadding: Int,
     val verticalPadding: Int,
     drawable: Drawable? = null,
@@ -97,13 +97,26 @@ class SpanBackgroundHelper<T>(
             } else {
                 if (it.startLine == it.endLine) singleLineRenderer else multiLineRenderer
             }
-            renderer.draw(canvas, layout, it.startLine, it.endLine, it.startOffset, it.endOffset)
+            renderer.draw(
+                canvas,
+                layout,
+                it.startLine,
+                it.endLine,
+                it.startOffset,
+                it.endOffset,
+                text,
+                spanType
+            )
         }
+    }
+
+    fun clearCachedPositions() {
+        cache.clear()
     }
 
     private fun getSpanPositions(text: Spanned): Set<SpanPosition> {
         val spans = text.getSpans(0, text.length, spanType)
-        return spans.map { SpanPosition(text.getSpanStart(it), text.getSpanEnd(it)) }.toSet()
+        return spans.map { SpanPosition(text.getSpanStart(it), text.getSpanEnd(it), spanType) }.toSet()
     }
 
     /**
@@ -143,6 +156,7 @@ class SpanBackgroundHelper<T>(
 internal data class SpanPosition(
     val spanStart: Int,
     val spanEnd: Int,
+    val spanType: Class<*>,
 )
 
 internal data class DrawPosition(

@@ -27,8 +27,6 @@ import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.inputhandlers.models.LinkAction
 import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
-import io.element.android.wysiwyg.spans.CodeBlockSpan
-import io.element.android.wysiwyg.spans.InlineCodeSpan
 import io.element.android.wysiwyg.utils.*
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
 import io.element.android.wysiwyg.viewmodel.EditorViewModel
@@ -41,10 +39,10 @@ class EditorEditText : TextInputEditText {
     private var inputConnection: InterceptInputConnection? = null
 
     private lateinit var styleConfig: StyleConfig
-    private val inlineCodeBgHelper: SpanBackgroundHelper<InlineCodeSpan> by lazy {
+    private val inlineCodeBgHelper: SpanBackgroundHelper by lazy {
         SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(styleConfig.inlineCode)
     }
-    private val codeBlockBgHelper: SpanBackgroundHelper<CodeBlockSpan> by lazy {
+    private val codeBlockBgHelper: SpanBackgroundHelper by lazy {
         SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(styleConfig.codeBlock)
     }
 
@@ -235,6 +233,9 @@ class EditorEditText : TextInputEditText {
         if (!this.isInitialized) {
             return super.setText(text, type)
         }
+
+        inlineCodeBgHelper.clearCachedPositions()
+        codeBlockBgHelper.clearCachedPositions()
 
         viewModel.updateSelection(editableText, 0, end)
 
