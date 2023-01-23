@@ -33,7 +33,6 @@ private enum Constants {
 }
 
 extension WysiwygComposerTests {
-    // FIXME: TREE SEEMS TO MISMATCH HTML
     func testCodeBlocksFromEmptyComposer() {
         let composer = newComposerModel()
         _ = composer.codeBlock()
@@ -47,7 +46,6 @@ extension WysiwygComposerTests {
         XCTAssertEqual(composer.toTree(), Constants.resultTree)
     }
 
-    // FIXME: TREE SEEMS TO MISMATCH HTML
     func testCodeBlocksWithMultilineInput() {
         let composer = newComposerModel()
         _ = composer.codeBlock()
