@@ -195,11 +195,11 @@ where
 
     fn compute_disabled_actions_for_locations(
         &self,
-        locations: &Vec<DomLocation>,
+        locations: &[DomLocation],
     ) -> HashSet<ComposerAction> {
         let mut disabled_actions = HashSet::new();
         let top_most_list_locations =
-            self.find_top_most_list_item_locations(&locations);
+            self.find_top_most_list_item_locations(locations);
         if !self.can_indent(&top_most_list_locations) {
             disabled_actions.insert(Indent);
         }

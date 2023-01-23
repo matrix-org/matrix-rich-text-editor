@@ -185,7 +185,7 @@ where
             panic!("Destination node must be a ContainerNode");
         }
 
-        self.remove(&from_handle);
+        self.remove(from_handle);
 
         (ret, moved_handles)
     }

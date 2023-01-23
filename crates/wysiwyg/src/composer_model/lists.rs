@@ -115,12 +115,9 @@ where
         locations: &[DomLocation],
     ) -> Vec<DomLocation> {
         // Find any selected leaves and block nodes
-        let leaves_and_empty_block_nodes: Vec<&DomLocation> = locations
-            .iter()
-            .filter(|l| {
-                l.is_leaf() || (l.kind.is_block_kind() && l.length == 0)
-            })
-            .collect();
+        let leaves_and_empty_block_nodes = locations.iter().filter(|l| {
+            l.is_leaf() || (l.kind.is_block_kind() && l.length == 0)
+        });
         // Gather their ancestor list items, if any
         let list_item_handles: Vec<DomHandle> = leaves_and_empty_block_nodes
             .into_iter()
@@ -138,13 +135,13 @@ where
             .unwrap_or(0);
         // Retrieve the actual list item locations
         let top_most_list_items: Vec<DomLocation> = locations
-            .into_iter()
+            .iter()
             .filter(|l| {
                 l.kind == DomNodeKind::ListItem
                     && l.node_handle.depth() == top_most_level
                     && l.relative_position() != Before
             })
-            .map(|l| l.clone())
+            .cloned()
             .collect();
         top_most_list_items
     }
@@ -285,7 +282,7 @@ where
         &self,
         handle: &DomHandle,
     ) -> bool {
-        let node = self.state.dom.lookup_node(&handle);
+        let node = self.state.dom.lookup_node(handle);
         if node.is_list_item() {
             handle.index_in_parent() > 0
         } else {
@@ -309,10 +306,8 @@ where
     }
 
     fn indent_locations(&mut self, locations: &[DomLocation]) {
-        let handles: Vec<DomHandle> = locations
-            .into_iter()
-            .map(|l| l.node_handle.clone())
-            .collect();
+        let handles: Vec<DomHandle> =
+            locations.iter().map(|l| l.node_handle.clone()).collect();
         self.indent_list_item_handles(&handles);
     }
 
@@ -322,7 +317,7 @@ where
             return;
         }
         let can_indent =
-            handles.iter().all(|h| self.can_indent_list_item_handle(&h));
+            handles.iter().all(|h| self.can_indent_list_item_handle(h));
         if !can_indent {
             return;
         }
@@ -344,7 +339,7 @@ where
         let parent_list_type = self
             .state
             .dom
-            .parent(&first_handle)
+            .parent(first_handle)
             .get_list_type()
             .unwrap()
             .clone();
@@ -352,7 +347,7 @@ where
         // Remove ListItems to indent from the parent List
         let mut removed_list_items = Vec::new();
         for handle in sorted_handles.iter().rev() {
-            removed_list_items.insert(0, self.state.dom.remove(&handle));
+            removed_list_items.insert(0, self.state.dom.remove(handle));
         }
 
         if let DomNode::Container(dest_list_item) =
@@ -381,10 +376,8 @@ where
     }
 
     fn unindent_locations(&mut self, locations: &[DomLocation]) {
-        let handles: Vec<DomHandle> = locations
-            .into_iter()
-            .map(|l| l.node_handle.clone())
-            .collect();
+        let handles: Vec<DomHandle> =
+            locations.iter().map(|l| l.node_handle.clone()).collect();
         self.unindent_handles(&handles);
     }
 
@@ -400,7 +393,7 @@ where
         if handles.is_empty() {
             return;
         }
-        let can_unindent = handles.iter().all(|h| self.can_unindent_handle(&h));
+        let can_unindent = handles.iter().all(|h| self.can_unindent_handle(h));
         if !can_unindent {
             return;
         }
@@ -423,7 +416,7 @@ where
         // Remove the selected ListItems
         let mut removed_list_items = Vec::new();
         for handle in sorted_handles.iter().rev() {
-            removed_list_items.insert(0, self.state.dom.remove(&handle));
+            removed_list_items.insert(0, self.state.dom.remove(handle));
         }
 
         let list_type = get_container(&self.state.dom, &parent_handle)

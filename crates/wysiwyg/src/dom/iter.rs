@@ -118,12 +118,7 @@ where
     pub fn next_leaf(&mut self, handle: &DomHandle) -> Option<&DomNode<S>> {
         let mut iter = self.iter_from_handle(handle);
         iter.next(); // Current node
-        while let Some(prev) = iter.next() {
-            if prev.is_leaf() {
-                return Some(prev);
-            }
-        }
-        None
+        iter.find(|&next| next.is_leaf())
     }
 
     /// Return the handle of the next node in the DOM, if exists, in depth-first order.

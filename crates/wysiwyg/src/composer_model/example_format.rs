@@ -76,7 +76,7 @@ impl ComposerModel<Utf16String> {
     /// ```
     pub fn from_example_format(text: &str) -> Self {
         let mut model = ComposerModel::new();
-        model.state.dom = parse(&text).unwrap();
+        model.state.dom = parse(text).unwrap();
 
         let mut offset = 0;
         let (start, end, curs) = Self::find_selection_in(
@@ -165,7 +165,7 @@ impl ComposerModel<Utf16String> {
             DomNode::Container(container) => {
                 for child in container.children() {
                     let (new_start, new_end, new_curs) =
-                        Self::find_selection_in(&model, &child, offset);
+                        Self::find_selection_in(model, child, offset);
                     if start.is_none() {
                         start = new_start;
                     }
@@ -178,9 +178,10 @@ impl ComposerModel<Utf16String> {
                     if model.adds_line_break(&child.handle()) {
                         *offset += 1;
                     }
-                    if start.is_none() && end.is_none() && curs.is_some() {
-                        break;
-                    } else if start.is_some() && end.is_some() {
+                    let found_cursor =
+                        start.is_none() && end.is_none() && curs.is_some();
+                    let found_selection = start.is_some() && end.is_some();
+                    if found_cursor || found_selection {
                         break;
                     }
                 }

@@ -315,7 +315,7 @@ mod sys {
         ) -> Dom<S> {
             let code_block_handles = Self::find_code_block_handles(&dom);
             for handle in code_block_handles.iter().rev() {
-                dom = Self::post_process_code_blocks_lines(dom, &handle);
+                dom = Self::post_process_code_blocks_lines(dom, handle);
             }
             dom
         }
@@ -333,8 +333,8 @@ mod sys {
             mut dom: Dom<S>,
             handle: &DomHandle,
         ) -> Dom<S> {
-            assert_eq!(dom.lookup_node(&handle).kind(), CodeBlock);
-            let last_handle = dom.last_node_handle_in_sub_tree(&handle);
+            assert_eq!(dom.lookup_node(handle).kind(), CodeBlock);
+            let last_handle = dom.last_node_handle_in_sub_tree(handle);
             let mut next_handle = last_handle.clone();
             let mut children = Vec::new();
             let mut line_break_handles = Vec::new();
@@ -364,17 +364,17 @@ mod sys {
                 children.insert(0, node);
             }
 
-            let needs_removal = if dom.contains(&handle) {
-                let block = dom.lookup_node(&handle);
+            let needs_removal = if dom.contains(handle) {
+                let block = dom.lookup_node(handle);
                 block.kind() == CodeBlock && block.is_empty()
             } else {
                 false
             };
             if needs_removal {
-                dom.remove(&handle);
+                dom.remove(handle);
             }
 
-            dom.insert_at(&handle, DomNode::new_code_block(children));
+            dom.insert_at(handle, DomNode::new_code_block(children));
             dom
         }
     }

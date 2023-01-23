@@ -79,23 +79,23 @@ where
                     if ancestor_block_location.kind != Generic {
                         if block_location.is_empty() {
                             self.do_new_line_in_block_node(
-                                &block_location,
-                                &ancestor_block_location,
+                                block_location,
+                                ancestor_block_location,
                             );
                         } else {
                             self.do_new_line_in_paragraph(
                                 first_leaf,
-                                &block_location,
+                                block_location,
                             );
                         }
                     } else {
                         self.do_new_line_in_paragraph(
                             first_leaf,
-                            &block_location,
+                            block_location,
                         );
                     }
                 } else {
-                    self.do_new_line_in_paragraph(first_leaf, &block_location);
+                    self.do_new_line_in_paragraph(first_leaf, block_location);
                 }
             }
             ListItem => {
@@ -125,31 +125,28 @@ where
                     {
                         self.state.dom.remove(&list_handle);
                     }
+                } else if block_location.start_offset == 0 {
+                    self.state.dom.insert_at(
+                        &block_location.node_handle,
+                        DomNode::new_list_item(Vec::new()),
+                    );
                 } else {
-                    if block_location.start_offset == 0 {
-                        self.state.dom.insert_at(
-                            &block_location.node_handle,
-                            DomNode::new_list_item(Vec::new()),
-                        );
-                    } else {
-                        let first_leaf = first_leaf.unwrap();
-                        let mut sub_tree = self.state.dom.split_sub_tree_from(
-                            &first_leaf.node_handle,
-                            first_leaf.start_offset,
-                            block_location.node_handle.depth(),
-                        );
-                        let children =
-                            sub_tree.document_mut().remove_children();
-                        self.state.dom.insert_at(
-                            &block_location.node_handle.next_sibling(),
-                            DomNode::new_list_item(children),
-                        );
-                        self.state.advance_selection();
-                    }
+                    let first_leaf = first_leaf.unwrap();
+                    let mut sub_tree = self.state.dom.split_sub_tree_from(
+                        &first_leaf.node_handle,
+                        first_leaf.start_offset,
+                        block_location.node_handle.depth(),
+                    );
+                    let children = sub_tree.document_mut().remove_children();
+                    self.state.dom.insert_at(
+                        &block_location.node_handle.next_sibling(),
+                        DomNode::new_list_item(children),
+                    );
+                    self.state.advance_selection();
                 }
             }
             Generic => {
-                self.do_new_line_in_paragraph(first_leaf, &block_location);
+                self.do_new_line_in_paragraph(first_leaf, block_location);
             }
             _ => panic!("Unexpected kind block node with inline contents"),
         }

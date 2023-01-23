@@ -103,7 +103,7 @@ where
             self.state.dom.find_insert_handle_for_extracted_block_node(
                 &start_handle,
                 &parent_handle,
-                &subtree.document_node(),
+                subtree.document_node(),
             );
 
         let code_block = DomNode::new_code_block(children);
@@ -212,9 +212,10 @@ where
             );
         }
 
-        if container.is_list_item() {
-            vec![DomNode::new_paragraph(children)]
-        } else if matches!(container.kind(), ContainerNodeKind::Paragraph) {
+        if matches!(
+            container.kind(),
+            ContainerNodeKind::Paragraph | ContainerNodeKind::ListItem
+        ) {
             vec![DomNode::new_paragraph(children)]
         } else if container.is_block_node() {
             children

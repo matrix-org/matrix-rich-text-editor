@@ -129,7 +129,7 @@ where
         &self,
         handle: &DomHandle,
     ) -> DomHandle {
-        if let DomNode::Container(container) = self.lookup_node(&handle) {
+        if let DomNode::Container(container) = self.lookup_node(handle) {
             if !container.children().is_empty() {
                 let cur_handle =
                     handle.child_handle(container.children().len() - 1);
