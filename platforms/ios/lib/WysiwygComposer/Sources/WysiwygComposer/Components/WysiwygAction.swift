@@ -36,6 +36,8 @@ public enum WysiwygAction: Equatable {
     case orderedList
     /// Create an unordered list.
     case unorderedList
+    case indent
+    case unIndent
     case codeBlock
     case quote
 }
