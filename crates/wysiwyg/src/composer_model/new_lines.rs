@@ -404,7 +404,7 @@ mod test {
     }
 
     #[test]
-    fn line_break_in_quote_splits_quote() {
+    fn line_break_in_empty_paragraph_inside_quote_splits_quote() {
         let mut model =
             cm("<blockquote><p>First</p><p>|</p><p>Second</p></blockquote>");
         model.enter();

@@ -82,7 +82,6 @@ where
             self.state.dom.find_insert_handle_for_extracted_block_node(
                 &start_handle,
                 &parent_handle,
-                subtree.document_node(),
             );
         let subtree_root_kind = subtree.document_node().kind();
         let quote_node = if subtree_root_kind.is_block_kind()
