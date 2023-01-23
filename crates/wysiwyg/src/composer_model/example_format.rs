@@ -236,7 +236,7 @@ impl ComposerModel<Utf16String> {
         // Modify the text nodes to add {, } and |
         let selection_start = state.start.into();
         let selection_end = state.end.into();
-        let doc_length = dom.document().text_len();
+        let doc_length = dom.text_len();
         let root = dom.lookup_node(&dom.document_handle());
         let state = SelectionWritingState::new(
             selection_start,

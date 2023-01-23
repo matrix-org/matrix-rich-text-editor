@@ -98,11 +98,11 @@ where
         match dom {
             Ok(dom) => {
                 self.state.dom = dom;
-                self.state.start = Location::from(self.state.dom.text_len());
-                self.state.end = self.state.start;
                 self.previous_states.clear();
                 self.next_states.clear();
                 Self::post_process_dom(&mut self.state.dom);
+                self.state.start = Location::from(self.state.dom.text_len());
+                self.state.end = self.state.start;
                 self.create_update_replace_all_with_menu_state()
             }
             Err(e) => {
@@ -196,7 +196,8 @@ where
 mod test {
     use widestring::Utf16String;
 
-    use crate::tests::testutils_composer_model::cm;
+    use crate::tests::testutils_composer_model::{cm, tx};
+    use crate::tests::testutils_conversion::utf16;
 
     use super::*;
 
@@ -219,5 +220,31 @@ mod test {
         assert!(model.action_is_reversed(ComposerAction::Bold));
         assert!(model.action_is_enabled(ComposerAction::StrikeThrough));
         assert!(model.action_is_disabled(ComposerAction::Redo));
+    }
+
+    #[test]
+    fn set_content_from_html_with_complex_html_has_proper_selection() {
+        let mut model = cm("|");
+        model.set_content_from_html(&utf16(
+            "<blockquote>\
+                    <p>Some</p>\
+                    <p>multi-line</p>\
+                    <p>quote</p>\
+                </blockquote>\
+                <p></p>\
+                <p>Some text</p>\
+                <pre>A\n\tcode\nblock</pre>\
+                <p>Some <code>inline</code> code</p>",
+        ));
+        assert_eq!(
+            tx(&model),
+            "<blockquote>\
+                <p>Some</p><p>multi-line</p><p>quote</p>\
+            </blockquote>\
+            <p></p>\
+            <p>Some text</p>\
+            <pre>A\n\tcode\nblock</pre>\
+            <p>Some <code>inline</code> code|</p>"
+        )
     }
 }
