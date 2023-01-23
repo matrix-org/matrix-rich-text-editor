@@ -121,7 +121,8 @@ public final class HTMLParser {
         // DTCoreText always adds a \n at the end of the document, which we need to remove
         // however it does not add it if </code> </a> are the last nodes.
         // Also we don't want to remove it if blockquote and codeblock contain that newline
-        // and are not empty
+        // and are not empty, because DTCoreText does not add a newline if these blocks
+        // contain one at the end.
         if mutableAttributedString.string.last == "\n",
            !html.hasSuffix("</code>"),
            !html.hasSuffix("</a>"),
