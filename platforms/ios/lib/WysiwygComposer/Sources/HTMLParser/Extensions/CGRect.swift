@@ -14,23 +14,14 @@
 // limitations under the License.
 //
 
-import XCTest
+import CoreGraphics
 
-extension WysiwygUITests {
-    func testQuote() throws {
-        // Type something into composer.
-        textView.typeTextCharByChar("Some text")
-        button(.quoteButton).tap()
-        // FIXME: iOS/DTCoreText automatically adds an extra line break even if not in the model
-        assertTextViewContent("​Some text \n")
-
-        // FIXME: an unwanted space is added into the model
-        assertTreeEquals(
-            """
-            └>blockquote
-              ├>~
-              └>"Some text "
-            """
-        )
+extension CGRect {
+    /// Return a copy of the rect extended to the leading and trailing borders of given frame.
+    ///
+    /// - Parameters:
+    ///   - frame: frame to extend into.
+    func extendHorizontally(in frame: CGRect) -> CGRect {
+        CGRect(x: frame.minX, y: minY, width: frame.width, height: height)
     }
 }

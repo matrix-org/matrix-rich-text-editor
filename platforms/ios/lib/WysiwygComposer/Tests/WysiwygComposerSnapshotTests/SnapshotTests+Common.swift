@@ -14,23 +14,23 @@
 // limitations under the License.
 //
 
-import XCTest
+import SnapshotTesting
 
-extension WysiwygUITests {
-    func testQuote() throws {
-        // Type something into composer.
-        textView.typeTextCharByChar("Some text")
-        button(.quoteButton).tap()
-        // FIXME: iOS/DTCoreText automatically adds an extra line break even if not in the model
-        assertTextViewContent("​Some text \n")
+final class CommonSnapshotTests: SnapshotTests {
+    func testClearState() throws {
+        assertSnapshot(
+            matching: hostingController,
+            as: .image(on: .iPhone13),
+            record: isRecord
+        )
+    }
 
-        // FIXME: an unwanted space is added into the model
-        assertTreeEquals(
-            """
-            └>blockquote
-              ├>~
-              └>"Some text "
-            """
+    func testPlainTextContent() throws {
+        viewModel.setHtmlContent("Test")
+        assertSnapshot(
+            matching: hostingController,
+            as: .image(on: .iPhone13),
+            record: isRecord
         )
     }
 }

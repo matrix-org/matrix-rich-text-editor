@@ -16,7 +16,7 @@
 
 import UIKit
 
-public class PlaceholdableTextView: UITextView {
+public class WysiwygTextView: UITextView {
     var shouldShowPlaceholder = true {
         didSet {
             setNeedsDisplay()
@@ -40,7 +40,7 @@ public class PlaceholdableTextView: UITextView {
             setNeedsDisplay()
         }
     }
-    
+
     override public init(frame: CGRect, textContainer: NSTextContainer?) {
         super.init(frame: frame, textContainer: textContainer)
         contentMode = .redraw
@@ -50,10 +50,31 @@ public class PlaceholdableTextView: UITextView {
         super.init(coder: coder)
         contentMode = .redraw
     }
+
+    /// Apply given content to the text view. This will temporary disrupt the text view
+    /// delegate in order to avoid having multiple unnecessary selection frowarded to
+    /// the model. This is especially useful since setting the attributed text automatically
+    /// moves the cursor to the end of the text and it might not be the expected behaviour.
+    ///
+    /// - Parameters:
+    ///   - content: Content to apply.
+    func apply(_ content: WysiwygComposerAttributedContent) {
+        guard content.text != attributedText || content.selection != selectedRange else { return }
+
+        performWithoutDelegate {
+            self.attributedText = content.text
+            // Set selection to {0, 0} then to expected position
+            // avoids an issue with autocapitalization.
+            self.selectedRange = .zero
+            self.selectedRange = content.selection
+        }
+    }
     
     override public func draw(_ rect: CGRect) {
         super.draw(rect)
-        
+
+        drawBackgroundStyleLayers()
+
         guard shouldShowPlaceholder, let placeholder = placeholder else {
             return
         }
@@ -66,5 +87,18 @@ public class PlaceholdableTextView: UITextView {
                                          right: textContainerInset.right))
         
         placeholder.draw(in: frame, withAttributes: attributes)
+    }
+}
+
+private extension WysiwygTextView {
+    /// Perform an action while temporary removing the text view delegate.
+    ///
+    /// - Parameters:
+    ///   - block: Code block to perform.
+    func performWithoutDelegate(block: () -> Void) {
+        let myDelegate = delegate
+        delegate = nil
+        block()
+        delegate = myDelegate
     }
 }

@@ -16,7 +16,7 @@
 
 import UIKit
 
-extension UIColor {
+public extension UIColor {
     func toHexString(shouldIncludeAlpha: Bool = false) -> String {
         var r: CGFloat = 0
         var g: CGFloat = 0

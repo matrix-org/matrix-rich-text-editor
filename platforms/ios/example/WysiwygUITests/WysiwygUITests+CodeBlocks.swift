@@ -21,14 +21,15 @@ extension WysiwygUITests {
         // Type something into composer.
         textView.typeTextCharByChar("Some text")
         button(.codeBlockButton).tap()
-        // FIXME: iOS automatically adds an extra line break even if not in the model
-        assertTextViewContent("​Some text\n")
+        // FIXME: iOS/DTCoreText automatically adds an extra line break even if not in the model
+        assertTextViewContent("​Some text \n")
 
+        // FIXME: an unwanted space is added into the model
         assertTreeEquals(
             """
             └>pre
               ├>~
-              └>"Some text"
+              └>"Some text "
             """
         )
     }

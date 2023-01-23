@@ -26,8 +26,7 @@ struct ContentView: View {
     /// View model for the composer.
     @StateObject private var viewModel = WysiwygComposerViewModel(
         minHeight: WysiwygSharedConstants.composerMinHeight,
-        maxExpandedHeight: WysiwygSharedConstants.composerMaxExtendedHeight,
-        linkColor: .purple
+        maxExpandedHeight: WysiwygSharedConstants.composerMaxExtendedHeight
     )
 
     var body: some View {
