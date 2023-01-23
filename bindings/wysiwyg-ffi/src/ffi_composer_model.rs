@@ -218,7 +218,7 @@ impl ComposerModel {
     }
 
     pub fn to_example_format(self: &Arc<Self>) -> String {
-        self.inner.lock().unwrap().to_example_format().to_string()
+        self.inner.lock().unwrap().to_example_format()
     }
 
     pub fn to_tree(self: &Arc<Self>) -> String {

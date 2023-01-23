@@ -394,3 +394,12 @@ fn new_line_at_end_of_link_does_not_extend_it() {
         </p>"
     );
 }
+
+#[test]
+fn pressing_enter_after_wrapping_text_in_code_block_works() {
+    let mut model = cm("|");
+    model.replace_text("Some code".into());
+    model.code_block();
+    model.enter();
+    assert_eq!(tx(&model), "<pre>Some code\n|</pre>")
+}

@@ -103,6 +103,7 @@ impl DomLocation {
     }
 
     /// Returns the relative position of this DomLocation towards the range.
+    #[allow(clippy::collapsible_else_if)] // It's a lot easier to differentiate these 2 cases
     pub fn relative_position(&self) -> DomLocationPosition {
         if self.kind.is_block_kind() && self.is_empty() {
             if self.start_offset == self.length {
@@ -266,7 +267,7 @@ impl Range {
     }
 
     pub fn has_leaves(&self) -> bool {
-        self.locations.iter().find(|l| l.is_leaf()).is_some()
+        self.locations.iter().any(|l| l.is_leaf())
     }
 
     pub fn leaves(&self) -> impl Iterator<Item = &DomLocation> {

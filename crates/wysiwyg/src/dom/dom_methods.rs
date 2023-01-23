@@ -174,14 +174,14 @@ where
 
     fn remove_empty_nodes_recursively(&mut self, handle: &DomHandle) {
         let needs_removal = if let DomNode::Container(container) =
-            self.lookup_node_mut(&handle)
+            self.lookup_node_mut(handle)
         {
             container.is_empty()
         } else {
             false
         };
         if needs_removal {
-            self.remove(&handle);
+            self.remove(handle);
         }
 
         if handle.has_parent() {
@@ -502,7 +502,7 @@ where
                 action_list.push(DomAction::add_node(
                     last_leaf.node_handle.parent_handle(),
                     last_leaf.node_handle.index_in_parent() + 1,
-                    DomNode::new_text(new_text.clone()),
+                    DomNode::new_text(new_text),
                 ));
             } else if let Some(block_node) = sorted_locations
                 .into_iter()
@@ -510,9 +510,9 @@ where
                 .find(|l| l.kind.is_block_kind())
             {
                 action_list.push(DomAction::add_node(
-                    block_node.node_handle.clone(),
+                    block_node.node_handle,
                     0,
-                    DomNode::new_text(new_text.clone()),
+                    DomNode::new_text(new_text),
                 ));
             }
         }
@@ -569,12 +569,12 @@ where
         &mut self,
         handle: &DomHandle,
     ) {
-        if !self.lookup_node(&handle).is_block_node() {
+        if !self.lookup_node(handle).is_block_node() {
             return;
         }
-        self.wrap_inline_nodes_into_paragraphs_at_container(&handle);
+        self.wrap_inline_nodes_into_paragraphs_at_container(handle);
         let child_count = self
-            .lookup_node(&handle)
+            .lookup_node(handle)
             .as_container()
             .map_or(0, |c| c.children().len());
         if child_count > 0 {
@@ -590,7 +590,7 @@ where
         &mut self,
         container_handle: &DomHandle,
     ) {
-        let DomNode::Container(container) = self.lookup_node_mut(&container_handle) else {
+        let DomNode::Container(container) = self.lookup_node_mut(container_handle) else {
             return;
         };
 
@@ -897,13 +897,13 @@ where
     }
 
     pub fn adds_line_break(&self, handle: &DomHandle) -> bool {
-        let node = self.lookup_node(&handle);
+        let node = self.lookup_node(handle);
         let is_block_node = node.is_block_node();
         if !is_block_node || handle.is_root() {
             return false;
         }
 
-        let parent = self.parent(&handle);
+        let parent = self.parent(handle);
         let child_count = parent.children().len();
 
         node.handle().index_in_parent() + 1 < child_count
@@ -921,7 +921,7 @@ where
 
             let needs_removal = {
                 let node = self.lookup_node(&cur);
-                condition(&node)
+                condition(node)
             };
 
             if needs_removal {

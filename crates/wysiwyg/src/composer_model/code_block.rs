@@ -103,7 +103,6 @@ where
             self.state.dom.find_insert_handle_for_extracted_block_node(
                 &start_handle,
                 &parent_handle,
-                &subtree.document_node(),
             );
 
         let code_block = DomNode::new_code_block(children);
@@ -212,9 +211,10 @@ where
             );
         }
 
-        if container.is_list_item() {
-            vec![DomNode::new_paragraph(children)]
-        } else if matches!(container.kind(), ContainerNodeKind::Paragraph) {
+        if matches!(
+            container.kind(),
+            ContainerNodeKind::Paragraph | ContainerNodeKind::ListItem
+        ) {
             vec![DomNode::new_paragraph(children)]
         } else if container.is_block_node() {
             children
@@ -460,6 +460,54 @@ mod test {
                       └>p
                 "#
             }
+        );
+    }
+
+    #[test]
+    fn applying_code_block_to_the_first_paragraph_does_not_move_it() {
+        let mut model = cm("\
+        <p>|A</p>\
+        <p>B</p>\
+        <p>C</p>");
+        model.code_block();
+        assert_eq!(
+            tx(&model),
+            "\
+        <pre>|A</pre>\
+        <p>B</p>\
+        <p>C</p>"
+        );
+    }
+
+    #[test]
+    fn applying_code_block_to_some_middle_paragraph_does_not_move_it() {
+        let mut model = cm("\
+        <p>A</p>\
+        <p>B|</p>\
+        <p>C</p>");
+        model.code_block();
+        assert_eq!(
+            tx(&model),
+            "\
+        <p>A</p>\
+        <pre>B|</pre>\
+        <p>C</p>"
+        );
+    }
+
+    #[test]
+    fn applying_code_block_to_the_last_paragraph_does_not_move_it() {
+        let mut model = cm("\
+        <p>A</p>\
+        <p>B</p>\
+        <p>|C</p>");
+        model.code_block();
+        assert_eq!(
+            tx(&model),
+            "\
+        <p>A</p>\
+        <p>B</p>\
+        <pre>|C</pre>"
         );
     }
 }

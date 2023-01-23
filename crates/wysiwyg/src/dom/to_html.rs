@@ -36,17 +36,8 @@ where
 
 /// State of the HTML generation at every `fmt_html` call, usually used to pass info from ancestor
 /// nodes to their descendants.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct ToHtmlState {
     pub is_inside_code_block: bool,
     pub is_last_node_in_parent: bool,
-}
-
-impl Default for ToHtmlState {
-    fn default() -> Self {
-        Self {
-            is_inside_code_block: false,
-            is_last_node_in_parent: false,
-        }
-    }
 }

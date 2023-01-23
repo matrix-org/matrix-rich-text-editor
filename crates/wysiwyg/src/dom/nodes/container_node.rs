@@ -636,7 +636,7 @@ impl<S: UnicodeString> ContainerNode<S> {
         if let Some(w) = selection_writer {
             for (i, child) in self.children.iter().enumerate() {
                 let is_last = self.children().len() == i + 1;
-                let mut state = state.clone();
+                let mut state = state;
                 state.is_last_node_in_parent = is_last;
                 child.fmt_html(formatter, Some(w), state);
             }
@@ -644,13 +644,13 @@ impl<S: UnicodeString> ContainerNode<S> {
                 w.write_selection_empty_container(
                     formatter,
                     formatter.len(),
-                    &self,
+                    self,
                 )
             }
         } else {
             for (i, child) in self.children.iter().enumerate() {
                 let is_last = self.children().len() == i + 1;
-                let mut state = state.clone();
+                let mut state = state;
                 state.is_last_node_in_parent = is_last;
                 child.fmt_html(formatter, None, state);
             }
