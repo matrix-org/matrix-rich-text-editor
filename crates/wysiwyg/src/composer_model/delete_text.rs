@@ -305,8 +305,8 @@ where
             // We are backspacing inside a text node with cursor
             // selection - we might need special behaviour, if
             // we are at the start of a list item.
-            let parent_list_item_loc = range
-                .deepest_node_of_kind(ListItem, Some(leaf.node_handle.clone()));
+            let parent_list_item_loc =
+                range.deepest_node_of_kind(ListItem, Some(&leaf.node_handle));
             if let Some(list_item_loc) = parent_list_item_loc {
                 if list_item_loc.start_offset == 0 {
                     self.do_backspace_in_list(&list_item_loc.node_handle)
