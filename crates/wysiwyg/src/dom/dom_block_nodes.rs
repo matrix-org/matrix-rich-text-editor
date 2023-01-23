@@ -157,22 +157,24 @@ where
         &self,
         start_handle: &DomHandle,
         parent_handle: &DomHandle,
-        subtree: &DomNode<S>,
     ) -> DomHandle {
-        let start_handle_is_start_at_depth =
-            start_handle.raw().iter().all(|i| *i == 0);
-        let mut insert_at_handle =
-            if subtree.is_block_node() && subtree.kind() != Generic {
-                start_handle.sub_handle_up_to(parent_handle.depth())
-            } else {
+        if self.document().is_empty() {
+            self.document_handle().child_handle(0)
+        } else {
+            let mut insert_at_handle = if parent_handle.is_root() {
                 start_handle.sub_handle_up_to(parent_handle.depth() + 1)
+            } else {
+                start_handle.sub_handle_up_to(parent_handle.depth())
             };
-        if !start_handle_is_start_at_depth && self.contains(&insert_at_handle) {
-            insert_at_handle = insert_at_handle.next_sibling();
-        } else if self.document().is_empty() {
-            insert_at_handle = self.document_handle().child_handle(0);
+
+            if insert_at_handle.index_in_parent() > 0
+                && self.next_sibling(&insert_at_handle).is_some()
+            {
+                insert_at_handle = insert_at_handle.next_sibling();
+            }
+
+            insert_at_handle
         }
-        insert_at_handle
     }
 }
 
