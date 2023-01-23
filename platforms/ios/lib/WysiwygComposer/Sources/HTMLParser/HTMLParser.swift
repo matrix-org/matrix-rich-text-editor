@@ -125,7 +125,6 @@ public final class HTMLParser {
            !html.hasSuffix("</code>"),
            !html.hasSuffix("</a>"),
            !html.hasSuffix("</p><p></p></blockquote>"),
-           // Is this intended or is it an html bug?
            !html.hasSuffix("\n</pre>") {
             mutableAttributedString.deleteCharacters(in: NSRange(location: mutableAttributedString.length - 1, length: 1))
         }

@@ -18,7 +18,7 @@
 import XCTest
 
 private enum Constants {
-    static let resultHtml = "<pre><p>Some code\n\tmore code</pre><p></p>"
+    static let resultHtml = "<pre>Some code\n\tmore code</pre><p></p>"
     static let resultTree =
         """
 
@@ -26,7 +26,7 @@ private enum Constants {
         │ ├>p
         │ │ └>"Some code"
         │ └>p
-        │   └>"    more code"
+        │   └>"\tmore code"
         └>p
 
         """
@@ -58,17 +58,16 @@ extension WysiwygComposerTests {
         XCTAssertEqual(composer.toTree(), Constants.resultTree)
     }
 
-    // FIXME: THIS ONE MAKES THE APP CRASH TEMPORARILY REMOVING THIS TEST
-//    func testCodeBlocksFromContent() {
-//        let composer = newComposerModel()
-//        _ = composer.replaceText(newText: "Some code")
-//        _ = composer.codeBlock()
-//        _ = composer.enter()
-//        _ = composer.replaceText(newText: "\t")
-//        _ = composer.replaceText(newText: "more code")
-//        _ = composer.enter()
-//        _ = composer.enter()
-//        XCTAssertEqual(composer.getContentAsHtml(), Constants.resultHtml)
-//        XCTAssertEqual(composer.toTree(), Constants.resultTree)
-//    }
+    func testCodeBlocksFromContent() {
+        let composer = newComposerModel()
+        _ = composer.replaceText(newText: "Some code")
+        _ = composer.codeBlock()
+        _ = composer.enter()
+        _ = composer.replaceText(newText: "\t")
+        _ = composer.replaceText(newText: "more code")
+        _ = composer.enter()
+        _ = composer.enter()
+        XCTAssertEqual(composer.getContentAsHtml(), Constants.resultHtml)
+        XCTAssertEqual(composer.toTree(), Constants.resultTree)
+    }
 }
