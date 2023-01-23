@@ -86,20 +86,12 @@ where
     }
 
     pub fn new_code_block(children: Vec<DomNode<S>>) -> DomNode<S> {
+        let children = Self::wrap_children_in_paragraphs_if_needed(children);
         DomNode::Container(ContainerNode::new_code_block(children))
     }
 
     pub fn new_quote(children: Vec<DomNode<S>>) -> DomNode<S> {
-        let all_block_nodes = if children.is_empty() {
-            false
-        } else {
-            children.iter().all(|c| c.is_block_node())
-        };
-        let children = if !all_block_nodes {
-            vec![DomNode::new_paragraph(children)]
-        } else {
-            children
-        };
+        let children = Self::wrap_children_in_paragraphs_if_needed(children);
         DomNode::Container(ContainerNode::new_quote(children))
     }
 
@@ -340,6 +332,21 @@ where
             DomNode::Container(container) => container.is_empty(),
             DomNode::Text(text_node) => text_node.data().is_empty(),
             _ => false,
+        }
+    }
+
+    fn wrap_children_in_paragraphs_if_needed(
+        children: Vec<DomNode<S>>,
+    ) -> Vec<DomNode<S>> {
+        let all_block_nodes = if children.is_empty() {
+            false
+        } else {
+            children.iter().all(|c| c.is_block_node())
+        };
+        if !all_block_nodes {
+            vec![DomNode::new_paragraph(children)]
+        } else {
+            children
         }
     }
 }
