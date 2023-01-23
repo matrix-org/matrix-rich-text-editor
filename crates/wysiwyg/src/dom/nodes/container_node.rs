@@ -351,6 +351,11 @@ where
             .iter()
             .filter(|child| child.is_block_node())
             .count();
+        let block_nodes_extra = if block_nodes_extra > 0 {
+            block_nodes_extra - 1
+        } else {
+            block_nodes_extra
+        };
         children_len + block_nodes_extra
     }
 
