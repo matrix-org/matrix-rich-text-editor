@@ -313,16 +313,17 @@ class InterceptInputConnectionIntegrationTest {
         // First line break, should just add a line break character
         inputConnection.onHardwareEnterKey()
 
-        assertThat(textView.text.toString(), equalTo("Test\n"))
+        assertThat(textView.text.toString(), equalTo("Test\n$ZWSP"))
         assertThat(
             textView.text.dumpSpans(), equalTo(
                 listOf(
-                    "Test\n: android.widget.TextView.ChangeWatcher (0-5) fl=#6553618",
-                    "Test\n: android.text.method.TextKeyListener (0-5) fl=#18",
-                    "Test\n: android.widget.Editor.SpanController (0-5) fl=#18",
+                    "Test\n$ZWSP: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
+                    "Test\n$ZWSP: android.text.method.TextKeyListener (0-6) fl=#18",
+                    "Test\n$ZWSP: android.widget.Editor.SpanController (0-6) fl=#18",
                     ": android.text.Selection.START (5-5) fl=#546",
                     ": android.text.Selection.END (5-5) fl=#34",
-                    "Test\n: io.element.android.wysiwyg.spans.CodeBlockSpan (0-5) fl=#33",
+                    "$ZWSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (5-6) fl=#17",
+                    "Test\n$ZWSP: io.element.android.wysiwyg.spans.CodeBlockSpan (0-6) fl=#33",
                 )
             )
         )
@@ -337,7 +338,7 @@ class InterceptInputConnectionIntegrationTest {
                     "Test\n$ZWSP: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
                     "Test\n$ZWSP: android.text.method.TextKeyListener (0-6) fl=#18",
                     "Test\n$ZWSP: android.widget.Editor.SpanController (0-6) fl=#18",
-                    ": android.text.Selection.START (5-5) fl=#546",
+                    ": android.text.Selection.START (5-5) fl=#34",
                     ": android.text.Selection.END (5-5) fl=#34",
                     "$ZWSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (5-6) fl=#17",
                     "Test: io.element.android.wysiwyg.spans.CodeBlockSpan (0-4) fl=#33",

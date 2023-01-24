@@ -49,8 +49,6 @@ internal class HtmlToSpansParser(
         val isPlaceholder: Boolean,
     )
 
-    private val spansToAdd = mutableListOf<AddSpan>()
-
     // Spans created to be used as 'marks' while parsing
     private sealed interface PlaceholderSpan {
         data class Hyperlink(val link: String): PlaceholderSpan
@@ -66,6 +64,28 @@ internal class HtmlToSpansParser(
             val order: Int? = null
         ) : BlockSpan, PlaceholderSpan
     }
+
+    /**
+     * Child tags are parsed before their parents,
+     * causing them to be added to the [text] also in reversed order.
+     * In example, in:
+     * ```
+     * <li><blockquote>text</blockquote></li>
+     * ```
+     * The `blockquote` tag will be parsed and its span will be added first to the text, then the
+     * `li` one will be parsed and its span will be added. However, as they were added in reversed
+     * order (`quote > li` instead of `li > quote`), it will appear as a list item inside a quote
+     * when Android renders the resulting text.
+     *
+     * To fix that, we're creating this list of Spans to be added to the text:
+     * 1. When we parse the start tag, we set a placeholder span to 'book' the position.
+     * 2. When we parse the end tag, we replace that placeholder with the real span, keeping the
+     * starting position.
+     * 3. Once we've parsed the whole HTML, we apply these spans to the text in order.
+     *
+     * *Note*: this is only needed for block spans, as inline spans can be rendered in any order.
+     */
+    private val spansToAdd = mutableListOf<AddSpan>()
 
     private val parser = Parser().also { it.contentHandler = this }
     private val text = SpannableStringBuilder()
@@ -197,9 +217,9 @@ internal class HtmlToSpansParser(
                 val last = getLast<PlaceholderSpan.ListItem>() ?: return
                 val start = text.getSpanStart(last)
                 text.removeSpan(last)
-                if (start == text.length) {
-                    addZWSP(start)
-                }
+
+                addZWSP(start)
+
                 val span = createListSpan(last = last)
                 replacePlaceholderSpanWith(last, span, start, text.length, Spanned.SPAN_EXCLUSIVE_INCLUSIVE)
             }
@@ -208,8 +228,11 @@ internal class HtmlToSpansParser(
                 val start = text.getSpanStart(last)
                 text.removeSpan(last)
 
-                if (start == text.length) {
-                    addZWSP(start)
+                addZWSP(start)
+
+                if (text.lastOrNull() == '\n') {
+                    // Extra char to properly render empty new lines in code blocks
+                    addZWSP(text.length)
                 }
 
                 val codeSpan = CodeBlockSpan(styleConfig.codeBlock.leadingMargin, styleConfig.codeBlock.verticalPadding)
@@ -220,9 +243,7 @@ internal class HtmlToSpansParser(
                 val start = text.getSpanStart(last)
                 text.removeSpan(last)
 
-                if (start == text.length) {
-                    addZWSP(start)
-                }
+                addZWSP(start)
 
                 val quoteSpan = QuoteSpan(
                     indicatorColor = 0xC0A0A0A0.toInt(),
@@ -237,38 +258,14 @@ internal class HtmlToSpansParser(
                 val start = text.getSpanStart(last)
                 text.removeSpan(start)
 
-                if (start == text.length) {
-                    addZWSP(start)
-                } else if (text.length - start == 1 && text.last() == ZWSP) {
-                    text.setSpan(ExtraCharacterSpan(), start, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-                }
+                addZWSP(start)
 
                 replacePlaceholderSpanWith(last, last, start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             }
         }
     }
 
-    private fun addLeadingLineBreakIfNeeded(start: Int): Int {
-        val previousBlock = spansToAdd.filter {
-            it.span is BlockSpan && !it.isPlaceholder && (it.start >= start -1 || it.end <= start)
-        }.maxByOrNull { it.start }
-        return if (previousBlock == null) {
-            start
-        } else {
-            val previousBlockEnd = previousBlock.end
-            if (previousBlockEnd == start) {
-                text.insert(start, "\n")
-                start + 1
-            } else {
-                start
-            }
-        }
-    }
-
-    private fun addZWSP(pos: Int) {
-        text.append(ZWSP)
-        text.setSpan(ExtraCharacterSpan(), pos, pos+1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-    }
+    // region: Handle parsing of tags into spans
 
     private fun handleFormatStartTag(format: InlineFormat) {
         text.setSpan(format, text.length, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
@@ -305,6 +302,56 @@ internal class HtmlToSpansParser(
         text.removeSpan(lastTag)
     }
 
+    private fun createListSpan(last: PlaceholderSpan.ListItem): ParagraphStyle {
+        val gapWidth = styleConfig.bulletList.bulletGapWidth.roundToInt()
+        val bulletRadius = styleConfig.bulletList.bulletRadius.roundToInt()
+
+        return if (last.ordered) {
+            // TODO: provide typeface and textSize somehow
+            val typeface = Typeface.defaultFromStyle(Typeface.NORMAL)
+            val textSize = 16.dpToPx()
+            OrderedListSpan(typeface, textSize, last.order ?: 1, gapWidth)
+        } else {
+            UnorderedListSpan(gapWidth, bulletRadius)
+        }
+    }
+
+    // endregion
+
+    // region: Utils for whitespaces and indexes
+
+    private fun addLeadingLineBreakIfNeeded(start: Int): Int {
+        val previousBlock = spansToAdd.filter {
+            it.span is BlockSpan && !it.isPlaceholder && (it.start >= start -1 || it.end <= start)
+        }.maxByOrNull { it.start }
+        return if (previousBlock == null) {
+            start
+        } else {
+            val previousBlockEnd = previousBlock.end
+            if (previousBlockEnd == start) {
+                text.insert(start, "\n")
+                start + 1
+            } else {
+                start
+            }
+        }
+    }
+
+    private fun addZWSP(pos: Int) {
+        if (pos == text.length) {
+            // If there was no ZWSP char, add a new one as an extra character
+            text.append(ZWSP)
+            text.setSpan(ExtraCharacterSpan(), pos, pos+1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+        } else if (text.length - pos == 1 && text.last() == ZWSP) {
+            // If there was one, set it as an extra character
+            text.setSpan(ExtraCharacterSpan(), pos, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+        }
+    }
+
+    // endregion
+
+    // region: Handle span placeholders for block spans
+
     private fun addSpan(span: Any, start: Int, end: Int, flags: Int) {
         spansToAdd.add(AddSpan(span, start, end, flags, false))
     }
@@ -327,19 +374,7 @@ internal class HtmlToSpansParser(
         }
     }
 
-    private fun createListSpan(last: PlaceholderSpan.ListItem): ParagraphStyle {
-        val gapWidth = styleConfig.bulletList.bulletGapWidth.roundToInt()
-        val bulletRadius = styleConfig.bulletList.bulletRadius.roundToInt()
-
-        return if (last.ordered) {
-            // TODO: provide typeface and textSize somehow
-            val typeface = Typeface.defaultFromStyle(Typeface.NORMAL)
-            val textSize = 16.dpToPx()
-            OrderedListSpan(typeface, textSize, last.order ?: 1, gapWidth)
-        } else {
-            UnorderedListSpan(gapWidth, bulletRadius)
-        }
-    }
+    // endregion
 
     private inline fun <reified T : Any> getLast(from: Int = 0, to: Int = text.length): T? {
         val spans = text.getSpans<T>(from, to)
