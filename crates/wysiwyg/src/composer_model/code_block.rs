@@ -441,7 +441,7 @@ mod test {
         model.code_block();
         assert_eq!(tx(&model), "<pre>|</pre>");
         model.code_block();
-        assert_eq!(tx(&model), "<p>|</p>");
+        assert_eq!(tx(&model), "<p>&nbsp;|</p>");
     }
 
     #[test]

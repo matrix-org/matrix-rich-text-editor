@@ -50,7 +50,7 @@ fn can_create_list_in_empty_model() {
 fn removing_list_item() {
     let mut model = cm("<ol><li>abcd</li><li>|</li></ol>");
     model.enter();
-    assert_eq!(tx(&model), "<ol><li>abcd</li></ol><p>|</p>");
+    assert_eq!(tx(&model), "<ol><li>abcd</li></ol><p>&nbsp;|</p>");
 
     let mut model = cm("<ol><li>abcd</li><li>|</li></ol>");
     model.backspace();
@@ -58,7 +58,7 @@ fn removing_list_item() {
 
     let mut model = cm("<ol><li>|</li></ol>");
     model.enter();
-    assert_eq!(tx(&model), "<p>|</p>");
+    assert_eq!(tx(&model), "<p>&nbsp;|</p>");
 
     let mut model = cm("<ol><li>|</li></ol>");
     model.backspace();
@@ -145,21 +145,21 @@ fn backspacing_trailing_part_of_a_list_item_with_formatting() {
 fn entering_with_entire_selection_in_one_node_deletes_list() {
     let mut model = cm("<ol><li>{abcd}|</li></ol>");
     model.enter();
-    assert_eq!(tx(&model), "<p>|</p>");
+    assert_eq!(tx(&model), "<p>&nbsp;|</p>");
 }
 
 #[test]
 fn entering_with_entire_selection_across_multiple_nodes_deletes_list() {
     let mut model = cm("<ol><li>{abcd</li><li>}|</li></ol>");
     model.enter();
-    assert_eq!(tx(&model), "<p>|</p>");
+    assert_eq!(tx(&model), "<p>&nbsp;|</p>");
 }
 
 #[test]
 fn entering_with_entire_selection_with_formatting() {
     let mut model = cm("<ol><li><b>{abcd}|</b></li></ol>");
     model.enter();
-    assert_eq!(tx(&model), "<p>|</p>");
+    assert_eq!(tx(&model), "<p>&nbsp;|</p>");
 }
 
 #[test]
@@ -232,28 +232,28 @@ fn removing_list() {
     let mut model = cm("|");
     model.ordered_list();
     model.enter();
-    assert_eq!(tx(&model), "<p>|</p>");
+    assert_eq!(tx(&model), "<p>&nbsp;|</p>");
 }
 
 #[test]
 fn removing_trailing_list_item_with_enter() {
     let mut model = cm("<ol><li>abc</li><li>|</li></ol>");
     model.enter();
-    assert_eq!(tx(&model), "<ol><li>abc</li></ol><p>|</p>")
+    assert_eq!(tx(&model), "<ol><li>abc</li></ol><p>&nbsp;|</p>")
 }
 
 #[test]
 fn removing_trailing_list_item_with_list_toggle() {
     let mut model = cm("<ol><li>abc</li><li>|</li></ol>");
     model.ordered_list();
-    assert_eq!(tx(&model), "<ol><li>abc</li></ol><p>|</p>")
+    assert_eq!(tx(&model), "<ol><li>abc</li></ol><p>&nbsp;|</p>")
 }
 
 #[test]
 fn removing_trailing_list_item_then_replace_text() {
     let mut model = cm("<ol><li>abc</li><li>|</li></ol>");
     model.enter();
-    assert_eq!(tx(&model), "<ol><li>abc</li></ol><p>|</p>");
+    assert_eq!(tx(&model), "<ol><li>abc</li></ol><p>&nbsp;|</p>");
     replace_text(&mut model, "def");
     assert_eq!(tx(&model), "<ol><li>abc</li></ol><p>def|</p>");
 }
@@ -464,7 +464,7 @@ fn multiple_list_toggle() {
     model.ordered_list();
     assert_eq!(tx(&model), "<ol><li>|</li></ol>");
     model.ordered_list();
-    assert_eq!(tx(&model), "<p>|</p>");
+    assert_eq!(tx(&model), "<p>&nbsp;|</p>");
     model.ordered_list();
     assert_eq!(tx(&model), "<ol><li>|</li></ol>");
 }
@@ -473,7 +473,7 @@ fn multiple_list_toggle() {
 fn new_list_after_linebreak() {
     let mut model = cm("start|");
     model.enter();
-    assert_eq!(tx(&model), "<p>start</p><p>|</p>");
+    assert_eq!(tx(&model), "<p>start</p><p>&nbsp;|</p>");
 
     model.unordered_list();
     // TODO: make 'start' be contained into a paragraph

@@ -66,7 +66,7 @@ public final class HTMLParser {
         guard !html.isEmpty else {
             return NSAttributedString(string: "")
         }
-        
+
         guard let data = html.data(using: encoding) else {
             throw BuildHtmlAttributedError.dataError(encoding: encoding)
         }
@@ -112,6 +112,18 @@ public final class HTMLParser {
         mutableAttributedString.addAttribute(.paragraphStyle,
                                              value: NSParagraphStyle.default,
                                              range: .init(location: 0, length: mutableAttributedString.length))
+        
+        // Removing NBSP character from <p>&nbsp;</p> since is only used to
+        // make DTCoreText able to easily parse new lines
+        mutableAttributedString.mutableString.replaceOccurrences(
+            of: "\u{00A0}",
+            with: "",
+            options: NSString.CompareOptions.literal,
+            range: NSRange(
+                location: 0,
+                length: mutableAttributedString.length
+            )
+        )
         
         removeTrailingNewlineIfNeeded(from: mutableAttributedString, given: html)
         return mutableAttributedString
