@@ -346,6 +346,20 @@ class EditorEditText : TextInputEditText {
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
+    fun indent() {
+        val result = viewModel.processInput(EditorInputAction.Indent) ?: return
+
+        setTextFromComposerUpdate(result)
+        setSelectionFromComposerUpdate(result.selection.last)
+    }
+
+    fun unIndent() {
+        val result = viewModel.processInput(EditorInputAction.UnIndent) ?: return
+
+        setTextFromComposerUpdate(result)
+        setSelectionFromComposerUpdate(result.selection.last)
+    }
+
     fun setHtml(html: String) {
         val result = viewModel.processInput(EditorInputAction.ReplaceAllHtml(html)) ?: return
 
