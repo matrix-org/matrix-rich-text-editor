@@ -107,11 +107,13 @@ internal class InterceptInputConnection(
         val result = processTextEntry(text, start, end)
 
         return if (result != null) {
-            val newText = result.text.subSequence(start, start + (text?.length ?: 0))
+            val newTextLength = text?.length ?: 0
+            val newEnd = min(result.text.length, start + newTextLength)
+            val newText = result.text.subSequence(start, newEnd)
 
             // Calculate the new composition range.
             val compositionStart = start
-            val compositionEnd = (newText.length + start)
+            val compositionEnd = newEnd
 
             // Here we restore the background color spans from the IME input. This seems to be
             // important for Japanese input.

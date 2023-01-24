@@ -72,7 +72,7 @@ internal class HtmlToSpansParser(
 
     fun convert(): Spanned {
         spansToAdd.clear()
-        parser.parse(InputSource(StringReader(html)))
+        parser.parse(InputSource(StringReader(html.replace(NBSP, ZWSP))))
         for (spanToAdd in spansToAdd) {
             text.setSpan(spanToAdd.span, spanToAdd.start, spanToAdd.end, spanToAdd.flags)
         }
@@ -236,6 +236,8 @@ internal class HtmlToSpansParser(
 
                 if (start == text.length) {
                     addZWSP(start)
+                } else if (text.length - start == 1 && text.last() == ZWSP) {
+                    text.setSpan(ExtraCharacterSpan(), start, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
                 }
 
                 replacePlaceholderSpanWith(last, last, start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
