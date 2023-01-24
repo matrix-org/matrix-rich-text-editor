@@ -231,7 +231,7 @@ mod test {
                     <p>multi-line</p>\
                     <p>quote</p>\
                 </blockquote>\
-                <p></p>\
+                <p>&nbsp;</p>\
                 <p>Some text</p>\
                 <pre>A\n\tcode\nblock</pre>\
                 <p>Some <code>inline</code> code</p>",
@@ -241,7 +241,7 @@ mod test {
             "<blockquote>\
                 <p>Some</p><p>multi-line</p><p>quote</p>\
             </blockquote>\
-            <p></p>\
+            <p>&nbsp;</p>\
             <p>Some text</p>\
             <pre>A\n\tcode\nblock</pre>\
             <p>Some <code>inline</code> code|</p>"

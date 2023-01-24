@@ -18,14 +18,16 @@
 import XCTest
 
 private enum Constants {
-    static let resultHtml = "<pre>​Some code\n\tmore code</pre><br />"
+    static let resultHtml = "<pre>Some code\n\tmore code</pre><p></p>"
     static let resultTree =
         """
 
         ├>pre
-        │ ├>~
-        │ └>"Some code\n\tmore code"
-        └>br
+        │ ├>p
+        │ │ └>"Some code"
+        │ └>p
+        │   └>"\tmore code"
+        └>p
 
         """
 }

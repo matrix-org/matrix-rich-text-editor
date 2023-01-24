@@ -18,7 +18,7 @@ import SnapshotTesting
 
 final class ListsSnapshotTests: SnapshotTests {
     func testOrderedListContent() throws {
-        viewModel.setHtmlContent("<ol><li>Item 1</li><li>Item 2</li></ol>Standard text")
+        viewModel.setHtmlContent("<ol><li>Item 1</li><li>Item 2</li></ol><p>Standard text</p>")
         assertSnapshot(
             matching: hostingController,
             as: .image(on: .iPhone13),
@@ -27,7 +27,7 @@ final class ListsSnapshotTests: SnapshotTests {
     }
 
     func testUnorderedListContent() throws {
-        viewModel.setHtmlContent("<ul><li>Item 1</li><li>Item 2</li></ul>Standard text")
+        viewModel.setHtmlContent("<ul><li>Item 1</li><li>Item 2</li></ul><p>Standard text</p>")
         assertSnapshot(
             matching: hostingController,
             as: .image(on: .iPhone13),

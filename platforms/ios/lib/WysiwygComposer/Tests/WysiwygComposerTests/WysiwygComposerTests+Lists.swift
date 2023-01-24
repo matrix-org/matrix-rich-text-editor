@@ -27,37 +27,23 @@ extension WysiwygComposerTests {
         // Add a thirs list item
         _ = composer.enter()
         XCTAssertEqual(composer.getContentAsHtml(),
-                       "<ol><li>"
-                           + TestConstants.zwsp
-                           + "Item 1</li><li>"
-                           + TestConstants.zwsp
-                           + "Item 2</li><li>"
-                           + TestConstants.zwsp
-                           + "</li></ol>")
+                       "<ol><li>Item 1</li><li>Item 2</li><li></li></ol>")
         XCTAssertEqual(composer.getCurrentDomState().start, composer.getCurrentDomState().end)
-        XCTAssertEqual(composer.getCurrentDomState().start, 15)
+        XCTAssertEqual(composer.getCurrentDomState().start, 14)
         // Remove it
         _ = composer.enter()
         XCTAssertEqual(composer.getContentAsHtml(),
-                       "<ol><li>"
-                           + TestConstants.zwsp
-                           + "Item 1</li><li>"
-                           + TestConstants.zwsp
-                           + "Item 2</li></ol>"
-                           + TestConstants.zwsp)
+                       "<ol><li>Item 1</li><li>Item 2</li></ol><p></p>")
         XCTAssertEqual(composer.getCurrentDomState().start, composer.getCurrentDomState().end)
-        XCTAssertEqual(composer.getCurrentDomState().start, 15)
+        XCTAssertEqual(composer.getCurrentDomState().start, 14)
         // Insert some text afterwards
         _ = composer.replaceText(newText: "Some text")
         XCTAssertEqual(composer.getContentAsHtml(),
                        "<ol><li>"
-                           + TestConstants.zwsp
                            + "Item 1</li><li>"
-                           + TestConstants.zwsp
                            + "Item 2</li></ol>"
-                           + TestConstants.zwsp
-                           + "Some text")
+                           + "<p>Some text</p>")
         XCTAssertEqual(composer.getCurrentDomState().start, composer.getCurrentDomState().end)
-        XCTAssertEqual(composer.getCurrentDomState().start, 24)
+        XCTAssertEqual(composer.getCurrentDomState().start, 23)
     }
 }

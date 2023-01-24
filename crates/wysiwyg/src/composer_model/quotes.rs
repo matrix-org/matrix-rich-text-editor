@@ -142,7 +142,7 @@ mod test {
     fn apply_quote_to_empty_dom() {
         let mut model = cm("|");
         model.quote();
-        assert_eq!(tx(&model), "<blockquote><p>|</p></blockquote>")
+        assert_eq!(tx(&model), "<blockquote><p>&nbsp;|</p></blockquote>")
     }
 
     #[test]
@@ -313,9 +313,9 @@ mod test {
     fn create_and_remove_quote() {
         let mut model = cm("|");
         model.quote();
-        assert_eq!(tx(&model), "<blockquote><p>|</p></blockquote>");
+        assert_eq!(tx(&model), "<blockquote><p>&nbsp;|</p></blockquote>");
         model.quote();
-        assert_eq!(tx(&model), "<p>|</p>");
+        assert_eq!(tx(&model), "<p>&nbsp;|</p>");
     }
 
     #[test]
@@ -324,7 +324,7 @@ mod test {
         model.quote();
         assert_eq!(
             tx(&model),
-            "<ul><li><blockquote><p>|</p></blockquote></li></ul>"
+            "<ul><li><blockquote><p>&nbsp;|</p></blockquote></li></ul>"
         )
     }
 }

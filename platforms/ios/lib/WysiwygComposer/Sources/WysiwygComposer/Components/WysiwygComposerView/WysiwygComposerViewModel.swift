@@ -159,8 +159,7 @@ public extension WysiwygComposerViewModel {
     /// Apply any additional setup required.
     /// Should be called when the view appears.
     func setup() {
-        // FIXME: multiple textViews sharing the model might unwittingly clear the composer because of this.
-        applyUpdate(model.setContentFromHtml(html: ""))
+        clearContent()
     }
 
     /// Apply given action to the composer.

@@ -14,6 +14,7 @@
 
 use std::ops::ControlFlow;
 
+use crate::char::CharExt;
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::nodes::dom_node::{DomNode, DomNodeKind};
@@ -618,6 +619,12 @@ where
             let mut state = state;
             if matches!(self.kind, ContainerNodeKind::CodeBlock) {
                 state.is_inside_code_block = true;
+            }
+
+            if matches!(self.kind, ContainerNodeKind::Paragraph)
+                && self.is_empty()
+            {
+                formatter.push(char::nbsp());
             }
 
             self.fmt_children_html(formatter, selection_writer, state);
