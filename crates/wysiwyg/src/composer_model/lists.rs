@@ -38,13 +38,8 @@ where
         // push_state_to_history is called if we can indent
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
-        let locations: Vec<DomLocation> = range
-            .locations
-            .into_iter()
-            .filter(|l| l.relative_position() != Before)
-            .collect();
         let top_most_locations =
-            self.find_top_most_list_item_locations(&locations);
+            self.find_top_most_list_item_locations(&range.locations);
         if !top_most_locations.is_empty()
             && self.can_indent(&top_most_locations)
         {
@@ -60,13 +55,8 @@ where
         // push_state_to_history is called if we can unindent
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
-        let locations: Vec<DomLocation> = range
-            .locations
-            .into_iter()
-            .filter(|l| l.relative_position() != Before)
-            .collect();
         let top_most_locations =
-            self.find_top_most_list_item_locations(&locations);
+            self.find_top_most_list_item_locations(&range.locations);
         if self.can_unindent(&top_most_locations) {
             self.push_state_to_history();
             self.unindent_locations(&top_most_locations);
@@ -77,37 +67,39 @@ where
     }
 
     pub fn can_indent(&self, locations: &Vec<DomLocation>) -> bool {
-        if locations.is_empty() {
+        let list_item_locations: Vec<&DomLocation> = locations
+            .iter()
+            .filter(|l| l.kind == DomNodeKind::ListItem)
+            .collect();
+        if list_item_locations.is_empty() {
             return false;
         }
-        for loc in locations {
+        let mut can_indent = true;
+        for loc in list_item_locations {
             if loc.relative_position() == Before {
                 continue;
             }
-            if loc.kind == DomNodeKind::ListItem
-                && !self.can_indent_list_item_handle(&loc.node_handle)
-            {
-                return false;
-            }
+            can_indent &= self.can_indent_list_item_handle(&loc.node_handle);
         }
-        true
+        can_indent
     }
 
     pub fn can_unindent(&self, locations: &Vec<DomLocation>) -> bool {
-        if locations.is_empty() {
+        let list_item_locations: Vec<&DomLocation> = locations
+            .iter()
+            .filter(|l| l.kind == DomNodeKind::ListItem)
+            .collect();
+        if list_item_locations.is_empty() {
             return false;
         }
-        for loc in locations {
+        let mut can_unindent = true;
+        for loc in list_item_locations {
             if loc.relative_position() == Before {
                 continue;
             }
-            if loc.kind == DomNodeKind::ListItem
-                && !self.can_unindent_handle(&loc.node_handle)
-            {
-                return false;
-            }
+            can_unindent &= self.can_unindent_handle(&loc.node_handle)
         }
-        true
+        can_unindent
     }
 
     pub(crate) fn find_top_most_list_item_locations(
@@ -116,7 +108,7 @@ where
     ) -> Vec<DomLocation> {
         // Find any selected leaves and block nodes
         let leaves_and_empty_block_nodes = locations.iter().filter(|l| {
-            l.is_leaf() || (l.kind.is_block_kind() && l.length == 0)
+            l.is_leaf() || (l.kind.is_block_kind() && l.is_empty())
         });
         // Gather their ancestor list items, if any
         let list_item_handles: Vec<DomHandle> = leaves_and_empty_block_nodes
