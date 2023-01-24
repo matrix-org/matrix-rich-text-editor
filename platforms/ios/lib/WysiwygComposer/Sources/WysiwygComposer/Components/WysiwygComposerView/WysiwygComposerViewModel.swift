@@ -173,6 +173,9 @@ public extension WysiwygComposerViewModel {
         guard let update = model.apply(action) else { return }
         if update.textUpdate() == .keep {
             hasPendingFormats = true
+        } else if action == .codeBlock || action == .quote, attributedContent.selection.length == 0 {
+            // Add code block/quote as a pending format to improve block display.
+            hasPendingFormats = true
         }
         applyUpdate(update)
     }
