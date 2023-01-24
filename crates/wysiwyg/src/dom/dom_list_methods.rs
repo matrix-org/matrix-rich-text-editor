@@ -402,9 +402,9 @@ mod test {
             "<p>abc<strong>de<em>f</em></strong></p><p><strong><em>gh</em>i</strong>jkl|</p>",
         );
         list_roundtrips("<p>abc|</p>");
-        list_roundtrips("<p>&nbsp;</p><p>abc</p><p>|</p>");
+        list_roundtrips("<p>&nbsp;</p><p>abc</p><p>&nbsp;|</p>");
         list_roundtrips("<p><em>ab|c</em></p>");
-        list_roundtrips("<p>{</p><p>}|</p>");
+        list_roundtrips("<p>{&nbsp;</p><p>&nbsp;}|</p>");
     }
 
     fn list_roundtrips(text: &str) {

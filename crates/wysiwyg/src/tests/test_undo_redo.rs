@@ -173,11 +173,11 @@ fn deleting_a_selection_with_enter_only_adds_one_to_undo_stack() {
 fn undoing_enter_only_undoes_one() {
     let mut model = cm("Test|");
     model.enter();
-    assert_eq!(tx(&model), "<p>Test</p><p>|</p>");
+    assert_eq!(tx(&model), "<p>Test</p><p>&nbsp;|</p>");
     model.enter();
-    assert_eq!(tx(&model), "<p>Test</p><p>&nbsp;</p><p>|</p>");
+    assert_eq!(tx(&model), "<p>Test</p><p>&nbsp;</p><p>&nbsp;|</p>");
     model.undo();
-    assert_eq!(tx(&model), "<p>Test</p><p>|</p>");
+    assert_eq!(tx(&model), "<p>Test</p><p>&nbsp;|</p>");
 }
 
 #[test]
