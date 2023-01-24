@@ -312,7 +312,7 @@ class EditorEditText : TextInputEditText {
      */
     fun setLink(link: String?) {
         val result = viewModel.processInput(
-            if(link != null) EditorInputAction.SetLink(link) else EditorInputAction.RemoveLink
+            if (link != null) EditorInputAction.SetLink(link) else EditorInputAction.RemoveLink
         ) ?: return
 
         setTextFromComposerUpdate(result)
