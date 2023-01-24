@@ -300,6 +300,31 @@ fn creating_a_new_list_immediately_after_an_old_one_joins_them() {
 }
 
 #[test]
+fn indent_single_list_item_works() {
+    let mut model = cm(
+        "<ul><li>First item</li><li>Second item|</li><li>Third item</li></ul>",
+    );
+    let (s, e) = model.safe_selection();
+    let range = model.state.dom.find_range(s, e);
+    let can_indent = model.can_indent(&range.locations);
+    assert!(can_indent);
+    model.indent();
+    assert_eq!(tx(&model), "<ul><li><p>First item</p><ul><li>Second item|</li></ul></li><li>Third item</li></ul>");
+}
+
+#[test]
+fn indent_single_empty_list_item_works() {
+    let mut model =
+        cm("<ul><li>First item</li><li>|</li><li>Third item</li></ul>");
+    let (s, e) = model.safe_selection();
+    let range = model.state.dom.find_range(s, e);
+    let can_indent = model.can_indent(&range.locations);
+    assert!(can_indent);
+    model.indent();
+    assert_eq!(tx(&model), "<ul><li><p>First item</p><ul><li>|</li></ul></li><li>Third item</li></ul>");
+}
+
+#[test]
 fn indent_several_list_items_simple_case_works() {
     let mut model = cm(
         "<ul><li>First item</li><li>{Second item</li><li>Third item}|</li></ul>",
