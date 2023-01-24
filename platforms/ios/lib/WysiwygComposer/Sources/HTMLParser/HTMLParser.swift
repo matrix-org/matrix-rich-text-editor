@@ -66,7 +66,7 @@ public final class HTMLParser {
         guard !html.isEmpty else {
             return NSAttributedString(string: "")
         }
-                
+
         guard let data = html.data(using: encoding) else {
             throw BuildHtmlAttributedError.dataError(encoding: encoding)
         }
