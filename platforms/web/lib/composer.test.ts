@@ -107,6 +107,8 @@ const testCases: testCase[] = [
     },
 ];
 
+const editor = document.createElement('div');
+
 describe('processInput', () => {
     beforeEach(() => {
         vi.resetAllMocks();
@@ -134,6 +136,7 @@ describe('processInput', () => {
                 mockComposerModel,
                 mockAction,
                 mockFormattingFunctions,
+                editor,
             );
 
             // check the calls to the composerModel and the action function
@@ -160,6 +163,7 @@ describe('processInput', () => {
             mockComposerModel,
             mockAction,
             mockFormattingFunctions,
+            editor,
             mockInputEventProcessor,
         );
 
@@ -184,6 +188,7 @@ describe('processInput', () => {
                 mockComposerModel,
                 mockAction,
                 mockFormattingFunctions,
+                editor,
             );
 
             expect(mockGetter).toHaveBeenCalledTimes(1);
@@ -204,6 +209,7 @@ describe('processInput', () => {
             mockComposerModel,
             mockAction,
             mockFormattingFunctions,
+            editor,
         );
 
         // Then mockAction have is not called
@@ -220,6 +226,7 @@ describe('processInput', () => {
             mockComposerModel,
             mockAction,
             mockFormattingFunctions,
+            editor,
         );
 
         // Then mockAction have is not called
@@ -236,6 +243,7 @@ describe('processInput', () => {
             mockComposerModel,
             mockAction,
             mockFormattingFunctions,
+            editor,
         );
 
         // Then mockAction is not called and we get null back
@@ -253,6 +261,7 @@ describe('processInput', () => {
             mockComposerModel,
             mockAction,
             mockFormattingFunctions,
+            editor,
         );
 
         // Then mockAction is not called, we get null back and there is an error
