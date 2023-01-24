@@ -174,7 +174,10 @@ internal class HtmlToSpansParser(
 
     private fun handleEndTag(name: String) {
         when (name) {
-            "br" -> text.append("\n")
+            "br" -> {
+                addLeadingLineBreakIfNeeded(text.length)
+                text.append("\n")
+            }
             "b", "strong" -> handleFormatEndTag(InlineFormat.Bold)
             "i", "em" -> handleFormatEndTag(InlineFormat.Italic)
             "u" -> handleFormatEndTag(InlineFormat.Underline)
@@ -284,7 +287,7 @@ internal class HtmlToSpansParser(
 
     private fun handleHyperlinkStart(url: String) {
         val hyperlink = PlaceholderSpan.Hyperlink(url)
-        addSpan(hyperlink, text.length, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+        text.setSpan(hyperlink, text.length, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
     }
 
     private fun handleHyperlinkEnd() {
