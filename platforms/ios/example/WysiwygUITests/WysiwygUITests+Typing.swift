@@ -66,9 +66,8 @@ extension WysiwygUITests {
         sleep(1)
         button(.sendButton).tap()
 
-        // FIXME: an unwanted space is added into the model
-        XCTAssertEqual(staticText(.contentText).label, "Some bold __text__  ")
-        XCTAssertEqual(staticText(.htmlContentText).label, "Some bold <strong>text</strong>  ")
+        XCTAssertEqual(staticText(.contentText).label, "Some bold __text__")
+        XCTAssertEqual(staticText(.htmlContentText).label, "Some bold <strong>text</strong>")
     }
 
     // Remember to disable hardware keyboard and use only software keyboard for this UITest
