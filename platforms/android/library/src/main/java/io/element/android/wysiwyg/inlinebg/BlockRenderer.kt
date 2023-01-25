@@ -26,8 +26,10 @@ internal class BlockRenderer(
         text: Spanned,
         spanType: Class<*>,
     ) {
-        val offset = layout.getOffsetForHorizontal(startLine, 0f)
-        val leadingMarginSpans = text.getSpans<LeadingMarginSpan>(offset).filter { !spanType.isInstance(it) }
+        val startIndex = layout.getOffsetForHorizontal(startLine, 0f)
+        val endIndex = layout.getOffsetForHorizontal(endLine, 0f)
+        val leadingMarginSpans = text.getSpans<LeadingMarginSpan>(startIndex, endIndex)
+            .filter { !spanType.isInstance(it) }
         val leadingMargin = leadingMarginSpans.sumOf { it.getLeadingMargin(true) }
         val top = layout.getLineTop(startLine)
         val bottom = layout.getLineBottom(endLine)
