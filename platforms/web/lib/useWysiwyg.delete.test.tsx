@@ -80,8 +80,8 @@ describe('delete content', () => {
 
         // Then
         await waitFor(() => {
-            expect(textbox).toContainHTML('foar');
-            expect(textbox).toHaveAttribute('data-content', 'foar');
+            expect(textbox).toContainHTML('<p>foar</p>');
+            expect(textbox).toHaveAttribute('data-content', '<p>foar</p>');
         });
     });
 
