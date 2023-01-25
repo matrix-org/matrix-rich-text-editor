@@ -83,6 +83,20 @@ extension NSAttributedString {
         return ranges
     }
 
+    func discardableTextRanges(in range: NSRange? = nil) -> [NSRange] {
+        let enumRange = range ?? .init(location: 0, length: length)
+        var ranges = [NSRange]()
+
+        enumerateAttribute(.discardableText,
+                           in: enumRange) { (attr: Any?, range: NSRange, _) in
+            if attr != nil {
+                ranges.append(range)
+            }
+        }
+
+        return ranges
+    }
+
     /// Computes index inside the HTML raw text from the index
     /// inside the attributed representation.
     ///
@@ -95,9 +109,17 @@ extension NSAttributedString {
                 .outOfBoundsAttributedIndex(index: attributedIndex)
         }
 
+        let discardableTextRanges = discardableTextRanges()
+        var actualIndex = attributedIndex
+
+        for discardableTextRange in discardableTextRanges {
+            if discardableTextRange.upperBound <= attributedIndex {
+                actualIndex -= discardableTextRange.length
+            }
+        }
+
         let prefixes = listPrefixesRanges()
-        var actualIndex: Int = attributedIndex
-        
+
         for listPrefix in prefixes {
             if listPrefix.upperBound <= attributedIndex {
                 actualIndex -= listPrefix.length
@@ -117,8 +139,16 @@ extension NSAttributedString {
     ///   - htmlIndex: the index inside the HTML raw text
     /// - Returns: the index inside the attributed representation
     func attributedPosition(at htmlIndex: Int) throws -> Int {
+        let discardableTextRanges = discardableTextRanges()
+        var actualIndex = htmlIndex
+
+        for discardableTextRange in discardableTextRanges {
+            if discardableTextRange.location < actualIndex {
+                actualIndex += discardableTextRange.length
+            }
+        }
+
         let prefixes = listPrefixesRanges()
-        var actualIndex: Int = htmlIndex
 
         for listPrefix in prefixes {
             if listPrefix.location < actualIndex {

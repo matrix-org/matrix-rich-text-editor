@@ -16,8 +16,10 @@
 
 extension String {
     static let nbsp = "\(Character.nbsp)"
+    static let zwsp = "\(Character.zwsp)"
 }
 
 public extension Character {
     static let nbsp = Character("\u{00A0}")
+    static let zwsp = Character("\u{200B}")
 }
