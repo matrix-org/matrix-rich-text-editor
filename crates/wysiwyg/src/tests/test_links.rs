@@ -480,6 +480,7 @@ fn set_link_with_text_on_blank_selection_with_different_containers() {
 #[test]
 fn set_link_with_text_at_end_of_a_link() {
     // This use case should never happen, but just in case it would...
+    // Now this test fails returning: <a href=\"https://element.io\">added_link</a><a href=\"https://matrix.org\">test_link|</a>
     let mut model = cm("<a href=\"https://matrix.org\">test_link|</a>");
     model.set_link_with_text(utf16("https://element.io"), utf16("added_link"));
     assert_eq!(tx(&model), "<a href=\"https://matrix.org\">test_link</a><a href=\"https://element.io\">added_link|</a>");
