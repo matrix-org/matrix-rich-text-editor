@@ -121,6 +121,9 @@ where
                 HashSet::new()
             } else {
                 self.compute_reversed_actions(&block_location.node_handle)
+                    .symmetric_difference(&toggled_format_actions)
+                    .cloned()
+                    .collect()
             }
         } else {
             HashSet::new()

@@ -278,3 +278,11 @@ fn formatting_multiple_lines_with_inline_code() {
     model.inline_code();
     assert_eq!(tx(&model), "fo<code>{o<br />b}|</code>ar");
 }
+
+#[test]
+fn formatting_in_an_empty_paragraph_applies_formatting() {
+    let mut model = cm("<p>A</p><p>|</p>");
+    model.bold();
+    model.replace_text("B".into());
+    assert_eq!(tx(&model), "<p>A</p><p><strong>B|</strong></p>");
+}
