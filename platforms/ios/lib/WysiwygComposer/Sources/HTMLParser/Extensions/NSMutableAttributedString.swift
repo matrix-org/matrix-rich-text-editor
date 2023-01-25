@@ -50,4 +50,13 @@ extension NSMutableAttributedString {
             addAttribute(.backgroundColor, value: codeBackgroundColor, range: range)
         }
     }
+
+    /// Removes any text that has been marked as discardable.
+    func removeDiscardableText() {
+        enumerateTypedAttribute(.discardableText) { (discardable: Bool, range: NSRange, _) in
+            guard discardable == true else { return }
+
+            self.deleteCharacters(in: range)
+        }
+    }
 }

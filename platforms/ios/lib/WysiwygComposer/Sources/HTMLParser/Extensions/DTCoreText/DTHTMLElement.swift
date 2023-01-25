@@ -25,6 +25,10 @@ extension DTHTMLElement {
            let child = childNodes.first as? DTTextHTMLElement,
            child.text() == .nbsp {
             removeAllChildNodes()
+            let newChild = DiscardableTextHTMLElement(from: child)
+            addChildNode(newChild)
+            newChild.inheritAttributes(from: self)
+            newChild.interpretAttributes()
         } else {
             for childNode in childNodes {
                 childNode.clearNbspNodes()

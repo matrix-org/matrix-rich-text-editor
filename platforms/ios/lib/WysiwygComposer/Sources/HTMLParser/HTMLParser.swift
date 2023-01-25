@@ -114,6 +114,7 @@ public final class HTMLParser {
         
         mutableAttributedString.applyBackgroundStyles(style: style)
         mutableAttributedString.applyInlineCodeBackgroundStyle(codeBackgroundColor: style.codeBackgroundColor)
+        mutableAttributedString.removeDiscardableText()
         
         // FIXME: This solution might not fit for everything.
         mutableAttributedString.addAttribute(.paragraphStyle,
@@ -127,15 +128,12 @@ public final class HTMLParser {
     private static func removeTrailingNewlineIfNeeded(from mutableAttributedString: NSMutableAttributedString, given html: String) {
         // DTCoreText always adds a \n at the end of the document, which we need to remove
         // however it does not add it if </code> </a> are the last nodes.
-        // Also we don't want to remove it if blockquote and codeblock contain that newline
-        // and are not empty, because DTCoreText does not add a newline if these blocks
+        // Also we don't want to remove it if a codeblock contains that newline
+        // and is not empty, because DTCoreText does not add a newline if these blocks
         // contain one at the end.
         if mutableAttributedString.string.last == "\n",
            !html.hasSuffix("</code>"),
            !html.hasSuffix("</a>"),
-           !html.hasSuffix("</p><p>\(Character.nbsp)</p></blockquote>"),
-           !html.hasSuffix("</ul><p>\(Character.nbsp)</p></blockquote>"),
-           !html.hasSuffix("</ol><p>\(Character.nbsp)</p></blockquote>"),
            !html.hasSuffix("\n</pre>") {
             mutableAttributedString.deleteCharacters(in: NSRange(location: mutableAttributedString.length - 1, length: 1))
         }
