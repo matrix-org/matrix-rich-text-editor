@@ -57,7 +57,7 @@ extension NSMutableAttributedString {
     func removeDiscardableText() {
         enumerateTypedAttribute(.discardableText) { (discardable: Bool, range: NSRange, _) in
             guard discardable == true else { return }
-            
+
             self.deleteCharacters(in: range)
         }
     }
