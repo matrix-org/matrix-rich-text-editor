@@ -623,12 +623,68 @@ fn set_link_across_list_items_with_multiple_inline_formattings_selected() {
 }
 
 #[test]
+fn set_link_across_list_items_including_an_entire_item() {
+    // panicked at 'All child nodes of handle DomHandle { path: Some([0]) } must be either inline nodes or block nodes
+    let mut model =
+        cm("<ul><li>te{st1</li><li>test2</li><li>te}|st3</li></ul>");
+    model.set_link("https://element.io".into());
+    assert_eq!(
+        tx(&model),
+        "<ul>\
+            <li>\
+                te<a href=\"https://element.io\">{st1</a>\
+            </li>\
+            <li>\
+                <a href=\"https://element.io\">test2</a>\
+            </li>\
+            <li>\
+                <a href=\"https://element.io\">te}|</a>st3\
+            </li>\
+        </ul>"
+    );
+}
+
+#[test]
 fn set_link_accross_quote() {
     let mut model =
         cm("<blockquote>test_{block_quote</blockquote><p> test}|</p>");
     model.set_link("https://element.io".into());
     assert_eq!(
         tx(&model),
-        "<blockquote>test_<a href=\"https://element.io\">{block_quote</a></blockquote><p><a href=\"https://element.io\"> test}|</a></p>"
+        "<blockquote>\
+            test_<a href=\"https://element.io\">{block_quote</a>\
+        </blockquote>\
+        <p>\
+            <a href=\"https://element.io\"> test}|</a>\
+        </p>"
+    );
+}
+
+#[test]
+fn set_link_across_multiple_paragraphs() {
+    let mut model = cm("<p>te{st1</p><p>te}|st2</p>");
+    model.set_link("https://element.io".into());
+    assert_eq!(
+        tx(&model),
+        "<p>te<a href=\"https://element.io\">{st1</a></p><p><a href=\"https://element.io\">te}|</a>st2</p>"
+    );
+}
+
+#[test]
+fn set_link_across_multiple_paragraphs_containing_an_entire_pagraph() {
+    // This panics saying 'All child nodes of handle DomHandle { path: Some([0]) } must be either inline nodes or block nodes'
+    let mut model = cm("<p>te{st1</p><p>test2</p><p>tes}|t3</p>");
+    model.set_link("https://element.io".into());
+    assert_eq!(
+        tx(&model),
+        "<p>\
+            te<a href=\"https://element.io\">{st1\
+        </p>\
+        <p>\
+            <a href=\"https://element.io\">test2</a>\
+        </p>\
+        <p>\
+            <a href=\"https://element.io\">tes}|</a>t3\
+        </p>"
     );
 }
