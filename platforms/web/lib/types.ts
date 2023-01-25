@@ -53,4 +53,5 @@ export type Wysiwyg = {
 export type InputEventProcessor = (
     event: WysiwygEvent,
     wysiwyg: Wysiwyg,
+    editor: HTMLElement,
 ) => WysiwygEvent | null;
