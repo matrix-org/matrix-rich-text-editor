@@ -16,6 +16,7 @@
 
 import Combine
 import Foundation
+import HTMLParser
 import OSLog
 import UIKit
 
@@ -34,7 +35,7 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         let textContainer = NSTextContainer()
         textStorage.addLayoutManager(layoutManager)
         layoutManager.addTextContainer(textContainer)
-        return PlaceholdableTextView(frame: .zero, textContainer: textContainer)
+        return WysiwygTextView(frame: .zero, textContainer: textContainer)
     }()
 
     /// The composer minimal height.
@@ -60,42 +61,12 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
             updatePlainTextMode(plainTextMode)
         }
     }
-    
-    /// The current textColor of the attributed string
-    public var textColor: UIColor {
-        didSet {
-            // In case of a color change, this will refresh the attributed text
-            let update = model.setContentFromHtml(html: content.html)
-            applyUpdate(update)
-            updateTextView()
-        }
-    }
-    
-    /// The color that will be used to display links
-    public var linkColor: UIColor {
-        didSet {
-            // In case of a color change, this will refresh the attributed text
-            textView.linkTextAttributes[.foregroundColor] = linkColor
-            let update = model.setContentFromHtml(html: content.html)
-            applyUpdate(update)
-            updateTextView()
-        }
-    }
-    
-    /// The color that will be used for the background of code blocks
-    public var codeBackgroundColor: UIColor {
-        didSet {
-            // In case of a color change, this will refresh the attributed text
-            let update = model.setContentFromHtml(html: content.html)
-            applyUpdate(update)
-            updateTextView()
-        }
-    }
 
-    /// The color that will be used for the background of quotes
-    public var quoteBackgroundColor: UIColor {
+    /// Style for the HTML parser.
+    public var parserStyle: HTMLParserStyle {
         didSet {
             // In case of a color change, this will refresh the attributed text
+            textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
             let update = model.setContentFromHtml(html: content.html)
             applyUpdate(update)
             updateTextView()
@@ -138,7 +109,7 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     private var cancellables = Set<AnyCancellable>()
     private var defaultTextAttributes: [NSAttributedString.Key: Any] {
         [.font: UIFont.preferredFont(forTextStyle: .body),
-         .foregroundColor: textColor]
+         .foregroundColor: parserStyle.textColor]
     }
 
     private var hasPendingFormats = false
@@ -148,19 +119,13 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     public init(minHeight: CGFloat = 22,
                 maxCompressedHeight: CGFloat = 200,
                 maxExpandedHeight: CGFloat = 300,
-                textColor: UIColor = .label,
-                linkColor: UIColor = .link,
-                codeBackgroundColor: UIColor = .systemGray5,
-                quoteBackgroundColor: UIColor = .systemGray4) {
+                parserStyle: HTMLParserStyle = .standard) {
         self.minHeight = minHeight
         self.maxCompressedHeight = maxCompressedHeight
         self.maxExpandedHeight = maxExpandedHeight
-        self.textColor = textColor
-        self.linkColor = linkColor
-        self.codeBackgroundColor = codeBackgroundColor
-        self.quoteBackgroundColor = quoteBackgroundColor
+        self.parserStyle = parserStyle
 
-        textView.linkTextAttributes[.foregroundColor] = linkColor
+        textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
         model = newComposerModel()
         // Publish composer empty state.
         $attributedContent.sink { [unowned self] content in
@@ -194,8 +159,7 @@ public extension WysiwygComposerViewModel {
     /// Apply any additional setup required.
     /// Should be called when the view appears.
     func setup() {
-        // FIXME: multiple textViews sharing the model might unwittingly clear the composer because of this.
-        applyUpdate(model.setContentFromHtml(html: ""))
+        clearContent()
     }
 
     /// Apply given action to the composer.
@@ -208,6 +172,9 @@ public extension WysiwygComposerViewModel {
                                   functionName: #function)
         guard let update = model.apply(action) else { return }
         if update.textUpdate() == .keep {
+            hasPendingFormats = true
+        } else if action == .codeBlock || action == .quote, attributedContent.selection.length == 0 {
+            // Add code block/quote as a pending format to improve block display.
             hasPendingFormats = true
         }
         applyUpdate(update)
@@ -273,6 +240,9 @@ public extension WysiwygComposerViewModel {
             shouldAcceptChange = false
         } else if replacementText.count == 1, replacementText[String.Index(utf16Offset: 0, in: replacementText)].isNewline {
             update = model.enter()
+            if model.actionStates()[.codeBlock] == .reversed || model.actionStates()[.quote] == .reversed {
+                hasPendingFormats = true
+            }
             shouldAcceptChange = false
         } else {
             update = model.replaceText(newText: replacementText)
@@ -294,6 +264,7 @@ public extension WysiwygComposerViewModel {
         }
         
         applyUpdate(update, skipTextViewUpdate: shouldAcceptChange)
+
         return shouldAcceptChange
     }
 
@@ -396,13 +367,7 @@ private extension WysiwygComposerViewModel {
     func applyReplaceAll(codeUnits: [UInt16], start: UInt32, end: UInt32) {
         do {
             let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count)
-            let attributed = try HTMLParser.parse(
-                html: html,
-                textColor: textColor,
-                linkColor: linkColor,
-                codeBackgroundColor: codeBackgroundColor,
-                quoteBackgroundColor: quoteBackgroundColor
-            )
+            let attributed = try HTMLParser.parse(html: html, style: parserStyle)
             // FIXME: handle error for out of bounds index
             let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
             let textSelection = try attributed.attributedRange(from: htmlSelection)

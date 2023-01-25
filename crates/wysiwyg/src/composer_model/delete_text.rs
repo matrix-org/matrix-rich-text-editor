@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::dom::nodes::dom_node::DomNodeKind::ListItem;
 use crate::dom::nodes::text_node::CharType;
 use crate::dom::nodes::{DomNode, TextNode};
 use crate::dom::unicode_string::UnicodeStrExt;
@@ -156,7 +157,6 @@ where
         match self.state.dom.lookup_node_mut(&location.node_handle) {
             // we should never be passed a container
             DomNode::Container(_) => ComposerUpdate::keep(),
-            DomNode::Zwsp(_) => ComposerUpdate::keep(),
             DomNode::LineBreak(_) => {
                 // for a linebreak, remove it if we started the operation from the whitespace
                 // char type, otherwise keep it
@@ -283,10 +283,7 @@ where
     ) -> Option<CharType> {
         let node = self.state.dom.lookup_node(&location.node_handle);
         match node {
-            DomNode::Container(_) => {
-                // we should never get a container type
-                panic!("get_char_type_from_location")
-            }
+            DomNode::Container(_) => None,
             DomNode::LineBreak(_) => {
                 // we have to treat linebreaks as chars, this type fits best
                 Some(CharType::Whitespace)
@@ -294,7 +291,6 @@ where
             DomNode::Text(text_node) => {
                 text_node.char_type_at_offset(location.start_offset, direction)
             }
-            DomNode::Zwsp(_) => None,
         }
     }
 
@@ -302,17 +298,21 @@ where
         // Find the first leaf node in this selection - note there
         // should only be one because s == e, so we don't have a
         // selection that spans multiple leaves.
-        let first_leaf = range.locations.iter().find(|loc| loc.is_leaf());
+        let first_leaf = range.locations.iter().find(|loc| {
+            loc.is_leaf() || (loc.kind.is_block_kind() && loc.is_empty())
+        });
         if let Some(leaf) = first_leaf {
-            // We are backspacing inside a text node with no
+            // We are backspacing inside a text node with cursor
             // selection - we might need special behaviour, if
             // we are at the start of a list item.
-            let parent_list_item_handle = self
-                .state
-                .dom
-                .find_parent_list_item_or_self(&leaf.node_handle);
-            if let Some(parent_handle) = parent_list_item_handle {
-                self.do_backspace_in_list(&parent_handle)
+            let parent_list_item_loc =
+                range.deepest_node_of_kind(ListItem, Some(&leaf.node_handle));
+            if let Some(list_item_loc) = parent_list_item_loc {
+                if list_item_loc.start_offset == 0 {
+                    self.do_backspace_in_list(&list_item_loc.node_handle)
+                } else {
+                    self.do_backspace()
+                }
             } else {
                 self.do_backspace()
             }

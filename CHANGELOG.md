@@ -1,6 +1,18 @@
 # Changelog
 
+# [0.20.0] - 2022-01-19
+
+### Added
+
+- Web: Add quotes
+
+### Changed
+
+- Common: Disable lists, inline code and links inside code blocks
+
 # [0.19.0] - 2022-01-17
+
+### Changed
 
 - Common: Blank selections allow the user to create links with text
 
@@ -37,6 +49,7 @@
 # [0.15.0] - 2022-01-10
 
 ### Added
+
 - Common: Add parsing of code blocks and quotes to the WASM HTML parser
 - iOS: Add attributed string to html mapping for lists with ZWSP
 - Android: Add inline code formatting
@@ -44,6 +57,7 @@
 - Android: Add code blocks & quotes to the example app
 
 ### Fixed
+
 - Common: Fix creating lists with a leading line break
 - Common: Fix selection state after toggling off list
 

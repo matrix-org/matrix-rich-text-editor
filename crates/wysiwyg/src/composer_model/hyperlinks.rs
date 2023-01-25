@@ -15,9 +15,7 @@
 use std::collections::HashSet;
 
 use crate::dom::nodes::dom_node::DomNodeKind;
-use crate::dom::nodes::dom_node::{
-    DomNodeKind::LineBreak, DomNodeKind::Text, DomNodeKind::Zwsp,
-};
+use crate::dom::nodes::dom_node::{DomNodeKind::LineBreak, DomNodeKind::Text};
 use crate::dom::nodes::ContainerNodeKind;
 use crate::dom::nodes::{ContainerNodeKind::Link, DomNode};
 use crate::dom::unicode_string::UnicodeStrExt;
@@ -51,7 +49,7 @@ where
 
     fn is_blank_selection(&self, range: Range) -> bool {
         for leaf in range.leaves() {
-            if leaf.kind == Zwsp || leaf.kind == LineBreak {
+            if leaf.kind == LineBreak {
                 continue;
             } else if leaf.kind == Text {
                 let text_node = self

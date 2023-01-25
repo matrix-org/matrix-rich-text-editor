@@ -7,7 +7,7 @@ description = "Model code to power a rich text editor for Matrix"
 keywords = ["matrix", "chat", "messaging", "composer", "wysiwyg"]
 license = "Apache-2.0"
 name = "wysiwyg"
-version = "0.19.0"
+version = "0.20.0"
 rust-version = "1.65"
 
 [features]
@@ -28,6 +28,7 @@ unicode-segmentation = "1.7.1"
 wasm-bindgen = { version = "0.2.83", default-features = false, optional = true }
 web-sys = { version = "0.3.60", default-features = false, features = ["Document", "DomParser", "HtmlElement", "Node", "NodeList", "SupportedType"], optional = true }
 widestring = "1.0.2"
+indoc = "1.0"
 url="2.3.1"
 email_address="0.2.4"
 

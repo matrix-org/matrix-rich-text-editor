@@ -15,15 +15,18 @@
 use std::collections::HashMap;
 use std::ops::Not;
 
-use widestring::Utf16String;
+use widestring::{Utf16Str, Utf16String};
 
 use crate::char::CharExt;
 use crate::composer_model::menu_state::MenuStateComputeType;
-use crate::dom::nodes::{LineBreakNode, TextNode, ZwspNode};
+use crate::dom::nodes::{ContainerNode, LineBreakNode, TextNode};
 use crate::dom::parser::parse;
-use crate::dom::unicode_string::UnicodeStrExt;
-use crate::dom::DomLocation;
-use crate::{ComposerModel, DomHandle, Location, ToHtml, UnicodeString};
+use crate::dom::to_html::ToHtmlState;
+use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
+use crate::dom::{Dom, DomLocation};
+use crate::{
+    ComposerModel, DomHandle, DomNode, Location, ToHtml, UnicodeString,
+};
 
 impl ComposerModel<Utf16String> {
     /// Convenience function to allow working with ComposerModel instances
@@ -54,14 +57,6 @@ impl ComposerModel<Utf16String> {
     /// The characters `{`, `}` or `|` must not appear anywhere else in the
     /// text.
     ///
-    /// Any occurrence of the `~` character is replaced with the Unicode
-    /// code point U+200B ZERO WIDTH SPACE inside from_example_format.
-    /// Similarly, when converting back using [to_example_format], any
-    /// ZERO WIDTH SPACE is replaced by `~`. This allows test cases to use
-    /// zero-width spaces without being very confusing. (Zero-width spaces
-    /// are used in various places in the model to allow the selection cursor
-    /// to be positioned e.g. inside an empty tag.)
-    ///
     /// HTML works, so `AA<b>B|B</b>CC` means a text node containing `AA`,
     /// followed by a bold node containing a text node containing `BB`,
     /// followed by a text node containing `CC`, with a selection starting and
@@ -80,46 +75,58 @@ impl ComposerModel<Utf16String> {
     /// assert_eq!(model.to_example_format(), "a{abbc}|c");
     /// ```
     pub fn from_example_format(text: &str) -> Self {
-        let text = text.replace('~', &char::zwsp().to_string());
-        let text_u16 = Utf16String::from_str(&text).into_vec();
-
-        let curs = find_char(&text_u16, "|").unwrap_or_else(|| {
-            panic!(
-                "ComposerModel text did not contain a '|' symbol: '{}'",
-                String::from_utf16(&text_u16)
-                    .expect("ComposerModel text was not UTF-16")
-            )
-        });
-
-        let s = find_char(&text_u16, "{");
-        let e = find_char(&text_u16, "}");
-
         let mut model = ComposerModel::new();
-        model.state.dom = parse(&text).unwrap();
+        model.state.dom = parse(text).unwrap();
+
+        let mut offset = 0;
+        let (start, end, curs) = Self::find_selection_in(
+            &model.state.dom,
+            model.state.dom.document_node(),
+            &mut offset,
+        );
+        let Some(curs) = curs else {
+            panic!("Selection not found");
+        };
 
         fn delete_range(
             model: &mut ComposerModel<Utf16String>,
-            p1: usize,
-            p2: usize,
+            loc: &SelectionLocation,
+            len: usize,
         ) {
-            model.do_replace_text_in(Utf16String::new(), p1, p2);
+            let mut needs_deletion = false;
+            if let DomNode::Text(text_node) =
+                model.state.dom.lookup_node_mut(&loc.handle)
+            {
+                if text_node.data().len() == len {
+                    needs_deletion = true;
+                } else {
+                    text_node.replace_range(
+                        Utf16String::new(),
+                        loc.offset,
+                        loc.offset + len,
+                    );
+                }
+            }
+            if needs_deletion {
+                model.state.dom.remove(&loc.handle);
+            }
         }
 
-        if let (Some(s), Some(e)) = (s, e) {
-            if curs == e + 1 {
+        if let (Some(s), Some(e)) = (start, end) {
+            if curs.index_in_dom() == e.index_in_dom() + 1 {
                 // Cursor after end: foo{bar}|baz
                 // The { made an extra codeunit - move the end back 1
-                delete_range(&mut model, s, s + 1);
-                delete_range(&mut model, e - 1, e + 1);
-                model.state.start = Location::from(s);
-                model.state.end = Location::from(e - 1);
-            } else if curs == s - 1 {
+                delete_range(&mut model, &e, 2);
+                delete_range(&mut model, &s, 1);
+                model.state.start = Location::from(s.index_in_dom());
+                model.state.end = Location::from(e.index_in_dom() - 1);
+            } else if curs.index_in_dom() + 1 == s.index_in_dom() {
                 // Cursor before beginning: foo|{bar}baz
                 // The |{ made an extra 2 codeunits - move the end back 2
-                delete_range(&mut model, s - 1, s + 1);
-                delete_range(&mut model, e - 2, e - 1);
-                model.state.start = Location::from(e - 2);
-                model.state.end = Location::from(curs);
+                delete_range(&mut model, &e, 1);
+                delete_range(&mut model, &curs, 2);
+                model.state.start = Location::from(e.index_in_dom() - 2);
+                model.state.end = Location::from(curs.index_in_dom());
             } else {
                 panic!(
                     "The cursor ('|') must always be directly before or after \
@@ -128,14 +135,88 @@ impl ComposerModel<Utf16String> {
                 );
             }
         } else {
-            delete_range(&mut model, curs, curs + 1);
-            model.state.start = Location::from(curs);
-            model.state.end = Location::from(curs);
+            delete_range(&mut model, &curs, 1);
+            model.state.start = Location::from(curs.index_in_dom());
+            model.state.end = Location::from(curs.index_in_dom());
         }
         model.compute_menu_state(MenuStateComputeType::KeepIfUnchanged);
+        model
+            .state
+            .dom
+            .wrap_inline_nodes_into_paragraphs_if_needed(&DomHandle::root());
         model.state.dom.explicitly_assert_invariants();
 
         model
+    }
+
+    fn find_selection_in(
+        model: &Dom<Utf16String>,
+        node: &DomNode<Utf16String>,
+        offset: &mut usize,
+    ) -> (
+        Option<SelectionLocation>,
+        Option<SelectionLocation>,
+        Option<SelectionLocation>,
+    ) {
+        let mut start = None;
+        let mut end = None;
+        let mut curs = None;
+        match node {
+            DomNode::Container(container) => {
+                for child in container.children() {
+                    let (new_start, new_end, new_curs) =
+                        Self::find_selection_in(model, child, offset);
+                    if start.is_none() {
+                        start = new_start;
+                    }
+                    if end.is_none() {
+                        end = new_end;
+                    }
+                    if curs.is_none() {
+                        curs = new_curs;
+                    }
+                    if model.adds_line_break(&child.handle()) {
+                        *offset += 1;
+                    }
+                    let found_cursor =
+                        start.is_none() && end.is_none() && curs.is_some();
+                    let found_selection = start.is_some() && end.is_some();
+                    if found_cursor || found_selection {
+                        break;
+                    }
+                }
+            }
+            DomNode::Text(text_node) => {
+                let start_pos = *offset;
+                let data: &Utf16Str = text_node.data();
+                for ch in data.chars() {
+                    if ch == '{' {
+                        start = Some(SelectionLocation::new(
+                            node.handle(),
+                            start_pos,
+                            *offset - start_pos,
+                        ));
+                    } else if ch == '}' {
+                        end = Some(SelectionLocation::new(
+                            node.handle(),
+                            start_pos,
+                            *offset - start_pos,
+                        ));
+                    } else if ch == '|' {
+                        curs = Some(SelectionLocation::new(
+                            node.handle(),
+                            start_pos,
+                            *offset - start_pos,
+                        ));
+                    }
+                    *offset += data.char_len(&ch);
+                }
+            }
+            _ => {
+                *offset += node.text_len();
+            }
+        }
+        (start, end, curs)
     }
 
     /// Convert this model to an ASCII-art style representation to be used
@@ -155,7 +236,7 @@ impl ComposerModel<Utf16String> {
         // Modify the text nodes to add {, } and |
         let selection_start = state.start.into();
         let selection_end = state.end.into();
-        let doc_length = dom.document().text_len();
+        let doc_length = dom.text_len();
         let root = dom.lookup_node(&dom.document_handle());
         let state = SelectionWritingState::new(
             selection_start,
@@ -163,12 +244,16 @@ impl ComposerModel<Utf16String> {
             doc_length,
         );
         let locations = range
-            .leaves()
-            .into_iter()
+            .locations
+            .iter()
             .map(|l| (l.node_handle.clone(), l.clone()))
             .collect();
         let mut selection_writer = SelectionWriter { state, locations };
-        root.fmt_html(&mut buf, Some(&mut selection_writer), false);
+        root.fmt_html(
+            &mut buf,
+            Some(&mut selection_writer),
+            ToHtmlState::default(),
+        );
         if range.is_empty().not() {
             // we should always have written at least the start of the selection
             // ({ or |) by now.
@@ -180,7 +265,27 @@ impl ComposerModel<Utf16String> {
         }
 
         // Replace characters with visible ones
-        html.replace(char::zwsp(), "~").replace('\u{A0}', "&nbsp;")
+        html.replace(char::nbsp(), "&nbsp;")
+    }
+}
+
+struct SelectionLocation {
+    handle: DomHandle,
+    pos: usize,
+    offset: usize,
+}
+
+impl SelectionLocation {
+    fn new(handle: DomHandle, pos: usize, offset: usize) -> Self {
+        Self {
+            handle,
+            pos,
+            offset,
+        }
+    }
+
+    fn index_in_dom(&self) -> usize {
+        self.pos + self.offset
     }
 }
 
@@ -220,16 +325,19 @@ impl SelectionWriter {
         }
     }
 
-    pub fn write_selection_zwsp_node<S: UnicodeString>(
+    pub fn write_selection_empty_container<S: UnicodeString>(
         &mut self,
         buf: &mut S,
         pos: usize,
-        node: &ZwspNode<S>,
+        node: &ContainerNode<S>,
     ) {
         if let Some(loc) = self.locations.get(&node.handle()) {
-            let strings_to_add = self.state.advance(loc, node.data().len());
-            for (str, i) in strings_to_add.into_iter().rev() {
-                buf.insert(pos + i, &S::from(str));
+            if !node.is_empty() || loc.node_handle.is_root() {
+                return;
+            }
+            let strings_to_add = self.state.advance(loc, 1);
+            for (str, _) in strings_to_add.into_iter().rev() {
+                buf.insert(pos, &S::from(str));
             }
         }
     }
@@ -237,73 +345,6 @@ impl SelectionWriter {
     pub fn is_selection_written(&self) -> bool {
         self.state.done_first
     }
-}
-
-/// Return the UTF-16 code unit for a character
-/// Panics if s is more than one code unit long.
-fn utf16_code_unit(s: &str) -> u16 {
-    let mut ret = Utf16String::new();
-    ret.push_str(s);
-    assert_eq!(ret.len(), 1);
-    ret.into_vec()[0]
-}
-
-/// Find a single utf16 code unit (needle) in haystack
-fn find_char(haystack: &[u16], needle: &str) -> Option<usize> {
-    let mut skip_count = 0; // How many tag characters we have seen
-    let mut in_tag = false; // Are we in a tag now?
-
-    // Track the contents of the tag we are inside, so we know whether we've
-    // seen a br tag.
-    let mut tag_contents: Vec<u16> = Vec::new();
-    let mut parent_tag_contents: Vec<u16> = Vec::new();
-    let mut pos_from_close_tag = 0;
-
-    let needle = utf16_code_unit(needle);
-    let open = utf16_code_unit("<");
-    let close = utf16_code_unit(">");
-    let space = utf16_code_unit(" ");
-    let forward_slash = utf16_code_unit("/");
-    let line_break = utf16_code_unit("\n");
-
-    let br_tag = Utf16String::from_str("br").into_vec();
-    let pre_tag = Utf16String::from_str("pre").into_vec();
-
-    for (i, &ch) in haystack.iter().enumerate() {
-        if ch == needle {
-            return Some(i - skip_count);
-        } else if ch == open {
-            in_tag = true;
-        } else if ch == close {
-            // Skip this character (>), unless we've found a br tag, in which
-            // case the whole tag will be worth 1 code unit, so we don't
-            // increase skip count.
-            if tag_contents != br_tag {
-                skip_count += 1;
-            }
-            in_tag = false;
-            pos_from_close_tag = 0;
-            parent_tag_contents = tag_contents.clone();
-            tag_contents.clear();
-        } else {
-            if pos_from_close_tag == 0
-                && parent_tag_contents == pre_tag
-                && ch == line_break
-            {
-                skip_count += 1;
-            }
-            pos_from_close_tag += 1;
-        }
-        if in_tag {
-            skip_count += 1;
-
-            // Track what's inside this tag, but ignore spaces and slashes
-            if !(ch == open || ch == space || ch == forward_slash) {
-                tag_contents.push(ch);
-            }
-        }
-    }
-    None
 }
 
 #[derive(Debug)]
@@ -364,20 +405,20 @@ impl SelectionWritingState {
         location: &DomLocation,
         code_units: usize,
     ) -> Vec<(&'static str, usize)> {
-        if self.current_pos == 0 {
-            // If this is the first location we have visited, update our start
-            // position to the start of this location.
-            self.current_pos = location.position;
-        }
-        self.current_pos += code_units;
+        self.current_pos = location.position + code_units;
 
         // If we just passed first, write out {
         let mut do_first = !self.done_first && self.first < self.current_pos;
 
         // If we just passed last or we're at the end, write out }
-        let do_last = !self.done_last
+        let do_last_in_inline = !location.kind.is_block_kind()
             && (self.last <= self.current_pos
                 || self.current_pos == self.length);
+        let do_last_in_block = location.kind.is_block_kind()
+            && !location.node_handle.is_root()
+            && self.last < self.current_pos;
+        let do_last =
+            !self.done_last && (do_last_in_inline || do_last_in_block);
 
         // In some weird circumstances with empty text nodes, we might
         // do_last when we haven't done_first, so make sure we do_first too.
@@ -450,10 +491,7 @@ mod test {
     use crate::dom::{parser, Dom, DomLocation};
     use crate::tests::testutils_composer_model::{cm, restore_whitespace, tx};
     use crate::tests::testutils_conversion::utf16;
-    use crate::{
-        ComposerModel, ComposerState, DomHandle, DomNode, Location,
-        UnicodeString,
-    };
+    use crate::{ComposerModel, ComposerState, DomHandle, Location};
 
     use super::SelectionWritingState;
 
@@ -462,8 +500,7 @@ mod test {
         // We have one text node with one character
         let mut state = SelectionWritingState::new(0, 1, 1);
         let handle = DomHandle::from_raw(vec![0]);
-        let location =
-            DomLocation::new(handle, 0, 0, 1, 1, DomNodeKind::Generic);
+        let location = DomLocation::new(handle, 0, 0, 1, 1, DomNodeKind::Text);
 
         // When we advance
         let strings_to_add = state.advance(&location, 1);
@@ -691,19 +728,6 @@ mod test {
     }
 
     #[test]
-    fn cm_converts_tilda_to_zero_width_space() {
-        let model = cm("~|");
-        assert_eq!(model.state.start, 1);
-        assert_eq!(model.state.end, 1);
-
-        if let DomNode::Zwsp(node) = &model.state.dom.document().children()[0] {
-            assert_eq!(node.data(), Utf16String::zwsp());
-        } else {
-            panic!("Expected a text node!");
-        }
-    }
-
-    #[test]
     fn cm_and_tx_roundtrip() {
         assert_that!("|").roundtrips();
         assert_that!("a|").roundtrips();
@@ -778,13 +802,13 @@ mod test {
     #[test]
     fn selection_across_lists_with_whitespace_roundtrips() {
         assert_that!(
-            "<ol>
-                <li>1{1</li>
-                <li>22</li>
-            </ol>
-            <ol>
-                <li>33</li>
-                <li>4}|4</li>
+            "<ol>\
+                <li>1{1</li>\
+                <li>22</li>\
+            </ol>\
+            <ol>\
+                <li>33</li>\
+                <li>4}|4</li>\
             </ol>"
         )
         .roundtrips();
@@ -795,8 +819,8 @@ mod test {
         assert_that!(
             "\
             <ul>\
-                <li>First item<ul>\
-                    <li>{Second item<ul>\
+                <li><p>First item</p><ul>\
+                    <li><p>{Second item</p><ul>\
                         <li>Third item</li>\
                         <li>Fourth item}|</li>\
                         <li>Fifth item</li>\

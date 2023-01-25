@@ -16,11 +16,9 @@ pub mod container_node;
 pub mod dom_node;
 pub mod line_break_node;
 pub mod text_node;
-pub mod zwsp_node;
 
 pub use container_node::ContainerNode;
 pub use container_node::ContainerNodeKind;
 pub use dom_node::DomNode;
 pub use line_break_node::LineBreakNode;
 pub use text_node::TextNode;
-pub use zwsp_node::ZwspNode;

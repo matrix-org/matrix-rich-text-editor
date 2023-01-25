@@ -26,6 +26,7 @@ pub fn tx(model: &ComposerModel<Utf16String>) -> String {
     model.to_example_format()
 }
 
+#[allow(dead_code)]
 pub(crate) fn sel(start: usize, end: usize) -> (Location, Location) {
     (Location::from(start), Location::from(end))
 }

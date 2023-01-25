@@ -33,9 +33,29 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "HTMLParserTests"
+               BuildableName = "HTMLParserTests"
+               BlueprintName = "HTMLParserTests"
+               ReferencedContainer = "container:../lib/WysiwygComposer">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "WysiwygComposerTests"
                BuildableName = "WysiwygComposerTests"
                BlueprintName = "WysiwygComposerTests"
+               ReferencedContainer = "container:../lib/WysiwygComposer">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "WysiwygComposerSnapshotTests"
+               BuildableName = "WysiwygComposerSnapshotTests"
+               BlueprintName = "WysiwygComposerSnapshotTests"
                ReferencedContainer = "container:../lib/WysiwygComposer">
             </BuildableReference>
          </TestableReference>

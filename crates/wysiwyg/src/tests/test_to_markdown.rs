@@ -13,8 +13,7 @@
 // limitations under the License.
 
 use crate::{
-    markdown_html_parser::MarkdownHTMLParser,
-    tests::testutils_composer_model::cm, ToMarkdown,
+    markdown_html_parser::MarkdownHTMLParser, ComposerModel, ToMarkdown,
 };
 use widestring::Utf16String;
 
@@ -219,7 +218,7 @@ fn assert_to_md(html: &str, expected_markdown: &str) {
     assert_eq!(html, expected_html);
 }
 fn to_markdown(html: &str) -> Utf16String {
-    let markdown = cm(&format!("{html}|")).state.dom.to_markdown();
+    let markdown = ComposerModel::from_html(html, 0, 0).state.dom.to_markdown();
     assert!(markdown.is_ok());
 
     markdown.unwrap()

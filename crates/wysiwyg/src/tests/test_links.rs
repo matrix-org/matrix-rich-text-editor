@@ -624,16 +624,11 @@ fn set_link_across_list_items_with_multiple_inline_formattings_selected() {
 
 #[test]
 fn set_link_accross_quote() {
-    let mut model = cm("<blockquote>test_{block_quote</blockquote> test}|");
+    let mut model =
+        cm("<blockquote>test_{block_quote</blockquote><p> test}|</p>");
     model.set_link("https://element.io".into());
     assert_eq!(
         tx(&model),
-        "<blockquote>\
-            test_<a href=\"https://element.io\">{block_quote</a>\
-        </blockquote>\
-        <a href=\"https://element.io\"> test}|</a>"
+        "<blockquote>test_<a href=\"https://element.io\">{block_quote</a></blockquote><p><a href=\"https://element.io\"> test}|</a></p>"
     );
 }
-
-// fails with this value
-// <a href=\"https://element.io\"> test</a><blockquote><a href=\"https://element.io\">{test_block_</a>quote}|</blockquote>

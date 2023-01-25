@@ -321,6 +321,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "indoc"
+version = "1.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da2d6f23ffea9d7e76c53eee25dfb67bcd8fde7f1198b0855350698c9f07c780"
+
+[[package]]
 name = "itoa"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1094,7 +1100,7 @@ dependencies = [
 
 [[package]]
 name = "uniffi-wysiwyg-composer"
-version = "0.19.0"
+version = "0.20.0"
 dependencies = [
  "uniffi",
  "uniffi_build",
@@ -1411,12 +1417,13 @@ checksum = "f40009d85759725a34da6d89a94e63d7bdc50a862acf0dbc7c8e488f1edcb6f5"
 
 [[package]]
 name = "wysiwyg"
-version = "0.19.0"
+version = "0.20.0"
 dependencies = [
  "cfg-if",
  "email_address",
  "html-escape",
  "html5ever",
+ "indoc",
  "once_cell",
  "pulldown-cmark",
  "speculoos",
@@ -1432,7 +1439,7 @@ dependencies = [
 
 [[package]]
 name = "wysiwyg-wasm"
-version = "0.19.0"
+version = "0.20.0"
 dependencies = [
  "console_error_panic_hook",
  "js-sys",

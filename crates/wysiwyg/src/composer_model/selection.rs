@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::ops::AddAssign;
-
 use crate::composer_model::menu_state::MenuStateComputeType;
 use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
 
@@ -75,12 +73,6 @@ where
     pub fn has_cursor(&self) -> bool {
         let (s, e) = self.safe_selection();
         s == e
-    }
-
-    /// Offset both the start and the end of the selection by given isize.
-    pub(crate) fn offset_selection(&mut self, rhs: isize) {
-        self.state.start.add_assign(rhs);
-        self.state.end.add_assign(rhs);
     }
 }
 
