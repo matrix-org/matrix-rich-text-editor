@@ -111,7 +111,7 @@ export function selectContent(
     startUtf16Codeunit: number,
     endUtf16Codeunit: number,
 ) {
-    console.log('select content');
+    // console.log('select content');
     const range = document.createRange();
 
     let start = computeNodeAndOffset(editor, startUtf16Codeunit);
@@ -187,11 +187,6 @@ export function computeNodeAndOffset(
     );
     const isEmptyList =
         currentNode.nodeName === 'LI' && !currentNode.hasChildNodes();
-    // We hit this if we split a formatting node, eg
-    // <u>something<u> => press enter => <p><u>something</u><p>|<u></u></p>
-    const isEmptyFormattingTag =
-        formattingNodeNames.includes(currentNode.nodeName) &&
-        !currentNode.hasChildNodes();
 
     if (currentNode.nodeType === Node.TEXT_NODE) {
         // For a text node, we need to check to see if it needs an extra offset
@@ -212,22 +207,6 @@ export function computeNodeAndOffset(
                     codeunits -
                     (currentNode.textContent?.length || 0) -
                     extraOffset,
-            };
-        }
-    } else if (isEmptyFormattingTag) {
-        const shouldAddOffset = nodeNeedsExtraOffset(currentNode);
-        const extraOffset = shouldAddOffset ? 1 : 0;
-        // console.log({ shouldAddOffset });
-
-        if (codeunits === 0) {
-            // we don't need to use that extra offset if we've found the answer
-            // currentNode.textContent = String.fromCharCode(160);
-            return { node: currentNode, offset: codeunits };
-        } else {
-            // but if we haven't found that answer, apply the extra offset
-            return {
-                node: null,
-                offset: codeunits - extraOffset,
             };
         }
     } else if (isEmptyList) {
@@ -254,6 +233,7 @@ export function computeNodeAndOffset(
             };
         }
     } else {
+        console.log('hitting the for loop');
         for (const ch of currentNode.childNodes) {
             const ret = computeNodeAndOffset(ch, codeunits);
             if (ret.node) {
@@ -261,6 +241,16 @@ export function computeNodeAndOffset(
             } else {
                 codeunits = ret.offset;
             }
+        }
+        // We hit this if we split a formatting node, eg
+        // <u>something<u> => press enter => <p><u>something</u><p>|<u></u></p>
+        const isEmptyFormattingTag =
+            formattingNodeNames.includes(currentNode.nodeName) &&
+            currentNode.textContent?.length === 0;
+
+        if (isEmptyFormattingTag && codeunits === 0) {
+            console.log('we hit an empty formatting tag');
+            return { node: currentNode, offset: codeunits };
         }
         return { node: null, offset: codeunits };
     }
@@ -362,9 +352,7 @@ function findCharacter(
             // Non-text node - offset is the index of the selected node
             // within currentNode.
             // Add up the sizes of all the nodes before offset.
-            console.log('HERE');
             const ret = textLength(currentNode, offsetToFind);
-            console.log({ ret });
             return { found: true, offset: ret };
         }
     } else {

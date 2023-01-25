@@ -278,3 +278,15 @@ fn formatting_multiple_lines_with_inline_code() {
     model.inline_code();
     assert_eq!(tx(&model), "fo<code>{o<br />b}|</code>ar");
 }
+
+#[test]
+fn wip_web_integration() {
+    let mut model = cm("|");
+    model.replace_text(utf16("foo"));
+    assert_eq!(tx(&model), "foo|");
+    model.enter();
+    assert_eq!(tx(&model), "<p>foo</p><p>&nbsp;|</p>");
+    model.underline();
+    model.replace_text(utf16("bar"));
+    assert_eq!(tx(&model), "<p>foo</p><p><u>bar</u>|</p>");
+}
