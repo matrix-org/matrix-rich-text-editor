@@ -15,12 +15,21 @@
 //
 
 import DTCoreText
-import Foundation
 
-extension NSAttributedString.Key {
-    static let DTTextBlocks: NSAttributedString.Key = .init(rawValue: DTTextBlocksAttribute)
-    static let backgroundStyle: NSAttributedString.Key = .init(rawValue: "BackgroundStyleAttributeKey")
-    static let DTField: NSAttributedString.Key = .init(rawValue: DTFieldAttribute)
-    static let DTTextLists: NSAttributedString.Key = .init(rawValue: DTTextListsAttribute)
-    static let discardableText: NSAttributedString.Key = .init(rawValue: "DiscardableAttributeKey")
+final class DiscardableTextHTMLElement: DTTextHTMLElement {
+    /// Init.
+    ///
+    /// - Parameters:
+    ///   - textNode: text node that should be copied into the element.
+    init(from textNode: DTTextHTMLElement) {
+        super.init()
+        setText(textNode.text())
+    }
+
+    override func attributesForAttributedStringRepresentation() -> [AnyHashable: Any]! {
+        var dict = super.attributesForAttributedStringRepresentation() ?? [AnyHashable: Any]()
+        // Insert a key to mark this as discardable post-parsing.
+        dict[NSAttributedString.Key.discardableText] = true
+        return dict
+    }
 }

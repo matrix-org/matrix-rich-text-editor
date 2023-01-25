@@ -114,6 +114,7 @@ public final class HTMLParser {
         
         mutableAttributedString.applyBackgroundStyles(style: style)
         mutableAttributedString.applyInlineCodeBackgroundStyle(codeBackgroundColor: style.codeBackgroundColor)
+        mutableAttributedString.removeDiscardableText()
         
         // FIXME: This solution might not fit for everything.
         mutableAttributedString.addAttribute(.paragraphStyle,
