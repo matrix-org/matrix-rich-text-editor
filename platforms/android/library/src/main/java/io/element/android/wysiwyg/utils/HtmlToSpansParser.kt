@@ -25,7 +25,6 @@ import org.xml.sax.ContentHandler
 import org.xml.sax.InputSource
 import org.xml.sax.Locator
 import java.io.StringReader
-import java.util.TreeMap
 import kotlin.math.roundToInt
 
 /**
@@ -92,7 +91,7 @@ internal class HtmlToSpansParser(
 
     fun convert(): Spanned {
         spansToAdd.clear()
-        parser.parse(InputSource(StringReader(html.replace(NBSP, ZWSP))))
+        parser.parse(InputSource(StringReader(html)))
         for (spanToAdd in spansToAdd) {
             text.setSpan(spanToAdd.span, spanToAdd.start, spanToAdd.end, spanToAdd.flags)
         }
@@ -218,7 +217,7 @@ internal class HtmlToSpansParser(
                 val start = text.getSpanStart(last)
                 text.removeSpan(last)
 
-                addZWSP(start)
+                addNBSP(start)
 
                 val span = createListSpan(last = last)
                 replacePlaceholderSpanWith(last, span, start, text.length, Spanned.SPAN_EXCLUSIVE_INCLUSIVE)
@@ -228,11 +227,11 @@ internal class HtmlToSpansParser(
                 val start = text.getSpanStart(last)
                 text.removeSpan(last)
 
-                addZWSP(start)
+                addNBSP(start)
 
                 if (text.lastOrNull() == '\n') {
                     // Extra char to properly render empty new lines in code blocks
-                    addZWSP(text.length)
+                    addNBSP(text.length)
                 }
 
                 val codeSpan = CodeBlockSpan(styleConfig.codeBlock.leadingMargin, styleConfig.codeBlock.verticalPadding)
@@ -243,7 +242,7 @@ internal class HtmlToSpansParser(
                 val start = text.getSpanStart(last)
                 text.removeSpan(last)
 
-                addZWSP(start)
+                addNBSP(start)
 
                 val quoteSpan = QuoteSpan(
                     indicatorColor = 0xC0A0A0A0.toInt(),
@@ -258,7 +257,7 @@ internal class HtmlToSpansParser(
                 val start = text.getSpanStart(last)
                 text.removeSpan(start)
 
-                addZWSP(start)
+                addNBSP(start)
 
                 replacePlaceholderSpanWith(last, last, start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             }
@@ -337,12 +336,12 @@ internal class HtmlToSpansParser(
         }
     }
 
-    private fun addZWSP(pos: Int) {
+    private fun addNBSP(pos: Int) {
         if (pos == text.length) {
-            // If there was no ZWSP char, add a new one as an extra character
-            text.append(ZWSP)
+            // If there was no NBSP char, add a new one as an extra character
+            text.append(NBSP)
             text.setSpan(ExtraCharacterSpan(), pos, pos+1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-        } else if (text.length - pos == 1 && text.last() == ZWSP) {
+        } else if (text.length - pos == 1 && text.last() == NBSP) {
             // If there was one, set it as an extra character
             text.setSpan(ExtraCharacterSpan(), pos, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
         }
