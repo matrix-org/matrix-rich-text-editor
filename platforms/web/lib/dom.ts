@@ -111,11 +111,15 @@ export function selectContent(
     startUtf16Codeunit: number,
     endUtf16Codeunit: number,
 ) {
+    console.log('select content');
     const range = document.createRange();
 
     let start = computeNodeAndOffset(editor, startUtf16Codeunit);
     let end = computeNodeAndOffset(editor, endUtf16Codeunit);
-
+    // console.log({
+    //     NODE_IS: start.node?.nodeName,
+    //     PARENT_IS: start.node?.parentNode?.nodeName,
+    // });
     if (start.node && end.node) {
         const endNodeBeforeStartNode =
             start.node.compareDocumentPosition(end.node) &
@@ -177,8 +181,17 @@ export function computeNodeAndOffset(
     node: Node | null;
     offset: number;
 } {
+    const formattingNodeNames = ['EM', 'U', 'STRONG', 'DEL'];
+    console.log(
+        `N&O for ${currentNode.nodeName}, NODE: ${currentNode.nodeName}, off: ${codeunits}`,
+    );
     const isEmptyList =
         currentNode.nodeName === 'LI' && !currentNode.hasChildNodes();
+    // We hit this if we split a formatting node, eg
+    // <u>something<u> => press enter => <p><u>something</u><p>|<u></u></p>
+    const isEmptyFormattingTag =
+        formattingNodeNames.includes(currentNode.nodeName) &&
+        !currentNode.hasChildNodes();
 
     if (currentNode.nodeType === Node.TEXT_NODE) {
         // For a text node, we need to check to see if it needs an extra offset
@@ -186,6 +199,8 @@ export function computeNodeAndOffset(
         // any of the nodes that require the extra offset.
         const shouldAddOffset = nodeNeedsExtraOffset(currentNode);
         const extraOffset = shouldAddOffset ? 1 : 0;
+        // console.log({ shouldAddOffset });
+
         if (codeunits <= (currentNode.textContent?.length || 0)) {
             // we don't need to use that extra offset if we've found the answer
             return { node: currentNode, offset: codeunits };
@@ -197,6 +212,22 @@ export function computeNodeAndOffset(
                     codeunits -
                     (currentNode.textContent?.length || 0) -
                     extraOffset,
+            };
+        }
+    } else if (isEmptyFormattingTag) {
+        const shouldAddOffset = nodeNeedsExtraOffset(currentNode);
+        const extraOffset = shouldAddOffset ? 1 : 0;
+        // console.log({ shouldAddOffset });
+
+        if (codeunits === 0) {
+            // we don't need to use that extra offset if we've found the answer
+            // currentNode.textContent = String.fromCharCode(160);
+            return { node: currentNode, offset: codeunits };
+        } else {
+            // but if we haven't found that answer, apply the extra offset
+            return {
+                node: null,
+                offset: codeunits - extraOffset,
             };
         }
     } else if (isEmptyList) {
@@ -243,6 +274,8 @@ export function getCurrentSelection(
     editor: HTMLElement,
     selection: Selection | null,
 ) {
+    console.log('getCurrentSelection');
+    console.log(selection);
     if (!selection) {
         return [0, 0];
     }
@@ -313,6 +346,7 @@ function findCharacter(
     found: boolean;
     offset: number;
 } {
+    console.log(`find ${nodeToFind.nodeName}, offset: ${offsetToFind}`);
     if (currentNode === nodeToFind) {
         // We've found the right node
         if (currentNode.nodeType === Node.TEXT_NODE) {
@@ -328,7 +362,9 @@ function findCharacter(
             // Non-text node - offset is the index of the selected node
             // within currentNode.
             // Add up the sizes of all the nodes before offset.
+            console.log('HERE');
             const ret = textLength(currentNode, offsetToFind);
+            console.log({ ret });
             return { found: true, offset: ret };
         }
     } else {
@@ -429,20 +465,58 @@ export function countCodeunit(
 
 function nodeNeedsExtraOffset(node: Node | null) {
     const nodeNamesWithExtraOffset = ['LI', 'PRE', 'BLOCKQUOTE', 'P'];
+    const formattingNodeNames = ['EM', 'U', 'STRONG', 'DEL'];
+
     if (node === null) return false;
 
     // do a recursive check up through its ancestors
     let checkNode: Node = node;
-    if (checkNode === null) {
+    let hasFormattingAncestor = false;
+
+    // don't break the previous implementation for now:
+    if (!formattingNodeNames.includes(checkNode.parentNode?.nodeName || '')) {
+        // do a recursive check up through its ancestors
+
+        while (checkNode) {
+            if (nodeNamesWithExtraOffset.includes(checkNode.nodeName)) {
+                return true;
+            } else {
+                checkNode = checkNode.parentNode as Node;
+            }
+        }
         return false;
     }
 
     while (checkNode) {
-        if (nodeNamesWithExtraOffset.includes(checkNode.nodeName)) {
+        // ...but we also need to make sure that we don't add the offset more
+        // than once when we have multiple inline formatting nodes
+        // start off just checking if it's a formatting node and
+        // has no next sibling
+        const parentIsFormattingNode = formattingNodeNames.includes(
+            checkNode.parentNode?.nodeName || '',
+        );
+        if (parentIsFormattingNode) {
+            hasFormattingAncestor = true;
+        }
+        const nextSibling = checkNode.nextSibling;
+
+        // stop looking if we find a next sibling that is not a container node
+        if (
+            nextSibling &&
+            !nodeNamesWithExtraOffset.includes(nextSibling.nodeName)
+        ) {
+            break;
+        }
+
+        if (
+            nodeNamesWithExtraOffset.includes(checkNode.nodeName) &&
+            hasFormattingAncestor
+        ) {
             return true;
         } else {
             checkNode = checkNode.parentNode as Node;
         }
     }
+
     return false;
 }

@@ -211,11 +211,13 @@ export function handleSelectionChange(
     composeModel: ComposerModel,
     { traceAction, getSelectionAccordingToActions }: TestUtilities,
 ): AllActionStates | undefined {
+    // console.log('selection change');
     const [start, end] = getCurrentSelection(editor, document.getSelection());
 
+    // console.log(`web : ${start}=>${end}`);
     const prevStart = composeModel.selection_start();
     const prevEnd = composeModel.selection_end();
-
+    // console.log(`rust : ${prevStart}=>${prevEnd}`);
     const [actStart, actEnd] = getSelectionAccordingToActions();
 
     // Ignore selection changes that do nothing
