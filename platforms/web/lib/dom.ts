@@ -16,6 +16,7 @@ limitations under the License.
 
 import { ComposerModel, DomHandle } from '../generated/wysiwyg';
 
+// TODO remove this code once paragraph implemetation done, it's unused
 export function computeSelectionOffset(node: Node, offset?: number): number {
     if (node && node.nodeType === Node.TEXT_NODE) {
         return offset ?? node.textContent?.length ?? 0;
@@ -178,7 +179,27 @@ export function computeNodeAndOffset(
 } {
     const isEmptyList =
         currentNode.nodeName === 'LI' && !currentNode.hasChildNodes();
-    if (currentNode.nodeType === Node.TEXT_NODE || isEmptyList) {
+
+    if (currentNode.nodeType === Node.TEXT_NODE) {
+        // For a text node, we need to check to see if it needs an extra offset
+        // which involves climbing the tree through it's ancestors checking for
+        // any of the nodes that require the extra offset.
+        const shouldAddOffset = nodeNeedsExtraOffset(currentNode);
+        const extraOffset = shouldAddOffset ? 1 : 0;
+        if (codeunits <= (currentNode.textContent?.length || 0)) {
+            // we don't need to use that extra offset if we've found the answer
+            return { node: currentNode, offset: codeunits };
+        } else {
+            // but if we haven't found that answer, apply the extra offset
+            return {
+                node: null,
+                offset:
+                    codeunits -
+                    (currentNode.textContent?.length || 0) -
+                    extraOffset,
+            };
+        }
+    } else if (isEmptyList) {
         if (codeunits <= (currentNode.textContent?.length || 0)) {
             return { node: currentNode, offset: codeunits };
         } else {
@@ -316,9 +337,15 @@ function findCharacter(
         if (currentNode.nodeType === Node.TEXT_NODE) {
             // Return how many steps forward we progress by skipping
             // this node.
+
+            // The extra check for an offset here depends on the ancestor of the
+            // text node and can be seen as the opposite to the equivalent call
+            // in computeNodeAndOffset
+            const shouldAddOffset = nodeNeedsExtraOffset(currentNode);
+            const extraOffset = shouldAddOffset ? 1 : 0;
             return {
                 found: false,
-                offset: currentNode.textContent?.length ?? 0,
+                offset: (currentNode.textContent?.length ?? 0) + extraOffset,
             };
         } else if (currentNode.nodeName === 'BR') {
             // Treat br tags as being 1 character long
@@ -388,4 +415,34 @@ export function countCodeunit(
     } else {
         return -1;
     }
+}
+
+/**
+ * Given a text node, determine if we need to add an additional offset to it. A
+ * text node that has any ancestor that is a li, pre, blockquote or p tag will
+ * require an additional offset to match up with the rust model. This
+ * implementation will probably need to be extended to deal with the list item
+ * case (and possibly others).
+ *
+ * Returns a boolean, true if the node needs an extra offset
+ */
+
+function nodeNeedsExtraOffset(node: Node | null) {
+    const nodeNamesWithExtraOffset = ['LI', 'PRE', 'BLOCKQUOTE', 'P'];
+    if (node === null) return false;
+
+    // do a recursive check up through its ancestors
+    let checkNode: Node = node;
+    if (checkNode === null) {
+        return false;
+    }
+
+    while (checkNode) {
+        if (nodeNamesWithExtraOffset.includes(checkNode.nodeName)) {
+            return true;
+        } else {
+            checkNode = checkNode.parentNode as Node;
+        }
+    }
+    return false;
 }
