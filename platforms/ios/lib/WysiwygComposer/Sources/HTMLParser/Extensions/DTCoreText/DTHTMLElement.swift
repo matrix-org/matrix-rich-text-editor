@@ -35,4 +35,40 @@ extension DTHTMLElement {
             }
         }
     }
+
+    func replaceNewlinesWithDiscardableElements() {
+        guard let childNodes = childNodes as? [DTHTMLElement] else { return }
+
+        if childNodes.count == 1,
+           let child = childNodes.first as? DTTextHTMLElement {
+            let splits = child.text().split(separator: "\n", omittingEmptySubsequences: false)
+            guard splits.count > 1, splits.contains("") else { return }
+
+            let strings: [String] = splits.map { "\($0)\n" }
+            removeAllChildNodes()
+            for string in strings {
+                if string != "\n" {
+                    var textElement = DTTextHTMLElement()
+                    textElement.setText("")
+                    if let lastChild = childNodes.last as? DTTextHTMLElement {
+                        textElement = lastChild
+                    } else {
+                        addChildNode(textElement)
+                        textElement.inheritAttributes(from: self)
+                        textElement.interpretAttributes()
+                    }
+                    textElement.setText(textElement.text() + string)
+                } else {
+                    let newChild = DiscardableTextHTMLElement()
+                    addChildNode(newChild)
+                    newChild.inheritAttributes(from: self)
+                    newChild.interpretAttributes()
+                }
+            }
+        } else {
+            for childNode in childNodes {
+                childNode.replaceNewlinesWithDiscardableElements()
+            }
+        }
+    }
 }

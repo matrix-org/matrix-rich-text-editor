@@ -26,6 +26,11 @@ final class DiscardableTextHTMLElement: DTTextHTMLElement {
         setText(textNode.text())
     }
 
+    override init() {
+        super.init()
+        setText(.nbsp)
+    }
+
     override func attributesForAttributedStringRepresentation() -> [AnyHashable: Any]! {
         var dict = super.attributesForAttributedStringRepresentation() ?? [AnyHashable: Any]()
         // Insert a key to mark this as discardable post-parsing.

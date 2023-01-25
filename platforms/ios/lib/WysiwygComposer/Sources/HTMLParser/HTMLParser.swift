@@ -88,6 +88,7 @@ public final class HTMLParser {
             // Removing NBSP character from <p>&nbsp;</p> since it is only used to
             // make DTCoreText able to easily parse new lines.
             element.clearNbspNodes()
+            element.replaceNewlinesWithDiscardableElements()
         }
         
         guard let attributedString = builder.generatedAttributedString() else {
