@@ -115,11 +115,7 @@ public final class HTMLParser {
         mutableAttributedString.applyBackgroundStyles(style: style)
         mutableAttributedString.applyInlineCodeBackgroundStyle(codeBackgroundColor: style.codeBackgroundColor)
         mutableAttributedString.replaceDiscardableTextWithZwsp()
-        
-        // FIXME: This solution might not fit for everything.
-        mutableAttributedString.addAttribute(.paragraphStyle,
-                                             value: NSParagraphStyle.default,
-                                             range: .init(location: 0, length: mutableAttributedString.length))
+        mutableAttributedString.removeParagraphVerticalSpacing()
         
         removeTrailingNewlineIfNeeded(from: mutableAttributedString, given: html)
         return mutableAttributedString

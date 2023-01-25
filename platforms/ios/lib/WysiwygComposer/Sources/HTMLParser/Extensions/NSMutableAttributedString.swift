@@ -29,8 +29,10 @@ extension NSMutableAttributedString {
             switch textBlock.backgroundColor {
             case TempColor.codeBlock:
                 addAttribute(.backgroundStyle, value: style.codeBlockBackgroundStyle, range: range)
+                addAttribute(.paragraphStyle, value: NSParagraphStyle.default, range: range)
             case TempColor.quote:
                 addAttribute(.backgroundStyle, value: style.quoteBackgroundStyle, range: range)
+                addAttribute(.paragraphStyle, value: NSParagraphStyle.default, range: range)
             default:
                 break
             }
@@ -57,6 +59,17 @@ extension NSMutableAttributedString {
             guard discardable == true else { return }
 
             self.replaceCharacters(in: range, with: String.zwsp)
+        }
+    }
+
+    /// Remove the vertical spacing for paragraphs in the entire attributed string.
+    func removeParagraphVerticalSpacing() {
+        enumerateTypedAttribute(.paragraphStyle) { (style: NSParagraphStyle, range: NSRange, _) in
+            guard let mutableStyle = style.mutableCopy() as? NSMutableParagraphStyle else { return }
+
+            mutableStyle.paragraphSpacing = 0
+            mutableStyle.paragraphSpacingBefore = 0
+            addAttribute(.paragraphStyle, value: mutableStyle as Any, range: range)
         }
     }
 }
