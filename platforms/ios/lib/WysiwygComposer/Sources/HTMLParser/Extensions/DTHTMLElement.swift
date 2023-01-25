@@ -23,7 +23,7 @@ extension DTHTMLElement {
 
         if childNodes.count == 1,
            let child = childNodes.first as? DTTextHTMLElement,
-           child.text() == "\u{00A0}" {
+           child.text() == .nbsp {
             removeAllChildNodes()
         } else {
             for childNode in childNodes {

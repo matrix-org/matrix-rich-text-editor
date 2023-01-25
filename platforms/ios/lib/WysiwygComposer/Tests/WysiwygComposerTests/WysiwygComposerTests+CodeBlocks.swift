@@ -18,7 +18,7 @@
 import XCTest
 
 private enum Constants {
-    static let resultHtml = "<pre>Some code\n\tmore code</pre><p>\(TestConstants.nbsp)</p>"
+    static let resultHtml = "<pre>Some code\n\tmore code</pre><p>\(Character.nbsp)</p>"
     static let resultTree =
         """
 

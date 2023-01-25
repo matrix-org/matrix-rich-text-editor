@@ -173,6 +173,9 @@ public extension WysiwygComposerViewModel {
         guard let update = model.apply(action) else { return }
         if update.textUpdate() == .keep {
             hasPendingFormats = true
+        } else if action == .codeBlock || action == .quote, attributedContent.selection.length == 0 {
+            // Add code block/quote as a pending format to improve block display.
+            hasPendingFormats = true
         }
         applyUpdate(update)
     }
@@ -237,6 +240,9 @@ public extension WysiwygComposerViewModel {
             shouldAcceptChange = false
         } else if replacementText.count == 1, replacementText[String.Index(utf16Offset: 0, in: replacementText)].isNewline {
             update = model.enter()
+            if model.actionStates()[.codeBlock] == .reversed || model.actionStates()[.quote] == .reversed {
+                hasPendingFormats = true
+            }
             shouldAcceptChange = false
         } else {
             update = model.replaceText(newText: replacementText)

@@ -133,9 +133,9 @@ public final class HTMLParser {
         if mutableAttributedString.string.last == "\n",
            !html.hasSuffix("</code>"),
            !html.hasSuffix("</a>"),
-           !html.hasSuffix("</p><p></p></blockquote>"),
-           !html.hasSuffix("</ul><p></p></blockquote>"),
-           !html.hasSuffix("</ol><p></p></blockquote>"),
+           !html.hasSuffix("</p><p>\(Character.nbsp)</p></blockquote>"),
+           !html.hasSuffix("</ul><p>\(Character.nbsp)</p></blockquote>"),
+           !html.hasSuffix("</ol><p>\(Character.nbsp)</p></blockquote>"),
            !html.hasSuffix("\n</pre>") {
             mutableAttributedString.deleteCharacters(in: NSRange(location: mutableAttributedString.length - 1, length: 1))
         }
