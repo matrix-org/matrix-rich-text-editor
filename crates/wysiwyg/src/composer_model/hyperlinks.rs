@@ -17,9 +17,9 @@ use std::collections::HashSet;
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::{DomNodeKind::LineBreak, DomNodeKind::Text};
 use crate::dom::nodes::ContainerNodeKind;
-use crate::dom::nodes::{ContainerNodeKind::Link, DomNode};
+use crate::dom::nodes::DomNode;
 use crate::dom::unicode_string::UnicodeStrExt;
-use crate::dom::{DomLocation, Range};
+use crate::dom::Range;
 use crate::{
     ComposerModel, ComposerUpdate, DomHandle, LinkAction, UnicodeString,
 };
@@ -71,7 +71,7 @@ where
 
     pub fn set_link_with_text(
         &mut self,
-        mut link: S,
+        link: S,
         text: S,
     ) -> ComposerUpdate<S> {
         let (s, _) = self.safe_selection();
@@ -79,21 +79,30 @@ where
         self.do_replace_text(text.clone());
         let e = s + text.len();
         let range = self.state.dom.find_range(s, e);
-        self.add_http_scheme(&mut link);
-        self.set_link_range(range, link)
+        self.set_link_in_range(link, range)
     }
 
-    pub fn set_link(&mut self, mut link: S) -> ComposerUpdate<S> {
+    pub fn set_link(&mut self, link: S) -> ComposerUpdate<S> {
         self.push_state_to_history();
-        let (mut s, mut e) = self.safe_selection();
+        let (s, e) = self.safe_selection();
 
-        let mut range = self.state.dom.find_range(s, e);
+        let range = self.state.dom.find_range(s, e);
 
+        self.set_link_in_range(link, range)
+    }
+
+    fn set_link_in_range(
+        &mut self,
+        mut link: S,
+        range: Range,
+    ) -> ComposerUpdate<S> {
         self.add_http_scheme(&mut link);
+
+        let (mut s, mut e) = (range.start(), range.end());
         // Find container link that completely covers the range
         if let Some(link) = self.find_closest_ancestor_link(&range) {
             // If found, update the range to the container link bounds
-            range = self.state.dom.find_range_by_node(&link);
+            let range = self.state.dom.find_range_by_node(&link);
             (s, e) = (range.start(), range.end());
         }
 
@@ -194,42 +203,6 @@ where
         }
 
         None
-    }
-
-    fn set_link_range(&mut self, range: Range, link: S) -> ComposerUpdate<S> {
-        let leaves: Vec<&DomLocation> = range.leaves().collect();
-        for leaf in leaves.into_iter().rev() {
-            let handle = &leaf.node_handle;
-            let parent = self.state.dom.parent_mut(&leaf.node_handle);
-            if let Link(_) = parent.kind() {
-                parent.set_link(link.clone());
-            } else {
-                let node = self.state.dom.lookup_node(handle);
-                if let DomNode::Text(t) = node {
-                    let text = t.data();
-                    let before = text[..leaf.start_offset].to_owned();
-                    let during =
-                        text[leaf.start_offset..leaf.end_offset].to_owned();
-                    let after = text[leaf.end_offset..].to_owned();
-                    let mut new_nodes = Vec::new();
-                    if !before.is_empty() {
-                        new_nodes.push(DomNode::new_text(before));
-                    }
-                    if !during.is_empty() {
-                        new_nodes.push(DomNode::new_link(
-                            link.clone(),
-                            vec![DomNode::new_text(during)],
-                        ));
-                    }
-                    if !after.is_empty() {
-                        new_nodes.push(DomNode::new_text(after));
-                    }
-                    self.state.dom.replace(handle, new_nodes);
-                }
-            }
-            // TODO: set link should be able to wrap container nodes, unlike formatting
-        }
-        self.create_update_replace_all()
     }
 
     pub fn remove_links(&mut self) -> ComposerUpdate<S> {
