@@ -132,7 +132,7 @@ where
             split_points.into_iter().collect();
         ordered_split_points.sort();
 
-        for (index, point) in ordered_split_points.iter().enumerate().rev() {
+        for (index, point) in ordered_split_points.iter().enumerate() {
             if index <= ordered_split_points.len() - 2 {
                 let point = *point;
                 let range = self
