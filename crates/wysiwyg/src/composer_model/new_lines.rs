@@ -1,5 +1,5 @@
 use crate::dom::nodes::dom_node::DomNodeKind::{
-    Generic, Link, ListItem, Paragraph,
+    Generic, Link, List, ListItem, Paragraph,
 };
 use crate::dom::{Dom, DomLocation};
 use crate::{ComposerModel, ComposerUpdate, DomNode, UnicodeString};
@@ -102,11 +102,27 @@ where
                 if list_item_is_empty {
                     let list_handle =
                         block_location.node_handle.parent_handle();
-                    // Add new paragraph after the list
-                    self.state.dom.insert_at(
-                        &list_handle.next_sibling(),
-                        DomNode::new_paragraph(Vec::new()),
-                    );
+                    if let Some(ancestor_list_handle) =
+                        self.find_closest_ancestor_of_kind(&list_handle, List)
+                    {
+                        // If this is a nested list, we should create a new list item in the
+                        // ancestor list instead of creating a new paragraph.
+                        let new_item_index = list_handle
+                            .sub_handle_up_to(ancestor_list_handle.depth() + 1)
+                            .index_in_parent();
+                        let insert_at = ancestor_list_handle
+                            .child_handle(new_item_index + 1);
+                        self.state.dom.insert_at(
+                            &insert_at,
+                            DomNode::new_list_item(Vec::new()),
+                        );
+                    } else {
+                        // Otherwise, add new paragraph after the current list
+                        self.state.dom.insert_at(
+                            &list_handle.next_sibling(),
+                            DomNode::new_paragraph(Vec::new()),
+                        );
+                    }
                     // And remove the current list item
                     self.state.dom.remove(&block_location.node_handle);
                     // If list becomes empty, remove it too
@@ -119,6 +135,23 @@ where
                         .is_empty()
                     {
                         self.state.dom.remove(&list_handle);
+
+                        // Then remove extra paragraphs from siblings if needed
+                        let remove_extra_initial_paragraph = {
+                            let parent_list_item_container =
+                                self.state.dom.parent(&list_handle);
+                            parent_list_item_container.is_list_item()
+                                && parent_list_item_container.children().len()
+                                    == 1
+                                && parent_list_item_container.children()[0]
+                                    .kind()
+                                    == Paragraph
+                        };
+                        if remove_extra_initial_paragraph {
+                            self.state.dom.remove_and_keep_children(
+                                &list_handle.prev_sibling(),
+                            );
+                        }
                     }
                 } else if block_location.start_offset == 0 {
                     self.state.dom.insert_at(
@@ -414,5 +447,25 @@ mod test {
         let mut model = cm("<p>|</p>");
         model.replace_text("Testing".into());
         assert_eq!(tx(&model), "<p>Testing|</p>");
+    }
+
+    #[test]
+    fn new_line_in_nested_empty_list_item_should_create_list_item_in_parent() {
+        let mut model = cm("\
+        <ul>\
+            <li>\
+                <p>First item</p>\
+                <ul><li>|</li></ul>\
+            </li>\
+        </ul>");
+        model.enter();
+        assert_eq!(
+            tx(&model),
+            "\
+        <ul>\
+            <li>First item</li>\
+            <li>|</li>\
+        </ul>"
+        );
     }
 }
