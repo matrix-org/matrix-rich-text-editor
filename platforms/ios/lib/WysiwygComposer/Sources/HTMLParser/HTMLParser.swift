@@ -128,7 +128,7 @@ public final class HTMLParser {
     private static func removeTrailingNewlineIfNeeded(from mutableAttributedString: NSMutableAttributedString, given html: String) {
         // DTCoreText always adds a \n at the end of the document, which we need to remove
         // however it does not add it if </code> </a> are the last nodes.
-        // Also we don't want to remove it if q codeblock contains that newline
+        // Also we don't want to remove it if a codeblock contains that newline
         // and is not empty, because DTCoreText does not add a newline if these blocks
         // contain one at the end.
         if mutableAttributedString.string.last == "\n",
