@@ -7,7 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.element.android.wysiwyg.fakes.createFakeStyleConfig
 import io.element.android.wysiwyg.utils.AndroidResourcesHelper
 import io.element.android.wysiwyg.utils.HtmlToSpansParser
-import io.element.android.wysiwyg.utils.ZWSP
+import io.element.android.wysiwyg.utils.NBSP
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.Test
@@ -103,13 +103,13 @@ class HtmlToSpansParserTest {
         assertThat(
             spanned.dumpSpans(), equalTo(
                 listOf(
-                    "$ZWSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (0-1) fl=#17",
-                    "$ZWSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (2-3) fl=#17"
+                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (0-1) fl=#17",
+                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (2-3) fl=#17"
                 )
             )
         )
         assertThat(
-            spanned.toString(), equalTo("$ZWSP\n$ZWSP")
+            spanned.toString(), equalTo("$NBSP\n$NBSP")
         )
     }
 

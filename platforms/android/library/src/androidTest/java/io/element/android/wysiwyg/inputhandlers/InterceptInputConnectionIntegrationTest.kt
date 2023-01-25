@@ -11,7 +11,7 @@ import io.element.android.wysiwyg.test.utils.dumpSpans
 import io.element.android.wysiwyg.utils.AndroidHtmlConverter
 import io.element.android.wysiwyg.utils.AndroidResourcesHelper
 import io.element.android.wysiwyg.utils.HtmlToSpansParser
-import io.element.android.wysiwyg.utils.ZWSP
+import io.element.android.wysiwyg.utils.NBSP
 import io.element.android.wysiwyg.viewmodel.EditorViewModel
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
@@ -290,16 +290,16 @@ class InterceptInputConnectionIntegrationTest {
         // Should replace the code block span with an empty paragraph
         inputConnection.onHardwareEnterKey()
 
-        assertThat(textView.text.toString(), equalTo("$ZWSP"))
+        assertThat(textView.text.toString(), equalTo("$NBSP"))
         assertThat(
             textView.text.dumpSpans(), equalTo(
                 listOf(
-                    "$ZWSP: android.widget.TextView.ChangeWatcher (0-1) fl=#6553618",
-                    "$ZWSP: android.text.method.TextKeyListener (0-1) fl=#18",
-                    "$ZWSP: android.widget.Editor.SpanController (0-1) fl=#18",
+                    "$NBSP: android.widget.TextView.ChangeWatcher (0-1) fl=#6553618",
+                    "$NBSP: android.text.method.TextKeyListener (0-1) fl=#18",
+                    "$NBSP: android.widget.Editor.SpanController (0-1) fl=#18",
                     ": android.text.Selection.START (0-0) fl=#546",
                     ": android.text.Selection.END (0-0) fl=#34",
-                    "$ZWSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (0-1) fl=#17"
+                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (0-1) fl=#17"
                 )
             )
         )
@@ -313,17 +313,17 @@ class InterceptInputConnectionIntegrationTest {
         // First line break, should just add a line break character
         inputConnection.onHardwareEnterKey()
 
-        assertThat(textView.text.toString(), equalTo("Test\n$ZWSP"))
+        assertThat(textView.text.toString(), equalTo("Test\n$NBSP"))
         assertThat(
             textView.text.dumpSpans(), equalTo(
                 listOf(
-                    "Test\n$ZWSP: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
-                    "Test\n$ZWSP: android.text.method.TextKeyListener (0-6) fl=#18",
-                    "Test\n$ZWSP: android.widget.Editor.SpanController (0-6) fl=#18",
+                    "Test\n$NBSP: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
+                    "Test\n$NBSP: android.text.method.TextKeyListener (0-6) fl=#18",
+                    "Test\n$NBSP: android.widget.Editor.SpanController (0-6) fl=#18",
                     ": android.text.Selection.START (5-5) fl=#546",
                     ": android.text.Selection.END (5-5) fl=#34",
-                    "$ZWSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (5-6) fl=#17",
-                    "Test\n$ZWSP: io.element.android.wysiwyg.spans.CodeBlockSpan (0-6) fl=#33",
+                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (5-6) fl=#17",
+                    "Test\n$NBSP: io.element.android.wysiwyg.spans.CodeBlockSpan (0-6) fl=#33",
                 )
             )
         )
@@ -331,16 +331,16 @@ class InterceptInputConnectionIntegrationTest {
         // Second one, should create a new line break outside the code block
         inputConnection.onHardwareEnterKey()
 
-        assertThat(textView.text.toString(), equalTo("Test\n$ZWSP"))
+        assertThat(textView.text.toString(), equalTo("Test\n$NBSP"))
         assertThat(
             textView.text.dumpSpans(), equalTo(
                 listOf(
-                    "Test\n$ZWSP: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
-                    "Test\n$ZWSP: android.text.method.TextKeyListener (0-6) fl=#18",
-                    "Test\n$ZWSP: android.widget.Editor.SpanController (0-6) fl=#18",
+                    "Test\n$NBSP: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
+                    "Test\n$NBSP: android.text.method.TextKeyListener (0-6) fl=#18",
+                    "Test\n$NBSP: android.widget.Editor.SpanController (0-6) fl=#18",
                     ": android.text.Selection.START (5-5) fl=#34",
                     ": android.text.Selection.END (5-5) fl=#34",
-                    "$ZWSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (5-6) fl=#17",
+                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (5-6) fl=#17",
                     "Test: io.element.android.wysiwyg.spans.CodeBlockSpan (0-4) fl=#33",
                 )
             )
@@ -380,16 +380,16 @@ class InterceptInputConnectionIntegrationTest {
         // Should replace the quote span with an empty paragraph
         inputConnection.onHardwareEnterKey()
 
-        assertThat(textView.text.toString(), equalTo("$ZWSP"))
+        assertThat(textView.text.toString(), equalTo("$NBSP"))
         assertThat(
             textView.text.dumpSpans(), equalTo(
                 listOf(
-                    "$ZWSP: android.widget.TextView.ChangeWatcher (0-1) fl=#6553618",
-                    "$ZWSP: android.text.method.TextKeyListener (0-1) fl=#18",
-                    "$ZWSP: android.widget.Editor.SpanController (0-1) fl=#18",
+                    "$NBSP: android.widget.TextView.ChangeWatcher (0-1) fl=#6553618",
+                    "$NBSP: android.text.method.TextKeyListener (0-1) fl=#18",
+                    "$NBSP: android.widget.Editor.SpanController (0-1) fl=#18",
                     ": android.text.Selection.START (0-0) fl=#546",
                     ": android.text.Selection.END (0-0) fl=#34",
-                    "$ZWSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (0-1) fl=#17"
+                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (0-1) fl=#17"
                 )
             )
         )
@@ -403,17 +403,17 @@ class InterceptInputConnectionIntegrationTest {
         // First line break, should just add a line break character
         inputConnection.onHardwareEnterKey()
 
-        assertThat(textView.text.toString(), equalTo("Test\n$ZWSP"))
+        assertThat(textView.text.toString(), equalTo("Test\n$NBSP"))
         assertThat(
             textView.text.dumpSpans(), equalTo(
                 listOf(
-                    "Test\n$ZWSP: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
-                    "Test\n$ZWSP: android.text.method.TextKeyListener (0-6) fl=#18",
-                    "Test\n$ZWSP: android.widget.Editor.SpanController (0-6) fl=#18",
+                    "Test\n$NBSP: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
+                    "Test\n$NBSP: android.text.method.TextKeyListener (0-6) fl=#18",
+                    "Test\n$NBSP: android.widget.Editor.SpanController (0-6) fl=#18",
                     ": android.text.Selection.START (5-5) fl=#546",
                     ": android.text.Selection.END (5-5) fl=#34",
-                    "$ZWSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (5-6) fl=#17",
-                    "Test\n$ZWSP: io.element.android.wysiwyg.spans.QuoteSpan (0-6) fl=#33",
+                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (5-6) fl=#17",
+                    "Test\n$NBSP: io.element.android.wysiwyg.spans.QuoteSpan (0-6) fl=#33",
                 )
             )
         )
@@ -421,16 +421,16 @@ class InterceptInputConnectionIntegrationTest {
         // Second one, should create a new line break outside the quote
         inputConnection.onHardwareEnterKey()
 
-        assertThat(textView.text.toString(), equalTo("Test\n$ZWSP"))
+        assertThat(textView.text.toString(), equalTo("Test\n$NBSP"))
         assertThat(
             textView.text.dumpSpans(), equalTo(
                 listOf(
-                    "Test\n$ZWSP: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
-                    "Test\n$ZWSP: android.text.method.TextKeyListener (0-6) fl=#18",
-                    "Test\n$ZWSP: android.widget.Editor.SpanController (0-6) fl=#18",
+                    "Test\n$NBSP: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
+                    "Test\n$NBSP: android.text.method.TextKeyListener (0-6) fl=#18",
+                    "Test\n$NBSP: android.widget.Editor.SpanController (0-6) fl=#18",
                     ": android.text.Selection.START (5-5) fl=#34",
                     ": android.text.Selection.END (5-5) fl=#34",
-                    "$ZWSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (5-6) fl=#17",
+                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (5-6) fl=#17",
                     "Test: io.element.android.wysiwyg.spans.QuoteSpan (0-4) fl=#33",
                 )
             )
@@ -441,18 +441,18 @@ class InterceptInputConnectionIntegrationTest {
     fun testEnterInEmptyModel() {
         inputConnection.onHardwareEnterKey()
 
-        assertThat(textView.text.toString(), equalTo("$ZWSP\n$ZWSP"))
+        assertThat(textView.text.toString(), equalTo("$NBSP\n$NBSP"))
 
         assertThat(
             textView.text.dumpSpans(), equalTo(
                 listOf(
-                    "$ZWSP\n$ZWSP: android.widget.TextView.ChangeWatcher (0-3) fl=#6553618",
-                    "$ZWSP\n$ZWSP: android.text.method.TextKeyListener (0-3) fl=#18",
-                    "$ZWSP\n$ZWSP: android.widget.Editor.SpanController (0-3) fl=#18",
+                    "$NBSP\n$NBSP: android.widget.TextView.ChangeWatcher (0-3) fl=#6553618",
+                    "$NBSP\n$NBSP: android.text.method.TextKeyListener (0-3) fl=#18",
+                    "$NBSP\n$NBSP: android.widget.Editor.SpanController (0-3) fl=#18",
                     ": android.text.Selection.START (2-2) fl=#546",
                     ": android.text.Selection.END (2-2) fl=#34",
-                    "$ZWSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (0-1) fl=#17",
-                    "$ZWSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (2-3) fl=#17"
+                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (0-1) fl=#17",
+                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (2-3) fl=#17"
                 )
             )
         )
@@ -465,7 +465,7 @@ class InterceptInputConnectionIntegrationTest {
 
         inputConnection.onHardwareEnterKey()
 
-        assertThat(textView.text.toString(), equalTo("$ZWSP\nInitial text"))
+        assertThat(textView.text.toString(), equalTo("$NBSP\nInitial text"))
     }
 
     @Test
@@ -474,7 +474,7 @@ class InterceptInputConnectionIntegrationTest {
 
         inputConnection.onHardwareEnterKey()
 
-        assertThat(textView.text.toString(), equalTo("Initial text\n$ZWSP"))
+        assertThat(textView.text.toString(), equalTo("Initial text\n$NBSP"))
     }
 
     @Test
