@@ -33,7 +33,7 @@ extension WysiwygComposerTests {
         // Remove it
         _ = composer.enter()
         XCTAssertEqual(composer.getContentAsHtml(),
-                       "<ol><li>Item 1</li><li>Item 2</li></ol><p>\(TestConstants.nbsp)</p>")
+                       "<ol><li>Item 1</li><li>Item 2</li></ol><p>\(Character.nbsp)</p>")
         XCTAssertEqual(composer.getCurrentDomState().start, composer.getCurrentDomState().end)
         XCTAssertEqual(composer.getCurrentDomState().start, 14)
         // Insert some text afterwards

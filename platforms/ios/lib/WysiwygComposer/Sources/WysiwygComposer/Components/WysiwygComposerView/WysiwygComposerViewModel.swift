@@ -240,6 +240,9 @@ public extension WysiwygComposerViewModel {
             shouldAcceptChange = false
         } else if replacementText.count == 1, replacementText[String.Index(utf16Offset: 0, in: replacementText)].isNewline {
             update = model.enter()
+            if model.actionStates()[.codeBlock] == .reversed || model.actionStates()[.quote] == .reversed {
+                hasPendingFormats = true
+            }
             shouldAcceptChange = false
         } else {
             update = model.replaceText(newText: replacementText)
