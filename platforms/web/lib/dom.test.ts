@@ -210,6 +210,78 @@ describe('computeNodeAndOffset', () => {
         expect(node).toBe(editor.childNodes[0].childNodes[0].childNodes[0]);
         expect(offset).toBe(1);
     });
+
+    it('Should find inside a paragraph, before content', () => {
+        // When
+        setEditorHtml('<p>a</p>');
+        const { node, offset } = computeNodeAndOffset(editor, 0);
+
+        // Then
+        expect(node).toBe(editor.childNodes[0].childNodes[0]);
+        expect(offset).toBe(0);
+    });
+
+    it('Should find inside a paragraph, after content', () => {
+        // When
+        setEditorHtml('<p>a</p>');
+        const { node, offset } = computeNodeAndOffset(editor, 1);
+
+        // Then
+        expect(node).toBe(editor.childNodes[0].childNodes[0]);
+        expect(offset).toBe(1);
+    });
+
+    it('Should find inside adjacent paragraphs, first child', () => {
+        // When
+        setEditorHtml('<p>a</p><p>b</p>');
+        const { node, offset } = computeNodeAndOffset(editor, 1);
+
+        // Then
+        expect(node).toBe(editor.childNodes[0].childNodes[0]);
+        expect(offset).toBe(1);
+    });
+
+    it('Should find inside adjacent paragraphs, second child', () => {
+        // When
+        setEditorHtml('<p>a</p><p>b</p>');
+        const { node, offset } = computeNodeAndOffset(editor, 2);
+
+        // Then
+        expect(node).toBe(editor.childNodes[1].childNodes[0]);
+        expect(offset).toBe(0);
+    });
+
+    it('Should find inside adjacent nested paragraphs, first child', () => {
+        // When
+        setEditorHtml('<p><em>a</em></p><p><em>b</em></p>');
+        const { node, offset } = computeNodeAndOffset(editor, 1);
+
+        // Then
+        expect(node).toBe(editor.childNodes[0].childNodes[0].childNodes[0]);
+        expect(offset).toBe(1);
+    });
+
+    it('Should find inside adjacent nested paragraphs, second child', () => {
+        // When
+        setEditorHtml('<p><em>a</em></p><p><em>b</em></p>');
+        const { node, offset } = computeNodeAndOffset(editor, 2);
+
+        // Then
+        expect(node).toBe(editor.childNodes[1].childNodes[0].childNodes[0]);
+        expect(offset).toBe(0);
+    });
+
+    it('Should find inside adjacent empty paragraph, second child', () => {
+        // When
+        // we get this when we start writing in the composer (goes in as plain
+        // text) and then we press enter and we move to paragraphs
+        setEditorHtml('<p>press enter</p><p>&nbsp;</p>');
+        const { node, offset } = computeNodeAndOffset(editor, 12);
+
+        // Then
+        expect(node).toBe(editor.childNodes[1].childNodes[0]);
+        expect(offset).toBe(0);
+    });
 });
 
 describe('countCodeunit', () => {
