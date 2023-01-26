@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::dom::nodes::dom_node::DomNodeKind::CodeBlock;
+use crate::dom::nodes::ContainerNode;
 use crate::dom::{Dom, DomCreationError, UnicodeString};
+use crate::{DomHandle, DomNode};
 
 pub fn parse<S>(html: &str) -> Result<Dom<S>, DomCreationError<S>>
 where
@@ -38,7 +41,7 @@ mod sys {
     use crate::dom::nodes::dom_node::DomNodeKind;
     use crate::dom::nodes::dom_node::DomNodeKind::CodeBlock;
     use crate::dom::nodes::{ContainerNode, DomNode};
-    use crate::{DomHandle, ListType};
+    use crate::ListType;
 
     pub(super) struct HtmlParser {
         current_path: Vec<DomNodeKind>,
@@ -60,7 +63,7 @@ mod sys {
             PaDomCreator::parse(html)
                 .map(|pa_dom| {
                     let dom = self.padom_to_dom(pa_dom);
-                    Self::post_process_code_blocks(dom)
+                    post_process_code_blocks(dom)
                 })
                 .map_err(|err| {
                     self.padom_creation_error_to_dom_creation_error(err)
@@ -152,10 +155,18 @@ mod sys {
             match tag {
                 "b" | "code" | "del" | "em" | "i" | "strong" | "u" => {
                     let formatting_node = Self::new_formatting(tag);
-                    self.current_path.push(formatting_node.kind());
-                    node.append_child(formatting_node);
-                    self.convert_children(padom, child, node.last_child_mut());
-                    self.current_path.remove(cur_path_idx);
+                    if tag == "code" && self.current_path.contains(&CodeBlock) {
+                        self.convert_children(padom, child, Some(node));
+                    } else {
+                        self.current_path.push(formatting_node.kind());
+                        node.append_child(formatting_node);
+                        self.convert_children(
+                            padom,
+                            child,
+                            last_container_mut_in(node),
+                        );
+                        self.current_path.remove(cur_path_idx);
+                    }
                 }
                 "br" => {
                     node.append_child(Self::new_line_break());
@@ -163,31 +174,51 @@ mod sys {
                 "ol" | "ul" => {
                     self.current_path.push(DomNodeKind::List);
                     node.append_child(Self::new_list(tag));
-                    self.convert_children(padom, child, node.last_child_mut());
+                    self.convert_children(
+                        padom,
+                        child,
+                        last_container_mut_in(node),
+                    );
                     self.current_path.remove(cur_path_idx);
                 }
                 "li" => {
                     self.current_path.push(DomNodeKind::ListItem);
                     node.append_child(Self::new_list_item());
-                    self.convert_children(padom, child, node.last_child_mut());
+                    self.convert_children(
+                        padom,
+                        child,
+                        last_container_mut_in(node),
+                    );
                     self.current_path.remove(cur_path_idx);
                 }
                 "a" => {
                     self.current_path.push(DomNodeKind::Link);
                     node.append_child(Self::new_link(child));
-                    self.convert_children(padom, child, node.last_child_mut());
+                    self.convert_children(
+                        padom,
+                        child,
+                        last_container_mut_in(node),
+                    );
                     self.current_path.remove(cur_path_idx);
                 }
                 "pre" => {
                     self.current_path.push(DomNodeKind::CodeBlock);
                     node.append_child(Self::new_code_block());
-                    self.convert_children(padom, child, node.last_child_mut());
+                    self.convert_children(
+                        padom,
+                        child,
+                        last_container_mut_in(node),
+                    );
                     self.current_path.remove(cur_path_idx);
                 }
                 "blockquote" => {
                     self.current_path.push(DomNodeKind::Quote);
                     node.append_child(Self::new_quote());
-                    self.convert_children(padom, child, node.last_child_mut());
+                    self.convert_children(
+                        padom,
+                        child,
+                        last_container_mut_in(node),
+                    );
                     self.current_path.remove(cur_path_idx);
                 }
                 "html" => {
@@ -198,7 +229,11 @@ mod sys {
                 "p" => {
                     self.current_path.push(DomNodeKind::Paragraph);
                     node.append_child(Self::new_paragraph());
-                    self.convert_children(padom, child, node.last_child_mut());
+                    self.convert_children(
+                        padom,
+                        child,
+                        last_container_mut_in(node),
+                    );
                     self.current_path.remove(cur_path_idx);
                 }
                 _ => {
@@ -213,11 +248,11 @@ mod sys {
             &mut self,
             padom: &PaDom,
             child: &PaNodeContainer,
-            new_node: Option<&mut DomNode<S>>,
+            new_node: Option<&mut ContainerNode<S>>,
         ) where
             S: UnicodeString,
         {
-            if let DomNode::Container(new_node) = new_node.unwrap() {
+            if let Some(new_node) = new_node {
                 self.convert(padom, child, new_node);
             } else {
                 panic!("Container became non-container!");
@@ -309,85 +344,18 @@ mod sys {
                 parse_errors: e.parse_errors,
             }
         }
-
-        fn post_process_code_blocks<S: UnicodeString>(
-            mut dom: Dom<S>,
-        ) -> Dom<S> {
-            let code_block_handles = Self::find_code_block_handles(&dom);
-            for handle in code_block_handles.iter().rev() {
-                dom = Self::post_process_code_blocks_lines(dom, handle);
-            }
-            dom
-        }
-
-        fn find_code_block_handles<S: UnicodeString>(
-            dom: &Dom<S>,
-        ) -> Vec<DomHandle> {
-            dom.iter()
-                .filter(|n| n.kind() == CodeBlock)
-                .map(|n| n.handle())
-                .collect()
-        }
-
-        fn post_process_code_blocks_lines<S: UnicodeString>(
-            mut dom: Dom<S>,
-            handle: &DomHandle,
-        ) -> Dom<S> {
-            assert_eq!(dom.lookup_node(handle).kind(), CodeBlock);
-            let last_handle = dom.last_node_handle_in_sub_tree(handle);
-            let mut next_handle = last_handle.clone();
-            let mut children = Vec::new();
-            let mut line_break_handles = Vec::new();
-            for node in dom.iter_from_handle(&last_handle).rev() {
-                if node.is_line_break() || node.handle() == *handle {
-                    line_break_handles.push(next_handle.clone());
-                }
-                next_handle = node.handle();
-                if node.handle().depth() <= handle.depth() {
-                    break;
-                }
-            }
-
-            for line_break_handle in line_break_handles {
-                let mut sub_tree = dom.split_sub_tree_from(
-                    &line_break_handle,
-                    0,
-                    handle.depth(),
-                );
-                if line_break_handle.index_in_parent() > 0 {
-                    // Remove line break too
-                    dom.remove(&line_break_handle.prev_sibling());
-                }
-                let node = DomNode::new_paragraph(
-                    sub_tree.document_mut().remove_children(),
-                );
-                children.insert(0, node);
-            }
-
-            let needs_removal = if dom.contains(handle) {
-                let block = dom.lookup_node(handle);
-                block.kind() == CodeBlock && block.is_empty()
-            } else {
-                false
-            };
-            if needs_removal {
-                dom.remove(handle);
-            }
-
-            dom.insert_at(handle, DomNode::new_code_block(children));
-            dom
-        }
     }
 
     #[cfg(test)]
     mod test {
         use crate::dom::parser::parse::sys::HtmlParser;
         use crate::dom::Dom;
+        use indoc::indoc;
         use speculoos::{assert_that, AssertionFailure, Spec};
         use widestring::Utf16String;
 
         use crate::tests::testutils_composer_model::restore_whitespace;
-        use crate::ToHtml;
+        use crate::{ToHtml, ToTree};
 
         use super::*;
 
@@ -451,7 +419,32 @@ mod sys {
         }
 
         #[test]
-        fn parse_code_block() {
+        fn parse_code_block_removes_internal_code_tag() {
+            let html = "\
+                <p>foo</p>\
+                <pre><code>Some code</code></pre>\
+                <p>bar</p>";
+            let dom: Dom<Utf16String> =
+                HtmlParser::default().parse(&html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+                
+                ├>p
+                │ └>"foo"
+                ├>pre
+                │ └>p
+                │   └>"Some code"
+                └>p
+                  └>"bar"
+                "#}
+            );
+        }
+
+        #[test]
+        fn parse_code_block_roundtrips() {
             assert_that!("<p>foo</p><pre>Some code</pre><p>bar</p>")
                 .roundtrips();
         }
@@ -459,7 +452,7 @@ mod sys {
         #[test]
         fn parse_code_block_post_processes_it() {
             let mut parser = HtmlParser::default();
-            let html = "<pre><b>Test\nCode</b></pre>";
+            let html = "<pre><code><b>Test\nCode</b></code></pre>";
             let dom: Dom<Utf16String> = PaDomCreator::parse(html)
                 .map(|pa_dom| parser.padom_to_dom(pa_dom))
                 .ok()
@@ -470,7 +463,7 @@ mod sys {
                 "<pre><b>Test<br />Code</b></pre>"
             );
             // Then these line breaks are post-processed and we get the actual paragraphs
-            let dom = HtmlParser::post_process_code_blocks_lines(
+            let dom = post_process_code_blocks_lines(
                 dom,
                 &DomHandle::from_raw(vec![0]),
             );
@@ -493,6 +486,72 @@ mod sys {
             assert_that!("<p>foo</p><p>A paragraph</p><p>bar</p>").roundtrips();
         }
     }
+}
+
+fn post_process_code_blocks<S: UnicodeString>(mut dom: Dom<S>) -> Dom<S> {
+    let code_block_handles = find_code_block_handles(&dom);
+    for handle in code_block_handles.iter().rev() {
+        dom = post_process_code_blocks_lines(dom, handle);
+    }
+    dom
+}
+
+fn find_code_block_handles<S: UnicodeString>(dom: &Dom<S>) -> Vec<DomHandle> {
+    dom.iter()
+        .filter(|n| n.kind() == CodeBlock)
+        .map(|n| n.handle())
+        .collect()
+}
+
+fn post_process_code_blocks_lines<S: UnicodeString>(
+    mut dom: Dom<S>,
+    handle: &DomHandle,
+) -> Dom<S> {
+    assert_eq!(dom.lookup_node(handle).kind(), CodeBlock);
+    let last_handle = dom.last_node_handle_in_sub_tree(handle);
+    let mut next_handle = last_handle.clone();
+    let mut children = Vec::new();
+    let mut line_break_handles = Vec::new();
+    for node in dom.iter_from_handle(&last_handle).rev() {
+        if node.is_line_break() || node.handle() == *handle {
+            line_break_handles.push(next_handle.clone());
+        }
+        next_handle = node.handle();
+        if node.handle().depth() <= handle.depth() {
+            break;
+        }
+    }
+
+    for line_break_handle in line_break_handles {
+        let mut sub_tree =
+            dom.split_sub_tree_from(&line_break_handle, 0, handle.depth());
+        if line_break_handle.index_in_parent() > 0 {
+            // Remove line break too
+            dom.remove(&line_break_handle.prev_sibling());
+        }
+        let node =
+            DomNode::new_paragraph(sub_tree.document_mut().remove_children());
+        children.insert(0, node);
+    }
+
+    let needs_removal = if dom.contains(handle) {
+        let block = dom.lookup_node(handle);
+        block.kind() == CodeBlock && block.is_empty()
+    } else {
+        false
+    };
+    if needs_removal {
+        dom.remove(handle);
+    }
+
+    dom.insert_at(handle, DomNode::new_code_block(children));
+    dom
+}
+
+fn last_container_mut_in<S: UnicodeString>(
+    node: &mut ContainerNode<S>,
+) -> Option<&mut ContainerNode<S>> {
+    node.last_child_mut().map_or(None, |n| n.as_container_mut())
 }
 
 #[cfg(all(feature = "js", target_arch = "wasm32"))]
@@ -542,6 +601,8 @@ mod js {
             let dom_document = dom.document_mut();
 
             convert_container(nodes, dom_document)?;
+
+            dom = post_process_code_blocks(dom);
 
             Ok(dom)
         }
@@ -609,9 +670,19 @@ mod js {
                     }
 
                     "PRE" => {
+                        let children = node.child_nodes();
+                        let children = if children.length() == 1
+                            && children.get(0).unwrap().node_name().as_str()
+                                == "CODE"
+                        {
+                            let code_node = children.get(0).unwrap();
+                            code_node.child_nodes()
+                        } else {
+                            children
+                        };
                         dom.append_child(DomNode::Container(
                             ContainerNode::new_code_block(
-                                convert(node.child_nodes())?.take_children(),
+                                convert(children)?.take_children(),
                             ),
                         ));
                     }
@@ -619,6 +690,14 @@ mod js {
                     "BLOCKQUOTE" => {
                         dom.append_child(DomNode::Container(
                             ContainerNode::new_quote(
+                                convert(node.child_nodes())?.take_children(),
+                            ),
+                        ));
+                    }
+
+                    "P" => {
+                        dom.append_child(DomNode::Container(
+                            ContainerNode::new_paragraph(
                                 convert(node.child_nodes())?.take_children(),
                             ),
                         ));
@@ -692,8 +771,9 @@ mod js {
     mod tests {
         use super::*;
         use crate::{
-            tests::testutils_composer_model::restore_whitespace, ToHtml,
+            tests::testutils_composer_model::restore_whitespace, ToHtml, ToTree,
         };
+        use indoc::indoc;
         use wasm_bindgen_test::*;
         use widestring::Utf16String;
 
@@ -746,6 +826,32 @@ mod js {
         #[wasm_bindgen_test]
         fn pre() {
             roundtrip("foo <pre>~Some code</pre> bar");
+        }
+
+        #[wasm_bindgen_test]
+        fn paragraph() {
+            roundtrip("<p>foo</p><p>Text</p><p>bar</p>");
+        }
+
+        #[wasm_bindgen_test]
+        fn pre_removes_internal_code() {
+            let html = "<p>foo</p><pre><code>Some code</code></pre><p>bar</p>";
+            let dom = parse::<Utf16String>(html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+        
+                ├>p
+                │ └>"foo"
+                ├>pre
+                │ └>p
+                │   └>"Some code"
+                └>p
+                  └>"bar"
+                "#}
+            );
         }
 
         #[wasm_bindgen_test]
