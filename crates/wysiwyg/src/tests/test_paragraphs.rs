@@ -184,14 +184,14 @@ fn backspace_merges_formatting_nodes() {
 fn enter_in_code_block_in_text_node_adds_line_break_as_text() {
     let mut model = cm("<pre>Test|</pre>");
     model.enter();
-    assert_eq!(tx(&model), "<pre>Test\n|</pre>")
+    assert_eq!(tx(&model), "<pre>Test\n&nbsp;|</pre>")
 }
 
 #[test]
 fn enter_in_code_block_at_start_adds_the_line_break() {
     let mut model = cm("<pre>|Test</pre>");
     model.enter();
-    assert_eq!(tx(&model), "<pre>\n|Test</pre>")
+    assert_eq!(tx(&model), "<pre>&nbsp;\n|Test</pre>")
 }
 
 #[test]
@@ -204,7 +204,7 @@ fn enter_in_code_block_at_start_with_previous_line_break_moves_it_outside_the_co
     model.select(0.into(), 0.into());
     assert_eq!(tx(&model), "<pre>|Test</pre>");
     model.enter();
-    assert_eq!(tx(&model), "<pre>\n|Test</pre>");
+    assert_eq!(tx(&model), "<pre>&nbsp;\n|Test</pre>");
     model.select(0.into(), 0.into());
     model.enter();
     assert_eq!(tx(&model), "<p>&nbsp;|</p><pre>Test</pre>");
@@ -225,12 +225,9 @@ fn enter_in_code_block_at_start_with_previous_line_break_moves_it_outside_the_co
 #[test]
 fn enter_in_code_block_at_start_with_a_line_break_after_it_adds_another_one() {
     // The initial line break will be removed, so it's the same as having a single line break at the start
-    let mut model = cm("\
-    <pre>\n\
-        \n|Test\
-    </pre>");
+    let mut model = cm("<pre>\n\n|Test</pre>");
     model.enter();
-    assert_eq!(tx(&model), "<pre>\n\n|Test</pre>")
+    assert_eq!(tx(&model), "<pre>&nbsp;\n&nbsp;\n|Test</pre>")
 }
 
 #[test]
@@ -309,7 +306,7 @@ fn double_enter_in_quote_at_end_when_not_empty_exits_it() {
 fn double_enter_in_code_block_when_empty_removes_it_and_adds_new_line() {
     let mut model = cm("|");
     model.code_block();
-    assert_eq!(tx(&model), "<pre>|</pre>");
+    assert_eq!(tx(&model), "<pre>&nbsp;|</pre>");
     model.enter();
     assert_eq!(tx(&model), "<p>&nbsp;|</p>");
     model.replace_text("asd".into());
@@ -413,5 +410,5 @@ fn pressing_enter_after_wrapping_text_in_code_block_works() {
     model.replace_text("Some code".into());
     model.code_block();
     model.enter();
-    assert_eq!(tx(&model), "<pre>Some code\n|</pre>")
+    assert_eq!(tx(&model), "<pre>Some code\n&nbsp;|</pre>")
 }

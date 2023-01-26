@@ -253,7 +253,7 @@ mod test {
     fn add_code_block_to_empty_dom() {
         let mut model = cm("|");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>|</pre>");
+        assert_eq!(tx(&model), "<pre>&nbsp;|</pre>");
     }
 
     #[test]
@@ -432,14 +432,14 @@ mod test {
     fn test_creating_code_block_at_the_end_of_editor() {
         let mut model = cm("<p>Test</p><p>|</p>");
         model.code_block();
-        assert_eq!(tx(&model), "<p>Test</p><pre>|</pre>");
+        assert_eq!(tx(&model), "<p>Test</p><pre>&nbsp;|</pre>");
     }
 
     #[test]
     fn creating_and_removing_code_block_works() {
         let mut model = cm("|");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>|</pre>");
+        assert_eq!(tx(&model), "<pre>&nbsp;|</pre>");
         model.code_block();
         assert_eq!(tx(&model), "<p>&nbsp;|</p>");
     }
@@ -448,7 +448,7 @@ mod test {
     fn add_code_block_to_empty_list_item() {
         let mut model = cm("<ul><li>|</li></ul>");
         model.code_block();
-        assert_eq!(tx(&model), "<ul><li><pre>|</pre></li></ul>");
+        assert_eq!(tx(&model), "<ul><li><pre>&nbsp;|</pre></li></ul>");
         assert_eq!(
             model.to_tree().to_string(),
             indoc! {
