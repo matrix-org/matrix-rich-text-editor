@@ -143,22 +143,22 @@ describe.each([
 
         it('Should format the selection on multiple lines', async () => {
             // When
-            await userEvent.click(
-                screen.getByRole('button', { name: 'strikeThrough' }),
+            await act(() =>
+                userEvent.click(
+                    screen.getByRole('button', { name: 'strikeThrough' }),
+                ),
             );
             fireEvent.input(textbox, {
                 data: 'foo',
                 inputType: 'insertText',
             });
-
-            await userEvent.type(textbox, '{enter}');
+            await act(() => userEvent.type(textbox, '{enter}'));
             fireEvent.input(textbox, {
                 data: 'bar',
                 inputType: 'insertText',
             });
 
             select(textbox, 2, 5);
-
             await act(() => userEvent.click(button));
 
             // Then
