@@ -439,6 +439,8 @@ export function countCodeunit(
  * handle the case where we have consecutive formatting nodes, as only the last
  * of the formatting nodes needs the extra offset (if applicable).
  *
+ * This is called in two places and only with TextNodes
+ *
  * Returns a boolean, true if the node needs an extra offset
  */
 
@@ -446,44 +448,34 @@ function nodeNeedsExtraOffset(node: Node | null) {
     if (node === null) return false;
 
     let checkNode: Node | ParentNode | null = node;
-    let hasFormattingAncestor = false;
+    const hasFormattingParent = isFormattingNode(checkNode.parentNode);
 
-    // don't break the previous implementation for now:
-    if (!isFormattingNode(checkNode.parentNode)) {
-        // do a recursive check up through its ancestors
-        while (checkNode) {
-            if (isNodeRequiringExtraOffset(checkNode)) {
-                return true;
-            } else {
-                checkNode = checkNode.parentNode as Node;
-            }
-        }
-        return false;
-    }
+    // If the parent is _not_ a formatting node, then we have a case where the
+    // text node we are looking at is in a container, so we simply need to check
+    // the ancestors to see if one of those containers requires an extra offset.
 
+    // Otherwise we are dealing with the case where we are inside at least one
+    // formatting node (but we could be deeper than that) and we also need to
+    // make sure that we don't add the offset more than once when we have
+    // multiple adjacent inline formatting nodes.
     while (checkNode) {
-        // ...but we also need to make sure that we don't add the offset more
-        // than once when we have multiple inline formatting nodes
-        // start off just checking if it's a formatting node and
-        // has no next sibling
-        const parentIsFormattingNode = isFormattingNode(checkNode.parentNode);
-        if (parentIsFormattingNode) {
-            hasFormattingAncestor = true;
-        }
+        // if we have a formatting ancestor and the next sibling is not a
+        // container node, stop looking (and return false)
         const nextSibling = checkNode.nextSibling;
-
-        // stop looking if we find a next sibling that is not a container node
-        if (nextSibling && !isNodeRequiringExtraOffset(nextSibling)) {
+        if (
+            hasFormattingParent &&
+            nextSibling &&
+            !isNodeRequiringExtraOffset(nextSibling)
+        ) {
             break;
         }
 
-        if (isNodeRequiringExtraOffset(checkNode) && hasFormattingAncestor) {
+        if (isNodeRequiringExtraOffset(checkNode)) {
             return true;
         } else {
             checkNode = checkNode.parentNode;
         }
     }
-
     return false;
 }
 
