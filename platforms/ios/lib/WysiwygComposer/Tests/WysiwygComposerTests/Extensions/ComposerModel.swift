@@ -75,4 +75,15 @@ extension ComposerModel {
         XCTAssertEqual(state.end, end)
         return self
     }
+
+    /// Assert link action matches self.
+    ///
+    /// - Parameters:
+    ///   - linkAction: expected link action
+    /// - Returns: self (discardable)
+    @discardableResult
+    func assertLinkAction(_ linkAction: LinkAction) -> ComposerModel {
+        XCTAssertEqual(getLinkAction(), linkAction)
+        return self
+    }
 }

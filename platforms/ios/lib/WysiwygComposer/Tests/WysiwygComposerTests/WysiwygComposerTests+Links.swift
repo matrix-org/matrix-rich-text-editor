@@ -19,25 +19,22 @@ import XCTest
 
 extension WysiwygComposerTests {
     func testCreateWithTextLinkAction() {
-        let composer = newComposerModel()
-        let action = composer.getLinkAction()
-        XCTAssertEqual(action, .createWithText)
+        newComposerModel()
+            .assertLinkAction(.createWithText)
     }
 
     func testCreateLinkAction() {
-        let composer = newComposerModel()
+        newComposerModel()
             .action { $0.replaceText(newText: "test") }
             .action { $0.select(startUtf16Codeunit: 0, endUtf16Codeunit: 4) }
-        let action = composer.getLinkAction()
-        XCTAssertEqual(action, .create)
+            .assertLinkAction(.create)
     }
 
     func testEditLinkAction() {
         let link = "test_url"
-        let composer = newComposerModel()
+        newComposerModel()
             .action { $0.setLinkWithText(link: link, text: "test") }
-        let action = composer.getLinkAction()
-        XCTAssertEqual(action, .edit(link: "https://\(link)"))
+            .assertLinkAction(.edit(link: "https://\(link)"))
     }
 
     func testSetLinkWithText() {
