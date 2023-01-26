@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::cmp::{max, min};
 use std::collections::HashSet;
 
 use crate::dom::nodes::dom_node::DomNodeKind;
+use crate::dom::nodes::dom_node::DomNodeKind::{Link, List};
 use crate::dom::nodes::dom_node::{DomNodeKind::LineBreak, DomNodeKind::Text};
 use crate::dom::nodes::ContainerNodeKind;
 use crate::dom::nodes::DomNode;
@@ -110,41 +112,73 @@ where
             return ComposerUpdate::keep();
         }
 
-        let mut split_points: HashSet<usize> = HashSet::new();
-        split_points.insert(s);
-        split_points.insert(e);
+        let mut split_points: Vec<(DomHandle, usize, usize)> = Vec::new();
 
         for location in range.locations.iter() {
-            if location.kind.is_block_kind()
-                || location.kind.is_structure_kind()
+            if (location.kind.is_block_kind()
+                || location.kind.is_structure_kind())
+                && location.kind != List
             {
-                if location.position > s {
-                    split_points.insert(location.position);
-                }
-                let end = location.position + location.length;
-                if end < e {
-                    split_points.insert(end);
+                let start = location.position + location.start_offset;
+                let end = if location.end_offset == location.length
+                    && !location.node_handle.is_root()
+                {
+                    location.position + location.end_offset - 1
+                } else {
+                    location.position + location.end_offset
+                };
+                if !split_points
+                    .iter()
+                    .any(|(h, _, _)| location.node_handle.is_ancestor_of(h))
+                {
+                    split_points.push((
+                        location.node_handle.clone(),
+                        start,
+                        end,
+                    ));
                 }
             }
         }
 
-        let mut ordered_split_points: Vec<usize> =
-            split_points.into_iter().collect();
-        ordered_split_points.sort();
-
-        for (index, point) in ordered_split_points.iter().enumerate() {
-            if index <= ordered_split_points.len() - 2 {
-                let point = *point;
-                let range = self
-                    .state
-                    .dom
-                    .find_range(point, ordered_split_points[index + 1]);
-                let inserted = self.state.dom.insert_parent(
-                    &range,
-                    DomNode::new_link(link.clone(), vec![]),
-                );
-                self.delete_child_links(&inserted);
+        for location in range.locations.iter() {
+            if location.kind == Link {
+                let start = location.position;
+                let end = location.position + location.length;
+                let idx = split_points.iter().position(|(h, s, e)| {
+                    h.is_ancestor_of(&location.node_handle)
+                        || (*s <= start && *e >= end)
+                });
+                if let Some(idx) = idx {
+                    let (_, s, e) = split_points.remove(idx);
+                    split_points.insert(
+                        idx,
+                        (
+                            location.node_handle.clone(),
+                            min(s, start),
+                            max(e, end),
+                        ),
+                    );
+                } else {
+                    split_points.push((
+                        location.node_handle.clone(),
+                        start,
+                        end,
+                    ));
+                }
             }
+        }
+
+        if split_points.is_empty() {
+            split_points.push((DomHandle::root(), s, e));
+        }
+
+        for (handle, s, e) in split_points.into_iter() {
+            let range = self.state.dom.find_range(s, e);
+            let inserted = self
+                .state
+                .dom
+                .insert_parent(&range, DomNode::new_link(link.clone(), vec![]));
+            self.delete_child_links(&inserted);
         }
 
         self.create_update_replace_all()
@@ -172,15 +206,14 @@ where
     fn delete_child_links(&mut self, node_handle: &DomHandle) {
         let node = self.state.dom.lookup_node(node_handle);
 
-        for handle in node
+        let child_link_handles = node
             .iter_containers()
             .filter(|n| matches!(n.kind(), ContainerNodeKind::Link(_)))
             .map(|n| n.handle())
             .filter(|h| *h != *node_handle)
-            .collect::<Vec<_>>()
-            .into_iter()
-            .rev()
-        {
+            .collect::<Vec<_>>();
+
+        for handle in child_link_handles.into_iter().rev() {
             self.state.dom.remove_and_keep_children(&handle);
         }
     }

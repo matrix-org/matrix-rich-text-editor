@@ -679,7 +679,7 @@ fn set_link_across_multiple_paragraphs_containing_an_entire_pagraph() {
     assert_eq!(
         tx(&model),
         "<p>\
-            te<a href=\"https://element.io\">{st1\
+            te<a href=\"https://element.io\">{st1</a>\
         </p>\
         <p>\
             <a href=\"https://element.io\">test2</a>\
