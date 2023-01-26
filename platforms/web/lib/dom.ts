@@ -164,9 +164,7 @@ export function computeNodeAndOffset(
     node: Node | null;
     offset: number;
 } {
-    const formattingNodeNames = ['EM', 'U', 'STRONG', 'DEL'];
-
-    const isEmptyList =
+    const isEmptyListItem =
         currentNode.nodeName === 'LI' && !currentNode.hasChildNodes();
 
     if (currentNode.nodeType === Node.TEXT_NODE) {
@@ -176,10 +174,10 @@ export function computeNodeAndOffset(
         const shouldAddOffset = nodeNeedsExtraOffset(currentNode);
         const extraOffset = shouldAddOffset ? 1 : 0;
 
-        // we have a special case for a text node that is a single &nbsp; char
+        // We also have a special case for a text node that is a single &nbsp;
         // which is used as a placeholder for an empty paragraph - we don't want
         // to count it's length
-        if (currentNode.textContent === String.fromCharCode(160)) {
+        if (textContentIsNbsp(currentNode)) {
             if (codeunits === 0) {
                 // this is the only time we would 'find' this node
                 return { node: currentNode, offset: codeunits };
@@ -202,7 +200,7 @@ export function computeNodeAndOffset(
                     extraOffset,
             };
         }
-    } else if (isEmptyList) {
+    } else if (isEmptyListItem) {
         if (codeunits <= (currentNode.textContent?.length || 0)) {
             return { node: currentNode, offset: codeunits };
         } else {
@@ -226,6 +224,12 @@ export function computeNodeAndOffset(
             };
         }
     } else {
+        // We hit this case if we split a formatting node, eg
+        // <u>something</u> => press enter => <p><u>something</u><p><u>|</u></p>
+        if (isEmptyFormattingNode(currentNode) && codeunits === 0) {
+            return { node: currentNode, offset: codeunits };
+        }
+
         for (const ch of currentNode.childNodes) {
             const ret = computeNodeAndOffset(ch, codeunits);
             if (ret.node) {
@@ -234,15 +238,7 @@ export function computeNodeAndOffset(
                 codeunits = ret.offset;
             }
         }
-        // We hit this if we split a formatting node, eg
-        // <u>something<u> => press enter => <p><u>something</u><p>|<u></u></p>
-        const isEmptyFormattingTag =
-            formattingNodeNames.includes(currentNode.nodeName) &&
-            currentNode.textContent?.length === 0;
 
-        if (isEmptyFormattingTag && codeunits === 0) {
-            return { node: currentNode, offset: codeunits };
-        }
         return { node: null, offset: codeunits };
     }
 }
@@ -356,11 +352,12 @@ function findCharacter(
             const shouldAddOffset = nodeNeedsExtraOffset(currentNode);
             const extraOffset = shouldAddOffset ? 1 : 0;
 
-            // but we also have a special case where we don't count a textnode
+            // ...but also have a special case where we don't count a textnode
             // if it is an nbsp, as this is what we use to mark out empty paras
-            if (currentNode.textContent === String.fromCharCode(160)) {
+            if (textContentIsNbsp(currentNode)) {
                 return { found: false, offset: extraOffset };
             }
+
             return {
                 found: false,
                 offset: (currentNode.textContent?.length ?? 0) + extraOffset,
@@ -446,19 +443,16 @@ export function countCodeunit(
  */
 
 function nodeNeedsExtraOffset(node: Node | null) {
-    const nodeNamesWithExtraOffset = ['LI', 'PRE', 'BLOCKQUOTE', 'P'];
-    const formattingNodeNames = ['EM', 'U', 'STRONG', 'DEL'];
-
     if (node === null) return false;
 
-    let checkNode: Node = node;
+    let checkNode: Node | ParentNode | null = node;
     let hasFormattingAncestor = false;
 
     // don't break the previous implementation for now:
-    if (!formattingNodeNames.includes(checkNode.parentNode?.nodeName || '')) {
+    if (!isFormattingNode(checkNode.parentNode)) {
         // do a recursive check up through its ancestors
         while (checkNode) {
-            if (nodeNamesWithExtraOffset.includes(checkNode.nodeName)) {
+            if (isNodeRequiringExtraOffset(checkNode)) {
                 return true;
             } else {
                 checkNode = checkNode.parentNode as Node;
@@ -472,31 +466,47 @@ function nodeNeedsExtraOffset(node: Node | null) {
         // than once when we have multiple inline formatting nodes
         // start off just checking if it's a formatting node and
         // has no next sibling
-        const parentIsFormattingNode = formattingNodeNames.includes(
-            checkNode.parentNode?.nodeName || '',
-        );
+        const parentIsFormattingNode = isFormattingNode(checkNode.parentNode);
         if (parentIsFormattingNode) {
             hasFormattingAncestor = true;
         }
         const nextSibling = checkNode.nextSibling;
 
         // stop looking if we find a next sibling that is not a container node
-        if (
-            nextSibling &&
-            !nodeNamesWithExtraOffset.includes(nextSibling.nodeName)
-        ) {
+        if (nextSibling && !isNodeRequiringExtraOffset(nextSibling)) {
             break;
         }
 
-        if (
-            nodeNamesWithExtraOffset.includes(checkNode.nodeName) &&
-            hasFormattingAncestor
-        ) {
+        if (isNodeRequiringExtraOffset(checkNode) && hasFormattingAncestor) {
             return true;
         } else {
-            checkNode = checkNode.parentNode as Node;
+            checkNode = checkNode.parentNode;
         }
     }
 
     return false;
+}
+
+function isFormattingNode(node: Node | ParentNode | null) {
+    if (node === null) return false;
+    const formattingNodeNames = ['EM', 'U', 'STRONG', 'DEL'];
+    return formattingNodeNames.includes(node.nodeName || '');
+}
+
+function isNodeRequiringExtraOffset(node: Node) {
+    const extraOffsetNodeNames = ['LI', 'PRE', 'BLOCKQUOTE', 'P'];
+    return extraOffsetNodeNames.includes(node.nodeName || '');
+}
+
+function isEmptyFormattingNode(node: Node) {
+    const formattingNodeNames = ['EM', 'U', 'STRONG', 'DEL'];
+    return (
+        formattingNodeNames.includes(node.nodeName) &&
+        node.textContent?.length === 0
+    );
+}
+
+function textContentIsNbsp(node: Node) {
+    const nbsp = String.fromCharCode(160); // &nbsp;
+    return node.textContent === nbsp;
 }
