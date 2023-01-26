@@ -8,7 +8,6 @@ import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.graphics.withTranslation
 import io.element.android.wysiwyg.inlinebg.SpanBackgroundHelper
 import io.element.android.wysiwyg.inlinebg.SpanBackgroundHelperFactory
-import io.element.android.wysiwyg.spans.InlineCodeSpan
 import io.element.android.wysiwyg.utils.*
 
 /**
@@ -16,24 +15,37 @@ import io.element.android.wysiwyg.utils.*
  */
 class EditorStyledTextView : AppCompatTextView {
     private lateinit var inlineCodeStyleConfig: InlineCodeStyleConfig
-    private val inlineCodeBgHelper: SpanBackgroundHelper<InlineCodeSpan> by lazy {
+    private lateinit var codeBlockStyleConfig: CodeBlockStyleConfig
+    private val inlineCodeBgHelper: SpanBackgroundHelper by lazy {
         SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(inlineCodeStyleConfig)
+    }
+    private val codeBlockBgHelper: SpanBackgroundHelper by lazy {
+        SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(codeBlockStyleConfig)
     }
 
     constructor(context: Context) : super(context)
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-        inlineCodeStyleConfig =
-            EditorStyledTextViewAttributeReader(context, attrs).inlineCodeStyleConfig
+        val attrReader = EditorStyledTextViewAttributeReader(context, attrs)
+        inlineCodeStyleConfig = attrReader.inlineCodeStyleConfig
+        codeBlockStyleConfig = attrReader.codeBlockStyleConfig
     }
 
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) :
             super(context, attrs, defStyleAttr)
 
+    override fun setText(text: CharSequence?, type: BufferType?) {
+        super.setText(text, type)
+
+        inlineCodeBgHelper.clearCachedPositions()
+        codeBlockBgHelper.clearCachedPositions()
+    }
+
     override fun onDraw(canvas: Canvas) {
         // need to draw bg first so that text can be on top during super.onDraw()
         if (text is Spanned && layout != null) {
             canvas.withTranslation(totalPaddingLeft.toFloat(), totalPaddingTop.toFloat()) {
+                codeBlockBgHelper.draw(canvas, text as Spanned, layout)
                 inlineCodeBgHelper.draw(canvas, text as Spanned, layout)
             }
         }

@@ -7,7 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.element.android.wysiwyg.fakes.createFakeStyleConfig
 import io.element.android.wysiwyg.utils.AndroidResourcesHelper
 import io.element.android.wysiwyg.utils.HtmlToSpansParser
-import io.element.android.wysiwyg.utils.ZWSP
+import io.element.android.wysiwyg.utils.NBSP
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.Test
@@ -45,27 +45,25 @@ class HtmlToSpansParserTest {
     fun testLists() {
         val html = """
             <ol>
-                <li>${ZWSP}ordered1</li>
-                <li>${ZWSP}ordered2</li>
+                <li>ordered1</li>
+                <li>ordered2</li>
             </ol>
             <ul> 
-                <li>${ZWSP}bullet1</li>
-                <li>${ZWSP}bullet2</li>
+                <li>bullet1</li>
+                <li>bullet2</li>
             </ul>
         """.trimIndent()
         val spanned = convertHtml(html)
 
 
         assertThat(
-            spanned.dumpSpans(), equalTo(
-                listOf(
-                    "${ZWSP}ordered1: io.element.android.wysiwyg.spans.OrderedListSpan (0-9) fl=#33",
-                    "\n: io.element.android.wysiwyg.spans.ExtraCharacterSpan (9-10) fl=#33",
-                    "${ZWSP}ordered2: io.element.android.wysiwyg.spans.OrderedListSpan (10-19) fl=#33",
-                    "${ZWSP}bullet1: io.element.android.wysiwyg.spans.UnorderedListSpan (20-28) fl=#33",
-                    "\n: io.element.android.wysiwyg.spans.ExtraCharacterSpan (28-29) fl=#33",
-                    "${ZWSP}bullet2: io.element.android.wysiwyg.spans.UnorderedListSpan (29-37) fl=#33"
-                )
+            spanned.dumpSpans().joinToString(",\n"), equalTo(
+                """
+                    ordered1: io.element.android.wysiwyg.spans.OrderedListSpan (0-8) fl=#34,
+                    ordered2: io.element.android.wysiwyg.spans.OrderedListSpan (9-17) fl=#34,
+                    bullet1: io.element.android.wysiwyg.spans.UnorderedListSpan (18-25) fl=#34,
+                    bullet2: io.element.android.wysiwyg.spans.UnorderedListSpan (26-33) fl=#34
+                """.trimIndent()
             )
         )
     }
@@ -85,8 +83,8 @@ class HtmlToSpansParserTest {
     }
 
     @Test
-    fun testIgnoresParagraphs() {
-        val html = "<p>Hello</p><br /><p>world</p>"
+    fun testParagraphs() {
+        val html = "<p>Hello</p><p>world</p>"
         val spanned = convertHtml(html)
         assertThat(
             spanned.dumpSpans(), equalTo(
@@ -95,6 +93,37 @@ class HtmlToSpansParserTest {
         )
         assertThat(
             spanned.toString(), equalTo("Hello\nworld")
+        )
+    }
+
+    @Test
+    fun testEmptyParagraphs() {
+        val html = "<p></p><p></p>"
+        val spanned = convertHtml(html)
+        assertThat(
+            spanned.dumpSpans(), equalTo(
+                listOf(
+                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (0-1) fl=#17",
+                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (2-3) fl=#17"
+                )
+            )
+        )
+        assertThat(
+            spanned.toString(), equalTo("$NBSP\n$NBSP")
+        )
+    }
+
+    @Test
+    fun testLineBreakCanWorkWithParagraphs() {
+        val html = "<p>Hello</p><br /><p>world</p>"
+        val spanned = convertHtml(html)
+        assertThat(
+            spanned.dumpSpans(), equalTo(
+                emptyList()
+            )
+        )
+        assertThat(
+            spanned.toString(), equalTo("Hello\n\nworld")
         )
     }
 
