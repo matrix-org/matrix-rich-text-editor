@@ -355,6 +355,12 @@ function findCharacter(
             // in computeNodeAndOffset
             const shouldAddOffset = nodeNeedsExtraOffset(currentNode);
             const extraOffset = shouldAddOffset ? 1 : 0;
+
+            // but we also have a special case where we don't count a textnode
+            // if it is an nbsp, as this is what we use to mark out empty paras
+            if (currentNode.textContent === String.fromCharCode(160)) {
+                return { found: false, offset: extraOffset };
+            }
             return {
                 found: false,
                 offset: (currentNode.textContent?.length ?? 0) + extraOffset,
