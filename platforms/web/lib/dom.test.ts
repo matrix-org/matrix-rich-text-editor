@@ -39,19 +39,6 @@ function setEditorHtml(html: string) {
     editor.innerHTML = html + '<br />';
 }
 
-describe('WIP', () => {
-    // eslint-disable-next-line max-len
-    it('does not count the length of "empty paragraphs" ie paragraphs with an nbsp inside them', () => {
-        // When
-        setEditorHtml('<p><del>foo</del></p><p>&nbsp;</p><p><del></del></p>');
-        const { node, offset } = computeNodeAndOffset(editor, 5);
-
-        // Then
-        expect(node).toBe(editor.childNodes[2].childNodes[0]);
-        expect(offset).toBe(0);
-    });
-});
-
 describe('computeNodeAndOffset', () => {
     it('Should find at the start of simple text', () => {
         // When
@@ -459,6 +446,29 @@ describe('computeNodeAndOffset', () => {
         // Then
         expect(node).toBe(editor.childNodes[0].childNodes[0]);
         expect(node?.textContent).toHaveLength(12);
+    });
+
+    // eslint-disable-next-line max-len
+    it('does not count the length of "empty paragraphs" ie paragraphs with an nbsp inside them', () => {
+        // When
+        setEditorHtml('<p><del>foo</del></p><p>&nbsp;</p><p><del></del></p>');
+        const { node, offset } = computeNodeAndOffset(editor, 5);
+
+        // Then
+        expect(node).toBe(editor.childNodes[2].childNodes[0]);
+        expect(offset).toBe(0);
+    });
+
+    it('allows multiple empty p tags and works as expected', () => {
+        // When
+        setEditorHtml(
+            '<p><del>foo</del></p><p>&nbsp;</p><p>&nbsp;</p><p><del></del></p>',
+        );
+        const { node, offset } = computeNodeAndOffset(editor, 6);
+
+        // Then
+        expect(node).toBe(editor.childNodes[3].childNodes[0]);
+        expect(offset).toBe(0);
     });
 });
 
