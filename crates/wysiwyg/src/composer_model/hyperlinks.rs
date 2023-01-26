@@ -114,6 +114,7 @@ where
         let mut split_points: Vec<(DomHandle, usize, usize)> = Vec::new();
 
         for location in range.locations.iter() {
+            // Look for block nodes
             if (location.kind.is_block_kind()
                 || location.kind.is_structure_kind())
                 && location.kind != List
@@ -122,10 +123,12 @@ where
                 let end = if location.end_offset == location.length
                     && !location.node_handle.is_root()
                 {
+                    // The end of the block node is covered (end_offset == length), don't include it
                     location.position + location.end_offset - 1
                 } else {
                     location.position + location.end_offset
                 };
+                // If there was a child block node added as a split point, don't add this one
                 if !split_points
                     .iter()
                     .any(|(h, _, _)| location.node_handle.is_ancestor_of(h))
@@ -140,6 +143,7 @@ where
         }
 
         for location in range.locations.iter() {
+            // Now look for previous links inside the selection
             if location.kind == Link {
                 let start = location.position;
                 let end = location.position + location.length;
@@ -148,6 +152,8 @@ where
                         || (*s <= start && *e >= end)
                 });
                 if let Some(idx) = idx {
+                    // If a parent or intersecting node was added before, remove it and extend this
+                    // one to match it (i.e., another link was already added).
                     let (_, s, e) = split_points.remove(idx);
                     split_points.insert(
                         idx,
@@ -158,6 +164,7 @@ where
                         ),
                     );
                 } else {
+                    // Otherwise, just add another split point.
                     split_points.push((
                         location.node_handle.clone(),
                         start,
@@ -167,16 +174,14 @@ where
             }
         }
 
-        if split_points.is_empty() {
-            split_points.push((DomHandle::root(), s, e));
-        }
-
         for (_, s, e) in split_points.into_iter() {
             let range = self.state.dom.find_range(s, e);
+            // Create a new link node containing the passed range
             let inserted = self
                 .state
                 .dom
                 .insert_parent(&range, DomNode::new_link(link.clone(), vec![]));
+            // Remove any child links inside it
             self.delete_child_links(&inserted);
         }
 
