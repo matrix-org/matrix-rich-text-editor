@@ -130,8 +130,7 @@ public final class HTMLParser {
         // contain one at the end.
         if mutableAttributedString.string.last == "\n",
            !html.hasSuffix("</code>"),
-           !html.hasSuffix("</a>"),
-           !html.hasSuffix("\n\(Character.nbsp)</pre>") {
+           !html.hasSuffix("</a>") {
             mutableAttributedString.deleteCharacters(
                 in: NSRange(
                     location: mutableAttributedString.length - 1,

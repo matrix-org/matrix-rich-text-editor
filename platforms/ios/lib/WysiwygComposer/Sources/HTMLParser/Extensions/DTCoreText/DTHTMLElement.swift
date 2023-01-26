@@ -44,7 +44,8 @@ extension DTHTMLElement {
         if name == "pre",
            childNodes.count == 1,
            let child = childNodes.first as? DTTextHTMLElement,
-           var text = child.text() {
+           var text = child.text(),
+           text != .nbsp {
             var leadingDiscardableElement: DiscardableTextHTMLElement?
             var trailingDiscardableElement: DiscardableTextHTMLElement?
             var shouldReplaceNodes = false
@@ -63,23 +64,21 @@ extension DTHTMLElement {
 
             if shouldReplaceNodes {
                 removeAllChildNodes()
-                let container = DTHTMLElement()
-                container.inheritAttributes(from: self)
-                container.interpretAttributes()
-                addChildNode(container)
 
                 if let leadingDiscardableElement = leadingDiscardableElement {
-                    container.addChildNode(leadingDiscardableElement)
+                    addChildNode(leadingDiscardableElement)
+                    addChildNode(createLineBreak())
                 }
 
                 let newTextNode = DTTextHTMLElement()
                 newTextNode.inheritAttributes(from: self)
                 newTextNode.interpretAttributes()
                 newTextNode.setText(text)
-                container.addChildNode(newTextNode)
+                addChildNode(newTextNode)
 
                 if let trailingDiscardableElement = trailingDiscardableElement {
-                    container.addChildNode(trailingDiscardableElement)
+                    addChildNode(createLineBreak())
+                    addChildNode(trailingDiscardableElement)
                 }
             }
         } else {
@@ -94,5 +93,12 @@ extension DTHTMLElement {
         discardableElement.inheritAttributes(from: self)
         discardableElement.interpretAttributes()
         return discardableElement
+    }
+
+    private func createLineBreak() -> DTBreakHTMLElement {
+        let lineBreakElement = DTBreakHTMLElement()
+        lineBreakElement.inheritAttributes(from: self)
+        lineBreakElement.interpretAttributes()
+        return lineBreakElement
     }
 }
