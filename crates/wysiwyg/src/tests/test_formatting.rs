@@ -354,6 +354,7 @@ fn locations_when_pressing_enter() {
     );
     assert_eq!(model.state.start, Location::from(6));
     model.enter();
+}
 
 fn formatting_in_an_empty_paragraph_applies_formatting() {
     let mut model = cm("<p>A</p><p>|</p>");
