@@ -176,6 +176,19 @@ export function computeNodeAndOffset(
         const shouldAddOffset = nodeNeedsExtraOffset(currentNode);
         const extraOffset = shouldAddOffset ? 1 : 0;
 
+        // we have a special case for a text node that is a single &nbsp; char
+        // which is used as a placeholder for an empty paragraph - we don't want
+        // to count it's length
+        if (currentNode.textContent === String.fromCharCode(160)) {
+            if (codeunits === 0) {
+                // this is the only time we would 'find' this node
+                return { node: currentNode, offset: codeunits };
+            } else {
+                // otherwise we need to keep looking, but count this as 0 length
+                return { node: null, offset: codeunits - extraOffset };
+            }
+        }
+
         if (codeunits <= (currentNode.textContent?.length || 0)) {
             // we don't need to use that extra offset if we've found the answer
             return { node: currentNode, offset: codeunits };
