@@ -310,3 +310,48 @@ fn splitting_a_formatting_tag_across_multiple_lines() {
         "<p><del>foo</del></p><p>&nbsp;</p><p><del>bar|</del></p>"
     );
 }
+
+#[test]
+fn splitting_a_formatting_tag_multiple_times_across_multiple_lines() {
+    let mut model = cm("|");
+    model.strike_through();
+    model.replace_text(utf16("foo"));
+    assert_eq!(tx(&model), "<del>foo|</del>");
+    model.enter();
+    assert_eq!(tx(&model), "<p><del>foo</del></p><p><del>|</del></p>");
+    model.enter();
+    assert_eq!(
+        tx(&model),
+        "<p><del>foo</del></p><p>&nbsp;</p><p><del>|</del></p>"
+    );
+    model.replace_text(utf16("bar"));
+    assert_eq!(
+        tx(&model),
+        "<p><del>foo</del></p><p>&nbsp;</p><p><del>bar|</del></p>"
+    );
+    model.enter();
+    assert_eq!(
+        tx(&model),
+        "<p><del>foo</del></p><p>&nbsp;</p><p><del>bar</del></p><p><del>|</del></p>"
+    );
+}
+
+#[test]
+fn locations_when_pressing_enter() {
+    let mut model = cm("|");
+    model.replace_text(utf16("foo"));
+    assert_eq!(tx(&model), "foo|");
+    model.enter();
+    assert_eq!(tx(&model), "<p>foo</p><p>&nbsp;|</p>");
+    assert_eq!(model.state.start, Location::from(4));
+    model.enter();
+    assert_eq!(tx(&model), "<p>foo</p><p>&nbsp;</p><p>&nbsp;|</p>");
+    assert_eq!(model.state.start, Location::from(5));
+    model.enter();
+    assert_eq!(
+        tx(&model),
+        "<p>foo</p><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;|</p>"
+    );
+    assert_eq!(model.state.start, Location::from(6));
+    model.enter();
+}
