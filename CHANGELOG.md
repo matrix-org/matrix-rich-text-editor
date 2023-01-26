@@ -1,5 +1,16 @@
 # Changelog
 
+# [0.21.0] - 2022-01-26
+
+### Added
+
+- Web: Add editor HTMLElement parameter to inputEventProcessor
+
+### Changed
+
+- Common: Improve link behaviour when the selection contains block or structure nodes
+- iOS: Integrate DTCoreText
+
 # [0.20.0] - 2022-01-19
 
 ### Added
