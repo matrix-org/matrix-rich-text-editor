@@ -13,7 +13,6 @@
 // limitations under the License.
 
 use std::cmp::{max, min};
-use std::collections::HashSet;
 
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::DomNodeKind::{Link, List};
@@ -172,7 +171,7 @@ where
             split_points.push((DomHandle::root(), s, e));
         }
 
-        for (handle, s, e) in split_points.into_iter() {
+        for (_, s, e) in split_points.into_iter() {
             let range = self.state.dom.find_range(s, e);
             let inserted = self
                 .state
