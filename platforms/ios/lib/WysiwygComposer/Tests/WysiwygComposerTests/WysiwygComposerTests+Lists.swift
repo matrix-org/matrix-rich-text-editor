@@ -19,31 +19,31 @@ import XCTest
 
 extension WysiwygComposerTests {
     func testLists() {
-        let composer = newComposerModel()
-        _ = composer.orderedList()
-        _ = composer.replaceText(newText: "Item 1")
-        _ = composer.enter()
-        _ = composer.replaceText(newText: "Item 2")
-        // Add a thirs list item
-        _ = composer.enter()
-        XCTAssertEqual(composer.getContentAsHtml(),
-                       "<ol><li>Item 1</li><li>Item 2</li><li></li></ol>")
-        XCTAssertEqual(composer.getCurrentDomState().start, composer.getCurrentDomState().end)
-        XCTAssertEqual(composer.getCurrentDomState().start, 14)
-        // Remove it
-        _ = composer.enter()
-        XCTAssertEqual(composer.getContentAsHtml(),
-                       "<ol><li>Item 1</li><li>Item 2</li></ol><p>\(Character.nbsp)</p>")
-        XCTAssertEqual(composer.getCurrentDomState().start, composer.getCurrentDomState().end)
-        XCTAssertEqual(composer.getCurrentDomState().start, 14)
-        // Insert some text afterwards
-        _ = composer.replaceText(newText: "Some text")
-        XCTAssertEqual(composer.getContentAsHtml(),
-                       "<ol><li>"
-                           + "Item 1</li><li>"
-                           + "Item 2</li></ol>"
-                           + "<p>Some text</p>")
-        XCTAssertEqual(composer.getCurrentDomState().start, composer.getCurrentDomState().end)
-        XCTAssertEqual(composer.getCurrentDomState().start, 23)
+        newComposerModel()
+            .action { $0.orderedList() }
+            .action { $0.replaceText(newText: "Item 1") }
+            .action { $0.enter() }
+            .action { $0.replaceText(newText: "Item 2") }
+            // Add a third list item
+            .action { $0.enter() }
+            .assertHtml("<ol><li>Item 1</li><li>Item 2</li><li></li></ol>")
+            .assert {
+                XCTAssertEqual($0.getCurrentDomState().start, $0.getCurrentDomState().end)
+                XCTAssertEqual($0.getCurrentDomState().start, 14)
+            }
+            // Remove it
+            .action { $0.enter() }
+            .assertHtml("<ol><li>Item 1</li><li>Item 2</li></ol><p>\(Character.nbsp)</p>")
+            .assert {
+                XCTAssertEqual($0.getCurrentDomState().start, $0.getCurrentDomState().end)
+                XCTAssertEqual($0.getCurrentDomState().start, 14)
+            }
+            // Insert some text afterwards
+            .action { $0.replaceText(newText: "Some text") }
+            .assertHtml("<ol><li>Item 1</li><li>Item 2</li></ol><p>Some text</p>")
+            .assert {
+                XCTAssertEqual($0.getCurrentDomState().start, $0.getCurrentDomState().end)
+                XCTAssertEqual($0.getCurrentDomState().start, 23)
+            }
     }
 }

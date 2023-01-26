@@ -34,36 +34,36 @@ private enum Constants {
 
 extension WysiwygComposerTests {
     func testQuotesFromEmptyComposer() {
-        let composer = newComposerModel()
-        _ = composer.quote()
-        _ = composer.replaceText(newText: "Some quote")
-        _ = composer.enter()
-        _ = composer.replaceText(newText: "More text")
-        _ = composer.enter()
-        _ = composer.enter()
-        XCTAssertEqual(composer.getContentAsHtml(), Constants.resultHtml)
-        XCTAssertEqual(composer.toTree(), Constants.resultTree)
+        newComposerModel()
+            .action { $0.quote() }
+            .action { $0.replaceText(newText: "Some quote") }
+            .action { $0.enter() }
+            .action { $0.replaceText(newText: "More text") }
+            .action { $0.enter() }
+            .action { $0.enter() }
+            .assertHtml(Constants.resultHtml)
+            .assertTree(Constants.resultTree)
     }
 
     func testQuotesWithMultilineInput() {
-        let composer = newComposerModel()
-        _ = composer.quote()
-        _ = composer.replaceText(newText: "Some quote\nMore text")
-        _ = composer.enter()
-        _ = composer.enter()
-        XCTAssertEqual(composer.getContentAsHtml(), Constants.resultHtml)
-        XCTAssertEqual(composer.toTree(), Constants.resultTree)
+        newComposerModel()
+            .action { $0.quote() }
+            .action { $0.replaceText(newText: "Some quote\nMore text") }
+            .action { $0.enter() }
+            .action { $0.enter() }
+            .assertHtml(Constants.resultHtml)
+            .assertTree(Constants.resultTree)
     }
 
     func testQuotesFromContent() {
-        let composer = newComposerModel()
-        _ = composer.replaceText(newText: "Some quote")
-        _ = composer.quote()
-        _ = composer.enter()
-        _ = composer.replaceText(newText: "More text")
-        _ = composer.enter()
-        _ = composer.enter()
-        XCTAssertEqual(composer.getContentAsHtml(), Constants.resultHtml)
-        XCTAssertEqual(composer.toTree(), Constants.resultTree)
+        newComposerModel()
+            .action { $0.replaceText(newText: "Some quote") }
+            .action { $0.quote() }
+            .action { $0.enter() }
+            .action { $0.replaceText(newText: "More text") }
+            .action { $0.enter() }
+            .action { $0.enter() }
+            .assertHtml(Constants.resultHtml)
+            .assertTree(Constants.resultTree)
     }
 }

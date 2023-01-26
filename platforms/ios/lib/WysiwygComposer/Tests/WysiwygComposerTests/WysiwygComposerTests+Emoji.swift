@@ -38,9 +38,8 @@ extension WysiwygComposerTests {
 
     func testBackspacingEmoji() {
         let composer = newComposerModel()
-        _ = composer.replaceText(newText: TestConstants.testStringWithEmojis)
-
-        _ = composer.select(startUtf16Codeunit: 7, endUtf16Codeunit: 14)
+            .action { $0.replaceText(newText: TestConstants.testStringWithEmojis) }
+            .action { $0.select(startUtf16Codeunit: 7, endUtf16Codeunit: 14) }
 
         let update = composer.backspace()
         switch update.textUpdate() {
