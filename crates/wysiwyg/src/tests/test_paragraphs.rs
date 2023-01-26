@@ -309,7 +309,7 @@ fn double_enter_in_quote_at_end_when_not_empty_exits_it() {
 fn double_enter_in_code_block_when_empty_removes_it_and_adds_new_line() {
     let mut model = cm("|");
     model.code_block();
-    assert_eq!(tx(&model), "<pre>|</pre>");
+    assert_eq!(tx(&model), "<pre>&nbsp;|</pre>");
     model.enter();
     assert_eq!(tx(&model), "<p>&nbsp;|</p>");
     model.replace_text("asd".into());

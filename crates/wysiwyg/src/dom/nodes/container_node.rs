@@ -594,6 +594,9 @@ where
         if matches!(self.kind, ContainerNodeKind::Paragraph)
             && state.is_inside_code_block
         {
+            if self.is_empty() {
+                formatter.push(char::nbsp());
+            }
             self.fmt_children_html(formatter, selection_writer, state);
             if !state.is_last_node_in_parent {
                 formatter.push('\n');
