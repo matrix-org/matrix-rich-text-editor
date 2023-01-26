@@ -23,14 +23,10 @@ internal class BlockRenderer(
         endLine: Int,
         startOffset: Int,
         endOffset: Int,
+        leadingMargin: Int,
         text: Spanned,
         spanType: Class<*>,
     ) {
-        val startIndex = layout.getOffsetForHorizontal(startLine, 0f)
-        val endIndex = layout.getOffsetForHorizontal(endLine, 0f)
-        val leadingMarginSpans = text.getSpans<LeadingMarginSpan>(startIndex, endIndex)
-            .filter { !spanType.isInstance(it) }
-        val leadingMargin = leadingMarginSpans.sumOf { it.getLeadingMargin(true) }
         val top = layout.getLineTop(startLine)
         val bottom = layout.getLineBottom(endLine)
         drawable.setBounds(

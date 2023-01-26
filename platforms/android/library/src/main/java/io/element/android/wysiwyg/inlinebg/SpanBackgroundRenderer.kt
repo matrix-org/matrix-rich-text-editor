@@ -53,6 +53,7 @@ internal abstract class SpanBackgroundRenderer(
         endLine: Int,
         startOffset: Int,
         endOffset: Int,
+        leadingMargin: Int,
         text: Spanned,
         spanType: Class<*>,
     )
@@ -100,6 +101,7 @@ internal class SingleLineRenderer(
         endLine: Int,
         startOffset: Int,
         endOffset: Int,
+        leadingMargin: Int,
         text: Spanned,
         spanType: Class<*>,
     ) {
@@ -139,6 +141,7 @@ internal class MultiLineRenderer(
         endLine: Int,
         startOffset: Int,
         endOffset: Int,
+        leadingMargin: Int,
         text: Spanned,
         spanType: Class<*>,
     ) {

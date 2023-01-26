@@ -20,6 +20,8 @@ import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.text.Layout
 import android.text.Spanned
+import android.text.style.LeadingMarginSpan
+import androidx.core.text.getSpans
 import io.element.android.wysiwyg.spans.BlockSpan
 
 /**
@@ -89,7 +91,7 @@ class SpanBackgroundHelper(
      */
     fun draw(canvas: Canvas, text: Spanned, layout: Layout) {
         val spanPositions = getSpanPositions(text)
-        val drawPositions = getOrCalculateDrawPositions(layout, spanPositions)
+        val drawPositions = getOrCalculateDrawPositions(text, layout, spanPositions)
 
         drawPositions.forEach {
             val renderer = if (BlockSpan::class.java.isAssignableFrom(spanType)) {
@@ -104,6 +106,7 @@ class SpanBackgroundHelper(
                 it.endLine,
                 it.startOffset,
                 it.endOffset,
+                it.leadingMargin,
                 text,
                 spanType
             )
@@ -123,6 +126,7 @@ class SpanBackgroundHelper(
      * Calculate the positions at which to draw backgrounds if they are not already cached
      */
     private fun getOrCalculateDrawPositions(
+        text: Spanned,
         layout: Layout,
         spanPositions: Set<SpanPosition>
     ): Collection<DrawPosition> {
@@ -131,13 +135,17 @@ class SpanBackgroundHelper(
 
         // Calculate draw positions for any new keys
         spanPositions.forEach { spanPosition ->
-            cache.getOrPut(spanPosition) { calculateDrawPosition(layout, spanPosition) }
+            cache.getOrPut(spanPosition) { calculateDrawPosition(text, layout, spanPosition) }
         }
 
         return cache.values
     }
 
-    private fun calculateDrawPosition(layout: Layout, spanPosition: SpanPosition): DrawPosition {
+    private fun calculateDrawPosition(
+        text: Spanned,
+        layout: Layout,
+        spanPosition: SpanPosition
+    ): DrawPosition {
         val (spanStart, spanEnd) = spanPosition
         val startLine = layout.getLineForOffset(spanStart)
         val endLine = layout.getLineForOffset(spanEnd)
@@ -149,7 +157,13 @@ class SpanBackgroundHelper(
         val endOffset = (layout.getPrimaryHorizontal(spanEnd)
                 + layout.getParagraphDirection(endLine) * horizontalPadding).toInt()
 
-        return DrawPosition(startLine, endLine, startOffset, endOffset)
+        val startIndex = layout.getOffsetForHorizontal(startLine, 0f)
+        val endIndex = layout.getOffsetForHorizontal(endLine, 0f)
+        val leadingMarginSpans = text.getSpans<LeadingMarginSpan>(startIndex, endIndex)
+            .filter { !spanType.isInstance(it) }
+        val leadingMargin = leadingMarginSpans.sumOf { it.getLeadingMargin(true) }
+
+        return DrawPosition(startLine, endLine, startOffset, endOffset, leadingMargin)
     }
 }
 
@@ -164,4 +178,5 @@ internal data class DrawPosition(
     val endLine: Int,
     val startOffset: Int,
     val endOffset: Int,
+    val leadingMargin: Int,
 )
