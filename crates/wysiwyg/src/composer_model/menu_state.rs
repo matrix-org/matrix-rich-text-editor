@@ -142,15 +142,15 @@ where
         let mut cur_handle = handle.clone();
 
         while !cur_handle.is_root() {
-            let active_button = self.active_button_for_handle(&cur_handle);
-            if let Some(button) = active_button {
-                match button {
+            let reversed_action = self.reversed_action_for_handle(&cur_handle);
+            if let Some(action) = reversed_action {
+                match action {
                     // If there is multiple list types in the hierarchy we
                     // only keep the deepest list type.
                     OrderedList | UnorderedList
                         if has_list_in(&reversed_actions) => {}
                     _ => {
-                        reversed_actions.insert(button);
+                        reversed_actions.insert(action);
                     }
                 }
             }
@@ -160,19 +160,19 @@ where
         reversed_actions
     }
 
-    fn active_button_for_handle(
+    fn reversed_action_for_handle(
         &self,
         handle: &DomHandle,
     ) -> Option<ComposerAction> {
         let node = self.state.dom.lookup_node(handle);
         if let DomNode::Container(container) = node {
-            Self::active_button_for_container(container)
+            Self::reversed_action_for_container(container)
         } else {
             None
         }
     }
 
-    fn active_button_for_container(
+    fn reversed_action_for_container(
         container: &ContainerNode<S>,
     ) -> Option<ComposerAction> {
         match container.kind() {
