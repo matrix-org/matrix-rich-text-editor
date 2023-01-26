@@ -36,39 +36,63 @@ extension DTHTMLElement {
         }
     }
 
-    func replaceNewlinesWithDiscardableElements() {
-        guard let childNodes = childNodes as? [DTHTMLElement] else { return }
+    func clearTrailingAndLeadingNewlinesInCodeblocks() {
+        guard let childNodes = childNodes as? [DTHTMLElement] else {
+            return
+        }
 
-        if childNodes.count == 1,
-           let child = childNodes.first as? DTTextHTMLElement {
-            let splits = child.text().split(separator: "\n", omittingEmptySubsequences: false)
-            guard splits.count > 1, splits.contains("") else { return }
+        if name == "pre",
+           childNodes.count == 1,
+           let child = childNodes.first as? DTTextHTMLElement,
+           var text = child.text() {
+            var leadingDiscardableElement: DiscardableTextHTMLElement?
+            var trailingDiscardableElement: DiscardableTextHTMLElement?
+            var shouldReplaceNodes = false
 
-            let strings: [String] = splits.map { "\($0)\n" }
-            removeAllChildNodes()
-            for string in strings {
-                if string != "\n" {
-                    var textElement = DTTextHTMLElement()
-                    textElement.setText("")
-                    if let lastChild = childNodes.last as? DTTextHTMLElement {
-                        textElement = lastChild
-                    } else {
-                        addChildNode(textElement)
-                        textElement.inheritAttributes(from: self)
-                        textElement.interpretAttributes()
-                    }
-                    textElement.setText(textElement.text() + string)
-                } else {
-                    let newChild = DiscardableTextHTMLElement()
-                    addChildNode(newChild)
-                    newChild.inheritAttributes(from: self)
-                    newChild.interpretAttributes()
+            if text.hasPrefix("\(Character.nbsp)") {
+                shouldReplaceNodes = true
+                text.removeFirst()
+                leadingDiscardableElement = createDiscardableElement()
+            }
+            
+            if text.hasSuffix("\(Character.nbsp)") {
+                shouldReplaceNodes = true
+                text.removeLast()
+                trailingDiscardableElement = createDiscardableElement()
+            }
+
+            if shouldReplaceNodes {
+                removeAllChildNodes()
+                let container = DTHTMLElement()
+                container.inheritAttributes(from: self)
+                container.interpretAttributes()
+                addChildNode(container)
+
+                if let leadingDiscardableElement = leadingDiscardableElement {
+                    container.addChildNode(leadingDiscardableElement)
+                }
+
+                let newTextNode = DTTextHTMLElement()
+                newTextNode.inheritAttributes(from: self)
+                newTextNode.interpretAttributes()
+                newTextNode.setText(text)
+                container.addChildNode(newTextNode)
+
+                if let trailingDiscardableElement = trailingDiscardableElement {
+                    container.addChildNode(trailingDiscardableElement)
                 }
             }
         } else {
             for childNode in childNodes {
-                childNode.replaceNewlinesWithDiscardableElements()
+                childNode.clearTrailingAndLeadingNewlinesInCodeblocks()
             }
         }
+    }
+
+    private func createDiscardableElement() -> DiscardableTextHTMLElement {
+        let discardableElement = DiscardableTextHTMLElement()
+        discardableElement.inheritAttributes(from: self)
+        discardableElement.interpretAttributes()
+        return discardableElement
     }
 }
