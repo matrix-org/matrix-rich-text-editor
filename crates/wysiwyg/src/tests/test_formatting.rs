@@ -282,11 +282,11 @@ fn formatting_multiple_lines_with_inline_code() {
 #[test]
 fn wip_web_integration() {
     let mut model = cm("|");
+    model.strike_through();
     model.replace_text(utf16("foo"));
-    assert_eq!(tx(&model), "foo|");
+    assert_eq!(tx(&model), "<del>foo|</del>");
     model.enter();
-    assert_eq!(tx(&model), "<p>foo</p><p>&nbsp;|</p>");
-    model.underline();
+    assert_eq!(tx(&model), "<p><del>foo</del></p><p><del>|</del></p>");
     model.replace_text(utf16("bar"));
-    assert_eq!(tx(&model), "<p>foo</p><p><u>bar</u>|</p>");
+    assert_eq!(tx(&model), "<p><del>foo</del></p><p><del>bar|</del></p>");
 }
