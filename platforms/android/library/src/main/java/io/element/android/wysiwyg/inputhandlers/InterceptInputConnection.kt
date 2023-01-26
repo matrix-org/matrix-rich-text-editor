@@ -198,7 +198,6 @@ internal class InterceptInputConnection(
     internal fun onHardwareBackspaceKey(): Boolean {
         val start = Selection.getSelectionStart(editable)
         val end = Selection.getSelectionEnd(editable)
-        if (start == 0 && end == 0) return false
 
         val toDelete = if (start == end) 1 else abs(start - end)
         // We're going to copy backspace behaviour, the selection must be at the greater value
