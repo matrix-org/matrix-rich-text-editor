@@ -227,7 +227,7 @@ fn enter_in_code_block_at_start_with_a_line_break_after_it_adds_another_one() {
     // The initial line break will be removed, so it's the same as having a single line break at the start
     let mut model = cm("<pre>\n\n|Test</pre>");
     model.enter();
-    assert_eq!(tx(&model), "<pre>&nbsp;\n&nbsp;\n|Test</pre>")
+    assert_eq!(tx(&model), "<pre>&nbsp;\n\n|Test</pre>")
 }
 
 #[test]
