@@ -25,7 +25,7 @@ where
         if #[cfg(feature = "sys")] {
             sys::HtmlParser::default().parse(html)
         } else if #[cfg(all(feature = "js", target_arch = "wasm32"))] {
-            js::parse(html)
+            js::HtmlParser::default().parse(html)
         } else {
             unreachable!("The `sys` or `js` are mutually exclusive, and one of them must be enabled.")
         }
@@ -117,25 +117,9 @@ mod sys {
                     }
                     PaDomNode::Text(text) => {
                         // Special case for code block, translate '\n' into <br /> nodes
-                        if self.current_path.contains(&DomNodeKind::CodeBlock) {
-                            let text_nodes: Vec<_> =
-                                text.content.split('\n').collect();
-                            let text_nodes_len = text_nodes.len();
-                            for (i, str) in text_nodes.into_iter().enumerate() {
-                                if !str.is_empty() {
-                                    let text_node =
-                                        DomNode::new_text(str.into());
-                                    node.append_child(text_node);
-                                }
-                                if i + 1 < text_nodes_len {
-                                    node.append_child(DomNode::new_line_break());
-                                }
-                            }
-                        } else {
-                            node.append_child(DomNode::new_text(
-                                text.content.clone().into(),
-                            ));
-                        }
+                        let is_inside_code_block =
+                            self.current_path.contains(&CodeBlock);
+                        convert_text(&text.content, node, is_inside_code_block);
                     }
                 }
             }
@@ -485,6 +469,52 @@ mod sys {
         fn parse_paragraph() {
             assert_that!("<p>foo</p><p>A paragraph</p><p>bar</p>").roundtrips();
         }
+
+        #[test]
+        fn nbsp_chars_are_removed() {
+            let html = "\
+                <p>\u{A0}</p>\
+                <pre><code>\u{A0}\n\u{A0}</code></pre>\
+                <p>\u{A0}</p>";
+            let dom: Dom<Utf16String> =
+                HtmlParser::default().parse(&html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+                
+                ├>p
+                ├>pre
+                │ ├>p
+                │ └>p
+                └>p
+                "#}
+            );
+        }
+
+        #[test]
+        fn nbsp_text_is_removed() {
+            let html = "\
+                <p>&nbsp;</p>\
+                <pre><code>&nbsp;\n&nbsp;</code></pre>\
+                <p>&nbsp;</p>";
+            let dom: Dom<Utf16String> =
+                HtmlParser::default().parse(&html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+                
+                ├>p
+                ├>pre
+                │ ├>p
+                │ └>p
+                └>p
+                "#}
+            );
+        }
     }
 }
 
@@ -514,7 +544,11 @@ fn post_process_code_blocks_lines<S: UnicodeString>(
     let mut line_break_handles = Vec::new();
     for node in dom.iter_from_handle(&last_handle).rev() {
         if node.is_line_break() || node.handle() == *handle {
-            line_break_handles.push(next_handle.clone());
+            if node.handle() == next_handle {
+                line_break_handles.push(next_handle.next_sibling());
+            } else {
+                line_break_handles.push(next_handle.clone());
+            }
         }
         next_handle = node.handle();
         if node.handle().depth() <= handle.depth() {
@@ -554,9 +588,37 @@ fn last_container_mut_in<S: UnicodeString>(
     node.last_child_mut().map_or(None, |n| n.as_container_mut())
 }
 
+fn convert_text<S: UnicodeString>(
+    text: &str,
+    node: &mut ContainerNode<S>,
+    is_inside_code_block: bool,
+) {
+    if is_inside_code_block {
+        let text_nodes: Vec<_> = text.split('\n').collect();
+        let text_nodes_len = text_nodes.len();
+        for (i, str) in text_nodes.into_iter().enumerate() {
+            let is_nbsp = str == "\u{A0}" || str == "&nbsp;";
+            if !str.is_empty() && !is_nbsp {
+                let text_node = DomNode::new_text(str.into());
+                node.append_child(text_node);
+            }
+            if i + 1 < text_nodes_len {
+                node.append_child(DomNode::new_line_break());
+            }
+        }
+    } else {
+        let contents = text;
+        let is_nbsp = contents == "\u{A0}" || contents == "&nbsp;";
+        if !is_nbsp {
+            node.append_child(DomNode::new_text(contents.clone().into()));
+        }
+    }
+}
+
 #[cfg(all(feature = "js", target_arch = "wasm32"))]
 mod js {
     use super::*;
+    use crate::dom::nodes::dom_node::DomNodeKind;
     use crate::{
         dom::nodes::{ContainerNode, DomNode},
         InlineFormatType, ListType,
@@ -565,34 +627,52 @@ mod js {
     use wasm_bindgen::JsCast;
     use web_sys::{Document, DomParser, Element, NodeList, SupportedType};
 
-    pub(super) fn parse<S>(html: &str) -> Result<Dom<S>, DomCreationError<S>>
-    where
-        S: UnicodeString,
-    {
-        let parser: DomParser = DomParser::new().map_err(|_| {
-            to_dom_creation_error(
-                "Failed to create the `DOMParser` from JavaScript",
-            )
-        })?;
+    pub(super) struct HtmlParser {
+        current_path: Vec<DomNodeKind>,
+    }
+    impl HtmlParser {
+        pub(super) fn default() -> Self {
+            Self {
+                current_path: Vec::new(),
+            }
+        }
 
-        let document = parser
-            .parse_from_string(html, SupportedType::TextHtml)
-            .map_err(|_| {
+        pub(super) fn parse<S>(
+            &mut self,
+            html: &str,
+        ) -> Result<Dom<S>, DomCreationError<S>>
+        where
+            S: UnicodeString,
+        {
+            let parser: DomParser = DomParser::new().map_err(|_| {
                 to_dom_creation_error(
-                    "Failed to convert the Web `Document` to internal `Dom`",
+                    "Failed to create the `DOMParser` from JavaScript",
                 )
             })?;
 
-        webdom_to_dom(document).map_err(to_dom_creation_error)
-    }
+            let document = parser
+                .parse_from_string(html, SupportedType::TextHtml)
+                .map_err(|_| {
+                    to_dom_creation_error(
+                        "Failed to convert the Web `Document` to internal `Dom`",
+                    )
+                })?;
 
-    fn webdom_to_dom<S>(webdoc: Document) -> Result<Dom<S>, Error>
-    where
-        S: UnicodeString,
-    {
-        let body = webdoc.body().ok_or_else(|| Error::NoBody)?;
+            self.webdom_to_dom(document).map_err(to_dom_creation_error)
+        }
 
-        fn convert<S>(nodes: NodeList) -> Result<Dom<S>, Error>
+        fn webdom_to_dom<S>(
+            &mut self,
+            webdoc: Document,
+        ) -> Result<Dom<S>, Error>
+        where
+            S: UnicodeString,
+        {
+            let body = webdoc.body().ok_or_else(|| Error::NoBody)?;
+            self.convert(body.child_nodes())
+        }
+
+        fn convert<S>(&mut self, nodes: NodeList) -> Result<Dom<S>, Error>
         where
             S: UnicodeString,
         {
@@ -600,7 +680,7 @@ mod js {
             let mut dom = Dom::new(Vec::with_capacity(number_of_nodes));
             let dom_document = dom.document_mut();
 
-            convert_container(nodes, dom_document)?;
+            self.convert_container(nodes, dom_document)?;
 
             dom = post_process_code_blocks(dom);
 
@@ -608,6 +688,7 @@ mod js {
         }
 
         fn convert_container<S>(
+            &mut self,
             nodes: NodeList,
             dom: &mut ContainerNode<S>,
         ) -> Result<(), Error>
@@ -624,52 +705,68 @@ mod js {
                         dom.append_child(DomNode::new_line_break());
                     }
 
-                    "#text" => {
-                        dom.append_child(match node.node_value() {
-                            Some(value) => {
-                                DomNode::new_text(value.as_str().into())
-                            }
-                            None => DomNode::new_empty_text(),
-                        });
-                    }
+                    "#text" => match node.node_value() {
+                        Some(value) => {
+                            let is_inside_code_block =
+                                self.current_path.contains(&CodeBlock);
+                            convert_text(
+                                value.as_str(),
+                                dom,
+                                is_inside_code_block,
+                            );
+                        }
+                        _ => {}
+                    },
 
                     "A" => {
+                        self.current_path.push(DomNodeKind::Link);
                         dom.append_child(DomNode::new_link(
                             node.unchecked_ref::<Element>()
                                 .get_attribute("href")
                                 .unwrap_or_default()
                                 .into(),
-                            convert(node.child_nodes())?.take_children(),
+                            self.convert(node.child_nodes())?.take_children(),
                         ));
+                        self.current_path.pop();
                     }
 
                     "OL" => {
+                        self.current_path.push(DomNodeKind::List);
                         dom.append_child(DomNode::Container(
                             ContainerNode::new_list(
                                 ListType::Ordered,
-                                convert(node.child_nodes())?.take_children(),
+                                self.convert(node.child_nodes())?
+                                    .take_children(),
                             ),
                         ));
+                        self.current_path.pop();
                     }
 
                     "UL" => {
+                        self.current_path.push(DomNodeKind::List);
                         dom.append_child(DomNode::Container(
                             ContainerNode::new_list(
                                 ListType::Unordered,
-                                convert(node.child_nodes())?.take_children(),
+                                self.convert(node.child_nodes())?
+                                    .take_children(),
                             ),
                         ));
+                        self.current_path.pop();
                     }
 
                     "LI" => {
+                        self.current_path.push(DomNodeKind::ListItem);
                         dom.append_child(DomNode::Container(
                             ContainerNode::new_list_item(
-                                convert(node.child_nodes())?.take_children(),
+                                self.convert(node.child_nodes())?
+                                    .take_children(),
                             ),
                         ));
+                        self.current_path.pop();
                     }
 
                     "PRE" => {
+                        self.current_path.push(DomNodeKind::CodeBlock);
                         let children = node.child_nodes();
                         let children = if children.length() == 1
                             && children.get(0).unwrap().node_name().as_str()
@@ -682,56 +779,68 @@ mod js {
                         };
                         dom.append_child(DomNode::Container(
                             ContainerNode::new_code_block(
-                                convert(children)?.take_children(),
+                                self.convert(children)?.take_children(),
                             ),
                         ));
+                        self.current_path.pop();
                     }
 
                     "BLOCKQUOTE" => {
+                        self.current_path.push(DomNodeKind::Quote);
                         dom.append_child(DomNode::Container(
                             ContainerNode::new_quote(
-                                convert(node.child_nodes())?.take_children(),
+                                self.convert(node.child_nodes())?
+                                    .take_children(),
                             ),
                         ));
+                        self.current_path.pop();
                     }
 
                     "P" => {
+                        self.current_path.push(DomNodeKind::Paragraph);
                         dom.append_child(DomNode::Container(
                             ContainerNode::new_paragraph(
-                                convert(node.child_nodes())?.take_children(),
+                                self.convert(node.child_nodes())?
+                                    .take_children(),
                             ),
                         ));
+                        self.current_path.pop();
                     }
 
                     node_name => {
                         let children_nodes =
-                            convert(node.child_nodes())?.take_children();
+                            self.convert(node.child_nodes())?.take_children();
+
+                        let formatting_kind = match node_name {
+                            "STRONG" | "B" => InlineFormatType::Bold,
+                            "EM" | "I" => InlineFormatType::Italic,
+                            "DEL" => InlineFormatType::StrikeThrough,
+                            "U" => InlineFormatType::Underline,
+                            "CODE" => InlineFormatType::InlineCode,
+                            _ => {
+                                return Err(Error::UnknownNode(
+                                    node_name.to_owned(),
+                                ))
+                            }
+                        };
+
+                        self.current_path.push(DomNodeKind::Formatting(
+                            formatting_kind.clone(),
+                        ));
 
                         dom.append_child(DomNode::Container(
                             ContainerNode::new_formatting(
-                                match node_name {
-                                    "STRONG" | "B" => InlineFormatType::Bold,
-                                    "EM" | "I" => InlineFormatType::Italic,
-                                    "DEL" => InlineFormatType::StrikeThrough,
-                                    "U" => InlineFormatType::Underline,
-                                    "CODE" => InlineFormatType::InlineCode,
-                                    _ => {
-                                        return Err(Error::UnknownNode(
-                                            node_name.to_owned(),
-                                        ))
-                                    }
-                                },
+                                formatting_kind,
                                 children_nodes,
                             ),
                         ));
+                        self.current_path.pop();
                     }
                 }
             }
 
             Ok(())
         }
-
-        convert(body.child_nodes())
     }
 
     fn to_dom_creation_error<S, E>(error: E) -> DomCreationError<S>
@@ -780,7 +889,7 @@ mod js {
         wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
 
         fn roundtrip(html: &str) {
-            let parse = parse::<Utf16String>(html);
+            let parse = HtmlParser::default().parse::<Utf16String>(html);
 
             assert!(
                 parse.is_ok(),
@@ -836,7 +945,7 @@ mod js {
         #[wasm_bindgen_test]
         fn pre_removes_internal_code() {
             let html = "<p>foo</p><pre><code>Some code</code></pre><p>bar</p>";
-            let dom = parse::<Utf16String>(html).unwrap();
+            let dom = HtmlParser::default().parse::<Utf16String>(html).unwrap();
             let tree = dom.to_tree().to_string();
             assert_eq!(
                 tree,
@@ -857,6 +966,50 @@ mod js {
         #[wasm_bindgen_test]
         fn blockquote() {
             roundtrip("foo <blockquote>~Some code</blockquote> bar");
+        }
+
+        #[wasm_bindgen_test]
+        fn nbsp_chars_are_removed() {
+            let html = "\
+                <p>\u{A0}</p>\
+                <pre><code>\u{A0}\n\u{A0}</code></pre>\
+                <p>\u{A0}</p>";
+            let dom = HtmlParser::default().parse::<Utf16String>(html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+                
+                ├>p
+                ├>pre
+                │ ├>p
+                │ └>p
+                └>p
+                "#}
+            );
+        }
+
+        #[wasm_bindgen_test]
+        fn nbsp_text_is_removed() {
+            let html = "\
+                <p>&nbsp;</p>\
+                <pre><code>&nbsp;\n&nbsp;</code></pre>\
+                <p>&nbsp;</p>";
+            let dom = HtmlParser::default().parse::<Utf16String>(html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+                
+                ├>p
+                ├>pre
+                │ ├>p
+                │ └>p
+                └>p
+                "#}
+            );
         }
     }
 }
