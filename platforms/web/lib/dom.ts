@@ -441,9 +441,9 @@ export function countCodeunit(
 /**
  * Given a text node, determine if we need to add an additional offset to it. A
  * text node that has any ancestor that is a li, pre, blockquote or p tag will
- * require an additional offset to match up with the rust model. This
- * implementation will probably need to be extended to deal with the list item
- * case (and possibly others).
+ * require an additional offset to match up with the rust model. We also need to
+ * handle the case where we have consecutive formatting nodes, as only the last
+ * of the formatting nodes needs the extra offset (if applicable).
  *
  * Returns a boolean, true if the node needs an extra offset
  */
@@ -454,14 +454,12 @@ function nodeNeedsExtraOffset(node: Node | null) {
 
     if (node === null) return false;
 
-    // do a recursive check up through its ancestors
     let checkNode: Node = node;
     let hasFormattingAncestor = false;
 
     // don't break the previous implementation for now:
     if (!formattingNodeNames.includes(checkNode.parentNode?.nodeName || '')) {
         // do a recursive check up through its ancestors
-
         while (checkNode) {
             if (nodeNamesWithExtraOffset.includes(checkNode.nodeName)) {
                 return true;
