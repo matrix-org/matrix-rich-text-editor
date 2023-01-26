@@ -404,30 +404,8 @@ where
             let mut node = self.lookup_node_mut(&loc.node_handle);
             match &mut node {
                 DomNode::Container(c) => {
-                    // do a special case here to try and add the formatting container
-                    if c.is_formatting_node() && c.text_len() == 0 {
-                        println!("the container we want");
-                        let text_node = DomNode::new_text(new_text.clone());
-                        action_list.push(DomAction::add_node(
-                            loc.node_handle.clone(),
-                            0,
-                            text_node,
-                        ));
-                        first_text_node = false;
-                    }
-
-                    // and another special case to skip the paragraph container
-
-                    if loc.kind == Paragraph
-                        && c.children().len() > 0 // this could be !c.is_empty(), but for clarity, we want to see children
-                        && c.text_len() == 0
-                    {
-                        println!("the para we want to skip");
-                        continue;
-                    }
                     if loc.kind.is_block_kind() && loc.kind != Generic {
                         if loc.is_empty() && loc.relative_position() == After {
-                            println!("top block");
                             // Empty block node
                             if new_text.is_empty() {
                                 action_list.push(DomAction::remove_node(
@@ -454,6 +432,16 @@ where
                             ));
                             first_text_node = false;
                         }
+                    } else if c.is_formatting_node() && c.is_empty() {
+                        // do a special case here for when we split a formatting node and create empty
+                        // formatting nodes inside the next paragraph tag
+                        let text_node = DomNode::new_text(new_text.clone());
+                        action_list.push(DomAction::add_node(
+                            loc.node_handle.clone(),
+                            0,
+                            text_node,
+                        ));
+                        first_text_node = false;
                     }
                 }
                 DomNode::LineBreak(_) => {
