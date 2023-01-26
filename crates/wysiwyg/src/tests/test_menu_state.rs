@@ -230,6 +230,27 @@ fn code_block_doesnt_affect_cursor_if_its_outside() {
     assert!(model.action_is_enabled(ComposerAction::OrderedList));
 }
 
+#[test]
+fn enable_inline_code_with_cursor_immediately_updates_disabled_actions() {
+    let mut model = cm("|");
+    model.inline_code();
+    assert_formatting_actions_and_links_are_disabled(&model);
+}
+
+#[test]
+fn disable_inline_code_with_cursor_immediately_updates_disabled_actions() {
+    let mut model = cm("<code>some code|</code>");
+    model.inline_code();
+    // Inline code is not marked as reversed anymore
+    assert!(!model.action_is_reversed(ComposerAction::InlineCode));
+    // Other format types and link are enabled again
+    assert!(model.action_is_enabled(ComposerAction::Bold));
+    assert!(model.action_is_enabled(ComposerAction::Italic));
+    assert!(model.action_is_enabled(ComposerAction::Underline));
+    assert!(model.action_is_enabled(ComposerAction::StrikeThrough));
+    assert!(model.action_is_enabled(ComposerAction::Link));
+}
+
 fn assert_formatting_actions_and_links_are_disabled(
     model: &ComposerModel<Utf16String>,
 ) {
