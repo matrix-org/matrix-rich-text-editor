@@ -69,6 +69,8 @@ where
         let range = self.find_range(start, end);
         let (start_block, end_block) =
             self.top_most_block_nodes_in_range(start, &range);
+        // println!("{:?}", start_block);
+        // println!("{:?}", end_block);
         let deleted_handles = if range.is_empty() {
             if !new_text.is_empty() {
                 self.append_at_end_of_document(DomNode::new_text(new_text));
@@ -89,6 +91,7 @@ where
             );
             deleted_handles
         } else {
+            // println!("replace multiple"); // GOTO replace_multiple_nodes
             self.replace_multiple_nodes(&range, new_text)
         };
 
@@ -279,6 +282,8 @@ where
         let to_delete: Vec<DomHandle> =
             to_delete.into_iter().map(|a| a.handle).collect();
 
+        // println!("{:?}", to_add);
+        // println!("{:?}", to_delete); GOTO replace_in_text_nodes
         // We only add nodes in one special case: when the selection ends at
         // a BR tag. In that case, the only nodes that might be deleted are
         // going to be before the one we add here, so their handles won't be
@@ -393,12 +398,36 @@ where
         let mut action_list = DomActionList::default();
         let mut first_text_node = true;
 
+        // need to figure out how to make this add to the del tag, not the p tag
+        println!("{:?}", range.locations);
         for loc in range.locations.iter() {
             let mut node = self.lookup_node_mut(&loc.node_handle);
             match &mut node {
-                DomNode::Container(_) => {
+                DomNode::Container(c) => {
+                    // do a special case here to try and add the formatting container
+                    if c.is_formatting_node() && c.text_len() == 0 {
+                        println!("the container we want");
+                        let text_node = DomNode::new_text(new_text.clone());
+                        action_list.push(DomAction::add_node(
+                            loc.node_handle.clone(),
+                            0,
+                            text_node,
+                        ));
+                        first_text_node = false;
+                    }
+
+                    // and another special case to skip the paragraph container
+
+                    if loc.kind == Paragraph
+                        && c.children().len() > 0 // this could be !c.is_empty(), but for clarity, we want to see children
+                        && c.text_len() == 0
+                    {
+                        println!("the para we want to skip");
+                        continue;
+                    }
                     if loc.kind.is_block_kind() && loc.kind != Generic {
                         if loc.is_empty() && loc.relative_position() == After {
+                            println!("top block");
                             // Empty block node
                             if new_text.is_empty() {
                                 action_list.push(DomAction::remove_node(
@@ -495,6 +524,7 @@ where
 
         let mut sorted_locations = range.locations.clone();
         sorted_locations.sort();
+        println!("{:?}", action_list);
 
         // If text wasn't added in any previous iteration, just append it next to the last leaf
         if first_text_node && !new_text.is_empty() {
