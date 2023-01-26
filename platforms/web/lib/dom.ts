@@ -16,19 +16,6 @@ limitations under the License.
 
 import { ComposerModel, DomHandle } from '../generated/wysiwyg';
 
-// TODO remove this code once paragraph implemetation done, it's unused
-export function computeSelectionOffset(node: Node, offset?: number): number {
-    if (node && node.nodeType === Node.TEXT_NODE) {
-        return offset ?? node.textContent?.length ?? 0;
-    } else if (node.hasChildNodes()) {
-        return Array.from(node.childNodes)
-            .map((childNode) => computeSelectionOffset(childNode))
-            .reduce((prev, curr) => prev + curr, 0);
-    } else {
-        return 0;
-    }
-}
-
 export function refreshComposerView(
     node: HTMLElement,
     composerModel: ComposerModel,

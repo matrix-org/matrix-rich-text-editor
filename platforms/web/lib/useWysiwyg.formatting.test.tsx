@@ -28,40 +28,6 @@ import { Editor } from './testUtils/Editor';
 import { select } from './testUtils/selection';
 import { FormattingFunctions } from './types';
 
-describe('WIP', () => {
-    let textbox: HTMLDivElement;
-
-    beforeEach(async () => {
-        render(<Editor />);
-        textbox = screen.getByRole('textbox');
-        await waitFor(() =>
-            expect(textbox).toHaveAttribute('contentEditable', 'true'),
-        );
-    });
-
-    it('failing formatting test', async () => {
-        // When
-        await userEvent.click(
-            screen.getByRole('button', { name: 'strikeThrough' }),
-        );
-        screen.debug(textbox);
-        fireEvent.input(textbox, {
-            data: 'foo',
-            inputType: 'insertText',
-        });
-        screen.debug(textbox);
-
-        await userEvent.type(textbox, '{enter}');
-        // issue is here, we're putting bar in the p tag, not the del tag
-        screen.debug(textbox);
-        fireEvent.input(textbox, {
-            data: 'bar',
-            inputType: 'insertText',
-        });
-        screen.debug(textbox);
-    });
-});
-
 describe.each([
     [
         'bold',
@@ -73,33 +39,33 @@ describe.each([
         '<p><del>fo<strong>o</strong></del></p><p><del><strong>b</strong>ar</del></p>',
         '<strong>fo</strong>o <strong>bar</strong>',
     ],
-    // [
-    //     'italic',
-    //     'enabled',
-    //     'reversed',
-    //     '<em>foo</em>',
-    //     'fo<em>o&nbsp;</em>bar',
-    //     '<p><del>fo<em>o</em></del></p><p><del><em>b</em>ar</del></p>',
-    //     '<em>fo</em>o <em>bar</em>',
-    // ],
-    // [
-    //     'underline',
-    //     'enabled',
-    //     'reversed',
-    //     '<u>foo</u>',
-    //     'fo<u>o&nbsp;</u>bar',
-    //     '<p><del>fo<u>o</u></del></p><p><del><u>b</u>ar</del></p>',
-    //     '<u>fo</u>o <u>bar</u>',
-    // ],
-    // [
-    //     'strikeThrough',
-    //     'enabled',
-    //     'reversed',
-    //     '<del>foo</del>',
-    //     'fo<del>o&nbsp;</del>bar',
-    //     '<p><del>fo</del>o</p><p>b<del>ar</del></p>',
-    //     '<del>fo</del>o <del>bar</del>',
-    // ],
+    [
+        'italic',
+        'enabled',
+        'reversed',
+        '<em>foo</em>',
+        'fo<em>o&nbsp;</em>bar',
+        '<p><del>fo<em>o</em></del></p><p><del><em>b</em>ar</del></p>',
+        '<em>fo</em>o <em>bar</em>',
+    ],
+    [
+        'underline',
+        'enabled',
+        'reversed',
+        '<u>foo</u>',
+        'fo<u>o&nbsp;</u>bar',
+        '<p><del>fo<u>o</u></del></p><p><del><u>b</u>ar</del></p>',
+        '<u>fo</u>o <u>bar</u>',
+    ],
+    [
+        'strikeThrough',
+        'enabled',
+        'reversed',
+        '<del>foo</del>',
+        'fo<del>o&nbsp;</del>bar',
+        '<p><del>fo</del>o</p><p>b<del>ar</del></p>',
+        '<del>fo</del>o <del>bar</del>',
+    ],
 ])(
     'Formatting %s',
     (
@@ -180,32 +146,25 @@ describe.each([
             await userEvent.click(
                 screen.getByRole('button', { name: 'strikeThrough' }),
             );
-            screen.debug(textbox);
             fireEvent.input(textbox, {
                 data: 'foo',
                 inputType: 'insertText',
             });
-            screen.debug(textbox);
 
             await userEvent.type(textbox, '{enter}');
-            // issue is here, we're putting bar in the p tag, not the del tag
-            screen.debug(textbox);
             fireEvent.input(textbox, {
                 data: 'bar',
                 inputType: 'insertText',
             });
-            screen.debug(textbox);
 
             select(textbox, 2, 5);
-            screen.debug(textbox);
 
             await act(() => userEvent.click(button));
-            screen.debug(textbox);
 
             // Then
-            // await waitFor(() =>
-            //     expect(textbox).toContainHTML(expectedMultipleLineFormatting),
-            // );
+            await waitFor(() =>
+                expect(textbox).toContainHTML(expectedMultipleLineFormatting),
+            );
         });
 
         it('Should unformat the selection', async () => {
