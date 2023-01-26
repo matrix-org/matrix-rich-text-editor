@@ -40,4 +40,5 @@ where
 pub struct ToHtmlState {
     pub is_inside_code_block: bool,
     pub is_last_node_in_parent: bool,
+    pub is_first_node_in_parent: bool,
 }

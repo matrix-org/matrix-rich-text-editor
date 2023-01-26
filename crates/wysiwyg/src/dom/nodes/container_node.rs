@@ -396,14 +396,6 @@ where
         }
     }
 
-    pub(crate) fn set_link(&mut self, link: S) {
-        let ContainerNodeKind::Link(_) = self.kind else {
-            panic!("Setting list type to a non-list container is not allowed")
-        };
-        self.kind = ContainerNodeKind::Link(link.clone());
-        self.attrs = Some(vec![("href".into(), link)]);
-    }
-
     pub(crate) fn get_link(&self) -> Option<S> {
         let ContainerNodeKind::Link(link) = self.kind.clone() else {
             return None
@@ -594,6 +586,12 @@ where
         if matches!(self.kind, ContainerNodeKind::Paragraph)
             && state.is_inside_code_block
         {
+            if self.is_empty()
+                && (state.is_last_node_in_parent
+                    || state.is_first_node_in_parent)
+            {
+                formatter.push(char::nbsp());
+            }
             self.fmt_children_html(formatter, selection_writer, state);
             if !state.is_last_node_in_parent {
                 formatter.push('\n');
@@ -647,9 +645,7 @@ impl<S: UnicodeString> ContainerNode<S> {
     ) {
         if let Some(w) = selection_writer {
             for (i, child) in self.children.iter().enumerate() {
-                let is_last = self.children().len() == i + 1;
-                let mut state = state;
-                state.is_last_node_in_parent = is_last;
+                let state = self.updated_state(state, i);
                 child.fmt_html(formatter, Some(w), state);
             }
             if self.is_empty() {
@@ -661,12 +657,23 @@ impl<S: UnicodeString> ContainerNode<S> {
             }
         } else {
             for (i, child) in self.children.iter().enumerate() {
-                let is_last = self.children().len() == i + 1;
-                let mut state = state;
-                state.is_last_node_in_parent = is_last;
+                let state = self.updated_state(state, i);
                 child.fmt_html(formatter, None, state);
             }
         }
+    }
+
+    fn updated_state(
+        &self,
+        initial_state: ToHtmlState,
+        child_index: usize,
+    ) -> ToHtmlState {
+        let is_last = self.children().len() == child_index + 1;
+        let is_first = child_index == 0;
+        let mut state = initial_state;
+        state.is_last_node_in_parent = is_last;
+        state.is_first_node_in_parent = is_first;
+        state
     }
 }
 

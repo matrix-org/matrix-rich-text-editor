@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::cmp::{max, min};
+
 use crate::dom::nodes::dom_node::DomNodeKind;
-use crate::dom::nodes::dom_node::DomNodeKind::Generic;
+use crate::dom::nodes::dom_node::DomNodeKind::{Link, List};
 use crate::dom::nodes::dom_node::{DomNodeKind::LineBreak, DomNodeKind::Text};
 use crate::dom::nodes::ContainerNodeKind;
-use crate::dom::nodes::{ContainerNodeKind::Link, DomNode};
+use crate::dom::nodes::DomNode;
 use crate::dom::unicode_string::UnicodeStrExt;
-use crate::dom::{DomLocation, Range};
+use crate::dom::Range;
 use crate::{
     ComposerModel, ComposerUpdate, DomHandle, LinkAction, UnicodeString,
 };
@@ -70,7 +72,7 @@ where
 
     pub fn set_link_with_text(
         &mut self,
-        mut link: S,
+        link: S,
         text: S,
     ) -> ComposerUpdate<S> {
         let (s, _) = self.safe_selection();
@@ -78,21 +80,30 @@ where
         self.do_replace_text(text.clone());
         let e = s + text.len();
         let range = self.state.dom.find_range(s, e);
-        self.add_http_scheme(&mut link);
-        self.set_link_range(range, link)
+        self.set_link_in_range(link, range)
     }
 
-    pub fn set_link(&mut self, mut link: S) -> ComposerUpdate<S> {
+    pub fn set_link(&mut self, link: S) -> ComposerUpdate<S> {
         self.push_state_to_history();
-        let (mut s, mut e) = self.safe_selection();
+        let (s, e) = self.safe_selection();
 
-        let mut range = self.state.dom.find_range(s, e);
+        let range = self.state.dom.find_range(s, e);
 
+        self.set_link_in_range(link, range)
+    }
+
+    fn set_link_in_range(
+        &mut self,
+        mut link: S,
+        range: Range,
+    ) -> ComposerUpdate<S> {
         self.add_http_scheme(&mut link);
+
+        let (mut s, mut e) = (range.start(), range.end());
         // Find container link that completely covers the range
         if let Some(link) = self.find_closest_ancestor_link(&range) {
             // If found, update the range to the container link bounds
-            range = self.state.dom.find_range_by_node(&link);
+            let range = self.state.dom.find_range_by_node(&link);
             (s, e) = (range.start(), range.end());
         }
 
@@ -100,17 +111,77 @@ where
             return ComposerUpdate::keep();
         }
 
-        if range.locations.iter().any(|location| {
-            location.kind.is_structure_kind()
-                || (location.kind.is_block_kind() && location.kind != Generic)
-        }) {
-            return self.set_link_range(range, link);
-        } else {
+        let mut split_points: Vec<(DomHandle, usize, usize)> = Vec::new();
+
+        for location in range.locations.iter() {
+            // Look for block nodes
+            if (location.kind.is_block_kind()
+                || location.kind.is_structure_kind())
+                && location.kind != List
+            {
+                let start = location.position + location.start_offset;
+                let end = if location.end_offset == location.length
+                    && !location.node_handle.is_root()
+                {
+                    // The end of the block node is covered (end_offset == length), don't include it
+                    location.position + location.end_offset - 1
+                } else {
+                    location.position + location.end_offset
+                };
+                // If there was a child block node added as a split point, don't add this one
+                if !split_points
+                    .iter()
+                    .any(|(h, _, _)| location.node_handle.is_ancestor_of(h))
+                {
+                    split_points.push((
+                        location.node_handle.clone(),
+                        start,
+                        end,
+                    ));
+                }
+            }
+        }
+
+        for location in range.locations.iter() {
+            // Now look for previous links inside the selection
+            if location.kind == Link {
+                let start = location.position;
+                let end = location.position + location.length;
+                let idx = split_points.iter().position(|(h, s, e)| {
+                    h.is_ancestor_of(&location.node_handle)
+                        || (*s <= start && *e >= end)
+                });
+                if let Some(idx) = idx {
+                    // If a parent or intersecting node was added before, remove it and extend this
+                    // one to match it (i.e., another link was already added).
+                    let (_, s, e) = split_points.remove(idx);
+                    split_points.insert(
+                        idx,
+                        (
+                            location.node_handle.clone(),
+                            min(s, start),
+                            max(e, end),
+                        ),
+                    );
+                } else {
+                    // Otherwise, just add another split point.
+                    split_points.push((
+                        location.node_handle.clone(),
+                        start,
+                        end,
+                    ));
+                }
+            }
+        }
+
+        for (_, s, e) in split_points.into_iter() {
+            let range = self.state.dom.find_range(s, e);
+            // Create a new link node containing the passed range
             let inserted = self
                 .state
                 .dom
-                .insert_parent(&range, DomNode::new_link(link, vec![]));
-            // Ensure no duplication by deleting any links contained within the new link
+                .insert_parent(&range, DomNode::new_link(link.clone(), vec![]));
+            // Remove any child links inside it
             self.delete_child_links(&inserted);
         }
 
@@ -139,15 +210,14 @@ where
     fn delete_child_links(&mut self, node_handle: &DomHandle) {
         let node = self.state.dom.lookup_node(node_handle);
 
-        for handle in node
+        let child_link_handles = node
             .iter_containers()
             .filter(|n| matches!(n.kind(), ContainerNodeKind::Link(_)))
             .map(|n| n.handle())
             .filter(|h| *h != *node_handle)
-            .collect::<Vec<_>>()
-            .into_iter()
-            .rev()
-        {
+            .collect::<Vec<_>>();
+
+        for handle in child_link_handles.into_iter().rev() {
             self.state.dom.remove_and_keep_children(&handle);
         }
     }
@@ -170,42 +240,6 @@ where
         }
 
         None
-    }
-
-    fn set_link_range(&mut self, range: Range, link: S) -> ComposerUpdate<S> {
-        let leaves: Vec<&DomLocation> = range.leaves().collect();
-        for leaf in leaves.into_iter().rev() {
-            let handle = &leaf.node_handle;
-            let parent = self.state.dom.parent_mut(&leaf.node_handle);
-            if let Link(_) = parent.kind() {
-                parent.set_link(link.clone());
-            } else {
-                let node = self.state.dom.lookup_node(handle);
-                if let DomNode::Text(t) = node {
-                    let text = t.data();
-                    let before = text[..leaf.start_offset].to_owned();
-                    let during =
-                        text[leaf.start_offset..leaf.end_offset].to_owned();
-                    let after = text[leaf.end_offset..].to_owned();
-                    let mut new_nodes = Vec::new();
-                    if !before.is_empty() {
-                        new_nodes.push(DomNode::new_text(before));
-                    }
-                    if !during.is_empty() {
-                        new_nodes.push(DomNode::new_link(
-                            link.clone(),
-                            vec![DomNode::new_text(during)],
-                        ));
-                    }
-                    if !after.is_empty() {
-                        new_nodes.push(DomNode::new_text(after));
-                    }
-                    self.state.dom.replace(handle, new_nodes);
-                }
-            }
-            // TODO: set link should be able to wrap container nodes, unlike formatting
-        }
-        self.create_update_replace_all()
     }
 
     pub fn remove_links(&mut self) -> ComposerUpdate<S> {
