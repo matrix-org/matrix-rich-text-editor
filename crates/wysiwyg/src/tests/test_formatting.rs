@@ -280,7 +280,7 @@ fn formatting_multiple_lines_with_inline_code() {
 }
 
 #[test]
-fn splitting_a_formatting_tag_across_multiple_lines() {
+fn splitting_a_formatting_tag_across_two_lines() {
     let mut model = cm("|");
     model.strike_through();
     model.replace_text(utf16("foo"));
@@ -289,4 +289,24 @@ fn splitting_a_formatting_tag_across_multiple_lines() {
     assert_eq!(tx(&model), "<p><del>foo</del></p><p><del>|</del></p>");
     model.replace_text(utf16("bar"));
     assert_eq!(tx(&model), "<p><del>foo</del></p><p><del>bar|</del></p>");
+}
+
+#[test]
+fn splitting_a_formatting_tag_across_multiple_lines() {
+    let mut model = cm("|");
+    model.strike_through();
+    model.replace_text(utf16("foo"));
+    assert_eq!(tx(&model), "<del>foo|</del>");
+    model.enter();
+    assert_eq!(tx(&model), "<p><del>foo</del></p><p><del>|</del></p>");
+    model.enter();
+    assert_eq!(
+        tx(&model),
+        "<p><del>foo</del></p><p>&nbsp;</p><p><del>|</del></p>"
+    );
+    model.replace_text(utf16("bar"));
+    assert_eq!(
+        tx(&model),
+        "<p><del>foo</del></p><p>&nbsp;</p><p><del>bar|</del></p>"
+    );
 }
