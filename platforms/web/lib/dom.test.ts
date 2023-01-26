@@ -39,22 +39,34 @@ function setEditorHtml(html: string) {
     editor.innerHTML = html + '<br />';
 }
 
-// describe('WIP', () => {
-//     it('failing formatting test', () => {
-//         // When
-//         setEditorHtml(
-//             // eslint-disable-next-line max-len
-//             '<p><del>fo<strong>o</strong></del></p><p><del><strong>b</strong>ar</del>',
-//         );
-//         const { node, offset } = computeNodeAndOffset(editor, 4);
+describe('WIP', () => {
+    it('failing formatting test', () => {
+        // When
+        setEditorHtml(
+            // eslint-disable-next-line max-len
+            '<p><del>foo</del></p><p><del></del></p>',
+        );
+        const { node, offset } = computeNodeAndOffset(editor, 4);
 
-//         // Then
-//         expect(node).toBe(
-//             editor.childNodes[1].childNodes[0].childNodes[0].childNodes[0],
-//         );
-//         expect(offset).toBe(0);
-//     });
-// });
+        // Then
+        expect(node).toBe(editor.childNodes[1].childNodes[0]);
+        expect(offset).toBe(0);
+    });
+    //    it('failing formatting test', () => {
+    //        // When
+    //        setEditorHtml(
+    //            // eslint-disable-next-line max-len
+    //            '<p><del>fo<strong>o</strong></del></p><p><del><strong>b</strong>ar</del>',
+    //        );
+    //        const { node, offset } = computeNodeAndOffset(editor, 4);
+
+    //        // Then
+    //        expect(node).toBe(
+    //            editor.childNodes[1].childNodes[0].childNodes[0].childNodes[0],
+    //        );
+    //        expect(offset).toBe(0);
+    //    });
+});
 
 describe('computeNodeAndOffset', () => {
     it('Should find at the start of simple text', () => {

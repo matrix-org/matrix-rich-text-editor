@@ -28,6 +28,40 @@ import { Editor } from './testUtils/Editor';
 import { select } from './testUtils/selection';
 import { FormattingFunctions } from './types';
 
+describe('WIP', () => {
+    let textbox: HTMLDivElement;
+
+    beforeEach(async () => {
+        render(<Editor />);
+        textbox = screen.getByRole('textbox');
+        await waitFor(() =>
+            expect(textbox).toHaveAttribute('contentEditable', 'true'),
+        );
+    });
+
+    it('failing formatting test', async () => {
+        // When
+        await userEvent.click(
+            screen.getByRole('button', { name: 'strikeThrough' }),
+        );
+        screen.debug(textbox);
+        fireEvent.input(textbox, {
+            data: 'foo',
+            inputType: 'insertText',
+        });
+        screen.debug(textbox);
+
+        await userEvent.type(textbox, '{enter}');
+        // issue is here, we're putting bar in the p tag, not the del tag
+        screen.debug(textbox);
+        fireEvent.input(textbox, {
+            data: 'bar',
+            inputType: 'insertText',
+        });
+        screen.debug(textbox);
+    });
+});
+
 describe.each([
     [
         'bold',
