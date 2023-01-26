@@ -280,7 +280,7 @@ fn formatting_multiple_lines_with_inline_code() {
 }
 
 #[test]
-fn wip_web_integration() {
+fn splitting_a_formatting_tag_across_multiple_lines() {
     let mut model = cm("|");
     model.strike_through();
     model.replace_text(utf16("foo"));
