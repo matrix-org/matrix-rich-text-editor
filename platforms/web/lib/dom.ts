@@ -111,15 +111,11 @@ export function selectContent(
     startUtf16Codeunit: number,
     endUtf16Codeunit: number,
 ) {
-    // console.log('select content');
     const range = document.createRange();
 
     let start = computeNodeAndOffset(editor, startUtf16Codeunit);
     let end = computeNodeAndOffset(editor, endUtf16Codeunit);
-    // console.log({
-    //     NODE_IS: start.node?.nodeName,
-    //     PARENT_IS: start.node?.parentNode?.nodeName,
-    // });
+
     if (start.node && end.node) {
         const endNodeBeforeStartNode =
             start.node.compareDocumentPosition(end.node) &
@@ -182,9 +178,7 @@ export function computeNodeAndOffset(
     offset: number;
 } {
     const formattingNodeNames = ['EM', 'U', 'STRONG', 'DEL'];
-    console.log(
-        `N&O for ${currentNode.nodeName}, NODE: ${currentNode.nodeName}, off: ${codeunits}`,
-    );
+
     const isEmptyList =
         currentNode.nodeName === 'LI' && !currentNode.hasChildNodes();
 
@@ -194,7 +188,15 @@ export function computeNodeAndOffset(
         // any of the nodes that require the extra offset.
         const shouldAddOffset = nodeNeedsExtraOffset(currentNode);
         const extraOffset = shouldAddOffset ? 1 : 0;
-        // console.log({ shouldAddOffset });
+
+        // we have a special case where the text node actually has a sibling
+        // when we split a formatting node in paragraphs
+        const nextNode = currentNode.nextSibling;
+        if (currentNode.nextSibling) {
+            // if we have a sibling, we need to go as deep into it as we can
+            // then we only use this node if the codeunits are equal to the
+            // length of this text node
+        }
 
         if (codeunits <= (currentNode.textContent?.length || 0)) {
             // we don't need to use that extra offset if we've found the answer
@@ -233,7 +235,6 @@ export function computeNodeAndOffset(
             };
         }
     } else {
-        console.log('hitting the for loop');
         for (const ch of currentNode.childNodes) {
             const ret = computeNodeAndOffset(ch, codeunits);
             if (ret.node) {
@@ -249,7 +250,6 @@ export function computeNodeAndOffset(
             currentNode.textContent?.length === 0;
 
         if (isEmptyFormattingTag && codeunits === 0) {
-            console.log('we hit an empty formatting tag');
             return { node: currentNode, offset: codeunits };
         }
         return { node: null, offset: codeunits };
@@ -264,8 +264,6 @@ export function getCurrentSelection(
     editor: HTMLElement,
     selection: Selection | null,
 ) {
-    console.log('getCurrentSelection');
-    console.log(selection);
     if (!selection) {
         return [0, 0];
     }
@@ -336,7 +334,6 @@ function findCharacter(
     found: boolean;
     offset: number;
 } {
-    console.log(`find ${nodeToFind.nodeName}, offset: ${offsetToFind}`);
     if (currentNode === nodeToFind) {
         // We've found the right node
         if (currentNode.nodeType === Node.TEXT_NODE) {
