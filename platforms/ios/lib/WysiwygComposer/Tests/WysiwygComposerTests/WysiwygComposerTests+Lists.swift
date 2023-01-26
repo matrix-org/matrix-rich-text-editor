@@ -27,23 +27,14 @@ extension WysiwygComposerTests {
             // Add a third list item
             .action { $0.enter() }
             .assertHtml("<ol><li>Item 1</li><li>Item 2</li><li></li></ol>")
-            .assert {
-                XCTAssertEqual($0.getCurrentDomState().start, $0.getCurrentDomState().end)
-                XCTAssertEqual($0.getCurrentDomState().start, 14)
-            }
+            .assertSelection(start: 14, end: 14)
             // Remove it
             .action { $0.enter() }
             .assertHtml("<ol><li>Item 1</li><li>Item 2</li></ol><p>\(Character.nbsp)</p>")
-            .assert {
-                XCTAssertEqual($0.getCurrentDomState().start, $0.getCurrentDomState().end)
-                XCTAssertEqual($0.getCurrentDomState().start, 14)
-            }
+            .assertSelection(start: 14, end: 14)
             // Insert some text afterwards
             .action { $0.replaceText(newText: "Some text") }
             .assertHtml("<ol><li>Item 1</li><li>Item 2</li></ol><p>Some text</p>")
-            .assert {
-                XCTAssertEqual($0.getCurrentDomState().start, $0.getCurrentDomState().end)
-                XCTAssertEqual($0.getCurrentDomState().start, 23)
-            }
+            .assertSelection(start: 23, end: 23)
     }
 }

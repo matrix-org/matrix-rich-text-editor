@@ -61,4 +61,18 @@ extension ComposerModel {
         XCTAssertEqual(toTree(), tree)
         return self
     }
+
+    /// Assert given selection matches self.
+    ///
+    /// - Parameters:
+    ///   - start: selection start (UTF16 code units)
+    ///   - end: selection end (UTF16 code units)
+    /// - Returns: self (discardable)
+    @discardableResult
+    func assertSelection(start: UInt32, end: UInt32) -> ComposerModel {
+        let state = getCurrentDomState()
+        XCTAssertEqual(state.start, start)
+        XCTAssertEqual(state.end, end)
+        return self
+    }
 }
