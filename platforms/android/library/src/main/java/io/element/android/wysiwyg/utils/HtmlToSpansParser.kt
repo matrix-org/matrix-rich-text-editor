@@ -25,6 +25,7 @@ import org.xml.sax.ContentHandler
 import org.xml.sax.InputSource
 import org.xml.sax.Locator
 import java.io.StringReader
+import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
@@ -227,7 +228,8 @@ internal class HtmlToSpansParser(
                 val start = text.getSpanStart(last)
                 text.removeSpan(last)
 
-                addNBSP(start)
+                val lastNewLine = max(text.lastIndexOf('\n') + 1, start);
+                addNBSP(lastNewLine)
 
                 if (text.lastOrNull() == '\n') {
                     // Extra char to properly render empty new lines in code blocks
