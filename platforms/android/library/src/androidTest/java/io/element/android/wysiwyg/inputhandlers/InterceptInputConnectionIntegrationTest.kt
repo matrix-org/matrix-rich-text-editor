@@ -322,8 +322,8 @@ class InterceptInputConnectionIntegrationTest {
                     "Test\n$NBSP: android.widget.Editor.SpanController (0-6) fl=#18",
                     ": android.text.Selection.START (5-5) fl=#546",
                     ": android.text.Selection.END (5-5) fl=#34",
-                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (5-6) fl=#17",
                     "Test\n$NBSP: io.element.android.wysiwyg.spans.CodeBlockSpan (0-6) fl=#33",
+                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (5-6) fl=#17",
                 )
             )
         )
@@ -340,8 +340,8 @@ class InterceptInputConnectionIntegrationTest {
                     "Test\n$NBSP: android.widget.Editor.SpanController (0-6) fl=#18",
                     ": android.text.Selection.START (5-5) fl=#34",
                     ": android.text.Selection.END (5-5) fl=#34",
-                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (5-6) fl=#17",
                     "Test: io.element.android.wysiwyg.spans.CodeBlockSpan (0-4) fl=#33",
+                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (5-6) fl=#17",
                 )
             )
         )
@@ -412,8 +412,8 @@ class InterceptInputConnectionIntegrationTest {
                     "Test\n$NBSP: android.widget.Editor.SpanController (0-6) fl=#18",
                     ": android.text.Selection.START (5-5) fl=#546",
                     ": android.text.Selection.END (5-5) fl=#34",
-                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (5-6) fl=#17",
                     "Test\n$NBSP: io.element.android.wysiwyg.spans.QuoteSpan (0-6) fl=#33",
+                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (5-6) fl=#17",
                 )
             )
         )
@@ -430,8 +430,8 @@ class InterceptInputConnectionIntegrationTest {
                     "Test\n$NBSP: android.widget.Editor.SpanController (0-6) fl=#18",
                     ": android.text.Selection.START (5-5) fl=#34",
                     ": android.text.Selection.END (5-5) fl=#34",
-                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (5-6) fl=#17",
                     "Test: io.element.android.wysiwyg.spans.QuoteSpan (0-4) fl=#33",
+                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (5-6) fl=#17",
                 )
             )
         )
