@@ -354,4 +354,10 @@ fn locations_when_pressing_enter() {
     );
     assert_eq!(model.state.start, Location::from(6));
     model.enter();
+
+fn formatting_in_an_empty_paragraph_applies_formatting() {
+    let mut model = cm("<p>A</p><p>|</p>");
+    model.bold();
+    model.replace_text("B".into());
+    assert_eq!(tx(&model), "<p>A</p><p><strong>B|</strong></p>");
 }

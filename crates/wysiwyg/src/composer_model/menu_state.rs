@@ -18,6 +18,7 @@ use crate::action_state::ActionState;
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind};
 use crate::dom::range::DomLocationPosition;
+use crate::dom::range::DomLocationPosition::Before;
 use crate::dom::{DomLocation, Range};
 use crate::menu_state::MenuStateUpdate;
 use crate::ComposerAction::{Indent, UnIndent};
@@ -120,6 +121,9 @@ where
                 HashSet::new()
             } else {
                 self.compute_reversed_actions(&block_location.node_handle)
+                    .symmetric_difference(&toggled_format_actions)
+                    .cloned()
+                    .collect()
             }
         } else {
             HashSet::new()
@@ -238,5 +242,7 @@ fn contains_inline_code(locations: &[DomLocation]) -> bool {
 }
 
 fn contains_code_block(locations: &[DomLocation]) -> bool {
-    locations.iter().any(|l| l.kind == DomNodeKind::CodeBlock)
+    locations.iter().any(|l| {
+        l.relative_position() != Before && l.kind == DomNodeKind::CodeBlock
+    })
 }

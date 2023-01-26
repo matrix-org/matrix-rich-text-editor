@@ -396,14 +396,6 @@ where
         }
     }
 
-    pub(crate) fn set_link(&mut self, link: S) {
-        let ContainerNodeKind::Link(_) = self.kind else {
-            panic!("Setting list type to a non-list container is not allowed")
-        };
-        self.kind = ContainerNodeKind::Link(link.clone());
-        self.attrs = Some(vec![("href".into(), link)]);
-    }
-
     pub(crate) fn get_link(&self) -> Option<S> {
         let ContainerNodeKind::Link(link) = self.kind.clone() else {
             return None
@@ -594,6 +586,9 @@ where
         if matches!(self.kind, ContainerNodeKind::Paragraph)
             && state.is_inside_code_block
         {
+            if self.is_empty() {
+                formatter.push(char::nbsp());
+            }
             self.fmt_children_html(formatter, selection_writer, state);
             if !state.is_last_node_in_parent {
                 formatter.push('\n');
