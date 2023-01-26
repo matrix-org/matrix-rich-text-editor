@@ -356,6 +356,7 @@ fn locations_when_pressing_enter() {
     model.enter();
 }
 
+#[test]
 fn formatting_in_an_empty_paragraph_applies_formatting() {
     let mut model = cm("<p>A</p><p>|</p>");
     model.bold();
