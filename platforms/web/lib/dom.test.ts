@@ -282,6 +282,171 @@ describe('computeNodeAndOffset', () => {
         expect(node).toBe(editor.childNodes[1].childNodes[0]);
         expect(offset).toBe(0);
     });
+
+    it('Should find inside adjacent empty paragraph, second child', () => {
+        // When
+        // we get this when we start writing in the composer (goes in as plain
+        // text) and then we press enter and we move to paragraphs
+        setEditorHtml('<p>press enter</p><p>&nbsp;</p>');
+        const { node, offset } = computeNodeAndOffset(editor, 12);
+
+        // Then
+        expect(node).toBe(editor.childNodes[1].childNodes[0]);
+        expect(offset).toBe(0);
+    });
+
+    it('Should find inside an empty list', () => {
+        // When
+        setEditorHtml('<ul><li></li></ul>');
+        const { node, offset } = computeNodeAndOffset(editor, 0);
+
+        // Then
+        expect(node).toBe(editor.childNodes[0].childNodes[0]);
+        expect(offset).toBe(0);
+    });
+
+    it('Should find inside an empty single list item', () => {
+        // When
+        setEditorHtml('<ul><li></li></ul>');
+        const { node, offset } = computeNodeAndOffset(editor, 0);
+
+        // Then
+        expect(node).toBe(editor.childNodes[0].childNodes[0]);
+        expect(offset).toBe(0);
+    });
+
+    it('Should find inside a single list item', () => {
+        // When
+        setEditorHtml('<ul><li>foo</li></ul>'); // also invalid html
+        const { node, offset } = computeNodeAndOffset(editor, 1);
+
+        // Then
+        expect(node).toBe(editor.childNodes[0].childNodes[0].childNodes[0]);
+        expect(offset).toBe(1);
+    });
+
+    it('Should find inside first child of two empty list items', () => {
+        // When
+        setEditorHtml('<ul><li></li><li></li></ul>');
+        const { node, offset } = computeNodeAndOffset(editor, 0);
+
+        // Then
+        expect(node).toBe(editor.childNodes[0].childNodes[0]);
+        expect(offset).toBe(0);
+    });
+
+    it('Should find inside adjacent list items, first child', () => {
+        // When
+        setEditorHtml('<ul><li>foo</li><li>bar</li></ul>');
+        const { node, offset } = computeNodeAndOffset(editor, 3);
+
+        // Then
+        expect(node).toBe(editor.childNodes[0].childNodes[0].childNodes[0]);
+        expect(offset).toBe(3);
+    });
+
+    it('Should find inside adjacent list items, second child', () => {
+        // When
+        setEditorHtml('<ul><li>foo</li><li>bar</li></ul>');
+        const { node, offset } = computeNodeAndOffset(editor, 4);
+
+        // Then
+        expect(node).toBe(editor.childNodes[0].childNodes[1].childNodes[0]);
+        expect(offset).toBe(0);
+    });
+
+    it('Should find inside adjacent lists, first list', () => {
+        // When
+        setEditorHtml('<ul><li>foo</li></ul><ul><li>bar</li></ul>');
+        const { node, offset } = computeNodeAndOffset(editor, 3);
+
+        // Then
+        expect(node).toBe(editor.childNodes[0].childNodes[0].childNodes[0]);
+        expect(offset).toBe(3);
+    });
+
+    it('Should find inside adjacent lists, second list', () => {
+        // When
+        setEditorHtml('<ul><li>foo</li></ul><ul><li>bar</li></ul>');
+        const { node, offset } = computeNodeAndOffset(editor, 4);
+
+        // Then
+        expect(node).toBe(editor.childNodes[1].childNodes[0].childNodes[0]);
+        expect(offset).toBe(0);
+    });
+
+    it('Should find inside quote', () => {
+        // When
+        setEditorHtml('<blockquote>quote</blockquote>');
+        const { node, offset } = computeNodeAndOffset(editor, 2);
+
+        // Then
+        expect(node).toBe(editor.childNodes[0].childNodes[0]);
+        expect(offset).toBe(2);
+    });
+
+    it('Should find inside quote followed by another container node', () => {
+        // When
+        const firstNode = '<blockquote>quote</blockquote>';
+        const nextOtherNodes = [
+            '<ol><li>ordered list</li></ol>',
+            '<ul><li>ordered list</li></ul>',
+            '<p>paragraph</p>',
+            '<pre>codeblock</pre>',
+            '<blockquote>another quote</blockquote>',
+        ];
+
+        nextOtherNodes.forEach((nextNode) => {
+            setEditorHtml(firstNode + nextNode);
+            const { node, offset } = computeNodeAndOffset(editor, 5);
+
+            // Then
+            expect(node).toBe(editor.childNodes[0].childNodes[0]);
+            expect(offset).toBe(5);
+        });
+    });
+
+    it('Should find inside quote container node after a quote', () => {
+        // When
+        const firstNode = '<blockquote>quote</blockquote>';
+        const nextListNodes = [
+            '<ol><li>ordered list</li></ol>',
+            '<ul><li>ordered list</li></ul>',
+        ];
+        const nextOtherNodes = [
+            '<p>paragraph</p>',
+            '<pre>codeblock</pre>',
+            '<blockquote>another quote</blockquote>',
+        ];
+
+        nextListNodes.forEach((nextNode) => {
+            setEditorHtml(firstNode + nextNode);
+            const { node, offset } = computeNodeAndOffset(editor, 6);
+
+            // Then
+            expect(node).toBe(editor.childNodes[1].childNodes[0].childNodes[0]);
+            expect(offset).toBe(0);
+        });
+
+        nextOtherNodes.forEach((nextNode) => {
+            setEditorHtml(firstNode + nextNode);
+            const { node, offset } = computeNodeAndOffset(editor, 6);
+
+            // Then
+            expect(node).toBe(editor.childNodes[1].childNodes[0]);
+            expect(offset).toBe(0);
+        });
+    });
+
+    it('Should count newlines as characters in code blocks', () => {
+        // When
+        setEditorHtml('<pre>length\nis 12</pre>');
+        const { node } = computeNodeAndOffset(editor, 5);
+
+        // Then
+        expect(node).toBe(editor.childNodes[0].childNodes[0]);
+        expect(node?.textContent).toHaveLength(12);
+    });
 });
 
 describe('countCodeunit', () => {
