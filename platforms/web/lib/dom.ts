@@ -189,15 +189,6 @@ export function computeNodeAndOffset(
         const shouldAddOffset = nodeNeedsExtraOffset(currentNode);
         const extraOffset = shouldAddOffset ? 1 : 0;
 
-        // we have a special case where the text node actually has a sibling
-        // when we split a formatting node in paragraphs
-        const nextNode = currentNode.nextSibling;
-        if (currentNode.nextSibling) {
-            // if we have a sibling, we need to go as deep into it as we can
-            // then we only use this node if the codeunits are equal to the
-            // length of this text node
-        }
-
         if (codeunits <= (currentNode.textContent?.length || 0)) {
             // we don't need to use that extra offset if we've found the answer
             return { node: currentNode, offset: codeunits };
