@@ -18,6 +18,7 @@ import {
     computeNodeAndOffset,
     countCodeunit,
     getCurrentSelection,
+    textNodeNeedsExtraOffset,
 } from './dom';
 
 let beforeEditor: HTMLDivElement;
@@ -945,5 +946,79 @@ describe('getCurrentSelection', () => {
 });
 
 describe('nodeNeedsExtraOffset', () => {
-    it('does something', () => {});
+    const trueTestCases = [
+        { name: 'paragraph', testTag: 'p' },
+        { name: 'preformatted', testTag: 'pre' },
+        { name: 'block quote', testTag: 'blockquote' },
+        { name: 'list item (ordered)', testTag: 'li', wrappingTag: 'ol' },
+        { name: 'list item (unordered)', testTag: 'li', wrappingTag: 'ul' },
+    ];
+
+    const falseTestCases = [
+        { name: 'bold', testTag: 'strong' },
+        { name: 'italic', testTag: 'em' },
+        { name: 'underline', testTag: 'u' },
+        { name: 'strikethrough', testTag: 'del' },
+        { name: 'link', testTag: 'a' },
+        { name: 'inline code', testTag: 'code' },
+    ];
+
+    it.each(trueTestCases)(
+        'Should add an offset to text node inside ${name} tag',
+        ({ testTag, wrappingTag = '' }) => {
+            // When
+            // to allow us to handle list items in the test cases we need a way
+            // to calculate the wrapping tag if required
+            const openingTag = wrappingTag ? `<${wrappingTag}>` : '';
+            const closingTag = wrappingTag ? `<${wrappingTag}>` : '';
+            setEditorHtml(
+                `${openingTag}<${testTag}>test test</${testTag}>${closingTag}`,
+            );
+            const { node } = computeNodeAndOffset(editor, 1);
+
+            // Then
+            // to account for extra nesting in some cases
+            if (wrappingTag) {
+                expect(node).toBe(
+                    editor.childNodes[0].childNodes[0].childNodes[0],
+                );
+            } else {
+                expect(node).toBe(editor.childNodes[0].childNodes[0]);
+            }
+
+            expect(textNodeNeedsExtraOffset(node)).toBe(true);
+        },
+    );
+
+    it.each(falseTestCases)(
+        'Should not add an offset to text node inside ${name} tag',
+        ({ testTag }) => {
+            // When
+            setEditorHtml(`<${testTag}>test test</${testTag}>`);
+            const { node } = computeNodeAndOffset(editor, 1);
+
+            // Then
+            expect(node).toBe(editor.childNodes[0].childNodes[0]);
+            expect(textNodeNeedsExtraOffset(node)).toBe(false);
+        },
+    );
+
+    it('only applies offset to last of consecutive inline items', () => {
+        // When
+        setEditorHtml(`<p><u>test</u><em> words</em></p><p></p>`);
+        // look at the `test` text node
+        const { node: testNode } = computeNodeAndOffset(editor, 0);
+
+        // Then
+        expect(testNode).toBe(editor.childNodes[0].childNodes[0].childNodes[0]);
+        expect(textNodeNeedsExtraOffset(testNode)).toBe(false);
+
+        // look at the `words` text node
+        const { node: wordsNode } = computeNodeAndOffset(editor, 5);
+
+        expect(wordsNode).toBe(
+            editor.childNodes[0].childNodes[1].childNodes[0],
+        );
+        expect(textNodeNeedsExtraOffset(wordsNode)).toBe(true);
+    });
 });
