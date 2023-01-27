@@ -489,6 +489,9 @@ function isInlineNode(node: Node | ParentNode | null) {
 }
 
 function isNodeRequiringExtraOffset(node: Node) {
+    // note this isn't simply a block node, we need to ensure that for lists we
+    // do not add an extra offset for the ol/ul tag, only for the list items
+    // themselves
     return EXTRA_OFFSET_NODE_NAMES.includes(node.nodeName || '');
 }
 
