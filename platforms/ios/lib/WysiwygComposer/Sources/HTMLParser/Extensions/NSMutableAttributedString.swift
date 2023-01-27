@@ -53,12 +53,18 @@ extension NSMutableAttributedString {
         }
     }
 
-    /// Removes any text that has been marked as discardable.
-    func replaceDiscardableTextWithZwsp() {
+    /// Finds any text that has been marked as discardable
+    /// and either replaces it with ZWSP if contained overlaps with text marked with a background style
+    /// or removes it otherwise
+    func replaceOrDeleteDiscardableText() {
         enumerateTypedAttribute(.discardableText) { (discardable: Bool, range: NSRange, _) in
             guard discardable == true else { return }
-
-            self.replaceCharacters(in: range, with: String.zwsp)
+            let attributes = self.attributes(at: range.location, effectiveRange: nil)
+            if attributes[.backgroundStyle] != nil {
+                self.replaceCharacters(in: range, with: String.zwsp)
+            } else {
+                self.deleteCharacters(in: range)
+            }
         }
     }
 
