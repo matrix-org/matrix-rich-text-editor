@@ -94,6 +94,12 @@ class RichTextEditor : LinearLayout {
             unorderedListButton.setOnClickListener {
                 richTextEditText.toggleList(false)
             }
+            indentButton.setOnClickListener {
+                richTextEditText.indent()
+            }
+            unIndentButton.setOnClickListener {
+                richTextEditText.unIndent()
+            }
 
             richTextEditText.actionStatesChangedListener = EditorEditText.OnActionStatesChangedListener { actionStates ->
                 updateActionStates(actionStates)
@@ -115,6 +121,8 @@ class RichTextEditor : LinearLayout {
             updateActionStateFor(unorderedListButton, ComposerAction.UNORDERED_LIST, actionStates)
             updateActionStateFor(formatCodeBlockButton, ComposerAction.CODE_BLOCK, actionStates)
             updateActionStateFor(formatQuoteButton, ComposerAction.QUOTE, actionStates)
+            updateActionStateFor(indentButton, ComposerAction.INDENT, actionStates)
+            updateActionStateFor(unIndentButton, ComposerAction.UN_INDENT, actionStates)
         }
     }
 

@@ -35,7 +35,8 @@ describe.each([
         'reversed',
         '<strong>foo</strong>',
         'fo<strong>o&nbsp;</strong>bar',
-        '<del>fo<strong>o</strong><strong><br/>b</strong>ar</del>',
+        // eslint-disable-next-line max-len
+        '<p><del>fo<strong>o</strong></del></p><p><del><strong>b</strong>ar</del></p>',
         '<strong>fo</strong>o <strong>bar</strong>',
     ],
     [
@@ -44,7 +45,7 @@ describe.each([
         'reversed',
         '<em>foo</em>',
         'fo<em>o&nbsp;</em>bar',
-        '<del>fo<em>o</em><em><br/>b</em>ar</del>',
+        '<p><del>fo<em>o</em></del></p><p><del><em>b</em>ar</del></p>',
         '<em>fo</em>o <em>bar</em>',
     ],
     [
@@ -53,7 +54,7 @@ describe.each([
         'reversed',
         '<u>foo</u>',
         'fo<u>o&nbsp;</u>bar',
-        '<del>fo<u>o</u><u><br/>b</u>ar</del>',
+        '<p><del>fo<u>o</u></del></p><p><del><u>b</u>ar</del></p>',
         '<u>fo</u>o <u>bar</u>',
     ],
     [
@@ -62,7 +63,7 @@ describe.each([
         'reversed',
         '<del>foo</del>',
         'fo<del>o&nbsp;</del>bar',
-        '<del>fo</del>o<br/>b<del>ar</del>',
+        '<p><del>fo</del>o</p><p>b<del>ar</del></p>',
         '<del>fo</del>o <del>bar</del>',
     ],
 ])(

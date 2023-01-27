@@ -4,10 +4,12 @@ import android.content.Context
 import android.util.AttributeSet
 import androidx.core.content.res.getDimensionPixelSizeOrThrow
 import androidx.core.content.res.getDrawableOrThrow
+import io.element.android.wysiwyg.utils.CodeBlockStyleConfig
 import io.element.android.wysiwyg.utils.InlineCodeStyleConfig
 
 internal class EditorStyledTextViewAttributeReader(context: Context, attrs: AttributeSet?) {
     internal val inlineCodeStyleConfig: InlineCodeStyleConfig
+    internal val codeBlockStyleConfig: CodeBlockStyleConfig
 
     init {
         val typedArray = context.theme.obtainStyledAttributes(
@@ -23,6 +25,11 @@ internal class EditorStyledTextViewAttributeReader(context: Context, attrs: Attr
             multiLineBgLeft = typedArray.getDrawableOrThrow(R.styleable.EditorStyledTextView_inlineCodeMultiLineBgLeft),
             multiLineBgMid = typedArray.getDrawableOrThrow(R.styleable.EditorStyledTextView_inlineCodeMultiLineBgMid),
             multiLineBgRight = typedArray.getDrawableOrThrow(R.styleable.EditorStyledTextView_inlineCodeMultiLineBgRight),
+        )
+        codeBlockStyleConfig = CodeBlockStyleConfig(
+            leadingMargin = typedArray.getDimensionPixelSizeOrThrow(R.styleable.EditorStyledTextView_codeBlockLeadingMargin),
+            verticalPadding = typedArray.getDimensionPixelSizeOrThrow(R.styleable.EditorStyledTextView_codeBlockVerticalPadding),
+            backgroundDrawable = typedArray.getDrawableOrThrow(R.styleable.EditorStyledTextView_codeBlockBackgroundDrawable),
         )
         typedArray.recycle()
     }

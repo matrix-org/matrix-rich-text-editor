@@ -20,6 +20,8 @@ import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.text.Layout
 import android.text.Spanned
+import android.text.style.LeadingMarginSpan
+import androidx.core.text.getSpans
 import io.element.android.wysiwyg.spans.BlockSpan
 
 /**
@@ -43,8 +45,8 @@ import io.element.android.wysiwyg.spans.BlockSpan
  * @param drawableMid the drawable used to draw for whole line
  * @param drawableRight the drawable used to draw right edge of the background
  */
-class SpanBackgroundHelper<T>(
-    private val spanType: Class<T>,
+class SpanBackgroundHelper(
+    private val spanType: Class<*>,
     val horizontalPadding: Int,
     val verticalPadding: Int,
     drawable: Drawable? = null,
@@ -89,7 +91,7 @@ class SpanBackgroundHelper<T>(
      */
     fun draw(canvas: Canvas, text: Spanned, layout: Layout) {
         val spanPositions = getSpanPositions(text)
-        val drawPositions = getOrCalculateDrawPositions(layout, spanPositions)
+        val drawPositions = getOrCalculateDrawPositions(text, layout, spanPositions)
 
         drawPositions.forEach {
             val renderer = if (BlockSpan::class.java.isAssignableFrom(spanType)) {
@@ -97,19 +99,34 @@ class SpanBackgroundHelper<T>(
             } else {
                 if (it.startLine == it.endLine) singleLineRenderer else multiLineRenderer
             }
-            renderer.draw(canvas, layout, it.startLine, it.endLine, it.startOffset, it.endOffset)
+            renderer.draw(
+                canvas,
+                layout,
+                it.startLine,
+                it.endLine,
+                it.startOffset,
+                it.endOffset,
+                it.leadingMargin,
+                text,
+                spanType
+            )
         }
+    }
+
+    fun clearCachedPositions() {
+        cache.clear()
     }
 
     private fun getSpanPositions(text: Spanned): Set<SpanPosition> {
         val spans = text.getSpans(0, text.length, spanType)
-        return spans.map { SpanPosition(text.getSpanStart(it), text.getSpanEnd(it)) }.toSet()
+        return spans.map { SpanPosition(text.getSpanStart(it), text.getSpanEnd(it), spanType) }.toSet()
     }
 
     /**
      * Calculate the positions at which to draw backgrounds if they are not already cached
      */
     private fun getOrCalculateDrawPositions(
+        text: Spanned,
         layout: Layout,
         spanPositions: Set<SpanPosition>
     ): Collection<DrawPosition> {
@@ -118,13 +135,17 @@ class SpanBackgroundHelper<T>(
 
         // Calculate draw positions for any new keys
         spanPositions.forEach { spanPosition ->
-            cache.getOrPut(spanPosition) { calculateDrawPosition(layout, spanPosition) }
+            cache.getOrPut(spanPosition) { calculateDrawPosition(text, layout, spanPosition) }
         }
 
         return cache.values
     }
 
-    private fun calculateDrawPosition(layout: Layout, spanPosition: SpanPosition): DrawPosition {
+    private fun calculateDrawPosition(
+        text: Spanned,
+        layout: Layout,
+        spanPosition: SpanPosition
+    ): DrawPosition {
         val (spanStart, spanEnd) = spanPosition
         val startLine = layout.getLineForOffset(spanStart)
         val endLine = layout.getLineForOffset(spanEnd)
@@ -136,13 +157,20 @@ class SpanBackgroundHelper<T>(
         val endOffset = (layout.getPrimaryHorizontal(spanEnd)
                 + layout.getParagraphDirection(endLine) * horizontalPadding).toInt()
 
-        return DrawPosition(startLine, endLine, startOffset, endOffset)
+        val startIndex = layout.getOffsetForHorizontal(startLine, 0f)
+        val endIndex = layout.getOffsetForHorizontal(endLine, 0f)
+        val leadingMarginSpans = text.getSpans<LeadingMarginSpan>(startIndex, endIndex)
+            .filter { !spanType.isInstance(it) }
+        val leadingMargin = leadingMarginSpans.sumOf { it.getLeadingMargin(true) }
+
+        return DrawPosition(startLine, endLine, startOffset, endOffset, leadingMargin)
     }
 }
 
 internal data class SpanPosition(
     val spanStart: Int,
     val spanEnd: Int,
+    val spanType: Class<*>,
 )
 
 internal data class DrawPosition(
@@ -150,4 +178,5 @@ internal data class DrawPosition(
     val endLine: Int,
     val startOffset: Int,
     val endOffset: Int,
+    val leadingMargin: Int,
 )

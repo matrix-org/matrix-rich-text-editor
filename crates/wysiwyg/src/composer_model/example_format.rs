@@ -257,7 +257,13 @@ impl ComposerModel<Utf16String> {
         if range.is_empty().not() {
             // we should always have written at least the start of the selection
             // ({ or |) by now.
-            assert!(selection_writer.is_selection_written());
+            assert!(
+                selection_writer.is_selection_written(),
+                "Selection ({},{}) couldn't be written in Dom of length {}.",
+                selection_start,
+                selection_end,
+                doc_length,
+            );
         }
         let mut html = buf.to_string();
         if html.is_empty() {

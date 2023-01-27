@@ -63,8 +63,11 @@ describe('delete content', () => {
 
         // Then
         await waitFor(() => {
-            expect(textbox).toContainHTML('fo<br />bar');
-            expect(textbox).toHaveAttribute('data-content', 'fo<br />bar');
+            expect(textbox).toContainHTML('<p>fo</p><p>bar</p>');
+            expect(textbox).toHaveAttribute(
+                'data-content',
+                '<p>fo</p><p>bar</p>',
+            );
         });
     });
 
@@ -77,8 +80,8 @@ describe('delete content', () => {
 
         // Then
         await waitFor(() => {
-            expect(textbox).toContainHTML('foar');
-            expect(textbox).toHaveAttribute('data-content', 'foar');
+            expect(textbox).toContainHTML('<p>foar</p>');
+            expect(textbox).toHaveAttribute('data-content', '<p>foar</p>');
         });
     });
 

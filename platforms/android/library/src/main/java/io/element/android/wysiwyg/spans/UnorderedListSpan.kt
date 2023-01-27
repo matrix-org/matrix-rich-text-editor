@@ -15,7 +15,7 @@ class UnorderedListSpan(
     @Px
     @IntRange(from = 0)
     private val bulletRadius: Int,
-) : LeadingMarginSpan {
+) : LeadingMarginSpan, BlockSpan {
     override fun getLeadingMargin(first: Boolean): Int {
         return 2 * bulletRadius + gapWidth
     }

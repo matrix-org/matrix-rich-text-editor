@@ -19,6 +19,7 @@ package io.element.android.wysiwyg.inlinebg;
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.text.Layout
+import android.text.Spanned
 import io.element.android.wysiwyg.utils.getLineBottomWithoutPadding
 import io.element.android.wysiwyg.utils.getLineTopWithoutPadding
 import kotlin.math.max
@@ -51,7 +52,10 @@ internal abstract class SpanBackgroundRenderer(
         startLine: Int,
         endLine: Int,
         startOffset: Int,
-        endOffset: Int
+        endOffset: Int,
+        leadingMargin: Int,
+        text: Spanned,
+        spanType: Class<*>,
     )
 
     /**
@@ -96,7 +100,10 @@ internal class SingleLineRenderer(
         startLine: Int,
         endLine: Int,
         startOffset: Int,
-        endOffset: Int
+        endOffset: Int,
+        leadingMargin: Int,
+        text: Spanned,
+        spanType: Class<*>,
     ) {
         val lineTop = getLineTop(layout, startLine)
         val lineBottom = getLineBottom(layout, startLine)
@@ -133,7 +140,10 @@ internal class MultiLineRenderer(
         startLine: Int,
         endLine: Int,
         startOffset: Int,
-        endOffset: Int
+        endOffset: Int,
+        leadingMargin: Int,
+        text: Spanned,
+        spanType: Class<*>,
     ) {
         // draw the first line
         val paragDir = layout.getParagraphDirection(startLine)
