@@ -25,14 +25,21 @@ extension NSMutableAttributedString {
     func applyBackgroundStyles(style: HTMLParserStyle) {
         enumerateTypedAttribute(.DTTextBlocks) { (value: NSArray, range: NSRange, _) in
             guard let textBlock = value.firstObject as? DTTextBlock else { return }
-
             switch textBlock.backgroundColor {
             case TempColor.codeBlock:
                 addAttribute(.backgroundStyle, value: style.codeBlockBackgroundStyle, range: range)
-                addAttribute(.paragraphStyle, value: NSParagraphStyle.default, range: range)
+                guard let paragraphStyle = NSMutableParagraphStyle.default.mutableCopy() as? NSMutableParagraphStyle else { return }
+                paragraphStyle.firstLineHeadIndent = 10
+                paragraphStyle.headIndent = 10
+                paragraphStyle.tailIndent = -10
+                addAttribute(.paragraphStyle, value: paragraphStyle, range: range)
             case TempColor.quote:
                 addAttribute(.backgroundStyle, value: style.quoteBackgroundStyle, range: range)
-                addAttribute(.paragraphStyle, value: NSParagraphStyle.default, range: range)
+                guard let paragraphStyle = NSMutableParagraphStyle.default.mutableCopy() as? NSMutableParagraphStyle else { return }
+                paragraphStyle.firstLineHeadIndent = 10
+                paragraphStyle.headIndent = 10
+                paragraphStyle.tailIndent = -10
+                addAttribute(.paragraphStyle, value: paragraphStyle, range: range)
             default:
                 break
             }
