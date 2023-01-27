@@ -220,12 +220,12 @@ internal class HtmlToSpansParser(
                 val last = getLastPending<PlaceholderSpan.CodeBlock>() ?: return
                 val start = last.start
 
-                val lastNewLine = max(text.lastIndexOf('\n') + 1, start);
-                handleNbspInBlock(lastNewLine)
-
-                if (text.lastOrNull() == '\n') {
-                    // Extra char to properly render empty new lines in code blocks
-                    handleNbspInBlock(text.length)
+                handleNbspInBlock(start)
+                for (i in start+1 until text.length) {
+                    if (text[i] == NBSP) {
+                        // Extra char to properly render empty new lines in code blocks
+                        handleNbspInBlock(i)
+                    }
                 }
 
                 val codeSpan = CodeBlockSpan(styleConfig.codeBlock.leadingMargin, styleConfig.codeBlock.verticalPadding)
@@ -346,9 +346,9 @@ internal class HtmlToSpansParser(
             // If there was no NBSP char, add a new one as an extra character
             text.append(NBSP)
             addPendingSpan(ExtraCharacterSpan(), pos, pos + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-        } else if (text.length - pos == 1 && text.last() == NBSP) {
+        } else if (text.length > pos && text[pos] == NBSP) {
             // If there was one, set it as an extra character
-            addPendingSpan(ExtraCharacterSpan(), pos, text.length, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            addPendingSpan(ExtraCharacterSpan(), pos, pos+1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
         }
     }
 
