@@ -16,6 +16,7 @@ internal fun createFakeStyleConfig() = StyleConfig(
     inlineCode = InlineCodeStyleConfig(
         horizontalPadding = 2,
         verticalPadding = 2,
+        relativeTextSize = 1f,
         singleLineBg = fakeDrawable,
         multiLineBgLeft = fakeDrawable,
         multiLineBgMid = fakeDrawable,
@@ -24,6 +25,7 @@ internal fun createFakeStyleConfig() = StyleConfig(
     codeBlock = CodeBlockStyleConfig(
         leadingMargin = 0,
         verticalPadding = 0,
+        relativeTextSize = 1f,
         backgroundDrawable = fakeDrawable,
     )
 )
