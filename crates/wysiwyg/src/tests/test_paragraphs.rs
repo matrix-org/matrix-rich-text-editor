@@ -432,7 +432,7 @@ fn pressing_enter_at_the_start_of_a_multiline_block_quote() {
 
 #[test]
 fn pressing_enter_in_the_middle_of_a_multiline_code_block() {
-    let mut model = cm("<pre>\n\n|line_1\nline_2</pre>");
+    let mut model = cm("<pre>&nbsp;\n|line_1\nline_2</pre>");
     model.enter();
     assert_eq!(tx(&model), "<pre>&nbsp;\n\n|line_1\nline_2</pre>")
 }
