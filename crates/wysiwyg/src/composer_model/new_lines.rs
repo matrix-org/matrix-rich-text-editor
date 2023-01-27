@@ -253,9 +253,7 @@ where
             } else if block_node_is_paragraph && cur_block_node_was_removed {
                 let new_paragraph = DomNode::new_paragraph(Vec::new());
                 self.state.dom.insert_at(&block_node_handle, new_paragraph);
-            } else if paragraph_location.node_handle.index_in_parent() == 0
-                && paragraph_location.start_offset == 0
-            {
+            } else if paragraph_location.start_offset == 0 {
                 // Special case when we need to insert a new paragraph at the start of the parent
                 // block handle
                 self.state.dom.insert_at(
