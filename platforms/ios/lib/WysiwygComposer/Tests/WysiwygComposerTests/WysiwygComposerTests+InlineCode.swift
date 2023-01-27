@@ -19,39 +19,36 @@ import XCTest
 
 extension WysiwygComposerTests {
     func testInlineCode() {
-        let composer = newComposerModel()
-        _ = composer.inlineCode()
-        _ = composer.replaceText(newText: "code")
-        XCTAssertEqual(
-            composer.toTree(),
-            """
+        newComposerModel()
+            .action { $0.inlineCode() }
+            .action { $0.replaceText(newText: "code") }
+            .assertTree(
+                """
 
-            └>code
-              └>\"code\"
+                └>code
+                  └>\"code\"
 
-            """
-        )
+                """
+            )
     }
 
     func testInlineCodeWithFormatting() {
-        let composer = newComposerModel()
-        _ = composer.bold()
-        _ = composer.replaceText(newText: "bold")
-        // This should get ignored
-        _ = composer.italic()
-        _ = composer.inlineCode()
-        _ = composer.replaceText(newText: "code")
-        print(composer.toTree())
-        XCTAssertEqual(
-            composer.toTree(),
-            """
+        newComposerModel()
+            .action { $0.bold() }
+            .action { $0.replaceText(newText: "bold") }
+            // This should get ignored
+            .action { $0.italic() }
+            .action { $0.inlineCode() }
+            .action { $0.replaceText(newText: "code") }
+            .assertTree(
+                """
 
-            ├>strong
-            │ └>"bold"
-            └>code
-              └>"code"
+                ├>strong
+                │ └>"bold"
+                └>code
+                  └>"code"
 
-            """
-        )
+                """
+            )
     }
 }
