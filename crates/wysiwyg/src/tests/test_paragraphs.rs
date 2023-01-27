@@ -435,7 +435,7 @@ fn pressing_enter_in_the_middle_of_a_multiline_code_block_with_empty_starting_pa
 ) {
     let mut model = cm("<pre>|line_1\nline_2</pre>");
     model.enter();
-    assert_eq!(tx(&model), "<pre>&nbsp;\n\n|line_1\nline_2</pre>")
+    assert_eq!(tx(&model), "<pre>&nbsp;\n|line_1\nline_2</pre>")
 }
 
 #[test]
