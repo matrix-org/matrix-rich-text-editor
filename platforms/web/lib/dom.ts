@@ -449,7 +449,7 @@ export function textNodeNeedsExtraOffset(node: Node | null) {
     if (node === null) return false;
 
     let checkNode: Node | ParentNode | null = node;
-    const hasFormattingParent = isFormattingNode(checkNode.parentNode);
+    const hasFormattingParent = isInlineNode(checkNode.parentNode);
 
     // If the parent is _not_ a formatting node, then we have a case where the
     // text node we are looking at is in a container, so we simply need to check
@@ -480,12 +480,12 @@ export function textNodeNeedsExtraOffset(node: Node | null) {
     return false;
 }
 
-const FORMATTING_NODE_NAMES = ['EM', 'U', 'STRONG', 'DEL', 'CODE', 'A'];
+const INLINE_NODE_NAMES = ['EM', 'U', 'STRONG', 'DEL', 'CODE', 'A'];
 const EXTRA_OFFSET_NODE_NAMES = ['LI', 'PRE', 'BLOCKQUOTE', 'P'];
 
-function isFormattingNode(node: Node | ParentNode | null) {
+function isInlineNode(node: Node | ParentNode | null) {
     if (node === null) return false;
-    return FORMATTING_NODE_NAMES.includes(node.nodeName || '');
+    return INLINE_NODE_NAMES.includes(node.nodeName || '');
 }
 
 function isNodeRequiringExtraOffset(node: Node) {
@@ -494,7 +494,7 @@ function isNodeRequiringExtraOffset(node: Node) {
 
 function isEmptyFormattingNode(node: Node) {
     return (
-        FORMATTING_NODE_NAMES.includes(node.nodeName) &&
+        INLINE_NODE_NAMES.includes(node.nodeName) &&
         node.textContent?.length === 0
     );
 }
