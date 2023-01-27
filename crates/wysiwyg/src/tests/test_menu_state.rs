@@ -191,9 +191,13 @@ fn formatting_is_disabled_when_selection_covers_inline_code_node_and_others() {
 
 #[test]
 fn selecting_indented_list_only_marks_the_deepest_list_type_as_reversed() {
-    let model = cm("<ol><li><p>Item 1</p><ul><li>Item 1|A</li></ul></li></ol>");
+    let mut model = cm("<ol><li><p>Item 1</p><ul><li><p>Item 1|A</p><ol><li>Item1A1</li></ol></li></ul></li></ol>");
     assert!(!model.action_is_reversed(ComposerAction::OrderedList));
     assert!(model.action_is_reversed(ComposerAction::UnorderedList));
+    // Select inside deeper ordered list.
+    model.select(Location::from(15), Location::from(15));
+    assert!(!model.action_is_reversed(ComposerAction::UnorderedList));
+    assert!(model.action_is_reversed(ComposerAction::OrderedList));
 }
 
 #[test]
