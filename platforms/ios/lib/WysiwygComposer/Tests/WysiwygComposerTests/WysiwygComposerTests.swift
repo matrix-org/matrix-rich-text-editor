@@ -21,7 +21,7 @@ final class WysiwygComposerTests: XCTestCase {
     func testComposerEmptyState() {
         newComposerModel()
             .assertHtml("")
-            .assert { XCTAssertEqual($0.getContentAsMarkdown(), "") }
+            .execute { XCTAssertEqual($0.getContentAsMarkdown(), "") }
             .assertSelection(start: 0, end: 0)
     }
 }

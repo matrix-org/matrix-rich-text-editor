@@ -29,14 +29,14 @@ extension ComposerModel {
         return self
     }
 
-    /// Execute given assertion (or any other code) on self.
+    /// Execute given code on self.
     ///
     /// - Parameters:
-    ///   - assertion: assertion/code to execute
+    ///   - block: code to execute
     /// - Returns: self (discardable)
     @discardableResult
-    func assert(_ assertion: @escaping (ComposerModel) -> Void) -> ComposerModel {
-        assertion(self)
+    func execute(_ block: @escaping (ComposerModel) -> Void) -> ComposerModel {
+        block(self)
         return self
     }
 

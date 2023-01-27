@@ -35,12 +35,12 @@ extension WysiwygComposerTests {
             // Select somewhere on item 2
             .action { $0.select(startUtf16Codeunit: 9, endUtf16Codeunit: 9) }
             .action { $0.indent() }
-            .assert { XCTAssertTrue($0.actionStates()[.indent] == .disabled) }
+            .execute { XCTAssertTrue($0.actionStates()[.indent] == .disabled) }
             // Select somewhere on item 3
             .action { $0.select(startUtf16Codeunit: 18, endUtf16Codeunit: 18) }
             .action { $0.indent() }
             .action { $0.indent() }
-            .assert { XCTAssertTrue($0.actionStates()[.indent] == .disabled) }
+            .execute { XCTAssertTrue($0.actionStates()[.indent] == .disabled) }
             .assertHtml(Constants.indentedSampleListHtml)
     }
 
@@ -51,11 +51,11 @@ extension WysiwygComposerTests {
             .action { $0.select(startUtf16Codeunit: 18, endUtf16Codeunit: 18) }
             .action { $0.unIndent() }
             .action { $0.unIndent() }
-            .assert { XCTAssertTrue($0.actionStates()[.unIndent] == .disabled) }
+            .execute { XCTAssertTrue($0.actionStates()[.unIndent] == .disabled) }
             // Select somewhere on item 2
             .action { $0.select(startUtf16Codeunit: 9, endUtf16Codeunit: 9) }
             .action { $0.unIndent() }
-            .assert { XCTAssertTrue($0.actionStates()[.unIndent] == .disabled) }
+            .execute { XCTAssertTrue($0.actionStates()[.unIndent] == .disabled) }
             .assertHtml(Constants.sampleListHtml)
     }
 }

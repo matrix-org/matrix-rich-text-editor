@@ -27,7 +27,7 @@ extension WysiwygComposerTests {
             .assertHtml("This is <strong>bold</strong> text")
             // Selection is kept after format.
             .assertSelection(start: 8, end: 12)
-            .assert {
+            .execute {
                 // Constructed attributed string sets bold on the selected range.
                 guard let attributed = try? HTMLParser.parse(html: $0.getContentAsHtml()) else {
                     XCTFail("Parsing unexpectedly failed")
