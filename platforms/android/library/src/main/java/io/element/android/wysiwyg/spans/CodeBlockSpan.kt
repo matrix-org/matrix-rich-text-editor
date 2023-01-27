@@ -5,15 +5,9 @@ import android.graphics.Paint
 import android.text.Layout
 import android.text.Spanned
 import android.text.TextPaint
-import android.text.style.LeadingMarginSpan
-import android.text.style.LineBackgroundSpan
-import android.text.style.LineHeightSpan
-import android.text.style.MetricAffectingSpan
-import android.text.style.TypefaceSpan
-import android.text.style.UpdateAppearance
-import androidx.annotation.ColorInt
+import android.text.style.*
+import androidx.annotation.FloatRange
 import androidx.annotation.Px
-import kotlin.math.roundToInt
 
 /**
  * Code block (```some code``` in Markdown, <pre> in HTML) Span that applies a monospaced font style
@@ -22,15 +16,20 @@ import kotlin.math.roundToInt
 class CodeBlockSpan(
     @Px private val leadingMargin: Int,
     @Px private val verticalPadding: Int,
+    @FloatRange(from = 0.0) relativeSizeProportion: Float =
+        CodeSpanConstants.DEFAULT_RELATIVE_SIZE_PROPORTION,
 ) : MetricAffectingSpan(), BlockSpan, LeadingMarginSpan, LineHeightSpan, UpdateAppearance {
 
     private val monoTypefaceSpan = TypefaceSpan("monospace")
+    private val relativeSizeSpan = RelativeSizeSpan(relativeSizeProportion)
 
     override fun updateDrawState(tp: TextPaint) {
+        relativeSizeSpan.updateDrawState(tp)
         monoTypefaceSpan.updateDrawState(tp)
     }
 
     override fun updateMeasureState(textPaint: TextPaint) {
+        relativeSizeSpan.updateMeasureState(textPaint)
         monoTypefaceSpan.updateMeasureState(textPaint)
     }
 

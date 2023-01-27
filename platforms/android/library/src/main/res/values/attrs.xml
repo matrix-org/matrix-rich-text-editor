@@ -5,12 +5,14 @@
     <attr name="codeBlockLeadingMargin" format="dimension" />
     <attr name="codeBlockVerticalPadding" format="dimension" />
     <attr name="codeBlockBackgroundDrawable" format="reference" />
+    <attr name="codeBlockRelativeTextSize" format="float" />
     <attr name="inlineCodeHorizontalPadding" format="dimension" />
     <attr name="inlineCodeVerticalPadding" format="dimension" />
     <attr name="inlineCodeSingleLineBg" format="reference" />
     <attr name="inlineCodeMultiLineBgLeft" format="reference" />
     <attr name="inlineCodeMultiLineBgMid" format="reference" />
     <attr name="inlineCodeMultiLineBgRight" format="reference" />
+    <attr name="inlineCodeRelativeTextSize" format="float" />
 
     <declare-styleable name="EditorEditText">
         <attr name="bulletGap" />
@@ -18,12 +20,14 @@
         <attr name="codeBlockLeadingMargin" />
         <attr name="codeBlockVerticalPadding" />
         <attr name="codeBlockBackgroundDrawable" />
+        <attr name="codeBlockRelativeTextSize" />
         <attr name="inlineCodeHorizontalPadding" />
         <attr name="inlineCodeVerticalPadding" />
         <attr name="inlineCodeSingleLineBg" />
         <attr name="inlineCodeMultiLineBgLeft" />
         <attr name="inlineCodeMultiLineBgMid" />
         <attr name="inlineCodeMultiLineBgRight" />
+        <attr name="inlineCodeRelativeTextSize" />
     </declare-styleable>
 
     <declare-styleable name="EditorStyledTextView">
@@ -33,5 +37,6 @@
         <attr name="inlineCodeMultiLineBgLeft" />
         <attr name="inlineCodeMultiLineBgMid" />
         <attr name="inlineCodeMultiLineBgRight" />
+        <attr name="inlineCodeRelativeTextSize" />
     </declare-styleable>
 </resources>

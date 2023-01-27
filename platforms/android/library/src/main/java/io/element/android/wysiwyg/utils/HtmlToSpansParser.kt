@@ -164,7 +164,11 @@ internal class HtmlToSpansParser(
                 val start = addLeadingLineBreakIfNeeded(text.getSpanStart(last))
                 text.removeSpan(last)
 
-                val codeSpan = CodeBlockSpan(styleConfig.codeBlock.leadingMargin, styleConfig.codeBlock.verticalPadding)
+                val codeSpan = CodeBlockSpan(
+                    leadingMargin = styleConfig.codeBlock.leadingMargin,
+                    verticalPadding = styleConfig.codeBlock.verticalPadding,
+                    relativeSizeProportion = styleConfig.codeBlock.relativeTextSize,
+                )
 
                 addZWSP(text.length)
 
@@ -215,7 +219,9 @@ internal class HtmlToSpansParser(
             InlineFormat.Italic -> StyleSpan(Typeface.ITALIC)
             InlineFormat.Underline -> UnderlineSpan()
             InlineFormat.StrikeThrough -> StrikethroughSpan()
-            InlineFormat.InlineCode -> InlineCodeSpan()
+            InlineFormat.InlineCode -> InlineCodeSpan(
+                relativeSizeProportion = styleConfig.inlineCode.relativeTextSize
+            )
         }
         setSpanFromMark(format, span)
     }
