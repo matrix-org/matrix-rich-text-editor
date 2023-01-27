@@ -190,6 +190,32 @@ fn formatting_is_disabled_when_selection_covers_inline_code_node_and_others() {
 }
 
 #[test]
+fn selecting_indented_list_only_marks_the_deepest_list_type_as_reversed() {
+    let mut model = cm("<ol><li><p>Item 1</p><ul><li><p>Item 1|A</p><ol><li>Item1A1</li></ol></li></ul></li></ol>");
+    assert!(!model.action_is_reversed(ComposerAction::OrderedList));
+    assert!(model.action_is_reversed(ComposerAction::UnorderedList));
+    // Select inside deeper ordered list.
+    model.select(Location::from(15), Location::from(15));
+    assert!(!model.action_is_reversed(ComposerAction::UnorderedList));
+    assert!(model.action_is_reversed(ComposerAction::OrderedList));
+}
+
+#[test]
+fn selecting_cross_unmatching_indented_list_exclude_both_list_types() {
+    let model =
+        cm("<ol><li><p>It{em 1</p><ul><li>Item 1}|A</li></ul></li></ol>");
+    assert!(!model.action_is_reversed(ComposerAction::OrderedList));
+    assert!(!model.action_is_reversed(ComposerAction::UnorderedList));
+}
+
+#[test]
+fn selecting_cross_matching_indented_list_include_list_type() {
+    let model =
+        cm("<ol><li><p>It{em 1</p><ol><li>Item 1}|A</li></ol></li></ol>");
+    assert!(model.action_is_reversed(ComposerAction::OrderedList));
+}
+
+#[test]
 fn clicking_code_block_disables_expected_formatting_functions() {
     let mut model = cm("|");
     model.code_block();
