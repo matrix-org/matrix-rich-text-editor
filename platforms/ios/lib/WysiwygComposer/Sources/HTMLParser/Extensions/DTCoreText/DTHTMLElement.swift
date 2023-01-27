@@ -46,41 +46,22 @@ extension DTHTMLElement {
            let child = childNodes.first as? DTTextHTMLElement,
            var text = child.text(),
            text != .nbsp {
-            var leadingDiscardableElement: DiscardableTextHTMLElement?
-            var trailingDiscardableElement: DiscardableTextHTMLElement?
-            var shouldReplaceNodes = false
-
-            if text.hasPrefix("\(Character.nbsp)") {
-                shouldReplaceNodes = true
+            let hasLeadingNbsp = text.hasPrefix("\(Character.nbsp)")
+            let hasTrailingNbsp = text.hasSuffix("\(Character.nbsp)")
+            guard hasLeadingNbsp || hasTrailingNbsp else { return }
+            removeAllChildNodes()
+            if hasLeadingNbsp {
                 text.removeFirst()
-                leadingDiscardableElement = createDiscardableElement()
+                addChildNode(createDiscardableElement())
+                addChildNode(createLineBreak())
             }
-            
-            if text.hasSuffix("\(Character.nbsp)") {
-                shouldReplaceNodes = true
+            addChildNode(child)
+            if hasTrailingNbsp {
                 text.removeLast()
-                trailingDiscardableElement = createDiscardableElement()
+                addChildNode(createLineBreak())
+                addChildNode(createDiscardableElement())
             }
-
-            if shouldReplaceNodes {
-                removeAllChildNodes()
-
-                if let leadingDiscardableElement = leadingDiscardableElement {
-                    addChildNode(leadingDiscardableElement)
-                    addChildNode(createLineBreak())
-                }
-
-                let newTextNode = DTTextHTMLElement()
-                newTextNode.inheritAttributes(from: self)
-                newTextNode.interpretAttributes()
-                newTextNode.setText(text)
-                addChildNode(newTextNode)
-
-                if let trailingDiscardableElement = trailingDiscardableElement {
-                    addChildNode(createLineBreak())
-                    addChildNode(trailingDiscardableElement)
-                }
-            }
+            child.setText(text)
         } else {
             for childNode in childNodes {
                 childNode.clearTrailingAndLeadingNewlinesInCodeblocks()

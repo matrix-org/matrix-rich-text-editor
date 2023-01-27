@@ -112,10 +112,8 @@ extension NSAttributedString {
         let discardableTextRanges = discardableTextRanges()
         var actualIndex = attributedIndex
 
-        for discardableTextRange in discardableTextRanges {
-            if discardableTextRange.upperBound <= attributedIndex {
-                actualIndex -= discardableTextRange.length
-            }
+        for discardableTextRange in discardableTextRanges where discardableTextRange.upperBound <= attributedIndex {
+            actualIndex -= discardableTextRange.length
         }
 
         let prefixes = listPrefixesRanges()
@@ -142,10 +140,8 @@ extension NSAttributedString {
         let discardableTextRanges = discardableTextRanges()
         var actualIndex = htmlIndex
 
-        for discardableTextRange in discardableTextRanges {
-            if discardableTextRange.location < actualIndex {
-                actualIndex += discardableTextRange.length
-            }
+        for discardableTextRange in discardableTextRanges where discardableTextRange.location < actualIndex {
+            actualIndex += discardableTextRange.length
         }
 
         let prefixes = listPrefixesRanges()
