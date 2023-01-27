@@ -85,4 +85,8 @@ internal sealed interface EditorInputAction {
      * Creates a list, [ordered] if true or unordered in the current selection.
      */
     data class ToggleList(val ordered: Boolean): EditorInputAction
+
+    object Indent: EditorInputAction
+
+    object UnIndent: EditorInputAction
 }

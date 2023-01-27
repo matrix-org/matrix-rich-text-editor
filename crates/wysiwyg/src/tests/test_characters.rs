@@ -185,39 +185,31 @@ fn replacing_within_a_list_replaces_characters() {
 
 #[test]
 fn replacing_across_list_items_deletes_intervening_ones() {
-    let mut model = cm("<ol>
-            <li>1{1</li>
-            <li>22</li>
-            <li>3}|3</li>
-            <li>44</li>
+    let mut model = cm("<ol>\
+            <li>1{1</li>\
+            <li>22</li>\
+            <li>3}|3</li>\
+            <li>44</li>\
         </ol>");
     replace_text(&mut model, "Z");
     assert_eq!(
         restore_whitespace(&tx(&model)),
-        "<ol>
-            <li>1Z|3</li>
-            <li>44</li>
-        </ol>"
+        "<ol><li>1Z|3</li><li>44</li></ol>"
     );
 }
 
 #[test]
 fn replacing_across_lists_joins_them() {
-    let mut model = cm("<ol>
-            <li>1{1</li>
-            <li>22</li>
-        </ol>
-        <ol>
-            <li>33</li>
-            <li>4}|4</li>
+    let mut model = cm("<ol>\
+            <li>1{1</li>\
+            <li>22</li>\
+        </ol>\
+        <ol>\
+            <li>33</li>\
+            <li>4}|4</li>\
         </ol>");
     replace_text(&mut model, "Z");
-    assert_eq!(
-        restore_whitespace(&tx(&model)),
-        "<ol>
-            <li>1Z|4</li>
-        </ol>"
-    );
+    assert_eq!(restore_whitespace(&tx(&model)), "<ol><li>1Z|4</li></ol>");
 }
 
 #[test]
@@ -277,31 +269,32 @@ fn typing_html_does_not_break_anything() {
 fn newline_characters_insert_br_tags() {
     let mut model = cm("|");
     replace_text(&mut model, "abc\ndef\nghi");
-    assert_eq!(tx(&model), "abc<br />def<br />ghi|");
+    assert_eq!(tx(&model), "<p>abc</p><p>def</p><p>ghi|</p>");
 }
 
 #[test]
 fn leading_and_trailing_newline_characters_insert_br_tags() {
     let mut model = cm("|");
     replace_text(&mut model, "\nabc");
-    assert_eq!(tx(&model), "<br />abc|");
+    assert_eq!(tx(&model), "<p>&nbsp;</p><p>abc|</p>");
 
     let mut model = cm("|");
     replace_text(&mut model, "abc\n");
-    assert_eq!(tx(&model), "abc<br />|");
+    assert_eq!(tx(&model), "<p>abc</p><p>&nbsp;|</p>");
 
     let mut model = cm("|");
     replace_text(&mut model, "\nabc\n");
-    assert_eq!(tx(&model), "<br />abc<br />|");
+    assert_eq!(tx(&model), "<p>&nbsp;</p><p>abc</p><p>&nbsp;|</p>");
 }
 
 #[test]
-fn inserting_a_new_line_and_text_before_a_new_line_works() {
+#[allow(deprecated)]
+fn inserting_a_line_break_and_text_before_a_line_break_works() {
     let mut model = cm("|{AAA}");
-    model.enter();
+    model.add_line_break();
     model.select(Location::from(0), Location::from(0));
     // Inserting a line break at index 0 (no text node before it) can cause issues
-    model.enter();
+    model.add_line_break();
     model.select(Location::from(0), Location::from(0));
     // Inserting text before a line break with no text node before it is a special case too
     model.replace_text("Test".into());

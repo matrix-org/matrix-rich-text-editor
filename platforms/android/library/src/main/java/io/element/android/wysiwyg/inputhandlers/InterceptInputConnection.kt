@@ -107,15 +107,13 @@ internal class InterceptInputConnection(
         val result = processTextEntry(text, start, end)
 
         return if (result != null) {
-            val newText = result.text.subSequence(start, start + (text?.length ?: 0))
+            val newTextLength = text?.length ?: 0
+            val newEnd = min(result.text.length, start + newTextLength)
+            val newText = result.text.subSequence(start, newEnd)
 
             // Calculate the new composition range.
-            // If the composer has inserted a zero width whitespace as a list delimiter,
-            // shift the composition indices so that it is not included.
             val compositionStart = start
-                .let { if (newText.startsWith("\u200b")) it + 1 else it }
-            val compositionEnd = (newText.length + start)
-                .let { if (newText.startsWith("\u200b")) it + 1 else it }
+            val compositionEnd = newEnd
 
             // Here we restore the background color spans from the IME input. This seems to be
             // important for Japanese input.
@@ -200,7 +198,6 @@ internal class InterceptInputConnection(
     internal fun onHardwareBackspaceKey(): Boolean {
         val start = Selection.getSelectionStart(editable)
         val end = Selection.getSelectionEnd(editable)
-        if (start == 0 && end == 0) return false
 
         val toDelete = if (start == end) 1 else abs(start - end)
         // We're going to copy backspace behaviour, the selection must be at the greater value

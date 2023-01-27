@@ -220,6 +220,16 @@ fn code_block_disables_expected_formatting_functions_with_selection() {
     assert!(model.action_is_disabled(ComposerAction::Link));
 }
 
+#[test]
+fn code_block_doesnt_affect_cursor_if_its_outside() {
+    let model = cm("<pre>Some code</pre><p>|And text</p>");
+    assert!(!model.action_is_reversed(ComposerAction::CodeBlock));
+    assert!(model.action_is_enabled(ComposerAction::InlineCode));
+    assert!(model.action_is_enabled(ComposerAction::Quote));
+    assert!(model.action_is_enabled(ComposerAction::UnorderedList));
+    assert!(model.action_is_enabled(ComposerAction::OrderedList));
+}
+
 fn assert_formatting_actions_and_links_are_disabled(
     model: &ComposerModel<Utf16String>,
 ) {

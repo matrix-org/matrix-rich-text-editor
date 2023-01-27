@@ -13,16 +13,11 @@
 // limitations under the License.
 
 pub trait CharExt: Sized {
-    fn is_zwsp(&self) -> bool;
-    fn zwsp() -> Self;
+    fn nbsp() -> Self;
 }
 
 impl CharExt for char {
-    fn is_zwsp(&self) -> bool {
-        self == &char::zwsp()
-    }
-
-    fn zwsp() -> Self {
-        '\u{200B}'
+    fn nbsp() -> Self {
+        '\u{A0}'
     }
 }

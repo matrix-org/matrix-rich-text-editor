@@ -58,18 +58,20 @@ fn backspacing_a_backwards_selection_deletes_it() {
 }
 
 #[test]
-fn backspacing_a_lone_newline_deletes_it() {
+#[allow(deprecated)]
+fn backspacing_a_lone_line_break_deletes_it() {
     let mut model = ComposerModel::new();
-    model.enter();
+    model.add_line_break();
     model.backspace();
     assert_eq!(tx(&model), "|");
     model.state.dom.explicitly_assert_invariants();
 }
 
 #[test]
-fn backspacing_a_newline_deletes_it() {
+#[allow(deprecated)]
+fn backspacing_a_line_break_deletes_it() {
     let mut model = cm("abc|");
-    let update = model.enter();
+    let update = model.add_line_break();
 
     let replace_all = match update.text_update {
         TextUpdate::Keep => panic!("expected ReplaceAll"),
@@ -144,17 +146,17 @@ fn deleting_when_spanning_two_separate_identical_tags_joins_them() {
 
 #[test]
 fn deleting_across_list_items_joins_them() {
-    let mut model = cm("<ol>
-            <li>1{1</li>
-            <li>22</li>
-            <li>33</li>
-            <li>4}|4</li>
+    let mut model = cm("<ol>\
+            <li>1{1</li>\
+            <li>22</li>\
+            <li>33</li>\
+            <li>4}|4</li>\
         </ol>");
     model.delete();
     assert_eq!(
         restore_whitespace(&tx(&model)),
-        "<ol>
-            <li>1|4</li>
+        "<ol>\
+            <li>1|4</li>\
         </ol>"
     );
     model.state.dom.explicitly_assert_invariants();
@@ -162,44 +164,34 @@ fn deleting_across_list_items_joins_them() {
 
 #[test]
 fn deleting_across_lists_joins_them() {
-    let mut model = cm("<ol>
-            <li>1{1</li>
-            <li>22</li>
-        </ol>
-        <ol>
-            <li>33</li>
-            <li>4}|4</li>
+    let mut model = cm("<ol>\
+            <li>1{1</li>\
+            <li>22</li>\
+        </ol>\
+        <ol>\
+            <li>33</li>\
+            <li>4}|4</li>\
         </ol>");
     model.delete();
-    assert_eq!(
-        restore_whitespace(&tx(&model)),
-        "<ol>
-            <li>1|4</li>
-        </ol>"
-    );
+    assert_eq!(restore_whitespace(&tx(&model)), "<ol><li>1|4</li></ol>");
     model.state.dom.explicitly_assert_invariants();
 }
 
 #[test]
 fn deleting_across_lists_joins_them_nested() {
-    let mut model = cm("<ol>
-            <li>1{1</li>
-            <li>22</li>
-            <ol>
-                <li>55</li>
-            </ol>
-        </ol>
-        <ol>
-            <li>33</li>
-            <li>4}|4</li>
+    let mut model = cm("<ol>\
+            <li>1{1</li>\
+            <li>22</li>\
+            <ol>\
+                <li>55</li>\
+            </ol>\
+        </ol>\
+        <ol>\
+            <li>33</li>\
+            <li>4}|4</li>\
         </ol>");
     model.delete();
-    assert_eq!(
-        restore_whitespace(&tx(&model)),
-        "<ol>
-            <li>1|4</li>
-        </ol>"
-    );
+    assert_eq!(restore_whitespace(&tx(&model)), "<ol><li>1|4</li></ol>");
     model.state.dom.explicitly_assert_invariants();
 }
 
@@ -229,7 +221,7 @@ fn deleting_in_nested_structure_and_format_nodes_works() {
 
 #[test]
 fn deleting_empty_list_item() {
-    let mut model = cm("<ul><li>A{</li><li>~}|</li></ul>");
+    let mut model = cm("<ul><li>A{</li><li>}|</li></ul>");
     model.backspace();
     assert_eq!(tx(&model), "<ul><li>A|</li></ul>");
     model.state.dom.explicitly_assert_invariants();
@@ -777,83 +769,94 @@ fn html_delete_word_out_of_deep_nesting() {
 
 #[test]
 fn html_backspace_word_inside_single_list_item() {
-    let mut model = cm("<ol><li>~remove     |</li></ol>");
+    let mut model =
+        cm("<ol><li>remove\u{00A0}\u{00A0}\u{00A0}\u{00A0}\u{00A0}|</li></ol>");
     model.backspace_word();
-    assert_eq!(restore_whitespace(&tx(&model)), "<ol><li>~|</li></ol>");
+    assert_eq!(restore_whitespace(&tx(&model)), "<ol><li>|</li></ol>");
 }
 #[test]
 fn html_delete_word_inside_single_list_item() {
-    let mut model = cm("<ol><li>~|    remove</li></ol>");
+    let mut model = cm("<ol><li>|    remove</li></ol>");
     model.delete_word();
-    assert_eq!(restore_whitespace(&tx(&model)), "<ol><li>~|</li></ol>");
+    assert_eq!(restore_whitespace(&tx(&model)), "<ol><li>|</li></ol>");
 }
 
 #[test]
 fn html_backspace_word_does_not_move_outside_list_item() {
-    let mut model = cm("<ol><li>~1</li><li>~12|</li><li>~123</li></ol>");
+    let mut model = cm("<ol><li>1</li><li>12|</li><li>123</li></ol>");
     model.backspace_word();
     assert_eq!(
         restore_whitespace(&tx(&model)),
-        "<ol><li>~1</li><li>~|</li><li>~123</li></ol>"
+        "<ol><li>1</li><li>|</li><li>123</li></ol>"
     );
 }
 #[test]
 fn html_delete_word_does_not_move_outside_list_item() {
-    let mut model = cm("<ol><li>~1</li><li>~|12</li><li>~123</li></ol>");
+    let mut model = cm("<ol><li>1</li><li>|12</li><li>123</li></ol>");
     model.delete_word();
     assert_eq!(
         restore_whitespace(&tx(&model)),
-        "<ol><li>~1</li><li>~|</li><li>~123</li></ol>"
+        "<ol><li>1</li><li>|</li><li>123</li></ol>"
     );
+}
+
+#[test]
+fn backspace_between_block_nodes() {
+    let mut model = cm("<p>First</p><p>|Second</p>");
+    model.backspace();
+    assert_eq!(tx(&model), "<p>First|Second</p>");
+}
+
+#[test]
+fn backspace_between_nested_block_nodes() {
+    let mut model = cm("<p>First</p><blockquote><p>|Second</p></blockquote>");
+    model.backspace();
+    assert_eq!(tx(&model), "<p>First|Second</p>");
 }
 
 #[test]
 // TODO: remove these tests when implementing list behaviour
 fn html_backspace_word_does_not_change_model() {
-    let mut model = cm("<ol><li>~|</li></ol>");
+    let mut model = cm("<ol><li>|</li></ol>");
     model.backspace_word();
-    assert_eq!(restore_whitespace(&tx(&model)), "<ol><li>~|</li></ol>");
+    assert_eq!(restore_whitespace(&tx(&model)), "<ol><li>|</li></ol>");
 }
 #[test]
 // TODO: remove these tests when implementing list behaviour
 fn html_delete_word_does_not_change_model() {
-    let mut model = cm("<ol><li>~|</li></ol>");
+    let mut model = cm("<ol><li>|</li></ol>");
     model.delete_word();
-    assert_eq!(restore_whitespace(&tx(&model)), "<ol><li>~|</li></ol>");
+    assert_eq!(restore_whitespace(&tx(&model)), "<ol><li>|</li></ol>");
 }
 
 #[test]
-#[ignore] // TODO: implement comprehensive list behaviour
 fn html_backspace_word_for_single_empty_list_item() {
-    let mut model = cm("<ol><li>~|</li></ol>");
+    let mut model = cm("<ol><li>|</li></ol>");
     model.backspace_word();
-    assert_eq!(restore_whitespace(&tx(&model)), "<ol><li>~|</li></ol>");
+    assert_eq!(restore_whitespace(&tx(&model)), "<ol><li>|</li></ol>");
 }
 #[test]
-#[ignore] // TODO: implement comprehensive list behaviour
 fn html_delete_word_for_single_empty_list_item() {
-    let mut model = cm("<ol><li>~|</li></ol>");
+    let mut model = cm("<ol><li>|</li></ol>");
     model.delete_word();
-    assert_eq!(restore_whitespace(&tx(&model)), "<ol><li>~|</li></ol>");
+    assert_eq!(restore_whitespace(&tx(&model)), "<ol><li>|</li></ol>");
 }
 
 #[test]
-#[ignore] // TODO: implement comprehensive list behaviour
 fn html_backspace_word_for_empty_list_item() {
-    let mut model = cm("<ol><li>~1</li><li>~|</li><li>~123</li></ol>");
+    let mut model = cm("<ol><li>1</li><li>|</li><li>123</li></ol>");
     model.backspace_word();
     assert_eq!(
         restore_whitespace(&tx(&model)),
-        "<ol><li>~1</li><li>~|</li><li>~123</li></ol>"
+        "<ol><li>1</li><li>|</li><li>123</li></ol>"
     );
 }
 #[test]
-#[ignore] // TODO: implement comprehensive list behaviour
 fn html_delete_word_for_empty_list_item() {
-    let mut model = cm("<ol><li>~1</li><li>~|</li><li>~123</li></ol>");
+    let mut model = cm("<ol><li>1</li><li>|</li><li>123</li></ol>");
     model.delete_word();
     assert_eq!(
         restore_whitespace(&tx(&model)),
-        "<ol><li>~1</li><li>~|</li><li>~123</li></ol>"
+        "<ol><li>1</li><li>|</li><li>123</li></ol>"
     );
 }

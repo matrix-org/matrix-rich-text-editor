@@ -27,6 +27,9 @@
     </declare-styleable>
 
     <declare-styleable name="EditorStyledTextView">
+        <attr name="codeBlockLeadingMargin" />
+        <attr name="codeBlockVerticalPadding" />
+        <attr name="codeBlockBackgroundDrawable" />
         <attr name="inlineCodeHorizontalPadding" />
         <attr name="inlineCodeVerticalPadding" />
         <attr name="inlineCodeSingleLineBg" />

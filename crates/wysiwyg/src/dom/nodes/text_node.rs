@@ -15,7 +15,7 @@
 use crate::composer_model::delete_text::Direction;
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
-use crate::dom::to_html::ToHtml;
+use crate::dom::to_html::{ToHtml, ToHtmlState};
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
@@ -62,6 +62,13 @@ where
 
     pub fn set_data(&mut self, data: S) {
         self.data = data;
+    }
+
+    pub fn replace_range(&mut self, data: S, start: usize, end: usize) {
+        let mut new_data = self.data[..start].to_owned();
+        new_data.push(data);
+        new_data.push(self.data[end..].to_owned());
+        self.data = new_data;
     }
 
     pub fn handle(&self) -> DomHandle {
@@ -142,12 +149,11 @@ where
         self.data().len() != 0
     }
 
-    /// Push content of the given text node into self. If given
-    /// node is empty or a single ZWSP, nothing is pushed.
+    /// Push content of the given text node into self.
     pub(crate) fn push(&mut self, other_node: &TextNode<S>) {
         let mut text_data = self.data().to_owned();
         let other_text_data = other_node.data();
-        if !other_text_data.is_empty() && other_text_data != "\u{200B}" {
+        if !other_text_data.is_empty() {
             text_data.push(other_text_data.to_owned());
         }
         self.set_data(text_data);
@@ -196,22 +202,25 @@ where
         &self,
         buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        is_last_node_in_parent: bool,
+        state: ToHtmlState,
     ) {
         let cur_pos = buf.len();
         let string = self.data.to_string();
 
-        let mut escaped = html_escape::encode_text(&string)
-            // Replace all pairs of spaces with non-breaking ones. Transforms
-            // `a     b` to `a\u{A0}\u{A0}\u{A0}\u{A0} b`, which will render
-            // exactly as five spaces like in the input.
-            .replace("  ", "\u{A0}\u{A0}");
-        if is_last_node_in_parent
-            && escaped.chars().next_back().map_or(false, |c| c == ' ')
-        {
-            // If this is the last node and it ends in a space, replace that
-            // space with a non-breaking one.
-            escaped.replace_range(escaped.len() - 1.., "\u{A0}");
+        let mut escaped = html_escape::encode_text(&string).to_string();
+        // Replace all pairs of spaces with non-breaking ones. Transforms
+        // `a     b` to `a\u{A0}\u{A0}\u{A0}\u{A0} b`, which will render
+        // exactly as five spaces like in the input.
+        if !state.is_inside_code_block {
+            escaped = escaped.replace("  ", "\u{A0}\u{A0}");
+
+            if state.is_last_node_in_parent
+                && escaped.chars().next_back().map_or(false, |c| c == ' ')
+            {
+                // If this is the last node and it ends in a space, replace that
+                // space with a non-breaking one.
+                escaped.replace_range(escaped.len() - 1.., "\u{A0}");
+            }
         }
         buf.push(escaped.as_str());
 
@@ -262,12 +271,11 @@ where
 }
 #[cfg(test)]
 mod test {
-    use widestring::Utf16String;
+    use crate::char::CharExt;
 
     use crate::composer_model::delete_text::Direction;
     use crate::dom::nodes::text_node::CharType;
     use crate::tests::testutils_conversion::utf16;
-    use crate::UnicodeString;
 
     use super::{get_char_type, TextNode};
 
@@ -276,7 +284,7 @@ mod test {
         // space
         assert_eq!(get_char_type('\u{0020}'), CharType::Whitespace);
         // no break space
-        assert_eq!(get_char_type('\u{00A0}'), CharType::Whitespace);
+        assert_eq!(get_char_type(char::nbsp()), CharType::Whitespace);
     }
 
     #[test]
@@ -331,14 +339,6 @@ mod test {
     fn pushing_empty_text_node_does_nothing() {
         let mut t1 = TextNode::from(utf16("abc"));
         let t2 = TextNode::from(utf16(""));
-        t1.push(&t2);
-        assert_eq!(t1, TextNode::from(utf16("abc")));
-    }
-
-    #[test]
-    fn pushing_zwsp_text_node_does_nothing() {
-        let mut t1 = TextNode::from(utf16("abc"));
-        let t2 = TextNode::from(Utf16String::zwsp());
         t1.push(&t2);
         assert_eq!(t1, TextNode::from(utf16("abc")));
     }

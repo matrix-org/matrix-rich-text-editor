@@ -16,18 +16,6 @@ limitations under the License.
 
 import { ComposerModel, DomHandle } from '../generated/wysiwyg';
 
-export function computeSelectionOffset(node: Node, offset?: number): number {
-    if (node && node.nodeType === Node.TEXT_NODE) {
-        return offset ?? node.textContent?.length ?? 0;
-    } else if (node.hasChildNodes()) {
-        return Array.from(node.childNodes)
-            .map((childNode) => computeSelectionOffset(childNode))
-            .reduce((prev, curr) => prev + curr, 0);
-    } else {
-        return 0;
-    }
-}
-
 export function refreshComposerView(
     node: HTMLElement,
     composerModel: ComposerModel,
@@ -176,9 +164,43 @@ export function computeNodeAndOffset(
     node: Node | null;
     offset: number;
 } {
-    const isEmptyList =
+    const isEmptyListItem =
         currentNode.nodeName === 'LI' && !currentNode.hasChildNodes();
-    if (currentNode.nodeType === Node.TEXT_NODE || isEmptyList) {
+
+    if (currentNode.nodeType === Node.TEXT_NODE) {
+        // For a text node, we need to check to see if it needs an extra offset
+        // which involves climbing the tree through it's ancestors checking for
+        // any of the nodes that require the extra offset.
+        const shouldAddOffset = textNodeNeedsExtraOffset(currentNode);
+        const extraOffset = shouldAddOffset ? 1 : 0;
+
+        // We also have a special case for a text node that is a single &nbsp;
+        // which is used as a placeholder for an empty paragraph - we don't want
+        // to count it's length
+        if (textContentIsNbsp(currentNode)) {
+            if (codeunits === 0) {
+                // this is the only time we would 'find' this node
+                return { node: currentNode, offset: codeunits };
+            } else {
+                // otherwise we need to keep looking, but count this as 0 length
+                return { node: null, offset: codeunits - extraOffset };
+            }
+        }
+
+        if (codeunits <= (currentNode.textContent?.length || 0)) {
+            // we don't need to use that extra offset if we've found the answer
+            return { node: currentNode, offset: codeunits };
+        } else {
+            // but if we haven't found that answer, apply the extra offset
+            return {
+                node: null,
+                offset:
+                    codeunits -
+                    (currentNode.textContent?.length || 0) -
+                    extraOffset,
+            };
+        }
+    } else if (isEmptyListItem) {
         if (codeunits <= (currentNode.textContent?.length || 0)) {
             return { node: currentNode, offset: codeunits };
         } else {
@@ -202,6 +224,12 @@ export function computeNodeAndOffset(
             };
         }
     } else {
+        // We hit this case if we split a formatting node, eg
+        // <u>something</u> => press enter => <p><u>something</u><p><u>|</u></p>
+        if (isEmptyInlineNode(currentNode) && codeunits === 0) {
+            return { node: currentNode, offset: codeunits };
+        }
+
         for (const ch of currentNode.childNodes) {
             const ret = computeNodeAndOffset(ch, codeunits);
             if (ret.node) {
@@ -210,6 +238,7 @@ export function computeNodeAndOffset(
                 codeunits = ret.offset;
             }
         }
+
         return { node: null, offset: codeunits };
     }
 }
@@ -316,9 +345,23 @@ function findCharacter(
         if (currentNode.nodeType === Node.TEXT_NODE) {
             // Return how many steps forward we progress by skipping
             // this node.
+
+            // The extra check for an offset here depends on the ancestor of the
+            // text node and can be seen as the opposite to the equivalent call
+            // in computeNodeAndOffset
+            const shouldAddOffset = textNodeNeedsExtraOffset(currentNode);
+            const extraOffset = shouldAddOffset ? 1 : 0;
+
+            // ...but also have a special case where we don't count a textnode
+            // if it is an nbsp, as this is what we use to mark out empty
+            // paragraphs
+            if (textContentIsNbsp(currentNode)) {
+                return { found: false, offset: extraOffset };
+            }
+
             return {
                 found: false,
-                offset: currentNode.textContent?.length ?? 0,
+                offset: (currentNode.textContent?.length ?? 0) + extraOffset,
             };
         } else if (currentNode.nodeName === 'BR') {
             // Treat br tags as being 1 character long
@@ -388,4 +431,78 @@ export function countCodeunit(
     } else {
         return -1;
     }
+}
+
+/**
+ * Given a text node, determine if we need to add an additional offset to it. A
+ * text node that has any ancestor that is a li, pre, blockquote or p tag will
+ * require an additional offset to match up with the rust model. We also need to
+ * handle the case where we have consecutive formatting nodes, as only the last
+ * of the formatting nodes needs the extra offset (if applicable).
+ *
+ * This is called in two places and only with TextNodes. Only exported for test.
+ *
+ * Returns a boolean, true if the node needs an extra offset
+ */
+
+export function textNodeNeedsExtraOffset(node: Node | null) {
+    if (node === null) return false;
+
+    let checkNode: Node | ParentNode | null = node;
+    const hasFormattingParent = isInlineNode(checkNode.parentNode);
+
+    // If the parent is _not_ a formatting node, then we have a case where the
+    // text node we are looking at is in a container, so we simply need to check
+    // the ancestors to see if one of those containers requires an extra offset.
+
+    // Otherwise we are dealing with the case where we are inside at least one
+    // formatting node (but we could be deeper than that) and we also need to
+    // make sure that we don't add the offset more than once when we have
+    // multiple adjacent inline formatting nodes.
+    while (checkNode) {
+        // if we have a formatting ancestor and the next sibling is not a
+        // container node, stop looking (and return false)
+        const nextSibling = checkNode.nextSibling;
+        if (
+            hasFormattingParent &&
+            nextSibling &&
+            !isNodeRequiringExtraOffset(nextSibling)
+        ) {
+            break;
+        }
+
+        if (isNodeRequiringExtraOffset(checkNode)) {
+            return true;
+        } else {
+            checkNode = checkNode.parentNode;
+        }
+    }
+    return false;
+}
+
+const INLINE_NODE_NAMES = ['EM', 'U', 'STRONG', 'DEL', 'CODE', 'A'];
+const EXTRA_OFFSET_NODE_NAMES = ['LI', 'PRE', 'BLOCKQUOTE', 'P'];
+
+function isInlineNode(node: Node | ParentNode | null) {
+    if (node === null) return false;
+    return INLINE_NODE_NAMES.includes(node.nodeName || '');
+}
+
+function isNodeRequiringExtraOffset(node: Node) {
+    // note this isn't simply a block node, we need to ensure that for lists we
+    // do not add an extra offset for the ol/ul tag, only for the list items
+    // themselves
+    return EXTRA_OFFSET_NODE_NAMES.includes(node.nodeName || '');
+}
+
+function isEmptyInlineNode(node: Node) {
+    return (
+        INLINE_NODE_NAMES.includes(node.nodeName) &&
+        node.textContent?.length === 0
+    );
+}
+
+function textContentIsNbsp(node: Node) {
+    const nbsp = String.fromCharCode(160); // &nbsp;
+    return node.textContent === nbsp;
 }

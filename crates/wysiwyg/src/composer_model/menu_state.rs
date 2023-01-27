@@ -18,6 +18,7 @@ use crate::action_state::ActionState;
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind};
 use crate::dom::range::DomLocationPosition;
+use crate::dom::range::DomLocationPosition::Before;
 use crate::dom::{DomLocation, Range};
 use crate::menu_state::MenuStateUpdate;
 use crate::ComposerAction::{Indent, UnIndent};
@@ -115,6 +116,15 @@ where
             intersection
         } else if self.state.dom.document().children().is_empty() {
             HashSet::from_iter(toggled_format_actions.into_iter())
+        } else if let Some(block_location) = range.deepest_block_node(None) {
+            if block_location.node_handle.is_root() {
+                HashSet::new()
+            } else {
+                self.compute_reversed_actions(&block_location.node_handle)
+                    .symmetric_difference(&toggled_format_actions)
+                    .cloned()
+                    .collect()
+            }
         } else {
             HashSet::new()
         }
@@ -189,13 +199,15 @@ where
 
     fn compute_disabled_actions_for_locations(
         &self,
-        locations: &Vec<DomLocation>,
+        locations: &[DomLocation],
     ) -> HashSet<ComposerAction> {
         let mut disabled_actions = HashSet::new();
-        if !self.can_indent(locations) {
+        let top_most_list_locations =
+            self.find_top_most_list_item_locations(locations);
+        if !self.can_indent(&top_most_list_locations) {
             disabled_actions.insert(Indent);
         }
-        if !self.can_unindent(locations) {
+        if !self.can_unindent(&top_most_list_locations) {
             disabled_actions.insert(UnIndent);
         }
         if contains_inline_code(locations) {
@@ -230,5 +242,7 @@ fn contains_inline_code(locations: &[DomLocation]) -> bool {
 }
 
 fn contains_code_block(locations: &[DomLocation]) -> bool {
-    locations.iter().any(|l| l.kind == DomNodeKind::CodeBlock)
+    locations.iter().any(|l| {
+        l.relative_position() != Before && l.kind == DomNodeKind::CodeBlock
+    })
 }

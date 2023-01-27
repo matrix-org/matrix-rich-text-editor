@@ -16,6 +16,7 @@ use std::fmt::Display;
 
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::nodes::{ContainerNode, DomNode};
+use crate::dom::to_html::ToHtmlState;
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{
@@ -40,10 +41,22 @@ where
     pub fn new(top_level_items: Vec<DomNode<S>>) -> Self {
         let mut document = ContainerNode::default();
         document.append_children(top_level_items);
-        document.set_handle(DomHandle::from_raw(Vec::new()));
+        document.set_handle(DomHandle::root());
 
         Self {
             document: DomNode::Container(document),
+        }
+    }
+
+    /// Creates a new Dom using the passed `root_node` as its root document. This `root_node` must
+    /// be a container node.
+    pub fn new_with_root(root_node: DomNode<S>) -> Self {
+        assert!(root_node.is_container_node());
+        let mut root_node = root_node;
+        root_node.set_handle(DomHandle::root());
+
+        Self {
+            document: root_node,
         }
     }
 
@@ -98,26 +111,38 @@ where
     /// Returns the last node handle of the Dom. It's useful for reverse iterators that should start
     /// at the end of the Dom.
     pub fn last_node_handle(&self) -> DomHandle {
-        let mut found = false;
-        let mut cur_handle = DomHandle::root();
-        while !found {
-            if let DomNode::Container(container) = self.lookup_node(&cur_handle)
-            {
-                if !container.children().is_empty() {
-                    cur_handle =
-                        cur_handle.child_handle(container.children().len() - 1);
-                } else {
-                    // Empty container node.
-                    // We might reach this line if we use the function while we are editing the Dom.
+        self.last_node_handle_in_sub_tree(&DomHandle::root())
+    }
 
-                    found = true;
-                }
+    /// Returns the node handle of the sub-tree, searching recursively. It's specially useful when
+    /// we want to iterate through the sub-tree in reverse order.
+    ///
+    /// Example, in this sub-tree:
+    /// ```text
+    /// ├>b
+    /// │ └>"Bold"
+    /// └>i
+    ///   └>"Italic"
+    /// ```
+    /// This method will return `[1, 0]`, `"Italic"`.
+    pub fn last_node_handle_in_sub_tree(
+        &self,
+        handle: &DomHandle,
+    ) -> DomHandle {
+        if let DomNode::Container(container) = self.lookup_node(handle) {
+            if !container.children().is_empty() {
+                let cur_handle =
+                    handle.child_handle(container.children().len() - 1);
+                self.last_node_handle_in_sub_tree(&cur_handle)
             } else {
-                // Leaf node
-                found = true;
+                // Empty container node.
+                // We might reach this line if we use the function while we are editing the Dom.
+                handle.clone()
             }
+        } else {
+            // Leaf node
+            handle.clone()
         }
-        cur_handle
     }
 
     #[cfg(all(feature = "js", target_arch = "wasm32"))]
@@ -213,6 +238,13 @@ where
         parent.remove_child(index)
     }
 
+    /// Returns the root document of this Dom.
+    ///
+    /// **Note**: this call moves the Dom, so it becomes unusable.
+    pub fn take_document(self) -> DomNode<S> {
+        self.document
+    }
+
     /// Given the start and end code units, find which nodes of this Dom are
     /// selected. The returned range lists all the Dom nodes involved.
     pub fn find_range(&self, start: usize, end: usize) -> Range {
@@ -239,7 +271,7 @@ where
         self.document.handle()
     }
 
-    pub fn find_parent_list_item_or_self(
+    pub fn find_ancestor_list_item_or_self(
         &self,
         child_handle: &DomHandle,
     ) -> Option<DomHandle> {
@@ -250,26 +282,10 @@ where
         }
 
         if child_handle.has_parent() {
-            self.find_parent_list_item_or_self(&child_handle.parent_handle())
+            self.find_ancestor_list_item_or_self(&child_handle.parent_handle())
         } else {
             None
         }
-    }
-
-    pub(crate) fn find_closest_list_ancestor(
-        &self,
-        handle: &DomHandle,
-    ) -> Option<DomHandle> {
-        if handle.has_parent() {
-            let parent = self.parent(handle);
-            let parent_handle = parent.handle();
-            if parent.is_list() {
-                return Some(parent_handle);
-            } else if parent_handle.has_parent() {
-                return self.find_closest_list_ancestor(&parent_handle);
-            }
-        }
-        None
     }
 
     /// Find the node based on its handle.
@@ -314,10 +330,6 @@ where
                 DomNode::Text(_) => panic!(
                     "Handle is invalid: refers to the child of a text node, \
                     but text nodes cannot have children."
-                ),
-                DomNode::Zwsp(_) => panic!(
-                    "Handle is invalid: refers to the child of a zwsp node, \
-                    but zwsp nodes cannot have children."
                 ),
             }
         }
@@ -373,19 +385,6 @@ where
                     Where::After
                 } else {
                     Where::During
-                }
-            }
-            DomNode::Zwsp(_) => {
-                if offset == 0 {
-                    Where::Before
-                } else if offset == 1 {
-                    Where::After
-                } else {
-                    panic!(
-                        "Attempting to insert a new line into a zwsp node, but offset wasn't \
-                        either 0 or 1: {}",
-                        offset
-                    );
                 }
             }
         };
@@ -543,10 +542,9 @@ where
         &self,
         buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        is_last_node_in_parent: bool,
+        state: ToHtmlState,
     ) {
-        self.document
-            .fmt_html(buf, selection_writer, is_last_node_in_parent)
+        self.document.fmt_html(buf, selection_writer, state)
     }
 }
 
@@ -819,8 +817,10 @@ mod test {
     #[test]
     fn find_parent_list_item_or_self_finds_our_parent() {
         let d = cm("|a<ul><li>b</li></ul>").state.dom;
-        let res = d
-            .find_parent_list_item_or_self(&DomHandle::from_raw(vec![1, 0, 0]));
+        let res =
+            d.find_ancestor_list_item_or_self(&DomHandle::from_raw(vec![
+                1, 0, 0,
+            ]));
         let res = res.expect("Should have found a list parent!");
         assert_eq!(res.into_raw(), vec![1, 0]);
     }
@@ -829,7 +829,7 @@ mod test {
     fn find_parent_list_item_or_self_finds_ourself() {
         let d = cm("|a<ul><li>b</li></ul>").state.dom;
         let res =
-            d.find_parent_list_item_or_self(&DomHandle::from_raw(vec![1, 0]));
+            d.find_ancestor_list_item_or_self(&DomHandle::from_raw(vec![1, 0]));
         let res = res.expect("Should have found a list parent!");
         assert_eq!(res.into_raw(), vec![1, 0]);
     }
@@ -837,9 +837,10 @@ mod test {
     #[test]
     fn find_parent_list_item_or_self_finds_our_grandparent() {
         let d = cm("|<ul><li>b<strong>c</strong></li></ul>d").state.dom;
-        let res = d.find_parent_list_item_or_self(&DomHandle::from_raw(vec![
-            0, 0, 1, 0,
-        ]));
+        let res =
+            d.find_ancestor_list_item_or_self(&DomHandle::from_raw(vec![
+                0, 0, 1, 0,
+            ]));
         let res = res.expect("Should have found a list parent!");
         assert_eq!(res.into_raw(), vec![0, 0]);
     }
@@ -848,7 +849,7 @@ mod test {
     fn find_parent_list_item_or_self_returns_none_when_not_in_a_list() {
         let d = cm("|<ul><li>b<strong>c</strong></li></ul>d").state.dom;
         let res =
-            d.find_parent_list_item_or_self(&DomHandle::from_raw(vec![1]));
+            d.find_ancestor_list_item_or_self(&DomHandle::from_raw(vec![1]));
         assert!(res.is_none(), "Should not have found a list parent!")
     }
 
@@ -904,7 +905,6 @@ mod test {
             DomNode::Text(_) => {
                 panic!("We expected an Element, but found Text")
             }
-            DomNode::Zwsp(_) => NO_CHILDREN,
         }
     }
 }

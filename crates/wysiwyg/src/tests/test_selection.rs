@@ -30,9 +30,6 @@ fn selecting_ascii_characters() {
 
     model.select(Location::from(4), Location::from(9));
     assert_eq!(tx(&model), "abcd{efgh}|");
-
-    model.select(Location::from(4), Location::from(10));
-    assert_eq!(tx(&model), "abcd{efgh}|");
 }
 
 #[test]

@@ -14,8 +14,7 @@
 
 use crate::dom::action_list::{DomAction, DomActionList};
 use crate::dom::nodes::{ContainerNodeKind, DomNode};
-use crate::dom::unicode_string::UnicodeStringExt;
-use crate::dom::{Dom, DomHandle, DomLocation, Range};
+use crate::dom::{Dom, DomHandle, Range};
 use crate::UnicodeString;
 
 /// Handles joining together nodes after an edit event.
@@ -27,15 +26,6 @@ impl<S> Dom<S>
 where
     S: UnicodeString,
 {
-    /// After the selection range we were given in from_range has been deleted,
-    /// join any nodes that match up across the selection.
-    pub(crate) fn join_nodes(&mut self, range: &Range, new_pos: usize) {
-        if let Some(start_handle) = self.first_text_handle(range) {
-            self.join_structure_nodes(&start_handle, new_pos);
-            self.join_format_nodes_at_index(new_pos);
-        }
-    }
-
     /// Join format node at [handle], if any, with its previous sibling if it's a compatible format
     /// node.
     /// The passed [action_list] is used in a special way here: instead of collecting actions to be
@@ -48,43 +38,7 @@ where
         self.join_format_nodes_at_level(handle, 0, action_list);
     }
 
-    fn join_structure_nodes(
-        &mut self,
-        start_handle: &DomHandle,
-        new_pos: usize,
-    ) {
-        // Find next node
-        if let Some(mut next_handle) = self.find_leaf_containing(new_pos) {
-            // Find struct parents
-            if let (Some(struct_parent_start), Some(struct_parent_next)) = self
-                .find_closest_structure_ancestors_to_join(
-                    start_handle,
-                    &next_handle,
-                )
-            {
-                if struct_parent_start != struct_parent_next {
-                    // Move children
-                    let (new_index, _) = self.move_children_and_delete_parent(
-                        &struct_parent_next,
-                        &struct_parent_start,
-                    );
-
-                    next_handle = struct_parent_start.child_handle(new_index);
-                }
-
-                // Find ancestor lists
-                let ancestors_start =
-                    Self::list_of_ancestors_from_root(start_handle);
-                let ancestors_next =
-                    Self::list_of_ancestors_from_root(&next_handle);
-
-                // Merge nodes based on ancestors
-                self.do_join_structure_nodes(&ancestors_start, &ancestors_next);
-            }
-        }
-    }
-
-    fn join_format_nodes_at_index(&mut self, index: usize) {
+    pub(crate) fn join_format_nodes_at_index(&mut self, index: usize) {
         if let Some(next_node_handle) = self.find_leaf_containing(index) {
             self.join_format_node_with_prev(
                 &next_node_handle,
@@ -177,92 +131,6 @@ where
         false
     }
 
-    fn do_join_structure_nodes(
-        &mut self,
-        ancestors_start: &Vec<DomHandle>,
-        ancestors_next: &Vec<DomHandle>,
-    ) {
-        let mut i = 0;
-        let mut j = 0;
-        while i < ancestors_start.len() && j < ancestors_next.len() {
-            let start_handle = ancestors_start.get(i).unwrap();
-            let next_handle = ancestors_next.get(j).unwrap();
-
-            // If both lists contain this ancestor handle, continue to the next comparison.
-            if start_handle == next_handle {
-                i += 1;
-                j += 1;
-                continue;
-            }
-
-            let start_i = self.lookup_node(start_handle);
-            let next_i = self.lookup_node(next_handle);
-
-            match (start_i, next_i) {
-                (DomNode::Container(start_i), DomNode::Container(next_i)) => {
-                    // TODO: check if this is_structure_node verification is needed.
-                    if start_i.is_structure_node()
-                        && next_i.is_structure_node()
-                        && start_i.name() == next_i.name()
-                    {
-                        // Both containers with the same tag.
-                        // Move children from next to start node, remove next node.
-                        let (new_index_in_parent, _) = self
-                            .move_children_and_delete_parent(
-                                next_handle,
-                                start_handle,
-                            );
-                        // This alters ancestors, so we need to re-calculate them and start again.
-                        let new_ancestors_next = Self::re_calculate_ancestors(
-                            start_handle,
-                            new_index_in_parent,
-                            i,
-                        );
-                        // Restart the process
-                        self.do_join_structure_nodes(
-                            ancestors_start,
-                            &new_ancestors_next,
-                        );
-                        return;
-                    } else {
-                        // Both containers, but different tags. We're done.
-                        return;
-                    }
-                }
-                (DomNode::Container(_), DomNode::Text(_)) => {
-                    i += 1;
-                }
-                (DomNode::Text(start_i), DomNode::Text(next_i)) => {
-                    let mut new_data = start_i.data().to_owned();
-                    new_data.push(next_i.data());
-                    let text_node = DomNode::new_text(new_data);
-                    let old_parent = self.parent_mut(next_handle);
-                    old_parent.remove_child(next_handle.index_in_parent());
-                    let parent = self.parent_mut(start_handle);
-                    parent.replace_child(
-                        start_handle.index_in_parent(),
-                        vec![text_node],
-                    );
-                    return;
-                }
-                _ => return,
-            }
-        }
-    }
-
-    fn re_calculate_ancestors(
-        start_handle: &DomHandle,
-        new_index_in_parent: usize,
-        level: usize,
-    ) -> Vec<DomHandle> {
-        let mut new_next_path = start_handle.raw()[..level].to_vec();
-        new_next_path.push(new_index_in_parent);
-        let new_next_handle = DomHandle::from_raw(new_next_path);
-
-        // Re-calculate ancestors
-        Self::list_of_ancestors_from_root(&new_next_handle)
-    }
-
     /// Given a position, find the text or line break node containing it
     fn find_leaf_containing(&self, pos: usize) -> Option<DomHandle> {
         let range = self.find_range(pos, pos);
@@ -273,38 +141,13 @@ where
         range.leaves().next().map(|loc| loc.node_handle.clone())
     }
 
-    /// Finds the closest structure ancestors to join for the start and end handles, or None if they
-    /// can't be found.
-    /// Note: If a ListItem is found, the parent List will be returned instead.
-    fn find_closest_structure_ancestors_to_join(
-        &self,
-        start: &DomHandle,
-        next: &DomHandle,
-    ) -> (Option<DomHandle>, Option<DomHandle>) {
-        let get_list_parent_if_is_list_item = |handle| {
-            let node = self.lookup_node(&handle);
-            if node.is_list_item() {
-                handle.parent_handle()
-            } else {
-                handle.clone()
-            }
-        };
-        let struct_parent_start = self
-            .find_structure_ancestor(start)
-            .map(get_list_parent_if_is_list_item);
-        let struct_parent_next = self
-            .find_structure_ancestor(next)
-            .map(get_list_parent_if_is_list_item);
-        (struct_parent_start, struct_parent_next)
-    }
-
     /// Finds the closest structure node ancestor for the given handle, or None if it doesn't exist
     pub(crate) fn find_structure_ancestor(
         &self,
         handle: &DomHandle,
     ) -> Option<DomHandle> {
         let parent = self.parent(handle);
-        if parent.is_structure_node() {
+        if parent.is_structure_node() || parent.is_block_node() {
             Some(parent.handle())
         } else if parent.handle().has_parent() {
             self.find_structure_ancestor(&parent.handle())
@@ -342,13 +185,15 @@ where
             panic!("Destination node must be a ContainerNode");
         }
 
-        let parent = self.parent_mut(from_handle);
-        parent.remove_child(from_handle.index_in_parent());
+        self.remove(from_handle);
 
         (ret, moved_handles)
     }
 
-    fn list_of_ancestors_from_root(handle: &DomHandle) -> Vec<DomHandle> {
+    #[allow(dead_code)]
+    pub(crate) fn list_of_ancestors_from_root(
+        handle: &DomHandle,
+    ) -> Vec<DomHandle> {
         let mut ancestors = Vec::new();
         let mut cur_handle = handle.clone();
         while cur_handle.has_parent() {
@@ -360,24 +205,5 @@ where
         // Reverse to start from root
         ancestors.reverse();
         ancestors
-    }
-
-    /// Search the supplied iterator for a text node and return a handle to it,
-    /// or None if there are no text nodes.
-    fn find_text_handle<'a>(
-        &self,
-        mut locations: impl Iterator<Item = &'a DomLocation>,
-    ) -> Option<DomHandle> {
-        locations.find_map(|loc| {
-            if let DomNode::Text(_) = self.lookup_node(&loc.node_handle) {
-                Some(loc.node_handle.clone())
-            } else {
-                None
-            }
-        })
-    }
-
-    fn first_text_handle(&self, range: &Range) -> Option<DomHandle> {
-        self.find_text_handle(range.locations.iter())
     }
 }

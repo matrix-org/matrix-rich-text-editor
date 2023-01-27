@@ -27,8 +27,6 @@ import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.inputhandlers.models.LinkAction
 import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
-import io.element.android.wysiwyg.spans.CodeBlockSpan
-import io.element.android.wysiwyg.spans.InlineCodeSpan
 import io.element.android.wysiwyg.utils.*
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
 import io.element.android.wysiwyg.viewmodel.EditorViewModel
@@ -41,10 +39,10 @@ class EditorEditText : TextInputEditText {
     private var inputConnection: InterceptInputConnection? = null
 
     private lateinit var styleConfig: StyleConfig
-    private val inlineCodeBgHelper: SpanBackgroundHelper<InlineCodeSpan> by lazy {
+    private val inlineCodeBgHelper: SpanBackgroundHelper by lazy {
         SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(styleConfig.inlineCode)
     }
-    private val codeBlockBgHelper: SpanBackgroundHelper<CodeBlockSpan> by lazy {
+    private val codeBlockBgHelper: SpanBackgroundHelper by lazy {
         SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(styleConfig.codeBlock)
     }
 
@@ -236,6 +234,9 @@ class EditorEditText : TextInputEditText {
             return super.setText(text, type)
         }
 
+        inlineCodeBgHelper.clearCachedPositions()
+        codeBlockBgHelper.clearCachedPositions()
+
         viewModel.updateSelection(editableText, 0, end)
 
         val result = viewModel.processInput(EditorInputAction.ReplaceText(text.toString()))
@@ -311,7 +312,7 @@ class EditorEditText : TextInputEditText {
      */
     fun setLink(link: String?) {
         val result = viewModel.processInput(
-            if(link != null) EditorInputAction.SetLink(link) else EditorInputAction.RemoveLink
+            if (link != null) EditorInputAction.SetLink(link) else EditorInputAction.RemoveLink
         ) ?: return
 
         setTextFromComposerUpdate(result)
@@ -340,6 +341,20 @@ class EditorEditText : TextInputEditText {
 
     fun toggleList(ordered: Boolean) {
         val result = viewModel.processInput(EditorInputAction.ToggleList(ordered)) ?: return
+
+        setTextFromComposerUpdate(result)
+        setSelectionFromComposerUpdate(result.selection.last)
+    }
+
+    fun indent() {
+        val result = viewModel.processInput(EditorInputAction.Indent) ?: return
+
+        setTextFromComposerUpdate(result)
+        setSelectionFromComposerUpdate(result.selection.last)
+    }
+
+    fun unIndent() {
+        val result = viewModel.processInput(EditorInputAction.UnIndent) ?: return
 
         setTextFromComposerUpdate(result)
         setSelectionFromComposerUpdate(result.selection.last)

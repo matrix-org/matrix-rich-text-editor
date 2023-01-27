@@ -18,7 +18,7 @@ use crate::char::CharExt;
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::nodes::dom_node::{DomNode, DomNodeKind};
-use crate::dom::to_html::ToHtml;
+use crate::dom::to_html::{ToHtml, ToHtmlState};
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
@@ -50,6 +50,7 @@ where
     ListItem,
     CodeBlock,
     Quote,
+    Paragraph,
 }
 
 impl<S: dom::unicode_string::UnicodeString> Default for ContainerNode<S> {
@@ -85,6 +86,16 @@ where
             name,
             kind,
             attrs,
+            children,
+            handle: DomHandle::new_unset(),
+        }
+    }
+
+    pub fn new_paragraph(children: Vec<DomNode<S>>) -> Self {
+        Self {
+            name: "p".into(),
+            kind: ContainerNodeKind::Paragraph,
+            attrs: None,
             children,
             handle: DomHandle::new_unset(),
         }
@@ -284,6 +295,11 @@ where
         self.children
     }
 
+    /// Removes all children from the container and returns them
+    pub(crate) fn remove_children(&mut self) -> Vec<DomNode<S>> {
+        self.children.drain(..).collect()
+    }
+
     pub(crate) fn take_children_after(
         &mut self,
         position: usize,
@@ -329,7 +345,19 @@ where
     }
 
     pub fn text_len(&self) -> usize {
-        self.children.iter().map(|child| child.text_len()).sum()
+        let children_len: usize =
+            self.children.iter().map(|child| child.text_len()).sum();
+        let block_nodes_extra: usize = self
+            .children
+            .iter()
+            .filter(|child| child.is_block_node())
+            .count();
+        let block_nodes_extra = if block_nodes_extra > 0 {
+            block_nodes_extra - 1
+        } else {
+            block_nodes_extra
+        };
+        children_len + block_nodes_extra
     }
 
     pub fn new_link(url: S, children: Vec<DomNode<S>>) -> Self {
@@ -344,15 +372,12 @@ where
 
     pub fn is_empty_list_item(&self) -> bool {
         match self.kind {
-            ContainerNodeKind::ListItem => {
-                let raw_text = self.to_raw_text().to_string();
-                raw_text.is_empty() || raw_text == char::zwsp().to_string()
-            }
+            ContainerNodeKind::ListItem => self.is_empty(),
             _ => false,
         }
     }
 
-    pub(crate) fn get_list_type(&mut self) -> Option<&ListType> {
+    pub(crate) fn get_list_type(&self) -> Option<&ListType> {
         match &self.kind {
             ContainerNodeKind::List(t) => Some(t),
             _ => None,
@@ -369,14 +394,6 @@ where
                 "Setting list type to a non-list container is not allowed"
             ),
         }
-    }
-
-    pub(crate) fn set_link(&mut self, link: S) {
-        let ContainerNodeKind::Link(_) = self.kind else {
-            panic!("Setting list type to a non-list container is not allowed")
-        };
-        self.kind = ContainerNodeKind::Link(link.clone());
-        self.attrs = Some(vec![("href".into(), link)]);
     }
 
     pub(crate) fn get_link(&self) -> Option<S> {
@@ -398,79 +415,6 @@ where
             attrs: self.attrs.clone(),
             children,
             handle: DomHandle::new_unset(),
-        }
-    }
-
-    /// Add a leading ZWSP char to this container.
-    /// Returns false if no updates was done.
-    /// e.g. first text-like node is already a ZWSP.
-    pub fn add_leading_zwsp(&mut self) -> bool {
-        // Note: handle might not be set in cases where we are transforming a node
-        // that is detached from the DOM. In that case it's fine to transform it
-        // without worrying about handles.
-        fn insert_zwsp<S>(container: &mut ContainerNode<S>)
-        where
-            S: UnicodeString,
-        {
-            if container.handle().is_set() {
-                container.insert_child(0, DomNode::new_zwsp());
-            } else {
-                container.children.insert(0, DomNode::new_zwsp());
-            }
-        }
-
-        let Some(first_child) = self.children.get_mut(0) else {
-            insert_zwsp(self);
-            return true;
-        };
-        match first_child {
-            DomNode::Container(c) => c.add_leading_zwsp(),
-            DomNode::Zwsp(_) => false,
-            DomNode::Text(t) if !t.data().is_empty() => {
-                insert_zwsp(self);
-                true
-            }
-            DomNode::Text(_) | DomNode::LineBreak(_) => {
-                if self.handle().is_set() {
-                    self.replace_child(0, vec![DomNode::new_zwsp()]);
-                } else {
-                    self.children[0] = DomNode::new_zwsp();
-                }
-                true
-            }
-        }
-    }
-
-    /// Remove leading ZWSP char from this container.
-    /// Returns false if no updates was done.
-    /// e.g. first text-like node is a line break
-    /// or a text node that doesn't start with a ZWSP.
-    pub fn remove_leading_zwsp(&mut self) -> bool {
-        let Some(first_child) = self.children.get_mut(0) else {
-            return false;
-        };
-        match first_child {
-            DomNode::Container(c) => {
-                // Remove the entire container if all it contains is the ZWSP.
-                if c.text_len() == 1 && c.has_leading_zwsp() {
-                    self.remove_child(0);
-                    true
-                } else {
-                    c.remove_leading_zwsp()
-                }
-            }
-            DomNode::Zwsp(_) => {
-                // Note: handle might not be set in cases where we are transforming a node
-                // that is detached from the DOM. In that case it's fine to transform it
-                // without worrying about handles.
-                if self.handle().is_set() {
-                    self.remove_child(0);
-                } else {
-                    self.children.remove(0);
-                }
-                true
-            }
-            _ => false,
         }
     }
 
@@ -501,30 +445,6 @@ where
             return false;
         };
         first_child.has_leading_line_break()
-    }
-
-    /// Returns whether this container first text-like
-    /// child is a ZWSP.
-    pub fn has_leading_zwsp(&self) -> bool {
-        let Some(first_child) = self.children.get(0) else {
-            return false;
-        };
-        first_child.has_leading_zwsp()
-    }
-
-    pub fn replace_leading_zwsp_with_linebreak(&mut self) -> bool {
-        let Some(first_child) = self.children.get_mut(0) else {
-            return false;
-        };
-        match first_child {
-            DomNode::Container(c) => c.replace_leading_zwsp_with_linebreak(),
-            DomNode::Text(_) => false,
-            DomNode::LineBreak(_) => false,
-            DomNode::Zwsp(_) => {
-                self.children[0] = DomNode::new_line_break();
-                true
-            }
-        }
     }
 
     /// Push content of the given container node into self. Panics
@@ -609,11 +529,6 @@ where
         self.children.is_empty()
     }
 
-    /// Returns true if the ContainerNode only has 1 child, and it's a ZwspNode.
-    pub fn only_contains_zwsp(&self) -> bool {
-        self.children.len() == 1 && self.children[0].is_zwsp()
-    }
-
     fn find_slice_location(
         &self,
         position: usize,
@@ -666,44 +581,99 @@ where
         &self,
         formatter: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        _: bool,
+        state: ToHtmlState,
     ) {
-        let name = self.name();
-        if !name.is_empty() {
-            formatter.push('<');
-            formatter.push(name);
-            if let Some(attrs) = &self.attrs {
-                for attr in attrs {
-                    formatter.push(' ');
-                    let (attr_name, value) = attr;
-                    formatter.push(&**attr_name);
-                    formatter.push('=');
-                    formatter.push('"');
-                    formatter.push(&**value);
-                    formatter.push('"');
-                }
+        if matches!(self.kind, ContainerNodeKind::Paragraph)
+            && state.is_inside_code_block
+        {
+            if self.is_empty()
+                && (state.is_last_node_in_parent
+                    || state.is_first_node_in_parent)
+            {
+                formatter.push(char::nbsp());
             }
-            formatter.push('>');
-        }
+            self.fmt_children_html(formatter, selection_writer, state);
+            if !state.is_last_node_in_parent {
+                formatter.push('\n');
+            }
+        } else {
+            let name = self.name();
+            if !name.is_empty() {
+                formatter.push('<');
+                formatter.push(name);
+                if let Some(attrs) = &self.attrs {
+                    for attr in attrs {
+                        let (attr_name, value) = attr;
+                        formatter.push(' ');
+                        formatter.push(&**attr_name);
+                        formatter.push("=\"");
+                        formatter.push(&**value);
+                        formatter.push('"');
+                    }
+                }
+                formatter.push('>');
+            }
 
+            let mut state = state;
+            if matches!(self.kind, ContainerNodeKind::CodeBlock) {
+                state.is_inside_code_block = true;
+            }
+
+            if matches!(self.kind, ContainerNodeKind::Paragraph)
+                && self.is_empty()
+            {
+                formatter.push(char::nbsp());
+            }
+
+            self.fmt_children_html(formatter, selection_writer, state);
+
+            if !name.is_empty() {
+                formatter.push("</");
+                formatter.push(name);
+                formatter.push('>');
+            }
+        }
+    }
+}
+
+impl<S: UnicodeString> ContainerNode<S> {
+    fn fmt_children_html(
+        &self,
+        formatter: &mut S,
+        selection_writer: Option<&mut SelectionWriter>,
+        state: ToHtmlState,
+    ) {
         if let Some(w) = selection_writer {
             for (i, child) in self.children.iter().enumerate() {
-                let is_last = self.children().len() == i + 1;
-                child.fmt_html(formatter, Some(w), is_last);
+                let state = self.updated_state(state, i);
+                child.fmt_html(formatter, Some(w), state);
+            }
+            if self.is_empty() {
+                w.write_selection_empty_container(
+                    formatter,
+                    formatter.len(),
+                    self,
+                )
             }
         } else {
             for (i, child) in self.children.iter().enumerate() {
-                let is_last = self.children().len() == i + 1;
-                child.fmt_html(formatter, None, is_last);
+                let state = self.updated_state(state, i);
+                child.fmt_html(formatter, None, state);
             }
         }
+    }
 
-        if !name.is_empty() {
-            formatter.push('<');
-            formatter.push('/');
-            formatter.push(name);
-            formatter.push('>');
-        }
+    fn updated_state(
+        &self,
+        initial_state: ToHtmlState,
+        child_index: usize,
+    ) -> ToHtmlState {
+        let is_last = self.children().len() == child_index + 1;
+        let is_first = child_index == 0;
+        let mut state = initial_state;
+        state.is_last_node_in_parent = is_last;
+        state.is_first_node_in_parent = is_first;
+        state
     }
 }
 
@@ -808,6 +778,10 @@ where
 
             Quote => {
                 fmt_quote(self, buffer, &options)?;
+            }
+
+            Paragraph => {
+                fmt_paragraph(self, buffer, &options)?;
             }
         };
 
@@ -1040,7 +1014,7 @@ where
                         )))
                     }
 
-                    DomNode::Text(_) | DomNode::Zwsp(_) => {
+                    DomNode::Text(_) => {
                         return Err(MarkdownError::InvalidListItem(None))
                     }
                 };
@@ -1157,6 +1131,20 @@ where
             buffer.push("> ");
             fmt_children(this, buffer, options)?;
             buffer.push("\n");
+
+            Ok(())
+        }
+
+        #[inline(always)]
+        fn fmt_paragraph<S>(
+            this: &ContainerNode<S>,
+            buffer: &mut S,
+            options: &MarkdownOptions,
+        ) -> Result<(), MarkdownError<S>>
+        where
+            S: UnicodeString,
+        {
+            fmt_children(this, buffer, options)?;
 
             Ok(())
         }
@@ -1305,14 +1293,6 @@ mod test {
 
         // Returned vec matches moved handles.
         assert_eq!(moved_handles, vec![text_node2.handle()]);
-    }
-
-    #[test]
-    fn adding_zwsp_to_container() {
-        let mut bold = create_container_with_nested_children();
-        assert!(bold.add_leading_zwsp());
-        assert_eq!(bold.to_html(), "<strong><em>\u{200b}abc</em>def</strong>");
-        assert!(!bold.add_leading_zwsp());
     }
 
     #[test]

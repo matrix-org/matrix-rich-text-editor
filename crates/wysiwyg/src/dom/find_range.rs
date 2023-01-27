@@ -20,8 +20,6 @@ use crate::dom::{Dom, DomHandle, FindResult, Range};
 use crate::UnicodeString;
 use std::cmp::{max, min};
 
-use super::nodes::ZwspNode;
-
 pub fn find_range<S>(dom: &Dom<S>, start: usize, end: usize) -> Range
 where
     S: UnicodeString,
@@ -110,11 +108,6 @@ where
             locations
                 .extend(process_container_node(dom, n, start, end, offset));
         }
-        DomNode::Zwsp(n) => {
-            if let Some(location) = process_zwsp_node(n, start, end, offset) {
-                locations.push(location);
-            }
-        }
     }
     locations
 }
@@ -140,13 +133,16 @@ where
         }
     }
     // If container node is completely selected, include it
-    let container_end = *offset;
+    let mut container_end = *offset;
+    if node.is_block_node() && !node.handle().is_root() {
+        container_end += 1;
+        if !dom.is_last_in_parent(&node.handle()) {
+            *offset = container_end;
+        }
+    }
     let container_node_len = container_end - container_start;
     // We never want to return the root node
-    if container_end >= start
-        && container_start <= end
-        && !node.handle().is_root()
-    {
+    if container_end >= start && container_start <= end {
         let start_offset = max(start, container_start) - container_start;
         let end_offset = min(end, container_end) - container_start;
         results.push(DomLocation {
@@ -197,25 +193,6 @@ where
         end,
         offset,
         DomNodeKind::LineBreak,
-    )
-}
-
-fn process_zwsp_node<S>(
-    node: &ZwspNode<S>,
-    start: usize,
-    end: usize,
-    offset: &mut usize,
-) -> Option<DomLocation>
-where
-    S: UnicodeString,
-{
-    process_textlike_node(
-        node.handle(),
-        node.data().len(),
-        start,
-        end,
-        offset,
-        DomNodeKind::Zwsp,
     )
 }
 
@@ -271,29 +248,13 @@ mod test {
     use crate::tests::testutils_dom::{b, dom, tn};
     use crate::{InlineFormatType, InlineFormatType::Italic, ToHtml};
 
-    fn found_single_node(
-        handle: DomHandle,
-        position: usize,
-        start_offset: usize,
-        end_offset: usize,
-        length: usize,
-    ) -> FindResult {
-        FindResult::Found(vec![DomLocation {
-            node_handle: handle,
-            position,
-            start_offset,
-            end_offset,
-            length,
-            kind: DomNodeKind::Text,
-        }])
-    }
-
     fn make_single_location(
         handle: DomHandle,
         position: usize,
         start_offset: usize,
         end_offset: usize,
         length: usize,
+        kind: DomNodeKind,
     ) -> DomLocation {
         DomLocation {
             node_handle: handle,
@@ -301,7 +262,7 @@ mod test {
             start_offset,
             end_offset,
             length,
-            kind: DomNodeKind::Text,
+            kind,
         }
     }
 
@@ -321,11 +282,18 @@ mod test {
     }
 
     #[test]
-    fn finding_a_node_within_an_empty_dom_returns_not_found() {
+    fn finding_a_node_within_an_empty_dom_returns_only_root_location() {
         let d = dom(&[]);
         assert_eq!(
             find_pos(&d, &d.document_handle(), 0, 0),
-            FindResult::NotFound
+            FindResult::Found(vec![make_single_location(
+                DomHandle::root(),
+                0,
+                0,
+                0,
+                0,
+                DomNodeKind::Generic
+            ),])
         );
     }
 
@@ -334,7 +302,24 @@ mod test {
         let d = dom(&[tn("foo")]);
         assert_eq!(
             find_pos(&d, &d.document_handle(), 1, 1),
-            found_single_node(DomHandle::from_raw(vec![0]), 0, 1, 1, 3)
+            FindResult::Found(vec![
+                make_single_location(
+                    DomHandle::from_raw(vec![0]),
+                    0,
+                    1,
+                    1,
+                    3,
+                    DomNodeKind::Text
+                ),
+                make_single_location(
+                    DomHandle::root(),
+                    0,
+                    1,
+                    1,
+                    3,
+                    DomNodeKind::Generic
+                ),
+            ])
         );
     }
 
@@ -343,15 +328,66 @@ mod test {
         let d = dom(&[tn("foo"), tn("bar")]);
         assert_eq!(
             find_pos(&d, &d.document_handle(), 0, 0),
-            found_single_node(DomHandle::from_raw(vec![0]), 0, 0, 0, 3)
+            FindResult::Found(vec![
+                make_single_location(
+                    DomHandle::from_raw(vec![0]),
+                    0,
+                    0,
+                    0,
+                    3,
+                    DomNodeKind::Text
+                ),
+                make_single_location(
+                    DomHandle::root(),
+                    0,
+                    0,
+                    0,
+                    6,
+                    DomNodeKind::Generic
+                ),
+            ])
         );
         assert_eq!(
             find_pos(&d, &d.document_handle(), 1, 1),
-            found_single_node(DomHandle::from_raw(vec![0]), 0, 1, 1, 3)
+            FindResult::Found(vec![
+                make_single_location(
+                    DomHandle::from_raw(vec![0]),
+                    0,
+                    1,
+                    1,
+                    3,
+                    DomNodeKind::Text
+                ),
+                make_single_location(
+                    DomHandle::root(),
+                    0,
+                    1,
+                    1,
+                    6,
+                    DomNodeKind::Generic
+                ),
+            ])
         );
         assert_eq!(
             find_pos(&d, &d.document_handle(), 2, 2),
-            found_single_node(DomHandle::from_raw(vec![0]), 0, 2, 2, 3)
+            FindResult::Found(vec![
+                make_single_location(
+                    DomHandle::from_raw(vec![0]),
+                    0,
+                    2,
+                    2,
+                    3,
+                    DomNodeKind::Text
+                ),
+                make_single_location(
+                    DomHandle::root(),
+                    0,
+                    2,
+                    2,
+                    6,
+                    DomNodeKind::Generic
+                ),
+            ])
         );
     }
 
@@ -360,15 +396,66 @@ mod test {
         let d = dom(&[tn("foo"), tn("bar")]);
         assert_eq!(
             find_pos(&d, &d.document_handle(), 4, 4),
-            found_single_node(DomHandle::from_raw(vec![1]), 3, 1, 1, 3)
+            FindResult::Found(vec![
+                make_single_location(
+                    DomHandle::from_raw(vec![1]),
+                    3,
+                    1,
+                    1,
+                    3,
+                    DomNodeKind::Text
+                ),
+                make_single_location(
+                    DomHandle::root(),
+                    0,
+                    4,
+                    4,
+                    6,
+                    DomNodeKind::Generic
+                ),
+            ])
         );
         assert_eq!(
             find_pos(&d, &d.document_handle(), 5, 5),
-            found_single_node(DomHandle::from_raw(vec![1]), 3, 2, 2, 3)
+            FindResult::Found(vec![
+                make_single_location(
+                    DomHandle::from_raw(vec![1]),
+                    3,
+                    2,
+                    2,
+                    3,
+                    DomNodeKind::Text
+                ),
+                make_single_location(
+                    DomHandle::root(),
+                    0,
+                    5,
+                    5,
+                    6,
+                    DomNodeKind::Generic
+                ),
+            ])
         );
         assert_eq!(
             find_pos(&d, &d.document_handle(), 6, 6),
-            found_single_node(DomHandle::from_raw(vec![1]), 3, 3, 3, 3)
+            FindResult::Found(vec![
+                make_single_location(
+                    DomHandle::from_raw(vec![1]),
+                    3,
+                    3,
+                    3,
+                    3,
+                    DomNodeKind::Text
+                ),
+                make_single_location(
+                    DomHandle::root(),
+                    0,
+                    6,
+                    6,
+                    6,
+                    DomNodeKind::Generic
+                ),
+            ])
         );
     }
 
@@ -380,8 +467,30 @@ mod test {
         assert_eq!(
             find_pos(&d, &d.document_handle(), 3, 3),
             FindResult::Found(vec![
-                make_single_location(DomHandle::from_raw(vec![0]), 0, 3, 3, 3),
-                make_single_location(DomHandle::from_raw(vec![1]), 3, 0, 0, 3)
+                make_single_location(
+                    DomHandle::from_raw(vec![0]),
+                    0,
+                    3,
+                    3,
+                    3,
+                    DomNodeKind::Text
+                ),
+                make_single_location(
+                    DomHandle::from_raw(vec![1]),
+                    3,
+                    0,
+                    0,
+                    3,
+                    DomNodeKind::Text
+                ),
+                make_single_location(
+                    DomHandle::root(),
+                    0,
+                    3,
+                    3,
+                    6,
+                    DomNodeKind::Generic
+                ),
             ])
         );
     }
@@ -463,12 +572,13 @@ mod test {
         let range = d.find_range(2, 12);
 
         // 3 text nodes + bold node
-        assert_eq!(4, range.locations.len());
+        assert_eq!(5, range.locations.len());
         let html_of_ranges = ranges_to_html(&d, &range);
         assert_eq!(utf16("test"), html_of_ranges[0]);
         assert_eq!(utf16("ing a "), html_of_ranges[1]);
         assert_eq!(utf16("<b>ing a </b>"), html_of_ranges[2]);
         assert_eq!(utf16("new feature"), html_of_ranges[3]);
+        assert_eq!(utf16("test<b>ing a </b>new feature"), html_of_ranges[4]);
     }
 
     #[test]
@@ -476,7 +586,7 @@ mod test {
         let d = cm("test<b>ing <i>a </i></b>new feature|").state.dom;
         let range = d.find_range(2, 12);
         // 4 text nodes + bold node + italic node
-        assert_eq!(6, range.locations.len());
+        assert_eq!(7, range.locations.len());
         let html_of_ranges = ranges_to_html(&d, &range);
         assert_eq!(utf16("test"), html_of_ranges[0]);
         assert_eq!(utf16("ing "), html_of_ranges[1]);
@@ -484,6 +594,10 @@ mod test {
         assert_eq!(utf16("<i>a </i>"), html_of_ranges[3]);
         assert_eq!(utf16("<b>ing <i>a </i></b>"), html_of_ranges[4]);
         assert_eq!(utf16("new feature"), html_of_ranges[5]);
+        assert_eq!(
+            utf16("test<b>ing <i>a </i></b>new feature"),
+            html_of_ranges[6]
+        );
     }
 
     #[test]
@@ -519,6 +633,14 @@ mod test {
                         position: 4,
                         length: 6,
                         kind: DomNodeKind::Formatting(InlineFormatType::Bold),
+                    },
+                    DomLocation {
+                        node_handle: DomHandle::root(),
+                        start_offset: 9,
+                        end_offset: 10,
+                        position: 0,
+                        length: 21,
+                        kind: DomNodeKind::Generic,
                     }
                 ]
             }
@@ -531,12 +653,16 @@ mod test {
         // The range of the whole <i> tag
         let range = d.find_range(8, 11);
         // 2 text nodes + italic node
-        assert_eq!(4, range.locations.len());
+        assert_eq!(5, range.locations.len());
         let html_of_ranges = ranges_to_html(&d, &range);
         assert_eq!(utf16("a "), html_of_ranges[0]);
         assert_eq!(utf16("<i>a </i>"), html_of_ranges[1]);
         assert_eq!(utf16("<b>ing <i>a </i></b>"), html_of_ranges[2]);
         assert_eq!(utf16("new feature"), html_of_ranges[3]);
+        assert_eq!(
+            utf16("test<b>ing <i>a </i></b>new feature"),
+            html_of_ranges[4]
+        );
     }
 
     #[test]
@@ -579,6 +705,14 @@ mod test {
                         position: 0,
                         length: 30,
                         kind: DomNodeKind::Formatting(Italic)
+                    },
+                    DomLocation {
+                        node_handle: DomHandle::root(),
+                        start_offset: 8,
+                        end_offset: 8,
+                        position: 0,
+                        length: 30,
+                        kind: DomNodeKind::Generic
                     },
                 ]
             }

@@ -16,10 +16,11 @@ use crate::action_state::ActionState;
 use crate::composer_model::menu_state::MenuStateComputeType;
 use crate::composer_state::ComposerState;
 use crate::dom::parser::parse;
-use crate::dom::UnicodeString;
+use crate::dom::{Dom, UnicodeString};
 use crate::markdown_html_parser::MarkdownHTMLParser;
 use crate::{
-    ComposerAction, ComposerUpdate, Location, ToHtml, ToMarkdown, ToTree,
+    ComposerAction, ComposerUpdate, DomHandle, Location, ToHtml, ToMarkdown,
+    ToTree,
 };
 use std::collections::HashMap;
 
@@ -84,6 +85,7 @@ where
             action_states: HashMap::new(), // TODO: Calculate state based on ComposerState
         };
         model.compute_menu_state(MenuStateComputeType::AlwaysUpdate);
+        Self::post_process_dom(&mut model.state.dom);
         model
     }
 
@@ -96,10 +98,11 @@ where
         match dom {
             Ok(dom) => {
                 self.state.dom = dom;
-                self.state.start = Location::from(self.state.dom.text_len());
-                self.state.end = self.state.start;
                 self.previous_states.clear();
                 self.next_states.clear();
+                Self::post_process_dom(&mut self.state.dom);
+                self.state.start = Location::from(self.state.dom.text_len());
+                self.state.end = self.state.start;
                 self.create_update_replace_all_with_menu_state()
             }
             Err(e) => {
@@ -110,6 +113,11 @@ where
                 self.create_update_replace_all_with_menu_state()
             }
         }
+    }
+
+    fn post_process_dom(dom: &mut Dom<S>) {
+        dom.wrap_inline_nodes_into_paragraphs_if_needed(&DomHandle::root());
+        dom.explicitly_assert_invariants();
     }
 
     pub fn set_content_from_markdown(
@@ -188,7 +196,8 @@ where
 mod test {
     use widestring::Utf16String;
 
-    use crate::tests::testutils_composer_model::cm;
+    use crate::tests::testutils_composer_model::{cm, tx};
+    use crate::tests::testutils_conversion::utf16;
 
     use super::*;
 
@@ -211,5 +220,31 @@ mod test {
         assert!(model.action_is_reversed(ComposerAction::Bold));
         assert!(model.action_is_enabled(ComposerAction::StrikeThrough));
         assert!(model.action_is_disabled(ComposerAction::Redo));
+    }
+
+    #[test]
+    fn set_content_from_html_with_complex_html_has_proper_selection() {
+        let mut model = cm("|");
+        model.set_content_from_html(&utf16(
+            "<blockquote>\
+                    <p>Some</p>\
+                    <p>multi-line</p>\
+                    <p>quote</p>\
+                </blockquote>\
+                <p>&nbsp;</p>\
+                <p>Some text</p>\
+                <pre>A\n\tcode\nblock</pre>\
+                <p>Some <code>inline</code> code</p>",
+        ));
+        assert_eq!(
+            tx(&model),
+            "<blockquote>\
+                <p>Some</p><p>multi-line</p><p>quote</p>\
+            </blockquote>\
+            <p>&nbsp;</p>\
+            <p>Some text</p>\
+            <pre>A\n\tcode\nblock</pre>\
+            <p>Some <code>inline</code> code|</p>"
+        )
     }
 }

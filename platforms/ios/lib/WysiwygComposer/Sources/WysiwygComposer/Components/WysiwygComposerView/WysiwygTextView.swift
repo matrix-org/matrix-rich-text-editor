@@ -67,6 +67,10 @@ public class WysiwygTextView: UITextView {
             // avoids an issue with autocapitalization.
             self.selectedRange = .zero
             self.selectedRange = content.selection
+
+            // Force redraw when applying content
+            // FIXME: this could be improved further as we sometimes draw twice in a row.
+            self.drawBackgroundStyleLayers()
         }
     }
     
