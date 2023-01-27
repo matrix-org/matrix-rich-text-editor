@@ -412,3 +412,20 @@ fn pressing_enter_after_wrapping_text_in_code_block_works() {
     model.enter();
     assert_eq!(tx(&model), "<pre>Some code\n&nbsp;|</pre>")
 }
+
+#[test]
+fn pressing_enter_at_the_start_of_a_multiline_code_block() {
+    let mut model = cm("<pre>|line_1\nline_2</pre>");
+    model.enter();
+    assert_eq!(tx(&model), "<pre>&nbsp;\n|line_1\nline_2</pre>")
+}
+
+#[test]
+fn pressing_enter_at_the_start_of_a_multiline_block_quote() {
+    let mut model = cm("<blockquote><p>|line_1</p><p>line_2</p></blockquote>");
+    model.enter();
+    assert_eq!(
+        tx(&model),
+        "<blockquote><p>&nbsp;</p><p>|line_1</p><p>line_2</p></blockquote>"
+    )
+}
