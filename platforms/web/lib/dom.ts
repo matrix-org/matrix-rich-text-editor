@@ -353,7 +353,8 @@ function findCharacter(
             const extraOffset = shouldAddOffset ? 1 : 0;
 
             // ...but also have a special case where we don't count a textnode
-            // if it is an nbsp, as this is what we use to mark out empty paras
+            // if it is an nbsp, as this is what we use to mark out empty
+            // paragraphs
             if (textContentIsNbsp(currentNode)) {
                 return { found: false, offset: extraOffset };
             }
