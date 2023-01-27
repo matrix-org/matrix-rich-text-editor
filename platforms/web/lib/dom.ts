@@ -171,7 +171,7 @@ export function computeNodeAndOffset(
         // For a text node, we need to check to see if it needs an extra offset
         // which involves climbing the tree through it's ancestors checking for
         // any of the nodes that require the extra offset.
-        const shouldAddOffset = nodeNeedsExtraOffset(currentNode);
+        const shouldAddOffset = textNodeNeedsExtraOffset(currentNode);
         const extraOffset = shouldAddOffset ? 1 : 0;
 
         // We also have a special case for a text node that is a single &nbsp;
@@ -349,7 +349,7 @@ function findCharacter(
             // The extra check for an offset here depends on the ancestor of the
             // text node and can be seen as the opposite to the equivalent call
             // in computeNodeAndOffset
-            const shouldAddOffset = nodeNeedsExtraOffset(currentNode);
+            const shouldAddOffset = textNodeNeedsExtraOffset(currentNode);
             const extraOffset = shouldAddOffset ? 1 : 0;
 
             // ...but also have a special case where we don't count a textnode
@@ -439,12 +439,12 @@ export function countCodeunit(
  * handle the case where we have consecutive formatting nodes, as only the last
  * of the formatting nodes needs the extra offset (if applicable).
  *
- * This is called in two places and only with TextNodes
+ * This is called in two places and only with TextNodes. Only exported for test.
  *
  * Returns a boolean, true if the node needs an extra offset
  */
 
-function nodeNeedsExtraOffset(node: Node | null) {
+export function textNodeNeedsExtraOffset(node: Node | null) {
     if (node === null) return false;
 
     let checkNode: Node | ParentNode | null = node;
@@ -479,21 +479,21 @@ function nodeNeedsExtraOffset(node: Node | null) {
     return false;
 }
 
+const FORMATTING_NODE_NAMES = ['EM', 'U', 'STRONG', 'DEL'];
+const EXTRA_OFFSET_NODE_NAMES = ['LI', 'PRE', 'BLOCKQUOTE', 'P'];
+
 function isFormattingNode(node: Node | ParentNode | null) {
     if (node === null) return false;
-    const formattingNodeNames = ['EM', 'U', 'STRONG', 'DEL'];
-    return formattingNodeNames.includes(node.nodeName || '');
+    return FORMATTING_NODE_NAMES.includes(node.nodeName || '');
 }
 
 function isNodeRequiringExtraOffset(node: Node) {
-    const extraOffsetNodeNames = ['LI', 'PRE', 'BLOCKQUOTE', 'P'];
-    return extraOffsetNodeNames.includes(node.nodeName || '');
+    return EXTRA_OFFSET_NODE_NAMES.includes(node.nodeName || '');
 }
 
 function isEmptyFormattingNode(node: Node) {
-    const formattingNodeNames = ['EM', 'U', 'STRONG', 'DEL'];
     return (
-        formattingNodeNames.includes(node.nodeName) &&
+        FORMATTING_NODE_NAMES.includes(node.nodeName) &&
         node.textContent?.length === 0
     );
 }
