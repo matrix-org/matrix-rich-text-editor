@@ -945,7 +945,7 @@ describe('getCurrentSelection', () => {
     });
 });
 
-describe('nodeNeedsExtraOffset', () => {
+describe('textNodeNeedsExtraOffset', () => {
     const trueTestCases = [
         { name: 'paragraph', testTag: 'p' },
         { name: 'preformatted', testTag: 'pre' },
