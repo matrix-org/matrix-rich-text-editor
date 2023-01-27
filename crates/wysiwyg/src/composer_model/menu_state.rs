@@ -228,7 +228,15 @@ where
         if !self.can_unindent(&top_most_list_locations) {
             disabled_actions.insert(UnIndent);
         }
-        if contains_inline_code(locations) {
+        // XOR on inline code in selection & toggled format types.
+        // If selection is not a cursor, toggled format types is always
+        // empty, which makes `contains_inline_code` the only condition.
+        if contains_inline_code(locations)
+            ^ self
+                .state
+                .toggled_format_types
+                .contains(&InlineFormatType::InlineCode)
+        {
             // Remove the rest of inline formatting options
             disabled_actions.extend(vec![
                 ComposerAction::Bold,
