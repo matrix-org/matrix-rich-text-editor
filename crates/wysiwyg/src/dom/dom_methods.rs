@@ -396,7 +396,7 @@ where
         for loc in range.locations.iter() {
             let mut node = self.lookup_node_mut(&loc.node_handle);
             match &mut node {
-                DomNode::Container(_) => {
+                DomNode::Container(container_node) => {
                     if loc.kind.is_block_kind() && loc.kind != Generic {
                         if loc.is_empty() && loc.relative_position() == After {
                             // Empty block node
@@ -425,6 +425,18 @@ where
                             ));
                             first_text_node = false;
                         }
+                    } else if container_node.is_formatting_node()
+                        && container_node.is_empty()
+                    {
+                        // do a special case here for when we split a formatting node and create empty
+                        // formatting nodes inside the next paragraph tag
+                        let text_node = DomNode::new_text(new_text.clone());
+                        action_list.push(DomAction::add_node(
+                            loc.node_handle.clone(),
+                            0,
+                            text_node,
+                        ));
+                        first_text_node = false;
                     }
                 }
                 DomNode::LineBreak(_) => {
