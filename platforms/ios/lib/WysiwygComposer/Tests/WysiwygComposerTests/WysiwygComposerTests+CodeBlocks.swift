@@ -18,52 +18,54 @@
 import XCTest
 
 private enum Constants {
-    static let resultHtml = "<pre>​Some code\n\tmore code</pre><br />"
+    static let resultHtml = "<pre>Some code\n\tmore code</pre><p>\(Character.nbsp)</p>"
     static let resultTree =
         """
 
         ├>pre
-        │ ├>~
-        │ └>"Some code\n\tmore code"
-        └>br
+        │ ├>p
+        │ │ └>"Some code"
+        │ └>p
+        │   └>"\tmore code"
+        └>p
 
         """
 }
 
 extension WysiwygComposerTests {
     func testCodeBlocksFromEmptyComposer() {
-        let composer = newComposerModel()
-        _ = composer.codeBlock()
-        _ = composer.replaceText(newText: "Some code")
-        _ = composer.enter()
-        _ = composer.replaceText(newText: "\t")
-        _ = composer.replaceText(newText: "more code")
-        _ = composer.enter()
-        _ = composer.enter()
-        XCTAssertEqual(composer.getContentAsHtml(), Constants.resultHtml)
-        XCTAssertEqual(composer.toTree(), Constants.resultTree)
+        newComposerModel()
+            .action { $0.codeBlock() }
+            .action { $0.replaceText(newText: "Some code") }
+            .action { $0.enter() }
+            .action { $0.replaceText(newText: "\t") }
+            .action { $0.replaceText(newText: "more code") }
+            .action { $0.enter() }
+            .action { $0.enter() }
+            .assertHtml(Constants.resultHtml)
+            .assertTree(Constants.resultTree)
     }
 
     func testCodeBlocksWithMultilineInput() {
-        let composer = newComposerModel()
-        _ = composer.codeBlock()
-        _ = composer.replaceText(newText: "Some code\n\tmore code")
-        _ = composer.enter()
-        _ = composer.enter()
-        XCTAssertEqual(composer.getContentAsHtml(), Constants.resultHtml)
-        XCTAssertEqual(composer.toTree(), Constants.resultTree)
+        newComposerModel()
+            .action { $0.codeBlock() }
+            .action { $0.replaceText(newText: "Some code\n\tmore code") }
+            .action { $0.enter() }
+            .action { $0.enter() }
+            .assertHtml(Constants.resultHtml)
+            .assertTree(Constants.resultTree)
     }
 
     func testCodeBlocksFromContent() {
-        let composer = newComposerModel()
-        _ = composer.replaceText(newText: "Some code")
-        _ = composer.codeBlock()
-        _ = composer.enter()
-        _ = composer.replaceText(newText: "\t")
-        _ = composer.replaceText(newText: "more code")
-        _ = composer.enter()
-        _ = composer.enter()
-        XCTAssertEqual(composer.getContentAsHtml(), Constants.resultHtml)
-        XCTAssertEqual(composer.toTree(), Constants.resultTree)
+        newComposerModel()
+            .action { $0.replaceText(newText: "Some code") }
+            .action { $0.codeBlock() }
+            .action { $0.enter() }
+            .action { $0.replaceText(newText: "\t") }
+            .action { $0.replaceText(newText: "more code") }
+            .action { $0.enter() }
+            .action { $0.enter() }
+            .assertHtml(Constants.resultHtml)
+            .assertTree(Constants.resultTree)
     }
 }

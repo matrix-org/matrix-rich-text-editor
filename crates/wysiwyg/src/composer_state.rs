@@ -38,4 +38,9 @@ where
             toggled_format_types: Vec::new(),
         }
     }
+
+    pub fn advance_selection(&mut self) {
+        self.start += 1;
+        self.end += 1;
+    }
 }

@@ -19,11 +19,9 @@ import XCTest
 
 final class WysiwygComposerTests: XCTestCase {
     func testComposerEmptyState() {
-        let model = newComposerModel()
-        XCTAssertEqual(model.getContentAsHtml(), "")
-        XCTAssertEqual(model.getContentAsMarkdown(), "")
-        let state = model.getCurrentDomState()
-        XCTAssertEqual(state.start, 0)
-        XCTAssertEqual(state.end, 0)
+        newComposerModel()
+            .assertHtml("")
+            .execute { XCTAssertEqual($0.getContentAsMarkdown(), "") }
+            .assertSelection(start: 0, end: 0)
     }
 }

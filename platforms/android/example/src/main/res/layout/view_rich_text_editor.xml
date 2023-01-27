@@ -166,6 +166,25 @@
                     android:src="@drawable/ic_unordered_list"
                     app:tint="@drawable/editor_menu_text_selector" />
 
+                <ImageButton
+                    android:id="@+id/indentButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"
+                    android:backgroundTint="@drawable/editor_menu_bg_selector"
+                    android:contentDescription="Indent"
+                    android:src="@drawable/ic_indent"
+                    app:tint="@drawable/editor_menu_text_selector" />
+
+                <ImageButton
+                    android:id="@+id/unIndentButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="4dp"
+                    android:backgroundTint="@drawable/editor_menu_bg_selector"
+                    android:contentDescription="Unindent"
+                    android:src="@drawable/ic_unindent"
+                    app:tint="@drawable/editor_menu_text_selector" />
 
             </LinearLayout>
         </HorizontalScrollView>

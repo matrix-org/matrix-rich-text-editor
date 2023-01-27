@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::char::CharExt;
 use std::fmt;
 use std::iter;
 use std::ops::{Deref, Index, Range, RangeFrom, RangeTo};
@@ -49,11 +48,6 @@ pub trait UnicodeString:
     fn insert(&mut self, idx: usize, s: &Self::Str);
     fn remove_at(&mut self, idx: usize);
     fn pop_last(&mut self) -> Option<char>;
-
-    /// Creates a new unicode string consisting of a single ZWSP.
-    fn zwsp() -> Self {
-        char::zwsp().to_string().into()
-    }
 }
 
 pub trait UnicodeStr:

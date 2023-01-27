@@ -41,6 +41,10 @@ extension ComposerModel {
             update = orderedList()
         case .unorderedList:
             update = unorderedList()
+        case .indent:
+            update = indent()
+        case .unIndent:
+            update = unIndent()
         case .codeBlock:
             update = codeBlock()
         case .quote:

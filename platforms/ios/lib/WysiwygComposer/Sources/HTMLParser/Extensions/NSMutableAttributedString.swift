@@ -29,8 +29,10 @@ extension NSMutableAttributedString {
             switch textBlock.backgroundColor {
             case TempColor.codeBlock:
                 addAttribute(.backgroundStyle, value: style.codeBlockBackgroundStyle, range: range)
+                addAttribute(.paragraphStyle, value: NSParagraphStyle.default, range: range)
             case TempColor.quote:
                 addAttribute(.backgroundStyle, value: style.quoteBackgroundStyle, range: range)
+                addAttribute(.paragraphStyle, value: NSParagraphStyle.default, range: range)
             default:
                 break
             }
@@ -48,6 +50,32 @@ extension NSMutableAttributedString {
             // Note: for now inline code just uses standard NSAttributedString background color
             // to avoid issues where it spans accross multiple lines.
             addAttribute(.backgroundColor, value: codeBackgroundColor, range: range)
+        }
+    }
+
+    /// Finds any text that has been marked as discardable
+    /// and either replaces it with ZWSP if contained overlaps with text marked with a background style
+    /// or removes it otherwise
+    func replaceOrDeleteDiscardableText() {
+        enumerateTypedAttribute(.discardableText) { (discardable: Bool, range: NSRange, _) in
+            guard discardable == true else { return }
+            let attributes = self.attributes(at: range.location, effectiveRange: nil)
+            if attributes[.backgroundStyle] != nil {
+                self.replaceCharacters(in: range, with: String.zwsp)
+            } else {
+                self.deleteCharacters(in: range)
+            }
+        }
+    }
+
+    /// Remove the vertical spacing for paragraphs in the entire attributed string.
+    func removeParagraphVerticalSpacing() {
+        enumerateTypedAttribute(.paragraphStyle) { (style: NSParagraphStyle, range: NSRange, _) in
+            guard let mutableStyle = style.mutableCopy() as? NSMutableParagraphStyle else { return }
+
+            mutableStyle.paragraphSpacing = 0
+            mutableStyle.paragraphSpacingBefore = 0
+            addAttribute(.paragraphStyle, value: mutableStyle as Any, range: range)
         }
     }
 }

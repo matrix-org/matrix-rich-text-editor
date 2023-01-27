@@ -22,4 +22,5 @@ extension NSAttributedString.Key {
     static let backgroundStyle: NSAttributedString.Key = .init(rawValue: "BackgroundStyleAttributeKey")
     static let DTField: NSAttributedString.Key = .init(rawValue: DTFieldAttribute)
     static let DTTextLists: NSAttributedString.Key = .init(rawValue: DTTextListsAttribute)
+    static let discardableText: NSAttributedString.Key = .init(rawValue: "DiscardableAttributeKey")
 }

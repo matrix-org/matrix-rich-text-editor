@@ -117,7 +117,7 @@ private struct StringDiff {
 private extension String {
     /// Converts all whitespaces to NBSP to avoid diffs caused by HTML translations.
     var withNBSP: String {
-        String(map { $0.isWhitespace ? Character("\u{00A0}") : $0 })
+        String(map { $0.isWhitespace ? Character.nbsp : $0 }).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// Computes the diff from provided string to self. Outputs UTF16 locations and lengths.

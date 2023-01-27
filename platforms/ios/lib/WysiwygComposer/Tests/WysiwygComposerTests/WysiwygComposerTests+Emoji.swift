@@ -19,41 +19,21 @@ import XCTest
 
 extension WysiwygComposerTests {
     func testSetBaseStringWithEmoji() {
-        let composer = newComposerModel()
-        let update = composer.replaceText(newText: TestConstants.testStringWithEmojis)
-        switch update.textUpdate() {
-        case .keep, .select:
-            XCTFail("Expected replace all HTML update")
-        case let .replaceAll(replacementHtml: codeUnits,
-                             startUtf16Codeunit: start,
-                             endUtf16Codeunit: end):
+        newComposerModel()
+            .action { $0.replaceText(newText: TestConstants.testStringWithEmojis) }
             // Text is preserved, including emojis.
-            XCTAssertEqual(String(utf16CodeUnits: codeUnits, count: codeUnits.count),
-                           TestConstants.testStringWithEmojis)
+            .assertHtml(TestConstants.testStringWithEmojis)
             // Selection is set at the end of the text.
-            XCTAssertEqual(start, end)
-            XCTAssertEqual(end, 14)
-        }
+            .assertSelection(start: 14, end: 14)
     }
 
     func testBackspacingEmoji() {
-        let composer = newComposerModel()
-        _ = composer.replaceText(newText: TestConstants.testStringWithEmojis)
-
-        _ = composer.select(startUtf16Codeunit: 7, endUtf16Codeunit: 14)
-
-        let update = composer.backspace()
-        switch update.textUpdate() {
-        case .keep, .select:
-            XCTFail("Expected replace all HTML update")
-        case let .replaceAll(replacementHtml: codeUnits,
-                             startUtf16Codeunit: start,
-                             endUtf16Codeunit: end):
+        newComposerModel()
+            .action { $0.replaceText(newText: TestConstants.testStringWithEmojis) }
+            .action { $0.select(startUtf16Codeunit: 7, endUtf16Codeunit: 14) }
+            .action { $0.backspace() }
             // Text should remove exactly the last emoji.
-            XCTAssertEqual(String(utf16CodeUnits: codeUnits, count: codeUnits.count),
-                           TestConstants.testStringAfterBackspace)
-            XCTAssertEqual(start, end)
-            XCTAssertEqual(start, 7)
-        }
+            .assertHtml(TestConstants.testStringAfterBackspace)
+            .assertSelection(start: 7, end: 7)
     }
 }

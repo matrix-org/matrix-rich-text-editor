@@ -15,7 +15,10 @@
 //! Methods on Dom that modify its contents and are guaranteed to conform to
 //! our invariants e.g. no empty text nodes, no adjacent text nodes.
 
+use crate::dom::nodes::dom_node::DomNodeKind::{Generic, ListItem, Paragraph};
+use crate::dom::range::DomLocationPosition::After;
 use crate::dom::unicode_string::UnicodeStr;
+use crate::dom::DomLocation;
 use crate::{DomHandle, DomNode, UnicodeString};
 
 use super::action_list::{DomAction, DomActionList};
@@ -62,7 +65,10 @@ where
         #[cfg(any(test, feature = "assert-invariants"))]
         self.assert_invariants();
 
+        let extra_len = new_text.len() + 1;
         let range = self.find_range(start, end);
+        let (start_block, end_block) =
+            self.top_most_block_nodes_in_range(start, &range);
         let deleted_handles = if range.is_empty() {
             if !new_text.is_empty() {
                 self.append_at_end_of_document(DomNode::new_text(new_text));
@@ -86,10 +92,101 @@ where
             self.replace_multiple_nodes(&range, new_text)
         };
 
+        // If text was replaced, not inserted
+        let needs_to_merge_block_nodes =
+            if let (Some(start_block), Some(end_block)) =
+                (start_block, end_block)
+            {
+                start_block != end_block
+                    && start_block.start_offset != start_block.length
+                    && !deleted_handles.contains(&start_block.node_handle)
+                    && !deleted_handles.contains(&end_block.node_handle)
+            } else {
+                false
+            };
         self.merge_adjacent_text_nodes_after_replace(range, deleted_handles);
 
+        if start != end && needs_to_merge_block_nodes {
+            let (start_block, end_block) =
+                self.top_most_block_nodes_in_boundary(start, extra_len);
+            if let (Some(start_block_loc), Some(end_block_loc)) =
+                (start_block, end_block)
+            {
+                // If there are adjacent block nodes as a result of replacing text
+                if start_block_loc != end_block_loc {
+                    let end_block = self.remove(&end_block_loc.node_handle);
+                    let DomNode::Container(end_block) = end_block else {
+                        panic!("Ending block node must be a container node")
+                    };
+                    let removed_items = end_block.take_children();
+                    if let DomNode::Container(start_block) =
+                        self.lookup_node_mut(&start_block_loc.node_handle)
+                    {
+                        // Merge contents in `start_block`
+                        start_block.append_children(removed_items);
+                    } else {
+                        panic!("Starting block node must be a container node");
+                    }
+
+                    if end_block_loc.node_handle.has_parent() {
+                        self.remove_empty_nodes_recursively(
+                            &end_block_loc.node_handle.parent_handle(),
+                        );
+                    }
+
+                    self.join_nodes_in_container(&start_block_loc.node_handle);
+                }
+            }
+        }
         #[cfg(any(test, feature = "assert-invariants"))]
         self.assert_invariants();
+    }
+
+    fn top_most_block_nodes_in_boundary(
+        &self,
+        selection_pos: usize,
+        length: usize,
+    ) -> (Option<DomLocation>, Option<DomLocation>) {
+        let range = self.find_range(selection_pos, selection_pos + length);
+        self.top_most_block_nodes_in_range(selection_pos, &range)
+    }
+
+    fn top_most_block_nodes_in_range(
+        &self,
+        start_pos: usize,
+        range: &Range,
+    ) -> (Option<DomLocation>, Option<DomLocation>) {
+        let mut start = None;
+        let mut end = None;
+        let mut sorted_locations = range.locations.clone();
+        sorted_locations.sort();
+        for location in sorted_locations {
+            if location.kind.is_block_kind() {
+                if location.is_start() && location.index_in_dom() == start_pos {
+                    start = Some(location.clone());
+                } else if location.is_end() {
+                    end = Some(location.clone());
+                }
+            }
+        }
+        (start, end)
+    }
+
+    fn remove_empty_nodes_recursively(&mut self, handle: &DomHandle) {
+        let needs_removal = if let DomNode::Container(container) =
+            self.lookup_node_mut(handle)
+        {
+            container.is_empty()
+        } else {
+            false
+        };
+        if needs_removal {
+            self.remove(handle);
+        }
+
+        if handle.has_parent() {
+            self.remove_empty_nodes_recursively(&handle.parent_handle());
+        }
     }
 
     /// Deletes the given [to_delete] nodes and then removes any given parent nodes that became
@@ -107,26 +204,28 @@ where
         let mut deleted = Vec::new();
 
         // Delete in reverse order to avoid invalidating handles
-        to_delete.reverse();
+        to_delete.sort();
 
         // We repeatedly delete to ensure anything that became empty because
         // of deletions is itself deleted.
         while !to_delete.is_empty() {
-            // Keep a list of things we will delete next time around the loop
-            let mut new_to_delete = Vec::new();
-
-            for handle in to_delete.into_iter().filter(not_root) {
-                let index_in_parent = handle.index_in_parent();
-                let parent = self.parent_mut(&handle);
-                parent.remove_child(index_in_parent);
-                adjust_handles_for_delete(&mut new_to_delete, &handle);
-                deleted.push(handle);
-                if parent.children().is_empty() {
-                    new_to_delete.push(parent.handle());
-                }
+            let handle = to_delete.pop().unwrap();
+            if handle.is_root() {
+                continue;
             }
 
-            to_delete = new_to_delete;
+            let cur_node = self.remove(&handle);
+            deleted.push(handle.clone());
+            let parent = self.parent(&handle);
+            let parent_handle = parent.handle();
+            if parent.children().is_empty()
+                && !to_delete.contains(&parent_handle)
+                && !deleted.contains(&parent_handle)
+                && (!parent.is_block_node()
+                    || (cur_node.is_block_node() && parent.is_block_node()))
+            {
+                to_delete.push(parent_handle);
+            }
         }
         deleted
     }
@@ -212,14 +311,7 @@ where
                     // range, after the in-between characters have been
                     // deleted, and the new characters have been inserted.
                     let new_pos = range.start() + len + 1;
-
-                    // join_nodes only requires that the first location in
-                    // the supplied range has a valid handle.
-                    // We think it's OK to pass in a range where later
-                    // locations have been deleted.
-                    // TODO: can we just pass in this handle, to avoid the
-                    // ambiguity here?
-                    self.join_nodes(range, new_pos);
+                    self.join_format_nodes_at_index(new_pos);
                 }
             }
         } else if let Some(first_leave) = range.leaves().next() {
@@ -232,6 +324,7 @@ where
                 self.join_nodes_in_container(&ancestor_handle);
             }
         }
+
         deleted_handles
     }
 
@@ -300,11 +393,51 @@ where
         let mut action_list = DomActionList::default();
         let mut first_text_node = true;
 
-        for loc in range.leaves() {
+        for loc in range.locations.iter() {
             let mut node = self.lookup_node_mut(&loc.node_handle);
             match &mut node {
-                DomNode::Container(_) => {
-                    panic!("Leaves shouldn't have containers")
+                DomNode::Container(container_node) => {
+                    if loc.kind.is_block_kind() && loc.kind != Generic {
+                        if loc.is_empty() && loc.relative_position() == After {
+                            // Empty block node
+                            if new_text.is_empty() {
+                                action_list.push(DomAction::remove_node(
+                                    loc.node_handle.clone(),
+                                ));
+                                first_text_node = false;
+                            } else if first_text_node {
+                                match loc.kind {
+                                    Paragraph | ListItem => {
+                                        let text_node = DomNode::new_text(new_text.clone());
+                                        action_list.push(DomAction::add_node(
+                                            loc.node_handle.clone(),
+                                            0,
+                                            text_node,
+                                        ));
+                                        first_text_node = false;
+                                    },
+                                    _ => panic!("A block node that can't contain inline nodes was selected, text can't be added to it."),
+                                }
+                            }
+                        } else if !loc.is_empty() && loc.is_covered() {
+                            action_list.push(DomAction::remove_node(
+                                loc.node_handle.clone(),
+                            ));
+                            first_text_node = false;
+                        }
+                    } else if container_node.is_formatting_node()
+                        && container_node.is_empty()
+                    {
+                        // do a special case here for when we split a formatting node and create empty
+                        // formatting nodes inside the next paragraph tag
+                        let text_node = DomNode::new_text(new_text.clone());
+                        action_list.push(DomAction::add_node(
+                            loc.node_handle.clone(),
+                            0,
+                            text_node,
+                        ));
+                        first_text_node = false;
+                    }
                 }
                 DomNode::LineBreak(_) => {
                     match (loc.start_offset, loc.end_offset) {
@@ -369,49 +502,33 @@ where
 
                     first_text_node = false;
                 }
-                DomNode::Zwsp(_) => {
-                    // FIXME: zwsp might not be handled in the same way as linebreak in some cases.
-                    let insert_at = loc.node_handle.parent_handle();
-                    match (loc.start_offset, loc.end_offset) {
-                        (0, 1) => {
-                            // Whole zwsp is selected, delete it
-                            action_list.push(DomAction::remove_node(
-                                loc.node_handle.clone(),
-                            ));
-                        }
-                        (1, 1) => {
-                            // Cursor is after zwsp, no need to delete
-                        }
-                        (0, 0) => {
-                            if first_text_node && !new_text.is_empty() {
-                                action_list.push(DomAction::add_node(
-                                    insert_at.parent_handle(),
-                                    insert_at.index_in_parent(),
-                                    DomNode::new_text(new_text.clone()),
-                                ));
-                                first_text_node = false;
-                            }
-                        }
-                        _ => panic!(
-                            "Tried to insert text into a zwsp with offset != 0 or 1. \
-                            Start offset: {}, end offset: {}",
-                            loc.start_offset,
-                            loc.end_offset,
-                        ),
-                    }
-                }
             }
         }
 
+        let mut sorted_locations = range.locations.clone();
+        sorted_locations.sort();
+
         // If text wasn't added in any previous iteration, just append it next to the last leaf
         if first_text_node && !new_text.is_empty() {
-            let last_leaf = range.leaves().last().unwrap();
-            action_list.push(DomAction::add_node(
-                last_leaf.node_handle.parent_handle(),
-                last_leaf.node_handle.index_in_parent() + 1,
-                DomNode::new_text(new_text.clone()),
-            ));
+            if let Some(last_leaf) = range.leaves().last() {
+                action_list.push(DomAction::add_node(
+                    last_leaf.node_handle.parent_handle(),
+                    last_leaf.node_handle.index_in_parent() + 1,
+                    DomNode::new_text(new_text),
+                ));
+            } else if let Some(block_node) = sorted_locations
+                .into_iter()
+                .rev()
+                .find(|l| l.kind.is_block_kind())
+            {
+                action_list.push(DomAction::add_node(
+                    block_node.node_handle,
+                    0,
+                    DomNode::new_text(new_text),
+                ));
+            }
         }
+
         action_list
     }
 
@@ -457,6 +574,80 @@ where
         self.assert_invariants();
     }
 
+    /// Recursively visit container nodes, looking for block nodes and, if they contain a
+    /// mix of inline node and block nodes, wraps the inline nodes into paragraphs so only block
+    /// nodes remain. If the container only has inline nodes or block nodes, nothing is done.
+    pub(crate) fn wrap_inline_nodes_into_paragraphs_if_needed(
+        &mut self,
+        handle: &DomHandle,
+    ) {
+        if !self.lookup_node(handle).is_block_node() {
+            return;
+        }
+        self.wrap_inline_nodes_into_paragraphs_at_container(handle);
+        let child_count = self
+            .lookup_node(handle)
+            .as_container()
+            .map_or(0, |c| c.children().len());
+        if child_count > 0 {
+            for idx in 0..child_count {
+                self.wrap_inline_nodes_into_paragraphs_if_needed(
+                    &handle.child_handle(idx),
+                );
+            }
+        }
+    }
+
+    fn wrap_inline_nodes_into_paragraphs_at_container(
+        &mut self,
+        container_handle: &DomHandle,
+    ) {
+        let DomNode::Container(container) = self.lookup_node_mut(container_handle) else {
+            return;
+        };
+
+        let all_nodes_are_inline =
+            container.children().iter().all(|n| !n.is_block_node());
+        if all_nodes_are_inline {
+            return;
+        }
+        let all_nodes_are_block =
+            container.children().iter().all(|n| n.is_block_node());
+        if all_nodes_are_block {
+            return;
+        }
+
+        let mut wrap_start = usize::MAX;
+        let mut wrap_end = container.children().len();
+        let mut to_wrap = Vec::new();
+
+        // Find ranges to wrap into paragraphs
+        for (idx, child) in container.children().iter().enumerate().rev() {
+            if !child.is_block_node() {
+                wrap_start = idx;
+            } else {
+                if wrap_start != usize::MAX {
+                    to_wrap.push((wrap_start, wrap_end));
+                    wrap_start = usize::MAX;
+                }
+                wrap_end = idx;
+            }
+        }
+        if wrap_start != usize::MAX {
+            to_wrap.push((wrap_start, wrap_end));
+        }
+
+        // Do wrap them
+        for (start, end) in to_wrap {
+            let mut removed = Vec::new();
+            for idx in (start..end).rev() {
+                removed.insert(0, container.remove_child(idx));
+            }
+            let paragraph = DomNode::new_paragraph(removed);
+            container.insert_child(start, paragraph);
+        }
+    }
+
     /// Returns two new subtrees as the result of splitting the Dom symmetrically without mutating
     /// itself. Also returns the new handles of node that was split.
     ///
@@ -472,7 +663,7 @@ where
         let right = clone.split_sub_tree_from(from_handle, offset, depth);
 
         // Remove unmodified children of the right split
-        let mut right = right.into_container().unwrap().take_children();
+        let mut right = right.into_container().take_children();
         right.truncate(1);
 
         // Remove unmodified children of the left split
@@ -508,7 +699,7 @@ where
         from_handle: &DomHandle,
         start_offset: usize,
         depth: usize,
-    ) -> DomNode<S> {
+    ) -> Dom<S> {
         self.split_sub_tree(from_handle, start_offset, None, usize::MAX, depth)
     }
 
@@ -527,7 +718,7 @@ where
         to_handle: &DomHandle,
         end_offset: usize,
         depth: usize,
-    ) -> DomNode<S> {
+    ) -> Dom<S> {
         self.split_sub_tree(
             from_handle,
             start_offset,
@@ -552,7 +743,7 @@ where
         to_handle: Option<DomHandle>,
         end_offset: usize,
         depth: usize,
-    ) -> DomNode<S> {
+    ) -> Dom<S> {
         let cur_handle = from_handle.sub_handle_up_to(depth);
         let mut subtree_children = self.split_sub_tree_at_index(
             cur_handle,
@@ -564,12 +755,7 @@ where
 
         // Create new 'root' node to contain the split sub-tree
         let new_subtree = subtree_children.remove(0);
-
-        let keep_empty_list_items =
-            !new_subtree.iter_subtree().any(|n| n.is_list());
-        self.remove_empty_container_nodes(keep_empty_list_items);
-
-        new_subtree
+        Dom::new_with_root(new_subtree)
     }
 
     fn split_sub_tree_at_index<'a>(
@@ -622,6 +808,7 @@ where
         to_handle: Option<DomHandle>,
     ) -> Vec<DomNode<S>> {
         let depth = cur_handle.depth();
+        let mut child_count = 0;
         let min_child_index: usize =
             if is_ancestor_or_self(&cur_handle, from_handle) {
                 sub_handle_up_to_or_none(from_handle, depth + 1)
@@ -632,7 +819,7 @@ where
         let max_child_index = if let DomNode::Container(container) =
             self.lookup_node(&cur_handle)
         {
-            let child_count = container.children().len();
+            child_count = container.children().len();
             to_handle.clone().map_or(child_count, |to_handle| {
                 if is_ancestor_or_self(&cur_handle, &to_handle) {
                     sub_handle_up_to_or_none(&to_handle, depth + 1)
@@ -658,13 +845,28 @@ where
             new_children.extend(child_nodes);
             child_nodes = new_children;
         }
-        let container = self
-            .lookup_node_mut(&cur_handle)
-            .as_container_mut()
-            .unwrap();
-        vec![DomNode::Container(
-            container.clone_with_new_children(child_nodes),
-        )]
+
+        let result: Vec<DomNode<S>>;
+        let mut needs_to_remove_container = false;
+        if let DomNode::Container(container) = self.lookup_node(&cur_handle) {
+            if !container.handle().is_root()
+                && container.is_empty()
+                && child_count > 0
+            {
+                needs_to_remove_container = true;
+            }
+            result = vec![DomNode::Container(
+                container.clone_with_new_children(child_nodes),
+            )]
+        } else {
+            result = Vec::new();
+        }
+
+        if needs_to_remove_container {
+            self.remove(&cur_handle);
+        }
+
+        result
     }
 
     fn split_sub_tree_at_text_node<'a>(
@@ -706,35 +908,39 @@ where
         nodes
     }
 
-    pub(crate) fn remove_empty_container_nodes(
+    pub fn adds_line_break(&self, handle: &DomHandle) -> bool {
+        let node = self.lookup_node(handle);
+        let is_block_node = node.is_block_node();
+        if !is_block_node || handle.is_root() {
+            return false;
+        }
+
+        let parent = self.parent(handle);
+        let child_count = parent.children().len();
+
+        node.handle().index_in_parent() + 1 < child_count
+    }
+
+    pub(crate) fn remove_nodes_matching(
         &mut self,
-        keep_empty_list_items: bool,
+        condition: &dyn Fn(&DomNode<S>) -> bool,
     ) {
-        let last_handle_in_dom = self.last_node_handle();
-        let handles_in_reverse: Vec<DomHandle> =
-            self.handle_iter_from(&last_handle_in_dom).rev().collect();
-        for handle in handles_in_reverse {
-            let mut needs_removal = false;
-            if !self.contains(&handle) {
-                continue;
+        let mut cur = self.last_node_handle();
+        loop {
+            if cur.is_root() {
+                break;
             }
-            if let DomNode::Container(container) = self.lookup_node(&handle) {
-                let children_are_empty = container.children().is_empty();
 
-                let is_list_item_and_keep_empty_list_items =
-                    keep_empty_list_items && container.is_list_item();
+            let needs_removal = {
+                let node = self.lookup_node(&cur);
+                condition(node)
+            };
 
-                let is_block_with_only_zwsp =
-                    container.is_block_node() && container.only_contains_zwsp();
-
-                if children_are_empty && !is_list_item_and_keep_empty_list_items
-                    || is_block_with_only_zwsp
-                {
-                    needs_removal = true;
-                }
-            }
-            if needs_removal && !handle.is_root() {
-                self.remove(&handle);
+            if needs_removal {
+                self.remove_and_keep_children(&cur);
+                cur = cur.parent_handle();
+            } else {
+                cur = self.prev_node(&cur).unwrap().handle();
             }
         }
     }
@@ -772,10 +978,6 @@ fn first_shrinkable_link_node_handle(range: &Range) -> Option<DomHandle> {
     Some(link_loc.node_handle.clone())
 }
 
-fn not_root(handle: &DomHandle) -> bool {
-    !handle.is_root()
-}
-
 fn sub_handle_up_to_or_none(
     handle: &DomHandle,
     depth: usize,
@@ -790,95 +992,11 @@ fn is_ancestor_or_self(ancestor: &DomHandle, handle: &DomHandle) -> bool {
     ancestor.is_ancestor_of(handle) || ancestor == handle
 }
 
-fn adjust_handles_for_delete(
-    handles: &mut Vec<DomHandle>,
-    deleted: &DomHandle,
-) {
-    let mut indices_in_handles_to_delete = Vec::new();
-    let mut handles_to_replace = Vec::new();
-
-    let parent = deleted.parent_handle();
-    for (i, handle) in handles.iter().enumerate() {
-        if deleted.is_ancestor_of(handle) {
-            // We are the deleted node (or a descendant of it)
-            indices_in_handles_to_delete.push(i);
-        } else if parent.is_ancestor_of(handle) {
-            // We are a sibling of the deleted node (or a descendant of one)
-
-            // If we're after a deleted node, reduce our index
-            let mut child_index = handle.raw()[parent.raw().len()];
-            let deleted_index = *deleted.raw().last().unwrap();
-            if child_index > deleted_index {
-                child_index -= 1;
-            }
-
-            // Create a handle with the adjusted index (but missing anything
-            // after the delete node's length).
-            let mut new_handle = parent.child_handle(child_index);
-
-            // Add back the rest of our original handle, unadjusted
-            for h in &handle.raw()[deleted.raw().len()..] {
-                new_handle = new_handle.child_handle(*h);
-            }
-            handles_to_replace.push((i, new_handle));
-        }
-    }
-
-    for (i, new_handle) in handles_to_replace {
-        handles[i] = new_handle;
-    }
-
-    indices_in_handles_to_delete.reverse();
-    for i in indices_in_handles_to_delete {
-        handles.remove(i);
-    }
-}
-
 #[cfg(test)]
 mod test {
     use crate::dom::DomHandle;
     use crate::tests::testutils_composer_model::{cm, tx};
     use crate::ToHtml;
-
-    use super::*;
-
-    #[test]
-    fn can_adjust_handles_when_removing_nodes() {
-        let mut handles = vec![
-            DomHandle::from_raw(vec![1, 2, 3]), // Ignored because before
-            DomHandle::from_raw(vec![2, 3, 4, 5]), // Deleted because inside
-            DomHandle::from_raw(vec![3, 4, 5]), // Adjusted because after
-            DomHandle::from_raw(vec![3]),       // Adjusted because after
-        ];
-
-        let to_delete = DomHandle::from_raw(vec![2]);
-
-        adjust_handles_for_delete(&mut handles, &to_delete);
-
-        assert_eq!(*handles[0].raw(), vec![1, 2, 3]);
-        assert_eq!(*handles[1].raw(), vec![2, 4, 5]);
-        assert_eq!(*handles[2].raw(), vec![2]);
-        assert_eq!(handles.len(), 3);
-    }
-
-    #[test]
-    fn can_adjust_handles_when_removing_nested_nodes() {
-        let mut handles = vec![
-            DomHandle::from_raw(vec![0, 9, 1, 2, 3]),
-            DomHandle::from_raw(vec![0, 9, 2, 3, 4, 5]),
-            DomHandle::from_raw(vec![0, 9, 3, 4, 5]),
-            DomHandle::from_raw(vec![0, 9, 3]),
-        ];
-
-        let to_delete = DomHandle::from_raw(vec![0, 9, 2]);
-
-        adjust_handles_for_delete(&mut handles, &to_delete);
-
-        assert_eq!(*handles[0].raw(), vec![0, 9, 1, 2, 3]);
-        assert_eq!(*handles[1].raw(), vec![0, 9, 2, 4, 5]);
-        assert_eq!(*handles[2].raw(), vec![0, 9, 2]);
-        assert_eq!(handles.len(), 3);
-    }
 
     #[test]
     fn delete_nodes_refuses_to_delete_root() {
@@ -1021,9 +1139,9 @@ mod test {
     }
 
     #[test]
-    fn replace_text_with_code_block() {
-        let mut model = cm("<pre>~Te{st</pre>AA}|BB");
+    fn delete_text_at_end_of_code_block_appends_next_content() {
+        let mut model = cm("<pre>Te{st</pre>AA}|BB");
         model.delete();
-        assert_eq!(tx(&model), "<pre>~Te|</pre>BB");
+        assert_eq!(tx(&model), "<pre>Te|BB</pre>");
     }
 }

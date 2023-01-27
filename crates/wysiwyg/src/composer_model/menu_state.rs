@@ -18,9 +18,10 @@ use crate::action_state::ActionState;
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind};
 use crate::dom::range::DomLocationPosition;
+use crate::dom::range::DomLocationPosition::Before;
 use crate::dom::{DomLocation, Range};
 use crate::menu_state::MenuStateUpdate;
-use crate::ComposerAction::{Indent, UnIndent};
+use crate::ComposerAction::{Indent, OrderedList, UnIndent, UnorderedList};
 use crate::{
     ComposerAction, ComposerModel, DomHandle, DomNode, InlineFormatType,
     ListType, MenuState, UnicodeString,
@@ -115,6 +116,15 @@ where
             intersection
         } else if self.state.dom.document().children().is_empty() {
             HashSet::from_iter(toggled_format_actions.into_iter())
+        } else if let Some(block_location) = range.deepest_block_node(None) {
+            if block_location.node_handle.is_root() {
+                HashSet::new()
+            } else {
+                self.compute_reversed_actions(&block_location.node_handle)
+                    .symmetric_difference(&toggled_format_actions)
+                    .cloned()
+                    .collect()
+            }
         } else {
             HashSet::new()
         }
@@ -124,27 +134,45 @@ where
         &self,
         handle: &DomHandle,
     ) -> HashSet<ComposerAction> {
-        let mut reversed_actions = HashSet::new();
-        let node = self.state.dom.lookup_node(handle);
-        if let DomNode::Container(container) = node {
-            let active_button = Self::active_button_for_container(container);
-            if let Some(button) = active_button {
-                reversed_actions.insert(button);
-            }
+        fn has_list_in(set: &HashSet<ComposerAction>) -> bool {
+            set.contains(&OrderedList) || set.contains(&UnorderedList)
         }
 
-        if handle.has_parent() {
-            reversed_actions = reversed_actions
-                .union(&self.compute_reversed_actions(&handle.parent_handle()))
-                .into_iter()
-                .cloned()
-                .collect();
+        let mut reversed_actions = HashSet::new();
+        let mut cur_handle = handle.clone();
+
+        while !cur_handle.is_root() {
+            let reversed_action = self.reversed_action_for_handle(&cur_handle);
+            if let Some(action) = reversed_action {
+                match action {
+                    // If there is multiple list types in the hierarchy we
+                    // only keep the deepest list type.
+                    OrderedList | UnorderedList
+                        if has_list_in(&reversed_actions) => {}
+                    _ => {
+                        reversed_actions.insert(action);
+                    }
+                }
+            }
+            cur_handle = cur_handle.parent_handle();
         }
 
         reversed_actions
     }
 
-    fn active_button_for_container(
+    fn reversed_action_for_handle(
+        &self,
+        handle: &DomHandle,
+    ) -> Option<ComposerAction> {
+        let node = self.state.dom.lookup_node(handle);
+        if let DomNode::Container(container) = node {
+            Self::reversed_action_for_container(container)
+        } else {
+            None
+        }
+    }
+
+    fn reversed_action_for_container(
         container: &ContainerNode<S>,
     ) -> Option<ComposerAction> {
         match container.kind() {
@@ -189,16 +217,26 @@ where
 
     fn compute_disabled_actions_for_locations(
         &self,
-        locations: &Vec<DomLocation>,
+        locations: &[DomLocation],
     ) -> HashSet<ComposerAction> {
         let mut disabled_actions = HashSet::new();
-        if !self.can_indent(locations) {
+        let top_most_list_locations =
+            self.find_top_most_list_item_locations(locations);
+        if !self.can_indent(&top_most_list_locations) {
             disabled_actions.insert(Indent);
         }
-        if !self.can_unindent(locations) {
+        if !self.can_unindent(&top_most_list_locations) {
             disabled_actions.insert(UnIndent);
         }
-        if contains_inline_code(locations) {
+        // XOR on inline code in selection & toggled format types.
+        // If selection is not a cursor, toggled format types is always
+        // empty, which makes `contains_inline_code` the only condition.
+        if contains_inline_code(locations)
+            ^ self
+                .state
+                .toggled_format_types
+                .contains(&InlineFormatType::InlineCode)
+        {
             // Remove the rest of inline formatting options
             disabled_actions.extend(vec![
                 ComposerAction::Bold,
@@ -230,5 +268,7 @@ fn contains_inline_code(locations: &[DomLocation]) -> bool {
 }
 
 fn contains_code_block(locations: &[DomLocation]) -> bool {
-    locations.iter().any(|l| l.kind == DomNodeKind::CodeBlock)
+    locations.iter().any(|l| {
+        l.relative_position() != Before && l.kind == DomNodeKind::CodeBlock
+    })
 }

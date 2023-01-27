@@ -19,7 +19,7 @@ import XCTest
 
 final class HTMLParserTests: XCTestCase {
     func testBuildAttributedFromHtml() throws {
-        let html = "Some <strong>bold and <em>italic</em> text</strong>"
+        let html = "<p>Some <strong>bold and <em>italic</em> text</strong></p>"
         let attributed = try HTMLParser.parse(html: html)
         XCTAssertEqual(attributed.string,
                        "Some bold and italic text")

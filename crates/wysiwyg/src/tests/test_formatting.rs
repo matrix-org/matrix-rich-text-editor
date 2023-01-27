@@ -278,3 +278,88 @@ fn formatting_multiple_lines_with_inline_code() {
     model.inline_code();
     assert_eq!(tx(&model), "fo<code>{o<br />b}|</code>ar");
 }
+
+#[test]
+fn splitting_a_formatting_tag_across_two_lines() {
+    let mut model = cm("|");
+    model.strike_through();
+    model.replace_text(utf16("foo"));
+    assert_eq!(tx(&model), "<del>foo|</del>");
+    model.enter();
+    assert_eq!(tx(&model), "<p><del>foo</del></p><p><del>|</del></p>");
+    model.replace_text(utf16("bar"));
+    assert_eq!(tx(&model), "<p><del>foo</del></p><p><del>bar|</del></p>");
+}
+
+#[test]
+fn splitting_a_formatting_tag_across_multiple_lines() {
+    let mut model = cm("|");
+    model.strike_through();
+    model.replace_text(utf16("foo"));
+    assert_eq!(tx(&model), "<del>foo|</del>");
+    model.enter();
+    assert_eq!(tx(&model), "<p><del>foo</del></p><p><del>|</del></p>");
+    model.enter();
+    assert_eq!(
+        tx(&model),
+        "<p><del>foo</del></p><p>&nbsp;</p><p><del>|</del></p>"
+    );
+    model.replace_text(utf16("bar"));
+    assert_eq!(
+        tx(&model),
+        "<p><del>foo</del></p><p>&nbsp;</p><p><del>bar|</del></p>"
+    );
+}
+
+#[test]
+fn splitting_a_formatting_tag_multiple_times_across_multiple_lines() {
+    let mut model = cm("|");
+    model.strike_through();
+    model.replace_text(utf16("foo"));
+    assert_eq!(tx(&model), "<del>foo|</del>");
+    model.enter();
+    assert_eq!(tx(&model), "<p><del>foo</del></p><p><del>|</del></p>");
+    model.enter();
+    assert_eq!(
+        tx(&model),
+        "<p><del>foo</del></p><p>&nbsp;</p><p><del>|</del></p>"
+    );
+    model.replace_text(utf16("bar"));
+    assert_eq!(
+        tx(&model),
+        "<p><del>foo</del></p><p>&nbsp;</p><p><del>bar|</del></p>"
+    );
+    model.enter();
+    assert_eq!(
+        tx(&model),
+        "<p><del>foo</del></p><p>&nbsp;</p><p><del>bar</del></p><p><del>|</del></p>"
+    );
+}
+
+#[test]
+fn locations_when_pressing_enter() {
+    let mut model = cm("|");
+    model.replace_text(utf16("foo"));
+    assert_eq!(tx(&model), "foo|");
+    model.enter();
+    assert_eq!(tx(&model), "<p>foo</p><p>&nbsp;|</p>");
+    assert_eq!(model.state.start, Location::from(4));
+    model.enter();
+    assert_eq!(tx(&model), "<p>foo</p><p>&nbsp;</p><p>&nbsp;|</p>");
+    assert_eq!(model.state.start, Location::from(5));
+    model.enter();
+    assert_eq!(
+        tx(&model),
+        "<p>foo</p><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;|</p>"
+    );
+    assert_eq!(model.state.start, Location::from(6));
+    model.enter();
+}
+
+#[test]
+fn formatting_in_an_empty_paragraph_applies_formatting() {
+    let mut model = cm("<p>A</p><p>|</p>");
+    model.bold();
+    model.replace_text("B".into());
+    assert_eq!(tx(&model), "<p>A</p><p><strong>B|</strong></p>");
+}

@@ -5,6 +5,7 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.Typeface
 import android.text.Layout
+import android.text.Spanned
 import android.text.style.LeadingMarginSpan
 
 /**
@@ -16,7 +17,7 @@ class OrderedListSpan(
     textSize: Float,
     val order: Int,
     private val gapWidth: Int,
-) : LeadingMarginSpan {
+) : LeadingMarginSpan, BlockSpan {
 
     private val prefix = "$order."
     private val prefixToMeasure = "99."
@@ -47,6 +48,10 @@ class OrderedListSpan(
         first: Boolean,
         layout: Layout?
     ) {
+        val spanStart = (text as? Spanned)?.getSpanStart(this) ?: return
+        val startLine = layout?.getLineForOffset(spanStart) ?: 0
+        val currentLine = layout?.getLineForOffset(start) ?: 0
+        if (currentLine - startLine > 0) return
         val bounds = Rect()
         p.getTextBounds(prefix, 0, prefix.length, bounds)
         val xEnd = x + getLeadingMargin(true) - gapWidth - bounds.width()

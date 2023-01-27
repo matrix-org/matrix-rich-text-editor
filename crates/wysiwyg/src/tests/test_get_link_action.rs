@@ -157,14 +157,8 @@ fn get_link_action_on_blank_selection_with_line_break() {
 }
 
 #[test]
-fn get_link_action_on_blank_selection_with_zwsp() {
-    let model = cm("test{  ~ }|test");
-    assert_eq!(model.get_link_action(), LinkAction::CreateWithText)
-}
-
-#[test]
 fn get_link_action_on_blank_selection_with_different_containers() {
-    let model = cm("<b>test_bold{ </b><br>  ~  <i> }|test_italic</i>");
+    let model = cm("<b>test_bold{ </b>    <i> }|test_italic</i>");
     assert_eq!(model.get_link_action(), LinkAction::CreateWithText)
 }
 

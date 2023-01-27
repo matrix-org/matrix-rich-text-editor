@@ -24,12 +24,21 @@ where
         &self,
         buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        is_last_node_in_parent: bool,
+        state: ToHtmlState,
     );
 
     fn to_html(&self) -> S {
         let mut buf = S::default();
-        self.fmt_html(&mut buf, None, false);
+        self.fmt_html(&mut buf, None, ToHtmlState::default());
         buf
     }
+}
+
+/// State of the HTML generation at every `fmt_html` call, usually used to pass info from ancestor
+/// nodes to their descendants.
+#[derive(Copy, Clone, Default)]
+pub struct ToHtmlState {
+    pub is_inside_code_block: bool,
+    pub is_last_node_in_parent: bool,
+    pub is_first_node_in_parent: bool,
 }

@@ -287,11 +287,11 @@ mod test {
     #[test]
     fn format_inline_code_in_several_list_items_and_text() {
         let mut model =
-            cm("Text {before<br /><ul><li><b>bo}|ld</b></li><li><i>text</i></li></ul>");
+            cm("<p>Text {before</p><ul><li><b>bo}|ld</b></li><li><i>text</i></li></ul>");
         model.inline_code();
         assert_eq!(
             tx(&model),
-            "Text <code>{before<br /></code><ul><li><code>bo}|</code><b>ld</b></li><li><i>text</i></li></ul>"
+            "<p>Text <code>{before</code></p><ul><li><code>bo}|</code><b>ld</b></li><li><i>text</i></li></ul>"
         );
     }
 
@@ -333,15 +333,14 @@ mod test {
     #[test]
     fn unformat_inline_code_in_several_list_items_and_text() {
         let mut model =
-            cm("Text <code>{before<br /></code><ul><li><code>bo}|</code><b>ld</b></li><li><i>text</i></li></ul>");
+            cm("<p>Text <code>{before</code></p><ul><li><code>bo}|</code><b>ld</b></li><li><i>text</i></li></ul>");
         model.inline_code();
         assert_eq!(
             tx(&model),
-            "Text {before<br /><ul><li>bo}|<b>ld</b></li><li><i>text</i></li></ul>"
+            "<p>Text {before</p><ul><li>bo}|<b>ld</b></li><li><i>text</i></li></ul>"
         );
     }
 
-    // TODO: might need to re-visit it if we add ZWSP at the end of inline code tags,
     // otherwise this test should actually follow the same behaviour as those in `test_formatting.rs`
     // for 'unformatting_...'.
     #[test]

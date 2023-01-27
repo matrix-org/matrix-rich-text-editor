@@ -99,24 +99,32 @@ impl DomLocation {
     /// True if this is a node which is not a container i.e. a text node or
     /// a text-like node like a line break.
     pub fn is_leaf(&self) -> bool {
-        matches!(
-            self.kind,
-            DomNodeKind::Text | DomNodeKind::LineBreak | DomNodeKind::Zwsp
-        )
+        self.kind.is_leaf_kind()
     }
 
     /// Returns the relative position of this DomLocation towards the range.
+    #[allow(clippy::collapsible_else_if)] // It's a lot easier to differentiate these 2 cases
     pub fn relative_position(&self) -> DomLocationPosition {
-        if self.length == 0 {
-            // Note: this should only trigger on an initial/single empty text node.
-            // Other nodes are not allowed to have a length of 0.
-            DomLocationPosition::Inside
-        } else if self.start_offset == self.length {
-            DomLocationPosition::Before
-        } else if self.end_offset == 0 {
-            DomLocationPosition::After
+        if self.kind.is_block_kind() && self.is_empty() {
+            if self.start_offset == self.length {
+                DomLocationPosition::Before
+            } else if self.start_offset == 0 && self.end_offset == 1 {
+                DomLocationPosition::Inside
+            } else {
+                DomLocationPosition::After
+            }
         } else {
-            DomLocationPosition::Inside
+            if self.length == 0 {
+                // Note: this should only trigger on an initial/single empty text node.
+                // Other nodes are not allowed to have a length of 0.
+                DomLocationPosition::Inside
+            } else if self.start_offset == self.length {
+                DomLocationPosition::Before
+            } else if self.end_offset == 0 {
+                DomLocationPosition::After
+            } else {
+                DomLocationPosition::Inside
+            }
         }
     }
 
@@ -185,6 +193,16 @@ impl DomLocation {
 
         is_list_item && position_is_at_end_of_location
     }
+
+    /// Checks if the node referenced by this DomLocation is empty.
+    pub fn is_empty(&self) -> bool {
+        if self.kind.is_block_kind() {
+            // Block nodes should always have at least length 1
+            self.length <= 1
+        } else {
+            self.length == 0
+        }
+    }
 }
 
 impl PartialOrd<Self> for DomLocation {
@@ -248,6 +266,10 @@ impl Range {
             .unwrap_or(0)
     }
 
+    pub fn has_leaves(&self) -> bool {
+        self.locations.iter().any(|l| l.is_leaf())
+    }
+
     pub fn leaves(&self) -> impl Iterator<Item = &DomLocation> {
         self.locations.iter().filter(|loc| loc.is_leaf())
     }
@@ -255,9 +277,10 @@ impl Range {
     pub fn top_level_depth(&self) -> usize {
         self.locations
             .iter()
+            .filter(|l| !l.node_handle.is_root())
             .map(|l| l.node_handle.depth())
             .min()
-            .expect("Should always have at least one set handle")
+            .unwrap_or(0)
     }
 
     pub fn locations_at_depth(
@@ -291,7 +314,7 @@ impl Range {
     }
 
     pub fn is_selection(&self) -> bool {
-        self.start() == self.end()
+        self.start() != self.end()
     }
 
     // TODO: remove all uses of this when we guarantee that Dom is never empty
@@ -355,6 +378,42 @@ impl Range {
         }
 
         DomHandle::from_raw(shared_path)
+    }
+
+    /// Returns the block node in this `Range` that's deepest in the tree.
+    ///
+    /// If `ancestor_of` is passed, the result must also be an ancestor of the provided `Handle`.
+    pub(crate) fn deepest_block_node(
+        &self,
+        ancestor_of: Option<&DomHandle>,
+    ) -> Option<&DomLocation> {
+        self.locations
+            .iter()
+            .filter(|l| {
+                let mut found = true;
+                if let Some(ancestor_of) = ancestor_of {
+                    found = l.node_handle.is_ancestor_of(ancestor_of);
+                }
+                found && (l.kind.is_block_kind() || l.kind.is_structure_kind())
+            })
+            .max()
+    }
+
+    pub(crate) fn deepest_node_of_kind(
+        &self,
+        kind: DomNodeKind,
+        ancestor_of: Option<&DomHandle>,
+    ) -> Option<&DomLocation> {
+        self.locations
+            .iter()
+            .filter(|l| {
+                let mut found = true;
+                if let Some(ancestor_of) = ancestor_of {
+                    found = l.node_handle.is_ancestor_of(ancestor_of);
+                }
+                found && l.kind == kind
+            })
+            .max()
     }
 }
 
@@ -435,8 +494,8 @@ mod test {
             <ul><li>a</li><li>b</li></ul>\
             <ul><li>c</li><li>d|</li><li>e</li></ul>",
         );
-        assert_eq!(r.start(), 4);
-        assert_eq!(r.end(), 4);
+        assert_eq!(r.start(), 7);
+        assert_eq!(r.end(), 7);
     }
 
     #[test]
@@ -447,8 +506,8 @@ mod test {
             <ul><li>c</li><li>{d</li><li>e}|</li></ul>",
         );
 
-        assert_eq!(r.start(), 3);
-        assert_eq!(r.end(), 5);
+        assert_eq!(r.start(), 6);
+        assert_eq!(r.end(), 9);
     }
 
     #[test]
@@ -459,8 +518,8 @@ mod test {
             <ul><li>c</li><li>d</li><li>e|</li></ul>",
         );
 
-        assert_eq!(r.start(), 5);
-        assert_eq!(r.end(), 5);
+        assert_eq!(r.start(), 9);
+        assert_eq!(r.end(), 9);
     }
 
     #[test]
@@ -471,8 +530,8 @@ mod test {
             <ul><li>c</li><li>d</li><li>e</li></ul>fgh|",
         );
 
-        assert_eq!(r.start(), 8);
-        assert_eq!(r.end(), 8);
+        assert_eq!(r.start(), 13);
+        assert_eq!(r.end(), 13);
     }
 
     #[test]
@@ -480,7 +539,7 @@ mod test {
         let r = range_of(
             "\
             <ul><li>{a</li><li>b</li></ul>\
-            <ol><li>c</li><li>d</li><li>e</li></ol>fgh}|",
+            <ol><li>c</li><li>d</li><li>e</li></ol><p>fgh}|</p>",
         );
 
         assert_eq!(
@@ -494,7 +553,7 @@ mod test {
                 DomHandle::from_raw(vec![1, 0, 0]), // c
                 DomHandle::from_raw(vec![1, 1, 0]), // d
                 DomHandle::from_raw(vec![1, 2, 0]), // e
-                DomHandle::from_raw(vec![2]),       // fgh
+                DomHandle::from_raw(vec![2, 0]),    // fgh
             ]
         );
     }
@@ -521,15 +580,15 @@ mod test {
         let model = cm("<ol><li>abcd|</li></ol>");
         let (s, e) = model.safe_selection();
         let range = model.state.dom.find_range(s, e);
-        assert!(range.locations[1].position_is_end_of_list_item(4));
+        assert!(range.locations[1].position_is_end_of_list_item(5));
     }
 
     #[test]
     fn node_on_border_is_before_or_after_cursor() {
         let range = range_of("<strong>abc</strong>|def");
-        let strong_loc = range.locations.first().unwrap();
+        let strong_loc = range.locations.get(0).unwrap();
         assert!(strong_loc.relative_position() == DomLocationPosition::Before);
-        let def_loc = range.locations.last().unwrap();
+        let def_loc = range.locations.get(2).unwrap();
         assert!(def_loc.relative_position() == DomLocationPosition::After);
     }
 

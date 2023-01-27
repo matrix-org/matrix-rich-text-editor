@@ -97,9 +97,9 @@ where
             // Workaround for list items, if the closest list item ancestors for the first and last
             // nodes are the same one, we want to select the contents of the list item instead.
             let first_list_item =
-                self.find_parent_list_item_or_self(&first.handle);
+                self.find_ancestor_list_item_or_self(&first.handle);
             let last_list_item =
-                self.find_parent_list_item_or_self(&last.handle);
+                self.find_ancestor_list_item_or_self(&last.handle);
             if first_list_item.is_some()
                 && last_list_item.is_some()
                 && first_list_item == last_list_item
@@ -157,29 +157,31 @@ where
         &self,
         start_handle: &DomHandle,
         parent_handle: &DomHandle,
-        subtree: &DomNode<S>,
     ) -> DomHandle {
-        let start_handle_is_start_at_depth =
-            start_handle.raw().iter().all(|i| *i == 0);
-        let mut insert_at_handle =
-            if subtree.is_block_node() && subtree.kind() != Generic {
-                start_handle.sub_handle_up_to(parent_handle.depth())
-            } else {
+        if self.document().is_empty() {
+            self.document_handle().child_handle(0)
+        } else {
+            let mut insert_at_handle = if parent_handle.is_root() {
                 start_handle.sub_handle_up_to(parent_handle.depth() + 1)
+            } else {
+                start_handle.sub_handle_up_to(parent_handle.depth())
             };
-        if !start_handle_is_start_at_depth && self.contains(&insert_at_handle) {
-            insert_at_handle = insert_at_handle.next_sibling();
-        } else if self.document().is_empty() {
-            insert_at_handle = self.document_handle().child_handle(0);
+
+            if insert_at_handle.index_in_parent() > 0
+                && self.next_sibling(&insert_at_handle).is_some()
+            {
+                insert_at_handle = insert_at_handle.next_sibling();
+            }
+
+            insert_at_handle
         }
-        insert_at_handle
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::tests::testutils_composer_model::cm;
-    use crate::DomHandle;
+    use crate::tests::testutils_composer_model::{cm, restore_whitespace};
+    use crate::{DomHandle, ToHtml};
 
     #[test]
     fn find_ranges_to_wrap_simple_text() {
@@ -259,10 +261,14 @@ mod test {
     fn find_ranges_to_wrap_list_and_external_nodes() {
         let model =
             cm("{Text <ul><li>First item</li><li>Second}| item</li></ul>");
+        assert_eq!(
+            restore_whitespace(&model.state.dom.to_html().to_string()),
+            "<p>Text </p><ul><li>First item</li><li>Second item</li></ul>"
+        );
         let (s, e) = model.safe_selection();
         let ret = model.state.dom.find_nodes_to_wrap_in_block(s, e).unwrap();
         assert_eq!(ret.ancestor_handle, DomHandle::from_raw(Vec::new()));
-        assert_eq!(ret.start_handle, DomHandle::from_raw(vec![0]));
+        assert_eq!(ret.start_handle, DomHandle::from_raw(vec![0, 0]));
         assert_eq!(ret.end_handle, DomHandle::from_raw(vec![1, 1, 0]));
     }
 }

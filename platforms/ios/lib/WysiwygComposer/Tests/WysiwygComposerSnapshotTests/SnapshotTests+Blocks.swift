@@ -27,7 +27,7 @@ final class BlocksSnapshotTests: SnapshotTests {
     }
 
     func testCodeBlockContent() throws {
-        viewModel.setHtmlContent("<pre>if snapshot {\n\treturn true\n}</pre>")
+        viewModel.setHtmlContent("<pre><p>if snapshot {</p>\treturn true</p>}</pre>")
         assertSnapshot(
             matching: hostingController,
             as: .image(on: .iPhone13),
@@ -47,10 +47,15 @@ final class BlocksSnapshotTests: SnapshotTests {
     func testMultipleBlocksContent() throws {
         viewModel.setHtmlContent(
             """
-            <blockquote>Some<br />multi-line<br />quote</blockquote>\
-            <br />Some text<br />&nbsp;
+            <blockquote><p>Some</p>\
+            <p>multi-line</p>\
+            <p>quote</p></blockquote>\
+            <p></p>\
+            <p>Some text</p>\
+            <p></p>\
             <pre>A\n\tcode\nblock</pre>\
-            <br />Some <code>inline</code> code
+            <p></p>\
+            <p>Some <code>inline</code> code</p>
             """
         )
         assertSnapshot(
