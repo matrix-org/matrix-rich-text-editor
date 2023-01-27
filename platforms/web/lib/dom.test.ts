@@ -40,20 +40,6 @@ function setEditorHtml(html: string) {
     editor.innerHTML = html + '<br />';
 }
 
-describe('WIP', () => {
-    it('formatting inside lists', () => {
-        // When
-        setEditorHtml('<ol><li>reg <strong>b</strong></li></ol>');
-        const { node, offset } = computeNodeAndOffset(editor, 5);
-
-        // Then
-        expect(node).toBe(
-            editor.childNodes[0].childNodes[0].childNodes[1].childNodes[0],
-        );
-        expect(offset).toBe(1);
-    });
-});
-
 describe('computeNodeAndOffset', () => {
     it('Should find at the start of simple text', () => {
         // When
@@ -1034,5 +1020,15 @@ describe('textNodeNeedsExtraOffset', () => {
             editor.childNodes[0].childNodes[1].childNodes[0],
         );
         expect(textNodeNeedsExtraOffset(wordsNode)).toBe(true);
+    });
+
+    it('can handle formatting inside list items with nested formatting', () => {
+        // When
+        setEditorHtml('<ol><li>reg <strong>b</strong></li></ol>');
+        const { node } = computeNodeAndOffset(editor, 0);
+
+        // Then
+        expect(node).toBe(editor.childNodes[0].childNodes[0].childNodes[0]);
+        expect(textNodeNeedsExtraOffset(node)).toBe(false);
     });
 });
