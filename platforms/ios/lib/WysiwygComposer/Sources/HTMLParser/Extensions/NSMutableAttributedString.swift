@@ -59,8 +59,7 @@ extension NSMutableAttributedString {
     func replaceOrDeleteDiscardableText() {
         enumerateTypedAttribute(.discardableText) { (discardable: Bool, range: NSRange, _) in
             guard discardable == true else { return }
-            let attributes = self.attributes(at: range.location, effectiveRange: nil)
-            if attributes[.backgroundStyle] != nil {
+            if self.attribute(.backgroundStyle, at: range.location, effectiveRange: nil) != nil {
                 self.replaceCharacters(in: range, with: String.zwsp)
             } else {
                 self.deleteCharacters(in: range)
