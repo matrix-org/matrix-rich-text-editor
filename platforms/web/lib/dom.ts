@@ -460,13 +460,16 @@ export function textNodeNeedsExtraOffset(node: Node | null) {
     // make sure that we don't add the offset more than once when we have
     // multiple adjacent inline formatting nodes.
     while (checkNode) {
-        // if we have a formatting ancestor and the next sibling is not a
-        // container node, stop looking (and return false)
+        // break the loop and return false if
+        // either we find an inline node next
+        // or we have a formatting ancestor and the next sibng is not
+        // a container node
         const nextSibling = checkNode.nextSibling;
         if (
-            hasFormattingParent &&
-            nextSibling &&
-            !isNodeRequiringExtraOffset(nextSibling)
+            (nextSibling && isInlineNode(nextSibling)) ||
+            (hasFormattingParent &&
+                nextSibling &&
+                !isNodeRequiringExtraOffset(nextSibling))
         ) {
             break;
         }
