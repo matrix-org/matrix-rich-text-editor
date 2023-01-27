@@ -88,6 +88,7 @@ public final class HTMLParser {
             // Removing NBSP character from <p>&nbsp;</p> since it is only used to
             // make DTCoreText able to easily parse new lines.
             element.clearNbspNodes()
+            element.clearTrailingAndLeadingNewlinesInCodeblocks()
         }
         
         guard let attributedString = builder.generatedAttributedString() else {
@@ -114,7 +115,7 @@ public final class HTMLParser {
         
         mutableAttributedString.applyBackgroundStyles(style: style)
         mutableAttributedString.applyInlineCodeBackgroundStyle(codeBackgroundColor: style.codeBackgroundColor)
-        mutableAttributedString.removeDiscardableText()
+        mutableAttributedString.replaceOrDeleteDiscardableText()
         mutableAttributedString.removeParagraphVerticalSpacing()
         
         removeTrailingNewlineIfNeeded(from: mutableAttributedString, given: html)
@@ -124,14 +125,17 @@ public final class HTMLParser {
     private static func removeTrailingNewlineIfNeeded(from mutableAttributedString: NSMutableAttributedString, given html: String) {
         // DTCoreText always adds a \n at the end of the document, which we need to remove
         // however it does not add it if </code> </a> are the last nodes.
-        // Also we don't want to remove it if a codeblock contains that newline
-        // and is not empty, because DTCoreText does not add a newline if these blocks
-        // contain one at the end.
+        // It should give also issues with codeblock and blockquote when they contain newlines
+        // but the usage of nbsp and zwsp solves that
         if mutableAttributedString.string.last == "\n",
            !html.hasSuffix("</code>"),
-           !html.hasSuffix("</a>"),
-           !html.hasSuffix("\n</pre>") {
-            mutableAttributedString.deleteCharacters(in: NSRange(location: mutableAttributedString.length - 1, length: 1))
+           !html.hasSuffix("</a>") {
+            mutableAttributedString.deleteCharacters(
+                in: NSRange(
+                    location: mutableAttributedString.length - 1,
+                    length: 1
+                )
+            )
         }
     }
 }

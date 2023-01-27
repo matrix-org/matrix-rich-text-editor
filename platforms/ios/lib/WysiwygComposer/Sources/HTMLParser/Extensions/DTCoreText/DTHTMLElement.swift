@@ -35,4 +35,70 @@ extension DTHTMLElement {
             }
         }
     }
+
+    func clearTrailingAndLeadingNewlinesInCodeblocks() {
+        guard let childNodes = childNodes as? [DTHTMLElement] else {
+            return
+        }
+
+        if name == "pre",
+           childNodes.count == 1,
+           let child = childNodes.first as? DTTextHTMLElement,
+           var text = child.text(),
+           text != .nbsp {
+            var leadingDiscardableElement: DiscardableTextHTMLElement?
+            var trailingDiscardableElement: DiscardableTextHTMLElement?
+            var shouldReplaceNodes = false
+
+            if text.hasPrefix("\(Character.nbsp)") {
+                shouldReplaceNodes = true
+                text.removeFirst()
+                leadingDiscardableElement = createDiscardableElement()
+            }
+            
+            if text.hasSuffix("\(Character.nbsp)") {
+                shouldReplaceNodes = true
+                text.removeLast()
+                trailingDiscardableElement = createDiscardableElement()
+            }
+
+            if shouldReplaceNodes {
+                removeAllChildNodes()
+
+                if let leadingDiscardableElement = leadingDiscardableElement {
+                    addChildNode(leadingDiscardableElement)
+                    addChildNode(createLineBreak())
+                }
+
+                let newTextNode = DTTextHTMLElement()
+                newTextNode.inheritAttributes(from: self)
+                newTextNode.interpretAttributes()
+                newTextNode.setText(text)
+                addChildNode(newTextNode)
+
+                if let trailingDiscardableElement = trailingDiscardableElement {
+                    addChildNode(createLineBreak())
+                    addChildNode(trailingDiscardableElement)
+                }
+            }
+        } else {
+            for childNode in childNodes {
+                childNode.clearTrailingAndLeadingNewlinesInCodeblocks()
+            }
+        }
+    }
+
+    private func createDiscardableElement() -> DiscardableTextHTMLElement {
+        let discardableElement = DiscardableTextHTMLElement()
+        discardableElement.inheritAttributes(from: self)
+        discardableElement.interpretAttributes()
+        return discardableElement
+    }
+
+    private func createLineBreak() -> DTBreakHTMLElement {
+        let lineBreakElement = DTBreakHTMLElement()
+        lineBreakElement.inheritAttributes(from: self)
+        lineBreakElement.interpretAttributes()
+        return lineBreakElement
+    }
 }
