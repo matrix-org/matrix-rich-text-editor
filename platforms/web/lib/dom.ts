@@ -480,7 +480,7 @@ export function textNodeNeedsExtraOffset(node: Node | null) {
     return false;
 }
 
-const FORMATTING_NODE_NAMES = ['EM', 'U', 'STRONG', 'DEL'];
+const FORMATTING_NODE_NAMES = ['EM', 'U', 'STRONG', 'DEL', 'CODE', 'A'];
 const EXTRA_OFFSET_NODE_NAMES = ['LI', 'PRE', 'BLOCKQUOTE', 'P'];
 
 function isFormattingNode(node: Node | ParentNode | null) {
