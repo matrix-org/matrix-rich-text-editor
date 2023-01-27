@@ -943,3 +943,7 @@ describe('getCurrentSelection', () => {
         expect(getCurrentSelection(editor, sel)).toEqual([14, 14]);
     });
 });
+
+describe('nodeNeedsExtraOffset', () => {
+    it('does something', () => {});
+});
