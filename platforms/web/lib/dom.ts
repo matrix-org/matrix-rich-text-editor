@@ -226,7 +226,7 @@ export function computeNodeAndOffset(
     } else {
         // We hit this case if we split a formatting node, eg
         // <u>something</u> => press enter => <p><u>something</u><p><u>|</u></p>
-        if (isEmptyFormattingNode(currentNode) && codeunits === 0) {
+        if (isEmptyInlineNode(currentNode) && codeunits === 0) {
             return { node: currentNode, offset: codeunits };
         }
 
@@ -492,7 +492,7 @@ function isNodeRequiringExtraOffset(node: Node) {
     return EXTRA_OFFSET_NODE_NAMES.includes(node.nodeName || '');
 }
 
-function isEmptyFormattingNode(node: Node) {
+function isEmptyInlineNode(node: Node) {
     return (
         INLINE_NODE_NAMES.includes(node.nodeName) &&
         node.textContent?.length === 0
