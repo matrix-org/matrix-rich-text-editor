@@ -230,7 +230,7 @@ where
             };
             let mut new_paragraph_handle =
                 first_leaf.node_handle.sub_handle_up_to(depth);
-            if self.state.dom.contains(&new_paragraph_handle) {
+            if paragraph_location.start_offset > 0 {
                 new_paragraph_handle = new_paragraph_handle.next_sibling();
             }
             self.state
@@ -253,7 +253,15 @@ where
             } else if block_node_is_paragraph && cur_block_node_was_removed {
                 let new_paragraph = DomNode::new_paragraph(Vec::new());
                 self.state.dom.insert_at(&block_node_handle, new_paragraph);
-                // self.state.advance_selection();
+            } else if paragraph_location.node_handle.index_in_parent() == 0
+                && paragraph_location.start_offset == 0
+            {
+                // Special case when we need to insert a new paragraph at the start of the parent
+                // block handle
+                self.state.dom.insert_at(
+                    &paragraph_location.node_handle,
+                    DomNode::new_paragraph(Vec::new()),
+                );
             }
         } else {
             // Just add a new paragraph before the current block
