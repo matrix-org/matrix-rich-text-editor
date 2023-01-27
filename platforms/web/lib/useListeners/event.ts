@@ -64,6 +64,7 @@ function getInputFromKeyDown(
     e: KeyboardEvent,
     composerModel: ComposerModel,
     formattingFunctions: FormattingFunctions,
+    editor: HTMLElement,
     inputEventProcessor?: InputEventProcessor,
 ): BlockType | null {
     if (e.shiftKey && e.altKey) {
@@ -98,6 +99,7 @@ function getInputFromKeyDown(
             actions: formattingFunctions,
             content: () => composerModel.get_content_as_html(),
         },
+        editor,
         inputEventProcessor,
     );
     return null;
@@ -119,6 +121,7 @@ export function handleKeyDown(
         e,
         composerModel,
         formattingFunctions,
+        editor,
         inputEventProcessor,
     );
     if (inputType) {
@@ -167,6 +170,7 @@ export function handleInput(
         composerModel,
         testUtilities.traceAction,
         formattingFunctions,
+        editor,
         inputEventProcessor,
     );
     if (update) {
