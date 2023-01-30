@@ -35,8 +35,31 @@ public extension UITextView {
 
             layer.sublayers?[0].insertSublayer(styleLayer, at: UInt32(layer.sublayers?.count ?? 0))
         }
+
+        subviews
+            .compactMap { $0 as? SideBorderView }
+            .forEach { $0.removeFromSuperview() }
+        attributedText.enumerateTypedAttribute(.blockquote) { (color: UIColor, range: NSRange, _) in
+            let beginning = self.beginningOfDocument
+            guard let start = self.position(from: beginning, offset: range.location) else { return }
+            guard let end = self.position(from: start, offset: range.length) else { return }
+            guard let range = self.textRange(from: start, to: end) else { return }
+            let rects = selectionRects(for: range)
+            var textRect = CGRect.null
+            for rect in rects {
+                textRect = textRect.union(rect.rect)
+            }
+            if !textRect.isNull {
+                let sideBorderView = SideBorderView(frame: CGRect(x: 5, y: textRect.origin.y, width: 4, height: textRect.size.height))
+                sideBorderView.backgroundColor = color
+                sideBorderView.translatesAutoresizingMaskIntoConstraints = false
+                self.addSubview(sideBorderView)
+            }
+        }
     }
 }
+
+private final class SideBorderView: UIView { }
 
 private final class BackgroundStyleLayer: CALayer {
     override init() {

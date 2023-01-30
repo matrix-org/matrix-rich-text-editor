@@ -23,4 +23,5 @@ extension NSAttributedString.Key {
     static let DTField: NSAttributedString.Key = .init(rawValue: DTFieldAttribute)
     static let DTTextLists: NSAttributedString.Key = .init(rawValue: DTTextListsAttribute)
     static let discardableText: NSAttributedString.Key = .init(rawValue: "DiscardableAttributeKey")
+    static let blockquote: NSAttributedString.Key = .init(rawValue: "Blockquote")
 }

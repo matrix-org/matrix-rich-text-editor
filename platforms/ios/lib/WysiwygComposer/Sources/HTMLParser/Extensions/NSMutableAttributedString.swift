@@ -34,11 +34,11 @@ extension NSMutableAttributedString {
                 paragraphStyle.tailIndent = -10
                 addAttribute(.paragraphStyle, value: paragraphStyle, range: range)
             case TempColor.quote:
-                addAttribute(.backgroundStyle, value: style.quoteBackgroundStyle, range: range)
+                addAttribute(.blockquote, value: style.quoteBackgroundColor, range: range)
                 guard let paragraphStyle = NSMutableParagraphStyle.default.mutableCopy() as? NSMutableParagraphStyle else { return }
-                paragraphStyle.firstLineHeadIndent = 10
-                paragraphStyle.headIndent = 10
-                paragraphStyle.tailIndent = -10
+                paragraphStyle.firstLineHeadIndent = 25
+                paragraphStyle.headIndent = 25
+                paragraphStyle.tailIndent = -25
                 addAttribute(.paragraphStyle, value: paragraphStyle, range: range)
             default:
                 break
