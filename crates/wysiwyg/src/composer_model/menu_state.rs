@@ -141,8 +141,7 @@ where
         handle.with_ancestors().iter().rev().fold(
             HashSet::new(),
             |mut set, handle| {
-                let reversed_action = self.reversed_action_for_handle(handle);
-                if let Some(action) = reversed_action {
+                if let Some(action) = self.reversed_action_for_handle(handle) {
                     match action {
                         // If there is multiple list types in the hierarchy we
                         // only keep the deepest list type.

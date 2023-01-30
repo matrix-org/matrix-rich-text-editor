@@ -165,8 +165,8 @@ impl DomHandle {
         self.path = Some(new_path.clone());
     }
 
-    /// Returns a vec containing all ancestors handles of given handle,
-    /// including root and self. Panics if handle is unset.
+    /// Returns a vec containing all ancestors handles of the handle,
+    /// ordered from root to self (included). Panics if handle is unset.
     pub fn with_ancestors(&self) -> Vec<DomHandle> {
         self.raw().iter().fold(vec![DomHandle::root()], |mut v, i| {
             let last = v.last().unwrap();
