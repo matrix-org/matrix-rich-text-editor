@@ -51,18 +51,22 @@ public struct HTMLParserStyle {
 
     // MARK: - Internal
 
-    var codeBlockBackgroundStyle: BackgroundStyle {
-        BackgroundStyle(backgroundColor: codeBackgroundColor,
-                        borderColor: codeBorderColor,
-                        borderWidth: borderWidth,
-                        cornerRadius: cornerRadius)
+    var codeBlockStyle: BlockStyle {
+        BlockStyle(backgroundColor: codeBackgroundColor,
+                   borderColor: codeBorderColor,
+                   borderWidth: borderWidth,
+                   cornerRadius: cornerRadius,
+                   padding: 10.0,
+                   type: .background)
     }
 
-    var quoteBackgroundStyle: BackgroundStyle {
-        BackgroundStyle(backgroundColor: quoteBackgroundColor,
-                        borderColor: quoteBorderColor,
-                        borderWidth: borderWidth,
-                        cornerRadius: cornerRadius)
+    var quoteBlockStyle: BlockStyle {
+        BlockStyle(backgroundColor: quoteBackgroundColor,
+                   borderColor: quoteBorderColor,
+                   borderWidth: borderWidth,
+                   cornerRadius: cornerRadius,
+                   padding: 25,
+                   type: .side)
     }
 
     public init(textColor: UIColor,

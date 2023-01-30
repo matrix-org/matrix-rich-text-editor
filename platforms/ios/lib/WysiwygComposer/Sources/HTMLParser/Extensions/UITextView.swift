@@ -25,49 +25,44 @@ public extension UITextView {
             .compactMap { $0 as? BackgroundStyleLayer }
             .forEach { $0.removeFromSuperlayer() }
 
-        attributedText.enumerateTypedAttribute(.backgroundStyle) { (style: BackgroundStyle, range: NSRange, _) in
-            let glyphRange = layoutManager.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
-            let rect = layoutManager
-                .boundingRect(forGlyphRange: glyphRange, in: self.textContainer)
-                .extendHorizontally(in: frame)
+        attributedText.enumerateTypedAttribute(.blockStyle) { (style: BlockStyle, range: NSRange, _) in
+            var styleLayer: BackgroundStyleLayer?
+            switch style.type {
+            case .background:
+                let glyphRange = layoutManager.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
+                let rect = layoutManager
+                    .boundingRect(forGlyphRange: glyphRange, in: self.textContainer)
+                    .extendHorizontally(in: frame)
 
-            let styleLayer = BackgroundStyleLayer(style: style, frame: rect)
-
+                styleLayer = BackgroundStyleLayer(style: style, frame: rect)
+            case .side:
+                let beginning = self.beginningOfDocument
+                guard let start = self.position(from: beginning, offset: range.location) else { return }
+                // removing the last character to avoid including the empty new line
+                guard let end = self.position(from: start, offset: range.length - 1) else { return }
+                guard let range = self.textRange(from: start, to: end) else { return }
+                let rects = selectionRects(for: range)
+                var textRect = CGRect.null
+                for rect in rects {
+                    textRect = textRect.union(rect.rect)
+                }
+                if !textRect.isNull {
+                    let rect = CGRect(x: 5, y: textRect.origin.y, width: 4, height: textRect.size.height)
+                    styleLayer = BackgroundStyleLayer(style: style, frame: rect)
+                }
+            }
+            guard let styleLayer = styleLayer else { return }
             layer.sublayers?[0].insertSublayer(styleLayer, at: UInt32(layer.sublayers?.count ?? 0))
-        }
-
-        subviews
-            .compactMap { $0 as? SideBorderView }
-            .forEach { $0.removeFromSuperview() }
-        attributedText.enumerateTypedAttribute(.blockquote) { (color: UIColor, range: NSRange, _) in
-            let beginning = self.beginningOfDocument
-            guard let start = self.position(from: beginning, offset: range.location) else { return }
-            // removing the last character to avoid including the empty new line
-            guard let end = self.position(from: start, offset: range.length - 1) else { return }
-            guard let range = self.textRange(from: start, to: end) else { return }
-            let rects = selectionRects(for: range)
-            var textRect = CGRect.null
-            for rect in rects {
-                textRect = textRect.union(rect.rect)
-            }
-            if !textRect.isNull {
-                let sideBorderView = SideBorderView(frame: CGRect(x: 5, y: textRect.origin.y, width: 4, height: textRect.size.height))
-                sideBorderView.backgroundColor = color
-                sideBorderView.translatesAutoresizingMaskIntoConstraints = false
-                self.addSubview(sideBorderView)
-            }
         }
     }
 }
-
-private final class SideBorderView: UIView { }
 
 private final class BackgroundStyleLayer: CALayer {
     override init() {
         super.init()
     }
 
-    init(style: BackgroundStyle, frame: CGRect) {
+    init(style: BlockStyle, frame: CGRect) {
         super.init()
 
         self.frame = frame

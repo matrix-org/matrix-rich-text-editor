@@ -17,7 +17,12 @@
 import UIKit
 
 /// Defines a custom background style for an attributed string element.
-struct BackgroundStyle: Equatable {
+struct BlockStyle: Equatable {
+    enum RenderingType {
+        case background
+        case side
+    }
+
     /// Background color of the element.
     let backgroundColor: UIColor
     /// Border color of the  element.
@@ -26,4 +31,8 @@ struct BackgroundStyle: Equatable {
     let borderWidth: CGFloat
     /// Corner radius of the element
     let cornerRadius: CGFloat
+    /// Padding from the sides
+    let padding: CGFloat
+    /// Rendering type of the block
+    let type: RenderingType
 }
