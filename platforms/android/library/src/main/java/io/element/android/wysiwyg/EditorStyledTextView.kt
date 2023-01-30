@@ -16,6 +16,7 @@ import io.element.android.wysiwyg.utils.*
 class EditorStyledTextView : AppCompatTextView {
     private lateinit var inlineCodeStyleConfig: InlineCodeStyleConfig
     private lateinit var codeBlockStyleConfig: CodeBlockStyleConfig
+    private var styleAttributesReady = false
     private val inlineCodeBgHelper: SpanBackgroundHelper by lazy {
         SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(inlineCodeStyleConfig)
     }
@@ -29,6 +30,7 @@ class EditorStyledTextView : AppCompatTextView {
         val attrReader = EditorStyledTextViewAttributeReader(context, attrs)
         inlineCodeStyleConfig = attrReader.inlineCodeStyleConfig
         codeBlockStyleConfig = attrReader.codeBlockStyleConfig
+        styleAttributesReady = true
     }
 
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) :
@@ -36,6 +38,10 @@ class EditorStyledTextView : AppCompatTextView {
 
     override fun setText(text: CharSequence?, type: BufferType?) {
         super.setText(text, type)
+
+        // setText may be called during initialisation when we're not yet
+        // ready to load the background helpers
+        if(!styleAttributesReady) return
 
         inlineCodeBgHelper.clearCachedPositions()
         codeBlockBgHelper.clearCachedPositions()
