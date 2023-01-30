@@ -65,6 +65,6 @@ final class HTMLParserTests: XCTestCase {
         let html = "<code>inline code</code>"
         let attributed = try HTMLParser.parse(html: html)
         XCTAssertEqual(attributed.backgroundColor(at: 0),
-                       HTMLParserStyle.standard.codeBackgroundColor)
+                       HTMLParserStyle.standard.codeBlockStyle.backgroundColor)
     }
 }
