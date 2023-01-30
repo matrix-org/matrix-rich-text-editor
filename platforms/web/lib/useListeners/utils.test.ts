@@ -36,6 +36,8 @@ describe('createDefaultActionStates', () => {
             link: 'enabled',
             codeBlock: 'enabled',
             quote: 'enabled',
+            indent: 'enabled',
+            unindent: 'enabled',
         });
     });
 });

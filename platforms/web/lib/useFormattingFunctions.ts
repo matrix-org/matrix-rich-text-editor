@@ -61,6 +61,8 @@ export function useFormattingFunctions(
                 composerModel?.get_link_action()?.edit_link?.link || '',
             codeBlock: () => sendEvent('insertCodeBlock'),
             quote: () => sendEvent('insertQuote'),
+            indent: () => sendEvent('formatIndent'),
+            unindent: () => sendEvent('formatOutdent'),
         };
     }, [editorRef, composerModel]);
 

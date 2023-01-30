@@ -28,4 +28,6 @@ export const ACTION_TYPES = [
     'link',
     'codeBlock',
     'quote',
+    'indent',
+    'unindent',
 ] as const;

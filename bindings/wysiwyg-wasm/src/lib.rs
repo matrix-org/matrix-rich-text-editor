@@ -231,6 +231,14 @@ impl ComposerModel {
         ComposerUpdate::from(self.inner.unordered_list())
     }
 
+    pub fn indent(&mut self) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.indent())
+    }
+
+    pub fn unindent(&mut self) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.unindent())
+    }
+
     pub fn get_link_action(&self) -> LinkAction {
         self.inner.get_link_action().into()
     }
