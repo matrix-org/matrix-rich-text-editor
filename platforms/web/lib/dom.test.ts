@@ -181,106 +181,60 @@ describe('computeNodeAndOffset', () => {
         expect(offset).toBe(1);
     });
 
-    it('Should find inside an empty list', () => {
-        // When
-        setEditorHtml('<ul><li><li></ul>');
-        const { node, offset } = computeNodeAndOffset(editor, 0);
-
-        // Then
-        expect(node).toBe(editor.childNodes[0].childNodes[0]);
-        expect(offset).toBe(0);
-    });
-
-    it('Should find inside two empty list', () => {
-        // When
-        setEditorHtml('<ul><li><li></ul><li><li></ul>');
-        const { node, offset } = computeNodeAndOffset(editor, 0);
-
-        // Then
-        expect(node).toBe(editor.childNodes[0].childNodes[0]);
-        expect(offset).toBe(0);
-    });
-
-    it('Should find inside a list', () => {
-        // When
-        setEditorHtml('<ul><li>foo<li></ul>');
-        const { node, offset } = computeNodeAndOffset(editor, 1);
-
-        // Then
-        expect(node).toBe(editor.childNodes[0].childNodes[0].childNodes[0]);
-        expect(offset).toBe(1);
-    });
-
-    it('Should find inside a paragraph, before content', () => {
+    it('Should find inside a paragraph', () => {
         // When
         setEditorHtml('<p>a</p>');
-        const { node, offset } = computeNodeAndOffset(editor, 0);
+        const { node: startNode, offset: startOffset } = computeNodeAndOffset(
+            editor,
+            0,
+        );
+        const { node: endNode, offset: endOffset } = computeNodeAndOffset(
+            editor,
+            1,
+        );
 
         // Then
-        expect(node).toBe(editor.childNodes[0].childNodes[0]);
-        expect(offset).toBe(0);
+        expect(startNode).toBe(editor.childNodes[0].childNodes[0]);
+        expect(startOffset).toBe(0);
+
+        expect(endNode).toBe(editor.childNodes[0].childNodes[0]);
+        expect(endOffset).toBe(1);
     });
 
-    it('Should find inside a paragraph, after content', () => {
-        // When
-        setEditorHtml('<p>a</p>');
-        const { node, offset } = computeNodeAndOffset(editor, 1);
-
-        // Then
-        expect(node).toBe(editor.childNodes[0].childNodes[0]);
-        expect(offset).toBe(1);
-    });
-
-    it('Should find inside adjacent paragraphs, first child', () => {
-        // When
-        setEditorHtml('<p>a</p><p>b</p>');
-        const { node, offset } = computeNodeAndOffset(editor, 1);
-
-        // Then
-        expect(node).toBe(editor.childNodes[0].childNodes[0]);
-        expect(offset).toBe(1);
-    });
-
-    it('Should find inside adjacent paragraphs, second child', () => {
+    it('Should find inside adjacent paragraphs', () => {
         // When
         setEditorHtml('<p>a</p><p>b</p>');
-        const { node, offset } = computeNodeAndOffset(editor, 2);
+        const { node: fistChildNode, offset: firstChildOffset } =
+            computeNodeAndOffset(editor, 1);
+        const { node: secondChildNode, offset: secondChildOffset } =
+            computeNodeAndOffset(editor, 2);
 
         // Then
-        expect(node).toBe(editor.childNodes[1].childNodes[0]);
-        expect(offset).toBe(0);
+        expect(fistChildNode).toBe(editor.childNodes[0].childNodes[0]);
+        expect(firstChildOffset).toBe(1);
+
+        expect(secondChildNode).toBe(editor.childNodes[1].childNodes[0]);
+        expect(secondChildOffset).toBe(0);
     });
 
     it('Should find inside adjacent nested paragraphs, first child', () => {
         // When
         setEditorHtml('<p><em>a</em></p><p><em>b</em></p>');
-        const { node, offset } = computeNodeAndOffset(editor, 1);
+        const { node: firstChildNode, offset: firstChildOffset } =
+            computeNodeAndOffset(editor, 1);
+        const { node: secondChildNode, offset: secondChildOffset } =
+            computeNodeAndOffset(editor, 2);
 
         // Then
-        expect(node).toBe(editor.childNodes[0].childNodes[0].childNodes[0]);
-        expect(offset).toBe(1);
-    });
+        expect(firstChildNode).toBe(
+            editor.childNodes[0].childNodes[0].childNodes[0],
+        );
+        expect(firstChildOffset).toBe(1);
 
-    it('Should find inside adjacent nested paragraphs, second child', () => {
-        // When
-        setEditorHtml('<p><em>a</em></p><p><em>b</em></p>');
-        const { node, offset } = computeNodeAndOffset(editor, 2);
-
-        // Then
-        expect(node).toBe(editor.childNodes[1].childNodes[0].childNodes[0]);
-        expect(offset).toBe(0);
-    });
-
-    it('Should find inside adjacent empty paragraph, second child', () => {
-        // When
-        // we get this when we start writing in the composer (goes in as plain
-        // text) and then we press enter and we move to paragraphs
-        setEditorHtml('<p>press enter</p><p>&nbsp;</p>');
-        const { node, offset } = computeNodeAndOffset(editor, 12);
-
-        // Then
-        expect(node).toBe(editor.childNodes[1].childNodes[0]);
-        expect(offset).toBe(0);
+        expect(secondChildNode).toBe(
+            editor.childNodes[1].childNodes[0].childNodes[0],
+        );
+        expect(secondChildOffset).toBe(0);
     });
 
     it('Should find inside adjacent empty paragraph, second child', () => {
@@ -317,7 +271,7 @@ describe('computeNodeAndOffset', () => {
 
     it('Should find inside a single list item', () => {
         // When
-        setEditorHtml('<ul><li>foo</li></ul>'); // also invalid html
+        setEditorHtml('<ul><li>foo</li></ul>');
         const { node, offset } = computeNodeAndOffset(editor, 1);
 
         // Then
@@ -325,54 +279,55 @@ describe('computeNodeAndOffset', () => {
         expect(offset).toBe(1);
     });
 
-    it('Should find inside first child of two empty list items', () => {
+    it('Should find inside children of empty list items', () => {
         // When
         setEditorHtml('<ul><li></li><li></li></ul>');
-        const { node, offset } = computeNodeAndOffset(editor, 0);
+        const { node: firstChildNode, offset: firstChildOffset } =
+            computeNodeAndOffset(editor, 0);
 
         // Then
-        expect(node).toBe(editor.childNodes[0].childNodes[0]);
-        expect(offset).toBe(0);
+        expect(firstChildNode).toBe(editor.childNodes[0].childNodes[0]);
+        expect(firstChildOffset).toBe(0);
     });
 
-    it('Should find inside adjacent list items, first child', () => {
+    it('Should find inside adjacent list items', () => {
         // When
         setEditorHtml('<ul><li>foo</li><li>bar</li></ul>');
-        const { node, offset } = computeNodeAndOffset(editor, 3);
+        const { node: firstChildNode, offset: firstChildOffset } =
+            computeNodeAndOffset(editor, 3);
+        const { node: secondChildNode, offset: secondChildOffset } =
+            computeNodeAndOffset(editor, 4);
 
         // Then
-        expect(node).toBe(editor.childNodes[0].childNodes[0].childNodes[0]);
-        expect(offset).toBe(3);
+        expect(firstChildNode).toBe(
+            editor.childNodes[0].childNodes[0].childNodes[0],
+        );
+        expect(firstChildOffset).toBe(3);
+
+        expect(secondChildNode).toBe(
+            editor.childNodes[0].childNodes[1].childNodes[0],
+        );
+        expect(secondChildOffset).toBe(0);
     });
 
-    it('Should find inside adjacent list items, second child', () => {
-        // When
-        setEditorHtml('<ul><li>foo</li><li>bar</li></ul>');
-        const { node, offset } = computeNodeAndOffset(editor, 4);
-
-        // Then
-        expect(node).toBe(editor.childNodes[0].childNodes[1].childNodes[0]);
-        expect(offset).toBe(0);
-    });
-
-    it('Should find inside adjacent lists, first list', () => {
-        // When
-        setEditorHtml('<ul><li>foo</li></ul><ul><li>bar</li></ul>');
-        const { node, offset } = computeNodeAndOffset(editor, 3);
-
-        // Then
-        expect(node).toBe(editor.childNodes[0].childNodes[0].childNodes[0]);
-        expect(offset).toBe(3);
-    });
-
-    it('Should find inside adjacent lists, second list', () => {
+    it('Should find inside adjacent lists', () => {
         // When
         setEditorHtml('<ul><li>foo</li></ul><ul><li>bar</li></ul>');
-        const { node, offset } = computeNodeAndOffset(editor, 4);
+        const { node: firstListNode, offset: firstListOffset } =
+            computeNodeAndOffset(editor, 3);
+        const { node: secondListNode, offset: secondListOffset } =
+            computeNodeAndOffset(editor, 4);
 
         // Then
-        expect(node).toBe(editor.childNodes[1].childNodes[0].childNodes[0]);
-        expect(offset).toBe(0);
+        expect(firstListNode).toBe(
+            editor.childNodes[0].childNodes[0].childNodes[0],
+        );
+        expect(firstListOffset).toBe(3);
+
+        expect(secondListNode).toBe(
+            editor.childNodes[1].childNodes[0].childNodes[0],
+        );
+        expect(secondListOffset).toBe(0);
     });
 
     it('Should find inside quote', () => {
