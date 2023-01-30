@@ -6,6 +6,14 @@
     android:layout_height="match_parent"
     tools:context="io.element.android.wysiwyg.test.utils.TestActivity">
 
+    <io.element.android.wysiwyg.EditorStyledTextView
+        android:id="@+id/styledTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -13,7 +21,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toBottomOf="@id/styledTextView">
 
         <io.element.android.wysiwyg.EditorEditText
             android:id="@id/rich_text_edit_text"
