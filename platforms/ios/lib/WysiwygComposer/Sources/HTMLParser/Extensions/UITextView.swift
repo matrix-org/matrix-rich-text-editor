@@ -35,10 +35,10 @@ public extension UITextView {
                     .extendHorizontally(in: frame)
 
                 styleLayer = BackgroundStyleLayer(style: style, frame: rect)
-            case .side:
+            case let .side(offset, width):
                 let textRect = layoutManager
                     .boundingRect(forGlyphRange: glyphRange, in: self.textContainer)
-                let rect = CGRect(x: 5, y: textRect.origin.y, width: 4, height: textRect.size.height)
+                let rect = CGRect(x: offset, y: textRect.origin.y, width: width, height: textRect.size.height)
                 styleLayer = BackgroundStyleLayer(style: style, frame: rect)
             }
             layer.sublayers?[0].insertSublayer(styleLayer, at: UInt32(layer.sublayers?.count ?? 0))

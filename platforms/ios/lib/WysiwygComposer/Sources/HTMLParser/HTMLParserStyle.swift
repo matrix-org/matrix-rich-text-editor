@@ -28,14 +28,14 @@ public struct HTMLParserStyle {
                                    borderColor: UIColor(red: 227 / 255, green: 232 / 255, blue: 240 / 255, alpha: 1.0),
                                    borderWidth: 1.0,
                                    cornerRadius: 4.0,
-                                   padding: 10.0,
+                                   padding: 10,
                                    type: .background),
         quoteBlockStyle: BlockStyle(backgroundColor: UIColor(red: 244 / 255, green: 246 / 255, blue: 250 / 255, alpha: 1.0),
                                     borderColor: UIColor(red: 227 / 255, green: 232 / 255, blue: 240 / 255, alpha: 1.0),
                                     borderWidth: 0,
                                     cornerRadius: 0,
                                     padding: 25,
-                                    type: .side)
+                                    type: .side(offset: 5, width: 4))
     )
 
     /// Color for standard text.
