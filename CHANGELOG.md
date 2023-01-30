@@ -1,5 +1,28 @@
 # Changelog
 
+# [0.22.0] - 2022-01-30
+
+### Added
+
+- Common: Add `<pre>`, `<code>` and `<p>` handling to html parsers
+- Common: Add clippy to CI
+- Android: Add configuration options for code size in inline code and code blocks
+
+### Changed
+
+- Common: Paragraphs are now contained inside `<p>` tags
+- Common: Further improve link behaviour when spanning block nodes
+- Common: Leading and trailing empty paragraphs inside `<pre>` tags will now contain `&nbsp;` HTML entity
+- iOS: Use ZWSP in place of `&nbsp;` in some places to allow block rendering
+- iOS: Improve code utilities for writing Swift tests
+
+### Fixed
+
+- Common: Apply clippy fixes to all files
+- Common: Fix parsing of HTML tags containing only `&nbsp;` HTML entity
+- Common: Fix button state behaviour when creating nested lists
+- Common: Fix button state behaviour when starting inline code
+
 # [0.21.0] - 2022-01-26
 
 ### Added
