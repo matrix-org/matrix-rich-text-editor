@@ -19,9 +19,11 @@ jobs:
     - name: Set Version
       run: rustup default 1.65
     - name: Set Component 
-      run: rustup component add rustfmt
+      run: rustup component add rustfmt clippy
     - name: Format
       run: cargo fmt -- --check
+    - name: Clippy
+      run: cargo clippy -- -D warnings
     - name: Build
       run: cargo build --verbose
     - name: Run tests
