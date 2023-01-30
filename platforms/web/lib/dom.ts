@@ -462,7 +462,7 @@ export function textNodeNeedsExtraOffset(node: Node | null) {
     while (checkNode) {
         // break the loop and return false if
         // either we find an inline node next
-        // or we have a formatting ancestor and the next sibng is not
+        // or we have a formatting ancestor and the next sibling is not
         // a container node
         const nextSibling = checkNode.nextSibling;
         if (
