@@ -42,7 +42,8 @@ public extension UITextView {
         attributedText.enumerateTypedAttribute(.blockquote) { (color: UIColor, range: NSRange, _) in
             let beginning = self.beginningOfDocument
             guard let start = self.position(from: beginning, offset: range.location) else { return }
-            guard let end = self.position(from: start, offset: range.length) else { return }
+            // removing the last character to avoid including the empty new line
+            guard let end = self.position(from: start, offset: range.length - 1) else { return }
             guard let range = self.textRange(from: start, to: end) else { return }
             let rects = selectionRects(for: range)
             var textRect = CGRect.null
