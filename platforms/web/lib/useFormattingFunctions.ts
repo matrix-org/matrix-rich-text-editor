@@ -62,7 +62,7 @@ export function useFormattingFunctions(
             codeBlock: () => sendEvent('insertCodeBlock'),
             quote: () => sendEvent('insertQuote'),
             indent: () => sendEvent('formatIndent'),
-            unindent: () => sendEvent('formatOutdent'),
+            unIndent: () => sendEvent('formatOutdent'),
         };
     }, [editorRef, composerModel]);
 

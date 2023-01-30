@@ -42,5 +42,6 @@ export function mapToAllActionStates(
                 key.substring(1)) as ActionTypes
         ] = value.toLowerCase() as ActionState;
     }
+    console.log('actionStatesMap', actionStatesMap);
     return ret as AllActionStates;
 }
