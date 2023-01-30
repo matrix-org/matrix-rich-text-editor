@@ -17,7 +17,7 @@
 import UIKit
 
 /// Defines a custom background style for an attributed string element.
-struct BlockStyle: Equatable {
+public struct BlockStyle: Equatable {
     enum RenderingType {
         case background
         case side

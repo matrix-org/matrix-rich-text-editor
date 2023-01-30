@@ -114,7 +114,7 @@ public final class HTMLParser {
         }
         
         mutableAttributedString.applyBackgroundStyles(style: style)
-        mutableAttributedString.applyInlineCodeBackgroundStyle(codeBackgroundColor: style.codeBackgroundColor)
+        mutableAttributedString.applyInlineCodeBackgroundStyle(codeBackgroundColor: style.codeBlockStyle.backgroundColor)
         mutableAttributedString.replaceOrDeleteDiscardableText()
         mutableAttributedString.removeParagraphVerticalSpacing()
         
