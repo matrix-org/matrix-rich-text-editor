@@ -164,6 +164,16 @@ impl DomHandle {
         new_path.splice(0..old.raw().len(), new.into_raw());
         self.path = Some(new_path.clone());
     }
+
+    /// Returns a vec containing all ancestors handles of given handle,
+    /// including root and self. Panics if handle is unset.
+    pub fn with_ancestors(&self) -> Vec<DomHandle> {
+        self.raw().iter().fold(vec![DomHandle::root()], |mut v, i| {
+            let last = v.last().unwrap();
+            v.push(last.child_handle(*i));
+            v
+        })
+    }
 }
 
 #[cfg(test)]
@@ -267,5 +277,22 @@ mod test {
         let parent = DomHandle::from_raw(vec![0, 1, 4]);
         let new_parent = DomHandle::from_raw(vec![7, 8]);
         handle.replace_ancestor(parent, new_parent);
+    }
+
+    #[test]
+    fn with_ancestors_returns_all_ancestors_and_self() {
+        let handle = DomHandle::from_raw(vec![0, 1, 2, 4, 5]);
+        assert_eq!(
+            handle.with_ancestors(),
+            vec![
+                DomHandle::root(),
+                DomHandle::from_raw(vec![0]),
+                DomHandle::from_raw(vec![0, 1]),
+                DomHandle::from_raw(vec![0, 1, 2]),
+                DomHandle::from_raw(vec![0, 1, 2, 4]),
+                DomHandle::from_raw(vec![0, 1, 2, 4, 5]),
+            ]
+        );
+        assert_eq!(DomHandle::root().with_ancestors(), vec![DomHandle::root()]);
     }
 }
