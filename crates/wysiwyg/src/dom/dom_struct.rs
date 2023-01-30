@@ -275,17 +275,18 @@ where
         &self,
         child_handle: &DomHandle,
     ) -> Option<DomHandle> {
-        if let DomNode::Container(n) = self.lookup_node(child_handle) {
-            if n.is_list_item() {
-                return Some(child_handle.clone());
-            }
-        }
-
-        if child_handle.has_parent() {
-            self.find_ancestor_list_item_or_self(&child_handle.parent_handle())
-        } else {
-            None
-        }
+        child_handle
+            .with_ancestors()
+            .iter()
+            .rev()
+            .find(|handle| {
+                if let DomNode::Container(n) = self.lookup_node(handle) {
+                    n.is_list_item()
+                } else {
+                    false
+                }
+            })
+            .cloned()
     }
 
     /// Find the node based on its handle.

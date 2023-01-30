@@ -138,26 +138,22 @@ where
             set.contains(&OrderedList) || set.contains(&UnorderedList)
         }
 
-        let mut reversed_actions = HashSet::new();
-        let mut cur_handle = handle.clone();
-
-        while !cur_handle.is_root() {
-            let reversed_action = self.reversed_action_for_handle(&cur_handle);
-            if let Some(action) = reversed_action {
-                match action {
-                    // If there is multiple list types in the hierarchy we
-                    // only keep the deepest list type.
-                    OrderedList | UnorderedList
-                        if has_list_in(&reversed_actions) => {}
-                    _ => {
-                        reversed_actions.insert(action);
+        handle.with_ancestors().iter().rev().fold(
+            HashSet::new(),
+            |mut set, handle| {
+                if let Some(action) = self.reversed_action_for_handle(handle) {
+                    match action {
+                        // If there is multiple list types in the hierarchy we
+                        // only keep the deepest list type.
+                        OrderedList | UnorderedList if has_list_in(&set) => {}
+                        _ => {
+                            set.insert(action);
+                        }
                     }
                 }
-            }
-            cur_handle = cur_handle.parent_handle();
-        }
-
-        reversed_actions
+                set
+            },
+        )
     }
 
     fn reversed_action_for_handle(
