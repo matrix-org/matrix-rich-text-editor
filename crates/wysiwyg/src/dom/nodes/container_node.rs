@@ -311,6 +311,10 @@ where
         &self.kind
     }
 
+    pub fn is_link(&self) -> bool {
+        matches!(self.kind, ContainerNodeKind::Link(_))
+    }
+
     pub fn is_list_item(&self) -> bool {
         matches!(self.kind, ContainerNodeKind::ListItem)
     }

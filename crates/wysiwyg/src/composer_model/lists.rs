@@ -66,7 +66,7 @@ where
         }
     }
 
-    pub fn can_indent(&self, locations: &Vec<DomLocation>) -> bool {
+    pub fn can_indent(&self, locations: &[DomLocation]) -> bool {
         let list_item_locations: Vec<&DomLocation> = locations
             .iter()
             .filter(|l| l.kind == DomNodeKind::ListItem)
@@ -84,7 +84,7 @@ where
         can_indent
     }
 
-    pub fn can_unindent(&self, locations: &Vec<DomLocation>) -> bool {
+    pub fn can_unindent(&self, locations: &[DomLocation]) -> bool {
         let list_item_locations: Vec<&DomLocation> = locations
             .iter()
             .filter(|l| l.kind == DomNodeKind::ListItem)

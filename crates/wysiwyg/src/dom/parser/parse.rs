@@ -409,7 +409,7 @@ mod sys {
                 <pre><code>Some code</code></pre>\
                 <p>bar</p>";
             let dom: Dom<Utf16String> =
-                HtmlParser::default().parse(&html).unwrap();
+                HtmlParser::default().parse(html).unwrap();
             let tree = dom.to_tree().to_string();
             assert_eq!(
                 tree,
@@ -477,7 +477,7 @@ mod sys {
                 <pre><code>\u{A0}\n\u{A0}</code></pre>\
                 <p>\u{A0}</p>";
             let dom: Dom<Utf16String> =
-                HtmlParser::default().parse(&html).unwrap();
+                HtmlParser::default().parse(html).unwrap();
             let tree = dom.to_tree().to_string();
             assert_eq!(
                 tree,
@@ -500,7 +500,7 @@ mod sys {
                 <pre><code>&nbsp;\n&nbsp;</code></pre>\
                 <p>&nbsp;</p>";
             let dom: Dom<Utf16String> =
-                HtmlParser::default().parse(&html).unwrap();
+                HtmlParser::default().parse(html).unwrap();
             let tree = dom.to_tree().to_string();
             assert_eq!(
                 tree,
@@ -585,7 +585,7 @@ fn post_process_code_blocks_lines<S: UnicodeString>(
 fn last_container_mut_in<S: UnicodeString>(
     node: &mut ContainerNode<S>,
 ) -> Option<&mut ContainerNode<S>> {
-    node.last_child_mut().map_or(None, |n| n.as_container_mut())
+    node.last_child_mut().and_then(|n| n.as_container_mut())
 }
 
 fn convert_text<S: UnicodeString>(
@@ -610,7 +610,7 @@ fn convert_text<S: UnicodeString>(
         let contents = text;
         let is_nbsp = contents == "\u{A0}" || contents == "&nbsp;";
         if !is_nbsp {
-            node.append_child(DomNode::new_text(contents.clone().into()));
+            node.append_child(DomNode::new_text(contents.into()));
         }
     }
 }
