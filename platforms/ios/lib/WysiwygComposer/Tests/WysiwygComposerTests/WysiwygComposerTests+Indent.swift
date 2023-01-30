@@ -30,38 +30,32 @@ private enum Constants {
 
 extension WysiwygComposerTests {
     func testIndent() {
-        let composer = newComposerModel()
-        _ = composer.setContentFromHtml(html: Constants.sampleListHtml)
-        // Select somewhere on item 2
-        _ = composer.select(startUtf16Codeunit: 9, endUtf16Codeunit: 9)
-        _ = composer.indent()
-        XCTAssertTrue(composer.actionStates()[.indent] == .disabled)
-        // Select somewhere on item 3
-        _ = composer.select(startUtf16Codeunit: 18, endUtf16Codeunit: 18)
-        _ = composer.indent()
-        _ = composer.indent()
-        XCTAssertTrue(composer.actionStates()[.indent] == .disabled)
-        XCTAssertEqual(
-            composer.getContentAsHtml(),
-            Constants.indentedSampleListHtml
-        )
+        newComposerModel()
+            .action { $0.setContentFromHtml(html: Constants.sampleListHtml) }
+            // Select somewhere on item 2
+            .action { $0.select(startUtf16Codeunit: 9, endUtf16Codeunit: 9) }
+            .action { $0.indent() }
+            .execute { XCTAssertTrue($0.actionStates()[.indent] == .disabled) }
+            // Select somewhere on item 3
+            .action { $0.select(startUtf16Codeunit: 18, endUtf16Codeunit: 18) }
+            .action { $0.indent() }
+            .action { $0.indent() }
+            .execute { XCTAssertTrue($0.actionStates()[.indent] == .disabled) }
+            .assertHtml(Constants.indentedSampleListHtml)
     }
 
     func testUnIndent() {
-        let composer = newComposerModel()
-        _ = composer.setContentFromHtml(html: Constants.indentedSampleListHtml)
-        // Select somewhere on item 3
-        _ = composer.select(startUtf16Codeunit: 18, endUtf16Codeunit: 18)
-        _ = composer.unIndent()
-        _ = composer.unIndent()
-        XCTAssertTrue(composer.actionStates()[.unIndent] == .disabled)
-        // Select somewhere on item 2
-        _ = composer.select(startUtf16Codeunit: 9, endUtf16Codeunit: 9)
-        _ = composer.unIndent()
-        XCTAssertTrue(composer.actionStates()[.unIndent] == .disabled)
-        XCTAssertEqual(
-            composer.getContentAsHtml(),
-            Constants.sampleListHtml
-        )
+        newComposerModel()
+            .action { $0.setContentFromHtml(html: Constants.indentedSampleListHtml) }
+            // Select somewhere on item 3
+            .action { $0.select(startUtf16Codeunit: 18, endUtf16Codeunit: 18) }
+            .action { $0.unIndent() }
+            .action { $0.unIndent() }
+            .execute { XCTAssertTrue($0.actionStates()[.unIndent] == .disabled) }
+            // Select somewhere on item 2
+            .action { $0.select(startUtf16Codeunit: 9, endUtf16Codeunit: 9) }
+            .action { $0.unIndent() }
+            .execute { XCTAssertTrue($0.actionStates()[.unIndent] == .disabled) }
+            .assertHtml(Constants.sampleListHtml)
     }
 }

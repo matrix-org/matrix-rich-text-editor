@@ -21,7 +21,7 @@ use crate::dom::range::DomLocationPosition;
 use crate::dom::range::DomLocationPosition::Before;
 use crate::dom::{DomLocation, Range};
 use crate::menu_state::MenuStateUpdate;
-use crate::ComposerAction::{Indent, UnIndent};
+use crate::ComposerAction::{Indent, OrderedList, UnIndent, UnorderedList};
 use crate::{
     ComposerAction, ComposerModel, DomHandle, DomNode, InlineFormatType,
     ListType, MenuState, UnicodeString,
@@ -134,27 +134,41 @@ where
         &self,
         handle: &DomHandle,
     ) -> HashSet<ComposerAction> {
-        let mut reversed_actions = HashSet::new();
-        let node = self.state.dom.lookup_node(handle);
-        if let DomNode::Container(container) = node {
-            let active_button = Self::active_button_for_container(container);
-            if let Some(button) = active_button {
-                reversed_actions.insert(button);
-            }
+        fn has_list_in(set: &HashSet<ComposerAction>) -> bool {
+            set.contains(&OrderedList) || set.contains(&UnorderedList)
         }
 
-        if handle.has_parent() {
-            reversed_actions = reversed_actions
-                .union(&self.compute_reversed_actions(&handle.parent_handle()))
-                .into_iter()
-                .cloned()
-                .collect();
-        }
-
-        reversed_actions
+        handle.with_ancestors().iter().rev().fold(
+            HashSet::new(),
+            |mut set, handle| {
+                if let Some(action) = self.reversed_action_for_handle(handle) {
+                    match action {
+                        // If there is multiple list types in the hierarchy we
+                        // only keep the deepest list type.
+                        OrderedList | UnorderedList if has_list_in(&set) => {}
+                        _ => {
+                            set.insert(action);
+                        }
+                    }
+                }
+                set
+            },
+        )
     }
 
-    fn active_button_for_container(
+    fn reversed_action_for_handle(
+        &self,
+        handle: &DomHandle,
+    ) -> Option<ComposerAction> {
+        let node = self.state.dom.lookup_node(handle);
+        if let DomNode::Container(container) = node {
+            Self::reversed_action_for_container(container)
+        } else {
+            None
+        }
+    }
+
+    fn reversed_action_for_container(
         container: &ContainerNode<S>,
     ) -> Option<ComposerAction> {
         match container.kind() {
@@ -210,7 +224,15 @@ where
         if !self.can_unindent(&top_most_list_locations) {
             disabled_actions.insert(UnIndent);
         }
-        if contains_inline_code(locations) {
+        // XOR on inline code in selection & toggled format types.
+        // If selection is not a cursor, toggled format types is always
+        // empty, which makes `contains_inline_code` the only condition.
+        if contains_inline_code(locations)
+            ^ self
+                .state
+                .toggled_format_types
+                .contains(&InlineFormatType::InlineCode)
+        {
             // Remove the rest of inline formatting options
             disabled_actions.extend(vec![
                 ComposerAction::Bold,

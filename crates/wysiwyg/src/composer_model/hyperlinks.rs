@@ -210,16 +210,18 @@ where
     fn delete_child_links(&mut self, node_handle: &DomHandle) {
         let node = self.state.dom.lookup_node(node_handle);
 
-        let child_link_handles = node
-            .iter_containers()
-            .filter(|n| matches!(n.kind(), ContainerNodeKind::Link(_)))
-            .map(|n| n.handle())
-            .filter(|h| *h != *node_handle)
-            .collect::<Vec<_>>();
-
-        for handle in child_link_handles.into_iter().rev() {
-            self.state.dom.remove_and_keep_children(&handle);
-        }
+        node.iter_containers()
+            .filter_map(|c| {
+                if c.is_link() && c.handle() != *node_handle {
+                    Some(c.handle())
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
+            .rev()
+            .for_each(|h| self.state.dom.remove_and_keep_children(&h));
     }
 
     fn find_closest_ancestor_link(

@@ -19,105 +19,96 @@ import XCTest
 
 extension WysiwygComposerTests {
     func testCreateWithTextLinkAction() {
-        let composer = newComposerModel()
-        let action = composer.getLinkAction()
-        XCTAssertEqual(action, .createWithText)
+        newComposerModel()
+            .assertLinkAction(.createWithText)
     }
 
     func testCreateLinkAction() {
-        let composer = newComposerModel()
-        _ = composer.replaceText(newText: "test")
-        _ = composer.select(startUtf16Codeunit: 0, endUtf16Codeunit: 4)
-        let action = composer.getLinkAction()
-        XCTAssertEqual(action, .create)
+        newComposerModel()
+            .action { $0.replaceText(newText: "test") }
+            .action { $0.select(startUtf16Codeunit: 0, endUtf16Codeunit: 4) }
+            .assertLinkAction(.create)
     }
 
     func testEditLinkAction() {
         let link = "test_url"
-        let composer = newComposerModel()
-        _ = composer.setLinkWithText(link: link, text: "test")
-        let action = composer.getLinkAction()
-        XCTAssertEqual(action, .edit(link: "https://\(link)"))
+        newComposerModel()
+            .action { $0.setLinkWithText(link: link, text: "test") }
+            .assertLinkAction(.edit(link: "https://\(link)"))
     }
 
     func testSetLinkWithText() {
-        let composer = newComposerModel()
-        _ = composer.setLinkWithText(link: "link", text: "text")
-        XCTAssertEqual(
-            composer.toTree(),
-            """
+        newComposerModel()
+            .action { $0.setLinkWithText(link: "link", text: "text") }
+            .assertTree(
+                """
 
-            └>a \"https://link\"
-              └>\"text\"
+                └>a \"https://link\"
+                  └>\"text\"
 
-            """
-        )
+                """
+            )
     }
     
     func testSetLinkWithTextWithIncludedScheme() {
-        let composer = newComposerModel()
-        _ = composer.setLinkWithText(link: "http://link", text: "text")
-        XCTAssertEqual(
-            composer.toTree(),
-            """
+        newComposerModel()
+            .action { $0.setLinkWithText(link: "http://link", text: "text") }
+            .assertTree(
+                """
 
-            └>a \"http://link\"
-              └>\"text\"
+                └>a \"http://link\"
+                  └>\"text\"
 
-            """
-        )
+                """
+            )
     }
     
     func testSetMailLinkWithText() {
-        let composer = newComposerModel()
-        _ = composer.setLinkWithText(link: "test@element.io", text: "text")
-        XCTAssertEqual(
-            composer.toTree(),
-            """
+        newComposerModel()
+            .action { $0.setLinkWithText(link: "test@element.io", text: "text") }
+            .assertTree(
+                """
 
-            └>a \"mailto:test@element.io\"
-              └>\"text\"
+                └>a \"mailto:test@element.io\"
+                  └>\"text\"
 
-            """
-        )
+                """
+            )
     }
 
     func testSetLink() {
-        let composer = newComposerModel()
-        _ = composer.replaceText(newText: "text")
-        _ = composer.select(startUtf16Codeunit: 0, endUtf16Codeunit: 4)
-        _ = composer.setLink(link: "link")
-        XCTAssertEqual(
-            composer.toTree(),
-            """
+        newComposerModel()
+            .action { $0.replaceText(newText: "text") }
+            .action { $0.select(startUtf16Codeunit: 0, endUtf16Codeunit: 4) }
+            .action { $0.setLink(link: "link") }
+            .assertTree(
+                """
 
-            └>a \"https://link\"
-              └>\"text\"
+                └>a \"https://link\"
+                  └>\"text\"
 
-            """
-        )
+                """
+            )
     }
 
     func testRemoveLinks() {
-        let composer = newComposerModel()
-        _ = composer.setLinkWithText(link: "link", text: "text")
-        XCTAssertEqual(
-            composer.toTree(),
-            """
+        newComposerModel()
+            .action { $0.setLinkWithText(link: "link", text: "text") }
+            .assertTree(
+                """
 
-            └>a \"https://link\"
-              └>\"text\"
+                └>a \"https://link\"
+                  └>\"text\"
 
-            """
-        )
-        _ = composer.removeLinks()
-        XCTAssertEqual(
-            composer.toTree(),
-            """
+                """
+            )
+            .action { $0.removeLinks() }
+            .assertTree(
+                """
 
-            └>"text"
+                └>"text"
 
-            """
-        )
+                """
+            )
     }
 }

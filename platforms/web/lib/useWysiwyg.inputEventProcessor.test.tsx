@@ -43,6 +43,7 @@ describe('inputEventProcessor', () => {
                     code: 'KeyA',
                 }),
                 expect.anything(),
+                textbox,
             );
         });
     });

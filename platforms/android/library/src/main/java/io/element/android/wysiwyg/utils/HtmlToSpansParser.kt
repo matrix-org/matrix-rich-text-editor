@@ -228,7 +228,11 @@ internal class HtmlToSpansParser(
                     }
                 }
 
-                val codeSpan = CodeBlockSpan(styleConfig.codeBlock.leadingMargin, styleConfig.codeBlock.verticalPadding)
+                val codeSpan = CodeBlockSpan(
+                    leadingMargin = styleConfig.codeBlock.leadingMargin,
+                    verticalPadding = styleConfig.codeBlock.verticalPadding,
+                    relativeSizeProportion = styleConfig.codeBlock.relativeTextSize,
+                )
                 replacePlaceholderWithPendingSpan(
                     placeholder = last.span,
                     span = codeSpan,
@@ -283,7 +287,9 @@ internal class HtmlToSpansParser(
             InlineFormat.Italic -> StyleSpan(Typeface.ITALIC)
             InlineFormat.Underline -> UnderlineSpan()
             InlineFormat.StrikeThrough -> StrikethroughSpan()
-            InlineFormat.InlineCode -> InlineCodeSpan()
+            InlineFormat.InlineCode -> InlineCodeSpan(
+                relativeSizeProportion = styleConfig.inlineCode.relativeTextSize
+            )
         }
         replacePlaceholderWithPendingSpan(last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
     }

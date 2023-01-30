@@ -28,10 +28,11 @@ import { TestUtilities } from './useTestCases/types';
 export function processEvent<T extends WysiwygEvent>(
     e: T,
     wysiwyg: Wysiwyg,
+    editor: HTMLElement,
     inputEventProcessor?: InputEventProcessor,
 ): T | null {
     if (inputEventProcessor) {
-        return inputEventProcessor(e, wysiwyg) as T | null;
+        return inputEventProcessor(e, wysiwyg, editor) as T | null;
     } else {
         return e;
     }
@@ -42,6 +43,7 @@ export function processInput(
     composerModel: ComposerModel,
     action: TestUtilities['traceAction'],
     formattingFunctions: FormattingFunctions,
+    editor: HTMLElement,
     inputEventProcessor?: InputEventProcessor,
 ) {
     const event = processEvent(
@@ -50,6 +52,7 @@ export function processInput(
             actions: formattingFunctions,
             content: () => composerModel.get_content_as_html(),
         },
+        editor,
         inputEventProcessor,
     );
     if (!event) {

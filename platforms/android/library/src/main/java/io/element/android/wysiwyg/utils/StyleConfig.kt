@@ -19,6 +19,7 @@ data class BulletListStyleConfig(
 data class InlineCodeStyleConfig(
     @Px val horizontalPadding: Int,
     @Px val verticalPadding: Int,
+    val relativeTextSize: Float,
     val singleLineBg: Drawable,
     val multiLineBgLeft: Drawable,
     val multiLineBgMid: Drawable,
@@ -28,5 +29,6 @@ data class InlineCodeStyleConfig(
 data class CodeBlockStyleConfig(
     @Px val leadingMargin: Int,
     @Px val verticalPadding: Int,
+    val relativeTextSize: Float,
     val backgroundDrawable: Drawable,
 )

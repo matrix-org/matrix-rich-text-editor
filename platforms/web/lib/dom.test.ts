@@ -20,7 +20,6 @@ import {
     getCurrentSelection,
     textNodeNeedsExtraOffset,
 } from './dom';
-
 let beforeEditor: HTMLDivElement;
 let editor: HTMLDivElement;
 let afterEditor: HTMLDivElement;
@@ -1020,5 +1019,15 @@ describe('textNodeNeedsExtraOffset', () => {
             editor.childNodes[0].childNodes[1].childNodes[0],
         );
         expect(textNodeNeedsExtraOffset(wordsNode)).toBe(true);
+    });
+
+    it('can handle formatting inside list items with nested formatting', () => {
+        // When
+        setEditorHtml('<ol><li>reg <strong>b</strong></li></ol>');
+        const { node } = computeNodeAndOffset(editor, 0);
+
+        // Then
+        expect(node).toBe(editor.childNodes[0].childNodes[0].childNodes[0]);
+        expect(textNodeNeedsExtraOffset(node)).toBe(false);
     });
 });
