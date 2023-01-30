@@ -1,6 +1,9 @@
 package io.element.android.wysiwyg.spans
 
+import android.text.TextPaint
+import android.text.style.RelativeSizeSpan
 import android.text.style.TypefaceSpan
+import androidx.annotation.FloatRange
 
 /**
  * Inline code (`some code` in Markdown, <code> in HTML) Span that applies a monospaced font style.
@@ -17,4 +20,19 @@ import android.text.style.TypefaceSpan
  * - https://medium.com/androiddevelopers/drawing-a-rounded-corner-background-on-text-5a610a95af5
  * - https://github.com/googlearchive/android-text/tree/996fdb65bbfbb786c3ca4e4e40b30509067201fc/RoundedBackground-Kotlin
  */
-class InlineCodeSpan: TypefaceSpan("monospace")
+class InlineCodeSpan(
+    @FloatRange(from = 0.0) relativeSizeProportion: Float =
+        CodeSpanConstants.DEFAULT_RELATIVE_SIZE_PROPORTION,
+) : TypefaceSpan("monospace") {
+    private val relativeSizeSpan = RelativeSizeSpan(relativeSizeProportion)
+
+    override fun updateMeasureState(paint: TextPaint) {
+        super.updateMeasureState(paint)
+        relativeSizeSpan.updateMeasureState(paint)
+    }
+
+    override fun updateDrawState(ds: TextPaint) {
+        super.updateDrawState(ds)
+        relativeSizeSpan.updateMeasureState(ds)
+    }
+}
