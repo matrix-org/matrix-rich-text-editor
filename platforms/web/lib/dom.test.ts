@@ -20,7 +20,6 @@ import {
     getCurrentSelection,
     textNodeNeedsExtraOffset,
 } from './dom';
-
 let beforeEditor: HTMLDivElement;
 let editor: HTMLDivElement;
 let afterEditor: HTMLDivElement;
