@@ -146,15 +146,17 @@ class SpanBackgroundHelper(
         layout: Layout,
         spanPosition: SpanPosition
     ): DrawPosition {
-        val (spanStart, spanEnd) = spanPosition
-        val startLine = layout.getLineForOffset(spanStart)
-        val endLine = layout.getLineForOffset(spanEnd)
+        val start = spanPosition.spanStart
+        val end = spanPosition.endExcludingFinalNewline(text)
+
+        val startLine = layout.getLineForOffset(start)
+        val endLine = layout.getLineForOffset(end)
 
         // start can be on the left or on the right depending on the language direction.
-        val startOffset = (layout.getPrimaryHorizontal(spanStart)
+        val startOffset = (layout.getPrimaryHorizontal(start)
                 - layout.getParagraphDirection(startLine) * horizontalPadding).toInt()
         // end can be on the left or on the right depending on the language direction.
-        val endOffset = (layout.getPrimaryHorizontal(spanEnd)
+        val endOffset = (layout.getPrimaryHorizontal(end)
                 + layout.getParagraphDirection(endLine) * horizontalPadding).toInt()
 
         val startIndex = layout.getOffsetForHorizontal(startLine, 0f)
@@ -165,6 +167,13 @@ class SpanBackgroundHelper(
 
         return DrawPosition(startLine, endLine, startOffset, endOffset, leadingMargin)
     }
+
+    private fun SpanPosition.endExcludingFinalNewline(text: Spanned): Int =
+        if(spanEnd > spanStart + 1 && text[spanEnd - 1] == '\n') {
+            spanEnd - 1
+        } else {
+            spanEnd
+        }
 }
 
 internal data class SpanPosition(
