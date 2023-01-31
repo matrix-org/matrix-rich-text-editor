@@ -812,7 +812,9 @@ describe('getCurrentSelection', () => {
     });
 
     it('correctly locates the cursor on a new line inside another tag', () => {
-        setEditorHtml('pa<strong>ra 1<br /><br />pa</strong>ra 2');
+        setEditorHtml(
+            '<p>pa<strong>ra 1</strong></p><p><strong>pa</strong>ra 2</p>',
+        );
         const strong = editor.childNodes[1];
         const secondBr = strong.childNodes[2];
         assert(secondBr);
