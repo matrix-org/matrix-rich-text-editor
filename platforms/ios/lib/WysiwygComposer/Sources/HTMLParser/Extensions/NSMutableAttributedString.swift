@@ -25,14 +25,15 @@ extension NSMutableAttributedString {
     func applyBackgroundStyles(style: HTMLParserStyle) {
         enumerateTypedAttribute(.DTTextBlocks) { (value: NSArray, range: NSRange, _) in
             guard let textBlock = value.firstObject as? DTTextBlock else { return }
-
             switch textBlock.backgroundColor {
             case TempColor.codeBlock:
-                addAttribute(.backgroundStyle, value: style.codeBlockBackgroundStyle, range: range)
-                addAttribute(.paragraphStyle, value: NSParagraphStyle.default, range: range)
+                addAttribute(.blockStyle, value: style.codeBlockStyle, range: range)
+                guard let paragraphStyle = NSMutableParagraphStyle.createWithPadding(style.codeBlockStyle.padding) else { return }
+                addAttribute(.paragraphStyle, value: paragraphStyle, range: range)
             case TempColor.quote:
-                addAttribute(.backgroundStyle, value: style.quoteBackgroundStyle, range: range)
-                addAttribute(.paragraphStyle, value: NSParagraphStyle.default, range: range)
+                addAttribute(.blockStyle, value: style.quoteBlockStyle, range: range)
+                guard let paragraphStyle = NSMutableParagraphStyle.createWithPadding(style.quoteBlockStyle.padding) else { return }
+                addAttribute(.paragraphStyle, value: paragraphStyle, range: range)
             default:
                 break
             }
@@ -59,8 +60,7 @@ extension NSMutableAttributedString {
     func replaceOrDeleteDiscardableText() {
         enumerateTypedAttribute(.discardableText) { (discardable: Bool, range: NSRange, _) in
             guard discardable == true else { return }
-            let attributes = self.attributes(at: range.location, effectiveRange: nil)
-            if attributes[.backgroundStyle] != nil {
+            if self.attribute(.blockStyle, at: range.location, effectiveRange: nil) != nil {
                 self.replaceCharacters(in: range, with: String.zwsp)
             } else {
                 self.deleteCharacters(in: range)
@@ -77,5 +77,15 @@ extension NSMutableAttributedString {
             mutableStyle.paragraphSpacingBefore = 0
             addAttribute(.paragraphStyle, value: mutableStyle as Any, range: range)
         }
+    }
+}
+
+private extension NSParagraphStyle {
+    static func createWithPadding(_ padding: CGFloat) -> NSParagraphStyle? {
+        guard let paragraphStyle = NSMutableParagraphStyle.default.mutableCopy() as? NSMutableParagraphStyle else { return nil }
+        paragraphStyle.firstLineHeadIndent = padding
+        paragraphStyle.headIndent = padding
+        paragraphStyle.tailIndent = -padding
+        return paragraphStyle
     }
 }

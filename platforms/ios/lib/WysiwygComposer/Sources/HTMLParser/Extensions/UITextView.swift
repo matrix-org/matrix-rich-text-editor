@@ -25,14 +25,22 @@ public extension UITextView {
             .compactMap { $0 as? BackgroundStyleLayer }
             .forEach { $0.removeFromSuperlayer() }
 
-        attributedText.enumerateTypedAttribute(.backgroundStyle) { (style: BackgroundStyle, range: NSRange, _) in
+        attributedText.enumerateTypedAttribute(.blockStyle) { (style: BlockStyle, range: NSRange, _) in
+            let styleLayer: BackgroundStyleLayer
             let glyphRange = layoutManager.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
-            let rect = layoutManager
-                .boundingRect(forGlyphRange: glyphRange, in: self.textContainer)
-                .extendHorizontally(in: frame)
+            switch style.type {
+            case .background:
+                let rect = layoutManager
+                    .boundingRect(forGlyphRange: glyphRange, in: self.textContainer)
+                    .extendHorizontally(in: frame)
 
-            let styleLayer = BackgroundStyleLayer(style: style, frame: rect)
-
+                styleLayer = BackgroundStyleLayer(style: style, frame: rect)
+            case let .side(offset, width):
+                let textRect = layoutManager
+                    .boundingRect(forGlyphRange: glyphRange, in: self.textContainer)
+                let rect = CGRect(x: offset, y: textRect.origin.y, width: width, height: textRect.size.height)
+                styleLayer = BackgroundStyleLayer(style: style, frame: rect)
+            }
             layer.sublayers?[0].insertSublayer(styleLayer, at: UInt32(layer.sublayers?.count ?? 0))
         }
     }
@@ -43,7 +51,7 @@ private final class BackgroundStyleLayer: CALayer {
         super.init()
     }
 
-    init(style: BackgroundStyle, frame: CGRect) {
+    init(style: BlockStyle, frame: CGRect) {
         super.init()
 
         self.frame = frame

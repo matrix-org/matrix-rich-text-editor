@@ -19,7 +19,7 @@ import Foundation
 
 extension NSAttributedString.Key {
     static let DTTextBlocks: NSAttributedString.Key = .init(rawValue: DTTextBlocksAttribute)
-    static let backgroundStyle: NSAttributedString.Key = .init(rawValue: "BackgroundStyleAttributeKey")
+    static let blockStyle: NSAttributedString.Key = .init(rawValue: "BlockStyleAttributeKey")
     static let DTField: NSAttributedString.Key = .init(rawValue: DTFieldAttribute)
     static let DTTextLists: NSAttributedString.Key = .init(rawValue: DTTextListsAttribute)
     static let discardableText: NSAttributedString.Key = .init(rawValue: "DiscardableAttributeKey")

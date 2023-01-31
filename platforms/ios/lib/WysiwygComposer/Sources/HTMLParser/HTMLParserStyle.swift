@@ -24,62 +24,36 @@ public struct HTMLParserStyle {
     public static let standard = HTMLParserStyle(
         textColor: UIColor.label,
         linkColor: UIColor.link,
-        codeBackgroundColor: UIColor(red: 244 / 255, green: 246 / 255, blue: 250 / 255, alpha: 1.0),
-        codeBorderColor: UIColor(red: 227 / 255, green: 232 / 255, blue: 240 / 255, alpha: 1.0),
-        quoteBackgroundColor: UIColor(red: 244 / 255, green: 246 / 255, blue: 250 / 255, alpha: 1.0),
-        quoteBorderColor: UIColor(red: 227 / 255, green: 232 / 255, blue: 240 / 255, alpha: 1.0),
-        borderWidth: 1.0,
-        cornerRadius: 4.0
+        codeBlockStyle: BlockStyle(backgroundColor: UIColor(red: 244 / 255, green: 246 / 255, blue: 250 / 255, alpha: 1.0),
+                                   borderColor: UIColor(red: 227 / 255, green: 232 / 255, blue: 240 / 255, alpha: 1.0),
+                                   borderWidth: 1.0,
+                                   cornerRadius: 4.0,
+                                   padding: 10,
+                                   type: .background),
+        quoteBlockStyle: BlockStyle(backgroundColor: UIColor(red: 244 / 255, green: 246 / 255, blue: 250 / 255, alpha: 1.0),
+                                    borderColor: UIColor(red: 227 / 255, green: 232 / 255, blue: 240 / 255, alpha: 1.0),
+                                    borderWidth: 0,
+                                    cornerRadius: 0,
+                                    padding: 25,
+                                    type: .side(offset: 5, width: 4))
     )
 
     /// Color for standard text.
     public var textColor: UIColor
     /// Color for link text.
     public var linkColor: UIColor
-    /// Background color for code blocks / inline code.
-    public var codeBackgroundColor: UIColor
-    /// Border color for code blocks / inline code.
-    public var codeBorderColor: UIColor
-    /// Background color for quotes.
-    public var quoteBackgroundColor: UIColor
-    /// Border color for quotes.
-    public var quoteBorderColor: UIColor
-    /// Border width for custom backgrounds.
-    public var borderWidth: CGFloat
-    /// Corner radius for custom backgrounds.
-    public var cornerRadius: CGFloat
-
-    // MARK: - Internal
-
-    var codeBlockBackgroundStyle: BackgroundStyle {
-        BackgroundStyle(backgroundColor: codeBackgroundColor,
-                        borderColor: codeBorderColor,
-                        borderWidth: borderWidth,
-                        cornerRadius: cornerRadius)
-    }
-
-    var quoteBackgroundStyle: BackgroundStyle {
-        BackgroundStyle(backgroundColor: quoteBackgroundColor,
-                        borderColor: quoteBorderColor,
-                        borderWidth: borderWidth,
-                        cornerRadius: cornerRadius)
-    }
+    /// Code Block Style
+    public var codeBlockStyle: BlockStyle
+    /// Quote Block Style
+    public var quoteBlockStyle: BlockStyle
 
     public init(textColor: UIColor,
                 linkColor: UIColor,
-                codeBackgroundColor: UIColor,
-                codeBorderColor: UIColor,
-                quoteBackgroundColor: UIColor,
-                quoteBorderColor: UIColor,
-                borderWidth: CGFloat,
-                cornerRadius: CGFloat) {
+                codeBlockStyle: BlockStyle,
+                quoteBlockStyle: BlockStyle) {
         self.textColor = textColor
         self.linkColor = linkColor
-        self.codeBackgroundColor = codeBackgroundColor
-        self.codeBorderColor = codeBorderColor
-        self.quoteBackgroundColor = quoteBackgroundColor
-        self.quoteBorderColor = quoteBorderColor
-        self.borderWidth = borderWidth
-        self.cornerRadius = cornerRadius
+        self.codeBlockStyle = codeBlockStyle
+        self.quoteBlockStyle = quoteBlockStyle
     }
 }
