@@ -281,7 +281,11 @@ export function getCurrentSelection(
  */
 function textLength(node: Node, stopChildNumber: number): number {
     if (node.nodeType === Node.TEXT_NODE) {
-        return node.textContent?.length ?? 0;
+        // for a text node, we may have to add an extra offset if it's inside a
+        // certain container
+        const shouldAddOffset = textNodeNeedsExtraOffset(node);
+        const extraOffset = shouldAddOffset ? 1 : 0;
+        return (node.textContent?.length ?? 0) + extraOffset;
     } else if (node.nodeName === 'BR') {
         // Treat br tags as being 1 character long, unless we are
         // looking for location 0 inside one, in which case it's 0 length
@@ -408,7 +412,10 @@ export function countCodeunit(
 ): number {
     // Special case - if asked for after the last node of the editor (which we
     // get if we do select-all), return the end of the editor.
-    if (node === editor && offset === editor.childNodes.length) {
+
+    // change this to account for the fact that there's always
+    // a br tag at the end of the childNodes list
+    if (node === editor && offset === editor.childNodes.length - 1) {
         return textLength(editor, -1) - 1;
     }
 
