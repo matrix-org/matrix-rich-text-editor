@@ -70,7 +70,13 @@ internal extension WysiwygUITests {
                                _ message: @autoclosure () -> String = "",
                                file: StaticString = #filePath,
                                line: UInt = #line) {
-        XCTAssertEqual(textView.value as? String, try content(), message(), file: file, line: line)
+        guard var text = textView.value as? String else {
+            XCTFail("Unable to retrieve text view content")
+            return
+        }
+        // Remove occurences of ZWSP to avoid issues with expected content.
+        text = text.replacingOccurrences(of: "\u{200B}", with: "")
+        XCTAssertEqual(text, try content(), message(), file: file, line: line)
     }
 
     /// Focus the composer text view inside given app and
