@@ -521,6 +521,9 @@ describe('countCodeunit', () => {
 });
 
 describe('getCurrentSelection', () => {
+    // think I'm going to have to rewrite this entire suite of tests, making a mock
+    // selection using vite and then getting rid of all the br tag tests
+    // ...eurgh
     class FakeSelection {
         anchorNode: Node | null = null;
         anchorOffset = 0;
@@ -846,11 +849,11 @@ describe('getCurrentSelection', () => {
     });
 
     it('handles selecting all with ctrl-a', () => {
-        setEditorHtml('para 1<br /><br />para 2');
+        setEditorHtml('<p>para1</p><p>para2</p>');
         const sel = selectAll();
 
         // Do not count the last BR
-        expect(getCurrentSelection(editor, sel)).toEqual([0, 14]);
+        expect(getCurrentSelection(editor, sel)).toEqual([0, 11]);
     });
 
     it('handles selecting all by dragging', () => {
