@@ -521,257 +521,9 @@ describe('countCodeunit', () => {
 });
 
 describe('getCurrentSelection', () => {
-    // think I'm going to have to rewrite this entire suite of tests, making a mock
-    // selection using vite and then getting rid of all the br tag tests
-    // ...eurgh
-    class FakeSelection {
-        anchorNode: Node | null = null;
-        anchorOffset = 0;
-        focusNode: Node | null = null;
-        focusOffset = 0;
-
-        get isCollapsed(): boolean {
-            throw new Error('Not implemented!');
-        }
-        get rangeCount(): number {
-            throw new Error('Not implemented!');
-        }
-        get type(): string {
-            throw new Error('Not implemented!');
-        }
-        addRange() {
-            throw new Error('Not implemented!');
-        }
-        collapse() {
-            throw new Error('Not implemented!');
-        }
-        collapseToEnd() {
-            throw new Error('Not implemented!');
-        }
-        collapseToStart() {
-            throw new Error('Not implemented!');
-        }
-        containsNode(_: Node): boolean {
-            throw new Error('Not implemented!');
-        }
-        empty() {
-            throw new Error('Not implemented!');
-        }
-        deleteFromDocument() {
-            throw new Error('Not implemented!');
-        }
-        getRangeAt(): Range {
-            throw new Error('Not implemented!');
-        }
-        modify() {
-            throw new Error('Not implemented!');
-        }
-        removeRange() {
-            throw new Error('Not implemented!');
-        }
-        removeAllRanges() {
-            throw new Error('Not implemented!');
-        }
-        setPosition() {
-            throw new Error('Not implemented!');
-        }
-        toString(): string {
-            throw new Error('Not implemented!');
-        }
-
-        extend(focusNode: Node | null, focusOffset = 0) {
-            this.focusNode = focusNode;
-            this.focusOffset = focusOffset;
-        }
-
-        selectAllChildren(node: Node) {
-            this.anchorNode = node;
-            this.anchorOffset = 0;
-            this.focusNode = node;
-            this.focusOffset = node.childNodes.length;
-        }
-
-        setBaseAndExtent(
-            anchorNode: Node | null,
-            anchorOffset: number,
-            focusNode: Node | null,
-            focusOffset: number,
-        ) {
-            this.anchorNode = anchorNode;
-            this.anchorOffset = anchorOffset;
-            this.focusNode = focusNode;
-            this.focusOffset = focusOffset;
-        }
-    }
-
-    function lastTextNode(): Node | null {
-        for (let i = editor.childNodes.length - 1; i >= 0; i--) {
-            const n = editor.childNodes[i];
-            if (n.nodeType === Node.TEXT_NODE && n.textContent !== '\n') {
-                return n;
-            }
-        }
-        return null;
-    }
-
-    function indexOf(child: Node, parent: Node) {
-        let i = 0;
-        for (const ch of parent.childNodes) {
-            if (ch.isSameNode(child)) {
-                return i;
-            }
-            i++;
-        }
-        return -1;
-    }
-
-    /** Like selecting something before the editor */
-    function selectionBeforeEditor(): FakeSelection {
-        const sel = new FakeSelection();
-        sel.setBaseAndExtent(beforeEditor, 0, beforeEditor, 0);
-        return sel;
-    }
-
-    /** Like selecting something before the editor */
-    function selectionAfterEditor(): FakeSelection {
-        const sel = new FakeSelection();
-        sel.setBaseAndExtent(afterEditor, 0, afterEditor, 0);
-        return sel;
-    }
-
-    /** Like clicking at the beginning */
-    function cursorToBeginning(): FakeSelection {
-        const sel = new FakeSelection();
-        const node = editor.firstChild;
-        sel.setBaseAndExtent(node, 0, node, 0);
-        return sel;
-    }
-
-    /** Click at the end then press down arrow */
-    function cursorToAfterEnd(): FakeSelection {
-        const sel = new FakeSelection();
-        const offset = editor.childNodes.length - 1;
-        sel.setBaseAndExtent(editor, offset, editor, offset);
-        return sel;
-    }
-
-    /** Click at the end */
-    function cursorToEnd(): FakeSelection {
-        const sel = new FakeSelection();
-        const textNode = lastTextNode();
-        if (textNode) {
-            const len = textNode.textContent?.length ?? 0;
-            sel.setBaseAndExtent(textNode, len, textNode, len);
-        }
-        return sel;
-    }
-
-    /** Moves to the supplied node at the supplied offset. Ignores the offset
-     * if you supply a non-text node, and places you immediately BEFORE the
-     * supplied node. */
-    function cursorToNode(node: Node, offset: number): FakeSelection {
-        const sel = new FakeSelection();
-        if (node.nodeType === Node.TEXT_NODE) {
-            // Text node - refer to it, with index at end
-            sel.setBaseAndExtent(node, offset, node, offset);
-        } else {
-            // Find parent and point to this node within the parent
-            const parent = node.parentNode;
-            if (parent) {
-                const idx = indexOf(node, parent);
-                sel?.setBaseAndExtent(parent, idx, parent, idx);
-            }
-        }
-        return sel;
-    }
-
-    /** An alternative way of selecting a node - this is not possible
-     * to do by clicking, but it is the way we select nodes when we
-     * get a selection back from the ComposerModel sometimes. */
-    function cursorToNodeDirectly(node: Node, offset: number): FakeSelection {
-        const sel = new FakeSelection();
-        sel.setBaseAndExtent(node, offset, node, offset);
-        return sel;
-    }
-
-    function selectAll(): FakeSelection {
-        const sel = new FakeSelection();
-        sel.selectAllChildren(editor);
-        return sel;
-    }
-
-    function selectStartToEnd(): FakeSelection {
-        const sel = new FakeSelection();
-        const textNode = lastTextNode();
-        if (textNode && editor.firstChild) {
-            sel?.setBaseAndExtent(
-                editor.firstChild,
-                0,
-                textNode,
-                textNode.textContent?.length ?? 0,
-            );
-        }
-        return sel;
-    }
-
-    function selectEndToStart() {
-        const sel = cursorToEnd();
-        editor.firstChild && sel.extend(editor.firstChild);
-        return sel;
-    }
-
-    function select(
-        node1: Node,
-        offset1: number,
-        node2: Node,
-        offset2: number,
-    ): FakeSelection {
-        const sel = cursorToNode(node1, offset1);
-
-        if (!node2.parentNode) {
-            return sel;
-        }
-
-        let n2: Node;
-        let o2: number;
-        if (node2.nodeType === Node.TEXT_NODE) {
-            o2 = offset2;
-            n2 = node2;
-        } else {
-            o2 = indexOf(node2, node2.parentNode);
-            n2 = node2.parentNode;
-        }
-
-        sel.extend(n2, o2);
-        return sel;
-    }
-
-    /** Select from the end to the supplied node. If node is not a text node,
-     * offset is ignored, and the selection starts BEFORE node. */
-    function selectEndTo(node: Node, offset: number): FakeSelection {
-        const sel = cursorToEnd();
-
-        if (!node.parentNode) {
-            return sel;
-        }
-
-        let n: Node;
-        let o: number;
-        if (node.nodeType === Node.TEXT_NODE) {
-            o = offset;
-            n = node;
-        } else {
-            o = indexOf(node, node.parentNode);
-            n = node.parentNode;
-        }
-
-        sel.extend(n, o);
-        return sel;
-    }
-
     it('correctly locates the cursor in an empty editor', () => {
         setEditorHtml('');
-        const sel = selectAll();
+        const sel = _selectAll();
         expect(getCurrentSelection(editor, sel)).toEqual([0, 0]);
     });
 
@@ -932,20 +684,12 @@ describe('getCurrentSelection', () => {
             .createNodeIterator(editor, NodeFilter.SHOW_TEXT)
             .nextNode();
 
-        if (firstTextNode === null) {
-            throw new Error('_selectAll could not find a text node ');
-        }
-
-        select?.setBaseAndExtent(
-            firstTextNode,
-            0,
-            editor,
-            editor.childNodes.length - 1, // ignore the final linebreak
-        );
-
-        if (select === null) {
-            throw new Error(
-                'putCaretInTextNodeAtOffset tried to return null Selection',
+        if (firstTextNode) {
+            select?.setBaseAndExtent(
+                firstTextNode,
+                0,
+                editor,
+                editor.childNodes.length - 1, // ignore the final linebreak
             );
         }
 
@@ -1046,9 +790,19 @@ describe('getCurrentSelection', () => {
         expect(getCurrentSelection(editor, sel)).toEqual([0, 0]);
     });
 
+    function _selectionBeforeEditor(): Selection {
+        const sel = document.getSelection();
+        sel?.setBaseAndExtent(beforeEditor, 0, beforeEditor, 0);
+        if (sel === null) {
+            throw new Error(
+                '_selectionAfterEditor tried to return null Selection',
+            );
+        }
+        return sel;
+    }
     it('handles selection before the start by returning 0, 0', () => {
         setEditorHtml('<p>para 1</p><p>para 2</p>');
-        const sel = selectionBeforeEditor();
+        const sel = _selectionBeforeEditor();
         expect(getCurrentSelection(editor, sel)).toEqual([0, 0]);
     });
 
