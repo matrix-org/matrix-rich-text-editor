@@ -775,79 +775,150 @@ describe('getCurrentSelection', () => {
         expect(getCurrentSelection(editor, sel)).toEqual([0, 0]);
     });
 
-    it('correctly locates the cursor after a br tag', () => {
+    function putCaretInTextNodeAtOffset(node: Node, offset: number): Selection {
+        if (node.nodeName !== '#text') {
+            throw new Error(
+                'Called putCaretInTextNodeAtOffset with a non-text node',
+            );
+        }
+
+        const range = new Range();
+        const select = document.getSelection();
+
+        range.setStart(node, offset);
+        range.setEnd(node, offset);
+        range.collapse(true); // collapse to it's boundary point
+
+        select?.removeAllRanges(); // clear out all except anchor and focus
+        select?.addRange(range);
+
+        if (select === null) {
+            throw new Error(
+                'putCaretInTextNodeAtOffset tried to return null Selection',
+            );
+        }
+
+        return select;
+    }
+
+    it('correctly locates the cursor in adjacent paragraphs', () => {
         setEditorHtml('<p>para 1</p><p>para 2</p>');
-        const secondBr = editor.childNodes[2];
-        assert(secondBr);
-        const sel = cursorToNode(secondBr, 0);
+        const firstParagraphTextNode = editor.childNodes[0].childNodes[0];
+        const secondParagrahTextNode = editor.childNodes[1].childNodes[0];
+        const firstNodeOffset = 4;
+        const secondNodeOffset = 1;
 
-        // Sanity: the focusNode and anchorNode are the editor object, not one
-        // of the text nodes inside it, and the offset tells you which node
-        // inside editor is immediately after the cursor.
-        expect(sel.anchorNode).toBe(editor);
-        expect(sel.anchorOffset).toBe(2);
-        expect(sel.focusNode).toBe(editor);
-        expect(sel.focusOffset).toBe(2);
+        // test the first paragraph
+        let sel = putCaretInTextNodeAtOffset(
+            firstParagraphTextNode,
+            firstNodeOffset,
+        );
 
-        // We should see ourselves as on code unit 7, because the BR
-        // counts as 1.
-        expect(getCurrentSelection(editor, sel)).toEqual([7, 7]);
+        // Sanity: the focusNode and anchorNode are the first text node
+        // and the offset tells you how far into that text node we are
+        expect(sel.anchorNode).toBe(firstParagraphTextNode);
+        expect(sel.anchorOffset).toBe(firstNodeOffset);
+        expect(sel.focusNode).toBe(firstParagraphTextNode);
+        expect(sel.focusOffset).toBe(firstNodeOffset);
+
+        // We should see ourselves as on code unit firstNodeOffset
+        expect(getCurrentSelection(editor, sel)).toEqual([
+            firstNodeOffset,
+            firstNodeOffset,
+        ]);
+
+        // move to the second paragraph
+        sel = putCaretInTextNodeAtOffset(
+            secondParagrahTextNode,
+            secondNodeOffset,
+        );
+
+        // Sanity: the focusNode and anchorNode are the second text node
+        // and the offset tells you how far into that text node we are
+        expect(sel.anchorNode).toBe(secondParagrahTextNode);
+        expect(sel.anchorOffset).toBe(secondNodeOffset);
+        expect(sel.focusNode).toBe(secondParagrahTextNode);
+        expect(sel.focusOffset).toBe(secondNodeOffset);
+
+        // We should see ourselves as on code unit 8, because a paragraph tag
+        // will add an extra offset, so our total offset is the length of the
+        // first paragraph, plus the extra offset, plus the second node offset
+        // ie 6 + 1 + 1 = 8
+        expect(getCurrentSelection(editor, sel)).toEqual([8, 8]);
     });
 
-    it('correctly locates the cursor after a br tag selected directly', () => {
-        setEditorHtml('<p>para 1</p><p>para 2</p>');
-        const secondBr = editor.childNodes[2];
-        assert(secondBr);
-        const sel = cursorToNodeDirectly(secondBr, 0);
-
-        // Sanity: the focusNode and anchorNode are the BR itself
-        expect(sel.anchorNode).toBe(secondBr);
-        expect(sel.anchorOffset).toBe(0);
-        expect(sel.focusNode).toBe(secondBr);
-        expect(sel.focusOffset).toBe(0);
-
-        // We should see ourselves as on code unit 7, because the BR
-        // counts as 1.
-        expect(getCurrentSelection(editor, sel)).toEqual([7, 7]);
-    });
-
-    it('correctly locates the cursor on a new line inside another tag', () => {
+    it('correctly locates the cursor inside nested tags', () => {
         setEditorHtml(
             '<p>pa<strong>ra 1</strong></p><p><strong>pa</strong>ra 2</p>',
         );
-        const strong = editor.childNodes[1];
-        const secondBr = strong.childNodes[2];
-        assert(secondBr);
-        const sel = cursorToNode(secondBr, 0);
+        const firstParagraphStrongTextNode =
+            editor.childNodes[0].childNodes[1].childNodes[0];
+        const secondParagrahStrongTextNode =
+            editor.childNodes[1].childNodes[0].childNodes[0];
+        const firstNodeOffset = 0;
+        const secondNodeOffset = 2;
 
-        // Sanity: the focusNode and anchorNode are the editor object, not one
-        // of the text nodes inside it, and the offset tells you which node
-        // inside editor is immediately after the cursor.
-        expect(sel.anchorNode).toBe(strong);
-        expect(sel.anchorOffset).toBe(2);
-        expect(sel.focusNode).toBe(strong);
-        expect(sel.focusOffset).toBe(2);
+        // test the first paragraph strong node
+        let sel = putCaretInTextNodeAtOffset(
+            firstParagraphStrongTextNode,
+            firstNodeOffset,
+        );
 
-        // We should see ourselves as on code unit 7, because the BR
-        // counts as 1.
-        expect(getCurrentSelection(editor, sel)).toEqual([7, 7]);
+        // Sanity: the focusNode and anchorNode are the first strong text node
+        // and the offset tells you how far into that text node we are
+        expect(sel.anchorNode).toBe(firstParagraphStrongTextNode);
+        expect(sel.anchorOffset).toBe(firstNodeOffset);
+        expect(sel.focusNode).toBe(firstParagraphStrongTextNode);
+        expect(sel.focusOffset).toBe(firstNodeOffset);
+
+        // Sanity: the focusNode and anchorNode are the first strong text node
+        // and the offset tells you how far into that text node we are
+        expect(sel.anchorNode).toBe(firstParagraphStrongTextNode);
+        expect(sel.anchorOffset).toBe(firstNodeOffset);
+        expect(sel.focusNode).toBe(firstParagraphStrongTextNode);
+        expect(sel.focusOffset).toBe(firstNodeOffset);
+
+        // move to the second paragraph
+        sel = putCaretInTextNodeAtOffset(
+            secondParagrahStrongTextNode,
+            secondNodeOffset,
+        );
+
+        // Sanity: the focusNode and anchorNode are the second text node
+        // and the offset tells you how far into that text node we are
+        expect(sel.anchorNode).toBe(secondParagrahStrongTextNode);
+        expect(sel.anchorOffset).toBe(secondNodeOffset);
+        expect(sel.focusNode).toBe(secondParagrahStrongTextNode);
+        expect(sel.focusOffset).toBe(secondNodeOffset);
+
+        // We should see ourselves as on code unit 8, because a paragraph tag
+        // will add an extra offset, so our total offset is the length of the
+        // first paragraph, plus the extra offset, plus the second node offset
+        // ie 6 + 1 + 2 = 8
+        expect(getCurrentSelection(editor, sel)).toEqual([9, 9]);
     });
 
-    it('correctly finds backward selections ending after a BR', () => {
+    it('correctly finds backward selections in adjacent paragraphs', () => {
         setEditorHtml('<p>para 1</p><p>para 2</p>');
-        const secondBr = editor.childNodes[2];
-        assert(secondBr);
-        const sel = selectEndTo(secondBr, 0);
+        const firstParagraphTextNode = editor.childNodes[0].childNodes[0];
+        const firstOffset = 4;
+        const secondParagraphTextNode = editor.childNodes[1].childNodes[0];
+        const secondNodeOffset = 6;
 
-        // Sanity
-        expect(sel.anchorNode).toBe(editor.childNodes[3]);
+        const sel = putCaretInTextNodeAtOffset(
+            secondParagraphTextNode,
+            secondNodeOffset,
+        );
+        sel.extend(firstParagraphTextNode, firstOffset);
+
+        // Sanity: the focusNode and anchorNode are the first text node
+        // and the offset tells you how far into that text node we are
+        expect(sel.anchorNode).toBe(secondParagraphTextNode);
         expect(sel.anchorOffset).toBe(6);
-        expect(sel.focusNode).toBe(editor);
-        expect(sel.focusOffset).toBe(2);
+        expect(sel.focusNode).toBe(firstParagraphTextNode);
+        expect(sel.focusOffset).toBe(firstOffset);
 
-        // We should see ourselves as on code unit 7, because the BR
-        // counts as 1.
-        expect(getCurrentSelection(editor, sel)).toEqual([14, 7]);
+        expect(getCurrentSelection(editor, sel)).toEqual([13, 4]);
     });
 
     it('handles selecting all with ctrl-a', () => {
