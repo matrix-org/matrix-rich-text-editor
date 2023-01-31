@@ -285,13 +285,11 @@ export function getCurrentSelection(
  * stopAtNode?
  */
 function textLength(node: Node, stopChildNumber: number): number {
-    console.log(node, stopChildNumber);
     if (node.nodeType === Node.TEXT_NODE) {
         // for a text node, we may have to add an extra offset if it's inside a
         // certain container
         const shouldAddOffset = textNodeNeedsExtraOffset(node);
         const extraOffset = shouldAddOffset ? 1 : 0;
-        console.log({ shouldAddOffset });
         return (node.textContent?.length ?? 0) + extraOffset;
     } else if (node.nodeName === 'BR') {
         // Treat br tags as being 1 character long, unless we are
