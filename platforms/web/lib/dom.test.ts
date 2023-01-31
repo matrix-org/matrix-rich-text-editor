@@ -776,7 +776,7 @@ describe('getCurrentSelection', () => {
     });
 
     it('correctly locates the cursor after a br tag', () => {
-        setEditorHtml('para 1<br /><br />para 2');
+        setEditorHtml('<p>para 1</p><p>para 2</p>');
         const secondBr = editor.childNodes[2];
         assert(secondBr);
         const sel = cursorToNode(secondBr, 0);
@@ -795,7 +795,7 @@ describe('getCurrentSelection', () => {
     });
 
     it('correctly locates the cursor after a br tag selected directly', () => {
-        setEditorHtml('para 1<br /><br />para 2');
+        setEditorHtml('<p>para 1</p><p>para 2</p>');
         const secondBr = editor.childNodes[2];
         assert(secondBr);
         const sel = cursorToNodeDirectly(secondBr, 0);
@@ -832,7 +832,7 @@ describe('getCurrentSelection', () => {
     });
 
     it('correctly finds backward selections ending after a BR', () => {
-        setEditorHtml('para 1<br /><br />para 2');
+        setEditorHtml('<p>para 1</p><p>para 2</p>');
         const secondBr = editor.childNodes[2];
         assert(secondBr);
         const sel = selectEndTo(secondBr, 0);
@@ -857,19 +857,19 @@ describe('getCurrentSelection', () => {
     });
 
     it('handles selecting all by dragging', () => {
-        setEditorHtml('para 1<br /><br />para 2');
+        setEditorHtml('<p>para 1</p><p>para 2</p>');
         const sel = selectStartToEnd();
         expect(getCurrentSelection(editor, sel)).toEqual([0, 14]);
     });
 
     it('handles selecting all by dragging backwards', () => {
-        setEditorHtml('para 1<br /><br />para 2');
+        setEditorHtml('<p>para 1</p><p>para 2</p>');
         const sel = selectEndToStart();
         expect(getCurrentSelection(editor, sel)).toEqual([14, 0]);
     });
 
     it('handles selecting across multiple newlines', () => {
-        setEditorHtml('para 1<br /><br />para 2');
+        setEditorHtml('<p>para 1</p><p>para 2</p>');
         const p1 = editor.childNodes[0];
         const p2 = editor.childNodes[3];
         const sel = select(p1, 2, p2, 3);
@@ -877,26 +877,26 @@ describe('getCurrentSelection', () => {
     });
 
     it('handles cursor after end', () => {
-        setEditorHtml('para 1<br /><br />para 2');
+        setEditorHtml('<p>para 1</p><p>para 2</p>');
         // Simulate going to end of doc and pressing down arrow
         const sel = cursorToAfterEnd();
         expect(getCurrentSelection(editor, sel)).toEqual([14, 14]);
     });
 
     it('handles cursor at start', () => {
-        setEditorHtml('para 1<br /><br />para 2');
+        setEditorHtml('<p>para 1</p><p>para 2</p>');
         const sel = cursorToBeginning();
         expect(getCurrentSelection(editor, sel)).toEqual([0, 0]);
     });
 
     it('handles selection before the start by returning 0, 0', () => {
-        setEditorHtml('para 1<br /><br />para 2');
+        setEditorHtml('<p>para 1</p><p>para 2</p>');
         const sel = selectionBeforeEditor();
         expect(getCurrentSelection(editor, sel)).toEqual([0, 0]);
     });
 
     it('handles selection after the end by returning last character', () => {
-        setEditorHtml('para 1<br /><br />para 2');
+        setEditorHtml('<p>para 1</p><p>para 2</p>');
         const sel = selectionAfterEditor();
         expect(getCurrentSelection(editor, sel)).toEqual([14, 14]);
     });
@@ -929,7 +929,7 @@ describe('textNodeNeedsExtraOffset', () => {
             const openingTag = wrappingTag ? `<${wrappingTag}>` : '';
             const closingTag = wrappingTag ? `<${wrappingTag}>` : '';
             setEditorHtml(
-                `${openingTag}<${testTag}>test test</${testTag}>${closingTag}`,
+                `${openingTag}<${testTag}>test test</${testTag}>${closingTag}<p>some adjacent text</p>`,
             );
             const { node } = computeNodeAndOffset(editor, 1);
 
@@ -986,6 +986,17 @@ describe('textNodeNeedsExtraOffset', () => {
 
         // Then
         expect(node).toBe(editor.childNodes[0].childNodes[0].childNodes[0]);
+        expect(textNodeNeedsExtraOffset(node)).toBe(false);
+    });
+
+    it('does not apply offset to the last child node', () => {
+        // When
+        setEditorHtml('<p>single child</p>');
+
+        const { node } = computeNodeAndOffset(editor, 0);
+
+        // Then
+        expect(node).toBe(editor.childNodes[0].childNodes[0]);
         expect(textNodeNeedsExtraOffset(node)).toBe(false);
     });
 });
