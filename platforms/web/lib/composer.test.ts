@@ -30,6 +30,8 @@ const mockComposerModel = {
     unordered_list: vi.fn(),
     quote: vi.fn(),
     enter: vi.fn(),
+    indent: vi.fn(),
+    unindent: vi.fn(),
 } as unknown as ComposerModel;
 
 const mockAction = vi.fn();
@@ -104,6 +106,14 @@ const testCases: testCase[] = [
     {
         eventType: 'insertQuote',
         composerMethod: 'quote',
+    },
+    {
+        eventType: 'formatIndent',
+        composerMethod: 'indent',
+    },
+    {
+        eventType: 'formatOutdent',
+        composerMethod: 'unindent',
     },
 ];
 

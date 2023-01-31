@@ -28,6 +28,8 @@ import listOrderedImage from './images/list_ordered.svg';
 import inlineCodeImage from './images/inline_code.svg';
 import codeBlockImage from './images/code_block.svg';
 import quoteImage from './images/quote.svg';
+import indentImage from './images/indent.svg';
+import unindentImage from './images/unindent.svg';
 import { Wysiwyg, WysiwygEvent } from '../lib/types';
 
 type ButtonProps = {
@@ -142,6 +144,18 @@ function App() {
                             alt="list ordered"
                             imagePath={listOrderedImage}
                             state={actionStates.orderedList}
+                        />
+                        <Button
+                            onClick={wysiwyg.indent}
+                            alt="indent"
+                            imagePath={indentImage}
+                            state={actionStates.indent}
+                        />
+                        <Button
+                            onClick={wysiwyg.unIndent}
+                            alt="unindent"
+                            imagePath={unindentImage}
+                            state={actionStates.unIndent}
                         />
                         <Button
                             onClick={wysiwyg.quote}
