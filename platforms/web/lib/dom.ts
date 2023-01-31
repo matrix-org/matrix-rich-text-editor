@@ -251,7 +251,12 @@ export function getCurrentSelection(
     editor: HTMLElement,
     selection: Selection | null,
 ) {
-    if (!selection) {
+    // return [0,0] when selection is null, or we have an empty editor
+    const editorIsEmpty =
+        editor.childNodes.length === 1 &&
+        editor.childNodes[0].nodeName === 'BR';
+
+    if (!selection || editorIsEmpty) {
         return [0, 0];
     }
 
@@ -280,15 +285,18 @@ export function getCurrentSelection(
  * stopAtNode?
  */
 function textLength(node: Node, stopChildNumber: number): number {
+    console.log(node, stopChildNumber);
     if (node.nodeType === Node.TEXT_NODE) {
         // for a text node, we may have to add an extra offset if it's inside a
         // certain container
         const shouldAddOffset = textNodeNeedsExtraOffset(node);
         const extraOffset = shouldAddOffset ? 1 : 0;
+        console.log({ shouldAddOffset });
         return (node.textContent?.length ?? 0) + extraOffset;
     } else if (node.nodeName === 'BR') {
         // Treat br tags as being 1 character long, unless we are
         // looking for location 0 inside one, in which case it's 0 length
+
         return stopChildNumber === 0 ? 0 : 1;
     } else {
         // Add up lengths until we hit the stop node.
@@ -471,12 +479,14 @@ export function textNodeNeedsExtraOffset(node: Node | null) {
         // either we find an inline node next
         // or we have a formatting ancestor and the next sibling is not
         // a container node
+        // or the next node is a <br/> tag, as this is the end of the document
         const nextSibling = checkNode.nextSibling;
         if (
             (nextSibling && isInlineNode(nextSibling)) ||
             (hasFormattingParent &&
                 nextSibling &&
-                !isNodeRequiringExtraOffset(nextSibling))
+                !isNodeRequiringExtraOffset(nextSibling)) ||
+            (nextSibling && nextSibling.nodeName === 'BR')
         ) {
             break;
         }
