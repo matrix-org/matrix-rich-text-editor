@@ -921,44 +921,128 @@ describe('getCurrentSelection', () => {
         expect(getCurrentSelection(editor, sel)).toEqual([13, 4]);
     });
 
+    function _selectAll() {
+        // select all works in the browse} by selecting the first text node as
+        // the anchor with an offset of 0, and the focus node as the editor,
+        // with the offset equal to the number of paragraph nodes
+        const select = document.getSelection();
+        select?.removeAllRanges();
+
+        const firstTextNode = document
+            .createNodeIterator(editor, NodeFilter.SHOW_TEXT)
+            .nextNode();
+
+        if (firstTextNode === null) {
+            throw new Error('_selectAll could not find a text node ');
+        }
+
+        select?.setBaseAndExtent(
+            firstTextNode,
+            0,
+            editor,
+            editor.childNodes.length - 1, // ignore the final linebreak
+        );
+
+        if (select === null) {
+            throw new Error(
+                'putCaretInTextNodeAtOffset tried to return null Selection',
+            );
+        }
+
+        return select;
+    }
     it('handles selecting all with ctrl-a', () => {
-        setEditorHtml('<p>para1</p><p>para2</p>');
-        const sel = selectAll();
-
-        // Do not count the last BR
-        expect(getCurrentSelection(editor, sel)).toEqual([0, 11]);
+        setEditorHtml('<p>para 1</p><p>para 2</p>');
+        expect(getCurrentSelection(editor, _selectAll())).toEqual([0, 13]);
     });
 
-    it('handles selecting all by dragging', () => {
+    it('handles selecting all by dragging from start to end', () => {
         setEditorHtml('<p>para 1</p><p>para 2</p>');
-        const sel = selectStartToEnd();
-        expect(getCurrentSelection(editor, sel)).toEqual([0, 14]);
+        const firstParagraphTextNode = editor.childNodes[0].childNodes[0];
+        const firstOffset = 0;
+        const secondParagraphTextNode = editor.childNodes[1].childNodes[0];
+        const secondNodeOffset = 6;
+
+        const sel = putCaretInTextNodeAtOffset(
+            firstParagraphTextNode,
+            firstOffset,
+        );
+        sel.extend(secondParagraphTextNode, secondNodeOffset);
+
+        expect(getCurrentSelection(editor, sel)).toEqual([0, 13]);
     });
 
-    it('handles selecting all by dragging backwards', () => {
+    it('handles selecting all by dragging backwards from end to start', () => {
         setEditorHtml('<p>para 1</p><p>para 2</p>');
-        const sel = selectEndToStart();
-        expect(getCurrentSelection(editor, sel)).toEqual([14, 0]);
+        const firstParagraphTextNode = editor.childNodes[0].childNodes[0];
+        const firstOffset = 0;
+        const secondParagraphTextNode = editor.childNodes[1].childNodes[0];
+        const secondNodeOffset = 6;
+
+        const sel = putCaretInTextNodeAtOffset(
+            secondParagraphTextNode,
+            secondNodeOffset,
+        );
+        sel.extend(firstParagraphTextNode, firstOffset);
+
+        expect(getCurrentSelection(editor, sel)).toEqual([13, 0]);
     });
 
     it('handles selecting across multiple newlines', () => {
         setEditorHtml('<p>para 1</p><p>para 2</p>');
-        const p1 = editor.childNodes[0];
-        const p2 = editor.childNodes[3];
-        const sel = select(p1, 2, p2, 3);
-        expect(getCurrentSelection(editor, sel)).toEqual([2, 11]);
+        const firstParagraphTextNode = editor.childNodes[0].childNodes[0];
+        const firstOffset = 2;
+        const secondParagraphTextNode = editor.childNodes[1].childNodes[0];
+        const secondNodeOffset = 2;
+
+        const sel = putCaretInTextNodeAtOffset(
+            firstParagraphTextNode,
+            firstOffset,
+        );
+        sel.extend(secondParagraphTextNode, secondNodeOffset);
+
+        expect(getCurrentSelection(editor, sel)).toEqual([2, 9]);
     });
 
+    function _cursorToAfterEnd(): Selection {
+        const sel = document.getSelection();
+        const offset = editor.childNodes.length - 1;
+        sel?.setBaseAndExtent(editor, offset, editor, offset);
+
+        if (sel === null) {
+            throw new Error('_cursorToAfterEnd tried to return null Selection');
+        }
+
+        return sel;
+    }
     it('handles cursor after end', () => {
         setEditorHtml('<p>para 1</p><p>para 2</p>');
         // Simulate going to end of doc and pressing down arrow
-        const sel = cursorToAfterEnd();
-        expect(getCurrentSelection(editor, sel)).toEqual([14, 14]);
+        const sel = _cursorToAfterEnd();
+        expect(getCurrentSelection(editor, sel)).toEqual([13, 13]);
     });
 
+    function _cursorToBeginning(): Selection {
+        const sel = document.getSelection();
+        const firstTextNode = document
+            .createNodeIterator(editor, NodeFilter.SHOW_TEXT)
+            .nextNode();
+
+        if (firstTextNode === null) {
+            throw new Error('_cursorToBeginning could not find a text node ');
+        }
+        sel?.setBaseAndExtent(firstTextNode, 0, firstTextNode, 0);
+        if (sel === null) {
+            throw new Error(
+                '_cursorToBeginning tried to return null Selection',
+            );
+        }
+
+        return sel;
+    }
     it('handles cursor at start', () => {
         setEditorHtml('<p>para 1</p><p>para 2</p>');
-        const sel = cursorToBeginning();
+        const sel = _cursorToBeginning();
         expect(getCurrentSelection(editor, sel)).toEqual([0, 0]);
     });
 
@@ -968,10 +1052,20 @@ describe('getCurrentSelection', () => {
         expect(getCurrentSelection(editor, sel)).toEqual([0, 0]);
     });
 
+    function _selectionAfterEditor(): Selection {
+        const sel = document.getSelection();
+        sel?.setBaseAndExtent(afterEditor, 0, afterEditor, 0);
+        if (sel === null) {
+            throw new Error(
+                '_selectionAfterEditor tried to return null Selection',
+            );
+        }
+        return sel;
+    }
     it('handles selection after the end by returning last character', () => {
         setEditorHtml('<p>para 1</p><p>para 2</p>');
-        const sel = selectionAfterEditor();
-        expect(getCurrentSelection(editor, sel)).toEqual([14, 14]);
+        const sel = _selectionAfterEditor();
+        expect(getCurrentSelection(editor, sel)).toEqual([13, 13]);
     });
 });
 
