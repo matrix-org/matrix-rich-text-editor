@@ -1,5 +1,16 @@
 # Changelog
 
+# [0.23.0] - 2022-01-31
+
+### Added
+
+- Common: Add utility to build the array of ancestor handles from a handle
+- Web: Add indent and unindent
+
+### Fixed
+
+- Android: Fix crashes in `EditorStyledTextView`
+
 # [0.22.0] - 2022-01-30
 
 ### Added
