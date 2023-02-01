@@ -138,8 +138,39 @@ where
                 }
             }
         }
+
+        if let Some(leaf_handle) = self.first_leaf_handle_at_location(start) {
+            self.remove_list_item_child_paragraph_if_needed(&leaf_handle);
+        }
+
         #[cfg(any(test, feature = "assert-invariants"))]
         self.assert_invariants();
+    }
+
+    /// Removes paragraph from the closest list item ancestor, if
+    /// it exists and if it is an only child.
+    fn remove_list_item_child_paragraph_if_needed(
+        &mut self,
+        handle: &DomHandle,
+    ) {
+        if let Some(li_handle) = self.find_ancestor_list_item_or_self(handle) {
+            if let DomNode::Container(li) = self.lookup_node_mut(&li_handle) {
+                if li.children().len() == 1
+                    && li.children()[0].kind() == DomNodeKind::Paragraph
+                {
+                    if let DomNode::Container(p) = li.remove_child(0) {
+                        let children = p.take_children();
+                        li.append_children(children);
+                    }
+                }
+            }
+        }
+    }
+
+    fn first_leaf_handle_at_location(&self, pos: usize) -> Option<DomHandle> {
+        let range = self.find_range(pos, pos);
+        let mut leaves = range.leaves();
+        leaves.next().map(|leaf| leaf.node_handle.clone())
     }
 
     fn top_most_block_nodes_in_boundary(

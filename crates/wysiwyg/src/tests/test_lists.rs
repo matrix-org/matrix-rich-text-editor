@@ -512,6 +512,65 @@ fn backspace_text_in_list_item() {
     assert_eq!(tx(&model), "<p>test</p><ol><li>looks goo|</li></ol>")
 }
 
+#[test]
+fn backspacing_an_empty_indented_list_item_removes_parent_list_item_paragraph()
+{
+    let mut model = cm("<ul><li><p>item</p><ul><li><p>it</p><ul><li>|</li></ul></li></ul></li></ul>");
+    model.backspace();
+    assert_eq!(
+        tx(&model),
+        "<ul><li><p>item</p><ul><li>it|</li></ul></li></ul>"
+    );
+    model.enter();
+    assert_eq!(
+        tx(&model),
+        "<ul><li><p>item</p><ul><li>it</li><li>|</li></ul></li></ul>"
+    );
+}
+
+#[test]
+fn backspacing_at_a_non_empty_indented_list_item_start_removes_parent_list_item_paragraph(
+) {
+    let mut model = cm("<ul><li><p>item</p><ul><li><p>it</p><ul><li>|em</li></ul></li></ul></li></ul>");
+    model.backspace();
+    assert_eq!(
+        tx(&model),
+        "<ul><li><p>item</p><ul><li>it|em</li></ul></li></ul>"
+    );
+    model.enter();
+    assert_eq!(
+        tx(&model),
+        "<ul><li><p>item</p><ul><li>it</li><li>|em</li></ul></li></ul>"
+    );
+}
+
+#[test]
+fn backspacing_with_selection_across_an_indented_list_item_removes_parent_list_item_paragraph(
+) {
+    let mut model = cm("<ul><li><p>item</p><ul><li><p>i{t</p><ul><li>em</li></ul></li></ul></li></ul><p>ab}|c</p>");
+    model.backspace();
+    assert_eq!(
+        tx(&model),
+        "<ul><li><p>item</p><ul><li>i|c</li></ul></li></ul>"
+    );
+    model.enter();
+    assert_eq!(
+        tx(&model),
+        "<ul><li><p>item</p><ul><li>i</li><li>|c</li></ul></li></ul>"
+    );
+}
+
+#[test]
+fn backspacing_an_indented_list_item_with_siblings_doesnt_remove_parent_list_item_paragraph(
+) {
+    let mut model = cm("<ul><li><p>item</p><ul><li><p>i{t</p><ul><li>em}|</li><li>sibling</li></ul></li></ul></li></ul>");
+    model.backspace();
+    assert_eq!(
+        tx(&model),
+        "<ul><li><p>item</p><ul><li><p>i|</p><ul><li>sibling</li></ul></li></ul></li></ul>"
+    );
+}
+
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
     model.replace_text(utf16(new_text));
 }
