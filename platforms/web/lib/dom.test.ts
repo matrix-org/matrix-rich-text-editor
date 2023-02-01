@@ -521,30 +521,30 @@ describe('countCodeunit', () => {
 });
 
 describe('getCurrentSelection', () => {
-    function putCaretInTextNodeAtOffset(node: Node, offset: number): Selection {
+    function putCaretInTextNodeAtOffset(
+        node: Node,
+        offset: number,
+    ): Selection | null {
         if (node.nodeName !== '#text') {
             throw new Error(
                 'Called putCaretInTextNodeAtOffset with a non-text node',
             );
         }
 
+        // create a new range and selection for us to amend
         const range = new Range();
-        const select = document.getSelection();
+        const selection = document.getSelection();
 
         range.setStart(node, offset);
         range.setEnd(node, offset);
-        range.collapse(true); // collapse to it's boundary point
 
-        select?.removeAllRanges(); // clear out all except anchor and focus
-        select?.addRange(range);
-
-        if (select === null) {
-            throw new Error(
-                'putCaretInTextNodeAtOffset tried to return null Selection',
-            );
+        if (selection) {
+            // if we have a selection, clear it out and then add the new range
+            selection.removeAllRanges();
+            selection.addRange(range);
         }
 
-        return select;
+        return selection;
     }
     function selectAll() {
         // select all works in the browse} by selecting the first text node as
