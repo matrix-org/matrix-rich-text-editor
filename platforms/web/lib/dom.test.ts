@@ -612,7 +612,7 @@ describe('getCurrentSelection', () => {
         expect(sel.focusNode).toBe(secondParagrahStrongTextNode);
         expect(sel.focusOffset).toBe(secondNodeOffset);
 
-        // We should see ourselves as on code unit 8, because a paragraph tag
+        // We should see ourselves as on code unit 9, because a paragraph tag
         // will add an extra offset, so our total offset is the length of the
         // first paragraph, plus the extra offset, plus the second node offset
         // ie 6 + 1 + 2 = 8
@@ -632,10 +632,10 @@ describe('getCurrentSelection', () => {
         );
         sel.extend(firstParagraphTextNode, firstOffset);
 
-        // Sanity: the focusNode and anchorNode are the first text node
-        // and the offset tells you how far into that text node we are
+        // Sanity: the anchorNode is where we started, in the second text node,
+        // and the focusNode is where we moved to, the first text node
         expect(sel.anchorNode).toBe(secondParagraphTextNode);
-        expect(sel.anchorOffset).toBe(6);
+        expect(sel.anchorOffset).toBe(secondNodeOffset);
         expect(sel.focusNode).toBe(firstParagraphTextNode);
         expect(sel.focusOffset).toBe(firstOffset);
 
@@ -644,7 +644,8 @@ describe('getCurrentSelection', () => {
 
     it('handles selecting all with ctrl-a', () => {
         setEditorHtml('<p>para 1</p><p>para 2</p>');
-        expect(getCurrentSelection(editor, selectAll())).toEqual([0, 13]);
+        const sel = selectAll();
+        expect(getCurrentSelection(editor, sel)).toEqual([0, 13]);
     });
 
     it('handles selecting all by dragging from start to end', () => {
