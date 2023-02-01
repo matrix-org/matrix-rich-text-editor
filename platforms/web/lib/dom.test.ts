@@ -521,12 +521,6 @@ describe('countCodeunit', () => {
 });
 
 describe('getCurrentSelection', () => {
-    it('correctly locates the cursor in an empty editor', () => {
-        setEditorHtml('');
-        const sel = _selectAll();
-        expect(getCurrentSelection(editor, sel)).toEqual([0, 0]);
-    });
-
     function putCaretInTextNodeAtOffset(node: Node, offset: number): Selection {
         if (node.nodeName !== '#text') {
             throw new Error(
@@ -552,6 +546,83 @@ describe('getCurrentSelection', () => {
 
         return select;
     }
+    function _selectAll() {
+        // select all works in the browse} by selecting the first text node as
+        // the anchor with an offset of 0, and the focus node as the editor,
+        // with the offset equal to the number of paragraph nodes
+        const select = document.getSelection();
+        select?.removeAllRanges();
+
+        const firstTextNode = document
+            .createNodeIterator(editor, NodeFilter.SHOW_TEXT)
+            .nextNode();
+
+        if (firstTextNode) {
+            select?.setBaseAndExtent(
+                firstTextNode,
+                0,
+                editor,
+                editor.childNodes.length - 1, // ignore the final linebreak
+            );
+        }
+
+        return select;
+    }
+    function _cursorToAfterEnd(): Selection {
+        const sel = document.getSelection();
+        const offset = editor.childNodes.length - 1;
+        sel?.setBaseAndExtent(editor, offset, editor, offset);
+
+        if (sel === null) {
+            throw new Error('_cursorToAfterEnd tried to return null Selection');
+        }
+
+        return sel;
+    }
+    function _cursorToBeginning(): Selection {
+        const sel = document.getSelection();
+        const firstTextNode = document
+            .createNodeIterator(editor, NodeFilter.SHOW_TEXT)
+            .nextNode();
+
+        if (firstTextNode === null) {
+            throw new Error('_cursorToBeginning could not find a text node ');
+        }
+        sel?.setBaseAndExtent(firstTextNode, 0, firstTextNode, 0);
+        if (sel === null) {
+            throw new Error(
+                '_cursorToBeginning tried to return null Selection',
+            );
+        }
+
+        return sel;
+    }
+    function _selectionBeforeEditor(): Selection {
+        const sel = document.getSelection();
+        sel?.setBaseAndExtent(beforeEditor, 0, beforeEditor, 0);
+        if (sel === null) {
+            throw new Error(
+                '_selectionAfterEditor tried to return null Selection',
+            );
+        }
+        return sel;
+    }
+    function _selectionAfterEditor(): Selection {
+        const sel = document.getSelection();
+        sel?.setBaseAndExtent(afterEditor, 0, afterEditor, 0);
+        if (sel === null) {
+            throw new Error(
+                '_selectionAfterEditor tried to return null Selection',
+            );
+        }
+        return sel;
+    }
+
+    it('correctly locates the cursor in an empty editor', () => {
+        setEditorHtml('');
+        const sel = _selectAll();
+        expect(getCurrentSelection(editor, sel)).toEqual([0, 0]);
+    });
 
     it('correctly locates the cursor in adjacent paragraphs', () => {
         setEditorHtml('<p>para 1</p><p>para 2</p>');
@@ -673,28 +744,6 @@ describe('getCurrentSelection', () => {
         expect(getCurrentSelection(editor, sel)).toEqual([13, 4]);
     });
 
-    function _selectAll() {
-        // select all works in the browse} by selecting the first text node as
-        // the anchor with an offset of 0, and the focus node as the editor,
-        // with the offset equal to the number of paragraph nodes
-        const select = document.getSelection();
-        select?.removeAllRanges();
-
-        const firstTextNode = document
-            .createNodeIterator(editor, NodeFilter.SHOW_TEXT)
-            .nextNode();
-
-        if (firstTextNode) {
-            select?.setBaseAndExtent(
-                firstTextNode,
-                0,
-                editor,
-                editor.childNodes.length - 1, // ignore the final linebreak
-            );
-        }
-
-        return select;
-    }
     it('handles selecting all with ctrl-a', () => {
         setEditorHtml('<p>para 1</p><p>para 2</p>');
         expect(getCurrentSelection(editor, _selectAll())).toEqual([0, 13]);
@@ -748,17 +797,6 @@ describe('getCurrentSelection', () => {
         expect(getCurrentSelection(editor, sel)).toEqual([2, 9]);
     });
 
-    function _cursorToAfterEnd(): Selection {
-        const sel = document.getSelection();
-        const offset = editor.childNodes.length - 1;
-        sel?.setBaseAndExtent(editor, offset, editor, offset);
-
-        if (sel === null) {
-            throw new Error('_cursorToAfterEnd tried to return null Selection');
-        }
-
-        return sel;
-    }
     it('handles cursor after end', () => {
         setEditorHtml('<p>para 1</p><p>para 2</p>');
         // Simulate going to end of doc and pressing down arrow
@@ -766,56 +804,18 @@ describe('getCurrentSelection', () => {
         expect(getCurrentSelection(editor, sel)).toEqual([13, 13]);
     });
 
-    function _cursorToBeginning(): Selection {
-        const sel = document.getSelection();
-        const firstTextNode = document
-            .createNodeIterator(editor, NodeFilter.SHOW_TEXT)
-            .nextNode();
-
-        if (firstTextNode === null) {
-            throw new Error('_cursorToBeginning could not find a text node ');
-        }
-        sel?.setBaseAndExtent(firstTextNode, 0, firstTextNode, 0);
-        if (sel === null) {
-            throw new Error(
-                '_cursorToBeginning tried to return null Selection',
-            );
-        }
-
-        return sel;
-    }
     it('handles cursor at start', () => {
         setEditorHtml('<p>para 1</p><p>para 2</p>');
         const sel = _cursorToBeginning();
         expect(getCurrentSelection(editor, sel)).toEqual([0, 0]);
     });
 
-    function _selectionBeforeEditor(): Selection {
-        const sel = document.getSelection();
-        sel?.setBaseAndExtent(beforeEditor, 0, beforeEditor, 0);
-        if (sel === null) {
-            throw new Error(
-                '_selectionAfterEditor tried to return null Selection',
-            );
-        }
-        return sel;
-    }
     it('handles selection before the start by returning 0, 0', () => {
         setEditorHtml('<p>para 1</p><p>para 2</p>');
         const sel = _selectionBeforeEditor();
         expect(getCurrentSelection(editor, sel)).toEqual([0, 0]);
     });
 
-    function _selectionAfterEditor(): Selection {
-        const sel = document.getSelection();
-        sel?.setBaseAndExtent(afterEditor, 0, afterEditor, 0);
-        if (sel === null) {
-            throw new Error(
-                '_selectionAfterEditor tried to return null Selection',
-            );
-        }
-        return sel;
-    }
     it('handles selection after the end by returning last character', () => {
         setEditorHtml('<p>para 1</p><p>para 2</p>');
         const sel = _selectionAfterEditor();
