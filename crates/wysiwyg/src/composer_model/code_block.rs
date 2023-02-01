@@ -233,12 +233,12 @@ mod test {
 
     #[test]
     fn code_block_roundtrips() {
-        let model = cm("<pre>Test|\nCode</pre>");
+        let model = cm("<pre><code>Test|\nCode</code></pre>");
         // <pre> internally works as any other block node, with paragraphs
         let tree = model.to_tree().to_string();
         let expected_tree = indoc! { r#"
         
-            └>pre
+            └>codeblock
               ├>p
               │ └>"Test"
               └>p
@@ -246,21 +246,21 @@ mod test {
         "#};
         assert_eq!(tree, expected_tree);
         // But it gets translated back to the proper HTML output
-        assert_eq!(tx(&model), "<pre>Test|\nCode</pre>");
+        assert_eq!(tx(&model), "<pre><code>Test|\nCode</code></pre>");
     }
 
     #[test]
     fn add_code_block_to_empty_dom() {
         let mut model = cm("|");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>&nbsp;|</pre>");
+        assert_eq!(tx(&model), "<pre><code>&nbsp;|</code></pre>");
     }
 
     #[test]
     fn add_code_block_to_simple_text() {
         let mut model = cm("Some text|");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>Some text|</pre>");
+        assert_eq!(tx(&model), "<pre><code>Some text|</code></pre>");
     }
 
     #[test]
@@ -269,7 +269,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<pre>Some text| <b>and bold </b><i>and italic</i></pre>"
+            "<pre><code>Some text| <b>and bold </b><i>and italic</i></code></pre>"
         );
     }
 
@@ -280,7 +280,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<pre>Some text| <b>and bold </b></pre><p><i>and italic</i></p>"
+            "<pre><code>Some text| <b>and bold </b></code></pre><p><i>and italic</i></p>"
         );
     }
 
@@ -292,7 +292,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<ul><li><pre>Some text <b>and bold |</b><i>and italic</i></pre></li></ul>"
+            "<ul><li><pre><code>Some text <b>and bold |</b><i>and italic</i></code></pre></li></ul>"
         );
     }
 
@@ -304,7 +304,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<ul><li><p>Some text <b>and bold&nbsp;</b></p><pre><i>and| italic</i></pre></li></ul>"
+            "<ul><li><p>Some text <b>and bold&nbsp;</b></p><pre><code><i>and| italic</i></code></pre></li></ul>"
         );
     }
 
@@ -313,7 +313,10 @@ mod test {
         let mut model =
             cm("<ul><li>{First item</li><li>Second}| item</li></ul>");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>{First item\nSecond}| item</pre>");
+        assert_eq!(
+            tx(&model),
+            "<pre><code>{First item\nSecond}| item</code></pre>"
+        );
     }
 
     #[test]
@@ -321,7 +324,7 @@ mod test {
         let mut model =
             cm("<ul><li>{First item</li><li>Second item</li></ul><p>Some text</p><ul><li>Third}| item</li><li>Fourth one</li></ul>");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>{First item\nSecond item\nSome text\nThird}| item</pre><ul><li>Fourth one</li></ul>");
+        assert_eq!(tx(&model), "<pre><code>{First item\nSecond item\nSome text\nThird}| item</code></pre><ul><li>Fourth one</li></ul>");
     }
 
     #[test]
@@ -330,24 +333,27 @@ mod test {
             "<p>{Text</p><ul><li>First item</li><li>Second}| item</li></ul>",
         );
         model.code_block();
-        assert_eq!(tx(&model), "<pre>{Text\nFirst item\nSecond}| item</pre>");
+        assert_eq!(
+            tx(&model),
+            "<pre><code>{Text\nFirst item\nSecond}| item</code></pre>"
+        );
     }
 
     #[test]
     fn add_code_block_to_existing_code_block() {
-        let mut model = cm("<p>{Text</p><pre>code}|</pre>");
+        let mut model = cm("<p>{Text</p><pre><code>code}|</code></pre>");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>{Text\ncode}|</pre>");
+        assert_eq!(tx(&model), "<pre><code>{Text\ncode}|</code></pre>");
     }
 
     #[test]
     fn add_code_block_to_existing_code_block_partially_selected() {
         let mut model =
-            cm("<p>{Text</p><pre><b>code}|</b><i> and italic</i></pre>");
+            cm("<p>{Text</p><pre><code><b>code}|</b><i> and italic</i></code></pre>");
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<pre>{Text\n<b>code}|</b><i> and italic</i></pre>"
+            "<pre><code>{Text\n<b>code}|</b><i> and italic</i></code></pre>"
         );
     }
 
@@ -358,7 +364,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<p><b>Text</b></p><pre><b><i>{in italic}|</i></b></pre>"
+            "<p><b>Text</b></p><pre><code><b><i>{in italic}|</i></b></code></pre>"
         );
     }
 
@@ -370,7 +376,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<p><u><b>Text</b></u></p><pre><u><b><i>{in italic}|</i></b></u></pre>"
+            "<p><u><b>Text</b></u></p><pre><code><u><b><i>{in italic}|</i></b></u></code></pre>"
         );
     }
 
@@ -378,7 +384,7 @@ mod test {
     fn add_code_block_to_quote() {
         let mut model = cm("<blockquote><p>Quot|e</p></blockquote>");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>Quot|e</pre>");
+        assert_eq!(tx(&model), "<pre><code>Quot|e</code></pre>");
     }
 
     #[test]
@@ -386,7 +392,7 @@ mod test {
         let mut model =
             cm("<p>Te{xt </p><blockquote><p>Quot}|e</p></blockquote>");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>Te{xt \nQuot}|e</pre>");
+        assert_eq!(tx(&model), "<pre><code>Te{xt \nQuot}|e</code></pre>");
     }
 
     #[test]
@@ -394,13 +400,14 @@ mod test {
         let mut model =
             cm("<blockquote><p>Quo{te</p></blockquote><p>Te}|xt</p>");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>Quo{te\nTe}|xt</pre>");
+        assert_eq!(tx(&model), "<pre><code>Quo{te\nTe}|xt</code></pre>");
     }
 
     #[test]
     fn remove_code_block_moves_its_children_out() {
-        let mut model =
-            cm("<p>Text</p><pre><b>code|</b><i> and italic</i></pre>");
+        let mut model = cm(
+            "<p>Text</p><pre><code><b>code|</b><i> and italic</i></code></pre>",
+        );
         model.code_block();
         assert_eq!(
             tx(&model),
@@ -410,7 +417,8 @@ mod test {
 
     #[test]
     fn remove_code_block_moves_its_children_and_restores_line_breaks() {
-        let mut model = cm("<p>Text</p><pre>with|\nline\nbreaks</pre>");
+        let mut model =
+            cm("<p>Text</p><pre><code>with|\nline\nbreaks</code></pre>");
         model.code_block();
         assert_eq!(
             tx(&model),
@@ -420,7 +428,8 @@ mod test {
 
     #[test]
     fn remove_code_block_moves_its_children_and_keeps_selection_in_place() {
-        let mut model = cm("<p>Text</p><pre>wi{th\nline\nbrea}|ks</pre>");
+        let mut model =
+            cm("<p>Text</p><pre><code>wi{th\nline\nbrea}|ks</code></pre>");
         model.code_block();
         assert_eq!(
             tx(&model),
@@ -432,14 +441,14 @@ mod test {
     fn test_creating_code_block_at_the_end_of_editor() {
         let mut model = cm("<p>Test</p><p>|</p>");
         model.code_block();
-        assert_eq!(tx(&model), "<p>Test</p><pre>&nbsp;|</pre>");
+        assert_eq!(tx(&model), "<p>Test</p><pre><code>&nbsp;|</code></pre>");
     }
 
     #[test]
     fn creating_and_removing_code_block_works() {
         let mut model = cm("|");
         model.code_block();
-        assert_eq!(tx(&model), "<pre>&nbsp;|</pre>");
+        assert_eq!(tx(&model), "<pre><code>&nbsp;|</code></pre>");
         model.code_block();
         assert_eq!(tx(&model), "<p>&nbsp;|</p>");
     }
@@ -448,7 +457,10 @@ mod test {
     fn add_code_block_to_empty_list_item() {
         let mut model = cm("<ul><li>|</li></ul>");
         model.code_block();
-        assert_eq!(tx(&model), "<ul><li><pre>&nbsp;|</pre></li></ul>");
+        assert_eq!(
+            tx(&model),
+            "<ul><li><pre><code>&nbsp;|</code></pre></li></ul>"
+        );
         assert_eq!(
             model.to_tree().to_string(),
             indoc! {
@@ -456,7 +468,7 @@ mod test {
                 
                 └>ul
                   └>li
-                    └>pre
+                    └>codeblock
                       └>p
                 "#
             }
@@ -473,7 +485,7 @@ mod test {
         assert_eq!(
             tx(&model),
             "\
-        <pre>|A</pre>\
+        <pre><code>|A</code></pre>\
         <p>B</p>\
         <p>C</p>"
         );
@@ -490,7 +502,7 @@ mod test {
             tx(&model),
             "\
         <p>A</p>\
-        <pre>B|</pre>\
+        <pre><code>B|</code></pre>\
         <p>C</p>"
         );
     }
@@ -507,7 +519,7 @@ mod test {
             "\
         <p>A</p>\
         <p>B</p>\
-        <pre>|C</pre>"
+        <pre><code>|C</code></pre>"
         );
     }
 }

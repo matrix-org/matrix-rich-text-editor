@@ -1171,8 +1171,8 @@ mod test {
 
     #[test]
     fn delete_text_at_end_of_code_block_appends_next_content() {
-        let mut model = cm("<pre>Te{st</pre>AA}|BB");
+        let mut model = cm("<pre><code>Te{st</code></pre>AA}|BB");
         model.delete();
-        assert_eq!(tx(&model), "<pre>Te|BB</pre>");
+        assert_eq!(tx(&model), "<pre><code>Te|BB</code></pre>");
     }
 }

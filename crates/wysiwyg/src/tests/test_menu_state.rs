@@ -228,7 +228,7 @@ fn clicking_code_block_disables_expected_formatting_functions() {
 
 #[test]
 fn code_block_disables_expected_formatting_functions_with_cursor() {
-    let model = cm("<pre>Some code| as text</pre> and text");
+    let model = cm("<pre><code>Some code| as text</code></pre> and text");
     assert!(model.action_is_disabled(ComposerAction::InlineCode));
     assert!(model.action_is_disabled(ComposerAction::OrderedList));
     assert!(model.action_is_disabled(ComposerAction::UnorderedList));
@@ -238,7 +238,7 @@ fn code_block_disables_expected_formatting_functions_with_cursor() {
 
 #[test]
 fn code_block_disables_expected_formatting_functions_with_selection() {
-    let model = cm("<pre>Some {code as text</pre> and}| text");
+    let model = cm("<pre><code>Some {code as text</code></pre> and}| text");
     assert!(model.action_is_disabled(ComposerAction::InlineCode));
     assert!(model.action_is_disabled(ComposerAction::OrderedList));
     assert!(model.action_is_disabled(ComposerAction::UnorderedList));
@@ -248,7 +248,7 @@ fn code_block_disables_expected_formatting_functions_with_selection() {
 
 #[test]
 fn code_block_doesnt_affect_cursor_if_its_outside() {
-    let model = cm("<pre>Some code</pre><p>|And text</p>");
+    let model = cm("<pre><code>Some code</code></pre><p>|And text</p>");
     assert!(!model.action_is_reversed(ComposerAction::CodeBlock));
     assert!(model.action_is_enabled(ComposerAction::InlineCode));
     assert!(model.action_is_enabled(ComposerAction::Quote));

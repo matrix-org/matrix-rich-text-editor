@@ -233,7 +233,7 @@ mod test {
                 </blockquote>\
                 <p>&nbsp;</p>\
                 <p>Some text</p>\
-                <pre>A\n\tcode\nblock</pre>\
+                <pre><code>A\n\tcode\nblock</code></pre>\
                 <p>Some <code>inline</code> code</p>",
         ));
         assert_eq!(
@@ -243,7 +243,7 @@ mod test {
             </blockquote>\
             <p>&nbsp;</p>\
             <p>Some text</p>\
-            <pre>A\n\tcode\nblock</pre>\
+            <pre><code>A\n\tcode\nblock</code></pre>\
             <p>Some <code>inline</code> code|</p>"
         )
     }

@@ -151,7 +151,7 @@ where
 
     pub fn new_code_block(children: Vec<DomNode<S>>) -> Self {
         Self {
-            name: "pre".into(),
+            name: "codeblock".into(),
             kind: ContainerNodeKind::CodeBlock,
             attrs: None,
             children,
@@ -604,7 +604,11 @@ where
             let name = self.name();
             if !name.is_empty() {
                 formatter.push('<');
-                formatter.push(name);
+                if matches!(self.kind, ContainerNodeKind::CodeBlock) {
+                    formatter.push("pre");
+                } else {
+                    formatter.push(name);
+                }
                 if let Some(attrs) = &self.attrs {
                     for attr in attrs {
                         let (attr_name, value) = attr;
@@ -621,6 +625,7 @@ where
             let mut state = state;
             if matches!(self.kind, ContainerNodeKind::CodeBlock) {
                 state.is_inside_code_block = true;
+                formatter.push("<code>");
             }
 
             if matches!(self.kind, ContainerNodeKind::Paragraph)
@@ -631,9 +636,17 @@ where
 
             self.fmt_children_html(formatter, selection_writer, state);
 
+            if matches!(self.kind, ContainerNodeKind::CodeBlock) {
+                formatter.push("</code>");
+            }
+
             if !name.is_empty() {
                 formatter.push("</");
-                formatter.push(name);
+                if matches!(self.kind, ContainerNodeKind::CodeBlock) {
+                    formatter.push("pre");
+                } else {
+                    formatter.push(name);
+                }
                 formatter.push('>');
             }
         }

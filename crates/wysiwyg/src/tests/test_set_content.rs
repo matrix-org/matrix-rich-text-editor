@@ -51,6 +51,6 @@ fn clear() {
 fn set_contents_with_line_break_in_code_block() {
     // The first line break inside a block node will be removed as it can be used to just give
     // structure to the node
-    let model = cm("<pre>\n|Test</pre>");
-    assert_eq!(tx(&model), "<pre>|Test</pre>");
+    let model = cm("<pre>\n<code>|Test</code></pre>");
+    assert_eq!(tx(&model), "<pre><code>|Test</code></pre>");
 }
