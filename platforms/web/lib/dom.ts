@@ -253,8 +253,7 @@ export function getCurrentSelection(
 ) {
     // return [0,0] when selection is null, or we have an empty editor
     const editorIsEmpty =
-        editor.childNodes.length === 1 &&
-        editor.childNodes[0].nodeName === 'BR';
+        editor.childNodes.length === 1 && editor.firstChild?.nodeName === 'BR';
 
     if (!selection || editorIsEmpty) {
         return [0, 0];
@@ -416,11 +415,9 @@ export function countCodeunit(
     node: Node,
     offset: number,
 ): number {
-    // Special case - if asked for after the last node of the editor (which we
-    // get if we do select-all), return the end of the editor.
-
-    // change this to account for the fact that there's always
-    // a br tag at the end of the childNodes list
+    // Special case - if asked for after the last node of the editor excluding
+    // the line break tag (which we get if we do select-all), then we
+    // return the end of the editor.
     if (node === editor && offset === editor.childNodes.length - 1) {
         return textLength(editor, -1) - 1;
     }
