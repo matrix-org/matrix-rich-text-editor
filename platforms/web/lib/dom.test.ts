@@ -579,23 +579,17 @@ describe('getCurrentSelection', () => {
 
         return selection;
     }
-    function cursorToBeginning(): Selection {
-        const sel = document.getSelection();
+    function cursorToBeginning(): Selection | null {
+        const selection = document.getSelection();
         const firstTextNode = document
             .createNodeIterator(editor, NodeFilter.SHOW_TEXT)
             .nextNode();
 
-        if (firstTextNode === null) {
-            throw new Error('_cursorToBeginning could not find a text node ');
-        }
-        sel?.setBaseAndExtent(firstTextNode, 0, firstTextNode, 0);
-        if (sel === null) {
-            throw new Error(
-                '_cursorToBeginning tried to return null Selection',
-            );
+        if (firstTextNode) {
+            selection?.setBaseAndExtent(firstTextNode, 0, firstTextNode, 0);
         }
 
-        return sel;
+        return selection;
     }
     function selectionBeforeEditor(): Selection {
         const sel = document.getSelection();
