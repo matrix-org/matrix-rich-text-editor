@@ -18,6 +18,7 @@ import {
     computeNodeAndOffset,
     countCodeunit,
     getCurrentSelection,
+    textLength,
     textNodeNeedsExtraOffset,
 } from './dom';
 let beforeEditor: HTMLDivElement;
@@ -33,11 +34,6 @@ beforeAll(() => {
     document.body.appendChild(editor);
     document.body.appendChild(afterEditor);
 });
-
-function setEditorHtml(html: string) {
-    // The editor always needs an extra BR after your HTML
-    editor.innerHTML = html + '<br />';
-}
 
 describe('computeNodeAndOffset', () => {
     it('Should find at the start of simple text', () => {
@@ -428,6 +424,16 @@ describe('computeNodeAndOffset', () => {
 });
 
 describe('countCodeunit', () => {
+    it('Returns the end of the editor when whole editor selected', () => {
+        const plainString = 'abcdefgh';
+        const htmlString = '<p>text in</p><p>paragraph tags</p>';
+
+        setEditorHtml(plainString);
+        expect(countCodeunit(editor, editor, 1)).toBe(plainString.length);
+
+        setEditorHtml(htmlString);
+        expect(countCodeunit(editor, editor, 2)).toBe(22);
+    });
     it('Should count ASCII', () => {
         // When
         setEditorHtml('abcdefgh');
@@ -521,381 +527,209 @@ describe('countCodeunit', () => {
 });
 
 describe('getCurrentSelection', () => {
-    class FakeSelection {
-        anchorNode: Node | null = null;
-        anchorOffset = 0;
-        focusNode: Node | null = null;
-        focusOffset = 0;
-
-        get isCollapsed(): boolean {
-            throw new Error('Not implemented!');
-        }
-        get rangeCount(): number {
-            throw new Error('Not implemented!');
-        }
-        get type(): string {
-            throw new Error('Not implemented!');
-        }
-        addRange() {
-            throw new Error('Not implemented!');
-        }
-        collapse() {
-            throw new Error('Not implemented!');
-        }
-        collapseToEnd() {
-            throw new Error('Not implemented!');
-        }
-        collapseToStart() {
-            throw new Error('Not implemented!');
-        }
-        containsNode(_: Node): boolean {
-            throw new Error('Not implemented!');
-        }
-        empty() {
-            throw new Error('Not implemented!');
-        }
-        deleteFromDocument() {
-            throw new Error('Not implemented!');
-        }
-        getRangeAt(): Range {
-            throw new Error('Not implemented!');
-        }
-        modify() {
-            throw new Error('Not implemented!');
-        }
-        removeRange() {
-            throw new Error('Not implemented!');
-        }
-        removeAllRanges() {
-            throw new Error('Not implemented!');
-        }
-        setPosition() {
-            throw new Error('Not implemented!');
-        }
-        toString(): string {
-            throw new Error('Not implemented!');
-        }
-
-        extend(focusNode: Node | null, focusOffset = 0) {
-            this.focusNode = focusNode;
-            this.focusOffset = focusOffset;
-        }
-
-        selectAllChildren(node: Node) {
-            this.anchorNode = node;
-            this.anchorOffset = 0;
-            this.focusNode = node;
-            this.focusOffset = node.childNodes.length;
-        }
-
-        setBaseAndExtent(
-            anchorNode: Node | null,
-            anchorOffset: number,
-            focusNode: Node | null,
-            focusOffset: number,
-        ) {
-            this.anchorNode = anchorNode;
-            this.anchorOffset = anchorOffset;
-            this.focusNode = focusNode;
-            this.focusOffset = focusOffset;
-        }
-    }
-
-    function lastTextNode(): Node | null {
-        for (let i = editor.childNodes.length - 1; i >= 0; i--) {
-            const n = editor.childNodes[i];
-            if (n.nodeType === Node.TEXT_NODE && n.textContent !== '\n') {
-                return n;
-            }
-        }
-        return null;
-    }
-
-    function indexOf(child: Node, parent: Node) {
-        let i = 0;
-        for (const ch of parent.childNodes) {
-            if (ch.isSameNode(child)) {
-                return i;
-            }
-            i++;
-        }
-        return -1;
-    }
-
-    /** Like selecting something before the editor */
-    function selectionBeforeEditor(): FakeSelection {
-        const sel = new FakeSelection();
-        sel.setBaseAndExtent(beforeEditor, 0, beforeEditor, 0);
-        return sel;
-    }
-
-    /** Like selecting something before the editor */
-    function selectionAfterEditor(): FakeSelection {
-        const sel = new FakeSelection();
-        sel.setBaseAndExtent(afterEditor, 0, afterEditor, 0);
-        return sel;
-    }
-
-    /** Like clicking at the beginning */
-    function cursorToBeginning(): FakeSelection {
-        const sel = new FakeSelection();
-        const node = editor.firstChild;
-        sel.setBaseAndExtent(node, 0, node, 0);
-        return sel;
-    }
-
-    /** Click at the end then press down arrow */
-    function cursorToAfterEnd(): FakeSelection {
-        const sel = new FakeSelection();
-        const offset = editor.childNodes.length - 1;
-        sel.setBaseAndExtent(editor, offset, editor, offset);
-        return sel;
-    }
-
-    /** Click at the end */
-    function cursorToEnd(): FakeSelection {
-        const sel = new FakeSelection();
-        const textNode = lastTextNode();
-        if (textNode) {
-            const len = textNode.textContent?.length ?? 0;
-            sel.setBaseAndExtent(textNode, len, textNode, len);
-        }
-        return sel;
-    }
-
-    /** Moves to the supplied node at the supplied offset. Ignores the offset
-     * if you supply a non-text node, and places you immediately BEFORE the
-     * supplied node. */
-    function cursorToNode(node: Node, offset: number): FakeSelection {
-        const sel = new FakeSelection();
-        if (node.nodeType === Node.TEXT_NODE) {
-            // Text node - refer to it, with index at end
-            sel.setBaseAndExtent(node, offset, node, offset);
-        } else {
-            // Find parent and point to this node within the parent
-            const parent = node.parentNode;
-            if (parent) {
-                const idx = indexOf(node, parent);
-                sel?.setBaseAndExtent(parent, idx, parent, idx);
-            }
-        }
-        return sel;
-    }
-
-    /** An alternative way of selecting a node - this is not possible
-     * to do by clicking, but it is the way we select nodes when we
-     * get a selection back from the ComposerModel sometimes. */
-    function cursorToNodeDirectly(node: Node, offset: number): FakeSelection {
-        const sel = new FakeSelection();
-        sel.setBaseAndExtent(node, offset, node, offset);
-        return sel;
-    }
-
-    function selectAll(): FakeSelection {
-        const sel = new FakeSelection();
-        sel.selectAllChildren(editor);
-        return sel;
-    }
-
-    function selectStartToEnd(): FakeSelection {
-        const sel = new FakeSelection();
-        const textNode = lastTextNode();
-        if (textNode && editor.firstChild) {
-            sel?.setBaseAndExtent(
-                editor.firstChild,
-                0,
-                textNode,
-                textNode.textContent?.length ?? 0,
-            );
-        }
-        return sel;
-    }
-
-    function selectEndToStart() {
-        const sel = cursorToEnd();
-        editor.firstChild && sel.extend(editor.firstChild);
-        return sel;
-    }
-
-    function select(
-        node1: Node,
-        offset1: number,
-        node2: Node,
-        offset2: number,
-    ): FakeSelection {
-        const sel = cursorToNode(node1, offset1);
-
-        if (!node2.parentNode) {
-            return sel;
-        }
-
-        let n2: Node;
-        let o2: number;
-        if (node2.nodeType === Node.TEXT_NODE) {
-            o2 = offset2;
-            n2 = node2;
-        } else {
-            o2 = indexOf(node2, node2.parentNode);
-            n2 = node2.parentNode;
-        }
-
-        sel.extend(n2, o2);
-        return sel;
-    }
-
-    /** Select from the end to the supplied node. If node is not a text node,
-     * offset is ignored, and the selection starts BEFORE node. */
-    function selectEndTo(node: Node, offset: number): FakeSelection {
-        const sel = cursorToEnd();
-
-        if (!node.parentNode) {
-            return sel;
-        }
-
-        let n: Node;
-        let o: number;
-        if (node.nodeType === Node.TEXT_NODE) {
-            o = offset;
-            n = node;
-        } else {
-            o = indexOf(node, node.parentNode);
-            n = node.parentNode;
-        }
-
-        sel.extend(n, o);
-        return sel;
-    }
-
     it('correctly locates the cursor in an empty editor', () => {
         setEditorHtml('');
         const sel = selectAll();
         expect(getCurrentSelection(editor, sel)).toEqual([0, 0]);
     });
 
-    it('correctly locates the cursor after a br tag', () => {
-        setEditorHtml('para 1<br /><br />para 2');
-        const secondBr = editor.childNodes[2];
-        assert(secondBr);
-        const sel = cursorToNode(secondBr, 0);
+    it('correctly locates the cursor in adjacent paragraphs', () => {
+        setEditorHtml('<p>para 1</p><p>para 2</p>');
+        const firstParagraphTextNode = editor.childNodes[0].childNodes[0];
+        const secondParagrahTextNode = editor.childNodes[1].childNodes[0];
+        const firstNodeOffset = 4;
+        const secondNodeOffset = 1;
 
-        // Sanity: the focusNode and anchorNode are the editor object, not one
-        // of the text nodes inside it, and the offset tells you which node
-        // inside editor is immediately after the cursor.
-        expect(sel.anchorNode).toBe(editor);
-        expect(sel.anchorOffset).toBe(2);
-        expect(sel.focusNode).toBe(editor);
-        expect(sel.focusOffset).toBe(2);
+        // test the first paragraph
+        let sel = putCaretInTextNodeAtOffset(
+            firstParagraphTextNode,
+            firstNodeOffset,
+        );
 
-        // We should see ourselves as on code unit 7, because the BR
-        // counts as 1.
-        expect(getCurrentSelection(editor, sel)).toEqual([7, 7]);
+        // Sanity: the focusNode and anchorNode are the first text node
+        // and the offset tells you how far into that text node we are
+        expect(sel.anchorNode).toBe(firstParagraphTextNode);
+        expect(sel.anchorOffset).toBe(firstNodeOffset);
+        expect(sel.focusNode).toBe(firstParagraphTextNode);
+        expect(sel.focusOffset).toBe(firstNodeOffset);
+
+        // We should see ourselves as on code unit firstNodeOffset
+        expect(getCurrentSelection(editor, sel)).toEqual([
+            firstNodeOffset,
+            firstNodeOffset,
+        ]);
+
+        // move to the second paragraph
+        sel = putCaretInTextNodeAtOffset(
+            secondParagrahTextNode,
+            secondNodeOffset,
+        );
+
+        // Sanity: the focusNode and anchorNode are the second text node
+        // and the offset tells you how far into that text node we are
+        expect(sel.anchorNode).toBe(secondParagrahTextNode);
+        expect(sel.anchorOffset).toBe(secondNodeOffset);
+        expect(sel.focusNode).toBe(secondParagrahTextNode);
+        expect(sel.focusOffset).toBe(secondNodeOffset);
+
+        // We should see ourselves as on code unit 8, because a paragraph tag
+        // will add an extra offset, so our total offset is the length of the
+        // first paragraph, plus the extra offset, plus the second node offset
+        // ie 6 + 1 + 1 = 8
+        expect(getCurrentSelection(editor, sel)).toEqual([8, 8]);
     });
 
-    it('correctly locates the cursor after a br tag selected directly', () => {
-        setEditorHtml('para 1<br /><br />para 2');
-        const secondBr = editor.childNodes[2];
-        assert(secondBr);
-        const sel = cursorToNodeDirectly(secondBr, 0);
+    it('correctly locates the cursor inside nested tags', () => {
+        setEditorHtml(
+            '<p>pa<strong>ra 1</strong></p><p><strong>pa</strong>ra 2</p>',
+        );
+        const firstParagraphStrongTextNode =
+            editor.childNodes[0].childNodes[1].childNodes[0];
+        const secondParagrahStrongTextNode =
+            editor.childNodes[1].childNodes[0].childNodes[0];
+        const firstNodeOffset = 0;
+        const secondNodeOffset = 2;
 
-        // Sanity: the focusNode and anchorNode are the BR itself
-        expect(sel.anchorNode).toBe(secondBr);
-        expect(sel.anchorOffset).toBe(0);
-        expect(sel.focusNode).toBe(secondBr);
-        expect(sel.focusOffset).toBe(0);
+        // test the first paragraph strong node
+        let sel = putCaretInTextNodeAtOffset(
+            firstParagraphStrongTextNode,
+            firstNodeOffset,
+        );
 
-        // We should see ourselves as on code unit 7, because the BR
-        // counts as 1.
-        expect(getCurrentSelection(editor, sel)).toEqual([7, 7]);
+        // Sanity: the focusNode and anchorNode are the first strong text node
+        // and the offset tells you how far into that text node we are
+        expect(sel.anchorNode).toBe(firstParagraphStrongTextNode);
+        expect(sel.anchorOffset).toBe(firstNodeOffset);
+        expect(sel.focusNode).toBe(firstParagraphStrongTextNode);
+        expect(sel.focusOffset).toBe(firstNodeOffset);
+
+        // Sanity: the focusNode and anchorNode are the first strong text node
+        // and the offset tells you how far into that text node we are
+        expect(sel.anchorNode).toBe(firstParagraphStrongTextNode);
+        expect(sel.anchorOffset).toBe(firstNodeOffset);
+        expect(sel.focusNode).toBe(firstParagraphStrongTextNode);
+        expect(sel.focusOffset).toBe(firstNodeOffset);
+
+        // move to the second paragraph
+        sel = putCaretInTextNodeAtOffset(
+            secondParagrahStrongTextNode,
+            secondNodeOffset,
+        );
+
+        // Sanity: the focusNode and anchorNode are the second text node
+        // and the offset tells you how far into that text node we are
+        expect(sel.anchorNode).toBe(secondParagrahStrongTextNode);
+        expect(sel.anchorOffset).toBe(secondNodeOffset);
+        expect(sel.focusNode).toBe(secondParagrahStrongTextNode);
+        expect(sel.focusOffset).toBe(secondNodeOffset);
+
+        // We should see ourselves as on code unit 9, because a paragraph tag
+        // will add an extra offset, so our total offset is the length of the
+        // first paragraph, plus the extra offset, plus the second node offset
+        // ie 6 + 1 + 2 = 8
+        expect(getCurrentSelection(editor, sel)).toEqual([9, 9]);
     });
 
-    it('correctly locates the cursor on a new line inside another tag', () => {
-        setEditorHtml('pa<strong>ra 1<br /><br />pa</strong>ra 2');
-        const strong = editor.childNodes[1];
-        const secondBr = strong.childNodes[2];
-        assert(secondBr);
-        const sel = cursorToNode(secondBr, 0);
+    it('correctly finds backward selections in adjacent paragraphs', () => {
+        setEditorHtml('<p>para 1</p><p>para 2</p>');
+        const firstParagraphTextNode = editor.childNodes[0].childNodes[0];
+        const firstOffset = 4;
+        const secondParagraphTextNode = editor.childNodes[1].childNodes[0];
+        const secondNodeOffset = 6;
 
-        // Sanity: the focusNode and anchorNode are the editor object, not one
-        // of the text nodes inside it, and the offset tells you which node
-        // inside editor is immediately after the cursor.
-        expect(sel.anchorNode).toBe(strong);
-        expect(sel.anchorOffset).toBe(2);
-        expect(sel.focusNode).toBe(strong);
-        expect(sel.focusOffset).toBe(2);
+        const sel = putCaretInTextNodeAtOffset(
+            secondParagraphTextNode,
+            secondNodeOffset,
+        );
+        sel.extend(firstParagraphTextNode, firstOffset);
 
-        // We should see ourselves as on code unit 7, because the BR
-        // counts as 1.
-        expect(getCurrentSelection(editor, sel)).toEqual([7, 7]);
-    });
+        // Sanity: the anchorNode is where we started, in the second text node,
+        // and the focusNode is where we moved to, the first text node
+        expect(sel.anchorNode).toBe(secondParagraphTextNode);
+        expect(sel.anchorOffset).toBe(secondNodeOffset);
+        expect(sel.focusNode).toBe(firstParagraphTextNode);
+        expect(sel.focusOffset).toBe(firstOffset);
 
-    it('correctly finds backward selections ending after a BR', () => {
-        setEditorHtml('para 1<br /><br />para 2');
-        const secondBr = editor.childNodes[2];
-        assert(secondBr);
-        const sel = selectEndTo(secondBr, 0);
-
-        // Sanity
-        expect(sel.anchorNode).toBe(editor.childNodes[3]);
-        expect(sel.anchorOffset).toBe(6);
-        expect(sel.focusNode).toBe(editor);
-        expect(sel.focusOffset).toBe(2);
-
-        // We should see ourselves as on code unit 7, because the BR
-        // counts as 1.
-        expect(getCurrentSelection(editor, sel)).toEqual([14, 7]);
+        expect(getCurrentSelection(editor, sel)).toEqual([13, 4]);
     });
 
     it('handles selecting all with ctrl-a', () => {
-        setEditorHtml('para 1<br /><br />para 2');
+        setEditorHtml('<p>para 1</p><p>para 2</p>');
         const sel = selectAll();
-
-        // Do not count the last BR
-        expect(getCurrentSelection(editor, sel)).toEqual([0, 14]);
+        expect(getCurrentSelection(editor, sel)).toEqual([0, 13]);
     });
 
-    it('handles selecting all by dragging', () => {
-        setEditorHtml('para 1<br /><br />para 2');
-        const sel = selectStartToEnd();
-        expect(getCurrentSelection(editor, sel)).toEqual([0, 14]);
+    it('handles selecting all by dragging from start to end', () => {
+        setEditorHtml('<p>para 1</p><p>para 2</p>');
+        const firstParagraphTextNode = editor.childNodes[0].childNodes[0];
+        const firstOffset = 0;
+        const secondParagraphTextNode = editor.childNodes[1].childNodes[0];
+        const secondNodeOffset = 6;
+
+        const sel = putCaretInTextNodeAtOffset(
+            firstParagraphTextNode,
+            firstOffset,
+        );
+        sel.extend(secondParagraphTextNode, secondNodeOffset);
+
+        expect(getCurrentSelection(editor, sel)).toEqual([0, 13]);
     });
 
-    it('handles selecting all by dragging backwards', () => {
-        setEditorHtml('para 1<br /><br />para 2');
-        const sel = selectEndToStart();
-        expect(getCurrentSelection(editor, sel)).toEqual([14, 0]);
+    it('handles selecting all by dragging backwards from end to start', () => {
+        setEditorHtml('<p>para 1</p><p>para 2</p>');
+        const firstParagraphTextNode = editor.childNodes[0].childNodes[0];
+        const firstOffset = 0;
+        const secondParagraphTextNode = editor.childNodes[1].childNodes[0];
+        const secondNodeOffset = 6;
+
+        const sel = putCaretInTextNodeAtOffset(
+            secondParagraphTextNode,
+            secondNodeOffset,
+        );
+        sel.extend(firstParagraphTextNode, firstOffset);
+
+        expect(getCurrentSelection(editor, sel)).toEqual([13, 0]);
     });
 
     it('handles selecting across multiple newlines', () => {
-        setEditorHtml('para 1<br /><br />para 2');
-        const p1 = editor.childNodes[0];
-        const p2 = editor.childNodes[3];
-        const sel = select(p1, 2, p2, 3);
-        expect(getCurrentSelection(editor, sel)).toEqual([2, 11]);
+        setEditorHtml('<p>para 1</p><p>para 2</p>');
+        const firstParagraphTextNode = editor.childNodes[0].childNodes[0];
+        const firstOffset = 2;
+        const secondParagraphTextNode = editor.childNodes[1].childNodes[0];
+        const secondNodeOffset = 2;
+
+        const sel = putCaretInTextNodeAtOffset(
+            firstParagraphTextNode,
+            firstOffset,
+        );
+        sel.extend(secondParagraphTextNode, secondNodeOffset);
+
+        expect(getCurrentSelection(editor, sel)).toEqual([2, 9]);
     });
 
     it('handles cursor after end', () => {
-        setEditorHtml('para 1<br /><br />para 2');
+        setEditorHtml('<p>para 1</p><p>para 2</p>');
         // Simulate going to end of doc and pressing down arrow
         const sel = cursorToAfterEnd();
-        expect(getCurrentSelection(editor, sel)).toEqual([14, 14]);
+        expect(getCurrentSelection(editor, sel)).toEqual([13, 13]);
     });
 
     it('handles cursor at start', () => {
-        setEditorHtml('para 1<br /><br />para 2');
+        setEditorHtml('<p>para 1</p><p>para 2</p>');
         const sel = cursorToBeginning();
         expect(getCurrentSelection(editor, sel)).toEqual([0, 0]);
     });
 
     it('handles selection before the start by returning 0, 0', () => {
-        setEditorHtml('para 1<br /><br />para 2');
-        const sel = selectionBeforeEditor();
+        setEditorHtml('<p>para 1</p><p>para 2</p>');
+        const sel = selectionOutsideEditor('before');
         expect(getCurrentSelection(editor, sel)).toEqual([0, 0]);
     });
 
     it('handles selection after the end by returning last character', () => {
-        setEditorHtml('para 1<br /><br />para 2');
-        const sel = selectionAfterEditor();
-        expect(getCurrentSelection(editor, sel)).toEqual([14, 14]);
+        setEditorHtml('<p>para 1</p><p>para 2</p>');
+        const sel = selectionOutsideEditor('after');
+        expect(getCurrentSelection(editor, sel)).toEqual([13, 13]);
     });
 });
 
@@ -926,7 +760,8 @@ describe('textNodeNeedsExtraOffset', () => {
             const openingTag = wrappingTag ? `<${wrappingTag}>` : '';
             const closingTag = wrappingTag ? `<${wrappingTag}>` : '';
             setEditorHtml(
-                `${openingTag}<${testTag}>test test</${testTag}>${closingTag}`,
+                // eslint-disable-next-line max-len
+                `${openingTag}<${testTag}>test test</${testTag}>${closingTag}<p>some adjacent text</p>`,
             );
             const { node } = computeNodeAndOffset(editor, 1);
 
@@ -985,4 +820,140 @@ describe('textNodeNeedsExtraOffset', () => {
         expect(node).toBe(editor.childNodes[0].childNodes[0].childNodes[0]);
         expect(textNodeNeedsExtraOffset(node)).toBe(false);
     });
+
+    it('does not apply offset to the last child node', () => {
+        // When
+        setEditorHtml('<p>single child</p>');
+
+        const { node } = computeNodeAndOffset(editor, 0);
+
+        // Then
+        expect(node).toBe(editor.childNodes[0].childNodes[0]);
+        expect(textNodeNeedsExtraOffset(node)).toBe(false);
+    });
 });
+
+describe('textLength', () => {
+    const testString = 'string for testing';
+    const testStringLength = testString.length;
+    it('calculates the length of a plain string inside a div correcly', () => {
+        // this represents when the user initially starts typing, before any
+        // paragraphs have been added
+        const divNode = document.createElement('div');
+        divNode.textContent = testString;
+        expect(textLength(divNode, -1)).toBe(testStringLength);
+    });
+
+    it('calculates the length of a string inside a paragraph correctly', () => {
+        // when we have a string inside a paragraph, the length needs to be
+        // given an extra offset to match up with the rust model indices
+        const paragraphNode = document.createElement('p');
+        paragraphNode.textContent = testString;
+        expect(textLength(paragraphNode, -1)).toBe(testStringLength + 1);
+    });
+
+    it('calculates the length of a strings inside a list correctly', () => {
+        // when we have a list item inside a list, check that we only apply the
+        // offset to the list items, not to the list container as well
+        const listNode = document.createElement('ul');
+        const numberOfListItems = 3;
+
+        for (let i = 0; i < numberOfListItems; i++) {
+            const listItem = document.createElement('li');
+            listItem.textContent = testString;
+            listNode.appendChild(listItem);
+        }
+
+        expect(textLength(listNode, -1)).toBe(
+            numberOfListItems * (testStringLength + 1),
+        );
+    });
+});
+
+/* HELPER FUNCTIONS */
+/* The editor always needs an extra BR after your HTML */
+function setEditorHtml(html: string) {
+    editor.innerHTML = html + '<br />';
+}
+
+/* Given a text node, place the a caret (ie zero length selection) 
+at the given offset */
+function putCaretInTextNodeAtOffset(node: Node, offset: number): Selection {
+    if (node.nodeName !== '#text') {
+        throw new Error(
+            'Called putCaretInTextNodeAtOffset with a non-text node',
+        );
+    }
+
+    // nb typing here is a little strange, we will only get a null back if
+    // this is called on an iFrame with display:none from Firefox
+    // ref: https://developer.mozilla.org/en-US/docs/Web/API/Window/getSelection#return_value
+    const selection = document.getSelection();
+
+    // clear out the selection and then set base and extent
+    selection?.removeAllRanges();
+    selection?.setBaseAndExtent(node, offset, node, offset);
+
+    if (selection === null) {
+        throw new Error('null selection created in putCaretInTextNodeAtOffset');
+    }
+
+    return selection;
+}
+
+/* Press cmd/ctrl + a */
+function selectAll(): Selection | null {
+    // select all works in the browser by selecting the first text node as
+    // the anchor with an offset of 0, and the focus node as the editor,
+    // with the offset equal to the number of children nodes - 1, to exclude
+    // the last linebreak tag
+    const selection = document.getSelection();
+    selection?.removeAllRanges();
+
+    const firstTextNode = document
+        .createNodeIterator(editor, NodeFilter.SHOW_TEXT)
+        .nextNode();
+
+    if (firstTextNode) {
+        selection?.setBaseAndExtent(
+            firstTextNode,
+            0,
+            editor,
+            editor.childNodes.length - 1, // ignore the final linebreak
+        );
+    }
+
+    return selection;
+}
+
+/* Click at the end then press down arrow */
+function cursorToAfterEnd(): Selection | null {
+    const selection = document.getSelection();
+    const offset = editor.childNodes.length - 1;
+    selection?.setBaseAndExtent(editor, offset, editor, offset);
+    return selection;
+}
+
+/** Click at the beginning */
+function cursorToBeginning(): Selection | null {
+    const selection = document.getSelection();
+    const firstTextNode = document
+        .createNodeIterator(editor, NodeFilter.SHOW_TEXT)
+        .nextNode();
+
+    if (firstTextNode) {
+        selection?.setBaseAndExtent(firstTextNode, 0, firstTextNode, 0);
+    }
+
+    return selection;
+}
+
+/* Like selecting something before or after the editor */
+function selectionOutsideEditor(
+    location: 'before' | 'after',
+): Selection | null {
+    const selection = document.getSelection();
+    const targetElement = location === 'before' ? beforeEditor : afterEditor;
+    selection?.setBaseAndExtent(targetElement, 0, targetElement, 0);
+    return selection;
+}
