@@ -250,6 +250,38 @@ fn removing_trailing_list_item_with_list_toggle() {
 }
 
 #[test]
+fn removing_formatted_trailing_list_item_with_enter() {
+    let mut model =
+        cm("<ol><li><strong>abc</strong></li><li><strong>|</strong></li></ol>");
+    model.enter();
+    assert_eq!(
+        tx(&model),
+        "<ol><li><strong>abc</strong></li></ol><p><strong>|</strong></p>"
+    )
+}
+
+#[test]
+fn removing_formatted_trailing_list_item_with_list_toggle() {
+    let mut model =
+        cm("<ol><li><strong>abc</strong></li><li><strong>|</strong></li></ol>");
+    model.ordered_list();
+    assert_eq!(
+        tx(&model),
+        "<ol><li><strong>abc</strong></li></ol><p><strong>|</strong></p>"
+    )
+}
+
+#[test]
+fn enter_in_empty_indented_and_formatted_list_item() {
+    let mut model = cm("<ol><li><p><strong>abc</strong></p><ol><li><strong>|</strong></li></ol></li></ol>");
+    model.enter();
+    assert_eq!(
+        tx(&model),
+        "<ol><li><strong>abc</strong></li><li><strong>|</strong></li></ol>"
+    )
+}
+
+#[test]
 fn removing_trailing_list_item_then_replace_text() {
     let mut model = cm("<ol><li>abc</li><li>|</li></ol>");
     model.enter();

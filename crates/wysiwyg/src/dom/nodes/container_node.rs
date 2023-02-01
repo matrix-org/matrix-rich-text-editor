@@ -376,7 +376,7 @@ where
 
     pub fn is_empty_list_item(&self) -> bool {
         match self.kind {
-            ContainerNodeKind::ListItem => self.is_empty(),
+            ContainerNodeKind::ListItem => self.text_len() == 0,
             _ => false,
         }
     }
