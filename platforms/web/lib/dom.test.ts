@@ -877,7 +877,8 @@ function setEditorHtml(html: string) {
     editor.innerHTML = html + '<br />';
 }
 
-/* Given a text node, place the cursor at the given   */
+/* Given a text node, place the a caret (ie zero length selection) 
+at the given offset */
 function putCaretInTextNodeAtOffset(node: Node, offset: number): Selection {
     if (node.nodeName !== '#text') {
         throw new Error(
@@ -901,6 +902,7 @@ function putCaretInTextNodeAtOffset(node: Node, offset: number): Selection {
     return selection;
 }
 
+/* Press cmd/ctrl + a */
 function selectAll(): Selection | null {
     // select all works in the browser by selecting the first text node as
     // the anchor with an offset of 0, and the focus node as the editor,
