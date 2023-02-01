@@ -11,7 +11,7 @@ pub enum ComposerAction {
     OrderedList,
     UnorderedList,
     Indent,
-    UnIndent,
+    Unindent,
     CodeBlock,
     Quote,
 }
@@ -30,7 +30,7 @@ impl From<&ComposerAction> for wysiwyg::ComposerAction {
             ComposerAction::OrderedList => Self::OrderedList,
             ComposerAction::UnorderedList => Self::UnorderedList,
             ComposerAction::Indent => Self::Indent,
-            ComposerAction::UnIndent => Self::UnIndent,
+            ComposerAction::Unindent => Self::Unindent,
             ComposerAction::CodeBlock => Self::CodeBlock,
             ComposerAction::Quote => Self::Quote,
         }
@@ -51,7 +51,7 @@ impl From<&wysiwyg::ComposerAction> for ComposerAction {
             wysiwyg::ComposerAction::OrderedList => Self::OrderedList,
             wysiwyg::ComposerAction::UnorderedList => Self::UnorderedList,
             wysiwyg::ComposerAction::Indent => Self::Indent,
-            wysiwyg::ComposerAction::UnIndent => Self::UnIndent,
+            wysiwyg::ComposerAction::Unindent => Self::Unindent,
             wysiwyg::ComposerAction::CodeBlock => Self::CodeBlock,
             wysiwyg::ComposerAction::Quote => Self::Quote,
         }

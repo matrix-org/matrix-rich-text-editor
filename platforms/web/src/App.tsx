@@ -152,10 +152,10 @@ function App() {
                             state={actionStates.indent}
                         />
                         <Button
-                            onClick={wysiwyg.unIndent}
+                            onClick={wysiwyg.unindent}
                             alt="unindent"
                             imagePath={unindentImage}
-                            state={actionStates.unIndent}
+                            state={actionStates.unindent}
                         />
                         <Button
                             onClick={wysiwyg.quote}

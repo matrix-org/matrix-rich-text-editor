@@ -259,7 +259,7 @@ mod test {
                 action,
                 ComposerAction::Redo
                     | ComposerAction::Indent
-                    | ComposerAction::UnIndent
+                    | ComposerAction::Unindent
             ) {
                 (action, ActionState::Disabled)
             } else {

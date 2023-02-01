@@ -44,18 +44,18 @@ extension WysiwygComposerTests {
             .assertHtml(Constants.indentedSampleListHtml)
     }
 
-    func testUnIndent() {
+    func testUnindent() {
         newComposerModel()
             .action { $0.setContentFromHtml(html: Constants.indentedSampleListHtml) }
             // Select somewhere on item 3
             .action { $0.select(startUtf16Codeunit: 18, endUtf16Codeunit: 18) }
-            .action { $0.unIndent() }
-            .action { $0.unIndent() }
-            .execute { XCTAssertTrue($0.actionStates()[.unIndent] == .disabled) }
+            .action { $0.unindent() }
+            .action { $0.unindent() }
+            .execute { XCTAssertTrue($0.actionStates()[.unindent] == .disabled) }
             // Select somewhere on item 2
             .action { $0.select(startUtf16Codeunit: 9, endUtf16Codeunit: 9) }
-            .action { $0.unIndent() }
-            .execute { XCTAssertTrue($0.actionStates()[.unIndent] == .disabled) }
+            .action { $0.unindent() }
+            .execute { XCTAssertTrue($0.actionStates()[.unindent] == .disabled) }
             .assertHtml(Constants.sampleListHtml)
     }
 }

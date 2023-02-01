@@ -83,7 +83,7 @@ internal class EditorViewModel(
                 is EditorInputAction.CodeBlock -> composer?.codeBlock()
                 is EditorInputAction.Quote -> composer?.quote()
                 is EditorInputAction.Indent -> composer?.indent()
-                is EditorInputAction.UnIndent -> composer?.unIndent()
+                is EditorInputAction.Unindent -> composer?.unindent()
             }
         }.onFailure { error ->
             rustErrorCollector?.onRustError(error)
