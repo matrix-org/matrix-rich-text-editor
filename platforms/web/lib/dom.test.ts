@@ -591,25 +591,19 @@ describe('getCurrentSelection', () => {
 
         return selection;
     }
-    function selectionBeforeEditor(): Selection {
-        const sel = document.getSelection();
-        sel?.setBaseAndExtent(beforeEditor, 0, beforeEditor, 0);
-        if (sel === null) {
-            throw new Error(
-                '_selectionAfterEditor tried to return null Selection',
-            );
+    function selectionBeforeEditor(): Selection | null {
+        const selection = document.getSelection();
+        if (selection) {
+            selection.setBaseAndExtent(beforeEditor, 0, beforeEditor, 0);
         }
-        return sel;
+        return selection;
     }
-    function selectionAfterEditor(): Selection {
-        const sel = document.getSelection();
-        sel?.setBaseAndExtent(afterEditor, 0, afterEditor, 0);
-        if (sel === null) {
-            throw new Error(
-                '_selectionAfterEditor tried to return null Selection',
-            );
+    function selectionAfterEditor(): Selection | null {
+        const selection = document.getSelection();
+        if (selection) {
+            selection.setBaseAndExtent(afterEditor, 0, afterEditor, 0);
         }
-        return sel;
+        return selection;
     }
 
     it('correctly locates the cursor in an empty editor', () => {
