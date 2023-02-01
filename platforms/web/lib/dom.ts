@@ -281,9 +281,9 @@ export function getCurrentSelection(
 
 /**
  * How many codeunits are there inside node, stopping counting if you get to
- * stopAtNode?
+ * stopAtNode? Exported for testing purposes
  */
-function textLength(node: Node, stopChildNumber: number): number {
+export function textLength(node: Node, stopChildNumber: number): number {
     if (node.nodeType === Node.TEXT_NODE) {
         // for a text node, we may have to add an extra offset if it's inside a
         // certain container

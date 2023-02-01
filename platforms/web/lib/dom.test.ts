@@ -18,6 +18,7 @@ import {
     computeNodeAndOffset,
     countCodeunit,
     getCurrentSelection,
+    textLength,
     textNodeNeedsExtraOffset,
 } from './dom';
 let beforeEditor: HTMLDivElement;
@@ -819,6 +820,43 @@ describe('textNodeNeedsExtraOffset', () => {
         // Then
         expect(node).toBe(editor.childNodes[0].childNodes[0]);
         expect(textNodeNeedsExtraOffset(node)).toBe(false);
+    });
+});
+
+describe('textLength', () => {
+    const testString = 'string for testing';
+    const testStringLength = testString.length;
+    it('calculates the length of a plain string inside a div correcly', () => {
+        // this represents when the user initially starts typing, before any
+        // paragraphs have been added
+        const divNode = document.createElement('div');
+        divNode.textContent = testString;
+        expect(textLength(divNode, -1)).toBe(testStringLength);
+    });
+
+    it('calculates the length of a string inside a paragraph correctly', () => {
+        // when we have a string inside a paragraph, the length needs to be
+        // given an extra offset to match up with the rust model indices
+        const paragraphNode = document.createElement('p');
+        paragraphNode.textContent = testString;
+        expect(textLength(paragraphNode, -1)).toBe(testStringLength + 1);
+    });
+
+    it('calculates the length of a strings inside a list correctly', () => {
+        // when we have a list item inside a list, check that we only apply the
+        // offset to the list items, not to the list container as well
+        const listNode = document.createElement('ul');
+        const numberOfListItems = 3;
+
+        for (let i = 0; i < numberOfListItems; i++) {
+            const listItem = document.createElement('li');
+            listItem.textContent = testString;
+            listNode.appendChild(listItem);
+        }
+
+        expect(textLength(listNode, -1)).toBe(
+            numberOfListItems * (testStringLength + 1),
+        );
     });
 });
 
