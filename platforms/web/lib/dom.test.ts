@@ -873,7 +873,6 @@ describe('textLength', () => {
 /* HELPER FUNCTIONS */
 /* The editor always needs an extra BR after your HTML */
 function setEditorHtml(html: string) {
-    // The editor always needs an extra BR after your HTML
     editor.innerHTML = html + '<br />';
 }
 
