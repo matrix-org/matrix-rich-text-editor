@@ -521,10 +521,7 @@ describe('countCodeunit', () => {
 });
 
 describe('getCurrentSelection', () => {
-    function putCaretInTextNodeAtOffset(
-        node: Node,
-        offset: number,
-    ): Selection | null {
+    function putCaretInTextNodeAtOffset(node: Node, offset: number): Selection {
         if (node.nodeName !== '#text') {
             throw new Error(
                 'Called putCaretInTextNodeAtOffset with a non-text node',
@@ -533,15 +530,23 @@ describe('getCurrentSelection', () => {
 
         // create a new range and selection for us to amend
         const range = new Range();
+
+        // nb typing here is a little strange, we will only get a null back if
+        // this is called on an iFrame with display:none from Firefox
+        // ref: https://developer.mozilla.org/en-US/docs/Web/API/Window/getSelection#return_value
         const selection = document.getSelection();
 
         range.setStart(node, offset);
         range.setEnd(node, offset);
 
-        if (selection) {
-            // if we have a selection, clear it out and then add the new range
-            selection.removeAllRanges();
-            selection.addRange(range);
+        // clear out the selection and then add the new range
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+
+        if (selection === null) {
+            throw new Error(
+                'null selection created in putCaretInTextNodeAtOffset',
+            );
         }
 
         return selection;
@@ -551,7 +556,6 @@ describe('getCurrentSelection', () => {
         // the anchor with an offset of 0, and the focus node as the editor,
         // with the offset equal to the number of paragraph nodes
         const selection = document.getSelection();
-
         selection?.removeAllRanges();
 
         const firstTextNode = document
@@ -838,6 +842,7 @@ describe('textNodeNeedsExtraOffset', () => {
             const openingTag = wrappingTag ? `<${wrappingTag}>` : '';
             const closingTag = wrappingTag ? `<${wrappingTag}>` : '';
             setEditorHtml(
+                // eslint-disable-next-line max-len
                 `${openingTag}<${testTag}>test test</${testTag}>${closingTag}<p>some adjacent text</p>`,
             );
             const { node } = computeNodeAndOffset(editor, 1);
