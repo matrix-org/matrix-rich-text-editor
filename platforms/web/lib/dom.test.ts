@@ -546,7 +546,7 @@ describe('getCurrentSelection', () => {
 
         return select;
     }
-    function _selectAll() {
+    function selectAll() {
         // select all works in the browse} by selecting the first text node as
         // the anchor with an offset of 0, and the focus node as the editor,
         // with the offset equal to the number of paragraph nodes
@@ -568,7 +568,7 @@ describe('getCurrentSelection', () => {
 
         return select;
     }
-    function _cursorToAfterEnd(): Selection {
+    function cursorToAfterEnd(): Selection {
         const sel = document.getSelection();
         const offset = editor.childNodes.length - 1;
         sel?.setBaseAndExtent(editor, offset, editor, offset);
@@ -579,7 +579,7 @@ describe('getCurrentSelection', () => {
 
         return sel;
     }
-    function _cursorToBeginning(): Selection {
+    function cursorToBeginning(): Selection {
         const sel = document.getSelection();
         const firstTextNode = document
             .createNodeIterator(editor, NodeFilter.SHOW_TEXT)
@@ -597,7 +597,7 @@ describe('getCurrentSelection', () => {
 
         return sel;
     }
-    function _selectionBeforeEditor(): Selection {
+    function selectionBeforeEditor(): Selection {
         const sel = document.getSelection();
         sel?.setBaseAndExtent(beforeEditor, 0, beforeEditor, 0);
         if (sel === null) {
@@ -607,7 +607,7 @@ describe('getCurrentSelection', () => {
         }
         return sel;
     }
-    function _selectionAfterEditor(): Selection {
+    function selectionAfterEditor(): Selection {
         const sel = document.getSelection();
         sel?.setBaseAndExtent(afterEditor, 0, afterEditor, 0);
         if (sel === null) {
@@ -620,7 +620,7 @@ describe('getCurrentSelection', () => {
 
     it('correctly locates the cursor in an empty editor', () => {
         setEditorHtml('');
-        const sel = _selectAll();
+        const sel = selectAll();
         expect(getCurrentSelection(editor, sel)).toEqual([0, 0]);
     });
 
@@ -746,7 +746,7 @@ describe('getCurrentSelection', () => {
 
     it('handles selecting all with ctrl-a', () => {
         setEditorHtml('<p>para 1</p><p>para 2</p>');
-        expect(getCurrentSelection(editor, _selectAll())).toEqual([0, 13]);
+        expect(getCurrentSelection(editor, selectAll())).toEqual([0, 13]);
     });
 
     it('handles selecting all by dragging from start to end', () => {
@@ -800,25 +800,25 @@ describe('getCurrentSelection', () => {
     it('handles cursor after end', () => {
         setEditorHtml('<p>para 1</p><p>para 2</p>');
         // Simulate going to end of doc and pressing down arrow
-        const sel = _cursorToAfterEnd();
+        const sel = cursorToAfterEnd();
         expect(getCurrentSelection(editor, sel)).toEqual([13, 13]);
     });
 
     it('handles cursor at start', () => {
         setEditorHtml('<p>para 1</p><p>para 2</p>');
-        const sel = _cursorToBeginning();
+        const sel = cursorToBeginning();
         expect(getCurrentSelection(editor, sel)).toEqual([0, 0]);
     });
 
     it('handles selection before the start by returning 0, 0', () => {
         setEditorHtml('<p>para 1</p><p>para 2</p>');
-        const sel = _selectionBeforeEditor();
+        const sel = selectionBeforeEditor();
         expect(getCurrentSelection(editor, sel)).toEqual([0, 0]);
     });
 
     it('handles selection after the end by returning last character', () => {
         setEditorHtml('<p>para 1</p><p>para 2</p>');
-        const sel = _selectionAfterEditor();
+        const sel = selectionAfterEditor();
         expect(getCurrentSelection(editor, sel)).toEqual([13, 13]);
     });
 });
