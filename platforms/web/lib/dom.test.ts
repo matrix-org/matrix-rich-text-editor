@@ -34,11 +34,6 @@ beforeAll(() => {
     document.body.appendChild(afterEditor);
 });
 
-function setEditorHtml(html: string) {
-    // The editor always needs an extra BR after your HTML
-    editor.innerHTML = html + '<br />';
-}
-
 describe('computeNodeAndOffset', () => {
     it('Should find at the start of simple text', () => {
         // When
@@ -521,95 +516,6 @@ describe('countCodeunit', () => {
 });
 
 describe('getCurrentSelection', () => {
-    function putCaretInTextNodeAtOffset(node: Node, offset: number): Selection {
-        if (node.nodeName !== '#text') {
-            throw new Error(
-                'Called putCaretInTextNodeAtOffset with a non-text node',
-            );
-        }
-
-        // create a new range and selection for us to amend
-        const range = new Range();
-
-        // nb typing here is a little strange, we will only get a null back if
-        // this is called on an iFrame with display:none from Firefox
-        // ref: https://developer.mozilla.org/en-US/docs/Web/API/Window/getSelection#return_value
-        const selection = document.getSelection();
-
-        range.setStart(node, offset);
-        range.setEnd(node, offset);
-
-        // clear out the selection and then add the new range
-        selection?.removeAllRanges();
-        selection?.addRange(range);
-
-        if (selection === null) {
-            throw new Error(
-                'null selection created in putCaretInTextNodeAtOffset',
-            );
-        }
-
-        return selection;
-    }
-    function selectAll(): Selection | null {
-        // select all works in the browser by selecting the first text node as
-        // the anchor with an offset of 0, and the focus node as the editor,
-        // with the offset equal to the number of paragraph nodes
-        const selection = document.getSelection();
-        selection?.removeAllRanges();
-
-        const firstTextNode = document
-            .createNodeIterator(editor, NodeFilter.SHOW_TEXT)
-            .nextNode();
-
-        if (firstTextNode) {
-            selection?.setBaseAndExtent(
-                firstTextNode,
-                0,
-                editor,
-                editor.childNodes.length - 1, // ignore the final linebreak
-            );
-        }
-
-        return selection;
-    }
-    function cursorToAfterEnd(): Selection | null {
-        const selection = document.getSelection();
-        const offset = editor.childNodes.length - 1;
-
-        if (selection) {
-            selection.setBaseAndExtent(editor, offset, editor, offset);
-        }
-
-        return selection;
-    }
-    function cursorToBeginning(): Selection | null {
-        const selection = document.getSelection();
-        const firstTextNode = document
-            .createNodeIterator(editor, NodeFilter.SHOW_TEXT)
-            .nextNode();
-
-        if (firstTextNode) {
-            selection?.setBaseAndExtent(firstTextNode, 0, firstTextNode, 0);
-        }
-
-        return selection;
-    }
-    function selectionBeforeEditor(): Selection | null {
-        const selection = document.getSelection();
-        if (selection) {
-            selection.setBaseAndExtent(beforeEditor, 0, beforeEditor, 0);
-        }
-        return selection;
-    }
-    function selectionAfterEditor(): Selection | null {
-        const selection = document.getSelection();
-        if (selection) {
-            selection.setBaseAndExtent(afterEditor, 0, afterEditor, 0);
-        }
-        return selection;
-    }
-
     it('correctly locates the cursor in an empty editor', () => {
         setEditorHtml('');
         const sel = selectAll();
@@ -804,13 +710,13 @@ describe('getCurrentSelection', () => {
 
     it('handles selection before the start by returning 0, 0', () => {
         setEditorHtml('<p>para 1</p><p>para 2</p>');
-        const sel = selectionBeforeEditor();
+        const sel = selectionOutsideEditor('before');
         expect(getCurrentSelection(editor, sel)).toEqual([0, 0]);
     });
 
     it('handles selection after the end by returning last character', () => {
         setEditorHtml('<p>para 1</p><p>para 2</p>');
-        const sel = selectionAfterEditor();
+        const sel = selectionOutsideEditor('after');
         expect(getCurrentSelection(editor, sel)).toEqual([13, 13]);
     });
 });
@@ -914,3 +820,91 @@ describe('textNodeNeedsExtraOffset', () => {
         expect(textNodeNeedsExtraOffset(node)).toBe(false);
     });
 });
+
+/* HELPER FUNCTIONS */
+function setEditorHtml(html: string) {
+    // The editor always needs an extra BR after your HTML
+    editor.innerHTML = html + '<br />';
+}
+
+function putCaretInTextNodeAtOffset(node: Node, offset: number): Selection {
+    if (node.nodeName !== '#text') {
+        throw new Error(
+            'Called putCaretInTextNodeAtOffset with a non-text node',
+        );
+    }
+
+    // create a new range and selection for us to amend
+    const range = new Range();
+
+    // nb typing here is a little strange, we will only get a null back if
+    // this is called on an iFrame with display:none from Firefox
+    // ref: https://developer.mozilla.org/en-US/docs/Web/API/Window/getSelection#return_value
+    const selection = document.getSelection();
+
+    range.setStart(node, offset);
+    range.setEnd(node, offset);
+
+    // clear out the selection and then add the new range
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+
+    if (selection === null) {
+        throw new Error('null selection created in putCaretInTextNodeAtOffset');
+    }
+
+    return selection;
+}
+
+function selectAll(): Selection | null {
+    // select all works in the browser by selecting the first text node as
+    // the anchor with an offset of 0, and the focus node as the editor,
+    // with the offset equal to the number of children nodes - 1, to exclude
+    // the last linebreak tag
+    const selection = document.getSelection();
+    selection?.removeAllRanges();
+
+    const firstTextNode = document
+        .createNodeIterator(editor, NodeFilter.SHOW_TEXT)
+        .nextNode();
+
+    if (firstTextNode) {
+        selection?.setBaseAndExtent(
+            firstTextNode,
+            0,
+            editor,
+            editor.childNodes.length - 1, // ignore the final linebreak
+        );
+    }
+
+    return selection;
+}
+
+function cursorToAfterEnd(): Selection | null {
+    const selection = document.getSelection();
+    const offset = editor.childNodes.length - 1;
+    selection?.setBaseAndExtent(editor, offset, editor, offset);
+    return selection;
+}
+
+function cursorToBeginning(): Selection | null {
+    const selection = document.getSelection();
+    const firstTextNode = document
+        .createNodeIterator(editor, NodeFilter.SHOW_TEXT)
+        .nextNode();
+
+    if (firstTextNode) {
+        selection?.setBaseAndExtent(firstTextNode, 0, firstTextNode, 0);
+    }
+
+    return selection;
+}
+
+function selectionOutsideEditor(
+    location: 'before' | 'after',
+): Selection | null {
+    const selection = document.getSelection();
+    const targetElement = location === 'before' ? beforeEditor : afterEditor;
+    selection?.setBaseAndExtent(targetElement, 0, targetElement, 0);
+    return selection;
+}
