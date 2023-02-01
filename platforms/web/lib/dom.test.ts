@@ -424,6 +424,16 @@ describe('computeNodeAndOffset', () => {
 });
 
 describe('countCodeunit', () => {
+    it('Returns the end of the editor when whole editor selected', () => {
+        const plainString = 'abcdefgh';
+        const htmlString = '<p>text in</p><p>paragraph tags</p>';
+
+        setEditorHtml(plainString);
+        expect(countCodeunit(editor, editor, 1)).toBe(plainString.length);
+
+        setEditorHtml(htmlString);
+        expect(countCodeunit(editor, editor, 2)).toBe(22);
+    });
     it('Should count ASCII', () => {
         // When
         setEditorHtml('abcdefgh');
