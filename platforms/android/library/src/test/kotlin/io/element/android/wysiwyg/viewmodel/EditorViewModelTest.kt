@@ -57,7 +57,7 @@ internal class EditorViewModelTest {
                 ComposerAction.INLINE_CODE to ActionState.ENABLED,
                 ComposerAction.UNDERLINE to ActionState.ENABLED,
                 ComposerAction.INDENT to ActionState.ENABLED,
-                ComposerAction.UN_INDENT to ActionState.ENABLED,
+                ComposerAction.UNINDENT to ActionState.ENABLED,
             )
 
         private val composerStateUpdate = MockComposerUpdateFactory.create(

@@ -21,7 +21,7 @@ use crate::dom::range::DomLocationPosition;
 use crate::dom::range::DomLocationPosition::Before;
 use crate::dom::{DomLocation, Range};
 use crate::menu_state::MenuStateUpdate;
-use crate::ComposerAction::{Indent, OrderedList, UnIndent, UnorderedList};
+use crate::ComposerAction::{Indent, OrderedList, Unindent, UnorderedList};
 use crate::{
     ComposerAction, ComposerModel, DomHandle, DomNode, InlineFormatType,
     ListType, MenuState, UnicodeString,
@@ -222,7 +222,7 @@ where
             disabled_actions.insert(Indent);
         }
         if !self.can_unindent(&top_most_list_locations) {
-            disabled_actions.insert(UnIndent);
+            disabled_actions.insert(Unindent);
         }
         // XOR on inline code in selection & toggled format types.
         // If selection is not a cursor, toggled format types is always

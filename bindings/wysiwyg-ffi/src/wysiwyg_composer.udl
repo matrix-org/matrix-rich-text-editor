@@ -39,7 +39,7 @@ interface ComposerModel {
     ComposerUpdate undo();
     ComposerUpdate redo();
     ComposerUpdate indent();
-    ComposerUpdate un_indent();
+    ComposerUpdate unindent();
     ComposerUpdate set_link(string link);
     ComposerUpdate set_link_with_text(string link, string text);
     ComposerUpdate remove_links();
@@ -89,7 +89,7 @@ enum ComposerAction {
     "OrderedList",
     "UnorderedList",
     "Indent",
-    "UnIndent",
+    "Unindent",
     "CodeBlock",
     "Quote",
 };

@@ -27,7 +27,7 @@ pub enum ComposerAction {
     OrderedList,
     UnorderedList,
     Indent,
-    UnIndent,
+    Unindent,
     CodeBlock,
     Quote,
 }

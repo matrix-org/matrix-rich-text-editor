@@ -213,7 +213,7 @@ impl ComposerModel {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().indent()))
     }
 
-    pub fn un_indent(self: &Arc<Self>) -> Arc<ComposerUpdate> {
+    pub fn unindent(self: &Arc<Self>) -> Arc<ComposerUpdate> {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().unindent()))
     }
 

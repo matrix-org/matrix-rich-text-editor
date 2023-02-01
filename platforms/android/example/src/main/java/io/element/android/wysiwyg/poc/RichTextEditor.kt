@@ -97,8 +97,8 @@ class RichTextEditor : LinearLayout {
             indentButton.setOnClickListener {
                 richTextEditText.indent()
             }
-            unIndentButton.setOnClickListener {
-                richTextEditText.unIndent()
+            unindentButton.setOnClickListener {
+                richTextEditText.unindent()
             }
 
             richTextEditText.actionStatesChangedListener = EditorEditText.OnActionStatesChangedListener { actionStates ->
@@ -122,7 +122,7 @@ class RichTextEditor : LinearLayout {
             updateActionStateFor(formatCodeBlockButton, ComposerAction.CODE_BLOCK, actionStates)
             updateActionStateFor(formatQuoteButton, ComposerAction.QUOTE, actionStates)
             updateActionStateFor(indentButton, ComposerAction.INDENT, actionStates)
-            updateActionStateFor(unIndentButton, ComposerAction.UN_INDENT, actionStates)
+            updateActionStateFor(unindentButton, ComposerAction.UNINDENT, actionStates)
         }
     }
 

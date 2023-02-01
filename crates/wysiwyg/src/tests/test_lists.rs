@@ -352,7 +352,7 @@ fn indent_several_list_items_with_sub_levels_works() {
 }
 
 #[test]
-fn un_indent_several_items_works() {
+fn unindent_several_items_works() {
     let mut model =
         cm("<ul><li><p>First item</p><ul><li>{Second item</li><li>Third item}|</li></ul></li></ul>");
     model.unindent();
@@ -363,7 +363,7 @@ fn un_indent_several_items_works() {
 }
 
 #[test]
-fn un_indent_nested_lists_works() {
+fn unindent_nested_lists_works() {
     let mut model =
         cm("<ul><li><p>First item</p><ul><li><p>{Second item</p><ul><li>Third item}|</li></ul></li></ul></li></ul>");
     model.unindent();
@@ -374,7 +374,7 @@ fn un_indent_nested_lists_works() {
 }
 
 #[test]
-fn un_indent_middle_list_item_works() {
+fn unindent_middle_list_item_works() {
     let mut model =
         cm("<ul><li><p>First item</p><ul><li>Second item</li><li>{Third item}|</li><li>Fourth item</li></ul></li></ul>");
     model.unindent();
@@ -385,7 +385,7 @@ fn un_indent_middle_list_item_works() {
 }
 
 #[test]
-fn un_indent_nested_lists_with_remnants_works() {
+fn unindent_nested_lists_with_remnants_works() {
     let mut model =
         cm("<ul><li><p>First item</p><ul><li><p>Second item</p><ul><li>{Third item</li><li>Fourth item}|</li><li>Fifth item</li></ul></li></ul></li></ul>");
     model.unindent();

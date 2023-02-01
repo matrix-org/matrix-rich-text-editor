@@ -87,14 +87,14 @@ fn updating_model_updates_disabled_actions() {
     assert!(model.action_is_disabled(ComposerAction::Undo));
     assert!(model.action_is_disabled(ComposerAction::Redo));
     assert!(model.action_is_disabled(ComposerAction::Indent));
-    assert!(model.action_is_disabled(ComposerAction::UnIndent));
+    assert!(model.action_is_disabled(ComposerAction::Unindent));
 
     replace_text(&mut model, "a");
     model.select(Location::from(0), Location::from(1));
     model.bold();
     assert!(model.action_is_disabled(ComposerAction::Redo));
     assert!(model.action_is_disabled(ComposerAction::Indent));
-    assert!(model.action_is_disabled(ComposerAction::UnIndent));
+    assert!(model.action_is_disabled(ComposerAction::Unindent));
     assert!(model.action_is_enabled(ComposerAction::StrikeThrough));
 
     model.undo();
@@ -134,7 +134,7 @@ fn test_menu_updates_indent() {
     let model = cm("<ul><li>First item</li><li>{Second item}|</li></ul>");
     assert!(model.action_is_disabled(ComposerAction::Redo));
     assert!(model.action_is_disabled(ComposerAction::Undo));
-    assert!(model.action_is_disabled(ComposerAction::UnIndent));
+    assert!(model.action_is_disabled(ComposerAction::Unindent));
     assert!(model.action_is_enabled(ComposerAction::StrikeThrough));
 }
 

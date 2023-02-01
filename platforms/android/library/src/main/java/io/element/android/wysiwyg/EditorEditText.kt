@@ -353,8 +353,8 @@ class EditorEditText : TextInputEditText {
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
-    fun unIndent() {
-        val result = viewModel.processInput(EditorInputAction.UnIndent) ?: return
+    fun unindent() {
+        val result = viewModel.processInput(EditorInputAction.Unindent) ?: return
 
         setTextFromComposerUpdate(result)
         setSelectionFromComposerUpdate(result.selection.last)

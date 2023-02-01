@@ -49,7 +49,7 @@ extension WysiwygUITests {
             """
         )
         // Unindent second list item.
-        button(.unIndentButton).tap()
+        button(.unindentButton).tap()
         assertTreeEquals(
             """
             └>ol
@@ -59,6 +59,6 @@ extension WysiwygUITests {
                 └>"Item 2"
             """
         )
-        XCTAssertFalse(button(.unIndentButton).isEnabled)
+        XCTAssertFalse(button(.unindentButton).isEnabled)
     }
 }

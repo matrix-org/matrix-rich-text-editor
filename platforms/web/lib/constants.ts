@@ -29,5 +29,5 @@ export const ACTION_TYPES = [
     'codeBlock',
     'quote',
     'indent',
-    'unIndent',
+    'unindent',
 ] as const;
