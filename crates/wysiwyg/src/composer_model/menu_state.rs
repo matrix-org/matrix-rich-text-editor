@@ -17,8 +17,7 @@ use strum::IntoEnumIterator;
 use crate::action_state::ActionState;
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind};
-use crate::dom::range::DomLocationPosition;
-use crate::dom::range::DomLocationPosition::Before;
+use crate::dom::range::DomLocationPosition::{After, Before};
 use crate::dom::{DomLocation, Range};
 use crate::menu_state::MenuStateUpdate;
 use crate::ComposerAction::{Indent, OrderedList, Unindent, UnorderedList};
@@ -90,30 +89,18 @@ where
             .map(|format| format.action())
             .collect();
 
-        let reversed_actions = if let Some(intersection) =
-            range.leaves().next().map(|l| {
-                range
-                    .leaves()
-                    // do not need locations after the cursor for next logic
-                    .filter(|loc| {
-                        !(loc.relative_position() == DomLocationPosition::After)
-                    })
-                    .fold(
-                        // Init with reversed_actions from the first leave.
-                        self.compute_reversed_actions(&l.node_handle),
-                        // And intersect with the reversed_actions of all subsequent leaves.
-                        |set, leave| {
-                            set.intersection(
-                                &self.compute_reversed_actions(
-                                    &leave.node_handle,
-                                ),
-                            )
-                            .cloned()
-                            .collect()
-                        },
-                    )
-            }) {
-            intersection
+        let reversed_actions = if let Some(first_leaf) = range.leaves().next() {
+            range
+                .leaves()
+                // do not need locations after the cursor for next logic
+                .filter(|loc| !(loc.relative_position() == After))
+                .map(|loc| self.compute_reversed_actions(&loc.node_handle))
+                .fold(
+                    // Init with reversed_actions from the first leave.
+                    self.compute_reversed_actions(&first_leaf.node_handle),
+                    // And intersect with the reversed_actions of all subsequent leaves.
+                    |i, set| i.intersection(&set).cloned().collect(),
+                )
         } else if self.state.dom.document().children().is_empty() {
             HashSet::new()
         } else if let Some(container_loc) = range.deepest_container_node(None) {
