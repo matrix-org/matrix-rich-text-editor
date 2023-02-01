@@ -399,6 +399,22 @@ impl Range {
             .max()
     }
 
+    pub(crate) fn deepest_container_node(
+        &self,
+        ancestor_of: Option<&DomHandle>,
+    ) -> Option<&DomLocation> {
+        self.locations
+            .iter()
+            .filter(|l| {
+                let mut found = true;
+                if let Some(ancestor_of) = ancestor_of {
+                    found = l.node_handle.is_ancestor_of(ancestor_of);
+                }
+                found && !l.is_leaf()
+            })
+            .max()
+    }
+
     pub(crate) fn deepest_node_of_kind(
         &self,
         kind: DomNodeKind,
