@@ -569,16 +569,15 @@ describe('getCurrentSelection', () => {
 
         return selection;
     }
-    function cursorToAfterEnd(): Selection {
-        const sel = document.getSelection();
+    function cursorToAfterEnd(): Selection | null {
+        const selection = document.getSelection();
         const offset = editor.childNodes.length - 1;
-        sel?.setBaseAndExtent(editor, offset, editor, offset);
 
-        if (sel === null) {
-            throw new Error('_cursorToAfterEnd tried to return null Selection');
+        if (selection) {
+            selection.setBaseAndExtent(editor, offset, editor, offset);
         }
 
-        return sel;
+        return selection;
     }
     function cursorToBeginning(): Selection {
         const sel = document.getSelection();
