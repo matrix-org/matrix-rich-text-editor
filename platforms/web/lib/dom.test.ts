@@ -546,19 +546,20 @@ describe('getCurrentSelection', () => {
 
         return selection;
     }
-    function selectAll() {
-        // select all works in the browse} by selecting the first text node as
+    function selectAll(): Selection | null {
+        // select all works in the browser by selecting the first text node as
         // the anchor with an offset of 0, and the focus node as the editor,
         // with the offset equal to the number of paragraph nodes
-        const select = document.getSelection();
-        select?.removeAllRanges();
+        const selection = document.getSelection();
+
+        selection?.removeAllRanges();
 
         const firstTextNode = document
             .createNodeIterator(editor, NodeFilter.SHOW_TEXT)
             .nextNode();
 
         if (firstTextNode) {
-            select?.setBaseAndExtent(
+            selection?.setBaseAndExtent(
                 firstTextNode,
                 0,
                 editor,
@@ -566,7 +567,7 @@ describe('getCurrentSelection', () => {
             );
         }
 
-        return select;
+        return selection;
     }
     function cursorToAfterEnd(): Selection {
         const sel = document.getSelection();
