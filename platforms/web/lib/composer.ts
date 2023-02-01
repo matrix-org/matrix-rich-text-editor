@@ -71,6 +71,13 @@ export function processInput(
             return action(composerModel.backspace(), 'backspace');
         case 'deleteWordBackward':
             return action(composerModel.backspace_word(), 'backspace_word');
+        case 'deleteSoftLineBackward': {
+            document
+                .getSelection()
+                ?.modify('extend', 'backward', 'lineboundary');
+            document.dispatchEvent(new CustomEvent('selectionchange'));
+            return action(composerModel.delete(), 'backspace_line');
+        }
         case 'deleteContentForward':
             return action(composerModel.delete(), 'delete');
         case 'deleteWordForward':

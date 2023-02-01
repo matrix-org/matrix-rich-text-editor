@@ -90,6 +90,8 @@ function getInputFromKeyDown(
                 return 'historyRedo';
             case 'Enter':
                 return 'sendMessage';
+            case 'Backspace':
+                return 'deleteSoftLineBackward';
         }
     }
 
@@ -216,7 +218,6 @@ export function handleSelectionChange(
     { traceAction, getSelectionAccordingToActions }: TestUtilities,
 ): AllActionStates | undefined {
     const [start, end] = getCurrentSelection(editor, document.getSelection());
-
     const prevStart = composeModel.selection_start();
     const prevEnd = composeModel.selection_end();
 
