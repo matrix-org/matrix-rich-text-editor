@@ -871,11 +871,13 @@ describe('textLength', () => {
 });
 
 /* HELPER FUNCTIONS */
+/* The editor always needs an extra BR after your HTML */
 function setEditorHtml(html: string) {
     // The editor always needs an extra BR after your HTML
     editor.innerHTML = html + '<br />';
 }
 
+/* Given a text node, place the cursor at the given   */
 function putCaretInTextNodeAtOffset(node: Node, offset: number): Selection {
     if (node.nodeName !== '#text') {
         throw new Error(
@@ -883,20 +885,14 @@ function putCaretInTextNodeAtOffset(node: Node, offset: number): Selection {
         );
     }
 
-    // create a new range and selection for us to amend
-    const range = new Range();
-
     // nb typing here is a little strange, we will only get a null back if
     // this is called on an iFrame with display:none from Firefox
     // ref: https://developer.mozilla.org/en-US/docs/Web/API/Window/getSelection#return_value
     const selection = document.getSelection();
 
-    range.setStart(node, offset);
-    range.setEnd(node, offset);
-
-    // clear out the selection and then add the new range
+    // clear out the selection and then set base and extent
     selection?.removeAllRanges();
-    selection?.addRange(range);
+    selection?.setBaseAndExtent(node, offset, node, offset);
 
     if (selection === null) {
         throw new Error('null selection created in putCaretInTextNodeAtOffset');
@@ -929,6 +925,7 @@ function selectAll(): Selection | null {
     return selection;
 }
 
+/* Click at the end then press down arrow */
 function cursorToAfterEnd(): Selection | null {
     const selection = document.getSelection();
     const offset = editor.childNodes.length - 1;
@@ -936,6 +933,7 @@ function cursorToAfterEnd(): Selection | null {
     return selection;
 }
 
+/** Click at the beginning */
 function cursorToBeginning(): Selection | null {
     const selection = document.getSelection();
     const firstTextNode = document
@@ -949,6 +947,7 @@ function cursorToBeginning(): Selection | null {
     return selection;
 }
 
+/* Like selecting something before or after the editor */
 function selectionOutsideEditor(
     location: 'before' | 'after',
 ): Selection | null {
