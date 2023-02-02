@@ -177,7 +177,7 @@ export function computeNodeAndOffset(
         // We also have a special case for a text node that is a single &nbsp;
         // which is used as a placeholder for an empty paragraph - we don't want
         // to count it's length
-        if (textContentIsNbsp(currentNode)) {
+        if (isPlaceholderParagraphNode(currentNode)) {
             if (codeunits === 0) {
                 // this is the only time we would 'find' this node
                 return { node: currentNode, offset: codeunits };
@@ -364,7 +364,7 @@ function findCharacter(
             // ...but also have a special case where we don't count a textnode
             // if it is an nbsp, as this is what we use to mark out empty
             // paragraphs
-            if (textContentIsNbsp(currentNode)) {
+            if (isPlaceholderParagraphNode(currentNode)) {
                 return { found: false, offset: extraOffset };
             }
 
@@ -517,7 +517,11 @@ function isEmptyInlineNode(node: Node) {
     );
 }
 
-function textContentIsNbsp(node: Node) {
-    const nbsp = String.fromCharCode(160); // &nbsp;
-    return node.textContent === nbsp;
+export function isPlaceholderParagraphNode(node: Node) {
+    // a placeholder paragraph will have single child that is a text node with
+    // a content that is an nbsp
+    const hasNoSiblings = node.parentNode?.childNodes.length === 1;
+    const hasParagraphParent = node.parentNode?.nodeName === 'P';
+    const hasNbspContent = node.textContent === String.fromCharCode(160);
+    return hasParagraphParent && hasNoSiblings && hasNbspContent;
 }
