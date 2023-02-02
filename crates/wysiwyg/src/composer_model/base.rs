@@ -147,7 +147,26 @@ where
         self.action_states.get(&action) == Some(&ActionState::Disabled)
     }
 
+    pub(crate) fn create_update_update_selection(
+        &mut self,
+    ) -> ComposerUpdate<S> {
+        #[cfg(any(test, feature = "assert-invariants"))]
+        self.state.dom.assert_transaction_not_in_progress();
+
+        let menu_state =
+            self.compute_menu_state(MenuStateComputeType::KeepIfUnchanged);
+
+        ComposerUpdate::update_selection(
+            self.state.start,
+            self.state.end,
+            menu_state,
+        )
+    }
+
     pub(crate) fn create_update_replace_all(&mut self) -> ComposerUpdate<S> {
+        #[cfg(any(test, feature = "assert-invariants"))]
+        self.state.dom.assert_transaction_not_in_progress();
+
         ComposerUpdate::replace_all(
             self.state.dom.to_html(),
             self.state.start,
@@ -159,6 +178,9 @@ where
     pub(crate) fn create_update_replace_all_with_menu_state(
         &mut self,
     ) -> ComposerUpdate<S> {
+        #[cfg(any(test, feature = "assert-invariants"))]
+        self.state.dom.assert_transaction_not_in_progress();
+
         ComposerUpdate::replace_all(
             self.state.dom.to_html(),
             self.state.start,

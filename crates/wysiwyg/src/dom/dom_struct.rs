@@ -122,6 +122,16 @@ where
         self.is_transaction_in_progress
     }
 
+    /// Asserts there is no transaction in progress (which implies the
+    /// Dom not known to be in bad state).
+    /// See [is_transaction_in_progress()].
+    #[cfg(any(test, feature = "assert-invariants"))]
+    pub fn assert_transaction_not_in_progress(&self) {
+        if self.is_transaction_in_progress() {
+            panic!("Transaction in progress");
+        }
+    }
+
     /// Asserts the DOM is in a good state and starts a transaction.
     /// See [is_transaction_in_progress()].
     #[cfg(any(test, feature = "assert-invariants"))]
