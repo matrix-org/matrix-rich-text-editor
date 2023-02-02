@@ -94,37 +94,40 @@ where
                 }
             }
             ListItem => {
-                let list_item_is_empty = self
+                let list_item_has_no_text = self
                     .state
                     .dom
                     .lookup_node(&block_location.node_handle)
-                    .is_empty_list_item();
-                if list_item_is_empty {
+                    .has_no_text();
+                if list_item_has_no_text {
                     let list_handle =
                         block_location.node_handle.parent_handle();
+                    // Remove the current list item
+                    let li = self.state.dom.remove(&block_location.node_handle);
+
                     if let Some(ancestor_list_handle) =
                         self.find_closest_ancestor_of_kind(&list_handle, List)
                     {
-                        // If this is a nested list, we should create a new list item in the
+                        // If this is a nested list, we should insert the list item in the
                         // ancestor list instead of creating a new paragraph.
                         let new_item_index = list_handle
                             .sub_handle_up_to(ancestor_list_handle.depth() + 1)
                             .index_in_parent();
                         let insert_at = ancestor_list_handle
                             .child_handle(new_item_index + 1);
-                        self.state.dom.insert_at(
-                            &insert_at,
-                            DomNode::new_list_item(Vec::new()),
-                        );
+                        self.state.dom.insert_at(&insert_at, li);
                     } else {
                         // Otherwise, add new paragraph after the current list
+                        let DomNode::Container(list_item) = li else {
+                            panic!("List item is not a container")
+                        };
+                        // A list item without text might still contain some formatting nodes that
+                        // should be transferred to the new paragraph.
                         self.state.dom.insert_at(
                             &list_handle.next_sibling(),
-                            DomNode::new_paragraph(Vec::new()),
+                            DomNode::new_paragraph(list_item.take_children()),
                         );
                     }
-                    // And remove the current list item
-                    self.state.dom.remove(&block_location.node_handle);
                     // If list becomes empty, remove it too
                     if self
                         .state

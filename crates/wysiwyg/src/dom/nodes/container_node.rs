@@ -374,13 +374,6 @@ where
         }
     }
 
-    pub fn is_empty_list_item(&self) -> bool {
-        match self.kind {
-            ContainerNodeKind::ListItem => self.is_empty(),
-            _ => false,
-        }
-    }
-
     pub(crate) fn get_list_type(&self) -> Option<&ListType> {
         match &self.kind {
             ContainerNodeKind::List(t) => Some(t),
@@ -531,6 +524,11 @@ where
     /// Returns true if the ContainerNode has no children.
     pub fn is_empty(&self) -> bool {
         self.children.is_empty()
+    }
+
+    /// Returns true if there is no text in this ContainerNode.
+    pub fn has_no_text(&self) -> bool {
+        self.children.iter().all(|c| c.has_no_text())
     }
 
     fn find_slice_location(

@@ -173,11 +173,6 @@ where
     }
 
     #[allow(dead_code)]
-    pub(crate) fn is_empty_list_item(&self) -> bool {
-        matches!(self, Self::Container(container) if container.is_empty_list_item())
-    }
-
-    #[allow(dead_code)]
     pub(crate) fn is_list(&self) -> bool {
         matches!(self, Self::Container(container) if container.is_list())
     }
@@ -331,6 +326,15 @@ where
         match self {
             DomNode::Container(container) => container.is_empty(),
             DomNode::Text(text_node) => text_node.data().is_empty(),
+            _ => false,
+        }
+    }
+
+    /// Returns true if there is no text in this DomNode.
+    pub fn has_no_text(&self) -> bool {
+        match self {
+            DomNode::Container(c) => c.has_no_text(),
+            DomNode::Text(t) => t.data().is_empty(),
             _ => false,
         }
     }
