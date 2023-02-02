@@ -164,28 +164,34 @@ export function computeNodeAndOffset(
     node: Node | null;
     offset: number;
 } {
+    // console.log(`node: ${currentNode.nodeName} offset: ${codeunits}`);
     const isEmptyListItem =
         currentNode.nodeName === 'LI' && !currentNode.hasChildNodes();
 
     if (currentNode.nodeType === Node.TEXT_NODE) {
+        // console.log(currentNode.textContent?.length);
         // For a text node, we need to check to see if it needs an extra offset
         // which involves climbing the tree through it's ancestors checking for
         // any of the nodes that require the extra offset.
         const shouldAddOffset = textNodeNeedsExtraOffset(currentNode);
         const extraOffset = shouldAddOffset ? 1 : 0;
 
+        // TODO the issue is coming from handling the nbsp that is inserted when
+        // we split like <p><strong>bold</strong>&nbsp;</p><p>line2</p>
+        // FIXME
+
         // We also have a special case for a text node that is a single &nbsp;
         // which is used as a placeholder for an empty paragraph - we don't want
         // to count it's length
-        if (textContentIsNbsp(currentNode)) {
-            if (codeunits === 0) {
-                // this is the only time we would 'find' this node
-                return { node: currentNode, offset: codeunits };
-            } else {
-                // otherwise we need to keep looking, but count this as 0 length
-                return { node: null, offset: codeunits - extraOffset };
-            }
-        }
+        // if (isNbspParagraphNode(currentNode)) {
+        //     if (codeunits === 0) {
+        //         // this is the only time we would 'find' this node
+        //         return { node: currentNode, offset: codeunits };
+        //     } else {
+        //         // otherwise we need to keep looking, but count this as 0 length
+        //         return { node: null, offset: codeunits - extraOffset };
+        //     }
+        // }
 
         if (codeunits <= (currentNode.textContent?.length || 0)) {
             // we don't need to use that extra offset if we've found the answer
@@ -364,9 +370,9 @@ function findCharacter(
             // ...but also have a special case where we don't count a textnode
             // if it is an nbsp, as this is what we use to mark out empty
             // paragraphs
-            if (textContentIsNbsp(currentNode)) {
-                return { found: false, offset: extraOffset };
-            }
+            // if (isNbspParagraphNode(currentNode)) {
+            //     return { found: false, offset: extraOffset };
+            // }
 
             return {
                 found: false,
@@ -517,7 +523,7 @@ function isEmptyInlineNode(node: Node) {
     );
 }
 
-function textContentIsNbsp(node: Node) {
+function isNbspParagraphNode(node: Node) {
     const nbsp = String.fromCharCode(160); // &nbsp;
     return node.textContent === nbsp;
 }
