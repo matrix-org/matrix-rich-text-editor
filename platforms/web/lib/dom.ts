@@ -169,16 +169,11 @@ export function computeNodeAndOffset(
         currentNode.nodeName === 'LI' && !currentNode.hasChildNodes();
 
     if (currentNode.nodeType === Node.TEXT_NODE) {
-        // console.log(currentNode.textContent?.length);
         // For a text node, we need to check to see if it needs an extra offset
         // which involves climbing the tree through it's ancestors checking for
         // any of the nodes that require the extra offset.
         const shouldAddOffset = textNodeNeedsExtraOffset(currentNode);
         const extraOffset = shouldAddOffset ? 1 : 0;
-
-        // TODO the issue is coming from handling the nbsp that is inserted when
-        // we split like <p><strong>bold</strong>&nbsp;</p><p>line2</p>
-        // FIXME
 
         // We also have a special case for a text node that is a single &nbsp;
         // which is used as a placeholder for an empty paragraph - we don't want
