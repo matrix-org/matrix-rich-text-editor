@@ -32,6 +32,7 @@ where
     S: UnicodeString,
 {
     document: DomNode<S>,
+    #[cfg(any(test, feature = "assert-invariants"))]
     is_transaction_in_progress: bool,
 }
 
@@ -46,6 +47,7 @@ where
 
         Self {
             document: DomNode::Container(document),
+            #[cfg(any(test, feature = "assert-invariants"))]
             is_transaction_in_progress: false,
         }
     }
@@ -59,6 +61,7 @@ where
 
         Self {
             document: root_node,
+            #[cfg(any(test, feature = "assert-invariants"))]
             is_transaction_in_progress: false,
         }
     }
@@ -114,17 +117,18 @@ where
     /// Check if a transaction is in progress.
     /// Inside a transaction, multiple DOM operations can be performed without
     /// the need to keep the DOM in a consistent state between them.
+    #[cfg(any(test, feature = "assert-invariants"))]
     pub fn is_transaction_in_progress(&self) -> bool {
         self.is_transaction_in_progress
     }
 
     /// Asserts the DOM is in a good state and starts a transaction.
     /// See [is_transaction_in_progress()].
+    #[cfg(any(test, feature = "assert-invariants"))]
     pub fn start_transaction(&mut self) {
         if self.is_transaction_in_progress() {
             panic!("Cannot start transaction as one is already in progress");
         }
-        #[cfg(any(test, feature = "assert-invariants"))]
         self.assert_invariants();
         self.is_transaction_in_progress = true;
     }
@@ -132,12 +136,12 @@ where
     /// Ends the current transaction and asserts the DOM is still in a good
     /// state.
     /// See [is_transaction_in_progress()].
+    #[cfg(any(test, feature = "assert-invariants"))]
     pub fn end_transaction(&mut self) {
         if !self.is_transaction_in_progress() {
             panic!("Cannot end transaction as no transaction is in progress");
         }
         self.is_transaction_in_progress = false;
-        #[cfg(any(test, feature = "assert-invariants"))]
         self.assert_invariants();
     }
 
