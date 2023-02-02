@@ -517,7 +517,7 @@ function isEmptyInlineNode(node: Node) {
     );
 }
 
-function isPlaceholderParagraphNode(node: Node) {
+export function isPlaceholderParagraphNode(node: Node) {
     // a placeholder paragraph will have single child that is a text node with
     // a content that is an nbsp
     const hasNoSiblings = node.parentNode?.childNodes.length === 1;

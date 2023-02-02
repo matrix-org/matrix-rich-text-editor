@@ -18,6 +18,7 @@ import {
     computeNodeAndOffset,
     countCodeunit,
     getCurrentSelection,
+    isPlaceholderParagraphNode,
     textLength,
     textNodeNeedsExtraOffset,
 } from './dom';
@@ -428,7 +429,6 @@ describe('computeNodeAndOffset', () => {
         // case when we have <strong>bold</strong> line2 then move cursor to
         // just before the l and press enter
         setEditorHtml('<p><strong>bold</strong>&nbsp;</p><p>line2</p>');
-        console.log(editor.innerHTML);
         const { node, offset } = computeNodeAndOffset(editor, 6);
 
         // Then
@@ -881,6 +881,32 @@ describe('textLength', () => {
         expect(textLength(listNode, -1)).toBe(
             numberOfListItems * (testStringLength + 1),
         );
+    });
+});
+
+describe('isPlaceholderParagraphNode', () => {
+    it('returns true for placeholder paragraph', () => {
+        setEditorHtml('<p>&nbsp;</p>');
+        const node = editor.childNodes[0].childNodes[0];
+        expect(isPlaceholderParagraphNode(node)).toBe(true);
+    });
+
+    it('returns false for whitespace paragraph', () => {
+        setEditorHtml('<p> </p>');
+        const node = editor.childNodes[0].childNodes[0];
+        expect(isPlaceholderParagraphNode(node)).toBe(false);
+    });
+
+    it('returns false for node with sibling', () => {
+        setEditorHtml('<p>text<em>italic</em></p>');
+        const node = editor.childNodes[0].childNodes[0];
+        expect(isPlaceholderParagraphNode(node)).toBe(false);
+    });
+
+    it('returns false for node with non paragraph parent', () => {
+        setEditorHtml('<div>text</div>');
+        const node = editor.childNodes[0].childNodes[0];
+        expect(isPlaceholderParagraphNode(node)).toBe(false);
     });
 });
 
