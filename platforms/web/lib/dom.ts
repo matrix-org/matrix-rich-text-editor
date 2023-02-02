@@ -164,7 +164,6 @@ export function computeNodeAndOffset(
     node: Node | null;
     offset: number;
 } {
-    // console.log(`node: ${currentNode.nodeName} offset: ${codeunits}`);
     const isEmptyListItem =
         currentNode.nodeName === 'LI' && !currentNode.hasChildNodes();
 
