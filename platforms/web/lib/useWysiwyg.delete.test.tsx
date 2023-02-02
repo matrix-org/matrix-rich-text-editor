@@ -100,4 +100,27 @@ describe('delete content', () => {
             expect(textbox).toHaveAttribute('data-content', 'fooar');
         });
     });
+
+    // eslint-disable-next-line max-len
+    it('Should call Selection.modify with the correct arguments when using meta + backspace', async () => {
+        // this test is the best we can do given the limitation that jsdom does
+        // not implement Selection.modify
+        const mockModify = vi.fn();
+        Object.assign(Selection.prototype, { modify: mockModify });
+
+        fireEvent.input(textbox, {
+            data: 'foobar',
+            inputType: 'insertText',
+        });
+        select(textbox, 6, 6);
+        fireEvent.keyDown(textbox, { key: 'Backspace', metaKey: true });
+
+        expect(mockModify).toHaveBeenCalledWith(
+            'extend',
+            'backward',
+            'lineboundary',
+        );
+
+        mockModify.mockRestore();
+    });
 });

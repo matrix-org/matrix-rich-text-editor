@@ -90,6 +90,8 @@ function getInputFromKeyDown(
                 return 'historyRedo';
             case 'Enter':
                 return 'sendMessage';
+            case 'Backspace':
+                return 'deleteSoftLineBackward';
         }
     }
 
