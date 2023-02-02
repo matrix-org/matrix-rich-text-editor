@@ -94,12 +94,12 @@ where
                 }
             }
             ListItem => {
-                let list_item_is_empty = self
+                let list_item_has_no_text = self
                     .state
                     .dom
                     .lookup_node(&block_location.node_handle)
-                    .is_empty_list_item();
-                if list_item_is_empty {
+                    .has_no_text();
+                if list_item_has_no_text {
                     let list_handle =
                         block_location.node_handle.parent_handle();
                     // Remove the current list item
@@ -121,7 +121,7 @@ where
                         let DomNode::Container(list_item) = li else {
                             panic!("List item is not a container")
                         };
-                        // An empty list item might still contain some formatting nodes that
+                        // A list item without text might still contain some formatting nodes that
                         // should be transferred to the new paragraph.
                         self.state.dom.insert_at(
                             &list_handle.next_sibling(),

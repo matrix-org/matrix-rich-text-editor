@@ -145,7 +145,7 @@ where
         let list_item_node = self.state.dom.lookup_node(list_item_handle);
         let list_node_handle = list_item_node.handle().parent_handle();
         if let DomNode::Container(list_item) = list_item_node {
-            if list_item.is_empty_list_item()
+            if list_item.has_no_text()
                 || list_item_handle.index_in_parent() == 0
             {
                 self.state.dom.extract_list_items(
