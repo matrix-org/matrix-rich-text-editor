@@ -17,8 +17,7 @@ use strum::IntoEnumIterator;
 use crate::action_state::ActionState;
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind};
-use crate::dom::range::DomLocationPosition;
-use crate::dom::range::DomLocationPosition::Before;
+use crate::dom::range::DomLocationPosition::{After, Before};
 use crate::dom::{DomLocation, Range};
 use crate::menu_state::MenuStateUpdate;
 use crate::ComposerAction::{Indent, OrderedList, Unindent, UnorderedList};
@@ -90,44 +89,34 @@ where
             .map(|format| format.action())
             .collect();
 
-        if let Some(intersection) = range.leaves().next().map(|l| {
+        let reversed_actions = if let Some(first_leaf) = range.leaves().next() {
             range
                 .leaves()
                 // do not need locations after the cursor for next logic
-                .filter(|loc| {
-                    !(loc.relative_position() == DomLocationPosition::After)
-                })
+                .filter(|loc| !(loc.relative_position() == After))
+                .map(|loc| self.compute_reversed_actions(&loc.node_handle))
                 .fold(
                     // Init with reversed_actions from the first leave.
-                    self.compute_reversed_actions(&l.node_handle),
+                    self.compute_reversed_actions(&first_leaf.node_handle),
                     // And intersect with the reversed_actions of all subsequent leaves.
-                    |set, leave| {
-                        set.intersection(
-                            &self.compute_reversed_actions(&leave.node_handle),
-                        )
-                        .cloned()
-                        .collect()
-                    },
+                    |i, set| i.intersection(&set).cloned().collect(),
                 )
-                .symmetric_difference(&toggled_format_actions)
-                .cloned()
-                .collect()
-        }) {
-            intersection
         } else if self.state.dom.document().children().is_empty() {
-            HashSet::from_iter(toggled_format_actions.into_iter())
-        } else if let Some(block_location) = range.deepest_block_node(None) {
-            if block_location.node_handle.is_root() {
+            HashSet::new()
+        } else if let Some(container_loc) = range.deepest_container_node(None) {
+            if container_loc.node_handle.is_root() {
                 HashSet::new()
             } else {
-                self.compute_reversed_actions(&block_location.node_handle)
-                    .symmetric_difference(&toggled_format_actions)
-                    .cloned()
-                    .collect()
+                self.compute_reversed_actions(&container_loc.node_handle)
             }
         } else {
             HashSet::new()
-        }
+        };
+
+        reversed_actions
+            .symmetric_difference(&toggled_format_actions)
+            .cloned()
+            .collect()
     }
 
     fn compute_reversed_actions(

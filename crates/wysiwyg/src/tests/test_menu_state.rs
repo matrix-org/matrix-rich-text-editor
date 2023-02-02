@@ -277,6 +277,18 @@ fn disable_inline_code_with_cursor_immediately_updates_disabled_actions() {
     assert!(model.action_is_enabled(ComposerAction::Link));
 }
 
+#[test]
+fn empty_paragraph_with_formatting_computes_expected_menu_state() {
+    let model = cm("<p><em>abc</em></p><p><em>|</em></p>");
+    assert!(model.action_is_reversed(ComposerAction::Italic));
+}
+
+#[test]
+fn empty_list_item_with_formatting_computes_expected_menu_state() {
+    let model = cm("<ol><li><em>abc</em></li><li><em>|</em></li></ol>");
+    assert!(model.action_is_reversed(ComposerAction::Italic));
+}
+
 fn assert_formatting_actions_and_links_are_disabled(
     model: &ComposerModel<Utf16String>,
 ) {
