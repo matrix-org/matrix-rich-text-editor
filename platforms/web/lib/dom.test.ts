@@ -421,6 +421,20 @@ describe('computeNodeAndOffset', () => {
         expect(node).toBe(editor.childNodes[3].childNodes[0]);
         expect(offset).toBe(0);
     });
+
+    // eslint-disable-next-line max-len
+    it('should deal with nbsp caused by line breaking part way through a tag', () => {
+        // When
+        // case when we have <strong>bold</strong> line2 then move cursor to
+        // just before the l and press enter
+        setEditorHtml('<p><strong>bold</strong>&nbsp;</p><p>line2</p>');
+        console.log(editor.innerHTML);
+        const { node, offset } = computeNodeAndOffset(editor, 6);
+
+        // Then
+        expect(node).toBe(editor.childNodes[1].childNodes[0]);
+        expect(offset).toBe(0);
+    });
 });
 
 describe('countCodeunit', () => {
