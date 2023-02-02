@@ -18,21 +18,44 @@ import UIKit
 
 /// Defines a custom background style for an attributed string element.
 public struct BlockStyle: Equatable {
-    enum RenderingType: Equatable {
+    public enum RenderingType: Equatable {
         case background
         case side(offset: CGFloat, width: CGFloat)
     }
 
+    /// Init.
+    ///
+    /// - Parameters:
+    ///   - backgroundColor: Background color of the element.
+    ///   - borderColor: Border color of the  element.
+    ///   - borderWidth: Border width of the element.
+    ///   - cornerRadius: Corner radius of the element
+    ///   - padding: Padding from the sides
+    ///   - type: Rendering type of the block
+    public init(backgroundColor: UIColor,
+                borderColor: UIColor,
+                borderWidth: CGFloat,
+                cornerRadius: CGFloat,
+                padding: CGFloat,
+                type: RenderingType) {
+        self.backgroundColor = backgroundColor
+        self.borderColor = borderColor
+        self.borderWidth = borderWidth
+        self.cornerRadius = cornerRadius
+        self.padding = padding
+        self.type = type
+    }
+
     /// Background color of the element.
-    let backgroundColor: UIColor
+    public let backgroundColor: UIColor
     /// Border color of the  element.
-    let borderColor: UIColor
+    public let borderColor: UIColor
     /// Border width of the element.
-    let borderWidth: CGFloat
+    public let borderWidth: CGFloat
     /// Corner radius of the element
-    let cornerRadius: CGFloat
+    public let cornerRadius: CGFloat
     /// Padding from the sides
-    let padding: CGFloat
+    public let padding: CGFloat
     /// Rendering type of the block
-    let type: RenderingType
+    public let type: RenderingType
 }
