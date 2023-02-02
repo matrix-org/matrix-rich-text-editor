@@ -82,6 +82,8 @@ function getInputFromKeyDown(
                 return 'formatItalic';
             case 'u':
                 return 'formatUnderline';
+            case 'e':
+                return 'formatInlineCode';
             case 'y':
                 return 'historyRedo';
             case 'z':
