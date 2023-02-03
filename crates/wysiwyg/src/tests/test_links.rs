@@ -691,3 +691,28 @@ fn set_link_across_multiple_paragraphs_containing_an_entire_pagraph() {
         </p>"
     );
 }
+
+#[test]
+fn create_link_after_enter_with_formatting_applied() {
+    let mut model = cm("|");
+    model.replace_text("test ".into());
+    model.bold();
+    model.replace_text("test".into());
+    model.enter();
+    model.set_link_with_text("https://matrix.org".into(), "test".into());
+    assert_eq!(
+        tx(&model),
+        "<p>test <strong>test</strong></p><p><a href=\"https://matrix.org\"><strong>test|</strong></a></p>",
+    );
+}
+
+#[test]
+fn create_link_after_enter_with_no_formatting_applied() {
+    let mut model = cm("|");
+    model.enter();
+    model.set_link_with_text("https://matrix.org".into(), "test".into());
+    assert_eq!(
+        tx(&model),
+        "<p>&nbsp;</p><p><a href=\"https://matrix.org\">test|</a></p>"
+    );
+}

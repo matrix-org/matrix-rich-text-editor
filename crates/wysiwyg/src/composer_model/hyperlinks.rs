@@ -132,6 +132,8 @@ where
                 if !split_points
                     .iter()
                     .any(|(h, _, _)| location.node_handle.is_ancestor_of(h))
+                    // Only include split points which actually have some text in the range.
+                    && end > start
                 {
                     split_points.push((
                         location.node_handle.clone(),
