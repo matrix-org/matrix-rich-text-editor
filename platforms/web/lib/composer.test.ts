@@ -32,6 +32,7 @@ const mockComposerModel = {
     enter: vi.fn(),
     indent: vi.fn(),
     unindent: vi.fn(),
+    set_content_from_html: vi.fn(),
 } as unknown as ComposerModel;
 
 const mockAction = vi.fn();
@@ -115,9 +116,16 @@ const testCases: testCase[] = [
         eventType: 'formatOutdent',
         composerMethod: 'unindent',
     },
+    {
+        eventType: 'insertReplacementText',
+        composerMethod: 'set_content_from_html',
+        composerArguments: ['content'],
+        actionArguments: ['content'],
+    },
 ];
 
 const editor = document.createElement('div');
+editor.innerHTML = 'content<br>';
 
 describe('processInput', () => {
     beforeEach(() => {
