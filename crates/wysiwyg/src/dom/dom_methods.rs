@@ -63,7 +63,7 @@ where
 
     pub fn replace_text_in(&mut self, new_text: S, start: usize, end: usize) {
         #[cfg(any(test, feature = "assert-invariants"))]
-        self.assert_invariants();
+        self.start_transaction();
 
         let extra_len = new_text.len() + 1;
         let range = self.find_range(start, end);
@@ -144,7 +144,7 @@ where
         }
 
         #[cfg(any(test, feature = "assert-invariants"))]
-        self.assert_invariants();
+        self.end_transaction();
     }
 
     /// Removes paragraph from the closest list item ancestor, if

@@ -137,6 +137,10 @@ where
                         .unwrap()
                         .is_empty()
                     {
+                        // FIXME: extract transaction to a dom method if possible
+                        #[cfg(any(test, feature = "assert-invariants"))]
+                        self.state.dom.start_transaction();
+
                         self.state.dom.remove(&list_handle);
 
                         // Then remove extra paragraphs from siblings if needed
@@ -155,6 +159,9 @@ where
                                 &list_handle.prev_sibling(),
                             );
                         }
+
+                        #[cfg(any(test, feature = "assert-invariants"))]
+                        self.state.dom.end_transaction();
                     }
                 } else if block_location.start_offset == 0 {
                     self.state.dom.insert_at(

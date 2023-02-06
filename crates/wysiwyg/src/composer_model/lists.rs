@@ -430,6 +430,10 @@ where
             list_items_after_removed_ones.insert(0, child);
         }
 
+        // FIXME: extract transaction to a dom method if possible
+        #[cfg(any(test, feature = "assert-invariants"))]
+        self.state.dom.start_transaction();
+
         let list_became_empty =
             get_container(&self.state.dom, &parent_handle).is_empty();
         if list_became_empty {
@@ -491,6 +495,9 @@ where
             .insert(&insert_into_handle, removed_list_items);
 
         self.state.dom.join_nodes_in_container(&insert_into_handle);
+
+        #[cfg(any(test, feature = "assert-invariants"))]
+        self.state.dom.end_transaction();
     }
 }
 

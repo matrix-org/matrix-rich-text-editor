@@ -62,6 +62,7 @@ where
         self.assert_no_adjacent_text_nodes();
         self.assert_exactly_one_generic_container();
         self.assert_all_nodes_in_containers_are_block_or_inline();
+        self.assert_list_item_never_contains_single_paragraph();
 
         // We probably want some more asserts like these:
         // self.assert_document_node_is_a_container();
@@ -138,6 +139,17 @@ where
                 panic!("All child nodes of handle {:?} must be either inline nodes or block nodes:\n{}", container.handle(), container.to_tree());
             }
         }
+    }
+
+    #[cfg(any(test, feature = "assert-invariants"))]
+    fn assert_list_item_never_contains_single_paragraph(&self) {
+        use super::nodes::dom_node::DomNodeKind;
+
+        self.iter_containers().filter(|c| c.is_list_item()).for_each(|c| {
+            if c.children().len() == 1 && c.children()[0].kind() == DomNodeKind::Paragraph {
+                panic!("List item at handle {:?} contains a single paragraph: \n{}", c.handle(), c.to_tree());
+            }
+        })
     }
 }
 
