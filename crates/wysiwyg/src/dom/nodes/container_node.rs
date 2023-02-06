@@ -587,73 +587,106 @@ where
         selection_writer: Option<&mut SelectionWriter>,
         state: ToHtmlState,
     ) {
-        if matches!(self.kind, ContainerNodeKind::Paragraph)
-            && state.is_inside_code_block
-        {
-            if self.is_empty()
-                && (state.is_last_node_in_parent
-                    || state.is_first_node_in_parent)
-            {
-                formatter.push(char::nbsp());
+        match self.kind() {
+            ContainerNodeKind::Paragraph => {
+                self.fmt_paragraph_html(formatter, selection_writer, state)
             }
-            self.fmt_children_html(formatter, selection_writer, state);
-            if !state.is_last_node_in_parent {
-                formatter.push('\n');
+            ContainerNodeKind::CodeBlock => {
+                self.fmt_code_block_html(formatter, selection_writer, state)
             }
-        } else {
-            let name = self.name();
-            if !name.is_empty() {
-                formatter.push('<');
-                if matches!(self.kind, ContainerNodeKind::CodeBlock) {
-                    formatter.push("pre");
-                } else {
-                    formatter.push(name);
-                }
-                if let Some(attrs) = &self.attrs {
-                    for attr in attrs {
-                        let (attr_name, value) = attr;
-                        formatter.push(' ');
-                        formatter.push(&**attr_name);
-                        formatter.push("=\"");
-                        formatter.push(&**value);
-                        formatter.push('"');
-                    }
-                }
-                formatter.push('>');
-            }
-
-            let mut state = state;
-            if matches!(self.kind, ContainerNodeKind::CodeBlock) {
-                state.is_inside_code_block = true;
-                formatter.push("<code>");
-            }
-
-            if matches!(self.kind, ContainerNodeKind::Paragraph)
-                && self.is_empty()
-            {
-                formatter.push(char::nbsp());
-            }
-
-            self.fmt_children_html(formatter, selection_writer, state);
-
-            if matches!(self.kind, ContainerNodeKind::CodeBlock) {
-                formatter.push("</code>");
-            }
-
-            if !name.is_empty() {
-                formatter.push("</");
-                if matches!(self.kind, ContainerNodeKind::CodeBlock) {
-                    formatter.push("pre");
-                } else {
-                    formatter.push(name);
-                }
-                formatter.push('>');
-            }
-        }
+            _ => self.fmt_default_html(formatter, selection_writer, state),
+        };
     }
 }
 
 impl<S: UnicodeString> ContainerNode<S> {
+    /// Wrap the nodes children in an html node of the same name
+    fn fmt_default_html(
+        &self,
+        formatter: &mut S,
+        selection_writer: Option<&mut SelectionWriter>,
+        state: ToHtmlState,
+    ) {
+        let name = self.name();
+        if !name.is_empty() {
+            self.fmt_tag_open(name, formatter, &self.attrs);
+        }
+
+        self.fmt_children_html(formatter, selection_writer, state);
+
+        if !name.is_empty() {
+            self.fmt_tag_close(name, formatter);
+        }
+    }
+
+    fn fmt_paragraph_html(
+        &self,
+        formatter: &mut S,
+        selection_writer: Option<&mut SelectionWriter>,
+        state: ToHtmlState,
+    ) {
+        assert!(matches!(self.kind, ContainerNodeKind::Paragraph));
+        if state.is_inside_code_block {
+            self.fmt_code_paragraph_html(formatter, selection_writer, state)
+        } else {
+            self.fmt_default_paragraph_html(formatter, selection_writer, state)
+        }
+    }
+
+    fn fmt_default_paragraph_html(
+        &self,
+        formatter: &mut S,
+        selection_writer: Option<&mut SelectionWriter>,
+        state: ToHtmlState,
+    ) {
+        assert!(matches!(self.kind, ContainerNodeKind::Paragraph));
+        let name = self.name();
+
+        self.fmt_tag_open(name, formatter, &self.attrs);
+        if self.is_empty() {
+            formatter.push(char::nbsp());
+        }
+        self.fmt_children_html(formatter, selection_writer, state);
+        self.fmt_tag_close(name, formatter);
+    }
+
+    fn fmt_code_paragraph_html(
+        &self,
+        formatter: &mut S,
+        selection_writer: Option<&mut SelectionWriter>,
+        state: ToHtmlState,
+    ) {
+        assert!(matches!(self.kind, ContainerNodeKind::Paragraph));
+        if self.is_empty()
+            && (state.is_last_node_in_parent || state.is_first_node_in_parent)
+        {
+            formatter.push(char::nbsp());
+        }
+        self.fmt_children_html(formatter, selection_writer, state);
+        if !state.is_last_node_in_parent {
+            formatter.push('\n');
+        }
+    }
+
+    fn fmt_code_block_html(
+        &self,
+        formatter: &mut S,
+        selection_writer: Option<&mut SelectionWriter>,
+        state: ToHtmlState,
+    ) {
+        assert!(matches!(self.kind, ContainerNodeKind::CodeBlock));
+        self.fmt_tag_open(&S::from("pre"), formatter, &self.attrs);
+        let mut state = state;
+        state.is_inside_code_block = true;
+
+        self.fmt_tag_open(&S::from("code"), formatter, &None::<Vec<(S, S)>>);
+
+        self.fmt_children_html(formatter, selection_writer, state);
+
+        self.fmt_tag_close(&S::from("code"), formatter);
+        self.fmt_tag_close(&S::from("pre"), formatter);
+    }
+
     fn fmt_children_html(
         &self,
         formatter: &mut S,
@@ -678,6 +711,33 @@ impl<S: UnicodeString> ContainerNode<S> {
                 child.fmt_html(formatter, None, state);
             }
         }
+    }
+
+    fn fmt_tag_open(
+        &self,
+        name: &S::Str,
+        formatter: &mut S,
+        attrs: &Option<Vec<(S, S)>>,
+    ) {
+        formatter.push('<');
+        formatter.push(name);
+        if let Some(attrs) = attrs {
+            for attr in attrs {
+                let (attr_name, value) = attr;
+                formatter.push(' ');
+                formatter.push(&**attr_name);
+                formatter.push("=\"");
+                formatter.push(&**value);
+                formatter.push('"');
+            }
+        }
+        formatter.push('>');
+    }
+
+    fn fmt_tag_close(&self, name: &S::Str, formatter: &mut S) {
+        formatter.push("</");
+        formatter.push(name);
+        formatter.push('>');
     }
 
     fn updated_state(
