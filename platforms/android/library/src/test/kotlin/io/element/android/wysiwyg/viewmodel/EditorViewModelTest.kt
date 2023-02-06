@@ -26,7 +26,7 @@ internal class EditorViewModelTest {
     private val composer = MockComposer()
     private val htmlConverter = BasicHtmlConverter()
     private val viewModel = EditorViewModel(
-        composer = composer.instance,
+        provideComposer = { composer.instance },
         htmlConverter = htmlConverter,
     )
     private val actionsStatesCallback = mockk<(

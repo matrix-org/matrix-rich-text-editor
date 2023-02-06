@@ -8,21 +8,25 @@ import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.inputhandlers.models.LinkAction
 import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
-import io.element.android.wysiwyg.utils.EditorIndexMapper
+import io.element.android.wysiwyg.utils.*
 import io.element.android.wysiwyg.utils.HtmlConverter
-import io.element.android.wysiwyg.utils.RustErrorCollector
-import io.element.android.wysiwyg.utils.throwIfDebugBuild
 import uniffi.wysiwyg_composer.*
 import uniffi.wysiwyg_composer.LinkAction as ComposerLinkAction
 
 internal class EditorViewModel(
-    private val composer: ComposerModelInterface?,
+    private val provideComposer: () -> ComposerModelInterface?,
     private val htmlConverter: HtmlConverter,
 ) : ViewModel() {
+
+    private var composer: ComposerModelInterface? = provideComposer()
 
     var rustErrorCollector: RustErrorCollector? = null
 
     private var actionStatesCallback: ((Map<ComposerAction, ActionState>) -> Unit)? = null
+
+    // Last known good HTML. If there is an internal error in the Rust model,
+    // we can manually recover to this state.
+    private var recoveryContentHtml: String = ""
 
     fun setActionStatesCallback(callback: ((Map<ComposerAction, ActionState>) -> Unit)?) {
         this.actionStatesCallback = callback
@@ -35,10 +39,10 @@ internal class EditorViewModel(
 
         val update = runCatching {
             composer?.select(newStart, newEnd)
-        }.onFailure { error ->
-            rustErrorCollector?.onRustError(error)
-            error.throwIfDebugBuild()
-        }.getOrNull()
+        }
+            .onFailure(::onComposerFailure)
+            .getOrNull()
+
         val menuState = update?.menuState()
         if (menuState is MenuState.Update) {
             actionStatesCallback?.invoke(menuState.actionStates)
@@ -85,10 +89,8 @@ internal class EditorViewModel(
                 is EditorInputAction.Indent -> composer?.indent()
                 is EditorInputAction.Unindent -> composer?.unindent()
             }
-        }.onFailure { error ->
-            rustErrorCollector?.onRustError(error)
-            error.throwIfDebugBuild()
-        }.getOrNull()
+        }.onFailure(::onComposerFailure)
+            .getOrNull()
 
         composer?.log()
 
@@ -98,10 +100,17 @@ internal class EditorViewModel(
         }
 
         return when (val textUpdate = update?.textUpdate()) {
-            is TextUpdate.ReplaceAll -> ReplaceTextResult(
-                text = stringToSpans(textUpdate.replacementHtml.string()),
-                selection = textUpdate.startUtf16Codeunit.toInt()..textUpdate.endUtf16Codeunit.toInt(),
-            )
+            is TextUpdate.ReplaceAll -> {
+                val replacementHtml = textUpdate.replacementHtml.string()
+
+                // Keep track of the last known good state
+                recoveryContentHtml = replacementHtml
+
+                ReplaceTextResult(
+                    text = stringToSpans(replacementHtml),
+                    selection = textUpdate.startUtf16Codeunit.toInt()..textUpdate.endUtf16Codeunit.toInt(),
+                )
+            }
             is TextUpdate.Select,
             is TextUpdate.Keep,
             null -> null
@@ -131,6 +140,16 @@ internal class EditorViewModel(
                 is ComposerLinkAction.CreateWithText -> LinkAction.InsertLink
             }
         }
+
+    private fun onComposerFailure(error: Throwable) {
+        rustErrorCollector?.onRustError(error)
+
+        // Recover from the crash
+        composer = provideComposer()
+        composer?.setContentFromHtml(recoveryContentHtml)
+
+        error.throwIfDebugBuild()
+    }
 
     private fun stringToSpans(string: String): CharSequence =
         htmlConverter.fromHtmlToSpans(string)

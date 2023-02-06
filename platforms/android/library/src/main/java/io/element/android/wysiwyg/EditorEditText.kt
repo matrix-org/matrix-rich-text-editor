@@ -58,7 +58,7 @@ class EditorEditText : TextInputEditText {
                     )
                 },
             )
-            val composer = if (!isInEditMode) newComposerModel() else null
+            val composer = { if (!isInEditMode) newComposerModel() else null }
             EditorViewModel(composer, htmlConverter)
         }
     )
