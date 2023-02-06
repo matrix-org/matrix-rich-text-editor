@@ -53,6 +53,11 @@ where
 
     #[cfg(any(test, feature = "assert-invariants"))]
     pub(crate) fn assert_invariants(&self) {
+        if self.is_transaction_in_progress() {
+            // Invariants should not be asserted during a transaction
+            // as the DOM is known to be in an inconsistent state
+            return;
+        }
         self.assert_no_empty_text_nodes();
         self.assert_no_adjacent_text_nodes();
         self.assert_exactly_one_generic_container();
@@ -142,7 +147,18 @@ mod test {
 
     use crate::dom::nodes::{ContainerNode, TextNode};
     use crate::dom::Dom;
-    use crate::{DomNode, InlineFormatType};
+    use crate::{DomHandle, DomNode, InlineFormatType};
+
+    #[test]
+    fn should_not_panic_if_transaction_in_progress() {
+        let mut dom = Dom::new(vec![]);
+        dom.start_transaction();
+        dom.insert(
+            &DomHandle::root().child_handle(0),
+            vec![DomNode::Text(TextNode::from(Utf16String::from("")))],
+        );
+        dom.assert_invariants();
+    }
 
     #[test]
     #[should_panic(expected = "Empty text node found")]

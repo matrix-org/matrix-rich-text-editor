@@ -32,6 +32,8 @@ where
     S: UnicodeString,
 {
     document: DomNode<S>,
+    #[cfg(any(test, feature = "assert-invariants"))]
+    is_transaction_in_progress: bool,
 }
 
 impl<S> Dom<S>
@@ -45,6 +47,8 @@ where
 
         Self {
             document: DomNode::Container(document),
+            #[cfg(any(test, feature = "assert-invariants"))]
+            is_transaction_in_progress: false,
         }
     }
 
@@ -57,6 +61,8 @@ where
 
         Self {
             document: root_node,
+            #[cfg(any(test, feature = "assert-invariants"))]
+            is_transaction_in_progress: false,
         }
     }
 
@@ -106,6 +112,47 @@ where
 
     pub fn children(&self) -> &Vec<DomNode<S>> {
         self.document().children()
+    }
+
+    /// Check if a transaction is in progress.
+    /// Inside a transaction, multiple DOM operations can be performed without
+    /// the need to keep the DOM in a consistent state between them.
+    #[cfg(any(test, feature = "assert-invariants"))]
+    pub fn is_transaction_in_progress(&self) -> bool {
+        self.is_transaction_in_progress
+    }
+
+    /// Asserts there is no transaction in progress (which implies the
+    /// Dom not known to be in bad state).
+    /// See [is_transaction_in_progress()].
+    #[cfg(any(test, feature = "assert-invariants"))]
+    pub fn assert_transaction_not_in_progress(&self) {
+        if self.is_transaction_in_progress() {
+            panic!("Transaction in progress");
+        }
+    }
+
+    /// Asserts the DOM is in a good state and starts a transaction.
+    /// See [is_transaction_in_progress()].
+    #[cfg(any(test, feature = "assert-invariants"))]
+    pub fn start_transaction(&mut self) {
+        if self.is_transaction_in_progress() {
+            panic!("Cannot start transaction as one is already in progress");
+        }
+        self.assert_invariants();
+        self.is_transaction_in_progress = true;
+    }
+
+    /// Ends the current transaction and asserts the DOM is still in a good
+    /// state.
+    /// See [is_transaction_in_progress()].
+    #[cfg(any(test, feature = "assert-invariants"))]
+    pub fn end_transaction(&mut self) {
+        if !self.is_transaction_in_progress() {
+            panic!("Cannot end transaction as no transaction is in progress");
+        }
+        self.is_transaction_in_progress = false;
+        self.assert_invariants();
     }
 
     /// Returns the last node handle of the Dom. It's useful for reverse iterators that should start
@@ -894,6 +941,51 @@ mod test {
         let actual_range = d.find_range(0, 12);
 
         assert_eq!(range_by_node, actual_range);
+    }
+
+    #[test]
+    fn transaction_succeeds() {
+        let mut d = cm("|").state.dom;
+        d.start_transaction();
+        d.end_transaction();
+    }
+
+    #[test]
+    #[should_panic(expected = "More than one generic container node found")]
+    fn transaction_start_asserts() {
+        let mut bad_dom =
+            dom(vec![&DomNode::Container(ContainerNode::default())]);
+        bad_dom.start_transaction();
+    }
+
+    #[test]
+    #[should_panic(expected = "More than one generic container node found")]
+    fn transaction_end_asserts() {
+        let mut dom = dom(vec![]);
+        dom.start_transaction();
+        let container =
+            DomNode::<Utf16String>::Container(ContainerNode::default());
+        dom.insert(&DomHandle::root().child_handle(0), vec![container]);
+        dom.end_transaction();
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "Cannot start transaction as one is already in progress"
+    )]
+    fn transaction_start_twice() {
+        let mut d = cm("|").state.dom;
+        d.start_transaction();
+        d.start_transaction();
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "Cannot end transaction as no transaction is in progress"
+    )]
+    fn transaction_end_without_start() {
+        let mut d = cm("|").state.dom;
+        d.end_transaction();
     }
 
     const NO_CHILDREN: &Vec<DomNode<Utf16String>> = &Vec::new();
