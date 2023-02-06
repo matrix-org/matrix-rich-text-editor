@@ -25,7 +25,7 @@ extension WysiwygUITests {
 
         assertTreeEquals(
             """
-            └>pre
+            └>codeblock
               └>p
                 └>"Some text"
             """
