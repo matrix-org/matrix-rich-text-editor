@@ -30,6 +30,8 @@ extension NSMutableAttributedString {
                 addAttribute(.blockStyle, value: style.codeBlockStyle, range: range)
                 guard let paragraphStyle = NSMutableParagraphStyle.createWithPadding(style.codeBlockStyle.padding) else { return }
                 addAttribute(.paragraphStyle, value: paragraphStyle, range: range)
+                // Remove inline code background color, if it exists.
+                removeAttribute(.backgroundColor, range: range)
             case TempColor.quote:
                 addAttribute(.blockStyle, value: style.quoteBlockStyle, range: range)
                 guard let paragraphStyle = NSMutableParagraphStyle.createWithPadding(style.quoteBlockStyle.padding) else { return }
