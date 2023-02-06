@@ -14,19 +14,11 @@
 // limitations under the License.
 //
 
-public extension String {
-    /// String containing a single NBSP character (`\u{00A0}`)
-    static let nbsp = "\u{00A0}"
-    /// String containing a single ZWSP character (`\u{200B}`)
-    static let zwsp = "\u{200B}"
-    /// String containing a single line separator character (`\u{2028}`)
-    static let lineSeparator = "\u{2028}"
-    /// String containing a single carriage return character (`\r`)
-    static let carriageReturn = "\r"
-    /// String containing a single line feed character (`\n`)
-    static let lineFeed = "\n"
-}
+import Foundation
 
-public extension Character {
-    static let nbsp = Character(.nbsp)
+extension NSRange {
+    /// Returns an `NSRange` with the length reduced by 1.
+    var excludingLast: NSRange {
+        .init(location: location, length: length - 1)
+    }
 }

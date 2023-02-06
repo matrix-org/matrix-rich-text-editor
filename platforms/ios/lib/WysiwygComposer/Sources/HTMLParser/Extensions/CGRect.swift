@@ -21,7 +21,8 @@ extension CGRect {
     ///
     /// - Parameters:
     ///   - frame: frame to extend into.
-    func extendHorizontally(in frame: CGRect) -> CGRect {
-        CGRect(x: frame.minX, y: minY, width: frame.width, height: height)
+    ///   - verticalPadding: padding to apply vertically
+    func extendHorizontally(in frame: CGRect, withVerticalPadding verticalPadding: CGFloat) -> CGRect {
+        CGRect(x: frame.minX, y: minY - verticalPadding, width: frame.width, height: height + 2 * verticalPadding)
     }
 }

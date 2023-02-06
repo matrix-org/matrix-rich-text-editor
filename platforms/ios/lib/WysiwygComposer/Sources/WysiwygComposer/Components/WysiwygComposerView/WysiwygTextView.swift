@@ -92,9 +92,30 @@ public class WysiwygTextView: UITextView {
         
         placeholder.draw(in: frame, withAttributes: attributes)
     }
+
+    override public func caretRect(for position: UITextPosition) -> CGRect {
+        // Compute system expected caret rect.
+        let rect = super.caretRect(for: position)
+        // Determine rect for glyph at expected position.
+        let index = offset(from: beginningOfDocument, to: position)
+        let glyphRange = layoutManager.glyphRange(forCharacterRange: .init(location: index, length: 1), actualCharacterRange: nil)
+        let glyphRect = layoutManager.boundingRect(forGlyphRange: glyphRange, in: textContainer)
+        // Use the system caret rect for `x` position and width and correct
+        // the `y` position and the height using the text glyphs.
+        return CGRect(x: rect.minX,
+                      y: glyphRect.minY - Constants.caretVerticalOffset,
+                      width: rect.width,
+                      height: glyphRect.height + 2 * Constants.caretVerticalOffset)
+    }
 }
 
 private extension WysiwygTextView {
+    enum Constants {
+        /// Vertical offset applied at the top and the bottom of
+        /// the caret to make it extend slightly from the text glyphs.
+        static let caretVerticalOffset: CGFloat = 1.5
+    }
+
     /// Perform an action while temporary removing the text view delegate.
     ///
     /// - Parameters:

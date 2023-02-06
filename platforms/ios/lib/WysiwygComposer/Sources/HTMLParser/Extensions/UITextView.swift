@@ -32,7 +32,8 @@ public extension UITextView {
             case .background:
                 let rect = layoutManager
                     .boundingRect(forGlyphRange: glyphRange, in: self.textContainer)
-                    .extendHorizontally(in: frame)
+                    /// Extend horizontally to the enclosing frame, and extend to half of the vertical  padding.
+                    .extendHorizontally(in: frame, withVerticalPadding: style.padding.vertical / 2.0)
 
                 styleLayer = BackgroundStyleLayer(style: style, frame: rect)
             case let .side(offset, width):

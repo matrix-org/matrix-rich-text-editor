@@ -65,7 +65,7 @@ final class StringDifferTests: XCTestCase {
                 .filter(\.isWhitespace)
         )
         XCTAssertNil(try StringDiffer.replacement(from: whitespaceString,
-                                                  to: String(repeating: .nbsp, count: whitespaceString.utf16Length)))
+                                                  to: String(repeating: Character.nbsp, count: whitespaceString.utf16Length)))
     }
 }
 

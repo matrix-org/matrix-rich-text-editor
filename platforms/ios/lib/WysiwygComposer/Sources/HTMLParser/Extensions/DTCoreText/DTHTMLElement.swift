@@ -46,8 +46,8 @@ extension DTHTMLElement {
            let child = childNodes.first as? DTTextHTMLElement,
            var text = child.text(),
            text != .nbsp {
-            let hasLeadingNbsp = text.hasPrefix("\(Character.nbsp)")
-            let hasTrailingNbsp = text.hasSuffix("\(Character.nbsp)")
+            let hasLeadingNbsp = text.hasPrefix(String.nbsp)
+            let hasTrailingNbsp = text.hasSuffix(String.nbsp)
             guard hasLeadingNbsp || hasTrailingNbsp else { return }
             removeAllChildNodes()
             if hasLeadingNbsp {

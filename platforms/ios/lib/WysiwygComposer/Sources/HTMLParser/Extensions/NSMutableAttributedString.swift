@@ -27,15 +27,13 @@ extension NSMutableAttributedString {
             guard let textBlock = value.firstObject as? DTTextBlock else { return }
             switch textBlock.backgroundColor {
             case TempColor.codeBlock:
-                addAttribute(.blockStyle, value: style.codeBlockStyle, range: range)
-                guard let paragraphStyle = NSMutableParagraphStyle.createWithPadding(style.codeBlockStyle.padding) else { return }
-                addAttribute(.paragraphStyle, value: paragraphStyle, range: range)
+                addAttributes(style.codeBlockStyle.attributes, range: range)
+                mutableString.replaceOccurrences(of: String.carriageReturn, with: String.lineSeparator, range: range.excludingLast)
                 // Remove inline code background color, if it exists.
                 removeAttribute(.backgroundColor, range: range)
             case TempColor.quote:
-                addAttribute(.blockStyle, value: style.quoteBlockStyle, range: range)
-                guard let paragraphStyle = NSMutableParagraphStyle.createWithPadding(style.quoteBlockStyle.padding) else { return }
-                addAttribute(.paragraphStyle, value: paragraphStyle, range: range)
+                addAttributes(style.quoteBlockStyle.attributes, range: range)
+                mutableString.replaceOccurrences(of: String.lineFeed, with: String.lineSeparator, range: range.excludingLast)
             default:
                 break
             }
@@ -69,21 +67,10 @@ extension NSMutableAttributedString {
     /// Remove the vertical spacing for paragraphs in the entire attributed string.
     func removeParagraphVerticalSpacing() {
         enumerateTypedAttribute(.paragraphStyle) { (style: NSParagraphStyle, range: NSRange, _) in
-            guard let mutableStyle = style.mutableCopy() as? NSMutableParagraphStyle else { return }
-
+            let mutableStyle = style.mut()
             mutableStyle.paragraphSpacing = 0
             mutableStyle.paragraphSpacingBefore = 0
             addAttribute(.paragraphStyle, value: mutableStyle as Any, range: range)
         }
-    }
-}
-
-private extension NSParagraphStyle {
-    static func createWithPadding(_ padding: CGFloat) -> NSParagraphStyle? {
-        guard let paragraphStyle = NSMutableParagraphStyle.default.mutableCopy() as? NSMutableParagraphStyle else { return nil }
-        paragraphStyle.firstLineHeadIndent = padding
-        paragraphStyle.headIndent = padding
-        paragraphStyle.tailIndent = -padding
-        return paragraphStyle
     }
 }
