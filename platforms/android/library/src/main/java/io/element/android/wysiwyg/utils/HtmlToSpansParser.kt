@@ -25,7 +25,6 @@ import org.xml.sax.ContentHandler
 import org.xml.sax.InputSource
 import org.xml.sax.Locator
 import java.io.StringReader
-import kotlin.math.max
 import kotlin.math.roundToInt
 
 /**
@@ -142,7 +141,10 @@ internal class HtmlToSpansParser(
             "i", "em" -> handleFormatStartTag(InlineFormat.Italic)
             "u" -> handleFormatStartTag(InlineFormat.Underline)
             "del" -> handleFormatStartTag(InlineFormat.StrikeThrough)
-            "code" -> handleFormatStartTag(InlineFormat.InlineCode)
+            "code" -> {
+                if(getLastPending<PlaceholderSpan.CodeBlock>() != null) return
+                handleFormatStartTag(InlineFormat.InlineCode)
+            }
             "a" -> {
                 val url = attrs?.getValue("href") ?: return
                 handleHyperlinkStart(url)
