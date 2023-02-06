@@ -114,6 +114,18 @@ export function processInput(
         case 'insertLineBreak':
         case 'insertParagraph':
             return action(composerModel.enter(), 'enter');
+        case 'insertReplacementText': {
+            // Remove br tag
+            const newContent = editor.innerHTML.slice(
+                0,
+                editor.innerHTML.length - 4,
+            );
+            return action(
+                composerModel.set_content_from_html(newContent),
+                'set_content_from_html',
+                newContent,
+            );
+        }
         case 'insertCompositionText':
         case 'insertFromComposition':
         case 'insertText':
