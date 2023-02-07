@@ -182,16 +182,16 @@ fn backspace_merges_formatting_nodes() {
 
 #[test]
 fn enter_in_code_block_in_text_node_adds_line_break_as_text() {
-    let mut model = cm("<pre>Test|</pre>");
+    let mut model = cm("<pre><code>Test|</code></pre>");
     model.enter();
-    assert_eq!(tx(&model), "<pre>Test\n&nbsp;|</pre>")
+    assert_eq!(tx(&model), "<pre><code>Test\n&nbsp;|</code></pre>")
 }
 
 #[test]
 fn enter_in_code_block_at_start_adds_the_line_break() {
-    let mut model = cm("<pre>|Test</pre>");
+    let mut model = cm("<pre><code>|Test</code></pre>");
     model.enter();
-    assert_eq!(tx(&model), "<pre>&nbsp;\n|Test</pre>")
+    assert_eq!(tx(&model), "<pre><code>&nbsp;\n|Test</code></pre>")
 }
 
 #[test]
@@ -202,56 +202,58 @@ fn enter_in_code_block_at_start_with_previous_line_break_moves_it_outside_the_co
     model.code_block();
     model.replace_text("Test".into());
     model.select(0.into(), 0.into());
-    assert_eq!(tx(&model), "<pre>|Test</pre>");
+    assert_eq!(tx(&model), "<pre><code>|Test</code></pre>");
     model.enter();
-    assert_eq!(tx(&model), "<pre>&nbsp;\n|Test</pre>");
+    assert_eq!(tx(&model), "<pre><code>&nbsp;\n|Test</code></pre>");
     model.select(0.into(), 0.into());
     model.enter();
-    assert_eq!(tx(&model), "<p>&nbsp;|</p><pre>Test</pre>");
+    assert_eq!(tx(&model), "<p>&nbsp;|</p><pre><code>Test</code></pre>");
 }
 
 #[test]
 fn enter_in_code_block_at_start_with_previous_line_break_moves_it_outside_the_code_block_with_text_around(
 ) {
-    // The initial line break will be removed, so it's the same as having a single line break at the start
-    let mut model = cm("<p>ASDA</p><pre>\n|\nTest</pre><p>ASD</p>");
+    let mut model = cm("<p>ASDA</p><pre><code>|\nTest</code></pre><p>ASD</p>");
     model.enter();
     assert_eq!(
         tx(&model),
-        "<p>ASDA</p><p>&nbsp;|</p><pre>Test</pre><p>ASD</p>"
+        "<p>ASDA</p><p>&nbsp;|</p><pre><code>Test</code></pre><p>ASD</p>"
     )
 }
 
 #[test]
 fn enter_in_code_block_at_start_with_a_line_break_after_it_adds_another_one() {
-    // The initial line break will be removed, so it's the same as having a single line break at the start
-    let mut model = cm("<pre>\n\n|Test</pre>");
+    let mut model = cm("<pre><code>\n\n|Test</code></pre>");
     model.enter();
-    assert_eq!(tx(&model), "<pre>&nbsp;\n\n|Test</pre>")
+    assert_eq!(tx(&model), "<pre><code>&nbsp;\n\n\n|Test</code></pre>")
 }
 
 #[test]
 fn enter_in_code_block_after_line_break_in_middle_splits_code_block() {
-    let mut model = cm("<pre>Test\n|\ncode blocks</pre>");
+    let mut model = cm("<pre><code>Test\n|\ncode blocks</code></pre>");
     model.enter();
     assert_eq!(
         tx(&model),
-        "<pre>Test</pre><p>&nbsp;|</p><pre>code blocks</pre>"
+        "<pre><code>Test</code></pre><p>&nbsp;|</p><pre><code>code blocks</code></pre>"
     )
 }
 
 #[test]
 fn enter_in_code_block_after_nested_line_break_in_middle_splits_code_block() {
-    let mut model = cm("<pre><b><i>Test\n|\ncode blocks</i></b></pre>");
+    let mut model =
+        cm("<pre><code><b><i>Test\n|\ncode blocks</i></b></code></pre>");
     model.enter();
-    assert_eq!(tx(&model), "<pre><b><i>Test</i></b></pre><p>&nbsp;|</p><pre><b><i>code blocks</i></b></pre>")
+    assert_eq!(tx(&model), "<pre><code><b><i>Test</i></b></code></pre><p>&nbsp;|</p><pre><code><b><i>code blocks</i></b></code></pre>")
 }
 
 #[test]
 fn enter_in_code_block_after_line_break_at_end_exits_it() {
-    let mut model = cm("<pre><b>Bold</b> plain\n|</pre>");
+    let mut model = cm("<pre><code><b>Bold</b> plain\n|</code></pre>");
     model.enter();
-    assert_eq!(tx(&model), "<pre><b>Bold</b> plain</pre><p>&nbsp;|</p>")
+    assert_eq!(
+        tx(&model),
+        "<pre><code><b>Bold</b> plain</code></pre><p>&nbsp;|</p>"
+    )
 }
 
 #[test]
@@ -306,7 +308,7 @@ fn double_enter_in_quote_at_end_when_not_empty_exits_it() {
 fn double_enter_in_code_block_when_empty_removes_it_and_adds_new_line() {
     let mut model = cm("|");
     model.code_block();
-    assert_eq!(tx(&model), "<pre>&nbsp;|</pre>");
+    assert_eq!(tx(&model), "<pre><code>&nbsp;|</code></pre>");
     model.enter();
     assert_eq!(tx(&model), "<p>&nbsp;|</p>");
     model.replace_text("asd".into());
@@ -336,7 +338,7 @@ fn double_enter_in_quote_in_nested_nodes() {
 
 #[test]
 fn backspace_at_start_of_code_block_moves_contents_to_previous_block() {
-    let mut model = cm("<p>Test</p><pre>|code</pre>");
+    let mut model = cm("<p>Test</p><pre><code>|code</code></pre>");
     model.backspace();
     assert_eq!(tx(&model), "<p>Test|code</p>");
 }
@@ -344,14 +346,18 @@ fn backspace_at_start_of_code_block_moves_contents_to_previous_block() {
 #[test]
 fn backspace_at_end_of_code_block_adds_the_content_of_the_next_block_node_to_it(
 ) {
-    let mut model = cm("<p>Test</p><pre>code</pre><p>|and more</p>");
+    let mut model =
+        cm("<p>Test</p><pre><code>code</code></pre><p>|and more</p>");
     model.backspace();
-    assert_eq!(tx(&model), "<p>Test</p><pre>code|and more</pre>");
+    assert_eq!(
+        tx(&model),
+        "<p>Test</p><pre><code>code|and more</code></pre>"
+    );
 }
 
 #[test]
 fn backspace_emptying_code_block_removes_it() {
-    let mut model = cm("<p>Test</p><pre>|</pre>");
+    let mut model = cm("<p>Test</p><pre><code>|</code></pre>");
     model.backspace();
     assert_eq!(tx(&model), "<p>Test|</p>");
 }
@@ -410,14 +416,17 @@ fn pressing_enter_after_wrapping_text_in_code_block_works() {
     model.replace_text("Some code".into());
     model.code_block();
     model.enter();
-    assert_eq!(tx(&model), "<pre>Some code\n&nbsp;|</pre>")
+    assert_eq!(tx(&model), "<pre><code>Some code\n&nbsp;|</code></pre>")
 }
 
 #[test]
 fn pressing_enter_at_the_start_of_a_multiline_code_block() {
-    let mut model = cm("<pre>|line_1\nline_2</pre>");
+    let mut model = cm("<pre><code>|line_1\nline_2</code></pre>");
     model.enter();
-    assert_eq!(tx(&model), "<pre>&nbsp;\n|line_1\nline_2</pre>")
+    assert_eq!(
+        tx(&model),
+        "<pre><code>&nbsp;\n|line_1\nline_2</code></pre>"
+    )
 }
 
 #[test]
@@ -433,16 +442,22 @@ fn pressing_enter_at_the_start_of_a_multiline_block_quote() {
 #[test]
 fn pressing_enter_in_the_middle_of_a_multiline_code_block_with_empty_starting_paragraphs(
 ) {
-    let mut model = cm("<pre>|line_1\nline_2</pre>");
+    let mut model = cm("<pre><code>|line_1\nline_2</code></pre>");
     model.enter();
-    assert_eq!(tx(&model), "<pre>&nbsp;\n|line_1\nline_2</pre>")
+    assert_eq!(
+        tx(&model),
+        "<pre><code>&nbsp;\n|line_1\nline_2</code></pre>"
+    )
 }
 
 #[test]
 fn pressing_enter_in_the_middle_of_a_multiline_code_block() {
-    let mut model = cm("<pre>line_0\n|line_1\nline_2</pre>");
+    let mut model = cm("<pre><code>line_0\n|line_1\nline_2</code></pre>");
     model.enter();
-    assert_eq!(tx(&model), "<pre>line_0\n\n|line_1\nline_2</pre>")
+    assert_eq!(
+        tx(&model),
+        "<pre><code>line_0\n\n|line_1\nline_2</code></pre>"
+    )
 }
 
 #[test]

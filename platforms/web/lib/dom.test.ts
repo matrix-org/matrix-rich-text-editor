@@ -344,7 +344,7 @@ describe('computeNodeAndOffset', () => {
             '<ol><li>ordered list</li></ol>',
             '<ul><li>ordered list</li></ul>',
             '<p>paragraph</p>',
-            '<pre>codeblock</pre>',
+            '<pre><code>codeblock</code></pre>',
             '<blockquote>another quote</blockquote>',
         ];
 
@@ -361,42 +361,35 @@ describe('computeNodeAndOffset', () => {
     it('Should find inside quote container node after a quote', () => {
         // When
         const firstNode = '<blockquote>quote</blockquote>';
-        const nextListNodes = [
-            '<ol><li>ordered list</li></ol>',
-            '<ul><li>ordered list</li></ul>',
-        ];
-        const nextOtherNodes = [
-            '<p>paragraph</p>',
-            '<pre>codeblock</pre>',
-            '<blockquote>another quote</blockquote>',
+        const nextNodes = [
+            { node: '<ol><li>ordered list</li></ol>', depth: 2 },
+            { node: '<ul><li>ordered list</li></ul>', depth: 2 },
+            { node: '<pre><code>codeblock</code></pre>', depth: 2 },
+            { node: '<p>paragraph</p>', depth: 1 },
+            { node: '<blockquote>another quote</blockquote>', depth: 1 },
         ];
 
-        nextListNodes.forEach((nextNode) => {
-            setEditorHtml(firstNode + nextNode);
+        nextNodes.forEach((nextNode) => {
+            setEditorHtml(firstNode + nextNode.node);
             const { node, offset } = computeNodeAndOffset(editor, 6);
 
+            let editorNextNode = editor.childNodes[1];
+            for (let i = 0; i < nextNode.depth; i++) {
+                editorNextNode = editorNextNode.childNodes[0];
+            }
             // Then
-            expect(node).toBe(editor.childNodes[1].childNodes[0].childNodes[0]);
-            expect(offset).toBe(0);
-        });
-
-        nextOtherNodes.forEach((nextNode) => {
-            setEditorHtml(firstNode + nextNode);
-            const { node, offset } = computeNodeAndOffset(editor, 6);
-
-            // Then
-            expect(node).toBe(editor.childNodes[1].childNodes[0]);
+            expect(node).toBe(editorNextNode);
             expect(offset).toBe(0);
         });
     });
 
     it('Should count newlines as characters in code blocks', () => {
         // When
-        setEditorHtml('<pre>length\nis 12</pre>');
+        setEditorHtml('<pre><code>length\nis 12</code></pre>');
         const { node } = computeNodeAndOffset(editor, 5);
 
         // Then
-        expect(node).toBe(editor.childNodes[0].childNodes[0]);
+        expect(node).toBe(editor.childNodes[0].childNodes[0].childNodes[0]);
         expect(node?.textContent).toHaveLength(12);
     });
 

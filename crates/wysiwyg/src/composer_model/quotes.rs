@@ -269,9 +269,12 @@ mod test {
 
     #[test]
     fn apply_quote_to_code_block() {
-        let mut model = cm("<pre>Some| code</pre>");
+        let mut model = cm("<pre><code>Some| code</code></pre>");
         model.quote();
-        assert_eq!(tx(&model), "<blockquote><pre>Some| code</pre></blockquote>")
+        assert_eq!(
+            tx(&model),
+            "<blockquote><pre><code>Some| code</code></pre></blockquote>"
+        )
     }
 
     #[test]

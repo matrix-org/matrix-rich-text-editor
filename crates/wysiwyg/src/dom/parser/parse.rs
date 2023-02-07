@@ -403,7 +403,7 @@ mod sys {
         }
 
         #[test]
-        fn parse_code_block_removes_internal_code_tag() {
+        fn parse_code_block_keeps_internal_code_tag() {
             let html = "\
                 <p>foo</p>\
                 <pre><code>Some code</code></pre>\
@@ -418,7 +418,7 @@ mod sys {
                 
                 ├>p
                 │ └>"foo"
-                ├>pre
+                ├>codeblock
                 │ └>p
                 │   └>"Some code"
                 └>p
@@ -429,8 +429,10 @@ mod sys {
 
         #[test]
         fn parse_code_block_roundtrips() {
-            assert_that!("<p>foo</p><pre>Some code</pre><p>bar</p>")
-                .roundtrips();
+            assert_that!(
+                "<p>foo</p><pre><code>Some code</code></pre><p>bar</p>"
+            )
+            .roundtrips();
         }
 
         #[test]
@@ -444,7 +446,7 @@ mod sys {
             // First, line breaks are added as placeholders for paragraphs
             assert_eq!(
                 dom.to_html().to_string(),
-                "<pre><b>Test<br />Code</b></pre>"
+                "<pre><code><b>Test<br />Code</b></code></pre>"
             );
             // Then these line breaks are post-processed and we get the actual paragraphs
             let dom = post_process_code_blocks_lines(
@@ -453,7 +455,7 @@ mod sys {
             );
             assert_eq!(
                 dom.to_html().to_string(),
-                "<pre><b>Test</b>\n<b>Code</b></pre>"
+                "<pre><code><b>Test</b>\n<b>Code</b></code></pre>"
             );
         }
 
@@ -485,7 +487,7 @@ mod sys {
                 r#"
                 
                 ├>p
-                ├>pre
+                ├>codeblock
                 │ ├>p
                 │ └>p
                 └>p
@@ -508,7 +510,7 @@ mod sys {
                 r#"
                 
                 ├>p
-                ├>pre
+                ├>codeblock
                 │ ├>p
                 │ └>p
                 └>p
@@ -934,7 +936,7 @@ mod js {
 
         #[wasm_bindgen_test]
         fn pre() {
-            roundtrip("foo <pre>~Some code</pre> bar");
+            roundtrip("foo <pre><code>~Some code</code></pre> bar");
         }
 
         #[wasm_bindgen_test]
@@ -954,7 +956,7 @@ mod js {
         
                 ├>p
                 │ └>"foo"
-                ├>pre
+                ├>codeblock
                 │ └>p
                 │   └>"Some code"
                 └>p
@@ -982,7 +984,7 @@ mod js {
                 r#"
                 
                 ├>p
-                ├>pre
+                ├>codeblock
                 │ ├>p
                 │ └>p
                 └>p
@@ -1004,7 +1006,7 @@ mod js {
                 r#"
                 
                 ├>p
-                ├>pre
+                ├>codeblock
                 │ ├>p
                 │ └>p
                 └>p
