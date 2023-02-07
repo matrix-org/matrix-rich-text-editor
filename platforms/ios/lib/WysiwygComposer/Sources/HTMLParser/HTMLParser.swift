@@ -112,12 +112,12 @@ public final class HTMLParser {
                 mutableAttributedString.addAttributes([.foregroundColor: style.linkColor], range: range)
             }
         }
-        
+
+        mutableAttributedString.removeParagraphVerticalSpacing()
         mutableAttributedString.applyBackgroundStyles(style: style)
         mutableAttributedString.applyInlineCodeBackgroundStyle(codeBackgroundColor: style.codeBlockStyle.backgroundColor)
         mutableAttributedString.replaceOrDeleteDiscardableText()
-        mutableAttributedString.removeParagraphVerticalSpacing()
-        
+
         removeTrailingNewlineIfNeeded(from: mutableAttributedString, given: html)
         return mutableAttributedString
     }

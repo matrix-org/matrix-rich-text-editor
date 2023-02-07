@@ -53,6 +53,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
         textView.adjustsFontForContentSizeCategory = true
         textView.backgroundColor = .clear
         textView.tintColor = UIColor(tintColor)
+        textView.clipsToBounds = false
         textView.placeholderFont = UIFont.preferredFont(forTextStyle: .body)
         textView.placeholderColor = UIColor(placeholderColor)
         textView.placeholder = placeholder

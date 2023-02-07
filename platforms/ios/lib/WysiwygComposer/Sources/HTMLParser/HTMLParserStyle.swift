@@ -28,13 +28,13 @@ public struct HTMLParserStyle {
                                    borderColor: UIColor(red: 227 / 255, green: 232 / 255, blue: 240 / 255, alpha: 1.0),
                                    borderWidth: 1.0,
                                    cornerRadius: 4.0,
-                                   padding: 10,
+                                   padding: BlockStyle.Padding(horizontal: 10, vertical: 12),
                                    type: .background),
         quoteBlockStyle: BlockStyle(backgroundColor: UIColor(red: 244 / 255, green: 246 / 255, blue: 250 / 255, alpha: 1.0),
                                     borderColor: UIColor(red: 227 / 255, green: 232 / 255, blue: 240 / 255, alpha: 1.0),
                                     borderWidth: 0,
                                     cornerRadius: 0,
-                                    padding: 25,
+                                    padding: BlockStyle.Padding(horizontal: 25, vertical: 12),
                                     type: .side(offset: 5, width: 4))
     )
 
@@ -42,11 +42,18 @@ public struct HTMLParserStyle {
     public var textColor: UIColor
     /// Color for link text.
     public var linkColor: UIColor
-    /// Code Block Style
+    /// Code Block Style.
     public var codeBlockStyle: BlockStyle
-    /// Quote Block Style
+    /// Quote Block Style.
     public var quoteBlockStyle: BlockStyle
 
+    /// Init.
+    ///
+    /// - Parameters:
+    ///   - textColor: Color for standard text.
+    ///   - linkColor: Color for link text.
+    ///   - codeBlockStyle: Code Block Style.
+    ///   - quoteBlockStyle: Quote Block Style.
     public init(textColor: UIColor,
                 linkColor: UIColor,
                 codeBlockStyle: BlockStyle,
