@@ -8,6 +8,7 @@ import androidx.test.espresso.ViewAction
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
+import io.element.android.wysiwyg.utils.RustErrorCollector
 import org.hamcrest.Matcher
 
 object Editor {
@@ -144,6 +145,22 @@ object Editor {
             )
         }
     }
+
+    class TestCrash(
+        private val errorCollector: RustErrorCollector?
+    ) : ViewAction {
+        override fun getConstraints(): Matcher<View> = isDisplayed()
+
+        override fun getDescription(): String = "Test Rust crash"
+
+        override fun perform(uiController: UiController?, view: View?) {
+            val editor = view as? EditorEditText ?: return
+            if(errorCollector != null) {
+                editor.rustErrorCollector = errorCollector
+            }
+            editor.testComposerCrashRecovery()
+        }
+    }
 }
 
 object EditorActions {
@@ -157,4 +174,7 @@ object EditorActions {
     fun redo() = Editor.Redo
     fun toggleFormat(format: InlineFormat) = Editor.ToggleFormat(format)
     fun addTextWatcher(watcher : (Editable?) -> Unit) = Editor.AddTextWatcher(watcher)
+    fun testCrash(
+        errorCollector: RustErrorCollector? = null
+    ) = Editor.TestCrash(errorCollector)
 }

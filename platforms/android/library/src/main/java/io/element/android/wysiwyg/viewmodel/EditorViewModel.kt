@@ -1,7 +1,9 @@
 package io.element.android.wysiwyg.viewmodel
 
 import android.text.Editable
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.ViewModel
+import io.element.android.wysiwyg.BuildConfig
 import io.element.android.wysiwyg.extensions.log
 import io.element.android.wysiwyg.extensions.string
 import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
@@ -27,6 +29,8 @@ internal class EditorViewModel(
     // Last known good HTML. If there is an internal error in the Rust model,
     // we can manually recover to this state.
     private var recoveryContentHtml: String = ""
+
+    private var crashOnComposerFailure: Boolean = BuildConfig.DEBUG
 
     fun setActionStatesCallback(callback: ((Map<ComposerAction, ActionState>) -> Unit)?) {
         this.actionStatesCallback = callback
@@ -144,11 +148,31 @@ internal class EditorViewModel(
     private fun onComposerFailure(error: Throwable) {
         rustErrorCollector?.onRustError(error)
 
+        if (crashOnComposerFailure) {
+            throw error
+        }
+
         // Recover from the crash
         composer = provideComposer()
         composer?.setContentFromHtml(recoveryContentHtml)
+    }
 
-        error.throwIfDebugBuild()
+    @VisibleForTesting
+    internal fun testComposerCrashRecovery() {
+        val crashOnComposerFailure = this.crashOnComposerFailure
+
+        // Normally debug builds should fail fast and crash but
+        // we disable this behaviour in order to test the recovery
+        // behaviour
+        this.crashOnComposerFailure = false
+
+        runCatching {
+            composer?.forcePanic()
+        }.onFailure {
+            onComposerFailure(it)
+        }
+
+        this.crashOnComposerFailure = crashOnComposerFailure
     }
 
     private fun stringToSpans(string: String): CharSequence =

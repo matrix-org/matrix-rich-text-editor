@@ -17,6 +17,7 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
+import androidx.annotation.VisibleForTesting
 import androidx.core.graphics.withTranslation
 import androidx.lifecycle.*
 import com.google.android.material.textfield.TextInputEditText
@@ -58,8 +59,8 @@ class EditorEditText : TextInputEditText {
                     )
                 },
             )
-            val composer = { if (!isInEditMode) newComposerModel() else null }
-            EditorViewModel(composer, htmlConverter)
+            val provideComposer = { if (!isInEditMode) newComposerModel() else null }
+            EditorViewModel(provideComposer, htmlConverter)
         }
     )
 
@@ -384,6 +385,10 @@ class EditorEditText : TextInputEditText {
         setTextFromComposerUpdate(result)
         setSelectionFromComposerUpdate(result.selection.last)
     }
+
+    @VisibleForTesting
+    internal fun testComposerCrashRecovery() =
+        viewModel.testComposerCrashRecovery()
 
     override fun onDraw(canvas: Canvas) {
         // need to draw bg first so that text can be on top during super.onDraw()
