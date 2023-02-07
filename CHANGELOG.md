@@ -1,6 +1,31 @@
 # Changelog
 
-# [0.23.0] - 2022-01-31
+# [1.0.0] - 2023-02-07
+
+### Added
+- Common: Add transaction functionality to Dom
+- Web: Add cmd-e shortcut for inline code
+- Web: Add soft delete line backwards implementation
+
+### Changed
+- Common: [API breaking change] Rename UnIndent as Unindent
+- iOS: Set BlockStyle parameters as public
+- iOS: Update padding and style of quotes and code block
+
+### Fixed
+- Common: Fix code block HTML rendering
+- Common: Fix links creation panicking when empty nodes are within the range
+- Common: Fix enter behaviour on empty list item with formatting
+- Common: Fix menu state in empty formatted paragraphs/list items
+- Common: Fix parent `li` paragraph hierarchy after backspacing an indented `li`
+- Web: Handle insertReplacementText input event
+- Web: Fix cursor positioning issue when splitting a node into paragraphs
+- Web: Fix Ctrl/cmd-a behaviour
+- Android: Fix test coverage configuration
+- Android: Fix rendering of code with trailing new line
+- iOS: Fix line indent after quotes & code blocks
+
+# [0.23.0] - 2023-01-31
 
 ### Added
 
@@ -11,7 +36,7 @@
 
 - Android: Fix crashes in `EditorStyledTextView`
 
-# [0.22.0] - 2022-01-30
+# [0.22.0] - 2023-01-30
 
 ### Added
 
@@ -34,7 +59,7 @@
 - Common: Fix button state behaviour when creating nested lists
 - Common: Fix button state behaviour when starting inline code
 
-# [0.21.0] - 2022-01-26
+# [0.21.0] - 2023-01-26
 
 ### Added
 
@@ -45,7 +70,7 @@
 - Common: Improve link behaviour when the selection contains block or structure nodes
 - iOS: Integrate DTCoreText
 
-# [0.20.0] - 2022-01-19
+# [0.20.0] - 2023-01-19
 
 ### Added
 
@@ -55,7 +80,7 @@
 
 - Common: Disable lists, inline code and links inside code blocks
 
-# [0.19.0] - 2022-01-17
+# [0.19.0] - 2023-01-17
 
 ### Changed
 
@@ -65,7 +90,7 @@
 
 - Web: Fix isWysiwygReady
 
-# [0.18.0] - 2022-01-16
+# [0.18.0] - 2023-01-16
 
 ### Added
 
@@ -78,20 +103,20 @@
 
 - Common: Default to https:// or mailto: for links without schemes
 
-# [0.17.0] - 2022-01-12
+# [0.17.0] - 2023-01-12
 
 ### Added
 
 - Common: Fixed a bug that created links with generic empty nodes in some cases
 
-# [0.16.0] - 2022-01-11
+# [0.16.0] - 2023-01-11
 
 ### Added
 
 - Web: InputEventProcessor is called on keyDown event
 - iOS: Add Quote/code blocks integration
 
-# [0.15.0] - 2022-01-10
+# [0.15.0] - 2023-01-10
 
 ### Added
 
@@ -106,7 +131,7 @@
 - Common: Fix creating lists with a leading line break
 - Common: Fix selection state after toggling off list
 
-# [0.14.0] - 2022-01-05
+# [0.14.0] - 2023-01-05
 
 ### Added
 
