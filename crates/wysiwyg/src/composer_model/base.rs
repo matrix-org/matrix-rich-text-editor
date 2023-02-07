@@ -105,12 +105,11 @@ where
                 self.state.end = self.state.start;
                 self.create_update_replace_all_with_menu_state()
             }
-            Err(e) => {
-                // We should log here - internal task PSU-741
-                self.state.dom = e.dom;
-                self.previous_states.clear();
-                self.next_states.clear();
-                self.create_update_replace_all_with_menu_state()
+            Err(_) => {
+                // Keep the previous version of the dom and create a recovery update.
+                self.create_update_panic_recovery(String::from(
+                    "An error occured during HTML parsing",
+                ))
             }
         }
     }
@@ -185,6 +184,19 @@ where
             self.state.dom.to_html(),
             self.state.start,
             self.state.end,
+            self.compute_menu_state(MenuStateComputeType::AlwaysUpdate),
+        )
+    }
+
+    pub(crate) fn create_update_panic_recovery(
+        &mut self,
+        error_message: String,
+    ) -> ComposerUpdate<S> {
+        ComposerUpdate::panic_recovery(
+            self.state.dom.to_html(),
+            self.state.start,
+            self.state.end,
+            error_message,
             self.compute_menu_state(MenuStateComputeType::AlwaysUpdate),
         )
     }

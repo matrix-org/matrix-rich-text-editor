@@ -33,6 +33,9 @@ struct ContentView: View {
         Spacer()
             .frame(width: nil, height: 50, alignment: .center)
         Composer(viewModel: viewModel)
+        Button("Crash") {
+            viewModel.setHtmlContent("<//code>")
+        }
         Button("Min/Max") {
             viewModel.maximised.toggle()
         }

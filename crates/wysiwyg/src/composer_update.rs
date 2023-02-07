@@ -13,7 +13,9 @@
 // limitations under the License.
 
 use crate::dom::UnicodeString;
-use crate::{Location, MenuState, ReplaceAll, Selection, TextUpdate};
+use crate::{
+    Location, MenuState, PanicRecovery, ReplaceAll, Selection, TextUpdate,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ComposerUpdate<S>
@@ -64,6 +66,24 @@ where
                 replacement_html,
                 start,
                 end,
+            }),
+            menu_state,
+        }
+    }
+
+    pub fn panic_recovery(
+        previous_html: S,
+        start: Location,
+        end: Location,
+        error_message: String,
+        menu_state: MenuState,
+    ) -> Self {
+        Self {
+            text_update: TextUpdate::PanicRecovery(PanicRecovery {
+                previous_html,
+                start,
+                end,
+                error_message,
             }),
             menu_state,
         }

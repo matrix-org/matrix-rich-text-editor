@@ -82,7 +82,10 @@ impl TreeSink for PaDomCreator {
     }
 
     fn create_comment(&mut self, _text: StrTendril) -> Self::Handle {
-        todo!("Comments not yet supported")
+        self.state
+            .parse_errors
+            .push(String::from("Comments not yet supported"));
+        self.state.dom.add_node(PaDomNode::Error)
     }
 
     fn create_pi(
@@ -90,7 +93,10 @@ impl TreeSink for PaDomCreator {
         _target: StrTendril,
         _data: StrTendril,
     ) -> Self::Handle {
-        todo!("create_pi not yet supported")
+        self.state
+            .parse_errors
+            .push(String::from("create_pi not yet supported"));
+        self.state.dom.add_node(PaDomNode::Error)
     }
 
     fn append(
@@ -103,15 +109,18 @@ impl TreeSink for PaDomCreator {
                 match self.state.dom.get_mut_node(parent) {
                     PaDomNode::Container(p) => p.children.push(child),
                     PaDomNode::Document(p) => p.children.push(child),
-                    PaDomNode::Text(_) => {
-                        panic!("Appending node to text! {:?}", parent)
-                    }
+                    PaDomNode::Text(_) => self
+                        .state
+                        .parse_errors
+                        .push(String::from("Appending node to text!")),
+                    PaDomNode::Error => {}
                 }
             }
             NodeOrText::AppendText(tendril) => {
                 let text_handle = match self.state.dom.get_node(parent) {
                     PaDomNode::Document(_) => None,
                     PaDomNode::Text(_) => Some(parent.clone()),
+                    PaDomNode::Error => None,
                     PaDomNode::Container(PaNodeContainer {
                         children, ..
                     }) => match children
@@ -145,8 +154,11 @@ impl TreeSink for PaDomCreator {
                         PaDomNode::Container(p) => p.children.push(new_handle),
                         PaDomNode::Document(p) => p.children.push(new_handle),
                         PaDomNode::Text(_) => {
-                            panic!("parent changed from container to text!")
+                            self.state.parse_errors.push(String::from(
+                                "parent changed from container to text!",
+                            ))
                         }
+                        PaDomNode::Error => {}
                     }
                 }
             }
@@ -217,7 +229,9 @@ impl TreeSink for PaDomCreator {
                 .collect();
             node.attrs.extend(to_add);
         } else {
-            panic!("Non-element passed to add_attrs_if_missing!");
+            self.state.parse_errors.push(String::from(
+                "Non-element passed to add_attrs_if_missing!",
+            ));
         }
     }
 
@@ -266,6 +280,7 @@ mod test {
                         children.extend(p.children.iter().cloned());
                     }
                     PaDomNode::Text(_) => {}
+                    PaDomNode::Error => {}
                 }
                 for ch in children {
                     find_used(dom_container, deleted_indices, &ch)
@@ -319,6 +334,7 @@ mod test {
                         }
                     }
                     PaDomNode::Text(_) => {}
+                    PaDomNode::Error => {}
                 }
             }
 
@@ -355,6 +371,7 @@ mod test {
                     p.children.push(child.clone());
                 }
                 PaDomNode::Text(_) => panic!("Parent can't be a text node"),
+                PaDomNode::Error => {}
             }
 
             for ch in test_node.children {

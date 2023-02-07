@@ -288,6 +288,7 @@ impl ComposerUpdate {
 #[wasm_bindgen(getter_with_clone)]
 pub struct TextUpdate {
     pub keep: Option<Keep>,
+    pub panic_recovery: Option<PanicRecovery>,
     pub replace_all: Option<ReplaceAll>,
     pub select: Option<Selection>,
 }
@@ -297,14 +298,35 @@ impl TextUpdate {
         match inner {
             wysiwyg::TextUpdate::Keep => Self {
                 keep: Some(Keep),
+                panic_recovery: None,
                 replace_all: None,
                 select: None,
             },
+            wysiwyg::TextUpdate::PanicRecovery(p) => {
+                let start_utf16_codeunit: usize = p.start.into();
+                let end_utf16_codeunit: usize = p.end.into();
+                Self {
+                    keep: None,
+                    panic_recovery: Some(PanicRecovery {
+                        replacement_html: p.previous_html.to_string(),
+                        start_utf16_codeunit: u32::try_from(
+                            start_utf16_codeunit,
+                        )
+                        .unwrap(),
+                        end_utf16_codeunit: u32::try_from(end_utf16_codeunit)
+                            .unwrap(),
+                        error_message: p.error_message,
+                    }),
+                    replace_all: None,
+                    select: None,
+                }
+            }
             wysiwyg::TextUpdate::ReplaceAll(r) => {
                 let start_utf16_codeunit: usize = r.start.into();
                 let end_utf16_codeunit: usize = r.end.into();
                 Self {
                     keep: None,
+                    panic_recovery: None,
                     replace_all: Some(ReplaceAll {
                         replacement_html: r.replacement_html.to_string(),
                         start_utf16_codeunit: u32::try_from(
@@ -322,6 +344,7 @@ impl TextUpdate {
                 let end_utf16_codeunit: usize = s.end.into();
                 Self {
                     keep: None,
+                    panic_recovery: None,
                     replace_all: None,
                     select: Some(Selection {
                         start_utf16_codeunit: u32::try_from(
@@ -340,6 +363,15 @@ impl TextUpdate {
 #[derive(Clone)]
 #[wasm_bindgen]
 pub struct Keep;
+
+#[derive(Clone)]
+#[wasm_bindgen(getter_with_clone)]
+pub struct PanicRecovery {
+    pub replacement_html: String,
+    pub start_utf16_codeunit: u32,
+    pub end_utf16_codeunit: u32,
+    pub error_message: String,
+}
 
 #[derive(Clone)]
 #[wasm_bindgen(getter_with_clone)]

@@ -33,6 +33,23 @@ fn set_content_from_markdown() {
 }
 
 #[test]
+fn set_content_from_html_failure() {
+    let mut model = ComposerModel::new();
+    let invalid_htmls = vec!["<//code>", "<strong>", "<em", "</p>test"];
+
+    for html in invalid_htmls {
+        let update = model.set_content_from_html(&Utf16String::from(html));
+        match update.text_update {
+            crate::TextUpdate::PanicRecovery(_) => {}
+            _ => {
+                panic!("Panic recovery did not trigger for HTML: \"{}\"", html)
+            }
+        }
+        assert_eq!(tx(&model), "|");
+    }
+}
+
+#[test]
 fn set_content_from_html_moves_cursor_to_the_end() {
     let mut model = cm("abc|");
     model.set_content_from_html(&"content".into());

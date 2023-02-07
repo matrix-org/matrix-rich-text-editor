@@ -20,8 +20,20 @@ where
     S: UnicodeString,
 {
     Keep,
+    PanicRecovery(PanicRecovery<S>),
     ReplaceAll(ReplaceAll<S>),
     Select(Selection),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PanicRecovery<S>
+where
+    S: UnicodeString,
+{
+    pub previous_html: S,
+    pub start: Location,
+    pub end: Location,
+    pub error_message: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -343,6 +343,12 @@ private extension WysiwygComposerViewModel {
                 textView.apply(attributedContent)
                 updateCompressedHeightIfNeeded()
             }
+        case let .panicRecovery(previousHtml: codeUnits,
+                                startUtf16Codeunit: start,
+                                endUtf16Codeunit: end,
+                                errorMessage: error):
+            Logger.viewModel.error("\(error)")
+            applyReplaceAll(codeUnits: codeUnits, start: start, end: end)
         case let .select(startUtf16Codeunit: start,
                          endUtf16Codeunit: end):
             applySelect(start: start, end: end)

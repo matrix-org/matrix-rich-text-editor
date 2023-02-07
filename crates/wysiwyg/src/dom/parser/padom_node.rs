@@ -18,12 +18,14 @@ use once_cell::sync::OnceCell;
 use super::{paqual_name, PaNodeContainer, PaNodeText};
 
 static TEXT: OnceCell<QualName> = OnceCell::new();
+static ERROR: OnceCell<QualName> = OnceCell::new();
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum PaDomNode {
     Container(PaNodeContainer),
     Document(PaNodeContainer),
     Text(PaNodeText),
+    Error,
 }
 
 impl PaDomNode {
@@ -32,6 +34,7 @@ impl PaDomNode {
             PaDomNode::Container(n) => &n.name,
             PaDomNode::Document(n) => &n.name,
             PaDomNode::Text(_) => q(&TEXT, ""),
+            PaDomNode::Error => q(&ERROR, ""),
         }
     }
 }

@@ -66,6 +66,12 @@ dictionary ComposerState {
 [Enum]
 interface TextUpdate {
     Keep();
+    PanicRecovery(
+        sequence<u16> previous_html,
+        u32 start_utf16_codeunit,
+        u32 end_utf16_codeunit,
+        string error_message
+    );
     ReplaceAll(
         sequence<u16> replacement_html,
         u32 start_utf16_codeunit,

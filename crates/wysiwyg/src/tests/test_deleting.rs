@@ -74,9 +74,8 @@ fn backspacing_a_line_break_deletes_it() {
     let update = model.add_line_break();
 
     let replace_all = match update.text_update {
-        TextUpdate::Keep => panic!("expected ReplaceAll"),
         TextUpdate::ReplaceAll(replace_all) => replace_all,
-        TextUpdate::Select(_) => panic!("expected ReplaceAll"),
+        _ => panic!("expected ReplaceAll"),
     };
 
     assert_eq!(replace_all.start, 4);

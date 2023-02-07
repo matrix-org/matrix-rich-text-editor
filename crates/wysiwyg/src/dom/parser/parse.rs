@@ -121,6 +121,7 @@ mod sys {
                             self.current_path.contains(&CodeBlock);
                         convert_text(&text.content, node, is_inside_code_block);
                     }
+                    PaDomNode::Error => {}
                 }
             }
         }
