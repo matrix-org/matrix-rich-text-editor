@@ -63,9 +63,12 @@ where
 
         let reversed = self.compute_reversed_actions_from_range(range);
         let disabled = self.compute_disabled_actions();
+        let hidden = self.compute_hidden_actions();
 
         for action in ComposerAction::iter() {
-            let state = if disabled.contains(&action) {
+            let state = if hidden.contains(&action) {
+                ActionState::Hidden
+            } else if disabled.contains(&action) {
                 ActionState::Disabled
             } else if reversed.contains(&action) {
                 ActionState::Reversed
@@ -180,6 +183,18 @@ where
             ContainerNodeKind::CodeBlock => Some(ComposerAction::CodeBlock),
             ContainerNodeKind::Quote => Some(ComposerAction::Quote),
             _ => None,
+        }
+    }
+
+    fn compute_hidden_actions(&self) -> HashSet<ComposerAction> {
+        let (s, e) = self.safe_selection();
+        let locations = &self.state.dom.find_range(s, e).locations;
+        let top_most_list_locations =
+            self.find_top_most_list_item_locations(locations);
+        if top_most_list_locations.is_empty() {
+            HashSet::from([ComposerAction::Indent, ComposerAction::Unindent])
+        } else {
+            HashSet::new()
         }
     }
 

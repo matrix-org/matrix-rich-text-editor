@@ -89,14 +89,14 @@ mod test {
     fn redo_indent_unindent_disabled() -> HashMap<ComposerAction, ActionState> {
         HashMap::from([
             (ComposerAction::Bold, ActionState::Enabled),
-            (ComposerAction::Indent, ActionState::Disabled),
+            (ComposerAction::Indent, ActionState::Hidden),
             (ComposerAction::InlineCode, ActionState::Enabled),
             (ComposerAction::Italic, ActionState::Enabled),
             (ComposerAction::Link, ActionState::Enabled),
             (ComposerAction::OrderedList, ActionState::Enabled),
             (ComposerAction::Redo, ActionState::Disabled),
             (ComposerAction::StrikeThrough, ActionState::Enabled),
-            (ComposerAction::Unindent, ActionState::Disabled),
+            (ComposerAction::Unindent, ActionState::Hidden),
             (ComposerAction::Underline, ActionState::Enabled),
             (ComposerAction::Undo, ActionState::Enabled),
             (ComposerAction::UnorderedList, ActionState::Enabled),
@@ -109,14 +109,14 @@ mod test {
     ) -> HashMap<ComposerAction, ActionState> {
         HashMap::from([
             (ComposerAction::Bold, ActionState::Enabled),
-            (ComposerAction::Indent, ActionState::Disabled),
+            (ComposerAction::Indent, ActionState::Hidden),
             (ComposerAction::InlineCode, ActionState::Enabled),
             (ComposerAction::Italic, ActionState::Enabled),
             (ComposerAction::Link, ActionState::Enabled),
             (ComposerAction::OrderedList, ActionState::Enabled),
             (ComposerAction::Redo, ActionState::Disabled),
             (ComposerAction::StrikeThrough, ActionState::Enabled),
-            (ComposerAction::Unindent, ActionState::Disabled),
+            (ComposerAction::Unindent, ActionState::Hidden),
             (ComposerAction::Underline, ActionState::Enabled),
             (ComposerAction::Undo, ActionState::Disabled),
             (ComposerAction::UnorderedList, ActionState::Enabled),

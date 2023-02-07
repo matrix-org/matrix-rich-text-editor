@@ -50,6 +50,14 @@ extension WysiwygAction: CaseIterable, Identifiable {
         viewModel.actionStates[composerAction] == ActionState.disabled
     }
 
+    /// Compute hidden status for action.
+    ///
+    /// - Parameter viewModel: Composer's view model.
+    /// - Returns: True if the action is hidden, false otherwise.
+    public func isHidden(_ viewModel: WysiwygComposerViewModel) -> Bool {
+        viewModel.actionStates[composerAction] == ActionState.hidden
+    }
+
     var accessibilityIdentifier: WysiwygSharedAccessibilityIdentifier {
         switch self {
         case .bold:

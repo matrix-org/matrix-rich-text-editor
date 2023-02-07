@@ -19,4 +19,5 @@ pub enum ActionState {
     Enabled,
     Reversed,
     Disabled,
+    Hidden,
 }

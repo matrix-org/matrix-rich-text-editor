@@ -132,6 +132,7 @@ class RichTextEditor : LinearLayout {
         actionStates: Map<ComposerAction, ActionState>
     ) {
         val state = actionStates[action]
+        button.isVisible = state != ActionState.HIDDEN
         button.isEnabled = state != ActionState.DISABLED
         button.isActivated = state == ActionState.REVERSED
     }

@@ -56,6 +56,9 @@ pub enum ActionState {
 
     /// The button cannot be clicked
     Disabled,
+
+    /// The button is hidden
+    Hidden,
 }
 
 trait IntoFfi {

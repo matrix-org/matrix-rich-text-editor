@@ -147,6 +147,11 @@ where
         self.action_states.get(&action) == Some(&ActionState::Disabled)
     }
 
+    #[cfg(test)]
+    pub(crate) fn action_is_hidden(&self, action: ComposerAction) -> bool {
+        self.action_states.get(&action) == Some(&ActionState::Hidden)
+    }
+
     pub(crate) fn create_update_update_selection(
         &mut self,
     ) -> ComposerUpdate<S> {

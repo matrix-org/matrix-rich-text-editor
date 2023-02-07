@@ -86,15 +86,15 @@ fn updating_model_updates_disabled_actions() {
     assert!(model.action_is_enabled(ComposerAction::UnorderedList));
     assert!(model.action_is_disabled(ComposerAction::Undo));
     assert!(model.action_is_disabled(ComposerAction::Redo));
-    assert!(model.action_is_disabled(ComposerAction::Indent));
-    assert!(model.action_is_disabled(ComposerAction::Unindent));
+    assert!(model.action_is_hidden(ComposerAction::Indent));
+    assert!(model.action_is_hidden(ComposerAction::Unindent));
 
     replace_text(&mut model, "a");
     model.select(Location::from(0), Location::from(1));
     model.bold();
     assert!(model.action_is_disabled(ComposerAction::Redo));
-    assert!(model.action_is_disabled(ComposerAction::Indent));
-    assert!(model.action_is_disabled(ComposerAction::Unindent));
+    assert!(model.action_is_hidden(ComposerAction::Indent));
+    assert!(model.action_is_hidden(ComposerAction::Unindent));
     assert!(model.action_is_enabled(ComposerAction::StrikeThrough));
 
     model.undo();
@@ -287,6 +287,19 @@ fn empty_paragraph_with_formatting_computes_expected_menu_state() {
 fn empty_list_item_with_formatting_computes_expected_menu_state() {
     let model = cm("<ol><li><em>abc</em></li><li><em>|</em></li></ol>");
     assert!(model.action_is_reversed(ComposerAction::Italic));
+}
+
+#[test]
+fn indent_unindent_is_hidden_outside_of_list() {
+    let mut model = cm("abc|");
+    assert!(model.action_is_hidden(ComposerAction::Indent));
+    assert!(model.action_is_hidden(ComposerAction::Unindent));
+    model.ordered_list();
+    assert!(model.action_is_disabled(ComposerAction::Indent));
+    assert!(model.action_is_disabled(ComposerAction::Unindent));
+    model.enter();
+    assert!(model.action_is_enabled(ComposerAction::Indent));
+    assert!(model.action_is_disabled(ComposerAction::Unindent));
 }
 
 fn assert_formatting_actions_and_links_are_disabled(

@@ -247,20 +247,21 @@ mod test {
                 Location::from(1),
                 Location::from(1),
                 MenuState::Update(MenuStateUpdate {
-                    action_states: indent_unindent_redo_disabled()
+                    action_states: indent_unindent_hidden_redo_disabled()
                 }),
             )
         );
     }
 
-    fn indent_unindent_redo_disabled() -> HashMap<ComposerAction, ActionState> {
+    fn indent_unindent_hidden_redo_disabled(
+    ) -> HashMap<ComposerAction, ActionState> {
         let actions = ComposerAction::iter().map(|action| {
             if matches!(
                 action,
-                ComposerAction::Redo
-                    | ComposerAction::Indent
-                    | ComposerAction::Unindent
+                ComposerAction::Indent | ComposerAction::Unindent
             ) {
+                (action, ActionState::Hidden)
+            } else if action == ComposerAction::Redo {
                 (action, ActionState::Disabled)
             } else {
                 (action, ActionState::Enabled)
