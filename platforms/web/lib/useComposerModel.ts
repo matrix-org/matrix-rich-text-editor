@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { RefObject, useEffect, useState } from 'react';
+import { RefObject, useCallback, useEffect, useState } from 'react';
 
 // rust generated bindings
 import init, {
@@ -62,36 +62,43 @@ export function useComposerModel(
         null,
     );
 
-    useEffect(() => {
-        const initModel = async () => {
+    const initModel = useCallback(
+        async (initialContent?: string) => {
             await initOnce();
 
             if (initialContent) {
-                setComposerModel(
-                    new_composer_model_from_html(
-                        initialContent,
-                        0,
-                        initialContent.length,
-                    ),
-                );
-
-                if (editorRef.current) {
-                    replaceEditor(
-                        editorRef.current,
-                        initialContent,
-                        0,
-                        initialContent.length,
+                try {
+                    setComposerModel(
+                        new_composer_model_from_html(
+                            initialContent,
+                            0,
+                            initialContent.length,
+                        ),
                     );
+
+                    if (editorRef.current) {
+                        replaceEditor(
+                            editorRef.current,
+                            initialContent,
+                            0,
+                            initialContent.length,
+                        );
+                    }
+                } catch (e) {
+                    setComposerModel(new_composer_model());
                 }
             } else {
                 setComposerModel(new_composer_model());
             }
-        };
+        },
+        [setComposerModel, editorRef],
+    );
 
+    useEffect(() => {
         if (editorRef.current) {
-            initModel();
+            initModel(initialContent);
         }
-    }, [editorRef, initialContent]);
+    }, [editorRef, initModel, initialContent]);
 
-    return composerModel;
+    return { composerModel, initModel };
 }
