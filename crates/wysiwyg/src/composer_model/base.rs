@@ -16,6 +16,7 @@ use crate::action_state::ActionState;
 use crate::composer_model::menu_state::MenuStateComputeType;
 use crate::composer_state::ComposerState;
 use crate::dom::parser::parse;
+use crate::dom::to_plain_text::ToPlainText;
 use crate::dom::{Dom, UnicodeString};
 use crate::markdown_html_parser::MarkdownHTMLParser;
 use crate::{
@@ -199,6 +200,10 @@ where
 
     pub fn get_content_as_markdown(&self) -> S {
         self.state.dom.to_markdown().unwrap()
+    }
+
+    pub fn get_content_as_plain_text(&self) -> S {
+        self.state.dom.to_plain_text()
     }
 
     pub fn get_current_state(&self) -> &ComposerState<S> {

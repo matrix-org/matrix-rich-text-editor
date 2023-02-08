@@ -19,6 +19,7 @@ use crate::dom::nodes::{
 };
 use crate::dom::to_html::{ToHtml, ToHtmlState};
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
+use crate::dom::to_plain_text::ToPlainText;
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
 use crate::dom::unicode_string::UnicodeStrExt;
@@ -382,6 +383,19 @@ where
             DomNode::Container(n) => n.to_raw_text(),
             DomNode::LineBreak(n) => n.to_raw_text(),
             DomNode::Text(n) => n.to_raw_text(),
+        }
+    }
+}
+
+impl<S> ToPlainText<S> for DomNode<S>
+where
+    S: UnicodeString,
+{
+    fn to_plain_text(&self) -> S {
+        match self {
+            DomNode::Container(n) => n.to_plain_text(),
+            DomNode::LineBreak(n) => n.to_plain_text(),
+            DomNode::Text(n) => n.to_plain_text(),
         }
     }
 }

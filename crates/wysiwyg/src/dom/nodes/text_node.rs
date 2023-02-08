@@ -17,6 +17,7 @@ use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::to_html::{ToHtml, ToHtmlState};
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
+use crate::dom::to_plain_text::ToPlainText;
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
 use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt, UnicodeStringExt};
@@ -235,6 +236,15 @@ where
     S: UnicodeString,
 {
     fn to_raw_text(&self) -> S {
+        self.data.clone()
+    }
+}
+
+impl<S> ToPlainText<S> for TextNode<S>
+where
+    S: UnicodeString,
+{
+    fn to_plain_text(&self) -> S {
         self.data.clone()
     }
 }

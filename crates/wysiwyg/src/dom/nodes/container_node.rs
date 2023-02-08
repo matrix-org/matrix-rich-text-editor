@@ -20,9 +20,10 @@ use crate::dom::dom_handle::DomHandle;
 use crate::dom::nodes::dom_node::{DomNode, DomNodeKind};
 use crate::dom::to_html::{ToHtml, ToHtmlState};
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
+use crate::dom::to_plain_text::ToPlainText;
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
-use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
+use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt, UnicodeStringExt};
 use crate::dom::{self, UnicodeString};
 use crate::{InlineFormatType, ListType};
 
@@ -762,6 +763,61 @@ where
             text.push(child.to_raw_text());
         }
         text
+    }
+}
+
+impl<S> ToPlainText<S> for ContainerNode<S>
+where
+    S: UnicodeString,
+{
+    fn to_plain_text(&self) -> S {
+        let mut text = S::default();
+        match self.kind {
+            ContainerNodeKind::List(_) => fmt_list(self, &mut text),
+            ContainerNodeKind::ListItem => fmt_list_item(self, &mut text),
+            _ => fmt_default(self, &mut text),
+        }
+        return text;
+
+        #[inline(always)]
+        fn fmt_list<S: UnicodeString>(
+            container: &ContainerNode<S>,
+            text: &mut S,
+        ) {
+            for (index, child) in container.children.iter().enumerate() {
+                if index != 0 && !matches!(text.chars().last(), Some('\n')) {
+                    text.push("\n");
+                }
+                text.push(child.to_plain_text());
+            }
+            text.push("\n");
+        }
+
+        #[inline(always)]
+        fn fmt_list_item<S: UnicodeString>(
+            container: &ContainerNode<S>,
+            text: &mut S,
+        ) {
+            for child in container.children() {
+                text.push(child.to_plain_text());
+            }
+        }
+
+        #[inline(always)]
+        fn fmt_default<S: UnicodeString>(
+            container: &ContainerNode<S>,
+            text: &mut S,
+        ) {
+            for child in &container.children {
+                text.push(child.to_plain_text());
+            }
+            if container.is_block_node()
+                && !container.handle.is_root()
+                && !matches!(text.chars().last(), Some('\n'))
+            {
+                text.push("\n");
+            }
+        }
     }
 }
 

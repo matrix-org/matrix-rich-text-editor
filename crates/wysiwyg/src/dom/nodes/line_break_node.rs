@@ -16,6 +16,7 @@ use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::to_html::{ToHtml, ToHtmlState};
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
+use crate::dom::to_plain_text::ToPlainText;
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
 use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
@@ -55,12 +56,12 @@ where
         "br".into()
     }
 
-    pub fn handle(&self) -> DomHandle {
-        self.handle.clone()
-    }
-
     pub fn set_handle(&mut self, handle: DomHandle) {
         self.handle = handle;
+    }
+
+    pub fn handle(&self) -> DomHandle {
+        self.handle.clone()
     }
 
     // A br tag is always treated as 1 character, so this always returns 1
@@ -93,6 +94,15 @@ where
 {
     fn to_raw_text(&self) -> S {
         "\\n".into()
+    }
+}
+
+impl<S> ToPlainText<S> for LineBreakNode<S>
+where
+    S: UnicodeString,
+{
+    fn to_plain_text(&self) -> S {
+        "\n".into()
     }
 }
 
