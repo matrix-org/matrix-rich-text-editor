@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use crate::{dom::to_plain_text::ToPlainText, ComposerModel};
+use indoc::indoc;
 use widestring::Utf16String;
 
 #[test]
@@ -28,16 +29,20 @@ fn text_with_linebreaks() {
     // One new line.
     assert_to_plain(
         "abc<br />def",
-        r#"abc
-def"#,
+        indoc! {
+            r#"abc
+            def"#
+        },
     );
 
     // Two new lines (isn't transformed into a new block).
     assert_to_plain(
         "abc<br /><br />def",
-        r#"abc
+        indoc! {
+            r#"abc
 
-def"#,
+            def"#
+        },
     );
 }
 
@@ -47,10 +52,12 @@ fn text_with_italic() {
     assert_to_plain("abc <em>def</em> ghi", "abc def ghi");
     assert_to_plain(
         "abc <em>line1<br />line2<br /><br />line3</em> def",
-        r#"abc line1
-line2
+        indoc! {
+            r#"abc line1
+            line2
 
-line3 def"#,
+            line3 def"#
+        },
     );
 
     assert_to_plain("abc<em>def</em>ghi", "abcdefghi");
@@ -64,10 +71,12 @@ fn text_with_bold() {
     assert_to_plain("abc <strong>def</strong> ghi", "abc def ghi");
     assert_to_plain(
         "abc <strong>line1<br />line2<br /><br />line3</strong> def",
-        r#"abc line1
-line2
+        indoc! {
+            r#"abc line1
+            line2
 
-line3 def"#,
+            line3 def"#
+        },
     );
 
     assert_to_plain("abc<strong>def</strong>ghi", "abcdefghi");
@@ -81,8 +90,10 @@ fn text_with_italic_and_bold() {
     assert_to_plain("<em>abc <strong>def</strong></em> ghi", "abc def ghi");
     assert_to_plain(
         "abc <em><strong>line1<br />line2</strong> def</em>",
-        r#"abc line1
-line2 def"#,
+        indoc! {
+            r#"abc line1
+            line2 def"#
+        },
     );
 }
 
@@ -92,10 +103,12 @@ fn text_with_strikethrough() {
     assert_to_plain("abc <del>def</del> ghi", "abc def ghi");
     assert_to_plain(
         "abc <del>line1<br />line2<br /><br />line3</del> def",
-        r#"abc line1
-line2
+        indoc! {
+            r#"abc line1
+            line2
 
-line3 def"#,
+            line3 def"#
+        },
     );
 }
 
@@ -116,10 +129,12 @@ fn text_with_inline_code() {
 
     assert_to_plain(
         "abc <code>line1<br />line2<br /><br />line3</code> def",
-        r#"abc line1
-line2
+        indoc! {
+            r#"abc line1
+            line2
 
-line3 def"#,
+            line3 def"#
+        },
     );
 }
 
@@ -139,18 +154,22 @@ fn link() {
 fn list_unordered() {
     assert_to_plain(
         r#"<ul><li>item1</li><li>item2</li></ul>"#,
-        r#"item1
-item2
-"#,
+        indoc! {
+            r#"item1
+            item2
+            "#
+        },
     );
 
     assert_to_plain(
         r#"<ul><li>item1<ul><li>subitem1</li><li>subitem2</li></ul></li><li>item2</li></ul>"#,
-        r#"item1
-subitem1
-subitem2
-item2
-"#,
+        indoc! {
+            r#"item1
+            subitem1
+            subitem2
+            item2
+            "#
+        },
     );
 }
 
@@ -158,18 +177,22 @@ item2
 fn list_ordered() {
     assert_to_plain(
         r#"<ol><li>item1</li><li>item2</li></ol>"#,
-        r#"item1
-item2
-"#,
+        indoc! {
+            r#"item1
+            item2
+            "#
+        },
     );
 
     assert_to_plain(
         r#"<ol><li>item1<ol><li>subitem1</li><li>subitem2</li></ol></li><li>item2</li></ol>"#,
-        r#"item1
-subitem1
-subitem2
-item2
-"#,
+        indoc! {
+            r#"item1
+            subitem1
+            subitem2
+            item2
+            "#
+        },
     );
 }
 
@@ -177,11 +200,13 @@ item2
 fn list_ordered_and_unordered() {
     assert_to_plain(
         r#"<ol><li>item1<ul><li>subitem1</li><li>subitem2</li></ul></li><li>item2</li></ol>"#,
-        r#"item1
-subitem1
-subitem2
-item2
-"#,
+        indoc! {
+            r#"item1
+            subitem1
+            subitem2
+            item2
+            "#
+        },
     );
 }
 
@@ -189,13 +214,15 @@ item2
 fn blocks() {
     assert_to_plain(
         r#"<p>paragraph 1</p><ul><li>list item 1</li><li>list item 2</li></ul><pre><code>codeblock</code></pre><blockquote>blockquote</blockquote><p>paragraph 2</p>"#,
-        r#"paragraph 1
-list item 1
-list item 2
-codeblock
-blockquote
-paragraph 2
-"#,
+        indoc! {
+            r#"paragraph 1
+            list item 1
+            list item 2
+            codeblock
+            blockquote
+            paragraph 2
+        "#
+        },
     );
 }
 
