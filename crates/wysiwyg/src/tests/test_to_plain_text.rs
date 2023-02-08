@@ -160,12 +160,17 @@ fn list_unordered() {
             "#
         },
     );
+}
 
+#[test]
+fn list_unordered_indented() {
     assert_to_plain(
-        r#"<ul><li>item1<ul><li>subitem1</li><li>subitem2</li></ul></li><li>item2</li></ul>"#,
+        r#"<ul><li>item1<ul><li>subitem1<ul><li>subitem1a</li><li>subitem1b</li></ul></li><li>subitem2</li></ul></li><li>item2</li></ul>"#,
         indoc! {
             r#"item1
             subitem1
+            subitem1a
+            subitem1b
             subitem2
             item2
             "#
@@ -183,12 +188,17 @@ fn list_ordered() {
             "#
         },
     );
+}
 
+#[test]
+fn list_ordered_indented() {
     assert_to_plain(
-        r#"<ol><li>item1<ol><li>subitem1</li><li>subitem2</li></ol></li><li>item2</li></ol>"#,
+        r#"<ol><li>item1<ol><li>subitem1<ol><li>subitem1a</li><li>subitem1b</li></ol></li><li>subitem2</li></ol></li><li>item2</li></ol>"#,
         indoc! {
             r#"item1
             subitem1
+            subitem1a
+            subitem1b
             subitem2
             item2
             "#
