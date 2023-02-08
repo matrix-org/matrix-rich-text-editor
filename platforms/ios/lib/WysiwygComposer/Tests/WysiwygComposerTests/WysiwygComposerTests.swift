@@ -24,4 +24,15 @@ final class WysiwygComposerTests: XCTestCase {
             .execute { XCTAssertEqual($0.getContentAsMarkdown(), "") }
             .assertSelection(start: 0, end: 0)
     }
+
+    func testComposerCrashRecovery() {
+        let fallbackContent = "Fallback content"
+        ComposerModelWrapper(fallbackContent: {
+            fallbackContent
+        })
+        .action { $0.replaceText(newText: "Some text") }
+        // Force a crash
+        .action { $0.setContentFromHtml(html: "</strong>") }
+        .assertHtml(fallbackContent)
+    }
 }

@@ -45,6 +45,7 @@ public enum WysiwygSharedAccessibilityIdentifier: String {
     case linkTextTextField = "WysiwygLinkTextTextField"
     case showTreeButton = "WysiwygShowTreeButton"
     case treeText = "WysiwygTreeText"
+    case forceCrashButton = "WysiwygForceCrashButton"
 }
 
 public extension View {

@@ -37,6 +37,19 @@ class WysiwygUITests: XCTestCase {
         sleep(1)
         XCTAssertEqual(textView.frame.height, WysiwygSharedConstants.composerMinHeight)
     }
+
+    func testCrashRecovery() throws {
+        button(.boldButton).tap()
+        textView.typeTextCharByChar("Some text")
+        assertTreeEquals(
+            """
+            └>strong
+              └>"Some text"
+            """
+        )
+        button(.forceCrashButton).tap()
+        // TODO: assert plain text tree
+    }
 }
 
 internal extension WysiwygUITests {

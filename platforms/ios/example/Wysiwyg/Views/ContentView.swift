@@ -33,6 +33,10 @@ struct ContentView: View {
         Spacer()
             .frame(width: nil, height: 50, alignment: .center)
         Composer(viewModel: viewModel)
+        Button("Force crash") {
+            viewModel.setHtmlContent("</strong>")
+        }
+        .accessibilityIdentifier(.forceCrashButton)
         Button("Min/Max") {
             viewModel.maximised.toggle()
         }
