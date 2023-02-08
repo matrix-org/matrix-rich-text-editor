@@ -126,10 +126,8 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         self.parserStyle = parserStyle
 
         textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
-        model = ComposerModelWrapper(fallbackContent: {
-            // FIXME: should return the last known plain text instead
-            ""
-        })
+        model = ComposerModelWrapper()
+        model.delegate = self
         // Publish composer empty state.
         $attributedContent.sink { [unowned self] content in
             self.isContentEmpty = content.text.length == 0
@@ -374,7 +372,9 @@ private extension WysiwygComposerViewModel {
             // FIXME: handle error for out of bounds index
             let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
             let textSelection = try attributed.attributedRange(from: htmlSelection)
-            attributedContent = WysiwygComposerAttributedContent(text: attributed, selection: textSelection)
+            attributedContent = WysiwygComposerAttributedContent(text: attributed,
+                                                                 selection: textSelection,
+                                                                 plainText: model.getContentAsPlainText())
             Logger.viewModel.logDebug(["Sel(att): \(textSelection)",
                                        "Sel: \(htmlSelection)",
                                        "HTML: \"\(html)\"",
@@ -487,6 +487,14 @@ private extension WysiwygComposerViewModel {
         textView.apply(attributedContent)
         updateCompressedHeightIfNeeded()
         hasPendingFormats = false
+    }
+}
+
+// MARK: - ComposerModelWrapperDelegate
+
+extension WysiwygComposerViewModel: ComposerModelWrapperDelegate {
+    func fallbackContent() -> String {
+        attributedContent.plainText
     }
 }
 

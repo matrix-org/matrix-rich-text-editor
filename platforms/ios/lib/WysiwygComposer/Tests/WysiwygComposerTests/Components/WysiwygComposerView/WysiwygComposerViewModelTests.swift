@@ -150,9 +150,8 @@ final class WysiwygComposerViewModelTests: XCTestCase {
     func testCrashRecoveryUsesLatestPlainText() {
         viewModel.setHtmlContent("<strong>Some <em>text</em></strong>")
         // Force a crash
-        viewModel.setHtmlContent("</strong>")
-        // TODO: replace with plain text when implemented
-        XCTAssertEqual(viewModel.content.html, "")
+        viewModel.setHtmlContent("<//strong>")
+        XCTAssertEqual(viewModel.content.html, "Some text")
     }
 }
 

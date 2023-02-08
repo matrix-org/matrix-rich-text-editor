@@ -40,15 +40,23 @@ class WysiwygUITests: XCTestCase {
 
     func testCrashRecovery() throws {
         button(.boldButton).tap()
-        textView.typeTextCharByChar("Some text")
+        textView.typeTextCharByChar("Some ")
+        button(.italicButton).tap()
+        textView.typeTextCharByChar("text")
         assertTreeEquals(
             """
             └>strong
-              └>"Some text"
+              ├>"Some "
+              └>em
+                └>"text"
             """
         )
         button(.forceCrashButton).tap()
-        // TODO: assert plain text tree
+        assertTreeEquals(
+            """
+            └>"Some text"
+            """
+        )
     }
 }
 

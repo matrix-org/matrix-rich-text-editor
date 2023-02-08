@@ -34,7 +34,7 @@ struct ContentView: View {
             .frame(width: nil, height: 50, alignment: .center)
         Composer(viewModel: viewModel)
         Button("Force crash") {
-            viewModel.setHtmlContent("</strong>")
+            viewModel.setHtmlContent("<//strong>")
         }
         .accessibilityIdentifier(.forceCrashButton)
         Button("Min/Max") {

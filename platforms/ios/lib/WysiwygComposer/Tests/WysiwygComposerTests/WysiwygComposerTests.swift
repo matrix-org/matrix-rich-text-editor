@@ -17,6 +17,10 @@
 @testable import WysiwygComposer
 import XCTest
 
+private enum Constants {
+    static let fallbackContent = "Fallback content"
+}
+
 final class WysiwygComposerTests: XCTestCase {
     func testComposerEmptyState() {
         ComposerModelWrapper()
@@ -26,13 +30,20 @@ final class WysiwygComposerTests: XCTestCase {
     }
 
     func testComposerCrashRecovery() {
-        let fallbackContent = "Fallback content"
-        ComposerModelWrapper(fallbackContent: {
-            fallbackContent
-        })
-        .action { $0.replaceText(newText: "Some text") }
-        // Force a crash
-        .action { $0.setContentFromHtml(html: "</strong>") }
-        .assertHtml(fallbackContent)
+        class SomeDelegate: ComposerModelWrapperDelegate {
+            func fallbackContent() -> String {
+                Constants.fallbackContent
+            }
+        }
+
+        let delegate = SomeDelegate()
+        let model = ComposerModelWrapper()
+        model.delegate = delegate
+
+        model
+            .action { $0.replaceText(newText: "Some text") }
+            // Force a crash
+            .action { $0.setContentFromHtml(html: "<//strong>") }
+            .assertHtml(Constants.fallbackContent)
     }
 }

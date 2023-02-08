@@ -21,6 +21,7 @@ protocol ComposerModelWrapperProtocol {
     func setContentFromMarkdown(markdown: String) -> ComposerUpdate
     func getContentAsHtml() -> String
     func getContentAsMarkdown() -> String
+    func getContentAsPlainText() -> String
     func clear() -> ComposerUpdate
     func select(startUtf16Codeunit: UInt32, endUtf16Codeunit: UInt32) -> ComposerUpdate
     func replaceText(newText: String) -> ComposerUpdate
@@ -37,19 +38,21 @@ protocol ComposerModelWrapperProtocol {
     func getLinkAction() -> LinkAction
 }
 
+/// Defines a delegate that can provide fallback content in case something goes wrong within the model.
+protocol ComposerModelWrapperDelegate: AnyObject {
+    func fallbackContent() -> String
+}
+
 /// Provides a wrapper around `ComposerModel` that handles failures and reset to
 /// a fallback content if needed.
 final class ComposerModelWrapper: ComposerModelWrapperProtocol {
     // MARK: - Private
 
     private var model = newComposerModel()
-    private var fallbackContent: (() -> String)?
 
     // MARK: - Internal
 
-    init(fallbackContent: (() -> String)? = nil) {
-        self.fallbackContent = fallbackContent
-    }
+    weak var delegate: ComposerModelWrapperDelegate?
 
     func setContentFromHtml(html: String) -> ComposerUpdate {
         execute { try $0.setContentFromHtml(html: html) }
@@ -65,6 +68,10 @@ final class ComposerModelWrapper: ComposerModelWrapperProtocol {
 
     func getContentAsMarkdown() -> String {
         model.getContentAsMarkdown()
+    }
+
+    func getContentAsPlainText() -> String {
+        model.getContentAsPlainText()
     }
 
     func clear() -> ComposerUpdate {
@@ -134,9 +141,9 @@ private extension ComposerModelWrapper {
             return update
         } catch {
             model = newComposerModel()
-            if let fallbackContent {
+            if let fallbackContent = delegate?.fallbackContent() {
                 do {
-                    let update = try model.replaceText(newText: fallbackContent())
+                    let update = try model.replaceText(newText: fallbackContent)
                     return update
                 } catch {
                     // If setting the fallback content fails, just reset to empty.
