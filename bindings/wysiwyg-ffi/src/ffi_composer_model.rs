@@ -56,6 +56,14 @@ impl ComposerModel {
             .to_string()
     }
 
+    pub fn get_content_as_plain_text(self: &Arc<Self>) -> String {
+        self.inner
+            .lock()
+            .unwrap()
+            .get_content_as_plain_text()
+            .to_string()
+    }
+
     pub fn clear(self: &Arc<Self>) -> Arc<ComposerUpdate> {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().clear()))
     }

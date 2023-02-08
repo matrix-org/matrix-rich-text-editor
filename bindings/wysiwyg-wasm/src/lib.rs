@@ -104,6 +104,10 @@ impl ComposerModel {
         self.inner.get_content_as_markdown().to_string()
     }
 
+    pub fn get_content_as_plain_text(&self) -> String {
+        self.inner.get_content_as_plain_text().to_string()
+    }
+
     pub fn document(&self) -> DomHandle {
         DomHandle {
             inner: self.inner.state.dom.document().handle(),

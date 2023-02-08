@@ -31,6 +31,7 @@ pub mod parser;
 pub mod range;
 pub mod to_html;
 pub mod to_markdown;
+pub mod to_plain_text;
 pub mod to_raw_text;
 pub mod to_tree;
 pub mod unicode_string;
