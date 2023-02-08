@@ -50,6 +50,19 @@ extension WysiwygAction: CaseIterable, Identifiable {
         viewModel.actionStates[composerAction] == ActionState.disabled
     }
 
+    /// Compute visibility status for action.
+    ///
+    /// - Parameter viewModel: Composer's view model.
+    /// - Returns: True if the action is visible, false otherwise.
+    public func isVisible(_ viewModel: WysiwygComposerViewModel) -> Bool {
+        switch self {
+        case .indent, .unindent:
+            return viewModel.isInList
+        default:
+            return true
+        }
+    }
+
     var accessibilityIdentifier: WysiwygSharedAccessibilityIdentifier {
         switch self {
         case .bold:
@@ -150,5 +163,12 @@ private extension WysiwygAction {
         case .quote:
             return .quote
         }
+    }
+}
+
+private extension WysiwygComposerViewModel {
+    /// Returns true if we are currently inside a list.
+    var isInList: Bool {
+        actionStates[.orderedList] == .reversed || actionStates[.unorderedList] == .reversed
     }
 }
