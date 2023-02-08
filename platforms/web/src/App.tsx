@@ -92,6 +92,10 @@ function App() {
         setEnterToSend((prevValue) => !prevValue);
     };
 
+    const isInList =
+        actionStates.unorderedList === 'reversed' ||
+        actionStates.orderedList === 'reversed';
+
     return (
         <div className="wrapper">
             <div>
@@ -145,18 +149,22 @@ function App() {
                             imagePath={listOrderedImage}
                             state={actionStates.orderedList}
                         />
-                        <Button
-                            onClick={wysiwyg.indent}
-                            alt="indent"
-                            imagePath={indentImage}
-                            state={actionStates.indent}
-                        />
-                        <Button
-                            onClick={wysiwyg.unindent}
-                            alt="unindent"
-                            imagePath={unindentImage}
-                            state={actionStates.unindent}
-                        />
+                        {isInList && (
+                            <Button
+                                onClick={wysiwyg.indent}
+                                alt="indent"
+                                imagePath={indentImage}
+                                state={actionStates.indent}
+                            />
+                        )}
+                        {isInList && (
+                            <Button
+                                onClick={wysiwyg.unindent}
+                                alt="unindent"
+                                imagePath={unindentImage}
+                                state={actionStates.unindent}
+                            />
+                        )}
                         <Button
                             onClick={wysiwyg.quote}
                             alt="quote"
