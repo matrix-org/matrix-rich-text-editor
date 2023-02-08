@@ -19,27 +19,27 @@ import XCTest
 
 extension WysiwygComposerTests {
     func testCreateWithTextLinkAction() {
-        newComposerModel()
+        ComposerModelWrapper()
             .assertLinkAction(.createWithText)
     }
 
     func testCreateLinkAction() {
-        newComposerModel()
-            .action { try $0.replaceText(newText: "test") }
-            .action { try $0.select(startUtf16Codeunit: 0, endUtf16Codeunit: 4) }
+        ComposerModelWrapper()
+            .action { $0.replaceText(newText: "test") }
+            .action { $0.select(startUtf16Codeunit: 0, endUtf16Codeunit: 4) }
             .assertLinkAction(.create)
     }
 
     func testEditLinkAction() {
         let link = "test_url"
-        newComposerModel()
-            .action { try $0.setLinkWithText(link: link, text: "test") }
+        ComposerModelWrapper()
+            .action { $0.setLinkWithText(link: link, text: "test") }
             .assertLinkAction(.edit(link: "https://\(link)"))
     }
 
     func testSetLinkWithText() {
-        newComposerModel()
-            .action { try $0.setLinkWithText(link: "link", text: "text") }
+        ComposerModelWrapper()
+            .action { $0.setLinkWithText(link: "link", text: "text") }
             .assertTree(
                 """
 
@@ -51,8 +51,8 @@ extension WysiwygComposerTests {
     }
     
     func testSetLinkWithTextWithIncludedScheme() {
-        newComposerModel()
-            .action { try $0.setLinkWithText(link: "http://link", text: "text") }
+        ComposerModelWrapper()
+            .action { $0.setLinkWithText(link: "http://link", text: "text") }
             .assertTree(
                 """
 
@@ -64,8 +64,8 @@ extension WysiwygComposerTests {
     }
     
     func testSetMailLinkWithText() {
-        newComposerModel()
-            .action { try $0.setLinkWithText(link: "test@element.io", text: "text") }
+        ComposerModelWrapper()
+            .action { $0.setLinkWithText(link: "test@element.io", text: "text") }
             .assertTree(
                 """
 
@@ -77,10 +77,10 @@ extension WysiwygComposerTests {
     }
 
     func testSetLink() {
-        newComposerModel()
-            .action { try $0.replaceText(newText: "text") }
-            .action { try $0.select(startUtf16Codeunit: 0, endUtf16Codeunit: 4) }
-            .action { try $0.setLink(link: "link") }
+        ComposerModelWrapper()
+            .action { $0.replaceText(newText: "text") }
+            .action { $0.select(startUtf16Codeunit: 0, endUtf16Codeunit: 4) }
+            .action { $0.setLink(link: "link") }
             .assertTree(
                 """
 
@@ -92,8 +92,8 @@ extension WysiwygComposerTests {
     }
 
     func testRemoveLinks() {
-        newComposerModel()
-            .action { try $0.setLinkWithText(link: "link", text: "text") }
+        ComposerModelWrapper()
+            .action { $0.setLinkWithText(link: "link", text: "text") }
             .assertTree(
                 """
 
@@ -102,7 +102,7 @@ extension WysiwygComposerTests {
 
                 """
             )
-            .action { try $0.removeLinks() }
+            .action { $0.removeLinks() }
             .assertTree(
                 """
 

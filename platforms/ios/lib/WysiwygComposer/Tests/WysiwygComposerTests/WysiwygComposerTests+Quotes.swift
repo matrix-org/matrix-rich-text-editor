@@ -34,35 +34,35 @@ private enum Constants {
 
 extension WysiwygComposerTests {
     func testQuotesFromEmptyComposer() {
-        newComposerModel()
-            .action { try $0.quote() }
-            .action { try $0.replaceText(newText: "Some quote") }
-            .action { try $0.enter() }
-            .action { try $0.replaceText(newText: "More text") }
-            .action { try $0.enter() }
-            .action { try $0.enter() }
+        ComposerModelWrapper()
+            .action { $0.apply(.quote) }
+            .action { $0.replaceText(newText: "Some quote") }
+            .action { $0.enter() }
+            .action { $0.replaceText(newText: "More text") }
+            .action { $0.enter() }
+            .action { $0.enter() }
             .assertHtml(Constants.resultHtml)
             .assertTree(Constants.resultTree)
     }
 
     func testQuotesWithMultilineInput() {
-        newComposerModel()
-            .action { try $0.quote() }
-            .action { try $0.replaceText(newText: "Some quote\nMore text") }
-            .action { try $0.enter() }
-            .action { try $0.enter() }
+        ComposerModelWrapper()
+            .action { $0.apply(.quote) }
+            .action { $0.replaceText(newText: "Some quote\nMore text") }
+            .action { $0.enter() }
+            .action { $0.enter() }
             .assertHtml(Constants.resultHtml)
             .assertTree(Constants.resultTree)
     }
 
     func testQuotesFromContent() {
-        newComposerModel()
-            .action { try $0.replaceText(newText: "Some quote") }
-            .action { try $0.quote() }
-            .action { try $0.enter() }
-            .action { try $0.replaceText(newText: "More text") }
-            .action { try $0.enter() }
-            .action { try $0.enter() }
+        ComposerModelWrapper()
+            .action { $0.replaceText(newText: "Some quote") }
+            .action { $0.apply(.quote) }
+            .action { $0.enter() }
+            .action { $0.replaceText(newText: "More text") }
+            .action { $0.enter() }
+            .action { $0.enter() }
             .assertHtml(Constants.resultHtml)
             .assertTree(Constants.resultTree)
     }

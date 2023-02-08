@@ -20,10 +20,10 @@ import XCTest
 
 extension WysiwygComposerTests {
     func testFormatBold() throws {
-        newComposerModel()
-            .action { try $0.replaceText(newText: "This is bold text") }
-            .action { try $0.select(startUtf16Codeunit: 8, endUtf16Codeunit: 12) }
-            .action { try $0.bold() }
+        ComposerModelWrapper()
+            .action { $0.replaceText(newText: "This is bold text") }
+            .action { $0.select(startUtf16Codeunit: 8, endUtf16Codeunit: 12) }
+            .action { $0.apply(.bold) }
             .assertHtml("This is <strong>bold</strong> text")
             // Selection is kept after format.
             .assertSelection(start: 8, end: 12)

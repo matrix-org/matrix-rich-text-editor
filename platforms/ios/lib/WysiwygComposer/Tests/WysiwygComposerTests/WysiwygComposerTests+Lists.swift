@@ -19,21 +19,21 @@ import XCTest
 
 extension WysiwygComposerTests {
     func testLists() {
-        newComposerModel()
-            .action { try $0.orderedList() }
-            .action { try $0.replaceText(newText: "Item 1") }
-            .action { try $0.enter() }
-            .action { try $0.replaceText(newText: "Item 2") }
+        ComposerModelWrapper()
+            .action { $0.apply(.orderedList) }
+            .action { $0.replaceText(newText: "Item 1") }
+            .action { $0.enter() }
+            .action { $0.replaceText(newText: "Item 2") }
             // Add a third list item
-            .action { try $0.enter() }
+            .action { $0.enter() }
             .assertHtml("<ol><li>Item 1</li><li>Item 2</li><li></li></ol>")
             .assertSelection(start: 14, end: 14)
             // Remove it
-            .action { try $0.enter() }
+            .action { $0.enter() }
             .assertHtml("<ol><li>Item 1</li><li>Item 2</li></ol><p>\(Character.nbsp)</p>")
             .assertSelection(start: 14, end: 14)
             // Insert some text afterwards
-            .action { try $0.replaceText(newText: "Some text") }
+            .action { $0.replaceText(newText: "Some text") }
             .assertHtml("<ol><li>Item 1</li><li>Item 2</li></ol><p>Some text</p>")
             .assertSelection(start: 23, end: 23)
     }

@@ -20,8 +20,8 @@ extension ComposerModel {
     ///
     /// - Parameters:
     ///   - action: Action to apply.
-    func apply(_ action: WysiwygAction) throws -> ComposerUpdateProtocol? {
-        let update: ComposerUpdateProtocol
+    func apply(_ action: WysiwygAction) throws -> ComposerUpdate {
+        let update: ComposerUpdate
         switch action {
         case .bold:
             update = try bold()
@@ -49,8 +49,8 @@ extension ComposerModel {
             update = try codeBlock()
         case .quote:
             update = try quote()
-        default:
-            return nil
+        case .link:
+            fatalError()
         }
 
         return update

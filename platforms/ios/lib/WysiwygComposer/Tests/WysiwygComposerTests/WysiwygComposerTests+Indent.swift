@@ -30,31 +30,31 @@ private enum Constants {
 
 extension WysiwygComposerTests {
     func testIndent() {
-        newComposerModel()
-            .action { try $0.setContentFromHtml(html: Constants.sampleListHtml) }
+        ComposerModelWrapper()
+            .action { $0.setContentFromHtml(html: Constants.sampleListHtml) }
             // Select somewhere on item 2
-            .action { try $0.select(startUtf16Codeunit: 9, endUtf16Codeunit: 9) }
-            .action { try $0.indent() }
+            .action { $0.select(startUtf16Codeunit: 9, endUtf16Codeunit: 9) }
+            .action { $0.apply(.indent) }
             .execute { XCTAssertTrue($0.actionStates()[.indent] == .disabled) }
             // Select somewhere on item 3
-            .action { try $0.select(startUtf16Codeunit: 18, endUtf16Codeunit: 18) }
-            .action { try $0.indent() }
-            .action { try $0.indent() }
+            .action { $0.select(startUtf16Codeunit: 18, endUtf16Codeunit: 18) }
+            .action { $0.apply(.indent) }
+            .action { $0.apply(.indent) }
             .execute { XCTAssertTrue($0.actionStates()[.indent] == .disabled) }
             .assertHtml(Constants.indentedSampleListHtml)
     }
 
     func testUnindent() {
-        newComposerModel()
-            .action { try $0.setContentFromHtml(html: Constants.indentedSampleListHtml) }
+        ComposerModelWrapper()
+            .action { $0.setContentFromHtml(html: Constants.indentedSampleListHtml) }
             // Select somewhere on item 3
-            .action { try $0.select(startUtf16Codeunit: 18, endUtf16Codeunit: 18) }
-            .action { try $0.unindent() }
-            .action { try $0.unindent() }
+            .action { $0.select(startUtf16Codeunit: 18, endUtf16Codeunit: 18) }
+            .action { $0.apply(.unindent) }
+            .action { $0.apply(.unindent) }
             .execute { XCTAssertTrue($0.actionStates()[.unindent] == .disabled) }
             // Select somewhere on item 2
-            .action { try $0.select(startUtf16Codeunit: 9, endUtf16Codeunit: 9) }
-            .action { try $0.unindent() }
+            .action { $0.select(startUtf16Codeunit: 9, endUtf16Codeunit: 9) }
+            .action { $0.apply(.unindent) }
             .execute { XCTAssertTrue($0.actionStates()[.unindent] == .disabled) }
             .assertHtml(Constants.sampleListHtml)
     }
