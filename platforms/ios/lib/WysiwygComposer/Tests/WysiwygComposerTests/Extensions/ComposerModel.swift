@@ -24,8 +24,12 @@ extension ComposerModel {
     ///   - action: composer action to execute
     /// - Returns: self (discardable)
     @discardableResult
-    func action(_ action: @escaping (ComposerModel) -> ComposerUpdate) -> ComposerModel {
-        _ = action(self)
+    func action(_ action: @escaping (ComposerModel) throws -> ComposerUpdate) -> ComposerModel {
+        do {
+            _ = try action(self)
+        } catch {
+            XCTFail("Rust panic: \(error.localizedDescription)")
+        }
         return self
     }
 

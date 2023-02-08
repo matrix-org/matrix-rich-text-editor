@@ -20,35 +20,35 @@ extension ComposerModel {
     ///
     /// - Parameters:
     ///   - action: Action to apply.
-    func apply(_ action: WysiwygAction) -> ComposerUpdateProtocol? {
+    func apply(_ action: WysiwygAction) throws -> ComposerUpdateProtocol? {
         let update: ComposerUpdateProtocol
         switch action {
         case .bold:
-            update = bold()
+            update = try bold()
         case .italic:
-            update = italic()
+            update = try italic()
         case .strikeThrough:
-            update = strikeThrough()
+            update = try strikeThrough()
         case .underline:
-            update = underline()
+            update = try underline()
         case .inlineCode:
-            update = inlineCode()
+            update = try inlineCode()
         case .undo:
-            update = undo()
+            update = try undo()
         case .redo:
-            update = redo()
+            update = try redo()
         case .orderedList:
-            update = orderedList()
+            update = try orderedList()
         case .unorderedList:
-            update = unorderedList()
+            update = try unorderedList()
         case .indent:
-            update = indent()
+            update = try indent()
         case .unindent:
-            update = unindent()
+            update = try unindent()
         case .codeBlock:
-            update = codeBlock()
+            update = try codeBlock()
         case .quote:
-            update = quote()
+            update = try quote()
         default:
             return nil
         }

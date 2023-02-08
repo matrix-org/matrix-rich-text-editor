@@ -53,7 +53,10 @@ ios: setup
 	  -headers ${IOS_GENERATION_DIR}/headers \
 	  -library ../../target/ios-simulator/libuniffi_wysiwyg_composer.a \
 	  -headers ${IOS_GENERATION_DIR}/headers \
-	  -output ${IOS_PACKAGE_DIR}/WysiwygComposerFFI.xcframework
+	  -output ${IOS_PACKAGE_DIR}/WysiwygComposerFFI.xcframework && \
+	sed -i "" -e '1h;2,$$H;$$!d;g' -e 's/) -> ComposerUpdate {\n        return try! FfiConverterTypeComposerUpdate.lift(\n            try!/) throws -> ComposerUpdate {\n        return try FfiConverterTypeComposerUpdate.lift(\n            try/g' ${IOS_PACKAGE_DIR}/Sources/WysiwygComposer/WysiwygComposer.swift && \
+	sed -i "" -e '1h;2,$$H;$$!d;g' -e 's/) -> ComposerUpdate/) throws -> ComposerUpdate/g' ${IOS_PACKAGE_DIR}/Sources/WysiwygComposer/WysiwygComposer.swift
+
 web: setup
 	cd bindings/wysiwyg-wasm && \
 	npm install && \

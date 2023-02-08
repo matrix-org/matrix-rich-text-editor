@@ -35,36 +35,36 @@ private enum Constants {
 extension WysiwygComposerTests {
     func testCodeBlocksFromEmptyComposer() {
         newComposerModel()
-            .action { $0.codeBlock() }
-            .action { $0.replaceText(newText: "Some code") }
-            .action { $0.enter() }
-            .action { $0.replaceText(newText: "\t") }
-            .action { $0.replaceText(newText: "more code") }
-            .action { $0.enter() }
-            .action { $0.enter() }
+            .action { try $0.codeBlock() }
+            .action { try $0.replaceText(newText: "Some code") }
+            .action { try $0.enter() }
+            .action { try $0.replaceText(newText: "\t") }
+            .action { try $0.replaceText(newText: "more code") }
+            .action { try $0.enter() }
+            .action { try $0.enter() }
             .assertHtml(Constants.resultHtml)
             .assertTree(Constants.resultTree)
     }
 
     func testCodeBlocksWithMultilineInput() {
         newComposerModel()
-            .action { $0.codeBlock() }
-            .action { $0.replaceText(newText: "Some code\n\tmore code") }
-            .action { $0.enter() }
-            .action { $0.enter() }
+            .action { try $0.codeBlock() }
+            .action { try $0.replaceText(newText: "Some code\n\tmore code") }
+            .action { try $0.enter() }
+            .action { try $0.enter() }
             .assertHtml(Constants.resultHtml)
             .assertTree(Constants.resultTree)
     }
 
     func testCodeBlocksFromContent() {
         newComposerModel()
-            .action { $0.replaceText(newText: "Some code") }
-            .action { $0.codeBlock() }
-            .action { $0.enter() }
-            .action { $0.replaceText(newText: "\t") }
-            .action { $0.replaceText(newText: "more code") }
-            .action { $0.enter() }
-            .action { $0.enter() }
+            .action { try $0.replaceText(newText: "Some code") }
+            .action { try $0.codeBlock() }
+            .action { try $0.enter() }
+            .action { try $0.replaceText(newText: "\t") }
+            .action { try $0.replaceText(newText: "more code") }
+            .action { try $0.enter() }
+            .action { try $0.enter() }
             .assertHtml(Constants.resultHtml)
             .assertTree(Constants.resultTree)
     }

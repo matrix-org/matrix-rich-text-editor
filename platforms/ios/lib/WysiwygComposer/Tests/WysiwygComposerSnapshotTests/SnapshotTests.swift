@@ -22,12 +22,11 @@ import XCTest
 class SnapshotTests: XCTestCase {
     let isRecord = false
     
-    var viewModel: WysiwygComposerViewModel!
+    var viewModel = WysiwygComposerViewModel()
     var hostingController: UIViewController!
     
     override func setUpWithError() throws {
         try super.setUpWithError()
-        viewModel = WysiwygComposerViewModel()
         let binding: Binding<Bool> = .init(get: { true }, set: { _ in })
         let composerView = WysiwygComposerView(focused: binding, viewModel: viewModel)
             .placeholder("Placeholder")
@@ -37,6 +36,5 @@ class SnapshotTests: XCTestCase {
     override func tearDownWithError() throws {
         try super.tearDownWithError()
         hostingController = nil
-        viewModel = nil
     }
 }

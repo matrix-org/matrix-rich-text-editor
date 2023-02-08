@@ -20,8 +20,8 @@ import XCTest
 extension WysiwygComposerTests {
     func testInlineCode() {
         newComposerModel()
-            .action { $0.inlineCode() }
-            .action { $0.replaceText(newText: "code") }
+            .action { try $0.inlineCode() }
+            .action { try $0.replaceText(newText: "code") }
             .assertTree(
                 """
 
@@ -34,12 +34,12 @@ extension WysiwygComposerTests {
 
     func testInlineCodeWithFormatting() {
         newComposerModel()
-            .action { $0.bold() }
-            .action { $0.replaceText(newText: "bold") }
+            .action { try $0.bold() }
+            .action { try $0.replaceText(newText: "bold") }
             // This should get ignored
-            .action { $0.italic() }
-            .action { $0.inlineCode() }
-            .action { $0.replaceText(newText: "code") }
+            .action { try $0.italic() }
+            .action { try $0.inlineCode() }
+            .action { try $0.replaceText(newText: "code") }
             .assertTree(
                 """
 

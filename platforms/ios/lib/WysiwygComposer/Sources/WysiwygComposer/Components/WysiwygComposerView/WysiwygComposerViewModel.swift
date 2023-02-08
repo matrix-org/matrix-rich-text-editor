@@ -67,9 +67,13 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         didSet {
             // In case of a color change, this will refresh the attributed text
             textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
-            let update = model.setContentFromHtml(html: content.html)
-            applyUpdate(update)
-            updateTextView()
+            do {
+                let update = try model.setContentFromHtml(html: content.html)
+                applyUpdate(update)
+                updateTextView()
+            } catch {
+                restoreContent()
+            }
         }
     }
     
@@ -97,7 +101,11 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     /// The current composer content.
     public var content: WysiwygComposerContent {
         if plainTextMode {
-            _ = model.setContentFromMarkdown(markdown: textView.text)
+            do {
+                _ = try model.setContentFromMarkdown(markdown: textView.text)
+            } catch {
+                restoreContent()
+            }
         }
         return WysiwygComposerContent(markdown: model.getContentAsMarkdown(),
                                       html: model.getContentAsHtml())
@@ -170,14 +178,18 @@ public extension WysiwygComposerViewModel {
         Logger.viewModel.logDebug([attributedContent.logSelection,
                                    "Apply action: \(action)"],
                                   functionName: #function)
-        guard let update = model.apply(action) else { return }
-        if update.textUpdate() == .keep {
-            hasPendingFormats = true
-        } else if action == .codeBlock || action == .quote, attributedContent.selection.length == 0 {
-            // Add code block/quote as a pending format to improve block display.
-            hasPendingFormats = true
+        do {
+            guard let update = try model.apply(action) else { return }
+            if update.textUpdate() == .keep {
+                hasPendingFormats = true
+            } else if action == .codeBlock || action == .quote, attributedContent.selection.length == 0 {
+                // Add code block/quote as a pending format to improve block display.
+                hasPendingFormats = true
+            }
+            applyUpdate(update)
+        } catch {
+            restoreContent()
         }
-        applyUpdate(update)
     }
 
     /// Sets given HTML as the current content of the composer.
@@ -185,8 +197,11 @@ public extension WysiwygComposerViewModel {
     /// - Parameters:
     ///   - html: HTML content to apply
     func setHtmlContent(_ html: String) {
-        let update = model.setContentFromHtml(html: html)
-        applyUpdate(update)
+        do {
+            applyUpdate(try model.setContentFromHtml(html: html))
+        } catch {
+            restoreContent()
+        }
     }
 
     /// Clear the content of the composer.
@@ -194,7 +209,11 @@ public extension WysiwygComposerViewModel {
         if plainTextMode {
             textView.attributedText = NSAttributedString(string: "", attributes: defaultTextAttributes)
         } else {
-            applyUpdate(model.clear())
+            do {
+                applyUpdate(try model.clear())
+            } catch {
+                restoreContent()
+            }
         }
     }
 
@@ -228,44 +247,49 @@ public extension WysiwygComposerViewModel {
             textView.typingAttributes = defaultTextAttributes
         }
 
-        let update: ComposerUpdate
-        let shouldAcceptChange: Bool
+        do {
+            let update: ComposerUpdate
+            let shouldAcceptChange: Bool
 
-        if range != attributedContent.selection {
-            select(range: range)
-        }
-
-        if attributedContent.selection.length == 0, replacementText == "" {
-            update = model.backspace()
-            shouldAcceptChange = false
-        } else if replacementText.count == 1, replacementText[String.Index(utf16Offset: 0, in: replacementText)].isNewline {
-            update = model.enter()
-            if model.actionStates()[.codeBlock] == .reversed || model.actionStates()[.quote] == .reversed {
-                hasPendingFormats = true
+            if range != attributedContent.selection {
+                select(range: range)
             }
-            shouldAcceptChange = false
-        } else {
-            update = model.replaceText(newText: replacementText)
-            shouldAcceptChange = true
-        }
-        
-        // Reconciliates the model with the text any time the link state changes
-        // this adjusts an iOS behaviour that extends a link when typing after it
-        // which does not reflect the model state.
-        switch update.menuState() {
-        case let .update(newState):
-            if newState[.link] != actionStates[.link] {
-                applyUpdate(update, skipTextViewUpdate: true)
-                textView.apply(attributedContent)
-                updateCompressedHeightIfNeeded()
-                return false
-            }
-        default: break
-        }
-        
-        applyUpdate(update, skipTextViewUpdate: shouldAcceptChange)
 
-        return shouldAcceptChange
+            if attributedContent.selection.length == 0, replacementText == "" {
+                update = try model.backspace()
+                shouldAcceptChange = false
+            } else if replacementText.count == 1, replacementText[String.Index(utf16Offset: 0, in: replacementText)].isNewline {
+                update = try model.enter()
+                if model.actionStates()[.codeBlock] == .reversed || model.actionStates()[.quote] == .reversed {
+                    hasPendingFormats = true
+                }
+                shouldAcceptChange = false
+            } else {
+                update = try model.replaceText(newText: replacementText)
+                shouldAcceptChange = true
+            }
+
+            // Reconciliates the model with the text any time the link state changes
+            // this adjusts an iOS behaviour that extends a link when typing after it
+            // which does not reflect the model state.
+            switch update.menuState() {
+            case let .update(newState):
+                if newState[.link] != actionStates[.link] {
+                    applyUpdate(update, skipTextViewUpdate: true)
+                    textView.apply(attributedContent)
+                    updateCompressedHeightIfNeeded()
+                    return false
+                }
+            default: break
+            }
+
+            applyUpdate(update, skipTextViewUpdate: shouldAcceptChange)
+
+            return shouldAcceptChange
+        } catch {
+            restoreContent()
+            return false
+        }
     }
 
     func select(range: NSRange) {
@@ -276,14 +300,21 @@ public extension WysiwygComposerViewModel {
                                        "Sel: \(htmlSelection)",
                                        "Text: \"\(text.string)\""],
                                       functionName: #function)
-            let update = model.select(startUtf16Codeunit: UInt32(htmlSelection.location),
-                                      endUtf16Codeunit: UInt32(htmlSelection.upperBound))
+            let update = try model.select(startUtf16Codeunit: UInt32(htmlSelection.location),
+                                          endUtf16Codeunit: UInt32(htmlSelection.upperBound))
 
             applyUpdate(update)
         } catch {
-            Logger.viewModel.logError(["Sel(att): \(range)",
-                                       "Error: \(error.localizedDescription)"],
-                                      functionName: #function)
+            switch error {
+            case AttributedRangeError.outOfBoundsAttributedIndex,
+                 AttributedRangeError.outOfBoundsHtmlIndex:
+                Logger.viewModel.logError(["Sel(att): \(range)",
+                                           "Error: \(error.localizedDescription)"],
+                                          functionName: #function)
+            default:
+                // Something went wrong on the Rust side
+                restoreContent()
+            }
         }
     }
 
@@ -302,16 +333,20 @@ public extension WysiwygComposerViewModel {
     }
     
     func applyLinkOperation(_ linkOperation: WysiwygLinkOperation) {
-        let update: ComposerUpdate
-        switch linkOperation {
-        case let .createLink(urlString, text):
-            update = model.setLinkWithText(link: urlString, text: text)
-        case let .setLink(urlString):
-            update = model.setLink(link: urlString)
-        case .removeLinks:
-            update = model.removeLinks()
+        do {
+            let update: ComposerUpdate
+            switch linkOperation {
+            case let .createLink(urlString, text):
+                update = try model.setLinkWithText(link: urlString, text: text)
+            case let .setLink(urlString):
+                update = try model.setLink(link: urlString)
+            case .removeLinks:
+                update = try model.removeLinks()
+            }
+            applyUpdate(update)
+        } catch {
+            restoreContent()
         }
-        applyUpdate(update)
     }
     
     func getLinkAction() -> LinkAction {
@@ -427,9 +462,13 @@ private extension WysiwygComposerViewModel {
                                                 attributes: defaultTextAttributes)
             textView.attributedText = attributed
         } else {
-            let update = model.setContentFromMarkdown(markdown: textView.text)
-            applyUpdate(update)
-            updateTextView()
+            do {
+                let update = try model.setContentFromMarkdown(markdown: textView.text)
+                applyUpdate(update)
+                updateTextView()
+            } catch {
+                restoreContent()
+            }
         }
     }
 
@@ -443,15 +482,15 @@ private extension WysiwygComposerViewModel {
             // Reconciliate
             let rustRange = try attributedContent.text.htmlRange(from: replacement.range)
 
-            let replaceUpdate = model.replaceTextIn(newText: replacement.text,
-                                                    start: UInt32(rustRange.location),
-                                                    end: UInt32(rustRange.upperBound))
+            let replaceUpdate = try model.replaceTextIn(newText: replacement.text,
+                                                        start: UInt32(rustRange.location),
+                                                        end: UInt32(rustRange.upperBound))
             applyUpdate(replaceUpdate, skipTextViewUpdate: true)
 
             // Resync selectedRange
             let rustSelection = try textView.attributedText.htmlRange(from: textView.selectedRange)
-            let selectUpdate = model.select(startUtf16Codeunit: UInt32(rustSelection.location),
-                                            endUtf16Codeunit: UInt32(rustSelection.upperBound))
+            let selectUpdate = try model.select(startUtf16Codeunit: UInt32(rustSelection.location),
+                                                endUtf16Codeunit: UInt32(rustSelection.upperBound))
             applyUpdate(selectUpdate)
 
             Logger.viewModel.logDebug(["Reconciliate from \"\(attributedContent.text.string)\" to \"\(textView.text ?? "")\""],
@@ -471,7 +510,8 @@ private extension WysiwygComposerViewModel {
                 Logger.viewModel.logError(["Reconciliate failed due to out of bounds indexes"],
                                           functionName: #function)
             default:
-                break
+                // Something went wrong on the Rust side
+                restoreContent()
             }
         }
     }
@@ -484,6 +524,25 @@ private extension WysiwygComposerViewModel {
         textView.apply(attributedContent)
         updateCompressedHeightIfNeeded()
         hasPendingFormats = false
+    }
+
+    func restoreContent(plainText: String? = nil) {
+        resetModel()
+
+        if let plainText {
+            do {
+                applyUpdate(try model.replaceText(newText: plainText))
+            } catch {
+                // If applying the plain text fails, just provide an empty composer.
+                resetModel()
+            }
+        }
+    }
+
+    /// Resets the model as empty.
+    func resetModel() {
+        model = newComposerModel()
+        attributedContent = .init()
     }
 }
 
