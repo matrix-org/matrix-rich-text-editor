@@ -13,7 +13,7 @@ import io.element.android.wysiwyg.utils.*
 /**
  * This TextView can display all spans used by the editor.
  */
-class EditorStyledTextView : AppCompatTextView {
+open class EditorStyledTextView : AppCompatTextView {
     private lateinit var inlineCodeStyleConfig: InlineCodeStyleConfig
     private lateinit var codeBlockStyleConfig: CodeBlockStyleConfig
     private var styleAttributesReady = false
