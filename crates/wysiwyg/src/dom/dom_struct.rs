@@ -24,6 +24,7 @@ use crate::dom::{
 };
 use crate::ToHtml;
 
+use super::to_plain_text::ToPlainText;
 use super::FindResult;
 
 #[derive(Clone, Debug, PartialEq, Default)]
@@ -602,6 +603,15 @@ where
 {
     fn to_raw_text(&self) -> S {
         self.document.to_raw_text()
+    }
+}
+
+impl<S> ToPlainText<S> for Dom<S>
+where
+    S: UnicodeString,
+{
+    fn to_plain_text(&self) -> S {
+        self.document.to_plain_text()
     }
 }
 
