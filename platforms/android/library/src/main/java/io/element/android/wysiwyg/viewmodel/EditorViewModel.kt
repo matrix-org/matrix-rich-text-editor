@@ -26,9 +26,8 @@ internal class EditorViewModel(
 
     private var actionStatesCallback: ((Map<ComposerAction, ActionState>) -> Unit)? = null
 
-    // Last known good HTML. If there is an internal error in the Rust model,
-    // we can manually recover to this state.
-    private var recoveryContentHtml: String = ""
+    // If there is an internal error in the Rust model, we can manually recover to this state.
+    private var recoveryContentPlainText: String = ""
 
     private var crashOnComposerFailure: Boolean = BuildConfig.DEBUG
 
@@ -107,8 +106,7 @@ internal class EditorViewModel(
             is TextUpdate.ReplaceAll -> {
                 val replacementHtml = textUpdate.replacementHtml.string()
 
-                // Keep track of the last known good state
-                recoveryContentHtml = replacementHtml
+                recoveryContentPlainText = composer?.getContentAsPlainText() ?: ""
 
                 ReplaceTextResult(
                     text = stringToSpans(replacementHtml),
@@ -145,7 +143,7 @@ internal class EditorViewModel(
             }
         }
 
-    private fun onComposerFailure(error: Throwable) {
+    private fun onComposerFailure(error: Throwable, attemptContentRecovery: Boolean = true) {
         rustErrorCollector?.onRustError(error)
 
         if (crashOnComposerFailure) {
@@ -154,7 +152,14 @@ internal class EditorViewModel(
 
         // Recover from the crash
         composer = provideComposer()
-        composer?.setContentFromHtml(recoveryContentHtml)
+
+        if (attemptContentRecovery) {
+            runCatching {
+                composer?.replaceText(recoveryContentPlainText)
+            }.onFailure {
+                onComposerFailure(it, attemptContentRecovery = false)
+            }
+        }
     }
 
     @VisibleForTesting
