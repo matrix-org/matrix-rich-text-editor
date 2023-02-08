@@ -26,7 +26,7 @@ struct WysiwygActionToolbar: View {
     
     var body: some View {
         HStack {
-            ForEach(WysiwygAction.allCases) { action in
+            ForEach(WysiwygAction.allCases.filter { $0.isVisible(viewModel) }) { action in
                 Button {
                     if action == .link {
                         linkAttributedRange = viewModel.attributedContent.selection
