@@ -106,13 +106,24 @@ describe('useWysiwyg', () => {
     });
 
     test('Create wysiwyg with initial content', async () => {
-        // When
+        // when
         const content = 'fo<strong>o</strong><br />b<em>ar</em>';
         render(<Editor initialContent={content} />);
 
         // Then
         await waitFor(() =>
             expect(screen.getByRole('textbox')).toContainHTML(content),
+        );
+    });
+
+    test('Handle panic', async () => {
+        // When
+        const content = 'fo<strng>o</strng><br />b<em><kar</em>';
+        render(<Editor initialContent={content} />);
+
+        // Then
+        await waitFor(() =>
+            expect(screen.getByRole('textbox')).not.toContainHTML(content),
         );
     });
 });

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { RefObject, useEffect, useState } from 'react';
+import { RefObject, useEffect, useRef, useState } from 'react';
 
 import { ComposerModel } from '../../generated/wysiwyg';
 import { isClipboardEvent, isInputEvent } from './assert';
@@ -40,6 +40,7 @@ export function useListeners(
     composerModel: ComposerModel | null,
     testUtilities: TestUtilities,
     formattingFunctions: FormattingFunctions,
+    onError: (content?: string) => void,
     initialContent?: string,
     inputEventProcessor?: InputEventProcessor,
 ) {
@@ -47,6 +48,8 @@ export function useListeners(
         content: initialContent || null,
         actionStates: createDefaultActionStates(),
     });
+
+    const plainTextContentRef = useRef<string>();
 
     const [areListenersReady, setAreListenersReady] = useState(false);
 
@@ -58,6 +61,8 @@ export function useListeners(
                     composerModel.action_states(),
                 ),
             });
+            plainTextContentRef.current =
+                composerModel.get_content_as_plain_text();
         }
     }, [composerModel]);
 
@@ -68,28 +73,34 @@ export function useListeners(
         }
 
         const _handleInput = (e: WysiwygInputEvent) => {
-            const res = handleInput(
-                e,
-                editorNode,
-                composerModel,
-                modelRef.current,
-                testUtilities,
-                formattingFunctions,
-                inputEventProcessor,
-            );
+            try {
+                const res = handleInput(
+                    e,
+                    editorNode,
+                    composerModel,
+                    modelRef.current,
+                    testUtilities,
+                    formattingFunctions,
+                    inputEventProcessor,
+                );
 
-            if (res) {
-                setState(({ content, actionStates }) => {
-                    const newState: State = {
-                        content,
-                        actionStates: res.actionStates || actionStates,
-                    };
-                    if (res.content !== undefined) {
-                        newState.content = res.content;
-                    }
+                if (res) {
+                    setState(({ content, actionStates }) => {
+                        const newState: State = {
+                            content,
+                            actionStates: res.actionStates || actionStates,
+                        };
+                        if (res.content !== undefined) {
+                            newState.content = res.content;
+                        }
 
-                    return newState;
-                });
+                        return newState;
+                    });
+                    plainTextContentRef.current =
+                        composerModel.get_content_as_plain_text();
+                }
+            } catch (e) {
+                onError(plainTextContentRef.current);
             }
         };
 
@@ -130,17 +141,23 @@ export function useListeners(
         editorNode.addEventListener('keydown', onKeyDown);
 
         const onSelectionChange = () => {
-            const actionStates = handleSelectionChange(
-                editorNode,
-                composerModel,
-                testUtilities,
-            );
+            try {
+                const actionStates = handleSelectionChange(
+                    editorNode,
+                    composerModel,
+                    testUtilities,
+                );
 
-            if (actionStates) {
-                setState(({ content }) => ({
-                    content,
-                    actionStates,
-                }));
+                if (actionStates) {
+                    setState(({ content }) => ({
+                        content,
+                        actionStates,
+                    }));
+                }
+                plainTextContentRef.current =
+                    composerModel.get_content_as_plain_text();
+            } catch (e) {
+                onError(plainTextContentRef.current);
             }
         };
         document.addEventListener('selectionchange', onSelectionChange);
@@ -162,7 +179,8 @@ export function useListeners(
         modelRef,
         testUtilities,
         inputEventProcessor,
-        setState,
+        onError,
+        plainTextContentRef,
     ]);
 
     return { areListenersReady, ...state };
