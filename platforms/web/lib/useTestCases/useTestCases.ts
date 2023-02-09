@@ -33,6 +33,15 @@ export function useTestCases(
 
     const [editorHtml, setEditorHtml] = useState<string>('');
 
+    const setEditor = useCallback(
+        (content: string) => {
+            if (testRef.current) {
+                setEditorHtml(content);
+            }
+        },
+        [testRef],
+    );
+
     const memorizedTraceAction = useMemo(
         () => traceAction(testRef.current, actions, composerModel),
         [testRef, actions, composerModel],
@@ -59,13 +68,23 @@ export function useTestCases(
         [editorRef, testRef, composerModel, editorHtml],
     );
 
-    return {
-        testRef,
-        utilities: {
+    const utilities = useMemo(
+        () => ({
             traceAction: memorizedTraceAction,
             getSelectionAccordingToActions: memorizedGetSelection,
             onResetTestCase,
-            setEditorHtml,
-        },
+            setEditorHtml: setEditor,
+        }),
+        [
+            memorizedTraceAction,
+            memorizedGetSelection,
+            onResetTestCase,
+            setEditor,
+        ],
+    );
+
+    return {
+        testRef,
+        utilities,
     };
 }
