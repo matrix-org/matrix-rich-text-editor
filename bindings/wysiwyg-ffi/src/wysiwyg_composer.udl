@@ -46,7 +46,7 @@ interface ComposerModel {
     ComposerUpdate remove_links();
     ComposerUpdate code_block();
     ComposerUpdate quote();
-    void force_panic();
+    void debug_panic();
     string to_tree();
     string to_example_format();
     ComposerState get_current_dom_state();

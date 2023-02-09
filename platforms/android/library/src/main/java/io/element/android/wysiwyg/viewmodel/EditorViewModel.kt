@@ -172,7 +172,7 @@ internal class EditorViewModel(
         this.crashOnComposerFailure = false
 
         runCatching {
-            composer?.forcePanic()
+            composer?.debugPanic()
         }.onFailure {
             onComposerFailure(it)
         }
