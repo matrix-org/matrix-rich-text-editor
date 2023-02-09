@@ -17,11 +17,33 @@
 @testable import WysiwygComposer
 import XCTest
 
+private enum Constants {
+    static let fallbackContent = "Fallback content"
+}
+
 final class WysiwygComposerTests: XCTestCase {
     func testComposerEmptyState() {
-        newComposerModel()
+        ComposerModelWrapper()
             .assertHtml("")
             .execute { XCTAssertEqual($0.getContentAsMarkdown(), "") }
             .assertSelection(start: 0, end: 0)
+    }
+
+    func testComposerCrashRecovery() {
+        class SomeDelegate: ComposerModelWrapperDelegate {
+            func fallbackContent() -> String {
+                Constants.fallbackContent
+            }
+        }
+
+        let delegate = SomeDelegate()
+        let model = ComposerModelWrapper()
+        model.delegate = delegate
+
+        model
+            .action { $0.replaceText(newText: "Some text") }
+            // Force a crash
+            .action { $0.setContentFromHtml(html: "<//strong>") }
+            .assertHtml(Constants.fallbackContent)
     }
 }

@@ -19,8 +19,8 @@ import XCTest
 
 extension WysiwygComposerTests {
     func testLists() {
-        newComposerModel()
-            .action { $0.orderedList() }
+        ComposerModelWrapper()
+            .action { $0.apply(.orderedList) }
             .action { $0.replaceText(newText: "Item 1") }
             .action { $0.enter() }
             .action { $0.replaceText(newText: "Item 2") }

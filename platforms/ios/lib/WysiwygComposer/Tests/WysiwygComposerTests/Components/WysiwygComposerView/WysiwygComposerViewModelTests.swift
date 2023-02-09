@@ -146,6 +146,13 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         XCTAssertTrue(result)
         XCTAssertEqual(viewModel.content.html, "<a href=\"https://element.io\">teabcst</a>")
     }
+
+    func testCrashRecoveryUsesLatestPlainText() {
+        viewModel.setHtmlContent("<strong>Some <em>text</em></strong>")
+        // Force a crash
+        viewModel.setHtmlContent("<//strong>")
+        XCTAssertEqual(viewModel.content.html, "Some text")
+    }
 }
 
 private extension WysiwygComposerViewModelTests {

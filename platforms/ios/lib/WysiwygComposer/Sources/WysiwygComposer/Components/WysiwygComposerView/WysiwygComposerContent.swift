@@ -45,6 +45,8 @@ public struct WysiwygComposerAttributedContent {
     public let text: NSAttributedString
     /// Range of the selected text within the attributed representation.
     public var selection: NSRange
+    /// Plain text variant of the content saved for recovery.
+    public let plainText: String
 
     // MARK: - Internal
 
@@ -53,9 +55,12 @@ public struct WysiwygComposerAttributedContent {
     /// - Parameters:
     ///   - text: Attributed string representation of the displayed text.
     ///   - selection: Range of the selected text within the attributed representation.
+    ///   - plainText: Plain text variant of the content saved for recovery.
     init(text: NSAttributedString = .init(string: ""),
-         selection: NSRange = .zero) {
+         selection: NSRange = .zero,
+         plainText: String = "") {
         self.text = text
         self.selection = selection
+        self.plainText = plainText
     }
 }

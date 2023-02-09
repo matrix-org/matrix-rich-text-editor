@@ -14,17 +14,17 @@
 // limitations under the License.
 //
 
-import WysiwygComposer
+@testable import WysiwygComposer
 import XCTest
 
-extension ComposerModel {
+extension ComposerModelWrapper {
     /// Execute given action that returns a `ComposerUpdate` on self.
     ///
     /// - Parameters:
     ///   - action: composer action to execute
     /// - Returns: self (discardable)
     @discardableResult
-    func action(_ action: @escaping (ComposerModel) -> ComposerUpdate) -> ComposerModel {
+    func action(_ action: @escaping (ComposerModelWrapper) -> ComposerUpdate) -> ComposerModelWrapper {
         _ = action(self)
         return self
     }
@@ -35,7 +35,7 @@ extension ComposerModel {
     ///   - block: code to execute
     /// - Returns: self (discardable)
     @discardableResult
-    func execute(_ block: @escaping (ComposerModel) -> Void) -> ComposerModel {
+    func execute(_ block: @escaping (ComposerModelWrapper) -> Void) -> ComposerModelWrapper {
         block(self)
         return self
     }
@@ -46,7 +46,7 @@ extension ComposerModel {
     ///   - html: html string to test
     /// - Returns: self (discardable)
     @discardableResult
-    func assertHtml(_ html: String) -> ComposerModel {
+    func assertHtml(_ html: String) -> ComposerModelWrapper {
         XCTAssertEqual(getContentAsHtml(), html)
         return self
     }
@@ -57,7 +57,7 @@ extension ComposerModel {
     ///   - tree: tree string to test
     /// - Returns: self (discardable)
     @discardableResult
-    func assertTree(_ tree: String) -> ComposerModel {
+    func assertTree(_ tree: String) -> ComposerModelWrapper {
         XCTAssertEqual(toTree(), tree)
         return self
     }
@@ -69,7 +69,7 @@ extension ComposerModel {
     ///   - end: selection end (UTF16 code units)
     /// - Returns: self (discardable)
     @discardableResult
-    func assertSelection(start: UInt32, end: UInt32) -> ComposerModel {
+    func assertSelection(start: UInt32, end: UInt32) -> ComposerModelWrapper {
         let state = getCurrentDomState()
         XCTAssertEqual(state.start, start)
         XCTAssertEqual(state.end, end)
@@ -82,7 +82,7 @@ extension ComposerModel {
     ///   - linkAction: expected link action
     /// - Returns: self (discardable)
     @discardableResult
-    func assertLinkAction(_ linkAction: LinkAction) -> ComposerModel {
+    func assertLinkAction(_ linkAction: LinkAction) -> ComposerModelWrapper {
         XCTAssertEqual(getLinkAction(), linkAction)
         return self
     }

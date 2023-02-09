@@ -34,8 +34,8 @@ private enum Constants {
 
 extension WysiwygComposerTests {
     func testQuotesFromEmptyComposer() {
-        newComposerModel()
-            .action { $0.quote() }
+        ComposerModelWrapper()
+            .action { $0.apply(.quote) }
             .action { $0.replaceText(newText: "Some quote") }
             .action { $0.enter() }
             .action { $0.replaceText(newText: "More text") }
@@ -46,8 +46,8 @@ extension WysiwygComposerTests {
     }
 
     func testQuotesWithMultilineInput() {
-        newComposerModel()
-            .action { $0.quote() }
+        ComposerModelWrapper()
+            .action { $0.apply(.quote) }
             .action { $0.replaceText(newText: "Some quote\nMore text") }
             .action { $0.enter() }
             .action { $0.enter() }
@@ -56,9 +56,9 @@ extension WysiwygComposerTests {
     }
 
     func testQuotesFromContent() {
-        newComposerModel()
+        ComposerModelWrapper()
             .action { $0.replaceText(newText: "Some quote") }
-            .action { $0.quote() }
+            .action { $0.apply(.quote) }
             .action { $0.enter() }
             .action { $0.replaceText(newText: "More text") }
             .action { $0.enter() }

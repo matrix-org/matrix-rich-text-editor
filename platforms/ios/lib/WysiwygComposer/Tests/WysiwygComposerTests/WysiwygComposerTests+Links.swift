@@ -19,12 +19,12 @@ import XCTest
 
 extension WysiwygComposerTests {
     func testCreateWithTextLinkAction() {
-        newComposerModel()
+        ComposerModelWrapper()
             .assertLinkAction(.createWithText)
     }
 
     func testCreateLinkAction() {
-        newComposerModel()
+        ComposerModelWrapper()
             .action { $0.replaceText(newText: "test") }
             .action { $0.select(startUtf16Codeunit: 0, endUtf16Codeunit: 4) }
             .assertLinkAction(.create)
@@ -32,13 +32,13 @@ extension WysiwygComposerTests {
 
     func testEditLinkAction() {
         let link = "test_url"
-        newComposerModel()
+        ComposerModelWrapper()
             .action { $0.setLinkWithText(link: link, text: "test") }
             .assertLinkAction(.edit(link: "https://\(link)"))
     }
 
     func testSetLinkWithText() {
-        newComposerModel()
+        ComposerModelWrapper()
             .action { $0.setLinkWithText(link: "link", text: "text") }
             .assertTree(
                 """
@@ -51,7 +51,7 @@ extension WysiwygComposerTests {
     }
     
     func testSetLinkWithTextWithIncludedScheme() {
-        newComposerModel()
+        ComposerModelWrapper()
             .action { $0.setLinkWithText(link: "http://link", text: "text") }
             .assertTree(
                 """
@@ -64,7 +64,7 @@ extension WysiwygComposerTests {
     }
     
     func testSetMailLinkWithText() {
-        newComposerModel()
+        ComposerModelWrapper()
             .action { $0.setLinkWithText(link: "test@element.io", text: "text") }
             .assertTree(
                 """
@@ -77,7 +77,7 @@ extension WysiwygComposerTests {
     }
 
     func testSetLink() {
-        newComposerModel()
+        ComposerModelWrapper()
             .action { $0.replaceText(newText: "text") }
             .action { $0.select(startUtf16Codeunit: 0, endUtf16Codeunit: 4) }
             .action { $0.setLink(link: "link") }
@@ -92,7 +92,7 @@ extension WysiwygComposerTests {
     }
 
     func testRemoveLinks() {
-        newComposerModel()
+        ComposerModelWrapper()
             .action { $0.setLinkWithText(link: "link", text: "text") }
             .assertTree(
                 """

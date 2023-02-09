@@ -34,8 +34,8 @@ private enum Constants {
 
 extension WysiwygComposerTests {
     func testCodeBlocksFromEmptyComposer() {
-        newComposerModel()
-            .action { $0.codeBlock() }
+        ComposerModelWrapper()
+            .action { $0.apply(.codeBlock) }
             .action { $0.replaceText(newText: "Some code") }
             .action { $0.enter() }
             .action { $0.replaceText(newText: "\t") }
@@ -47,8 +47,8 @@ extension WysiwygComposerTests {
     }
 
     func testCodeBlocksWithMultilineInput() {
-        newComposerModel()
-            .action { $0.codeBlock() }
+        ComposerModelWrapper()
+            .action { $0.apply(.codeBlock) }
             .action { $0.replaceText(newText: "Some code\n\tmore code") }
             .action { $0.enter() }
             .action { $0.enter() }
@@ -57,9 +57,9 @@ extension WysiwygComposerTests {
     }
 
     func testCodeBlocksFromContent() {
-        newComposerModel()
+        ComposerModelWrapper()
             .action { $0.replaceText(newText: "Some code") }
-            .action { $0.codeBlock() }
+            .action { $0.apply(.codeBlock) }
             .action { $0.enter() }
             .action { $0.replaceText(newText: "\t") }
             .action { $0.replaceText(newText: "more code") }

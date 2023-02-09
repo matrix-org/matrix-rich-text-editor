@@ -105,7 +105,7 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
 
     // MARK: - Private
 
-    private var model: ComposerModel
+    private let model: ComposerModelWrapper
     private var cancellables = Set<AnyCancellable>()
     private var defaultTextAttributes: [NSAttributedString.Key: Any] {
         [.font: UIFont.preferredFont(forTextStyle: .body),
@@ -126,7 +126,8 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         self.parserStyle = parserStyle
 
         textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
-        model = newComposerModel()
+        model = ComposerModelWrapper()
+        model.delegate = self
         // Publish composer empty state.
         $attributedContent.sink { [unowned self] content in
             self.isContentEmpty = content.text.length == 0
@@ -170,7 +171,7 @@ public extension WysiwygComposerViewModel {
         Logger.viewModel.logDebug([attributedContent.logSelection,
                                    "Apply action: \(action)"],
                                   functionName: #function)
-        guard let update = model.apply(action) else { return }
+        let update = model.apply(action)
         if update.textUpdate() == .keep {
             hasPendingFormats = true
         } else if action == .codeBlock || action == .quote, attributedContent.selection.length == 0 {
@@ -371,7 +372,9 @@ private extension WysiwygComposerViewModel {
             // FIXME: handle error for out of bounds index
             let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
             let textSelection = try attributed.attributedRange(from: htmlSelection)
-            attributedContent = WysiwygComposerAttributedContent(text: attributed, selection: textSelection)
+            attributedContent = WysiwygComposerAttributedContent(text: attributed,
+                                                                 selection: textSelection,
+                                                                 plainText: model.getContentAsPlainText())
             Logger.viewModel.logDebug(["Sel(att): \(textSelection)",
                                        "Sel: \(htmlSelection)",
                                        "HTML: \"\(html)\"",
@@ -484,6 +487,14 @@ private extension WysiwygComposerViewModel {
         textView.apply(attributedContent)
         updateCompressedHeightIfNeeded()
         hasPendingFormats = false
+    }
+}
+
+// MARK: - ComposerModelWrapperDelegate
+
+extension WysiwygComposerViewModel: ComposerModelWrapperDelegate {
+    func fallbackContent() -> String {
+        attributedContent.plainText
     }
 }
 

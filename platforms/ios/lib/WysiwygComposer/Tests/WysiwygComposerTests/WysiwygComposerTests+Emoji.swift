@@ -19,7 +19,7 @@ import XCTest
 
 extension WysiwygComposerTests {
     func testSetBaseStringWithEmoji() {
-        newComposerModel()
+        ComposerModelWrapper()
             .action { $0.replaceText(newText: TestConstants.testStringWithEmojis) }
             // Text is preserved, including emojis.
             .assertHtml(TestConstants.testStringWithEmojis)
@@ -28,7 +28,7 @@ extension WysiwygComposerTests {
     }
 
     func testBackspacingEmoji() {
-        newComposerModel()
+        ComposerModelWrapper()
             .action { $0.replaceText(newText: TestConstants.testStringWithEmojis) }
             .action { $0.select(startUtf16Codeunit: 7, endUtf16Codeunit: 14) }
             .action { $0.backspace() }
