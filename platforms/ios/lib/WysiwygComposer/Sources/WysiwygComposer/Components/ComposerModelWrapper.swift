@@ -44,7 +44,10 @@ protocol ComposerModelWrapperDelegate: AnyObject {
 }
 
 /// Provides a wrapper around `ComposerModel` that handles failures and reset to
-/// a fallback content if needed.
+/// a fallback content if needed. This wrapper exists because we are currently tweaking
+/// the generated bindings to be able to catch Rust panics on the Swift side (see `make ios`).
+/// If the bindings are restored to their standard state, this class can be removed and occurences
+/// of `ComposerModelWrapper()` just needs to be replaced with `newComposerModel()`.
 final class ComposerModelWrapper: ComposerModelWrapperProtocol {
     // MARK: - Private
 
