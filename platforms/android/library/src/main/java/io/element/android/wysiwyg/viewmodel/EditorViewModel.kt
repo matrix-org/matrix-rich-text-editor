@@ -1,28 +1,35 @@
 package io.element.android.wysiwyg.viewmodel
 
 import android.text.Editable
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.ViewModel
+import io.element.android.wysiwyg.BuildConfig
 import io.element.android.wysiwyg.extensions.log
 import io.element.android.wysiwyg.extensions.string
 import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.inputhandlers.models.LinkAction
 import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
-import io.element.android.wysiwyg.utils.EditorIndexMapper
+import io.element.android.wysiwyg.utils.*
 import io.element.android.wysiwyg.utils.HtmlConverter
-import io.element.android.wysiwyg.utils.RustErrorCollector
-import io.element.android.wysiwyg.utils.throwIfDebugBuild
 import uniffi.wysiwyg_composer.*
 import uniffi.wysiwyg_composer.LinkAction as ComposerLinkAction
 
 internal class EditorViewModel(
-    private val composer: ComposerModelInterface?,
+    private val provideComposer: () -> ComposerModelInterface?,
     private val htmlConverter: HtmlConverter,
 ) : ViewModel() {
+
+    private var composer: ComposerModelInterface? = provideComposer()
 
     var rustErrorCollector: RustErrorCollector? = null
 
     private var actionStatesCallback: ((Map<ComposerAction, ActionState>) -> Unit)? = null
+
+    // If there is an internal error in the Rust model, we can manually recover to this state.
+    private var recoveryContentPlainText: String = ""
+
+    private var crashOnComposerFailure: Boolean = BuildConfig.DEBUG
 
     fun setActionStatesCallback(callback: ((Map<ComposerAction, ActionState>) -> Unit)?) {
         this.actionStatesCallback = callback
@@ -35,10 +42,10 @@ internal class EditorViewModel(
 
         val update = runCatching {
             composer?.select(newStart, newEnd)
-        }.onFailure { error ->
-            rustErrorCollector?.onRustError(error)
-            error.throwIfDebugBuild()
-        }.getOrNull()
+        }
+            .onFailure(::onComposerFailure)
+            .getOrNull()
+
         val menuState = update?.menuState()
         if (menuState is MenuState.Update) {
             actionStatesCallback?.invoke(menuState.actionStates)
@@ -85,10 +92,8 @@ internal class EditorViewModel(
                 is EditorInputAction.Indent -> composer?.indent()
                 is EditorInputAction.Unindent -> composer?.unindent()
             }
-        }.onFailure { error ->
-            rustErrorCollector?.onRustError(error)
-            error.throwIfDebugBuild()
-        }.getOrNull()
+        }.onFailure(::onComposerFailure)
+            .getOrNull()
 
         composer?.log()
 
@@ -98,10 +103,16 @@ internal class EditorViewModel(
         }
 
         return when (val textUpdate = update?.textUpdate()) {
-            is TextUpdate.ReplaceAll -> ReplaceTextResult(
-                text = stringToSpans(textUpdate.replacementHtml.string()),
-                selection = textUpdate.startUtf16Codeunit.toInt()..textUpdate.endUtf16Codeunit.toInt(),
-            )
+            is TextUpdate.ReplaceAll -> {
+                val replacementHtml = textUpdate.replacementHtml.string()
+
+                recoveryContentPlainText = composer?.getContentAsPlainText() ?: ""
+
+                ReplaceTextResult(
+                    text = stringToSpans(replacementHtml),
+                    selection = textUpdate.startUtf16Codeunit.toInt()..textUpdate.endUtf16Codeunit.toInt(),
+                )
+            }
             is TextUpdate.Select,
             is TextUpdate.Keep,
             null -> null
@@ -131,6 +142,43 @@ internal class EditorViewModel(
                 is ComposerLinkAction.CreateWithText -> LinkAction.InsertLink
             }
         }
+
+    private fun onComposerFailure(error: Throwable, attemptContentRecovery: Boolean = true) {
+        rustErrorCollector?.onRustError(error)
+
+        if (crashOnComposerFailure) {
+            throw error
+        }
+
+        // Recover from the crash
+        composer = provideComposer()
+
+        if (attemptContentRecovery) {
+            runCatching {
+                composer?.replaceText(recoveryContentPlainText)
+            }.onFailure {
+                onComposerFailure(it, attemptContentRecovery = false)
+            }
+        }
+    }
+
+    @VisibleForTesting
+    internal fun testComposerCrashRecovery() {
+        val crashOnComposerFailure = this.crashOnComposerFailure
+
+        // Normally debug builds should fail fast and crash but
+        // we disable this behaviour in order to test the recovery
+        // behaviour
+        this.crashOnComposerFailure = false
+
+        runCatching {
+            composer?.debugPanic()
+        }.onFailure {
+            onComposerFailure(it)
+        }
+
+        this.crashOnComposerFailure = crashOnComposerFailure
+    }
 
     private fun stringToSpans(string: String): CharSequence =
         htmlConverter.fromHtmlToSpans(string)

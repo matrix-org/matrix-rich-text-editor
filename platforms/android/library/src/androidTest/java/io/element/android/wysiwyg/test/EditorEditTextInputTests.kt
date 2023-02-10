@@ -24,7 +24,9 @@ import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.spans.LinkSpan
 import io.element.android.wysiwyg.spans.OrderedListSpan
 import io.element.android.wysiwyg.test.utils.*
+import io.element.android.wysiwyg.utils.RustErrorCollector
 import io.mockk.confirmVerified
+import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
 import org.hamcrest.CoreMatchers
@@ -417,6 +419,25 @@ class EditorEditTextInputTests {
                 editor.getHtmlOutput(),
                 CoreMatchers.equalTo("<u><em>Test</em></u>")
             )
+        }
+    }
+
+    @Test
+    fun testRustCrashRecovery() {
+        val mockErrorCollector = mockk<RustErrorCollector>(relaxed = true)
+
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(ImeActions.commitText("Testing"))
+            .perform(EditorActions.testCrash(errorCollector = mockErrorCollector))
+            .check(matches(withText("Testing")))
+            .perform(ImeActions.commitText("...1, 2, 3"))
+            .check(matches(withText("Testing...1, 2, 3")))
+
+        verify {
+            mockErrorCollector.onRustError(withArg {
+                it is uniffi.wysiwyg_composer.InternalException &&
+                        it.message == "This should only happen in tests."
+            })
         }
     }
 }

@@ -251,4 +251,15 @@ impl ComposerModel {
     pub fn get_link_action(self: &Arc<Self>) -> LinkAction {
         self.inner.lock().unwrap().get_link_action().into()
     }
+
+    #[cfg(not(debug_assertions))]
+    pub fn debug_panic(self: &Arc<Self>) {
+        // No-op
+    }
+
+    /// Force a panic for test purposes
+    #[cfg(debug_assertions)]
+    pub fn debug_panic(self: &Arc<Self>) {
+        panic!("This should only happen in tests.");
+    }
 }

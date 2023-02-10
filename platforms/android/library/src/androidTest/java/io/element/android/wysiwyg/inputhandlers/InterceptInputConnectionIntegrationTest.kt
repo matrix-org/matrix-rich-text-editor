@@ -22,7 +22,7 @@ class InterceptInputConnectionIntegrationTest {
 
     private val app: Application = ApplicationProvider.getApplicationContext()
     private val viewModel = EditorViewModel(
-        composer = newComposerModel(),
+        provideComposer = { newComposerModel() },
         htmlConverter = AndroidHtmlConverter(
             provideHtmlToSpansParser = { html ->
                 HtmlToSpansParser(
