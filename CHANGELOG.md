@@ -1,5 +1,21 @@
 # Changelog
 
+# [1.1.0] - 2023-02-10
+
+### Added
+- Common: Add utility to get content as plain text
+
+### Changed
+- Web & iOS: Hide indent/unindent buttons outside of lists in example app
+- Android: Update NDK version to r25c (LTS)
+- Android: Allow subclassing `EditorStyledTextView`
+
+### Fixed
+- Common: Recover from Rust model panics
+- Web: Don't rerender when testRef is not set
+- iOS: Fix pending formats not reapplied in new list item after `enter`
+- iOS: Improve composer content vertical spacing
+
 # [1.0.0] - 2023-02-07
 
 ### Added
