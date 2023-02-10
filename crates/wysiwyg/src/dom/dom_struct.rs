@@ -56,7 +56,11 @@ where
     /// Creates a new Dom using the passed `root_node` as its root document. This `root_node` must
     /// be a container node.
     pub fn new_with_root(root_node: DomNode<S>) -> Self {
-        assert!(root_node.is_container_node());
+        assert!(
+            root_node.is_container_node(),
+            "Root node cannot be of type {:?}",
+            root_node.kind()
+        );
         let mut root_node = root_node;
         root_node.set_handle(DomHandle::root());
 

@@ -37,6 +37,8 @@ pub mod to_tree;
 pub mod unicode_string;
 
 pub use dom_creation_error::DomCreationError;
+pub use dom_creation_error::HtmlParseError;
+pub use dom_creation_error::MarkdownParseError;
 pub use dom_handle::DomHandle;
 pub use dom_struct::Dom;
 pub use find_result::FindResult;

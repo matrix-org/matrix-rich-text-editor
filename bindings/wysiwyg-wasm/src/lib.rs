@@ -156,15 +156,19 @@ impl ComposerModel {
     pub fn set_content_from_html(&mut self, text: &str) -> ComposerUpdate {
         ComposerUpdate::from(
             self.inner
-                .set_content_from_html(&Utf16String::from_str(text)),
+                .set_content_from_html(&Utf16String::from_str(text))
+                // TODO
+                .unwrap(),
         )
     }
 
     pub fn set_content_from_markdown(&mut self, text: &str) -> ComposerUpdate {
-        ComposerUpdate::from(
-            self.inner
-                .set_content_from_markdown(&Utf16String::from_str(text)),
-        )
+        let markdown = self
+            .inner
+            .set_content_from_markdown(&Utf16String::from_str(text))
+            // TODO
+            .unwrap();
+        ComposerUpdate::from(markdown)
     }
 
     pub fn clear(&mut self) -> ComposerUpdate {

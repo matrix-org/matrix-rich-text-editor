@@ -15,10 +15,10 @@
 use crate::action_state::ActionState;
 use crate::composer_model::menu_state::MenuStateComputeType;
 use crate::composer_state::ComposerState;
+use crate::dom::parser::markdown::markdown_html_parser::MarkdownHTMLParser;
 use crate::dom::parser::parse;
 use crate::dom::to_plain_text::ToPlainText;
-use crate::dom::{Dom, UnicodeString};
-use crate::markdown_html_parser::MarkdownHTMLParser;
+use crate::dom::{Dom, DomCreationError, UnicodeString};
 use crate::{
     ComposerAction, ComposerUpdate, DomHandle, Location, ToHtml, ToMarkdown,
     ToTree,
@@ -93,27 +93,20 @@ where
     /// Replace the entire content of the model with given HTML string.
     /// This will remove all previous and next states, effectively disabling
     /// undo and redo until further updates.
-    pub fn set_content_from_html(&mut self, html: &S) -> ComposerUpdate<S> {
-        let dom = parse(&html.to_string());
+    pub fn set_content_from_html(
+        &mut self,
+        html: &S,
+    ) -> Result<ComposerUpdate<S>, DomCreationError> {
+        let dom = parse(&html.to_string())
+            .map_err(DomCreationError::HtmlParseError)?;
 
-        match dom {
-            Ok(dom) => {
-                self.state.dom = dom;
-                self.previous_states.clear();
-                self.next_states.clear();
-                Self::post_process_dom(&mut self.state.dom);
-                self.state.start = Location::from(self.state.dom.text_len());
-                self.state.end = self.state.start;
-                self.create_update_replace_all_with_menu_state()
-            }
-            Err(e) => {
-                // We should log here - internal task PSU-741
-                self.state.dom = e.dom;
-                self.previous_states.clear();
-                self.next_states.clear();
-                self.create_update_replace_all_with_menu_state()
-            }
-        }
+        self.state.dom = dom;
+        self.previous_states.clear();
+        self.next_states.clear();
+        Self::post_process_dom(&mut self.state.dom);
+        self.state.start = Location::from(self.state.dom.text_len());
+        self.state.end = self.state.start;
+        Ok(self.create_update_replace_all_with_menu_state())
     }
 
     fn post_process_dom(dom: &mut Dom<S>) {
@@ -124,8 +117,9 @@ where
     pub fn set_content_from_markdown(
         &mut self,
         markdown: &S,
-    ) -> ComposerUpdate<S> {
-        let html = MarkdownHTMLParser::to_html(markdown);
+    ) -> Result<ComposerUpdate<S>, DomCreationError> {
+        let html = MarkdownHTMLParser::to_html(markdown)
+            .map_err(DomCreationError::MarkdownParseError)?;
 
         self.set_content_from_html(&html)
     }
@@ -216,6 +210,7 @@ where
 
     pub fn clear(&mut self) -> ComposerUpdate<S> {
         self.set_content_from_html(&"".into())
+            .expect("empty content")
     }
 }
 
@@ -231,10 +226,12 @@ mod test {
     // Most tests for ComposerModel are inside the tests/ modules
 
     #[test]
-    fn completely_replacing_html_works() {
+    fn completely_replacing_html_works() -> Result<(), DomCreationError> {
         let mut model = cm("{hello}| world");
-        model.set_content_from_html(&Utf16String::from_str("foo <b>bar</b>"));
+        model
+            .set_content_from_html(&Utf16String::from_str("foo <b>bar</b>"))?;
         assert_eq!(model.state.dom.to_string(), "foo <b>bar</b>");
+        Ok(())
     }
 
     #[test]
@@ -250,7 +247,8 @@ mod test {
     }
 
     #[test]
-    fn set_content_from_html_with_complex_html_has_proper_selection() {
+    fn set_content_from_html_with_complex_html_has_proper_selection(
+    ) -> Result<(), DomCreationError> {
         let mut model = cm("|");
         model.set_content_from_html(&utf16(
             "<blockquote>\
@@ -262,7 +260,7 @@ mod test {
                 <p>Some text</p>\
                 <pre><code>A\n\tcode\nblock</code></pre>\
                 <p>Some <code>inline</code> code</p>",
-        ));
+        ))?;
         assert_eq!(
             tx(&model),
             "<blockquote>\
@@ -272,6 +270,7 @@ mod test {
             <p>Some text</p>\
             <pre><code>A\n\tcode\nblock</code></pre>\
             <p>Some <code>inline</code> code|</p>"
-        )
+        );
+        Ok(())
     }
 }

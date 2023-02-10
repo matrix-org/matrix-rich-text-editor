@@ -14,37 +14,60 @@
 
 use widestring::Utf16String;
 
-use crate::{tests::testutils_composer_model::tx, ComposerModel};
+use crate::{
+    dom::DomCreationError,
+    tests::{testutils_composer_model::tx, testutils_conversion::utf16},
+    HtmlParseError,
+};
 
 use super::testutils_composer_model::cm;
 
 #[test]
-fn set_content_from_html() {
-    let mut model = ComposerModel::new();
-    model.set_content_from_html(&Utf16String::from("content"));
+fn set_content_from_html() -> Result<(), DomCreationError> {
+    let mut model = cm("|");
+    model.set_content_from_html(&utf16("content"))?;
     assert_eq!(tx(&model), "content|");
+    Ok(())
 }
 
 #[test]
-fn set_content_from_markdown() {
-    let mut model = ComposerModel::new();
-    model.set_content_from_markdown(&Utf16String::from("**abc**"));
+fn set_content_from_markdown() -> Result<(), DomCreationError> {
+    let mut model = cm("|");
+    model.set_content_from_markdown(&utf16("**abc**"))?;
     assert_eq!(tx(&model), "<strong>abc|</strong>");
+    Ok(())
 }
 
 #[test]
-fn set_content_from_html_moves_cursor_to_the_end() {
+fn set_content_from_markdown_invalid() {
+    let mut model = cm("|");
+    let result = model
+        .set_content_from_markdown(&utf16("`````"))
+        .unwrap_err();
+    assert_eq!(
+        result,
+        DomCreationError::HtmlParseError(HtmlParseError {
+            parse_errors: vec!["Panic".into()]
+        })
+    );
+}
+
+#[test]
+fn set_content_from_html_moves_cursor_to_the_end(
+) -> Result<(), DomCreationError> {
     let mut model = cm("abc|");
-    model.set_content_from_html(&"content".into());
+    model.set_content_from_html(&"content".into())?;
     assert_eq!(tx(&model), "content|");
+    Ok(())
 }
 
 #[test]
-fn clear() {
-    let mut model = ComposerModel::new();
-    model.set_content_from_html(&Utf16String::from("content"));
+fn clear() -> Result<(), DomCreationError> {
+    let mut model = cm("|");
+    model.set_content_from_html(&Utf16String::from("content"))?;
     model.clear();
     assert_eq!(tx(&model), "|");
+    Ok(())
 }
 
 #[test]

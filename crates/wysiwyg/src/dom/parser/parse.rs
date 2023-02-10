@@ -12,24 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::panic::catch_unwind;
+
+use crate::dom::dom_creation_error::HtmlParseError;
 use crate::dom::nodes::dom_node::DomNodeKind::CodeBlock;
 use crate::dom::nodes::ContainerNode;
-use crate::dom::{Dom, DomCreationError, UnicodeString};
-use crate::{DomHandle, DomNode};
+use crate::dom::Dom;
+use crate::{DomHandle, DomNode, UnicodeString};
 
-pub fn parse<S>(html: &str) -> Result<Dom<S>, DomCreationError<S>>
+pub fn parse<S>(html: &str) -> Result<Dom<S>, HtmlParseError>
 where
     S: UnicodeString,
 {
-    cfg_if::cfg_if! {
-        if #[cfg(feature = "sys")] {
-            sys::HtmlParser::default().parse(html)
-        } else if #[cfg(all(feature = "js", target_arch = "wasm32"))] {
-            js::HtmlParser::default().parse(html)
-        } else {
-            unreachable!("The `sys` or `js` are mutually exclusive, and one of them must be enabled.")
+    // TODO: Don't use catch_unwind! It's not for general purpose try-catch.
+    catch_unwind(|| {
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "sys")] {
+                sys::HtmlParser::default().parse(html)
+            } else if #[cfg(all(feature = "js", target_arch = "wasm32"))] {
+                js::HtmlParser::default().parse(html)
+            } else {
+                unreachable!("The `sys` or `js` are mutually exclusive, and one of them must be enabled.")
+            }
         }
-    }
+    }).map_err(|_e| HtmlParseError { parse_errors: vec!["Panic".into()]})?
 }
 
 #[cfg(feature = "sys")]
@@ -56,7 +62,7 @@ mod sys {
         pub(super) fn parse<S>(
             &mut self,
             html: &str,
-        ) -> Result<Dom<S>, DomCreationError<S>>
+        ) -> Result<Dom<S>, HtmlParseError>
         where
             S: UnicodeString,
         {
@@ -66,7 +72,7 @@ mod sys {
                     post_process_code_blocks(dom)
                 })
                 .map_err(|err| {
-                    self.padom_creation_error_to_dom_creation_error(err)
+                    self.padom_creation_error_to_html_parse_error(err)
                 })
         }
 
@@ -316,15 +322,11 @@ mod sys {
             DomNode::Container(ContainerNode::new_paragraph(Vec::new()))
         }
 
-        fn padom_creation_error_to_dom_creation_error<S>(
+        fn padom_creation_error_to_html_parse_error(
             &mut self,
             e: PaDomCreationError,
-        ) -> DomCreationError<S>
-        where
-            S: UnicodeString,
-        {
-            DomCreationError {
-                dom: self.padom_to_dom(e.dom),
+        ) -> HtmlParseError {
+            HtmlParseError {
                 parse_errors: e.parse_errors,
             }
         }
@@ -642,7 +644,7 @@ mod js {
         pub(super) fn parse<S>(
             &mut self,
             html: &str,
-        ) -> Result<Dom<S>, DomCreationError<S>>
+        ) -> Result<Dom<S>, HtmlParseError>
         where
             S: UnicodeString,
         {
@@ -845,13 +847,11 @@ mod js {
         }
     }
 
-    fn to_dom_creation_error<S, E>(error: E) -> DomCreationError<S>
+    fn to_dom_creation_error<E>(error: E) -> HtmlParseError
     where
-        S: UnicodeString,
         E: ToString,
     {
-        DomCreationError {
-            dom: Dom::new(vec![]),
+        HtmlParseError {
             parse_errors: vec![error.to_string()],
         }
     }
