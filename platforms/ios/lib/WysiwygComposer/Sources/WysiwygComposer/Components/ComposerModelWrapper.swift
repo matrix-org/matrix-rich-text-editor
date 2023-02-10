@@ -17,6 +17,7 @@
 import Foundation
 
 protocol ComposerModelWrapperProtocol {
+    // Rust direct bindings
     func setContentFromHtml(html: String) -> ComposerUpdate
     func setContentFromMarkdown(markdown: String) -> ComposerUpdate
     func getContentAsHtml() -> String
@@ -28,7 +29,6 @@ protocol ComposerModelWrapperProtocol {
     func replaceTextIn(newText: String, start: UInt32, end: UInt32) -> ComposerUpdate
     func backspace() -> ComposerUpdate
     func enter() -> ComposerUpdate
-    func apply(_ action: WysiwygAction) -> ComposerUpdate
     func setLink(link: String) -> ComposerUpdate
     func setLinkWithText(link: String, text: String) -> ComposerUpdate
     func removeLinks() -> ComposerUpdate
@@ -36,6 +36,10 @@ protocol ComposerModelWrapperProtocol {
     func getCurrentDomState() -> ComposerState
     func actionStates() -> [ComposerAction: ActionState]
     func getLinkAction() -> LinkAction
+
+    // Extensions
+    func apply(_ action: WysiwygAction) -> ComposerUpdate
+    var reversedActions: Set<ComposerAction> { get }
 }
 
 /// Defines a delegate that can provide fallback content in case something goes wrong within the model.
@@ -54,6 +58,8 @@ final class ComposerModelWrapper: ComposerModelWrapperProtocol {
     private var model = newComposerModel()
 
     // MARK: - Internal
+
+    // MARK: Rust direct bindings
 
     weak var delegate: ComposerModelWrapperDelegate?
 
@@ -101,10 +107,6 @@ final class ComposerModelWrapper: ComposerModelWrapperProtocol {
         execute { try $0.enter() }
     }
 
-    func apply(_ action: WysiwygAction) -> ComposerUpdate {
-        execute { try $0.apply(action) }
-    }
-
     func setLink(link: String) -> ComposerUpdate {
         execute { try $0.setLink(link: link) }
     }
@@ -131,6 +133,16 @@ final class ComposerModelWrapper: ComposerModelWrapperProtocol {
 
     func getLinkAction() -> LinkAction {
         model.getLinkAction()
+    }
+
+    // MARK: Extensions
+
+    func apply(_ action: WysiwygAction) -> ComposerUpdate {
+        execute { try $0.apply(action) }
+    }
+
+    var reversedActions: Set<ComposerAction> {
+        model.reversedActions
     }
 }
 
