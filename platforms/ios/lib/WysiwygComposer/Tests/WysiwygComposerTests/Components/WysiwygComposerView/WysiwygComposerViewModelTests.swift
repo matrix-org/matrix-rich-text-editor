@@ -153,6 +153,23 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         viewModel.setHtmlContent("<//strong>")
         XCTAssertEqual(viewModel.content.html, "Some text")
     }
+
+    func testPendingFormatIsReapplied() {
+        viewModel.apply(.orderedList)
+        viewModel.apply(.bold)
+        viewModel.apply(.italic)
+        viewModel.typeTrailingText("Formatted")
+        // Enter
+        viewModel.typeTrailingText("\n")
+        viewModel.typeTrailingText("Still formatted")
+        XCTAssertTrue(
+            viewModel
+                .textView
+                .attributedText
+                .fontSymbolicTraits(at: viewModel.textView.attributedText.length - 1)
+                .contains([.traitBold, .traitItalic])
+        )
+    }
 }
 
 private extension WysiwygComposerViewModelTests {
@@ -166,5 +183,13 @@ private extension WysiwygComposerViewModelTests {
         // Set selection where we want it, as setting the content automatically moves cursor to the end.
         viewModel.textView.selectedRange = selectedRange
         viewModel.didUpdateText()
+    }
+}
+
+private extension WysiwygComposerViewModel {
+    func typeTrailingText(_ text: String) {
+        let lastChar = textView.attributedText.length - 1
+        let range = NSRange(location: lastChar, length: 0)
+        _ = replaceText(range: range, replacementText: text)
     }
 }

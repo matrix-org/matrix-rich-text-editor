@@ -241,7 +241,13 @@ public extension WysiwygComposerViewModel {
             shouldAcceptChange = false
         } else if replacementText.count == 1, replacementText[String.Index(utf16Offset: 0, in: replacementText)].isNewline {
             update = model.enter()
-            if model.actionStates()[.codeBlock] == .reversed || model.actionStates()[.quote] == .reversed {
+            // Pending formats need to be reapplied to the
+            // NSAttributedString upon next character input if we
+            // are in a structure that might add non-formatted
+            // representation chars to it (e.g. NBSP/ZWSP, list prefixes)
+            if !model.reversedActions
+                .intersection([.codeBlock, .quote, .orderedList, .unorderedList])
+                .isEmpty {
                 hasPendingFormats = true
             }
             shouldAcceptChange = false
