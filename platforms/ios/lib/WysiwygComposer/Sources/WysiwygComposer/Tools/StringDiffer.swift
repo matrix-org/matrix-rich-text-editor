@@ -37,11 +37,6 @@ struct StringDifferReplacement: Equatable {
     let range: NSRange
     let text: String
 
-    /// Returns true if all the character of the replacement are whitespaces.
-    var isAllWhitespaces: Bool {
-        text.allSatisfy { $0.isWhitespace || $0 == .zwsp }
-    }
-
     init(range: NSRange, text: String) {
         self.range = range
         self.text = text
@@ -122,7 +117,11 @@ private struct StringDiff {
 private extension String {
     /// Converts all whitespaces to NBSP to avoid diffs caused by HTML translations.
     var withNBSP: String {
-        String(map { $0.isWhitespace ? Character.nbsp : $0 }).trimmingCharacters(in: .whitespacesAndNewlines)
+        String(self
+            // FIXME: Not ideal, but avoids triggering reconciliate because of placeholder whitespaces
+            .filter { $0 != .zwsp }
+            .map { $0.isWhitespace ? Character.nbsp : $0 })
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// Computes the diff from provided string to self. Outputs UTF16 locations and lengths.
