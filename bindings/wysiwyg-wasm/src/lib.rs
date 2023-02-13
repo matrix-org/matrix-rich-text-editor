@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::collections::{HashMap, VecDeque};
+use std::{
+    collections::{HashMap, VecDeque},
+    fmt::Display,
+};
 
 use wasm_bindgen::prelude::*;
 use widestring::Utf16String;
@@ -153,22 +156,24 @@ impl ComposerModel {
         )
     }
 
-    pub fn set_content_from_html(&mut self, text: &str) -> ComposerUpdate {
-        ComposerUpdate::from(
-            self.inner
-                .set_content_from_html(&Utf16String::from_str(text))
-                // TODO
-                .unwrap(),
-        )
+    pub fn set_content_from_html(
+        &mut self,
+        text: &str,
+    ) -> Result<ComposerUpdate, DomCreationError> {
+        let update = self
+            .inner
+            .set_content_from_html(&Utf16String::from_str(text))?;
+        Ok(ComposerUpdate::from(update))
     }
 
-    pub fn set_content_from_markdown(&mut self, text: &str) -> ComposerUpdate {
+    pub fn set_content_from_markdown(
+        &mut self,
+        text: &str,
+    ) -> Result<ComposerUpdate, DomCreationError> {
         let markdown = self
             .inner
-            .set_content_from_markdown(&Utf16String::from_str(text))
-            // TODO
-            .unwrap();
-        ComposerUpdate::from(markdown)
+            .set_content_from_markdown(&Utf16String::from_str(text))?;
+        Ok(ComposerUpdate::from(markdown))
     }
 
     pub fn clear(&mut self) -> ComposerUpdate {
@@ -290,6 +295,51 @@ impl ComposerUpdate {
 
     pub fn menu_state(&self) -> MenuState {
         MenuState::from(self.inner.menu_state.clone())
+    }
+}
+
+#[derive(Clone, Debug)]
+#[wasm_bindgen]
+pub enum DomCreationError {
+    HtmlParseError,
+    MarkdownParseError,
+}
+
+impl Display for DomCreationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            DomCreationError::HtmlParseError => {
+                "could not create dom from html"
+            }
+            DomCreationError::MarkdownParseError => {
+                "could not create dom from markdown"
+            }
+        })
+    }
+}
+
+impl From<wysiwyg::DomCreationError> for DomCreationError {
+    fn from(error: wysiwyg::DomCreationError) -> Self {
+        match error {
+            wysiwyg::DomCreationError::HtmlParseError(_) => {
+                Self::HtmlParseError
+            }
+            wysiwyg::DomCreationError::MarkdownParseError(_) => {
+                Self::MarkdownParseError
+            }
+        }
+    }
+}
+
+impl From<DomCreationError> for wysiwyg::DomCreationError {
+    fn from(_: DomCreationError) -> Self {
+        unimplemented!("Error is not needed as input")
+    }
+}
+
+impl From<DomCreationError> for JsValue {
+    fn from(error: DomCreationError) -> Self {
+        JsValue::from_str(&error.to_string())
     }
 }
 
