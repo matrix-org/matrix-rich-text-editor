@@ -29,4 +29,5 @@ public extension String {
 
 public extension Character {
     static let nbsp = Character(.nbsp)
+    static let zwsp = Character(.zwsp)
 }

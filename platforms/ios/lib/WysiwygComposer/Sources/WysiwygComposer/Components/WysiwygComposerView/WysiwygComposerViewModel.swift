@@ -446,7 +446,10 @@ private extension WysiwygComposerViewModel {
     func reconciliateIfNeeded() {
         do {
             guard let replacement = try StringDiffer.replacement(from: attributedContent.text.string,
-                                                                 to: textView.text ?? "") else {
+                                                                 to: textView.text ?? ""),
+                // FIXME: Not ideal, but avoids triggering reconciliate because of placeholder whitespaces
+                !replacement.isAllWhitespaces
+            else {
                 return
             }
             // Reconciliate

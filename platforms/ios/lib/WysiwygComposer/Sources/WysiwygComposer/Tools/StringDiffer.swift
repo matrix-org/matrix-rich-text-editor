@@ -37,6 +37,11 @@ struct StringDifferReplacement: Equatable {
     let range: NSRange
     let text: String
 
+    /// Returns true if all the character of the replacement are whitespaces.
+    var isAllWhitespaces: Bool {
+        text.allSatisfy { $0.isWhitespace || $0 == .zwsp }
+    }
+
     init(range: NSRange, text: String) {
         self.range = range
         self.text = text
