@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::panic::catch_unwind;
-
 use crate::dom::dom_creation_error::HtmlParseError;
 use crate::dom::nodes::dom_node::DomNodeKind::CodeBlock;
 use crate::dom::nodes::ContainerNode;
@@ -24,18 +22,15 @@ pub fn parse<S>(html: &str) -> Result<Dom<S>, HtmlParseError>
 where
     S: UnicodeString,
 {
-    // TODO: Don't use catch_unwind! It's not for general purpose try-catch.
-    catch_unwind(|| {
-        cfg_if::cfg_if! {
-            if #[cfg(feature = "sys")] {
-                sys::HtmlParser::default().parse(html)
-            } else if #[cfg(all(feature = "js", target_arch = "wasm32"))] {
-                js::HtmlParser::default().parse(html)
-            } else {
-                unreachable!("The `sys` or `js` are mutually exclusive, and one of them must be enabled.")
-            }
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "sys")] {
+            sys::HtmlParser::default().parse(html)
+        } else if #[cfg(all(feature = "js", target_arch = "wasm32"))] {
+            js::HtmlParser::default().parse(html)
+        } else {
+            unreachable!("The `sys` or `js` are mutually exclusive, and one of them must be enabled.")
         }
-    }).map_err(|_e| HtmlParseError { parse_errors: vec!["Panic".into()]})?
+    }
 }
 
 #[cfg(feature = "sys")]

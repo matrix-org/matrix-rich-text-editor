@@ -17,7 +17,6 @@ use widestring::Utf16String;
 use crate::{
     dom::DomCreationError,
     tests::{testutils_composer_model::tx, testutils_conversion::utf16},
-    HtmlParseError,
 };
 
 use super::testutils_composer_model::cm;
@@ -36,20 +35,6 @@ fn set_content_from_markdown() -> Result<(), DomCreationError> {
     model.set_content_from_markdown(&utf16("**abc**"))?;
     assert_eq!(tx(&model), "<strong>abc|</strong>");
     Ok(())
-}
-
-#[test]
-fn set_content_from_markdown_invalid() {
-    let mut model = cm("|");
-    let result = model
-        .set_content_from_markdown(&utf16("`````"))
-        .unwrap_err();
-    assert_eq!(
-        result,
-        DomCreationError::HtmlParseError(HtmlParseError {
-            parse_errors: vec!["Panic".into()]
-        })
-    );
 }
 
 #[test]
