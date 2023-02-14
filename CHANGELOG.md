@@ -1,5 +1,10 @@
 # Changelog
 
+# [1.1.1] - 2023-02-14
+
+### Fixed
+- iOS: Fix selection/cursor position after lists
+
 # [1.1.0] - 2023-02-10
 
 ### Added
