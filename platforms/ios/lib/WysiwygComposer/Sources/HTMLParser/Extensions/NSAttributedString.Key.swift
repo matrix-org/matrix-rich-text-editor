@@ -18,9 +18,17 @@ import DTCoreText
 import Foundation
 
 extension NSAttributedString.Key {
+    // MARK: - DTCoreText Internal Keys
+
     static let DTTextBlocks: NSAttributedString.Key = .init(rawValue: DTTextBlocksAttribute)
-    static let blockStyle: NSAttributedString.Key = .init(rawValue: "BlockStyleAttributeKey")
     static let DTField: NSAttributedString.Key = .init(rawValue: DTFieldAttribute)
     static let DTTextLists: NSAttributedString.Key = .init(rawValue: DTTextListsAttribute)
+
+    // MARK: - Custom Keys
+
+    /// Attribute for parts of the string that require some custom drawing (e.g. code blocks, quotes).
+    static let blockStyle: NSAttributedString.Key = .init(rawValue: "BlockStyleAttributeKey")
+    /// Attribute for parts of the string that should be removed for HTML selection computation.
+    /// Should include both placeholder characters such as NBSP and ZWSP, as well as list prefixes.
     static let discardableText: NSAttributedString.Key = .init(rawValue: "DiscardableAttributeKey")
 }

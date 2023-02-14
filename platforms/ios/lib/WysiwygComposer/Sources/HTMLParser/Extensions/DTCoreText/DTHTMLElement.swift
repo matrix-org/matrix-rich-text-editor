@@ -25,7 +25,7 @@ extension DTHTMLElement {
            let child = childNodes.first as? DTTextHTMLElement,
            child.text() == .nbsp {
             removeAllChildNodes()
-            let newChild = DiscardableTextHTMLElement(from: child)
+            let newChild = PlaceholderTextHTMLElement(from: child)
             addChildNode(newChild)
             newChild.inheritAttributes(from: self)
             newChild.interpretAttributes()
@@ -69,8 +69,8 @@ extension DTHTMLElement {
         }
     }
 
-    private func createDiscardableElement() -> DiscardableTextHTMLElement {
-        let discardableElement = DiscardableTextHTMLElement()
+    private func createDiscardableElement() -> PlaceholderTextHTMLElement {
+        let discardableElement = PlaceholderTextHTMLElement()
         discardableElement.inheritAttributes(from: self)
         discardableElement.interpretAttributes()
         return discardableElement

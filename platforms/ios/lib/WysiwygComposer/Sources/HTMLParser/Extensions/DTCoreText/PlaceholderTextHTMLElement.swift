@@ -16,7 +16,9 @@
 
 import DTCoreText
 
-final class DiscardableTextHTMLElement: DTTextHTMLElement {
+/// Defines a placeholder to be inserted during HTML parsing in order to have a valid
+/// position for e.g. an empty paragraph.
+final class PlaceholderTextHTMLElement: DTTextHTMLElement {
     /// Init.
     ///
     /// - Parameters:

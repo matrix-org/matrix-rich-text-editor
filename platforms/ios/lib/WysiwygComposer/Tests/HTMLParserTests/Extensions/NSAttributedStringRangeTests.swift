@@ -27,7 +27,7 @@ final class NSAttributedStringRangeTests: XCTestCase {
                        "\t1.\tItem 1\n\t2.\tItem 2\nSome Text")
 
         // Ranges that are not part of the raw HTML text (excluding tags) are detected
-        XCTAssertEqual(attributed.listPrefixesRanges(),
+        XCTAssertEqual(attributed.discardableTextRanges(),
                        [NSRange(location: 0, length: 4),
                         NSRange(location: 11, length: 4)])
 
@@ -72,7 +72,7 @@ final class NSAttributedStringRangeTests: XCTestCase {
         let attributed = try HTMLParser.parse(html: html)
         XCTAssertEqual(attributed.string,
                        "\t•\tItem 1\n\t•\tItem 2\nSome Text")
-        XCTAssertEqual(attributed.listPrefixesRanges(),
+        XCTAssertEqual(attributed.discardableTextRanges(),
                        [NSRange(location: 0, length: 3),
                         NSRange(location: 10, length: 3)])
         XCTAssertEqual(try attributed.attributedPosition(at: 1), 4)
@@ -86,7 +86,7 @@ final class NSAttributedStringRangeTests: XCTestCase {
         let attributed = try HTMLParser.parse(html: html)
         XCTAssertEqual(attributed.string,
                        "\t1.\tItem 1\n\t2.\tItem 2\n\t•\tItem 1\n\t•\tItem 2")
-        XCTAssertEqual(attributed.listPrefixesRanges(),
+        XCTAssertEqual(attributed.discardableTextRanges(),
                        [NSRange(location: 0, length: 4),
                         NSRange(location: 11, length: 4),
                         NSRange(location: 22, length: 3),
@@ -113,7 +113,7 @@ final class NSAttributedStringRangeTests: XCTestCase {
         }
         html.append(contentsOf: "</ol>")
         let attributed = try HTMLParser.parse(html: html)
-        XCTAssertEqual(attributed.listPrefixesRanges().count,
+        XCTAssertEqual(attributed.discardableTextRanges().count,
                        19)
     }
 
