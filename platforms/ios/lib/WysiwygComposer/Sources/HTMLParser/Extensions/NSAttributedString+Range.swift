@@ -140,16 +140,17 @@ extension NSAttributedString {
         let discardableTextRanges = discardableTextRanges()
         var actualIndex = htmlIndex
 
-        for discardableTextRange in discardableTextRanges where discardableTextRange.location < actualIndex {
+        for discardableTextRange in discardableTextRanges where try htmlPosition(at: discardableTextRange.location) <= htmlIndex {
             actualIndex += discardableTextRange.length
         }
 
         let prefixes = listPrefixesRanges()
 
         for listPrefix in prefixes {
-            if listPrefix.location < actualIndex {
+            let prefixLocation = try htmlPosition(at: listPrefix.location)
+            if prefixLocation < htmlIndex {
                 actualIndex += listPrefix.length
-            } else if listPrefix.location == actualIndex {
+            } else if prefixLocation == htmlIndex {
                 // Should only count the listPrefix in if we are
                 // not on an inserted newline from end of <li>
                 if !(attributedSubstring(from: .init(location: actualIndex, length: 1))

@@ -117,6 +117,32 @@ final class NSAttributedStringRangeTests: XCTestCase {
                        19)
     }
 
+    func testPositionAfterList() throws {
+        let html = "<ol><li>test</li></ol><p>\(Character.nbsp)</p><p>\(Character.nbsp)</p>"
+        let attributed = try HTMLParser.parse(html: html)
+        XCTAssertEqual(
+            try attributed.htmlRange(from: .init(location: 12, length: 0)),
+            NSRange(location: 6, length: 0)
+        )
+        XCTAssertEqual(
+            try attributed.attributedRange(from: .init(location: 6, length: 0)),
+            NSRange(location: 12, length: 0)
+        )
+    }
+
+    func testPositionAfterListWithInput() throws {
+        let html = "<ol><li>test</li></ol><p>\(Character.nbsp)</p><p>a</p>"
+        let attributed = try HTMLParser.parse(html: html)
+        XCTAssertEqual(
+            try attributed.htmlRange(from: .init(location: 12, length: 0)),
+            NSRange(location: 7, length: 0)
+        )
+        XCTAssertEqual(
+            try attributed.attributedRange(from: .init(location: 7, length: 0)),
+            NSRange(location: 12, length: 0)
+        )
+    }
+
     func testOutOfBoundsIndexes() throws {
         let html = "<ol><li>Item 1</li><li>Item 2</li></ol>Some Text"
         let attributed = try HTMLParser.parse(html: html)
