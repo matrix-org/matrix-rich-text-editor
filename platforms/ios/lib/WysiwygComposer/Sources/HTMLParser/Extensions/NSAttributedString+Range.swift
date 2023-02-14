@@ -70,12 +70,10 @@ extension NSAttributedString {
     ///   - range: the range on which the elements should be detected. Entire range if omitted
     /// - Returns: an array of matching ranges
     func discardableTextRanges(in range: NSRange? = nil) -> [NSRange] {
-        let enumRange = range ?? .init(location: 0, length: length)
         var ranges = [NSRange]()
 
-        enumerateAttribute(.discardableText,
-                           in: enumRange) { (attr: Any?, range: NSRange, _) in
-            if attr != nil {
+        enumerateTypedAttribute(.discardableText, in: range) { (isDiscardable: Bool, range: NSRange, _) in
+            if isDiscardable {
                 ranges.append(range)
             }
         }

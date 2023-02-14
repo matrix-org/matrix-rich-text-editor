@@ -28,15 +28,10 @@ extension NSMutableAttributedString {
         )
 
         // This fixes an iOS bug where if some text is typed after a link, and then a whitespace is added the link color is overridden.
-        enumerateAttribute(
-            .link,
-            in: NSRange(location: 0, length: length)
-        ) { value, range, _ in
-            if value != nil {
-                removeAttribute(.underlineStyle, range: range)
-                removeAttribute(.underlineColor, range: range)
-                addAttributes([.foregroundColor: style.linkColor], range: range)
-            }
+        enumerateTypedAttribute(.link) { (_: URL, range: NSRange, _) in
+            removeAttribute(.underlineStyle, range: range)
+            removeAttribute(.underlineColor, range: range)
+            addAttributes([.foregroundColor: style.linkColor], range: range)
         }
 
         removeParagraphVerticalSpacing()
@@ -104,11 +99,8 @@ private extension NSMutableAttributedString {
 
     /// Finds any list prefix field inside the string and mark them as discardable text.
     func applyDiscardableToListPrefixes() {
-        enumerateAttribute(.DTField,
-                           in: .init(location: 0, length: length)) { (attr: Any?, range: NSRange, _) in
-            if attr != nil {
-                addAttribute(.discardableText, value: true, range: range)
-            }
+        enumerateTypedAttribute(.DTField) { (_: String, range: NSRange, _) in
+            addAttribute(.discardableText, value: true, range: range)
         }
     }
 }
