@@ -245,9 +245,9 @@ public extension WysiwygComposerViewModel {
             // NSAttributedString upon next character input if we
             // are in a structure that might add non-formatted
             // representation chars to it (e.g. NBSP/ZWSP, list prefixes)
-            if !model.reversedActions
-                .intersection([.codeBlock, .quote, .orderedList, .unorderedList])
-                .isEmpty {
+            if !model
+                .reversedActions
+                .isDisjoint(with: [.codeBlock, .quote, .orderedList, .unorderedList]) {
                 hasPendingFormats = true
             }
             shouldAcceptChange = false
