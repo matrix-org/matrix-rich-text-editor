@@ -62,34 +62,18 @@ extension NSAttributedString {
 
     // MARK: - Internal
 
-    /// Compute an array of all detected occurences of bulleted lists and
-    /// numbered lists prefixes. ("1.", "•", ... with included tabulations and newline
-    /// that are not represented in the HTML raw text).
+    /// Compute an array of all detected occurences of discardable
+    /// text (list prefixes, placeholder characters) within the given range
+    /// of the attributed text.
     ///
     /// - Parameters:
     ///   - range: the range on which the elements should be detected. Entire range if omitted
     /// - Returns: an array of matching ranges
-    func listPrefixesRanges(in range: NSRange? = nil) -> [NSRange] {
-        let enumRange = range ?? .init(location: 0, length: length)
-        var ranges = [NSRange]()
-
-        enumerateAttribute(.DTField,
-                           in: enumRange) { (attr: Any?, range: NSRange, _) in
-            if attr != nil {
-                ranges.append(range)
-            }
-        }
-
-        return ranges
-    }
-
     func discardableTextRanges(in range: NSRange? = nil) -> [NSRange] {
-        let enumRange = range ?? .init(location: 0, length: length)
         var ranges = [NSRange]()
 
-        enumerateAttribute(.discardableText,
-                           in: enumRange) { (attr: Any?, range: NSRange, _) in
-            if attr != nil {
+        enumerateTypedAttribute(.discardableText, in: range) { (isDiscardable: Bool, range: NSRange, _) in
+            if isDiscardable {
                 ranges.append(range)
             }
         }
@@ -109,25 +93,11 @@ extension NSAttributedString {
                 .outOfBoundsAttributedIndex(index: attributedIndex)
         }
 
-        let discardableTextRanges = discardableTextRanges()
-        var actualIndex = attributedIndex
-
-        for discardableTextRange in discardableTextRanges where discardableTextRange.upperBound <= attributedIndex {
-            actualIndex -= discardableTextRange.length
-        }
-
-        let prefixes = listPrefixesRanges()
-
-        for listPrefix in prefixes {
-            if listPrefix.upperBound <= attributedIndex {
-                actualIndex -= listPrefix.length
-            } else if listPrefix.contains(attributedIndex),
-                      character(at: attributedIndex)?.isNewline == false {
-                actualIndex -= (attributedIndex - listPrefix.location)
-            }
-        }
-
-        return actualIndex
+        return discardableTextRanges(in: .init(location: 0, length: attributedIndex))
+            // All ranges length should be counted out, unless the last one end strictly after the
+            // attributed index, in that case we only count out the difference (i.e. chars before the index)
+            .map { $0.upperBound <= attributedIndex ? $0.length : attributedIndex - $0.location }
+            .reduce(attributedIndex) { $0 - $1 }
     }
 
     /// Computes index inside the attributed representation from the index
@@ -137,34 +107,16 @@ extension NSAttributedString {
     ///   - htmlIndex: the index inside the HTML raw text
     /// - Returns: the index inside the attributed representation
     func attributedPosition(at htmlIndex: Int) throws -> Int {
-        let discardableTextRanges = discardableTextRanges()
-        var actualIndex = htmlIndex
+        let attributedIndex = try discardableTextRanges()
+            // All ranges that have a HTML position before the provided index should be entirely counted.
+            .filter { try htmlPosition(at: $0.location) <= htmlIndex }
+            .reduce(htmlIndex) { $0 + $1.length }
 
-        for discardableTextRange in discardableTextRanges where try htmlPosition(at: discardableTextRange.location) <= htmlIndex {
-            actualIndex += discardableTextRange.length
-        }
-
-        let prefixes = listPrefixesRanges()
-
-        for listPrefix in prefixes {
-            let prefixLocation = try htmlPosition(at: listPrefix.location)
-            if prefixLocation < htmlIndex {
-                actualIndex += listPrefix.length
-            } else if prefixLocation == htmlIndex {
-                // Should only count the listPrefix in if we are
-                // not on an inserted newline from end of <li>
-                if !(attributedSubstring(from: .init(location: actualIndex, length: 1))
-                    .string == "\n") {
-                    actualIndex += listPrefix.length
-                }
-            }
-        }
-
-        guard actualIndex <= length else {
+        guard attributedIndex <= length else {
             throw AttributedRangeError
                 .outOfBoundsHtmlIndex(index: htmlIndex)
         }
 
-        return actualIndex
+        return attributedIndex
     }
 }

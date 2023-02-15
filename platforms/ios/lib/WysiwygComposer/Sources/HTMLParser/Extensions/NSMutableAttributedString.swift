@@ -18,6 +18,41 @@ import DTCoreText
 import UIKit
 
 extension NSMutableAttributedString {
+    /// Apply all custom attributes expected by the composer's `UITextView` on self.
+    ///
+    /// - Parameters:
+    ///   - style: Style for HTML parsing.
+    func applyPostParsingCustomAttributes(style: HTMLParserStyle) {
+        addAttributes(
+            [.foregroundColor: style.textColor], range: NSRange(location: 0, length: length)
+        )
+
+        // This fixes an iOS bug where if some text is typed after a link, and then a whitespace is added the link color is overridden.
+        enumerateTypedAttribute(.link) { (_: URL, range: NSRange, _) in
+            removeAttribute(.underlineStyle, range: range)
+            removeAttribute(.underlineColor, range: range)
+            addAttributes([.foregroundColor: style.linkColor], range: range)
+        }
+
+        removeParagraphVerticalSpacing()
+        applyBackgroundStyles(style: style)
+        applyInlineCodeBackgroundStyle(codeBackgroundColor: style.codeBlockStyle.backgroundColor)
+        replacePlaceholderTexts()
+        applyDiscardableToListPrefixes()
+    }
+}
+
+private extension NSMutableAttributedString {
+    /// Remove the vertical spacing for paragraphs in the entire attributed string.
+    func removeParagraphVerticalSpacing() {
+        enumerateTypedAttribute(.paragraphStyle) { (style: NSParagraphStyle, range: NSRange, _) in
+            let mutableStyle = style.mut()
+            mutableStyle.paragraphSpacing = 0
+            mutableStyle.paragraphSpacingBefore = 0
+            addAttribute(.paragraphStyle, value: mutableStyle as Any, range: range)
+        }
+    }
+
     /// Sets the background style for detected quote & code blocks within the attributed string.
     ///
     /// - Parameters:
@@ -54,23 +89,18 @@ extension NSMutableAttributedString {
         }
     }
 
-    /// Finds any text that has been marked as discardable
-    /// and either replaces it with ZWSP if contained overlaps with text marked with a background style
-    /// or removes it otherwise
-    func replaceOrDeleteDiscardableText() {
+    /// Finds any text that has been marked as discardable and replaces it with ZWSP
+    func replacePlaceholderTexts() {
         enumerateTypedAttribute(.discardableText) { (discardable: Bool, range: NSRange, _) in
             guard discardable == true else { return }
             self.replaceCharacters(in: range, with: String.zwsp)
         }
     }
 
-    /// Remove the vertical spacing for paragraphs in the entire attributed string.
-    func removeParagraphVerticalSpacing() {
-        enumerateTypedAttribute(.paragraphStyle) { (style: NSParagraphStyle, range: NSRange, _) in
-            let mutableStyle = style.mut()
-            mutableStyle.paragraphSpacing = 0
-            mutableStyle.paragraphSpacingBefore = 0
-            addAttribute(.paragraphStyle, value: mutableStyle as Any, range: range)
+    /// Finds any list prefix field inside the string and mark them as discardable text.
+    func applyDiscardableToListPrefixes() {
+        enumerateTypedAttribute(.DTField) { (_: String, range: NSRange, _) in
+            addAttribute(.discardableText, value: true, range: range)
         }
     }
 }
