@@ -19,6 +19,7 @@ use core::panic;
 
 use crate::{DomHandle, DomNode, ListType, UnicodeString};
 
+use super::nodes::dom_node::DomNodeKind::{CodeBlock, Quote};
 use super::nodes::ContainerNode;
 use super::Dom;
 
@@ -45,7 +46,23 @@ where
         let first_handle = handles[0];
         let mut removed_nodes = Vec::new();
         for handle in handles.iter().rev() {
-            removed_nodes.push(self.remove(handle));
+            let removed = self.remove(handle);
+            // Quotes and code block contains paragraphs as direct children
+            // We need to wrap these instead of the quote/code block
+            //
+            // Note: this behaviour might change if we want to handle
+            // quote/code blocks inside list items.
+            if removed.kind() == Quote || removed.kind() == CodeBlock {
+                if let DomNode::Container(c) = removed {
+                    let mut children = c.take_children();
+                    children.reverse();
+                    removed_nodes.append(&mut children);
+                } else {
+                    panic!("Quote/code block is not a container!")
+                }
+            } else {
+                removed_nodes.push(removed);
+            }
         }
         removed_nodes.reverse();
 

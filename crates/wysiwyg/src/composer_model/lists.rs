@@ -248,8 +248,16 @@ where
         list_type: ListType,
         range: Range,
     ) -> ComposerUpdate<S> {
-        let handles: Vec<&DomHandle> = range
-            .top_level_locations()
+        let nodes_iterator =
+            if range.has_single_top_level_node(Some(DomNodeKind::Quote)) {
+                // Single top level quote means we're trying to create a list inside
+                // the quote, we should wrap the nodes from one depth further into it.
+                range.locations_at_depth(range.top_level_depth() + 1)
+            } else {
+                range.locations_at_depth(range.top_level_depth())
+            };
+
+        let handles = nodes_iterator
             // FIXME: filtering positions that are before start, these shouldn't be returned from a > 0 range
             .filter(|l| !(l.relative_position() == DomLocationPosition::Before))
             .map(|l| &l.node_handle)
