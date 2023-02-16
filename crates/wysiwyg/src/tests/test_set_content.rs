@@ -14,35 +14,55 @@
 
 use widestring::Utf16String;
 
-use crate::{tests::testutils_composer_model::tx, ComposerModel};
+use crate::{
+    dom::DomCreationError,
+    tests::{testutils_composer_model::tx, testutils_conversion::utf16},
+    HtmlParseError,
+};
 
 use super::testutils_composer_model::cm;
 
 #[test]
 fn set_content_from_html() {
-    let mut model = ComposerModel::new();
-    model.set_content_from_html(&Utf16String::from("content"));
+    let mut model = cm("|");
+    model.set_content_from_html(&utf16("content")).unwrap();
     assert_eq!(tx(&model), "content|");
 }
 
 #[test]
+fn set_content_from_html_invalid() {
+    let mut model = cm("|");
+    let error = model
+        .set_content_from_html(&utf16("<strong>hello<strong>"))
+        .unwrap_err();
+    assert_eq!(
+        error,
+        DomCreationError::HtmlParseError(HtmlParseError::new(vec![
+            "Unexpected open tag at end of body".into()
+        ]))
+    );
+}
+
+#[test]
 fn set_content_from_markdown() {
-    let mut model = ComposerModel::new();
-    model.set_content_from_markdown(&Utf16String::from("**abc**"));
+    let mut model = cm("|");
+    model.set_content_from_markdown(&utf16("**abc**")).unwrap();
     assert_eq!(tx(&model), "<strong>abc|</strong>");
 }
 
 #[test]
 fn set_content_from_html_moves_cursor_to_the_end() {
     let mut model = cm("abc|");
-    model.set_content_from_html(&"content".into());
+    model.set_content_from_html(&"content".into()).unwrap();
     assert_eq!(tx(&model), "content|");
 }
 
 #[test]
 fn clear() {
-    let mut model = ComposerModel::new();
-    model.set_content_from_html(&Utf16String::from("content"));
+    let mut model = cm("|");
+    model
+        .set_content_from_html(&Utf16String::from("content"))
+        .unwrap();
     model.clear();
     assert_eq!(tx(&model), "|");
 }

@@ -19,6 +19,7 @@
 //! [super::Dom]. All instances of classes within this module are thrown away
 //! when parsing finishes.
 
+pub mod markdown;
 #[cfg(feature = "sys")]
 mod padom;
 #[cfg(feature = "sys")]

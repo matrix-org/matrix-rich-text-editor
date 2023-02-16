@@ -14,12 +14,12 @@
 
 use pulldown_cmark as md_parser;
 
-use crate::UnicodeString;
+use crate::{dom::MarkdownParseError, UnicodeString};
 
 pub struct MarkdownHTMLParser {}
 
 impl MarkdownHTMLParser {
-    pub fn to_html<S>(markdown: &S) -> S
+    pub fn to_html<S>(markdown: &S) -> Result<S, MarkdownParseError>
     where
         S: UnicodeString,
     {
@@ -33,6 +33,7 @@ impl MarkdownHTMLParser {
         let parser = Parser::new_ext(&markdown, options);
 
         let mut html = String::new();
+
         compile_to_html(&mut html, parser);
 
         // By default, there is a `<p>…</p>\n` around the HTML content. That's the
@@ -58,6 +59,6 @@ impl MarkdownHTMLParser {
             .replace("</li>\n", "</li>")
             .replace("<br />\n", "<br />");
 
-        S::try_from(html).unwrap()
+        Ok(S::try_from(html).unwrap())
     }
 }

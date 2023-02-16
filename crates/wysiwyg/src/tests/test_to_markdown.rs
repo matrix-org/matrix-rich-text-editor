@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use crate::{
-    markdown_html_parser::MarkdownHTMLParser, ComposerModel, ToMarkdown,
+    dom::parser::markdown::MarkdownHTMLParser, ComposerModel, ToMarkdown,
 };
 use widestring::Utf16String;
 
@@ -213,7 +213,7 @@ fn assert_to_md(html: &str, expected_markdown: &str) {
     assert_eq!(markdown, expected_markdown);
 
     let expected_html = html;
-    let html = MarkdownHTMLParser::to_html(&markdown);
+    let html = MarkdownHTMLParser::to_html(&markdown).unwrap();
 
     assert_eq!(html, expected_html);
 }

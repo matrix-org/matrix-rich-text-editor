@@ -5,6 +5,7 @@ use widestring::Utf16String;
 
 use crate::ffi_composer_state::ComposerState;
 use crate::ffi_composer_update::ComposerUpdate;
+use crate::ffi_dom_creation_error::DomCreationError;
 use crate::ffi_link_actions::LinkAction;
 use crate::into_ffi::IntoFfi;
 use crate::{ActionState, ComposerAction};
@@ -24,24 +25,23 @@ impl ComposerModel {
     pub fn set_content_from_html(
         self: &Arc<Self>,
         html: String,
-    ) -> Arc<ComposerUpdate> {
+    ) -> Result<Arc<ComposerUpdate>, DomCreationError> {
         let html = Utf16String::from_str(&html);
-        Arc::new(ComposerUpdate::from(
-            self.inner.lock().unwrap().set_content_from_html(&html),
-        ))
+        let update = self.inner.lock().unwrap().set_content_from_html(&html)?;
+        Ok(Arc::new(ComposerUpdate::from(update)))
     }
 
     pub fn set_content_from_markdown(
         self: &Arc<Self>,
         markdown: String,
-    ) -> Arc<ComposerUpdate> {
+    ) -> Result<Arc<ComposerUpdate>, DomCreationError> {
         let markdown = Utf16String::from_str(&markdown);
-        Arc::new(ComposerUpdate::from(
-            self.inner
-                .lock()
-                .unwrap()
-                .set_content_from_markdown(&markdown),
-        ))
+        let update = self
+            .inner
+            .lock()
+            .unwrap()
+            .set_content_from_markdown(&markdown)?;
+        Ok(Arc::new(ComposerUpdate::from(update)))
     }
 
     pub fn get_content_as_html(self: &Arc<Self>) -> String {

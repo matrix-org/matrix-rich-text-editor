@@ -136,7 +136,7 @@ internal class EditorViewModel(
 
     fun getLinkAction(): LinkAction? =
         composer?.getLinkAction()?.let {
-            when(it) {
+            when (it) {
                 is ComposerLinkAction.Edit -> LinkAction.SetLink(currentLink = it.link)
                 is ComposerLinkAction.Create -> LinkAction.SetLink(currentLink = null)
                 is ComposerLinkAction.CreateWithText -> LinkAction.InsertLink
@@ -150,14 +150,16 @@ internal class EditorViewModel(
             throw error
         }
 
-        // Recover from the crash
-        composer = provideComposer()
+        if (error is InternalException) { // InternalException means Rust panic
+            // Recover from the crash
+            composer = provideComposer()
 
-        if (attemptContentRecovery) {
-            runCatching {
-                composer?.replaceText(recoveryContentPlainText)
-            }.onFailure {
-                onComposerFailure(it, attemptContentRecovery = false)
+            if (attemptContentRecovery) {
+                runCatching {
+                    composer?.replaceText(recoveryContentPlainText)
+                }.onFailure {
+                    onComposerFailure(it, attemptContentRecovery = false)
+                }
             }
         }
     }

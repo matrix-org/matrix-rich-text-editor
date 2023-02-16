@@ -54,7 +54,7 @@ final class ListsSnapshotTests: SnapshotTests {
             """
             <ol><li>Item 1</li><li><p>Item 2</p>\
             <ol><li>Item 2A</li><li>Item 2B</li><li>Item 2C</li></ol>\
-            </li><li>Item 3</li></ul>
+            </li><li>Item 3</li></ol>
             """
         )
         assertSnapshot(

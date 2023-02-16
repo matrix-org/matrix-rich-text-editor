@@ -12,13 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use super::{Dom, UnicodeString};
+use core::fmt;
 
-#[derive(Debug)]
-pub struct DomCreationError<S>
-where
-    S: UnicodeString,
-{
-    pub dom: Dom<S>,
+#[derive(Debug, Eq, PartialEq)]
+pub enum DomCreationError {
+    HtmlParseError(HtmlParseError),
+    MarkdownParseError(MarkdownParseError),
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct HtmlParseError {
     pub parse_errors: Vec<String>,
+}
+
+impl HtmlParseError {
+    pub fn default() -> Self {
+        Self {
+            parse_errors: vec![],
+        }
+    }
+
+    pub fn new(parse_errors: Vec<String>) -> Self {
+        Self { parse_errors }
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum MarkdownParseError {
+    InvalidMarkdownError,
+}
+
+impl fmt::Display for MarkdownParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let message = match self {
+            Self::InvalidMarkdownError => "unable to parse markdown",
+        };
+        write!(f, "{message}")
+    }
 }
