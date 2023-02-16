@@ -290,6 +290,8 @@ impl Range {
         self.locations
             .iter()
             .filter(move |l| l.node_handle.depth() == depth)
+            // FIXME: filtering positions that are before start, these shouldn't be returned.
+            .filter(|l| !(l.relative_position() == DomLocationPosition::Before))
     }
 
     pub fn locations_from_depth(
@@ -308,12 +310,7 @@ impl Range {
     /// Return true if the current range contains a single top
     /// level node of optional given kind.
     pub fn has_single_top_level_node(&self, kind: Option<DomNodeKind>) -> bool {
-        let mut top_level_locations = self
-            .top_level_locations()
-            // FIXME: filtering positions that are before start, these shouldn't be returned from a > 0 range
-            .filter(|l| {
-                !(l.relative_position() == DomLocationPosition::Before)
-            });
+        let mut top_level_locations = self.top_level_locations();
 
         if let Some(first_loc) = top_level_locations.next() {
             let is_expected_kind = if let Some(kind) = kind {

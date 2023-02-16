@@ -257,11 +257,7 @@ where
                 range.locations_at_depth(range.top_level_depth())
             };
 
-        let handles = nodes_iterator
-            // FIXME: filtering positions that are before start, these shouldn't be returned from a > 0 range
-            .filter(|l| !(l.relative_position() == DomLocationPosition::Before))
-            .map(|l| &l.node_handle)
-            .collect();
+        let handles = nodes_iterator.map(|l| &l.node_handle).collect();
         self.state.dom.wrap_nodes_in_list(list_type, handles);
         self.create_update_replace_all()
     }
