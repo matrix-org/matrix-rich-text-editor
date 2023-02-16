@@ -17,6 +17,7 @@ use widestring::Utf16String;
 use crate::{
     dom::DomCreationError,
     tests::{testutils_composer_model::tx, testutils_conversion::utf16},
+    HtmlParseError,
 };
 
 use super::testutils_composer_model::cm;
@@ -27,6 +28,20 @@ fn set_content_from_html() -> Result<(), DomCreationError> {
     model.set_content_from_html(&utf16("content"))?;
     assert_eq!(tx(&model), "content|");
     Ok(())
+}
+
+#[test]
+fn set_content_from_html_invalid() {
+    let mut model = cm("|");
+    let error = model
+        .set_content_from_html(&utf16("<strong>hello<strong>"))
+        .unwrap_err();
+    assert_eq!(
+        error,
+        DomCreationError::HtmlParseError(HtmlParseError::new(vec![
+            "Unexpected open tag at end of body".into()
+        ]))
+    );
 }
 
 #[test]

@@ -25,6 +25,18 @@ pub struct HtmlParseError {
     pub parse_errors: Vec<String>,
 }
 
+impl HtmlParseError {
+    pub fn default() -> Self {
+        Self {
+            parse_errors: vec![],
+        }
+    }
+
+    pub fn new(parse_errors: Vec<String>) -> Self {
+        Self { parse_errors }
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum MarkdownParseError {
     InvalidMarkdownError,
