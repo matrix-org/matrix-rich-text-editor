@@ -25,8 +25,6 @@ impl ComposerUpdate {
 mod test {
     use std::{collections::HashMap, sync::Arc};
 
-    use wysiwyg::DomCreationError;
-
     use crate::{ActionState, ComposerAction, ComposerModel, MenuState};
 
     #[test]
@@ -44,10 +42,9 @@ mod test {
     }
 
     #[test]
-    fn after_set_content_from_html_menu_is_updated(
-    ) -> Result<(), DomCreationError> {
+    fn after_set_content_from_html_menu_is_updated() {
         let model = Arc::new(ComposerModel::new());
-        let update = model.set_content_from_html(String::from(""))?;
+        let update = model.set_content_from_html(String::from("")).unwrap();
 
         // Undo and Redo are disabled
         assert_eq!(
@@ -56,17 +53,15 @@ mod test {
                 action_states: undo_redo_indent_unindent_disabled()
             }
         );
-        Ok(())
     }
 
     #[test]
-    fn after_later_set_content_from_html_menu_is_updated(
-    ) -> Result<(), DomCreationError> {
+    fn after_later_set_content_from_html_menu_is_updated() {
         let model = Arc::new(ComposerModel::new());
         model.replace_text(String::from("foo"));
         model.replace_text(String::from("bar"));
         model.undo();
-        let update = model.set_content_from_html(String::from(""))?;
+        let update = model.set_content_from_html(String::from("")).unwrap();
 
         // Undo and Redo are disabled
         assert_eq!(
@@ -75,14 +70,12 @@ mod test {
                 action_states: undo_redo_indent_unindent_disabled()
             }
         );
-        Ok(())
     }
 
     #[test]
-    fn after_set_content_from_markdown_menu_is_updated(
-    ) -> Result<(), DomCreationError> {
+    fn after_set_content_from_markdown_menu_is_updated() {
         let model = Arc::new(ComposerModel::new());
-        let update = model.set_content_from_markdown(String::from(""))?;
+        let update = model.set_content_from_markdown(String::from("")).unwrap();
 
         // Undo and Redo are disabled
         assert_eq!(
@@ -91,7 +84,6 @@ mod test {
                 action_states: undo_redo_indent_unindent_disabled()
             }
         );
-        Ok(())
     }
 
     fn redo_indent_unindent_disabled() -> HashMap<ComposerAction, ActionState> {

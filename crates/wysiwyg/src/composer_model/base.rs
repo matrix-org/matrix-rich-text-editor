@@ -226,12 +226,12 @@ mod test {
     // Most tests for ComposerModel are inside the tests/ modules
 
     #[test]
-    fn completely_replacing_html_works() -> Result<(), DomCreationError> {
+    fn completely_replacing_html_works() {
         let mut model = cm("{hello}| world");
         model
-            .set_content_from_html(&Utf16String::from_str("foo <b>bar</b>"))?;
-        assert_eq!(model.state.dom.to_string(), "foo <b>bar</b>");
-        Ok(())
+            .set_content_from_html(&Utf16String::from_str("foo <b>bar</b>"))
+            .unwrap();
+        assert_eq!(model.state.dom.to_string(), "foo <b>bar</b>")
     }
 
     #[test]
@@ -247,8 +247,7 @@ mod test {
     }
 
     #[test]
-    fn set_content_from_html_with_complex_html_has_proper_selection(
-    ) -> Result<(), DomCreationError> {
+    fn set_content_from_html_with_complex_html_has_proper_selection() {
         let mut model = cm("|");
         model.set_content_from_html(&utf16(
             "<blockquote>\
@@ -260,7 +259,7 @@ mod test {
                 <p>Some text</p>\
                 <pre><code>A\n\tcode\nblock</code></pre>\
                 <p>Some <code>inline</code> code</p>",
-        ))?;
+        ));
         assert_eq!(
             tx(&model),
             "<blockquote>\
@@ -271,6 +270,5 @@ mod test {
             <pre><code>A\n\tcode\nblock</code></pre>\
             <p>Some <code>inline</code> code|</p>"
         );
-        Ok(())
     }
 }

@@ -23,11 +23,10 @@ use crate::{
 use super::testutils_composer_model::cm;
 
 #[test]
-fn set_content_from_html() -> Result<(), DomCreationError> {
+fn set_content_from_html() {
     let mut model = cm("|");
-    model.set_content_from_html(&utf16("content"))?;
+    model.set_content_from_html(&utf16("content")).unwrap();
     assert_eq!(tx(&model), "content|");
-    Ok(())
 }
 
 #[test]
@@ -45,29 +44,27 @@ fn set_content_from_html_invalid() {
 }
 
 #[test]
-fn set_content_from_markdown() -> Result<(), DomCreationError> {
+fn set_content_from_markdown() {
     let mut model = cm("|");
-    model.set_content_from_markdown(&utf16("**abc**"))?;
+    model.set_content_from_markdown(&utf16("**abc**")).unwrap();
     assert_eq!(tx(&model), "<strong>abc|</strong>");
-    Ok(())
 }
 
 #[test]
-fn set_content_from_html_moves_cursor_to_the_end(
-) -> Result<(), DomCreationError> {
+fn set_content_from_html_moves_cursor_to_the_end() {
     let mut model = cm("abc|");
-    model.set_content_from_html(&"content".into())?;
+    model.set_content_from_html(&"content".into()).unwrap();
     assert_eq!(tx(&model), "content|");
-    Ok(())
 }
 
 #[test]
-fn clear() -> Result<(), DomCreationError> {
+fn clear() {
     let mut model = cm("|");
-    model.set_content_from_html(&Utf16String::from("content"))?;
+    model
+        .set_content_from_html(&Utf16String::from("content"))
+        .unwrap();
     model.clear();
     assert_eq!(tx(&model), "|");
-    Ok(())
 }
 
 #[test]

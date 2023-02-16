@@ -16,7 +16,7 @@ use widestring::Utf16String;
 
 use crate::{
     tests::testutils_composer_model::{cm, tx},
-    ComposerModel, DomCreationError,
+    ComposerModel,
 };
 
 #[test]
@@ -29,13 +29,11 @@ fn pressing_enter_with_a_brand_new_model() {
 
 #[test]
 #[allow(deprecated)]
-fn adding_line_break_after_replacing_with_empty_html(
-) -> Result<(), DomCreationError> {
+fn adding_line_break_after_replacing_with_empty_html() {
     let mut model = ComposerModel::new();
-    model.set_content_from_html(&Utf16String::new())?;
+    model.set_content_from_html(&Utf16String::new()).unwrap();
     model.add_line_break();
     assert_eq!(tx(&model), "<br />|");
-    Ok(())
 }
 
 #[test]
