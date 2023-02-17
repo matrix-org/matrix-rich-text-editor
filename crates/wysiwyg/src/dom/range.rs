@@ -290,6 +290,8 @@ impl Range {
         self.locations
             .iter()
             .filter(move |l| l.node_handle.depth() == depth)
+            // FIXME: filtering positions that are before start, these shouldn't be returned.
+            .filter(|l| !(l.relative_position() == DomLocationPosition::Before))
     }
 
     pub fn locations_from_depth(
@@ -303,6 +305,24 @@ impl Range {
 
     pub fn top_level_locations(&self) -> impl Iterator<Item = &DomLocation> {
         self.locations_at_depth(self.top_level_depth())
+    }
+
+    /// Return true if the current range contains a single top
+    /// level node of optional given kind.
+    pub fn has_single_top_level_node(&self, kind: Option<DomNodeKind>) -> bool {
+        let mut top_level_locations = self.top_level_locations();
+
+        if let Some(first_loc) = top_level_locations.next() {
+            let is_expected_kind = if let Some(kind) = kind {
+                first_loc.kind == kind
+            } else {
+                // No specific `DomNodeKind` provided.
+                true
+            };
+            is_expected_kind && top_level_locations.next().is_none()
+        } else {
+            false
+        }
     }
 
     pub fn node_handles(&self) -> impl DoubleEndedIterator<Item = &DomHandle> {
@@ -689,6 +709,24 @@ mod test {
         let location = range.find_location(&handle);
 
         assert!(location.is_none());
+    }
+
+    #[test]
+    fn range_top_level_single_node() {
+        let range = range_of(
+            "<blockquote><p><em>{ab</em>c</p><p>de}|f</p></blockquote>",
+        );
+        assert!(range.has_single_top_level_node(None));
+        assert!(range.has_single_top_level_node(Some(DomNodeKind::Quote)));
+        assert!(!range.has_single_top_level_node(Some(DomNodeKind::Paragraph)));
+    }
+
+    #[test]
+    fn range_top_level_single_node_with_multiple_nodes() {
+        let range = range_of("<p>a{bc</p><pre><code>de}|f</code></pre>");
+        assert!(!range.has_single_top_level_node(None));
+        assert!(!range.has_single_top_level_node(Some(DomNodeKind::Paragraph)));
+        assert!(!range.has_single_top_level_node(Some(DomNodeKind::CodeBlock)));
     }
 
     fn range_of(model: &str) -> Range {
