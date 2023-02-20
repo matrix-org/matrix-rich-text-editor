@@ -249,7 +249,7 @@ mod test {
     #[test]
     fn set_content_from_html_with_complex_html_has_proper_selection() {
         let mut model = cm("|");
-        model.set_content_from_html(&utf16(
+        let result = model.set_content_from_html(&utf16(
             "<blockquote>\
                     <p>Some</p>\
                     <p>multi-line</p>\
@@ -260,6 +260,7 @@ mod test {
                 <pre><code>A\n\tcode\nblock</code></pre>\
                 <p>Some <code>inline</code> code</p>",
         ));
+        assert!(result.is_ok());
         assert_eq!(
             tx(&model),
             "<blockquote>\
