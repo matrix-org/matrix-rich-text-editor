@@ -61,6 +61,40 @@ where
         &self.data
     }
 
+    pub fn data_for_range(&self, range: Range<usize>) -> &S::Str {
+        &self.data[range]
+    }
+
+    pub fn extended_data_for_range(
+        &self,
+        range: Range<usize>,
+    ) -> (&S::Str, usize, usize) {
+        let mut start = range.start;
+        let mut end = range.end;
+
+        // if start == self.data.len() && start != 0 {
+        //     start -= self.data.chars().last().unwrap().len_utf8()
+        // }
+
+        while start > 0
+            && start <= self.data.len()
+            && !matches!(self.data.char_at(start - 1), ' ' | '\x09'..='\x0d')
+        {
+            //let char = self.data.char_at(start);
+            start -= 1; //char.len_utf8();
+        }
+
+        while end < self.data.len()
+            && end > 0
+            && !matches!(self.data.char_at(end), ' ' | '\x09'..='\x0d')
+        {
+            //let char = self.data.char_at(end);
+            end += 1; //char.len_utf8();
+        }
+
+        (&self.data[start..end], range.start - start, end - range.end)
+    }
+
     pub fn set_data(&mut self, data: S) {
         self.data = data;
     }

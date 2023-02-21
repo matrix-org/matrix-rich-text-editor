@@ -113,6 +113,7 @@ where
             self.toggle_zero_length_format(&format);
             ComposerUpdate::update_menu_state(
                 self.compute_menu_state(MenuStateComputeType::KeepIfUnchanged),
+                self.compute_menu_action(),
             )
         } else {
             self.format_range(s, e, &format);
@@ -142,6 +143,7 @@ where
             self.toggle_zero_length_format(&format);
             ComposerUpdate::update_menu_state(
                 self.compute_menu_state(MenuStateComputeType::KeepIfUnchanged),
+                self.compute_menu_action(),
             )
         } else {
             self.unformat_range(s, e, &format);

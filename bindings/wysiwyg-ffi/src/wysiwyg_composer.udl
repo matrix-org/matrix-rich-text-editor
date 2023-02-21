@@ -28,6 +28,7 @@ interface ComposerModel {
     ComposerUpdate select(u32 start_utf16_codeunit, u32 end_utf16_codeunit);
     ComposerUpdate replace_text(string new_text);
     ComposerUpdate replace_text_in(string new_text, u32 start, u32 end);
+    ComposerUpdate replace_text_suggestion(string new_text, SuggestionPattern suggestion);
     ComposerUpdate backspace();
     ComposerUpdate delete();
     ComposerUpdate delete_in(u32 start, u32 end);
@@ -45,6 +46,7 @@ interface ComposerModel {
     ComposerUpdate unindent();
     ComposerUpdate set_link(string link);
     ComposerUpdate set_link_with_text(string link, string text);
+    ComposerUpdate set_link_suggestion(string link, string text, SuggestionPattern suggestion);
     ComposerUpdate remove_links();
     ComposerUpdate code_block();
     ComposerUpdate quote();
@@ -59,6 +61,7 @@ interface ComposerModel {
 interface ComposerUpdate {
     TextUpdate text_update();
     MenuState menu_state();
+    MenuAction menu_action();
 };
 
 dictionary ComposerState {
@@ -113,6 +116,27 @@ interface MenuState {
 };
 
 [Enum]
+interface MenuAction {
+    None();
+    Suggestion(
+        SuggestionPattern suggestion_pattern
+    );
+};
+
+dictionary SuggestionPattern {
+    PatternKey key;
+    string text;
+    u32 start;
+    u32 end;
+};
+
+enum PatternKey {
+    "At",
+    "Hash",
+    "Slash",
+};
+
+[Enum]
 interface LinkAction {
     CreateWithText();
     Create();
@@ -120,7 +144,6 @@ interface LinkAction {
         string link
     );
 };
-
 
 [Error]
 enum DomCreationError {

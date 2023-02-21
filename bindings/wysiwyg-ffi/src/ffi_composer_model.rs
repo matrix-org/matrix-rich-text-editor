@@ -8,7 +8,7 @@ use crate::ffi_composer_update::ComposerUpdate;
 use crate::ffi_dom_creation_error::DomCreationError;
 use crate::ffi_link_actions::LinkAction;
 use crate::into_ffi::IntoFfi;
-use crate::{ActionState, ComposerAction};
+use crate::{ActionState, ComposerAction, SuggestionPattern};
 
 #[derive(Default)]
 pub struct ComposerModel {
@@ -114,6 +114,22 @@ impl ComposerModel {
         ))
     }
 
+    pub fn replace_text_suggestion(
+        self: &Arc<Self>,
+        new_text: String,
+        suggestion: SuggestionPattern,
+    ) -> Arc<ComposerUpdate> {
+        let start = usize::try_from(suggestion.start).unwrap();
+        let end = usize::try_from(suggestion.end).unwrap();
+        Arc::new(ComposerUpdate::from(
+            self.inner.lock().unwrap().replace_text_in(
+                Utf16String::from_str(&new_text),
+                start,
+                end,
+            ),
+        ))
+    }
+
     pub fn backspace(self: &Arc<Self>) -> Arc<ComposerUpdate> {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().backspace()))
     }
@@ -208,6 +224,23 @@ impl ComposerModel {
         let text = Utf16String::from_str(&text);
         Arc::new(ComposerUpdate::from(
             self.inner.lock().unwrap().set_link_with_text(link, text),
+        ))
+    }
+
+    pub fn set_link_suggestion(
+        self: &Arc<Self>,
+        link: String,
+        text: String,
+        suggestion: SuggestionPattern,
+    ) -> Arc<ComposerUpdate> {
+        let link = Utf16String::from_str(&link);
+        let text = Utf16String::from_str(&text);
+        let suggestion = wysiwyg::SuggestionPattern::from(suggestion);
+        Arc::new(ComposerUpdate::from(
+            self.inner
+                .lock()
+                .unwrap()
+                .set_link_suggestion(link, text, suggestion),
         ))
     }
 

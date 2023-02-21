@@ -233,7 +233,9 @@ mod test {
     use crate::menu_state::MenuStateUpdate;
     use crate::tests::testutils_composer_model::cm;
     use crate::tests::testutils_conversion::utf16;
-    use crate::{ComposerAction, ComposerUpdate, Location, MenuState};
+    use crate::{
+        ComposerAction, ComposerUpdate, Location, MenuAction, MenuState,
+    };
     use strum::IntoEnumIterator;
 
     #[test]
@@ -249,7 +251,8 @@ mod test {
                 MenuState::Update(MenuStateUpdate {
                     action_states: indent_unindent_redo_disabled()
                 }),
-            )
+                MenuAction::None,
+            ),
         );
     }
 

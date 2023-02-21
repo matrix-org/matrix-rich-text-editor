@@ -156,6 +156,18 @@ impl ComposerModel {
         )
     }
 
+    pub fn replace_text_suggestion(
+        &mut self,
+        new_text: &str,
+        suggestion: SuggestionPattern,
+    ) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.replace_text_in(
+            Utf16String::from_str(new_text),
+            usize::try_from(suggestion.start).unwrap(),
+            usize::try_from(suggestion.end).unwrap(),
+        ))
+    }
+
     pub fn set_content_from_html(
         &mut self,
         text: &str,
@@ -271,6 +283,19 @@ impl ComposerModel {
         ))
     }
 
+    pub fn set_link_suggestion(
+        &mut self,
+        link: &str,
+        text: &str,
+        suggestion: SuggestionPattern,
+    ) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.set_link_suggestion(
+            Utf16String::from_str(link),
+            Utf16String::from_str(text),
+            wysiwyg::SuggestionPattern::from(suggestion),
+        ))
+    }
+
     pub fn remove_links(&mut self) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.remove_links())
     }
@@ -295,6 +320,10 @@ impl ComposerUpdate {
 
     pub fn menu_state(&self) -> MenuState {
         MenuState::from(self.inner.menu_state.clone())
+    }
+
+    pub fn menu_action(&self) -> MenuAction {
+        MenuAction::from(self.inner.menu_action.clone())
     }
 }
 
@@ -456,6 +485,43 @@ impl MenuStateUpdate {
 }
 
 #[wasm_bindgen]
+pub struct MenuAction {
+    inner: wysiwyg::MenuAction,
+}
+
+impl MenuAction {
+    pub fn from(inner: wysiwyg::MenuAction) -> Self {
+        Self { inner }
+    }
+}
+
+#[wasm_bindgen]
+impl MenuAction {
+    pub fn none(&self) -> bool {
+        matches!(self.inner, wysiwyg::MenuAction::None)
+    }
+
+    pub fn suggestion(&self) -> Option<MenuActionSuggestion> {
+        match &self.inner {
+            wysiwyg::MenuAction::Suggestion(suggestion) => {
+                Some(MenuActionSuggestion {
+                    suggestion_pattern: SuggestionPattern::from(
+                        suggestion.clone(),
+                    ),
+                })
+            }
+            _ => None,
+        }
+    }
+}
+
+#[wasm_bindgen(getter_with_clone)]
+#[derive(Clone)]
+pub struct MenuActionSuggestion {
+    pub suggestion_pattern: SuggestionPattern,
+}
+
+#[wasm_bindgen]
 #[derive(Clone)]
 pub enum ComposerAction {
     Bold,
@@ -512,6 +578,65 @@ impl From<&ComposerAction> for wysiwyg::ComposerAction {
             ComposerAction::Unindent => Self::Unindent,
             ComposerAction::CodeBlock => Self::CodeBlock,
             ComposerAction::Quote => Self::Quote,
+        }
+    }
+}
+
+#[wasm_bindgen(getter_with_clone)]
+#[derive(Clone)]
+pub struct SuggestionPattern {
+    pub key: PatternKey,
+    pub text: String,
+    pub start: u32,
+    pub end: u32,
+}
+
+impl From<wysiwyg::SuggestionPattern> for SuggestionPattern {
+    fn from(inner: wysiwyg::SuggestionPattern) -> Self {
+        Self {
+            key: PatternKey::from(inner.key),
+            text: inner.text,
+            start: u32::try_from(inner.start).unwrap(),
+            end: u32::try_from(inner.end).unwrap(),
+        }
+    }
+}
+
+impl From<SuggestionPattern> for wysiwyg::SuggestionPattern {
+    fn from(pattern: SuggestionPattern) -> Self {
+        Self {
+            key: wysiwyg::PatternKey::from(pattern.key),
+            text: pattern.text,
+            start: usize::try_from(pattern.end).unwrap(),
+            end: usize::try_from(pattern.end).unwrap(),
+        }
+    }
+}
+
+#[wasm_bindgen]
+#[derive(Clone)]
+pub enum PatternKey {
+    At,
+    Hash,
+    Slash,
+}
+
+impl From<wysiwyg::PatternKey> for PatternKey {
+    fn from(inner: wysiwyg::PatternKey) -> Self {
+        match inner {
+            wysiwyg::PatternKey::At => Self::At,
+            wysiwyg::PatternKey::Hash => Self::Hash,
+            wysiwyg::PatternKey::Slash => Self::Slash,
+        }
+    }
+}
+
+impl From<PatternKey> for wysiwyg::PatternKey {
+    fn from(key: PatternKey) -> Self {
+        match key {
+            PatternKey::At => Self::At,
+            PatternKey::Hash => Self::Hash,
+            PatternKey::Slash => Self::Slash,
         }
     }
 }

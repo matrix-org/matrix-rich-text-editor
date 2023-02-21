@@ -2,6 +2,7 @@ use widestring::Utf16String;
 
 use crate::ffi_menu_state::MenuState;
 use crate::ffi_text_update::TextUpdate;
+use crate::MenuAction;
 
 pub struct ComposerUpdate {
     inner: wysiwyg::ComposerUpdate<Utf16String>,
@@ -18,6 +19,10 @@ impl ComposerUpdate {
 
     pub fn menu_state(&self) -> MenuState {
         MenuState::from(self.inner.menu_state.clone())
+    }
+
+    pub fn menu_action(&self) -> MenuAction {
+        MenuAction::from(self.inner.menu_action.clone())
     }
 }
 

@@ -46,7 +46,7 @@ pub trait UnicodeString:
     type Str: UnicodeStr<CodeUnit = Self::CodeUnit, Owned = Self> + ?Sized;
 
     fn insert(&mut self, idx: usize, s: &Self::Str);
-    fn remove_at(&mut self, idx: usize);
+    fn remove_at(&mut self, idx: usize) -> char;
     fn pop_last(&mut self) -> Option<char>;
 }
 
@@ -69,6 +69,8 @@ pub trait UnicodeStr:
 
     /// Returns the length of the char in indices of the current encoding
     fn char_len(&self, char: &char) -> usize;
+
+    fn char_at(&self, idx: usize) -> char;
 }
 
 impl UnicodeString for String {
@@ -78,8 +80,8 @@ impl UnicodeString for String {
     fn insert(&mut self, idx: usize, s: &Self::Str) {
         self.insert_str(idx, s);
     }
-    fn remove_at(&mut self, idx: usize) {
-        self.remove(idx);
+    fn remove_at(&mut self, idx: usize) -> char {
+        self.remove(idx)
     }
     fn pop_last(&mut self) -> Option<char> {
         self.pop()
@@ -97,6 +99,10 @@ impl UnicodeStr for str {
     fn char_len(&self, char: &char) -> usize {
         char.len_utf8()
     }
+
+    fn char_at(&self, idx: usize) -> char {
+        self.chars().nth(idx).unwrap()
+    }
 }
 
 impl UnicodeString for Utf16String {
@@ -106,8 +112,8 @@ impl UnicodeString for Utf16String {
     fn insert(&mut self, idx: usize, s: &Self::Str) {
         self.insert_utfstr(idx, s);
     }
-    fn remove_at(&mut self, idx: usize) {
-        self.remove(idx);
+    fn remove_at(&mut self, idx: usize) -> char {
+        self.remove(idx)
     }
     fn pop_last(&mut self) -> Option<char> {
         self.pop()
@@ -125,6 +131,10 @@ impl UnicodeStr for Utf16Str {
     fn char_len(&self, char: &char) -> usize {
         char.len_utf16()
     }
+
+    fn char_at(&self, idx: usize) -> char {
+        self.chars().nth(idx).unwrap()
+    }
 }
 
 impl UnicodeString for Utf32String {
@@ -134,8 +144,8 @@ impl UnicodeString for Utf32String {
     fn insert(&mut self, idx: usize, s: &Self::Str) {
         self.insert_utfstr(idx, s);
     }
-    fn remove_at(&mut self, idx: usize) {
-        self.remove(idx);
+    fn remove_at(&mut self, idx: usize) -> char {
+        self.remove(idx)
     }
     fn pop_last(&mut self) -> Option<char> {
         self.pop()
@@ -153,6 +163,10 @@ impl UnicodeStr for Utf32Str {
     fn char_len(&self, _: &char) -> usize {
         // 1 char == 1 u32, see https://doc.rust-lang.org/std/primitive.char.html#method.from_u32
         1
+    }
+
+    fn char_at(&self, idx: usize) -> char {
+        self.chars().nth(idx).unwrap()
     }
 }
 

@@ -21,7 +21,10 @@ mod ffi_composer_state;
 mod ffi_composer_update;
 mod ffi_dom_creation_error;
 mod ffi_link_actions;
+mod ffi_menu_action;
 mod ffi_menu_state;
+mod ffi_pattern_key;
+mod ffi_suggestion_pattern;
 mod ffi_text_update;
 mod into_ffi;
 
@@ -34,7 +37,10 @@ pub use crate::ffi_composer_state::ComposerState;
 pub use crate::ffi_composer_update::ComposerUpdate;
 pub use crate::ffi_dom_creation_error::DomCreationError;
 pub use crate::ffi_link_actions::LinkAction;
+pub use crate::ffi_menu_action::MenuAction;
 pub use crate::ffi_menu_state::MenuState;
+pub use crate::ffi_pattern_key::PatternKey;
+pub use crate::ffi_suggestion_pattern::SuggestionPattern;
 pub use crate::ffi_text_update::TextUpdate;
 
 pub fn new_composer_model() -> Arc<ComposerModel> {
