@@ -25,6 +25,12 @@ fn at_pattern_is_detected() {
 }
 
 #[test]
+fn empty_at_pattern_is_detected() {
+    let model = cm("@|");
+    assert_eq!(model.compute_menu_action(), sp(At, "", 0, 1),)
+}
+
+#[test]
 fn at_pattern_is_detected_after_text() {
     let model = cm("Hey @alic|");
     assert_eq!(model.compute_menu_action(), sp(At, "alic", 4, 9));
