@@ -12,22 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::Location;
 use crate::PatternKey::{At, Hash, Slash};
 use crate::{
     tests::testutils_composer_model::cm, MenuAction, PatternKey,
     SuggestionPattern,
 };
 
+// MenuAction computation tests.
 #[test]
 fn at_pattern_is_detected() {
     let model = cm("@alic|");
-    assert_eq!(model.compute_menu_action(), sp(At, "alic", 0, 5),)
+    assert_eq!(model.compute_menu_action(), sp(At, "alic", 0, 5),);
+}
+
+#[test]
+fn at_pattern_is_not_detected_if_preceded_by_non_whitespace_char() {
+    let model = cm("alice@matri|");
+    assert_eq!(model.compute_menu_action(), MenuAction::None);
 }
 
 #[test]
 fn empty_at_pattern_is_detected() {
     let model = cm("@|");
-    assert_eq!(model.compute_menu_action(), sp(At, "", 0, 1),)
+    assert_eq!(model.compute_menu_action(), sp(At, "", 0, 1));
 }
 
 #[test]
@@ -79,6 +87,18 @@ fn at_pattern_is_not_detected_in_code_block() {
 }
 
 #[test]
+fn at_pattern_is_not_detected_in_inline_code() {
+    let model = cm("<code>@alic|</code>");
+    assert_eq!(model.compute_menu_action(), MenuAction::None);
+}
+
+#[test]
+fn at_pattern_is_detected_if_cursor_is_right_before() {
+    let model = cm("|@alic");
+    assert_eq!(model.compute_menu_action(), sp(At, "alic", 0, 5));
+}
+
+#[test]
 fn suggestion_applies_additional_offset_from_structure_nodes() {
     let model = cm("abc<ul><li>item</li><li>@alic|</li></ul>");
     assert_eq!(model.compute_menu_action(), sp(At, "alic", 9, 14));
@@ -96,6 +116,79 @@ fn slash_pattern_is_detected() {
     assert_eq!(model.compute_menu_action(), sp(Slash, "invi", 0, 5));
 }
 
+// MenuAction update tests.
+#[test]
+fn at_pattern_is_updated_on_character_input() {
+    let mut model = cm("|");
+    assert_eq!(model.compute_menu_action(), MenuAction::None);
+    let update = model.replace_text("@ali".into());
+    assert_eq!(update.menu_action, sp(At, "ali", 0, 4));
+    let update = model.replace_text("c".into());
+    assert_eq!(update.menu_action, sp(At, "alic", 0, 5));
+}
+
+#[test]
+fn at_pattern_is_updated_on_whitespace_input() {
+    let mut model = cm("@alic|");
+    let update = model.replace_text(" ".into());
+    assert_eq!(update.menu_action, MenuAction::None);
+}
+
+#[test]
+fn at_pattern_is_updated_upon_selection() {
+    let mut model = cm("@alic abc|");
+    let update = model.select(Location::from(5), Location::from(5));
+    assert_eq!(update.menu_action, sp(At, "alic", 0, 5));
+}
+
+#[test]
+fn at_pattern_is_updated_on_backspace() {
+    let mut model = cm("@alic|");
+    let update = model.backspace();
+    assert_eq!(update.menu_action, sp(At, "ali", 0, 4));
+
+    let mut model = cm("@|alic");
+    let update = model.backspace();
+    assert_eq!(update.menu_action, MenuAction::None);
+}
+
+#[test]
+fn at_pattern_is_updated_on_delete() {
+    let mut model = cm("@|alic");
+    let update = model.delete();
+    assert_eq!(update.menu_action, sp(At, "lic", 0, 4));
+
+    let mut model = cm("|@alic");
+    let update = model.delete();
+    assert_eq!(update.menu_action, MenuAction::None);
+}
+
+#[test]
+fn at_pattern_is_still_detected_after_moving_inside_structure_node() {
+    let mut model = cm("@alic|");
+    let update = model.ordered_list();
+    assert_eq!(update.menu_action, sp(At, "alic", 0, 5));
+
+    let mut model = cm("@alic|");
+    let update = model.quote();
+    assert_eq!(update.menu_action, sp(At, "alic", 0, 5));
+}
+
+#[test]
+fn at_pattern_is_still_detected_after_applying_formatting() {
+    let mut model = cm("{@alic}|");
+    let update = model.bold();
+    assert_eq!(update.menu_action, sp(At, "alic", 0, 5))
+}
+
+#[test]
+fn at_pattern_is_not_detected_after_moving_in_code_block() {
+    let mut model = cm("@alic|");
+    let update = model.code_block();
+    assert_eq!(update.menu_action, MenuAction::None);
+}
+
+/// Short wrapper around [MenuAction::Suggestion(SuggestionPattern)].
 fn sp(k: PatternKey, t: &str, s: usize, e: usize) -> MenuAction {
     MenuAction::Suggestion(SuggestionPattern {
         key: k,
