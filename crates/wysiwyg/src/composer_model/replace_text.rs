@@ -50,7 +50,9 @@ where
         new_text: S,
         suggestion: SuggestionPattern,
     ) -> ComposerUpdate<S> {
-        self.replace_text_in(new_text, suggestion.start, suggestion.end)
+        self.push_state_to_history();
+        self.do_replace_text_in(new_text, suggestion.start, suggestion.end);
+        self.do_replace_text(suggestion.trailing_strategy.text())
     }
 
     #[deprecated(since = "0.20.0")]

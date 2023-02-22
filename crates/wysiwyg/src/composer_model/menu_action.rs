@@ -19,7 +19,7 @@ use crate::{
         DomLocation,
     },
     ComposerModel, DomNode, MenuAction, PatternKey, SuggestionPattern,
-    UnicodeString,
+    TrailingStrategy, UnicodeString,
 };
 
 impl<S> ComposerModel<S>
@@ -67,6 +67,7 @@ where
                         text: raw_text.to_string(),
                         start: s,
                         end: e,
+                        trailing_strategy: TrailingStrategy::Space,
                     };
                     MenuAction::Suggestion(suggestion_pattern)
                 }

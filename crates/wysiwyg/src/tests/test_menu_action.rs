@@ -195,5 +195,6 @@ fn sp(k: PatternKey, t: &str, s: usize, e: usize) -> MenuAction {
         text: t.into(),
         start: s,
         end: e,
+        trailing_strategy: crate::TrailingStrategy::Space,
     })
 }

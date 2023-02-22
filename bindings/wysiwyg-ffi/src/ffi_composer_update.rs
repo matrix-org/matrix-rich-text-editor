@@ -32,7 +32,7 @@ mod test {
 
     use crate::{
         ActionState, ComposerAction, ComposerModel, MenuAction, MenuState,
-        SuggestionPattern,
+        SuggestionPattern, TrailingStrategy,
     };
 
     #[test]
@@ -114,7 +114,8 @@ mod test {
                     key: crate::PatternKey::At,
                     text: "alic".into(),
                     start: 0,
-                    end: 5
+                    end: 5,
+                    trailing_strategy: TrailingStrategy::Space,
                 }
             },
         )

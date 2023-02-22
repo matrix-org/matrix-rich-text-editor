@@ -12,9 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::MenuAction;
+use crate::{MenuAction, TrailingStrategy};
 
 use super::testutils_composer_model::{cm, tx};
+
+#[test]
+fn test_replace_text_suggestion() {
+    let mut model = cm("|");
+    let update = model.replace_text("/".into());
+    let MenuAction::Suggestion(suggestion) = update.menu_action else {
+        panic!("No suggestion pattern found")
+    };
+    model.replace_text_suggestion("/invite".into(), suggestion);
+    assert_eq!(tx(&model), "/invite&nbsp;|");
+}
 
 #[test]
 fn test_set_link_suggestion() {
@@ -30,17 +41,25 @@ fn test_set_link_suggestion() {
     );
     assert_eq!(
         tx(&model),
-        "<a href=\"https://matrix.to/#/@alice:matrix.org\">Alice|</a>",
+        "<a href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>&nbsp;|",
     );
 }
 
 #[test]
-fn test_replace_text_suggestion() {
+fn test_set_link_suggestion_with_colon_space_trailing() {
     let mut model = cm("|");
-    let update = model.replace_text("/".into());
-    let MenuAction::Suggestion(suggestion) = update.menu_action else {
+    let update = model.replace_text("@alic".into());
+    let MenuAction::Suggestion(mut suggestion) = update.menu_action else {
         panic!("No suggestion pattern found")
     };
-    model.replace_text_suggestion("/invite".into(), suggestion);
-    assert_eq!(tx(&model), "/invite|");
+    suggestion.trailing_strategy = TrailingStrategy::ColonSpace;
+    model.set_link_suggestion(
+        "https://matrix.to/#/@alice:matrix.org".into(),
+        "Alice".into(),
+        suggestion,
+    );
+    assert_eq!(
+        tx(&model),
+        "<a href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>:&nbsp;|",
+    );
 }

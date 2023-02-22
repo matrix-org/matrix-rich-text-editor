@@ -12,13 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{PatternKey, TrailingStrategy};
+use crate::UnicodeString;
 
+/// Defines a strategy for trailing characters after autocompleting
+/// from a `SuggestionPattern`.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SuggestionPattern {
-    pub key: PatternKey,
-    pub text: String,
-    pub start: usize,
-    pub end: usize,
-    pub trailing_strategy: TrailingStrategy,
+pub enum TrailingStrategy {
+    ColonSpace,
+    Space,
+}
+
+impl TrailingStrategy {
+    pub(crate) fn text<S>(&self) -> S
+    where
+        S: UnicodeString,
+    {
+        match self {
+            TrailingStrategy::ColonSpace => ": ".into(),
+            TrailingStrategy::Space => " ".into(),
+        }
+    }
 }

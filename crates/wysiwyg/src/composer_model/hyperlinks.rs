@@ -58,7 +58,8 @@ where
         self.do_replace_text_in(S::default(), suggestion.start, suggestion.end);
         self.state.start = Location::from(suggestion.start);
         self.state.end = self.state.start;
-        self.set_link_with_text(link, text)
+        self.set_link_with_text(link, text);
+        self.do_replace_text(suggestion.trailing_strategy.text())
     }
 
     fn is_blank_selection(&self, range: Range) -> bool {
