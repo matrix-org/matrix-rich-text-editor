@@ -1,0 +1,39 @@
+name: Move labelled issues to correct boards and columns
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  move_element_x_issues:
+    name: Add labelled issues to Verticals Feature project
+    runs-on: ubuntu-latest
+    # Skip in forks
+    if: >
+      github.repository == 'matrix-org/matrix-rich-text-editor'
+    steps:
+      - uses: octokit/graphql-action@v2.x
+        with:
+          headers: '{"GraphQL-Features": "projects_next_graphql"}'
+          query: |
+            mutation add_to_project($projectid:ID!,$contentid:ID!) {
+              addProjectV2ItemById(input: {projectId: $projectid contentId: $contentid}) {
+                item {
+                  id
+                }
+              }
+            }
+          projectid: ${{ env.PROJECT_ID }}
+          contentid: ${{ github.event.issue.node_id }}
+      - uses: actions/github-script@v5
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['A-Rich-Text-Editor']
+            })
+        env:
+          PROJECT_ID: "PVT_kwDOAM0swc4AHJKW"
+          GITHUB_TOKEN: ${{ secrets.ELEMENT_BOT_TOKEN }}
