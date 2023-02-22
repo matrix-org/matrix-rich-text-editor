@@ -30,7 +30,10 @@ impl ComposerUpdate {
 mod test {
     use std::{collections::HashMap, sync::Arc};
 
-    use crate::{ActionState, ComposerAction, ComposerModel, MenuState};
+    use crate::{
+        ActionState, ComposerAction, ComposerModel, MenuAction, MenuState,
+        SuggestionPattern,
+    };
 
     #[test]
     fn initial_menu_update_is_populated() {
@@ -89,6 +92,32 @@ mod test {
                 action_states: undo_redo_indent_unindent_disabled()
             }
         );
+    }
+
+    #[test]
+    fn initial_menu_action_is_none() {
+        let model = Arc::new(ComposerModel::new());
+        let update = model.set_content_from_html("".into()).unwrap();
+
+        assert_eq!(update.menu_action(), MenuAction::None);
+    }
+
+    #[test]
+    fn menu_action_is_updated() {
+        let model = Arc::new(ComposerModel::new());
+        let update = model.replace_text("@alic".into());
+
+        assert_eq!(
+            update.menu_action(),
+            MenuAction::Suggestion {
+                suggestion_pattern: SuggestionPattern {
+                    key: crate::PatternKey::At,
+                    text: "alic".into(),
+                    start: 0,
+                    end: 5
+                }
+            },
+        )
     }
 
     fn redo_indent_unindent_disabled() -> HashMap<ComposerAction, ActionState> {
