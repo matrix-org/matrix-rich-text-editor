@@ -161,10 +161,9 @@ impl ComposerModel {
         new_text: &str,
         suggestion: SuggestionPattern,
     ) -> ComposerUpdate {
-        ComposerUpdate::from(self.inner.replace_text_in(
+        ComposerUpdate::from(self.inner.replace_text_suggestion(
             Utf16String::from_str(new_text),
-            usize::try_from(suggestion.start).unwrap(),
-            usize::try_from(suggestion.end).unwrap(),
+            wysiwyg::SuggestionPattern::from(suggestion),
         ))
     }
 

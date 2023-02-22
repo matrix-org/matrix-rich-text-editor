@@ -119,13 +119,10 @@ impl ComposerModel {
         new_text: String,
         suggestion: SuggestionPattern,
     ) -> Arc<ComposerUpdate> {
-        let start = usize::try_from(suggestion.start).unwrap();
-        let end = usize::try_from(suggestion.end).unwrap();
         Arc::new(ComposerUpdate::from(
-            self.inner.lock().unwrap().replace_text_in(
+            self.inner.lock().unwrap().replace_text_suggestion(
                 Utf16String::from_str(&new_text),
-                start,
-                end,
+                wysiwyg::SuggestionPattern::from(suggestion),
             ),
         ))
     }

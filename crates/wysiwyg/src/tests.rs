@@ -27,6 +27,7 @@ pub mod test_paragraphs;
 pub mod test_remove_links;
 pub mod test_selection;
 pub mod test_set_content;
+pub mod test_suggestions;
 pub mod test_to_markdown;
 pub mod test_to_plain_text;
 pub mod test_to_raw_text;

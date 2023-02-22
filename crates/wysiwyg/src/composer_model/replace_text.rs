@@ -17,7 +17,8 @@ use crate::dom::nodes::DomNode;
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{DomLocation, Range};
 use crate::{
-    ComposerModel, ComposerUpdate, DomHandle, Location, UnicodeString,
+    ComposerModel, ComposerUpdate, DomHandle, Location, SuggestionPattern,
+    UnicodeString,
 };
 use std::cmp::min;
 
@@ -42,6 +43,14 @@ where
     ) -> ComposerUpdate<S> {
         self.push_state_to_history();
         self.do_replace_text_in(new_text, start, end)
+    }
+
+    pub fn replace_text_suggestion(
+        &mut self,
+        new_text: S,
+        suggestion: SuggestionPattern,
+    ) -> ComposerUpdate<S> {
+        self.replace_text_in(new_text, suggestion.start, suggestion.end)
     }
 
     #[deprecated(since = "0.20.0")]
