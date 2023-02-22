@@ -65,34 +65,54 @@ where
         &self.data[range]
     }
 
-    pub fn extended_data_for_range(
+    /// Extends the text before and after given range, until reaching a whitespace or the
+    /// boundaries of the `UnicodeString`.
+    /// Returns the extended data, as well as the length of the extension before and after
+    /// the given range, with the current character encoding.
+    pub(crate) fn extended_text_for_range(
         &self,
         range: Range<usize>,
     ) -> (&S::Str, usize, usize) {
-        let mut start = range.start;
-        let mut end = range.end;
+        let s_ext = self.extend_text_before(range.start);
+        let e_ext = self.extend_text_after(range.end);
+        let new_start = range.start - s_ext;
+        let new_end = range.end + e_ext;
 
-        // if start == self.data.len() && start != 0 {
-        //     start -= self.data.chars().last().unwrap().len_utf8()
-        // }
+        (&self.data[new_start..new_end], s_ext, e_ext)
+    }
 
-        while start > 0
-            && start <= self.data.len()
-            && !matches!(self.data.char_at(start - 1), ' ' | '\x09'..='\x0d')
-        {
-            //let char = self.data.char_at(start);
-            start -= 1; //char.len_utf8();
+    /// Iterate over the characters before given position, until reaching a whitespace
+    /// or the start of the `UnicodeString`.
+    /// Returns the length of the extension with the current character encoding.
+    fn extend_text_before(&self, pos: usize) -> usize {
+        let mut extended = 0;
+
+        while let Some(prev) = self.data.find_graphemes_at(pos - extended).0 {
+            if prev.chars().all(|c| matches!(c, ' ' | '\x09'..='\x0d')) {
+                break;
+            } else {
+                extended += prev.len();
+            }
         }
 
-        while end < self.data.len()
-            && end > 0
-            && !matches!(self.data.char_at(end), ' ' | '\x09'..='\x0d')
-        {
-            //let char = self.data.char_at(end);
-            end += 1; //char.len_utf8();
+        extended
+    }
+
+    /// Iterate over the characters after given position, until reaching a whitespace
+    /// or the end of the `UnicodeString`.
+    /// Returns the length of the extension with the current character encoding.
+    fn extend_text_after(&self, pos: usize) -> usize {
+        let mut extended = 0;
+
+        while let Some(next) = self.data.find_graphemes_at(pos + extended).1 {
+            if next.chars().all(|c| matches!(c, ' ' | '\x09'..='\x0d')) {
+                break;
+            } else {
+                extended += next.len();
+            }
         }
 
-        (&self.data[start..end], range.start - start, end - range.end)
+        extended
     }
 
     pub fn set_data(&mut self, data: S) {

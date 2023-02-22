@@ -45,7 +45,7 @@ where
                 self.state.dom.lookup_node(&loc.node_handle)
             {
                 let (text, extended_start, extended_end) =
-                    t.extended_data_for_range(loc.start_offset..loc.end_offset);
+                    t.extended_text_for_range(loc.start_offset..loc.end_offset);
                 raw_text.push(text);
                 s -= extended_start;
                 e += extended_end;
