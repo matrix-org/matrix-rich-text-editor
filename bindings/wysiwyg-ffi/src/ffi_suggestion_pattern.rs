@@ -40,7 +40,7 @@ impl From<SuggestionPattern> for wysiwyg::SuggestionPattern {
         Self {
             key: wysiwyg::PatternKey::from(pattern.key),
             text: pattern.text,
-            start: usize::try_from(pattern.end).unwrap(),
+            start: usize::try_from(pattern.start).unwrap(),
             end: usize::try_from(pattern.end).unwrap(),
             trailing_strategy: wysiwyg::TrailingStrategy::from(
                 pattern.trailing_strategy,

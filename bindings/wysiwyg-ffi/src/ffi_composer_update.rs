@@ -121,6 +121,28 @@ mod test {
         )
     }
 
+    #[test]
+    fn test_set_link_suggestion_ffi() {
+        let model = Arc::new(ComposerModel::new());
+        let update = model.replace_text("@alic".into());
+
+        let MenuAction::Suggestion { suggestion_pattern } =
+            update.menu_action() else
+        {
+            panic!("No suggestion found");
+        };
+
+        model.set_link_suggestion(
+            "https://matrix.to/#/@alice:matrix.org".into(),
+            "Alice".into(),
+            suggestion_pattern,
+        );
+        assert_eq!(
+            model.get_content_as_html(),
+            "<a href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>\u{a0}",
+        )
+    }
+
     fn redo_indent_unindent_disabled() -> HashMap<ComposerAction, ActionState> {
         HashMap::from([
             (ComposerAction::Bold, ActionState::Enabled),
