@@ -32,6 +32,7 @@ import { createDefaultActionStates, mapToAllActionStates } from './utils';
 type State = {
     content: string | null;
     actionStates: AllActionStates;
+    autocomplete: { text: string; type: string } | null;
 };
 
 export function useListeners(
@@ -47,6 +48,7 @@ export function useListeners(
     const [state, setState] = useState<State>({
         content: initialContent || null,
         actionStates: createDefaultActionStates(),
+        autocomplete: null,
     });
 
     const plainTextContentRef = useRef<string>();
@@ -60,6 +62,8 @@ export function useListeners(
                 actionStates: mapToAllActionStates(
                     composerModel.action_states(),
                 ),
+                // is this ok? maybe we need to be able to detect
+                autocomplete: null,
             });
             plainTextContentRef.current =
                 composerModel.get_content_as_plain_text();
@@ -85,10 +89,11 @@ export function useListeners(
                 );
 
                 if (res) {
-                    setState(({ content, actionStates }) => {
+                    setState(({ content, actionStates, autocomplete }) => {
                         const newState: State = {
                             content,
                             actionStates: res.actionStates || actionStates,
+                            autocomplete: res.autocomplete || autocomplete,
                         };
                         if (res.content !== undefined) {
                             newState.content = res.content;
@@ -149,9 +154,10 @@ export function useListeners(
                 );
 
                 if (actionStates) {
-                    setState(({ content }) => ({
+                    setState(({ content, autocomplete }) => ({
                         content,
                         actionStates,
+                        autocomplete,
                     }));
                 }
                 plainTextContentRef.current =
