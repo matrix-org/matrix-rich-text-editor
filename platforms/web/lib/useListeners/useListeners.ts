@@ -48,7 +48,9 @@ export function useListeners(
     const [state, setState] = useState<State>({
         content: initialContent || null,
         actionStates: createDefaultActionStates(),
-        autocomplete: null,
+        // <<< TODO change this to be the whole update now
+        autocomplete: null, // maybe this needs to be the whole update, not just
+        // the text and query etc, as we need this to call the replacer fn
     });
 
     const plainTextContentRef = useRef<string>();
