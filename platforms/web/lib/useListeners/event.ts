@@ -16,7 +16,11 @@ limitations under the License.
 
 import { MouseEvent as ReactMouseEvent } from 'react';
 
-import { ComposerModel, MenuStateUpdate } from '../../generated/wysiwyg';
+import {
+    ComposerModel,
+    MenuActionSuggestion,
+    MenuStateUpdate,
+} from '../../generated/wysiwyg';
 import { processEvent, processInput } from '../composer';
 import {
     getCurrentSelection,
@@ -145,6 +149,22 @@ export function extractActionStates(
 }
 
 /**
+ * Extract the autocomplete information from the
+ * @param {MenuActionSuggestion} menuActionSuggestion update from the composer
+ * @returns {AllActionStates}
+ */
+export function extractAutocompleteUpdate(
+    menuActionSuggestion: MenuActionSuggestion,
+): { text: string; type: string } | null {
+    const suggestion = menuActionSuggestion.suggestion_pattern;
+    const keyToString: Record<number, string> = { 0: '@', 1: '#', 2: '/' };
+    return {
+        text: suggestion.text,
+        type: keyToString[suggestion.key],
+    };
+}
+
+/**
  * Event listener for WysiwygInputEvent
  * @param {WysiwygInputEvent} e
  * @param {HTMLElement} editor
@@ -167,6 +187,7 @@ export function handleInput(
     | {
           content?: string;
           actionStates: AllActionStates | null;
+          autocomplete: { text: string; type: string } | null;
       }
     | undefined {
     const update = processInput(
@@ -196,11 +217,20 @@ export function handleInput(
         }
 
         const menuStateUpdate = update.menu_state().update();
+        const menuActionUpdate = update.menu_action().suggestion();
+
+        const actionStates = menuStateUpdate
+            ? extractActionStates(menuStateUpdate)
+            : null;
+
+        const autocomplete = menuActionUpdate
+            ? extractAutocompleteUpdate(menuActionUpdate)
+            : null;
+
         const res = {
             content: repl?.replacement_html,
-            actionStates: menuStateUpdate
-                ? extractActionStates(menuStateUpdate)
-                : null,
+            actionStates,
+            autocomplete,
         };
 
         return res;
