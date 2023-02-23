@@ -27,10 +27,12 @@ protocol ComposerModelWrapperProtocol {
     func select(startUtf16Codeunit: UInt32, endUtf16Codeunit: UInt32) -> ComposerUpdate
     func replaceText(newText: String) -> ComposerUpdate
     func replaceTextIn(newText: String, start: UInt32, end: UInt32) -> ComposerUpdate
+    func replaceTextSuggestion(newText: String, suggestion: SuggestionPattern) -> ComposerUpdate
     func backspace() -> ComposerUpdate
     func enter() -> ComposerUpdate
     func setLink(link: String) -> ComposerUpdate
     func setLinkWithText(link: String, text: String) -> ComposerUpdate
+    func setLinkSuggestion(link: String, text: String, suggestion: SuggestionPattern) -> ComposerUpdate
     func removeLinks() -> ComposerUpdate
     func toTree() -> String
     func getCurrentDomState() -> ComposerState
@@ -99,6 +101,10 @@ final class ComposerModelWrapper: ComposerModelWrapperProtocol {
         execute { try $0.replaceTextIn(newText: newText, start: start, end: end) }
     }
 
+    func replaceTextSuggestion(newText: String, suggestion: SuggestionPattern) -> ComposerUpdate {
+        execute { try $0.replaceTextSuggestion(newText: newText, suggestion: suggestion) }
+    }
+
     func backspace() -> ComposerUpdate {
         execute { try $0.backspace() }
     }
@@ -113,6 +119,10 @@ final class ComposerModelWrapper: ComposerModelWrapperProtocol {
 
     func setLinkWithText(link: String, text: String) -> ComposerUpdate {
         execute { try $0.setLinkWithText(link: link, text: text) }
+    }
+
+    func setLinkSuggestion(link: String, text: String, suggestion: SuggestionPattern) -> ComposerUpdate {
+        execute { try $0.setLinkSuggestion(link: link, text: text, suggestion: suggestion) }
     }
 
     func removeLinks() -> ComposerUpdate {
