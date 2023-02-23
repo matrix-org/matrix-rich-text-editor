@@ -70,15 +70,20 @@ export function processInput(
 
     switch (event.inputType) {
         case 'insertMention': {
-            console.log('adding suggestion...');
             if (isMentionEvent(event)) {
-                console.log('for a link event');
                 const { text, link } = event.data;
                 return action(
-                    text
-                        ? composerModel.set_link_with_text(link, text)
-                        : composerModel.set_link(link),
-                    'insertLink',
+                    composerModel.set_link_suggestion(link, text, {
+                        free: function (): void {
+                            throw new Error('Function not implemented.');
+                        },
+                        end: 4,
+                        key: 0,
+                        start: 0,
+                        text: '',
+                        trailing_strategy: 0,
+                    }),
+                    'insertMention',
                 );
             }
             break;
