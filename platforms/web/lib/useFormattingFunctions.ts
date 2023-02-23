@@ -63,7 +63,7 @@ export function useFormattingFunctions(
             quote: () => sendEvent('insertQuote'),
             indent: () => sendEvent('formatIndent'),
             unindent: () => sendEvent('formatOutdent'),
-            mention: (link: string, text?: string) =>
+            mention: (link: string, text: string) =>
                 sendEvent('insertMention', { link, text }),
         };
     }, [editorRef, composerModel]);
