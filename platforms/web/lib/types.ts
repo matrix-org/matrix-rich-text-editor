@@ -36,12 +36,12 @@ export type ActionState = 'enabled' | 'reversed' | 'disabled';
 export type AllActionStates = Record<ActionTypes, ActionState>;
 
 export type FormattingFunctions = Record<
-    Exclude<ActionTypes, 'link' | 'addSuggestion'>,
+    Exclude<ActionTypes, 'link'>,
     () => void
 > & {
     insertText: (text: string) => void;
     link: (link: string, text?: string) => void;
-    addSuggestion: (link: string, text?: string) => void;
+    mention: (link: string, text?: string) => void;
     removeLinks: () => void;
     getLink: () => string;
 };
