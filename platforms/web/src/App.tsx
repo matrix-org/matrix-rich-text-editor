@@ -189,7 +189,7 @@ function App() {
                         <button
                             type="button"
                             onClick={(_e) =>
-                                wysiwyg.link('www.link.com', 'some text')
+                                wysiwyg.mention('www.link.com', 'some text')
                             }
                         >
                             Add @mention

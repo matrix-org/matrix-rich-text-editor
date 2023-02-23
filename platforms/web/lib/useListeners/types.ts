@@ -25,3 +25,8 @@ export type LinkEvent = Omit<InputEvent, 'data'> & {
     inputType: 'insertLink';
     data: { link: string; text?: string };
 };
+
+export type MentionEvent = Omit<InputEvent, 'data'> & {
+    inputType: 'insertMention';
+    data: { link: string; text?: string };
+};

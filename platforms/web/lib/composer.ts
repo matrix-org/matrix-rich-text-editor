@@ -22,7 +22,11 @@ import {
     FormattingFunctions,
     WysiwygEvent,
 } from './types';
-import { isClipboardEvent, isLinkEvent } from './useListeners/assert';
+import {
+    isClipboardEvent,
+    isLinkEvent,
+    isMentionEvent,
+} from './useListeners/assert';
 import { TestUtilities } from './useTestCases/types';
 
 export function processEvent<T extends WysiwygEvent>(
@@ -65,6 +69,20 @@ export function processInput(
     }
 
     switch (event.inputType) {
+        case 'insertMention': {
+            console.log('adding suggestion...');
+            if (isMentionEvent(event)) {
+                console.log('for a link event');
+                const { text, link } = event.data;
+                return action(
+                    text
+                        ? composerModel.set_link_with_text(link, text)
+                        : composerModel.set_link(link),
+                    'insertLink',
+                );
+            }
+            break;
+        }
         case 'clear':
             return action(composerModel.clear(), 'clear');
         case 'deleteContentBackward':
