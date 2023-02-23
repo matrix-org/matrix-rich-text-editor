@@ -186,6 +186,14 @@ function App() {
                         <button type="button" onClick={(_e) => wysiwyg.clear()}>
                             clear
                         </button>
+                        <button
+                            type="button"
+                            onClick={(_e) =>
+                                wysiwyg.link('www.link.com', 'some text')
+                            }
+                        >
+                            Add @mention
+                        </button>
                     </div>
                     <div
                         className="editor"
