@@ -18,7 +18,6 @@ import { MouseEvent as ReactMouseEvent } from 'react';
 
 import {
     ComposerModel,
-    MenuActionSuggestion,
     MenuStateUpdate,
     SuggestionPattern,
 } from '../../generated/wysiwyg';
@@ -167,6 +166,7 @@ export function handleInput(
     modelNode: HTMLElement | null,
     testUtilities: TestUtilities,
     formattingFunctions: FormattingFunctions,
+    suggestion: SuggestionPattern | null,
     inputEventProcessor?: InputEventProcessor,
 ):
     | {
@@ -181,6 +181,7 @@ export function handleInput(
         testUtilities.traceAction,
         formattingFunctions,
         editor,
+        suggestion,
         inputEventProcessor,
     );
     if (update) {

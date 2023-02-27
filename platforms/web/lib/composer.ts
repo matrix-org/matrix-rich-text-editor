@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { ComposerModel } from '../generated/wysiwyg';
+import { ComposerModel, SuggestionPattern } from '../generated/wysiwyg';
 import {
     WysiwygInputEvent,
     InputEventProcessor,
@@ -48,6 +48,7 @@ export function processInput(
     action: TestUtilities['traceAction'],
     formattingFunctions: FormattingFunctions,
     editor: HTMLElement,
+    suggestion: SuggestionPattern | null,
     inputEventProcessor?: InputEventProcessor,
 ) {
     const event = processEvent(
@@ -72,17 +73,9 @@ export function processInput(
         case 'insertMention': {
             if (isMentionEvent(event)) {
                 const { text, link } = event.data;
+                console.log('setting for ', { text, link });
                 return action(
-                    composerModel.set_link_suggestion(link, text, {
-                        free: function (): void {
-                            throw new Error('Function not implemented.');
-                        },
-                        end: 4,
-                        key: 0,
-                        start: 0,
-                        text: '',
-                        trailing_strategy: 0,
-                    }),
+                    composerModel.set_link_suggestion(link, text, suggestion),
                     'insertMention',
                 );
             }

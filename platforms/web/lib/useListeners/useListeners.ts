@@ -85,6 +85,7 @@ export function useListeners(
                     modelRef.current,
                     testUtilities,
                     formattingFunctions,
+                    state.suggestion,
                     inputEventProcessor,
                 );
 
