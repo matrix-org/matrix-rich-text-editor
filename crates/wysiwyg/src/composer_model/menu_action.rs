@@ -14,68 +14,78 @@
 
 use crate::{
     dom::{
-        nodes::dom_node::DomNodeKind,
         unicode_string::{UnicodeStr, UnicodeStringExt},
-        DomLocation,
+        Range,
     },
-    ComposerModel, DomNode, MenuAction, PatternKey, SuggestionPattern,
-    TrailingStrategy, UnicodeString,
+    ComposerModel, MenuAction, PatternKey, SuggestionPattern, TrailingStrategy,
+    UnicodeString,
 };
 
 impl<S> ComposerModel<S>
 where
     S: UnicodeString,
 {
+    /// Compute the menu action for current composer model state.
     pub(crate) fn compute_menu_action(&self) -> MenuAction {
-        let (mut s, mut e) = self.safe_selection();
+        let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
-
         if range.locations.iter().any(|l| l.kind.is_code_kind()) {
             return MenuAction::None;
         }
-
-        let text_nodes_loc: Vec<&DomLocation> = range
-            .leaves()
-            .filter(|l| l.kind == DomNodeKind::Text)
-            .collect();
-
-        let mut raw_text = S::default();
-        for loc in text_nodes_loc {
-            if let DomNode::Text(t) =
-                self.state.dom.lookup_node(&loc.node_handle)
-            {
-                let (text, extended_start, extended_end) =
-                    t.extended_text_for_range(loc.start_offset..loc.end_offset);
-                raw_text.push(text);
-                s -= extended_start;
-                e += extended_end;
-            }
-        }
-
-        if raw_text != S::default() {
-            let first_char = raw_text.remove_at(0);
-            if let Some(pattern_key) = PatternKey::from_char(first_char) {
-                // Pattern found, verify there is no whitespace inside
-                if raw_text
-                    .chars()
-                    .any(|c| matches!(&c, ' ' | '\x09'..='\x0d'))
-                {
-                    MenuAction::None
-                } else {
-                    let suggestion_pattern = SuggestionPattern {
-                        key: pattern_key,
-                        text: raw_text.to_string(),
-                        start: s,
-                        end: e,
-                        trailing_strategy: TrailingStrategy::Space,
-                    };
-                    MenuAction::Suggestion(suggestion_pattern)
-                }
-            } else {
-                MenuAction::None
-            }
+        let (raw_text, start, end) = self.extended_text(range);
+        if let Some((key, text)) = Self::pattern_for_text(raw_text) {
+            MenuAction::Suggestion(SuggestionPattern {
+                key,
+                text,
+                start,
+                end,
+                trailing_strategy: TrailingStrategy::default(),
+            })
         } else {
             MenuAction::None
+        }
+    }
+
+    /// Compute extended text from a range. Text is extended up
+    /// to the leading/trailing of the text nodes, or up to the
+    /// first whitespace found.
+    /// Returns the extended text, and its start/end locations.
+    fn extended_text(&self, range: Range) -> (S, usize, usize) {
+        range
+            .leaves()
+            .filter_map(|loc| {
+                self.state
+                    .dom
+                    .lookup_node(&loc.node_handle)
+                    .as_text()
+                    .map(|t| (t, loc.start_offset..loc.end_offset))
+            })
+            .fold(
+                (S::default(), range.start(), range.end()),
+                |(mut text, s, e), (t, range)| {
+                    let (node_text, start_offset, end_offset) =
+                        t.extended_text_for_range(range);
+                    text.push(node_text);
+                    (text, s - start_offset, e + end_offset)
+                },
+            )
+    }
+
+    /// Compute at/hash/slash pattern for a given text.
+    /// Return pattern key and associated text, if it exists.
+    fn pattern_for_text(mut text: S) -> Option<(PatternKey, String)> {
+        let Some(first_char) = text.pop_first() else {
+            return None;
+        };
+        let Some(key) = PatternKey::from_char(first_char) else {
+            return None;
+        };
+
+        // Exclude if there is inner whitespaces.
+        if text.chars().any(|c| matches!(&c, ' ' | '\x09'..='\x0d')) {
+            None
+        } else {
+            Some((key, text.to_string()))
         }
     }
 }
