@@ -188,6 +188,16 @@ fn at_pattern_is_not_detected_after_moving_in_code_block() {
     assert_eq!(update.menu_action, MenuAction::None);
 }
 
+#[test]
+fn menu_action_retuns_keep_after_format_with_cursor() {
+    let mut model = cm("@alic|");
+    let update = model.bold();
+    assert_eq!(update.menu_action, MenuAction::Keep);
+    // Unbold
+    let update = model.bold();
+    assert_eq!(update.menu_action, MenuAction::Keep);
+}
+
 /// Short wrapper around [MenuAction::Suggestion(SuggestionPattern)].
 fn sp(k: PatternKey, t: &str, s: usize, e: usize) -> MenuAction {
     MenuAction::Suggestion(SuggestionPattern {
