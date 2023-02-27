@@ -37,6 +37,8 @@ const mockComposerModel = {
 
 const mockAction = vi.fn();
 
+const mockSuggestion = null;
+
 const mockFormattingFunctions = {} as unknown as FormattingFunctions;
 
 const consoleErrorSpy = vi.spyOn(console, 'error');
@@ -155,6 +157,7 @@ describe('processInput', () => {
                 mockAction,
                 mockFormattingFunctions,
                 editor,
+                mockSuggestion,
             );
 
             // check the calls to the composerModel and the action function
@@ -182,6 +185,7 @@ describe('processInput', () => {
             mockAction,
             mockFormattingFunctions,
             editor,
+            mockSuggestion,
             mockInputEventProcessor,
         );
 
@@ -207,6 +211,7 @@ describe('processInput', () => {
                 mockAction,
                 mockFormattingFunctions,
                 editor,
+                mockSuggestion,
             );
 
             expect(mockGetter).toHaveBeenCalledTimes(1);
@@ -228,6 +233,7 @@ describe('processInput', () => {
             mockAction,
             mockFormattingFunctions,
             editor,
+            mockSuggestion,
         );
 
         // Then mockAction have is not called
@@ -245,6 +251,7 @@ describe('processInput', () => {
             mockAction,
             mockFormattingFunctions,
             editor,
+            mockSuggestion,
         );
 
         // Then mockAction have is not called
@@ -262,6 +269,7 @@ describe('processInput', () => {
             mockAction,
             mockFormattingFunctions,
             editor,
+            mockSuggestion,
         );
 
         // Then mockAction is not called and we get null back
@@ -280,6 +288,7 @@ describe('processInput', () => {
             mockAction,
             mockFormattingFunctions,
             editor,
+            mockSuggestion,
         );
 
         // Then mockAction is not called, we get null back and there is an error
