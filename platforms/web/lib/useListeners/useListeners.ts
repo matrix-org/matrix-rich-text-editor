@@ -16,7 +16,7 @@ limitations under the License.
 
 import { RefObject, useEffect, useRef, useState } from 'react';
 
-import { ComposerModel } from '../../generated/wysiwyg';
+import { ComposerModel, SuggestionPattern } from '../../generated/wysiwyg';
 import { isClipboardEvent, isInputEvent } from './assert';
 import { handleInput, handleKeyDown, handleSelectionChange } from './event';
 import {
@@ -32,7 +32,7 @@ import { createDefaultActionStates, mapToAllActionStates } from './utils';
 type State = {
     content: string | null;
     actionStates: AllActionStates;
-    autocomplete: { text: string; type: string } | null;
+    suggestion: SuggestionPattern | null;
 };
 
 export function useListeners(
@@ -48,9 +48,7 @@ export function useListeners(
     const [state, setState] = useState<State>({
         content: initialContent || null,
         actionStates: createDefaultActionStates(),
-        // <<< TODO change this to be the whole update now
-        autocomplete: null, // maybe this needs to be the whole update, not just
-        // the text and query etc, as we need this to call the replacer fn
+        suggestion: null,
     });
 
     const plainTextContentRef = useRef<string>();
@@ -65,7 +63,7 @@ export function useListeners(
                     composerModel.action_states(),
                 ),
                 // is this ok? maybe we need to be able to detect
-                autocomplete: null,
+                suggestion: null,
             });
             plainTextContentRef.current =
                 composerModel.get_content_as_plain_text();
@@ -91,11 +89,11 @@ export function useListeners(
                 );
 
                 if (res) {
-                    setState(({ content, actionStates, autocomplete }) => {
+                    setState(({ content, actionStates, suggestion }) => {
                         const newState: State = {
                             content,
                             actionStates: res.actionStates || actionStates,
-                            autocomplete: res.autocomplete || autocomplete,
+                            suggestion: res.suggestion || suggestion,
                         };
                         if (res.content !== undefined) {
                             newState.content = res.content;
@@ -156,10 +154,10 @@ export function useListeners(
                 );
 
                 if (actionStates) {
-                    setState(({ content, autocomplete }) => ({
+                    setState(({ content, suggestion }) => ({
                         content,
                         actionStates,
-                        autocomplete,
+                        suggestion,
                     }));
                 }
                 plainTextContentRef.current =
