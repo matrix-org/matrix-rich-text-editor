@@ -20,6 +20,7 @@ import {
     ComposerModel,
     MenuActionSuggestion,
     MenuStateUpdate,
+    SuggestionPattern,
 } from '../../generated/wysiwyg';
 import { processEvent, processInput } from '../composer';
 import {
@@ -149,22 +150,6 @@ export function extractActionStates(
 }
 
 /**
- * Extract the autocomplete information from the
- * @param {MenuActionSuggestion} menuActionSuggestion update from the composer
- * @returns {AllActionStates}
- */
-export function extractAutocompleteUpdate(
-    menuActionSuggestion: MenuActionSuggestion,
-): { text: string; type: string } | null {
-    const suggestion = menuActionSuggestion.suggestion_pattern;
-    const keyToString: Record<number, string> = { 0: '@', 1: '#', 2: '/' };
-    return {
-        text: suggestion.text,
-        type: keyToString[suggestion.key],
-    };
-}
-
-/**
  * Event listener for WysiwygInputEvent
  * @param {WysiwygInputEvent} e
  * @param {HTMLElement} editor
@@ -187,7 +172,7 @@ export function handleInput(
     | {
           content?: string;
           actionStates: AllActionStates | null;
-          autocomplete: { text: string; type: string } | null;
+          suggestion: SuggestionPattern | null;
       }
     | undefined {
     const update = processInput(
@@ -217,20 +202,20 @@ export function handleInput(
         }
 
         const menuStateUpdate = update.menu_state().update();
-        const menuActionUpdate = update.menu_action().suggestion();
+        const menuActionUpdate = update
+            .menu_action()
+            .suggestion()?.suggestion_pattern;
 
         const actionStates = menuStateUpdate
             ? extractActionStates(menuStateUpdate)
             : null;
 
-        const autocomplete = menuActionUpdate
-            ? extractAutocompleteUpdate(menuActionUpdate)
-            : null;
+        const suggestion = menuActionUpdate || null;
 
         const res = {
             content: repl?.replacement_html,
             actionStates,
-            autocomplete,
+            suggestion,
         };
 
         return res;
