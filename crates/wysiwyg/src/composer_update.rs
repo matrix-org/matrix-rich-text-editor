@@ -35,8 +35,7 @@ where
         Self {
             text_update: TextUpdate::<S>::Keep,
             menu_state: MenuState::Keep,
-            // FIXME: need a keep for this if this gets used at some point
-            menu_action: MenuAction::None,
+            menu_action: MenuAction::Keep,
         }
     }
 

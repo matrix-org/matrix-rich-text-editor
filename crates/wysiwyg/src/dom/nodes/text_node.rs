@@ -61,10 +61,6 @@ where
         &self.data
     }
 
-    pub fn data_for_range(&self, range: Range<usize>) -> &S::Str {
-        &self.data[range]
-    }
-
     /// Extends the text before and after given range, until reaching a whitespace or the
     /// boundaries of the `UnicodeString`.
     /// Returns the extended data, as well as the length of the extension before and after
@@ -73,46 +69,12 @@ where
         &self,
         range: Range<usize>,
     ) -> (&S::Str, usize, usize) {
-        let s_ext = self.extend_text_before(range.start);
-        let e_ext = self.extend_text_after(range.end);
-        let new_start = range.start - s_ext;
-        let new_end = range.end + e_ext;
+        let offset_before = self.data.previous_whitespace_offset(range.start);
+        let offset_after = self.data.next_whitespace_offset(range.end);
+        let new_start = range.start - offset_before;
+        let new_end = range.end + offset_after;
 
-        (&self.data[new_start..new_end], s_ext, e_ext)
-    }
-
-    /// Iterate over the characters before given position, until reaching a whitespace
-    /// or the start of the `UnicodeString`.
-    /// Returns the length of the extension with the current character encoding.
-    fn extend_text_before(&self, pos: usize) -> usize {
-        let mut extended = 0;
-
-        while let Some(prev) = self.data.find_graphemes_at(pos - extended).0 {
-            if prev.chars().all(|c| matches!(c, ' ' | '\x09'..='\x0d')) {
-                break;
-            } else {
-                extended += prev.len();
-            }
-        }
-
-        extended
-    }
-
-    /// Iterate over the characters after given position, until reaching a whitespace
-    /// or the end of the `UnicodeString`.
-    /// Returns the length of the extension with the current character encoding.
-    fn extend_text_after(&self, pos: usize) -> usize {
-        let mut extended = 0;
-
-        while let Some(next) = self.data.find_graphemes_at(pos + extended).1 {
-            if next.chars().all(|c| matches!(c, ' ' | '\x09'..='\x0d')) {
-                break;
-            } else {
-                extended += next.len();
-            }
-        }
-
-        extended
+        (&self.data[new_start..new_end], offset_before, offset_after)
     }
 
     pub fn set_data(&mut self, data: S) {

@@ -496,6 +496,10 @@ impl MenuAction {
 
 #[wasm_bindgen]
 impl MenuAction {
+    pub fn keep(&self) -> bool {
+        matches!(self.inner, wysiwyg::MenuAction::Keep)
+    }
+
     pub fn none(&self) -> bool {
         matches!(self.inner, wysiwyg::MenuAction::None)
     }
