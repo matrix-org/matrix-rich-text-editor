@@ -190,8 +190,8 @@ function App() {
                             type="button"
                             onClick={(_e) =>
                                 wysiwyg.mention(
-                                    'https://matrix.to/#/@alunt:element.io',
-                                    'Alun Turner',
+                                    'https://matrix.to/#/@a_user:element.io',
+                                    'a user',
                                 )
                             }
                         >
