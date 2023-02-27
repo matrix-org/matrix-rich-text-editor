@@ -47,6 +47,7 @@ pub trait UnicodeString:
 
     fn insert(&mut self, idx: usize, s: &Self::Str);
     fn remove_at(&mut self, idx: usize) -> char;
+    fn pop_first(&mut self) -> Option<char>;
     fn pop_last(&mut self) -> Option<char>;
 }
 
@@ -83,6 +84,13 @@ impl UnicodeString for String {
     fn remove_at(&mut self, idx: usize) -> char {
         self.remove(idx)
     }
+    fn pop_first(&mut self) -> Option<char> {
+        if self.is_empty() {
+            None
+        } else {
+            Some(self.remove(0))
+        }
+    }
     fn pop_last(&mut self) -> Option<char> {
         self.pop()
     }
@@ -115,6 +123,13 @@ impl UnicodeString for Utf16String {
     fn remove_at(&mut self, idx: usize) -> char {
         self.remove(idx)
     }
+    fn pop_first(&mut self) -> Option<char> {
+        if self.is_empty() {
+            None
+        } else {
+            Some(self.remove(0))
+        }
+    }
     fn pop_last(&mut self) -> Option<char> {
         self.pop()
     }
@@ -146,6 +161,13 @@ impl UnicodeString for Utf32String {
     }
     fn remove_at(&mut self, idx: usize) -> char {
         self.remove(idx)
+    }
+    fn pop_first(&mut self) -> Option<char> {
+        if self.is_empty() {
+            None
+        } else {
+            Some(self.remove(0))
+        }
     }
     fn pop_last(&mut self) -> Option<char> {
         self.pop()

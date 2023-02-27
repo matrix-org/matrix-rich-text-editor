@@ -33,3 +33,9 @@ impl TrailingStrategy {
         }
     }
 }
+
+impl Default for TrailingStrategy {
+    fn default() -> Self {
+        Self::Space
+    }
+}
