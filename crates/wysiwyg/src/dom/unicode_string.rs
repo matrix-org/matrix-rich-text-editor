@@ -193,6 +193,18 @@ pub trait UnicodeStrExt: UnicodeStr {
         index: usize,
     ) -> (Option<Self::StringType>, Option<Self::StringType>);
     fn u8_map_index(&self, pos: usize) -> usize;
+    /// Iterate over the characters before given position, until reaching a whitespace
+    /// or the start of the `UnicodeString`.
+    /// Returns the offset (bytes) to the whitespace or to the start, with the current character encoding.
+    ///
+    /// Note: this might have unexpected behaviour if the provided position is in the middle of a character.
+    fn previous_whitespace_offset(&self, pos: usize) -> usize;
+    /// Iterate over the characters after given position, until reaching a whitespace
+    /// or the end of the `UnicodeString`.
+    /// Returns the offset (bytes) to the whitespace or to the end, with the current character encoding.
+    ///
+    /// Note: this might have unexpected behaviour if the provided position is in the middle of a character.
+    fn next_whitespace_offset(&self, pos: usize) -> usize;
 }
 
 impl<S: UnicodeStr + ?Sized> UnicodeStrExt for S {
@@ -250,6 +262,30 @@ impl<S: UnicodeStr + ?Sized> UnicodeStrExt for S {
         }
         pos_u8
     }
+
+    fn previous_whitespace_offset(&self, pos: usize) -> usize {
+        let mut offset = 0;
+        while let Some(prev) = self.find_graphemes_at(pos - offset).0 {
+            if prev.chars().all(|c| matches!(c, ' ' | '\x09'..='\x0d')) {
+                break;
+            } else {
+                offset += prev.len();
+            }
+        }
+        offset
+    }
+
+    fn next_whitespace_offset(&self, pos: usize) -> usize {
+        let mut offset = 0;
+        while let Some(next) = self.find_graphemes_at(pos + offset).1 {
+            if next.chars().all(|c| matches!(c, ' ' | '\x09'..='\x0d')) {
+                break;
+            } else {
+                offset += next.len();
+            }
+        }
+        offset
+    }
 }
 
 #[cfg(test)]
@@ -297,6 +333,22 @@ mod test {
     }
 
     #[test]
+    fn test_whitespace_before_postion_utf8() {
+        let str = "😮‍💨test 😮‍💨test";
+        // Emoji has a length of 11 bytes
+        assert_eq!(str.previous_whitespace_offset(28), 12);
+        assert_eq!(str.previous_whitespace_offset(12), 12);
+    }
+
+    #[test]
+    fn test_whitespace_after_postion_utf8() {
+        let str = "test😮‍💨 test😮‍💨";
+        // Emoji has a length of 11 bytes
+        assert_eq!(str.next_whitespace_offset(3), 12);
+        assert_eq!(str.next_whitespace_offset(19), 12);
+    }
+
+    #[test]
     fn test_emoji_complex_with_text_utf16() {
         let str = Utf16String::from_str("Test 😮‍💨");
         let (prev, next) = str.find_graphemes_at(5);
@@ -320,6 +372,22 @@ mod test {
     }
 
     #[test]
+    fn test_whitespace_before_postion_utf16() {
+        let str = Utf16String::from_str("😮‍💨test 😮‍💨test");
+        // Emoji has a length of 5 bytes
+        assert_eq!(str.previous_whitespace_offset(16), 6);
+        assert_eq!(str.previous_whitespace_offset(6), 6);
+    }
+
+    #[test]
+    fn test_whitespace_after_postion_utf16() {
+        let str = Utf16String::from_str("test😮‍💨 test😮‍💨");
+        // Emoji has a length of 5 bytes
+        assert_eq!(str.next_whitespace_offset(3), 6);
+        assert_eq!(str.next_whitespace_offset(13), 6);
+    }
+
+    #[test]
     fn test_emoji_complex_with_text_utf32() {
         let str = Utf32String::from_str("Test 😮‍💨");
         let (prev, next) = str.find_graphemes_at(5);
@@ -332,5 +400,21 @@ mod test {
     fn test_indexes_out_of_range_with_emoji_utf32() {
         let str = Utf32String::from_str("😮‍💨");
         str.find_graphemes_at(100);
+    }
+
+    #[test]
+    fn test_whitespace_before_postion_utf32() {
+        let str = Utf32String::from_str("😮‍💨test 😮‍💨test");
+        // Emoji has a length of 3 bytes
+        assert_eq!(str.previous_whitespace_offset(11), 3);
+        assert_eq!(str.previous_whitespace_offset(3), 3);
+    }
+
+    #[test]
+    fn test_whitespace_after_postion_utf32() {
+        let str = Utf32String::from_str("test😮‍💨 test😮‍💨");
+        // Emoji has a length of 3 bytes
+        assert_eq!(str.next_whitespace_offset(3), 4);
+        assert_eq!(str.next_whitespace_offset(11), 4);
     }
 }
