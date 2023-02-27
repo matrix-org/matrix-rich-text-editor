@@ -295,3 +295,53 @@ describe('link', () => {
         );
     });
 });
+
+describe('mentions', () => {
+    let button: HTMLButtonElement;
+    let textbox: HTMLDivElement;
+
+    beforeEach(async () => {
+        render(<Editor />);
+        textbox = screen.getByRole('textbox');
+        button = screen.getByRole('button', { name: 'add @mention' });
+        await waitFor(() =>
+            expect(textbox).toHaveAttribute('contentEditable', 'true'),
+        );
+    });
+
+    it('does not add a mention on click with an incorrect prefix', async () => {
+        // When
+        const noPrefixInput = 'noPrefix';
+        fireEvent.input(textbox, {
+            data: noPrefixInput,
+            inputType: 'insertText',
+        });
+        await act(() => userEvent.click(button));
+
+        // Then
+        await waitFor(() => expect(textbox).toContainHTML(noPrefixInput));
+    });
+
+    const prefixedInputs = ['@at', '#hash', '/slash'];
+
+    it.each(prefixedInputs)(
+        'adds a mention with prefix %s',
+        async (prefixedInput) => {
+            // When
+            fireEvent.input(textbox, {
+                data: prefixedInput,
+                inputType: 'insertText',
+            });
+            await act(() => userEvent.click(button));
+
+            // Then
+            // nb this information is hardcoded in the button for these tests so
+            // they should all yield the same result
+            await waitFor(() =>
+                expect(textbox).toContainHTML(
+                    '<a href="https://matrix.to/#/@test_user:element.io">test user</a>',
+                ),
+            );
+        },
+    );
+});
