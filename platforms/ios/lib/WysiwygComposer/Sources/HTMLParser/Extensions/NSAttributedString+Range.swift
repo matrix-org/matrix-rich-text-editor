@@ -81,6 +81,16 @@ extension NSAttributedString {
         return ranges
     }
 
+    func replacementTextRanges(in range: NSRange? = nil) -> [(range: NSRange, offset: Int)] {
+        var ranges = [(NSRange, Int)]()
+
+        enumerateTypedAttribute(.originalLength) { (originalLength: Int, range: NSRange, _) in
+            ranges.append((range, range.length - originalLength))
+        }
+
+        return ranges
+    }
+
     /// Computes index inside the HTML raw text from the index
     /// inside the attributed representation.
     ///
@@ -93,11 +103,16 @@ extension NSAttributedString {
                 .outOfBoundsAttributedIndex(index: attributedIndex)
         }
 
+        let range = NSRange(location: 0, length: attributedIndex)
+        let replacementTextLength = replacementTextRanges(in: range)
+            .map { range.contains($0.range) ? $0.offset : 0 }
+            .reduce(0) { $0 - $1 }
+
         return discardableTextRanges(in: .init(location: 0, length: attributedIndex))
             // All ranges length should be counted out, unless the last one end strictly after the
             // attributed index, in that case we only count out the difference (i.e. chars before the index)
             .map { $0.upperBound <= attributedIndex ? $0.length : attributedIndex - $0.location }
-            .reduce(attributedIndex) { $0 - $1 }
+            .reduce(attributedIndex) { $0 - $1 } + replacementTextLength
     }
 
     /// Computes index inside the attributed representation from the index
@@ -107,10 +122,17 @@ extension NSAttributedString {
     ///   - htmlIndex: the index inside the HTML raw text
     /// - Returns: the index inside the attributed representation
     func attributedPosition(at htmlIndex: Int) throws -> Int {
-        let attributedIndex = try discardableTextRanges()
+        var attributedIndex = try discardableTextRanges()
             // All ranges that have a HTML position before the provided index should be entirely counted.
             .filter { try htmlPosition(at: $0.location) <= htmlIndex }
             .reduce(htmlIndex) { $0 + $1.length }
+
+        let range = NSRange(location: 0, length: attributedIndex)
+        let replacementTextLength = replacementTextRanges(in: range)
+            .map { range.contains($0.range) ? $0.offset : 0 }
+            .reduce(0) { $0 - $1 }
+
+        attributedIndex -= replacementTextLength
 
         guard attributedIndex <= length else {
             throw AttributedRangeError
@@ -118,5 +140,11 @@ extension NSAttributedString {
         }
 
         return attributedIndex
+    }
+}
+
+extension NSRange {
+    func contains(_ otherRange: NSRange) -> Bool {
+        contains(otherRange.location) && contains(otherRange.upperBound - 1)
     }
 }

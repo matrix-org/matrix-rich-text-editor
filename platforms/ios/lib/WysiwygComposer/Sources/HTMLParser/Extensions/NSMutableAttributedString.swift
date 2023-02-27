@@ -40,6 +40,20 @@ extension NSMutableAttributedString {
         replacePlaceholderTexts()
         applyDiscardableToListPrefixes()
     }
+
+    func replaceLinks(with detector: PermalinkDetector) {
+        enumerateTypedAttribute(.link) { (url: URL, range: NSRange, _) in
+            if let replacement = detector.replacementForLink(
+                url.absoluteString,
+                displayName: self.mutableString.substring(with: range)
+            ) {
+                self.replaceCharacters(in: range, with: replacement)
+                self.addAttribute(.originalLength,
+                                  value: range.length,
+                                  range: .init(location: range.location, length: replacement.length))
+            }
+        }
+    }
 }
 
 private extension NSMutableAttributedString {

@@ -51,6 +51,10 @@ struct Composer: View {
             .onTapGesture {
                 focused = true
             }
+            if let suggestion = viewModel.suggestionPattern {
+                WysiwygSuggestionList(suggestion: suggestion)
+                    .environmentObject(viewModel)
+            }
             if !viewModel.plainTextMode {
                 WysiwygActionToolbar { action in
                     viewModel.apply(action)

@@ -23,10 +23,12 @@ struct ContentView: View {
     /// A composer content "saved" and displayed upon hitting the send button.
     @State private var sentMessage: WysiwygComposerContent?
     @State private var showTree = true
+    @State private var isShowingUrlAlert = false
     /// View model for the composer.
     @StateObject private var viewModel = WysiwygComposerViewModel(
         minHeight: WysiwygSharedConstants.composerMinHeight,
-        maxExpandedHeight: WysiwygSharedConstants.composerMaxExtendedHeight
+        maxExpandedHeight: WysiwygSharedConstants.composerMaxExtendedHeight,
+        permalinkDetector: WysiwygPermalinkDetector()
     )
 
     var body: some View {
@@ -37,6 +39,10 @@ struct ContentView: View {
             viewModel.setHtmlContent("<//strong>")
         }
         .accessibilityIdentifier(.forceCrashButton)
+        Button("Set HTML") {
+            isShowingUrlAlert.toggle()
+        }
+        .accessibilityIdentifier(.setHtmlButton)
         Button("Min/Max") {
             viewModel.maximised.toggle()
         }
@@ -78,5 +84,27 @@ struct ContentView: View {
             }
         }
         Spacer()
+            .alert(isPresented: $isShowingUrlAlert, makeAlertConfig())
+    }
+
+    func makeAlertConfig() -> AlertConfig {
+        let actions: [AlertConfig.Action] = [
+            .textAction(
+                title: "Ok",
+                textFieldsData: [
+                    .init(
+                        accessibilityIdentifier: .forceCrashButton,
+                        placeholder: "HTML",
+                        defaultValue: nil
+                    ),
+                ],
+                action: { action in
+                    var html = action.first ?? ""
+                    html = html.replacingOccurrences(of: "\\\"", with: "\"")
+                    viewModel.setHtmlContent(html)
+                }
+            ),
+        ]
+        return AlertConfig(title: "Set HTML", actions: actions)
     }
 }

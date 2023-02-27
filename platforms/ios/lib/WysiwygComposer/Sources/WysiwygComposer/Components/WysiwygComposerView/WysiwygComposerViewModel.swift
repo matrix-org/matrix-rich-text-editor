@@ -46,8 +46,10 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     @Published public var isContentEmpty = true
     /// Published value for the composer required height to fit entirely without scrolling.
     @Published public var idealHeight: CGFloat = .zero
-    /// Published value for the composer current action states
+    /// Published value for the composer current action states.
     @Published public var actionStates: [ComposerAction: ActionState] = [:]
+    /// Published value for current detected suggestion pattern.
+    @Published public var suggestionPattern: SuggestionPattern?
     /// Published value for the composer maximised state.
     @Published public var maximised = false {
         didSet {
@@ -114,16 +116,20 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
 
     private var hasPendingFormats = false
 
+    private var permalinkDetector: PermalinkDetector?
+
     // MARK: - Public
 
     public init(minHeight: CGFloat = 22,
                 maxCompressedHeight: CGFloat = 200,
                 maxExpandedHeight: CGFloat = 300,
-                parserStyle: HTMLParserStyle = .standard) {
+                parserStyle: HTMLParserStyle = .standard,
+                permalinkDetector: PermalinkDetector? = nil) {
         self.minHeight = minHeight
         self.maxCompressedHeight = maxCompressedHeight
         self.maxExpandedHeight = maxExpandedHeight
         self.parserStyle = parserStyle
+        self.permalinkDetector = permalinkDetector
 
         textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
         model = ComposerModelWrapper()
@@ -202,6 +208,26 @@ public extension WysiwygComposerViewModel {
     /// Returns a textual representation of the composer model as a tree.
     func treeRepresentation() -> String {
         model.toTree()
+    }
+
+    func setAtMention(link: String, text: String) {
+        guard let suggestionPattern, suggestionPattern.key == .at else { return }
+        let update = model.setLinkSuggestion(link: link, text: text, suggestion: suggestionPattern)
+        applyUpdate(update)
+        hasPendingFormats = true
+    }
+
+    func setHashMention(link: String, text: String) {
+        guard let suggestionPattern, suggestionPattern.key == .hash else { return }
+        let update = model.setLinkSuggestion(link: link, text: text, suggestion: suggestionPattern)
+        applyUpdate(update)
+        hasPendingFormats = true
+    }
+
+    func setCommand(text: String) {
+        guard let suggestionPattern, suggestionPattern.key == .slash else { return }
+        let update = model.replaceTextSuggestion(newText: text, suggestion: suggestionPattern)
+        applyUpdate(update)
     }
 }
 
@@ -363,6 +389,15 @@ private extension WysiwygComposerViewModel {
         default:
             break
         }
+
+        switch update.menuAction() {
+        case .keep:
+            break
+        case .none:
+            suggestionPattern = nil
+        case let .suggestion(suggestionPattern: suggestionPattern):
+            self.suggestionPattern = suggestionPattern
+        }
     }
 
     /// Apply a replaceAll update to the composer
@@ -374,7 +409,9 @@ private extension WysiwygComposerViewModel {
     func applyReplaceAll(codeUnits: [UInt16], start: UInt32, end: UInt32) {
         do {
             let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count)
-            let attributed = try HTMLParser.parse(html: html, style: parserStyle)
+            let attributed = try HTMLParser.parse(html: html,
+                                                  style: parserStyle,
+                                                  permalinkDetector: permalinkDetector)
             // FIXME: handle error for out of bounds index
             let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
             let textSelection = try attributed.attributedRange(from: htmlSelection)

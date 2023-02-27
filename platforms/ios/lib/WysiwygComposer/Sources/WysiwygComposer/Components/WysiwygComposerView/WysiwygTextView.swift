@@ -62,6 +62,7 @@ public class WysiwygTextView: UITextView {
         guard content.text != attributedText || content.selection != selectedRange else { return }
 
         performWithoutDelegate {
+            WysiwygPillsFlusher.flush()
             self.attributedText = content.text
             // Set selection to {0, 0} then to expected position
             // avoids an issue with autocapitalization.
