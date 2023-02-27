@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { LinkEvent, MentionEvent } from './types';
+import { LinkEvent, SuggestionEvent } from './types';
 
 export function isInputEvent(e: Event): e is InputEvent {
     return 'inputType' in e;
@@ -24,8 +24,8 @@ export function isClipboardEvent(e: Event): e is ClipboardEvent {
     return 'clipboardData' in e;
 }
 
-export function isMentionEvent(e: Event): e is MentionEvent {
-    return isInputEvent(e) && e.inputType === 'insertMention';
+export function isSuggestionEvent(e: Event): e is SuggestionEvent {
+    return isInputEvent(e) && e.inputType === 'insertSuggestion';
 }
 
 export function isLinkEvent(e: Event): e is LinkEvent {
