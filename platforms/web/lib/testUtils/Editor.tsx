@@ -41,11 +41,12 @@ export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
             key !== 'insertText' &&
             key !== 'link' &&
             key !== 'removeLinks' &&
-            key !== 'getLink',
+            key !== 'getLink' &&
+            key !== 'mention',
     ) as Array<
         Exclude<
             keyof typeof wysiwyg,
-            'insertText' | 'link' | 'removeLinks' | 'getLink'
+            'insertText' | 'link' | 'removeLinks' | 'getLink' | 'mention'
         >
     >;
     return (
@@ -80,6 +81,17 @@ export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
             </button>
             <button type="button" onClick={() => wysiwyg.removeLinks()}>
                 remove links
+            </button>
+            <button
+                type="button"
+                onClick={() => {
+                    wysiwyg.mention(
+                        'https://matrix.to/#/@test_user:element.io',
+                        'test user',
+                    );
+                }}
+            >
+                add @mention
             </button>
             <div
                 ref={(node) => {
