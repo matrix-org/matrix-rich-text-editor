@@ -51,6 +51,7 @@ export function processInput(
     suggestion: SuggestionPattern | null,
     inputEventProcessor?: InputEventProcessor,
 ) {
+    console.log({ e });
     const event = processEvent(
         e,
         {
@@ -64,6 +65,7 @@ export function processInput(
         return;
     }
 
+    console.log({ event });
     if (isClipboardEvent(event)) {
         const data = event.clipboardData?.getData('text/plain') ?? '';
         return action(composerModel.replace_text(data), 'paste');
@@ -71,12 +73,16 @@ export function processInput(
 
     switch (event.inputType) {
         case 'insertSuggestion': {
-            if (suggestion && isSuggestionEvent(event)) {
+            if (suggestion !== null && isSuggestionEvent(event)) {
                 const { text, link } = event.data;
-                console.log('setting for ', { text, link });
+                console.log('setting for ', {
+                    text,
+                    link,
+                    suggestionText: suggestion.text,
+                });
                 return action(
                     composerModel.set_link_suggestion(link, text, suggestion),
-                    'insertSuggestion',
+                    'set_link_suggestion',
                 );
             }
             break;

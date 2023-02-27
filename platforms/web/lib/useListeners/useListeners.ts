@@ -62,7 +62,6 @@ export function useListeners(
                 actionStates: mapToAllActionStates(
                     composerModel.action_states(),
                 ),
-                // is this ok? maybe we need to be able to detect
                 suggestion: null,
             });
             plainTextContentRef.current =
