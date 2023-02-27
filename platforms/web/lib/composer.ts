@@ -25,7 +25,7 @@ import {
 import {
     isClipboardEvent,
     isLinkEvent,
-    isMentionEvent,
+    isSuggestionEvent,
 } from './useListeners/assert';
 import { TestUtilities } from './useTestCases/types';
 
@@ -70,13 +70,13 @@ export function processInput(
     }
 
     switch (event.inputType) {
-        case 'insertMention': {
-            if (isMentionEvent(event)) {
+        case 'insertSuggestion': {
+            if (suggestion && isSuggestionEvent(event)) {
                 const { text, link } = event.data;
                 console.log('setting for ', { text, link });
                 return action(
                     composerModel.set_link_suggestion(link, text, suggestion),
-                    'insertMention',
+                    'insertSuggestion',
                 );
             }
             break;

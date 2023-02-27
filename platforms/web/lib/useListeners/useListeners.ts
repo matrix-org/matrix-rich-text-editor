@@ -188,6 +188,7 @@ export function useListeners(
         inputEventProcessor,
         onError,
         plainTextContentRef,
+        state.suggestion,
     ]);
 
     return { areListenersReady, ...state };
