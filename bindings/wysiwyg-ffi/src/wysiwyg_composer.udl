@@ -117,6 +117,7 @@ interface MenuState {
 
 [Enum]
 interface MenuAction {
+    Keep();
     None();
     Suggestion(
         SuggestionPattern suggestion_pattern

@@ -16,6 +16,7 @@ use crate::SuggestionPattern;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum MenuAction {
+    Keep,
     None,
     Suggestion {
         suggestion_pattern: SuggestionPattern,
@@ -25,6 +26,7 @@ pub enum MenuAction {
 impl MenuAction {
     pub fn from(inner: wysiwyg::MenuAction) -> Self {
         match inner {
+            wysiwyg::MenuAction::Keep => Self::Keep,
             wysiwyg::MenuAction::None => Self::None,
             wysiwyg::MenuAction::Suggestion(suggestion_pattern) => {
                 Self::Suggestion {
