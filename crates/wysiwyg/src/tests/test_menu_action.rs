@@ -15,7 +15,7 @@
 use crate::PatternKey::{At, Hash, Slash};
 use crate::{
     tests::testutils_composer_model::cm, Location, MenuAction, PatternKey,
-    SuggestionPattern, TrailingStrategy,
+    SuggestionPattern,
 };
 
 // MenuAction computation tests.
@@ -204,6 +204,5 @@ fn sp(k: PatternKey, t: &str, s: usize, e: usize) -> MenuAction {
         text: t.into(),
         start: s,
         end: e,
-        trailing_strategy: TrailingStrategy::default(),
     })
 }

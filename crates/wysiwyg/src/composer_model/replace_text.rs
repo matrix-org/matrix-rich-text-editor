@@ -52,7 +52,7 @@ where
     ) -> ComposerUpdate<S> {
         self.push_state_to_history();
         self.do_replace_text_in(new_text, suggestion.start, suggestion.end);
-        self.do_replace_text(suggestion.trailing_strategy.text())
+        self.do_replace_text(" ".into())
     }
 
     #[deprecated(since = "0.20.0")]

@@ -26,7 +26,6 @@ mod ffi_menu_state;
 mod ffi_pattern_key;
 mod ffi_suggestion_pattern;
 mod ffi_text_update;
-mod ffi_trailing_strategy;
 mod into_ffi;
 
 use std::sync::Arc;
@@ -43,7 +42,6 @@ pub use crate::ffi_menu_state::MenuState;
 pub use crate::ffi_pattern_key::PatternKey;
 pub use crate::ffi_suggestion_pattern::SuggestionPattern;
 pub use crate::ffi_text_update::TextUpdate;
-pub use crate::ffi_trailing_strategy::TrailingStrategy;
 
 pub fn new_composer_model() -> Arc<ComposerModel> {
     Arc::new(ComposerModel::new())

@@ -59,7 +59,7 @@ where
         self.state.start = Location::from(suggestion.start);
         self.state.end = self.state.start;
         self.set_link_with_text(link, text);
-        self.do_replace_text(suggestion.trailing_strategy.text())
+        self.do_replace_text(" ".into())
     }
 
     fn is_blank_selection(&self, range: Range) -> bool {

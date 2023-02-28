@@ -17,8 +17,7 @@ use crate::{
         unicode_string::{UnicodeStr, UnicodeStringExt},
         Range,
     },
-    ComposerModel, MenuAction, PatternKey, SuggestionPattern, TrailingStrategy,
-    UnicodeString,
+    ComposerModel, MenuAction, PatternKey, SuggestionPattern, UnicodeString,
 };
 
 impl<S> ComposerModel<S>
@@ -39,7 +38,6 @@ where
                 text,
                 start,
                 end,
-                trailing_strategy: TrailingStrategy::default(),
             })
         } else {
             MenuAction::None

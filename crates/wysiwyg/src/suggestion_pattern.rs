@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{PatternKey, TrailingStrategy};
+use crate::PatternKey;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SuggestionPattern {
@@ -20,5 +20,4 @@ pub struct SuggestionPattern {
     pub text: String,
     pub start: usize,
     pub end: usize,
-    pub trailing_strategy: TrailingStrategy,
 }
