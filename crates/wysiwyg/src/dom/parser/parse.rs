@@ -581,7 +581,7 @@ fn post_process_code_blocks_lines<S: UnicodeString>(
     dom
 }
 
-#[cfg(sys)]
+#[cfg(feature = "sys")]
 fn last_container_mut_in<S: UnicodeString>(
     node: &mut ContainerNode<S>,
 ) -> Option<&mut ContainerNode<S>> {
