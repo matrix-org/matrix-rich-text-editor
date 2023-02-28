@@ -288,7 +288,7 @@ impl<S: UnicodeStr + ?Sized> UnicodeStrExt for S {
     fn previous_whitespace_offset(&self, pos: usize) -> usize {
         let mut offset = 0;
         while let Some(prev) = self.find_graphemes_at(pos - offset).0 {
-            if prev.chars().all(|c| matches!(c, ' ' | '\x09'..='\x0d')) {
+            if prev.chars().all(|c| c.is_whitespace()) {
                 break;
             } else {
                 offset += prev.len();
@@ -300,7 +300,7 @@ impl<S: UnicodeStr + ?Sized> UnicodeStrExt for S {
     fn next_whitespace_offset(&self, pos: usize) -> usize {
         let mut offset = 0;
         while let Some(next) = self.find_graphemes_at(pos + offset).1 {
-            if next.chars().all(|c| matches!(c, ' ' | '\x09'..='\x0d')) {
+            if next.chars().all(|c| c.is_whitespace()) {
                 break;
             } else {
                 offset += next.len();

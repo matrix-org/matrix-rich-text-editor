@@ -80,7 +80,7 @@ where
         };
 
         // Exclude if there is inner whitespaces.
-        if text.chars().any(|c| matches!(&c, ' ' | '\x09'..='\x0d')) {
+        if text.chars().any(|c| c.is_whitespace()) {
             None
         } else {
             Some((key, text.to_string()))
