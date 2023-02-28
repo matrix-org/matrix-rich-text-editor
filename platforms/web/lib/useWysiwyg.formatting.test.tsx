@@ -312,3 +312,97 @@ describe('link', () => {
         expect(actionsRef.current?.getLink()).toBe('https://mylink.com');
     });
 });
+
+describe('indentation', () => {
+    let textbox: HTMLDivElement;
+
+    beforeEach(async () => {
+        render(<Editor />);
+        textbox = screen.getByRole('textbox');
+        await waitFor(() =>
+            expect(textbox).toHaveAttribute('contentEditable', 'true'),
+        );
+    });
+
+    it('Should not show the indent/unindent buttons when empty', async () => {
+        const indentButton = screen.queryByRole('button', { name: 'indent' });
+        const unindentButton = screen.queryByRole('button', {
+            name: 'unindent',
+        });
+
+        [indentButton, unindentButton].forEach((button) => {
+            expect(button).not.toBeInTheDocument();
+        });
+    });
+
+    // eslint-disable-next-line max-len
+    it('Should show the indent/unindent buttons when a list is reversed', async () => {
+        await userEvent.click(
+            screen.getByRole('button', { name: 'orderedList' }),
+        );
+
+        const indentButton = screen.getByRole('button', {
+            name: 'indent',
+        });
+        const unindentButton = screen.getByRole('button', {
+            name: 'unindent',
+        });
+
+        [indentButton, unindentButton].forEach((button) => {
+            expect(button).toBeInTheDocument();
+        });
+    });
+
+    // eslint-disable-next-line max-len
+    it('Should not be able to change indentation on first list item', async () => {
+        await userEvent.click(
+            screen.getByRole('button', { name: 'orderedList' }),
+        );
+        await userEvent.type(textbox, 'foo');
+
+        const indentButton = screen.getByRole('button', {
+            name: 'indent',
+        });
+
+        expect(indentButton).toHaveAttribute('data-state', 'disabled');
+    });
+
+    // eslint-disable-next-line max-len
+    it('Should be able to change indentation on second list item', async () => {
+        // Select the ordered list and then enter two lines of input
+        await userEvent.click(
+            screen.getByRole('button', { name: 'orderedList' }),
+        );
+
+        fireEvent.input(textbox, {
+            data: 'foo',
+            inputType: 'insertText',
+        });
+        await userEvent.type(textbox, '{enter}');
+        fireEvent.input(textbox, {
+            data: 'bar',
+            inputType: 'insertText',
+        });
+
+        const indentButton = screen.getByRole('button', {
+            name: 'indent',
+        });
+
+        // check that the indent button is enabled and we have a single list
+        expect(indentButton).toHaveAttribute('data-state', 'enabled');
+        expect(screen.getAllByRole('list')).toHaveLength(1);
+
+        // click the button and then check that we have two lists (as we nest
+        // lists to implement indentation)
+        await userEvent.click(indentButton);
+        expect(screen.getAllByRole('list')).toHaveLength(2);
+
+        // now reverse the actions
+        const unindentButton = screen.getByRole('button', {
+            name: 'unindent',
+        });
+        expect(unindentButton).toHaveAttribute('data-state', 'enabled');
+        await userEvent.click(unindentButton);
+        expect(screen.getAllByRole('list')).toHaveLength(1);
+    });
+});
