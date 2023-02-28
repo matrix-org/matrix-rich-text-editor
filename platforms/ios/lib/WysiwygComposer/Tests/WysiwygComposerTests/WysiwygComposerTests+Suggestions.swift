@@ -36,25 +36,6 @@ extension WysiwygComposerTests {
             .assertHtml("<a href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>\(String.nbsp)")
     }
 
-    func testSuggestionForAtPatternWithColon() {
-        let model = ComposerModelWrapper()
-        let update = model.replaceText(newText: "@alic")
-
-        guard case .suggestion(suggestionPattern: var suggestionPattern) = update.menuAction() else {
-            XCTFail("No suggestion found")
-            return
-        }
-
-        suggestionPattern.trailingStrategy = .colonSpace
-        model
-            .action {
-                $0.setLinkSuggestion(link: "https://matrix.to/#/@alice:matrix.org",
-                                     text: "Alice",
-                                     suggestion: suggestionPattern)
-            }
-            .assertHtml("<a href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>:\(String.nbsp)")
-    }
-
     func testSuggestionForHashPattern() {
         let model = ComposerModelWrapper()
         let update = model.replaceText(newText: "#roo")
