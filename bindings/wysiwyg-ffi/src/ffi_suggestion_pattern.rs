@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{PatternKey, TrailingStrategy};
+use crate::PatternKey;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct SuggestionPattern {
@@ -20,7 +20,6 @@ pub struct SuggestionPattern {
     pub text: String,
     pub start: u32,
     pub end: u32,
-    pub trailing_strategy: TrailingStrategy,
 }
 
 impl From<wysiwyg::SuggestionPattern> for SuggestionPattern {
@@ -30,7 +29,6 @@ impl From<wysiwyg::SuggestionPattern> for SuggestionPattern {
             text: inner.text,
             start: u32::try_from(inner.start).unwrap(),
             end: u32::try_from(inner.end).unwrap(),
-            trailing_strategy: TrailingStrategy::from(inner.trailing_strategy),
         }
     }
 }
@@ -42,9 +40,6 @@ impl From<SuggestionPattern> for wysiwyg::SuggestionPattern {
             text: pattern.text,
             start: usize::try_from(pattern.start).unwrap(),
             end: usize::try_from(pattern.end).unwrap(),
-            trailing_strategy: wysiwyg::TrailingStrategy::from(
-                pattern.trailing_strategy,
-            ),
         }
     }
 }

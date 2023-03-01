@@ -98,17 +98,13 @@ where
 
     /// Returns true if the text_node contains only blank characters
     pub fn is_blank(&self) -> bool {
-        self.data
-            .chars()
-            .all(|c| matches!(c, ' ' | '\x09'..='\x0d'))
+        self.data.chars().all(|c| c.is_whitespace())
     }
 
     /// Returns true if the text_node contains only blank characters
     /// in the specified range
     pub fn is_blank_in_range(&self, range: Range<usize>) -> bool {
-        self.data[range]
-            .chars()
-            .all(|c| matches!(c, ' ' | '\x09'..='\x0d'))
+        self.data[range].chars().all(|c| c.is_whitespace())
     }
 
     pub fn remove_trailing_line_break(&mut self) -> bool {

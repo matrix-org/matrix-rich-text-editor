@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{MenuAction, TrailingStrategy};
+use crate::MenuAction;
 
 use super::testutils_composer_model::{cm, tx};
 
@@ -42,24 +42,5 @@ fn test_set_link_suggestion() {
     assert_eq!(
         tx(&model),
         "<a href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>&nbsp;|",
-    );
-}
-
-#[test]
-fn test_set_link_suggestion_with_colon_space_trailing() {
-    let mut model = cm("|");
-    let update = model.replace_text("@alic".into());
-    let MenuAction::Suggestion(mut suggestion) = update.menu_action else {
-        panic!("No suggestion pattern found")
-    };
-    suggestion.trailing_strategy = TrailingStrategy::ColonSpace;
-    model.set_link_suggestion(
-        "https://matrix.to/#/@alice:matrix.org".into(),
-        "Alice".into(),
-        suggestion,
-    );
-    assert_eq!(
-        tx(&model),
-        "<a href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>:&nbsp;|",
     );
 }

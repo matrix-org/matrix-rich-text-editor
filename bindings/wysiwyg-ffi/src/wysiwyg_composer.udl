@@ -129,18 +129,12 @@ dictionary SuggestionPattern {
     string text;
     u32 start;
     u32 end;
-    TrailingStrategy trailing_strategy;
 };
 
 enum PatternKey {
     "At",
     "Hash",
     "Slash",
-};
-
-enum TrailingStrategy {
-    "ColonSpace",
-    "Space",
 };
 
 [Enum]

@@ -592,7 +592,6 @@ pub struct SuggestionPattern {
     pub text: String,
     pub start: u32,
     pub end: u32,
-    pub trailing_strategy: TrailingStrategy,
 }
 
 impl From<wysiwyg::SuggestionPattern> for SuggestionPattern {
@@ -602,7 +601,6 @@ impl From<wysiwyg::SuggestionPattern> for SuggestionPattern {
             text: inner.text,
             start: u32::try_from(inner.start).unwrap(),
             end: u32::try_from(inner.end).unwrap(),
-            trailing_strategy: TrailingStrategy::from(inner.trailing_strategy),
         }
     }
 }
@@ -614,9 +612,6 @@ impl From<SuggestionPattern> for wysiwyg::SuggestionPattern {
             text: pattern.text,
             start: usize::try_from(pattern.start).unwrap(),
             end: usize::try_from(pattern.end).unwrap(),
-            trailing_strategy: wysiwyg::TrailingStrategy::from(
-                pattern.trailing_strategy,
-            ),
         }
     }
 }
@@ -645,31 +640,6 @@ impl From<PatternKey> for wysiwyg::PatternKey {
             PatternKey::At => Self::At,
             PatternKey::Hash => Self::Hash,
             PatternKey::Slash => Self::Slash,
-        }
-    }
-}
-
-#[wasm_bindgen]
-#[derive(Clone)]
-pub enum TrailingStrategy {
-    ColonSpace,
-    Space,
-}
-
-impl From<wysiwyg::TrailingStrategy> for TrailingStrategy {
-    fn from(inner: wysiwyg::TrailingStrategy) -> Self {
-        match inner {
-            wysiwyg::TrailingStrategy::ColonSpace => Self::ColonSpace,
-            wysiwyg::TrailingStrategy::Space => Self::Space,
-        }
-    }
-}
-
-impl From<TrailingStrategy> for wysiwyg::TrailingStrategy {
-    fn from(trailing: TrailingStrategy) -> Self {
-        match trailing {
-            TrailingStrategy::ColonSpace => Self::ColonSpace,
-            TrailingStrategy::Space => Self::Space,
         }
     }
 }
