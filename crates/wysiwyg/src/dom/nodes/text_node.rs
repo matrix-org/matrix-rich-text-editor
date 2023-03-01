@@ -222,6 +222,14 @@ where
                 // space with a non-breaking one.
                 escaped.replace_range(escaped.len() - 1.., "\u{A0}");
             }
+
+            if state.is_first_node_in_parent
+                && escaped.chars().next().map_or(false, |c| c == ' ')
+            {
+                // If this is the first node and it starts with a space, replace that
+                // space with a non-breaking one.
+                escaped.replace_range(..1, "\u{A0}");
+            }
         }
         buf.push(escaped.as_str());
 

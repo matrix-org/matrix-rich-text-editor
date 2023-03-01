@@ -315,6 +315,24 @@ fn insert_text_between_line_breaks_in_format_node() {
     assert_eq!(tx(&model), "A<br /><b>C|<br />B</b>");
 }
 
+#[test]
+fn leading_whitespace_is_replace_with_nbsp() {
+    let model = cm("<p> text|</p>");
+    assert_eq!(tx(&model), "<p>&nbsp;text|</p>")
+}
+
+#[test]
+fn trailing_whitespace_is_replace_with_nbsp() {
+    let model = cm("<p>text |</p>");
+    assert_eq!(tx(&model), "<p>text&nbsp;|</p>")
+}
+
+#[test]
+fn leading_and_trailing_whitespace_are_both_replaced_with_nbsp() {
+    let model = cm("<p> text |</p>");
+    assert_eq!(tx(&model), "<p>&nbsp;text&nbsp;|</p>");
+}
+
 fn replace_text(model: &mut ComposerModel<Utf16String>, new_text: &str) {
     model.replace_text(utf16(new_text));
 }

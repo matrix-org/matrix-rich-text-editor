@@ -52,7 +52,7 @@ fn format_several_nodes_with_empty_text_nodes() {
     model.italic();
     model.select(Location::from(2), Location::from(17));
     model.strike_through();
-    assert_eq!(tx(&model), "<strong>so<del>{me</del></strong><del>&nbsp;</del><em><del>different</del></em><del> no}|</del>des")
+    assert_eq!(tx(&model), "<strong>so<del>{me</del></strong><del>&nbsp;</del><em><del>different</del></em><del>&nbsp;no}|</del>des")
 }
 
 #[test]

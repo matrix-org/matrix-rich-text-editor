@@ -343,7 +343,7 @@ mod test {
     fn test_new_line_in_plain_text() {
         let mut model = cm("Test| lines");
         model.enter();
-        assert_eq!(tx(&model), "<p>Test</p><p>| lines</p>");
+        assert_eq!(tx(&model), "<p>Test</p><p>|&nbsp;lines</p>");
     }
 
     #[test]
@@ -364,14 +364,14 @@ mod test {
     fn test_new_line_in_formatted_text() {
         let mut model = cm("<b>Test| lines</b>");
         model.enter();
-        assert_eq!(tx(&model), "<p><b>Test</b></p><p><b>| lines</b></p>");
+        assert_eq!(tx(&model), "<p><b>Test</b></p><p><b>|&nbsp;lines</b></p>");
     }
 
     #[test]
     fn test_new_line_in_paragraph() {
         let mut model = cm("<p>Test| lines</p>");
         model.enter();
-        assert_eq!(tx(&model), "<p>Test</p><p>| lines</p>");
+        assert_eq!(tx(&model), "<p>Test</p><p>|&nbsp;lines</p>");
     }
 
     #[test]
