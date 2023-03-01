@@ -83,10 +83,11 @@ function App() {
         return e;
     };
 
-    const { ref, isWysiwygReady, actionStates, wysiwyg, debug } = useWysiwyg({
-        isAutoFocusEnabled: true,
-        inputEventProcessor,
-    });
+    const { ref, isWysiwygReady, actionStates, wysiwyg, debug, suggestion } =
+        useWysiwyg({
+            isAutoFocusEnabled: true,
+            inputEventProcessor,
+        });
 
     const onEnterToSendChanged = () => {
         setEnterToSend((prevValue) => !prevValue);
@@ -186,17 +187,19 @@ function App() {
                         <button type="button" onClick={(_e) => wysiwyg.clear()}>
                             clear
                         </button>
-                        <button
-                            type="button"
-                            onClick={(_e) =>
-                                wysiwyg.mention(
-                                    'https://matrix.to/#/@a_user:element.io',
-                                    'a user',
-                                )
-                            }
-                        >
-                            Add @mention
-                        </button>
+                        {suggestion && (
+                            <button
+                                type="button"
+                                onClick={(_e) =>
+                                    wysiwyg.mention(
+                                        'https://matrix.to/#/@a_user:element.io',
+                                        'a user',
+                                    )
+                                }
+                            >
+                                Add mention
+                            </button>
+                        )}
                     </div>
                     <div
                         className="editor"
