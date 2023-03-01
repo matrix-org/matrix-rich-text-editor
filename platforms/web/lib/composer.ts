@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { ComposerModel } from '../generated/wysiwyg';
+import { ComposerModel, SuggestionPattern } from '../generated/wysiwyg';
 import {
     WysiwygInputEvent,
     InputEventProcessor,
@@ -22,7 +22,11 @@ import {
     FormattingFunctions,
     WysiwygEvent,
 } from './types';
-import { isClipboardEvent, isLinkEvent } from './useListeners/assert';
+import {
+    isClipboardEvent,
+    isLinkEvent,
+    isSuggestionEvent,
+} from './useListeners/assert';
 import { TestUtilities } from './useTestCases/types';
 
 export function processEvent<T extends WysiwygEvent>(
@@ -44,6 +48,7 @@ export function processInput(
     action: TestUtilities['traceAction'],
     formattingFunctions: FormattingFunctions,
     editor: HTMLElement,
+    suggestion: SuggestionPattern | null,
     inputEventProcessor?: InputEventProcessor,
 ) {
     const event = processEvent(
@@ -65,6 +70,16 @@ export function processInput(
     }
 
     switch (event.inputType) {
+        case 'insertSuggestion': {
+            if (suggestion && isSuggestionEvent(event)) {
+                const { text, link } = event.data;
+                return action(
+                    composerModel.set_link_suggestion(link, text, suggestion),
+                    'set_link_suggestion',
+                );
+            }
+            break;
+        }
         case 'clear':
             return action(composerModel.clear(), 'clear');
         case 'deleteContentBackward':

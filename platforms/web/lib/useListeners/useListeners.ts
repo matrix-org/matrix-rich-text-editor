@@ -16,7 +16,7 @@ limitations under the License.
 
 import { RefObject, useEffect, useRef, useState } from 'react';
 
-import { ComposerModel } from '../../generated/wysiwyg';
+import { ComposerModel, SuggestionPattern } from '../../generated/wysiwyg';
 import { isClipboardEvent, isInputEvent } from './assert';
 import { handleInput, handleKeyDown, handleSelectionChange } from './event';
 import {
@@ -32,6 +32,7 @@ import { createDefaultActionStates, mapToAllActionStates } from './utils';
 type State = {
     content: string | null;
     actionStates: AllActionStates;
+    suggestion: SuggestionPattern | null;
 };
 
 export function useListeners(
@@ -47,6 +48,7 @@ export function useListeners(
     const [state, setState] = useState<State>({
         content: initialContent || null,
         actionStates: createDefaultActionStates(),
+        suggestion: null,
     });
 
     const plainTextContentRef = useRef<string>();
@@ -60,6 +62,7 @@ export function useListeners(
                 actionStates: mapToAllActionStates(
                     composerModel.action_states(),
                 ),
+                suggestion: null,
             });
             plainTextContentRef.current =
                 composerModel.get_content_as_plain_text();
@@ -81,20 +84,31 @@ export function useListeners(
                     modelRef.current,
                     testUtilities,
                     formattingFunctions,
+                    state.suggestion,
                     inputEventProcessor,
                 );
 
                 if (res) {
-                    setState(({ content, actionStates }) => {
-                        const newState: State = {
-                            content,
-                            actionStates: res.actionStates || actionStates,
-                        };
-                        if (res.content !== undefined) {
-                            newState.content = res.content;
-                        }
+                    setState((prevState) => {
+                        // the state here is different for each piece of state
+                        // state.content: update it if not undefined
+                        const content =
+                            res.content !== undefined
+                                ? res.content
+                                : prevState.content;
 
-                        return newState;
+                        // state.actionStates: update if they are non-null
+                        const actionStates =
+                            res.actionStates || prevState.actionStates;
+
+                        // state.suggestion: update even if null
+                        const suggestion = res.suggestion;
+
+                        return {
+                            content,
+                            actionStates,
+                            suggestion,
+                        };
                     });
                     plainTextContentRef.current =
                         composerModel.get_content_as_plain_text();
@@ -149,9 +163,10 @@ export function useListeners(
                 );
 
                 if (actionStates) {
-                    setState(({ content }) => ({
+                    setState(({ content, suggestion }) => ({
                         content,
                         actionStates,
+                        suggestion,
                     }));
                 }
                 plainTextContentRef.current =
@@ -181,6 +196,7 @@ export function useListeners(
         inputEventProcessor,
         onError,
         plainTextContentRef,
+        state.suggestion,
     ]);
 
     return { areListenersReady, ...state };

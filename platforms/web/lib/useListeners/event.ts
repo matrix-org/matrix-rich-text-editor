@@ -16,7 +16,11 @@ limitations under the License.
 
 import { MouseEvent as ReactMouseEvent } from 'react';
 
-import { ComposerModel, MenuStateUpdate } from '../../generated/wysiwyg';
+import {
+    ComposerModel,
+    MenuStateUpdate,
+    SuggestionPattern,
+} from '../../generated/wysiwyg';
 import { processEvent, processInput } from '../composer';
 import {
     getCurrentSelection,
@@ -162,11 +166,13 @@ export function handleInput(
     modelNode: HTMLElement | null,
     testUtilities: TestUtilities,
     formattingFunctions: FormattingFunctions,
+    suggestion: SuggestionPattern | null,
     inputEventProcessor?: InputEventProcessor,
 ):
     | {
           content?: string;
           actionStates: AllActionStates | null;
+          suggestion: SuggestionPattern | null;
       }
     | undefined {
     const update = processInput(
@@ -175,6 +181,7 @@ export function handleInput(
         testUtilities.traceAction,
         formattingFunctions,
         editor,
+        suggestion,
         inputEventProcessor,
     );
     if (update) {
@@ -196,11 +203,20 @@ export function handleInput(
         }
 
         const menuStateUpdate = update.menu_state().update();
+        const menuActionUpdate = update
+            .menu_action()
+            .suggestion()?.suggestion_pattern;
+
+        const actionStates = menuStateUpdate
+            ? extractActionStates(menuStateUpdate)
+            : null;
+
+        const suggestion = menuActionUpdate || null;
+
         const res = {
             content: repl?.replacement_html,
-            actionStates: menuStateUpdate
-                ? extractActionStates(menuStateUpdate)
-                : null,
+            actionStates,
+            suggestion,
         };
 
         return res;

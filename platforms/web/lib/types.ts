@@ -41,6 +41,7 @@ export type FormattingFunctions = Record<
 > & {
     insertText: (text: string) => void;
     link: (link: string, text?: string) => void;
+    mention: (link: string, text: string) => void;
     removeLinks: () => void;
     getLink: () => string;
 };
