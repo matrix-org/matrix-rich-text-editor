@@ -427,10 +427,10 @@ describe('mentions', () => {
             data: noPrefixInput,
             inputType: 'insertText',
         });
-        await act(() => userEvent.click(button));
+        await userEvent.click(button);
 
         // Then
-        await waitFor(() => expect(textbox).toContainHTML(noPrefixInput));
+        await expect(textbox).toContainHTML(noPrefixInput);
     });
 
     const prefixedInputs = ['@at', '#hash', '/slash'];
@@ -443,15 +443,14 @@ describe('mentions', () => {
                 data: prefixedInput,
                 inputType: 'insertText',
             });
-            await act(() => userEvent.click(button));
+            await userEvent.click(button);
 
             // Then
             // nb this information is hardcoded in the button for these tests so
             // they should all yield the same result
-            await waitFor(() =>
-                expect(textbox).toContainHTML(
-                    '<a href="https://matrix.to/#/@test_user:element.io">test user</a>',
-                ),
+
+            expect(textbox).toContainHTML(
+                '<a href="https://matrix.to/#/@test_user:element.io">test user</a>',
             );
         },
     );
