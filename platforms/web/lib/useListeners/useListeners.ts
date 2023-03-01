@@ -93,7 +93,7 @@ export function useListeners(
                         const newState: State = {
                             content,
                             actionStates: res.actionStates || actionStates,
-                            suggestion: res.suggestion || suggestion,
+                            suggestion: res.suggestion,
                         };
                         if (res.content !== undefined) {
                             newState.content = res.content;
