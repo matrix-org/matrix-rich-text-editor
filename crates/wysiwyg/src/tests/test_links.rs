@@ -658,7 +658,7 @@ fn set_link_accross_quote() {
             test_<a href=\"https://element.io\">{block_quote</a>\
         </blockquote>\
         <p>\
-            <a href=\"https://element.io\"> test}|</a>\
+            <a href=\"https://element.io\">&nbsp;test}|</a>\
         </p>"
     );
 }

@@ -358,7 +358,7 @@ fn deleting_selection_in_multiple_containers() {
 fn deleting_selection_of_a_container_in_multiple_containers() {
     let mut model = cm("<i><b>{test}|</b> test</i>");
     model.backspace();
-    assert_eq!(tx(&model), "<i>| test</i>");
+    assert_eq!(tx(&model), "<i>|&nbsp;test</i>");
     model.state.dom.explicitly_assert_invariants();
 }
 

@@ -411,7 +411,7 @@ mod test {
         model.code_block();
         assert_eq!(
             tx(&model),
-            "<p>Text</p><p><b>code|</b><i> and italic</i></p>"
+            "<p>Text</p><p><b>code|</b><i>&nbsp;and italic</i></p>"
         );
     }
 
