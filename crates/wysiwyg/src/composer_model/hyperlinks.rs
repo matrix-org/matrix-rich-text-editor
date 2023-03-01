@@ -22,7 +22,8 @@ use crate::dom::nodes::DomNode;
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::Range;
 use crate::{
-    ComposerModel, ComposerUpdate, DomHandle, LinkAction, UnicodeString,
+    ComposerModel, ComposerUpdate, DomHandle, LinkAction, Location,
+    SuggestionPattern, UnicodeString,
 };
 use email_address::*;
 use url::{ParseError, Url};
@@ -46,6 +47,19 @@ where
         } else {
             LinkAction::Create
         }
+    }
+
+    pub fn set_link_suggestion(
+        &mut self,
+        link: S,
+        text: S,
+        suggestion: SuggestionPattern,
+    ) -> ComposerUpdate<S> {
+        self.do_replace_text_in(S::default(), suggestion.start, suggestion.end);
+        self.state.start = Location::from(suggestion.start);
+        self.state.end = self.state.start;
+        self.set_link_with_text(link, text);
+        self.do_replace_text(" ".into())
     }
 
     fn is_blank_selection(&self, range: Range) -> bool {

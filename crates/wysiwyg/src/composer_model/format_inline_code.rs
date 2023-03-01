@@ -31,6 +31,7 @@ where
                 vec![InlineFormatType::InlineCode];
             ComposerUpdate::update_menu_state(
                 self.compute_menu_state(MenuStateComputeType::KeepIfUnchanged),
+                self.compute_menu_action(),
             )
         } else {
             self.add_inline_code_in(s, e);

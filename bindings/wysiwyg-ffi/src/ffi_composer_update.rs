@@ -2,6 +2,7 @@ use widestring::Utf16String;
 
 use crate::ffi_menu_state::MenuState;
 use crate::ffi_text_update::TextUpdate;
+use crate::MenuAction;
 
 pub struct ComposerUpdate {
     inner: wysiwyg::ComposerUpdate<Utf16String>,
@@ -19,13 +20,20 @@ impl ComposerUpdate {
     pub fn menu_state(&self) -> MenuState {
         MenuState::from(self.inner.menu_state.clone())
     }
+
+    pub fn menu_action(&self) -> MenuAction {
+        MenuAction::from(self.inner.menu_action.clone())
+    }
 }
 
 #[cfg(test)]
 mod test {
     use std::{collections::HashMap, sync::Arc};
 
-    use crate::{ActionState, ComposerAction, ComposerModel, MenuState};
+    use crate::{
+        ActionState, ComposerAction, ComposerModel, MenuAction, MenuState,
+        SuggestionPattern,
+    };
 
     #[test]
     fn initial_menu_update_is_populated() {
@@ -84,6 +92,54 @@ mod test {
                 action_states: undo_redo_indent_unindent_disabled()
             }
         );
+    }
+
+    #[test]
+    fn initial_menu_action_is_none() {
+        let model = Arc::new(ComposerModel::new());
+        let update = model.set_content_from_html("".into()).unwrap();
+
+        assert_eq!(update.menu_action(), MenuAction::None);
+    }
+
+    #[test]
+    fn menu_action_is_updated() {
+        let model = Arc::new(ComposerModel::new());
+        let update = model.replace_text("@alic".into());
+
+        assert_eq!(
+            update.menu_action(),
+            MenuAction::Suggestion {
+                suggestion_pattern: SuggestionPattern {
+                    key: crate::PatternKey::At,
+                    text: "alic".into(),
+                    start: 0,
+                    end: 5,
+                }
+            },
+        )
+    }
+
+    #[test]
+    fn test_set_link_suggestion_ffi() {
+        let model = Arc::new(ComposerModel::new());
+        let update = model.replace_text("@alic".into());
+
+        let MenuAction::Suggestion { suggestion_pattern } =
+            update.menu_action() else
+        {
+            panic!("No suggestion found");
+        };
+
+        model.set_link_suggestion(
+            "https://matrix.to/#/@alice:matrix.org".into(),
+            "Alice".into(),
+            suggestion_pattern,
+        );
+        assert_eq!(
+            model.get_content_as_html(),
+            "<a href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>\u{a0}",
+        )
     }
 
     fn redo_indent_unindent_disabled() -> HashMap<ComposerAction, ActionState> {

@@ -483,6 +483,13 @@ impl DomNodeKind {
     pub fn is_leaf_kind(&self) -> bool {
         matches!(self, Self::Text | Self::LineBreak)
     }
+
+    pub fn is_code_kind(&self) -> bool {
+        matches!(
+            self,
+            Self::CodeBlock | Self::Formatting(InlineFormatType::InlineCode)
+        )
+    }
 }
 
 #[cfg(test)]

@@ -13,7 +13,9 @@
 // limitations under the License.
 
 use crate::dom::UnicodeString;
-use crate::{Location, MenuState, ReplaceAll, Selection, TextUpdate};
+use crate::{
+    Location, MenuAction, MenuState, ReplaceAll, Selection, TextUpdate,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ComposerUpdate<S>
@@ -22,6 +24,7 @@ where
 {
     pub text_update: TextUpdate<S>,
     pub menu_state: MenuState,
+    pub menu_action: MenuAction,
 }
 
 impl<S> ComposerUpdate<S>
@@ -32,13 +35,18 @@ where
         Self {
             text_update: TextUpdate::<S>::Keep,
             menu_state: MenuState::Keep,
+            menu_action: MenuAction::Keep,
         }
     }
 
-    pub fn update_menu_state(menu_state: MenuState) -> Self {
+    pub fn update_menu_state(
+        menu_state: MenuState,
+        menu_action: MenuAction,
+    ) -> Self {
         Self {
-            menu_state,
             text_update: TextUpdate::<S>::Keep,
+            menu_state,
+            menu_action,
         }
     }
 
@@ -46,10 +54,12 @@ where
         start: Location,
         end: Location,
         menu_state: MenuState,
+        menu_action: MenuAction,
     ) -> Self {
         Self {
             text_update: TextUpdate::<S>::Select(Selection { start, end }),
             menu_state,
+            menu_action,
         }
     }
 
@@ -58,6 +68,7 @@ where
         start: Location,
         end: Location,
         menu_state: MenuState,
+        menu_action: MenuAction,
     ) -> Self {
         Self {
             text_update: TextUpdate::ReplaceAll(ReplaceAll {
@@ -66,6 +77,7 @@ where
                 end,
             }),
             menu_state,
+            menu_action,
         }
     }
 }

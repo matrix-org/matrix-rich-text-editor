@@ -46,7 +46,8 @@ pub trait UnicodeString:
     type Str: UnicodeStr<CodeUnit = Self::CodeUnit, Owned = Self> + ?Sized;
 
     fn insert(&mut self, idx: usize, s: &Self::Str);
-    fn remove_at(&mut self, idx: usize);
+    fn remove_at(&mut self, idx: usize) -> char;
+    fn pop_first(&mut self) -> Option<char>;
     fn pop_last(&mut self) -> Option<char>;
 }
 
@@ -69,6 +70,8 @@ pub trait UnicodeStr:
 
     /// Returns the length of the char in indices of the current encoding
     fn char_len(&self, char: &char) -> usize;
+
+    fn char_at(&self, idx: usize) -> char;
 }
 
 impl UnicodeString for String {
@@ -78,8 +81,15 @@ impl UnicodeString for String {
     fn insert(&mut self, idx: usize, s: &Self::Str) {
         self.insert_str(idx, s);
     }
-    fn remove_at(&mut self, idx: usize) {
-        self.remove(idx);
+    fn remove_at(&mut self, idx: usize) -> char {
+        self.remove(idx)
+    }
+    fn pop_first(&mut self) -> Option<char> {
+        if self.is_empty() {
+            None
+        } else {
+            Some(self.remove(0))
+        }
     }
     fn pop_last(&mut self) -> Option<char> {
         self.pop()
@@ -97,6 +107,10 @@ impl UnicodeStr for str {
     fn char_len(&self, char: &char) -> usize {
         char.len_utf8()
     }
+
+    fn char_at(&self, idx: usize) -> char {
+        self.chars().nth(idx).unwrap()
+    }
 }
 
 impl UnicodeString for Utf16String {
@@ -106,8 +120,15 @@ impl UnicodeString for Utf16String {
     fn insert(&mut self, idx: usize, s: &Self::Str) {
         self.insert_utfstr(idx, s);
     }
-    fn remove_at(&mut self, idx: usize) {
-        self.remove(idx);
+    fn remove_at(&mut self, idx: usize) -> char {
+        self.remove(idx)
+    }
+    fn pop_first(&mut self) -> Option<char> {
+        if self.is_empty() {
+            None
+        } else {
+            Some(self.remove(0))
+        }
     }
     fn pop_last(&mut self) -> Option<char> {
         self.pop()
@@ -125,6 +146,10 @@ impl UnicodeStr for Utf16Str {
     fn char_len(&self, char: &char) -> usize {
         char.len_utf16()
     }
+
+    fn char_at(&self, idx: usize) -> char {
+        self.chars().nth(idx).unwrap()
+    }
 }
 
 impl UnicodeString for Utf32String {
@@ -134,8 +159,15 @@ impl UnicodeString for Utf32String {
     fn insert(&mut self, idx: usize, s: &Self::Str) {
         self.insert_utfstr(idx, s);
     }
-    fn remove_at(&mut self, idx: usize) {
-        self.remove(idx);
+    fn remove_at(&mut self, idx: usize) -> char {
+        self.remove(idx)
+    }
+    fn pop_first(&mut self) -> Option<char> {
+        if self.is_empty() {
+            None
+        } else {
+            Some(self.remove(0))
+        }
     }
     fn pop_last(&mut self) -> Option<char> {
         self.pop()
@@ -153,6 +185,10 @@ impl UnicodeStr for Utf32Str {
     fn char_len(&self, _: &char) -> usize {
         // 1 char == 1 u32, see https://doc.rust-lang.org/std/primitive.char.html#method.from_u32
         1
+    }
+
+    fn char_at(&self, idx: usize) -> char {
+        self.chars().nth(idx).unwrap()
     }
 }
 
@@ -179,6 +215,18 @@ pub trait UnicodeStrExt: UnicodeStr {
         index: usize,
     ) -> (Option<Self::StringType>, Option<Self::StringType>);
     fn u8_map_index(&self, pos: usize) -> usize;
+    /// Iterate over the characters before given position, until reaching a whitespace
+    /// or the start of the `UnicodeString`.
+    /// Returns the offset (bytes) to the whitespace or to the start, with the current character encoding.
+    ///
+    /// Note: this might have unexpected behaviour if the provided position is in the middle of a character.
+    fn previous_whitespace_offset(&self, pos: usize) -> usize;
+    /// Iterate over the characters after given position, until reaching a whitespace
+    /// or the end of the `UnicodeString`.
+    /// Returns the offset (bytes) to the whitespace or to the end, with the current character encoding.
+    ///
+    /// Note: this might have unexpected behaviour if the provided position is in the middle of a character.
+    fn next_whitespace_offset(&self, pos: usize) -> usize;
 }
 
 impl<S: UnicodeStr + ?Sized> UnicodeStrExt for S {
@@ -236,6 +284,30 @@ impl<S: UnicodeStr + ?Sized> UnicodeStrExt for S {
         }
         pos_u8
     }
+
+    fn previous_whitespace_offset(&self, pos: usize) -> usize {
+        let mut offset = 0;
+        while let Some(prev) = self.find_graphemes_at(pos - offset).0 {
+            if prev.chars().all(|c| c.is_whitespace()) {
+                break;
+            } else {
+                offset += prev.len();
+            }
+        }
+        offset
+    }
+
+    fn next_whitespace_offset(&self, pos: usize) -> usize {
+        let mut offset = 0;
+        while let Some(next) = self.find_graphemes_at(pos + offset).1 {
+            if next.chars().all(|c| c.is_whitespace()) {
+                break;
+            } else {
+                offset += next.len();
+            }
+        }
+        offset
+    }
 }
 
 #[cfg(test)]
@@ -283,6 +355,22 @@ mod test {
     }
 
     #[test]
+    fn test_whitespace_before_postion_utf8() {
+        let str = "😮‍💨test 😮‍💨test";
+        // Emoji has a length of 11 bytes
+        assert_eq!(str.previous_whitespace_offset(28), 12);
+        assert_eq!(str.previous_whitespace_offset(12), 12);
+    }
+
+    #[test]
+    fn test_whitespace_after_postion_utf8() {
+        let str = "test😮‍💨 test😮‍💨";
+        // Emoji has a length of 11 bytes
+        assert_eq!(str.next_whitespace_offset(3), 12);
+        assert_eq!(str.next_whitespace_offset(19), 12);
+    }
+
+    #[test]
     fn test_emoji_complex_with_text_utf16() {
         let str = Utf16String::from_str("Test 😮‍💨");
         let (prev, next) = str.find_graphemes_at(5);
@@ -306,6 +394,22 @@ mod test {
     }
 
     #[test]
+    fn test_whitespace_before_postion_utf16() {
+        let str = Utf16String::from_str("😮‍💨test 😮‍💨test");
+        // Emoji has a length of 5 bytes
+        assert_eq!(str.previous_whitespace_offset(16), 6);
+        assert_eq!(str.previous_whitespace_offset(6), 6);
+    }
+
+    #[test]
+    fn test_whitespace_after_postion_utf16() {
+        let str = Utf16String::from_str("test😮‍💨 test😮‍💨");
+        // Emoji has a length of 5 bytes
+        assert_eq!(str.next_whitespace_offset(3), 6);
+        assert_eq!(str.next_whitespace_offset(13), 6);
+    }
+
+    #[test]
     fn test_emoji_complex_with_text_utf32() {
         let str = Utf32String::from_str("Test 😮‍💨");
         let (prev, next) = str.find_graphemes_at(5);
@@ -318,5 +422,21 @@ mod test {
     fn test_indexes_out_of_range_with_emoji_utf32() {
         let str = Utf32String::from_str("😮‍💨");
         str.find_graphemes_at(100);
+    }
+
+    #[test]
+    fn test_whitespace_before_postion_utf32() {
+        let str = Utf32String::from_str("😮‍💨test 😮‍💨test");
+        // Emoji has a length of 3 bytes
+        assert_eq!(str.previous_whitespace_offset(11), 3);
+        assert_eq!(str.previous_whitespace_offset(3), 3);
+    }
+
+    #[test]
+    fn test_whitespace_after_postion_utf32() {
+        let str = Utf32String::from_str("test😮‍💨 test😮‍💨");
+        // Emoji has a length of 3 bytes
+        assert_eq!(str.next_whitespace_offset(3), 4);
+        assert_eq!(str.next_whitespace_offset(11), 4);
     }
 }

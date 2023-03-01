@@ -61,6 +61,22 @@ where
         &self.data
     }
 
+    /// Extends the text before and after given range, until reaching a whitespace or the
+    /// boundaries of the `UnicodeString`.
+    /// Returns the extended data, as well as the length of the extension before and after
+    /// the given range, with the current character encoding.
+    pub(crate) fn extended_text_for_range(
+        &self,
+        range: Range<usize>,
+    ) -> (&S::Str, usize, usize) {
+        let offset_before = self.data.previous_whitespace_offset(range.start);
+        let offset_after = self.data.next_whitespace_offset(range.end);
+        let new_start = range.start - offset_before;
+        let new_end = range.end + offset_after;
+
+        (&self.data[new_start..new_end], offset_before, offset_after)
+    }
+
     pub fn set_data(&mut self, data: S) {
         self.data = data;
     }
@@ -82,17 +98,13 @@ where
 
     /// Returns true if the text_node contains only blank characters
     pub fn is_blank(&self) -> bool {
-        self.data
-            .chars()
-            .all(|c| matches!(c, ' ' | '\x09'..='\x0d'))
+        self.data.chars().all(|c| c.is_whitespace())
     }
 
     /// Returns true if the text_node contains only blank characters
     /// in the specified range
     pub fn is_blank_in_range(&self, range: Range<usize>) -> bool {
-        self.data[range]
-            .chars()
-            .all(|c| matches!(c, ' ' | '\x09'..='\x0d'))
+        self.data[range].chars().all(|c| c.is_whitespace())
     }
 
     pub fn remove_trailing_line_break(&mut self) -> bool {

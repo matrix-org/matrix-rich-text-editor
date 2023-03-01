@@ -19,7 +19,9 @@ use crate::dom::action_list::DomActionList;
 use crate::dom::nodes::{ContainerNodeKind, DomNode};
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{Dom, DomHandle, DomLocation, Range};
-use crate::{ComposerModel, ComposerUpdate, InlineFormatType, UnicodeString};
+use crate::{
+    ComposerModel, ComposerUpdate, InlineFormatType, MenuAction, UnicodeString,
+};
 
 #[derive(Eq, PartialEq, Debug)]
 enum FormatSelectionType {
@@ -113,6 +115,7 @@ where
             self.toggle_zero_length_format(&format);
             ComposerUpdate::update_menu_state(
                 self.compute_menu_state(MenuStateComputeType::KeepIfUnchanged),
+                MenuAction::Keep,
             )
         } else {
             self.format_range(s, e, &format);
@@ -142,6 +145,7 @@ where
             self.toggle_zero_length_format(&format);
             ComposerUpdate::update_menu_state(
                 self.compute_menu_state(MenuStateComputeType::KeepIfUnchanged),
+                MenuAction::Keep,
             )
         } else {
             self.unformat_range(s, e, &format);
