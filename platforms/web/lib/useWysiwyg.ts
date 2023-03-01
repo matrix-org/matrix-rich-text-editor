@@ -30,7 +30,7 @@ function useEditorFocus(
 ) {
     useEffect(() => {
         if (isAutoFocusEnabled) {
-            // TODO remove this workaround
+            // TODO: remove this workaround
             const id = setTimeout(() => editorRef.current?.focus(), 200);
             return () => clearTimeout(id);
         }
