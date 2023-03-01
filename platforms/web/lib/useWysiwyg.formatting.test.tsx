@@ -14,13 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {
-    act,
-    fireEvent,
-    render,
-    screen,
-    waitFor,
-} from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createRef, MutableRefObject } from 'react';
 
@@ -66,6 +60,51 @@ describe.each([
         '<p><del>fo</del>o</p><p>b<del>ar</del></p>',
         '<del>fo</del>o <del>bar</del>',
     ],
+    [
+        'orderedList',
+        'enabled',
+        'reversed',
+        '<ol><li>foo</li></ol>',
+        '<ol><li>foo bar</li></ol>',
+        '<ol><li><del>foo</del></li><li><del>bar</del></li></ol>',
+        'foo bar',
+    ],
+    [
+        'unorderedList',
+        'enabled',
+        'reversed',
+        '<ul><li>foo</li></ul>',
+        '<ul><li>foo bar</li></ul>',
+        '<ul><li><del>foo</del></li><li><del>bar</del></li></ul>',
+        'foo bar',
+    ],
+    [
+        'inlineCode',
+        'enabled',
+        'reversed',
+        '<code>foo</code>',
+        'fo<code>o&nbsp;</code>bar',
+        '<p><del>fo</del><code>o</code></p><p><code>b</code><del>ar</del></p>',
+        '<code>fo</code>o <code>bar</code>',
+    ],
+    [
+        'codeBlock',
+        'enabled',
+        'reversed',
+        '<pre><code>foo</code></pre>',
+        '<pre><code>foo bar</code></pre>',
+        '<pre><code><del>foo</del>\n<del>bar</del></code></pre>',
+        'foo bar',
+    ],
+    [
+        'quote',
+        'enabled',
+        'reversed',
+        '<blockquote><p>foo</p></blockquote>',
+        '<blockquote><p>foo bar</p></blockquote>',
+        '<blockquote><p><del>foo</del></p><p><del>bar</del></p></blockquote>',
+        'foo bar',
+    ],
 ])(
     'Formatting %s',
     (
@@ -94,25 +133,21 @@ describe.each([
             expect(button).toHaveAttribute('data-state', defaultState);
         });
 
-        it(
-            `Should be ${expectedActivationState} ` + `after single activation`,
-            async () => {
-                // When
-                await act(() => userEvent.click(button));
+        // eslint-disable-next-line max-len
+        it(`Should be ${expectedActivationState} after single activation`, async () => {
+            // When
+            await userEvent.click(button);
 
-                // Then
-                await waitFor(() =>
-                    expect(button).toHaveAttribute(
-                        'data-state',
-                        expectedActivationState,
-                    ),
-                );
-            },
-        );
+            // Then
+            expect(button).toHaveAttribute(
+                'data-state',
+                expectedActivationState,
+            );
+        });
 
         it('Should be formatted after typing', async () => {
             // When
-            await act(() => userEvent.click(button));
+            await userEvent.click(button);
             // Do not use userEvent.type
             // The generated inputEvent has missing attributes
             fireEvent.input(textbox, {
@@ -121,9 +156,7 @@ describe.each([
             });
 
             // Then
-            await waitFor(() =>
-                expect(textbox).toContainHTML(expectedSimpleFormatting),
-            );
+            expect(textbox).toContainHTML(expectedSimpleFormatting);
         });
 
         it('Should format the selection', async () => {
@@ -133,55 +166,47 @@ describe.each([
                 inputType: 'insertText',
             });
             select(textbox, 2, 4);
-            await act(() => userEvent.click(button));
+            await userEvent.click(button);
 
             // Then
-            await waitFor(() =>
-                expect(textbox).toContainHTML(expectedAdvancedFormatting),
-            );
+            expect(textbox).toContainHTML(expectedAdvancedFormatting);
         });
 
         it('Should format the selection on multiple lines', async () => {
             // When
-            await act(() =>
-                userEvent.click(
-                    screen.getByRole('button', { name: 'strikeThrough' }),
-                ),
+            await userEvent.click(
+                screen.getByRole('button', { name: 'strikeThrough' }),
             );
             fireEvent.input(textbox, {
                 data: 'foo',
                 inputType: 'insertText',
             });
-            await act(() => userEvent.type(textbox, '{enter}'));
+            await userEvent.type(textbox, '{enter}');
             fireEvent.input(textbox, {
                 data: 'bar',
                 inputType: 'insertText',
             });
 
             select(textbox, 2, 5);
-            await act(() => userEvent.click(button));
+            await userEvent.click(button);
 
             // Then
-            await waitFor(() =>
-                expect(textbox).toContainHTML(expectedMultipleLineFormatting),
-            );
+            expect(textbox).toContainHTML(expectedMultipleLineFormatting);
         });
 
         it('Should unformat the selection', async () => {
             // When
-            await act(() => userEvent.click(button));
+            await userEvent.click(button);
             fireEvent.input(textbox, {
                 data: 'foo bar',
                 inputType: 'insertText',
             });
             select(textbox, 2, 4);
-            await act(() => userEvent.click(button));
+            await userEvent.click(button);
 
             // Then
-            await waitFor(() => {
-                expect(button).toHaveAttribute('data-state', defaultState);
-                expect(textbox).toContainHTML(expectedUnformatting);
-            });
+            expect(button).toHaveAttribute('data-state', defaultState);
+            expect(textbox).toContainHTML(expectedUnformatting);
         });
     },
 );
@@ -201,10 +226,10 @@ describe('insertText', () => {
 
     it('Should insert the text when empty', async () => {
         // When
-        await act(() => userEvent.click(button));
+        await userEvent.click(button);
 
         // Then
-        await waitFor(() => expect(textbox).toContainHTML('add new words'));
+        expect(textbox).toContainHTML('add new words');
     });
 
     it('Should insert the text when ', async () => {
@@ -213,12 +238,10 @@ describe('insertText', () => {
             data: 'foo bar',
             inputType: 'insertText',
         });
-        await act(() => userEvent.click(button));
+        await userEvent.click(button);
 
         // Then
-        await waitFor(() =>
-            expect(textbox).toContainHTML('foo baradd new words'),
-        );
+        expect(textbox).toContainHTML('foo baradd new words');
     });
 });
 
@@ -245,10 +268,8 @@ describe('link', () => {
         );
 
         // Then
-        await waitFor(() =>
-            expect(textbox).toContainHTML(
-                '<a href="https://mylink.com">my text</a>',
-            ),
+        expect(textbox).toContainHTML(
+            '<a href="https://mylink.com">my text</a>',
         );
     });
 
@@ -259,10 +280,8 @@ describe('link', () => {
         await userEvent.click(screen.getByRole('button', { name: 'link' }));
 
         // Then
-        await waitFor(() =>
-            expect(textbox).toContainHTML(
-                '<a href="https://mylink.com">foobar</a>',
-            ),
+        expect(textbox).toContainHTML(
+            '<a href="https://mylink.com">foobar</a>',
         );
     });
 
@@ -277,7 +296,7 @@ describe('link', () => {
         );
 
         // Then
-        await waitFor(() => expect(textbox).toContainHTML('foobar'));
+        expect(textbox).toContainHTML('foobar');
     });
 
     it('Should get the link', async () => {
@@ -290,8 +309,100 @@ describe('link', () => {
         select(textbox, 0, 6);
 
         // Then
+        expect(actionsRef.current?.getLink()).toBe('https://mylink.com');
+    });
+});
+
+describe('indentation', () => {
+    let textbox: HTMLDivElement;
+
+    beforeEach(async () => {
+        render(<Editor />);
+        textbox = screen.getByRole('textbox');
         await waitFor(() =>
-            expect(actionsRef.current?.getLink()).toBe('https://mylink.com'),
+            expect(textbox).toHaveAttribute('contentEditable', 'true'),
         );
+    });
+
+    it('Should not show the indent/unindent buttons when empty', async () => {
+        const indentButton = screen.queryByRole('button', { name: 'indent' });
+        const unindentButton = screen.queryByRole('button', {
+            name: 'unindent',
+        });
+
+        [indentButton, unindentButton].forEach((button) => {
+            expect(button).not.toBeInTheDocument();
+        });
+    });
+
+    // eslint-disable-next-line max-len
+    it('Should show the indent/unindent buttons when a list is reversed', async () => {
+        await userEvent.click(
+            screen.getByRole('button', { name: 'orderedList' }),
+        );
+
+        const indentButton = screen.getByRole('button', {
+            name: 'indent',
+        });
+        const unindentButton = screen.getByRole('button', {
+            name: 'unindent',
+        });
+
+        [indentButton, unindentButton].forEach((button) => {
+            expect(button).toBeInTheDocument();
+        });
+    });
+
+    // eslint-disable-next-line max-len
+    it('Should not be able to change indentation on first list item', async () => {
+        await userEvent.click(
+            screen.getByRole('button', { name: 'orderedList' }),
+        );
+        await userEvent.type(textbox, 'foo');
+
+        const indentButton = screen.getByRole('button', {
+            name: 'indent',
+        });
+
+        expect(indentButton).toHaveAttribute('data-state', 'disabled');
+    });
+
+    // eslint-disable-next-line max-len
+    it('Should be able to change indentation on second list item', async () => {
+        // Select the ordered list and then enter two lines of input
+        await userEvent.click(
+            screen.getByRole('button', { name: 'orderedList' }),
+        );
+
+        fireEvent.input(textbox, {
+            data: 'foo',
+            inputType: 'insertText',
+        });
+        await userEvent.type(textbox, '{enter}');
+        fireEvent.input(textbox, {
+            data: 'bar',
+            inputType: 'insertText',
+        });
+
+        const indentButton = screen.getByRole('button', {
+            name: 'indent',
+        });
+
+        // check that the indent button is enabled and we have a single list
+        expect(indentButton).toHaveAttribute('data-state', 'enabled');
+        expect(screen.getAllByRole('list')).toHaveLength(1);
+
+        // click the button and then check that we have two lists (as we nest
+        // lists to implement indentation)
+        await userEvent.click(indentButton);
+        expect(screen.getAllByRole('list')).toHaveLength(2);
+
+        // now reverse the actions
+        const unindentButton = screen.getByRole('button', {
+            name: 'unindent',
+        });
+        expect(unindentButton).toHaveAttribute('data-state', 'enabled');
+        await userEvent.click(unindentButton);
+        expect(screen.getAllByRole('list')).toHaveLength(1);
     });
 });
