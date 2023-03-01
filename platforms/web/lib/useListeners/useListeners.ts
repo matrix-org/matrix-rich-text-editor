@@ -89,17 +89,26 @@ export function useListeners(
                 );
 
                 if (res) {
-                    setState(({ content, actionStates, suggestion }) => {
-                        const newState: State = {
-                            content,
-                            actionStates: res.actionStates || actionStates,
-                            suggestion: res.suggestion,
-                        };
-                        if (res.content !== undefined) {
-                            newState.content = res.content;
-                        }
+                    setState((prevState) => {
+                        // the state here is different for each piece of state
+                        // state.content: update it if not undefined
+                        const content =
+                            res.content !== undefined
+                                ? res.content
+                                : prevState.content;
 
-                        return newState;
+                        // state.actionStates: update if they are non-null
+                        const actionStates =
+                            res.actionStates || prevState.actionStates;
+
+                        // state.suggestion: update even if null
+                        const suggestion = res.suggestion;
+
+                        return {
+                            content,
+                            actionStates,
+                            suggestion,
+                        };
                     });
                     plainTextContentRef.current =
                         composerModel.get_content_as_plain_text();
