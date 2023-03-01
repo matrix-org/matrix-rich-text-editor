@@ -42,13 +42,26 @@ export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
             key !== 'link' &&
             key !== 'removeLinks' &&
             key !== 'getLink' &&
-            key !== 'mention',
+            key !== 'mention' &&
+            key !== 'indent' &&
+            key !== 'unindent',
     ) as Array<
         Exclude<
             keyof typeof wysiwyg,
-            'insertText' | 'link' | 'removeLinks' | 'getLink' | 'mention'
+            | 'insertText'
+            | 'link'
+            | 'removeLinks'
+            | 'getLink'
+            | 'mention'
+            | 'indent'
+            | 'unindent'
         >
     >;
+
+    const isInList =
+        actionStates.unorderedList === 'reversed' ||
+        actionStates.orderedList === 'reversed';
+
     return (
         <>
             {keys.map((key) => (
@@ -61,6 +74,24 @@ export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
                     {key}
                 </button>
             ))}
+            {isInList && (
+                <button
+                    onClick={wysiwyg.indent}
+                    type="button"
+                    data-state={actionStates.indent}
+                >
+                    indent
+                </button>
+            )}
+            {isInList && (
+                <button
+                    onClick={wysiwyg.unindent}
+                    type="button"
+                    data-state={actionStates.unindent}
+                >
+                    unindent
+                </button>
+            )}
             <button
                 type="button"
                 onClick={() => wysiwyg.insertText('add new words')}
