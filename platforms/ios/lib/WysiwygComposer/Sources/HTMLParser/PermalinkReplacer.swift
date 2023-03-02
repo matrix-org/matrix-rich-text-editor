@@ -15,18 +15,17 @@
 //
 
 import Foundation
-import HTMLParser
-import UIKit
 
-final class WysiwygPermalinkDetector: PermalinkDetector {
-    func replacementForLink(_ link: String, displayName: String) -> NSAttributedString? {
-        if #available(iOS 15.0, *),
-           link.starts(with: "https://matrix.to/#/"),
-           let attachment = WysiwygTextAttachment(displayName: displayName,
-                                                  font: UIFont.preferredFont(forTextStyle: .body)) {
-            return NSAttributedString(attachment: attachment)
-        } else {
-            return nil
-        }
-    }
+/// Defines an API for permalink replacement with other objects (e.g. pills)
+public protocol PermalinkReplacer {
+    /// Called when the parser of the composer steps upon a link.
+    /// This can be used to provide custom attributed string parts, such
+    /// as a pillified representation of a link.
+    /// If nothing is provided, the composer will use a standard link.
+    ///
+    /// - Parameters:
+    ///   - link: URL of the link
+    ///   - text: Text of the link
+    /// - Returns: Replacement for the attributed link.
+    func replacementForLink(_ link: String, text: String) -> NSAttributedString?
 }

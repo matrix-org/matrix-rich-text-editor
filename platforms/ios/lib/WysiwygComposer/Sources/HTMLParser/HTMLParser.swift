@@ -63,7 +63,7 @@ public final class HTMLParser {
     public static func parse(html: String,
                              encoding: String.Encoding = .utf16,
                              style: HTMLParserStyle = .standard,
-                             permalinkDetector: PermalinkDetector? = nil) throws -> NSAttributedString {
+                             permalinkReplacer: PermalinkReplacer? = nil) throws -> NSAttributedString {
         guard !html.isEmpty else {
             return NSAttributedString(string: "")
         }
@@ -100,8 +100,8 @@ public final class HTMLParser {
         let mutableAttributedString = NSMutableAttributedString(attributedString: attributedString)
         mutableAttributedString.applyPostParsingCustomAttributes(style: style)
 
-        if let permalinkDetector {
-            mutableAttributedString.replaceLinks(with: permalinkDetector)
+        if let permalinkReplacer {
+            mutableAttributedString.replaceLinks(with: permalinkReplacer)
         }
 
         removeTrailingNewlineIfNeeded(from: mutableAttributedString, given: html)

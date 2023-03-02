@@ -28,7 +28,7 @@ struct ContentView: View {
     @StateObject private var viewModel = WysiwygComposerViewModel(
         minHeight: WysiwygSharedConstants.composerMinHeight,
         maxExpandedHeight: WysiwygSharedConstants.composerMaxExtendedHeight,
-        permalinkDetector: WysiwygPermalinkDetector()
+        permalinkReplacer: WysiwygPermalinkReplacer()
     )
 
     var body: some View {

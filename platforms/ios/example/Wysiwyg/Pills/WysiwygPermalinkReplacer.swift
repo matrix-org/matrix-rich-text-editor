@@ -15,7 +15,18 @@
 //
 
 import Foundation
+import HTMLParser
+import UIKit
 
-public protocol PermalinkDetector {
-    func replacementForLink(_ link: String, displayName: String) -> NSAttributedString?
+final class WysiwygPermalinkReplacer: PermalinkReplacer {
+    func replacementForLink(_ link: String, text: String) -> NSAttributedString? {
+        if #available(iOS 15.0, *),
+           link.starts(with: "https://matrix.to/#/"),
+           let attachment = WysiwygTextAttachment(displayName: text,
+                                                  font: UIFont.preferredFont(forTextStyle: .body)) {
+            return NSAttributedString(attachment: attachment)
+        } else {
+            return nil
+        }
+    }
 }

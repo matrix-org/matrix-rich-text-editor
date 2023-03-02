@@ -41,11 +41,11 @@ extension NSMutableAttributedString {
         applyDiscardableToListPrefixes()
     }
 
-    func replaceLinks(with detector: PermalinkDetector) {
+    func replaceLinks(with detector: PermalinkReplacer) {
         enumerateTypedAttribute(.link) { (url: URL, range: NSRange, _) in
             if let replacement = detector.replacementForLink(
                 url.absoluteString,
-                displayName: self.mutableString.substring(with: range)
+                text: self.mutableString.substring(with: range)
             ) {
                 self.replaceCharacters(in: range, with: replacement)
                 self.addAttribute(.originalLength,

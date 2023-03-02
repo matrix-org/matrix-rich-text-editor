@@ -116,7 +116,7 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
 
     private var hasPendingFormats = false
 
-    private var permalinkDetector: PermalinkDetector?
+    private var permalinkReplacer: PermalinkReplacer?
 
     // MARK: - Public
 
@@ -124,12 +124,12 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
                 maxCompressedHeight: CGFloat = 200,
                 maxExpandedHeight: CGFloat = 300,
                 parserStyle: HTMLParserStyle = .standard,
-                permalinkDetector: PermalinkDetector? = nil) {
+                permalinkReplacer: PermalinkReplacer? = nil) {
         self.minHeight = minHeight
         self.maxCompressedHeight = maxCompressedHeight
         self.maxExpandedHeight = maxExpandedHeight
         self.parserStyle = parserStyle
-        self.permalinkDetector = permalinkDetector
+        self.permalinkReplacer = permalinkReplacer
 
         textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
         model = ComposerModelWrapper()
@@ -439,7 +439,7 @@ private extension WysiwygComposerViewModel {
             let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count)
             let attributed = try HTMLParser.parse(html: html,
                                                   style: parserStyle,
-                                                  permalinkDetector: permalinkDetector)
+                                                  permalinkReplacer: permalinkReplacer)
             // FIXME: handle error for out of bounds index
             let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
             let textSelection = try attributed.attributedRange(from: htmlSelection)
