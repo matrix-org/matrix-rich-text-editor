@@ -59,7 +59,8 @@ struct WysiwygSuggestionList: View {
                     }
                 case .slash:
                     let commands = Commands.filtered(with: suggestion.text)
-                    if !commands.isEmpty {
+                    // FIXME: we should probably add the suggestion.start test at a deeper level (Rust?)
+                    if !commands.isEmpty, suggestion.start == 0 {
                         Text(Commands.title).underline()
                         ForEach(Commands.allCases.filter { $0.name.contains("/" + suggestion.text.lowercased()) }) { command in
                             Button {
