@@ -5,13 +5,12 @@ name: React build
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     strategy:
@@ -20,37 +19,37 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Rust & Cargo cache
-      uses: Swatinem/rust-cache@v2
-    - name: Build
-      run: make web
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'yarn'
-        cache-dependency-path: platforms/web/yarn.lock
-    - name: Typescript check
-      working-directory: platforms/web
-      run: yarn tsc
-    - name: Lint check
-      working-directory: platforms/web
-      run: yarn lint
-    - name: Test with coverage
-      working-directory: platforms/web
-      run: yarn coverage
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: coverage
-        path: |
-          platforms/web/coverage
-          !platforms/web/coverage/lcov-report
-          !platforms/web/coverage/tmp
-    - name: Browser Test
-      uses: cypress-io/github-action@v4
-      with:
-        browser: electron
+      - uses: actions/checkout@v3
+      - name: Rust & Cargo cache
+        uses: Swatinem/rust-cache@v2
+      - name: Build
+        run: make web
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "yarn"
+          cache-dependency-path: platforms/web/yarn.lock
+      - name: Typescript check
         working-directory: platforms/web
-        start: yarn dev
+        run: yarn tsc
+      - name: Lint check
+        working-directory: platforms/web
+        run: yarn lint
+      - name: Test (without coverage)
+        working-directory: platforms/web
+        run: yarn test
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage
+          path: |
+            platforms/web/coverage
+            !platforms/web/coverage/lcov-report
+            !platforms/web/coverage/tmp
+      - name: Browser Test
+        uses: cypress-io/github-action@v4
+        with:
+          browser: electron
+          working-directory: platforms/web
+          start: yarn dev
