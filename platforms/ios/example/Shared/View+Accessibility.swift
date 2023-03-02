@@ -47,6 +47,18 @@ public enum WysiwygSharedAccessibilityIdentifier: String {
     case treeText = "WysiwygTreeText"
     case forceCrashButton = "WysiwygForceCrashButton"
     case setHtmlButton = "WysiwygSetHtmlButton"
+    case setHtmlField = "WysiwygSetHtmlField"
+
+    // Mock buttons for menu
+    case aliceButton = "WysiwygMenuAliceButton"
+    case bobButton = "WysiwygMenuBobButton"
+    case charlieButton = "WysiwygMenuCharlieButton"
+    case room1Button = "WysiwygMenuRoom1Button"
+    case room2Button = "WysiwygMenuRoom2Button"
+    case room3Button = "WysiwygMenuRoom3Button"
+    case joinCommandButton = "WysiwygMenuJoinButton"
+    case inviteCommandButton = "WysiwygMenuInviteButton"
+    case meCommandButton = "WysiwygMenuMeButton"
 }
 
 public extension View {

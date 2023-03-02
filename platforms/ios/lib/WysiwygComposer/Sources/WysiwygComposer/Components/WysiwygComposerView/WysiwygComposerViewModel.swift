@@ -217,8 +217,14 @@ public extension WysiwygComposerViewModel {
     ///   - link: The link to the user.
     ///   - name: The display name of the user.
     func setAtMention(link: String, name: String) {
-        guard let suggestionPattern, suggestionPattern.key == .at else { return }
-        let update = model.setLinkSuggestion(link: link, text: name, suggestion: suggestionPattern)
+        let update: ComposerUpdate
+        if let suggestionPattern, suggestionPattern.key == .at {
+            update = model.setLinkSuggestion(link: link, text: name, suggestion: suggestionPattern)
+        } else {
+            _ = model.setLinkWithText(link: link, text: name)
+            // FIXME: remove this if Rust adds this space for free
+            update = model.replaceText(newText: " ")
+        }
         applyUpdate(update)
         hasPendingFormats = true
     }
@@ -230,8 +236,14 @@ public extension WysiwygComposerViewModel {
     ///   - link: The link to the room/channel.
     ///   - name: The display name of the room/channel.
     func setHashMention(link: String, name: String) {
-        guard let suggestionPattern, suggestionPattern.key == .hash else { return }
-        let update = model.setLinkSuggestion(link: link, text: name, suggestion: suggestionPattern)
+        let update: ComposerUpdate
+        if let suggestionPattern, suggestionPattern.key == .hash {
+            update = model.setLinkSuggestion(link: link, text: name, suggestion: suggestionPattern)
+        } else {
+            _ = model.setLinkWithText(link: link, text: name)
+            // FIXME: remove this if Rust adds this space for free
+            update = model.replaceText(newText: " ")
+        }
         applyUpdate(update)
         hasPendingFormats = true
     }

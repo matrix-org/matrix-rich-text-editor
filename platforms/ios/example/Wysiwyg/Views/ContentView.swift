@@ -93,7 +93,7 @@ struct ContentView: View {
                 title: "Ok",
                 textFieldsData: [
                     .init(
-                        accessibilityIdentifier: .forceCrashButton,
+                        accessibilityIdentifier: .setHtmlField,
                         placeholder: "HTML",
                         defaultValue: nil
                     ),

@@ -49,6 +49,17 @@ enum Rooms: Identifiable, CaseIterable {
         }
     }
 
+    var accessiblityIdentifier: WysiwygSharedAccessibilityIdentifier {
+        switch self {
+        case .room1:
+            return .room1Button
+        case .room2:
+            return .room2Button
+        case .room3:
+            return .room3Button
+        }
+    }
+
     static let title = "Rooms"
 
     static func filtered(with text: String) -> [Rooms] {

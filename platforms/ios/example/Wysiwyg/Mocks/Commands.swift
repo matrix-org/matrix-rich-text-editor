@@ -38,6 +38,17 @@ enum Commands: Identifiable, CaseIterable {
         }
     }
 
+    var accessibilityIdentifier: WysiwygSharedAccessibilityIdentifier {
+        switch self {
+        case .join:
+            return .joinCommandButton
+        case .invite:
+            return .inviteCommandButton
+        case .me:
+            return .meCommandButton
+        }
+    }
+
     static let title = "Commands"
 
     static func filtered(with text: String) -> [Commands] {

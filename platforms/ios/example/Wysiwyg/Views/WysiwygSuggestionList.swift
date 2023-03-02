@@ -38,6 +38,7 @@ struct WysiwygSuggestionList: View {
                                     Text(user.name)
                                 }
                             }
+                            .accessibilityIdentifier(user.accessibilityIdentifier)
                         }
                     }
                 case .hash:
@@ -53,6 +54,7 @@ struct WysiwygSuggestionList: View {
                                     Text(room.name)
                                 }
                             }
+                            .accessibilityIdentifier(room.accessiblityIdentifier)
                         }
                     }
                 case .slash:
@@ -68,6 +70,7 @@ struct WysiwygSuggestionList: View {
                                     Text(command.name)
                                 }
                             }
+                            .accessibilityIdentifier(command.accessibilityIdentifier)
                         }
                     }
                 }

@@ -49,6 +49,17 @@ enum Users: Identifiable, CaseIterable {
         }
     }
 
+    var accessibilityIdentifier: WysiwygSharedAccessibilityIdentifier {
+        switch self {
+        case .alice:
+            return .aliceButton
+        case .bob:
+            return .bobButton
+        case .charlie:
+            return .charlieButton
+        }
+    }
+
     static let title = "Users"
 
     static func filtered(with text: String) -> [Users] {
