@@ -210,23 +210,39 @@ public extension WysiwygComposerViewModel {
         model.toTree()
     }
 
-    func setAtMention(link: String, text: String) {
+    /// Set a mention with `At` pattern. Usually used
+    /// for mentioning a user.
+    ///
+    /// - Parameters:
+    ///   - link: The link to the user.
+    ///   - name: The display name of the user.
+    func setAtMention(link: String, name: String) {
         guard let suggestionPattern, suggestionPattern.key == .at else { return }
-        let update = model.setLinkSuggestion(link: link, text: text, suggestion: suggestionPattern)
+        let update = model.setLinkSuggestion(link: link, text: name, suggestion: suggestionPattern)
         applyUpdate(update)
         hasPendingFormats = true
     }
 
-    func setHashMention(link: String, text: String) {
+    /// Set a mention with `Hash` pattern. Usually used
+    /// for mentioning a room/channel.
+    ///
+    /// - Parameters:
+    ///   - link: The link to the room/channel.
+    ///   - name: The display name of the room/channel.
+    func setHashMention(link: String, name: String) {
         guard let suggestionPattern, suggestionPattern.key == .hash else { return }
-        let update = model.setLinkSuggestion(link: link, text: text, suggestion: suggestionPattern)
+        let update = model.setLinkSuggestion(link: link, text: name, suggestion: suggestionPattern)
         applyUpdate(update)
         hasPendingFormats = true
     }
 
-    func setCommand(text: String) {
+    /// Set a command with `Slash` pattern.
+    ///
+    /// - Parameters:
+    ///   - name: The name of the command.
+    func setCommand(name: String) {
         guard let suggestionPattern, suggestionPattern.key == .slash else { return }
-        let update = model.replaceTextSuggestion(newText: text, suggestion: suggestionPattern)
+        let update = model.replaceTextSuggestion(newText: name, suggestion: suggestionPattern)
         applyUpdate(update)
     }
 }

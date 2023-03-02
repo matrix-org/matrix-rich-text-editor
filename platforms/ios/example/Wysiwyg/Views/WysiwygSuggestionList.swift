@@ -31,7 +31,7 @@ struct WysiwygSuggestionList: View {
                         Text(Users.title).underline()
                         ForEach(users) { user in
                             Button {
-                                viewModel.setAtMention(link: user.url, text: user.name)
+                                viewModel.setAtMention(link: user.url, name: user.name)
                             } label: {
                                 HStack(spacing: 4) {
                                     Image(systemName: user.iconSystemName)
@@ -46,7 +46,7 @@ struct WysiwygSuggestionList: View {
                         Text(Rooms.title).underline()
                         ForEach(rooms) { room in
                             Button {
-                                viewModel.setHashMention(link: room.url, text: room.name)
+                                viewModel.setHashMention(link: room.url, name: room.name)
                             } label: {
                                 HStack(spacing: 4) {
                                     Image(systemName: room.iconSystemName)
@@ -61,7 +61,7 @@ struct WysiwygSuggestionList: View {
                         Text(Commands.title).underline()
                         ForEach(Commands.allCases.filter { $0.name.contains("/" + suggestion.text.lowercased()) }) { command in
                             Button {
-                                viewModel.setCommand(text: command.name)
+                                viewModel.setCommand(name: command.name)
                             } label: {
                                 HStack(spacing: 4) {
                                     Image(systemName: command.iconSystemName)
