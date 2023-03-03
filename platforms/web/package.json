@@ -37,7 +37,7 @@
         "test:watch": "vitest",
         "test:ui": "vitest --ui",
         "coverage": "vitest run --coverage",
-        "update": "cd ../../bindings/wysiwyg-wasm && npm run build && cp -f ./pkg/*wysiwyg* ../../platforms/web/generated && cd ../../platforms/web && yarn"
+        "update": "cd ../../bindings/wysiwyg-wasm && npm run build && cp -f ./pkg/*wysiwyg* ../../platforms/web/generated && cd ../../platforms/web && yarn build"
     },
     "peerDependencies": {
         "react": "^18.2.0"
