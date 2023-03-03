@@ -43,6 +43,7 @@ export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
             key !== 'removeLinks' &&
             key !== 'getLink' &&
             key !== 'mention' &&
+            key !== 'command' &&
             key !== 'indent' &&
             key !== 'unindent',
     ) as Array<
@@ -53,6 +54,7 @@ export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
             | 'removeLinks'
             | 'getLink'
             | 'mention'
+            | 'command'
             | 'indent'
             | 'unindent'
         >
@@ -123,6 +125,14 @@ export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
                 }}
             >
                 add @mention
+            </button>
+            <button
+                type="button"
+                onClick={() => {
+                    wysiwyg.command('/test_command');
+                }}
+            >
+                add command
             </button>
             <div
                 ref={(node) => {
