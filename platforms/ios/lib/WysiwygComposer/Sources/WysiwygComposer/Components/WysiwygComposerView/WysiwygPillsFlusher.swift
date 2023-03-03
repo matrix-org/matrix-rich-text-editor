@@ -17,21 +17,22 @@
 import Foundation
 import UIKit
 
-/// Provides flushing of views created by NSTextAttachmentViewProvider
-public final class WysiwygPillsFlusher {
-    private init() { }
-
-    private static var pillViews = [UIView]()
+/// Provides flushing of views created by NSTextAttachmentViewProvider.
+/// This is needed because of an issue with iOS not removing properly views
+/// that are created by `NSTextAttachmentViewProvider`.
+final class WysiwygPillsFlusher {
+    private var pillViews = [UIView]()
 
     /// Register a view to be flushed on attributed text updates.
     /// Should be called when creating a view from NSTextAttachmentViewProvider.
     ///
     /// - Parameter pillView: View to register.
-    public static func registerPillView(_ pillView: UIView) {
+    func registerPillView(_ pillView: UIView) {
         pillViews.append(pillView)
     }
 
-    static func flush() {
+    /// Flush all the registered view, should be called before setting a new attributed string.
+    func flush() {
         for view in pillViews {
             view.alpha = 0.0
             view.removeFromSuperview()

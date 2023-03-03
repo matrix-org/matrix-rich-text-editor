@@ -27,7 +27,7 @@ import WysiwygComposer
     private static let pillAttachmentViewSizes = WysiwygAttachmentView.Sizes(verticalMargin: 2.0,
                                                                              horizontalMargin: 4.0,
                                                                              avatarSideLength: 16.0)
-    private weak var textView: UITextView?
+    private weak var textView: WysiwygTextView?
 
     // MARK: - Override
 
@@ -37,7 +37,7 @@ import WysiwygComposer
                   location: NSTextLocation) {
         super.init(textAttachment: textAttachment, parentView: parentView, textLayoutManager: textLayoutManager, location: location)
 
-        textView = parentView?.superview as? UITextView
+        textView = parentView?.superview as? WysiwygTextView
     }
 
     override func loadView() {
@@ -56,7 +56,7 @@ import WysiwygComposer
                                              sizes: Self.pillAttachmentViewSizes,
                                              andPillData: pillData)
         view = pillView
-        WysiwygPillsFlusher.registerPillView(pillView)
+        textView?.registerPillView(pillView)
     }
 }
 
