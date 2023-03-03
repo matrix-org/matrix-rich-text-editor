@@ -36,7 +36,8 @@
         "test:cypress:open": "cypress open",
         "test:watch": "vitest",
         "test:ui": "vitest --ui",
-        "coverage": "vitest run --coverage"
+        "coverage": "vitest run --coverage",
+        "update": "cd ../../bindings/wysiwyg-wasm && npm run build && cp -f ./pkg/*wysiwyg* ../../platforms/web/generated && cd ../../platforms/web && yarn"
     },
     "peerDependencies": {
         "react": "^18.2.0"
