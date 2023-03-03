@@ -115,6 +115,12 @@ fn slash_pattern_is_detected() {
     assert_eq!(model.compute_menu_action(), sp(Slash, "invi", 0, 5));
 }
 
+#[test]
+fn slash_pattern_is_not_detected_if_not_at_the_beginning_of_dom() {
+    let model = cm("abc /invi|");
+    assert_eq!(model.compute_menu_action(), MenuAction::None);
+}
+
 // MenuAction update tests.
 #[test]
 fn at_pattern_is_updated_on_character_input() {

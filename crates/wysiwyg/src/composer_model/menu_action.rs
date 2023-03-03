@@ -32,7 +32,7 @@ where
             return MenuAction::None;
         }
         let (raw_text, start, end) = self.extended_text(range);
-        if let Some((key, text)) = Self::pattern_for_text(raw_text) {
+        if let Some((key, text)) = Self::pattern_for_text(raw_text, start) {
             MenuAction::Suggestion(SuggestionPattern {
                 key,
                 text,
@@ -71,7 +71,10 @@ where
 
     /// Compute at/hash/slash pattern for a given text.
     /// Return pattern key and associated text, if it exists.
-    fn pattern_for_text(mut text: S) -> Option<(PatternKey, String)> {
+    fn pattern_for_text(
+        mut text: S,
+        start_location: usize,
+    ) -> Option<(PatternKey, String)> {
         let Some(first_char) = text.pop_first() else {
             return None;
         };
@@ -79,8 +82,11 @@ where
             return None;
         };
 
-        // Exclude if there is inner whitespaces.
-        if text.chars().any(|c| c.is_whitespace()) {
+        // Exclude slash patterns that are not at the beginning of the document
+        // and any selection that contains inner whitespaces.
+        if (key == PatternKey::Slash && start_location > 0)
+            || text.chars().any(|c| c.is_whitespace())
+        {
             None
         } else {
             Some((key, text.to_string()))
