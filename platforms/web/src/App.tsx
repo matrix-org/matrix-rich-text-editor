@@ -187,7 +187,7 @@ function App() {
                         <button type="button" onClick={(_e) => wysiwyg.clear()}>
                             clear
                         </button>
-                        {suggestion && (
+                        {suggestion && suggestion.key !== 2 && (
                             <button
                                 type="button"
                                 onClick={(_e) =>
@@ -198,6 +198,14 @@ function App() {
                                 }
                             >
                                 Add mention
+                            </button>
+                        )}
+                        {suggestion && suggestion.key === 2 && (
+                            <button
+                                type="button"
+                                onClick={(_e) => wysiwyg.command('/spoiler ')}
+                            >
+                                Add /spoiler command
                             </button>
                         )}
                     </div>
