@@ -80,6 +80,18 @@ export function processInput(
             }
             break;
         }
+        case 'insertCommand': {
+            if (suggestion && event.data) {
+                return action(
+                    composerModel.replace_text_suggestion(
+                        event.data,
+                        suggestion,
+                    ),
+                    'replace_text_suggestion',
+                );
+            }
+            break;
+        }
         case 'clear':
             return action(composerModel.clear(), 'clear');
         case 'deleteContentBackward':
