@@ -41,9 +41,13 @@ extension NSMutableAttributedString {
         applyDiscardableToListPrefixes()
     }
 
-    func replaceLinks(with detector: PermalinkReplacer) {
+    /// Replace parts of the attributed string that represents links by
+    /// a new attributed string part provided by the hosting app `PermalinkReplacer`.
+    ///
+    /// - Parameter permalinkReplacer: The permalink replacer providing new attributed strings.
+    func replaceLinks(with permalinkReplacer: PermalinkReplacer) {
         enumerateTypedAttribute(.link) { (url: URL, range: NSRange, _) in
-            if let replacement = detector.replacementForLink(
+            if let replacement = permalinkReplacer.replacementForLink(
                 url.absoluteString,
                 text: self.mutableString.substring(with: range)
             ) {
