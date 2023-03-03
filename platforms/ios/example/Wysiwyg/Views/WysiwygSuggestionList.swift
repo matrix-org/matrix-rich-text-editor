@@ -31,7 +31,7 @@ struct WysiwygSuggestionList: View {
                         Text(Users.title).underline()
                         ForEach(users) { user in
                             Button {
-                                viewModel.setAtMention(link: user.url, name: user.name)
+                                viewModel.setMention(link: user.url, name: user.name, key: .at)
                             } label: {
                                 HStack(spacing: 4) {
                                     Image(systemName: user.iconSystemName)
@@ -47,7 +47,7 @@ struct WysiwygSuggestionList: View {
                         Text(Rooms.title).underline()
                         ForEach(rooms) { room in
                             Button {
-                                viewModel.setHashMention(link: room.url, name: room.name)
+                                viewModel.setMention(link: room.url, name: room.name, key: .hash)
                             } label: {
                                 HStack(spacing: 4) {
                                     Image(systemName: room.iconSystemName)
