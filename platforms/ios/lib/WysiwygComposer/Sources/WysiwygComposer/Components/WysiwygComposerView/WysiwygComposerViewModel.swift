@@ -405,8 +405,8 @@ private extension WysiwygComposerViewModel {
             break
         case .none:
             suggestionPattern = nil
-        case let .suggestion(suggestionPattern: suggestionPattern):
-            self.suggestionPattern = suggestionPattern
+        case let .suggestion(suggestionPattern: pattern):
+            suggestionPattern = pattern
         }
     }
 
