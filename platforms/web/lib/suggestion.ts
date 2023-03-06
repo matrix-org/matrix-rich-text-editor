@@ -43,7 +43,7 @@ export function mapSuggestion(
 ): MappedSuggestion | null {
     if (suggestion === null) return suggestion;
     return {
-        ...suggestion,
+        text: suggestion.text,
         keyChar: getSuggestionChar(suggestion),
         type: getSuggestionType(suggestion),
     };
