@@ -16,26 +16,22 @@ limitations under the License.
 
 import { RefObject, useCallback, useEffect, useMemo, useRef } from 'react';
 
-import { InputEventProcessor } from './types.js';
+import {
+    InputEventProcessor,
+    SuggestionChar,
+    SuggestionType,
+} from './types.js';
 import { useFormattingFunctions } from './useFormattingFunctions';
 import { useComposerModel } from './useComposerModel';
 import { useListeners } from './useListeners';
 import { useTestCases } from './useTestCases';
 import { SuggestionPattern } from '../generated/wysiwyg.js';
+import { SUGGESTIONS } from './constants.js';
 
 export { richToPlain, plainToRich } from './conversion';
 
-export type SuggestionType = 'mention' | 'command' | 'unknown';
-export type SuggestionChar = '@' | '#' | '/';
-
-export type MappedSuggestion = Omit<SuggestionPattern, 'free'> & {
-    type: SuggestionType;
-    keyChar: SuggestionChar;
-};
-
 function getSuggestionChar(suggestion: SuggestionPattern): SuggestionChar {
-    const suggestionMap = ['@', '#', '/'] as const;
-    return suggestionMap[suggestion.key];
+    return SUGGESTIONS[suggestion.key];
 }
 
 function getSuggestionType(suggestion: SuggestionPattern): SuggestionType {

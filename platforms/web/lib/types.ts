@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { ACTION_TYPES } from './constants';
+import { SuggestionPattern } from '../generated/wysiwyg';
+import { ACTION_TYPES, SUGGESTIONS } from './constants';
 import { LinkEvent } from './useListeners/types';
 
 export type BlockType = InputEvent['inputType'] | 'formatInlineCode' | 'clear';
@@ -57,3 +58,10 @@ export type InputEventProcessor = (
     wysiwyg: Wysiwyg,
     editor: HTMLElement,
 ) => WysiwygEvent | null;
+
+export type SuggestionChar = typeof SUGGESTIONS[number];
+export type SuggestionType = 'mention' | 'command' | 'unknown';
+export type MappedSuggestion = Omit<SuggestionPattern, 'free'> & {
+    type: SuggestionType;
+    keyChar: SuggestionChar;
+};
