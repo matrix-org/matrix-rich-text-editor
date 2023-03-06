@@ -59,7 +59,7 @@ export type InputEventProcessor = (
     editor: HTMLElement,
 ) => WysiwygEvent | null;
 
-export type SuggestionChar = typeof SUGGESTIONS[number];
+export type SuggestionChar = typeof SUGGESTIONS[number] | '';
 export type SuggestionType = 'mention' | 'command' | 'unknown';
 export type MappedSuggestion = Omit<SuggestionPattern, 'free'> & {
     type: SuggestionType;

@@ -18,11 +18,15 @@ import { SuggestionPattern } from '../generated/wysiwyg';
 import { SUGGESTIONS } from './constants';
 import { MappedSuggestion, SuggestionChar, SuggestionType } from './types';
 
-function getSuggestionChar(suggestion: SuggestionPattern): SuggestionChar {
-    return SUGGESTIONS[suggestion.key];
+export function getSuggestionChar(
+    suggestion: SuggestionPattern,
+): SuggestionChar {
+    return SUGGESTIONS[suggestion.key] || '';
 }
 
-function getSuggestionType(suggestion: SuggestionPattern): SuggestionType {
+export function getSuggestionType(
+    suggestion: SuggestionPattern,
+): SuggestionType {
     switch (suggestion.key) {
         case 0:
         case 1:
