@@ -25,6 +25,42 @@ import { SuggestionPattern } from '../generated/wysiwyg.js';
 
 export { richToPlain, plainToRich } from './conversion';
 
+export type SuggestionType = 'mention' | 'command' | 'unknown';
+export type SuggestionChar = '@' | '#' | '/';
+
+export type MappedSuggestion = Omit<SuggestionPattern, 'free'> & {
+    type: SuggestionType;
+    keyChar: SuggestionChar;
+};
+
+function getSuggestionChar(suggestion: SuggestionPattern): SuggestionChar {
+    const suggestionMap = ['@', '#', '/'] as const;
+    return suggestionMap[suggestion.key];
+}
+
+function getSuggestionType(suggestion: SuggestionPattern): SuggestionType {
+    switch (suggestion.key) {
+        case 0:
+        case 1:
+            return 'mention';
+        case 2:
+            return 'command';
+        default:
+            return 'unknown';
+    }
+}
+
+function mapSuggestion(
+    suggestion: SuggestionPattern | null,
+): MappedSuggestion | null {
+    if (suggestion === null) return suggestion;
+    return {
+        ...suggestion,
+        keyChar: getSuggestionChar(suggestion),
+        type: getSuggestionType(suggestion),
+    };
+}
+
 function useEditorFocus(
     editorRef: RefObject<HTMLElement | null>,
     isAutoFocusEnabled = false,
@@ -108,33 +144,5 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
             traceAction: testUtilities.traceAction,
         },
         suggestion: memoisedMappedSuggestion,
-    };
-}
-
-function getSuggestionChar(suggestion: SuggestionPattern) {
-    const suggestionMap = ['@', '#', '/'];
-    return suggestionMap[suggestion.key];
-}
-
-function getSuggestionType(suggestion: SuggestionPattern) {
-    switch (suggestion.key) {
-        case 0:
-        case 1:
-            return 'mention';
-        case 2:
-            return 'command';
-        default:
-            return 'unknown';
-    }
-}
-
-// TODO use this when passing the output out from the hook => this way we can
-// keep the state consistent, but use 'MappedSuggestion' type on the React side
-function mapSuggestion(suggestion: SuggestionPattern | null) {
-    if (suggestion === null) return suggestion;
-    return {
-        ...suggestion,
-        keyChar: getSuggestionChar(suggestion),
-        type: getSuggestionType(suggestion),
     };
 }
