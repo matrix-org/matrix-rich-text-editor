@@ -14,13 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { RefObject, useCallback, useEffect, useRef } from 'react';
+import { RefObject, useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { InputEventProcessor } from './types.js';
 import { useFormattingFunctions } from './useFormattingFunctions';
 import { useComposerModel } from './useComposerModel';
 import { useListeners } from './useListeners';
 import { useTestCases } from './useTestCases';
+import { SuggestionPattern } from '../generated/wysiwyg.js';
 
 export { richToPlain, plainToRich } from './conversion';
 
@@ -89,6 +90,11 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
 
     useEditorFocus(ref, wysiwygProps?.isAutoFocusEnabled);
 
+    const memoisedMappedSuggestion = useMemo(
+        () => mapSuggestion(suggestion),
+        [suggestion],
+    );
+
     return {
         ref,
         isWysiwygReady: areListenersReady,
@@ -101,6 +107,34 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
             resetTestCase: testUtilities.onResetTestCase,
             traceAction: testUtilities.traceAction,
         },
-        suggestion,
+        suggestion: memoisedMappedSuggestion,
+    };
+}
+
+function getSuggestionChar(suggestion: SuggestionPattern) {
+    const suggestionMap = ['@', '#', '/'];
+    return suggestionMap[suggestion.key];
+}
+
+function getSuggestionType(suggestion: SuggestionPattern) {
+    switch (suggestion.key) {
+        case 0:
+        case 1:
+            return 'mention';
+        case 2:
+            return 'command';
+        default:
+            return 'unknown';
+    }
+}
+
+// TODO use this when passing the output out from the hook => this way we can
+// keep the state consistent, but use 'MappedSuggestion' type on the React side
+function mapSuggestion(suggestion: SuggestionPattern | null) {
+    if (suggestion === null) return suggestion;
+    return {
+        ...suggestion,
+        keyChar: getSuggestionChar(suggestion),
+        type: getSuggestionType(suggestion),
     };
 }
