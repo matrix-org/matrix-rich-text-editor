@@ -19,7 +19,7 @@ import Combine
 import XCTest
 
 final class WysiwygComposerViewModelTests: XCTestCase {
-    private let viewModel = WysiwygComposerViewModel()
+    let viewModel = WysiwygComposerViewModel()
 
     override func setUpWithError() throws {
         viewModel.clearContent()

@@ -41,6 +41,8 @@ public class WysiwygTextView: UITextView {
         }
     }
 
+    private let flusher = WysiwygPillsFlusher()
+
     override public init(frame: CGRect, textContainer: NSTextContainer?) {
         super.init(frame: frame, textContainer: textContainer)
         contentMode = .redraw
@@ -49,6 +51,14 @@ public class WysiwygTextView: UITextView {
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         contentMode = .redraw
+    }
+
+    /// Register a pill view that has been added through `NSTextAttachmentViewProvider`.
+    /// Should be called within the `loadView` function in order to clear the pills properly on text updates.
+    ///
+    /// - Parameter pillView: View to register.
+    public func registerPillView(_ pillView: UIView) {
+        flusher.registerPillView(pillView)
     }
 
     /// Apply given content to the text view. This will temporary disrupt the text view
@@ -62,6 +72,7 @@ public class WysiwygTextView: UITextView {
         guard content.text != attributedText || content.selection != selectedRange else { return }
 
         performWithoutDelegate {
+            flusher.flush()
             self.attributedText = content.text
             // Set selection to {0, 0} then to expected position
             // avoids an issue with autocapitalization.

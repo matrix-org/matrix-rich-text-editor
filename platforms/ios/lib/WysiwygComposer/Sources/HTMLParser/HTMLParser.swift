@@ -62,7 +62,8 @@ public final class HTMLParser {
     /// - Returns: an attributed string representation of the HTML content
     public static func parse(html: String,
                              encoding: String.Encoding = .utf16,
-                             style: HTMLParserStyle = .standard) throws -> NSAttributedString {
+                             style: HTMLParserStyle = .standard,
+                             permalinkReplacer: PermalinkReplacer? = nil) throws -> NSAttributedString {
         guard !html.isEmpty else {
             return NSAttributedString(string: "")
         }
@@ -77,8 +78,9 @@ public final class HTMLParser {
             DTUseiOS6Attributes: true,
             DTDefaultFontDescriptor: defaultFont.fontDescriptor,
             DTDefaultStyleSheet: DTCSSStylesheet(styleBlock: defaultCSS) as Any,
+            DTDocumentPreserveTrailingSpaces: true,
         ]
-        
+
         guard let builder = DTHTMLAttributedStringBuilder(html: data, options: parsingOptions, documentAttributes: nil) else {
             throw BuildHtmlAttributedError.dataError(encoding: encoding)
         }
@@ -97,7 +99,13 @@ public final class HTMLParser {
         
         let mutableAttributedString = NSMutableAttributedString(attributedString: attributedString)
         mutableAttributedString.applyPostParsingCustomAttributes(style: style)
+
+        if let permalinkReplacer {
+            mutableAttributedString.replaceLinks(with: permalinkReplacer)
+        }
+
         removeTrailingNewlineIfNeeded(from: mutableAttributedString, given: html)
+
         return mutableAttributedString
     }
     

@@ -46,8 +46,10 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     @Published public var isContentEmpty = true
     /// Published value for the composer required height to fit entirely without scrolling.
     @Published public var idealHeight: CGFloat = .zero
-    /// Published value for the composer current action states
+    /// Published value for the composer current action states.
     @Published public var actionStates: [ComposerAction: ActionState] = [:]
+    /// Published value for current detected suggestion pattern.
+    @Published public var suggestionPattern: SuggestionPattern?
     /// Published value for the composer maximised state.
     @Published public var maximised = false {
         didSet {
@@ -114,16 +116,20 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
 
     private var hasPendingFormats = false
 
+    private var permalinkReplacer: PermalinkReplacer?
+
     // MARK: - Public
 
     public init(minHeight: CGFloat = 22,
                 maxCompressedHeight: CGFloat = 200,
                 maxExpandedHeight: CGFloat = 300,
-                parserStyle: HTMLParserStyle = .standard) {
+                parserStyle: HTMLParserStyle = .standard,
+                permalinkReplacer: PermalinkReplacer? = nil) {
         self.minHeight = minHeight
         self.maxCompressedHeight = maxCompressedHeight
         self.maxExpandedHeight = maxExpandedHeight
         self.parserStyle = parserStyle
+        self.permalinkReplacer = permalinkReplacer
 
         textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
         model = ComposerModelWrapper()
@@ -202,6 +208,36 @@ public extension WysiwygComposerViewModel {
     /// Returns a textual representation of the composer model as a tree.
     func treeRepresentation() -> String {
         model.toTree()
+    }
+
+    /// Set a mention with given pattern. Usually used
+    /// to mention a user (@) or a room/channel (#).
+    ///
+    /// - Parameters:
+    ///   - link: The link to the user.
+    ///   - name: The display name of the user.
+    ///   - key: The pattern key to use.
+    func setMention(link: String, name: String, key: PatternKey) {
+        let update: ComposerUpdate
+        if let suggestionPattern, suggestionPattern.key == key {
+            update = model.setLinkSuggestion(link: link, text: name, suggestion: suggestionPattern)
+        } else {
+            _ = model.setLinkWithText(link: link, text: name)
+            // FIXME: remove this if Rust adds this space for free
+            update = model.replaceText(newText: " ")
+        }
+        applyUpdate(update)
+        hasPendingFormats = true
+    }
+
+    /// Set a command with `Slash` pattern.
+    ///
+    /// - Parameters:
+    ///   - name: The name of the command.
+    func setCommand(name: String) {
+        guard let suggestionPattern, suggestionPattern.key == .slash else { return }
+        let update = model.replaceTextSuggestion(newText: name, suggestion: suggestionPattern)
+        applyUpdate(update)
     }
 }
 
@@ -363,6 +399,15 @@ private extension WysiwygComposerViewModel {
         default:
             break
         }
+
+        switch update.menuAction() {
+        case .keep:
+            break
+        case .none:
+            suggestionPattern = nil
+        case let .suggestion(suggestionPattern: pattern):
+            suggestionPattern = pattern
+        }
     }
 
     /// Apply a replaceAll update to the composer
@@ -374,7 +419,9 @@ private extension WysiwygComposerViewModel {
     func applyReplaceAll(codeUnits: [UInt16], start: UInt32, end: UInt32) {
         do {
             let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count)
-            let attributed = try HTMLParser.parse(html: html, style: parserStyle)
+            let attributed = try HTMLParser.parse(html: html,
+                                                  style: parserStyle,
+                                                  permalinkReplacer: permalinkReplacer)
             // FIXME: handle error for out of bounds index
             let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
             let textSelection = try attributed.attributedRange(from: htmlSelection)

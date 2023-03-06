@@ -67,4 +67,39 @@ final class HTMLParserTests: XCTestCase {
         XCTAssertEqual(attributed.backgroundColor(at: 0),
                        HTMLParserStyle.standard.codeBlockStyle.backgroundColor)
     }
+
+    func testReplaceLinks() throws {
+        let html = "<a href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>:\(String.nbsp)"
+        let attributed = try HTMLParser.parse(html: html, permalinkReplacer: CustomPermalinkReplacer())
+        // A text attachment is added.
+        XCTAssertTrue(attributed.attribute(.attachment, at: 0, effectiveRange: nil) is NSTextAttachment)
+        // The original length is added to the new part of the attributed string.
+        XCTAssertEqual(
+            attributed.attribute(.originalLength, at: 0, effectiveRange: nil) as? Int,
+            5
+        )
+        // HTML and attriubted range matches
+        let htmlRange = NSRange(location: 0, length: 5)
+        let attributedRange = NSRange(location: 0, length: 1)
+        XCTAssertEqual(
+            try attributed.attributedRange(from: htmlRange),
+            attributedRange
+        )
+        XCTAssertEqual(
+            try attributed.htmlRange(from: attributedRange),
+            htmlRange
+        )
+    }
+}
+
+private class CustomPermalinkReplacer: PermalinkReplacer {
+    func replacementForLink(_ link: String, text: String) -> NSAttributedString? {
+        if link.starts(with: "https://matrix.to/#/"),
+           let image = UIImage(systemName: "link") {
+            // Set a text attachment with an arbitrary image.
+            return NSAttributedString(attachment: NSTextAttachment(image: image))
+        } else {
+            return nil
+        }
+    }
 }
