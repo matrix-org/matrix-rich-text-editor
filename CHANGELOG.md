@@ -1,5 +1,20 @@
 # Changelog
 
+# [1.2.0] - 2023-03-06
+
+### Added
+- Common: Detection for at/hash/slash pattern in text
+- Common: API for replacing a detected pattern with link/text
+- Web & iOS: Support for inserting mentions/commands
+
+### Changed
+- Common: Set content with HTML/Markdown now returns a `Result`
+
+### Fixed
+- Common: Fixed creating a list from a selection containing quotes/code blocks
+- Common: Fix leading whitespaces ignored by HTML parsing
+- iOS: Fix trailing whitespace ignored after a link
+
 # [1.1.1] - 2023-02-14
 
 ### Fixed
