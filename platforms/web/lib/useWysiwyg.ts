@@ -18,6 +18,7 @@ import { RefObject, useCallback, useEffect, useMemo, useRef } from 'react';
 
 import {
     InputEventProcessor,
+    MappedSuggestion,
     SuggestionChar,
     SuggestionType,
 } from './types.js';
