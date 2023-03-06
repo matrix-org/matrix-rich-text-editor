@@ -31,6 +31,7 @@ import quoteImage from './images/quote.svg';
 import indentImage from './images/indent.svg';
 import unindentImage from './images/unindent.svg';
 import { Wysiwyg, WysiwygEvent } from '../lib/types';
+import { SuggestionPattern } from '../generated/wysiwyg';
 
 type ButtonProps = {
     onClick: MouseEventHandler<HTMLButtonElement>;
@@ -54,6 +55,33 @@ function Button({ onClick, imagePath, alt, state }: ButtonProps) {
             <img alt={alt} src={imagePath} />
         </button>
     );
+}
+
+function getSuggestionChar(suggestion: SuggestionPattern) {
+    const suggestionMap = ['@', '#', '/'];
+    return suggestionMap[suggestion.key];
+}
+
+function getSuggestionType(suggestion: SuggestionPattern) {
+    switch (suggestion.key) {
+        case 0:
+        case 1:
+            return 'mention';
+        case 2:
+            return 'command';
+        default:
+            return 'unknown';
+    }
+}
+
+// TODO use this when passing the output out from the hook => this way we can
+// keep the state consistent, but use 'MappedSuggestion' type on the React side
+function mapSuggestion(suggestion: SuggestionPattern) {
+    return {
+        ...suggestion,
+        keyChar: getSuggestionChar(suggestion),
+        suggestionType: getSuggestionType(suggestion),
+    };
 }
 
 function App() {
@@ -187,7 +215,7 @@ function App() {
                         <button type="button" onClick={(_e) => wysiwyg.clear()}>
                             clear
                         </button>
-                        {suggestion && suggestion.key !== 2 && (
+                        {isMention(suggestion) && (
                             <button
                                 type="button"
                                 onClick={(_e) =>
@@ -197,10 +225,10 @@ function App() {
                                     )
                                 }
                             >
-                                Add mention
+                                Add {getSuggestionChar(suggestion)}mention
                             </button>
                         )}
-                        {suggestion && suggestion.key === 2 && (
+                        {isCommand(suggestion) && (
                             <button
                                 type="button"
                                 onClick={(_e) => wysiwyg.command('/spoiler ')}
