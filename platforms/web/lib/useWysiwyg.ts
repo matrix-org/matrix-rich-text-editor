@@ -16,47 +16,14 @@ limitations under the License.
 
 import { RefObject, useCallback, useEffect, useMemo, useRef } from 'react';
 
-import {
-    InputEventProcessor,
-    MappedSuggestion,
-    SuggestionChar,
-    SuggestionType,
-} from './types.js';
+import { InputEventProcessor } from './types.js';
 import { useFormattingFunctions } from './useFormattingFunctions';
 import { useComposerModel } from './useComposerModel';
 import { useListeners } from './useListeners';
 import { useTestCases } from './useTestCases';
-import { SuggestionPattern } from '../generated/wysiwyg.js';
-import { SUGGESTIONS } from './constants.js';
+import { mapSuggestion } from './suggestion.js';
 
 export { richToPlain, plainToRich } from './conversion';
-
-function getSuggestionChar(suggestion: SuggestionPattern): SuggestionChar {
-    return SUGGESTIONS[suggestion.key];
-}
-
-function getSuggestionType(suggestion: SuggestionPattern): SuggestionType {
-    switch (suggestion.key) {
-        case 0:
-        case 1:
-            return 'mention';
-        case 2:
-            return 'command';
-        default:
-            return 'unknown';
-    }
-}
-
-function mapSuggestion(
-    suggestion: SuggestionPattern | null,
-): MappedSuggestion | null {
-    if (suggestion === null) return suggestion;
-    return {
-        ...suggestion,
-        keyChar: getSuggestionChar(suggestion),
-        type: getSuggestionType(suggestion),
-    };
-}
 
 function useEditorFocus(
     editorRef: RefObject<HTMLElement | null>,
