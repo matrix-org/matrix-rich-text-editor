@@ -14,13 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { RefObject, useCallback, useEffect, useRef } from 'react';
+import { RefObject, useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { InputEventProcessor } from './types.js';
 import { useFormattingFunctions } from './useFormattingFunctions';
 import { useComposerModel } from './useComposerModel';
 import { useListeners } from './useListeners';
 import { useTestCases } from './useTestCases';
+import { mapSuggestion } from './suggestion.js';
 
 export { richToPlain, plainToRich } from './conversion';
 
@@ -30,7 +31,7 @@ function useEditorFocus(
 ) {
     useEffect(() => {
         if (isAutoFocusEnabled) {
-            // TODO: remove this workaround
+            // TODO remove this workaround
             const id = setTimeout(() => editorRef.current?.focus(), 200);
             return () => clearTimeout(id);
         }
@@ -89,6 +90,11 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
 
     useEditorFocus(ref, wysiwygProps?.isAutoFocusEnabled);
 
+    const memoisedMappedSuggestion = useMemo(
+        () => mapSuggestion(suggestion),
+        [suggestion],
+    );
+
     return {
         ref,
         isWysiwygReady: areListenersReady,
@@ -101,6 +107,6 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
             resetTestCase: testUtilities.onResetTestCase,
             traceAction: testUtilities.traceAction,
         },
-        suggestion,
+        suggestion: memoisedMappedSuggestion,
     };
 }

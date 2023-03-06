@@ -433,9 +433,7 @@ describe('mentions', () => {
         await expect(textbox).toContainHTML(noPrefixInput);
     });
 
-    const prefixedInputs = ['@at', '#hash', '/slash'];
-
-    it.each(prefixedInputs)(
+    it.each(['@at', '#hash'])(
         'adds a mention with prefix %s',
         async (prefixedInput) => {
             // When
@@ -454,4 +452,45 @@ describe('mentions', () => {
             );
         },
     );
+});
+
+describe('commands', () => {
+    let button: HTMLButtonElement;
+    let textbox: HTMLDivElement;
+
+    beforeEach(async () => {
+        render(<Editor />);
+        textbox = screen.getByRole('textbox');
+        button = screen.getByRole('button', { name: 'add command' });
+        await waitFor(() =>
+            expect(textbox).toHaveAttribute('contentEditable', 'true'),
+        );
+    });
+
+    it('does not add a command on click with an incorrect prefix', async () => {
+        // When
+        const noPrefixInput = 'noPrefix';
+        fireEvent.input(textbox, {
+            data: noPrefixInput,
+            inputType: 'insertText',
+        });
+        await userEvent.click(button);
+
+        // Then
+        await expect(textbox).toContainHTML(noPrefixInput);
+    });
+
+    it('adds a command with prefix /slash', async () => {
+        const prefixedInput = '/slash';
+        // When
+        fireEvent.input(textbox, {
+            data: prefixedInput,
+            inputType: 'insertText',
+        });
+        await userEvent.click(button);
+
+        // Then
+        // nb this information is hardcoded in the button for this test
+        expect(textbox).toContainHTML('/test_command');
+    });
 });

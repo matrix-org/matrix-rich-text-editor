@@ -65,6 +65,7 @@ export function useFormattingFunctions(
             unindent: () => sendEvent('formatOutdent'),
             mention: (link: string, text: string) =>
                 sendEvent('insertSuggestion', { link, text }),
+            command: (text: string) => sendEvent('insertCommand', text),
         };
     }, [editorRef, composerModel]);
 

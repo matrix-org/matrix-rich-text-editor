@@ -31,3 +31,5 @@ export const ACTION_TYPES = [
     'indent',
     'unindent',
 ] as const;
+
+export const SUGGESTIONS = ['@', '#', '/'] as const;
