@@ -2,7 +2,7 @@
 
 # [1.2.1] - 2023-03-07
 
-### Fixed
+### Changed
 
 - Web: Change type of suggestion exported by hook
 
