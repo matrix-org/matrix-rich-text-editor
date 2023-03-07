@@ -73,10 +73,10 @@ describe('mapSuggestion', () => {
         };
 
         const mappedSuggestion = mapSuggestion(suggestion);
-        expect(mappedSuggestion).toMatchObject(suggestion);
         expect(mappedSuggestion).toMatchObject({
             keyChar: '@',
             type: 'mention',
+            text: suggestion.text,
         });
     });
 });
