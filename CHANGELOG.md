@@ -1,16 +1,25 @@
 # Changelog
 
+# [1.2.1] - 2023-03-07
+
+### Changed
+
+- Web: Change type of suggestion exported by hook
+
 # [1.2.0] - 2023-03-06
 
 ### Added
+
 - Common: Detection for at/hash/slash pattern in text
 - Common: API for replacing a detected pattern with link/text
 - Web & iOS: Support for inserting mentions/commands
 
 ### Changed
+
 - Common: Set content with HTML/Markdown now returns a `Result`
 
 ### Fixed
+
 - Common: Fixed creating a list from a selection containing quotes/code blocks
 - Common: Fix leading whitespaces ignored by HTML parsing
 - iOS: Fix trailing whitespace ignored after a link
@@ -18,19 +27,23 @@
 # [1.1.1] - 2023-02-14
 
 ### Fixed
+
 - iOS: Fix selection/cursor position after lists
 
 # [1.1.0] - 2023-02-10
 
 ### Added
+
 - Common: Add utility to get content as plain text
 
 ### Changed
+
 - Web & iOS: Hide indent/unindent buttons outside of lists in example app
 - Android: Update NDK version to r25c (LTS)
 - Android: Allow subclassing `EditorStyledTextView`
 
 ### Fixed
+
 - Common: Recover from Rust model panics
 - Web: Don't rerender when testRef is not set
 - iOS: Fix pending formats not reapplied in new list item after `enter`
@@ -39,16 +52,19 @@
 # [1.0.0] - 2023-02-07
 
 ### Added
+
 - Common: Add transaction functionality to Dom
 - Web: Add cmd-e shortcut for inline code
 - Web: Add soft delete line backwards implementation
 
 ### Changed
+
 - Common: [API breaking change] Rename UnIndent as Unindent
 - iOS: Set BlockStyle parameters as public
 - iOS: Update padding and style of quotes and code block
 
 ### Fixed
+
 - Common: Fix code block HTML rendering
 - Common: Fix links creation panicking when empty nodes are within the range
 - Common: Fix enter behaviour on empty list item with formatting

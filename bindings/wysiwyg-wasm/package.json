@@ -1,6 +1,6 @@
 {
   "name": "wysiwyg-wasm",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "homepage": "https://gitlab.com/andybalaam/wysiwyg-rust",
   "description": "WASM bindings for wysiwyg-rust",
   "license": "Apache-2.0",
