@@ -200,6 +200,7 @@ public extension WysiwygComposerViewModel {
     func clearContent() {
         if plainTextMode {
             textView.attributedText = NSAttributedString(string: "", attributes: defaultTextAttributes)
+            updateCompressedHeightIfNeeded()
         } else {
             applyUpdate(model.clear())
         }
@@ -313,7 +314,7 @@ public extension WysiwygComposerViewModel {
 
     func select(range: NSRange) {
         do {
-            guard let text = textView.attributedText else { return }
+            guard let text = textView.attributedText, !plainTextMode else { return }
             let htmlSelection = try text.htmlRange(from: range)
             Logger.viewModel.logDebug(["Sel(att): \(range)",
                                        "Sel: \(htmlSelection)",
@@ -482,6 +483,7 @@ private extension WysiwygComposerViewModel {
             let attributed = NSAttributedString(string: model.getContentAsMarkdown(),
                                                 attributes: defaultTextAttributes)
             textView.attributedText = attributed
+            updateCompressedHeightIfNeeded()
         } else {
             let update = model.setContentFromMarkdown(markdown: textView.text)
             applyUpdate(update)

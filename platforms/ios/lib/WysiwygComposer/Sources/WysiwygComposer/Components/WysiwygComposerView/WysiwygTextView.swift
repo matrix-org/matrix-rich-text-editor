@@ -72,7 +72,6 @@ public class WysiwygTextView: UITextView {
         guard content.text != attributedText || content.selection != selectedRange else { return }
 
         performWithoutDelegate {
-            flusher.flush()
             self.attributedText = content.text
             // Set selection to {0, 0} then to expected position
             // avoids an issue with autocapitalization.
@@ -82,6 +81,12 @@ public class WysiwygTextView: UITextView {
             // Force redraw when applying content
             // FIXME: this could be improved further as we sometimes draw twice in a row.
             self.drawBackgroundStyleLayers()
+        }
+    }
+
+    override public var attributedText: NSAttributedString! {
+        willSet {
+            flusher.flush()
         }
     }
     
