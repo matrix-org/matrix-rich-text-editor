@@ -1,5 +1,13 @@
 # Changelog
 
+# [1.2.2] - 2023-03-08
+
+### Fixed
+
+- iOS: Fix attachment views sometimes not clearing when switching to plain text mode
+- iOS: Fix publishing height updates of the composer in plain text mode
+- iOS: Remove `select` Rust API call in plain text mode
+
 # [1.2.1] - 2023-03-07
 
 ### Changed
