@@ -51,7 +51,7 @@ final class WysiwygPermalinkReplacer: PermalinkReplacer {
             var url = attributedString.attributedSubstring(from: urlRange).string
 
             // Note: a valid markdown link can be written with
-            // enclosing <..>, remove them for userId detection.
+            // enclosing <..>, remove them for url check.
             if url.first == "<", url.last == ">" {
                 url = String(url[url.index(after: url.startIndex)...url.index(url.endIndex, offsetBy: -2)])
             }
