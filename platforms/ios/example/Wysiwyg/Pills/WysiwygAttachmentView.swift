@@ -61,6 +61,7 @@ class WysiwygAttachmentView: UIView {
         label.text = pillData.displayName
         label.font = pillData.font
         label.textColor = UIColor.label
+        label.accessibilityIdentifier = "WysiwygAttachmentViewLabel" + pillData.displayName
         let labelSize = label.sizeThatFits(CGSize(width: CGFloat.greatestFiniteMagnitude,
                                                   height: sizes.pillBackgroundHeight))
         label.frame = CGRect(x: sizes.displaynameLabelLeading,

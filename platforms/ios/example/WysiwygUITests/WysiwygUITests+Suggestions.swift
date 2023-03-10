@@ -21,6 +21,7 @@ extension WysiwygUITests {
         textView.typeTextCharByChar("@ali")
         XCTAssertTrue(button(.aliceButton).exists)
         button(.aliceButton).tap()
+        assertMatchingPill("Alice")
         // Mention is replaced by a pill view, so there
         // is only the space after it in the field.
         assertTextViewContent("￼\u{00A0}")

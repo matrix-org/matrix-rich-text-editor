@@ -119,12 +119,22 @@ internal extension WysiwygUITests {
         id.rawValue
     }
     
-    /// Shows or updates the current tree content of the text view and checks if is equal to provided content
+    /// Check if the current tree content of the text view is equal to provided content
     ///
     /// - Parameter content: the tree content to assert, must be provided without newlines at the start and at the end.
     func assertTreeEquals(_ content: String) {
         sleep(1)
         XCTAssertEqual(staticText(.treeText).label, "\n\(content)\n")
+    }
+
+    /// Assert that a Pill for given `displayName` currently
+    /// exists in the text view and that the label matches.
+    ///
+    /// - Parameter displayName: The display name for the Pill.
+    func assertMatchingPill(_ displayName: String) {
+        let pill = textView.staticTexts["WysiwygAttachmentViewLabel" + displayName]
+        XCTAssertTrue(pill.exists)
+        XCTAssertEqual(pill.label, displayName)
     }
 }
 
