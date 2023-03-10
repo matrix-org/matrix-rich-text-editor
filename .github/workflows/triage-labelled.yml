@@ -1,0 +1,26 @@
+name: Move labelled issues to correct boards and columns
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  move_element_x_issues:
+    name: Label new issues created with 'A-Rich-Text-Editor' for use on our board
+    runs-on: ubuntu-latest
+    # Skip in forks
+    if: >
+      github.repository == 'matrix-org/matrix-rich-text-editor'
+    steps:
+      - uses: actions/github-script@v5
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['A-Rich-Text-Editor']
+            })
+        env:
+          PROJECT_ID: "PVT_kwDOAM0swc4AHJKW"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
