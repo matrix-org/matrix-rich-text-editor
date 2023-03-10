@@ -52,10 +52,13 @@ class WysiwygTextAttachment: NSTextAttachment {
     ///
     /// - Parameters:
     ///   - displayName: the display name for the pill
+    ///   - url: The absolute URL for the item.
     ///   - font: the text font
     convenience init?(displayName: String,
+                      url: String,
                       font: UIFont) {
         let data = WysiwygTextAttachmentData(displayName: displayName,
+                                             url: url,
                                              font: font)
 
         guard let encodedData = try? Self.serializationService.serialize(data) else {

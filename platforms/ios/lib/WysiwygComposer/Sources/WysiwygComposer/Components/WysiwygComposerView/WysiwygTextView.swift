@@ -88,6 +88,9 @@ public class WysiwygTextView: UITextView {
         willSet {
             flusher.flush()
         }
+        didSet {
+            delegate?.textViewDidChange?(self)
+        }
     }
     
     override public func draw(_ rect: CGRect) {

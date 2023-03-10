@@ -24,6 +24,8 @@ struct WysiwygTextAttachmentData: Codable {
 
     /// Display name.
     var displayName: String
+    /// The absolute URL for the item.
+    var url: String
     /// Font for the display name
     var font: UIFont
 
@@ -33,10 +35,13 @@ struct WysiwygTextAttachmentData: Codable {
     ///
     /// - Parameters:
     ///   - displayName: Item display name (user or room display name)
+    ///   - url: The absolute URL for the item.
     ///   - font: Font for the display name
     init(displayName: String,
+         url: String,
          font: UIFont) {
         self.displayName = displayName
+        self.url = url
         self.font = font
     }
 
@@ -44,6 +49,7 @@ struct WysiwygTextAttachmentData: Codable {
 
     enum CodingKeys: String, CodingKey {
         case displayName
+        case url
         case font
     }
 
@@ -54,6 +60,7 @@ struct WysiwygTextAttachmentData: Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         displayName = try container.decode(String.self, forKey: .displayName)
+        url = try container.decode(String.self, forKey: .url)
         let fontData = try container.decode(Data.self, forKey: .font)
         if let font = try NSKeyedUnarchiver.unarchivedObject(ofClass: UIFont.self, from: fontData) {
             self.font = font
@@ -65,6 +72,7 @@ struct WysiwygTextAttachmentData: Codable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(displayName, forKey: .displayName)
+        try container.encode(url, forKey: .url)
         let fontData = try NSKeyedArchiver.archivedData(withRootObject: font, requiringSecureCoding: false)
         try container.encode(fontData, forKey: .font)
     }

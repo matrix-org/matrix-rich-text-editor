@@ -57,13 +57,14 @@ public final class HTMLParser {
     ///
     /// - Parameters:
     ///   - html: HTML to parse
-    ///   - encoding: string encoding to use
-    ///   - style: style to apply for HTML parsing
-    /// - Returns: an attributed string representation of the HTML content
+    ///   - encoding: String encoding to use
+    ///   - style: Style to apply for HTML parsing
+    ///   - permalinkReplacer:An object that might replace detected links.
+    /// - Returns: An attributed string representation of the HTML content
     public static func parse(html: String,
                              encoding: String.Encoding = .utf16,
                              style: HTMLParserStyle = .standard,
-                             permalinkReplacer: PermalinkReplacer? = nil) throws -> NSAttributedString {
+                             permalinkReplacer: HTMLPermalinkReplacer? = nil) throws -> NSAttributedString {
         guard !html.isEmpty else {
             return NSAttributedString(string: "")
         }
