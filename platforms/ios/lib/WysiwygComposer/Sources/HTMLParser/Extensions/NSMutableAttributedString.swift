@@ -42,10 +42,10 @@ extension NSMutableAttributedString {
     }
 
     /// Replace parts of the attributed string that represents links by
-    /// a new attributed string part provided by the hosting app `PermalinkReplacer`.
+    /// a new attributed string part provided by the hosting app `HTMLPermalinkReplacer`.
     ///
     /// - Parameter permalinkReplacer: The permalink replacer providing new attributed strings.
-    func replaceLinks(with permalinkReplacer: PermalinkReplacer) {
+    func replaceLinks(with permalinkReplacer: HTMLPermalinkReplacer) {
         enumerateTypedAttribute(.link) { (url: URL, range: NSRange, _) in
             if let replacement = permalinkReplacer.replacementForLink(
                 url.absoluteString,
