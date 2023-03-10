@@ -1,8 +1,8 @@
-name: Move labelled issues to correct boards and columns
+name: Label
 
 on:
   issues:
-    types: [labeled]
+    types: [opened]
 
 jobs:
   move_element_x_issues:
