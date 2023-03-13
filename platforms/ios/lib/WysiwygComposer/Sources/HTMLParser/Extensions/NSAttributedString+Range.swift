@@ -117,10 +117,9 @@ extension NSAttributedString {
     /// - Parameter attributedIndex: the index inside the attributed representation
     /// - Returns: Total offset of replacement ranges
     func replacementsOffsetAt(at attributedIndex: Int) -> Int {
-        let range = NSRange(location: 0, length: attributedIndex)
-        return replacementTextRanges(in: range)
-            .map { range.contains($0.range) ? $0.offset : 0 }
-            .reduce(0) { $0 - $1 }
+        replacementTextRanges(to: attributedIndex)
+            .compactMap { $0.range.upperBound <= attributedIndex ? Optional($0.offset) : nil }
+            .reduce(0, -)
     }
 
     /// Computes index inside the HTML raw text from the index
@@ -140,7 +139,7 @@ extension NSAttributedString {
             // All ranges length should be counted out, unless the last one end strictly after the
             // attributed index, in that case we only count out the difference (i.e. chars before the index)
             .map { $0.upperBound <= attributedIndex ? $0.length : attributedIndex - $0.location }
-            .reduce(attributedIndex) { $0 - $1 } + replacementsOffset
+            .reduce(attributedIndex, -) + replacementsOffset
     }
 
     /// Computes index inside the attributed representation from the index
@@ -152,8 +151,8 @@ extension NSAttributedString {
     func attributedPosition(at htmlIndex: Int) throws -> Int {
         var attributedIndex = try discardableTextRanges()
             // All ranges that have a HTML position before the provided index should be entirely counted.
-            .filter { try htmlPosition(at: $0.location) <= htmlIndex }
-            .reduce(htmlIndex) { $0 + $1.length }
+            .compactMap { try htmlPosition(at: $0.location) <= htmlIndex ? Optional($0.length) : nil }
+            .reduce(htmlIndex, +)
 
         // Iterate replacement ranges in order and only account those
         // that are still in range after previous offset update.
@@ -166,11 +165,5 @@ extension NSAttributedString {
         }
 
         return attributedIndex
-    }
-}
-
-extension NSRange {
-    func contains(_ otherRange: NSRange) -> Bool {
-        contains(otherRange.location) && contains(otherRange.upperBound - 1)
     }
 }
