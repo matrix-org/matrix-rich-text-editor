@@ -250,7 +250,7 @@ class EditorEditTextInputTests {
             .check(matches(TextViewMatcher {
                 it.editableText.getSpans<LinkSpan>().isNotEmpty()
             }))
-            .check(matches(withText("a Element to set")))
+            .check(matches(withText("a Element  to set")))
     }
 
     @Test

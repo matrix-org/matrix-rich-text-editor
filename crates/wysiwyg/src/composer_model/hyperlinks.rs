@@ -58,8 +58,7 @@ where
         self.do_replace_text_in(S::default(), suggestion.start, suggestion.end);
         self.state.start = Location::from(suggestion.start);
         self.state.end = self.state.start;
-        self.set_link_with_text(link, text);
-        self.do_replace_text(" ".into())
+        self.set_link_with_text(link, text)
     }
 
     fn is_blank_selection(&self, range: Range) -> bool {
@@ -92,6 +91,7 @@ where
         let (s, _) = self.safe_selection();
         self.push_state_to_history();
         self.do_replace_text(text.clone());
+        self.do_replace_text(" ".into());
         let e = s + text.len();
         let range = self.state.dom.find_range(s, e);
         self.set_link_in_range(link, range)

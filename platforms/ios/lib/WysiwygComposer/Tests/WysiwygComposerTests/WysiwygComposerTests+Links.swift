@@ -34,6 +34,7 @@ extension WysiwygComposerTests {
         let link = "test_url"
         ComposerModelWrapper()
             .action { $0.setLinkWithText(link: link, text: "test") }
+            .action { $0.backspace() }
             .assertLinkAction(.edit(link: "https://\(link)"))
     }
 
@@ -43,8 +44,9 @@ extension WysiwygComposerTests {
             .assertTree(
                 """
 
-                └>a \"https://link\"
-                  └>\"text\"
+                ├>a "https://link"
+                │ └>"text"
+                └>" "
 
                 """
             )
@@ -56,8 +58,9 @@ extension WysiwygComposerTests {
             .assertTree(
                 """
 
-                └>a \"http://link\"
-                  └>\"text\"
+                ├>a "http://link"
+                │ └>"text"
+                └>" "
 
                 """
             )
@@ -69,8 +72,9 @@ extension WysiwygComposerTests {
             .assertTree(
                 """
 
-                └>a \"mailto:test@element.io\"
-                  └>\"text\"
+                ├>a "mailto:test@element.io"
+                │ └>"text"
+                └>" "
 
                 """
             )
@@ -97,11 +101,13 @@ extension WysiwygComposerTests {
             .assertTree(
                 """
 
-                └>a \"https://link\"
-                  └>\"text\"
+                ├>a "https://link"
+                │ └>"text"
+                └>" "
 
                 """
             )
+            .action { $0.backspace() }
             .action { $0.removeLinks() }
             .assertTree(
                 """

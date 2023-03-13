@@ -232,9 +232,7 @@ public extension WysiwygComposerViewModel {
         if let suggestionPattern, suggestionPattern.key == key {
             update = model.setLinkSuggestion(link: link, text: name, suggestion: suggestionPattern)
         } else {
-            _ = model.setLinkWithText(link: link, text: name)
-            // FIXME: remove this if Rust adds this space for free
-            update = model.replaceText(newText: " ")
+            update = model.setLinkWithText(link: link, text: name)
         }
         applyUpdate(update)
         hasPendingFormats = true

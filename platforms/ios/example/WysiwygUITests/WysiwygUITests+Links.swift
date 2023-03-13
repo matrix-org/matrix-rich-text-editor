@@ -28,12 +28,14 @@ extension WysiwygUITests {
         app.buttons["Ok"].tap()
         assertTreeEquals(
             """
-            └>a "https://url"
-              └>"text"
+            ├>a "https://url"
+            │ └>"text"
+            └>" "
             """
         )
 
         // Edit
+        textView.doubleTap()
         button(.linkButton).tap()
         XCTAssertFalse(textField(.linkTextTextField).exists)
         textField(.linkUrlTextField).doubleTap()
@@ -41,8 +43,9 @@ extension WysiwygUITests {
         app.buttons["Ok"].tap()
         assertTreeEquals(
             """
-            └>a "https://new_url"
-              └>"text"
+            ├>a "https://new_url"
+            │ └>"text"
+            └>" "
             """
         )
 
@@ -52,7 +55,7 @@ extension WysiwygUITests {
         app.buttons["Remove"].tap()
         assertTreeEquals(
             """
-            └>"text"
+            └>"text "
             """
         )
     }
