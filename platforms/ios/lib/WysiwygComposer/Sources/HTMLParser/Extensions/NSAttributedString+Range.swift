@@ -98,6 +98,17 @@ extension NSAttributedString {
         return ranges
     }
 
+    /// Compute an array of all parts of the attributed string that have been replaced
+    /// with `PermalinkReplacer` usage up to the provided index. Also computes
+    /// the offset between the replacement and the original part (i.e. if the original length
+    /// is greater than the replacement range, this offset will be negative).
+    ///
+    /// - Parameter attributedIndex: the position until which the ranges should be computed.
+    /// - Returns: an array of range and offsets.
+    func replacementTextRanges(to attributedIndex: Int) -> [(range: NSRange, offset: Int)] {
+        replacementTextRanges(in: .init(location: 0, length: attributedIndex))
+    }
+
     /// Find occurences of parts of the attributed string that have been replaced
     /// within the range before given attributed index and compute the total offset
     /// that should be subtracted (HTML to attributed) or added (attributed to HTML)
@@ -144,8 +155,10 @@ extension NSAttributedString {
             .filter { try htmlPosition(at: $0.location) <= htmlIndex }
             .reduce(htmlIndex) { $0 + $1.length }
 
-        let replacementsOffset = replacementsOffsetAt(at: attributedIndex)
-        attributedIndex -= replacementsOffset
+        // Iterate replacement ranges in order and only account those
+        // that are still in range after previous offset update.
+        attributedIndex = replacementTextRanges(to: attributedIndex)
+            .reduce(attributedIndex) { $1.range.location < $0 ? $0 + $1.offset : $0 }
 
         guard attributedIndex <= length else {
             throw AttributedRangeError
