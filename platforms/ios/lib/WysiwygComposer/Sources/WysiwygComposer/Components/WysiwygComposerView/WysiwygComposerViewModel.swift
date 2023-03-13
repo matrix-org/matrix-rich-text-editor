@@ -40,6 +40,8 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
 
     /// The composer minimal height.
     public let minHeight: CGFloat
+    /// The permalink replacer defined by the hosting application.
+    public var permalinkReplacer: PermalinkReplacer?
     /// Published object for the composer attributed content.
     @Published public var attributedContent: WysiwygComposerAttributedContent = .init()
     /// Published value for the content of the text view in plain text mode.
@@ -117,8 +119,7 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     }
 
     private var hasPendingFormats = false
-
-    public var permalinkReplacer: PermalinkReplacer?
+    private var storedLinkActionState: ActionState?
 
     // MARK: - Public
 
@@ -407,6 +408,7 @@ private extension WysiwygComposerViewModel {
         switch update.menuState() {
         case let .update(actionStates: actionStates):
             self.actionStates = actionStates
+            storedLinkActionState = actionStates[.link]
         default:
             break
         }
@@ -418,6 +420,17 @@ private extension WysiwygComposerViewModel {
             suggestionPattern = nil
         case let .suggestion(suggestionPattern: pattern):
             suggestionPattern = pattern
+        }
+
+        disableLinkActionIfNeeded()
+    }
+
+    /// Disable the link action button if we are near a pillified version of a link.
+    func disableLinkActionIfNeeded() {
+        if attributedContent.text.hasReplacementLinkNear(in: attributedContent.selection) {
+            actionStates[.link] = .disabled
+        } else {
+            actionStates[.link] = storedLinkActionState
         }
     }
 

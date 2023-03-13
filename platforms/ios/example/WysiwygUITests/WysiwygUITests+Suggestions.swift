@@ -32,6 +32,13 @@ extension WysiwygUITests {
             └>" "
             """
         )
+        // Removing the whitespace afterwards disables the
+        // link button as the caret is right after the pill.
+        app.keys["delete"].tap()
+        XCTAssertFalse(button(.linkButton).isEnabled)
+        // Link button can be re-enabled.
+        app.keys["space"].tap()
+        XCTAssertTrue(button(.linkButton).isEnabled)
     }
 
     func testHashMention() throws {
