@@ -24,8 +24,9 @@ extension HTMLParserTests {
         // A text attachment is added.
         XCTAssertTrue(attributed.attribute(.attachment, at: 0, effectiveRange: nil) is NSTextAttachment)
         // The original length is added to the new part of the attributed string.
+        let replacementContent = attributed.attribute(.replacementContent, at: 0, effectiveRange: nil) as? ReplacementContent
         XCTAssertEqual(
-            attributed.attribute(.originalLength, at: 0, effectiveRange: nil) as? Int,
+            replacementContent?.originalLength,
             5
         )
         // HTML and attributed range matches

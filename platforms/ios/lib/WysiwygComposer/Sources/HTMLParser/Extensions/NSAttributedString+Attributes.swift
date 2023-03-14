@@ -75,13 +75,13 @@ public extension NSAttributedString {
     /// - Returns: a boolean indicating the result
     func hasReplacementLinkNear(in range: NSRange) -> Bool {
         var hasInnerReplacement = false
-        enumerateTypedAttribute(.originalLength, in: range) { (_: Int, _, stop) in
+        enumerateTypedAttribute(.replacementContent, in: range) { (_: ReplacementContent, _, stop) in
             hasInnerReplacement = true
             stop.pointee = true
         }
         return hasInnerReplacement
-            || hasAttribute(.originalLength, at: range.location - 1)
-            || hasAttribute(.originalLength, at: range.upperBound)
+            || hasAttribute(.replacementContent, at: range.location - 1)
+            || hasAttribute(.replacementContent, at: range.upperBound)
     }
 }
 
