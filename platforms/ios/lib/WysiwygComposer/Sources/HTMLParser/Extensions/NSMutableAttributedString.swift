@@ -52,8 +52,8 @@ extension NSMutableAttributedString {
                 text: self.mutableString.substring(with: range)
             ) {
                 self.replaceCharacters(in: range, with: replacement)
-                self.addAttribute(.originalLength,
-                                  value: range.length,
+                self.addAttribute(.replacementContent,
+                                  value: ReplacementContent(originalLength: range.length),
                                   range: .init(location: range.location, length: replacement.length))
             }
         }

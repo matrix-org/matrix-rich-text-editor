@@ -91,8 +91,8 @@ extension NSAttributedString {
     func replacementTextRanges(in range: NSRange? = nil) -> [(range: NSRange, offset: Int)] {
         var ranges = [(NSRange, Int)]()
 
-        enumerateTypedAttribute(.originalLength) { (originalLength: Int, range: NSRange, _) in
-            ranges.append((range, range.length - originalLength))
+        enumerateTypedAttribute(.replacementContent) { (replacementContent: ReplacementContent, range: NSRange, _) in
+            ranges.append((range, range.length - replacementContent.originalLength))
         }
 
         return ranges
