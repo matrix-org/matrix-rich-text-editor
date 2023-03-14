@@ -105,34 +105,92 @@ function getInputFromKeyDown(
     const s = document.getSelection();
     if (e.key === 'Backspace' && s && s.isCollapsed) {
         // CASE 1 - going from text node into mention
+        // CASE 2 - going from the nbsp following a text node into a mention
         if (
-            s.anchorOffset === 0 &&
+            s.anchorNode?.textContent === '\u00A0' &&
             s.anchorNode?.previousSibling?.firstChild?.parentElement?.hasAttribute(
                 'contentEditable',
             )
         ) {
+            console.log('entering the pill from after the pill');
             // expand the selection, then delete
             s.setBaseAndExtent(
                 s.anchorNode,
-                0,
+                s.anchorOffset,
                 s.anchorNode.previousSibling.firstChild,
                 0,
             );
             document.dispatchEvent(new CustomEvent('selectionchange'));
             return 'deleteContentBackward';
         }
+    }
+    if (e.key === 'Delete' && s && s.isCollapsed) {
+        // CASE 1 - going from text node into the mention AT START OF THE EDITOR
+        if (
+            s.anchorNode === editor &&
+            s.anchorOffset === 0 &&
+            editor.firstChild &&
+            editor.firstElementChild?.hasAttribute('contentEditable')
+        ) {
+            console.log('entering the pill from start of editor');
+            // expand the selection, then delete
+            // we know here it's an a tag with a single text node inside it
+            // nb don't clip the nbsp off here, for caret purposes
+            s.setBaseAndExtent(
+                editor.firstChild,
+                0,
+                editor.firstChild.nextSibling,
+                0,
+            );
+            document.dispatchEvent(new CustomEvent('selectionchange'));
+            return 'deleteContentForward';
+        }
+        // CASE 2 - just going from end of a regular text node into the mention
+        if (
+            s.anchorNode &&
+            s.anchorOffset === s.anchorNode.textContent.length &&
+            s.anchorNode.nodeName === '#text' &&
+            s.anchorNode.nextSibling?.firstChild?.parentElement?.hasAttribute(
+                'contentEditable',
+            )
+        ) {
+            console.log('entering the pill from a prior text node');
+            // expand the selection, then delete
+            // we know here it's an a tag with a single text node inside it,
+            // and we want to remove the trailing nbsp as well
+            s.setBaseAndExtent(
+                s.anchorNode.nextSibling,
+                0,
+                s.anchorNode.nextSibling.nextSibling,
+                1,
+            );
+            document.dispatchEvent(new CustomEvent('selectionchange'));
+            return 'deleteContentForward';
+        }
+        // CASE 3 - going from an nbsp text node into the mention (like when
+        // you have a bunch of pills and you're deleting left to right)
+        if (
+            s.anchorNode &&
+            s.anchorNode.textContent === '\u00A0' &&
+            s.anchorOffset === 0 &&
+            s.anchorNode.nextSibling?.firstChild?.parentElement?.hasAttribute(
+                'contentEditable',
+            )
+        ) {
+            console.log('entering the pill from the beginning of an nbsp');
 
-        // CASE 2 - removing the nbsp after a mention
-        // if (s.anchorOffset === 1 && s.anchorNode?.textContent === '\u00A0') {
-        //     // create a caret node after the link
-        //     const newSpan = document.createElement('span');
-        //     newSpan.className = 'caretNode';
-        //     newSpan.appendChild(document.createTextNode('\uFEFF'));
-        //     editor.insertBefore(newSpan, s.anchorNode.nextSibling);
-        //     s.setBaseAndExtent(s.anchorNode, 0, newSpan, 0);
-        //     document.dispatchEvent(new CustomEvent('selectionchange'));
-        //     return 'deleteContentBackward';
-        // }
+            // expand the selection, then delete
+            // we know here it's an nbsp preceding an a tag with a single text
+            // node inside it, and we want to remove the trailing nbsp as well
+            s.setBaseAndExtent(
+                s.anchorNode,
+                0,
+                s.anchorNode.nextSibling.nextSibling,
+                1,
+            );
+            document.dispatchEvent(new CustomEvent('selectionchange'));
+            return 'deleteContentForward';
+        }
     }
 
     processEvent(
@@ -270,7 +328,6 @@ export function handleSelectionChange(
     { traceAction, getSelectionAccordingToActions }: TestUtilities,
 ): AllActionStates | undefined {
     const [start, end] = getCurrentSelection(editor, document.getSelection());
-    console.log(`returning ${start}-${end}`);
     const prevStart = composeModel.selection_start();
     const prevEnd = composeModel.selection_end();
 
