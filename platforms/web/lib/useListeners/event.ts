@@ -101,6 +101,40 @@ function getInputFromKeyDown(
         }
     }
 
+    // we have to handle pill deletion before the `deleteContentBackward` event fires
+    const s = document.getSelection();
+    if (e.key === 'Backspace' && s && s.isCollapsed) {
+        // CASE 1 - going from text node into mention
+        if (
+            s.anchorOffset === 0 &&
+            s.anchorNode?.previousSibling?.firstChild?.parentElement?.hasAttribute(
+                'contentEditable',
+            )
+        ) {
+            // expand the selection, then delete
+            s.setBaseAndExtent(
+                s.anchorNode,
+                0,
+                s.anchorNode.previousSibling.firstChild,
+                0,
+            );
+            document.dispatchEvent(new CustomEvent('selectionchange'));
+            return 'deleteContentBackward';
+        }
+
+        // CASE 2 - removing the nbsp after a mention
+        // if (s.anchorOffset === 1 && s.anchorNode?.textContent === '\u00A0') {
+        //     // create a caret node after the link
+        //     const newSpan = document.createElement('span');
+        //     newSpan.className = 'caretNode';
+        //     newSpan.appendChild(document.createTextNode('\uFEFF'));
+        //     editor.insertBefore(newSpan, s.anchorNode.nextSibling);
+        //     s.setBaseAndExtent(s.anchorNode, 0, newSpan, 0);
+        //     document.dispatchEvent(new CustomEvent('selectionchange'));
+        //     return 'deleteContentBackward';
+        // }
+    }
+
     processEvent(
         e,
         {
@@ -236,7 +270,7 @@ export function handleSelectionChange(
     { traceAction, getSelectionAccordingToActions }: TestUtilities,
 ): AllActionStates | undefined {
     const [start, end] = getCurrentSelection(editor, document.getSelection());
-
+    console.log(`returning ${start}-${end}`);
     const prevStart = composeModel.selection_start();
     const prevEnd = composeModel.selection_end();
 
