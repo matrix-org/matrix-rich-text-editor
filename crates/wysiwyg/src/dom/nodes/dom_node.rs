@@ -24,7 +24,7 @@ use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{self, UnicodeString};
-use crate::{InlineFormatType, ListType};
+use crate::{InlineFormatType, ListType, SuggestionPattern};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum DomNode<S>
@@ -124,8 +124,27 @@ where
         }
     }
 
-    pub fn new_link(url: S, children: Vec<DomNode<S>>) -> DomNode<S> {
-        DomNode::Container(ContainerNode::new_link(url, children))
+    pub fn new_link(
+        url: S,
+        children: Vec<DomNode<S>>,
+        suggestion: &Option<SuggestionPattern>,
+    ) -> DomNode<S> {
+        // now the mention type depends on the suggestion pattern
+        let mention_type: S = match suggestion {
+            Some(_sug) => match _sug.key {
+                crate::PatternKey::At => "user".into(),
+                crate::PatternKey::Hash | crate::PatternKey::Slash => {
+                    "room".into()
+                }
+            },
+            None => "none".into(),
+        };
+
+        DomNode::Container(ContainerNode::new_link(
+            url,
+            children,
+            Some(mention_type),
+        ))
     }
 
     pub fn is_container_node(&self) -> bool {
