@@ -199,7 +199,7 @@ export function computeNodeAndOffset(
                     'false' &&
                 codeunits === currentNode.textContent?.length
             ) {
-                console.log('trying to choose a non-editable node');
+                console.log('trying to choose a non-editable node (end)');
                 // in this case we actually don't want to find it, keep looking
                 // to allow the cursor to be put at the beginning of the next
                 // valid location
@@ -209,6 +209,22 @@ export function computeNodeAndOffset(
                         codeunits -
                         (currentNode.textContent?.length || 0) -
                         extraOffset,
+                };
+            }
+
+            // AND YET ANOTHER special case, which we can hit when a pill is at
+            // the beginning and we mess around before it, maybe other ways too
+            if (
+                currentNode.parentElement?.getAttribute('contenteditable') ===
+                    'false' &&
+                codeunits === 0
+            ) {
+                console.log('trying to choose a non-editable node (beginning)');
+                // lets just select the editor, after the hr tag, this is too
+                // fragile but can be improved later (after tests written)
+                return {
+                    node: currentNode.parentNode?.parentNode,
+                    offset: 1,
                 };
             }
             return { node: currentNode, offset: codeunits };
