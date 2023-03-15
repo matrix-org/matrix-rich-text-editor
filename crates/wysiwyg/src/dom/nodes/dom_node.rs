@@ -129,22 +129,17 @@ where
         children: Vec<DomNode<S>>,
         suggestion: &Option<SuggestionPattern>,
     ) -> DomNode<S> {
-        // now the mention type depends on the suggestion pattern
-        let mention_type: S = match suggestion {
+        // now the mention type depends on the suggestion pattern - TODO extract this somewhere
+        let mention_type: Option<S> = match suggestion {
             Some(_sug) => match _sug.key {
-                crate::PatternKey::At => "user".into(),
-                crate::PatternKey::Hash | crate::PatternKey::Slash => {
-                    "room".into()
-                }
+                crate::PatternKey::At => Some("user".into()),
+                crate::PatternKey::Hash => Some("user".into()),
+                crate::PatternKey::Slash => None,
             },
-            None => "none".into(),
+            None => None,
         };
 
-        DomNode::Container(ContainerNode::new_link(
-            url,
-            children,
-            Some(mention_type),
-        ))
+        DomNode::Container(ContainerNode::new_link(url, children, mention_type))
     }
 
     pub fn is_container_node(&self) -> bool {
