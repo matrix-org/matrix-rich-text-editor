@@ -129,7 +129,8 @@ where
         children: Vec<DomNode<S>>,
         suggestion: &Option<SuggestionPattern>,
     ) -> DomNode<S> {
-        // now the mention type depends on the suggestion pattern - TODO extract this somewhere
+        // TODO instead of inferring the type from the suggestion, change the initial function
+        // call from the client to pass in the mention type when creating the link
         let mention_type: Option<S> = match suggestion {
             Some(_sug) => match _sug.key {
                 crate::PatternKey::At => Some("user".into()),
