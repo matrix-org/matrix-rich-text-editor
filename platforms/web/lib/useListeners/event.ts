@@ -104,15 +104,33 @@ function getInputFromKeyDown(
     // we have to handle pill deletion before the `deleteContentBackward` event fires
     const s = document.getSelection();
     if (e.key === 'Backspace' && s && s.isCollapsed) {
-        // CASE 1 - going from text node into mention
-        // CASE 2 - going from the nbsp following a text node into a mention
+        // CASE 1 - going from the nbsp following a text node into a mention
         if (
             s.anchorNode?.textContent === '\u00A0' &&
-            s.anchorNode?.previousSibling?.firstChild?.parentElement?.hasAttribute(
+            s.anchorNode?.previousSibling?.firstChild?.parentElement?.getAttribute(
                 'contentEditable',
-            )
+            ) === 'false'
         ) {
-            console.log('entering the pill from after the pill');
+            console.log('entering the pill from single nbsp after the pill');
+            // expand the selection, then delete
+            s.setBaseAndExtent(
+                s.anchorNode,
+                s.anchorOffset,
+                s.anchorNode.previousSibling.firstChild,
+                0,
+            );
+            document.dispatchEvent(new CustomEvent('selectionchange'));
+            return 'deleteContentBackward';
+        }
+        // CASE 2 - going from beginning of text node into mention
+        if (
+            s.anchorNode?.nodeName === '#text' &&
+            s.anchorOffset === 0 &&
+            s.anchorNode?.previousSibling?.firstChild?.parentElement?.getAttribute(
+                'contentEditable',
+            ) === 'false'
+        ) {
+            console.log('entering the pill from text node after the pill');
             // expand the selection, then delete
             s.setBaseAndExtent(
                 s.anchorNode,
@@ -128,18 +146,18 @@ function getInputFromKeyDown(
         // CASE 1 - going from text node into the mention AT START OF THE EDITOR
         if (
             s.anchorNode === editor &&
-            s.anchorOffset === 0 &&
-            editor.firstChild &&
-            editor.firstElementChild?.hasAttribute('contentEditable')
+            s.anchorOffset === 1 && // nb changed to 1 due due presence of caretLine
+            editor.children[1] &&
+            editor.children[1].getAttribute('contentEditable') === 'false'
         ) {
             console.log('entering the pill from start of editor');
             // expand the selection, then delete
             // we know here it's an a tag with a single text node inside it
             // nb don't clip the nbsp off here, for caret purposes
             s.setBaseAndExtent(
-                editor.firstChild,
+                editor.children[1],
                 0,
-                editor.firstChild.nextSibling,
+                editor.children[1].nextSibling,
                 0,
             );
             document.dispatchEvent(new CustomEvent('selectionchange'));
@@ -150,9 +168,9 @@ function getInputFromKeyDown(
             s.anchorNode &&
             s.anchorOffset === s.anchorNode.textContent.length &&
             s.anchorNode.nodeName === '#text' &&
-            s.anchorNode.nextSibling?.firstChild?.parentElement?.hasAttribute(
+            s.anchorNode.nextSibling?.firstChild?.parentElement?.getAttribute(
                 'contentEditable',
-            )
+            ) === 'false'
         ) {
             console.log('entering the pill from a prior text node');
             // expand the selection, then delete
@@ -173,9 +191,9 @@ function getInputFromKeyDown(
             s.anchorNode &&
             s.anchorNode.textContent === '\u00A0' &&
             s.anchorOffset === 0 &&
-            s.anchorNode.nextSibling?.firstChild?.parentElement?.hasAttribute(
+            s.anchorNode.nextSibling?.firstChild?.parentElement?.getAttribute(
                 'contentEditable',
-            )
+            ) === 'false'
         ) {
             console.log('entering the pill from the beginning of an nbsp');
 
