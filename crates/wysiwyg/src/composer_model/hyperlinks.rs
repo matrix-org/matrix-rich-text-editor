@@ -101,7 +101,7 @@ where
         let mention_type: Option<S> = match suggestion {
             Some(_sug) => match _sug.key {
                 crate::PatternKey::At => Some("user".into()),
-                crate::PatternKey::Hash => Some("user".into()),
+                crate::PatternKey::Hash => Some("room".into()),
                 crate::PatternKey::Slash => None,
             },
             None => None,
