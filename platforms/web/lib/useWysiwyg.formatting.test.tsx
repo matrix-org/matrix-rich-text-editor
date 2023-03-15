@@ -17,6 +17,7 @@ limitations under the License.
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createRef, MutableRefObject } from 'react';
+import { preview } from 'vite';
 
 import { Editor } from './testUtils/Editor';
 import { select } from './testUtils/selection';
@@ -446,10 +447,11 @@ describe('mentions', () => {
             // Then
             // nb this information is hardcoded in the button for these tests so
             // they should all yield the same result
-
-            expect(textbox).toContainHTML(
-                '<a href="https://matrix.to/#/@test_user:element.io">test user</a>',
-            );
+            const link = screen.getByText('test user');
+            expect(link).toBeInTheDocument();
+            expect(link).toHaveAttribute('contenteditable', 'false');
+            screen.debug();
+            expect(link).toHaveAttribute('data-mention-type');
         },
     );
 });
