@@ -271,6 +271,7 @@ mod sys {
             DomNode::Container(ContainerNode::new_link(
                 child.get_attr("href").unwrap_or("").into(),
                 Vec::new(),
+                None,
             ))
         }
 
@@ -726,6 +727,7 @@ mod js {
                                 .unwrap_or_default()
                                 .into(),
                             self.convert(node.child_nodes())?.take_children(),
+                            None,
                         ));
                         self.current_path.pop();
                     }

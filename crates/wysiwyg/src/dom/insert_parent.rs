@@ -129,10 +129,10 @@ mod test {
         let (start, end) = model.safe_selection();
         let range = model.state.dom.find_range(start, end);
 
-        model
-            .state
-            .dom
-            .insert_parent(&range, DomNode::new_link(utf16("link"), vec![]));
+        model.state.dom.insert_parent(
+            &range,
+            DomNode::new_link(utf16("link"), vec![], None),
+        );
 
         assert_eq!(model.state.dom.to_html(), r#"A<a href="link">B</a>C"#)
     }
@@ -143,10 +143,10 @@ mod test {
         let (start, end) = model.safe_selection();
         let range = model.state.dom.find_range(start, end);
 
-        model
-            .state
-            .dom
-            .insert_parent(&range, DomNode::new_link(utf16("link"), vec![]));
+        model.state.dom.insert_parent(
+            &range,
+            DomNode::new_link(utf16("link"), vec![], None),
+        );
 
         assert_eq!(model.state.dom.to_html(), r#"<a href="link">AB</a>C"#)
     }
@@ -157,10 +157,10 @@ mod test {
         let (start, end) = model.safe_selection();
         let range = model.state.dom.find_range(start, end);
 
-        model
-            .state
-            .dom
-            .insert_parent(&range, DomNode::new_link(utf16("link"), vec![]));
+        model.state.dom.insert_parent(
+            &range,
+            DomNode::new_link(utf16("link"), vec![], None),
+        );
 
         assert_eq!(model.state.dom.to_html(), r#"A<a href="link">BC</a>"#)
     }
@@ -171,10 +171,10 @@ mod test {
         let (start, end) = model.safe_selection();
         let range = model.state.dom.find_range(start, end);
 
-        model
-            .state
-            .dom
-            .insert_parent(&range, DomNode::new_link(utf16("link"), vec![]));
+        model.state.dom.insert_parent(
+            &range,
+            DomNode::new_link(utf16("link"), vec![], None),
+        );
 
         assert_eq!(model.state.dom.to_html(), r#"<a href="link">ABC</a>"#)
     }
@@ -185,10 +185,10 @@ mod test {
         let (start, end) = model.safe_selection();
         let range = model.state.dom.find_range(start, end);
 
-        model
-            .state
-            .dom
-            .insert_parent(&range, DomNode::new_link(utf16("link"), vec![]));
+        model.state.dom.insert_parent(
+            &range,
+            DomNode::new_link(utf16("link"), vec![], None),
+        );
 
         assert_eq!(
             model.state.dom.to_html(),
@@ -202,10 +202,10 @@ mod test {
         let (start, end) = model.safe_selection();
         let range = model.state.dom.find_range(start, end);
 
-        model
-            .state
-            .dom
-            .insert_parent(&range, DomNode::new_link(utf16("link"), vec![]));
+        model.state.dom.insert_parent(
+            &range,
+            DomNode::new_link(utf16("link"), vec![], None),
+        );
 
         assert_eq!(
             model.state.dom.to_html(),
@@ -219,10 +219,10 @@ mod test {
         let (start, end) = model.safe_selection();
         let range = model.state.dom.find_range(start, end);
 
-        model
-            .state
-            .dom
-            .insert_parent(&range, DomNode::new_link(utf16("link"), vec![]));
+        model.state.dom.insert_parent(
+            &range,
+            DomNode::new_link(utf16("link"), vec![], None),
+        );
 
         assert_eq!(
             model.state.dom.to_html(),
@@ -236,10 +236,10 @@ mod test {
         let (start, end) = model.safe_selection();
         let range = model.state.dom.find_range(start, end);
 
-        model
-            .state
-            .dom
-            .insert_parent(&range, DomNode::new_link(utf16("link"), vec![]));
+        model.state.dom.insert_parent(
+            &range,
+            DomNode::new_link(utf16("link"), vec![], None),
+        );
 
         assert_eq!(
             model.state.dom.to_html(),
@@ -253,10 +253,10 @@ mod test {
         let (start, end) = model.safe_selection();
         let range = model.state.dom.find_range(start, end);
 
-        model
-            .state
-            .dom
-            .insert_parent(&range, DomNode::new_link(utf16("link"), vec![]));
+        model.state.dom.insert_parent(
+            &range,
+            DomNode::new_link(utf16("link"), vec![], None),
+        );
 
         assert_eq!(
             model.state.dom.to_html(),
@@ -270,10 +270,10 @@ mod test {
         let (start, end) = model.safe_selection();
         let range = model.state.dom.find_range(start, end);
 
-        model
-            .state
-            .dom
-            .insert_parent(&range, DomNode::new_link(utf16("link"), vec![]));
+        model.state.dom.insert_parent(
+            &range,
+            DomNode::new_link(utf16("link"), vec![], None),
+        );
 
         assert_eq!(
             model.state.dom.to_html(),
@@ -288,10 +288,10 @@ mod test {
         let (start, end) = model.safe_selection();
         let range = model.state.dom.find_range(start, end);
 
-        model
-            .state
-            .dom
-            .insert_parent(&range, DomNode::new_link(utf16("link"), vec![]));
+        model.state.dom.insert_parent(
+            &range,
+            DomNode::new_link(utf16("link"), vec![], None),
+        );
 
         assert_eq!(
             model.state.dom.to_html(),
@@ -305,10 +305,10 @@ mod test {
         let (start, end) = model.safe_selection();
         let range = model.state.dom.find_range(start, end);
 
-        model
-            .state
-            .dom
-            .insert_parent(&range, DomNode::new_link(utf16("link"), vec![]));
+        model.state.dom.insert_parent(
+            &range,
+            DomNode::new_link(utf16("link"), vec![], None),
+        );
 
         assert_eq!(
             model.state.dom.to_html(),

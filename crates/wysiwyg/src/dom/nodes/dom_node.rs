@@ -124,8 +124,12 @@ where
         }
     }
 
-    pub fn new_link(url: S, children: Vec<DomNode<S>>) -> DomNode<S> {
-        DomNode::Container(ContainerNode::new_link(url, children))
+    pub fn new_link(
+        url: S,
+        children: Vec<DomNode<S>>,
+        mention_type: Option<S>,
+    ) -> DomNode<S> {
+        DomNode::Container(ContainerNode::new_link(url, children, mention_type))
     }
 
     pub fn is_container_node(&self) -> bool {

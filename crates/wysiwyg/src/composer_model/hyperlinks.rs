@@ -58,7 +58,7 @@ where
         self.do_replace_text_in(S::default(), suggestion.start, suggestion.end);
         self.state.start = Location::from(suggestion.start);
         self.state.end = self.state.start;
-        self.set_link_with_text(link, text);
+        self.set_link_with_text(link, text, Some(suggestion));
         self.do_replace_text(" ".into())
     }
 
@@ -88,13 +88,26 @@ where
         &mut self,
         link: S,
         text: S,
+        suggestion: Option<SuggestionPattern>,
     ) -> ComposerUpdate<S> {
         let (s, _) = self.safe_selection();
         self.push_state_to_history();
         self.do_replace_text(text.clone());
         let e = s + text.len();
         let range = self.state.dom.find_range(s, e);
-        self.set_link_in_range(link, range)
+
+        // TODO instead of inferring the type from the suggestion, change the initial function
+        // call from the client to pass in the mention type when creating the link
+        let mention_type: Option<S> = match suggestion {
+            Some(_sug) => match _sug.key {
+                crate::PatternKey::At => Some("user".into()),
+                crate::PatternKey::Hash => Some("room".into()),
+                crate::PatternKey::Slash => None,
+            },
+            None => None,
+        };
+
+        self.set_link_in_range(link, range, mention_type)
     }
 
     pub fn set_link(&mut self, link: S) -> ComposerUpdate<S> {
@@ -103,13 +116,14 @@ where
 
         let range = self.state.dom.find_range(s, e);
 
-        self.set_link_in_range(link, range)
+        self.set_link_in_range(link, range, None)
     }
 
     fn set_link_in_range(
         &mut self,
         mut link: S,
         range: Range,
+        mention_type: Option<S>,
     ) -> ComposerUpdate<S> {
         self.add_http_scheme(&mut link);
 
@@ -193,10 +207,10 @@ where
         for (_, s, e) in split_points.into_iter() {
             let range = self.state.dom.find_range(s, e);
             // Create a new link node containing the passed range
-            let inserted = self
-                .state
-                .dom
-                .insert_parent(&range, DomNode::new_link(link.clone(), vec![]));
+            let inserted = self.state.dom.insert_parent(
+                &range,
+                DomNode::new_link(link.clone(), vec![], mention_type.clone()),
+            );
             // Remove any child links inside it
             self.delete_child_links(&inserted);
         }
