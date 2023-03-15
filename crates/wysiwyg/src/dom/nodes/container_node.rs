@@ -377,7 +377,6 @@ where
             attrs.push(("contenteditable".into(), "false".into()));
             attrs.push(("data-mention-type".into(), m_type))
         }
-        // conditionally add in the content editable and mention type if we have something
         Self {
             name: "a".into(),
             kind: ContainerNodeKind::Link(url),
