@@ -19,6 +19,7 @@ use crate::dom::nodes::dom_node::DomNodeKind::{Link, List};
 use crate::dom::nodes::dom_node::{DomNodeKind::LineBreak, DomNodeKind::Text};
 use crate::dom::nodes::ContainerNodeKind;
 use crate::dom::nodes::DomNode;
+use crate::dom::to_plain_text::ToPlainText;
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::Range;
 use crate::{
@@ -38,8 +39,9 @@ where
         for loc in range.locations.iter() {
             if loc.kind == DomNodeKind::Link {
                 let node = self.state.dom.lookup_node(&loc.node_handle);
-                let link = node.as_container().unwrap().get_link().unwrap();
-                return LinkAction::Edit(link);
+                let url = node.as_container().unwrap().get_link().unwrap();
+                let text = node.as_container().unwrap().to_plain_text();
+                return LinkAction::Edit { url, text };
             }
         }
         if s == e || self.is_blank_selection(range) {

@@ -52,8 +52,11 @@ fn get_link_action_from_highlighted_link() {
     let model = cm("{<a href=\"https://element.io\">test</a>}|");
     assert_eq!(
         model.get_link_action(),
-        LinkAction::Edit(utf16("https://element.io"))
-    )
+        LinkAction::Edit {
+            url: utf16("https://element.io"),
+            text: utf16("test"),
+        },
+    );
 }
 
 #[test]
@@ -61,8 +64,11 @@ fn get_link_action_from_cursor_at_the_end_of_a_link() {
     let model = cm("<a href=\"https://element.io\">test</a>|");
     assert_eq!(
         model.get_link_action(),
-        LinkAction::Edit(utf16("https://element.io"))
-    )
+        LinkAction::Edit {
+            url: utf16("https://element.io"),
+            text: utf16("test"),
+        },
+    );
 }
 
 #[test]
@@ -70,8 +76,11 @@ fn get_link_action_from_cursor_inside_a_link() {
     let model = cm("<a href=\"https://element.io\">te|st</a>");
     assert_eq!(
         model.get_link_action(),
-        LinkAction::Edit(utf16("https://element.io"))
-    )
+        LinkAction::Edit {
+            url: utf16("https://element.io"),
+            text: utf16("test"),
+        },
+    );
 }
 
 #[test]
@@ -79,8 +88,11 @@ fn get_link_action_from_cursor_at_the_start_of_a_link() {
     let model = cm("|<a href=\"https://element.io\">test</a>");
     assert_eq!(
         model.get_link_action(),
-        LinkAction::Edit(utf16("https://element.io"))
-    )
+        LinkAction::Edit {
+            url: utf16("https://element.io"),
+            text: utf16("test"),
+        },
+    );
 }
 
 #[test]
@@ -88,8 +100,11 @@ fn get_link_action_from_selection_that_contains_a_link_and_non_links() {
     let model = cm("<b>{test_bold <a href=\"https://element.io\">test}|_link</a> test_bold</b>");
     assert_eq!(
         model.get_link_action(),
-        LinkAction::Edit(utf16("https://element.io"))
-    )
+        LinkAction::Edit {
+            url: utf16("https://element.io"),
+            text: utf16("test_link"),
+        },
+    );
 }
 
 #[test]
@@ -97,8 +112,11 @@ fn get_link_action_from_selection_that_contains_multiple_links() {
     let model = cm("{<a href=\"https://element.io\">test_element</a> <a href=\"https://matrix.org\">test_matrix</a>}|");
     assert_eq!(
         model.get_link_action(),
-        LinkAction::Edit(utf16("https://element.io"))
-    )
+        LinkAction::Edit {
+            url: utf16("https://element.io"),
+            text: utf16("test_element"),
+        },
+    );
 }
 
 #[test]
@@ -106,8 +124,11 @@ fn get_link_action_from_selection_that_contains_multiple_links_partially() {
     let model = cm("<a href=\"https://element.io\">test_{element</a> <a href=\"https://matrix.org\">test}|_matrix</a>");
     assert_eq!(
         model.get_link_action(),
-        LinkAction::Edit(utf16("https://element.io"))
-    )
+        LinkAction::Edit {
+            url: utf16("https://element.io"),
+            text: utf16("test_element"),
+        },
+    );
 }
 
 #[test]
@@ -116,8 +137,11 @@ fn get_link_action_from_selection_that_contains_multiple_links_partially_in_diff
     let model = cm("<a href=\"https://element.io\"> <b>test_{element</b></a> <i><a href=\"https://matrix.org\">test}|_matrix</a></i>");
     assert_eq!(
         model.get_link_action(),
-        LinkAction::Edit(utf16("https://element.io"))
-    )
+        LinkAction::Edit {
+            url: utf16("https://element.io"),
+            text: utf16(" test_element"),
+        },
+    );
 }
 
 #[test]
@@ -174,6 +198,9 @@ fn get_link_action_on_blank_selection_after_a_link() {
     // This is the correct behaviour because the end of a link should be considered part of the link itself
     assert_eq!(
         model.get_link_action(),
-        LinkAction::Edit(utf16("https://element.io"))
-    )
+        LinkAction::Edit {
+            url: utf16("https://element.io"),
+            text: utf16("test"),
+        },
+    );
 }

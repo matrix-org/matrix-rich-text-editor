@@ -18,5 +18,5 @@ use crate::UnicodeString;
 pub enum LinkAction<S: UnicodeString> {
     CreateWithText,
     Create,
-    Edit(S),
+    Edit { url: S, text: S },
 }

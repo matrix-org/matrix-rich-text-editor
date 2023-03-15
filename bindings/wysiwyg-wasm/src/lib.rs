@@ -753,7 +753,8 @@ pub struct Create;
 #[derive(Clone)]
 #[wasm_bindgen(getter_with_clone)]
 pub struct Edit {
-    pub link: String,
+    pub url: String,
+    pub text: String,
 }
 
 #[wasm_bindgen(getter_with_clone)]
@@ -776,12 +777,13 @@ impl From<wysiwyg::LinkAction<Utf16String>> for LinkAction {
                 create: Some(Create),
                 edit_link: None,
             },
-            wysiwyg::LinkAction::Edit(link) => {
-                let link = link.to_string();
+            wysiwyg::LinkAction::Edit { url, text } => {
+                let url = url.to_string();
+                let text = text.to_string();
                 Self {
                     create_with_text: None,
                     create: None,
-                    edit_link: Some(Edit { link }),
+                    edit_link: Some(Edit { url, text }),
                 }
             }
         }
