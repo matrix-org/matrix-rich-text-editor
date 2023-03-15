@@ -41,6 +41,6 @@ fn test_set_link_suggestion() {
     );
     assert_eq!(
         tx(&model),
-        "<a href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>&nbsp;|",
+        "<a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\" data-mention-type=\"user\">Alice</a>&nbsp;|",
     );
 }

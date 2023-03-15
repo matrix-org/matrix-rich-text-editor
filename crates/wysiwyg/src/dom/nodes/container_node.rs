@@ -369,11 +369,22 @@ where
         children_len + block_nodes_extra
     }
 
-    pub fn new_link(url: S, children: Vec<DomNode<S>>) -> Self {
+    pub fn new_link(
+        url: S,
+        children: Vec<DomNode<S>>,
+        mention_type: Option<S>,
+    ) -> Self {
+        let mut attrs = vec![("href".into(), url.clone())];
+        if let Some(m_type) = mention_type {
+            // if we have a mention, add attributes to make it non-editable and to track
+            // the type of mention we have
+            attrs.push(("contenteditable".into(), "false".into()));
+            attrs.push(("data-mention-type".into(), m_type))
+        }
         Self {
             name: "a".into(),
-            kind: ContainerNodeKind::Link(url.clone()),
-            attrs: Some(vec![("href".into(), url)]),
+            kind: ContainerNodeKind::Link(url),
+            attrs: Some(attrs),
             children,
             handle: DomHandle::new_unset(),
         }

@@ -279,6 +279,7 @@ impl ComposerModel {
         ComposerUpdate::from(self.inner.set_link_with_text(
             Utf16String::from_str(link),
             Utf16String::from_str(text),
+            None,
         ))
     }
 

@@ -220,7 +220,10 @@ impl ComposerModel {
         let link = Utf16String::from_str(&link);
         let text = Utf16String::from_str(&text);
         Arc::new(ComposerUpdate::from(
-            self.inner.lock().unwrap().set_link_with_text(link, text),
+            self.inner
+                .lock()
+                .unwrap()
+                .set_link_with_text(link, text, None),
         ))
     }
 
