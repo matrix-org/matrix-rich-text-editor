@@ -65,31 +65,42 @@ where
         #[cfg(any(test, feature = "assert-invariants"))]
         self.assert_invariants();
 
-        let extra_len = new_text.len() + 1;
+        let length = new_text.len();
         let range = self.find_range(start, end);
         let (start_block, end_block) =
             self.top_most_block_nodes_in_range(start, &range);
-        let deleted_handles = if range.is_empty() {
+        let (deleted_handles, moved_handles) = if range.is_empty() {
             if !new_text.is_empty() {
                 self.append_at_end_of_document(DomNode::new_text(new_text));
             }
-            Vec::new()
+            (Vec::new(), Vec::new())
         // We check for the first starting_link_handle if any
-        // Because for links we always add the text to the next sibling
-        } else if let Some(starting_link_handle) =
+        // Because for links we always add the text to the previous or next sibling
+        } else if let Some(starting_link) =
             first_shrinkable_link_node_handle(&range)
         {
             // We replace and delete as normal with an empty string on the current range
             let deleted_handles =
                 self.replace_multiple_nodes(&range, "".into());
-            // Then we set the new text value in the next sibling node (or create a new one if none exists)
-            self.set_new_text_in_next_sibling_node(
-                starting_link_handle,
-                new_text,
-            );
-            deleted_handles
+            let mut moved_handles = Vec::new();
+            // Then we set the new text value in the previous/next sibling node (or create a new one if none exists)
+            if starting_link.is_start() {
+                self.set_new_text_in_next_sibling_node(
+                    starting_link.node_handle.clone(),
+                    new_text,
+                );
+            } else {
+                // `leading_is_end` case, as filtered by `first_shrinkable_link_node_handle`
+                self.set_new_text_in_prev_sibling_node(
+                    starting_link.node_handle.clone(),
+                    new_text,
+                );
+                moved_handles.push(starting_link.node_handle.clone());
+            }
+
+            (deleted_handles, moved_handles)
         } else {
-            self.replace_multiple_nodes(&range, new_text)
+            (self.replace_multiple_nodes(&range, new_text), Vec::new())
         };
 
         // If text was replaced, not inserted
@@ -104,11 +115,16 @@ where
             } else {
                 false
             };
-        self.merge_adjacent_text_nodes_after_replace(range, deleted_handles);
+        self.merge_adjacent_text_nodes_after_replace(
+            range,
+            deleted_handles,
+            moved_handles,
+            length,
+        );
 
         if start != end && needs_to_merge_block_nodes {
             let (start_block, end_block) =
-                self.top_most_block_nodes_in_boundary(start, extra_len);
+                self.top_most_block_nodes_in_boundary(start, length + 1);
             if let (Some(start_block_loc), Some(end_block_loc)) =
                 (start_block, end_block)
             {
@@ -261,13 +277,69 @@ where
         deleted
     }
 
+    /// Push text to the previous sibling text node from given handle.
+    fn set_new_text_in_prev_sibling_node(
+        &mut self,
+        node_handle: DomHandle,
+        new_text: S,
+    ) {
+        if let Some(sibling_text_node) =
+            self.prev_sibling_writable_text_node_mut(&node_handle)
+        {
+            let mut data = sibling_text_node.data().to_owned();
+            data.push(new_text);
+            sibling_text_node.set_data(data);
+        } else if !new_text.is_empty() {
+            let new_child = DomNode::new_text(new_text);
+            let parent = self.parent_mut(&node_handle);
+            let index = node_handle.index_in_parent();
+            parent.insert_child(index, new_child);
+        }
+    }
+
+    /// Return the previous text node belonging to a sibling of given handle were we could write text.
+    /// This excludes text nodes that are inside a link container.
+    fn prev_sibling_writable_text_node_mut(
+        &mut self,
+        node_handle: &DomHandle,
+    ) -> Option<&mut TextNode<S>> {
+        fn last_text_node_in<S>(
+            node: &mut DomNode<S>,
+        ) -> Option<&mut TextNode<S>>
+        where
+            S: UnicodeString,
+        {
+            match node {
+                DomNode::Container(c) => {
+                    if c.is_link() {
+                        None
+                    } else if let Some(last_child) = c.last_child_mut() {
+                        last_text_node_in(last_child)
+                    } else {
+                        None
+                    }
+                }
+                DomNode::Text(t) => Some(t),
+                DomNode::LineBreak(_) => None,
+            }
+        }
+
+        if node_handle.index_in_parent() > 0 {
+            let sibling = self.lookup_node_mut(&node_handle.prev_sibling());
+            last_text_node_in(sibling)
+        } else {
+            None
+        }
+    }
+
+    /// Insert text at the beginning of next sibling text node from given handle.
     fn set_new_text_in_next_sibling_node(
         &mut self,
         node_handle: DomHandle,
         new_text: S,
     ) {
         if let Some(sibling_text_node) =
-            self.first_next_sibling_text_node_mut(&node_handle)
+            self.next_sibling_writable_text_node_mut(&node_handle)
         {
             let mut data = sibling_text_node.data().to_owned();
             data.insert(0, &new_text);
@@ -280,18 +352,38 @@ where
         }
     }
 
-    fn first_next_sibling_text_node_mut(
+    /// Return the next text node belonging to a sibling of given handle were we could write text.
+    /// This excludes text nodes that are inside a link container.
+    fn next_sibling_writable_text_node_mut(
         &mut self,
         node_handle: &DomHandle,
     ) -> Option<&mut TextNode<S>> {
+        fn first_text_node_in<S>(
+            node: &mut DomNode<S>,
+        ) -> Option<&mut TextNode<S>>
+        where
+            S: UnicodeString,
+        {
+            match node {
+                DomNode::Container(c) => {
+                    if c.is_link() {
+                        None
+                    } else if let Some(first_child) = c.first_child_mut() {
+                        first_text_node_in(first_child)
+                    } else {
+                        None
+                    }
+                }
+                DomNode::Text(t) => Some(t),
+                DomNode::LineBreak(_) => None,
+            }
+        }
+
         let parent = self.parent(node_handle);
         let children_number = parent.children().len();
         if node_handle.index_in_parent() < children_number - 1 {
             let sibling = self.lookup_node_mut(&node_handle.next_sibling());
-            let DomNode::Text(sibling_text_node) = sibling else {
-                return None
-            };
-            Some(sibling_text_node)
+            first_text_node_in(sibling)
         } else {
             None
         }
@@ -567,6 +659,8 @@ where
         &mut self,
         replaced_range: Range,
         deleted_handles: Vec<DomHandle>,
+        moved_handles: Vec<DomHandle>,
+        inserted_length: usize,
     ) {
         // If we've ended up with adjacent text nodes, merge them
         if let Some(first_location) = replaced_range.locations.first() {
@@ -579,6 +673,17 @@ where
                     let prev_handle = first_handle.prev_sibling();
                     self.merge_text_nodes_around(&prev_handle);
                 }
+            } else if moved_handles.iter().any(|h| {
+                // The location, or one of its ancestors, got moved
+                first_location.node_handle.with_ancestors().contains(h)
+            }) {
+                // Re-compute the range and merge text nodes around its first location.
+                let location = replaced_range.start();
+                let range =
+                    self.find_range(location, location + inserted_length);
+                self.merge_text_nodes_around(
+                    &range.locations.first().unwrap().node_handle,
+                )
             } else {
                 // If the first node of the range still exists, then
                 // merge it with the next, and potentially also the
@@ -1000,13 +1105,13 @@ where
     }
 }
 
-fn first_shrinkable_link_node_handle(range: &Range) -> Option<DomHandle> {
+fn first_shrinkable_link_node_handle(range: &Range) -> Option<&DomLocation> {
     let Some(link_loc) = range.locations.iter().find(|loc| {
-            loc.kind == DomNodeKind::Link && !loc.is_covered() && loc.is_start()
+            loc.kind == DomNodeKind::Link && !loc.is_covered() && (loc.is_start() || loc.leading_is_end())
         }) else {
             return None
         };
-    Some(link_loc.node_handle.clone())
+    Some(link_loc)
 }
 
 fn sub_handle_up_to_or_none(

@@ -166,6 +166,11 @@ impl DomLocation {
         start_offset == 0
     }
 
+    /// Whether the selection ends exactly at the leading of this location.
+    pub fn leading_is_end(&self) -> bool {
+        self.is_end() && self.end_offset == 0
+    }
+
     pub fn starts_inside(&self) -> bool {
         self.start_offset > 0
     }

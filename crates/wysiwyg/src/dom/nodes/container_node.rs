@@ -247,6 +247,10 @@ where
         self.children.get(idx)
     }
 
+    pub fn first_child_mut(&mut self) -> Option<&mut DomNode<S>> {
+        self.get_child_mut(0)
+    }
+
     pub fn last_child_mut(&mut self) -> Option<&mut DomNode<S>> {
         self.children.last_mut()
     }
