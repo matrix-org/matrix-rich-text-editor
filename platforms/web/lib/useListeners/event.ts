@@ -132,7 +132,7 @@ function getInputFromKeyDown(
             ) === 'false'
         ) {
             console.log('entering the pill from text node after the pill');
-            // expand the selection, then delete
+            // expand the selection, thefn delete
             s.setBaseAndExtent(
                 s.anchorNode,
                 s.anchorOffset,
@@ -141,6 +141,16 @@ function getInputFromKeyDown(
             );
             document.dispatchEvent(new CustomEvent('selectionchange'));
             return 'deleteContentBackward';
+        }
+
+        // CASE 3 - pressing backspace at the beginning of the composer, just
+        // ignore it (it can cause issues with pills)
+        // nb 1 to include new hr tag
+        if (s.anchorNode === editor && s.anchorOffset === 1) {
+            console.log('trying to backspace at beginning of composer');
+            // put the cursor back at the beginning
+            s.setBaseAndExtent(editor, 1, editor, 1);
+            return null; // do no deletion
         }
     }
     if (e.key === 'Delete' && s && s.isCollapsed) {
@@ -179,30 +189,6 @@ function getInputFromKeyDown(
             // and we want to remove the trailing nbsp as well
             s.setBaseAndExtent(
                 s.anchorNode.nextSibling,
-                0,
-                s.anchorNode.nextSibling.nextSibling,
-                1,
-            );
-            document.dispatchEvent(new CustomEvent('selectionchange'));
-            return 'deleteContentForward';
-        }
-        // CASE 3 - going from an nbsp text node into the mention (like when
-        // you have a bunch of pills and you're deleting left to right)
-        if (
-            s.anchorNode &&
-            s.anchorNode.textContent === '\u00A0' &&
-            s.anchorOffset === 0 &&
-            s.anchorNode.nextSibling?.firstChild?.parentElement?.getAttribute(
-                'contentEditable',
-            ) === 'false'
-        ) {
-            console.log('entering the pill from the beginning of an nbsp');
-
-            // expand the selection, then delete
-            // we know here it's an nbsp preceding an a tag with a single text
-            // node inside it, and we want to remove the trailing nbsp as well
-            s.setBaseAndExtent(
-                s.anchorNode,
                 0,
                 s.anchorNode.nextSibling.nextSibling,
                 1,
