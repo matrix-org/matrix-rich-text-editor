@@ -24,7 +24,7 @@ use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{self, UnicodeString};
-use crate::{InlineFormatType, ListType, SuggestionPattern};
+use crate::{InlineFormatType, ListType};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum DomNode<S>
@@ -127,19 +127,8 @@ where
     pub fn new_link(
         url: S,
         children: Vec<DomNode<S>>,
-        suggestion: &Option<SuggestionPattern>,
+        mention_type: Option<S>,
     ) -> DomNode<S> {
-        // TODO instead of inferring the type from the suggestion, change the initial function
-        // call from the client to pass in the mention type when creating the link
-        let mention_type: Option<S> = match suggestion {
-            Some(_sug) => match _sug.key {
-                crate::PatternKey::At => Some("user".into()),
-                crate::PatternKey::Hash => Some("user".into()),
-                crate::PatternKey::Slash => None,
-            },
-            None => None,
-        };
-
         DomNode::Container(ContainerNode::new_link(url, children, mention_type))
     }
 
