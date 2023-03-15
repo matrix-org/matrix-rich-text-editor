@@ -716,3 +716,59 @@ fn create_link_after_enter_with_no_formatting_applied() {
         "<p>&nbsp;</p><p><a href=\"https://matrix.org\">test|</a></p>"
     );
 }
+
+#[test]
+fn replace_text_right_before_link() {
+    let mut model = cm("<a href=\"https://matrix.org\">|Matrix</a>");
+    model.replace_text("text".into());
+    assert_eq!(tx(&model), "text|<a href=\"https://matrix.org\">Matrix</a>",)
+}
+
+#[test]
+fn replace_text_right_before_link_with_prev_text() {
+    let mut model = cm("text|<a href=\"https://matrix.org\">Matrix</a>");
+    model.replace_text("text".into());
+    assert_eq!(
+        tx(&model),
+        "texttext|<a href=\"https://matrix.org\">Matrix</a>",
+    )
+}
+
+#[test]
+fn replace_text_right_before_link_with_formatted_prev_text() {
+    let mut model =
+        cm("<strong>text|</strong><a href=\"https://matrix.org\">Matrix</a>");
+    model.replace_text("text".into());
+    assert_eq!(
+        tx(&model),
+        "<strong>texttext|</strong><a href=\"https://matrix.org\">Matrix</a>",
+    )
+}
+
+#[test]
+fn replace_text_right_after_link() {
+    let mut model = cm("<a href=\"https://matrix.org\">Matrix|</a>");
+    model.replace_text("text".into());
+    assert_eq!(tx(&model), "<a href=\"https://matrix.org\">Matrix</a>text|",)
+}
+
+#[test]
+fn replace_text_right_after_link_with_next_text() {
+    let mut model = cm("<a href=\"https://matrix.org\">Matrix|</a>text");
+    model.replace_text("text".into());
+    assert_eq!(
+        tx(&model),
+        "<a href=\"https://matrix.org\">Matrix</a>text|text",
+    )
+}
+
+#[test]
+fn replace_text_right_after_link_with_next_formatted_text() {
+    let mut model =
+        cm("<a href=\"https://matrix.org\">Matrix|</a><strong>text</strong>");
+    model.replace_text("text".into());
+    assert_eq!(
+        tx(&model),
+        "<a href=\"https://matrix.org\">Matrix</a><strong>text|text</strong>",
+    )
+}

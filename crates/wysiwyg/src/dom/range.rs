@@ -166,6 +166,11 @@ impl DomLocation {
         start_offset == 0
     }
 
+    /// Whether the selection ends exactly at the leading of this location.
+    pub fn leading_is_end(&self) -> bool {
+        self.is_end() && self.end_offset == 0
+    }
+
     pub fn starts_inside(&self) -> bool {
         self.start_offset > 0
     }
@@ -727,6 +732,15 @@ mod test {
         assert!(!range.has_single_top_level_node(None));
         assert!(!range.has_single_top_level_node(Some(DomNodeKind::Paragraph)));
         assert!(!range.has_single_top_level_node(Some(DomNodeKind::CodeBlock)));
+    }
+
+    #[test]
+    fn range_end_on_leading_of_a_node() {
+        let range = range_of("{abc}|<strong>def</strong>");
+        // First returned location is "abc" text node,
+        // second one should be the strong tag that has
+        // `leading_is_end` as true.
+        assert!(range.locations[1].leading_is_end());
     }
 
     fn range_of(model: &str) -> Range {
