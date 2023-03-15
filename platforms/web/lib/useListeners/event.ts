@@ -105,26 +105,27 @@ function getInputFromKeyDown(
     const s = document.getSelection();
     if (e.key === 'Backspace' && s && s.isCollapsed) {
         // CASE 1 - going from the nbsp following a text node into a mention
-        if (
-            s.anchorNode?.textContent === '\u00A0' &&
-            s.anchorNode?.previousSibling?.firstChild?.parentElement?.getAttribute(
-                'contentEditable',
-            ) === 'false'
-        ) {
-            console.log('entering the pill from single nbsp after the pill');
-            // expand the selection, then delete
-            s.setBaseAndExtent(
-                s.anchorNode,
-                s.anchorOffset,
-                s.anchorNode.previousSibling.firstChild,
-                0,
-            );
-            document.dispatchEvent(new CustomEvent('selectionchange'));
-            return 'deleteContentBackward';
-        }
+        // if (
+        //     s.anchorNode?.textContent === '\u00A0' &&
+        //     s.anchorNode?.previousSibling?.firstChild?.parentElement?.getAttribute(
+        //         'contentEditable',
+        //     ) === 'false'
+        // ) {
+        //     console.log('entering the pill from single nbsp after the pill');
+        //     // expand the selection, then delete
+        //     s.setBaseAndExtent(
+        //         s.anchorNode,
+        //         s.anchorOffset,
+        //         s.anchorNode.previousSibling.firstChild,
+        //         0,
+        //     );
+        //     document.dispatchEvent(new CustomEvent('selectionchange'));
+        //     return 'deleteContentBackward';
+        // }
         // CASE 2 - going from beginning of text node into mention
         if (
-            s.anchorNode?.nodeName === '#text' &&
+            (s.anchorNode?.nodeName === '#text' ||
+                s.anchorNode?.nodeName === 'BR') &&
             s.anchorOffset === 0 &&
             s.anchorNode?.previousSibling?.firstChild?.parentElement?.getAttribute(
                 'contentEditable',
