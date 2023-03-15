@@ -17,7 +17,6 @@ limitations under the License.
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createRef, MutableRefObject } from 'react';
-import { preview } from 'vite';
 
 import { Editor } from './testUtils/Editor';
 import { select } from './testUtils/selection';
