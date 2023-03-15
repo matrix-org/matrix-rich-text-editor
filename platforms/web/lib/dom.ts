@@ -138,7 +138,9 @@ export function replaceEditor(
     startUtf16Codeunit: number,
     endUtf16Codeunit: number,
 ) {
-    editor.innerHTML = htmlContent + '<br />';
+    // similar to how we need the br, we also need an hr to allow us to position
+    // the cursor before a pill in element web, but we don't put it in the model
+    editor.innerHTML = '<hr class="caretLine" />' + htmlContent + '<br />';
     selectContent(editor, startUtf16Codeunit, endUtf16Codeunit);
 }
 
@@ -189,6 +191,26 @@ export function computeNodeAndOffset(
 
         if (codeunits <= (currentNode.textContent?.length || 0)) {
             // we don't need to use that extra offset if we've found the answer
+
+            // AND YET ANOTHER special case, to ensure that if we're looking for
+            // a non-editable node (mentions) then we select the next node
+            if (
+                currentNode.parentElement?.getAttribute('contenteditable') ===
+                    'false' &&
+                codeunits === currentNode.textContent?.length
+            ) {
+                console.log('trying to choose a non-editable node');
+                // in this case we actually don't want to find it, keep looking
+                // to allow the cursor to be put at the beginning of the next
+                // valid location
+                return {
+                    node: null,
+                    offset:
+                        codeunits -
+                        (currentNode.textContent?.length || 0) -
+                        extraOffset,
+                };
+            }
             return { node: currentNode, offset: codeunits };
         } else {
             // but if we haven't found that answer, apply the extra offset
