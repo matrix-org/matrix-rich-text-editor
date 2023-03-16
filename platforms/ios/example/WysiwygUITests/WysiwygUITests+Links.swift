@@ -49,7 +49,7 @@ extension WysiwygUITests {
 
         // Remove
         button(.linkButton).tap()
-        XCTAssertFalse(textField(.linkTextTextField).exists)
+        XCTAssertTrue(textField(.linkTextTextField).exists)
         app.buttons["Remove"].tap()
         assertTreeEquals(
             """

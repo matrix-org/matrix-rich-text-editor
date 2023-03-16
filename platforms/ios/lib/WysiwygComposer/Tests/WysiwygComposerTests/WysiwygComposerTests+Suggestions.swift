@@ -29,7 +29,7 @@ extension WysiwygComposerTests {
 
         model
             .action {
-                $0.setLinkSuggestion(link: "https://matrix.to/#/@alice:matrix.org",
+                $0.setLinkSuggestion(url: "https://matrix.to/#/@alice:matrix.org",
                                      text: "Alice",
                                      suggestion: suggestionPattern)
             }
@@ -51,7 +51,7 @@ extension WysiwygComposerTests {
 
         model
             .action {
-                $0.setLinkSuggestion(link: "https://matrix.to/#/#room1:matrix.org",
+                $0.setLinkSuggestion(url: "https://matrix.to/#/#room1:matrix.org",
                                      text: "Room 1",
                                      suggestion: suggestionPattern)
             }

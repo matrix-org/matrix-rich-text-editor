@@ -31,15 +31,15 @@ extension WysiwygComposerTests {
     }
 
     func testEditLinkAction() {
-        let link = "test_url"
+        let url = "test_url"
         ComposerModelWrapper()
-            .action { $0.setLinkWithText(link: link, text: "test") }
-            .assertLinkAction(.edit(url: "https://\(link)", text: "test"))
+            .action { $0.setLinkWithText(url: url, text: "test") }
+            .assertLinkAction(.edit(url: "https://\(url)", text: "test"))
     }
 
     func testSetLinkWithText() {
         ComposerModelWrapper()
-            .action { $0.setLinkWithText(link: "link", text: "text") }
+            .action { $0.setLinkWithText(url: "link", text: "text") }
             .assertTree(
                 """
 
@@ -52,7 +52,7 @@ extension WysiwygComposerTests {
     
     func testSetLinkWithTextWithIncludedScheme() {
         ComposerModelWrapper()
-            .action { $0.setLinkWithText(link: "http://link", text: "text") }
+            .action { $0.setLinkWithText(url: "http://link", text: "text") }
             .assertTree(
                 """
 
@@ -65,7 +65,7 @@ extension WysiwygComposerTests {
     
     func testSetMailLinkWithText() {
         ComposerModelWrapper()
-            .action { $0.setLinkWithText(link: "test@element.io", text: "text") }
+            .action { $0.setLinkWithText(url: "test@element.io", text: "text") }
             .assertTree(
                 """
 
@@ -80,7 +80,7 @@ extension WysiwygComposerTests {
         ComposerModelWrapper()
             .action { $0.replaceText(newText: "text") }
             .action { $0.select(startUtf16Codeunit: 0, endUtf16Codeunit: 4) }
-            .action { $0.setLink(link: "link") }
+            .action { $0.setLink(url: "link") }
             .assertTree(
                 """
 
@@ -93,7 +93,7 @@ extension WysiwygComposerTests {
 
     func testRemoveLinks() {
         ComposerModelWrapper()
-            .action { $0.setLinkWithText(link: "link", text: "text") }
+            .action { $0.setLinkWithText(url: "link", text: "text") }
             .assertTree(
                 """
 
