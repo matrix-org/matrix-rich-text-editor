@@ -23,7 +23,6 @@ import {
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createRef, MutableRefObject } from 'react';
-import { preview } from 'vite';
 
 import { Editor } from './testUtils/Editor';
 import { select } from './testUtils/selection';
@@ -520,6 +519,33 @@ describe('mentions', () => {
         await userEvent.keyboard('{delete}');
 
         expect(screen.queryByText(mentionText)).not.toBeInTheDocument();
+    });
+
+    it('delete removes whole mention with preceding text', async () => {
+        // When
+        fireEvent.input(textbox, {
+            data: 'text @a',
+            inputType: 'insertText',
+        });
+        await userEvent.click(button);
+
+        expect(screen.getByText(mentionText)).toBeInTheDocument();
+
+        // move the selection to the beginning of the editor
+        act(() => {
+            select(textbox, 5, 5);
+        });
+
+        // we must use .keyboard here - .type has some odd behaviour where it
+        // enters the text after the final linebreak
+        await userEvent.keyboard('{delete}');
+
+        // expect the link to have disappeared, check we haven't just clipped
+        // the beginning off the link text
+        expect(screen.queryByRole('link')).not.toBeInTheDocument();
+        expect(
+            screen.queryByText(mentionText.slice(1)),
+        ).not.toBeInTheDocument();
     });
 
     it('backspace multiple mentions', async () => {
