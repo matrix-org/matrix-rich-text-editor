@@ -33,7 +33,11 @@ extension WysiwygComposerTests {
                                      text: "Alice",
                                      suggestion: suggestionPattern)
             }
-            .assertHtml("<a href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>\(String.nbsp)")
+            .assertHtml(
+                """
+                <a href="https://matrix.to/#/@alice:matrix.org" contenteditable="false" data-mention-type="user">Alice</a>\(String.nbsp)
+                """
+            )
     }
 
     func testSuggestionForHashPattern() {
@@ -51,7 +55,11 @@ extension WysiwygComposerTests {
                                      text: "Room 1",
                                      suggestion: suggestionPattern)
             }
-            .assertHtml("<a href=\"https://matrix.to/#/#room1:matrix.org\">Room 1</a>\(String.nbsp)")
+            .assertHtml(
+                """
+                <a href="https://matrix.to/#/#room1:matrix.org" contenteditable="false" data-mention-type="room">Room 1</a>\(String.nbsp)
+                """
+            )
     }
 
     func testSuggestionForSlashPattern() {

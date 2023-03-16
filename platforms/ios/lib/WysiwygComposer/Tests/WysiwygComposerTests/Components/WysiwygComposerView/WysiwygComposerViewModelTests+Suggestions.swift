@@ -54,7 +54,7 @@ extension WysiwygComposerViewModelTests {
         XCTAssertEqual(
             viewModel.content.html,
             """
-            <a href="https://matrix.to/#/@alice:matrix.org">Alice</a>\u{00A0}
+            <a href="https://matrix.to/#/@alice:matrix.org" contenteditable="false" data-mention-type="user">Alice</a>\u{00A0}
             """
         )
     }
@@ -92,7 +92,7 @@ extension WysiwygComposerViewModelTests {
         XCTAssertEqual(
             viewModel.content.html,
             """
-            <a href="https://matrix.to/#/#room1:matrix.org">Room 1</a>\u{00A0}
+            <a href="https://matrix.to/#/#room1:matrix.org" contenteditable="false" data-mention-type="room">Room 1</a>\u{00A0}
             """
         )
     }
