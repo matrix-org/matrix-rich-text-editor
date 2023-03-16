@@ -35,7 +35,7 @@ import {
 } from '../types';
 import { TestUtilities } from '../useTestCases/types';
 import { AllActionStates } from '../types';
-import { mapToAllActionStates } from './utils';
+import { nodeIsMention, mapToAllActionStates } from './utils';
 import { LinkEvent } from './types';
 
 /**
@@ -101,98 +101,47 @@ function getInputFromKeyDown(
         }
     }
 
-    // we have to handle pill deletion before the `deleteContentBackward` event fires
+    // we have to handle pill removal before `deleteContentBackward` fires
     const s = document.getSelection();
-    if (e.key === 'Backspace' && s && s.isCollapsed) {
-        // CASE 1 - going from the nbsp following a text node into a mention
-        // if (
-        //     s.anchorNode?.textContent === '\u00A0' &&
-        //     s.anchorNode?.previousSibling?.firstChild?.parentElement?.getAttribute(
-        //         'contentEditable',
-        //     ) === 'false'
-        // ) {
-        //     console.log('entering the pill from single nbsp after the pill');
-        //     // expand the selection, then delete
-        //     s.setBaseAndExtent(
-        //         s.anchorNode,
-        //         s.anchorOffset,
-        //         s.anchorNode.previousSibling.firstChild,
-        //         0,
-        //     );
-        //     document.dispatchEvent(new CustomEvent('selectionchange'));
-        //     return 'deleteContentBackward';
-        // }
-        // CASE 2 - going from beginning of text node into mention
+    if (e.key === 'Backspace' && s && s.anchorNode && s.isCollapsed) {
+        // CASE - entering from beginning of a node
+        const { anchorNode: node, anchorOffset: offset } = s;
         if (
-            (s.anchorNode?.nodeName === '#text' ||
-                s.anchorNode?.nodeName === 'BR') &&
-            s.anchorOffset === 0 &&
-            s.anchorNode?.previousSibling?.firstChild?.parentElement?.getAttribute(
-                'contentEditable',
-            ) === 'false'
+            offset === 0 &&
+            node.previousSibling &&
+            nodeIsMention(node.previousSibling)
         ) {
-            console.log('entering the pill from text node after the pill');
-            // expand the selection, thefn delete
-            s.setBaseAndExtent(
-                s.anchorNode,
-                s.anchorOffset,
-                s.anchorNode.previousSibling.firstChild,
-                0,
-            );
+            // extend the selection backwards, then delete
+            s.extend(node.previousSibling, 0);
             document.dispatchEvent(new CustomEvent('selectionchange'));
             return 'deleteContentBackward';
         }
-
-        // CASE 3 - pressing backspace at the beginning of the composer, just
-        // ignore it (it can cause issues with pills)
-        // nb 1 to include new hr tag
-        // if (s.anchorNode === editor && s.anchorOffset === 1) {
-        //     console.log('trying to backspace at beginning of composer');
-        //     // put the cursor back at the beginning
-        //     s.setBaseAndExtent(editor, 1, editor, 1);
-        //     return null; // do no deletion
-        // }
     }
-    if (e.key === 'Delete' && s && s.isCollapsed) {
+
+    if (e.key === 'Delete' && s && s.anchorNode && s.isCollapsed) {
+        const { anchorNode: node, anchorOffset: offset } = s;
+
         // CASE 1 - going from text node into the mention AT START OF THE EDITOR
         if (
-            s.anchorNode === editor &&
-            s.anchorOffset === 0 && // nb changed to 1 due due presence of caretLine
-            editor.children[0] &&
-            editor.children[0].getAttribute('contentEditable') === 'false'
+            node === editor &&
+            offset === 0 &&
+            editor.firstChild &&
+            nodeIsMention(editor.firstChild)
         ) {
-            console.log('entering the pill from start of editor');
-            // expand the selection, then delete
-            // we know here it's an a tag with a single text node inside it
-            // nb don't clip the nbsp off here, for caret purposes
-            s.setBaseAndExtent(
-                editor.children[0],
-                0,
-                editor.children[0].nextSibling,
-                0,
-            );
+            // extend the selection to the next sibling, then delete
+            s.extend(editor, 1);
             document.dispatchEvent(new CustomEvent('selectionchange'));
             return 'deleteContentForward';
         }
-        // CASE 2 - just going from end of a regular text node into the mention
+        // CASE 2 - going from end of a regular text node into the mention
         if (
-            s.anchorNode &&
-            s.anchorOffset === s.anchorNode.textContent.length &&
-            s.anchorNode.nodeName === '#text' &&
-            s.anchorNode.nextSibling?.firstChild?.parentElement?.getAttribute(
-                'contentEditable',
-            ) === 'false'
+            offset === node.textContent?.length &&
+            node.nodeName === '#text' &&
+            node.nextSibling &&
+            nodeIsMention(node.nextSibling)
         ) {
-            console.log('entering the pill from a prior text node');
             // expand the selection, then delete
-            // we know here it's an a tag with a single text node inside it,
-            // and we want to remove the trailing nbsp as well
-            s.setBaseAndExtent(
-                s.anchorNode.nextSibling,
-                0,
-                s.anchorNode.nextSibling.nextSibling,
-                1,
-            );
+            s.selectAllChildren(node.nextSibling);
             document.dispatchEvent(new CustomEvent('selectionchange'));
             return 'deleteContentForward';
         }
