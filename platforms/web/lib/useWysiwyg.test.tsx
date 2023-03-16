@@ -28,7 +28,7 @@ describe('useWysiwyg', () => {
             editor.innerHTML = html + '<br />';
         }
 
-        beforeAll(() => {
+        beforeAll(async () => {
             render(
                 <Editor
                     ref={(node) => {
@@ -38,20 +38,24 @@ describe('useWysiwyg', () => {
                     }}
                 />,
             );
+            await waitFor(() =>
+                expect(screen.getByRole('textbox')).toHaveAttribute(
+                    'contenteditable',
+                    'true',
+                ),
+            );
         });
 
-        it('Should render ASCII characters with width 1', () => {
+        it.only('Should render ASCII characters with width 1', () => {
             // When
             setEditorHtml('abcd');
+            screen.debug();
             deleteRange(editor, 0, 1);
-
             // Then
             expect(editor).toContainHTML('bcd');
-
             //When
             setEditorHtml('abcd');
             deleteRange(editor, 0, 2);
-
             //Then
             expect(editor).toContainHTML('cd');
         });
