@@ -157,10 +157,16 @@ export function replaceEditor(
  * need to go to find the requested position.
  *
  * A "codeunit" here means a UTF-16 code unit.
+ *
+ * When first called, currentNode is the editor and rootNode is undefined. On
+ * recursive calls from inside this function, rootNode will be defined and will
+ * be the editor node (which allows us to always select the editor if required
+ * regardless of how deep we have gone into the tree)
  */
 export function computeNodeAndOffset(
     currentNode: Node,
     codeunits: number,
+    rootNode?: Node,
 ): {
     node: Node | null;
     offset: number;
@@ -189,43 +195,28 @@ export function computeNodeAndOffset(
         }
 
         if (codeunits <= (currentNode.textContent?.length || 0)) {
+            // special case to handle non-editable nodes, such as mentions
+            if (
+                currentNode.parentElement?.getAttribute('contenteditable') ===
+                'false'
+            ) {
+                // setting node to null and offset to zero means if we end up
+                // inside or at end of a non-editable node somehow, we will
+                // return "node not found" and so we will keep searching
+                let node = null;
+                let offset = 0;
+
+                // if we hit the beginning of the node, select start of editor
+                // as this is the only case in which I've encountered this
+                if (codeunits === 0) {
+                    node = rootNode || currentNode;
+                    offset = 0;
+                }
+
+                return { node, offset };
+            }
+
             // we don't need to use that extra offset if we've found the answer
-
-            // AND YET ANOTHER special case, to ensure that if we're looking for
-            // a non-editable node (mentions) then we select the next node
-            if (
-                currentNode.parentElement?.getAttribute('contenteditable') ===
-                    'false' &&
-                codeunits === currentNode.textContent?.length
-            ) {
-                console.log('trying to choose a non-editable node (end)');
-                // in this case we actually don't want to find it, keep looking
-                // to allow the cursor to be put at the beginning of the next
-                // valid location
-                return {
-                    node: null,
-                    offset:
-                        codeunits -
-                        (currentNode.textContent?.length || 0) -
-                        extraOffset,
-                };
-            }
-
-            // AND YET ANOTHER special case, which we can hit when a pill is at
-            // the beginning and we mess around before it, maybe other ways too
-            if (
-                currentNode.parentElement?.getAttribute('contenteditable') ===
-                    'false' &&
-                codeunits === 0
-            ) {
-                console.log('trying to choose a non-editable node (beginning)');
-                // select the beginning of the editor, it anchor of editor, with
-                // an offset of zero nodes
-                return {
-                    node: currentNode.parentNode?.parentNode,
-                    offset: 0,
-                };
-            }
             return { node: currentNode, offset: codeunits };
         } else {
             // but if we haven't found that answer, apply the extra offset
@@ -268,7 +259,11 @@ export function computeNodeAndOffset(
         }
 
         for (const ch of currentNode.childNodes) {
-            const ret = computeNodeAndOffset(ch, codeunits);
+            const ret = computeNodeAndOffset(
+                ch,
+                codeunits,
+                rootNode || currentNode,
+            );
             if (ret.node) {
                 return { node: ret.node, offset: ret.offset };
             } else {
