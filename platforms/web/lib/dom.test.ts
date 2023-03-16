@@ -428,6 +428,52 @@ describe('computeNodeAndOffset', () => {
         expect(node).toBe(editor.childNodes[1].childNodes[0]);
         expect(offset).toBe(0);
     });
+
+    // eslint-disable-next-line max-len
+    it('returns the beginning of the editor if we try to select the leading edge of non-editable node', () => {
+        // When
+        // this simulates having a mention in the html
+        setEditorHtml(
+            '<a data-mention-type="user" contenteditable="false">test</a>',
+        );
+        const { node, offset } = computeNodeAndOffset(editor, 0);
+
+        // Then
+        expect(node).toBe(editor);
+        expect(offset).toBe(0);
+    });
+
+    // eslint-disable-next-line max-len
+    it('returns the next node if we try to select the trailing edge of a non-editable node', () => {
+        // When
+        // this simulates having a mention in the html
+        setEditorHtml(
+            '<a data-mention-type="user" contenteditable="false">test</a>',
+        );
+        const { node, offset } = computeNodeAndOffset(editor, 4);
+
+        // Then
+        // eslint-disable-next-line max-len
+        expect(node).toBe(editor.lastChild); // ie it has selected the manually appended <br />
+        expect(offset).toBe(0);
+
+        // When
+        const adjacentText = 'something';
+        setEditorHtml(
+            // eslint-disable-next-line max-len
+            `<a data-mention-type="user" contenteditable="false">test</a>${adjacentText}`,
+        );
+        const { node: _node, offset: _offset } = computeNodeAndOffset(
+            editor,
+            4,
+        );
+
+        // Then
+        // eslint-disable-next-line max-len
+        expect(_node).toBe(editor.childNodes[1]); // ie it has selected the manually appended <br />
+        expect(_node?.textContent).toBe(adjacentText);
+        expect(_offset).toBe(0);
+    });
 });
 
 describe('countCodeunit', () => {
