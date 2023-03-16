@@ -219,11 +219,11 @@ export function computeNodeAndOffset(
                 codeunits === 0
             ) {
                 console.log('trying to choose a non-editable node (beginning)');
-                // lets just select the editor, after the hr tag, this is too
-                // fragile but can be improved later (after tests written)
+                // select the beginning of the editor, it anchor of editor, with
+                // an offset of zero nodes
                 return {
                     node: currentNode.parentNode?.parentNode,
-                    offset: 1,
+                    offset: 0,
                 };
             }
             return { node: currentNode, offset: codeunits };

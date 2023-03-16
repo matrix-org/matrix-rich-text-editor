@@ -146,29 +146,29 @@ function getInputFromKeyDown(
         // CASE 3 - pressing backspace at the beginning of the composer, just
         // ignore it (it can cause issues with pills)
         // nb 1 to include new hr tag
-        if (s.anchorNode === editor && s.anchorOffset === 1) {
-            console.log('trying to backspace at beginning of composer');
-            // put the cursor back at the beginning
-            s.setBaseAndExtent(editor, 1, editor, 1);
-            return null; // do no deletion
-        }
+        // if (s.anchorNode === editor && s.anchorOffset === 1) {
+        //     console.log('trying to backspace at beginning of composer');
+        //     // put the cursor back at the beginning
+        //     s.setBaseAndExtent(editor, 1, editor, 1);
+        //     return null; // do no deletion
+        // }
     }
     if (e.key === 'Delete' && s && s.isCollapsed) {
         // CASE 1 - going from text node into the mention AT START OF THE EDITOR
         if (
             s.anchorNode === editor &&
-            s.anchorOffset === 1 && // nb changed to 1 due due presence of caretLine
-            editor.children[1] &&
-            editor.children[1].getAttribute('contentEditable') === 'false'
+            s.anchorOffset === 0 && // nb changed to 1 due due presence of caretLine
+            editor.children[0] &&
+            editor.children[0].getAttribute('contentEditable') === 'false'
         ) {
             console.log('entering the pill from start of editor');
             // expand the selection, then delete
             // we know here it's an a tag with a single text node inside it
             // nb don't clip the nbsp off here, for caret purposes
             s.setBaseAndExtent(
-                editor.children[1],
+                editor.children[0],
                 0,
-                editor.children[1].nextSibling,
+                editor.children[0].nextSibling,
                 0,
             );
             document.dispatchEvent(new CustomEvent('selectionchange'));
