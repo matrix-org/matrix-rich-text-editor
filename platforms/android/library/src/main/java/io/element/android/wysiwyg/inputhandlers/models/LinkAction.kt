@@ -10,7 +10,12 @@ sealed class LinkAction {
     object InsertLink : LinkAction()
 
     /**
-     * Add or change the link for the current selection, without supplying text.
+     * Add a link for the current selection, without supplying text.
      */
-    data class SetLink(val currentLink: String?) : LinkAction()
+    object SetLink : LinkAction()
+
+    /**
+     * Edit the text and the url of link for the current selection.
+     */
+    data class EditLink(val text: String, val url: String) : LinkAction()
 }

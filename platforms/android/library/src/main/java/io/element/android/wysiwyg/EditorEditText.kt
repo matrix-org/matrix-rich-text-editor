@@ -309,11 +309,24 @@ class EditorEditText : TextInputEditText {
     /**
      * Set a link for the current selection. This method does nothing if there is no text selected.
      *
-     * @param link The link to set or null to remove
+     * @param url The url to set
      */
-    fun setLink(link: String?) {
+    fun setLink(url: String) {
+        val result = viewModel.processInput(EditorInputAction.SetLink(url)) ?: return
+
+        setTextFromComposerUpdate(result)
+        setSelectionFromComposerUpdate(result.selection.last)
+    }
+
+    /**
+     * Edit link for the current selection.
+     *
+     * @param text The new text for the link or null to remove
+     * @param url The url to set or null to remove
+     */
+    fun editLink(text: String?, url: String?, ) {
         val result = viewModel.processInput(
-            if (link != null) EditorInputAction.SetLink(link) else EditorInputAction.RemoveLink
+            if (text != null && url != null) EditorInputAction.EditLink(text, url) else EditorInputAction.RemoveLink
         ) ?: return
 
         setTextFromComposerUpdate(result)
@@ -321,20 +334,23 @@ class EditorEditText : TextInputEditText {
     }
 
     /**
-     * Remove a link for the current selection. Convenience for setLink(null).
-     *
-     * @see [setLink]
+     * Remove a link for the current selection.
      */
-    fun removeLink() = setLink(null)
+    fun removeLink() {
+        val result = viewModel.processInput(EditorInputAction.RemoveLink) ?: return
+
+        setTextFromComposerUpdate(result)
+        setSelectionFromComposerUpdate(result.selection.last)
+    }
 
     /**
-     * Insert new text with a link.
+     * Insert new link with text and url.
      *
-     * @param link The link to set
      * @param text The new text to insert
+     * @param url The url to set
      */
-    fun insertLink(link: String, text: String) {
-        val result = viewModel.processInput(EditorInputAction.SetLinkWithText(link, text)) ?: return
+    fun insertLink(text: String, url: String) {
+        val result = viewModel.processInput(EditorInputAction.SetLinkWithText(url, text)) ?: return
 
         setTextFromComposerUpdate(result)
         setSelectionFromComposerUpdate(result.selection.last)

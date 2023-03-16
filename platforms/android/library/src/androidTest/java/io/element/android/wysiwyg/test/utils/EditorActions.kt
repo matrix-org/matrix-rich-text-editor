@@ -63,17 +63,31 @@ object Editor {
         }
     }
 
-    data class InsertLink(
+    data class EditLink(
         val text: String,
-        val link: String,
+        val url: String,
     ) : ViewAction {
         override fun getConstraints(): Matcher<View> = isDisplayed()
 
-        override fun getDescription(): String = "Insert text ($text) linking to $link"
+        override fun getDescription(): String = "Insert text ($text) linking to $url"
 
         override fun perform(uiController: UiController?, view: View?) {
             val editor = view as? EditorEditText ?: return
-            editor.insertLink(link = link, text = text)
+            editor.editLink(text, url)
+        }
+    }
+
+    data class InsertLink(
+        val text: String,
+        val url: String,
+    ) : ViewAction {
+        override fun getConstraints(): Matcher<View> = isDisplayed()
+
+        override fun getDescription(): String = "Insert text ($text) linking to $url"
+
+        override fun perform(uiController: UiController?, view: View?) {
+            val editor = view as? EditorEditText ?: return
+            editor.insertLink(text, url)
         }
     }
 
@@ -167,6 +181,7 @@ object EditorActions {
     fun setText(text: String) = Editor.SetText(text)
     fun setHtml(html: String) = Editor.SetHtml(html)
     fun setLink(url: String) = Editor.SetLink(url)
+    fun editLink(text: String, url: String) = Editor.EditLink(text, url)
     fun insertLink(text: String, url: String) = Editor.InsertLink(text, url)
     fun removeLink() = Editor.RemoveLink
     fun toggleList(ordered: Boolean) = Editor.ToggleList(ordered)

@@ -20,23 +20,32 @@ class MainActivity : AppCompatActivity() {
         val context = this
 
         binding.editor.onSetLinkListener = object: OnSetLinkListener {
-            override fun openSetLinkDialog(currentLink: String?, callback: (url: String?) -> Unit) {
+            override fun openSetLinkDialog(callback: (url: String) -> Unit) {
                 val dialogBinding = DialogSetLinkBinding.inflate(LayoutInflater.from(context))
-                val title = if(currentLink == null) R.string.add_link else R.string.edit_link
-                dialogBinding.link.setText(currentLink)
                 dialogBinding.text.visibility = View.GONE
                 AlertDialog.Builder(context)
-                    .setTitle(title)
+                    .setTitle(R.string.add_link)
                     .setView(dialogBinding.root)
                     .setPositiveButton(android.R.string.ok) { _, _ ->
                         callback(dialogBinding.link.text.toString())
                     }
-                    .apply {
-                        if(currentLink != null) {
-                            setNeutralButton(R.string.remove_link) { _, _ ->
-                                callback(null)
-                            }
-                        }
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show()
+
+                dialogBinding.link.performClick()
+            }
+            override fun openEditLinkDialog(text: String, url: String, callback: (text: String?, url: String?) -> Unit) {
+                val dialogBinding = DialogSetLinkBinding.inflate(LayoutInflater.from(context))
+                dialogBinding.link.setText(url)
+                dialogBinding.text.setText(text)
+                AlertDialog.Builder(context)
+                    .setTitle(R.string.edit_link)
+                    .setView(dialogBinding.root)
+                    .setPositiveButton(android.R.string.ok) { _, _ ->
+                        callback(dialogBinding.text.text.toString(), dialogBinding.link.text.toString())
+                    }
+                    .setNeutralButton(R.string.remove_link) { _, _ ->
+                        callback(null, null)
                     }
                     .setNegativeButton(android.R.string.cancel, null)
                     .show()
