@@ -231,9 +231,9 @@ public extension WysiwygComposerViewModel {
     func setMention(link: String, name: String, key: PatternKey) {
         let update: ComposerUpdate
         if let suggestionPattern, suggestionPattern.key == key {
-            update = model.setLinkSuggestion(link: link, text: name, suggestion: suggestionPattern)
+            update = model.setLinkSuggestion(url: link, text: name, suggestion: suggestionPattern)
         } else {
-            _ = model.setLinkWithText(link: link, text: name)
+            _ = model.setLinkWithText(url: link, text: name)
             // FIXME: remove this if Rust adds this space for free
             update = model.replaceText(newText: " ")
         }
@@ -360,9 +360,11 @@ public extension WysiwygComposerViewModel {
         let update: ComposerUpdate
         switch linkOperation {
         case let .createLink(urlString, text):
-            update = model.setLinkWithText(link: urlString, text: text)
+            update = model.setLinkWithText(url: urlString, text: text)
+        case let .editLink(urlString, text):
+            update = model.editLinkWithText(url: urlString, text: text)
         case let .setLink(urlString):
-            update = model.setLink(link: urlString)
+            update = model.setLink(url: urlString)
         case .removeLinks:
             update = model.removeLinks()
         }

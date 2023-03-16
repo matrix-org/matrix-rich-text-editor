@@ -30,9 +30,10 @@ protocol ComposerModelWrapperProtocol {
     func replaceTextSuggestion(newText: String, suggestion: SuggestionPattern) -> ComposerUpdate
     func backspace() -> ComposerUpdate
     func enter() -> ComposerUpdate
-    func setLink(link: String) -> ComposerUpdate
-    func setLinkWithText(link: String, text: String) -> ComposerUpdate
-    func setLinkSuggestion(link: String, text: String, suggestion: SuggestionPattern) -> ComposerUpdate
+    func setLink(url: String) -> ComposerUpdate
+    func setLinkWithText(url: String, text: String) -> ComposerUpdate
+    func editLinkWithText(url: String, text: String) -> ComposerUpdate
+    func setLinkSuggestion(url: String, text: String, suggestion: SuggestionPattern) -> ComposerUpdate
     func removeLinks() -> ComposerUpdate
     func toTree() -> String
     func getCurrentDomState() -> ComposerState
@@ -113,16 +114,20 @@ final class ComposerModelWrapper: ComposerModelWrapperProtocol {
         execute { try $0.enter() }
     }
 
-    func setLink(link: String) -> ComposerUpdate {
-        execute { try $0.setLink(link: link) }
+    func setLink(url: String) -> ComposerUpdate {
+        execute { try $0.setLink(url: url) }
     }
 
-    func setLinkWithText(link: String, text: String) -> ComposerUpdate {
-        execute { try $0.setLinkWithText(link: link, text: text) }
+    func setLinkWithText(url: String, text: String) -> ComposerUpdate {
+        execute { try $0.setLinkWithText(url: url, text: text) }
     }
 
-    func setLinkSuggestion(link: String, text: String, suggestion: SuggestionPattern) -> ComposerUpdate {
-        execute { try $0.setLinkSuggestion(link: link, text: text, suggestion: suggestion) }
+    func editLinkWithText(url: String, text: String) -> ComposerUpdate {
+        execute { try $0.editLinkWithText(url: url, text: text) }
+    }
+
+    func setLinkSuggestion(url: String, text: String, suggestion: SuggestionPattern) -> ComposerUpdate {
+        execute { try $0.setLinkSuggestion(url: url, text: text, suggestion: suggestion) }
     }
 
     func removeLinks() -> ComposerUpdate {

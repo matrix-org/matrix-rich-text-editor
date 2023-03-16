@@ -35,7 +35,8 @@ extension WysiwygUITests {
 
         // Edit
         button(.linkButton).tap()
-        XCTAssertFalse(textField(.linkTextTextField).exists)
+        XCTAssertTrue(textField(.linkUrlTextField).exists)
+        XCTAssertTrue(textField(.linkTextTextField).exists)
         textField(.linkUrlTextField).doubleTap()
         textField(.linkUrlTextField).typeTextCharByChar("new_url")
         app.buttons["Ok"].tap()

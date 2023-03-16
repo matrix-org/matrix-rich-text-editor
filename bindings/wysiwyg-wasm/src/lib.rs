@@ -267,17 +267,17 @@ impl ComposerModel {
         self.inner.get_link_action().into()
     }
 
-    pub fn set_link(&mut self, link: &str) -> ComposerUpdate {
-        ComposerUpdate::from(self.inner.set_link(Utf16String::from_str(link)))
+    pub fn set_link(&mut self, url: &str) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.set_link(Utf16String::from_str(url)))
     }
 
     pub fn set_link_with_text(
         &mut self,
-        link: &str,
+        url: &str,
         text: &str,
     ) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.set_link_with_text(
-            Utf16String::from_str(link),
+            Utf16String::from_str(url),
             Utf16String::from_str(text),
             None,
         ))
@@ -285,12 +285,12 @@ impl ComposerModel {
 
     pub fn set_link_suggestion(
         &mut self,
-        link: &str,
+        url: &str,
         text: &str,
         suggestion: SuggestionPattern,
     ) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.set_link_suggestion(
-            Utf16String::from_str(link),
+            Utf16String::from_str(url),
             Utf16String::from_str(text),
             wysiwyg::SuggestionPattern::from(suggestion),
         ))

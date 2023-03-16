@@ -53,14 +53,14 @@ where
 
     pub fn set_link_suggestion(
         &mut self,
-        link: S,
+        url: S,
         text: S,
         suggestion: SuggestionPattern,
     ) -> ComposerUpdate<S> {
         self.do_replace_text_in(S::default(), suggestion.start, suggestion.end);
         self.state.start = Location::from(suggestion.start);
         self.state.end = self.state.start;
-        self.set_link_with_text(link, text, Some(suggestion));
+        self.set_link_with_text(url, text, Some(suggestion));
         self.do_replace_text(" ".into())
     }
 
@@ -88,7 +88,7 @@ where
 
     pub fn set_link_with_text(
         &mut self,
-        link: S,
+        url: S,
         text: S,
         suggestion: Option<SuggestionPattern>,
     ) -> ComposerUpdate<S> {
@@ -97,7 +97,6 @@ where
         self.do_replace_text(text.clone());
         let e = s + text.len();
         let range = self.state.dom.find_range(s, e);
-
         // TODO instead of inferring the type from the suggestion, change the initial function
         // call from the client to pass in the mention type when creating the link
         let mention_type: Option<S> = match suggestion {
@@ -109,25 +108,47 @@ where
             None => None,
         };
 
-        self.set_link_in_range(link, range, mention_type)
+        self.set_link_in_range(url, range, mention_type)
     }
 
-    pub fn set_link(&mut self, link: S) -> ComposerUpdate<S> {
+    pub fn edit_link_with_text(
+        &mut self,
+        url: S,
+        text: S,
+    ) -> ComposerUpdate<S> {
+        self.push_state_to_history();
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        let Some(link_loc) = range
+            .locations
+            .iter()
+            .find(|loc| loc.kind == DomNodeKind::Link) else {
+                panic!("Attempting to edit a link on a range that doesn't contain one")
+        };
+        let start = link_loc.position;
+        let end = start + link_loc.length;
+        let new_end = start + text.len();
+        self.do_replace_text_in(text, start, end);
+        let range = self.state.dom.find_range(start, new_end);
+        self.set_link_in_range(url, range, None)
+    }
+
+    pub fn set_link(&mut self, url: S) -> ComposerUpdate<S> {
         self.push_state_to_history();
         let (s, e) = self.safe_selection();
 
         let range = self.state.dom.find_range(s, e);
 
-        self.set_link_in_range(link, range, None)
+        self.set_link_in_range(url, range, None)
     }
 
     fn set_link_in_range(
         &mut self,
-        mut link: S,
+        mut url: S,
         range: Range,
         mention_type: Option<S>,
     ) -> ComposerUpdate<S> {
-        self.add_http_scheme(&mut link);
+        self.add_http_scheme(&mut url);
 
         let (mut s, mut e) = (range.start(), range.end());
         // Find container link that completely covers the range
@@ -211,7 +232,7 @@ where
             // Create a new link node containing the passed range
             let inserted = self.state.dom.insert_parent(
                 &range,
-                DomNode::new_link(link.clone(), vec![], mention_type.clone()),
+                DomNode::new_link(url.clone(), vec![], mention_type.clone()),
             );
             // Remove any child links inside it
             self.delete_child_links(&inserted);
@@ -220,8 +241,8 @@ where
         self.create_update_replace_all()
     }
 
-    fn add_http_scheme(&mut self, link: &mut S) {
-        let string = link.to_string();
+    fn add_http_scheme(&mut self, url: &mut S) {
+        let string = url.to_string();
         let str = string.as_str();
 
         match Url::parse(str) {
@@ -230,9 +251,9 @@ where
                 let is_email = EmailAddress::is_valid(str);
 
                 if is_email {
-                    link.insert(0, &S::from("mailto:"));
+                    url.insert(0, &S::from("mailto:"));
                 } else {
-                    link.insert(0, &S::from("https://"));
+                    url.insert(0, &S::from("https://"));
                 };
             }
             Err(_) => {}

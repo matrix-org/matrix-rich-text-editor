@@ -205,42 +205,54 @@ impl ComposerModel {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().redo()))
     }
 
-    pub fn set_link(self: &Arc<Self>, link: String) -> Arc<ComposerUpdate> {
-        let link = Utf16String::from_str(&link);
+    pub fn set_link(self: &Arc<Self>, url: String) -> Arc<ComposerUpdate> {
+        let url = Utf16String::from_str(&url);
         Arc::new(ComposerUpdate::from(
-            self.inner.lock().unwrap().set_link(link),
+            self.inner.lock().unwrap().set_link(url),
         ))
     }
 
     pub fn set_link_with_text(
         self: &Arc<Self>,
-        link: String,
+        url: String,
         text: String,
     ) -> Arc<ComposerUpdate> {
-        let link = Utf16String::from_str(&link);
-        let text = Utf16String::from_str(&text);
         Arc::new(ComposerUpdate::from(
-            self.inner
-                .lock()
-                .unwrap()
-                .set_link_with_text(link, text, None),
+            self.inner.lock().unwrap().set_link_with_text(
+                Utf16String::from_str(&url),
+                Utf16String::from_str(&text),
+                None,
+            ),
+        ))
+    }
+
+    pub fn edit_link_with_text(
+        self: &Arc<Self>,
+        url: String,
+        text: String,
+    ) -> Arc<ComposerUpdate> {
+        Arc::new(ComposerUpdate::from(
+            self.inner.lock().unwrap().edit_link_with_text(
+                Utf16String::from_str(&url),
+                Utf16String::from_str(&text),
+            ),
         ))
     }
 
     pub fn set_link_suggestion(
         self: &Arc<Self>,
-        link: String,
+        url: String,
         text: String,
         suggestion: SuggestionPattern,
     ) -> Arc<ComposerUpdate> {
-        let link = Utf16String::from_str(&link);
+        let url = Utf16String::from_str(&url);
         let text = Utf16String::from_str(&text);
         let suggestion = wysiwyg::SuggestionPattern::from(suggestion);
         Arc::new(ComposerUpdate::from(
             self.inner
                 .lock()
                 .unwrap()
-                .set_link_suggestion(link, text, suggestion),
+                .set_link_suggestion(url, text, suggestion),
         ))
     }
 
