@@ -73,15 +73,15 @@ class MockComposer {
     ) = every { instance.getLinkAction() } returns linkAction
 
     fun givenSetLinkResult(
-        link: String,
+        url: String,
         update: ComposerUpdate = MockComposerUpdateFactory.create(),
-    ) = every { instance.setLink(link = link) } returns update
+    ) = every { instance.setLink(url = url) } returns update
 
     fun givenSetLinkWithTextResult(
-        link: String,
+        url: String,
         text: String,
         update: ComposerUpdate = MockComposerUpdateFactory.create(),
-    ) = every { instance.setLinkWithText(link = link, text = text) } returns update
+    ) = every { instance.setLinkWithText(url = url, text = text) } returns update
 
     fun givenRemoveLinkResult(
         update: ComposerUpdate = MockComposerUpdateFactory.create(),
