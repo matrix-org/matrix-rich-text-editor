@@ -14,7 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { createDefaultActionStates, mapToAllActionStates } from './utils';
+import {
+    createDefaultActionStates,
+    mapToAllActionStates,
+    nodeIsMention,
+} from './utils';
 
 describe('createDefaultActionStates', () => {
     it('Should return all the action state with enabled as value', () => {
@@ -66,5 +70,42 @@ describe('mapToAllActionStates', () => {
             unorderedList: 'enabled',
             strikeThrough: 'enabled',
         });
+    });
+});
+
+describe('nodeIsMention', () => {
+    it('should return false if node has multiple children', () => {
+        const input = document.createElement('span');
+        input.appendChild(document.createElement('img'));
+        input.appendChild(document.createElement('span'));
+
+        expect(nodeIsMention(input)).toBe(false);
+    });
+
+    // eslint-disable-next-line max-len
+    it('should return false if node is missing the data-mention-type attribute', () => {
+        const input = document.createElement('a');
+        input.appendChild(document.createTextNode('text'));
+        input.setAttribute('contenteditable', 'false');
+
+        expect(nodeIsMention(input)).toBe(false);
+    });
+
+    // eslint-disable-next-line max-len
+    it('should return false if node is missing the contenteditable attribute', () => {
+        const input = document.createElement('a');
+        input.appendChild(document.createTextNode('text'));
+        input.setAttribute('data-mention-type', 'user');
+
+        expect(nodeIsMention(input)).toBe(false);
+    });
+
+    it('should return true if node is shaped like a mention', () => {
+        const input = document.createElement('a');
+        input.appendChild(document.createTextNode('text'));
+        input.setAttribute('contenteditable', 'false');
+        input.setAttribute('data-mention-type', 'user');
+
+        expect(nodeIsMention(input)).toBe(true);
     });
 });

@@ -50,9 +50,6 @@ export function mapToAllActionStates(
  * child node, has a data-mention-type attribute and is not editable
  */
 export function nodeIsMention(node: Node) {
-    if (node === null) {
-        return false;
-    }
     return (
         node.childNodes.length === 1 &&
         node.childNodes[0].nodeName === '#text' &&
