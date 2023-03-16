@@ -42,7 +42,7 @@ export default defineConfig({
         globals: true,
         environment: 'jsdom',
         setupFiles: 'test.setup.ts',
-        includeSource: ['lib/**/*.{ts,tsx}'],
+        include: ['lib/**/*test.{ts,tsx}'],
         coverage: {
             all: true,
             include: ['lib/**/*.{ts,tsx}'],
