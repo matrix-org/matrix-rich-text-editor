@@ -138,9 +138,8 @@ export function replaceEditor(
     startUtf16Codeunit: number,
     endUtf16Codeunit: number,
 ) {
-    // similar to how we need the br, we also need an hr to allow us to position
-    // the cursor before a pill in element web, but we don't put it in the model
-    editor.innerHTML = '<hr class="caretLine" />' + htmlContent + '<br />';
+    // need a linebreak after the html content (but not in the rust model)
+    editor.innerHTML = htmlContent + '<br />';
     selectContent(editor, startUtf16Codeunit, endUtf16Codeunit);
 }
 
