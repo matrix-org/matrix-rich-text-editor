@@ -44,3 +44,20 @@ export function mapToAllActionStates(
     }
     return ret as AllActionStates;
 }
+
+/**
+ * Returns whether a node is a mention or not by checking it has a single text
+ * child node, has a data-mention-type attribute and is not editable
+ */
+export function nodeIsMention(node: Node) {
+    if (node === null) {
+        return false;
+    }
+    return (
+        node.childNodes.length === 1 &&
+        node.childNodes[0].nodeName === '#text' &&
+        node.childNodes[0].parentElement?.hasAttribute('data-mention-type') &&
+        node.childNodes[0].parentElement?.getAttribute('contenteditable') ===
+            'false'
+    );
+}
