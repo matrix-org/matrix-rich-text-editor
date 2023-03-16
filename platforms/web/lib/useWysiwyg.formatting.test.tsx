@@ -14,9 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+    act,
+    fireEvent,
+    render,
+    screen,
+    waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createRef, MutableRefObject } from 'react';
+import { preview } from 'vite';
 
 import { Editor } from './testUtils/Editor';
 import { select } from './testUtils/selection';
@@ -410,6 +417,7 @@ describe('indentation', () => {
 describe('mentions', () => {
     let button: HTMLButtonElement;
     let textbox: HTMLDivElement;
+    const mentionText = 'test user';
 
     beforeEach(async () => {
         render(<Editor />);
@@ -446,12 +454,115 @@ describe('mentions', () => {
             // Then
             // nb this information is hardcoded in the button for these tests so
             // they should all yield the same result
-            const link = screen.getByText('test user');
+            const link = screen.getByText(mentionText);
             expect(link).toBeInTheDocument();
             expect(link).toHaveAttribute('contenteditable', 'false');
-            expect(link).toHaveAttribute('data-mention-type');
+            expect(link).toHaveAttribute(
+                'data-mention-type',
+                prefixedInput === '@at' ? 'user' : 'room',
+            );
         },
     );
+
+    it('backspace removes whole mention', async () => {
+        // When
+        fireEvent.input(textbox, {
+            data: '@',
+            inputType: 'insertText',
+        });
+        await userEvent.click(button);
+
+        expect(screen.getByText(mentionText)).toBeInTheDocument();
+
+        // press backspace twice, once to remove the trailing nbsp, once to
+        // remove the mention
+        await userEvent.type(textbox, '{backspace}{backspace}');
+
+        expect(screen.queryByText(mentionText)).not.toBeInTheDocument();
+    });
+
+    it('backspace before a mention does nothing', async () => {
+        // When
+        fireEvent.input(textbox, {
+            data: '@',
+            inputType: 'insertText',
+        });
+        await userEvent.click(button);
+
+        // move selection to beginning
+        act(() => {
+            select(textbox, 0, 0);
+        });
+
+        // press backspace once, expecting nothing to happen
+        userEvent.type(textbox, '{backspace}');
+
+        expect(screen.getByText(mentionText)).toBeInTheDocument();
+    });
+
+    it('delete removes whole mention', async () => {
+        // When
+        fireEvent.input(textbox, {
+            data: '@a',
+            inputType: 'insertText',
+        });
+        await userEvent.click(button);
+
+        expect(screen.getByText(mentionText)).toBeInTheDocument();
+
+        // move the selection to the beginning of the editor
+        act(() => {
+            select(textbox, 0, 0);
+        });
+
+        // we must use .keyboard here - .type has some odd behaviour where it
+        // enters the text after the final linebreak
+        await userEvent.keyboard('{delete}');
+
+        expect(screen.queryByText(mentionText)).not.toBeInTheDocument();
+    });
+
+    it('backspace multiple mentions', async () => {
+        // When
+        for (let i = 0; i < 3; i++) {
+            fireEvent.input(textbox, {
+                data: '@a',
+                inputType: 'insertText',
+            });
+            await userEvent.click(button);
+        }
+
+        expect(screen.getAllByText(mentionText)).toHaveLength(3);
+
+        // pressing backspace once only removes a trailing nbsp
+        await userEvent.keyboard('{backspace}');
+        expect(screen.getAllByText(mentionText)).toHaveLength(3);
+
+        // pressing backspace again removes a mention
+        await userEvent.keyboard('{backspace}');
+        expect(screen.getAllByText(mentionText)).toHaveLength(2);
+    });
+
+    it('delete multiple mentions', async () => {
+        // When
+        for (let i = 0; i < 3; i++) {
+            fireEvent.input(textbox, {
+                data: '@a',
+                inputType: 'insertText',
+            });
+            await userEvent.click(button);
+        }
+
+        // move the cursor to the beginning of the input
+        act(() => {
+            select(textbox, 0, 0);
+        });
+        expect(screen.getAllByText(mentionText)).toHaveLength(3);
+
+        // pressing delete once removes a single mention
+        await userEvent.keyboard('{delete}');
+        expect(screen.getAllByText(mentionText)).toHaveLength(2);
+    });
 });
 
 describe('commands', () => {
