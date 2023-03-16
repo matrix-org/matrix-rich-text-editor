@@ -46,10 +46,9 @@ describe('useWysiwyg', () => {
             );
         });
 
-        it.only('Should render ASCII characters with width 1', () => {
+        it('Should render ASCII characters with width 1', () => {
             // When
             setEditorHtml('abcd');
-            screen.debug();
             deleteRange(editor, 0, 1);
             // Then
             expect(editor).toContainHTML('bcd');
