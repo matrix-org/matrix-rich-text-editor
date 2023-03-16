@@ -838,3 +838,69 @@ fn replace_text_right_after_link_with_next_formatted_text() {
         "<a href=\"https://matrix.org\">Matrix</a><strong>text|text</strong>",
     )
 }
+
+#[test]
+fn edit_entirely_selected_link() {
+    let mut model = cm("<a href=\"https://mtrix.org\">{Mtrix}|</a>");
+    model.edit_link_with_text("https://matrix.org".into(), "Matrix".into());
+    assert_eq!(tx(&model), "<a href=\"https://matrix.org\">Matrix|</a>");
+}
+
+#[test]
+fn edit_partially_selected_link() {
+    let mut model = cm("<a href=\"https://mtrix.org\">Mtr{ix}|</a>");
+    model.edit_link_with_text("https://matrix.org".into(), "Matrix".into());
+    assert_eq!(tx(&model), "<a href=\"https://matrix.org\">Matrix|</a>");
+}
+
+#[test]
+fn edit_link_from_cursor_position() {
+    let mut model = cm("<a href=\"https://mtrix.org\">Mtrix|</a>");
+    model.edit_link_with_text("https://matrix.org".into(), "Matrix".into());
+    assert_eq!(tx(&model), "<a href=\"https://matrix.org\">Matrix|</a>");
+}
+
+#[test]
+fn edit_link_with_multiple_links_edits_first_occurence() {
+    // Note: this behaviour might change if we allow replacing
+    // text with the entire extended plain text from the selection.
+    let mut model = cm("<a href=\"https://mtrix.org\">{Mtrix</a> <a href=\"https://matrix.org\">Matrix}|</a>");
+    model.edit_link_with_text("https://matrix.org".into(), "Matrix".into());
+    assert_eq!(
+        tx(&model),
+        "<a href=\"https://matrix.org\">Matrix|</a> <a href=\"https://matrix.org\">Matrix</a>",
+    );
+}
+
+#[test]
+fn edit_link_with_multiple_partially_selected_links_edits_first_occurence() {
+    // Note: this behaviour might change if we allow replacing
+    // text with the entire extended plain text from the selection.
+    let mut model = cm("<a href=\"https://mtrix.org\">Mt{rix</a> <a href=\"https://matrix.org\">Mat}|rix</a>");
+    model.edit_link_with_text("https://matrix.org".into(), "Matrix".into());
+    assert_eq!(
+        tx(&model),
+        "<a href=\"https://matrix.org\">Matrix|</a> <a href=\"https://matrix.org\">Matrix</a>",
+    );
+}
+
+#[test]
+fn edit_entirely_formatted_link_keeps_formatting() {
+    let mut model =
+        cm("<a href=\"https://mtrix.org\">{<strong>Mtrix</strong>}|</a>");
+    model.edit_link_with_text("https://matrix.org".into(), "Matrix".into());
+    assert_eq!(
+        tx(&model),
+        "<a href=\"https://matrix.org\"><strong>Matrix|</strong></a>",
+    );
+}
+
+#[test]
+fn edit_partially_formatted_link_removes_formatting() {
+    // Note: replacing the text of the link makes the formatting position ambiguous
+    // it is better to remove it than provide unexpected content.
+    let mut model =
+        cm("<a href=\"https://mtrix.org\">{M<strong>tri</strong>x}|</a>");
+    model.edit_link_with_text("https://matrix.org".into(), "Matrix".into());
+    assert_eq!(tx(&model), "<a href=\"https://matrix.org\">Matrix|</a>");
+}
