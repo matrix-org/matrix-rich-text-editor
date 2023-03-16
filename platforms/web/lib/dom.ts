@@ -195,25 +195,24 @@ export function computeNodeAndOffset(
         }
 
         if (codeunits <= (currentNode.textContent?.length || 0)) {
-            // special case to handle non-editable nodes, such as mentions
+            // special case to handle being inside a non-editable node
+            // such as a mention
             if (
                 currentNode.parentElement?.getAttribute('contenteditable') ===
                 'false'
             ) {
-                // setting node to null and offset to zero means if we end up
-                // inside or at end of a non-editable node somehow, we will
-                // return "node not found" and so we will keep searching
+                // setting node to null means if we end up inside or at end of a
+                // non-editable node somehow, we will return "node not found"
+                // and so we will keep searching
                 let node = null;
-                let offset = 0;
 
                 // if we hit the beginning of the node, select start of editor
-                // as this is the only case in which I've encountered this
+                // as this appears to be the only way this can occur
                 if (codeunits === 0) {
                     node = rootNode || currentNode;
-                    offset = 0;
                 }
 
-                return { node, offset };
+                return { node, offset: 0 };
             }
 
             // we don't need to use that extra offset if we've found the answer
