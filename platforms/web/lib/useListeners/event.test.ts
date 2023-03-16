@@ -60,6 +60,8 @@ describe('handleKeyDown', () => {
         ['sendMessage', { ctrlKey: true, key: 'Enter' }],
         ['sendMessage', { metaKey: true, key: 'Enter' }],
         ['formatStrikeThrough', { shiftKey: true, altKey: true, key: '5' }],
+        ['deleteSoftLineBackward', { ctrlKey: true, key: 'Backspace' }],
+        ['deleteSoftLineBackward', { metaKey: true, key: 'Backspace' }],
     ])('Should dispatch %s when %o', async (expected, input) => {
         const elem = document.createElement('input');
         const event = new KeyboardEvent('keydown', input);
@@ -77,4 +79,6 @@ describe('handleKeyDown', () => {
         handleKeyDown(event, elem, model, {} as FormattingFunctions);
         expect(await result).toBe(expected);
     });
+
+    it('mention behaviour', () => {});
 });
