@@ -35,14 +35,27 @@ where
     pub fn get_link_action(&self) -> LinkAction<S> {
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
-        for loc in range.locations.iter() {
-            if loc.kind == DomNodeKind::Link {
-                let node = self.state.dom.lookup_node(&loc.node_handle);
-                let link = node.as_container().unwrap().get_link().unwrap();
-                return LinkAction::Edit(link);
-            }
-        }
-        if s == e || self.is_blank_selection(range) {
+        let mut iter = range
+            .locations
+            .iter()
+            .filter(|loc| loc.kind == DomNodeKind::Link);
+
+        if iter.clone().any(|loc| {
+            self.state
+                .dom
+                .lookup_container(&loc.node_handle)
+                .is_immutable()
+        }) {
+            LinkAction::Disabled
+        } else if let Some(loc) = iter.next() {
+            let link = self
+                .state
+                .dom
+                .lookup_container(&loc.node_handle)
+                .get_link()
+                .unwrap();
+            LinkAction::Edit(link)
+        } else if s == e || self.is_blank_selection(range) {
             LinkAction::CreateWithText
         } else {
             LinkAction::Create

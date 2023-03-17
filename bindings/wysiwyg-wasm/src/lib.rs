@@ -756,11 +756,16 @@ pub struct Edit {
     pub link: String,
 }
 
+#[derive(Clone)]
+#[wasm_bindgen]
+pub struct Disabled;
+
 #[wasm_bindgen(getter_with_clone)]
 pub struct LinkAction {
     pub create_with_text: Option<CreateWithText>,
     pub create: Option<Create>,
     pub edit_link: Option<Edit>,
+    pub disabled: Option<Disabled>,
 }
 
 impl From<wysiwyg::LinkAction<Utf16String>> for LinkAction {
@@ -770,11 +775,13 @@ impl From<wysiwyg::LinkAction<Utf16String>> for LinkAction {
                 create_with_text: Some(CreateWithText),
                 create: None,
                 edit_link: None,
+                disabled: None,
             },
             wysiwyg::LinkAction::Create => Self {
                 create_with_text: None,
                 create: Some(Create),
                 edit_link: None,
+                disabled: None,
             },
             wysiwyg::LinkAction::Edit(link) => {
                 let link = link.to_string();
@@ -782,8 +789,15 @@ impl From<wysiwyg::LinkAction<Utf16String>> for LinkAction {
                     create_with_text: None,
                     create: None,
                     edit_link: Some(Edit { link }),
+                    disabled: None,
                 }
             }
+            wysiwyg::LinkAction::Disabled => Self {
+                create_with_text: None,
+                create: None,
+                edit_link: None,
+                disabled: Some(Disabled),
+            },
         }
     }
 }

@@ -177,3 +177,35 @@ fn get_link_action_on_blank_selection_after_a_link() {
         LinkAction::Edit(utf16("https://element.io"))
     )
 }
+
+#[test]
+fn get_link_action_on_selected_immutable_link() {
+    let model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">{test}|</a>",
+    );
+    assert_eq!(model.get_link_action(), LinkAction::Disabled,)
+}
+
+#[test]
+fn get_link_action_on_immutable_link_leading() {
+    let model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">|test</a>",
+    );
+    assert_eq!(model.get_link_action(), LinkAction::Disabled,)
+}
+
+#[test]
+fn get_link_action_on_immutable_link_trailing() {
+    let model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">test|</a>",
+    );
+    assert_eq!(model.get_link_action(), LinkAction::Disabled,)
+}
+
+#[test]
+fn get_link_action_on_cross_selected_immutable_link() {
+    let model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">te{st</a>text}|",
+    );
+    assert_eq!(model.get_link_action(), LinkAction::Disabled,)
+}

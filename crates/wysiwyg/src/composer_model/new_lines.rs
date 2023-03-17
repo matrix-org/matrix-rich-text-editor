@@ -129,13 +129,7 @@ where
                         );
                     }
                     // If list becomes empty, remove it too
-                    if self
-                        .state
-                        .dom
-                        .lookup_node(&list_handle)
-                        .as_container()
-                        .unwrap()
-                        .is_empty()
+                    if self.state.dom.lookup_container(&list_handle).is_empty()
                     {
                         self.state.dom.remove(&list_handle);
 
@@ -197,9 +191,7 @@ where
             let child_count = self
                 .state
                 .dom
-                .lookup_node(&block_node_handle)
-                .as_container()
-                .unwrap()
+                .lookup_container(&block_node_handle)
                 .children()
                 .len();
             let last_child_handle =
