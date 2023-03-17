@@ -1,5 +1,19 @@
 # Changelog
 
+# [1.3.0] - 2023-03-17
+
+### Changed
+
+- Common: Autocompleted links now have extra attributes when representing a custom link type
+- Common: `replace_text` now defaults to writing outside of link label when on edge
+- iOS: Content of the `UITextView` for the plain text mode is now published
+- iOS: Updated `PermalinkReplacer` API to allow inserting/removing custom objetcs in the attributed string in plain text mode
+
+### Fixed
+
+- iOS: Fix link button availability around replaced links
+- iOS: Fix index computation around multiple replaced links
+
 # [1.2.2] - 2023-03-08
 
 ### Fixed
