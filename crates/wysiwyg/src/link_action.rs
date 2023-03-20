@@ -19,4 +19,5 @@ pub enum LinkAction<S: UnicodeString> {
     CreateWithText,
     Create,
     Edit(S),
+    Disabled,
 }

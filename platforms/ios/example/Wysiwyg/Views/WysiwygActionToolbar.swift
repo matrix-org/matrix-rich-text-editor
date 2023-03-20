@@ -79,7 +79,7 @@ struct WysiwygActionToolbar: View {
             }
             actions.append(.destructive(title: "Remove", action: removeAction))
             return AlertConfig(title: editLinktitle, actions: actions)
-        case .none:
+        case .disabled, .none:
             return AlertConfig(title: "", actions: actions)
         }
     }

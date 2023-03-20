@@ -347,6 +347,17 @@ where
         self.document_node().lookup_node(node_handle)
     }
 
+    /// Shortcut for looking up a container at given handle.
+    /// Should only be used from contexts where node is
+    /// guaranteed to be a container. (e.g. if `DomLocation`
+    /// provides a DomNodeKind matching container type).
+    pub fn lookup_container(
+        &self,
+        node_handle: &DomHandle,
+    ) -> &ContainerNode<S> {
+        self.lookup_node(node_handle).as_container().unwrap()
+    }
+
     /// Find the node based on its handle and returns a mutable reference.
     /// Panics if the handle is invalid or unset
     pub fn lookup_node_mut(

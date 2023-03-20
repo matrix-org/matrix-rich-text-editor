@@ -268,8 +268,15 @@ mod sys {
         where
             S: UnicodeString,
         {
+            let attributes = child
+                .attrs
+                .iter()
+                .map(|(k, v)| (k.as_str().into(), v.as_str().into()))
+                .collect();
+
             DomNode::Container(ContainerNode::new_link(
                 child.get_attr("href").unwrap_or("").into(),
+                Some(attributes),
                 Vec::new(),
                 None,
             ))

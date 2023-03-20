@@ -35,14 +35,29 @@ where
     pub fn get_link_action(&self) -> LinkAction<S> {
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
-        for loc in range.locations.iter() {
-            if loc.kind == DomNodeKind::Link {
-                let node = self.state.dom.lookup_node(&loc.node_handle);
-                let link = node.as_container().unwrap().get_link().unwrap();
-                return LinkAction::Edit(link);
+        let mut iter = range
+            .locations
+            .iter()
+            .filter(|loc| loc.kind == DomNodeKind::Link);
+
+        if let Some(first_loc) = iter.next() {
+            let first_link =
+                self.state.dom.lookup_container(&first_loc.node_handle);
+            // If any of the link in the selection is immutable, link actions are disabled.
+            if first_link.is_immutable()
+                || iter.any(|loc| {
+                    self.state
+                        .dom
+                        .lookup_container(&loc.node_handle)
+                        .is_immutable()
+                })
+            {
+                LinkAction::Disabled
+            } else {
+                // Otherwise we edit the first link of the selection.
+                LinkAction::Edit(first_link.get_link().unwrap())
             }
-        }
-        if s == e || self.is_blank_selection(range) {
+        } else if s == e || self.is_blank_selection(range) {
             LinkAction::CreateWithText
         } else {
             LinkAction::Create

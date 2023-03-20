@@ -4,6 +4,7 @@ pub enum LinkAction {
     CreateWithText,
     Create,
     Edit { link: String },
+    Disabled,
 }
 
 impl From<wysiwyg::LinkAction<Utf16String>> for LinkAction {
@@ -14,6 +15,7 @@ impl From<wysiwyg::LinkAction<Utf16String>> for LinkAction {
             wysiwyg::LinkAction::Edit(link) => Self::Edit {
                 link: link.to_string(),
             },
+            wysiwyg::LinkAction::Disabled => Self::Disabled,
         }
     }
 }
