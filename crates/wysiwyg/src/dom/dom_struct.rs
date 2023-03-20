@@ -685,6 +685,8 @@ impl Display for ItemNode {
 
 #[cfg(test)]
 mod test {
+    use std::ffi::FromVecWithNulError;
+
     use widestring::Utf16String;
 
     use crate::dom::nodes::dom_node::DomNode;
@@ -977,6 +979,22 @@ mod test {
         let actual_range = d.find_range(0, 12);
 
         assert_eq!(range_by_node, actual_range);
+    }
+
+    #[test]
+    fn text_node_with_immutable_ancestor() {
+        let d = cm("<a contenteditable=\"false\" href=\"https://matrix.org\">|first</a>").state.dom;
+        let handle = DomHandle::from_raw(vec![0, 0]);
+        let output = d.has_immutable_ancestor(&handle);
+        assert!(output);
+    }
+
+    #[test]
+    fn text_node_without_immutable_ancestor() {
+        let d = cm("<a href=\"https://matrix.org\">|first</a>").state.dom;
+        let handle = DomHandle::from_raw(vec![0, 0]);
+        let output = d.has_immutable_ancestor(&handle);
+        assert!(!output);
     }
 
     #[test]
