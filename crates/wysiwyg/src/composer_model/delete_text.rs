@@ -46,7 +46,7 @@ where
 {
     pub fn backspace(&mut self) -> ComposerUpdate<S> {
         self.push_state_to_history();
-        self.handle_mention();
+        self.handle_non_editable_selection();
 
         let (s, e) = self.safe_selection();
         if s == e {
@@ -95,7 +95,7 @@ where
 
     /// If we have cursor at the edge of or inside a non-editable text node, expand the selection to cover
     /// the whole of that node before continuing with the backspace/deletion flow
-    fn handle_mention(&mut self) {
+    fn handle_non_editable_selection(&mut self) {
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
 
@@ -125,7 +125,7 @@ where
     pub fn delete(&mut self) -> ComposerUpdate<S> {
         self.push_state_to_history();
 
-        self.handle_mention();
+        self.handle_non_editable_selection();
 
         if self.state.start == self.state.end {
             let (s, _) = self.safe_selection();
