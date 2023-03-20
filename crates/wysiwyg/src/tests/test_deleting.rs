@@ -896,7 +896,7 @@ fn backspace_mention_multiple() {
 #[test]
 fn backspace_word_from_edge_of_link() {
     let mut model = cm(
-        "<a contenteditable=\"false\" href=\"https://matrix.org\">test|</a>",
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">two words|</a>",
     );
     model.backspace_word();
     assert_eq!(restore_whitespace(&tx(&model)), "|");
@@ -937,7 +937,7 @@ fn delete_mention_multiple() {
 #[test]
 fn delete_word_from_edge_of_link() {
     let mut model = cm(
-        "<a contenteditable=\"false\" href=\"https://matrix.org\">|test</a>",
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">|two words</a>",
     );
     model.delete_word();
     assert_eq!(restore_whitespace(&tx(&model)), "|");
