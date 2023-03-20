@@ -140,6 +140,7 @@ internal class EditorViewModel(
                 is ComposerLinkAction.Edit -> LinkAction.SetLink(currentLink = it.link)
                 is ComposerLinkAction.Create -> LinkAction.SetLink(currentLink = null)
                 is ComposerLinkAction.CreateWithText -> LinkAction.InsertLink
+                is ComposerLinkAction.Disabled -> null
             }
         }
 
