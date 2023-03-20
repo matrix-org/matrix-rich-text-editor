@@ -67,33 +67,4 @@ public extension NSAttributedString {
         let color = attribute(.backgroundColor, at: index, effectiveRange: nil) as? UIColor
         return color ?? .clear
     }
-
-    /// Computes whether given range or its surroundings contains
-    /// a link that has been replaced with something else (e.g.: a pill)
-    ///
-    /// - Parameter range: the range to lookup
-    /// - Returns: a boolean indicating the result
-    func hasReplacementLinkNear(in range: NSRange) -> Bool {
-        var hasInnerReplacement = false
-        enumerateTypedAttribute(.replacementContent, in: range) { (_: ReplacementContent, _, stop) in
-            hasInnerReplacement = true
-            stop.pointee = true
-        }
-        return hasInnerReplacement
-            || hasAttribute(.replacementContent, at: range.location - 1)
-            || hasAttribute(.replacementContent, at: range.upperBound)
-    }
-}
-
-private extension NSAttributedString {
-    /// Computes whether the attributed string contains given attribute at index.
-    ///
-    /// - Parameters:
-    ///   - attrName: the key for the attribute to test
-    ///   - index: the index to lookup
-    /// - Returns: a boolean indicating the result
-    func hasAttribute(_ attrName: NSAttributedString.Key, at index: Int) -> Bool {
-        guard index >= 0, index < length else { return false }
-        return attribute(attrName, at: index, effectiveRange: nil) != nil
-    }
 }

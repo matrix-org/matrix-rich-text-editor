@@ -14,10 +14,10 @@
 
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::DomNodeKind::Paragraph;
-use crate::dom::nodes::{ContainerNode, DomNode};
+use crate::dom::nodes::DomNode;
 use crate::dom::range::DomLocationPosition;
 use crate::dom::range::DomLocationPosition::Before;
-use crate::dom::{Dom, DomHandle, DomLocation, Range};
+use crate::dom::{DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, ListType, UnicodeString};
 
 impl<S> ComposerModel<S>
@@ -378,13 +378,6 @@ where
     }
 
     fn unindent_handles(&mut self, handles: &Vec<DomHandle>) {
-        /// Helper to get a container node without so many unwraps
-        fn get_container<'a, S: UnicodeString>(
-            dom: &'a Dom<S>,
-            handle: &DomHandle,
-        ) -> &'a ContainerNode<S> {
-            dom.lookup_node(handle).as_container().unwrap()
-        }
         // Pre-checks
         if handles.is_empty() {
             return;
@@ -415,14 +408,19 @@ where
             removed_list_items.insert(0, self.state.dom.remove(handle));
         }
 
-        let list_type = get_container(&self.state.dom, &parent_handle)
+        let list_type = self
+            .state
+            .dom
+            .lookup_container(&parent_handle)
             .get_list_type()
             .unwrap()
             .clone();
-        let remaining_list_child_count =
-            get_container(&self.state.dom, &parent_handle)
-                .children()
-                .len();
+        let remaining_list_child_count = self
+            .state
+            .dom
+            .lookup_container(&parent_handle)
+            .children()
+            .len();
 
         // Remove any remaining ListItems after the removed ones to add them to a new List child.
         // The ListItems before the removed ones will be kept in the same List child.
@@ -435,7 +433,7 @@ where
         }
 
         let list_became_empty =
-            get_container(&self.state.dom, &parent_handle).is_empty();
+            self.state.dom.lookup_container(&parent_handle).is_empty();
         if list_became_empty {
             // If List containing the selected ListItems became empty, remove it
             self.state.dom.remove(&parent_handle);
@@ -477,8 +475,10 @@ where
 
         // Unwrap existing paragraph in the parent ListItem if needed
         {
-            let orig_parent_list_item =
-                get_container(&self.state.dom, &parent_handle.parent_handle());
+            let orig_parent_list_item = self
+                .state
+                .dom
+                .lookup_container(&parent_handle.parent_handle());
             // If only 1 node is left and it's a paragraph, unwrap its children
             if orig_parent_list_item.children().len() == 1
                 && orig_parent_list_item.children()[0].kind() == Paragraph

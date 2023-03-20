@@ -20,10 +20,12 @@ use crate::dom::nodes::{ContainerNode, ContainerNodeKind};
 use crate::dom::range::DomLocationPosition::{After, Before};
 use crate::dom::{DomLocation, Range};
 use crate::menu_state::MenuStateUpdate;
-use crate::ComposerAction::{Indent, OrderedList, Unindent, UnorderedList};
+use crate::ComposerAction::{
+    Indent, Link, OrderedList, Unindent, UnorderedList,
+};
 use crate::{
     ComposerAction, ComposerModel, DomHandle, DomNode, InlineFormatType,
-    ListType, MenuState, UnicodeString,
+    LinkAction, ListType, MenuState, UnicodeString,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -212,6 +214,9 @@ where
         }
         if !self.can_unindent(&top_most_list_locations) {
             disabled_actions.insert(Unindent);
+        }
+        if self.get_link_action() == LinkAction::Disabled {
+            disabled_actions.insert(Link);
         }
         // XOR on inline code in selection & toggled format types.
         // If selection is not a cursor, toggled format types is always

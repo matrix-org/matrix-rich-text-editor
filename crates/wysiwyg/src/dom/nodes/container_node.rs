@@ -320,6 +320,16 @@ where
         matches!(self.kind, ContainerNodeKind::Link(_))
     }
 
+    pub fn is_immutable(&self) -> bool {
+        self.attributes()
+            .unwrap_or(&vec![])
+            .contains(&("contenteditable".into(), "false".into()))
+    }
+
+    pub fn is_immutable_link(&self) -> bool {
+        matches!(self.kind, ContainerNodeKind::Link(_) if self.is_immutable())
+    }
+
     pub fn is_list_item(&self) -> bool {
         matches!(self.kind, ContainerNodeKind::ListItem)
     }
@@ -371,10 +381,15 @@ where
 
     pub fn new_link(
         url: S,
+        attributes: Option<Vec<(S, S)>>,
         children: Vec<DomNode<S>>,
         mention_type: Option<S>,
     ) -> Self {
-        let mut attrs = vec![("href".into(), url.clone())];
+        // FIXME: mention_type could be removed, and the hosting application could just provide attributes
+        // this would allow the Rust code to stay as generic as possible, since it should only care abouy
+        // `contenteditable="false"` to implement custom behaviours for immutable links.
+        let mut attrs =
+            attributes.unwrap_or_else(|| vec![("href".into(), url.clone())]);
         if let Some(m_type) = mention_type {
             // if we have a mention, add attributes to make it non-editable and to track
             // the type of mention we have

@@ -119,7 +119,6 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     }
 
     private var hasPendingFormats = false
-    private var storedLinkActionState: ActionState?
 
     // MARK: - Public
 
@@ -408,7 +407,6 @@ private extension WysiwygComposerViewModel {
         switch update.menuState() {
         case let .update(actionStates: actionStates):
             self.actionStates = actionStates
-            storedLinkActionState = actionStates[.link]
         default:
             break
         }
@@ -420,17 +418,6 @@ private extension WysiwygComposerViewModel {
             suggestionPattern = nil
         case let .suggestion(suggestionPattern: pattern):
             suggestionPattern = pattern
-        }
-
-        disableLinkActionIfNeeded()
-    }
-
-    /// Disable the link action button if we are near a pillified version of a link.
-    func disableLinkActionIfNeeded() {
-        if attributedContent.text.hasReplacementLinkNear(in: attributedContent.selection) {
-            actionStates[.link] = .disabled
-        } else {
-            actionStates[.link] = storedLinkActionState
         }
     }
 
