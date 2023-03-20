@@ -204,7 +204,7 @@ where
     ) -> ComposerUpdate<S> {
         // we could have entered a non-editable node during this run, if this is the
         // case, we handle it by calling the delete method once which will adjust the
-        // selection to cover that node and then remove it, then stop the deletion
+        // selection to cover that node and then remove it, ending the recursive calls
         if self.cursor_is_inside_non_editable_text_node() {
             return self.delete();
         }
