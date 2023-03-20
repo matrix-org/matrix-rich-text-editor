@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::dom::nodes::dom_node::DomNodeKind::ListItem;
+use crate::dom::nodes::dom_node::DomNodeKind::{Link, ListItem};
 use crate::dom::nodes::text_node::CharType;
 use crate::dom::nodes::{DomNode, TextNode};
 use crate::dom::unicode_string::UnicodeStrExt;
@@ -46,8 +46,9 @@ where
 {
     pub fn backspace(&mut self) -> ComposerUpdate<S> {
         self.push_state_to_history();
-        let (s, e) = self.safe_selection();
+        self.handle_non_editable_selection();
 
+        let (s, e) = self.safe_selection();
         if s == e {
             // We have no selection - check for special list behaviour
             // TODO: should probably also get inside here if our selection
@@ -92,9 +93,40 @@ where
         self.do_replace_text_in(S::default(), start, end)
     }
 
+    /// If we have cursor at the edge of or inside a non-editable text node, expand the selection to cover
+    /// the whole of that node before continuing with the backspace/deletion flow
+    fn handle_non_editable_selection(&mut self) {
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+
+        let first_leaf = range.locations.iter().find(|loc| {
+            loc.is_leaf() || (loc.kind.is_block_kind() && loc.is_empty())
+        });
+        if let Some(leaf) = first_leaf {
+            let parent_link_loc =
+                range.deepest_node_of_kind(Link, Some(&leaf.node_handle));
+            if let Some(link) = parent_link_loc {
+                if self
+                    .state
+                    .dom
+                    .lookup_container(&link.node_handle)
+                    .is_immutable_link()
+                {
+                    self.select(
+                        Location::from(link.position),
+                        Location::from(link.position + link.length),
+                    );
+                }
+            }
+        }
+    }
+
     /// Deletes the character after the current cursor position.
     pub fn delete(&mut self) -> ComposerUpdate<S> {
         self.push_state_to_history();
+
+        self.handle_non_editable_selection();
+
         if self.state.start == self.state.end {
             let (s, _) = self.safe_selection();
             // If we're dealing with complex graphemes, this value might not be 1

@@ -449,7 +449,6 @@ describe('mentions', () => {
             const link = screen.getByText('test user');
             expect(link).toBeInTheDocument();
             expect(link).toHaveAttribute('contenteditable', 'false');
-            screen.debug();
             expect(link).toHaveAttribute('data-mention-type');
         },
     );

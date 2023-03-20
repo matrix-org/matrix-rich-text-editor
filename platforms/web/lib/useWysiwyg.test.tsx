@@ -28,7 +28,7 @@ describe('useWysiwyg', () => {
             editor.innerHTML = html + '<br />';
         }
 
-        beforeAll(() => {
+        beforeAll(async () => {
             render(
                 <Editor
                     ref={(node) => {
@@ -37,6 +37,12 @@ describe('useWysiwyg', () => {
                         }
                     }}
                 />,
+            );
+            await waitFor(() =>
+                expect(screen.getByRole('textbox')).toHaveAttribute(
+                    'contenteditable',
+                    'true',
+                ),
             );
         });
 

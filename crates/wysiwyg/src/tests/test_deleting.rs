@@ -860,3 +860,85 @@ fn html_delete_word_for_empty_list_item() {
         "<ol><li>1</li><li>|</li><li>123</li></ol>"
     );
 }
+
+#[test]
+fn backspace_mention_from_edge_of_link() {
+    let mut model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">test|</a>",
+    );
+    model.backspace();
+    assert_eq!(restore_whitespace(&tx(&model)), "|");
+}
+
+#[test]
+fn backspace_mention_from_inside_link() {
+    let mut model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">tes|t</a>",
+    );
+    model.backspace();
+    assert_eq!(restore_whitespace(&tx(&model)), "|");
+}
+
+#[test]
+fn backspace_mention_multiple() {
+    let mut model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">first</a><a contenteditable=\"false\" href=\"https://matrix.org\">second|</a>",
+    );
+    model.backspace();
+    assert_eq!(
+        restore_whitespace(&tx(&model)),
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">first|</a>"
+    );
+    model.backspace();
+    assert_eq!(restore_whitespace(&tx(&model)), "|");
+}
+
+#[test]
+fn backspace_word_from_edge_of_link() {
+    let mut model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">test|</a>",
+    );
+    model.backspace_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "|");
+}
+
+#[test]
+fn delete_mention_from_edge_of_link() {
+    let mut model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">|test</a>",
+    );
+    model.delete();
+    assert_eq!(restore_whitespace(&tx(&model)), "|");
+}
+
+#[test]
+fn delete_mention_from_inside_link() {
+    let mut model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">te|st</a>",
+    );
+    model.delete();
+    assert_eq!(restore_whitespace(&tx(&model)), "|");
+}
+
+#[test]
+fn delete_mention_multiple() {
+    let mut model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">|first</a><a contenteditable=\"false\" href=\"https://matrix.org\">second</a>",
+    );
+    model.backspace();
+    assert_eq!(
+        restore_whitespace(&tx(&model)),
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">|second</a>"
+    );
+    model.backspace();
+    assert_eq!(restore_whitespace(&tx(&model)), "|");
+}
+
+#[test]
+fn delete_word_from_edge_of_link() {
+    let mut model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">|test</a>",
+    );
+    model.delete_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "|");
+}

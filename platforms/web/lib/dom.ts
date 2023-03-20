@@ -156,10 +156,16 @@ export function replaceEditor(
  * need to go to find the requested position.
  *
  * A "codeunit" here means a UTF-16 code unit.
+ *
+ * When first called, currentNode is the editor and rootNode is undefined. On
+ * recursive calls from inside this function, rootNode will be defined and will
+ * be the editor node (which allows us to always select the editor if required
+ * regardless of how deep we have gone into the tree)
  */
 export function computeNodeAndOffset(
     currentNode: Node,
     codeunits: number,
+    rootNode?: Node,
 ): {
     node: Node | null;
     offset: number;
@@ -189,6 +195,27 @@ export function computeNodeAndOffset(
 
         if (codeunits <= (currentNode.textContent?.length || 0)) {
             // we don't need to use that extra offset if we've found the answer
+
+            // special case to handle being inside a non-editable node
+            // such as a mention
+            if (
+                currentNode.parentElement?.getAttribute('contenteditable') ===
+                'false'
+            ) {
+                // setting node to null means if we end up inside or at end of a
+                // non-editable node somehow, we will return "node not found"
+                // and so we will keep searching
+                let node = null;
+
+                // if we hit the beginning of the node, select start of editor
+                // as this appears to be the only way this can occur
+                if (codeunits === 0) {
+                    node = rootNode || currentNode;
+                }
+
+                return { node, offset: 0 };
+            }
+
             return { node: currentNode, offset: codeunits };
         } else {
             // but if we haven't found that answer, apply the extra offset
@@ -231,7 +258,11 @@ export function computeNodeAndOffset(
         }
 
         for (const ch of currentNode.childNodes) {
-            const ret = computeNodeAndOffset(ch, codeunits);
+            const ret = computeNodeAndOffset(
+                ch,
+                codeunits,
+                rootNode || currentNode,
+            );
             if (ret.node) {
                 return { node: ret.node, offset: ret.offset };
             } else {
