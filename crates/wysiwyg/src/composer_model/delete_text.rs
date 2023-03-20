@@ -140,7 +140,10 @@ where
     /// Deletes the character after the current cursor position.
     pub fn delete(&mut self) -> ComposerUpdate<S> {
         self.push_state_to_history();
+        self.do_delete()
+    }
 
+    pub fn do_delete(&mut self) -> ComposerUpdate<S> {
         self.handle_non_editable_selection();
 
         if self.state.start == self.state.end {
@@ -206,7 +209,7 @@ where
         // case, we handle it by calling the delete method once which will adjust the
         // selection to cover that node and then remove it, ending the recursive calls
         if self.cursor_is_inside_non_editable_text_node() {
-            return self.delete();
+            return self.do_delete();
         }
         match self.state.dom.lookup_node_mut(&location.node_handle) {
             // we should never be passed a container
