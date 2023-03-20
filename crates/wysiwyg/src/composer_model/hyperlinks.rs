@@ -40,21 +40,23 @@ where
             .iter()
             .filter(|loc| loc.kind == DomNodeKind::Link);
 
-        if iter.clone().any(|loc| {
-            self.state
-                .dom
-                .lookup_container(&loc.node_handle)
-                .is_immutable()
-        }) {
-            LinkAction::Disabled
-        } else if let Some(loc) = iter.next() {
-            let link = self
-                .state
-                .dom
-                .lookup_container(&loc.node_handle)
-                .get_link()
-                .unwrap();
-            LinkAction::Edit(link)
+        if let Some(first_loc) = iter.next() {
+            let first_link =
+                self.state.dom.lookup_container(&first_loc.node_handle);
+            // If any of the link in the selection is immutable, link actions are disabled.
+            if first_link.is_immutable()
+                || iter.any(|loc| {
+                    self.state
+                        .dom
+                        .lookup_container(&loc.node_handle)
+                        .is_immutable()
+                })
+            {
+                LinkAction::Disabled
+            } else {
+                // Otherwise we edit the first link of the selection.
+                LinkAction::Edit(first_link.get_link().unwrap())
+            }
         } else if s == e || self.is_blank_selection(range) {
             LinkAction::CreateWithText
         } else {
