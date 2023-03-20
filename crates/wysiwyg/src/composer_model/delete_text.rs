@@ -46,32 +46,9 @@ where
 {
     pub fn backspace(&mut self) -> ComposerUpdate<S> {
         self.push_state_to_history();
+        self.handle_mention();
+
         let (s, e) = self.safe_selection();
-
-        // if we're inside a non-editable item, like a mention type link, expand the selection to cover the whole
-        // non-editable item and then allow the backspace flow to continue
-        let range = self.state.dom.find_range(s, e);
-
-        let first_leaf = range.locations.iter().find(|loc| {
-            loc.is_leaf() || (loc.kind.is_block_kind() && loc.is_empty())
-        });
-        if let Some(leaf) = first_leaf {
-            let parent_link_item_loc =
-                range.deepest_node_of_kind(Link, Some(&leaf.node_handle));
-            if let Some(link) = parent_link_item_loc {
-                if (self
-                    .state
-                    .dom
-                    .lookup_container(&link.node_handle)
-                    .is_immutable_link())
-                {
-                    self.state.start = Location::from(link.position);
-                    self.state.end =
-                        Location::from(link.position + link.length);
-                }
-            }
-        }
-
         if s == e {
             // We have no selection - check for special list behaviour
             // TODO: should probably also get inside here if our selection
@@ -116,12 +93,9 @@ where
         self.do_replace_text_in(S::default(), start, end)
     }
 
-    /// Deletes the character after the current cursor position.
-    pub fn delete(&mut self) -> ComposerUpdate<S> {
-        self.push_state_to_history();
-
-        // if we're inside a non-editable item, like a mention type link, expand the selection to cover the whole
-        // non-editable item and then allow the backspace flow to continue
+    /// If we have cursor at the edge of or inside a non-editable text node, expand the selection to cover
+    /// the whole of that node before continuing with the backspace/deletion flow
+    fn handle_mention(&mut self) {
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
 
@@ -132,18 +106,26 @@ where
             let parent_link_item_loc =
                 range.deepest_node_of_kind(Link, Some(&leaf.node_handle));
             if let Some(link) = parent_link_item_loc {
-                if (self
+                if self
                     .state
                     .dom
                     .lookup_container(&link.node_handle)
-                    .is_immutable_link())
+                    .is_immutable_link()
                 {
-                    self.state.start = Location::from(link.position);
-                    self.state.end =
-                        Location::from(link.position + link.length);
+                    self.select(
+                        Location::from(link.position),
+                        Location::from(link.position + link.length),
+                    );
                 }
             }
         }
+    }
+
+    /// Deletes the character after the current cursor position.
+    pub fn delete(&mut self) -> ComposerUpdate<S> {
+        self.push_state_to_history();
+
+        self.handle_mention();
 
         if self.state.start == self.state.end {
             let (s, _) = self.safe_selection();
