@@ -341,6 +341,17 @@ where
             .cloned()
     }
 
+    /// Determine if a node handle has any container ancestors with the attribute contenteditable=false
+    pub fn has_immutable_ancestor(&self, child_handle: &DomHandle) -> bool {
+        child_handle.with_ancestors().iter().rev().any(|handle| {
+            if let DomNode::Container(n) = self.lookup_node(handle) {
+                n.is_immutable()
+            } else {
+                false
+            }
+        })
+    }
+
     /// Find the node based on its handle.
     /// Panics if the handle is unset or invalid
     pub fn lookup_node(&self, node_handle: &DomHandle) -> &DomNode<S> {
