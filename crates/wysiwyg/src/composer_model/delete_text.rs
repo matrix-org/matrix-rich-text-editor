@@ -103,9 +103,9 @@ where
             loc.is_leaf() || (loc.kind.is_block_kind() && loc.is_empty())
         });
         if let Some(leaf) = first_leaf {
-            let parent_link_item_loc =
+            let parent_link_loc =
                 range.deepest_node_of_kind(Link, Some(&leaf.node_handle));
-            if let Some(link) = parent_link_item_loc {
+            if let Some(link) = parent_link_loc {
                 if self
                     .state
                     .dom
