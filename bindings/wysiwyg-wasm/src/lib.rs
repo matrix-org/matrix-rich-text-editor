@@ -288,7 +288,7 @@ impl ComposerModel {
         link: &str,
         text: &str,
         suggestion: SuggestionPattern,
-        attributes: Option<Vec<(S, S)>>,
+        attributes: Option<Vec<(&str, &str)>>,
     ) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.set_link_suggestion(
             Utf16String::from_str(link),

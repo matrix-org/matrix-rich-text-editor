@@ -232,6 +232,7 @@ impl ComposerModel {
         link: String,
         text: String,
         suggestion: SuggestionPattern,
+        attributes: Option<Vec<(Utf16String, Utf16String)>>,
     ) -> Arc<ComposerUpdate> {
         let link = Utf16String::from_str(&link);
         let text = Utf16String::from_str(&text);
@@ -240,7 +241,7 @@ impl ComposerModel {
             self.inner
                 .lock()
                 .unwrap()
-                .set_link_suggestion(link, text, suggestion),
+                .set_link_suggestion(link, text, suggestion, attributes),
         ))
     }
 
