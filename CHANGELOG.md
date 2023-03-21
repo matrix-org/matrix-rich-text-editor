@@ -1,5 +1,19 @@
 # Changelog
 
+# [1.4.0] - 2023-03-21
+
+### Changed
+
+- Common: Enable link attribute parsing
+- Common: Link button disabling logic exists for immutable links
+- Common: Backspace/delete behaviour now handles immutable links
+- iOS: swift-tools-version bump from 5.6 to 5.7
+- Web: selection logic now handles immutable links
+
+### Fixed
+
+- Android: Fix build for disabled link action
+
 # [1.3.0] - 2023-03-17
 
 ### Changed
