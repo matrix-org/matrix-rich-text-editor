@@ -69,7 +69,7 @@ where
         link: S,
         text: S,
         suggestion: SuggestionPattern,
-        attributes: Option<Vec<(S, S)>>,
+        attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
         self.do_replace_text_in(S::default(), suggestion.start, suggestion.end);
         self.state.start = Location::from(suggestion.start);
@@ -104,7 +104,7 @@ where
         &mut self,
         link: S,
         text: S,
-        attributes: Option<Vec<(S, S)>>,
+        attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
         let (s, _) = self.safe_selection();
         self.push_state_to_history();
@@ -120,14 +120,14 @@ where
 
         let range = self.state.dom.find_range(s, e);
 
-        self.set_link_in_range(link, range, None)
+        self.set_link_in_range(link, range, vec![])
     }
 
     fn set_link_in_range(
         &mut self,
         mut link: S,
         range: Range,
-        attributes: Option<Vec<(S, S)>>,
+        attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
         self.add_http_scheme(&mut link);
 
