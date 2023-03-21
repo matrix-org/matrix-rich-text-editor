@@ -9,11 +9,6 @@
 - Common: Backspace/delete behaviour now handles immutable links
 - iOS: Swift-tools-version bump from 5.6 to 5.7
 - Web: Selection logic now handles immutable links
-
-### Fixed
-
-- Android: Fix build for disabled link action
-
 # [1.3.0] - 2023-03-17
 
 ### Changed
