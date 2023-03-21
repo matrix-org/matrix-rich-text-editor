@@ -93,6 +93,22 @@ where
         self.do_replace_text_in(S::default(), start, end)
     }
 
+    /// To handle mentions we need to be able to check if a text node has a non-editable ancestor
+    fn cursor_is_inside_non_editable_text_node(&mut self) -> bool {
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+
+        let first_leaf = range.locations.iter().find(|loc| {
+            loc.is_leaf() || (loc.kind.is_block_kind() && loc.is_empty())
+        });
+
+        if let Some(leaf) = first_leaf {
+            self.state.dom.has_immutable_ancestor(&leaf.node_handle)
+        } else {
+            false
+        }
+    }
+
     /// If we have cursor at the edge of or inside a non-editable text node, expand the selection to cover
     /// the whole of that node before continuing with the backspace/deletion flow
     fn handle_non_editable_selection(&mut self) {
@@ -124,7 +140,10 @@ where
     /// Deletes the character after the current cursor position.
     pub fn delete(&mut self) -> ComposerUpdate<S> {
         self.push_state_to_history();
+        self.do_delete()
+    }
 
+    pub fn do_delete(&mut self) -> ComposerUpdate<S> {
         self.handle_non_editable_selection();
 
         if self.state.start == self.state.end {
@@ -186,6 +205,12 @@ where
         direction: Direction,
         location: DomLocation,
     ) -> ComposerUpdate<S> {
+        // we could have entered a non-editable node during this run, if this is the
+        // case, we handle it by calling the delete method once which will adjust the
+        // selection to cover that node and then remove it, ending the recursive calls
+        if self.cursor_is_inside_non_editable_text_node() {
+            return self.do_delete();
+        }
         match self.state.dom.lookup_node_mut(&location.node_handle) {
             // we should never be passed a container
             DomNode::Container(_) => ComposerUpdate::keep(),

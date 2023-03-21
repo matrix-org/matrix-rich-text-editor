@@ -341,6 +341,17 @@ where
             .cloned()
     }
 
+    /// Determine if a node handle has any container ancestors with the attribute contenteditable=false
+    pub fn has_immutable_ancestor(&self, child_handle: &DomHandle) -> bool {
+        child_handle.with_ancestors().iter().rev().any(|handle| {
+            if let DomNode::Container(n) = self.lookup_node(handle) {
+                n.is_immutable()
+            } else {
+                false
+            }
+        })
+    }
+
     /// Find the node based on its handle.
     /// Panics if the handle is unset or invalid
     pub fn lookup_node(&self, node_handle: &DomHandle) -> &DomNode<S> {
@@ -674,6 +685,8 @@ impl Display for ItemNode {
 
 #[cfg(test)]
 mod test {
+    use std::ffi::FromVecWithNulError;
+
     use widestring::Utf16String;
 
     use crate::dom::nodes::dom_node::DomNode;
@@ -966,6 +979,22 @@ mod test {
         let actual_range = d.find_range(0, 12);
 
         assert_eq!(range_by_node, actual_range);
+    }
+
+    #[test]
+    fn text_node_with_immutable_ancestor() {
+        let d = cm("<a contenteditable=\"false\" href=\"https://matrix.org\">|first</a>").state.dom;
+        let handle = DomHandle::from_raw(vec![0, 0]);
+        let output = d.has_immutable_ancestor(&handle);
+        assert!(output);
+    }
+
+    #[test]
+    fn text_node_without_immutable_ancestor() {
+        let d = cm("<a href=\"https://matrix.org\">|first</a>").state.dom;
+        let handle = DomHandle::from_raw(vec![0, 0]);
+        let output = d.has_immutable_ancestor(&handle);
+        assert!(!output);
     }
 
     #[test]
