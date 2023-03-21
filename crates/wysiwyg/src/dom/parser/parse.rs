@@ -276,9 +276,8 @@ mod sys {
 
             DomNode::Container(ContainerNode::new_link(
                 child.get_attr("href").unwrap_or("").into(),
-                Some(attributes),
                 Vec::new(),
-                None,
+                Some(attributes),
             ))
         }
 

@@ -213,7 +213,7 @@ where
             // Create a new link node containing the passed range
             let inserted = self.state.dom.insert_parent(
                 &range,
-                DomNode::new_link(link.clone(), vec![], attributes),
+                DomNode::new_link(link.clone(), vec![], attributes.clone()),
             );
             // Remove any child links inside it
             self.delete_child_links(&inserted);

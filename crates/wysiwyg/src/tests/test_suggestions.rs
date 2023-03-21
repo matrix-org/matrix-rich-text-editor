@@ -38,6 +38,7 @@ fn test_set_link_suggestion() {
         "https://matrix.to/#/@alice:matrix.org".into(),
         "Alice".into(),
         suggestion,
+        None,
     );
     assert_eq!(
         tx(&model),
