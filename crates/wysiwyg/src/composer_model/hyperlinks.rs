@@ -69,11 +69,12 @@ where
         link: S,
         text: S,
         suggestion: SuggestionPattern,
+        attributes: Option<Vec<(S, S)>>,
     ) -> ComposerUpdate<S> {
         self.do_replace_text_in(S::default(), suggestion.start, suggestion.end);
         self.state.start = Location::from(suggestion.start);
         self.state.end = self.state.start;
-        self.set_link_with_text(link, text, Some(suggestion));
+        self.set_link_with_text(link, text, attributes);
         self.do_replace_text(" ".into())
     }
 
@@ -103,26 +104,14 @@ where
         &mut self,
         link: S,
         text: S,
-        suggestion: Option<SuggestionPattern>,
+        attributes: Option<Vec<(S, S)>>,
     ) -> ComposerUpdate<S> {
         let (s, _) = self.safe_selection();
         self.push_state_to_history();
         self.do_replace_text(text.clone());
         let e = s + text.len();
         let range = self.state.dom.find_range(s, e);
-
-        // TODO instead of inferring the type from the suggestion, change the initial function
-        // call from the client to pass in the mention type when creating the link
-        let mention_type: Option<S> = match suggestion {
-            Some(_sug) => match _sug.key {
-                crate::PatternKey::At => Some("user".into()),
-                crate::PatternKey::Hash => Some("room".into()),
-                crate::PatternKey::Slash => None,
-            },
-            None => None,
-        };
-
-        self.set_link_in_range(link, range, mention_type)
+        self.set_link_in_range(link, range, attributes)
     }
 
     pub fn set_link(&mut self, link: S) -> ComposerUpdate<S> {
@@ -138,7 +127,7 @@ where
         &mut self,
         mut link: S,
         range: Range,
-        mention_type: Option<S>,
+        attributes: Option<Vec<(S, S)>>,
     ) -> ComposerUpdate<S> {
         self.add_http_scheme(&mut link);
 
@@ -224,7 +213,7 @@ where
             // Create a new link node containing the passed range
             let inserted = self.state.dom.insert_parent(
                 &range,
-                DomNode::new_link(link.clone(), vec![], mention_type.clone()),
+                DomNode::new_link(link.clone(), vec![], attributes),
             );
             // Remove any child links inside it
             self.delete_child_links(&inserted);
