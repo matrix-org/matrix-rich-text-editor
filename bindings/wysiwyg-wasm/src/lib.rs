@@ -288,11 +288,13 @@ impl ComposerModel {
         link: &str,
         text: &str,
         suggestion: SuggestionPattern,
+        attributes: Option<Vec<(S, S)>>,
     ) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.set_link_suggestion(
             Utf16String::from_str(link),
             Utf16String::from_str(text),
             wysiwyg::SuggestionPattern::from(suggestion),
+            attributes,
         ))
     }
 
