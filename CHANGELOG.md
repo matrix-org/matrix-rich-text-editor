@@ -7,8 +7,8 @@
 - Common: Enable link attribute parsing
 - Common: Link button disabling logic exists for immutable links
 - Common: Backspace/delete behaviour now handles immutable links
-- iOS: swift-tools-version bump from 5.6 to 5.7
-- Web: selection logic now handles immutable links
+- iOS: Swift-tools-version bump from 5.6 to 5.7
+- Web: Selection logic now handles immutable links
 
 ### Fixed
 
