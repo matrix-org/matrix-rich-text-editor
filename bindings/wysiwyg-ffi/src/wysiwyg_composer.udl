@@ -46,7 +46,7 @@ interface ComposerModel {
     ComposerUpdate unindent();
     ComposerUpdate set_link(string link);
     ComposerUpdate set_link_with_text(string link, string text);
-    ComposerUpdate set_link_suggestion(string link, string text, SuggestionPattern suggestion);
+    ComposerUpdate set_link_suggestion(string link, string text, SuggestionPattern suggestion, sequence<Attribute> attributes);
     ComposerUpdate remove_links();
     ComposerUpdate code_block();
     ComposerUpdate quote();
@@ -56,6 +56,11 @@ interface ComposerModel {
     ComposerState get_current_dom_state();
     record<ComposerAction, ActionState> action_states();
     LinkAction get_link_action();
+};
+
+dictionary Attribute {
+    string key;
+    string value;
 };
 
 interface ComposerUpdate {

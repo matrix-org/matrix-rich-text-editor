@@ -32,6 +32,7 @@ use std::sync::Arc;
 
 pub use crate::ffi_action_state::ActionState;
 pub use crate::ffi_composer_action::ComposerAction;
+pub use crate::ffi_composer_model::Attribute;
 pub use crate::ffi_composer_model::ComposerModel;
 pub use crate::ffi_composer_state::ComposerState;
 pub use crate::ffi_composer_update::ComposerUpdate;

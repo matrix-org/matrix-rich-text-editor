@@ -75,6 +75,23 @@ impl IntoFfi for &HashMap<wysiwyg::ComposerAction, wysiwyg::ActionState> {
     }
 }
 
+trait ToUtf16TupleVec {
+    fn into_vec(self) -> Vec<(Utf16String, Utf16String)>;
+}
+
+impl ToUtf16TupleVec for js_sys::Map {
+    fn into_vec(self) -> Vec<(Utf16String, Utf16String)> {
+        let mut vec = vec![];
+        self.for_each(&mut |value, key| {
+            vec.push((
+                Utf16String::from_str(&key.as_string().unwrap()),
+                Utf16String::from_str(&value.as_string().unwrap()),
+            ));
+        });
+        vec
+    }
+}
+
 #[wasm_bindgen]
 #[derive(Default)]
 pub struct ComposerModel {
@@ -279,7 +296,7 @@ impl ComposerModel {
         ComposerUpdate::from(self.inner.set_link_with_text(
             Utf16String::from_str(link),
             Utf16String::from_str(text),
-            None,
+            vec![],
         ))
     }
 
@@ -288,13 +305,13 @@ impl ComposerModel {
         link: &str,
         text: &str,
         suggestion: SuggestionPattern,
-        attributes: Option<Vec<(&str, &str)>>,
+        attributes: js_sys::Map,
     ) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.set_link_suggestion(
             Utf16String::from_str(link),
             Utf16String::from_str(text),
             wysiwyg::SuggestionPattern::from(suggestion),
-            attributes,
+            attributes.into_vec(),
         ))
     }
 

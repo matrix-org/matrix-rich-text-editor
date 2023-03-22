@@ -135,7 +135,7 @@ mod test {
             "https://matrix.to/#/@alice:matrix.org".into(),
             "Alice".into(),
             suggestion_pattern,
-            None,
+            vec![],
         );
         assert_eq!(
             model.get_content_as_html(),
