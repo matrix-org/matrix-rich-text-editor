@@ -223,7 +223,7 @@ impl ComposerModel {
             self.inner
                 .lock()
                 .unwrap()
-                .set_link_with_text(link, text, None),
+                .set_link_with_text(link, text, vec![]),
         ))
     }
 
@@ -232,16 +232,25 @@ impl ComposerModel {
         link: String,
         text: String,
         suggestion: SuggestionPattern,
-        attributes: Option<Vec<(Utf16String, Utf16String)>>,
+        attributes: Vec<Attribute>,
     ) -> Arc<ComposerUpdate> {
         let link = Utf16String::from_str(&link);
         let text = Utf16String::from_str(&text);
         let suggestion = wysiwyg::SuggestionPattern::from(suggestion);
+        let attrs = attributes
+            .iter()
+            .map(|attr| {
+                (
+                    Utf16String::from_str(&attr.key),
+                    Utf16String::from_str(&attr.value),
+                )
+            })
+            .collect();
         Arc::new(ComposerUpdate::from(
             self.inner
                 .lock()
                 .unwrap()
-                .set_link_suggestion(link, text, suggestion, attributes),
+                .set_link_suggestion(link, text, suggestion, attrs),
         ))
     }
 
@@ -296,4 +305,9 @@ impl ComposerModel {
     pub fn debug_panic(self: &Arc<Self>) {
         panic!("This should only happen in tests.");
     }
+}
+
+pub struct Attribute {
+    pub key: String,
+    pub value: String,
 }
