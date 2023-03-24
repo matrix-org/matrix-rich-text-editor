@@ -73,14 +73,14 @@ export function processInput(
         case 'insertSuggestion': {
             if (suggestion && isSuggestionEvent(event)) {
                 const { text, link } = event.data;
-                const map = new Map();
-                map.set('data-avatar-url', 'something');
+                const defaultMap = new Map();
+                defaultMap.set('contenteditable', 'false');
                 return action(
                     composerModel.set_link_suggestion(
                         link,
                         text,
                         suggestion,
-                        map,
+                        defaultMap,
                     ),
                     'set_link_suggestion',
                 );
