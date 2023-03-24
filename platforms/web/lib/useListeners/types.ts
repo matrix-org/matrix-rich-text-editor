@@ -26,7 +26,9 @@ export type LinkEvent = Omit<InputEvent, 'data'> & {
     data: { link: string; text?: string };
 };
 
+export type Attributes = Record<string, string>;
+
 export type SuggestionEvent = Omit<InputEvent, 'data'> & {
     inputType: 'insertSuggestion';
-    data: { link: string; text: string; attributes?: Record<string, string> };
+    data: { link: string; text: string; attributes: Attributes };
 };

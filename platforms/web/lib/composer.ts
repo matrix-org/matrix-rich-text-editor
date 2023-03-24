@@ -72,7 +72,7 @@ export function processInput(
     switch (event.inputType) {
         case 'insertSuggestion': {
             if (suggestion && isSuggestionEvent(event)) {
-                const { text, link } = event.data;
+                const { text, link, attributes } = event.data;
                 const defaultMap = new Map();
                 defaultMap.set('contenteditable', 'false');
                 return action(

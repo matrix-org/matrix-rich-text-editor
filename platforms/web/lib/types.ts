@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import { ACTION_TYPES, SUGGESTIONS } from './constants';
-import { LinkEvent } from './useListeners/types';
+import { Attributes, LinkEvent } from './useListeners/types';
 
 export type BlockType = InputEvent['inputType'] | 'formatInlineCode' | 'clear';
 
@@ -41,11 +41,7 @@ export type FormattingFunctions = Record<
 > & {
     insertText: (text: string) => void;
     link: (link: string, text?: string) => void;
-    mention: (
-        link: string,
-        text: string,
-        attributes: Record<string, string>,
-    ) => void;
+    mention: (link: string, text: string, attributes: Attributes) => void;
     command: (text: string) => void;
     removeLinks: () => void;
     getLink: () => string;
