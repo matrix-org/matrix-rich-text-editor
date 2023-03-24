@@ -733,7 +733,7 @@ mod js {
                                 .unwrap_or_default()
                                 .into(),
                             self.convert(node.child_nodes())?.take_children(),
-                            None,
+                            vec![],
                         ));
                         self.current_path.pop();
                     }
