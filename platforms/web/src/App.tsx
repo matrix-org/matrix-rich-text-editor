@@ -194,6 +194,7 @@ function App() {
                                     wysiwyg.mention(
                                         'https://matrix.to/#/@alice_user:element.io',
                                         'Alice',
+                                        { something: 'funny' },
                                     )
                                 }
                             >

@@ -75,6 +75,9 @@ export function processInput(
                 const { text, link, attributes } = event.data;
                 const defaultMap = new Map();
                 defaultMap.set('contenteditable', 'false');
+                Object.entries(attributes).forEach(([key, value]) => {
+                    defaultMap.set(key, value);
+                });
                 return action(
                     composerModel.set_link_suggestion(
                         link,
