@@ -27,11 +27,13 @@ export type LinkEvent = Omit<InputEvent, 'data'> & {
     data: { link: string; text?: string };
 };
 
-type AnchorHTMLAttribute<T> = T extends keyof HTMLAttributes<HTMLAnchorElement>
-    ? T
-    : never;
+type AnchorElementAttributes =
+    | keyof HTMLAttributes<HTMLAnchorElement>
+    | `data-${string}`;
 
-export type Attributes = Record<AnchorHTMLAttribute<string>, string>;
+export type Attributes = {
+    [K in AnchorElementAttributes]?: string;
+};
 
 export type SuggestionEvent = Omit<InputEvent, 'data'> & {
     inputType: 'insertSuggestion';
