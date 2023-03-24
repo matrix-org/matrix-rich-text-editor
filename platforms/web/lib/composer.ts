@@ -73,8 +73,15 @@ export function processInput(
         case 'insertSuggestion': {
             if (suggestion && isSuggestionEvent(event)) {
                 const { text, link } = event.data;
+                const map = new Map();
+                map.set('data-avatar-url', 'something');
                 return action(
-                    composerModel.set_link_suggestion(link, text, suggestion),
+                    composerModel.set_link_suggestion(
+                        link,
+                        text,
+                        suggestion,
+                        map,
+                    ),
                     'set_link_suggestion',
                 );
             }
