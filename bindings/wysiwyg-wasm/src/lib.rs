@@ -291,8 +291,6 @@ impl ComposerModel {
         start: u32,
         end: u32,
         text_to_replace: &str,
-        // suggestion: SuggestionPattern, // key, start, end, text (nb different to above, this
-        // refers to the text being replaced
     ) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.set_link_suggestion(
             Utf16String::from_str(link),
