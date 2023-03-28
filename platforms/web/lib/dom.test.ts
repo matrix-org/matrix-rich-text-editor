@@ -1004,5 +1004,3 @@ function selectionOutsideEditor(
     selection?.setBaseAndExtent(targetElement, 0, targetElement, 0);
     return selection;
 }
-
-// comment
