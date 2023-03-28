@@ -113,10 +113,12 @@ where
     /// the whole of that node before continuing with the backspace/deletion flow
     fn handle_non_editable_selection(&mut self, direction: &Direction) {
         let (s, e) = self.safe_selection();
-        let range = if direction == &Direction::Backwards {
-            self.state.dom.find_range(s, e)
-        } else {
-            self.state.dom.find_range(s, e + 1)
+
+        // when deleting (ie going "forwards"), to include the relevant leaf node we need to
+        // add one to the end of the range to make sure we can find it
+        let range = match direction {
+            Direction::Forwards => self.state.dom.find_range(s, e + 1),
+            Direction::Backwards => self.state.dom.find_range(s, e),
         };
 
         let first_leaf = range.locations.iter().find(|loc| {
