@@ -56,9 +56,9 @@ export default defineConfig({
         },
         reporters: ['default', 'vitest-sonar-reporter'],
         outputFile: 'coverage/sonar-report.xml',
-        // onConsoleLog: (log) => {
-        //     if (log.includes('wasm')) return false;
-        // },
+        onConsoleLog: (log) => {
+            if (log.includes('wasm')) return false;
+        },
     },
     build: {
         lib: {
