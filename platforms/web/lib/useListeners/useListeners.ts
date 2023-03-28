@@ -56,10 +56,6 @@ export function useListeners(
     const [areListenersReady, setAreListenersReady] = useState(false);
 
     useEffect(() => {
-        console.log(state.suggestion);
-    }, [state.suggestion]);
-
-    useEffect(() => {
         if (composerModel) {
             setState({
                 content: composerModel.get_content_as_html(),
