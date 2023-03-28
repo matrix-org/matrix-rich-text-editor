@@ -74,7 +74,14 @@ export function processInput(
             if (suggestion && isSuggestionEvent(event)) {
                 const { text, link } = event.data;
                 return action(
-                    composerModel.set_link_suggestion(link, text, suggestion),
+                    composerModel.set_link_suggestion(
+                        link,
+                        text,
+                        suggestion.key,
+                        suggestion.start,
+                        suggestion.end,
+                        suggestion.text,
+                    ),
                     'set_link_suggestion',
                 );
             }
