@@ -215,6 +215,9 @@ where
         // case, we handle it by calling the relecant method once which will adjust the
         // selection to cover that node and then remove it, ending the recursive calls
         if self.cursor_is_inside_non_editable_text_node() {
+            // TODO fix the divergence in behaviour between delete and backspace.
+            // `do_delete` was recently added and there's some work needed to make
+            // backspace and delete be equivalent, as well as the do_* functions
             return match direction {
                 Direction::Forwards => self.do_delete(),
                 Direction::Backwards => self.backspace(),
