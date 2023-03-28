@@ -287,12 +287,22 @@ impl ComposerModel {
         &mut self,
         link: &str,
         text: &str,
-        suggestion: SuggestionPattern,
+        key: PatternKey,
+        start: u32,
+        end: u32,
+        text_to_replace: &str,
+        // suggestion: SuggestionPattern, // key, start, end, text (nb different to above, this
+        // refers to the text being replaced
     ) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.set_link_suggestion(
             Utf16String::from_str(link),
             Utf16String::from_str(text),
-            wysiwyg::SuggestionPattern::from(suggestion),
+            wysiwyg::SuggestionPattern::from(SuggestionPattern {
+                key,
+                start,
+                end,
+                text: Utf16String::from_str(text_to_replace).to_string(),
+            }),
         ))
     }
 
