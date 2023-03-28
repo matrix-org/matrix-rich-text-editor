@@ -90,6 +90,8 @@ export function processInput(
         case 'insertCommand': {
             if (suggestion && event.data) {
                 return action(
+                    // TODO switch from object argument to value arguments as in
+                    // set_link_suggestion above
                     composerModel.replace_text_suggestion(
                         event.data,
                         suggestion,

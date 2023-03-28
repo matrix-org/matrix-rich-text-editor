@@ -156,6 +156,8 @@ impl ComposerModel {
         )
     }
 
+    // TODO may need to convert this from an object argument to value arguments
+    // to avoid memory management issues as per set_link_suggestion
     pub fn replace_text_suggestion(
         &mut self,
         new_text: &str,
