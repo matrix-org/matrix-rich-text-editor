@@ -921,17 +921,29 @@ fn delete_mention_from_inside_link() {
 }
 
 #[test]
-fn delete_mention_multiple() {
+fn delete_first_mention_of_multiple() {
     let mut model = cm(
         "<a contenteditable=\"false\" href=\"https://matrix.org\">|first</a><a contenteditable=\"false\" href=\"https://matrix.org\">second</a>",
     );
-    model.backspace();
+    model.delete();
     assert_eq!(
         restore_whitespace(&tx(&model)),
         "<a contenteditable=\"false\" href=\"https://matrix.org\">|second</a>"
     );
-    model.backspace();
+    model.delete();
     assert_eq!(restore_whitespace(&tx(&model)), "|");
+}
+
+#[test]
+fn delete_second_mention_of_multiple() {
+    let mut model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">first</a> <a contenteditable=\"false\" href=\"https://matrix.org\">|second</a>",
+    );
+    model.delete();
+    assert_eq!(
+        restore_whitespace(&tx(&model)),
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">first</a> |"
+    );
 }
 
 #[test]
