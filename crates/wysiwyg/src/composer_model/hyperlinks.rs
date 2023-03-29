@@ -69,8 +69,10 @@ where
         link: S,
         text: S,
         suggestion: SuggestionPattern,
-        attributes: Vec<(S, S)>,
+        mut attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
+        // when setting a suggestion, manually add contenteditable="false"
+        attributes.push(("contenteditable".into(), "false".into()));
         self.do_replace_text_in(S::default(), suggestion.start, suggestion.end);
         self.state.start = Location::from(suggestion.start);
         self.state.end = self.state.start;
