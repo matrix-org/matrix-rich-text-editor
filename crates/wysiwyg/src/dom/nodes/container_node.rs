@@ -387,8 +387,8 @@ where
         // Hosting application may provide attributes but always provides url, this
         // allows the Rust code to stay as generic as possible, since it should only care about
         // `contenteditable="false"` to implement custom behaviours for immutable links.
-        let mut attrs = attributes.clone();
-        attrs.push(("href".into(), url.clone())); // don't clone here
+        let mut attrs = attributes;
+        attrs.push(("href".into(), url.clone()));
 
         Self {
             name: "a".into(),
