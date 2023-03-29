@@ -304,13 +304,13 @@ impl ComposerModel {
         &mut self,
         link: &str,
         text: &str,
-        suggestion: SuggestionPattern,
+        suggestion: &SuggestionPattern,
         attributes: js_sys::Map,
     ) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.set_link_suggestion(
             Utf16String::from_str(link),
             Utf16String::from_str(text),
-            wysiwyg::SuggestionPattern::from(suggestion),
+            wysiwyg::SuggestionPattern::from(suggestion.clone()),
             attributes.into_vec(),
         ))
     }
