@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import { HTMLAttributes } from 'react';
+
 import { BlockType } from '../types';
 
 export type FormatBlockEvent = CustomEvent<{
