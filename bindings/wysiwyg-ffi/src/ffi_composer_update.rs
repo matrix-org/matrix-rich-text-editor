@@ -31,8 +31,8 @@ mod test {
     use std::{collections::HashMap, sync::Arc};
 
     use crate::{
-        ActionState, ComposerAction, ComposerModel, MenuAction, MenuState,
-        SuggestionPattern,
+        ActionState, Attribute, ComposerAction, ComposerModel, MenuAction,
+        MenuState, SuggestionPattern,
     };
 
     #[test]
@@ -135,7 +135,16 @@ mod test {
             "https://matrix.to/#/@alice:matrix.org".into(),
             "Alice".into(),
             suggestion_pattern,
-            vec![],
+            vec![
+                Attribute {
+                    key: "contenteditable".into(),
+                    value: "false".into(),
+                },
+                Attribute {
+                    key: "data-mention-type".into(),
+                    value: "user".into(),
+                },
+            ],
         );
         assert_eq!(
             model.get_content_as_html(),
