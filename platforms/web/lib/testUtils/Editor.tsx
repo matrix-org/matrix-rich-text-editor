@@ -121,6 +121,7 @@ export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
                     wysiwyg.mention(
                         'https://matrix.to/#/@test_user:element.io',
                         'test user',
+                        { 'data-mention-type': 'user' },
                     );
                 }}
             >
