@@ -271,6 +271,7 @@ mod sys {
             let attributes = child
                 .attrs
                 .iter()
+                .filter(|(k, _)| k != &String::from("href"))
                 .map(|(k, v)| (k.as_str().into(), v.as_str().into()))
                 .collect();
 
