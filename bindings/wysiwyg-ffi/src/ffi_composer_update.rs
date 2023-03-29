@@ -31,8 +31,8 @@ mod test {
     use std::{collections::HashMap, sync::Arc};
 
     use crate::{
-        ActionState, ComposerAction, ComposerModel, MenuAction, MenuState,
-        SuggestionPattern,
+        ActionState, Attribute, ComposerAction, ComposerModel, MenuAction,
+        MenuState, SuggestionPattern,
     };
 
     #[test]
@@ -139,7 +139,39 @@ mod test {
         );
         assert_eq!(
             model.get_content_as_html(),
-            "<a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\" data-mention-type=\"user\">Alice</a>\u{a0}",
+            "<a contenteditable=\"false\" href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>\u{a0}",
+        )
+    }
+
+    #[test]
+    fn test_set_link_suggestion_with_attributes_ffi() {
+        let model = Arc::new(ComposerModel::new());
+        let update = model.replace_text("@alic".into());
+
+        let MenuAction::Suggestion { suggestion_pattern } =
+            update.menu_action() else
+        {
+            panic!("No suggestion found");
+        };
+
+        model.set_link_suggestion(
+            "https://matrix.to/#/@alice:matrix.org".into(),
+            "Alice".into(),
+            suggestion_pattern,
+            vec![
+                Attribute {
+                    key: "data-mention-type".into(),
+                    value: "user".into(),
+                },
+                Attribute {
+                    key: "a_key".into(),
+                    value: "a_value".into(),
+                },
+            ],
+        );
+        assert_eq!(
+            model.get_content_as_html(),
+            "<a data-mention-type=\"user\" a_key=\"a_value\" contenteditable=\"false\" href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>\u{a0}",
         )
     }
 
