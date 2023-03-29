@@ -194,7 +194,12 @@ function App() {
                                     wysiwyg.mention(
                                         'https://matrix.to/#/@alice_user:element.io',
                                         'Alice',
-                                        { 'data-something': 'hello' },
+                                        {
+                                            'data-mention-type':
+                                                suggestion.keyChar === '@'
+                                                    ? 'user'
+                                                    : 'room',
+                                        },
                                     )
                                 }
                             >
