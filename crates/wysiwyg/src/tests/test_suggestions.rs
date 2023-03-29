@@ -38,10 +38,10 @@ fn test_set_link_suggestion() {
         "https://matrix.to/#/@alice:matrix.org".into(),
         "Alice".into(),
         suggestion,
-        vec![],
+        vec![("data-mention-type".into(), "user".into())],
     );
     assert_eq!(
         tx(&model),
-        "<a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\" data-mention-type=\"user\">Alice</a>&nbsp;|",
+        "<a data-mention-type=\"user\" contenteditable=\"false\" href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>&nbsp;|",
     );
 }
