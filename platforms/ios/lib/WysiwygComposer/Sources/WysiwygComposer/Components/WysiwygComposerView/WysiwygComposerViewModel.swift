@@ -227,10 +227,10 @@ public extension WysiwygComposerViewModel {
     ///   - link: The link to the user.
     ///   - name: The display name of the user.
     ///   - key: The pattern key to use.
-    func setMention(link: String, name: String, key: PatternKey) {
+    func setMention(link: String, name: String, mentionType: WysiwygMentionType) {
         let update: ComposerUpdate
-        if let suggestionPattern, suggestionPattern.key == key {
-            update = model.setLinkSuggestion(link: link, text: name, suggestion: suggestionPattern)
+        if let suggestionPattern, suggestionPattern.key == mentionType.patternKey {
+            update = model.setLinkSuggestion(link: link, text: name, suggestion: suggestionPattern, mentionType: mentionType)
         } else {
             _ = model.setLinkWithText(link: link, text: name)
             // FIXME: remove this if Rust adds this space for free
