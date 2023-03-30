@@ -538,6 +538,13 @@ function isNodeRequiringExtraOffset(node: Node) {
     // note this isn't simply a block node, we need to ensure that for lists we
     // do not add an extra offset for the ol/ul tag, only for the list items
     // themselves
+
+    // with the paragraph refactor, we could end up in a situation where we have
+    // a p tag containing formatted text next to a list, so if this is the case,
+    // we do want to add an extra offset _if_ the list has any children
+    if (node.nodeName === 'UL' || node.nodeName === 'OL') {
+        return node.hasChildNodes();
+    }
     return EXTRA_OFFSET_NODE_NAMES.includes(node.nodeName || '');
 }
 
