@@ -527,24 +527,18 @@ export function textNodeNeedsExtraOffset(node: Node | null) {
 }
 
 const INLINE_NODE_NAMES = ['EM', 'U', 'STRONG', 'DEL', 'CODE', 'A'];
-const EXTRA_OFFSET_NODE_NAMES = ['LI', 'PRE', 'BLOCKQUOTE', 'P'];
+const EXTRA_OFFSET_NODE_NAMES = ['OL', 'UL', 'LI', 'PRE', 'BLOCKQUOTE', 'P'];
 
 function isInlineNode(node: Node | ParentNode | null) {
     if (node === null) return false;
     return INLINE_NODE_NAMES.includes(node.nodeName || '');
 }
 
+// Due to the way the rust model handles indexing, all of the nodes in the EXTRA
+// _OFFSET_NODE_NAMES array will require the addition of an offset (of one).
+// Nb, whilst lists require this offset, we consider the offset to apply to each
+// list item, the enclosing list type tag does not add an extra offset.
 function isNodeRequiringExtraOffset(node: Node) {
-    // note this isn't simply a block node, we need to ensure that for lists we
-    // do not add an extra offset for the ol/ul tag, only for the list items
-    // themselves
-
-    // with the paragraph refactor, we could end up in a situation where we have
-    // a p tag containing formatted text next to a list, so if this is the case,
-    // we do want to add an extra offset _if_ the list has any children
-    if (node.nodeName === 'UL' || node.nodeName === 'OL') {
-        return node.hasChildNodes();
-    }
     return EXTRA_OFFSET_NODE_NAMES.includes(node.nodeName || '');
 }
 
