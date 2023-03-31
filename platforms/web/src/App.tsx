@@ -195,6 +195,7 @@ function App() {
                                         'https://matrix.to/#/@alice_user:element.io',
                                         'Alice',
                                         {
+                                            'contentEditable': 'false',
                                             'data-mention-type':
                                                 suggestion.keyChar === '@'
                                                     ? 'user'
