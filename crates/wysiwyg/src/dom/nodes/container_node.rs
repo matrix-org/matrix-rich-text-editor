@@ -382,18 +382,17 @@ where
     pub fn new_link(
         url: S,
         children: Vec<DomNode<S>>,
-        attributes: Vec<(S, S)>,
+        mut attributes: Vec<(S, S)>,
     ) -> Self {
         // Hosting application may provide attributes but always provides url, this
         // allows the Rust code to stay as generic as possible, since it should only care about
         // `contenteditable="false"` to implement custom behaviours for immutable links.
-        let mut attrs = attributes.clone();
-        attrs.push(("href".into(), url.clone())); // don't clone here
+        attributes.push(("href".into(), url.clone()));
 
         Self {
             name: "a".into(),
             kind: ContainerNodeKind::Link(url),
-            attrs: Some(attrs),
+            attrs: Some(attributes),
             children,
             handle: DomHandle::new_unset(),
         }
