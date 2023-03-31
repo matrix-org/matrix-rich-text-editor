@@ -494,3 +494,61 @@ describe('commands', () => {
         expect(textbox).toContainHTML('/test_command');
     });
 });
+
+describe('edge cases', () => {
+    let textbox: HTMLDivElement;
+
+    beforeEach(async () => {
+        render(<Editor />);
+        textbox = screen.getByRole('textbox');
+        await waitFor(() =>
+            expect(textbox).toHaveAttribute('contentEditable', 'true'),
+        );
+    });
+    // eslint-disable-next-line max-len
+    it('handles selection properly when formatted text is followed by list', async () => {
+        // When
+        // Input bold text (nb first input needs to use fireEvent)
+        await userEvent.click(screen.getByText('bold'));
+        fireEvent.input(textbox, {
+            data: 'one',
+            inputType: 'insertText',
+        });
+        await userEvent.click(screen.getByText('bold'));
+
+        // press enter then add a list item
+        await userEvent.keyboard('{enter}');
+        await userEvent.click(screen.getByText('unorderedList'));
+        fireEvent.input(textbox, {
+            data: 'two',
+            inputType: 'insertText',
+        });
+
+        // press left arrow three times to go to the beginning of the line
+        await userEvent.keyboard('{ArrowLeft}'.repeat(3));
+
+        // enter some more text, ensure it appears inside the list item
+        await userEvent.keyboard('before ');
+
+        // Then
+        expect(textbox).toMatchInlineSnapshot(`
+          <div
+            contenteditable="true"
+            data-content="<p><strong>one</strong></p><ul><li>two</li></ul>"
+            role="textbox"
+          >
+            <p>
+              <strong>
+                one
+              </strong>
+            </p>
+            <ul>
+              <li>
+                before two
+              </li>
+            </ul>
+            <br />
+          </div>
+        `);
+    });
+});
