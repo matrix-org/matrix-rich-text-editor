@@ -538,6 +538,8 @@ function isInlineNode(node: Node | ParentNode | null) {
 // _OFFSET_NODE_NAMES array will require the addition of an offset (of one).
 // Nb, whilst lists require this offset, we consider the offset to apply to each
 // list item, the enclosing list type tag does not add an extra offset.
+// We need the enclosing list tags in the array as we also use this check on
+// sibling nodes.
 function isNodeRequiringExtraOffset(node: Node) {
     return EXTRA_OFFSET_NODE_NAMES.includes(node.nodeName || '');
 }
