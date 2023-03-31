@@ -852,6 +852,40 @@ describe('textNodeNeedsExtraOffset', () => {
         expect(node).toBe(editor.childNodes[0].childNodes[0]);
         expect(textNodeNeedsExtraOffset(node)).toBe(false);
     });
+
+    // eslint-disable-next-line max-len
+    it('applies extra offset for nested formatting inside a paragraph adjacent to unordered list', () => {
+        // When
+        setEditorHtml(
+            '<p><strong>line one</strong></p><ul><li>item one</li></ul>',
+        );
+
+        // put the cursor before the "l" of line
+        const { node } = computeNodeAndOffset(editor, 0);
+
+        // Then
+        // check that the node we have is the text node "line one" and that we
+        // will add an offset for it
+        expect(node).toBe(editor.childNodes[0].childNodes[0].childNodes[0]);
+        expect(textNodeNeedsExtraOffset(node)).toBe(true);
+    });
+
+    // eslint-disable-next-line max-len
+    it('applies extra offset for nested formatting inside a paragraph adjacent to unordered list', () => {
+        // When
+        setEditorHtml(
+            '<p><strong>line one</strong></p><ol><li>item one</li></ol>',
+        );
+
+        // put the cursor before the "l" of line
+        const { node } = computeNodeAndOffset(editor, 0);
+
+        // Then
+        // check that the node we have is the text node "line one" and that we
+        // will add an offset for it
+        expect(node).toBe(editor.childNodes[0].childNodes[0].childNodes[0]);
+        expect(textNodeNeedsExtraOffset(node)).toBe(true);
+    });
 });
 
 describe('textLength', () => {
