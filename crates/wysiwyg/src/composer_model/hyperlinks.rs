@@ -71,6 +71,10 @@ where
         suggestion: SuggestionPattern,
         attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
+        // TODO - this function allows us to accept a Vec of attributes to add to the Link we create,
+        // but these attributes will be present in the html of the message we output. We may need to
+        // add a step in the future that strips these attributes from the html before it is sent.
+
         self.do_replace_text_in(S::default(), suggestion.start, suggestion.end);
         self.state.start = Location::from(suggestion.start);
         self.state.end = self.state.start;
