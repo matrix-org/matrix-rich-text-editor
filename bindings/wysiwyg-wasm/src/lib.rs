@@ -75,6 +75,23 @@ impl IntoFfi for &HashMap<wysiwyg::ComposerAction, wysiwyg::ActionState> {
     }
 }
 
+trait ToUtf16TupleVec {
+    fn into_vec(self) -> Vec<(Utf16String, Utf16String)>;
+}
+
+impl ToUtf16TupleVec for js_sys::Map {
+    fn into_vec(self) -> Vec<(Utf16String, Utf16String)> {
+        let mut vec = vec![];
+        self.for_each(&mut |value, key| {
+            vec.push((
+                Utf16String::from_str(&key.as_string().unwrap()),
+                Utf16String::from_str(&value.as_string().unwrap()),
+            ));
+        });
+        vec
+    }
+}
+
 #[wasm_bindgen]
 #[derive(Default)]
 pub struct ComposerModel {
@@ -279,20 +296,25 @@ impl ComposerModel {
         ComposerUpdate::from(self.inner.set_link_with_text(
             Utf16String::from_str(link),
             Utf16String::from_str(text),
-            None,
+            vec![],
         ))
     }
 
+    /// This function creates a link with the first argument being the href, the second being the
+    /// display text, the third being the (rust model) suggestion that is being replaced and the
+    /// final argument being a map of html attributes that will be added to the Link.
     pub fn set_link_suggestion(
         &mut self,
         link: &str,
         text: &str,
         suggestion: &SuggestionPattern,
+        attributes: js_sys::Map,
     ) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.set_link_suggestion(
             Utf16String::from_str(link),
             Utf16String::from_str(text),
             wysiwyg::SuggestionPattern::from(suggestion.clone()),
+            attributes.into_vec(),
         ))
     }
 

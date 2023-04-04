@@ -50,11 +50,11 @@ extension WysiwygComposerViewModelTests {
 
     func testAtSuggestionCanBeUsed() {
         _ = viewModel.replaceText(range: .zero, replacementText: "@ali")
-        viewModel.setMention(link: "https://matrix.to/#/@alice:matrix.org", name: "Alice", key: .at)
+        viewModel.setMention(link: "https://matrix.to/#/@alice:matrix.org", name: "Alice", mentionType: .user)
         XCTAssertEqual(
             viewModel.content.html,
             """
-            <a href="https://matrix.to/#/@alice:matrix.org" contenteditable="false" data-mention-type="user">Alice</a>\u{00A0}
+            <a data-mention-type="user" contenteditable="false" href="https://matrix.to/#/@alice:matrix.org">Alice</a>\u{00A0}
             """
         )
     }
@@ -62,7 +62,7 @@ extension WysiwygComposerViewModelTests {
     func testAtMentionWithNoSuggestion() {
         _ = viewModel.replaceText(range: .zero, replacementText: "Text")
         viewModel.select(range: .init(location: 0, length: 4))
-        viewModel.setMention(link: "https://matrix.to/#/@alice:matrix.org", name: "Alice", key: .at)
+        viewModel.setMention(link: "https://matrix.to/#/@alice:matrix.org", name: "Alice", mentionType: .user)
         // Text is not removed, and the
         // mention is added after the text
         XCTAssertEqual(
@@ -76,7 +76,7 @@ extension WysiwygComposerViewModelTests {
     func testAtMentionWithNoSuggestionAtLeading() {
         _ = viewModel.replaceText(range: .zero, replacementText: "Text")
         viewModel.select(range: .init(location: 0, length: 0))
-        viewModel.setMention(link: "https://matrix.to/#/@alice:matrix.org", name: "Alice", key: .at)
+        viewModel.setMention(link: "https://matrix.to/#/@alice:matrix.org", name: "Alice", mentionType: .user)
         // Text is not removed, and the mention is added before the text
         XCTAssertEqual(
             viewModel.content.html,
@@ -88,11 +88,11 @@ extension WysiwygComposerViewModelTests {
 
     func testHashSuggestionCanBeUsed() {
         _ = viewModel.replaceText(range: .zero, replacementText: "#roo")
-        viewModel.setMention(link: "https://matrix.to/#/#room1:matrix.org", name: "Room 1", key: .hash)
+        viewModel.setMention(link: "https://matrix.to/#/#room1:matrix.org", name: "Room 1", mentionType: .room)
         XCTAssertEqual(
             viewModel.content.html,
             """
-            <a href="https://matrix.to/#/#room1:matrix.org" contenteditable="false" data-mention-type="room">Room 1</a>\u{00A0}
+            <a data-mention-type="room" contenteditable="false" href="https://matrix.to/#/#room1:matrix.org">Room 1</a>\u{00A0}
             """
         )
     }
@@ -100,7 +100,7 @@ extension WysiwygComposerViewModelTests {
     func testHashMentionWithNoSuggestion() {
         _ = viewModel.replaceText(range: .zero, replacementText: "Text")
         viewModel.select(range: .init(location: 0, length: 4))
-        viewModel.setMention(link: "https://matrix.to/#/#room1:matrix.org", name: "Room 1", key: .hash)
+        viewModel.setMention(link: "https://matrix.to/#/#room1:matrix.org", name: "Room 1", mentionType: .room)
         XCTAssertEqual(
             viewModel.content.html,
             """
@@ -112,7 +112,7 @@ extension WysiwygComposerViewModelTests {
     func testHashMentionWithNoSuggestionAtLeading() {
         _ = viewModel.replaceText(range: .zero, replacementText: "Text")
         viewModel.select(range: .init(location: 0, length: 0))
-        viewModel.setMention(link: "https://matrix.to/#/#room1:matrix.org", name: "Room 1", key: .hash)
+        viewModel.setMention(link: "https://matrix.to/#/#room1:matrix.org", name: "Room 1", mentionType: .room)
         XCTAssertEqual(
             viewModel.content.html,
             """

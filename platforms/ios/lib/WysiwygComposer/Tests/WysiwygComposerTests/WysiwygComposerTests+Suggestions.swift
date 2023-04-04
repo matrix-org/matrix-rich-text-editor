@@ -29,13 +29,16 @@ extension WysiwygComposerTests {
 
         model
             .action {
-                $0.setLinkSuggestion(link: "https://matrix.to/#/@alice:matrix.org",
-                                     text: "Alice",
-                                     suggestion: suggestionPattern)
+                $0.setLinkSuggestion(
+                    link: "https://matrix.to/#/@alice:matrix.org",
+                    text: "Alice",
+                    suggestion: suggestionPattern,
+                    mentionType: .user
+                )
             }
             .assertHtml(
                 """
-                <a href="https://matrix.to/#/@alice:matrix.org" contenteditable="false" data-mention-type="user">Alice</a>\(String.nbsp)
+                <a data-mention-type="user" contenteditable="false" href="https://matrix.to/#/@alice:matrix.org">Alice</a>\(String.nbsp)
                 """
             )
     }
@@ -51,13 +54,16 @@ extension WysiwygComposerTests {
 
         model
             .action {
-                $0.setLinkSuggestion(link: "https://matrix.to/#/#room1:matrix.org",
-                                     text: "Room 1",
-                                     suggestion: suggestionPattern)
+                $0.setLinkSuggestion(
+                    link: "https://matrix.to/#/#room1:matrix.org",
+                    text: "Room 1",
+                    suggestion: suggestionPattern,
+                    mentionType: .room
+                )
             }
             .assertHtml(
                 """
-                <a href="https://matrix.to/#/#room1:matrix.org" contenteditable="false" data-mention-type="room">Room 1</a>\(String.nbsp)
+                <a data-mention-type="room" contenteditable="false" href="https://matrix.to/#/#room1:matrix.org">Room 1</a>\(String.nbsp)
                 """
             )
     }

@@ -32,7 +32,7 @@ pub fn a<'a>(
     DomNode::new_link(
         utf16("https://element.io"),
         clone_children(children),
-        None,
+        vec![],
     )
 }
 

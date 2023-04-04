@@ -28,7 +28,7 @@ fn test_replace_text_suggestion() {
 }
 
 #[test]
-fn test_set_link_suggestion() {
+fn test_set_link_suggestion_no_attributes() {
     let mut model = cm("|");
     let update = model.replace_text("@alic".into());
     let MenuAction::Suggestion(suggestion) = update.menu_action else {
@@ -38,9 +38,32 @@ fn test_set_link_suggestion() {
         "https://matrix.to/#/@alice:matrix.org".into(),
         "Alice".into(),
         suggestion,
+        vec![],
     );
     assert_eq!(
         tx(&model),
-        "<a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\" data-mention-type=\"user\">Alice</a>&nbsp;|",
+        "<a href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>&nbsp;|",
+    );
+}
+
+#[test]
+fn test_set_link_suggestion_with_attributes() {
+    let mut model = cm("|");
+    let update = model.replace_text("@alic".into());
+    let MenuAction::Suggestion(suggestion) = update.menu_action else {
+        panic!("No suggestion pattern found")
+    };
+    model.set_link_suggestion(
+        "https://matrix.to/#/@alice:matrix.org".into(),
+        "Alice".into(),
+        suggestion,
+        vec![
+            ("contenteditable".into(), "false".into()),
+            ("data-mention-type".into(), "user".into()),
+        ],
+    );
+    assert_eq!(
+        tx(&model),
+        "<a contenteditable=\"false\" data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>&nbsp;|",
     );
 }

@@ -18,7 +18,7 @@ import { RefObject, useMemo } from 'react';
 
 import { BlockType, FormattingFunctions } from './types';
 import { sendWysiwygInputEvent } from './useListeners';
-import { LinkEvent } from './useListeners/types';
+import { Attributes, LinkEvent, SuggestionEvent } from './useListeners/types';
 import { ComposerModel } from '../generated/wysiwyg';
 
 export function useFormattingFunctions(
@@ -32,7 +32,7 @@ export function useFormattingFunctions(
         // and we do not use the browser input event handling
         const sendEvent = (
             blockType: BlockType,
-            data?: string | LinkEvent['data'],
+            data?: string | LinkEvent['data'] | SuggestionEvent['data'],
         ) =>
             editorRef.current &&
             sendWysiwygInputEvent(
@@ -63,8 +63,8 @@ export function useFormattingFunctions(
             quote: () => sendEvent('insertQuote'),
             indent: () => sendEvent('formatIndent'),
             unindent: () => sendEvent('formatOutdent'),
-            mention: (link: string, text: string) =>
-                sendEvent('insertSuggestion', { link, text }),
+            mention: (link: string, text: string, attributes: Attributes) =>
+                sendEvent('insertSuggestion', { link, text, attributes }),
             command: (text: string) => sendEvent('insertCommand', text),
         };
     }, [editorRef, composerModel]);

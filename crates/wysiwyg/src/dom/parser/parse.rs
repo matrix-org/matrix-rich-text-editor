@@ -271,14 +271,14 @@ mod sys {
             let attributes = child
                 .attrs
                 .iter()
+                .filter(|(k, _)| k != &String::from("href"))
                 .map(|(k, v)| (k.as_str().into(), v.as_str().into()))
                 .collect();
 
             DomNode::Container(ContainerNode::new_link(
                 child.get_attr("href").unwrap_or("").into(),
-                Some(attributes),
                 Vec::new(),
-                None,
+                attributes,
             ))
         }
 
@@ -734,7 +734,7 @@ mod js {
                                 .unwrap_or_default()
                                 .into(),
                             self.convert(node.child_nodes())?.take_children(),
-                            None,
+                            vec![],
                         ));
                         self.current_path.pop();
                     }

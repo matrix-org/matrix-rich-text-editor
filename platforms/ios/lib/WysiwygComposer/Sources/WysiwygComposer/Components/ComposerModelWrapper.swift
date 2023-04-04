@@ -32,7 +32,7 @@ protocol ComposerModelWrapperProtocol {
     func enter() -> ComposerUpdate
     func setLink(link: String) -> ComposerUpdate
     func setLinkWithText(link: String, text: String) -> ComposerUpdate
-    func setLinkSuggestion(link: String, text: String, suggestion: SuggestionPattern) -> ComposerUpdate
+    func setLinkSuggestion(link: String, text: String, suggestion: SuggestionPattern, mentionType: WysiwygMentionType) -> ComposerUpdate
     func removeLinks() -> ComposerUpdate
     func toTree() -> String
     func getCurrentDomState() -> ComposerState
@@ -121,8 +121,12 @@ final class ComposerModelWrapper: ComposerModelWrapperProtocol {
         execute { try $0.setLinkWithText(link: link, text: text) }
     }
 
-    func setLinkSuggestion(link: String, text: String, suggestion: SuggestionPattern) -> ComposerUpdate {
-        execute { try $0.setLinkSuggestion(link: link, text: text, suggestion: suggestion) }
+    func setLinkSuggestion(link: String, text: String, suggestion: SuggestionPattern, mentionType: WysiwygMentionType) -> ComposerUpdate {
+        let attributes = [
+            Attribute(key: "data-mention-type", value: mentionType.rawValue),
+            Attribute(key: "contenteditable", value: "false")
+        ]
+        return execute { try $0.setLinkSuggestion(link: link, text: text, suggestion: suggestion, attributes: attributes) }
     }
 
     func removeLinks() -> ComposerUpdate {

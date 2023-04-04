@@ -72,9 +72,19 @@ export function processInput(
     switch (event.inputType) {
         case 'insertSuggestion': {
             if (suggestion && isSuggestionEvent(event)) {
-                const { text, link } = event.data;
+                const { text, link, attributes } = event.data;
+                const defaultMap = new Map();
+                defaultMap.set('contenteditable', 'false');
+                Object.entries(attributes).forEach(([key, value]) => {
+                    defaultMap.set(key, value);
+                });
                 return action(
-                    composerModel.set_link_suggestion(link, text, suggestion),
+                    composerModel.set_link_suggestion(
+                        link,
+                        text,
+                        suggestion,
+                        defaultMap,
+                    ),
                     'set_link_suggestion',
                 );
             }

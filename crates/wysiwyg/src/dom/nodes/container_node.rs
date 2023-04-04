@@ -381,25 +381,18 @@ where
 
     pub fn new_link(
         url: S,
-        attributes: Option<Vec<(S, S)>>,
         children: Vec<DomNode<S>>,
-        mention_type: Option<S>,
+        mut attributes: Vec<(S, S)>,
     ) -> Self {
-        // FIXME: mention_type could be removed, and the hosting application could just provide attributes
-        // this would allow the Rust code to stay as generic as possible, since it should only care abouy
+        // Hosting application may provide attributes but always provides url, this
+        // allows the Rust code to stay as generic as possible, since it should only care about
         // `contenteditable="false"` to implement custom behaviours for immutable links.
-        let mut attrs =
-            attributes.unwrap_or_else(|| vec![("href".into(), url.clone())]);
-        if let Some(m_type) = mention_type {
-            // if we have a mention, add attributes to make it non-editable and to track
-            // the type of mention we have
-            attrs.push(("contenteditable".into(), "false".into()));
-            attrs.push(("data-mention-type".into(), m_type))
-        }
+        attributes.push(("href".into(), url.clone()));
+
         Self {
             name: "a".into(),
             kind: ContainerNodeKind::Link(url),
-            attrs: Some(attrs),
+            attrs: Some(attributes),
             children,
             handle: DomHandle::new_unset(),
         }

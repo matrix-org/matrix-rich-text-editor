@@ -685,8 +685,6 @@ impl Display for ItemNode {
 
 #[cfg(test)]
 mod test {
-    use std::ffi::FromVecWithNulError;
-
     use widestring::Utf16String;
 
     use crate::dom::nodes::dom_node::DomNode;

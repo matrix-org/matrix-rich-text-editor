@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { HTMLAttributes } from 'react';
+
 import { BlockType } from '../types';
 
 export type FormatBlockEvent = CustomEvent<{
@@ -26,7 +28,15 @@ export type LinkEvent = Omit<InputEvent, 'data'> & {
     data: { link: string; text?: string };
 };
 
+type AnchorElementAttributes =
+    | keyof HTMLAttributes<HTMLAnchorElement>
+    | `data-${string}`;
+
+export type Attributes = {
+    [K in AnchorElementAttributes]?: string;
+};
+
 export type SuggestionEvent = Omit<InputEvent, 'data'> & {
     inputType: 'insertSuggestion';
-    data: { link: string; text: string };
+    data: { link: string; text: string; attributes: Attributes };
 };

@@ -131,7 +131,7 @@ mod test {
 
         model.state.dom.insert_parent(
             &range,
-            DomNode::new_link(utf16("link"), vec![], None),
+            DomNode::new_link(utf16("link"), vec![], vec![]),
         );
 
         assert_eq!(model.state.dom.to_html(), r#"A<a href="link">B</a>C"#)
@@ -145,7 +145,7 @@ mod test {
 
         model.state.dom.insert_parent(
             &range,
-            DomNode::new_link(utf16("link"), vec![], None),
+            DomNode::new_link(utf16("link"), vec![], vec![]),
         );
 
         assert_eq!(model.state.dom.to_html(), r#"<a href="link">AB</a>C"#)
@@ -159,7 +159,7 @@ mod test {
 
         model.state.dom.insert_parent(
             &range,
-            DomNode::new_link(utf16("link"), vec![], None),
+            DomNode::new_link(utf16("link"), vec![], vec![]),
         );
 
         assert_eq!(model.state.dom.to_html(), r#"A<a href="link">BC</a>"#)
@@ -173,7 +173,7 @@ mod test {
 
         model.state.dom.insert_parent(
             &range,
-            DomNode::new_link(utf16("link"), vec![], None),
+            DomNode::new_link(utf16("link"), vec![], vec![]),
         );
 
         assert_eq!(model.state.dom.to_html(), r#"<a href="link">ABC</a>"#)
@@ -187,7 +187,7 @@ mod test {
 
         model.state.dom.insert_parent(
             &range,
-            DomNode::new_link(utf16("link"), vec![], None),
+            DomNode::new_link(utf16("link"), vec![], vec![]),
         );
 
         assert_eq!(
@@ -204,7 +204,7 @@ mod test {
 
         model.state.dom.insert_parent(
             &range,
-            DomNode::new_link(utf16("link"), vec![], None),
+            DomNode::new_link(utf16("link"), vec![], vec![]),
         );
 
         assert_eq!(
@@ -221,7 +221,7 @@ mod test {
 
         model.state.dom.insert_parent(
             &range,
-            DomNode::new_link(utf16("link"), vec![], None),
+            DomNode::new_link(utf16("link"), vec![], vec![]),
         );
 
         assert_eq!(
@@ -238,7 +238,7 @@ mod test {
 
         model.state.dom.insert_parent(
             &range,
-            DomNode::new_link(utf16("link"), vec![], None),
+            DomNode::new_link(utf16("link"), vec![], vec![]),
         );
 
         assert_eq!(
@@ -255,7 +255,7 @@ mod test {
 
         model.state.dom.insert_parent(
             &range,
-            DomNode::new_link(utf16("link"), vec![], None),
+            DomNode::new_link(utf16("link"), vec![], vec![]),
         );
 
         assert_eq!(
@@ -272,7 +272,7 @@ mod test {
 
         model.state.dom.insert_parent(
             &range,
-            DomNode::new_link(utf16("link"), vec![], None),
+            DomNode::new_link(utf16("link"), vec![], vec![]),
         );
 
         assert_eq!(
@@ -290,7 +290,7 @@ mod test {
 
         model.state.dom.insert_parent(
             &range,
-            DomNode::new_link(utf16("link"), vec![], None),
+            DomNode::new_link(utf16("link"), vec![], vec![]),
         );
 
         assert_eq!(
@@ -307,7 +307,7 @@ mod test {
 
         model.state.dom.insert_parent(
             &range,
-            DomNode::new_link(utf16("link"), vec![], None),
+            DomNode::new_link(utf16("link"), vec![], vec![]),
         );
 
         assert_eq!(
