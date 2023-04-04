@@ -4,7 +4,7 @@
 
 ### Changed
 
-- Common: Change signature of `set_link_suggestion` function to take an attribute argument
+- Common: Change signature of `set_link_suggestion` function to take an attributes argument
 
 ### Fixed
 
