@@ -210,7 +210,7 @@ function App() {
                         {suggestion && suggestion.type === 'command' && (
                             <button
                                 type="button"
-                                onClick={(_e) => wysiwyg.command('/spoiler ')}
+                                onClick={(_e) => wysiwyg.command('/spoiler')}
                             >
                                 Add /spoiler command
                             </button>

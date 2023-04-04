@@ -176,11 +176,11 @@ impl ComposerModel {
     pub fn replace_text_suggestion(
         &mut self,
         new_text: &str,
-        suggestion: SuggestionPattern,
+        suggestion: &SuggestionPattern,
     ) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.replace_text_suggestion(
             Utf16String::from_str(new_text),
-            wysiwyg::SuggestionPattern::from(suggestion),
+            wysiwyg::SuggestionPattern::from(suggestion.clone()),
         ))
     }
 
