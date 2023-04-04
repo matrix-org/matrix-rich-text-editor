@@ -1,5 +1,16 @@
 # Changelog
 
+# [1.5.0] - 2023-03-28
+
+### Changed
+
+- Common: Change signature of `set_link_suggestion` function to take an attribute argument
+
+### Fixed
+
+- Web: Fix selection issue when formatted text is inside paragraph adjacent to a list
+- Web: Prevent memory issues when using `replace_text_suggestion` function
+
 # [1.4.1] - 2023-03-28
 
 ### Fixed
