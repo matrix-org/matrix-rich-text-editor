@@ -300,6 +300,9 @@ impl ComposerModel {
         ))
     }
 
+    /// This function creates a link with the first argument being the href, the second being the
+    /// display text, the third being the (rust model) suggestion that is being replaced and the
+    /// final argument being a map of html attributes that will be added to the Link.
     pub fn set_link_suggestion(
         &mut self,
         link: &str,
