@@ -28,12 +28,11 @@ import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.inputhandlers.models.LinkAction
 import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
+import io.element.android.wysiwyg.suggestions.MentionType
 import io.element.android.wysiwyg.utils.*
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
-import io.element.android.wysiwyg.viewmodel.EditorViewModel
-import uniffi.wysiwyg_composer.ActionState
-import uniffi.wysiwyg_composer.ComposerAction
-import uniffi.wysiwyg_composer.newComposerModel
+import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
+import uniffi.wysiwyg_composer.*
 
 class EditorEditText : TextInputEditText {
 
@@ -97,6 +96,10 @@ class EditorEditText : TextInputEditText {
         fun actionStatesChanged(actionStates: Map<ComposerAction, ActionState>)
     }
 
+    fun interface OnMenuActionChangedListener {
+        fun onMenuActionChanged(menuAction: MenuAction)
+    }
+
     var selectionChangeListener: OnSelectionChangeListener? = null
     var actionStatesChangedListener: OnActionStatesChangedListener? = null
         set(value) {
@@ -104,6 +107,14 @@ class EditorEditText : TextInputEditText {
 
             viewModel.setActionStatesCallback { actionStates ->
                 value?.actionStatesChanged(actionStates)
+            }
+        }
+    var menuActionListener: OnMenuActionChangedListener? = null
+        set(value) {
+            field = value
+
+            viewModel.menuActionCallback = { menuAction ->
+                value?.onMenuActionChanged(menuAction)
             }
         }
 
@@ -382,6 +393,24 @@ class EditorEditText : TextInputEditText {
      */
     fun setMarkdown(markdown: String) {
         val result = viewModel.processInput(EditorInputAction.ReplaceAllMarkdown(markdown)) ?: return
+        setTextFromComposerUpdate(result)
+        setSelectionFromComposerUpdate(result.selection.last)
+    }
+
+    /**
+     * Set a mention with given pattern. Usually used
+     * to mention a user (e.g. @jonny.andrew) or a room/channel (e.g. #matrix).
+     *
+     * @param name The display name of the user or room
+     * @param link The link to the user or room
+     * @param type The type of mention
+     */
+    fun setMention(name: String, link: String, type: MentionType) {
+        val result = viewModel.processInput(EditorInputAction.SetMention(
+            name = name,
+            link = link,
+            type = type
+        )) ?: return
         setTextFromComposerUpdate(result)
         setSelectionFromComposerUpdate(result.selection.last)
     }

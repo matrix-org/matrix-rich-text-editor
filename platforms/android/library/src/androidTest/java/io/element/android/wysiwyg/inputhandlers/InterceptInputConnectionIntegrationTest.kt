@@ -12,7 +12,7 @@ import io.element.android.wysiwyg.utils.AndroidHtmlConverter
 import io.element.android.wysiwyg.utils.AndroidResourcesHelper
 import io.element.android.wysiwyg.utils.HtmlToSpansParser
 import io.element.android.wysiwyg.utils.NBSP
-import io.element.android.wysiwyg.viewmodel.EditorViewModel
+import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.Test

@@ -1,4 +1,4 @@
-package io.element.android.wysiwyg.viewmodel
+package io.element.android.wysiwyg.internal.viewmodel
 
 import android.text.Editable
 import androidx.annotation.VisibleForTesting
@@ -10,8 +10,11 @@ import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.inputhandlers.models.LinkAction
 import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
-import io.element.android.wysiwyg.utils.*
+import io.element.android.wysiwyg.internal.suggestions.toInternalPatternKey
+import io.element.android.wysiwyg.internal.suggestions.toSymbol
+import io.element.android.wysiwyg.utils.EditorIndexMapper
 import io.element.android.wysiwyg.utils.HtmlConverter
+import io.element.android.wysiwyg.utils.RustErrorCollector
 import uniffi.wysiwyg_composer.*
 import uniffi.wysiwyg_composer.LinkAction as ComposerLinkAction
 
@@ -25,6 +28,9 @@ internal class EditorViewModel(
     var rustErrorCollector: RustErrorCollector? = null
 
     private var actionStatesCallback: ((Map<ComposerAction, ActionState>) -> Unit)? = null
+    var menuActionCallback: ((MenuAction) -> Unit)? = null
+
+    private var curMenuAction: MenuAction = MenuAction.None
 
     // If there is an internal error in the Rust model, we can manually recover to this state.
     private var recoveryContentPlainText: String = ""
@@ -91,6 +97,7 @@ internal class EditorViewModel(
                 is EditorInputAction.Quote -> composer?.quote()
                 is EditorInputAction.Indent -> composer?.indent()
                 is EditorInputAction.Unindent -> composer?.unindent()
+                is EditorInputAction.SetMention -> setMention(action)
             }
         }.onFailure(::onComposerFailure)
             .getOrNull()
@@ -100,6 +107,13 @@ internal class EditorViewModel(
         val menuState = update?.menuState()
         if (menuState is MenuState.Update) {
             actionStatesCallback?.invoke(menuState.actionStates)
+        }
+
+        update?.menuAction()?.let { menuAction ->
+            curMenuAction = menuAction
+            if (menuAction !is MenuAction.Keep) {
+                menuActionCallback?.invoke(menuAction)
+            }
         }
 
         return when (val textUpdate = update?.textUpdate()) {
@@ -163,6 +177,25 @@ internal class EditorViewModel(
                 }
             }
         }
+    }
+
+    private fun setMention(action: EditorInputAction.SetMention): ComposerUpdate? {
+        val (link, name, type) = action
+
+        val suggestion = (curMenuAction as? MenuAction.Suggestion)
+            ?.suggestionPattern
+            ?: return null
+
+        val key = type.toInternalPatternKey()
+        val symbol = key.toSymbol()
+        val text = "$symbol$name"
+
+        return composer?.setLinkSuggestion(
+            url = link,
+            text = text,
+            suggestion = suggestion,
+            attributes = emptyList()
+        )
     }
 
     @VisibleForTesting

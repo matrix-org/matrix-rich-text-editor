@@ -15,7 +15,7 @@ import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
 import io.element.android.wysiwyg.utils.EditorIndexMapper
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
-import io.element.android.wysiwyg.viewmodel.EditorViewModel
+import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min

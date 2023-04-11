@@ -1,5 +1,6 @@
 package io.element.android.wysiwyg.inputhandlers.models
 
+import io.element.android.wysiwyg.suggestions.MentionType
 import uniffi.wysiwyg_composer.ComposerModel
 
 /**
@@ -89,4 +90,10 @@ internal sealed interface EditorInputAction {
     object Indent: EditorInputAction
 
     object Unindent: EditorInputAction
+
+    data class SetMention(
+        val link: String,
+        val name: String,
+        val type: MentionType,
+    ): EditorInputAction
 }

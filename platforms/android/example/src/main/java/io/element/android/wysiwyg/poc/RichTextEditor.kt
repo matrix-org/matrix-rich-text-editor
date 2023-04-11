@@ -5,6 +5,8 @@ import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.AdapterView.OnItemClickListener
+import android.widget.ArrayAdapter
 import android.widget.LinearLayout
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
@@ -14,24 +16,29 @@ import io.element.android.wysiwyg.inputhandlers.models.LinkAction
 import io.element.android.wysiwyg.poc.databinding.ViewRichTextEditorBinding
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
+import uniffi.wysiwyg_composer.MenuAction
+import uniffi.wysiwyg_composer.PatternKey
 
 class RichTextEditor : LinearLayout {
 
     private val binding = ViewRichTextEditorBinding.inflate(LayoutInflater.from(context), this, true)
 
-    constructor(context: Context): super(context)
+    constructor(context: Context) : super(context)
 
-    constructor(context: Context, attrs: AttributeSet?): super(context, attrs)
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
 
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int):
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) :
             super(context, attrs, defStyleAttr)
 
     var onSetLinkListener: OnSetLinkListener? = null
 
+    private val suggestionAdapter =
+        ArrayAdapter(context, android.R.layout.simple_list_item_1, arrayListOf<String>())
+
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
 
-        with (binding) {
+        with(binding) {
             formattingSwitch.apply {
                 isChecked = true
                 setOnCheckedChangeListener { _, isChecked ->
@@ -101,9 +108,15 @@ class RichTextEditor : LinearLayout {
                 richTextEditText.unindent()
             }
 
-            richTextEditText.actionStatesChangedListener = EditorEditText.OnActionStatesChangedListener { actionStates ->
-                updateActionStates(actionStates)
-            }
+            richTextEditText.actionStatesChangedListener =
+                EditorEditText.OnActionStatesChangedListener { actionStates ->
+                    updateActionStates(actionStates)
+                }
+            menuSuggestion.adapter = suggestionAdapter
+            richTextEditText.menuActionListener =
+                EditorEditText.OnMenuActionChangedListener { menuAction ->
+                    updateSuggestions(menuAction)
+                }
         }
     }
 
@@ -123,6 +136,39 @@ class RichTextEditor : LinearLayout {
             updateActionStateFor(formatQuoteButton, ComposerAction.QUOTE, actionStates)
             updateActionStateFor(indentButton, ComposerAction.INDENT, actionStates)
             updateActionStateFor(unindentButton, ComposerAction.UNINDENT, actionStates)
+        }
+    }
+
+    private fun updateSuggestions(menuAction: MenuAction) {
+        when (menuAction) {
+            MenuAction.Keep -> {
+                // Do nothing
+            }
+            MenuAction.None -> {
+                suggestionAdapter.clear()
+            }
+            is MenuAction.Suggestion -> {
+                val text = menuAction.suggestionPattern.text
+                val people = listOf("alice", "bob", "carol", "dan").map(Mention::User)
+                val rooms = listOf("matrix", "element").map(Mention::Room)
+                val names = when (menuAction.suggestionPattern.key) {
+                    PatternKey.AT -> people
+                    PatternKey.HASH -> rooms
+                    PatternKey.SLASH ->
+                        emptyList() // TODO
+                }
+                val suggestions = names
+                    .filter { it.display.contains(text) }
+                suggestionAdapter.clear()
+                suggestionAdapter.addAll(suggestions.map { it.display })
+                binding.menuSuggestion.onItemClickListener =
+                    OnItemClickListener { _, _, position, _ ->
+                        val item = suggestions[position]
+                        binding.richTextEditText.setMention(
+                            item.display, item.link, item.mentionType
+                        )
+                    }
+            }
         }
     }
 
