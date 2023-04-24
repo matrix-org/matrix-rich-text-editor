@@ -124,7 +124,7 @@ final class ComposerModelWrapper: ComposerModelWrapperProtocol {
     func setLinkSuggestion(link: String, text: String, suggestion: SuggestionPattern, mentionType: WysiwygMentionType) -> ComposerUpdate {
         let attributes = [
             Attribute(key: "data-mention-type", value: mentionType.rawValue),
-            Attribute(key: "contenteditable", value: "false")
+            Attribute(key: "contenteditable", value: "false"),
         ]
         return execute { try $0.setLinkSuggestion(link: link, text: text, suggestion: suggestion, attributes: attributes) }
     }

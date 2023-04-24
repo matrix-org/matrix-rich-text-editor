@@ -205,6 +205,18 @@ public extension WysiwygComposerViewModel {
         }
     }
 
+    /// Sets given Markdown as the current content of the composer.
+    ///
+    /// - Parameters:
+    ///   - markdown: Markdown content to apply
+    func setMarkdownContent(_ markdown: String) {
+        let update = model.setContentFromMarkdown(markdown: markdown)
+        applyUpdate(update)
+        if plainTextMode {
+            updatePlainTextMode(true)
+        }
+    }
+
     /// Clear the content of the composer.
     func clearContent() {
         if plainTextMode {
