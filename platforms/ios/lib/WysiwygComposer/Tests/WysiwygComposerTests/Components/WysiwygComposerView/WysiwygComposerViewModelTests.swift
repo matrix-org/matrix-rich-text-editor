@@ -28,39 +28,17 @@ final class WysiwygComposerViewModelTests: XCTestCase {
     func testIsContentEmpty() throws {
         XCTAssertTrue(viewModel.isContentEmpty)
 
-        let expectFalse = expectation(description: "Await isContentEmpty false")
-        let cancellableFalse = viewModel.$isContentEmpty
-            // Ignore on subscribe publish.
-            .removeDuplicates()
-            .dropFirst()
-            .sink(receiveValue: { isEmpty in
-                XCTAssertFalse(isEmpty)
-                expectFalse.fulfill()
-            })
-
+        let expectFalse = expectContentEmpty(false)
         _ = viewModel.replaceText(range: .zero,
                                   replacementText: "Test")
         viewModel.textView.attributedText = viewModel.attributedContent.text
+        waitExpectation(expectation: expectFalse, timeout: 2.0)
 
-        wait(for: [expectFalse], timeout: 2.0)
-        cancellableFalse.cancel()
-
-        let expectTrue = expectation(description: "Await isContentEmpty true")
-        let cancellableTrue = viewModel.$isContentEmpty
-            // Ignore on subscribe publish.
-            .removeDuplicates()
-            .dropFirst()
-            .sink(receiveValue: { isEmpty in
-                XCTAssertTrue(isEmpty)
-                expectTrue.fulfill()
-            })
-
+        let expectTrue = expectContentEmpty(true)
         _ = viewModel.replaceText(range: .init(location: 0, length: viewModel.attributedContent.text.length),
                                   replacementText: "")
         viewModel.textView.attributedText = viewModel.attributedContent.text
-
-        wait(for: [expectTrue], timeout: 2.0)
-        cancellableTrue.cancel()
+        waitExpectation(expectation: expectTrue, timeout: 2.0)
     }
 
     func testSimpleTextInputIsAccepted() throws {
@@ -171,6 +149,52 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         )
     }
 }
+
+// MARK: - WysiwygTestExpectation
+
+extension WysiwygComposerViewModelTests {
+    /// Defines a test expectation.
+    struct WysiwygTestExpectation {
+        let value: XCTestExpectation
+        let cancellable: AnyCancellable
+    }
+
+    /// Wait for an expectation to be fulfilled.
+    ///
+    /// - Parameters:
+    ///   - expectation: Expectation to fulfill.
+    ///   - timeout: Timeout for failure.
+    func waitExpectation(expectation: WysiwygTestExpectation, timeout: TimeInterval) {
+        wait(for: [expectation.value], timeout: timeout)
+        expectation.cancellable.cancel()
+    }
+
+    /// Create an expectation for empty content status to be published by the view model.
+    ///
+    /// - Parameters:
+    ///   - expectedIsContentEmpty: Expected `isContentEmpty` value.
+    ///   - description: Description for expectation.
+    /// - Returns: Expectation to be fulfilled. Can be used with `waitExpectation`.
+    func expectContentEmpty(_ expectedIsContentEmpty: Bool,
+                            description: String = "Await isContentEmpty") -> WysiwygTestExpectation {
+        let expectation = expectation(description: description)
+        let cancellable = viewModel.$isContentEmpty
+            // Ignore on subscribe publish.
+            .removeDuplicates()
+            .dropFirst()
+            .sink(receiveValue: { isContentEmpty in
+                // Assert the plain text,
+                XCTAssertEqual(
+                    isContentEmpty,
+                    expectedIsContentEmpty
+                )
+                expectation.fulfill()
+            })
+        return WysiwygTestExpectation(value: expectation, cancellable: cancellable)
+    }
+}
+
+// MARK: - Helpers
 
 private extension WysiwygComposerViewModelTests {
     /// Fakes a trigger of the reconciliate mechanism of the view model.

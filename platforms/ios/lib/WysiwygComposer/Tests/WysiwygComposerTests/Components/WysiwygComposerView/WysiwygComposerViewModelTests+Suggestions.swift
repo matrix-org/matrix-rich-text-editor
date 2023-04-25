@@ -134,12 +134,6 @@ extension WysiwygComposerViewModelTests {
 }
 
 private extension WysiwygComposerViewModelTests {
-    /// Defines a test expectation.
-    struct WysiwygTestExpectation {
-        let value: XCTestExpectation
-        let cancellable: AnyCancellable
-    }
-
     /// Create an expectation for a `SuggestionPattern` to be published by the view model.
     ///
     /// - Parameters:
@@ -161,15 +155,5 @@ private extension WysiwygComposerViewModelTests {
                 expectSuggestionPattern.fulfill()
             })
         return WysiwygTestExpectation(value: expectSuggestionPattern, cancellable: cancellable)
-    }
-
-    /// Wait for an expectation to be fulfilled.
-    ///
-    /// - Parameters:
-    ///   - expectation: Expectation to fulfill.
-    ///   - timeout: Timeout for failure.
-    func waitExpectation(expectation: WysiwygTestExpectation, timeout: TimeInterval) {
-        wait(for: [expectation.value], timeout: timeout)
-        expectation.cancellable.cancel()
     }
 }

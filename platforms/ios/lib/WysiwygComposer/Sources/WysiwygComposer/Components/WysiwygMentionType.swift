@@ -1,4 +1,4 @@
-// 
+//
 // Copyright 2023 The Matrix.org Foundation C.I.C
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,8 +21,8 @@ public enum WysiwygMentionType: String {
     case room
 }
 
-extension WysiwygMentionType {
-    public var patternKey: PatternKey {
+public extension WysiwygMentionType {
+    var patternKey: PatternKey {
         switch self {
         case .user:
             return .at
@@ -32,8 +32,8 @@ extension WysiwygMentionType {
     }
 }
 
-extension PatternKey {
-    public var mentionType: WysiwygMentionType? {
+public extension PatternKey {
+    var mentionType: WysiwygMentionType? {
         switch self {
         case .at:
             return .user
