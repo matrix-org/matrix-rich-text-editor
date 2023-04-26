@@ -26,6 +26,7 @@
 		A68E7140291D40710023CC04 /* WysiwygSharedConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A68E713F291D40710023CC04 /* WysiwygSharedConstants.swift */; };
 		A68E7141291D40710023CC04 /* WysiwygSharedConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A68E713F291D40710023CC04 /* WysiwygSharedConstants.swift */; };
 		A69356B229BB71F700A81F71 /* WysiwygUITests+PlainTextMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A69356B129BB71F700A81F71 /* WysiwygUITests+PlainTextMode.swift */; };
+		A6BB18D729F9191C00EB6366 /* WysiwygUITests+Autocorrection.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6BB18D629F9191C00EB6366 /* WysiwygUITests+Autocorrection.swift */; };
 		A6C2157528C0E95C00C8E727 /* View+Accessibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157428C0E95C00C8E727 /* View+Accessibility.swift */; };
 		A6C2157928C0F62000C8E727 /* WysiwygActionToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157828C0F62000C8E727 /* WysiwygActionToolbar.swift */; };
 		A6C2157C28C0FAAD00C8E727 /* WysiwygAction+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6C2157B28C0FAAD00C8E727 /* WysiwygAction+Utils.swift */; };
@@ -76,6 +77,7 @@
 		A6852F042981661000632252 /* WysiwygUITests+Indent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WysiwygUITests+Indent.swift"; sourceTree = "<group>"; };
 		A68E713F291D40710023CC04 /* WysiwygSharedConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygSharedConstants.swift; sourceTree = "<group>"; };
 		A69356B129BB71F700A81F71 /* WysiwygUITests+PlainTextMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WysiwygUITests+PlainTextMode.swift"; sourceTree = "<group>"; };
+		A6BB18D629F9191C00EB6366 /* WysiwygUITests+Autocorrection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WysiwygUITests+Autocorrection.swift"; sourceTree = "<group>"; };
 		A6C2157428C0E95C00C8E727 /* View+Accessibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Accessibility.swift"; sourceTree = "<group>"; };
 		A6C2157828C0F62000C8E727 /* WysiwygActionToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WysiwygActionToolbar.swift; sourceTree = "<group>"; };
 		A6C2157B28C0FAAD00C8E727 /* WysiwygAction+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WysiwygAction+Utils.swift"; sourceTree = "<group>"; };
@@ -165,6 +167,7 @@
 			isa = PBXGroup;
 			children = (
 				A6472CC52886CF840021A0E8 /* WysiwygUITests.swift */,
+				A6BB18D629F9191C00EB6366 /* WysiwygUITests+Autocorrection.swift */,
 				A64AB147296C769000F08494 /* WysiwygUITests+CodeBlocks.swift */,
 				A64AB143296C747C00F08494 /* WysiwygUITests+Format.swift */,
 				A6852F042981661000632252 /* WysiwygUITests+Indent.swift */,
@@ -426,6 +429,7 @@
 			files = (
 				A6852F052981661000632252 /* WysiwygUITests+Indent.swift in Sources */,
 				A64AB13E296C732500F08494 /* WysiwygUITests+Typing.swift in Sources */,
+				A6BB18D729F9191C00EB6366 /* WysiwygUITests+Autocorrection.swift in Sources */,
 				A6472CC62886CF840021A0E8 /* WysiwygUITests.swift in Sources */,
 				A64AB140296C73CE00F08494 /* WysiwygUITests+Links.swift in Sources */,
 				A661FDA729B0ACB400E799A6 /* WysiwygUITests+Suggestions.swift in Sources */,

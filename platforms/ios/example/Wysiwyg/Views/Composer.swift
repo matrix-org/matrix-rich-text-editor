@@ -51,6 +51,12 @@ struct Composer: View {
             .onTapGesture {
                 focused = true
             }
+            if viewModel.textView.autocorrectionType == .yes {
+                Image(systemName: "text.badge.checkmark")
+                    .foregroundColor(.green)
+                    .padding(.horizontal, 16)
+                    .accessibilityIdentifier(.autocorrectionIndicator)
+            }
             if let suggestion = viewModel.suggestionPattern {
                 WysiwygSuggestionList(suggestion: suggestion)
                     .environmentObject(viewModel)
