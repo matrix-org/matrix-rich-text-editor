@@ -242,10 +242,12 @@ public extension WysiwygComposerViewModel {
     func setMention(url: String, name: String, mentionType: WysiwygMentionType) {
         let update: ComposerUpdate
         if let suggestionPattern, suggestionPattern.key == mentionType.patternKey {
-            update = model.setLinkSuggestion(url: url, text: name, suggestion: suggestionPattern, mentionType: mentionType)
+            update = model.setLinkSuggestion(url: url,
+                                             text: name,
+                                             suggestion: suggestionPattern,
+                                             attributes: mentionType.attributes)
         } else {
-            // FIXME: update when merged with https://github.com/matrix-org/matrix-rich-text-editor/pull/653
-            _ = model.setLinkWithText(url: url, text: name, attributes: [])
+            _ = model.setLinkWithText(url: url, text: name, attributes: mentionType.attributes)
             update = model.replaceText(newText: " ")
         }
         applyUpdate(update)
