@@ -48,7 +48,7 @@ final class HTMLParserTests: XCTestCase {
     }
 
     func testCodeBlockBackgroundStyleIsApplied() throws {
-        let html = "<pre>code block</pre>"
+        let html = "<pre><code>code block</code></pre>"
         let attributed = try HTMLParser.parse(html: html)
         XCTAssertEqual(attributed.attribute(.blockStyle, at: 0, effectiveRange: nil) as? BlockStyle,
                        HTMLParserStyle.standard.codeBlockStyle)
@@ -66,5 +66,29 @@ final class HTMLParserTests: XCTestCase {
         let attributed = try HTMLParser.parse(html: html)
         XCTAssertEqual(attributed.backgroundColor(at: 0),
                        HTMLParserStyle.standard.codeBlockStyle.backgroundColor)
+    }
+
+    func testSingleNbspInParagraphIsReplacedByZwsp() throws {
+        let html = "<p>\(String.nbsp)</p>"
+        let attributed = try HTMLParser.parse(html: html)
+        XCTAssertEqual(attributed.string, "\(String.zwsp)")
+    }
+
+    func testSingleNbspInCodeBlockIsReplacedByZwsp() throws {
+        let html = "<pre><code>\(String.nbsp)</code></pre>"
+        let attributed = try HTMLParser.parse(html: html)
+        XCTAssertEqual(attributed.string, "\(String.zwsp)")
+    }
+
+    func testTrailingCodeBlockNbspIsReplacedByZwsp() throws {
+        let html = "<pre><code>Test\n\(String.nbsp)</code></pre>"
+        let attributed = try HTMLParser.parse(html: html)
+        XCTAssertEqual(attributed.string, "Test\(String.lineSeparator)\(String.zwsp)")
+    }
+
+    func testLeadingCodeBlockNbspIsReplacedByZwsp() throws {
+        let html = "<pre><code>\(String.nbsp)Test</code></pre>"
+        let attributed = try HTMLParser.parse(html: html)
+        XCTAssertEqual(attributed.string, "\(String.zwsp)Test")
     }
 }
