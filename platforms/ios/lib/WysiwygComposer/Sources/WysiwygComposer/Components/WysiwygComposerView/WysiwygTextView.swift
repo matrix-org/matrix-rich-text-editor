@@ -89,6 +89,7 @@ public class WysiwygTextView: UITextView {
             flusher.flush()
         }
         didSet {
+            toggleAutocorrectionIfNeeded()
             delegate?.textViewDidChange?(self)
         }
     }

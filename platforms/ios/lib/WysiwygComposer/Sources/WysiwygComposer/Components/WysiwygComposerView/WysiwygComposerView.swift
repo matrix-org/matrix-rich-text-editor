@@ -110,6 +110,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
                 functionName: #function
             )
             didUpdateText()
+            textView.toggleAutocorrectionIfNeeded()
         }
 
         public func textViewDidChangeSelection(_ textView: UITextView) {

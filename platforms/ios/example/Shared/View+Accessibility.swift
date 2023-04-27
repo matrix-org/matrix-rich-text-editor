@@ -48,6 +48,7 @@ public enum WysiwygSharedAccessibilityIdentifier: String {
     case forceCrashButton = "WysiwygForceCrashButton"
     case setHtmlButton = "WysiwygSetHtmlButton"
     case setHtmlField = "WysiwygSetHtmlField"
+    case autocorrectionIndicator = "WysiwygAutocorrectionIndicator"
 
     // Mock buttons for menu
     case aliceButton = "WysiwygMenuAliceButton"

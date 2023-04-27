@@ -25,6 +25,10 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         viewModel.clearContent()
     }
 
+    override func tearDownWithError() throws {
+        viewModel.plainTextMode = false
+    }
+
     func testIsContentEmpty() throws {
         XCTAssertTrue(viewModel.isContentEmpty)
 
@@ -136,10 +140,10 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         viewModel.apply(.orderedList)
         viewModel.apply(.bold)
         viewModel.apply(.italic)
-        viewModel.typeTrailingText("Formatted")
+        mockTrailingTyping("Formatted")
         // Enter
-        viewModel.typeTrailingText("\n")
-        viewModel.typeTrailingText("Still formatted")
+        mockTrailingTyping("\n")
+        mockTrailingTyping("Still formatted")
         XCTAssertTrue(
             viewModel
                 .textView
@@ -196,6 +200,54 @@ extension WysiwygComposerViewModelTests {
 
 // MARK: - Helpers
 
+extension WysiwygComposerViewModelTests {
+    /// Mock typing at given location.
+    ///
+    /// - Parameters:
+    ///   - text: text to type
+    ///   - location: index in text view's attributed string
+    func mockTyping(_ text: String, at location: Int) {
+        guard location <= viewModel.textView.attributedText.length else {
+            fatalError("Invalid location index")
+        }
+
+        let range = NSRange(location: location, length: 0)
+        let shouldAcceptChange = viewModel.replaceText(range: range, replacementText: text)
+        if shouldAcceptChange {
+            // Force apply since the text view should've updated by itself
+            viewModel.textView.apply(viewModel.attributedContent)
+        }
+    }
+
+    /// Mock typing trailing text.
+    ///
+    /// - Parameter text: text to type
+    func mockTrailingTyping(_ text: String) {
+        mockTyping(text, at: viewModel.textView.attributedText.length)
+    }
+
+    /// Mock backspacing at given location.
+    ///
+    /// - Parameter location: index in text view's attributed string
+    func mockBackspace(at location: Int) {
+        guard location <= viewModel.textView.attributedText.length else {
+            fatalError("Invalid location index")
+        }
+
+        let range: NSRange = location == 0 ? .zero : NSRange(location: location - 1, length: 1)
+        let shouldAcceptChange = viewModel.replaceText(range: range, replacementText: "")
+        if shouldAcceptChange {
+            // Force apply since the text view should've updated by itself
+            viewModel.textView.apply(viewModel.attributedContent)
+        }
+    }
+
+    /// Mock backspacing from trailing position.
+    func mockTrailingBackspace() {
+        mockBackspace(at: viewModel.textView.attributedText.length)
+    }
+}
+
 private extension WysiwygComposerViewModelTests {
     /// Fakes a trigger of the reconciliate mechanism of the view model.
     ///
@@ -207,13 +259,5 @@ private extension WysiwygComposerViewModelTests {
         // Set selection where we want it, as setting the content automatically moves cursor to the end.
         viewModel.textView.selectedRange = selectedRange
         viewModel.didUpdateText()
-    }
-}
-
-private extension WysiwygComposerViewModel {
-    func typeTrailingText(_ text: String) {
-        let lastChar = textView.attributedText.length - 1
-        let range = NSRange(location: lastChar, length: 0)
-        _ = replaceText(range: range, replacementText: text)
     }
 }

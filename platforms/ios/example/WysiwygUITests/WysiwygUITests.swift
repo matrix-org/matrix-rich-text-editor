@@ -73,9 +73,35 @@ internal extension WysiwygUITests {
     func button(_ id: WysiwygSharedAccessibilityIdentifier) -> XCUIElement {
         app.buttons[rawIdentifier(id)]
     }
-    
+
+    /// Get the text field with given id
+    ///
+    /// - Parameter id: Accessibility identifier
+    /// - Returns: Associated text field, if it exists
     func textField(_ id: WysiwygSharedAccessibilityIdentifier) -> XCUIElement {
-        app.textFields[id.rawValue]
+        app.textFields[rawIdentifier(id)]
+    }
+
+    /// Get the image with given id
+    ///
+    /// - Parameter id: Accessibility identifier
+    /// - Returns: Associated image, if it exists
+    func image(_ id: WysiwygSharedAccessibilityIdentifier) -> XCUIElement {
+        app.images[rawIdentifier(id)]
+    }
+
+    /// Wait for buton with given id to exist, then tap it.
+    ///
+    /// - Parameter id: Accessibility identifier
+    func waitForButtonToExistAndTap(_ id: WysiwygSharedAccessibilityIdentifier) {
+        let expectation = expectation(
+            for: NSPredicate(format: "exists == true"),
+            evaluatedWith: button(id),
+            handler: .none
+        )
+        let result = XCTWaiter.wait(for: [expectation], timeout: 30.0)
+        XCTAssertEqual(result, .completed)
+        button(id).tap()
     }
 
     /// Get the static text with given id
