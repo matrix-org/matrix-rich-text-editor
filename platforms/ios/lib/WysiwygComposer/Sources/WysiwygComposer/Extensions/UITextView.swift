@@ -20,10 +20,10 @@ extension UITextView {
     /// Toggles  autocorrection if needed. It should always be enabled,
     /// unless current text starts with exactly one slash.
     func toggleAutocorrectionIfNeeded() {
-        if attributedText.string.prefix(while: { $0 == .slash }).count == 1 {
-            autocorrectionType = .no
-        } else {
-            autocorrectionType = .yes
+        let newValue: UITextAutocorrectionType = attributedText.string.prefix(while: { $0 == .slash }).count == 1 ? .no : .yes
+        if newValue != autocorrectionType {
+            autocorrectionType = newValue
+            reloadInputViews()
         }
     }
 }
