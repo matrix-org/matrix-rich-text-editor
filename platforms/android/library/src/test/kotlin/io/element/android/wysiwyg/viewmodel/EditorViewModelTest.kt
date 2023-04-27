@@ -12,6 +12,7 @@ import io.element.android.wysiwyg.utils.RustErrorCollector
 import io.mockk.mockk
 import io.mockk.verify
 import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.empty
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.notNullValue
 import org.junit.Before
@@ -42,7 +43,7 @@ internal class EditorViewModelTest {
             "<p><b>$paragraph</b></p>" +
                     "<p><i>$paragraph</i></p>"
         private const val markdownParagraphs = "**paragraph**\n**paragraph**"
-        private const val link = "https://matrix.org"
+        private const val linkUrl = "https://matrix.org"
         private const val linkText = "Matrix"
         private val actionStates =
             mapOf(
@@ -210,12 +211,12 @@ internal class EditorViewModelTest {
 
     @Test
     fun `given internal edit link action, when get, it returns the right action`() {
-        composer.givenLinkAction(ComposerLinkAction.Edit(link))
+        composer.givenLinkAction(ComposerLinkAction.Edit(linkUrl))
 
         assertThat(
             viewModel.getLinkAction(), equalTo(
                 LinkAction.SetLink(
-                    currentLink = link
+                    currentUrl = linkUrl
                 )
             )
         )
@@ -235,7 +236,7 @@ internal class EditorViewModelTest {
         assertThat(
             viewModel.getLinkAction(), equalTo(
                 LinkAction.SetLink(
-                    currentLink = null
+                    currentUrl = null
                 )
             )
         )
@@ -248,7 +249,7 @@ internal class EditorViewModelTest {
         val result = viewModel.processInput(EditorInputAction.SetLink("https://element.io"))
 
         verify {
-            composer.instance.setLink("https://element.io")
+            composer.instance.setLink("https://element.io", attributes = emptyList())
             actionsStatesCallback(actionStates)
         }
         assertThat(result, equalTo(replaceTextResult))
@@ -270,17 +271,17 @@ internal class EditorViewModelTest {
     @Test
     fun `when process set link with text action, it returns a text update`() {
         composer.givenSetLinkWithTextResult(
-            link = link, text = linkText,
+            url = linkUrl, text = linkText,
             composerStateUpdate
         )
 
         val result = viewModel.processInput(
-            EditorInputAction.SetLinkWithText(link, linkText)
+            EditorInputAction.SetLinkWithText(linkUrl, linkText)
         )
 
         verify {
             composer.instance.setLinkWithText(
-                link = link, text = linkText
+                url = linkUrl, text = linkText, attributes = emptyList()
             )
             actionsStatesCallback(actionStates)
         }

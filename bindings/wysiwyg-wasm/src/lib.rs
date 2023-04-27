@@ -286,23 +286,23 @@ impl ComposerModel {
 
     pub fn set_link(
         &mut self,
-        link: &str,
+        url: &str,
         attributes: js_sys::Map,
     ) -> ComposerUpdate {
         ComposerUpdate::from(
             self.inner
-                .set_link(Utf16String::from_str(link), attributes.into_vec()),
+                .set_link(Utf16String::from_str(url), attributes.into_vec()),
         )
     }
 
     pub fn set_link_with_text(
         &mut self,
-        link: &str,
+        url: &str,
         text: &str,
         attributes: js_sys::Map,
     ) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.set_link_with_text(
-            Utf16String::from_str(link),
+            Utf16String::from_str(url),
             Utf16String::from_str(text),
             attributes.into_vec(),
         ))
@@ -313,13 +313,13 @@ impl ComposerModel {
     /// final argument being a map of html attributes that will be added to the Link.
     pub fn set_link_suggestion(
         &mut self,
-        link: &str,
+        url: &str,
         text: &str,
         suggestion: &SuggestionPattern,
         attributes: js_sys::Map,
     ) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.set_link_suggestion(
-            Utf16String::from_str(link),
+            Utf16String::from_str(url),
             Utf16String::from_str(text),
             wysiwyg::SuggestionPattern::from(suggestion.clone()),
             attributes.into_vec(),
@@ -783,7 +783,7 @@ pub struct Create;
 #[derive(Clone)]
 #[wasm_bindgen(getter_with_clone)]
 pub struct Edit {
-    pub link: String,
+    pub url: String,
 }
 
 #[derive(Clone)]
@@ -813,12 +813,12 @@ impl From<wysiwyg::LinkAction<Utf16String>> for LinkAction {
                 edit_link: None,
                 disabled: None,
             },
-            wysiwyg::LinkAction::Edit(link) => {
-                let link = link.to_string();
+            wysiwyg::LinkAction::Edit(url) => {
+                let url = url.to_string();
                 Self {
                     create_with_text: None,
                     create: None,
-                    edit_link: Some(Edit { link }),
+                    edit_link: Some(Edit { url }),
                     disabled: None,
                 }
             }

@@ -25,7 +25,7 @@ export type FormatBlockEvent = CustomEvent<{
 
 export type LinkEvent = Omit<InputEvent, 'data'> & {
     inputType: 'insertLink';
-    data: { link: string; text?: string };
+    data: { url: string; text?: string };
 };
 
 type AnchorElementAttributes =
@@ -38,5 +38,5 @@ export type Attributes = {
 
 export type SuggestionEvent = Omit<InputEvent, 'data'> & {
     inputType: 'insertSuggestion';
-    data: { link: string; text: string; attributes: Attributes };
+    data: { url: string; text: string; attributes: Attributes };
 };

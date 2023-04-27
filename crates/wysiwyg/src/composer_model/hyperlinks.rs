@@ -55,7 +55,7 @@ where
                 LinkAction::Disabled
             } else {
                 // Otherwise we edit the first link of the selection.
-                LinkAction::Edit(first_link.get_link().unwrap())
+                LinkAction::Edit(first_link.get_link_url().unwrap())
             }
         } else if s == e || self.is_blank_selection(range) {
             LinkAction::CreateWithText
@@ -66,7 +66,7 @@ where
 
     pub fn set_link_suggestion(
         &mut self,
-        link: S,
+        url: S,
         text: S,
         suggestion: SuggestionPattern,
         attributes: Vec<(S, S)>,
@@ -78,7 +78,7 @@ where
         self.do_replace_text_in(S::default(), suggestion.start, suggestion.end);
         self.state.start = Location::from(suggestion.start);
         self.state.end = self.state.start;
-        self.set_link_with_text(link, text, attributes);
+        self.set_link_with_text(url, text, attributes);
         self.do_replace_text(" ".into())
     }
 
@@ -106,7 +106,7 @@ where
 
     pub fn set_link_with_text(
         &mut self,
-        link: S,
+        url: S,
         text: S,
         attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
@@ -115,12 +115,12 @@ where
         self.do_replace_text(text.clone());
         let e = s + text.len();
         let range = self.state.dom.find_range(s, e);
-        self.set_link_in_range(link, range, attributes)
+        self.set_link_in_range(url, range, attributes)
     }
 
     pub fn set_link(
         &mut self,
-        link: S,
+        url: S,
         attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
         self.push_state_to_history();
@@ -128,16 +128,16 @@ where
 
         let range = self.state.dom.find_range(s, e);
 
-        self.set_link_in_range(link, range, attributes)
+        self.set_link_in_range(url, range, attributes)
     }
 
     fn set_link_in_range(
         &mut self,
-        mut link: S,
+        mut url: S,
         range: Range,
         attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
-        self.add_http_scheme(&mut link);
+        self.add_http_scheme(&mut url);
 
         let (mut s, mut e) = (range.start(), range.end());
         // Find container link that completely covers the range
@@ -221,7 +221,7 @@ where
             // Create a new link node containing the passed range
             let inserted = self.state.dom.insert_parent(
                 &range,
-                DomNode::new_link(link.clone(), vec![], attributes.clone()),
+                DomNode::new_link(url.clone(), vec![], attributes.clone()),
             );
             // Remove any child links inside it
             self.delete_child_links(&inserted);
@@ -230,8 +230,8 @@ where
         self.create_update_replace_all()
     }
 
-    fn add_http_scheme(&mut self, link: &mut S) {
-        let string = link.to_string();
+    fn add_http_scheme(&mut self, url: &mut S) {
+        let string = url.to_string();
         let str = string.as_str();
 
         match Url::parse(str) {
@@ -240,9 +240,9 @@ where
                 let is_email = EmailAddress::is_valid(str);
 
                 if is_email {
-                    link.insert(0, &S::from("mailto:"));
+                    url.insert(0, &S::from("mailto:"));
                 } else {
-                    link.insert(0, &S::from("https://"));
+                    url.insert(0, &S::from("https://"));
                 };
             }
             Err(_) => {}

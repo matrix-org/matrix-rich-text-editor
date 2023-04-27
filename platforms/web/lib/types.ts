@@ -23,9 +23,9 @@ export type WysiwygInputEvent =
     | ClipboardEvent
     | LinkEvent
     | (InputEvent & {
-          inputType: BlockType;
-          data?: string | null;
-      });
+        inputType: BlockType;
+        data?: string | null;
+    });
 
 export type WysiwygEvent = WysiwygInputEvent | KeyboardEvent;
 
@@ -40,8 +40,8 @@ export type FormattingFunctions = Record<
     () => void
 > & {
     insertText: (text: string) => void;
-    link: (link: string, text?: string) => void;
-    mention: (link: string, text: string, attributes: Attributes) => void;
+    link: (url: string, text?: string) => void;
+    mention: (url: string, text: string, attributes: Attributes) => void;
     command: (text: string) => void;
     removeLinks: () => void;
     getLink: () => string;

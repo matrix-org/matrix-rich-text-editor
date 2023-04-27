@@ -236,16 +236,16 @@ public extension WysiwygComposerViewModel {
     /// to mention a user (@) or a room/channel (#).
     ///
     /// - Parameters:
-    ///   - link: The link to the user.
-    ///   - name: The display name of the user.
-    ///   - key: The pattern key to use.
-    func setMention(link: String, name: String, mentionType: WysiwygMentionType) {
+    ///   - url: The URL to the user/room.
+    ///   - name: The display name of the user/room.
+    ///   - mentionType: The type of mention.
+    func setMention(url: String, name: String, mentionType: WysiwygMentionType) {
         let update: ComposerUpdate
         if let suggestionPattern, suggestionPattern.key == mentionType.patternKey {
-            update = model.setLinkSuggestion(link: link, text: name, suggestion: suggestionPattern, mentionType: mentionType)
+            update = model.setLinkSuggestion(url: url, text: name, suggestion: suggestionPattern, mentionType: mentionType)
         } else {
             // FIXME: update when merged with https://github.com/matrix-org/matrix-rich-text-editor/pull/653
-            _ = model.setLinkWithText(link: link, text: name, attributes: [])
+            _ = model.setLinkWithText(url: url, text: name, attributes: [])
             update = model.replaceText(newText: " ")
         }
         applyUpdate(update)
@@ -371,9 +371,9 @@ public extension WysiwygComposerViewModel {
         let update: ComposerUpdate
         switch linkOperation {
         case let .createLink(urlString, text):
-            update = model.setLinkWithText(link: urlString, text: text, attributes: [])
+            update = model.setLinkWithText(url: urlString, text: text, attributes: [])
         case let .setLink(urlString):
-            update = model.setLink(link: urlString, attributes: [])
+            update = model.setLink(url: urlString, attributes: [])
         case .removeLinks:
             update = model.removeLinks()
         }

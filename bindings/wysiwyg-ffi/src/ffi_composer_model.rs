@@ -207,10 +207,10 @@ impl ComposerModel {
 
     pub fn set_link(
         self: &Arc<Self>,
-        link: String,
+        url: String,
         attributes: Vec<Attribute>,
     ) -> Arc<ComposerUpdate> {
-        let link = Utf16String::from_str(&link);
+        let url = Utf16String::from_str(&url);
         let attrs = attributes
             .iter()
             .map(|attr| {
@@ -221,17 +221,17 @@ impl ComposerModel {
             })
             .collect();
         Arc::new(ComposerUpdate::from(
-            self.inner.lock().unwrap().set_link(link, attrs),
+            self.inner.lock().unwrap().set_link(url, attrs),
         ))
     }
 
     pub fn set_link_with_text(
         self: &Arc<Self>,
-        link: String,
+        url: String,
         text: String,
         attributes: Vec<Attribute>,
     ) -> Arc<ComposerUpdate> {
-        let link = Utf16String::from_str(&link);
+        let url = Utf16String::from_str(&url);
         let text = Utf16String::from_str(&text);
         let attrs = attributes
             .iter()
@@ -246,7 +246,7 @@ impl ComposerModel {
             self.inner
                 .lock()
                 .unwrap()
-                .set_link_with_text(link, text, attrs),
+                .set_link_with_text(url, text, attrs),
         ))
     }
 
@@ -255,12 +255,12 @@ impl ComposerModel {
     /// final argument being a list of attributes that will be added to the Link.
     pub fn set_link_suggestion(
         self: &Arc<Self>,
-        link: String,
+        url: String,
         text: String,
         suggestion: SuggestionPattern,
         attributes: Vec<Attribute>,
     ) -> Arc<ComposerUpdate> {
-        let link = Utf16String::from_str(&link);
+        let url = Utf16String::from_str(&url);
         let text = Utf16String::from_str(&text);
         let suggestion = wysiwyg::SuggestionPattern::from(suggestion);
         let attrs = attributes
@@ -276,7 +276,7 @@ impl ComposerModel {
             self.inner
                 .lock()
                 .unwrap()
-                .set_link_suggestion(link, text, suggestion, attrs),
+                .set_link_suggestion(url, text, suggestion, attrs),
         ))
     }
 

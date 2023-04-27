@@ -309,11 +309,11 @@ class EditorEditText : TextInputEditText {
     /**
      * Set a link for the current selection. This method does nothing if there is no text selected.
      *
-     * @param link The link to set or null to remove
+     * @param url The link URL to set or null to remove
      */
-    fun setLink(link: String?) {
+    fun setLink(url: String?) {
         val result = viewModel.processInput(
-            if (link != null) EditorInputAction.SetLink(link) else EditorInputAction.RemoveLink
+            if (url != null) EditorInputAction.SetLink(url) else EditorInputAction.RemoveLink
         ) ?: return
 
         setTextFromComposerUpdate(result)
@@ -330,11 +330,11 @@ class EditorEditText : TextInputEditText {
     /**
      * Insert new text with a link.
      *
-     * @param link The link to set
+     * @param url The link URL to set
      * @param text The new text to insert
      */
-    fun insertLink(link: String, text: String) {
-        val result = viewModel.processInput(EditorInputAction.SetLinkWithText(link, text)) ?: return
+    fun insertLink(url: String, text: String) {
+        val result = viewModel.processInput(EditorInputAction.SetLinkWithText(url, text)) ?: return
 
         setTextFromComposerUpdate(result)
         setSelectionFromComposerUpdate(result.selection.last)

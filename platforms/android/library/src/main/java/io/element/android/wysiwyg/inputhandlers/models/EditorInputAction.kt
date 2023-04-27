@@ -67,9 +67,9 @@ internal sealed interface EditorInputAction {
     object Redo: EditorInputAction
 
     /**
-     * Add or edit a link to the [link] url in the current selection.
+     * Add or edit a link to the [url] in the current selection.
      */
-    data class SetLink(val link: String): EditorInputAction
+    data class SetLink(val url: String): EditorInputAction
 
     /**
      * Remove link on the current selection.
