@@ -23,9 +23,9 @@ export type WysiwygInputEvent =
     | ClipboardEvent
     | LinkEvent
     | (InputEvent & {
-        inputType: BlockType;
-        data?: string | null;
-    });
+          inputType: BlockType;
+          data?: string | null;
+      });
 
 export type WysiwygEvent = WysiwygInputEvent | KeyboardEvent;
 
