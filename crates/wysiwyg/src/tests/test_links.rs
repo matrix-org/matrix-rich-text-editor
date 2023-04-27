@@ -18,21 +18,21 @@ use crate::tests::testutils_conversion::utf16;
 #[test]
 fn set_link_to_empty_selection_at_end_of_alink() {
     let mut model = cm("<a href=\"https://matrix.org\">test_link</a>|");
-    model.set_link(utf16("https://element.io"));
+    model.set_link(utf16("https://element.io"), vec![]);
     assert_eq!(tx(&model), "<a href=\"https://element.io\">test_link|</a>");
 }
 
 #[test]
 fn set_link_to_empty_selection_within_a_link() {
     let mut model = cm("<a href=\"https://matrix.org\">test_|link</a>");
-    model.set_link(utf16("https://element.io"));
+    model.set_link(utf16("https://element.io"), vec![]);
     assert_eq!(tx(&model), "<a href=\"https://element.io\">test_|link</a>");
 }
 
 #[test]
 fn set_link_to_empty_selection_at_start_of_a_link() {
     let mut model = cm("<a href=\"https://matrix.org\">|test_link</a>");
-    model.set_link(utf16("https://element.io"));
+    model.set_link(utf16("https://element.io"), vec![]);
     assert_eq!(tx(&model), "<a href=\"https://element.io\">|test_link</a>");
 }
 
@@ -40,14 +40,14 @@ fn set_link_to_empty_selection_at_start_of_a_link() {
 fn set_link_to_empty_selection() {
     // This use case should never happen but in case it would...
     let mut model = cm("test|");
-    model.set_link(utf16("https://element.io"));
+    model.set_link(utf16("https://element.io"), vec![]);
     assert_eq!(tx(&model), "test|");
 }
 
 #[test]
 fn set_link_wraps_selection_in_link_tag() {
     let mut model = cm("{hello}| world");
-    model.set_link(utf16("https://element.io"));
+    model.set_link(utf16("https://element.io"), vec![]);
     assert_eq!(
         model.state.dom.to_string(),
         "<a href=\"https://element.io\">hello</a> world"
@@ -57,7 +57,7 @@ fn set_link_wraps_selection_in_link_tag() {
 #[test]
 fn set_link_in_multiple_leaves_of_formatted_text() {
     let mut model = cm("{<i>test_italic<b>test_italic_bold</b></i>}|");
-    model.set_link(utf16("https://element.io"));
+    model.set_link(utf16("https://element.io"), vec![]);
     assert_eq!(
         model.state.dom.to_string(),
         "<a href=\"https://element.io\"><i>test_italic<b>test_italic_bold</b></i></a>"
@@ -67,7 +67,7 @@ fn set_link_in_multiple_leaves_of_formatted_text() {
 #[test]
 fn set_link_in_multiple_leaves_of_formatted_text_partially_covered() {
     let mut model = cm("<i>test_it{alic<b>test_ital}|ic_bold</b></i>");
-    model.set_link(utf16("https://element.io"));
+    model.set_link(utf16("https://element.io"), vec![]);
     assert_eq!(
         model.state.dom.to_string(),
         "<i>test_it<a href=\"https://element.io\">alic<b>test_ital</b></a><b>ic_bold</b></i>"
@@ -77,7 +77,7 @@ fn set_link_in_multiple_leaves_of_formatted_text_partially_covered() {
 #[test]
 fn set_link_in_multiple_leaves_of_formatted_text_partially_covered_2() {
     let mut model = cm("<i><u>test_it{alic_underline</u>test_italic<b>test_ital}|ic_bold</b></i>");
-    model.set_link(utf16("https://element.io"));
+    model.set_link(utf16("https://element.io"), vec![]);
     assert_eq!(
         model.state.dom.to_string(),
         "<i><u>test_it</u><a href=\"https://element.io\"><u>alic_underline</u>test_italic<b>test_ital</b></a><b>ic_bold</b></i>"
@@ -87,7 +87,7 @@ fn set_link_in_multiple_leaves_of_formatted_text_partially_covered_2() {
 #[test]
 fn set_link_in_already_linked_text() {
     let mut model = cm("{<a href=\"https://element.io\">link_text</a>}|");
-    model.set_link(utf16("https://matrix.org"));
+    model.set_link(utf16("https://matrix.org"), vec![]);
     assert_eq!(
         model.state.dom.to_string(),
         "<a href=\"https://matrix.org\">link_text</a>"
@@ -97,7 +97,7 @@ fn set_link_in_already_linked_text() {
 #[test]
 fn set_link_in_already_linked_text_with_partial_selection() {
     let mut model = cm("<a href=\"https://element.io\">link_{text}|</a>");
-    model.set_link(utf16("https://matrix.org"));
+    model.set_link(utf16("https://matrix.org"), vec![]);
     assert_eq!(
         model.state.dom.to_string(),
         "<a href=\"https://matrix.org\">link_text</a>"
@@ -108,7 +108,7 @@ fn set_link_in_already_linked_text_with_partial_selection() {
 fn set_link_in_text_and_already_linked_text() {
     let mut model =
         cm("{non_link_text<a href=\"https://element.io\">link_text</a>}|");
-    model.set_link(utf16("https://matrix.org"));
+    model.set_link(utf16("https://matrix.org"), vec![]);
     assert_eq!(
         model.state.dom.to_string(),
         "<a href=\"https://matrix.org\">non_link_textlink_text</a>"
@@ -118,7 +118,7 @@ fn set_link_in_text_and_already_linked_text() {
 #[test]
 fn set_link_in_multiple_leaves_of_formatted_text_with_link() {
     let mut model = cm("{<i><a href=\"https://element.io\">test_italic</a><b><a href=\"https://element.io\">test_italic_bold</a></b></i>}|");
-    model.set_link(utf16("https://matrix.org"));
+    model.set_link(utf16("https://matrix.org"), vec![]);
     assert_eq!(
         model.state.dom.to_string(),
         "<a href=\"https://matrix.org\"><i>test_italic<b>test_italic_bold</b></i></a>"
@@ -128,7 +128,7 @@ fn set_link_in_multiple_leaves_of_formatted_text_with_link() {
 #[test]
 fn set_link_partially_highlighted_inside_a_link_and_starting_inside() {
     let mut model = cm("<a href=\"https://element.io\">test_{link</a> test}|");
-    model.set_link(utf16("https://matrix.org"));
+    model.set_link(utf16("https://matrix.org"), vec![]);
     assert_eq!(
         tx(&model),
         "<a href=\"https://matrix.org\">test_{link test}|</a>"
@@ -138,7 +138,7 @@ fn set_link_partially_highlighted_inside_a_link_and_starting_inside() {
 #[test]
 fn set_link_partially_highlighted_inside_a_link_and_starting_before() {
     let mut model = cm("{test <a href=\"https://element.io\">test}|_link</a>");
-    model.set_link(utf16("https://matrix.org"));
+    model.set_link(utf16("https://matrix.org"), vec![]);
     assert_eq!(
         tx(&model),
         "<a href=\"https://matrix.org\">{test test}|_link</a>"
@@ -148,7 +148,7 @@ fn set_link_partially_highlighted_inside_a_link_and_starting_before() {
 #[test]
 fn set_link_highlighted_inside_a_link() {
     let mut model = cm("<a href=\"https://element.io\">test {test}| test</a>");
-    model.set_link(utf16("https://matrix.org"));
+    model.set_link(utf16("https://matrix.org"), vec![]);
     assert_eq!(
         tx(&model),
         r#"<a href="https://matrix.org">test {test}| test</a>"#
@@ -158,7 +158,7 @@ fn set_link_highlighted_inside_a_link() {
 #[test]
 fn set_link_around_links() {
     let mut model = cm(r#"{X <a href="linkA">A</a> <a href="linkB">B</a> Y}|"#);
-    model.set_link(utf16("https://matrix.org"));
+    model.set_link(utf16("https://matrix.org"), vec![]);
     assert_eq!(tx(&model), r#"<a href="https://matrix.org">{X A B Y}|</a>"#);
 }
 
@@ -638,14 +638,14 @@ fn set_link_add_mail_scheme_with_plus() {
 #[test]
 fn set_link_with_selection_add_http_scheme() {
     let mut model = cm("<a href=\"https://matrix.org\">test_link</a>|");
-    model.set_link(utf16("element.io"));
+    model.set_link(utf16("element.io"), vec![]);
     assert_eq!(tx(&model), "<a href=\"https://element.io\">test_link|</a>");
 }
 
 #[test]
 fn set_link_accross_list_items() {
     let mut model = cm("<ul><li>Te{st</li><li>Bo}|ld</li></ul>");
-    model.set_link("https://element.io".into());
+    model.set_link("https://element.io".into(), vec![]);
     assert_eq!(
         tx(&model),
         "<ul>\
@@ -658,7 +658,7 @@ fn set_link_accross_list_items() {
 #[test]
 fn set_link_accross_list_items_with_container() {
     let mut model = cm("<ul><li><b>Te{st</b></li><li><b>Bo}|ld</b></li></ul>");
-    model.set_link("https://element.io".into());
+    model.set_link("https://element.io".into(), vec![]);
     assert_eq!(
         tx(&model),
         "<ul>\
@@ -677,7 +677,7 @@ fn set_link_across_list_items_with_multiple_inline_formattings_selected() {
     let mut model = cm(
         "<ul><li>tes{t<b>test_bold</b></li><li><i>test_}|italic</i></li></ul>",
     );
-    model.set_link("https://element.io".into());
+    model.set_link("https://element.io".into(), vec![]);
     assert_eq!(
         tx(&model),
         "<ul>\
@@ -696,7 +696,7 @@ fn set_link_across_list_items_including_an_entire_item() {
     // panicked at 'All child nodes of handle DomHandle { path: Some([0]) } must be either inline nodes or block nodes
     let mut model =
         cm("<ul><li>te{st1</li><li>test2</li><li>te}|st3</li></ul>");
-    model.set_link("https://element.io".into());
+    model.set_link("https://element.io".into(), vec![]);
     assert_eq!(
         tx(&model),
         "<ul>\
@@ -717,7 +717,7 @@ fn set_link_across_list_items_including_an_entire_item() {
 fn set_link_accross_quote() {
     let mut model =
         cm("<blockquote>test_{block_quote</blockquote><p> test}|</p>");
-    model.set_link("https://element.io".into());
+    model.set_link("https://element.io".into(), vec![]);
     assert_eq!(
         tx(&model),
         "<blockquote>\
@@ -732,7 +732,7 @@ fn set_link_accross_quote() {
 #[test]
 fn set_link_across_multiple_paragraphs() {
     let mut model = cm("<p>te{st1</p><p>te}|st2</p>");
-    model.set_link("https://element.io".into());
+    model.set_link("https://element.io".into(), vec![]);
     assert_eq!(
         tx(&model),
         "<p>te<a href=\"https://element.io\">{st1</a></p><p><a href=\"https://element.io\">te}|</a>st2</p>"
@@ -743,7 +743,7 @@ fn set_link_across_multiple_paragraphs() {
 fn set_link_across_multiple_paragraphs_containing_an_entire_pagraph() {
     // This panics saying 'All child nodes of handle DomHandle { path: Some([0]) } must be either inline nodes or block nodes'
     let mut model = cm("<p>te{st1</p><p>test2</p><p>tes}|t3</p>");
-    model.set_link("https://element.io".into());
+    model.set_link("https://element.io".into(), vec![]);
     assert_eq!(
         tx(&model),
         "<p>\

@@ -70,9 +70,9 @@ struct WysiwygActionToolbar: View {
             }
             actions.append(createWithTextAction(doubleTextAction: doubleTextAction))
             return AlertConfig(title: createLinkTitle, actions: actions)
-        case let .edit(link):
-            let editLinktitle = "Edit Link"
-            actions.append(editTextAction(singleTextAction: singleTextAction, link: link))
+        case let .edit(url):
+            let editLinktitle = "Edit Link URL"
+            actions.append(editTextAction(singleTextAction: singleTextAction, url: url))
             let removeAction = {
                 viewModel.select(range: linkAttributedRange)
                 viewModel.applyLinkOperation(.removeLinks)
@@ -119,14 +119,14 @@ private extension WysiwygActionToolbar {
         )
     }
 
-    private func editTextAction(singleTextAction: @escaping ([String]) -> Void, link: String) -> AlertConfig.Action {
+    private func editTextAction(singleTextAction: @escaping ([String]) -> Void, url: String) -> AlertConfig.Action {
         .textAction(
             title: "Ok",
             textFieldsData: [
                 .init(
                     accessibilityIdentifier: .linkUrlTextField,
                     placeholder: "URL",
-                    defaultValue: link
+                    defaultValue: url
                 ),
             ],
             action: singleTextAction

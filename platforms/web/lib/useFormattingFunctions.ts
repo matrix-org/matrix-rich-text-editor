@@ -54,17 +54,17 @@ export function useFormattingFunctions(
             inlineCode: () => sendEvent('formatInlineCode'),
             clear: () => sendEvent('clear'),
             insertText: (text: string) => sendEvent('insertText', text),
-            link: (link: string, text?: string) =>
-                sendEvent('insertLink', { link, text }),
+            link: (url: string, text?: string) =>
+                sendEvent('insertLink', { url, text }),
             removeLinks: () => sendEvent('removeLinks'),
             getLink: () =>
-                composerModel?.get_link_action()?.edit_link?.link || '',
+                composerModel?.get_link_action()?.edit_link?.url || '',
             codeBlock: () => sendEvent('insertCodeBlock'),
             quote: () => sendEvent('insertQuote'),
             indent: () => sendEvent('formatIndent'),
             unindent: () => sendEvent('formatOutdent'),
-            mention: (link: string, text: string, attributes: Attributes) =>
-                sendEvent('insertSuggestion', { link, text, attributes }),
+            mention: (url: string, text: string, attributes: Attributes) =>
+                sendEvent('insertSuggestion', { url, text, attributes }),
             command: (text: string) => sendEvent('insertCommand', text),
         };
     }, [editorRef, composerModel]);

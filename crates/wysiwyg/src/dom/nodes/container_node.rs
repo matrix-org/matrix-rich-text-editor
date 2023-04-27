@@ -417,11 +417,11 @@ where
         }
     }
 
-    pub(crate) fn get_link(&self) -> Option<S> {
-        let ContainerNodeKind::Link(link) = self.kind.clone() else {
+    pub(crate) fn get_link_url(&self) -> Option<S> {
+        let ContainerNodeKind::Link(url) = self.kind.clone() else {
             return None
         };
-        Some(link)
+        Some(url)
     }
 
     /// Creates a container with the same kind & attributes

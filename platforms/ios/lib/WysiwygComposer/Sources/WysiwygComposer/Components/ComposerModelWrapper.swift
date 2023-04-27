@@ -30,9 +30,9 @@ protocol ComposerModelWrapperProtocol {
     func replaceTextSuggestion(newText: String, suggestion: SuggestionPattern) -> ComposerUpdate
     func backspace() -> ComposerUpdate
     func enter() -> ComposerUpdate
-    func setLink(link: String) -> ComposerUpdate
-    func setLinkWithText(link: String, text: String) -> ComposerUpdate
-    func setLinkSuggestion(link: String, text: String, suggestion: SuggestionPattern, mentionType: WysiwygMentionType) -> ComposerUpdate
+    func setLink(url: String, attributes: [Attribute]) -> ComposerUpdate
+    func setLinkWithText(url: String, text: String, attributes: [Attribute]) -> ComposerUpdate
+    func setLinkSuggestion(url: String, text: String, suggestion: SuggestionPattern, mentionType: WysiwygMentionType) -> ComposerUpdate
     func removeLinks() -> ComposerUpdate
     func toTree() -> String
     func getCurrentDomState() -> ComposerState
@@ -113,20 +113,20 @@ final class ComposerModelWrapper: ComposerModelWrapperProtocol {
         execute { try $0.enter() }
     }
 
-    func setLink(link: String) -> ComposerUpdate {
-        execute { try $0.setLink(link: link) }
+    func setLink(url: String, attributes: [Attribute]) -> ComposerUpdate {
+        execute { try $0.setLink(url: url, attributes: attributes) }
     }
 
-    func setLinkWithText(link: String, text: String) -> ComposerUpdate {
-        execute { try $0.setLinkWithText(link: link, text: text) }
+    func setLinkWithText(url: String, text: String, attributes: [Attribute]) -> ComposerUpdate {
+        execute { try $0.setLinkWithText(url: url, text: text, attributes: attributes) }
     }
 
-    func setLinkSuggestion(link: String, text: String, suggestion: SuggestionPattern, mentionType: WysiwygMentionType) -> ComposerUpdate {
+    func setLinkSuggestion(url: String, text: String, suggestion: SuggestionPattern, mentionType: WysiwygMentionType) -> ComposerUpdate {
         let attributes = [
             Attribute(key: "data-mention-type", value: mentionType.rawValue),
             Attribute(key: "contenteditable", value: "false"),
         ]
-        return execute { try $0.setLinkSuggestion(link: link, text: text, suggestion: suggestion, attributes: attributes) }
+        return execute { try $0.setLinkSuggestion(url: url, text: text, suggestion: suggestion, attributes: attributes) }
     }
 
     func removeLinks() -> ComposerUpdate {

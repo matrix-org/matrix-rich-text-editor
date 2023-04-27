@@ -78,9 +78,9 @@ internal class EditorViewModel(
                     action.end.toUInt()
                 )
                 is EditorInputAction.Delete -> composer?.delete()
-                is EditorInputAction.SetLink -> composer?.setLink(link = action.link)
+                is EditorInputAction.SetLink -> composer?.setLink(url = action.url, attributes = emptyList())
                 is EditorInputAction.RemoveLink -> composer?.removeLinks()
-                is EditorInputAction.SetLinkWithText -> composer?.setLinkWithText(action.link, action.text)
+                is EditorInputAction.SetLinkWithText -> composer?.setLinkWithText(action.link, action.text, attributes = emptyList())
                 is EditorInputAction.ReplaceAllHtml -> composer?.setContentFromHtml(action.html)
                 is EditorInputAction.ReplaceAllMarkdown -> composer?.setContentFromMarkdown(action.markdown)
                 is EditorInputAction.Undo -> composer?.undo()
@@ -137,8 +137,8 @@ internal class EditorViewModel(
     fun getLinkAction(): LinkAction? =
         composer?.getLinkAction()?.let {
             when (it) {
-                is ComposerLinkAction.Edit -> LinkAction.SetLink(currentLink = it.link)
-                is ComposerLinkAction.Create -> LinkAction.SetLink(currentLink = null)
+                is ComposerLinkAction.Edit -> LinkAction.SetLink(currentUrl = it.url)
+                is ComposerLinkAction.Create -> LinkAction.SetLink(currentUrl = null)
                 is ComposerLinkAction.CreateWithText -> LinkAction.InsertLink
                 is ComposerLinkAction.Disabled -> null
             }

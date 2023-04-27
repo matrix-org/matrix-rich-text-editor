@@ -72,13 +72,13 @@ class RichTextEditor : LinearLayout {
                 val linkAction = richTextEditText.getLinkAction() ?: return@setOnClickListener
                 when(linkAction) {
                     is LinkAction.InsertLink -> {
-                        onSetLinkListener?.openInsertLinkDialog { text, link ->
-                            richTextEditText.insertLink(link = link, text = text)
+                        onSetLinkListener?.openInsertLinkDialog { text, url ->
+                            richTextEditText.insertLink(url = url, text = text)
                         }
                     }
                     is LinkAction.SetLink ->
-                        onSetLinkListener?.openSetLinkDialog(linkAction.currentLink) { link ->
-                            richTextEditText.setLink(link)
+                        onSetLinkListener?.openSetLinkDialog(linkAction.currentUrl) { url ->
+                            richTextEditText.setLink(url)
                         }
                 }
             }

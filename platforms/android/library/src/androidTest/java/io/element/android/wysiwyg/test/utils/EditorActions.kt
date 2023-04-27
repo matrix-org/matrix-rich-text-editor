@@ -65,15 +65,15 @@ object Editor {
 
     data class InsertLink(
         val text: String,
-        val link: String,
+        val url: String,
     ) : ViewAction {
         override fun getConstraints(): Matcher<View> = isDisplayed()
 
-        override fun getDescription(): String = "Insert text ($text) linking to $link"
+        override fun getDescription(): String = "Insert text ($text) linking to $url"
 
         override fun perform(uiController: UiController?, view: View?) {
             val editor = view as? EditorEditText ?: return
-            editor.insertLink(link = link, text = text)
+            editor.insertLink(url = url, text = text)
         }
     }
 
