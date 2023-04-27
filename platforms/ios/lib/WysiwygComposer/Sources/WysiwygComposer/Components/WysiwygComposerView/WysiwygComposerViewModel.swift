@@ -244,8 +244,8 @@ public extension WysiwygComposerViewModel {
         if let suggestionPattern, suggestionPattern.key == mentionType.patternKey {
             update = model.setLinkSuggestion(link: link, text: name, suggestion: suggestionPattern, mentionType: mentionType)
         } else {
-            _ = model.setLinkWithText(link: link, text: name)
-            // FIXME: remove this if Rust adds this space for free
+            // FIXME: update when merged with https://github.com/matrix-org/matrix-rich-text-editor/pull/653
+            _ = model.setLinkWithText(link: link, text: name, attributes: [])
             update = model.replaceText(newText: " ")
         }
         applyUpdate(update)
@@ -371,9 +371,9 @@ public extension WysiwygComposerViewModel {
         let update: ComposerUpdate
         switch linkOperation {
         case let .createLink(urlString, text):
-            update = model.setLinkWithText(link: urlString, text: text)
+            update = model.setLinkWithText(link: urlString, text: text, attributes: [])
         case let .setLink(urlString):
-            update = model.setLink(link: urlString)
+            update = model.setLink(link: urlString, attributes: [])
         case .removeLinks:
             update = model.removeLinks()
         }

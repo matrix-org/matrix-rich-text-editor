@@ -44,8 +44,8 @@ interface ComposerModel {
     ComposerUpdate redo();
     ComposerUpdate indent();
     ComposerUpdate unindent();
-    ComposerUpdate set_link(string link);
-    ComposerUpdate set_link_with_text(string link, string text);
+    ComposerUpdate set_link(string link, sequence<Attribute> attributes);
+    ComposerUpdate set_link_with_text(string link, string text, sequence<Attribute> attributes);
     ComposerUpdate set_link_suggestion(string link, string text, SuggestionPattern suggestion, sequence<Attribute> attributes);
     ComposerUpdate remove_links();
     ComposerUpdate code_block();

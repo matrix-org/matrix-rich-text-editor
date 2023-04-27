@@ -284,19 +284,27 @@ impl ComposerModel {
         self.inner.get_link_action().into()
     }
 
-    pub fn set_link(&mut self, link: &str) -> ComposerUpdate {
-        ComposerUpdate::from(self.inner.set_link(Utf16String::from_str(link)))
+    pub fn set_link(
+        &mut self,
+        link: &str,
+        attributes: js_sys::Map,
+    ) -> ComposerUpdate {
+        ComposerUpdate::from(
+            self.inner
+                .set_link(Utf16String::from_str(link), attributes.into_vec()),
+        )
     }
 
     pub fn set_link_with_text(
         &mut self,
         link: &str,
         text: &str,
+        attributes: js_sys::Map,
     ) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.set_link_with_text(
             Utf16String::from_str(link),
             Utf16String::from_str(text),
-            vec![],
+            attributes.into_vec(),
         ))
     }
 

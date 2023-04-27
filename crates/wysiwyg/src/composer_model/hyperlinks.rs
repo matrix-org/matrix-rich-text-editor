@@ -118,13 +118,17 @@ where
         self.set_link_in_range(link, range, attributes)
     }
 
-    pub fn set_link(&mut self, link: S) -> ComposerUpdate<S> {
+    pub fn set_link(
+        &mut self,
+        link: S,
+        attributes: Vec<(S, S)>,
+    ) -> ComposerUpdate<S> {
         self.push_state_to_history();
         let (s, e) = self.safe_selection();
 
         let range = self.state.dom.find_range(s, e);
 
-        self.set_link_in_range(link, range, vec![])
+        self.set_link_in_range(link, range, attributes)
     }
 
     fn set_link_in_range(

@@ -205,10 +205,23 @@ impl ComposerModel {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().redo()))
     }
 
-    pub fn set_link(self: &Arc<Self>, link: String) -> Arc<ComposerUpdate> {
+    pub fn set_link(
+        self: &Arc<Self>,
+        link: String,
+        attributes: Vec<Attribute>,
+    ) -> Arc<ComposerUpdate> {
         let link = Utf16String::from_str(&link);
+        let attrs = attributes
+            .iter()
+            .map(|attr| {
+                (
+                    Utf16String::from_str(&attr.key),
+                    Utf16String::from_str(&attr.value),
+                )
+            })
+            .collect();
         Arc::new(ComposerUpdate::from(
-            self.inner.lock().unwrap().set_link(link),
+            self.inner.lock().unwrap().set_link(link, attrs),
         ))
     }
 
@@ -216,14 +229,24 @@ impl ComposerModel {
         self: &Arc<Self>,
         link: String,
         text: String,
+        attributes: Vec<Attribute>,
     ) -> Arc<ComposerUpdate> {
         let link = Utf16String::from_str(&link);
         let text = Utf16String::from_str(&text);
+        let attrs = attributes
+            .iter()
+            .map(|attr| {
+                (
+                    Utf16String::from_str(&attr.key),
+                    Utf16String::from_str(&attr.value),
+                )
+            })
+            .collect();
         Arc::new(ComposerUpdate::from(
             self.inner
                 .lock()
                 .unwrap()
-                .set_link_with_text(link, text, vec![]),
+                .set_link_with_text(link, text, attrs),
         ))
     }
 

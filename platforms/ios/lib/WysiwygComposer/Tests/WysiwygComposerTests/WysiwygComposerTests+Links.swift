@@ -33,13 +33,13 @@ extension WysiwygComposerTests {
     func testEditLinkAction() {
         let link = "test_url"
         ComposerModelWrapper()
-            .action { $0.setLinkWithText(link: link, text: "test") }
+            .action { $0.setLinkWithText(link: link, text: "test", attributes: []) }
             .assertLinkAction(.edit(link: "https://\(link)"))
     }
 
     func testSetLinkWithText() {
         ComposerModelWrapper()
-            .action { $0.setLinkWithText(link: "link", text: "text") }
+            .action { $0.setLinkWithText(link: "link", text: "text", attributes: []) }
             .assertTree(
                 """
 
@@ -52,7 +52,7 @@ extension WysiwygComposerTests {
     
     func testSetLinkWithTextWithIncludedScheme() {
         ComposerModelWrapper()
-            .action { $0.setLinkWithText(link: "http://link", text: "text") }
+            .action { $0.setLinkWithText(link: "http://link", text: "text", attributes: []) }
             .assertTree(
                 """
 
@@ -65,7 +65,7 @@ extension WysiwygComposerTests {
     
     func testSetMailLinkWithText() {
         ComposerModelWrapper()
-            .action { $0.setLinkWithText(link: "test@element.io", text: "text") }
+            .action { $0.setLinkWithText(link: "test@element.io", text: "text", attributes: []) }
             .assertTree(
                 """
 
@@ -80,7 +80,7 @@ extension WysiwygComposerTests {
         ComposerModelWrapper()
             .action { $0.replaceText(newText: "text") }
             .action { $0.select(startUtf16Codeunit: 0, endUtf16Codeunit: 4) }
-            .action { $0.setLink(link: "link") }
+            .action { $0.setLink(link: "link", attributes: []) }
             .assertTree(
                 """
 
@@ -93,7 +93,7 @@ extension WysiwygComposerTests {
 
     func testRemoveLinks() {
         ComposerModelWrapper()
-            .action { $0.setLinkWithText(link: "link", text: "text") }
+            .action { $0.setLinkWithText(link: "link", text: "text", attributes: []) }
             .assertTree(
                 """
 

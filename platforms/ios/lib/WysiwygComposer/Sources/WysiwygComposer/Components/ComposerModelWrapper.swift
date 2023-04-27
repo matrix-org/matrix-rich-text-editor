@@ -30,8 +30,8 @@ protocol ComposerModelWrapperProtocol {
     func replaceTextSuggestion(newText: String, suggestion: SuggestionPattern) -> ComposerUpdate
     func backspace() -> ComposerUpdate
     func enter() -> ComposerUpdate
-    func setLink(link: String) -> ComposerUpdate
-    func setLinkWithText(link: String, text: String) -> ComposerUpdate
+    func setLink(link: String, attributes: [Attribute]) -> ComposerUpdate
+    func setLinkWithText(link: String, text: String, attributes: [Attribute]) -> ComposerUpdate
     func setLinkSuggestion(link: String, text: String, suggestion: SuggestionPattern, mentionType: WysiwygMentionType) -> ComposerUpdate
     func removeLinks() -> ComposerUpdate
     func toTree() -> String
@@ -113,12 +113,12 @@ final class ComposerModelWrapper: ComposerModelWrapperProtocol {
         execute { try $0.enter() }
     }
 
-    func setLink(link: String) -> ComposerUpdate {
-        execute { try $0.setLink(link: link) }
+    func setLink(link: String, attributes: [Attribute]) -> ComposerUpdate {
+        execute { try $0.setLink(link: link, attributes: attributes) }
     }
 
-    func setLinkWithText(link: String, text: String) -> ComposerUpdate {
-        execute { try $0.setLinkWithText(link: link, text: text) }
+    func setLinkWithText(link: String, text: String, attributes: [Attribute]) -> ComposerUpdate {
+        execute { try $0.setLinkWithText(link: link, text: text, attributes: attributes) }
     }
 
     func setLinkSuggestion(link: String, text: String, suggestion: SuggestionPattern, mentionType: WysiwygMentionType) -> ComposerUpdate {
