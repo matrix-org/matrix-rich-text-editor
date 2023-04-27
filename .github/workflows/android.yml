@@ -15,6 +15,10 @@ env:
   ARCH: x86_64
   DEVICE: Nexus 5X
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
 jobs:
   tests:
     if: |
