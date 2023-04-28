@@ -14,36 +14,16 @@
 // limitations under the License.
 //
 
-import Foundation
-
-// MARK: - Public
-
-/// Defines a mention type available in the Rich Text Editor.
-public enum WysiwygMentionType: String {
-    case user
-    case room
-}
-
-public extension WysiwygMentionType {
-    /// Associated pattern key.
-    var patternKey: PatternKey {
+public extension PatternKey {
+    /// Associated mention type, if any.
+    var mentionType: WysiwygMentionType? {
         switch self {
-        case .user:
-            return .at
-        case .room:
-            return .hash
+        case .at:
+            return .user
+        case .hash:
+            return .room
+        case .slash:
+            return nil
         }
-    }
-}
-
-// MARK: - Internal
-
-extension WysiwygMentionType {
-    /// Default attributes.
-    var attributes: [Attribute] {
-        [
-            Attribute(key: "data-mention-type", value: rawValue),
-            Attribute(key: "contenteditable", value: "false"),
-        ]
     }
 }
