@@ -17,66 +17,70 @@
 import DTCoreText
 
 extension DTHTMLElement {
-    /// Clears any only child consisting of a single non-breaking space.
-    func clearNbspNodes() {
+    /// Sanitize the DTHTMLElement right before it's written inside the resulting attributed string.
+    func sanitize() {
         guard let childNodes = childNodes as? [DTHTMLElement] else { return }
 
-        if childNodes.count == 1,
-           let child = childNodes.first as? DTTextHTMLElement,
-           child.text() == .nbsp {
-            removeAllChildNodes()
-            let newChild = PlaceholderTextHTMLElement(from: child)
-            addChildNode(newChild)
-            newChild.inheritAttributes(from: self)
-            newChild.interpretAttributes()
-        } else {
-            for childNode in childNodes {
-                childNode.clearNbspNodes()
+        if childNodes.count == 1, let child = childNodes.first as? DTTextHTMLElement {
+            if child.text() == .nbsp {
+                // Removing NBSP character from e.g. <p>&nbsp;</p> since it is only used to
+                // make DTCoreText able to easily parse new lines.
+                removeAllChildNodes()
+                let newChild = PlaceholderTextHTMLElement(from: child)
+                addChildNode(newChild)
+                newChild.inheritAttributes(from: self)
+                newChild.interpretAttributes()
+            } else {
+                if tag == .code, parent().tag == .pre, var text = child.text() {
+                    // Replace leading and trailing NBSP from code blocks with
+                    // discardable elements (ZWSP).
+                    let hasLeadingNbsp = text.hasPrefix(String.nbsp)
+                    let hasTrailingNbsp = text.hasSuffix(String.nbsp)
+                    guard hasLeadingNbsp || hasTrailingNbsp else { return }
+                    removeAllChildNodes()
+                    if hasLeadingNbsp {
+                        text.removeFirst()
+                        addChildNode(createDiscardableElement())
+                    }
+                    addChildNode(child)
+                    if hasTrailingNbsp {
+                        text.removeLast()
+                        if text.last == .lineFeed {
+                            text.removeLast()
+                            addChildNode(createLineBreak())
+                        }
+                        addChildNode(createDiscardableElement())
+                    }
+                    child.setText(text)
+                }
             }
+        } else {
+            childNodes.forEach { $0.sanitize() }
         }
     }
+}
 
-    func clearTrailingAndLeadingNewlinesInCodeblocks() {
-        guard let childNodes = childNodes as? [DTHTMLElement] else {
-            return
-        }
+// MARK: - Helpers
 
-        if name == "pre",
-           childNodes.count == 1,
-           let child = childNodes.first as? DTTextHTMLElement,
-           var text = child.text(),
-           text != .nbsp {
-            let hasLeadingNbsp = text.hasPrefix(String.nbsp)
-            let hasTrailingNbsp = text.hasSuffix(String.nbsp)
-            guard hasLeadingNbsp || hasTrailingNbsp else { return }
-            removeAllChildNodes()
-            if hasLeadingNbsp {
-                text.removeFirst()
-                addChildNode(createDiscardableElement())
-                addChildNode(createLineBreak())
-            }
-            addChildNode(child)
-            if hasTrailingNbsp {
-                text.removeLast()
-                addChildNode(createLineBreak())
-                addChildNode(createDiscardableElement())
-            }
-            child.setText(text)
-        } else {
-            for childNode in childNodes {
-                childNode.clearTrailingAndLeadingNewlinesInCodeblocks()
-            }
-        }
+/// An arbitrary enum of HTML tags that requires some specific handling
+private enum DTHTMLElementTag: String {
+    case pre
+    case code
+}
+
+private extension DTHTMLElement {
+    var tag: DTHTMLElementTag? {
+        DTHTMLElementTag(rawValue: name)
     }
 
-    private func createDiscardableElement() -> PlaceholderTextHTMLElement {
+    func createDiscardableElement() -> PlaceholderTextHTMLElement {
         let discardableElement = PlaceholderTextHTMLElement()
         discardableElement.inheritAttributes(from: self)
         discardableElement.interpretAttributes()
         return discardableElement
     }
 
-    private func createLineBreak() -> DTBreakHTMLElement {
+    func createLineBreak() -> DTBreakHTMLElement {
         let lineBreakElement = DTBreakHTMLElement()
         lineBreakElement.inheritAttributes(from: self)
         lineBreakElement.interpretAttributes()
