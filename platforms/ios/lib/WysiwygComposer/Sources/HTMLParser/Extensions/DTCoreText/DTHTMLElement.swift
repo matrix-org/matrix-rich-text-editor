@@ -45,7 +45,10 @@ extension DTHTMLElement {
                     addChildNode(child)
                     if hasTrailingNbsp {
                         text.removeLast()
-                        addChildNode(createLineBreak())
+                        if text.last == .lineFeed {
+                            text.removeLast()
+                            addChildNode(createLineBreak())
+                        }
                         addChildNode(createDiscardableElement())
                     }
                     child.setText(text)

@@ -80,7 +80,15 @@ final class HTMLParserTests: XCTestCase {
         XCTAssertEqual(attributed.string, "\(String.zwsp)")
     }
 
-    func testTrailingCodeBlockNbspIsReplacedByZwsp() throws {
+    func testTrailingCodeBlockNbspWithoutLineFeedIsReplacedByZwsp() throws {
+        // Note shouldn't happen in normal circumstances.
+        // But this case should definitely not add a lineSeparator
+        let html = "<pre><code>Test\(String.nbsp)</code></pre>"
+        let attributed = try HTMLParser.parse(html: html)
+        XCTAssertEqual(attributed.string, "Test\(String.zwsp)")
+    }
+
+    func testTrailingCodeBlockNbspWithLineFeedIsReplacedByLineSeparatorAndZwsp() throws {
         let html = "<pre><code>Test\n\(String.nbsp)</code></pre>"
         let attributed = try HTMLParser.parse(html: html)
         XCTAssertEqual(attributed.string, "Test\(String.lineSeparator)\(String.zwsp)")
