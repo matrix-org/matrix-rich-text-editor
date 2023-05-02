@@ -6,6 +6,12 @@ the Element clients.
 Works on Web, Android and iOS using a cross-platform core written in Rust,
 and platform-specific wrappers.
 
+## Important Note
+
+This project is still in an early stage. Minor versions could bring 
+breaking API changes, see [CHANGELOG.md](CHANGELOG.md) for details.
+Bugs and crashes may occur, please report them [here](https://github.com/matrix-org/matrix-rich-text-editor/issues/new).
+
 ## Live demo
 
 Try it out at

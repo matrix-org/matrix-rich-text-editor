@@ -4,8 +4,8 @@
 
 ### Changed
 
-- Common: Add extra HTML attributes parameter to all link creation APIs
-- Common: Rename `link` parameter to `url` wherever it's relevant
+- Common: [API breaking change] Add extra HTML attributes parameter to all link creation APIs
+- Common: [API breaking change] Rename `link` parameter to `url` wherever it's relevant
 - iOS: Expose `set_content_from_markdown` to the hosting application
 
 ### Fixed
