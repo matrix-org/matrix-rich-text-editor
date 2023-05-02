@@ -1,5 +1,18 @@
 # Changelog
 
+# [2.1.0] - 2023-05-02
+
+### Changed
+
+- Common: Add extra HTML attributes parameter to all link creation APIs
+- Common: Rename `link` parameter to `url` wherever it's relevant
+- iOS: Expose `set_content_from_markdown` to the hosting application
+
+### Fixed
+
+- iOS: Disable autocorrection if current input is a command
+- iOS: Fix an issue with code blocks NBSP placeholder not being replaced on display
+
 # [2.0.0] - 2023-04-04
 
 ### Changed
