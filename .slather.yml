@@ -1,0 +1,5 @@
+coverage_service: cobertura_xml
+xcodeproj: platforms/ios/example/Wysiwyg.xcodeproj
+scheme: Wysiwyg
+source_directory: platforms/ios/example/Wysiwyg
+output_directory: ./
