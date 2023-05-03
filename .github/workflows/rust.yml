@@ -10,7 +10,7 @@ env:
   CARGO_TERM_COLOR: always
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.workflow_run.head_branch }}
+  group: ${{ github.ref == 'refs/heads/main' && format('rust-build-main-{0}', github.sha) || format('rust-build-pr-{0}', github.ref)  }}
   cancel-in-progress: true
 
 jobs:
