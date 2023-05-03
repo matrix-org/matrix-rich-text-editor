@@ -62,7 +62,7 @@ jobs:
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
-      working-directory: platforms/ios/example
       with:
+        directory: platforms/ios/example
         fail_ci_if_error: true
         flags: unittests-ios, unittests
