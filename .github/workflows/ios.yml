@@ -46,3 +46,9 @@ jobs:
     - name: Tests
       working-directory: platforms/ios/example
       run: exec ./ios-tests.sh
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        fail_ci_if_error: true
+        flags: unittests-ios, unittests
