@@ -59,15 +59,15 @@ jobs:
       run: exec ./ios-tests.sh
 
     - name: Extract branch name
-        shell: bash
-        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-        id: get_branch
+      shell: bash
+      run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+      id: get_branch
 
     - run: bundle exec slather
       env:
         GIT_BRANCH: ${{ steps.get_branch.outputs.branch }}
         CI_PULL_REQUEST: ${{ github.event.number }}
-        
+
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
