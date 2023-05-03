@@ -99,7 +99,9 @@ jobs:
           disable-animations: true
           enable-hw-keyboard: true
           script: |
-            ./generate_coverage_report.sh
+            ./gradlew unitTestsWithCoverage ${{ env.CI_GRADLE_ARG_PROPERTIES }}
+            ./gradlew instrumentationTestsWithCoverage ${{ env.CI_GRADLE_ARG_PROPERTIES }}
+            ./gradlew generateCoverageReport ${{ env.CI_GRADLE_ARG_PROPERTIES }}
 
       - name : Upload test results
         if : ${{ always() }}
@@ -112,6 +114,6 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
-          directory: platforms/android/build/reports
+          directory: platforms/android/build/report
           fail_ci_if_error: true
           flags: unittests-ios, unittests
