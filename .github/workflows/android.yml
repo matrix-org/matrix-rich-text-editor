@@ -99,8 +99,21 @@ jobs:
           disable-animations: true
           enable-hw-keyboard: true
           script: |
+            ./gradlew :library:testDebugUnitTest :library:connectedDebugAndroidTest ${{ env.CI_GRADLE_ARG_PROPERTIES }}
+
+      - name: Run coverage
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          working-directory: platforms/android
+          api-level: ${{ matrix.api-level }}
+          arch: ${{ env.ARCH }}
+          profile: ${{ env.DEVICE }}
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          enable-hw-keyboard: true
+          script: |
             ./gradlew unitTestsWithCoverage ${{ env.CI_GRADLE_ARG_PROPERTIES }}
-            ./gradlew instrumentationTestsWithCoverage ${{ env.CI_GRADLE_ARG_PROPERTIES }}
             ./gradlew generateCoverageReport ${{ env.CI_GRADLE_ARG_PROPERTIES }}
 
       - name : Upload test results
@@ -111,9 +124,10 @@ jobs:
           path : |
             ./**/build/reports/tests/**
             ./**/build/reports/androidTests/connected/**
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
-          directory: platforms/android/build/report
-          fail_ci_if_error: true
+          directory: platforms/android/build/reports
+          fail_ci_if_error: false
           flags: unittests-ios, unittests
