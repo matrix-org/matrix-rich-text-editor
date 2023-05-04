@@ -1,4 +1,7 @@
-package io.element.android.wysiwyg.suggestions
+package io.element.android.wysiwyg.poc.matrix
+
+import io.element.android.wysiwyg.suggestions.LinkDisplay
+import io.element.android.wysiwyg.suggestions.LinkDisplayHandler
 
 /**
  * Convenience implementation of a [LinkDisplayHandler] that detects Matrix mentions and

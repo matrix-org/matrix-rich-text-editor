@@ -31,7 +31,6 @@ import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
 import io.element.android.wysiwyg.utils.*
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
 import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
-import io.element.android.wysiwyg.suggestions.MatrixMentionLinkDisplayHandler
 import io.element.android.wysiwyg.suggestions.LinkDisplayHandler
 import uniffi.wysiwyg_composer.*
 

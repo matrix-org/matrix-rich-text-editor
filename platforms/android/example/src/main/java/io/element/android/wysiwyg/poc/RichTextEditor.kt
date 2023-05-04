@@ -14,7 +14,8 @@ import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.inputhandlers.models.LinkAction
 import io.element.android.wysiwyg.poc.databinding.ViewRichTextEditorBinding
-import io.element.android.wysiwyg.suggestions.MatrixMentionLinkDisplayHandler
+import io.element.android.wysiwyg.poc.matrix.Mention
+import io.element.android.wysiwyg.poc.matrix.MatrixMentionLinkDisplayHandler
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
 import uniffi.wysiwyg_composer.MenuAction
@@ -167,7 +168,7 @@ class RichTextEditor : LinearLayout {
                     OnItemClickListener { _, _, position, _ ->
                         val item = suggestions[position]
                         binding.richTextEditText.setLinkSuggestion(
-                            "${item.key}${item.display}", item.link
+                            item.text, item.link
                         )
                     }
             }

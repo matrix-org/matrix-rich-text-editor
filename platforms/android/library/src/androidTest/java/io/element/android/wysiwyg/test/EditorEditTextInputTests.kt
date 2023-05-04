@@ -24,7 +24,7 @@ import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.spans.LinkSpan
 import io.element.android.wysiwyg.spans.PillSpan
 import io.element.android.wysiwyg.spans.OrderedListSpan
-import io.element.android.wysiwyg.suggestions.MatrixMentionLinkDisplayHandler
+import io.element.android.wysiwyg.suggestions.LinkDisplay
 import io.element.android.wysiwyg.test.utils.*
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import io.mockk.confirmVerified
@@ -259,7 +259,7 @@ class EditorEditTextInputTests {
     fun testSettingLinkSuggestion() {
         onView(withId(R.id.rich_text_edit_text))
             .perform(ImeActions.setComposingText("@jonny"))
-            .perform(EditorActions.setLinkDisplayHandler(MatrixMentionLinkDisplayHandler()))
+            .perform(EditorActions.setLinkDisplayHandler { _, _ -> LinkDisplay.Pill })
             .perform(EditorActions.setLinkSuggestion("jonny", "https://matrix.to/#/@jonny.andrew:matrix.org"))
             .check(matches(TextViewMatcher {
                 it.editableText.getSpans<PillSpan>().isNotEmpty()

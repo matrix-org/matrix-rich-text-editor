@@ -6,7 +6,6 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.element.android.wysiwyg.fakes.createFakeStyleConfig
 import io.element.android.wysiwyg.suggestions.LinkDisplay
-import io.element.android.wysiwyg.suggestions.MatrixMentionLinkDisplayHandler
 import io.element.android.wysiwyg.suggestions.LinkDisplayHandler
 import io.element.android.wysiwyg.utils.AndroidResourcesHelper
 import io.element.android.wysiwyg.utils.HtmlToSpansParser
@@ -131,33 +130,13 @@ class HtmlToSpansParserTest {
     }
 
     @Test
-    fun testLinkDisplayWithMatrixFilter() {
-        val html = """
-            <a href="https://element.io">link</a>
-            <a href="https://matrix.to/#/@jonny.andrew:matrix.org">jonny</a>
-        """.trimIndent()
-        val spanned = convertHtml(html, linkDisplayHandler = MatrixMentionLinkDisplayHandler())
-        assertThat(
-            spanned.dumpSpans(), equalTo(
-                listOf(
-                    "link: io.element.android.wysiwyg.spans.LinkSpan (0-4) fl=#33",
-                    "jonny: io.element.android.wysiwyg.spans.PillSpan (5-10) fl=#33"
-                )
-            )
-        )
-        assertThat(
-            spanned.toString(), equalTo("link\njonny")
-        )
-    }
-
-    @Test
     fun testLinkDisplayWithCustomLinkDisplayHandler() {
         val html = """
             <a href="https://element.io">link</a>
             <a href="https://matrix.to/#/@jonny.andrew:matrix.org">jonny</a>
         """.trimIndent()
-        val spanned = convertHtml(html, linkDisplayHandler = {
-            if(it.contains("element.io")) {
+        val spanned = convertHtml(html, linkDisplayHandler = { _, url ->
+            if(url.contains("element.io")) {
                 LinkDisplay.Pill
             } else {
                 LinkDisplay.Plain
@@ -178,7 +157,7 @@ class HtmlToSpansParserTest {
 
     private fun convertHtml(
         html: String,
-        linkDisplayHandler: LinkDisplayHandler? = MatrixMentionLinkDisplayHandler()
+        linkDisplayHandler: LinkDisplayHandler? = null
     ): Spanned {
         val app = ApplicationProvider.getApplicationContext<Application>()
         return HtmlToSpansParser(
