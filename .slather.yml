@@ -1,10 +1,8 @@
 coverage_service: cobertura_xml
 xcodeproj: platforms/ios/example/Wysiwyg.xcodeproj
 scheme: Wysiwyg
-source_directory: platforms/ios/example
-output_directory: platforms/ios/example
+output_directory: platforms/ios/lib/coverage
 build_directory: platforms/ios/example/DerivedData
 ignore:
-  - Wysiwyg/Mocks/*
-  - Wysiwyg/AppDelegate.swift
-  - lib/Sources/WysiwygComposer.swift
+  - platforms/ios/example/**
+  - platforms/ios/lib/WysiwygComposer/Sources/WysiwygComposer/WysiwygComposer.swift
