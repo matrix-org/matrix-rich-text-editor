@@ -20,8 +20,7 @@ extension WysiwygUITests {
     func testRichTextModeAutocorrection() throws {
         textView.typeTextCharByChar("/")
         XCTAssertFalse(image(.autocorrectionIndicator).exists)
-        let deleteKey = app.keys["delete"]
-        deleteKey.tap()
+        textView.typeText(XCUIKeyboardKey.delete.rawValue)
         XCTAssertTrue(image(.autocorrectionIndicator).exists)
         textView.typeTextCharByChar("/join")
         XCTAssertFalse(image(.autocorrectionIndicator).exists)
@@ -34,8 +33,7 @@ extension WysiwygUITests {
         waitForButtonToExistAndTap(.plainRichButton)
         textView.typeTextCharByChar("/")
         XCTAssertFalse(image(.autocorrectionIndicator).exists)
-        let deleteKey = app.keys["delete"]
-        deleteKey.tap()
+        textView.typeText(XCUIKeyboardKey.delete.rawValue)
         XCTAssertTrue(image(.autocorrectionIndicator).exists)
         textView.typeTextCharByChar("/join")
         XCTAssertFalse(image(.autocorrectionIndicator).exists)
