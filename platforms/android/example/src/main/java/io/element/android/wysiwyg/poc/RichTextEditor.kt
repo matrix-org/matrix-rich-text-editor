@@ -14,6 +14,7 @@ import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.inputhandlers.models.LinkAction
 import io.element.android.wysiwyg.poc.databinding.ViewRichTextEditorBinding
+import io.element.android.wysiwyg.suggestions.MatrixMentionUrlFilter
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
 import uniffi.wysiwyg_composer.MenuAction
@@ -117,6 +118,7 @@ class RichTextEditor : LinearLayout {
                 EditorEditText.OnMenuActionChangedListener { menuAction ->
                     updateSuggestions(menuAction)
                 }
+            richTextEditText.mentionUrlFilter = MatrixMentionUrlFilter()
         }
     }
 

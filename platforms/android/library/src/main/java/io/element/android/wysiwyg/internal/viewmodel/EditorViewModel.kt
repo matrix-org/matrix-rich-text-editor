@@ -10,8 +10,6 @@ import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.inputhandlers.models.LinkAction
 import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
-import io.element.android.wysiwyg.internal.suggestions.toInternalPatternKey
-import io.element.android.wysiwyg.internal.suggestions.toSymbol
 import io.element.android.wysiwyg.utils.EditorIndexMapper
 import io.element.android.wysiwyg.utils.HtmlConverter
 import io.element.android.wysiwyg.utils.RustErrorCollector
@@ -180,19 +178,15 @@ internal class EditorViewModel(
     }
 
     private fun setMention(action: EditorInputAction.SetMention): ComposerUpdate? {
-        val (link, name, type) = action
+        val (link, name) = action
 
         val suggestion = (curMenuAction as? MenuAction.Suggestion)
             ?.suggestionPattern
             ?: return null
 
-        val key = type.toInternalPatternKey()
-        val symbol = key.toSymbol()
-        val text = "$symbol$name"
-
         return composer?.setLinkSuggestion(
             url = link,
-            text = text,
+            text = name,
             suggestion = suggestion,
             attributes = emptyList()
         )

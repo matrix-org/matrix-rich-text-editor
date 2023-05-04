@@ -1,6 +1,7 @@
 package io.element.android.wysiwyg.utils
 
 import android.graphics.drawable.Drawable
+import androidx.annotation.ColorRes
 import androidx.annotation.Px
 
 internal data class StyleConfig(
@@ -8,7 +9,9 @@ internal data class StyleConfig(
 
     val inlineCode: InlineCodeStyleConfig,
 
-    val codeBlock: CodeBlockStyleConfig
+    val codeBlock: CodeBlockStyleConfig,
+
+    val mention: MentionStyleConfig,
 )
 
 data class BulletListStyleConfig(
@@ -31,4 +34,9 @@ data class CodeBlockStyleConfig(
     @Px val verticalPadding: Int,
     val relativeTextSize: Float,
     val backgroundDrawable: Drawable,
+)
+
+data class MentionStyleConfig(
+    @ColorRes
+    val backgroundColor: Int,
 )

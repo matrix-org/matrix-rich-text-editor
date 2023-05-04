@@ -5,6 +5,8 @@ import android.text.Spanned
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.element.android.wysiwyg.fakes.createFakeStyleConfig
+import io.element.android.wysiwyg.suggestions.MatrixMentionUrlFilter
+import io.element.android.wysiwyg.suggestions.MentionUrlFilter
 import io.element.android.wysiwyg.utils.AndroidResourcesHelper
 import io.element.android.wysiwyg.utils.HtmlToSpansParser
 import io.element.android.wysiwyg.utils.NBSP
@@ -127,12 +129,58 @@ class HtmlToSpansParserTest {
         )
     }
 
-    private fun convertHtml(html: String): Spanned {
+    @Test
+    fun testMentionsWithMatrixFilter() {
+        val html = """
+            <a href="https://element.io">link</a>
+            <a href="https://matrix.to/#/@jonny.andrew:matrix.org">jonny</a>
+        """.trimIndent()
+        val spanned = convertHtml(html, mentionUrlFilter = MatrixMentionUrlFilter())
+        assertThat(
+            spanned.dumpSpans(), equalTo(
+                listOf(
+                    "link: io.element.android.wysiwyg.spans.LinkSpan (0-4) fl=#33",
+                    "jonny: io.element.android.wysiwyg.spans.MentionSpan (5-10) fl=#33"
+                )
+            )
+        )
+        assertThat(
+            spanned.toString(), equalTo("link\njonny")
+        )
+    }
+
+    @Test
+    fun testMentionsWithCustomFilter() {
+        val html = """
+            <a href="https://element.io">link</a>
+            <a href="https://matrix.to/#/@jonny.andrew:matrix.org">jonny</a>
+        """.trimIndent()
+        val spanned = convertHtml(html, mentionUrlFilter = MentionUrlFilter {
+            it.contains("element.io")
+        })
+        assertThat(
+            spanned.dumpSpans(), equalTo(
+                listOf(
+                    "link: io.element.android.wysiwyg.spans.MentionSpan (0-4) fl=#33",
+                    "jonny: io.element.android.wysiwyg.spans.LinkSpan (5-10) fl=#33"
+                )
+            )
+        )
+        assertThat(
+            spanned.toString(), equalTo("link\njonny")
+        )
+    }
+
+    private fun convertHtml(
+        html: String,
+        mentionUrlFilter: MentionUrlFilter? = MatrixMentionUrlFilter()
+    ): Spanned {
         val app = ApplicationProvider.getApplicationContext<Application>()
         return HtmlToSpansParser(
             resourcesHelper = AndroidResourcesHelper(application = app),
             html = html,
             styleConfig = createFakeStyleConfig(),
+            mentionUrlFilter = mentionUrlFilter,
         ).convert()
     }
 }

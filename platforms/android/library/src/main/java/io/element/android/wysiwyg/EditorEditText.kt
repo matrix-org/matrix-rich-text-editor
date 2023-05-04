@@ -32,6 +32,8 @@ import io.element.android.wysiwyg.suggestions.MentionType
 import io.element.android.wysiwyg.utils.*
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
 import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
+import io.element.android.wysiwyg.suggestions.MatrixMentionUrlFilter
+import io.element.android.wysiwyg.suggestions.MentionUrlFilter
 import uniffi.wysiwyg_composer.*
 
 class EditorEditText : TextInputEditText {
@@ -54,7 +56,8 @@ class EditorEditText : TextInputEditText {
                 provideHtmlToSpansParser = { html ->
                     HtmlToSpansParser(
                         resourcesProvider, html,
-                        styleConfig = styleConfig
+                        styleConfig = styleConfig,
+                        mentionUrlFilter = mentionUrlFilter,
                     )
                 },
             )
@@ -100,6 +103,11 @@ class EditorEditText : TextInputEditText {
         fun onMenuActionChanged(menuAction: MenuAction)
     }
 
+    /**
+     * Set the mention URL filter to enable mention formatting.
+     * The [MatrixMentionUrlFilter] can be used to format Matrix mentions.
+     */
+    var mentionUrlFilter: MentionUrlFilter? = null
     var selectionChangeListener: OnSelectionChangeListener? = null
     var actionStatesChangedListener: OnActionStatesChangedListener? = null
         set(value) {

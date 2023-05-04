@@ -29,6 +29,7 @@ class InterceptInputConnectionIntegrationTest {
                     AndroidResourcesHelper(app),
                     html,
                     createFakeStyleConfig(),
+                    mentionUrlFilter = null,
                 )
             },
         )

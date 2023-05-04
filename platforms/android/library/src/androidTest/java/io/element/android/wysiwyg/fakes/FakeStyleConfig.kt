@@ -1,10 +1,8 @@
 package io.element.android.wysiwyg.fakes
 
 import android.graphics.drawable.ColorDrawable
-import io.element.android.wysiwyg.utils.BulletListStyleConfig
-import io.element.android.wysiwyg.utils.CodeBlockStyleConfig
-import io.element.android.wysiwyg.utils.InlineCodeStyleConfig
-import io.element.android.wysiwyg.utils.StyleConfig
+import io.element.android.wysiwyg.utils.*
+import io.element.android.wysiwyg.test.R
 
 private val fakeDrawable = ColorDrawable()
 
@@ -27,5 +25,8 @@ internal fun createFakeStyleConfig() = StyleConfig(
         verticalPadding = 0,
         relativeTextSize = 1f,
         backgroundDrawable = fakeDrawable,
+    ),
+    mention = MentionStyleConfig(
+        R.color.fake_color
     )
 )

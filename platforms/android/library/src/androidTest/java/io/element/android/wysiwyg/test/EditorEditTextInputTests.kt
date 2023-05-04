@@ -22,7 +22,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.spans.LinkSpan
+import io.element.android.wysiwyg.spans.MentionSpan
 import io.element.android.wysiwyg.spans.OrderedListSpan
+import io.element.android.wysiwyg.suggestions.MatrixMentionUrlFilter
+import io.element.android.wysiwyg.suggestions.MentionType
 import io.element.android.wysiwyg.test.utils.*
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import io.mockk.confirmVerified
@@ -251,6 +254,17 @@ class EditorEditTextInputTests {
                 it.editableText.getSpans<LinkSpan>().isNotEmpty()
             }))
             .check(matches(withText("a Element to set")))
+    }
+
+    @Test
+    fun testSettingMention() {
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(ImeActions.setComposingText("@jonny"))
+            .perform(EditorActions.setMentionUrlFilter(MatrixMentionUrlFilter()))
+            .perform(EditorActions.setMention("jonny", "https://matrix.to/#/@jonny.andrew:matrix.org", MentionType.User))
+            .check(matches(TextViewMatcher {
+                it.editableText.getSpans<MentionSpan>().isNotEmpty()
+            }))
     }
 
     @Test

@@ -11,14 +11,10 @@ import android.text.style.UnderlineSpan
 import androidx.core.text.getSpans
 import io.element.android.wysiwyg.BuildConfig
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
-import io.element.android.wysiwyg.spans.BlockSpan
-import io.element.android.wysiwyg.spans.CodeBlockSpan
-import io.element.android.wysiwyg.spans.ExtraCharacterSpan
-import io.element.android.wysiwyg.spans.InlineCodeSpan
+import io.element.android.wysiwyg.spans.*
 import io.element.android.wysiwyg.spans.LinkSpan
-import io.element.android.wysiwyg.spans.OrderedListSpan
-import io.element.android.wysiwyg.spans.UnorderedListSpan
-import io.element.android.wysiwyg.spans.QuoteSpan
+import io.element.android.wysiwyg.spans.MentionSpan
+import io.element.android.wysiwyg.suggestions.MentionUrlFilter
 import org.ccil.cowan.tagsoup.Parser
 import org.xml.sax.Attributes
 import org.xml.sax.ContentHandler
@@ -38,6 +34,7 @@ internal class HtmlToSpansParser(
     private val resourcesHelper: ResourcesHelper,
     private val html: String,
     private val styleConfig: StyleConfig,
+    private val mentionUrlFilter: MentionUrlFilter?,
 ) : ContentHandler {
 
     /**
@@ -55,6 +52,7 @@ internal class HtmlToSpansParser(
     // Spans created to be used as 'marks' while parsing
     private sealed interface PlaceholderSpan {
         data class Hyperlink(val link: String): PlaceholderSpan
+        data class Mention(val link: String): PlaceholderSpan
         sealed interface ListBlock: PlaceholderSpan {
             class Ordered: ListBlock
             class Unordered: ListBlock
@@ -147,7 +145,11 @@ internal class HtmlToSpansParser(
             }
             "a" -> {
                 val url = attrs?.getValue("href") ?: return
-                handleHyperlinkStart(url)
+                if (mentionUrlFilter?.isMention(url) == true) {
+                    handleMentionStart(url)
+                } else {
+                    handleHyperlinkStart(url)
+                }
             }
             "ul", "ol" -> {
                 addLeadingLineBreakIfNeeded(text.length)
@@ -203,7 +205,10 @@ internal class HtmlToSpansParser(
             "u" -> handleFormatEndTag(InlineFormat.Underline)
             "del" -> handleFormatEndTag(InlineFormat.StrikeThrough)
             "code" -> handleFormatEndTag(InlineFormat.InlineCode)
-            "a" -> handleHyperlinkEnd()
+            "a" -> {
+                handleMentionEnd()
+                handleHyperlinkEnd()
+            }
             "li" -> {
                 val last = getLastPending<PlaceholderSpan.ListItem>() ?: return
                 val start = last.start
@@ -306,6 +311,18 @@ internal class HtmlToSpansParser(
         val span = LinkSpan((last.span).link)
         replacePlaceholderWithPendingSpan(last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
     }
+
+    private fun handleMentionStart(url: String) {
+        val hyperlink = PlaceholderSpan.Mention(url)
+        addPlaceHolderSpan(hyperlink)
+    }
+
+    private fun handleMentionEnd() {
+        val last = getLastPending<PlaceholderSpan.Mention>() ?: return
+        val span = MentionSpan((last.span).link, resourcesHelper.getColor(styleConfig.mention.backgroundColor))
+        replacePlaceholderWithPendingSpan(last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+    }
+
 
     private fun createListSpan(last: PlaceholderSpan.ListItem): ParagraphStyle {
         val gapWidth = styleConfig.bulletList.bulletGapWidth.roundToInt()
@@ -471,6 +488,9 @@ internal class HtmlToSpansParser(
             // Blocks
             CodeBlockSpan::class.java,
             QuoteSpan::class.java,
+
+            // Pills
+            MentionSpan::class.java,
         )
 
         fun Editable.removeFormattingSpans() =

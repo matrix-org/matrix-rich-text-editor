@@ -2,13 +2,8 @@ package io.element.android.wysiwyg
 
 import android.content.Context
 import android.util.AttributeSet
-import androidx.core.content.res.getDimensionOrThrow
-import androidx.core.content.res.getDimensionPixelSizeOrThrow
-import androidx.core.content.res.getDrawableOrThrow
-import androidx.core.content.res.getFloatOrThrow
-import io.element.android.wysiwyg.utils.BulletListStyleConfig
-import io.element.android.wysiwyg.utils.CodeBlockStyleConfig
-import io.element.android.wysiwyg.utils.InlineCodeStyleConfig
+import androidx.core.content.res.*
+import io.element.android.wysiwyg.utils.*
 import io.element.android.wysiwyg.utils.StyleConfig
 
 internal class EditorEditTextAttributeReader(context: Context, attrs: AttributeSet?) {
@@ -41,6 +36,9 @@ internal class EditorEditTextAttributeReader(context: Context, attrs: AttributeS
                 verticalPadding = typedArray.getDimensionPixelSizeOrThrow(R.styleable.EditorEditText_codeBlockVerticalPadding),
                 relativeTextSize = typedArray.getFloatOrThrow(R.styleable.EditorEditText_codeBlockRelativeTextSize),
                 backgroundDrawable = typedArray.getDrawableOrThrow(R.styleable.EditorEditText_codeBlockBackgroundDrawable),
+            ),
+            mention = MentionStyleConfig(
+                backgroundColor = typedArray.getResourceIdOrThrow(R.styleable.EditorEditText_mentionBackgroundColor),
             )
         )
         typedArray.recycle()

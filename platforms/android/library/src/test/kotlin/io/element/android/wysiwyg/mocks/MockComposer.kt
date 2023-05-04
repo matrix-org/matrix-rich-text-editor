@@ -3,10 +3,7 @@ package io.element.android.wysiwyg.mocks
 import io.element.android.wysiwyg.extensions.toUShortList
 import io.mockk.every
 import io.mockk.mockk
-import uniffi.wysiwyg_composer.ComposerModelInterface
-import uniffi.wysiwyg_composer.ComposerState
-import uniffi.wysiwyg_composer.ComposerUpdate
-import uniffi.wysiwyg_composer.LinkAction
+import uniffi.wysiwyg_composer.*
 
 class MockComposer {
     val instance = mockk<ComposerModelInterface>()
@@ -86,6 +83,12 @@ class MockComposer {
     fun givenRemoveLinkResult(
         update: ComposerUpdate = MockComposerUpdateFactory.create(),
     ) = every { instance.removeLinks() } returns update
+
+    fun givenSetMentionResult(
+        name: String,
+        link: String,
+        update: ComposerUpdate = MockComposerUpdateFactory.create(),
+    ) = every { instance.setLinkSuggestion(url = link, attributes = emptyList(), text = name, suggestion = any()) } returns update
 
     fun givenReplaceAllHtmlResult(
         html: String,
