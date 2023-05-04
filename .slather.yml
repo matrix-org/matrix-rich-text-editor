@@ -1,6 +1,5 @@
 coverage_service: cobertura_xml
 xcodeproj: platforms/ios/example/Wysiwyg.xcodeproj
-scheme: Wysiwyg
 source_directory: platforms/ios/example
 output_directory: platforms/ios/example
 build_directory: platforms/ios/example/DerivedData
