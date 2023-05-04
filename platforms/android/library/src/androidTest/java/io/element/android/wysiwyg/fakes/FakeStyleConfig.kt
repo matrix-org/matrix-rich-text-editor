@@ -1,8 +1,12 @@
 package io.element.android.wysiwyg.fakes
 
 import android.graphics.drawable.ColorDrawable
-import io.element.android.wysiwyg.utils.*
 import io.element.android.wysiwyg.test.R
+import io.element.android.wysiwyg.utils.BulletListStyleConfig
+import io.element.android.wysiwyg.utils.CodeBlockStyleConfig
+import io.element.android.wysiwyg.utils.InlineCodeStyleConfig
+import io.element.android.wysiwyg.utils.PillStyleConfig
+import io.element.android.wysiwyg.utils.StyleConfig
 
 private val fakeDrawable = ColorDrawable()
 

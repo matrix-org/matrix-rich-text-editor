@@ -2,8 +2,15 @@ package io.element.android.wysiwyg
 
 import android.content.Context
 import android.util.AttributeSet
-import androidx.core.content.res.*
-import io.element.android.wysiwyg.utils.*
+import androidx.core.content.res.getDimensionOrThrow
+import androidx.core.content.res.getDimensionPixelSizeOrThrow
+import androidx.core.content.res.getDrawableOrThrow
+import androidx.core.content.res.getFloatOrThrow
+import androidx.core.content.res.getResourceIdOrThrow
+import io.element.android.wysiwyg.utils.BulletListStyleConfig
+import io.element.android.wysiwyg.utils.CodeBlockStyleConfig
+import io.element.android.wysiwyg.utils.InlineCodeStyleConfig
+import io.element.android.wysiwyg.utils.PillStyleConfig
 import io.element.android.wysiwyg.utils.StyleConfig
 
 internal class EditorEditTextAttributeReader(context: Context, attrs: AttributeSet?) {

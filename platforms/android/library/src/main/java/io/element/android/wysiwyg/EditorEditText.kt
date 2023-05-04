@@ -28,11 +28,11 @@ import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.inputhandlers.models.LinkAction
 import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
-import io.element.android.wysiwyg.utils.*
-import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
+import io.element.android.wysiwyg.internal.links.MemoizingLinkDisplayHandler
 import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
 import io.element.android.wysiwyg.links.LinkDisplayHandler
-import io.element.android.wysiwyg.internal.links.MemoizingLinkDisplayHandler
+import io.element.android.wysiwyg.utils.*
+import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
 import uniffi.wysiwyg_composer.*
 
 class EditorEditText : TextInputEditText {
@@ -104,7 +104,7 @@ class EditorEditText : TextInputEditText {
 
     /**
      * Set the link display handler to display links in a custom way.
-     * The [MatrixMentionLinkDisplayHandler] can be used to format Matrix mentions.
+     * For example, to transform links into pills.
      */
     var linkDisplayHandler: LinkDisplayHandler? = null
         set(value) {

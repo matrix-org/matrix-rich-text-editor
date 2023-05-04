@@ -133,7 +133,7 @@ class HtmlToSpansParserTest {
     fun testLinkDisplayWithCustomLinkDisplayHandler() {
         val html = """
             <a href="https://element.io">link</a>
-            <a href="https://matrix.to/#/@jonny.andrew:matrix.org">jonny</a>
+            <a href="https://matrix.to/#/@test:matrix.org">jonny</a>
         """.trimIndent()
         val spanned = convertHtml(html, linkDisplayHandler = { _, url ->
             if(url.contains("element.io")) {

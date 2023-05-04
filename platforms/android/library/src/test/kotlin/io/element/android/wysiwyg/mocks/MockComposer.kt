@@ -3,7 +3,10 @@ package io.element.android.wysiwyg.mocks
 import io.element.android.wysiwyg.extensions.toUShortList
 import io.mockk.every
 import io.mockk.mockk
-import uniffi.wysiwyg_composer.*
+import uniffi.wysiwyg_composer.ComposerModelInterface
+import uniffi.wysiwyg_composer.ComposerState
+import uniffi.wysiwyg_composer.ComposerUpdate
+import uniffi.wysiwyg_composer.LinkAction
 
 class MockComposer {
     val instance = mockk<ComposerModelInterface>()

@@ -17,7 +17,12 @@ import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.notNullValue
 import org.junit.Before
 import org.junit.Test
-import uniffi.wysiwyg_composer.*
+import uniffi.wysiwyg_composer.ActionState
+import uniffi.wysiwyg_composer.ComposerAction
+import uniffi.wysiwyg_composer.MenuAction
+import uniffi.wysiwyg_composer.MenuState
+import uniffi.wysiwyg_composer.PatternKey
+import uniffi.wysiwyg_composer.SuggestionPattern
 import uniffi.wysiwyg_composer.LinkAction as ComposerLinkAction
 
 internal class EditorViewModelTest {
@@ -289,7 +294,7 @@ internal class EditorViewModelTest {
     @Test
     fun `when process set link suggestion action, it returns a text update`() {
         val name = "jonny"
-        val url = "https://matrix.to/#/@jonny.andrew:matrix.org"
+        val url = "https://matrix.to/#/@test:matrix.org"
         val suggestionPattern =
             SuggestionPattern(PatternKey.AT, text = "jonny", 0.toUInt(), 5.toUInt())
         composer.givenReplaceTextResult(MockComposerUpdateFactory.create(

@@ -8,7 +8,8 @@ import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.graphics.withTranslation
 import io.element.android.wysiwyg.inlinebg.SpanBackgroundHelper
 import io.element.android.wysiwyg.inlinebg.SpanBackgroundHelperFactory
-import io.element.android.wysiwyg.utils.*
+import io.element.android.wysiwyg.utils.CodeBlockStyleConfig
+import io.element.android.wysiwyg.utils.InlineCodeStyleConfig
 
 /**
  * This TextView can display all spans used by the editor.
