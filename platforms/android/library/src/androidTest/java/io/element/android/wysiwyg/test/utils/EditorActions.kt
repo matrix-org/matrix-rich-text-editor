@@ -8,8 +8,7 @@ import androidx.test.espresso.ViewAction
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
-import io.element.android.wysiwyg.suggestions.MentionType
-import io.element.android.wysiwyg.suggestions.MentionUrlFilter
+import io.element.android.wysiwyg.suggestions.LinkDisplayHandler
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import org.hamcrest.Matcher
 
@@ -79,31 +78,30 @@ object Editor {
         }
     }
 
-    class SetMention(
+    class SetLinkSuggestion(
         private val name: String,
         private val link: String,
-        private val type: MentionType,
     ) : ViewAction {
         override fun getConstraints(): Matcher<View> = isDisplayed()
 
-        override fun getDescription(): String = "Set mention to $name, $link"
+        override fun getDescription(): String = "Set link at suggestion to $name, $link"
 
         override fun perform(uiController: UiController?, view: View?) {
             val editor = view as? EditorEditText ?: return
-            editor.setMention(name = name,link = link, type = type)
+            editor.setLinkSuggestion(name = name,link = link)
         }
     }
 
-    class SetMentionUrlFilter(
-        private val mentionUrlFilter: MentionUrlFilter,
+    class SetLinkDisplayHandler(
+        private val linkDisplayHandler: LinkDisplayHandler,
     ) : ViewAction {
         override fun getConstraints(): Matcher<View> = isDisplayed()
 
-        override fun getDescription(): String = "Set mention url filter"
+        override fun getDescription(): String = "Set link display handler"
 
         override fun perform(uiController: UiController?, view: View?) {
             val editor = view as? EditorEditText ?: return
-            editor.mentionUrlFilter = mentionUrlFilter
+            editor.linkDisplayHandler = linkDisplayHandler
         }
     }
 
@@ -199,8 +197,8 @@ object EditorActions {
     fun setLink(url: String) = Editor.SetLink(url)
     fun insertLink(text: String, url: String) = Editor.InsertLink(text, url)
     fun removeLink() = Editor.RemoveLink
-    fun setMention(name: String, link: String, type: MentionType) = Editor.SetMention(name, link, type)
-    fun setMentionUrlFilter(mentionUrlFilter: MentionUrlFilter) = Editor.SetMentionUrlFilter(mentionUrlFilter)
+    fun setLinkSuggestion(name: String, link: String) = Editor.SetLinkSuggestion(name, link)
+    fun setLinkDisplayHandler(linkDisplayHandler: LinkDisplayHandler) = Editor.SetLinkDisplayHandler(linkDisplayHandler)
     fun toggleList(ordered: Boolean) = Editor.ToggleList(ordered)
     fun undo() = Editor.Undo
     fun redo() = Editor.Redo

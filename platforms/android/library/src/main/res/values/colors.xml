@@ -2,5 +2,5 @@
 <resources>
     <color name="inline_code_bg">#F4F6FA</color>
     <color name="inline_code_border">#E3E8F0</color>
-    <color name="default_mention_bg">#E3E8F0</color>
+    <color name="default_pill_bg">#E3E8F0</color>
 </resources>

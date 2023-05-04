@@ -1,6 +1,5 @@
 package io.element.android.wysiwyg.inputhandlers.models
 
-import io.element.android.wysiwyg.suggestions.MentionType
 import uniffi.wysiwyg_composer.ComposerModel
 
 /**
@@ -82,6 +81,11 @@ internal sealed interface EditorInputAction {
      */
     data class SetLinkWithText(val link: String, val text: String): EditorInputAction
 
+    data class SetLinkSuggestion(
+        val link: String,
+        val name: String,
+    ): EditorInputAction
+
     /**
      * Creates a list, [ordered] if true or unordered in the current selection.
      */
@@ -91,9 +95,4 @@ internal sealed interface EditorInputAction {
 
     object Unindent: EditorInputAction
 
-    data class SetMention(
-        val link: String,
-        val name: String,
-        val type: MentionType,
-    ): EditorInputAction
 }

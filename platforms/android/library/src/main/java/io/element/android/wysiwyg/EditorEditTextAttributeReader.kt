@@ -37,8 +37,8 @@ internal class EditorEditTextAttributeReader(context: Context, attrs: AttributeS
                 relativeTextSize = typedArray.getFloatOrThrow(R.styleable.EditorEditText_codeBlockRelativeTextSize),
                 backgroundDrawable = typedArray.getDrawableOrThrow(R.styleable.EditorEditText_codeBlockBackgroundDrawable),
             ),
-            mention = MentionStyleConfig(
-                backgroundColor = typedArray.getResourceIdOrThrow(R.styleable.EditorEditText_mentionBackgroundColor),
+            pill = PillStyleConfig(
+                backgroundColor = typedArray.getResourceIdOrThrow(R.styleable.EditorEditText_pillBackgroundColor),
             )
         )
         typedArray.recycle()

@@ -11,7 +11,7 @@ internal data class StyleConfig(
 
     val codeBlock: CodeBlockStyleConfig,
 
-    val mention: MentionStyleConfig,
+    val pill: PillStyleConfig,
 )
 
 data class BulletListStyleConfig(
@@ -36,7 +36,7 @@ data class CodeBlockStyleConfig(
     val backgroundDrawable: Drawable,
 )
 
-data class MentionStyleConfig(
+data class PillStyleConfig(
     @ColorRes
     val backgroundColor: Int,
 )

@@ -8,7 +8,6 @@ import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
 import io.element.android.wysiwyg.mocks.MockComposer
 import io.element.android.wysiwyg.mocks.MockComposerUpdateFactory
 import io.element.android.wysiwyg.mocks.MockTextUpdateFactory
-import io.element.android.wysiwyg.suggestions.MentionType
 import io.element.android.wysiwyg.utils.BasicHtmlConverter
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import io.mockk.mockk
@@ -288,7 +287,7 @@ internal class EditorViewModelTest {
     }
 
     @Test
-    fun `when process set mention action, it returns a text update`() {
+    fun `when process set link suggestion action, it returns a text update`() {
         val name = "jonny"
         val url = "https://matrix.to/#/@jonny.andrew:matrix.org"
         val suggestionPattern =
@@ -298,8 +297,8 @@ internal class EditorViewModelTest {
         ))
         viewModel.processInput(EditorInputAction.ReplaceText("@jonny"))
 
-        composer.givenSetMentionResult(name, url, composerStateUpdate)
-        val result = viewModel.processInput(EditorInputAction.SetMention(url, name, MentionType.User))
+        composer.givenSetLinkSuggestionResult(name, url, composerStateUpdate)
+        val result = viewModel.processInput(EditorInputAction.SetLinkSuggestion(url, name))
 
         verify {
             composer.instance.setLinkSuggestion(url, attributes = emptyList(), text = name, suggestion = suggestionPattern)

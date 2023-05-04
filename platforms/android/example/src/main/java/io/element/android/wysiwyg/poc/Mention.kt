@@ -1,7 +1,5 @@
 package io.element.android.wysiwyg.poc
 
-import io.element.android.wysiwyg.suggestions.MentionType
-
 /**
  * Utility model class for the sample app to represent a mention to a
  * matrix.org user or room

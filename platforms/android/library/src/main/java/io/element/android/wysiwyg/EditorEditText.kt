@@ -28,12 +28,11 @@ import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.inputhandlers.models.LinkAction
 import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
-import io.element.android.wysiwyg.suggestions.MentionType
 import io.element.android.wysiwyg.utils.*
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
 import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
-import io.element.android.wysiwyg.suggestions.MatrixMentionUrlFilter
-import io.element.android.wysiwyg.suggestions.MentionUrlFilter
+import io.element.android.wysiwyg.suggestions.MatrixMentionLinkDisplayHandler
+import io.element.android.wysiwyg.suggestions.LinkDisplayHandler
 import uniffi.wysiwyg_composer.*
 
 class EditorEditText : TextInputEditText {
@@ -57,7 +56,7 @@ class EditorEditText : TextInputEditText {
                     HtmlToSpansParser(
                         resourcesProvider, html,
                         styleConfig = styleConfig,
-                        mentionUrlFilter = mentionUrlFilter,
+                        linkDisplayHandler = linkDisplayHandler,
                     )
                 },
             )
@@ -104,10 +103,10 @@ class EditorEditText : TextInputEditText {
     }
 
     /**
-     * Set the mention URL filter to enable mention formatting.
-     * The [MatrixMentionUrlFilter] can be used to format Matrix mentions.
+     * Set the link display handler to display links in a custom way.
+     * The [MatrixMentionLinkDisplayHandler] can be used to format Matrix mentions.
      */
-    var mentionUrlFilter: MentionUrlFilter? = null
+    var linkDisplayHandler: LinkDisplayHandler? = null
     var selectionChangeListener: OnSelectionChangeListener? = null
     var actionStatesChangedListener: OnActionStatesChangedListener? = null
         set(value) {
@@ -406,18 +405,15 @@ class EditorEditText : TextInputEditText {
     }
 
     /**
-     * Set a mention with given pattern. Usually used
-     * to mention a user (e.g. @jonny.andrew) or a room/channel (e.g. #matrix).
+     * Set a link that applies to the current suggestion range
      *
      * @param name The display name of the user or room
      * @param link The link to the user or room
-     * @param type The type of mention
      */
-    fun setMention(name: String, link: String, type: MentionType) {
-        val result = viewModel.processInput(EditorInputAction.SetMention(
+    fun setLinkSuggestion(name: String, link: String) {
+        val result = viewModel.processInput(EditorInputAction.SetLinkSuggestion(
             name = name,
             link = link,
-            type = type
         )) ?: return
         setTextFromComposerUpdate(result)
         setSelectionFromComposerUpdate(result.selection.last)

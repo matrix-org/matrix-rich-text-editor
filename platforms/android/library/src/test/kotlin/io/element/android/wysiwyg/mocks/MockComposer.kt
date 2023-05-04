@@ -84,7 +84,7 @@ class MockComposer {
         update: ComposerUpdate = MockComposerUpdateFactory.create(),
     ) = every { instance.removeLinks() } returns update
 
-    fun givenSetMentionResult(
+    fun givenSetLinkSuggestionResult(
         name: String,
         link: String,
         update: ComposerUpdate = MockComposerUpdateFactory.create(),

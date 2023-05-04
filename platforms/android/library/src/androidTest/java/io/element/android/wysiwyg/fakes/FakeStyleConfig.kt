@@ -26,7 +26,7 @@ internal fun createFakeStyleConfig() = StyleConfig(
         relativeTextSize = 1f,
         backgroundDrawable = fakeDrawable,
     ),
-    mention = MentionStyleConfig(
+    pill = PillStyleConfig(
         R.color.fake_color
     )
 )

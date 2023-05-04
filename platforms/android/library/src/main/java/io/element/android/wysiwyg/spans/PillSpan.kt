@@ -7,7 +7,7 @@ import android.text.style.ReplacementSpan
 import androidx.annotation.ColorInt
 import kotlin.math.roundToInt
 
-internal class MentionSpan(
+internal class PillSpan(
     val url: String,
     @ColorInt
     val backgroundColor: Int,
