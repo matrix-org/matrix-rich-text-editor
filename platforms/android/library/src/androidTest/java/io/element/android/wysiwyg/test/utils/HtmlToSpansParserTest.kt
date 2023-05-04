@@ -5,8 +5,8 @@ import android.text.Spanned
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.element.android.wysiwyg.fakes.createFakeStyleConfig
-import io.element.android.wysiwyg.suggestions.LinkDisplay
-import io.element.android.wysiwyg.suggestions.LinkDisplayHandler
+import io.element.android.wysiwyg.links.LinkDisplay
+import io.element.android.wysiwyg.links.LinkDisplayHandler
 import io.element.android.wysiwyg.utils.AndroidResourcesHelper
 import io.element.android.wysiwyg.utils.HtmlToSpansParser
 import io.element.android.wysiwyg.utils.NBSP

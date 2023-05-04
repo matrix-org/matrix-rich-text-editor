@@ -31,7 +31,8 @@ import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
 import io.element.android.wysiwyg.utils.*
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
 import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
-import io.element.android.wysiwyg.suggestions.LinkDisplayHandler
+import io.element.android.wysiwyg.links.LinkDisplayHandler
+import io.element.android.wysiwyg.internal.links.MemoizingLinkDisplayHandler
 import uniffi.wysiwyg_composer.*
 
 class EditorEditText : TextInputEditText {
@@ -106,6 +107,9 @@ class EditorEditText : TextInputEditText {
      * The [MatrixMentionLinkDisplayHandler] can be used to format Matrix mentions.
      */
     var linkDisplayHandler: LinkDisplayHandler? = null
+        set(value) {
+            field = value?.let { MemoizingLinkDisplayHandler(it) }
+        }
     var selectionChangeListener: OnSelectionChangeListener? = null
     var actionStatesChangedListener: OnActionStatesChangedListener? = null
         set(value) {

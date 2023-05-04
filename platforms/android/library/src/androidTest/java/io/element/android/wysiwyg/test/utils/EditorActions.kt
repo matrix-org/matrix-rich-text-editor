@@ -8,7 +8,7 @@ import androidx.test.espresso.ViewAction
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
-import io.element.android.wysiwyg.suggestions.LinkDisplayHandler
+import io.element.android.wysiwyg.links.LinkDisplayHandler
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import org.hamcrest.Matcher
 

@@ -24,7 +24,7 @@ import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.spans.LinkSpan
 import io.element.android.wysiwyg.spans.PillSpan
 import io.element.android.wysiwyg.spans.OrderedListSpan
-import io.element.android.wysiwyg.suggestions.LinkDisplay
+import io.element.android.wysiwyg.links.LinkDisplay
 import io.element.android.wysiwyg.test.utils.*
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import io.mockk.confirmVerified

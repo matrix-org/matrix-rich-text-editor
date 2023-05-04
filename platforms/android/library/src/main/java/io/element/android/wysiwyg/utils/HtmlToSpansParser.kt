@@ -14,8 +14,8 @@ import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.spans.*
 import io.element.android.wysiwyg.spans.LinkSpan
 import io.element.android.wysiwyg.spans.PillSpan
-import io.element.android.wysiwyg.suggestions.LinkDisplay
-import io.element.android.wysiwyg.suggestions.LinkDisplayHandler
+import io.element.android.wysiwyg.links.LinkDisplay
+import io.element.android.wysiwyg.links.LinkDisplayHandler
 import org.ccil.cowan.tagsoup.Parser
 import org.xml.sax.Attributes
 import org.xml.sax.ContentHandler

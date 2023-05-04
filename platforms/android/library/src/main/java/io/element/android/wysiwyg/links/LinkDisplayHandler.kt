@@ -1,4 +1,4 @@
-package io.element.android.wysiwyg.suggestions
+package io.element.android.wysiwyg.links
 
 /**
  * Clients can implement a link display handler to let the editor
