@@ -5,7 +5,7 @@ package io.element.android.wysiwyg.suggestions
  * displays them as default pills.
  */
 class MatrixMentionLinkDisplayHandler : LinkDisplayHandler {
-    override fun resolveUrlDisplay(url: String): LinkDisplay =
+    override fun resolveUrlDisplay(text: String, url: String): LinkDisplay =
         when (url.startsWith("https://matrix.to/#/")) {
             true -> LinkDisplay.Pill
             false -> LinkDisplay.Plain

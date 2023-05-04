@@ -6,9 +6,9 @@ package io.element.android.wysiwyg.suggestions
  */
 fun interface LinkDisplayHandler {
     /**
-     * Return the method with which to display a given URL
+     * Return the method with which to display a given link
      */
-    fun resolveUrlDisplay(url: String): LinkDisplay
+    fun resolveUrlDisplay(text: String, url: String): LinkDisplay
 }
 
 /**

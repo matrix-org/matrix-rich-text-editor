@@ -52,7 +52,7 @@ internal class HtmlToSpansParser(
 
     // Spans created to be used as 'marks' while parsing
     private sealed interface PlaceholderSpan {
-        data class Hyperlink(val link: String, val linkDisplay: LinkDisplay): PlaceholderSpan
+        data class Hyperlink(val link: String): PlaceholderSpan
         sealed interface ListBlock: PlaceholderSpan {
             class Ordered: ListBlock
             class Unordered: ListBlock
@@ -295,15 +295,17 @@ internal class HtmlToSpansParser(
     }
 
     private fun handleHyperlinkStart(url: String) {
-        val linkDisplay = linkDisplayHandler?.resolveUrlDisplay(url)
-            ?: LinkDisplay.Plain
-        val hyperlink = PlaceholderSpan.Hyperlink(url, linkDisplay)
+        val hyperlink = PlaceholderSpan.Hyperlink(url)
         addPlaceHolderSpan(hyperlink)
     }
 
     private fun handleHyperlinkEnd() {
         val last = getLastPending<PlaceholderSpan.Hyperlink>() ?: return
-        when(val linkDisplay = last.span.linkDisplay) {
+        val url = last.span.link
+        val innerText = text.subSequence(last.start, text.length).toString()
+        val linkDisplay = linkDisplayHandler?.resolveUrlDisplay(innerText, url)
+            ?: LinkDisplay.Plain
+        when(linkDisplay) {
             is LinkDisplay.Custom -> {
                 val span = linkDisplay.customSpan
                 replacePlaceholderWithPendingSpan(last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
