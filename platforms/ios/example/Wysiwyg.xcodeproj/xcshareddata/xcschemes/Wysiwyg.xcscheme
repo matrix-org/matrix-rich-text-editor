@@ -27,24 +27,7 @@
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES"
-      codeCoverageEnabled = "YES"
-      onlyGenerateCoverageForSpecifiedTargets = "YES">
-      <CodeCoverageTargets>
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "WysiwygComposerSnapshotTests"
-            BuildableName = "WysiwygComposerSnapshotTests"
-            BlueprintName = "WysiwygComposerSnapshotTests"
-            ReferencedContainer = "container:../lib/WysiwygComposer">
-         </BuildableReference>
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "A6472CC02886CF840021A0E8"
-            BuildableName = "WysiwygUITests.xctest"
-            BlueprintName = "WysiwygUITests"
-            ReferencedContainer = "container:Wysiwyg.xcodeproj">
-         </BuildableReference>
-      </CodeCoverageTargets>
+      codeCoverageEnabled = "YES">
       <Testables>
          <TestableReference
             skipped = "NO">
