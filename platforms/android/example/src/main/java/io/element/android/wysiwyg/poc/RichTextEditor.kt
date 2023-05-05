@@ -168,7 +168,7 @@ class RichTextEditor : LinearLayout {
                     OnItemClickListener { _, _, position, _ ->
                         val item = suggestions[position]
                         binding.richTextEditText.setLinkSuggestion(
-                            item.text, item.link
+                            item.link, item.text
                         )
                     }
             }

@@ -79,16 +79,16 @@ object Editor {
     }
 
     class SetLinkSuggestion(
-        private val name: String,
-        private val link: String,
+        private val text: String,
+        private val url: String,
     ) : ViewAction {
         override fun getConstraints(): Matcher<View> = isDisplayed()
 
-        override fun getDescription(): String = "Set link at suggestion to $name, $link"
+        override fun getDescription(): String = "Set link at suggestion to $text, $url"
 
         override fun perform(uiController: UiController?, view: View?) {
             val editor = view as? EditorEditText ?: return
-            editor.setLinkSuggestion(name = name,link = link)
+            editor.setLinkSuggestion(url = url, text = text)
         }
     }
 
@@ -197,7 +197,7 @@ object EditorActions {
     fun setLink(url: String) = Editor.SetLink(url)
     fun insertLink(text: String, url: String) = Editor.InsertLink(text, url)
     fun removeLink() = Editor.RemoveLink
-    fun setLinkSuggestion(name: String, link: String) = Editor.SetLinkSuggestion(name, link)
+    fun setLinkSuggestion(text: String, url: String) = Editor.SetLinkSuggestion(text, url)
     fun setLinkDisplayHandler(linkDisplayHandler: LinkDisplayHandler) = Editor.SetLinkDisplayHandler(linkDisplayHandler)
     fun toggleList(ordered: Boolean) = Editor.ToggleList(ordered)
     fun undo() = Editor.Undo

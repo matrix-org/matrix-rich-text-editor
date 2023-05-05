@@ -82,8 +82,8 @@ internal sealed interface EditorInputAction {
     data class SetLinkWithText(val link: String, val text: String): EditorInputAction
 
     data class SetLinkSuggestion(
-        val link: String,
-        val name: String,
+        val url: String,
+        val text: String,
     ): EditorInputAction
 
     /**

@@ -410,13 +410,13 @@ class EditorEditText : TextInputEditText {
     /**
      * Set a link that applies to the current suggestion range
      *
-     * @param name The display name of the user or room
-     * @param link The link to the user or room
+     * @param url The url of the new link
+     * @param text The text to insert into the current suggestion range
      */
-    fun setLinkSuggestion(name: String, link: String) {
+    fun setLinkSuggestion(url: String, text: String) {
         val result = viewModel.processInput(EditorInputAction.SetLinkSuggestion(
-            name = name,
-            link = link,
+            text = text,
+            url = url,
         )) ?: return
         setTextFromComposerUpdate(result)
         setSelectionFromComposerUpdate(result.selection.last)
