@@ -5,4 +5,5 @@ output_directory: platforms/ios/lib/coverage
 build_directory: platforms/ios/example/DerivedData
 ignore:
   - platforms/ios/example/**
+  - platforms/ios/lib/WysiwygComposer/Tests/**
   - platforms/ios/lib/WysiwygComposer/Sources/WysiwygComposer/WysiwygComposer.swift
