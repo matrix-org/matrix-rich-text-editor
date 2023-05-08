@@ -40,3 +40,4 @@ jobs:
         files: lcov.info
         fail_ci_if_error: true
         flags: unittests-rust, unittests
+        token: ${{ secrets.CODECOV_TOKEN }}
