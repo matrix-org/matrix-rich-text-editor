@@ -87,21 +87,7 @@ jobs:
           enable-hw-keyboard: true
           script: echo "Generated AVD snapshot for caching."
 
-      - name: Run all the tests
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          working-directory: platforms/android
-          api-level: ${{ matrix.api-level }}
-          arch: ${{ env.ARCH }}
-          profile: ${{ env.DEVICE }}
-          force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: true
-          enable-hw-keyboard: true
-          script: |
-            ./gradlew :library:testDebugUnitTest :library:connectedDebugAndroidTest ${{ env.CI_GRADLE_ARG_PROPERTIES }}
-
-      - name: Run coverage
+      - name: Run all tests with coverage
         uses: reactivecircus/android-emulator-runner@v2
         with:
           working-directory: platforms/android
