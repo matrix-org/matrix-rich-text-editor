@@ -115,6 +115,7 @@ jobs:
           script: |
             ./gradlew unitTestsWithCoverage ${{ env.CI_GRADLE_ARG_PROPERTIES }}
             ./gradlew generateCoverageReport ${{ env.CI_GRADLE_ARG_PROPERTIES }}
+            ls build/reports/jacoco/generateCoverageReport
 
       - name : Upload test results
         if : ${{ always() }}
