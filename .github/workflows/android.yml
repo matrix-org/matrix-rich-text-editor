@@ -132,3 +132,4 @@ jobs:
           directory: build/reports/jacoco/generateCoverageReport
           fail_ci_if_error: false
           flags: unittests-android, unittests
+          verbose: true
