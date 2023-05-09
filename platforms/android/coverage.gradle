@@ -25,13 +25,12 @@ def excludes = [
 'uniffi/**/',
 ]
 
-def initializeReport(report, projects, classExcludes) {
+def initializeReport(report, projects, classExcludes, executionDataPaths) {
     projects.each { project -> project.apply plugin: 'jacoco' }
 
     report.executionData {
         fileTree(rootProject.rootDir.absolutePath).include(
-                "**/build/**/*.exec",
-                "**/build/outputs/code_coverage/**/coverage.ec",
+                *executionDataPaths
         )
     }
     report.reports {
@@ -77,7 +76,31 @@ task generateCoverageReport(type: JacocoReport) {
     outputs.upToDateWhen { false }
     rootProject.apply plugin: 'jacoco'
     def projects = collectProjects { ['library'].contains(it.name) }
-    initializeReport(it, projects, excludes)
+    def executionDataPaths = [
+            "**/build/**/*.exec",
+            "**/build/outputs/code_coverage/**/coverage.ec",
+    ]
+    initializeReport(it, projects, excludes, executionDataPaths)
+}
+
+task generateUnitTestCoverageReport(type: JacocoReport) {
+    outputs.upToDateWhen { false }
+    rootProject.apply plugin: 'jacoco'
+    def projects = collectProjects { ['library'].contains(it.name) }
+    def executionDataPaths = [
+            "**/build/outputs/unit_test_code_coverage/**/*.exec",
+    ]
+    initializeReport(it, projects, excludes, executionDataPaths)
+}
+
+task generateInstrumentationTestCoverageReport(type: JacocoReport) {
+    outputs.upToDateWhen { false }
+    rootProject.apply plugin: 'jacoco'
+    def projects = collectProjects { ['library'].contains(it.name) }
+    def executionDataPaths = [
+            "**/build/outputs/code_coverage/*AndroidTest/connected/**/coverage.ec",
+    ]
+    initializeReport(it, projects, excludes, executionDataPaths)
 }
 
 task unitTestsWithCoverage(type: GradleBuild) {
