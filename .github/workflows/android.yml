@@ -114,7 +114,9 @@ jobs:
           enable-hw-keyboard: true
           script: |
             ./gradlew unitTestsWithCoverage ${{ env.CI_GRADLE_ARG_PROPERTIES }}
-            ./gradlew generateCoverageReport ${{ env.CI_GRADLE_ARG_PROPERTIES }}
+            ./gradlew generateUnitTestCoverageReport ${{ env.CI_GRADLE_ARG_PROPERTIES }}
+            ./gradlew instrumentationTestsWithCoverage ${{ env.CI_GRADLE_ARG_PROPERTIES }}
+            ./gradlew generateInstrumentationTestCoverageReport ${{ env.CI_GRADLE_ARG_PROPERTIES }}
 
       - name : Upload test results
         if : ${{ always() }}
@@ -125,11 +127,12 @@ jobs:
             ./**/build/reports/tests/**
             ./**/build/reports/androidTests/connected/**
 
-      - name: Upload coverage to Codecov
+      - name: Upload unit test coverage to Codecov
         uses: codecov/codecov-action@main
         with:
           working-directory: platforms/android
-          files: build/reports/jacoco/generateCoverageReport/generateCoverageReport.xml
+          files: build/reports/jacoco/generateInstrumentationTestCoverageReport/generateUnitTestCoverageReport.xml
           fail_ci_if_error: false
           flags: unittests-android, unittests
           verbose: true
+
