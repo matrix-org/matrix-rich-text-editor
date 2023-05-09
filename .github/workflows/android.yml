@@ -130,7 +130,7 @@ jobs:
         uses: codecov/codecov-action@main
         with:
           working-directory: platforms/android
-          directory: build/reports/jacoco/generateCoverageReport
+          files: build/reports/jacoco/generateCoverageReport/generateCoverageReport.xml
           fail_ci_if_error: false
           flags: unittests-android, unittests
           verbose: true
