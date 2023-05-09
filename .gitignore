@@ -12,5 +12,6 @@
 /platforms/android/out/
 /platforms/ios/lib/WysiwygComposer/Sources/WysiwygComposer/WysiwygComposer.swift
 /platforms/ios/lib/WysiwygComposer/WysiwygComposerFFI.xcframework
+/platforms/ios/lib/coverage/*
 /build/
 .DS_Store

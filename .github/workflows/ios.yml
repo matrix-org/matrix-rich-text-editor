@@ -23,6 +23,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Setup - Ruby and bundler dependencies
+      uses: ruby/setup-ruby@v1
+      with:
+        bundler-cache: true
+
+    - name: Rust & Cargo cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        cache-on-failure: true
 
     - name: Install Rust
       uses: actions-rs/toolchain@v1
@@ -46,3 +55,26 @@ jobs:
     - name: Tests
       working-directory: platforms/ios/example
       run: exec ./ios-tests.sh
+
+    - name: Coverage
+      working-directory: platforms/ios/example
+      run: exec ./ios-test-coverage.sh
+
+    - name: Extract branch name
+      shell: bash
+      run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+      id: get_branch
+
+    - name: Run Slather for Unit tests
+      run: bundle exec slather
+      env:
+        GIT_BRANCH: ${{ steps.get_branch.outputs.branch }}
+        CI_PULL_REQUEST: ${{ github.event.number }}
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        directory: platforms/ios/lib/coverage
+        fail_ci_if_error: true
+        flags: unittests-ios, unittests
+        token: ${{ secrets.CODECOV_TOKEN }}
