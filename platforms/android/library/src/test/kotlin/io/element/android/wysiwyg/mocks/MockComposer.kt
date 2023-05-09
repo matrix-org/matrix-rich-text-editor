@@ -87,6 +87,12 @@ class MockComposer {
         update: ComposerUpdate = MockComposerUpdateFactory.create(),
     ) = every { instance.removeLinks() } returns update
 
+    fun givenSetLinkSuggestionResult(
+        name: String,
+        link: String,
+        update: ComposerUpdate = MockComposerUpdateFactory.create(),
+    ) = every { instance.setLinkSuggestion(url = link, attributes = emptyList(), text = name, suggestion = any()) } returns update
+
     fun givenReplaceAllHtmlResult(
         html: String,
         update: ComposerUpdate = MockComposerUpdateFactory.create(),

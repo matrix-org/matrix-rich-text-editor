@@ -8,6 +8,7 @@ import androidx.test.espresso.ViewAction
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
+import io.element.android.wysiwyg.links.LinkDisplayHandler
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import org.hamcrest.Matcher
 
@@ -74,6 +75,33 @@ object Editor {
         override fun perform(uiController: UiController?, view: View?) {
             val editor = view as? EditorEditText ?: return
             editor.insertLink(url = url, text = text)
+        }
+    }
+
+    class SetLinkSuggestion(
+        private val text: String,
+        private val url: String,
+    ) : ViewAction {
+        override fun getConstraints(): Matcher<View> = isDisplayed()
+
+        override fun getDescription(): String = "Set link at suggestion to $text, $url"
+
+        override fun perform(uiController: UiController?, view: View?) {
+            val editor = view as? EditorEditText ?: return
+            editor.setLinkSuggestion(url = url, text = text)
+        }
+    }
+
+    class SetLinkDisplayHandler(
+        private val linkDisplayHandler: LinkDisplayHandler,
+    ) : ViewAction {
+        override fun getConstraints(): Matcher<View> = isDisplayed()
+
+        override fun getDescription(): String = "Set link display handler"
+
+        override fun perform(uiController: UiController?, view: View?) {
+            val editor = view as? EditorEditText ?: return
+            editor.linkDisplayHandler = linkDisplayHandler
         }
     }
 
@@ -169,6 +197,8 @@ object EditorActions {
     fun setLink(url: String) = Editor.SetLink(url)
     fun insertLink(text: String, url: String) = Editor.InsertLink(text, url)
     fun removeLink() = Editor.RemoveLink
+    fun setLinkSuggestion(text: String, url: String) = Editor.SetLinkSuggestion(text, url)
+    fun setLinkDisplayHandler(linkDisplayHandler: LinkDisplayHandler) = Editor.SetLinkDisplayHandler(linkDisplayHandler)
     fun toggleList(ordered: Boolean) = Editor.ToggleList(ordered)
     fun undo() = Editor.Undo
     fun redo() = Editor.Redo

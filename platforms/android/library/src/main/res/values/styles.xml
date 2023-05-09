@@ -12,6 +12,7 @@
         <item name="codeBlockLeadingMargin">10dp</item>
         <item name="codeBlockVerticalPadding">4dp</item>
         <item name="codeBlockBackgroundDrawable">@drawable/code_block_bg</item>
+        <item name="pillBackgroundColor">@color/default_pill_bg</item>
     </style>
 
     <style name="EditorEditText" parent="EditorStyledTextView">

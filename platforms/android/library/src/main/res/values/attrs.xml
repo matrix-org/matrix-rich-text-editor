@@ -13,6 +13,7 @@
     <attr name="inlineCodeMultiLineBgMid" format="reference" />
     <attr name="inlineCodeMultiLineBgRight" format="reference" />
     <attr name="inlineCodeRelativeTextSize" format="float" />
+    <attr name="pillBackgroundColor" format="color" />
 
     <declare-styleable name="EditorEditText">
         <attr name="bulletGap" />
@@ -28,6 +29,7 @@
         <attr name="inlineCodeMultiLineBgMid" />
         <attr name="inlineCodeMultiLineBgRight" />
         <attr name="inlineCodeRelativeTextSize" />
+        <attr name="pillBackgroundColor" />
     </declare-styleable>
 
     <declare-styleable name="EditorStyledTextView">
@@ -42,5 +44,6 @@
         <attr name="inlineCodeMultiLineBgMid" />
         <attr name="inlineCodeMultiLineBgRight" />
         <attr name="inlineCodeRelativeTextSize" />
+        <attr name="pillBackgroundColor" />
     </declare-styleable>
 </resources>

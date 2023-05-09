@@ -10,8 +10,6 @@ import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.inputhandlers.models.LinkAction
 import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
-import io.element.android.wysiwyg.internal.suggestions.toInternalPatternKey
-import io.element.android.wysiwyg.internal.suggestions.toSymbol
 import io.element.android.wysiwyg.utils.EditorIndexMapper
 import io.element.android.wysiwyg.utils.HtmlConverter
 import io.element.android.wysiwyg.utils.RustErrorCollector
@@ -97,7 +95,7 @@ internal class EditorViewModel(
                 is EditorInputAction.Quote -> composer?.quote()
                 is EditorInputAction.Indent -> composer?.indent()
                 is EditorInputAction.Unindent -> composer?.unindent()
-                is EditorInputAction.SetMention -> setMention(action)
+                is EditorInputAction.SetLinkSuggestion -> setLinkSuggestion(action)
             }
         }.onFailure(::onComposerFailure)
             .getOrNull()
@@ -179,19 +177,15 @@ internal class EditorViewModel(
         }
     }
 
-    private fun setMention(action: EditorInputAction.SetMention): ComposerUpdate? {
-        val (link, name, type) = action
+    private fun setLinkSuggestion(action: EditorInputAction.SetLinkSuggestion): ComposerUpdate? {
+        val (url, text) = action
 
         val suggestion = (curMenuAction as? MenuAction.Suggestion)
             ?.suggestionPattern
             ?: return null
 
-        val key = type.toInternalPatternKey()
-        val symbol = key.toSymbol()
-        val text = "$symbol$name"
-
         return composer?.setLinkSuggestion(
-            url = link,
+            url = url,
             text = text,
             suggestion = suggestion,
             attributes = emptyList()

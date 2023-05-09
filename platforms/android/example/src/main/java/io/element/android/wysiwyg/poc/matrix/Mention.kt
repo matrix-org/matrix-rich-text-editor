@@ -1,6 +1,4 @@
-package io.element.android.wysiwyg.poc
-
-import io.element.android.wysiwyg.suggestions.MentionType
+package io.element.android.wysiwyg.poc.matrix
 
 /**
  * Utility model class for the sample app to represent a mention to a
@@ -12,6 +10,7 @@ sealed class Mention(
     abstract val key: String
     abstract val mentionType: MentionType
     val link get() = "https://matrix.to/#/$key$display:matrix.org"
+    val text get() = "$key$display"
 
     class Room(
         display: String

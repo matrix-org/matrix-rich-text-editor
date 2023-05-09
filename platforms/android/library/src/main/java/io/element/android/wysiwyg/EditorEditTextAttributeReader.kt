@@ -6,9 +6,11 @@ import androidx.core.content.res.getDimensionOrThrow
 import androidx.core.content.res.getDimensionPixelSizeOrThrow
 import androidx.core.content.res.getDrawableOrThrow
 import androidx.core.content.res.getFloatOrThrow
+import androidx.core.content.res.getResourceIdOrThrow
 import io.element.android.wysiwyg.utils.BulletListStyleConfig
 import io.element.android.wysiwyg.utils.CodeBlockStyleConfig
 import io.element.android.wysiwyg.utils.InlineCodeStyleConfig
+import io.element.android.wysiwyg.utils.PillStyleConfig
 import io.element.android.wysiwyg.utils.StyleConfig
 
 internal class EditorEditTextAttributeReader(context: Context, attrs: AttributeSet?) {
@@ -41,6 +43,9 @@ internal class EditorEditTextAttributeReader(context: Context, attrs: AttributeS
                 verticalPadding = typedArray.getDimensionPixelSizeOrThrow(R.styleable.EditorEditText_codeBlockVerticalPadding),
                 relativeTextSize = typedArray.getFloatOrThrow(R.styleable.EditorEditText_codeBlockRelativeTextSize),
                 backgroundDrawable = typedArray.getDrawableOrThrow(R.styleable.EditorEditText_codeBlockBackgroundDrawable),
+            ),
+            pill = PillStyleConfig(
+                backgroundColor = typedArray.getResourceIdOrThrow(R.styleable.EditorEditText_pillBackgroundColor),
             )
         )
         typedArray.recycle()

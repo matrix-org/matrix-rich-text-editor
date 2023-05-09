@@ -28,10 +28,11 @@ import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
 import io.element.android.wysiwyg.inputhandlers.models.LinkAction
 import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
-import io.element.android.wysiwyg.suggestions.MentionType
+import io.element.android.wysiwyg.internal.links.MemoizingLinkDisplayHandler
+import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
+import io.element.android.wysiwyg.links.LinkDisplayHandler
 import io.element.android.wysiwyg.utils.*
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
-import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
 import uniffi.wysiwyg_composer.*
 
 class EditorEditText : TextInputEditText {
@@ -54,7 +55,8 @@ class EditorEditText : TextInputEditText {
                 provideHtmlToSpansParser = { html ->
                     HtmlToSpansParser(
                         resourcesProvider, html,
-                        styleConfig = styleConfig
+                        styleConfig = styleConfig,
+                        linkDisplayHandler = linkDisplayHandler,
                     )
                 },
             )
@@ -100,6 +102,14 @@ class EditorEditText : TextInputEditText {
         fun onMenuActionChanged(menuAction: MenuAction)
     }
 
+    /**
+     * Set the link display handler to display links in a custom way.
+     * For example, to transform links into pills.
+     */
+    var linkDisplayHandler: LinkDisplayHandler? = null
+        set(value) {
+            field = value?.let { MemoizingLinkDisplayHandler(it) }
+        }
     var selectionChangeListener: OnSelectionChangeListener? = null
     var actionStatesChangedListener: OnActionStatesChangedListener? = null
         set(value) {
@@ -398,18 +408,15 @@ class EditorEditText : TextInputEditText {
     }
 
     /**
-     * Set a mention with given pattern. Usually used
-     * to mention a user (e.g. @jonny.andrew) or a room/channel (e.g. #matrix).
+     * Set a link that applies to the current suggestion range
      *
-     * @param name The display name of the user or room
-     * @param link The link to the user or room
-     * @param type The type of mention
+     * @param url The url of the new link
+     * @param text The text to insert into the current suggestion range
      */
-    fun setMention(name: String, link: String, type: MentionType) {
-        val result = viewModel.processInput(EditorInputAction.SetMention(
-            name = name,
-            link = link,
-            type = type
+    fun setLinkSuggestion(url: String, text: String) {
+        val result = viewModel.processInput(EditorInputAction.SetLinkSuggestion(
+            text = text,
+            url = url,
         )) ?: return
         setTextFromComposerUpdate(result)
         setSelectionFromComposerUpdate(result.selection.last)

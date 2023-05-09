@@ -11,14 +11,17 @@ import android.text.style.UnderlineSpan
 import androidx.core.text.getSpans
 import io.element.android.wysiwyg.BuildConfig
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
+import io.element.android.wysiwyg.links.LinkDisplay
+import io.element.android.wysiwyg.links.LinkDisplayHandler
 import io.element.android.wysiwyg.spans.BlockSpan
 import io.element.android.wysiwyg.spans.CodeBlockSpan
 import io.element.android.wysiwyg.spans.ExtraCharacterSpan
 import io.element.android.wysiwyg.spans.InlineCodeSpan
 import io.element.android.wysiwyg.spans.LinkSpan
 import io.element.android.wysiwyg.spans.OrderedListSpan
-import io.element.android.wysiwyg.spans.UnorderedListSpan
+import io.element.android.wysiwyg.spans.PillSpan
 import io.element.android.wysiwyg.spans.QuoteSpan
+import io.element.android.wysiwyg.spans.UnorderedListSpan
 import org.ccil.cowan.tagsoup.Parser
 import org.xml.sax.Attributes
 import org.xml.sax.ContentHandler
@@ -38,6 +41,7 @@ internal class HtmlToSpansParser(
     private val resourcesHelper: ResourcesHelper,
     private val html: String,
     private val styleConfig: StyleConfig,
+    private val linkDisplayHandler: LinkDisplayHandler?,
 ) : ContentHandler {
 
     /**
@@ -303,8 +307,31 @@ internal class HtmlToSpansParser(
 
     private fun handleHyperlinkEnd() {
         val last = getLastPending<PlaceholderSpan.Hyperlink>() ?: return
-        val span = LinkSpan((last.span).link)
-        replacePlaceholderWithPendingSpan(last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        val url = last.span.link
+        val innerText = text.subSequence(last.start, text.length).toString()
+        val linkDisplay = linkDisplayHandler?.resolveUrlDisplay(innerText, url)
+            ?: LinkDisplay.Plain
+        when(linkDisplay) {
+            is LinkDisplay.Custom -> {
+                val span = linkDisplay.customSpan
+                replacePlaceholderWithPendingSpan(last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
+            LinkDisplay.Pill -> {
+                val span = PillSpan((last.span).link, resourcesHelper.getColor(styleConfig.pill.backgroundColor))
+                replacePlaceholderWithPendingSpan(last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
+            LinkDisplay.Plain -> {
+                val span = LinkSpan((last.span).link)
+                replacePlaceholderWithPendingSpan(
+                    last.span,
+                    span,
+                    last.start,
+                    text.length,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+            }
+        }
+
     }
 
     private fun createListSpan(last: PlaceholderSpan.ListItem): ParagraphStyle {
@@ -461,6 +488,7 @@ internal class HtmlToSpansParser(
 
             // Links
             LinkSpan::class.java,
+            PillSpan::class.java,
 
             // Lists
             UnorderedListSpan::class.java,

@@ -11,7 +11,9 @@ import android.widget.TextView
 import androidx.core.text.getSpans
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.accessibility.AccessibilityChecks
-import androidx.test.espresso.action.ViewActions.*
+import androidx.test.espresso.action.ViewActions.pressKey
+import androidx.test.espresso.action.ViewActions.replaceText
+import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.BoundedDiagnosingMatcher
 import androidx.test.espresso.matcher.ViewMatchers
@@ -21,8 +23,10 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
+import io.element.android.wysiwyg.links.LinkDisplay
 import io.element.android.wysiwyg.spans.LinkSpan
 import io.element.android.wysiwyg.spans.OrderedListSpan
+import io.element.android.wysiwyg.spans.PillSpan
 import io.element.android.wysiwyg.test.utils.*
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import io.mockk.confirmVerified
@@ -251,6 +255,17 @@ class EditorEditTextInputTests {
                 it.editableText.getSpans<LinkSpan>().isNotEmpty()
             }))
             .check(matches(withText("a Element to set")))
+    }
+
+    @Test
+    fun testSettingLinkSuggestion() {
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(ImeActions.setComposingText("@jonny"))
+            .perform(EditorActions.setLinkDisplayHandler { _, _ -> LinkDisplay.Pill })
+            .perform(EditorActions.setLinkSuggestion("jonny", "https://matrix.to/#/@test:matrix.org"))
+            .check(matches(TextViewMatcher {
+                it.editableText.getSpans<PillSpan>().isNotEmpty()
+            }))
     }
 
     @Test

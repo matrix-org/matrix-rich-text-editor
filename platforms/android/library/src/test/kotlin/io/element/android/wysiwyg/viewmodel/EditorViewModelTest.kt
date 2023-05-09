@@ -13,14 +13,16 @@ import io.element.android.wysiwyg.utils.RustErrorCollector
 import io.mockk.mockk
 import io.mockk.verify
 import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.Matchers.empty
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.notNullValue
 import org.junit.Before
 import org.junit.Test
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
+import uniffi.wysiwyg_composer.MenuAction
 import uniffi.wysiwyg_composer.MenuState
+import uniffi.wysiwyg_composer.PatternKey
+import uniffi.wysiwyg_composer.SuggestionPattern
 import uniffi.wysiwyg_composer.LinkAction as ComposerLinkAction
 
 internal class EditorViewModelTest {
@@ -285,6 +287,26 @@ internal class EditorViewModelTest {
                 url = linkUrl, text = linkText, attributes = emptyList()
             )
             actionsStatesCallback(actionStates)
+        }
+        assertThat(result, equalTo(replaceTextResult))
+    }
+
+    @Test
+    fun `when process set link suggestion action, it returns a text update`() {
+        val name = "jonny"
+        val url = "https://matrix.to/#/@test:matrix.org"
+        val suggestionPattern =
+            SuggestionPattern(PatternKey.AT, text = "jonny", 0.toUInt(), 5.toUInt())
+        composer.givenReplaceTextResult(MockComposerUpdateFactory.create(
+            menuAction = MenuAction.Suggestion(suggestionPattern)
+        ))
+        viewModel.processInput(EditorInputAction.ReplaceText("@jonny"))
+
+        composer.givenSetLinkSuggestionResult(name, url, composerStateUpdate)
+        val result = viewModel.processInput(EditorInputAction.SetLinkSuggestion(url, name))
+
+        verify {
+            composer.instance.setLinkSuggestion(url, attributes = emptyList(), text = name, suggestion = suggestionPattern)
         }
         assertThat(result, equalTo(replaceTextResult))
     }

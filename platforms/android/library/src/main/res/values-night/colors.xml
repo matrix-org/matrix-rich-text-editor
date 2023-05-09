@@ -2,4 +2,5 @@
 <resources>
     <color name="inline_code_bg">#21262C</color>
     <color name="inline_code_border">#394049</color>
+    <color name="default_pill_bg">#21262C</color>
 </resources>
