@@ -4,6 +4,7 @@ plugins {
 
     // Rust
     id 'org.mozilla.rust-android-gradle.rust-android'
+    id("com.dicedmelon.gradle.jacoco-android") version "0.1.5"
 }
 
 if (project.hasProperty("coverage")) {
@@ -109,5 +110,10 @@ afterEvaluate {
     if (isReleaseBuild) {
         cargo.profile = "release"
     }
+}
+
+tasks.withType(Test) {
+    jacoco.includeNoLocationClasses = true
+    jacoco.excludes = ['jdk.internal.*']
 }
 

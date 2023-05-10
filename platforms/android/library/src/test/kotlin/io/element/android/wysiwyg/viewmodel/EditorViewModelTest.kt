@@ -1,9 +1,9 @@
 package io.element.android.wysiwyg.viewmodel
 
-import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
-import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
-import io.element.android.wysiwyg.inputhandlers.models.LinkAction
-import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
+import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
+import io.element.android.wysiwyg.view.models.InlineFormat
+import io.element.android.wysiwyg.view.models.LinkAction
+import io.element.android.wysiwyg.internal.viewmodel.ReplaceTextResult
 import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
 import io.element.android.wysiwyg.mocks.MockComposer
 import io.element.android.wysiwyg.mocks.MockComposerUpdateFactory

@@ -1,29 +1,22 @@
-def excludes = [
-// dependency injection graph
-'**/*Module.*',
-'**/*Module*.*',
-
-// Framework entry points
-'**/*Activity*',
-'**/*Fragment*',
-'**/*Application*',
-'**/*AndroidService*',
-
-// We would like to exclude android widgets as well but our naming is inconsistent
-
-// Proof of concept
-'**/*Login2*',
-
-// Generated
-'**/*JsonAdapter*',
-'**/*Item.*',
-'**/*$Holder.*',
-'**/*ViewHolder.*',
-'**/*View.*',
-'**/*BottomSheet.*',
-// Bindings
-'uniffi/**/',
+def commonExcludes = [
+        // Bindings
+        'uniffi/**/',
 ]
+
+def unitTestExcludes = [
+        // Views
+        '**/*View.*',
+        '**/*EditText*',
+        '**/*TextView*',
+
+        // UI helpers, rendering
+        '**/*InterceptInputConnection*',
+        '**/*EditorEditTextAttributeReader*',
+        '**/internal/view/**/*',
+        '**/view/**/*',
+]
+
+def instrumentationTestExcludes = []
 
 def initializeReport(report, projects, classExcludes, executionDataPaths) {
     projects.each { project -> project.apply plugin: 'jacoco' }
@@ -80,6 +73,7 @@ task generateCoverageReport(type: JacocoReport) {
             "**/build/**/*.exec",
             "**/build/outputs/code_coverage/**/coverage.ec",
     ]
+    def excludes = commonExcludes
     initializeReport(it, projects, excludes, executionDataPaths)
 }
 
@@ -90,6 +84,7 @@ task generateUnitTestCoverageReport(type: JacocoReport) {
     def executionDataPaths = [
             "**/build/outputs/unit_test_code_coverage/**/*.exec",
     ]
+    def excludes = commonExcludes + unitTestExcludes
     initializeReport(it, projects, excludes, executionDataPaths)
 }
 
@@ -100,6 +95,7 @@ task generateInstrumentationTestCoverageReport(type: JacocoReport) {
     def executionDataPaths = [
             "**/build/outputs/code_coverage/*AndroidTest/connected/**/coverage.ec",
     ]
+    def excludes = commonExcludes + instrumentationTestExcludes
     initializeReport(it, projects, excludes, executionDataPaths)
 }
 
