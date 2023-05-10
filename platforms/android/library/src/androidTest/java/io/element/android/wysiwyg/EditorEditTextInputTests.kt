@@ -1,4 +1,4 @@
-package io.element.android.wysiwyg.test
+package io.element.android.wysiwyg
 
 import android.graphics.Typeface
 import android.text.Editable
@@ -19,10 +19,10 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.element.android.wysiwyg.EditorEditText
-import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
-import io.element.android.wysiwyg.spans.LinkSpan
-import io.element.android.wysiwyg.spans.OrderedListSpan
+import io.element.android.wysiwyg.view.models.InlineFormat
+import io.element.android.wysiwyg.view.spans.LinkSpan
+import io.element.android.wysiwyg.view.spans.OrderedListSpan
+import io.element.android.wysiwyg.test.R
 import io.element.android.wysiwyg.test.utils.*
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import io.mockk.confirmVerified

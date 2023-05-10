@@ -21,17 +21,20 @@ import androidx.annotation.VisibleForTesting
 import androidx.core.graphics.withTranslation
 import androidx.lifecycle.*
 import com.google.android.material.textfield.TextInputEditText
-import io.element.android.wysiwyg.inlinebg.SpanBackgroundHelper
-import io.element.android.wysiwyg.inlinebg.SpanBackgroundHelperFactory
+import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelper
+import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelperFactory
 import io.element.android.wysiwyg.inputhandlers.InterceptInputConnection
-import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
-import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
-import io.element.android.wysiwyg.inputhandlers.models.LinkAction
-import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
+import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
+import io.element.android.wysiwyg.view.models.InlineFormat
+import io.element.android.wysiwyg.view.models.LinkAction
+import io.element.android.wysiwyg.internal.viewmodel.ReplaceTextResult
+import io.element.android.wysiwyg.internal.view.EditorEditTextAttributeReader
+import io.element.android.wysiwyg.internal.view.viewModel
 import io.element.android.wysiwyg.suggestions.MentionType
 import io.element.android.wysiwyg.utils.*
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
 import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
+import io.element.android.wysiwyg.view.StyleConfig
 import uniffi.wysiwyg_composer.*
 
 class EditorEditText : TextInputEditText {

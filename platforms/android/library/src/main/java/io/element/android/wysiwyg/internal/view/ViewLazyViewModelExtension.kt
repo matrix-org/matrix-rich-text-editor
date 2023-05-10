@@ -1,4 +1,4 @@
-package io.element.android.wysiwyg.utils
+package io.element.android.wysiwyg.internal.view
 
 import android.content.Context
 import android.content.ContextWrapper
@@ -8,10 +8,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelLazy
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
-import androidx.lifecycle.findViewTreeViewModelStoreOwner
 
 @MainThread
-inline fun <reified VM : ViewModel> View.viewModel(
+internal inline fun <reified VM : ViewModel> View.viewModel(
     noinline viewModelInitializer: (() -> VM)? = null,
 ): Lazy<VM> {
     return ViewModelLazy(

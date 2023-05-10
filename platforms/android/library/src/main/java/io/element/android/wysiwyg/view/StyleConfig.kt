@@ -1,4 +1,4 @@
-package io.element.android.wysiwyg.utils
+package io.element.android.wysiwyg.view
 
 import android.graphics.drawable.Drawable
 import androidx.annotation.Px

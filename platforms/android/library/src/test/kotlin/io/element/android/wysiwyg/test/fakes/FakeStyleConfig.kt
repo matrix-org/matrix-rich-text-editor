@@ -1,4 +1,4 @@
-package io.element.android.wysiwyg.fakes
+package io.element.android.wysiwyg.test.fakes
 
 import android.graphics.drawable.ColorDrawable
 import io.element.android.wysiwyg.view.BulletListStyleConfig

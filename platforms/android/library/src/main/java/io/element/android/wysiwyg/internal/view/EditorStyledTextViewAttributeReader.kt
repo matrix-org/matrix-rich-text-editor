@@ -1,12 +1,13 @@
-package io.element.android.wysiwyg
+package io.element.android.wysiwyg.internal.view
 
 import android.content.Context
 import android.util.AttributeSet
 import androidx.core.content.res.getDimensionPixelSizeOrThrow
 import androidx.core.content.res.getDrawableOrThrow
 import androidx.core.content.res.getFloatOrThrow
-import io.element.android.wysiwyg.utils.CodeBlockStyleConfig
-import io.element.android.wysiwyg.utils.InlineCodeStyleConfig
+import io.element.android.wysiwyg.R
+import io.element.android.wysiwyg.view.CodeBlockStyleConfig
+import io.element.android.wysiwyg.view.InlineCodeStyleConfig
 
 internal class EditorStyledTextViewAttributeReader(context: Context, attrs: AttributeSet?) {
     internal val inlineCodeStyleConfig: InlineCodeStyleConfig

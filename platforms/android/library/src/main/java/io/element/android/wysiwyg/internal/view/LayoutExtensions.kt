@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.element.android.wysiwyg.utils
+package io.element.android.wysiwyg.internal.view
 
 import android.os.Build
 import android.text.Layout

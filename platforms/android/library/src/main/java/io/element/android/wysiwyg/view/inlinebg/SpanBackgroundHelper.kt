@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
 */
-package io.element.android.wysiwyg.inlinebg
+package io.element.android.wysiwyg.view.inlinebg
 
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
@@ -22,7 +22,7 @@ import android.text.Layout
 import android.text.Spanned
 import android.text.style.LeadingMarginSpan
 import androidx.core.text.getSpans
-import io.element.android.wysiwyg.spans.BlockSpan
+import io.element.android.wysiwyg.view.spans.BlockSpan
 
 /**
  * Helper class to draw multi-line rounded background to certain parts of a text. The start/end

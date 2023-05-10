@@ -1,4 +1,4 @@
-package io.element.android.wysiwyg.inputhandlers.models
+package io.element.android.wysiwyg.view.models
 
 import uniffi.wysiwyg_composer.ComposerAction
 

@@ -6,10 +6,8 @@ import androidx.lifecycle.ViewModel
 import io.element.android.wysiwyg.BuildConfig
 import io.element.android.wysiwyg.extensions.log
 import io.element.android.wysiwyg.extensions.string
-import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
-import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
-import io.element.android.wysiwyg.inputhandlers.models.LinkAction
-import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
+import io.element.android.wysiwyg.view.models.InlineFormat
+import io.element.android.wysiwyg.view.models.LinkAction
 import io.element.android.wysiwyg.internal.suggestions.toInternalPatternKey
 import io.element.android.wysiwyg.internal.suggestions.toSymbol
 import io.element.android.wysiwyg.utils.EditorIndexMapper

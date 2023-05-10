@@ -1,17 +1,15 @@
-package io.element.android.wysiwyg.test.utils
+package io.element.android.wysiwyg.utils
 
 import androidx.core.text.toSpanned
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.element.android.wysiwyg.utils.AndroidHtmlConverter
-import io.element.android.wysiwyg.utils.HtmlToSpansParser
 import io.mockk.every
 import io.mockk.mockk
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
-@RunWith(AndroidJUnit4::class)
+@RunWith(RobolectricTestRunner::class)
 class AndroidHtmlConverterTest {
     private val htmlToSpansParser = mockk<HtmlToSpansParser>()
     private val androidHtmlConverter = AndroidHtmlConverter(

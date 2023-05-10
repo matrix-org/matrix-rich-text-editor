@@ -1,6 +1,7 @@
-package io.element.android.wysiwyg.inputhandlers.models
+package io.element.android.wysiwyg.internal.viewmodel
 
 import io.element.android.wysiwyg.suggestions.MentionType
+import io.element.android.wysiwyg.view.models.InlineFormat
 import uniffi.wysiwyg_composer.ComposerModel
 
 /**

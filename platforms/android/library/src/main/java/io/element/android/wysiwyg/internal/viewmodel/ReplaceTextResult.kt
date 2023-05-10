@@ -1,4 +1,4 @@
-package io.element.android.wysiwyg.inputhandlers.models
+package io.element.android.wysiwyg.internal.viewmodel
 
 import android.text.Spanned
 import android.widget.EditText

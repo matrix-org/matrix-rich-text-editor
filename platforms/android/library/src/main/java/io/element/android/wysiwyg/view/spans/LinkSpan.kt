@@ -1,4 +1,4 @@
-package io.element.android.wysiwyg.spans
+package io.element.android.wysiwyg.view.spans
 
 import android.text.TextPaint
 import android.text.style.URLSpan

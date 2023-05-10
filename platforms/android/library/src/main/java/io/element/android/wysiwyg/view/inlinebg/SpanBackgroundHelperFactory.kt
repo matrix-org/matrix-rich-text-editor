@@ -1,9 +1,9 @@
-package io.element.android.wysiwyg.inlinebg
+package io.element.android.wysiwyg.view.inlinebg
 
-import io.element.android.wysiwyg.spans.CodeBlockSpan
-import io.element.android.wysiwyg.spans.InlineCodeSpan
-import io.element.android.wysiwyg.utils.CodeBlockStyleConfig
-import io.element.android.wysiwyg.utils.InlineCodeStyleConfig
+import io.element.android.wysiwyg.view.spans.CodeBlockSpan
+import io.element.android.wysiwyg.view.spans.InlineCodeSpan
+import io.element.android.wysiwyg.view.CodeBlockStyleConfig
+import io.element.android.wysiwyg.view.InlineCodeStyleConfig
 
 object SpanBackgroundHelperFactory {
     fun createInlineCodeBackgroundHelper(styleConfig: InlineCodeStyleConfig): SpanBackgroundHelper {

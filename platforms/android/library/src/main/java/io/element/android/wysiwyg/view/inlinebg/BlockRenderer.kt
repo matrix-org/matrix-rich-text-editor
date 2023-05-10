@@ -1,11 +1,9 @@
-package io.element.android.wysiwyg.inlinebg
+package io.element.android.wysiwyg.view.inlinebg
 
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.text.Layout
 import android.text.Spanned
-import android.text.style.LeadingMarginSpan
-import androidx.core.text.getSpans
 
 /**
  * Helper class to render a single 'block' with a bordered round rectangle as its background.

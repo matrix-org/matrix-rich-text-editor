@@ -1,19 +1,16 @@
-package io.element.android.wysiwyg.test.utils
+package io.element.android.wysiwyg.utils
 
-import android.app.Application
 import android.text.Spanned
-import androidx.test.core.app.ApplicationProvider
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.element.android.wysiwyg.fakes.createFakeStyleConfig
-import io.element.android.wysiwyg.utils.AndroidResourcesHelper
-import io.element.android.wysiwyg.utils.HtmlToSpansParser
-import io.element.android.wysiwyg.utils.NBSP
+import io.element.android.wysiwyg.test.fakes.createFakeStyleConfig
+import io.element.android.wysiwyg.test.utils.dumpSpans
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 
-@RunWith(AndroidJUnit4::class)
+@RunWith(RobolectricTestRunner::class)
 class HtmlToSpansParserTest {
     @Test
     fun testStyles() {
@@ -35,7 +32,7 @@ class HtmlToSpansParserTest {
                     "strong: android.text.style.StyleSpan (19-25) fl=#33",
                     "emphasis: android.text.style.StyleSpan (25-33) fl=#33",
                     "strikethrough: android.text.style.StrikethroughSpan (33-46) fl=#33",
-                    "code: io.element.android.wysiwyg.spans.InlineCodeSpan (46-50) fl=#33",
+                    "code: io.element.android.wysiwyg.view.spans.InlineCodeSpan (46-50) fl=#33",
                 )
             )
         )
@@ -59,10 +56,10 @@ class HtmlToSpansParserTest {
         assertThat(
             spanned.dumpSpans().joinToString(",\n"), equalTo(
                 """
-                    ordered1: io.element.android.wysiwyg.spans.OrderedListSpan (0-8) fl=#34,
-                    ordered2: io.element.android.wysiwyg.spans.OrderedListSpan (9-17) fl=#34,
-                    bullet1: io.element.android.wysiwyg.spans.UnorderedListSpan (18-25) fl=#34,
-                    bullet2: io.element.android.wysiwyg.spans.UnorderedListSpan (26-33) fl=#34
+                    ordered1: io.element.android.wysiwyg.view.spans.OrderedListSpan (0-8) fl=#34,
+                    ordered2: io.element.android.wysiwyg.view.spans.OrderedListSpan (9-17) fl=#34,
+                    bullet1: io.element.android.wysiwyg.view.spans.UnorderedListSpan (18-25) fl=#34,
+                    bullet2: io.element.android.wysiwyg.view.spans.UnorderedListSpan (26-33) fl=#34
                 """.trimIndent()
             )
         )
@@ -103,8 +100,8 @@ class HtmlToSpansParserTest {
         assertThat(
             spanned.dumpSpans(), equalTo(
                 listOf(
-                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (0-1) fl=#17",
-                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (2-3) fl=#17"
+                    "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (0-1) fl=#17",
+                    "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (2-3) fl=#17"
                 )
             )
         )
@@ -128,7 +125,7 @@ class HtmlToSpansParserTest {
     }
 
     private fun convertHtml(html: String): Spanned {
-        val app = ApplicationProvider.getApplicationContext<Application>()
+        val app = RuntimeEnvironment.getApplication()
         return HtmlToSpansParser(
             resourcesHelper = AndroidResourcesHelper(application = app),
             html = html,

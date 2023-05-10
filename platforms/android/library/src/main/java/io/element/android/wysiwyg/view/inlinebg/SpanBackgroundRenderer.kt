@@ -14,14 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
 */
-package io.element.android.wysiwyg.inlinebg;
+package io.element.android.wysiwyg.view.inlinebg
 
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import android.text.Layout
 import android.text.Spanned
-import io.element.android.wysiwyg.utils.getLineBottomWithoutPadding
-import io.element.android.wysiwyg.utils.getLineTopWithoutPadding
+import io.element.android.wysiwyg.internal.view.getLineBottomWithoutPadding
+import io.element.android.wysiwyg.internal.view.getLineTopWithoutPadding
 import kotlin.math.max
 import kotlin.math.min
 

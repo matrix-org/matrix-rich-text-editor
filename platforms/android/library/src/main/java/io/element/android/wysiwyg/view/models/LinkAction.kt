@@ -1,4 +1,4 @@
-package io.element.android.wysiwyg.inputhandlers.models
+package io.element.android.wysiwyg.view.models
 
 /**
  * Link related editor actions, depending on the current selection.

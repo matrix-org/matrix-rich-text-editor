@@ -5,8 +5,8 @@ import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import androidx.test.core.app.ApplicationProvider
 import io.element.android.wysiwyg.fakes.createFakeStyleConfig
-import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
-import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
+import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
+import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.test.utils.dumpSpans
 import io.element.android.wysiwyg.utils.AndroidHtmlConverter
 import io.element.android.wysiwyg.utils.AndroidResourcesHelper
@@ -132,7 +132,7 @@ class InterceptInputConnectionIntegrationTest {
         assertThat(
             textView.text.dumpSpans(), equalTo(
                 baseEditedSpans + listOf(
-                    "world: io.element.android.wysiwyg.spans.InlineCodeSpan (0-5) fl=#33",
+                    "world: io.element.android.wysiwyg.view.spans.InlineCodeSpan (0-5) fl=#33",
                 )
             )
         )
@@ -152,7 +152,7 @@ class InterceptInputConnectionIntegrationTest {
                     "hello: android.widget.Editor.SpanController (0-5) fl=#18",
                     ": android.text.Selection.START (5-5) fl=#546",
                     ": android.text.Selection.END (5-5) fl=#34",
-                    "hello: io.element.android.wysiwyg.spans.OrderedListSpan (0-5) fl=#34",
+                    "hello: io.element.android.wysiwyg.view.spans.OrderedListSpan (0-5) fl=#34",
                     "hello: android.text.style.UnderlineSpan (0-5) fl=#289",
                     "hello: android.view.inputmethod.ComposingText (0-5) fl=#289",
                 )
@@ -178,7 +178,7 @@ class InterceptInputConnectionIntegrationTest {
                     hello: android.widget.Editor.SpanController (0-5) fl=#18,
                     : android.text.Selection.START (5-5) fl=#546,
                     : android.text.Selection.END (5-5) fl=#34,
-                    hello: io.element.android.wysiwyg.spans.UnorderedListSpan (0-5) fl=#34,
+                    hello: io.element.android.wysiwyg.view.spans.UnorderedListSpan (0-5) fl=#34,
                     hello: android.text.style.UnderlineSpan (0-5) fl=#289,
                     hello: android.view.inputmethod.ComposingText (0-5) fl=#289
                 """.trimIndent()
@@ -200,7 +200,7 @@ class InterceptInputConnectionIntegrationTest {
                     hello: android.widget.Editor.SpanController (0-5) fl=#18,
                     : android.text.Selection.START (5-5) fl=#546,
                     : android.text.Selection.END (5-5) fl=#34,
-                    hello: io.element.android.wysiwyg.spans.UnorderedListSpan (0-5) fl=#34,
+                    hello: io.element.android.wysiwyg.view.spans.UnorderedListSpan (0-5) fl=#34,
                     hello: android.text.style.UnderlineSpan (0-5) fl=#289,
                     hello: android.view.inputmethod.ComposingText (0-5) fl=#289
                 """.trimIndent()
@@ -226,7 +226,7 @@ class InterceptInputConnectionIntegrationTest {
                     hello: android.widget.Editor.SpanController (0-5) fl=#18,
                     : android.text.Selection.START (5-5) fl=#546,
                     : android.text.Selection.END (5-5) fl=#34,
-                    hello: io.element.android.wysiwyg.spans.OrderedListSpan (0-5) fl=#34,
+                    hello: io.element.android.wysiwyg.view.spans.OrderedListSpan (0-5) fl=#34,
                     hello: android.text.style.UnderlineSpan (0-5) fl=#289,
                     hello: android.view.inputmethod.ComposingText (0-5) fl=#289
                 """.trimIndent()
@@ -249,7 +249,7 @@ class InterceptInputConnectionIntegrationTest {
                     "😋😋: android.widget.Editor.SpanController (0-4) fl=#18",
                     ": android.text.Selection.START (4-4) fl=#546",
                     ": android.text.Selection.END (4-4) fl=#34",
-                    "😋😋: io.element.android.wysiwyg.spans.OrderedListSpan (0-4) fl=#34",
+                    "😋😋: io.element.android.wysiwyg.view.spans.OrderedListSpan (0-4) fl=#34",
                     "😋😋: android.text.style.UnderlineSpan (0-4) fl=#289",
                     "😋😋: android.view.inputmethod.ComposingText (0-4) fl=#289",
                 )
@@ -275,7 +275,7 @@ class InterceptInputConnectionIntegrationTest {
                     "hello: android.widget.Editor.SpanController (0-5) fl=#18",
                     ": android.text.Selection.START (5-5) fl=#546",
                     ": android.text.Selection.END (5-5) fl=#34",
-                    "hello: io.element.android.wysiwyg.spans.CodeBlockSpan (0-5) fl=#33",
+                    "hello: io.element.android.wysiwyg.view.spans.CodeBlockSpan (0-5) fl=#33",
                     "hello: android.text.style.UnderlineSpan (0-5) fl=#289",
                     "hello: android.view.inputmethod.ComposingText (0-5) fl=#289"
                 )
@@ -299,7 +299,7 @@ class InterceptInputConnectionIntegrationTest {
                     "$NBSP: android.widget.Editor.SpanController (0-1) fl=#18",
                     ": android.text.Selection.START (0-0) fl=#546",
                     ": android.text.Selection.END (0-0) fl=#34",
-                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (0-1) fl=#17"
+                    "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (0-1) fl=#17"
                 )
             )
         )
@@ -322,8 +322,8 @@ class InterceptInputConnectionIntegrationTest {
                     "Test\n$NBSP: android.widget.Editor.SpanController (0-6) fl=#18",
                     ": android.text.Selection.START (5-5) fl=#546",
                     ": android.text.Selection.END (5-5) fl=#34",
-                    "Test\n$NBSP: io.element.android.wysiwyg.spans.CodeBlockSpan (0-6) fl=#33",
-                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (5-6) fl=#17",
+                    "Test\n$NBSP: io.element.android.wysiwyg.view.spans.CodeBlockSpan (0-6) fl=#33",
+                    "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (5-6) fl=#17",
                 )
             )
         )
@@ -340,8 +340,8 @@ class InterceptInputConnectionIntegrationTest {
                     "Test\n$NBSP: android.widget.Editor.SpanController (0-6) fl=#18",
                     ": android.text.Selection.START (5-5) fl=#34",
                     ": android.text.Selection.END (5-5) fl=#34",
-                    "Test: io.element.android.wysiwyg.spans.CodeBlockSpan (0-4) fl=#33",
-                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (5-6) fl=#17",
+                    "Test: io.element.android.wysiwyg.view.spans.CodeBlockSpan (0-4) fl=#33",
+                    "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (5-6) fl=#17",
                 )
             )
         )
@@ -365,7 +365,7 @@ class InterceptInputConnectionIntegrationTest {
                     hello: android.widget.Editor.SpanController (0-5) fl=#18,
                     : android.text.Selection.START (5-5) fl=#546,
                     : android.text.Selection.END (5-5) fl=#34,
-                    hello: io.element.android.wysiwyg.spans.QuoteSpan (0-5) fl=#33,
+                    hello: io.element.android.wysiwyg.view.spans.QuoteSpan (0-5) fl=#33,
                     hello: android.text.style.UnderlineSpan (0-5) fl=#289,
                     hello: android.view.inputmethod.ComposingText (0-5) fl=#289
                 """.trimIndent()
@@ -389,7 +389,7 @@ class InterceptInputConnectionIntegrationTest {
                     "$NBSP: android.widget.Editor.SpanController (0-1) fl=#18",
                     ": android.text.Selection.START (0-0) fl=#546",
                     ": android.text.Selection.END (0-0) fl=#34",
-                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (0-1) fl=#17"
+                    "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (0-1) fl=#17"
                 )
             )
         )
@@ -412,8 +412,8 @@ class InterceptInputConnectionIntegrationTest {
                     "Test\n$NBSP: android.widget.Editor.SpanController (0-6) fl=#18",
                     ": android.text.Selection.START (5-5) fl=#546",
                     ": android.text.Selection.END (5-5) fl=#34",
-                    "Test\n$NBSP: io.element.android.wysiwyg.spans.QuoteSpan (0-6) fl=#33",
-                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (5-6) fl=#17",
+                    "Test\n$NBSP: io.element.android.wysiwyg.view.spans.QuoteSpan (0-6) fl=#33",
+                    "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (5-6) fl=#17",
                 )
             )
         )
@@ -430,8 +430,8 @@ class InterceptInputConnectionIntegrationTest {
                     "Test\n$NBSP: android.widget.Editor.SpanController (0-6) fl=#18",
                     ": android.text.Selection.START (5-5) fl=#34",
                     ": android.text.Selection.END (5-5) fl=#34",
-                    "Test: io.element.android.wysiwyg.spans.QuoteSpan (0-4) fl=#33",
-                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (5-6) fl=#17",
+                    "Test: io.element.android.wysiwyg.view.spans.QuoteSpan (0-4) fl=#33",
+                    "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (5-6) fl=#17",
                 )
             )
         )
@@ -451,8 +451,8 @@ class InterceptInputConnectionIntegrationTest {
                     "$NBSP\n$NBSP: android.widget.Editor.SpanController (0-3) fl=#18",
                     ": android.text.Selection.START (2-2) fl=#546",
                     ": android.text.Selection.END (2-2) fl=#34",
-                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (0-1) fl=#17",
-                    "$NBSP: io.element.android.wysiwyg.spans.ExtraCharacterSpan (2-3) fl=#17"
+                    "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (0-1) fl=#17",
+                    "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (2-3) fl=#17"
                 )
             )
         )
