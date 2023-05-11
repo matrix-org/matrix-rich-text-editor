@@ -6,6 +6,7 @@ import android.text.Editable
 import android.text.Selection
 import android.text.Spannable
 import android.text.style.BackgroundColorSpan
+import android.text.style.ReplacementSpan
 import android.view.KeyEvent
 import android.view.inputmethod.*
 import android.widget.TextView
@@ -251,15 +252,19 @@ internal class InterceptInputConnection(
         if (beforeLength == 0 && afterLength == 0) return false
         val start = Selection.getSelectionStart(editable)
         val end = Selection.getSelectionEnd(editable)
-        val deleteFrom = (start-beforeLength).coerceAtLeast(0)
-        val deleteTo = end + afterLength
 
         var handled = false
         beginBatchEdit()
         if (afterLength > 0) {
+            val spans = editable.getSpans(end, end + afterLength, ReplacementSpan::class.java)
+            val firstReplacementSpanStart = spans.minOfOrNull { editable.getSpanStart(it) }
+            val lastReplacementSpanEnd = spans.maxOfOrNull { editable.getSpanEnd(it) }
+            val deleteFrom = min(end, firstReplacementSpanStart ?: end)
+            val deleteTo = max(end + afterLength, lastReplacementSpanEnd ?: end)
+
             val result = withProcessor {
-                val action = if (afterLength > 1) {
-                    EditorInputAction.DeleteIn(end, deleteTo)
+                val action = if (afterLength > 1 || deleteTo - deleteFrom > 1) {
+                    EditorInputAction.DeleteIn(deleteFrom, deleteTo)
                 } else {
                     EditorInputAction.Delete
                 }
@@ -275,9 +280,15 @@ internal class InterceptInputConnection(
         }
 
         if (beforeLength > 0) {
+            val replacementSpans = editable.getSpans(start - beforeLength, start, ReplacementSpan::class.java)
+            val firstReplacementSpanStart = replacementSpans.minOfOrNull { editable.getSpanStart(it) }
+            val lastReplacementStartEnd = replacementSpans.maxOfOrNull { editable.getSpanEnd(it) }
+            val deleteFrom = min(start - beforeLength, firstReplacementSpanStart ?: start)
+            val deleteTo = max(start, lastReplacementStartEnd ?: start)
+
             val result = withProcessor {
-                if (beforeLength > 1) {
-                    updateSelection(editable, deleteFrom, start)
+                if (beforeLength > 1 || deleteTo - deleteFrom > 1) {
+                    updateSelection(editable, deleteFrom, deleteTo)
                 }
                 processInput(EditorInputAction.BackPress)
             }
