@@ -6,7 +6,7 @@ import androidx.annotation.ColorRes
 import androidx.annotation.Dimension
 import androidx.core.content.res.ResourcesCompat
 
-interface ResourcesHelper {
+internal interface ResourcesHelper {
     fun getDisplayMetrics(): DisplayMetrics
 
     fun dpToPx(@Dimension(unit = Dimension.DP) dp: Int): Float
@@ -14,7 +14,7 @@ interface ResourcesHelper {
     fun getColor(@ColorRes colorId: Int): Int
 }
 
-class AndroidResourcesHelper(
+internal class AndroidResourcesHelper(
     private val application: Application,
 ) : ResourcesHelper {
 

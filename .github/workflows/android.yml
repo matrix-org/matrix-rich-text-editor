@@ -87,7 +87,7 @@ jobs:
           enable-hw-keyboard: true
           script: echo "Generated AVD snapshot for caching."
 
-      - name: Run all the tests
+      - name: Run all tests with coverage
         uses: reactivecircus/android-emulator-runner@v2
         with:
           working-directory: platforms/android
@@ -99,7 +99,10 @@ jobs:
           disable-animations: true
           enable-hw-keyboard: true
           script: |
-            ./gradlew :library:testDebugUnitTest :library:connectedDebugAndroidTest ${{ env.CI_GRADLE_ARG_PROPERTIES }}
+            ./gradlew unitTestsWithCoverage ${{ env.CI_GRADLE_ARG_PROPERTIES }}
+            ./gradlew generateUnitTestCoverageReport ${{ env.CI_GRADLE_ARG_PROPERTIES }}
+            ./gradlew instrumentationTestsWithCoverage ${{ env.CI_GRADLE_ARG_PROPERTIES }}
+            ./gradlew generateInstrumentationTestCoverageReport ${{ env.CI_GRADLE_ARG_PROPERTIES }}
 
       - name : Upload test results
         if : ${{ always() }}
@@ -109,3 +112,17 @@ jobs:
           path : |
             ./**/build/reports/tests/**
             ./**/build/reports/androidTests/connected/**
+
+      - name: Upload unit test coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: build/reports/jacoco/generateUnitTestCoverageReport/generateUnitTestCoverageReport.xml
+          fail_ci_if_error: false
+          flags: unittests-android, unittests
+
+      - name: Upload instrumentation test coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: build/reports/jacoco/generateInstrumentationTestCoverageReport/generateInstrumentationTestCoverageReport.xml
+          fail_ci_if_error: false
+          flags: uitests-android, uitests

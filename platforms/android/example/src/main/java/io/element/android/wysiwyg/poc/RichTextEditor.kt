@@ -11,8 +11,8 @@ import android.widget.LinearLayout
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import io.element.android.wysiwyg.EditorEditText
-import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
-import io.element.android.wysiwyg.inputhandlers.models.LinkAction
+import io.element.android.wysiwyg.view.models.InlineFormat
+import io.element.android.wysiwyg.view.models.LinkAction
 import io.element.android.wysiwyg.poc.databinding.ViewRichTextEditorBinding
 import io.element.android.wysiwyg.poc.matrix.Mention
 import io.element.android.wysiwyg.poc.matrix.MatrixMentionLinkDisplayHandler

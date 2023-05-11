@@ -1,4 +1,4 @@
-package io.element.android.wysiwyg.fakes
+package io.element.android.wysiwyg.test.fakes
 
 import android.graphics.drawable.ColorDrawable
 import io.element.android.wysiwyg.test.R
@@ -31,6 +31,6 @@ internal fun createFakeStyleConfig() = StyleConfig(
         backgroundDrawable = fakeDrawable,
     ),
     pill = PillStyleConfig(
-        R.color.fake_color
+        android.R.color.white
     )
 )

@@ -6,13 +6,11 @@ import androidx.lifecycle.ViewModel
 import io.element.android.wysiwyg.BuildConfig
 import io.element.android.wysiwyg.extensions.log
 import io.element.android.wysiwyg.extensions.string
-import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
-import io.element.android.wysiwyg.inputhandlers.models.InlineFormat
-import io.element.android.wysiwyg.inputhandlers.models.LinkAction
-import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
 import io.element.android.wysiwyg.utils.EditorIndexMapper
 import io.element.android.wysiwyg.utils.HtmlConverter
 import io.element.android.wysiwyg.utils.RustErrorCollector
+import io.element.android.wysiwyg.view.models.InlineFormat
+import io.element.android.wysiwyg.view.models.LinkAction
 import uniffi.wysiwyg_composer.*
 import uniffi.wysiwyg_composer.LinkAction as ComposerLinkAction
 
