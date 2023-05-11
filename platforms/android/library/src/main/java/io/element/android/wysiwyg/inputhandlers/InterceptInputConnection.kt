@@ -11,6 +11,7 @@ import android.view.inputmethod.*
 import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
+import io.element.android.wysiwyg.internal.utils.SelectionHelper
 import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
 import io.element.android.wysiwyg.internal.viewmodel.ReplaceTextResult
 import io.element.android.wysiwyg.utils.EditorIndexMapper
@@ -251,15 +252,18 @@ internal class InterceptInputConnection(
         if (beforeLength == 0 && afterLength == 0) return false
         val start = Selection.getSelectionStart(editable)
         val end = Selection.getSelectionEnd(editable)
-        val deleteFrom = (start-beforeLength).coerceAtLeast(0)
-        val deleteTo = end + afterLength
 
         var handled = false
         beginBatchEdit()
         if (afterLength > 0) {
+            val (deleteFrom, deleteTo) =
+                SelectionHelper.extendSelectionToReplacementSpans(
+                    editable, end, end + afterLength
+                )
+
             val result = withProcessor {
-                val action = if (afterLength > 1) {
-                    EditorInputAction.DeleteIn(end, deleteTo)
+                val action = if (deleteTo - deleteFrom > 1) {
+                    EditorInputAction.DeleteIn(deleteFrom, deleteTo)
                 } else {
                     EditorInputAction.Delete
                 }
@@ -275,9 +279,14 @@ internal class InterceptInputConnection(
         }
 
         if (beforeLength > 0) {
+            val (deleteFrom, deleteTo) =
+                SelectionHelper.extendSelectionToReplacementSpans(
+                    editable, start - beforeLength, start
+                )
+
             val result = withProcessor {
-                if (beforeLength > 1) {
-                    updateSelection(editable, deleteFrom, start)
+                if (deleteTo - deleteFrom > 1) {
+                    updateSelection(editable, deleteFrom, deleteTo)
                 }
                 processInput(EditorInputAction.BackPress)
             }
