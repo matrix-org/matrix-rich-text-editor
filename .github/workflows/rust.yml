@@ -40,4 +40,5 @@ jobs:
         files: lcov.info
         fail_ci_if_error: true
         flags: unittests-rust, unittests
+        # https://github.com/codecov/codecov-action/issues/557#issuecomment-1216749652
         token: ${{ secrets.CODECOV_TOKEN }}
