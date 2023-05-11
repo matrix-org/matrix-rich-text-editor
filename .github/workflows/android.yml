@@ -114,17 +114,15 @@ jobs:
             ./**/build/reports/androidTests/connected/**
 
       - name: Upload unit test coverage to Codecov
-        uses: codecov/codecov-action@main
+        uses: codecov/codecov-action@v3
         with:
-          working-directory: platforms/android
           files: build/reports/jacoco/generateUnitTestCoverageReport/generateUnitTestCoverageReport.xml
           fail_ci_if_error: false
           flags: unittests-android, unittests
 
       - name: Upload instrumentation test coverage to Codecov
-        uses: codecov/codecov-action@main
+        uses: codecov/codecov-action@v3
         with:
-          working-directory: platforms/android
           files: build/reports/jacoco/generateInstrumentationTestCoverageReport/generateInstrumentationTestCoverageReport.xml
           fail_ci_if_error: false
           flags: uitests-android, uitests
