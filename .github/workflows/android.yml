@@ -120,7 +120,6 @@ jobs:
           files: build/reports/jacoco/generateUnitTestCoverageReport/generateUnitTestCoverageReport.xml
           fail_ci_if_error: false
           flags: unittests-android, unittests
-          verbose: true
 
       - name: Upload instrumentation test coverage to Codecov
         uses: codecov/codecov-action@main
@@ -129,4 +128,3 @@ jobs:
           files: build/reports/jacoco/generateInstrumentationTestCoverageReport/generateInstrumentationTestCoverageReport.xml
           fail_ci_if_error: false
           flags: uitests-android, uitests
-          verbose: true
