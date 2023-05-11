@@ -403,6 +403,12 @@ mod sys {
         }
 
         #[test]
+        fn attributes123() {
+            assert_that!(r#"<a href="http://example.com" data-mention-type="mention">@user</a>"#)
+                .roundtrips();
+        }
+
+        #[test]
         fn parse_br_tag() {
             assert_that!("<br />").roundtrips();
         }
@@ -728,13 +734,51 @@ mod js {
 
                     "A" => {
                         self.current_path.push(DomNodeKind::Link);
+                        let mut attributes = vec![];
+                        if node
+                            .unchecked_ref::<Element>()
+                            .has_attribute("contenteditable")
+                        {
+                            attributes.push((
+                                "contenteditable".into(),
+                                node.unchecked_ref::<Element>()
+                                    .get_attribute("contenteditable")
+                                    .unwrap_or_default()
+                                    .into(),
+                            ))
+                        }
+                        if node
+                            .unchecked_ref::<Element>()
+                            .has_attribute("data-mention-type")
+                        {
+                            attributes.push((
+                                "data-mention-type".into(),
+                                node.unchecked_ref::<Element>()
+                                    .get_attribute("data-mention-type")
+                                    .unwrap_or_default()
+                                    .into(),
+                            ))
+                        }
+                        if node
+                            .unchecked_ref::<Element>()
+                            .has_attribute("style")
+                        {
+                            attributes.push((
+                                "style".into(),
+                                node.unchecked_ref::<Element>()
+                                    .get_attribute("style")
+                                    .unwrap_or_default()
+                                    .into(),
+                            ))
+                        }
+
                         dom.append_child(DomNode::new_link(
                             node.unchecked_ref::<Element>()
                                 .get_attribute("href")
                                 .unwrap_or_default()
                                 .into(),
                             self.convert(node.child_nodes())?.take_children(),
-                            vec![],
+                            attributes,
                         ));
                         self.current_path.pop();
                     }
