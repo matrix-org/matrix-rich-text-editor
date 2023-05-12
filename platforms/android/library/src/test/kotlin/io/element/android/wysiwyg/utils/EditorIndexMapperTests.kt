@@ -3,7 +3,7 @@ package io.element.android.wysiwyg.utils
 import android.text.style.BulletSpan
 import androidx.core.text.buildSpannedString
 import androidx.core.text.inSpans
-import io.element.android.wysiwyg.spans.ExtraCharacterSpan
+import io.element.android.wysiwyg.view.spans.ExtraCharacterSpan
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith

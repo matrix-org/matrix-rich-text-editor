@@ -6,10 +6,11 @@ import android.text.Spanned
 import android.util.AttributeSet
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.graphics.withTranslation
-import io.element.android.wysiwyg.inlinebg.SpanBackgroundHelper
-import io.element.android.wysiwyg.inlinebg.SpanBackgroundHelperFactory
-import io.element.android.wysiwyg.utils.CodeBlockStyleConfig
-import io.element.android.wysiwyg.utils.InlineCodeStyleConfig
+import io.element.android.wysiwyg.internal.view.EditorStyledTextViewAttributeReader
+import io.element.android.wysiwyg.view.CodeBlockStyleConfig
+import io.element.android.wysiwyg.view.InlineCodeStyleConfig
+import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelper
+import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelperFactory
 
 /**
  * This TextView can display all spans used by the editor.

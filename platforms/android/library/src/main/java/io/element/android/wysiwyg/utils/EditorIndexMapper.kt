@@ -3,7 +3,7 @@ package io.element.android.wysiwyg.utils
 import android.text.Editable
 import android.text.Spanned
 import androidx.core.text.getSpans
-import io.element.android.wysiwyg.spans.ExtraCharacterSpan
+import io.element.android.wysiwyg.view.spans.ExtraCharacterSpan
 import kotlin.math.absoluteValue
 import kotlin.math.min
 import uniffi.wysiwyg_composer.ComposerModel

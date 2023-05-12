@@ -11,8 +11,8 @@ import android.view.inputmethod.*
 import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
-import io.element.android.wysiwyg.inputhandlers.models.EditorInputAction
-import io.element.android.wysiwyg.inputhandlers.models.ReplaceTextResult
+import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
+import io.element.android.wysiwyg.internal.viewmodel.ReplaceTextResult
 import io.element.android.wysiwyg.utils.EditorIndexMapper
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
 import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
