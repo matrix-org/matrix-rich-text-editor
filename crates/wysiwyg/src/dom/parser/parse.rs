@@ -951,7 +951,17 @@ mod js {
         #[wasm_bindgen_test]
         fn a_with_attributes() {
             roundtrip(
-                r#"<a contenteditable="false" style="something" data-mention-type="use" href="http://example.com">a user mention</a>"#,
+                r#"<a contenteditable="false" data-mention-type="user" style="something"  href="http://example.com">a user mention</a>"#,
+            );
+        }
+
+        #[wasm_bindgen_test]
+        fn a_with_bad_attribute() {
+            let html = r#"<a invalidattribute="true" href="http://example.com">a user mention</a>"#;
+            let dom = HtmlParser::default().parse::<Utf16String>(html).unwrap();
+            assert_eq!(
+                dom.to_string(),
+                r#"<a href="http://example.com">a user mention</a>"#
             );
         }
 
