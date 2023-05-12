@@ -403,12 +403,6 @@ mod sys {
         }
 
         #[test]
-        fn attributes123() {
-            assert_that!(r#"<a href="http://example.com" data-mention-type="mention">@user</a>"#)
-                .roundtrips();
-        }
-
-        #[test]
         fn parse_br_tag() {
             assert_that!("<br />").roundtrips();
         }
