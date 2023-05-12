@@ -949,6 +949,13 @@ mod js {
         }
 
         #[wasm_bindgen_test]
+        fn a_with_attributes() {
+            roundtrip(
+                r#"<a contenteditable="false" style="something" data-mention-type="use" href="http://example.com">a user mention</a>"#,
+            );
+        }
+
+        #[wasm_bindgen_test]
         fn ul() {
             roundtrip("foo <ul><li>item1</li><li>item2</li></ul> bar");
         }
