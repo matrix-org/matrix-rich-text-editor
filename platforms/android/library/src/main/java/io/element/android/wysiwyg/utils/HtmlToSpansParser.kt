@@ -16,6 +16,7 @@ import io.element.android.wysiwyg.view.StyleConfig
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.spans.BlockSpan
 import io.element.android.wysiwyg.view.spans.CodeBlockSpan
+import io.element.android.wysiwyg.view.spans.CustomReplacementSpan
 import io.element.android.wysiwyg.view.spans.ExtraCharacterSpan
 import io.element.android.wysiwyg.view.spans.InlineCodeSpan
 import io.element.android.wysiwyg.view.spans.LinkSpan
@@ -314,11 +315,11 @@ internal class HtmlToSpansParser(
             ?: LinkDisplay.Plain
         when(linkDisplay) {
             is LinkDisplay.Custom -> {
-                val span = linkDisplay.customSpan
+                val span = CustomReplacementSpan(linkDisplay.customSpan)
                 replacePlaceholderWithPendingSpan(last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             }
             LinkDisplay.Pill -> {
-                val span = PillSpan((last.span).link, resourcesHelper.getColor(styleConfig.pill.backgroundColor))
+                val span = PillSpan(resourcesHelper.getColor(styleConfig.pill.backgroundColor))
                 replacePlaceholderWithPendingSpan(last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             }
             LinkDisplay.Plain -> {
@@ -490,6 +491,7 @@ internal class HtmlToSpansParser(
             // Links
             LinkSpan::class.java,
             PillSpan::class.java,
+            CustomReplacementSpan::class.java,
 
             // Lists
             UnorderedListSpan::class.java,

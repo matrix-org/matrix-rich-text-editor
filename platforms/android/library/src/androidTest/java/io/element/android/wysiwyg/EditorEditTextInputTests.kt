@@ -3,6 +3,7 @@ package io.element.android.wysiwyg
 import android.graphics.Typeface
 import android.text.Editable
 import android.text.style.BulletSpan
+import android.text.style.ReplacementSpan
 import android.text.style.StyleSpan
 import android.view.KeyEvent
 import android.view.View
@@ -265,6 +266,22 @@ class EditorEditTextInputTests {
             .perform(EditorActions.setLinkSuggestion("jonny", "https://matrix.to/#/@test:matrix.org"))
             .check(matches(TextViewMatcher {
                 it.editableText.getSpans<PillSpan>().isNotEmpty()
+            }))
+    }
+
+    @Test
+    fun testSettingMultipleLinkSuggestionWithCustomReplacements() {
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(ImeActions.setComposingText("@jonny"))
+            .perform(EditorActions.setLinkDisplayHandler { _, _ -> LinkDisplay.Custom(PillSpan(
+                R.color.fake_color
+            )) })
+            .perform(EditorActions.setLinkSuggestion("jonny", "https://matrix.to/#/@test:matrix.org"))
+            .perform(typeText(" "))
+            .perform(ImeActions.setComposingText("@jonny"))
+            .perform(EditorActions.setLinkSuggestion("jonny", "https://matrix.to/#/@test:matrix.org"))
+            .check(matches(TextViewMatcher {
+                it.editableText.getSpans<ReplacementSpan>().count() == 2
             }))
     }
 

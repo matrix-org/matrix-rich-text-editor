@@ -1,5 +1,7 @@
 package io.element.android.wysiwyg.links
 
+import android.text.style.ReplacementSpan
+
 /**
  * Clients can implement a link display handler to let the editor
  * know how to display URLs.
@@ -18,7 +20,7 @@ sealed class LinkDisplay {
     /**
      * Display the link using a custom span
      */
-    data class Custom(val customSpan: Any): LinkDisplay()
+    data class Custom(val customSpan: ReplacementSpan): LinkDisplay()
 
     /**
      * Display the link using a default pill shape

@@ -8,7 +8,6 @@ import androidx.annotation.ColorInt
 import kotlin.math.roundToInt
 
 internal class PillSpan(
-    val url: String,
     @ColorInt
     val backgroundColor: Int,
 ) : ReplacementSpan() {
