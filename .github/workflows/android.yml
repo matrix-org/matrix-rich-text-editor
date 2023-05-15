@@ -119,6 +119,8 @@ jobs:
           files: build/reports/jacoco/generateUnitTestCoverageReport/generateUnitTestCoverageReport.xml
           fail_ci_if_error: false
           flags: unittests-android, unittests
+          # https://github.com/codecov/codecov-action/issues/557#issuecomment-1216749652
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload instrumentation test coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -126,3 +128,5 @@ jobs:
           files: build/reports/jacoco/generateInstrumentationTestCoverageReport/generateInstrumentationTestCoverageReport.xml
           fail_ci_if_error: false
           flags: uitests-android, uitests
+          # https://github.com/codecov/codecov-action/issues/557#issuecomment-1216749652
+          token: ${{ secrets.CODECOV_TOKEN }}

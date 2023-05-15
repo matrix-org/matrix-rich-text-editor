@@ -77,4 +77,5 @@ jobs:
         directory: platforms/ios/lib/coverage
         fail_ci_if_error: true
         flags: unittests-ios, unittests
+        # https://github.com/codecov/codecov-action/issues/557#issuecomment-1216749652
         token: ${{ secrets.CODECOV_TOKEN }}
