@@ -78,6 +78,18 @@ class EditorEditTextInputTests {
     }
 
     @Test
+    fun testBackspacePill() {
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(EditorActions.setLinkDisplayHandler { _, _ -> LinkDisplay.Pill })
+            .perform(typeText("Hello @"))
+            .perform(EditorActions.setLinkSuggestion("alice", "link"))
+            .perform(pressKey(KeyEvent.KEYCODE_DEL)) // Delete the space added after the pill
+            .perform(pressKey(KeyEvent.KEYCODE_DEL)) // Delete the pill
+            .perform(pressKey(KeyEvent.KEYCODE_DEL)) // Delete the trailing space after "Hello"
+            .check(matches(withText("Hello")))
+    }
+
+    @Test
     fun testHardwareKeyboardDelete() {
         onView(withId(R.id.rich_text_edit_text))
             .perform(typeText("Test"))
