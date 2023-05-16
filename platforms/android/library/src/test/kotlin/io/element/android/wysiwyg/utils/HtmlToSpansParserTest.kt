@@ -1,10 +1,13 @@
 package io.element.android.wysiwyg.utils
 
 import android.text.Spanned
-import io.element.android.wysiwyg.links.LinkDisplay
-import io.element.android.wysiwyg.links.LinkDisplayHandler
+import io.element.android.wysiwyg.display.KeywordDisplayHandler
+import io.element.android.wysiwyg.display.TextDisplay
+import io.element.android.wysiwyg.display.LinkDisplayHandler
 import io.element.android.wysiwyg.test.fakes.createFakeStyleConfig
 import io.element.android.wysiwyg.test.utils.dumpSpans
+import io.element.android.wysiwyg.view.spans.CustomReplacementSpan
+import io.element.android.wysiwyg.view.spans.PillSpan
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.Test
@@ -134,9 +137,9 @@ class HtmlToSpansParserTest {
         """.trimIndent()
         val spanned = convertHtml(html, linkDisplayHandler = { _, url ->
             if(url.contains("element.io")) {
-                LinkDisplay.Pill
+                TextDisplay.Pill
             } else {
-                LinkDisplay.Plain
+                TextDisplay.Plain
             }
         })
         assertThat(
@@ -152,9 +155,39 @@ class HtmlToSpansParserTest {
         )
     }
 
+    @Test
+    fun testKeywordDisplayWithCustomKeywordDisplayHandler() {
+        val keyword1 = "\$hello"
+        val keyword2 = "anotherkeyword"
+        val keyword3 = "plainkeyword"
+        val html = "$keyword1 $keyword2 $keyword3"
+        val spanned = convertHtml(html, keywordDisplayHandler = object: KeywordDisplayHandler {
+            override val keywords: List<String> = listOf(keyword1, keyword2)
+            override fun resolveKeywordDisplay(text: String): TextDisplay =
+                when(text) {
+                    keyword1 -> TextDisplay.Pill
+                    keyword2 -> TextDisplay.Custom(PillSpan(0))
+                    keyword3 -> TextDisplay.Plain
+                    else -> TextDisplay.Plain
+                }
+        })
+        assertThat(
+            spanned.dumpSpans(), equalTo(
+                listOf(
+                    "\$hello: io.element.android.wysiwyg.view.spans.PillSpan (0-6) fl=#33",
+                    "anotherkeyword: io.element.android.wysiwyg.view.spans.CustomReplacementSpan (7-21) fl=#33"
+                )
+            )
+        )
+        assertThat(
+            spanned.toString(), equalTo("\$hello anotherkeyword plainkeyword")
+        )
+    }
+
     private fun convertHtml(
         html: String,
-        linkDisplayHandler: LinkDisplayHandler? = null
+        linkDisplayHandler: LinkDisplayHandler? = null,
+        keywordDisplayHandler: KeywordDisplayHandler? = null,
     ): Spanned {
         val app = RuntimeEnvironment.getApplication()
         return HtmlToSpansParser(
@@ -162,6 +195,7 @@ class HtmlToSpansParserTest {
             html = html,
             styleConfig = createFakeStyleConfig(),
             linkDisplayHandler = linkDisplayHandler,
+            keywordDisplayHandler = keywordDisplayHandler,
         ).convert()
     }
 }

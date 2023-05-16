@@ -5,7 +5,7 @@ import android.text.style.URLSpan
 
 internal class LinkSpan(
     url: String
-) : URLSpan(url) {
+) : URLSpan(url), PlainKeywordDisplaySpan {
     override fun updateDrawState(ds: TextPaint) {
         // Check if the text is already underlined (for example by an UnderlineSpan)
         val wasUnderlinedByAnotherSpan = ds.isUnderlineText

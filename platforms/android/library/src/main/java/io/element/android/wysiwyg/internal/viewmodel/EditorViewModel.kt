@@ -66,6 +66,7 @@ internal class EditorViewModel(
                     // This conversion to a plain String might be too simple
                     composer?.replaceTextIn(action.value.toString(), action.start.toUInt(), action.end.toUInt())
                 }
+                is EditorInputAction.ReplaceTextSuggestion -> replaceTextSuggestion(action)
                 is EditorInputAction.InsertParagraph -> composer?.enter()
                 is EditorInputAction.BackPress -> composer?.backspace()
                 is EditorInputAction.ApplyInlineFormat -> when (action.format) {
@@ -187,6 +188,17 @@ internal class EditorViewModel(
             text = text,
             suggestion = suggestion,
             attributes = emptyList()
+        )
+    }
+
+    private fun replaceTextSuggestion(action: EditorInputAction.ReplaceTextSuggestion): ComposerUpdate? {
+        val suggestion = (curMenuAction as? MenuAction.Suggestion)
+            ?.suggestionPattern
+            ?: return null
+
+        return composer?.replaceTextSuggestion(
+            suggestion = suggestion,
+            newText = action.value,
         )
     }
 

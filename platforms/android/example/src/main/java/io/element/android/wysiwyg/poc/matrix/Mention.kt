@@ -8,21 +8,22 @@ sealed class Mention(
     val display: String,
 ) {
     abstract val key: String
-    abstract val mentionType: MentionType
     val link get() = "https://matrix.to/#/$key$display:matrix.org"
     val text get() = "$key$display"
 
     class Room(
         display: String
     ): Mention(display) {
-        override val mentionType: MentionType = MentionType.Room
         override val key: String = "#"
     }
 
     class User(
         display: String
     ): Mention(display) {
-        override val mentionType: MentionType = MentionType.User
+        override val key: String = "@"
+    }
+
+    object NotifyEveryone: Mention("room") {
         override val key: String = "@"
     }
 }

@@ -16,6 +16,7 @@ import io.element.android.wysiwyg.view.models.LinkAction
 import io.element.android.wysiwyg.poc.databinding.ViewRichTextEditorBinding
 import io.element.android.wysiwyg.poc.matrix.Mention
 import io.element.android.wysiwyg.poc.matrix.MatrixMentionLinkDisplayHandler
+import io.element.android.wysiwyg.poc.matrix.MatrixRoomKeywordDisplayHandler
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
 import uniffi.wysiwyg_composer.MenuAction
@@ -120,6 +121,7 @@ class RichTextEditor : LinearLayout {
                     updateSuggestions(menuAction)
                 }
             richTextEditText.linkDisplayHandler = MatrixMentionLinkDisplayHandler()
+            richTextEditText.keywordDisplayHandler = MatrixRoomKeywordDisplayHandler()
         }
     }
 
@@ -154,8 +156,9 @@ class RichTextEditor : LinearLayout {
                 val text = menuAction.suggestionPattern.text
                 val people = listOf("alice", "bob", "carol", "dan").map(Mention::User)
                 val rooms = listOf("matrix", "element").map(Mention::Room)
+                val everyone = Mention.NotifyEveryone
                 val names = when (menuAction.suggestionPattern.key) {
-                    PatternKey.AT -> people
+                    PatternKey.AT -> people + everyone
                     PatternKey.HASH -> rooms
                     PatternKey.SLASH ->
                         emptyList() // TODO
@@ -167,9 +170,13 @@ class RichTextEditor : LinearLayout {
                 binding.menuSuggestion.onItemClickListener =
                     OnItemClickListener { _, _, position, _ ->
                         val item = suggestions[position]
-                        binding.richTextEditText.setLinkSuggestion(
-                            item.link, item.text
-                        )
+                        if(item == Mention.NotifyEveryone) {
+                            binding.richTextEditText.replaceTextSuggestion(item.text)
+                        } else {
+                            binding.richTextEditText.setLinkSuggestion(
+                                item.link, item.text
+                            )
+                        }
                     }
             }
         }

@@ -30,6 +30,7 @@ class InterceptInputConnectionIntegrationTest {
                     html,
                     createFakeStyleConfig(),
                     linkDisplayHandler = null,
+                    keywordDisplayHandler = null,
                 )
             },
         )
