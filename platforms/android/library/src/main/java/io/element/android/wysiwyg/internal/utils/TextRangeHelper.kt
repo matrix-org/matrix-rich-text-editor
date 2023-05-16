@@ -5,16 +5,20 @@ import android.text.style.ReplacementSpan
 import kotlin.math.max
 import kotlin.math.min
 
-internal object SelectionHelper {
+internal object TextRangeHelper {
     /**
-     * Return a new selection that covers the given range and extends it to cover
-     * any replacement spans at either end
+     * Return a new range that covers the given range and extends it to cover
+     * any replacement spans at either end.
+     *
+     * The range is returned as a pair of integers where the first is less than the last
      */
-    fun extendSelectionToReplacementSpans(
+    fun extendRangeToReplacementSpans(
         spanned: Spanned,
         start: Int,
-        end: Int,
+        length: Int,
     ): Pair<Int, Int> {
+        require(length > 0)
+        val end = start + length
         val spans = spanned.getSpans(start, end, ReplacementSpan::class.java)
         val firstReplacementSpanStart = spans.minOfOrNull { spanned.getSpanStart(it) }
         val lastReplacementSpanEnd = spans.maxOfOrNull { spanned.getSpanEnd(it) }

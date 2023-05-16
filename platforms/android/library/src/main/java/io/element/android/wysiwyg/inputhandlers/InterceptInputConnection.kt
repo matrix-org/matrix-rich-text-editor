@@ -11,7 +11,7 @@ import android.view.inputmethod.*
 import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
-import io.element.android.wysiwyg.internal.utils.SelectionHelper
+import io.element.android.wysiwyg.internal.utils.TextRangeHelper
 import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
 import io.element.android.wysiwyg.internal.viewmodel.ReplaceTextResult
 import io.element.android.wysiwyg.utils.EditorIndexMapper
@@ -257,8 +257,8 @@ internal class InterceptInputConnection(
         beginBatchEdit()
         if (afterLength > 0) {
             val (deleteFrom, deleteTo) =
-                SelectionHelper.extendSelectionToReplacementSpans(
-                    editable, end, end + afterLength
+                TextRangeHelper.extendRangeToReplacementSpans(
+                    editable, start = end, length = afterLength
                 )
 
             val result = withProcessor {
@@ -280,8 +280,8 @@ internal class InterceptInputConnection(
 
         if (beforeLength > 0) {
             val (deleteFrom, deleteTo) =
-                SelectionHelper.extendSelectionToReplacementSpans(
-                    editable, start - beforeLength, start
+                TextRangeHelper.extendRangeToReplacementSpans(
+                    editable, start = start - beforeLength, length = beforeLength
                 )
 
             val result = withProcessor {

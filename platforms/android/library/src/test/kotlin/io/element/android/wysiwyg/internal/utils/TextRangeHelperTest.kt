@@ -11,14 +11,21 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class SelectionHelperTest {
+class TextRangeHelperTest {
+    @Test(expected = IllegalArgumentException::class)
+    fun `given negative length, when extend to cover ReplacementSpans, it throws`() {
+        val text = SpannableStringBuilder("0123456789")
 
+        TextRangeHelper.extendRangeToReplacementSpans(
+            text, 3, -1
+        )
+    }
     @Test
     fun `given plain text, when extend to cover ReplacementSpans, selection is not extended`() {
         val text = SpannableStringBuilder("0123456789")
 
-        val newSelection = SelectionHelper.extendSelectionToReplacementSpans(
-            text, 3, 7
+        val newSelection = TextRangeHelper.extendRangeToReplacementSpans(
+            text, 3, 4
         )
 
         assertEquals(3 to 7, newSelection)
@@ -29,8 +36,8 @@ class SelectionHelperTest {
         val text = SpannableStringBuilder("0123456789")
         text.setSpan(MyReplacementSpan(), 6, 10, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
 
-        val newSelection = SelectionHelper.extendSelectionToReplacementSpans(
-            text, 3, 7
+        val newSelection = TextRangeHelper.extendRangeToReplacementSpans(
+            text, 3, 4
         )
 
         assertEquals(3 to 10, newSelection)
@@ -41,8 +48,8 @@ class SelectionHelperTest {
         val text = SpannableStringBuilder("0123456789")
         text.setSpan(MyReplacementSpan(), 0, 4, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
 
-        val newSelection = SelectionHelper.extendSelectionToReplacementSpans(
-            text, 3, 7
+        val newSelection = TextRangeHelper.extendRangeToReplacementSpans(
+            text, 3, 4
         )
 
         assertEquals(0 to 7, newSelection)
@@ -54,8 +61,8 @@ class SelectionHelperTest {
         text.setSpan(MyReplacementSpan(), 0, 3, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         text.setSpan(MyReplacementSpan(), 7, 10, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
 
-        val newSelection = SelectionHelper.extendSelectionToReplacementSpans(
-            text, 3, 7
+        val newSelection = TextRangeHelper.extendRangeToReplacementSpans(
+            text, 3, 4
         )
 
         assertEquals(3 to 7, newSelection)
@@ -67,8 +74,8 @@ class SelectionHelperTest {
         text.setSpan(MyReplacementSpan(), 0, 4, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         text.setSpan(MyReplacementSpan(), 6, 10, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
 
-        val newSelection = SelectionHelper.extendSelectionToReplacementSpans(
-            text, 3, 7
+        val newSelection = TextRangeHelper.extendRangeToReplacementSpans(
+            text, 3, 4
         )
 
         assertEquals(0 to 10, newSelection)
