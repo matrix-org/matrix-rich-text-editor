@@ -728,13 +728,32 @@ mod js {
 
                     "A" => {
                         self.current_path.push(DomNodeKind::Link);
+                        let mut attributes = vec![];
+                        let valid_attributes =
+                            ["contenteditable", "data-mention-type", "style"];
+
+                        for attr in valid_attributes.into_iter() {
+                            if node
+                                .unchecked_ref::<Element>()
+                                .has_attribute(attr)
+                            {
+                                attributes.push((
+                                    attr.into(),
+                                    node.unchecked_ref::<Element>()
+                                        .get_attribute(attr)
+                                        .unwrap_or_default()
+                                        .into(),
+                                ))
+                            }
+                        }
+
                         dom.append_child(DomNode::new_link(
                             node.unchecked_ref::<Element>()
                                 .get_attribute("href")
                                 .unwrap_or_default()
                                 .into(),
                             self.convert(node.child_nodes())?.take_children(),
-                            vec![],
+                            attributes,
                         ));
                         self.current_path.pop();
                     }
@@ -927,6 +946,23 @@ mod js {
         fn a() {
             roundtrip(r#"foo <a href="url">bar</a> baz"#);
             roundtrip(r#"foo <a href="">bar</a> baz"#);
+        }
+
+        #[wasm_bindgen_test]
+        fn a_with_attributes() {
+            roundtrip(
+                r#"<a contenteditable="false" data-mention-type="user" style="something" href="http://example.com">a user mention</a>"#,
+            );
+        }
+
+        #[wasm_bindgen_test]
+        fn a_with_bad_attribute() {
+            let html = r#"<a invalidattribute="true" href="http://example.com">a user mention</a>"#;
+            let dom = HtmlParser::default().parse::<Utf16String>(html).unwrap();
+            assert_eq!(
+                dom.to_string(),
+                r#"<a href="http://example.com">a user mention</a>"#
+            );
         }
 
         #[wasm_bindgen_test]
