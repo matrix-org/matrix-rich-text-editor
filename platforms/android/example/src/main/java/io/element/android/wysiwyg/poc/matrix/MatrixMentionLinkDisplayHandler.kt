@@ -1,16 +1,16 @@
 package io.element.android.wysiwyg.poc.matrix
 
-import io.element.android.wysiwyg.links.LinkDisplay
-import io.element.android.wysiwyg.links.LinkDisplayHandler
+import io.element.android.wysiwyg.display.TextDisplay
+import io.element.android.wysiwyg.display.LinkDisplayHandler
 
 /**
  * Convenience implementation of a [LinkDisplayHandler] that detects Matrix mentions and
  * displays them as default pills.
  */
 class MatrixMentionLinkDisplayHandler : LinkDisplayHandler {
-    override fun resolveUrlDisplay(text: String, url: String): LinkDisplay =
+    override fun resolveLinkDisplay(text: String, url: String): TextDisplay =
         when (url.startsWith("https://matrix.to/#/")) {
-            true -> LinkDisplay.Pill
-            false -> LinkDisplay.Plain
+            true -> TextDisplay.Pill
+            false -> TextDisplay.Plain
         }
 }

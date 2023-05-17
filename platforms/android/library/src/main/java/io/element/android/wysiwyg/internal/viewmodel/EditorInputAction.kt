@@ -18,6 +18,11 @@ internal sealed interface EditorInputAction {
     data class ReplaceTextIn(val start: UInt, val end: UInt, val value: CharSequence): EditorInputAction
 
     /**
+     * Replaces the text of the current suggestion range with the provided [value] in plain text.
+     */
+    data class ReplaceTextSuggestion(val value: String): EditorInputAction
+
+    /**
      * Replaces the whole contents of the editor with the passed [html], re-creating the Dom.
      */
     data class ReplaceAllHtml(val html: String): EditorInputAction

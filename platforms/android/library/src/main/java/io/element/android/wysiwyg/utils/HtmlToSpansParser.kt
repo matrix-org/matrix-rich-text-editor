@@ -10,8 +10,9 @@ import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
 import androidx.core.text.getSpans
 import io.element.android.wysiwyg.BuildConfig
-import io.element.android.wysiwyg.links.LinkDisplay
-import io.element.android.wysiwyg.links.LinkDisplayHandler
+import io.element.android.wysiwyg.display.KeywordDisplayHandler
+import io.element.android.wysiwyg.display.TextDisplay
+import io.element.android.wysiwyg.display.LinkDisplayHandler
 import io.element.android.wysiwyg.view.StyleConfig
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.spans.BlockSpan
@@ -20,6 +21,7 @@ import io.element.android.wysiwyg.view.spans.CustomReplacementSpan
 import io.element.android.wysiwyg.view.spans.ExtraCharacterSpan
 import io.element.android.wysiwyg.view.spans.InlineCodeSpan
 import io.element.android.wysiwyg.view.spans.LinkSpan
+import io.element.android.wysiwyg.view.spans.PlainKeywordDisplaySpan
 import io.element.android.wysiwyg.view.spans.OrderedListSpan
 import io.element.android.wysiwyg.view.spans.PillSpan
 import io.element.android.wysiwyg.view.spans.QuoteSpan
@@ -44,6 +46,7 @@ internal class HtmlToSpansParser(
     private val html: String,
     private val styleConfig: StyleConfig,
     private val linkDisplayHandler: LinkDisplayHandler?,
+    private val keywordDisplayHandler: KeywordDisplayHandler?,
 ) : ContentHandler {
 
     /**
@@ -106,6 +109,7 @@ internal class HtmlToSpansParser(
             text.setSpan(spanToAdd.span, spanToAdd.start, spanToAdd.end, spanToAdd.flags)
         }
         text.removePlaceholderSpans()
+        text.addKeywordSpans()
         if (BuildConfig.DEBUG) text.assertOnlyAllowedSpans()
         return text
     }
@@ -311,18 +315,30 @@ internal class HtmlToSpansParser(
         val last = getLastPending<PlaceholderSpan.Hyperlink>() ?: return
         val url = last.span.link
         val innerText = text.subSequence(last.start, text.length).toString()
-        val linkDisplay = linkDisplayHandler?.resolveUrlDisplay(innerText, url)
-            ?: LinkDisplay.Plain
-        when(linkDisplay) {
-            is LinkDisplay.Custom -> {
-                val span = CustomReplacementSpan(linkDisplay.customSpan)
-                replacePlaceholderWithPendingSpan(last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        val textDisplay = linkDisplayHandler?.resolveLinkDisplay(innerText, url)
+            ?: TextDisplay.Plain
+        when (textDisplay) {
+            is TextDisplay.Custom -> {
+                val span = CustomReplacementSpan(textDisplay.customSpan)
+                replacePlaceholderWithPendingSpan(
+                    last.span,
+                    span,
+                    last.start,
+                    text.length,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
             }
-            LinkDisplay.Pill -> {
+            TextDisplay.Pill -> {
                 val span = PillSpan(resourcesHelper.getColor(styleConfig.pill.backgroundColor))
-                replacePlaceholderWithPendingSpan(last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                replacePlaceholderWithPendingSpan(
+                    last.span,
+                    span,
+                    last.start,
+                    text.length,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
             }
-            LinkDisplay.Plain -> {
+            TextDisplay.Plain -> {
                 val span = LinkSpan((last.span).link)
                 replacePlaceholderWithPendingSpan(
                     last.span,
@@ -468,6 +484,28 @@ internal class HtmlToSpansParser(
     private fun Int.dpToPx(): Float {
         return resourcesHelper.dpToPx(this)
     }
+
+    private fun Editable.addKeywordSpans() =
+        keywordDisplayHandler?.keywords?.forEach { keyword ->
+            val display = keywordDisplayHandler.resolveKeywordDisplay(keyword)
+            Regex(Regex.escape(keyword))
+                .findAll(text).forEach eachMatch@{ match ->
+                    val start = match.range.first
+                    val end = match.range.last + 1
+                    if (text.getSpans(start, end, PlainKeywordDisplaySpan::class.java).isNotEmpty()) {
+                        return@eachMatch
+                    }
+                    val span = when (display) {
+                        is TextDisplay.Custom -> CustomReplacementSpan(display.customSpan)
+                        TextDisplay.Pill -> PillSpan(
+                            resourcesHelper.getColor(styleConfig.pill.backgroundColor)
+                        )
+                        TextDisplay.Plain -> null
+                    }
+                    text.setSpan(span, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                }
+        }
+
 
     companion object FormattingSpans {
         /**

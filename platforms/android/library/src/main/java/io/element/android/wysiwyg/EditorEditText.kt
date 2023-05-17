@@ -21,6 +21,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.core.graphics.withTranslation
 import androidx.lifecycle.*
 import com.google.android.material.textfield.TextInputEditText
+import io.element.android.wysiwyg.display.KeywordDisplayHandler
 import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelper
 import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelperFactory
 import io.element.android.wysiwyg.inputhandlers.InterceptInputConnection
@@ -30,9 +31,10 @@ import io.element.android.wysiwyg.view.models.LinkAction
 import io.element.android.wysiwyg.internal.viewmodel.ReplaceTextResult
 import io.element.android.wysiwyg.internal.view.EditorEditTextAttributeReader
 import io.element.android.wysiwyg.internal.view.viewModel
-import io.element.android.wysiwyg.internal.links.MemoizingLinkDisplayHandler
+import io.element.android.wysiwyg.internal.display.MemoizingLinkDisplayHandler
 import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
-import io.element.android.wysiwyg.links.LinkDisplayHandler
+import io.element.android.wysiwyg.display.LinkDisplayHandler
+import io.element.android.wysiwyg.internal.display.MemoizedKeywordDisplayHandler
 import io.element.android.wysiwyg.utils.*
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
 import io.element.android.wysiwyg.view.StyleConfig
@@ -60,6 +62,7 @@ class EditorEditText : TextInputEditText {
                         resourcesProvider, html,
                         styleConfig = styleConfig,
                         linkDisplayHandler = linkDisplayHandler,
+                        keywordDisplayHandler = keywordDisplayHandler,
                     )
                 },
             )
@@ -112,6 +115,14 @@ class EditorEditText : TextInputEditText {
     var linkDisplayHandler: LinkDisplayHandler? = null
         set(value) {
             field = value?.let { MemoizingLinkDisplayHandler(it) }
+        }
+    /**
+     * Set the keyword display handler to display keywords in a custom way.
+     * For example, to transform keywords into pills.
+     */
+    var keywordDisplayHandler: KeywordDisplayHandler? = null
+        set(value) {
+            field = value?.let { MemoizedKeywordDisplayHandler(it) }
         }
     var selectionChangeListener: OnSelectionChangeListener? = null
     var actionStatesChangedListener: OnActionStatesChangedListener? = null
@@ -420,6 +431,19 @@ class EditorEditText : TextInputEditText {
         val result = viewModel.processInput(EditorInputAction.SetLinkSuggestion(
             text = text,
             url = url,
+        )) ?: return
+        setTextFromComposerUpdate(result)
+        setSelectionFromComposerUpdate(result.selection.last)
+    }
+
+    /**
+     * Replace text in the current suggestion range
+     *
+     * @param text The text to insert into the current suggestion range
+     */
+    fun replaceTextSuggestion(text: String) {
+        val result = viewModel.processInput(EditorInputAction.ReplaceTextSuggestion(
+            value = text,
         )) ?: return
         setTextFromComposerUpdate(result)
         setSelectionFromComposerUpdate(result.selection.last)

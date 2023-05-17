@@ -22,7 +22,8 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.element.android.wysiwyg.links.LinkDisplay
+import io.element.android.wysiwyg.display.TextDisplay
+import io.element.android.wysiwyg.fakes.SimpleKeywordDisplayHandler
 import io.element.android.wysiwyg.test.R
 import io.element.android.wysiwyg.test.utils.*
 import io.element.android.wysiwyg.utils.RustErrorCollector
@@ -274,7 +275,7 @@ class EditorEditTextInputTests {
     fun testSettingLinkSuggestion() {
         onView(withId(R.id.rich_text_edit_text))
             .perform(ImeActions.setComposingText("@jonny"))
-            .perform(EditorActions.setLinkDisplayHandler { _, _ -> LinkDisplay.Pill })
+            .perform(EditorActions.setLinkDisplayHandler { _, _ -> TextDisplay.Pill })
             .perform(EditorActions.setLinkSuggestion("jonny", "https://matrix.to/#/@test:matrix.org"))
             .check(matches(TextViewMatcher {
                 it.editableText.getSpans<PillSpan>().isNotEmpty()
@@ -285,13 +286,42 @@ class EditorEditTextInputTests {
     fun testSettingMultipleLinkSuggestionWithCustomReplacements() {
         onView(withId(R.id.rich_text_edit_text))
             .perform(ImeActions.setComposingText("@jonny"))
-            .perform(EditorActions.setLinkDisplayHandler { _, _ -> LinkDisplay.Custom(PillSpan(
+            .perform(EditorActions.setLinkDisplayHandler { _, _ -> TextDisplay.Custom(PillSpan(
                 R.color.fake_color
             )) })
             .perform(EditorActions.setLinkSuggestion("jonny", "https://matrix.to/#/@test:matrix.org"))
             .perform(typeText(" "))
             .perform(ImeActions.setComposingText("@jonny"))
             .perform(EditorActions.setLinkSuggestion("jonny", "https://matrix.to/#/@test:matrix.org"))
+            .check(matches(TextViewMatcher {
+                it.editableText.getSpans<ReplacementSpan>().count() == 2
+            }))
+    }
+
+    @Test
+    fun testReplaceTextSuggestion() {
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(ImeActions.setComposingText("@r"))
+            .perform(EditorActions.setKeywordDisplayHandler(SimpleKeywordDisplayHandler("@room")))
+            .perform(EditorActions.replaceTextSuggestion("@room"))
+            .check(matches(TextViewMatcher {
+                    it.editableText.getSpans<ReplacementSpan>().isNotEmpty()
+            }))
+    }
+
+    @Test
+    fun testReplacingMultipleTextSuggestionsWithCustomReplacements() {
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(ImeActions.setComposingText("@r"))
+            .perform(EditorActions.setKeywordDisplayHandler(
+                SimpleKeywordDisplayHandler("@room",
+                    displayAs = TextDisplay.Custom(PillSpan(R.color.fake_color)))
+                )
+            )
+            .perform(EditorActions.replaceTextSuggestion("@room"))
+            .perform(typeText(" "))
+            .perform(ImeActions.setComposingText("@r"))
+            .perform(EditorActions.replaceTextSuggestion("@room"))
             .check(matches(TextViewMatcher {
                 it.editableText.getSpans<ReplacementSpan>().count() == 2
             }))
