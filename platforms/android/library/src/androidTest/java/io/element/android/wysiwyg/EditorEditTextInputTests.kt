@@ -81,7 +81,7 @@ class EditorEditTextInputTests {
     @Test
     fun testBackspacePill() {
         onView(withId(R.id.rich_text_edit_text))
-            .perform(EditorActions.setLinkDisplayHandler { _, _ -> LinkDisplay.Pill })
+            .perform(EditorActions.setLinkDisplayHandler { _, _ -> TextDisplay.Pill })
             .perform(typeText("Hello @"))
             .perform(EditorActions.setLinkSuggestion("alice", "link"))
             .perform(pressKey(KeyEvent.KEYCODE_DEL)) // Delete the space added after the pill
