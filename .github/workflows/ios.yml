@@ -2,7 +2,7 @@ name: iOS
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main, "version-*" ]
   pull_request:
     branches: [ "main" ]
     types: [ labeled, synchronize, opened, reopened ]
