@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.2.0] - 2023-05-18
+
+### Changed
+
+- Android: [API breaking change] Add support for mentions
+- Common: Read attributes from markdown for mentions
+
 # [2.1.0] - 2023-05-02
 
 ### Changed
