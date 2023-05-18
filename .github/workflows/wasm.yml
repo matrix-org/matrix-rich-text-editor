@@ -2,7 +2,7 @@ name: Wasm
 
 on:
   push:
-    branches: [ main, "version-*" ]
+    branches: [ main ]
   pull_request:
     branches: [ "main" ]
 
