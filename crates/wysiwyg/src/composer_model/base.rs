@@ -195,6 +195,10 @@ where
         self.state.dom.to_html()
     }
 
+    pub fn get_content_as_message_html(&self) -> S {
+        self.state.dom.to_message_html()
+    }
+
     pub fn get_content_as_markdown(&self) -> S {
         self.state.dom.to_markdown().unwrap()
     }

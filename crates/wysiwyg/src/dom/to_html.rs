@@ -20,16 +20,30 @@ pub trait ToHtml<S>
 where
     S: UnicodeString,
 {
+    /// Convert to HTML
+    ///
+    /// When `is_message` is true, it outputs a clean representation of the
+    /// source object, suitable for sending as a message.
     fn fmt_html(
         &self,
         buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
         state: ToHtmlState,
+        as_message: bool,
     );
 
+    /// Convert to a clean HTML represention of the source object, suitable
+    /// for sending as a message
+    fn to_message_html(&self) -> S {
+        let mut buf = S::default();
+        self.fmt_html(&mut buf, None, ToHtmlState::default(), true);
+        buf
+    }
+
+    /// Convert to a literal HTML represention of the source object
     fn to_html(&self) -> S {
         let mut buf = S::default();
-        self.fmt_html(&mut buf, None, ToHtmlState::default());
+        self.fmt_html(&mut buf, None, ToHtmlState::default(), false);
         buf
     }
 }

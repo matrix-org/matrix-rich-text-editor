@@ -618,8 +618,10 @@ where
         buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
         state: ToHtmlState,
+        as_message: bool,
     ) {
-        self.document.fmt_html(buf, selection_writer, state)
+        self.document
+            .fmt_html(buf, selection_writer, state, as_message)
     }
 }
 
