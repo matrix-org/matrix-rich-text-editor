@@ -79,6 +79,7 @@ where
         buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
         _: ToHtmlState,
+        _clean: bool,
     ) {
         let cur_pos = buf.len();
         buf.push(S::from("<br />"));

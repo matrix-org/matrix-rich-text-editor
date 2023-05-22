@@ -608,15 +608,24 @@ where
         formatter: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
         state: ToHtmlState,
+        clean: bool,
     ) {
         match self.kind() {
-            ContainerNodeKind::Paragraph => {
-                self.fmt_paragraph_html(formatter, selection_writer, state)
+            ContainerNodeKind::Paragraph => self.fmt_paragraph_html(
+                formatter,
+                selection_writer,
+                state,
+                clean,
+            ),
+            ContainerNodeKind::CodeBlock => self.fmt_code_block_html(
+                formatter,
+                selection_writer,
+                state,
+                clean,
+            ),
+            _ => {
+                self.fmt_default_html(formatter, selection_writer, state, clean)
             }
-            ContainerNodeKind::CodeBlock => {
-                self.fmt_code_block_html(formatter, selection_writer, state)
-            }
-            _ => self.fmt_default_html(formatter, selection_writer, state),
         };
     }
 }
@@ -628,13 +637,14 @@ impl<S: UnicodeString> ContainerNode<S> {
         formatter: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
         state: ToHtmlState,
+        clean: bool,
     ) {
         let name = self.name();
         if !name.is_empty() {
             self.fmt_tag_open(name, formatter, &self.attrs);
         }
 
-        self.fmt_children_html(formatter, selection_writer, state);
+        self.fmt_children_html(formatter, selection_writer, state, clean);
 
         if !name.is_empty() {
             self.fmt_tag_close(name, formatter);
@@ -646,10 +656,18 @@ impl<S: UnicodeString> ContainerNode<S> {
         formatter: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
         state: ToHtmlState,
+        clean: bool,
     ) {
         assert!(matches!(self.kind, ContainerNodeKind::Paragraph));
         if state.is_inside_code_block {
-            self.fmt_code_paragraph_html(formatter, selection_writer, state)
+            self.fmt_code_paragraph_html(
+                formatter,
+                selection_writer,
+                state,
+                clean,
+            )
+        } else if clean {
+            self.fmt_clean_paragraph_html(formatter, selection_writer, state)
         } else {
             self.fmt_default_paragraph_html(formatter, selection_writer, state)
         }
@@ -668,8 +686,26 @@ impl<S: UnicodeString> ContainerNode<S> {
         if self.is_empty() {
             formatter.push(char::nbsp());
         }
-        self.fmt_children_html(formatter, selection_writer, state);
+        self.fmt_children_html(formatter, selection_writer, state, true);
         self.fmt_tag_close(name, formatter);
+    }
+
+    fn fmt_clean_paragraph_html(
+        &self,
+        formatter: &mut S,
+        selection_writer: Option<&mut SelectionWriter>,
+        state: ToHtmlState,
+    ) {
+        assert!(matches!(self.kind, ContainerNodeKind::Paragraph));
+        let name = self.name();
+
+        if self.is_empty() {
+            self.fmt_tag_empty(&S::from("br"), formatter, &self.attrs);
+        } else {
+            self.fmt_tag_open(name, formatter, &self.attrs);
+            self.fmt_children_html(formatter, selection_writer, state, false);
+            self.fmt_tag_close(name, formatter);
+        }
     }
 
     fn fmt_code_paragraph_html(
@@ -677,6 +713,7 @@ impl<S: UnicodeString> ContainerNode<S> {
         formatter: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
         state: ToHtmlState,
+        clean: bool,
     ) {
         assert!(matches!(self.kind, ContainerNodeKind::Paragraph));
         if self.is_empty()
@@ -684,7 +721,7 @@ impl<S: UnicodeString> ContainerNode<S> {
         {
             formatter.push(char::nbsp());
         }
-        self.fmt_children_html(formatter, selection_writer, state);
+        self.fmt_children_html(formatter, selection_writer, state, clean);
         if !state.is_last_node_in_parent {
             formatter.push('\n');
         }
@@ -695,6 +732,7 @@ impl<S: UnicodeString> ContainerNode<S> {
         formatter: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
         state: ToHtmlState,
+        clean: bool,
     ) {
         assert!(matches!(self.kind, ContainerNodeKind::CodeBlock));
         self.fmt_tag_open(&S::from("pre"), formatter, &self.attrs);
@@ -703,7 +741,7 @@ impl<S: UnicodeString> ContainerNode<S> {
 
         self.fmt_tag_open(&S::from("code"), formatter, &None::<Vec<(S, S)>>);
 
-        self.fmt_children_html(formatter, selection_writer, state);
+        self.fmt_children_html(formatter, selection_writer, state, clean);
 
         self.fmt_tag_close(&S::from("code"), formatter);
         self.fmt_tag_close(&S::from("pre"), formatter);
@@ -714,11 +752,12 @@ impl<S: UnicodeString> ContainerNode<S> {
         formatter: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
         state: ToHtmlState,
+        clean: bool,
     ) {
         if let Some(w) = selection_writer {
             for (i, child) in self.children.iter().enumerate() {
                 let state = self.updated_state(state, i);
-                child.fmt_html(formatter, Some(w), state);
+                child.fmt_html(formatter, Some(w), state, clean);
             }
             if self.is_empty() {
                 w.write_selection_empty_container(
@@ -730,7 +769,7 @@ impl<S: UnicodeString> ContainerNode<S> {
         } else {
             for (i, child) in self.children.iter().enumerate() {
                 let state = self.updated_state(state, i);
-                child.fmt_html(formatter, None, state);
+                child.fmt_html(formatter, None, state, clean);
             }
         }
     }
@@ -760,6 +799,27 @@ impl<S: UnicodeString> ContainerNode<S> {
         formatter.push("</");
         formatter.push(name);
         formatter.push('>');
+    }
+
+    fn fmt_tag_empty(
+        &self,
+        name: &S::Str,
+        formatter: &mut S,
+        attrs: &Option<Vec<(S, S)>>,
+    ) {
+        formatter.push('<');
+        formatter.push(name);
+        if let Some(attrs) = attrs {
+            for attr in attrs {
+                let (attr_name, value) = attr;
+                formatter.push(' ');
+                formatter.push(&**attr_name);
+                formatter.push("=\"");
+                formatter.push(&**value);
+                formatter.push('"');
+            }
+        }
+        formatter.push(" />");
     }
 
     fn updated_state(
@@ -1309,7 +1369,9 @@ where
 mod test {
     use widestring::Utf16String;
 
-    use crate::tests::testutils_conversion::utf16;
+    use crate::tests::{
+        testutils_composer_model::cm, testutils_conversion::utf16,
+    };
 
     use super::*;
 
@@ -1518,6 +1580,24 @@ mod test {
     fn slicing_after_edge_panics() {
         let mut container = create_container_with_nested_children();
         container.slice_after(42);
+    }
+
+    #[test]
+    fn paragraph_to_html() {
+        let model = cm("<p>&nbsp;</p><p>&nbsp;</p><p>Hello!</p><p>&nbsp;</p>|");
+        assert_eq!(
+            &model.state.dom.to_html(),
+            "<br /><br /><p>Hello!</p><br />"
+        );
+    }
+
+    #[test]
+    fn paragraph_to_internal_html() {
+        let model = cm("<p>&nbsp;</p><p>&nbsp;</p><p>Hello!</p><p>&nbsp;</p>|");
+        assert_eq!(
+            &model.state.dom.to_internal_html(),
+            "<p>\u{a0}</p><p>\u{a0}</p><p>Hello!</p><p>\u{a0}</p>"
+        );
     }
 
     /// Result HTML is "<strong><em>abc</em>def</strong>".

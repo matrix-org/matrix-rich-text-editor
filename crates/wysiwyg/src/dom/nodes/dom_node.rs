@@ -369,11 +369,16 @@ where
         buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
         state: ToHtmlState,
+        clean: bool,
     ) {
         match self {
-            DomNode::Container(s) => s.fmt_html(buf, selection_writer, state),
-            DomNode::LineBreak(s) => s.fmt_html(buf, selection_writer, state),
-            DomNode::Text(s) => s.fmt_html(buf, selection_writer, state),
+            DomNode::Container(s) => {
+                s.fmt_html(buf, selection_writer, state, clean)
+            }
+            DomNode::LineBreak(s) => {
+                s.fmt_html(buf, selection_writer, state, clean)
+            }
+            DomNode::Text(s) => s.fmt_html(buf, selection_writer, state, clean),
         }
     }
 }

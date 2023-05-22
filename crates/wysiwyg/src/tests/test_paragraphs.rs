@@ -16,7 +16,7 @@ use widestring::Utf16String;
 
 use crate::{
     tests::testutils_composer_model::{cm, tx},
-    ComposerModel,
+    ComposerModel, ToHtml,
 };
 
 #[test]

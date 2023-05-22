@@ -216,6 +216,7 @@ where
         buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
         state: ToHtmlState,
+        _clean: bool,
     ) {
         let cur_pos = buf.len();
         let string = self.data.to_string();

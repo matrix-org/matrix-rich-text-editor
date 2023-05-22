@@ -48,6 +48,14 @@ impl ComposerModel {
         self.inner.lock().unwrap().get_content_as_html().to_string()
     }
 
+    pub fn get_content_as_internal_html(self: &Arc<Self>) -> String {
+        self.inner
+            .lock()
+            .unwrap()
+            .get_content_as_internal_html()
+            .to_string()
+    }
+
     pub fn get_content_as_markdown(self: &Arc<Self>) -> String {
         self.inner
             .lock()

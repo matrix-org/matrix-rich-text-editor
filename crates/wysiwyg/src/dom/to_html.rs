@@ -25,11 +25,18 @@ where
         buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
         state: ToHtmlState,
+        clean: bool,
     );
 
     fn to_html(&self) -> S {
         let mut buf = S::default();
-        self.fmt_html(&mut buf, None, ToHtmlState::default());
+        self.fmt_html(&mut buf, None, ToHtmlState::default(), true);
+        buf
+    }
+
+    fn to_internal_html(&self) -> S {
+        let mut buf = S::default();
+        self.fmt_html(&mut buf, None, ToHtmlState::default(), false);
         buf
     }
 }

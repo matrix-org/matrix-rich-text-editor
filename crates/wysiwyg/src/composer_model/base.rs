@@ -164,7 +164,7 @@ where
         self.state.dom.assert_transaction_not_in_progress();
 
         ComposerUpdate::replace_all(
-            self.state.dom.to_html(),
+            self.state.dom.to_internal_html(),
             self.state.start,
             self.state.end,
             self.compute_menu_state(MenuStateComputeType::KeepIfUnchanged),
@@ -179,7 +179,7 @@ where
         self.state.dom.assert_transaction_not_in_progress();
 
         ComposerUpdate::replace_all(
-            self.state.dom.to_html(),
+            self.state.dom.to_internal_html(),
             self.state.start,
             self.state.end,
             self.compute_menu_state(MenuStateComputeType::AlwaysUpdate),
@@ -193,6 +193,10 @@ where
 
     pub fn get_content_as_html(&self) -> S {
         self.state.dom.to_html()
+    }
+
+    pub fn get_content_as_internal_html(&self) -> S {
+        self.state.dom.to_internal_html()
     }
 
     pub fn get_content_as_markdown(&self) -> S {
