@@ -109,6 +109,11 @@ afterEvaluate {
     def isReleaseBuild = taskName.containsIgnoreCase("release") || taskName.containsIgnoreCase("publish")
     if (isReleaseBuild) {
         cargo.profile = "release"
+    } else {
+        cargo.profile = "debug"
+        cargo.features {
+            defaultAnd("assert-invariants")
+        }
     }
 }
 
