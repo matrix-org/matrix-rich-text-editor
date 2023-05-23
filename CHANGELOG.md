@@ -1,5 +1,11 @@
 # Changelog
 
+# [2.2.1] - 2023-05-23
+
+### Fixed
+
+- Common: Disable invariant assertions by default
+
 # [2.2.0] - 2023-05-18
 
 ### Changed
