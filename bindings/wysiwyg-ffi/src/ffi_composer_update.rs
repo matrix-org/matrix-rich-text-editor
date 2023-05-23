@@ -147,7 +147,7 @@ mod test {
             ],
         );
         assert_eq!(
-            model.get_content_as_html(),
+            model.get_content_as_internal_html(),
             "<a contenteditable=\"false\" data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>\u{a0}",
         )
     }

@@ -623,6 +623,9 @@ where
                 state,
                 clean,
             ),
+            ContainerNodeKind::Link(_) => {
+                self.fmt_link_html(formatter, selection_writer, state, clean)
+            }
             _ => {
                 self.fmt_default_html(formatter, selection_writer, state, clean)
             }
@@ -671,6 +674,30 @@ impl<S: UnicodeString> ContainerNode<S> {
         } else {
             self.fmt_default_paragraph_html(formatter, selection_writer, state)
         }
+    }
+
+    fn fmt_link_html(
+        &self,
+        formatter: &mut S,
+        selection_writer: Option<&mut SelectionWriter>,
+        state: ToHtmlState,
+        clean: bool,
+    ) {
+        assert!(matches!(self.kind, ContainerNodeKind::Link(_)));
+        let name = self.name();
+        if clean {
+            let allowed_attrs = self.attrs.clone().map(|attrs| {
+                attrs
+                    .into_iter()
+                    .filter(|(key, _)| key == &S::from("href"))
+                    .collect()
+            });
+            self.fmt_tag_open(name, formatter, &allowed_attrs);
+        } else {
+            self.fmt_tag_open(name, formatter, &self.attrs);
+        }
+        self.fmt_children_html(formatter, selection_writer, state, true);
+        self.fmt_tag_close(name, formatter);
     }
 
     fn fmt_default_paragraph_html(
@@ -1597,6 +1624,21 @@ mod test {
         assert_eq!(
             &model.state.dom.to_internal_html(),
             "<p>\u{a0}</p><p>\u{a0}</p><p>Hello!</p><p>\u{a0}</p>"
+        );
+    }
+
+    #[test]
+    fn link_to_html() {
+        let model = cm(r#"<a href="href" contenteditable="false">link</a>|"#);
+        assert_eq!(&model.state.dom.to_html(), r#"<a href="href">link</a>"#);
+    }
+
+    #[test]
+    fn link_to_internal_html() {
+        let model = cm(r#"<a href="href" contenteditable="false">link</a>|"#);
+        assert_eq!(
+            &model.state.dom.to_internal_html(),
+            r#"<a contenteditable="false" href="href">link</a>"#
         );
     }
 
