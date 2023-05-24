@@ -135,20 +135,14 @@ mod test {
             "https://matrix.to/#/@alice:matrix.org".into(),
             "Alice".into(),
             suggestion_pattern,
-            vec![
-                Attribute {
-                    key: "contenteditable".into(),
-                    value: "false".into(),
-                },
-                Attribute {
-                    key: "data-mention-type".into(),
-                    value: "user".into(),
-                },
-            ],
+            vec![Attribute {
+                key: "data-mention-type".into(),
+                value: "user".into(),
+            }],
         );
         assert_eq!(
             model.get_content_as_html(),
-            "<a contenteditable=\"false\" data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>\u{a0}",
+            "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>\u{a0}",
         )
     }
 

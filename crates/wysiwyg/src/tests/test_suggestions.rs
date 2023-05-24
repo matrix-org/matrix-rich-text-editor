@@ -42,7 +42,7 @@ fn test_set_link_suggestion_no_attributes() {
     );
     assert_eq!(
         tx(&model),
-        "<a href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>&nbsp;|",
+        "<a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|",
     );
 }
 
@@ -57,13 +57,10 @@ fn test_set_link_suggestion_with_attributes() {
         "https://matrix.to/#/@alice:matrix.org".into(),
         "Alice".into(),
         suggestion,
-        vec![
-            ("contenteditable".into(), "false".into()),
-            ("data-mention-type".into(), "user".into()),
-        ],
+        vec![("data-mention-type".into(), "user".into())],
     );
     assert_eq!(
         tx(&model),
-        "<a contenteditable=\"false\" data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>&nbsp;|",
+        "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|",
     );
 }

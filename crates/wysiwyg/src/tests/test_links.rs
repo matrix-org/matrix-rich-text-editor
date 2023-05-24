@@ -838,17 +838,3 @@ fn replace_text_right_after_link_with_next_formatted_text() {
         "<a href=\"https://matrix.org\">Matrix</a><strong>text|text</strong>",
     )
 }
-
-#[test]
-fn set_link_with_text_and_custom_attributes() {
-    let mut model = cm("|");
-    model.set_link_with_text(
-        "https://matrix.org".into(),
-        "link".into(),
-        Some(vec![("customattribute".into(), "customvalue".into())]),
-    );
-    assert_eq!(
-        tx(&model),
-        "<a customattribute=\"customvalue\" href=\"https://matrix.org\">link|</a>"
-    )
-}
