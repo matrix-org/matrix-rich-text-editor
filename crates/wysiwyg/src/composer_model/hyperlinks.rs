@@ -78,7 +78,7 @@ where
         self.do_replace_text_in(S::default(), suggestion.start, suggestion.end);
         self.state.start = Location::from(suggestion.start);
         self.state.end = self.state.start;
-        self.set_link_with_text(url, text, Some(attributes));
+        self.set_mention_with_text(url, text, attributes);
         self.do_replace_text(" ".into())
     }
 
@@ -104,18 +104,27 @@ where
         true
     }
 
-    pub fn set_link_with_text(
+    pub fn set_link_with_text(&mut self, url: S, text: S) -> ComposerUpdate<S> {
+        let (s, _) = self.safe_selection();
+        self.push_state_to_history();
+        self.do_replace_text(text.clone());
+        let e = s + text.len();
+        let range = self.state.dom.find_range(s, e);
+        self.set_link_in_range(url, range, None)
+    }
+
+    pub fn set_mention_with_text(
         &mut self,
         url: S,
         text: S,
-        attributes: Option<Vec<(S, S)>>,
+        attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
         let (s, _) = self.safe_selection();
         self.push_state_to_history();
         self.do_replace_text(text.clone());
         let e = s + text.len();
         let range = self.state.dom.find_range(s, e);
-        self.set_link_in_range(url, range, attributes)
+        self.set_link_in_range(url, range, Some(attributes))
     }
 
     pub fn set_link(&mut self, url: S) -> ComposerUpdate<S> {
