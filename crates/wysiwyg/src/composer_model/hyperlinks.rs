@@ -254,7 +254,7 @@ where
 
         node.iter_containers()
             .filter_map(|c| {
-                if c.is_link() && c.handle() != *node_handle {
+                if c.is_link_or_mention() && c.handle() != *node_handle {
                     Some(c.handle())
                 } else {
                     None
@@ -277,7 +277,9 @@ where
                 DomNode::Container(container) => container,
                 _ => continue,
             };
-            if matches!(container.kind(), ContainerNodeKind::Link(_)) {
+            if matches!(container.kind(), ContainerNodeKind::Link(_))
+                || matches!(container.kind(), ContainerNodeKind::Mention(_))
+            {
                 return Some(node.handle());
             }
             parent_handle = parent_handle.parent_handle();

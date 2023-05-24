@@ -317,8 +317,9 @@ where
         &self.kind
     }
 
-    pub fn is_link(&self) -> bool {
+    pub fn is_link_or_mention(&self) -> bool {
         matches!(self.kind, ContainerNodeKind::Link(_))
+            || matches!(self.kind, ContainerNodeKind::Mention(_))
     }
 
     pub fn is_immutable(&self) -> bool {
@@ -327,8 +328,9 @@ where
             .contains(&("contenteditable".into(), "false".into()))
     }
 
-    pub fn is_immutable_link(&self) -> bool {
+    pub fn is_immutable_link_or_mention(&self) -> bool {
         matches!(self.kind, ContainerNodeKind::Link(_) if self.is_immutable())
+            || matches!(self.kind, ContainerNodeKind::Mention(_))
     }
 
     pub fn is_list_item(&self) -> bool {
@@ -441,10 +443,12 @@ where
     }
 
     pub(crate) fn get_link_url(&self) -> Option<S> {
-        let ContainerNodeKind::Link(url) = self.kind.clone() else {
-            return None
-        };
-        Some(url)
+        match self.kind.clone() {
+            ContainerNodeKind::Link(url) | ContainerNodeKind::Mention(url) => {
+                Some(url)
+            }
+            _ => None,
+        }
     }
 
     /// Creates a container with the same kind & attributes
