@@ -229,7 +229,7 @@ impl ComposerModel {
             self.inner
                 .lock()
                 .unwrap()
-                .set_link_with_text(url, text, vec![]),
+                .set_link_with_text(url, text, None),
         ))
     }
 
