@@ -465,6 +465,7 @@ impl DomNodeKind {
             ContainerNodeKind::CodeBlock => DomNodeKind::CodeBlock,
             ContainerNodeKind::Quote => DomNodeKind::Quote,
             ContainerNodeKind::Paragraph => DomNodeKind::Paragraph,
+            ContainerNodeKind::Mention(_) => DomNodeKind::Link,
         }
     }
 
