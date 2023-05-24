@@ -272,6 +272,8 @@ mod sys {
 
             // initial implementation, firstly check if we have either `contenteditable=false` or `data-mention-type=`
             // attributes, if so then we're going to add a mention instead of a link
+            // TODO should this just use `data-mention-type` to simulate a mention? Would need to change some tests
+            // if so
             let is_mention = child.attrs.iter().any(|(k, v)| {
                 k == &String::from("contenteditable")
                     && v == &String::from("false")
@@ -749,11 +751,15 @@ mod js {
                     },
 
                     "A" => {
-                        // TODO add some logic here to determine if it's a mention or a link
                         self.current_path.push(DomNodeKind::Link);
+
+                        // TODO add some logic here to determine if it's a mention or a link
+                        let is_mention = node
+                            .unchecked_ref::<Element>()
+                            .has_attribute("data-mention-type");
+
                         let mut attributes = vec![];
-                        let valid_attributes =
-                            ["contenteditable", "data-mention-type", "style"];
+                        let valid_attributes = ["data-mention-type", "style"];
 
                         for attr in valid_attributes.into_iter() {
                             if node
@@ -770,14 +776,22 @@ mod js {
                             }
                         }
 
-                        dom.append_child(DomNode::new_link(
-                            node.unchecked_ref::<Element>()
-                                .get_attribute("href")
-                                .unwrap_or_default()
-                                .into(),
-                            self.convert(node.child_nodes())?.take_children(),
-                            attributes,
-                        ));
+                        let url = node
+                            .unchecked_ref::<Element>()
+                            .get_attribute("href")
+                            .unwrap_or_default()
+                            .into();
+                        let children =
+                            self.convert(node.child_nodes())?.take_children();
+
+                        if is_mention {
+                            dom.append_child(DomNode::new_mention(
+                                url, children, attributes,
+                            ));
+                        } else {
+                            dom.append_child(DomNode::new_link(url, children));
+                        }
+
                         self.current_path.pop();
                     }
 
