@@ -138,6 +138,16 @@ where
         ))
     }
 
+    pub fn new_mention(
+        url: S,
+        children: Vec<DomNode<S>>,
+        attributes: Vec<(S, S)>,
+    ) -> DomNode<S> {
+        DomNode::Container(ContainerNode::new_mention(
+            url, children, attributes,
+        ))
+    }
+
     pub fn is_container_node(&self) -> bool {
         matches!(self, DomNode::Container(_))
     }

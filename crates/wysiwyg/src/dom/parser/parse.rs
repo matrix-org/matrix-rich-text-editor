@@ -269,6 +269,7 @@ mod sys {
         where
             S: UnicodeString,
         {
+
             // initial implementation, firstly check if we have either `contenteditable=false` or `data-mention-type=`
             // attributes, if so then we're going to add a mention instead of a link
             let is_mention = child.attrs.iter().any(|(k, v)| {
@@ -300,6 +301,7 @@ mod sys {
                     Vec::new(),
                 ))
             }
+
         }
 
         /// Create a list node
