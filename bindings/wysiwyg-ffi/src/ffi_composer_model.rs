@@ -209,7 +209,7 @@ impl ComposerModel {
     pub fn set_link(
         self: &Arc<Self>,
         url: String,
-        attributes: Vec<Attribute>,
+        attributes: Vec<Attribute>, // TODO figure out how to delete
     ) -> Arc<ComposerUpdate> {
         let url = Utf16String::from_str(&url);
         Arc::new(ComposerUpdate::from(
@@ -221,7 +221,7 @@ impl ComposerModel {
         self: &Arc<Self>,
         url: String,
         text: String,
-        attributes: Vec<Attribute>,
+        attributes: Vec<Attribute>, // TODO figure out how to delete
     ) -> Arc<ComposerUpdate> {
         let url = Utf16String::from_str(&url);
         let text = Utf16String::from_str(&text);
