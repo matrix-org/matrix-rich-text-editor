@@ -709,7 +709,7 @@ impl<S: UnicodeString> ContainerNode<S> {
         let name = self.name();
 
         if self.is_empty() {
-            self.fmt_tag_empty(&S::from("br"), formatter, &self.attrs);
+            formatter.push('\n');
         } else {
             self.fmt_tag_open(name, formatter, &self.attrs);
             self.fmt_children_html(
@@ -813,27 +813,6 @@ impl<S: UnicodeString> ContainerNode<S> {
         formatter.push("</");
         formatter.push(name);
         formatter.push('>');
-    }
-
-    fn fmt_tag_empty(
-        &self,
-        name: &S::Str,
-        formatter: &mut S,
-        attrs: &Option<Vec<(S, S)>>,
-    ) {
-        formatter.push('<');
-        formatter.push(name);
-        if let Some(attrs) = attrs {
-            for attr in attrs {
-                let (attr_name, value) = attr;
-                formatter.push(' ');
-                formatter.push(&**attr_name);
-                formatter.push("=\"");
-                formatter.push(&**value);
-                formatter.push('"');
-            }
-        }
-        formatter.push(" />");
     }
 
     fn updated_state(
@@ -1599,10 +1578,7 @@ mod test {
     #[test]
     fn paragraph_to_message_html() {
         let model = cm("<p>&nbsp;</p><p>&nbsp;</p><p>Hello!</p><p>&nbsp;</p>|");
-        assert_eq!(
-            &model.state.dom.to_message_html(),
-            "<br /><br /><p>Hello!</p><br />"
-        );
+        assert_eq!(&model.state.dom.to_message_html(), "\n\n<p>Hello!</p>\n");
     }
 
     #[test]
