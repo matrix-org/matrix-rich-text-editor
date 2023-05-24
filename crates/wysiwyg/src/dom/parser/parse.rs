@@ -269,7 +269,6 @@ mod sys {
         where
             S: UnicodeString,
         {
-
             // initial implementation, firstly check if we have either `contenteditable=false` or `data-mention-type=`
             // attributes, if so then we're going to add a mention instead of a link
             // TODO should this just use `data-mention-type` to simulate a mention? Would need to change some tests
@@ -303,7 +302,6 @@ mod sys {
                     Vec::new(),
                 ))
             }
-
         }
 
         /// Create a list node
@@ -988,7 +986,7 @@ mod js {
         #[wasm_bindgen_test]
         fn a_with_attributes() {
             roundtrip(
-                r#"<a contenteditable="false" data-mention-type="user" style="something" href="http://example.com">a user mention</a>"#,
+                r#"<a data-mention-type="user" style="something" href="http://example.com" contenteditable="false">a user mention</a>"#,
             );
         }
 
