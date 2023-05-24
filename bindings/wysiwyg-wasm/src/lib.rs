@@ -284,11 +284,7 @@ impl ComposerModel {
         self.inner.get_link_action().into()
     }
 
-    pub fn set_link(
-        &mut self,
-        url: &str,
-        attributes: js_sys::Map,
-    ) -> ComposerUpdate {
+    pub fn set_link(&mut self, url: &str) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.set_link(Utf16String::from_str(url)))
     }
 
@@ -296,7 +292,6 @@ impl ComposerModel {
         &mut self,
         url: &str,
         text: &str,
-        attributes: js_sys::Map,
     ) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.set_link_with_text(
             Utf16String::from_str(url),
