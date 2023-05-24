@@ -52,6 +52,7 @@ where
     CodeBlock,
     Quote,
     Paragraph,
+    Mention(S),
 }
 
 impl<S: dom::unicode_string::UnicodeString> Default for ContainerNode<S> {
@@ -937,6 +938,10 @@ where
             Paragraph => {
                 fmt_paragraph(self, buffer, &options)?;
             }
+
+            Mention(url) => {
+                fmt_mention(self, buffer, &options, url)?;
+            }
         };
 
         return Ok(());
@@ -1299,6 +1304,36 @@ where
             S: UnicodeString,
         {
             fmt_children(this, buffer, options)?;
+
+            Ok(())
+        }
+
+        #[inline(always)]
+        fn fmt_mention<S>(
+            this: &ContainerNode<S>,
+            buffer: &mut S,
+            options: &MarkdownOptions,
+            url: &S,
+        ) -> Result<(), MarkdownError<S>>
+        where
+            S: UnicodeString,
+        {
+            buffer.push('[');
+
+            fmt_children(this, buffer, options)?;
+
+            // For the time being, treat this as a link - will need to manipulate the url to get the mxId
+
+            buffer.push("](<");
+            buffer.push(
+                url.to_string()
+                    .replace('<', "\\<")
+                    .replace('>', "\\>")
+                    .replace('(', "\\(")
+                    .replace(')', "\\)")
+                    .as_str(),
+            );
+            buffer.push(">)");
 
             Ok(())
         }
