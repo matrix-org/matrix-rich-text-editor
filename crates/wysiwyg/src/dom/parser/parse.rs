@@ -177,6 +177,7 @@ mod sys {
                     self.current_path.remove(cur_path_idx);
                 }
                 "a" => {
+                    // TODO add some logic here to determine if it's a mention or a link
                     self.current_path.push(DomNodeKind::Link);
                     node.append_child(Self::new_link(child));
                     self.convert_children(
@@ -268,6 +269,7 @@ mod sys {
         where
             S: UnicodeString,
         {
+            // TODO add some logic here to determine if it's a mention or a link
             let attributes = child
                 .attrs
                 .iter()
@@ -727,6 +729,7 @@ mod js {
                     },
 
                     "A" => {
+                        // TODO add some logic here to determine if it's a mention or a link
                         self.current_path.push(DomNodeKind::Link);
                         let mut attributes = vec![];
                         let valid_attributes =

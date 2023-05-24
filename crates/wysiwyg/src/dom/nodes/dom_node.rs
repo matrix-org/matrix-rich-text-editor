@@ -132,6 +132,16 @@ where
         DomNode::Container(ContainerNode::new_link(url, children, attributes))
     }
 
+    pub fn new_mention(
+        url: S,
+        children: Vec<DomNode<S>>,
+        attributes: Vec<(S, S)>,
+    ) -> DomNode<S> {
+        DomNode::Container(ContainerNode::new_mention(
+            url, children, attributes,
+        ))
+    }
+
     pub fn is_container_node(&self) -> bool {
         matches!(self, DomNode::Container(_))
     }
@@ -465,6 +475,7 @@ impl DomNodeKind {
             ContainerNodeKind::CodeBlock => DomNodeKind::CodeBlock,
             ContainerNodeKind::Quote => DomNodeKind::Quote,
             ContainerNodeKind::Paragraph => DomNodeKind::Paragraph,
+            ContainerNodeKind::Mention(_) => DomNodeKind::Link,
         }
     }
 

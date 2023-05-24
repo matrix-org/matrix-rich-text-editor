@@ -52,6 +52,7 @@ where
     CodeBlock,
     Quote,
     Paragraph,
+    Mention(S),
 }
 
 impl<S: dom::unicode_string::UnicodeString> Default for ContainerNode<S> {
@@ -316,8 +317,9 @@ where
         &self.kind
     }
 
-    pub fn is_link(&self) -> bool {
+    pub fn is_link_or_mention(&self) -> bool {
         matches!(self.kind, ContainerNodeKind::Link(_))
+            || matches!(self.kind, ContainerNodeKind::Mention(_))
     }
 
     pub fn is_immutable(&self) -> bool {
@@ -326,8 +328,9 @@ where
             .contains(&("contenteditable".into(), "false".into()))
     }
 
-    pub fn is_immutable_link(&self) -> bool {
+    pub fn is_immutable_link_or_mention(&self) -> bool {
         matches!(self.kind, ContainerNodeKind::Link(_) if self.is_immutable())
+            || matches!(self.kind, ContainerNodeKind::Mention(_))
     }
 
     pub fn is_list_item(&self) -> bool {
@@ -398,6 +401,28 @@ where
         }
     }
 
+    pub fn new_mention(
+        url: S,
+        children: Vec<DomNode<S>>,
+        mut attributes: Vec<(S, S)>,
+    ) -> Self {
+        // In order to display correctly in the composer for web, the client must pass in:
+        // - style attribute containing the required CSS variable
+        // - data-mention-type giving the type of the mention as "user" | "room" | "at-room"
+
+        // We then add the href and contenteditable attributes to make sure they are present
+        attributes.push(("href".into(), url.clone()));
+        attributes.push(("contenteditable".into(), "false".into()));
+
+        Self {
+            name: "a".into(),
+            kind: ContainerNodeKind::Mention(url),
+            attrs: Some(attributes),
+            children,
+            handle: DomHandle::new_unset(),
+        }
+    }
+
     pub(crate) fn get_list_type(&self) -> Option<&ListType> {
         match &self.kind {
             ContainerNodeKind::List(t) => Some(t),
@@ -418,10 +443,12 @@ where
     }
 
     pub(crate) fn get_link_url(&self) -> Option<S> {
-        let ContainerNodeKind::Link(url) = self.kind.clone() else {
-            return None
-        };
-        Some(url)
+        match self.kind.clone() {
+            ContainerNodeKind::Link(url) | ContainerNodeKind::Mention(url) => {
+                Some(url)
+            }
+            _ => None,
+        }
     }
 
     /// Creates a container with the same kind & attributes
@@ -850,6 +877,7 @@ where
 {
     fn to_tree_display(&self, continuous_positions: Vec<usize>) -> S {
         let mut description = self.name.clone();
+        // TODO need to handle mentions in the tree display
         if let ContainerNodeKind::Link(url) = self.kind() {
             description.push(" \"");
             description.push(url.clone());
@@ -936,6 +964,10 @@ where
 
             Paragraph => {
                 fmt_paragraph(self, buffer, &options)?;
+            }
+
+            Mention(url) => {
+                fmt_mention(self, buffer, &options, url)?;
             }
         };
 
@@ -1299,6 +1331,37 @@ where
             S: UnicodeString,
         {
             fmt_children(this, buffer, options)?;
+
+            Ok(())
+        }
+
+        #[inline(always)]
+        fn fmt_mention<S>(
+            this: &ContainerNode<S>,
+            buffer: &mut S,
+            options: &MarkdownOptions,
+            url: &S,
+        ) -> Result<(), MarkdownError<S>>
+        where
+            S: UnicodeString,
+        {
+            buffer.push('[');
+
+            fmt_children(this, buffer, options)?;
+
+            // TODO add some logic here to determine if it's a mention or a link
+            // For the time being, treat this as a link - will need to manipulate the url to get the mxId
+
+            buffer.push("](<");
+            buffer.push(
+                url.to_string()
+                    .replace('<', "\\<")
+                    .replace('>', "\\>")
+                    .replace('(', "\\(")
+                    .replace(')', "\\)")
+                    .as_str(),
+            );
+            buffer.push(">)");
 
             Ok(())
         }
