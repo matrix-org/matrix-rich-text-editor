@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use std::vec;
 
 use widestring::Utf16String;
 
@@ -206,11 +205,7 @@ impl ComposerModel {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().redo()))
     }
 
-    pub fn set_link(
-        self: &Arc<Self>,
-        url: String,
-        attributes: Vec<Attribute>, // TODO figure out how to delete
-    ) -> Arc<ComposerUpdate> {
+    pub fn set_link(self: &Arc<Self>, url: String) -> Arc<ComposerUpdate> {
         let url = Utf16String::from_str(&url);
         Arc::new(ComposerUpdate::from(
             self.inner.lock().unwrap().set_link(url),
@@ -221,7 +216,6 @@ impl ComposerModel {
         self: &Arc<Self>,
         url: String,
         text: String,
-        attributes: Vec<Attribute>, // TODO figure out how to delete
     ) -> Arc<ComposerUpdate> {
         let url = Utf16String::from_str(&url);
         let text = Utf16String::from_str(&text);
