@@ -124,12 +124,18 @@ where
         }
     }
 
-    pub fn new_link(
+    pub fn new_link(url: S, children: Vec<DomNode<S>>) -> DomNode<S> {
+        DomNode::Container(ContainerNode::new_link(url, children))
+    }
+
+    pub fn new_mention(
         url: S,
         children: Vec<DomNode<S>>,
         attributes: Vec<(S, S)>,
     ) -> DomNode<S> {
-        DomNode::Container(ContainerNode::new_link(url, children, attributes))
+        DomNode::Container(ContainerNode::new_mention(
+            url, children, attributes,
+        ))
     }
 
     pub fn new_mention(

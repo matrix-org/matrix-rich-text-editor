@@ -29,11 +29,7 @@ pub fn dom<'a>(
 pub fn a<'a>(
     children: impl IntoIterator<Item = &'a DomNode<Utf16String>>,
 ) -> DomNode<Utf16String> {
-    DomNode::new_link(
-        utf16("https://element.io"),
-        clone_children(children),
-        vec![],
-    )
+    DomNode::new_link(utf16("https://element.io"), clone_children(children))
 }
 
 pub fn b<'a>(

@@ -284,33 +284,26 @@ impl ComposerModel {
         self.inner.get_link_action().into()
     }
 
-    pub fn set_link(
-        &mut self,
-        url: &str,
-        attributes: js_sys::Map,
-    ) -> ComposerUpdate {
-        ComposerUpdate::from(
-            self.inner
-                .set_link(Utf16String::from_str(url), attributes.into_vec()),
-        )
+    pub fn set_link(&mut self, url: &str) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.set_link(Utf16String::from_str(url)))
     }
 
     pub fn set_link_with_text(
         &mut self,
         url: &str,
         text: &str,
-        attributes: js_sys::Map,
     ) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.set_link_with_text(
             Utf16String::from_str(url),
             Utf16String::from_str(text),
-            attributes.into_vec(),
         ))
     }
 
     /// This function creates a link with the first argument being the href, the second being the
     /// display text, the third being the (rust model) suggestion that is being replaced and the
-    /// final argument being a map of html attributes that will be added to the Link.
+    /// final argument being a map of html attributes that will be added to the mention.
+
+    // TODO should this be renamed? We're now creating a mention container, but that is still a link node
     pub fn set_link_suggestion(
         &mut self,
         url: &str,
@@ -318,7 +311,7 @@ impl ComposerModel {
         suggestion: &SuggestionPattern,
         attributes: js_sys::Map,
     ) -> ComposerUpdate {
-        ComposerUpdate::from(self.inner.set_link_suggestion(
+        ComposerUpdate::from(self.inner.set_mention_from_suggestion(
             Utf16String::from_str(url),
             Utf16String::from_str(text),
             wysiwyg::SuggestionPattern::from(suggestion.clone()),

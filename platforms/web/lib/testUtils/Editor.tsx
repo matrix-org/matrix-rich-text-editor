@@ -122,7 +122,6 @@ export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
                         'https://matrix.to/#/@test_user:element.io',
                         'test user',
                         {
-                            'contentEditable': 'false',
                             'data-mention-type': 'user',
                         },
                     );
