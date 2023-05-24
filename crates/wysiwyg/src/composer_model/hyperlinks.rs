@@ -78,7 +78,7 @@ where
         self.do_replace_text_in(S::default(), suggestion.start, suggestion.end);
         self.state.start = Location::from(suggestion.start);
         self.state.end = self.state.start;
-        self.set_link_with_text(url, text, attributes);
+        self.set_link_with_text(url, text, Some(attributes));
         self.do_replace_text(" ".into())
     }
 
@@ -108,7 +108,7 @@ where
         &mut self,
         url: S,
         text: S,
-        attributes: Vec<(S, S)>,
+        attributes: Option<Vec<(S, S)>>,
     ) -> ComposerUpdate<S> {
         let (s, _) = self.safe_selection();
         self.push_state_to_history();
@@ -124,14 +124,14 @@ where
 
         let range = self.state.dom.find_range(s, e);
 
-        self.set_link_in_range(url, range, vec![])
+        self.set_link_in_range(url, range, None)
     }
 
     fn set_link_in_range(
         &mut self,
         mut url: S,
         range: Range,
-        attributes: Vec<(S, S)>,
+        attributes: Option<Vec<(S, S)>>,
     ) -> ComposerUpdate<S> {
         self.add_http_scheme(&mut url);
 
@@ -214,11 +214,15 @@ where
 
         for (_, s, e) in split_points.into_iter() {
             let range = self.state.dom.find_range(s, e);
+            // Determine if we are adding a link or a mention
+            let new_node = match attributes.clone() {
+                Some(attrs) => DomNode::new_mention(url.clone(), vec![], attrs),
+                None => DomNode::new_link(url.clone(), vec![], vec![]),
+            };
+
             // Create a new link node containing the passed range
-            let inserted = self.state.dom.insert_parent(
-                &range,
-                DomNode::new_link(url.clone(), vec![], attributes.clone()),
-            );
+            let inserted = self.state.dom.insert_parent(&range, new_node);
+
             // Remove any child links inside it
             self.delete_child_links(&inserted);
         }
