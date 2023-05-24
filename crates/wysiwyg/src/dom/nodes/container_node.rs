@@ -877,6 +877,7 @@ where
 {
     fn to_tree_display(&self, continuous_positions: Vec<usize>) -> S {
         let mut description = self.name.clone();
+        // TODO need to handle mentions in the tree display
         if let ContainerNodeKind::Link(url) = self.kind() {
             description.push(" \"");
             description.push(url.clone());
