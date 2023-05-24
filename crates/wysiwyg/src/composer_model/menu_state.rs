@@ -174,7 +174,9 @@ where
                     Some(ComposerAction::InlineCode)
                 }
             },
-            ContainerNodeKind::Link(_) => Some(ComposerAction::Link),
+            ContainerNodeKind::Link(_) | ContainerNodeKind::Mention(_) => {
+                Some(ComposerAction::Link)
+            }
             ContainerNodeKind::List(list_type) => match list_type {
                 ListType::Ordered => Some(ComposerAction::OrderedList),
                 ListType::Unordered => Some(ComposerAction::UnorderedList),

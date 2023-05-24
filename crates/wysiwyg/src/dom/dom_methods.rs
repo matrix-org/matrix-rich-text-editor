@@ -311,7 +311,7 @@ where
         {
             match node {
                 DomNode::Container(c) => {
-                    if c.is_link() {
+                    if c.is_link_or_mention() {
                         None
                     } else if let Some(last_child) = c.last_child_mut() {
                         last_text_node_in(last_child)
@@ -366,7 +366,7 @@ where
         {
             match node {
                 DomNode::Container(c) => {
-                    if c.is_link() {
+                    if c.is_link_or_mention() {
                         None
                     } else if let Some(first_child) = c.first_child_mut() {
                         first_text_node_in(first_child)
