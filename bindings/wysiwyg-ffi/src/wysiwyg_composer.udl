@@ -22,6 +22,7 @@ interface ComposerModel {
     [Throws=DomCreationError]
     ComposerUpdate set_content_from_markdown(string markdown);
     string get_content_as_html();
+    string get_content_as_message_html();
     string get_content_as_markdown();
     string get_content_as_plain_text();
     ComposerUpdate clear();
