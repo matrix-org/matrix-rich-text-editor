@@ -382,15 +382,9 @@ where
         children_len + block_nodes_extra
     }
 
-    pub fn new_link(
-        url: S,
-        children: Vec<DomNode<S>>,
-        mut attributes: Vec<(S, S)>,
-    ) -> Self {
-        // Hosting application may provide attributes but always provides url, this
-        // allows the Rust code to stay as generic as possible, since it should only care about
-        // `contenteditable="false"` to implement custom behaviours for immutable links.
-        attributes.push(("href".into(), url.clone()));
+    // links only ever have hrefs
+    pub fn new_link(url: S, children: Vec<DomNode<S>>) -> Self {
+        let attributes = vec![("href".into(), url.clone())];
 
         Self {
             name: "a".into(),
@@ -401,6 +395,7 @@ where
         }
     }
 
+    // mentions can have custom attributes
     pub fn new_mention(
         url: S,
         children: Vec<DomNode<S>>,

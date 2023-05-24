@@ -226,7 +226,7 @@ where
             // Determine if we are adding a link or a mention
             let new_node = match attributes.clone() {
                 Some(attrs) => DomNode::new_mention(url.clone(), vec![], attrs),
-                None => DomNode::new_link(url.clone(), vec![], vec![]),
+                None => DomNode::new_link(url.clone(), vec![]),
             };
 
             // Create a new link node containing the passed range

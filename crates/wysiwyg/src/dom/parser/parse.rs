@@ -269,19 +269,37 @@ mod sys {
         where
             S: UnicodeString,
         {
-            // TODO add some logic here to determine if it's a mention or a link
-            let attributes = child
-                .attrs
-                .iter()
-                .filter(|(k, _)| k != &String::from("href"))
-                .map(|(k, v)| (k.as_str().into(), v.as_str().into()))
-                .collect();
+            // initial implementation, firstly check if we have either `contenteditable=false` or `data-mention-type=`
+            // attributes, if so then we're going to add a mention instead of a link
+            let is_mention = child.attrs.iter().any(|(k, v)| {
+                k == &String::from("contenteditable")
+                    && v == &String::from("false")
+                    || k == &String::from("data-mention-type")
+            });
 
-            DomNode::Container(ContainerNode::new_link(
-                child.get_attr("href").unwrap_or("").into(),
-                Vec::new(),
-                attributes,
-            ))
+            if is_mention {
+                // if we have a mention, filtering out the href and contenteditable attributes because
+                // we add these attributes when creating the mention and don't want repetition
+                let attributes = child
+                    .attrs
+                    .iter()
+                    .filter(|(k, _)| {
+                        k != &String::from("href")
+                            && k != &String::from("contenteditable")
+                    })
+                    .map(|(k, v)| (k.as_str().into(), v.as_str().into()))
+                    .collect();
+                DomNode::Container(ContainerNode::new_mention(
+                    child.get_attr("href").unwrap_or("").into(),
+                    Vec::new(),
+                    attributes,
+                ))
+            } else {
+                DomNode::Container(ContainerNode::new_link(
+                    child.get_attr("href").unwrap_or("").into(),
+                    Vec::new(),
+                ))
+            }
         }
 
         /// Create a list node
