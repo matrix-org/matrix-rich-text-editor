@@ -387,7 +387,7 @@ fn set_link_with_text() {
     model.set_link_with_text(
         utf16("https://element.io"),
         utf16("added_link"),
-        vec![],
+        None,
     );
     assert_eq!(
         tx(&model),
@@ -401,7 +401,7 @@ fn set_link_with_text_and_undo() {
     model.set_link_with_text(
         utf16("https://element.io"),
         utf16("added_link"),
-        vec![],
+        None,
     );
     assert_eq!(
         tx(&model),
@@ -417,7 +417,7 @@ fn set_link_with_text_in_container() {
     model.set_link_with_text(
         utf16("https://element.io"),
         utf16("added_link"),
-        vec![],
+        None,
     );
     assert_eq!(
         tx(&model),
@@ -431,7 +431,7 @@ fn set_link_with_text_on_blank_selection() {
     model.set_link_with_text(
         utf16("https://element.io"),
         utf16("added_link"),
-        vec![],
+        None,
     );
     assert_eq!(tx(&model), "<a href=\"https://element.io\">added_link|</a>");
 }
@@ -442,7 +442,7 @@ fn set_link_with_text_on_blank_selection_after_text() {
     model.set_link_with_text(
         utf16("https://element.io"),
         utf16("added_link"),
-        vec![],
+        None,
     );
     assert_eq!(
         tx(&model),
@@ -456,7 +456,7 @@ fn set_link_with_text_on_blank_selection_before_text() {
     model.set_link_with_text(
         utf16("https://element.io"),
         utf16("added_link"),
-        vec![],
+        None,
     );
     assert_eq!(
         tx(&model),
@@ -470,7 +470,7 @@ fn set_link_with_text_on_blank_selection_between_texts() {
     model.set_link_with_text(
         utf16("https://element.io"),
         utf16("added_link"),
-        vec![],
+        None,
     );
     assert_eq!(
         tx(&model),
@@ -484,7 +484,7 @@ fn set_link_with_text_on_blank_selection_in_container() {
     model.set_link_with_text(
         utf16("https://element.io"),
         utf16("added_link"),
-        vec![],
+        None,
     );
     assert_eq!(
         tx(&model),
@@ -498,7 +498,7 @@ fn set_link_with_text_on_blank_selection_with_line_break() {
     model.set_link_with_text(
         utf16("https://element.io"),
         utf16("added_link"),
-        vec![],
+        None,
     );
     assert_eq!(
         tx(&model),
@@ -512,7 +512,7 @@ fn set_link_with_text_on_blank_selection_with_different_containers() {
     model.set_link_with_text(
         utf16("https://element.io"),
         utf16("added_link"),
-        vec![],
+        None,
     );
     assert_eq!(tx(&model), "<b>test_bold<a href=\"https://element.io\">added_link|</a></b><i>test_italic</i>");
 }
@@ -527,7 +527,7 @@ fn set_link_with_text_at_end_of_a_link() {
     model.set_link_with_text(
         utf16("https://element.io"),
         utf16("added_link"),
-        vec![],
+        None,
     );
     assert_eq!(tx(&model), "<a href=\"https://matrix.org\">test_link</a><a href=\"https://element.io\">added_link|</a>");
 }
@@ -539,7 +539,7 @@ fn set_link_with_text_within_a_link() {
     model.set_link_with_text(
         utf16("https://element.io"),
         utf16("added_link"),
-        vec![],
+        None,
     );
     assert_eq!(
         tx(&model),
@@ -550,7 +550,7 @@ fn set_link_with_text_within_a_link() {
 #[test]
 fn set_link_without_http_scheme_and_www() {
     let mut model = cm("|");
-    model.set_link_with_text(utf16("element.io"), utf16("added_link"), vec![]);
+    model.set_link_with_text(utf16("element.io"), utf16("added_link"), None);
     assert_eq!(tx(&model), "<a href=\"https://element.io\">added_link|</a>");
 }
 
@@ -560,7 +560,7 @@ fn set_link_without_http_scheme() {
     model.set_link_with_text(
         utf16("www.element.io"),
         utf16("added_link"),
-        vec![],
+        None,
     );
     assert_eq!(
         tx(&model),
@@ -574,7 +574,7 @@ fn set_link_do_not_change_scheme_for_http() {
     model.set_link_with_text(
         utf16("https://www.element.io"),
         utf16("added_link"),
-        vec![],
+        None,
     );
     assert_eq!(
         tx(&model),
@@ -588,7 +588,7 @@ fn set_link_do_not_change_scheme_for_udp() {
     model.set_link_with_text(
         utf16("udp://element.io"),
         utf16("added_link"),
-        vec![],
+        None,
     );
     assert_eq!(tx(&model), "<a href=\"udp://element.io\">added_link|</a>");
 }
@@ -599,7 +599,7 @@ fn set_link_do_not_change_scheme_for_mail() {
     model.set_link_with_text(
         utf16("mailto:mymail@mail.com"),
         utf16("added_link"),
-        vec![],
+        None,
     );
     assert_eq!(
         tx(&model),
@@ -613,7 +613,7 @@ fn set_link_add_mail_scheme() {
     model.set_link_with_text(
         utf16("mymail@mail.com"),
         utf16("added_link"),
-        vec![],
+        None,
     );
     assert_eq!(
         tx(&model),
@@ -627,7 +627,7 @@ fn set_link_add_mail_scheme_with_plus() {
     model.set_link_with_text(
         utf16("mymail+01@mail.com"),
         utf16("added_link"),
-        vec![],
+        None,
     );
     assert_eq!(
         tx(&model),
@@ -765,11 +765,7 @@ fn create_link_after_enter_with_formatting_applied() {
     model.bold();
     model.replace_text("test".into());
     model.enter();
-    model.set_link_with_text(
-        "https://matrix.org".into(),
-        "test".into(),
-        vec![],
-    );
+    model.set_link_with_text("https://matrix.org".into(), "test".into(), None);
     assert_eq!(
         tx(&model),
         "<p>test <strong>test</strong></p><p><a href=\"https://matrix.org\"><strong>test|</strong></a></p>",
@@ -780,11 +776,7 @@ fn create_link_after_enter_with_formatting_applied() {
 fn create_link_after_enter_with_no_formatting_applied() {
     let mut model = cm("|");
     model.enter();
-    model.set_link_with_text(
-        "https://matrix.org".into(),
-        "test".into(),
-        vec![],
-    );
+    model.set_link_with_text("https://matrix.org".into(), "test".into(), None);
     assert_eq!(
         tx(&model),
         "<p>&nbsp;</p><p><a href=\"https://matrix.org\">test|</a></p>"
@@ -853,7 +845,7 @@ fn set_link_with_text_and_custom_attributes() {
     model.set_link_with_text(
         "https://matrix.org".into(),
         "link".into(),
-        vec![("customattribute".into(), "customvalue".into())],
+        Some(vec![("customattribute".into(), "customvalue".into())]),
     );
     assert_eq!(
         tx(&model),
