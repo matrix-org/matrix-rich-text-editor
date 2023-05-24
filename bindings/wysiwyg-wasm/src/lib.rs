@@ -289,10 +289,7 @@ impl ComposerModel {
         url: &str,
         attributes: js_sys::Map,
     ) -> ComposerUpdate {
-        ComposerUpdate::from(
-            self.inner
-                .set_link(Utf16String::from_str(url), attributes.into_vec()),
-        )
+        ComposerUpdate::from(self.inner.set_link(Utf16String::from_str(url)))
     }
 
     pub fn set_link_with_text(
@@ -304,7 +301,7 @@ impl ComposerModel {
         ComposerUpdate::from(self.inner.set_link_with_text(
             Utf16String::from_str(url),
             Utf16String::from_str(text),
-            attributes.into_vec(),
+            vec![],
         ))
     }
 
