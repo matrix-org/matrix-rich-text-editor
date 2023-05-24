@@ -64,7 +64,7 @@ where
         }
     }
 
-    pub fn set_link_suggestion(
+    pub fn set_mention_from_suggestion(
         &mut self,
         url: S,
         text: S,

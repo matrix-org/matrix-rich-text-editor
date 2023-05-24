@@ -34,7 +34,7 @@ fn test_set_link_suggestion_no_attributes() {
     let MenuAction::Suggestion(suggestion) = update.menu_action else {
         panic!("No suggestion pattern found")
     };
-    model.set_link_suggestion(
+    model.set_mention_from_suggestion(
         "https://matrix.to/#/@alice:matrix.org".into(),
         "Alice".into(),
         suggestion,
@@ -53,7 +53,7 @@ fn test_set_link_suggestion_with_attributes() {
     let MenuAction::Suggestion(suggestion) = update.menu_action else {
         panic!("No suggestion pattern found")
     };
-    model.set_link_suggestion(
+    model.set_mention_from_suggestion(
         "https://matrix.to/#/@alice:matrix.org".into(),
         "Alice".into(),
         suggestion,
