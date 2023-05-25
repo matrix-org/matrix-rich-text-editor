@@ -3,6 +3,7 @@ members = [
     "bindings/wysiwyg-ffi",
     "bindings/wysiwyg-wasm",
     "crates/wysiwyg",
+    "crates/matrix_mentions",
 ]
 resolver = "2"
 
