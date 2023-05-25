@@ -322,15 +322,14 @@ where
             || matches!(self.kind, ContainerNodeKind::Mention(_))
     }
 
+    // we have gone away from non-editable links so now, the only immutable container
+    // node is the Mention type
     pub fn is_immutable(&self) -> bool {
-        self.attributes()
-            .unwrap_or(&vec![])
-            .contains(&("contenteditable".into(), "false".into()))
+        matches!(self.kind, ContainerNodeKind::Mention(_))
     }
 
-    pub fn is_immutable_link_or_mention(&self) -> bool {
-        matches!(self.kind, ContainerNodeKind::Link(_) if self.is_immutable())
-            || matches!(self.kind, ContainerNodeKind::Mention(_))
+    pub fn is_mention(&self) -> bool {
+        matches!(self.kind, ContainerNodeKind::Mention(_))
     }
 
     pub fn is_list_item(&self) -> bool {

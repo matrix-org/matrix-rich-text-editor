@@ -132,7 +132,7 @@ where
                     .state
                     .dom
                     .lookup_container(&link.node_handle)
-                    .is_immutable_link_or_mention()
+                    .is_mention()
                 {
                     self.select(
                         Location::from(link.position),
