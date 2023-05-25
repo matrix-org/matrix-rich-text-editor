@@ -253,6 +253,7 @@ impl ComposerModel<Utf16String> {
             &mut buf,
             Some(&mut selection_writer),
             ToHtmlState::default(),
+            false,
         );
         if range.is_empty().not() {
             // we should always have written at least the start of the selection
