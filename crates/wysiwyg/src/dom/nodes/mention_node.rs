@@ -207,3 +207,13 @@ impl<S: UnicodeString> MentionNode<S> {
         formatter.push('>');
     }
 }
+
+impl<S> ToRawText<S> for MentionNode<S>
+where
+    S: UnicodeString,
+{
+    fn to_raw_text(&self) -> S {
+        // no idea if this is correct
+        self.display_text.clone()
+    }
+}
