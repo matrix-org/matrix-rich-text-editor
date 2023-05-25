@@ -12,22 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::ops::ControlFlow;
-
-use crate::char::CharExt;
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
-use crate::dom::nodes::dom_node::{DomNode, DomNodeKind};
 use crate::dom::to_html::{ToHtml, ToHtmlState};
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_plain_text::ToPlainText;
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
-use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt, UnicodeStringExt};
-use crate::dom::{self, UnicodeString};
-use crate::{InlineFormatType, ListType};
+use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
+use crate::dom::UnicodeString;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MentionNode<S>
 where
     S: UnicodeString,
