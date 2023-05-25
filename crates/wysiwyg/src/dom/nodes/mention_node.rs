@@ -227,3 +227,26 @@ where
         self.display_text.clone()
     }
 }
+
+impl<S> ToTree<S> for MentionNode<S>
+where
+    S: UnicodeString,
+{
+    fn to_tree_display(&self, continuous_positions: Vec<usize>) -> S {
+        let mut description = self.name.clone();
+
+        if let Some(url) = &self.url {
+            description.push(" \"");
+            description.push(url.clone());
+            description.push("\"");
+        }
+
+        let tree_part = self.tree_line(
+            description,
+            self.handle.raw().len(),
+            continuous_positions,
+        );
+
+        tree_part
+    }
+}
