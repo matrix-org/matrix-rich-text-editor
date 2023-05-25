@@ -130,15 +130,15 @@ internal class EditorViewModel(
         }
     }
 
-    fun getHtml(): String {
-        return composer?.getContentAsHtml().orEmpty()
+    fun getContentAsMessageHtml(): String {
+        return composer?.getContentAsMessageHtml().orEmpty()
     }
 
     fun getMarkdown(): String =
         composer?.getContentAsMarkdown().orEmpty()
 
     fun getCurrentFormattedText(): CharSequence {
-        return stringToSpans(getHtml())
+        return stringToSpans(getContentAsMessageHtml())
     }
 
     fun actionStates(): Map<ComposerAction, ActionState>? {

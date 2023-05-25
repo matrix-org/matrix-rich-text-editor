@@ -478,19 +478,19 @@ class EditorEditTextInputTests {
             val editor = activity.findViewById<EditorEditText>(R.id.rich_text_edit_text)
             editor.setMarkdown("__Test__")
             ViewMatchers.assertThat(
-                editor.getHtmlOutput(),
+                editor.getContentAsMessageHtml(),
                 CoreMatchers.equalTo("<strong>Test</strong>")
             )
             editor.setMarkdown("**Test**")
             ViewMatchers.assertThat(
-                editor.getHtmlOutput(),
+                editor.getContentAsMessageHtml(),
                 CoreMatchers.equalTo("<strong>Test</strong>")
             )
             editor.setMarkdown("**Test*")
-            ViewMatchers.assertThat(editor.getHtmlOutput(), CoreMatchers.equalTo("*<em>Test</em>"))
+            ViewMatchers.assertThat(editor.getContentAsMessageHtml(), CoreMatchers.equalTo("*<em>Test</em>"))
             editor.setMarkdown("<u>*Test*</u>")
             ViewMatchers.assertThat(
-                editor.getHtmlOutput(),
+                editor.getContentAsMessageHtml(),
                 CoreMatchers.equalTo("<u><em>Test</em></u>")
             )
         }

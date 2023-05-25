@@ -503,7 +503,7 @@ class InterceptInputConnectionIntegrationTest {
         inputConnection.setComposingRegion(0, 4)
         inputConnection.commitText("testing", 1)
 
-        assertThat(viewModel.getHtml(), equalTo("<strong>test</strong>ing"))
+        assertThat(viewModel.getContentAsMessageHtml(), equalTo("<strong>test</strong>ing"))
     }
 
     @Test
@@ -519,7 +519,7 @@ class InterceptInputConnectionIntegrationTest {
         // Add some extra text
         inputConnection.setComposingText("whitespaces", 1)
 
-        assertThat(viewModel.getHtml(), equalTo("<strong>test</strong> whitespaces"))
+        assertThat(viewModel.getContentAsMessageHtml(), equalTo("<strong>test</strong> whitespaces"))
     }
 
     private fun simulateInput(editorInputAction: EditorInputAction) =
