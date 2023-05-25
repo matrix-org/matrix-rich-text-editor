@@ -217,3 +217,13 @@ where
         self.display_text.clone()
     }
 }
+
+impl<S> ToPlainText<S> for MentionNode<S>
+where
+    S: UnicodeString,
+{
+    fn to_plain_text(&self) -> S {
+        // no idea if this is correct
+        self.display_text.clone()
+    }
+}
