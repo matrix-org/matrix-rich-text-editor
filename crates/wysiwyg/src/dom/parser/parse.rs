@@ -291,11 +291,11 @@ mod sys {
                     })
                     .map(|(k, v)| (k.as_str().into(), v.as_str().into()))
                     .collect();
-                DomNode::Container(ContainerNode::new_mention(
+                DomNode::new_mention(
                     child.get_attr("href").unwrap_or("").into(),
-                    Vec::new(),
+                    "TODO".into(),
                     attributes,
-                ))
+                )
             } else {
                 DomNode::Container(ContainerNode::new_link(
                     child.get_attr("href").unwrap_or("").into(),

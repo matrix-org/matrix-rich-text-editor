@@ -132,7 +132,7 @@ where
                     .state
                     .dom
                     .lookup_container(&link.node_handle)
-                    .is_immutable_link_or_mention()
+                    .is_immutable_link()
                 {
                     self.select(
                         Location::from(link.position),
@@ -226,7 +226,9 @@ where
         match self.state.dom.lookup_node_mut(&location.node_handle) {
             // we should never be passed a container
             DomNode::Container(_) => ComposerUpdate::keep(),
-            DomNode::LineBreak(_) => {
+            DomNode::LineBreak(_)
+                | DomNode::Mention(_) // ?? TODO
+                => {
                 // for a linebreak, remove it if we started the operation from the whitespace
                 // char type, otherwise keep it
                 match start_type {
@@ -356,6 +358,10 @@ where
             DomNode::LineBreak(_) => {
                 // we have to treat linebreaks as chars, this type fits best
                 Some(CharType::Whitespace)
+            }
+            DomNode::Mention(_) => {
+                // ?? TODO
+                Some(CharType::Punctuation)
             }
             DomNode::Text(text_node) => {
                 text_node.char_type_at_offset(location.start_offset, direction)

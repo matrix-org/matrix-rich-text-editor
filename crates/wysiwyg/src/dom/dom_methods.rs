@@ -311,7 +311,7 @@ where
         {
             match node {
                 DomNode::Container(c) => {
-                    if c.is_link_or_mention() {
+                    if c.is_link() {
                         None
                     } else if let Some(last_child) = c.last_child_mut() {
                         last_text_node_in(last_child)
@@ -320,7 +320,7 @@ where
                     }
                 }
                 DomNode::Text(t) => Some(t),
-                DomNode::LineBreak(_) => None,
+                DomNode::LineBreak(_) | DomNode::Mention(_) => None,
             }
         }
 
@@ -366,7 +366,7 @@ where
         {
             match node {
                 DomNode::Container(c) => {
-                    if c.is_link_or_mention() {
+                    if c.is_link() {
                         None
                     } else if let Some(first_child) = c.first_child_mut() {
                         first_text_node_in(first_child)
@@ -375,7 +375,7 @@ where
                     }
                 }
                 DomNode::Text(t) => Some(t),
-                DomNode::LineBreak(_) => None,
+                DomNode::LineBreak(_) | DomNode::Mention(_) => None,
             }
         }
 
@@ -562,7 +562,7 @@ where
                         first_text_node = false;
                     }
                 }
-                DomNode::LineBreak(_) => {
+                DomNode::LineBreak(_) | DomNode::Mention(_) => {
                     match (loc.start_offset, loc.end_offset) {
                         (0, 1) => {
                             // Whole line break is selected, delete it
@@ -584,7 +584,7 @@ where
                             }
                         }
                         _ => panic!(
-                            "Tried to insert text into a line break with offset != 0 or 1. \
+                            "Tried to insert text into a node of length 1 with offset != 0 or 1. \
                             Start offset: {}, end offset: {}",
                             loc.start_offset,
                             loc.end_offset,

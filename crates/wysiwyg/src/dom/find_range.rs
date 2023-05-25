@@ -20,6 +20,8 @@ use crate::dom::{Dom, DomHandle, FindResult, Range};
 use crate::UnicodeString;
 use std::cmp::{max, min};
 
+use super::nodes::MentionNode;
+
 pub fn find_range<S>(dom: &Dom<S>, start: usize, end: usize) -> Range
 where
     S: UnicodeString,
@@ -100,6 +102,12 @@ where
         DomNode::LineBreak(n) => {
             if let Some(location) =
                 process_line_break_node(n, start, end, offset)
+            {
+                locations.push(location);
+            }
+        }
+        DomNode::Mention(n) => {
+            if let Some(location) = process_mention_node(n, start, end, offset)
             {
                 locations.push(location);
             }
@@ -193,6 +201,26 @@ where
         end,
         offset,
         DomNodeKind::LineBreak,
+    )
+}
+
+fn process_mention_node<S>(
+    node: &MentionNode<S>,
+    start: usize,
+    end: usize,
+    offset: &mut usize,
+) -> Option<DomLocation>
+where
+    S: UnicodeString,
+{
+    // Mentions are like 1-character text nodes
+    process_textlike_node(
+        node.handle(),
+        1,
+        start,
+        end,
+        offset,
+        DomNodeKind::Mention,
     )
 }
 

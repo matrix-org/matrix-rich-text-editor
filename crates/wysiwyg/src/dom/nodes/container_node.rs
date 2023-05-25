@@ -52,7 +52,6 @@ where
     CodeBlock,
     Quote,
     Paragraph,
-    Mention(S),
 }
 
 impl<S: dom::unicode_string::UnicodeString> Default for ContainerNode<S> {
@@ -317,9 +316,8 @@ where
         &self.kind
     }
 
-    pub fn is_link_or_mention(&self) -> bool {
+    pub fn is_link(&self) -> bool {
         matches!(self.kind, ContainerNodeKind::Link(_))
-            || matches!(self.kind, ContainerNodeKind::Mention(_))
     }
 
     pub fn is_immutable(&self) -> bool {
@@ -328,9 +326,8 @@ where
             .contains(&("contenteditable".into(), "false".into()))
     }
 
-    pub fn is_immutable_link_or_mention(&self) -> bool {
+    pub fn is_immutable_link(&self) -> bool {
         matches!(self.kind, ContainerNodeKind::Link(_) if self.is_immutable())
-            || matches!(self.kind, ContainerNodeKind::Mention(_))
     }
 
     pub fn is_list_item(&self) -> bool {
@@ -395,29 +392,6 @@ where
         }
     }
 
-    // mentions can have custom attributes
-    pub fn new_mention(
-        url: S,
-        children: Vec<DomNode<S>>,
-        mut attributes: Vec<(S, S)>,
-    ) -> Self {
-        // In order to display correctly in the composer for web, the client must pass in:
-        // - style attribute containing the required CSS variable
-        // - data-mention-type giving the type of the mention as "user" | "room" | "at-room"
-
-        // We then add the href and contenteditable attributes to make sure they are present
-        attributes.push(("href".into(), url.clone()));
-        attributes.push(("contenteditable".into(), "false".into()));
-
-        Self {
-            name: "a".into(),
-            kind: ContainerNodeKind::Mention(url),
-            attrs: Some(attributes),
-            children,
-            handle: DomHandle::new_unset(),
-        }
-    }
-
     pub(crate) fn get_list_type(&self) -> Option<&ListType> {
         match &self.kind {
             ContainerNodeKind::List(t) => Some(t),
@@ -439,9 +413,7 @@ where
 
     pub(crate) fn get_link_url(&self) -> Option<S> {
         match self.kind.clone() {
-            ContainerNodeKind::Link(url) | ContainerNodeKind::Mention(url) => {
-                Some(url)
-            }
+            ContainerNodeKind::Link(url) => Some(url),
             _ => None,
         }
     }
@@ -960,10 +932,6 @@ where
             Paragraph => {
                 fmt_paragraph(self, buffer, &options)?;
             }
-
-            Mention(url) => {
-                fmt_mention(self, buffer, &options, url)?;
-            }
         };
 
         return Ok(());
@@ -1196,6 +1164,10 @@ where
                     }
 
                     DomNode::Text(_) => {
+                        return Err(MarkdownError::InvalidListItem(None))
+                    }
+
+                    DomNode::Mention(_) => {
                         return Err(MarkdownError::InvalidListItem(None))
                     }
                 };

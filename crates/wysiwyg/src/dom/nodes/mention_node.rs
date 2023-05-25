@@ -92,6 +92,10 @@ where
         }
     }
 
+    pub fn display_text(&self) -> &S {
+        &self.display_text
+    }
+
     /**
      * LIFTED FROM LINE_BREAK_NODE.RS
      */

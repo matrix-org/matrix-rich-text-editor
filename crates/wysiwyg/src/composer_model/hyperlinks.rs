@@ -223,11 +223,7 @@ where
 
         for (_, s, e) in split_points.into_iter() {
             let range = self.state.dom.find_range(s, e);
-            // Determine if we are adding a link or a mention
-            let new_node = match attributes.clone() {
-                Some(attrs) => DomNode::new_mention(url.clone(), vec![], attrs),
-                None => DomNode::new_link(url.clone(), vec![]),
-            };
+            let new_node = DomNode::new_link(url.clone(), vec![]);
 
             // Create a new link node containing the passed range
             let inserted = self.state.dom.insert_parent(&range, new_node);
@@ -263,7 +259,7 @@ where
 
         node.iter_containers()
             .filter_map(|c| {
-                if c.is_link_or_mention() && c.handle() != *node_handle {
+                if c.is_link() && c.handle() != *node_handle {
                     Some(c.handle())
                 } else {
                     None
@@ -286,9 +282,7 @@ where
                 DomNode::Container(container) => container,
                 _ => continue,
             };
-            if matches!(container.kind(), ContainerNodeKind::Link(_))
-                || matches!(container.kind(), ContainerNodeKind::Mention(_))
-            {
+            if matches!(container.kind(), ContainerNodeKind::Link(_)) {
                 return Some(node.handle());
             }
             parent_handle = parent_handle.parent_handle();
