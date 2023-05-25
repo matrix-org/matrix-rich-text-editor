@@ -32,6 +32,7 @@ pub struct MentionNode<S>
 where
     S: UnicodeString,
 {
+    name: S,
     display_text: S,
     kind: MentionNodeKind,
     attrs: Vec<(S, S)>,
@@ -55,25 +56,28 @@ where
     /// NOTE: Its handle() will be unset until you call set_handle() or
     /// append() it to another node.
     pub fn new(url: S, display_text: S, mut attributes: Vec<(S, S)>) -> Self {
-        // do the things we need to do for all cases - add the required attributes and create a handle
-        attributes.push(("href".into(), url.clone()));
+        // do the things we need to do for all cases - add the contenteditable attribute and create a handle and name
         attributes.push(("contenteditable".into(), "false".into()));
         let handle = DomHandle::new_unset();
+        let name = "a".into();
 
         // for now, we're going to check the display_text and attributes to figure out which
         // mention to build - this is a bit hacky and may change in the future when we
         // can infer the type directly from the url
         if display_text == "@room".into() {
+            // we set a placeholder here to ensure semantic html in the output
+            attributes.push(("href".into(), "#".into()));
             return Self {
+                name,
                 display_text,
                 kind: MentionNodeKind::AtRoom,
                 attrs: attributes,
-                // I _think_ this is the best way to handle it, can replace this with a # placeholder
-                // as that's how you make a placeholder link in html
                 url: None,
                 handle,
             };
         }
+
+        attributes.push(("href".into(), url.clone()));
 
         let kind = if attributes
             .contains(&(S::from("data-mention-type"), S::from("user")))
@@ -84,6 +88,7 @@ where
         };
 
         Self {
+            name,
             display_text,
             kind,
             attrs: attributes,
@@ -95,9 +100,6 @@ where
     /**
      * LIFTED FROM LINE_BREAK_NODE.RS
      */
-    pub fn name(&self) -> S {
-        "a".into()
-    }
 
     pub fn set_handle(&mut self, handle: DomHandle) {
         self.handle = handle;
@@ -114,13 +116,17 @@ where
     /**
      * LIFTED FROM CONTAINER_NODE.RS
      */
+    pub fn name(&self) -> &S::Str {
+        &self.name
+    }
+
     pub fn attributes(&self) -> &Vec<(S, S)> {
         self.attrs.as_ref()
     }
 
-    pub fn kind(&self) -> &MentionNodeKind {
-        &self.kind
-    }
+    // pub fn kind(&self) -> &MentionNodeKind {
+    //     &self.kind
+    // }
     pub(crate) fn get_mention_url(&self) -> Option<S> {
         self.url.clone()
     }
@@ -133,5 +139,71 @@ where
     /// Returns true if there is no text in this ContainerNode.
     pub fn has_no_text(&self) -> bool {
         self.display_text.len() == 0
+    }
+}
+
+impl<S> ToHtml<S> for MentionNode<S>
+where
+    S: UnicodeString,
+{
+    fn fmt_html(
+        &self,
+        formatter: &mut S,
+        selection_writer: Option<&mut SelectionWriter>,
+        state: ToHtmlState,
+    ) {
+        self.fmt_mention_html(formatter, selection_writer, state)
+    }
+}
+
+impl<S: UnicodeString> MentionNode<S> {
+    fn fmt_mention_html(
+        &self,
+        formatter: &mut S,
+        _: Option<&mut SelectionWriter>,
+        _: ToHtmlState,
+    ) {
+        assert!(matches!(
+            self.kind,
+            MentionNodeKind::Room
+                | MentionNodeKind::User
+                | MentionNodeKind::AtRoom
+        ));
+
+        let name = self.name();
+        self.fmt_tag_open(name, formatter, self.attrs.clone());
+
+        formatter.push(self.display_text.clone());
+
+        self.fmt_tag_close(name, formatter);
+    }
+
+    /**
+     * LIFTED FROM CONTAINER_NODE.RS
+     * TODO could we export/import these to avoid repetition?
+     */
+    fn fmt_tag_open(
+        &self,
+        name: &S::Str,
+        formatter: &mut S,
+        attrs: Vec<(S, S)>,
+    ) {
+        formatter.push('<');
+        formatter.push(name);
+        for attr in attrs {
+            let (attr_name, value) = attr;
+            formatter.push(' ');
+            formatter.push(attr_name);
+            formatter.push("=\"");
+            formatter.push(value);
+            formatter.push('"');
+        }
+        formatter.push('>');
+    }
+
+    fn fmt_tag_close(&self, name: &S::Str, formatter: &mut S) {
+        formatter.push("</");
+        formatter.push(name);
+        formatter.push('>');
     }
 }
