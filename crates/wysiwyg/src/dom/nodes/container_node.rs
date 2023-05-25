@@ -1344,19 +1344,9 @@ where
 
             fmt_children(this, buffer, options)?;
 
-            // TODO add some logic here to determine if it's a mention or a link
-            // For the time being, treat this as a link - will need to manipulate the url to get the mxId
+            // TODO extract mxId from the url instead of hardcoding this
 
-            buffer.push("](<");
-            buffer.push(
-                url.to_string()
-                    .replace('<', "\\<")
-                    .replace('>', "\\>")
-                    .replace('(', "\\(")
-                    .replace(')', "\\)")
-                    .as_str(),
-            );
-            buffer.push(">)");
+            buffer.push("@mxId");
 
             Ok(())
         }
