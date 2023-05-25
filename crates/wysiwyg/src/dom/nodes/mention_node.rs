@@ -124,9 +124,9 @@ where
         self.attrs.as_ref()
     }
 
-    // pub fn kind(&self) -> &MentionNodeKind {
-    //     &self.kind
-    // }
+    pub fn kind(&self) -> &MentionNodeKind {
+        &self.kind
+    }
     pub(crate) fn get_mention_url(&self) -> Option<S> {
         self.url.clone()
     }
@@ -248,5 +248,65 @@ where
         );
 
         tree_part
+    }
+}
+
+impl<S> ToMarkdown<S> for MentionNode<S>
+where
+    S: UnicodeString,
+{
+    fn fmt_markdown(
+        &self,
+        buffer: &mut S,
+        options: &MarkdownOptions,
+    ) -> Result<(), MarkdownError<S>> {
+        use MentionNodeKind::*;
+
+        let mut options = *options;
+
+        // There are two different functions to allow for fact one will use mxId later on
+        match self.kind() {
+            User | Room => {
+                fmt_user_or_room_mention(self, buffer)?;
+            }
+            AtRoom => {
+                fmt_at_room_mention(self, buffer)?;
+            }
+        }
+
+        return Ok(());
+
+        #[inline(always)]
+        fn fmt_user_or_room_mention<S>(
+            this: &MentionNode<S>,
+            buffer: &mut S,
+        ) -> Result<(), MarkdownError<S>>
+        where
+            S: UnicodeString,
+        {
+            // TODO make this use mxId, for now we use display_text
+            buffer.push(this.display_text.clone());
+            Ok(())
+        }
+
+        #[inline(always)]
+        fn fmt_at_room_mention<S>(
+            this: &MentionNode<S>,
+            buffer: &mut S,
+        ) -> Result<(), MarkdownError<S>>
+        where
+            S: UnicodeString,
+        {
+            // should this be "@room".into()? not sure what's clearer
+            buffer.push(this.display_text.clone());
+            Ok(())
+        }
+    }
+
+    fn to_markdown(&self) -> Result<S, MarkdownError<S>> {
+        let mut buffer = <S>::default();
+        self.fmt_markdown(&mut buffer, &MarkdownOptions::empty())?;
+
+        Ok(buffer)
     }
 }
