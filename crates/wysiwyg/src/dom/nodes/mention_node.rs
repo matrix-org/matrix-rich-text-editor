@@ -258,11 +258,9 @@ where
     fn fmt_markdown(
         &self,
         buffer: &mut S,
-        options: &MarkdownOptions,
+        _: &MarkdownOptions,
     ) -> Result<(), MarkdownError<S>> {
         use MentionNodeKind::*;
-
-        let mut options = *options;
 
         // There are two different functions to allow for fact one will use mxId later on
         match self.kind() {
@@ -301,12 +299,5 @@ where
             buffer.push(this.display_text.clone());
             Ok(())
         }
-    }
-
-    fn to_markdown(&self) -> Result<S, MarkdownError<S>> {
-        let mut buffer = <S>::default();
-        self.fmt_markdown(&mut buffer, &MarkdownOptions::empty())?;
-
-        Ok(buffer)
     }
 }
