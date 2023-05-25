@@ -35,7 +35,7 @@ where
     display_text: S,
     kind: MentionNodeKind,
     attrs: Vec<(S, S)>,
-    href: S,
+    url: Option<S>,
     handle: DomHandle,
 }
 
@@ -50,6 +50,51 @@ impl<S> MentionNode<S>
 where
     S: UnicodeString,
 {
+    /// Create a new MentionNode
+    ///
+    /// NOTE: Its handle() will be unset until you call set_handle() or
+    /// append() it to another node.
+    pub fn new(url: S, display_text: S, mut attributes: Vec<(S, S)>) -> Self {
+        // do the things we need to do for all cases - add the required attributes and create a handle
+        attributes.push(("href".into(), url.clone()));
+        attributes.push(("contenteditable".into(), "false".into()));
+        let handle = DomHandle::new_unset();
+
+        // for now, we're going to check the display_text and attributes to figure out which
+        // mention to build - this is a bit hacky and may change in the future when we
+        // can infer the type directly from the url
+        if display_text == "@room".into() {
+            return Self {
+                display_text,
+                kind: MentionNodeKind::AtRoom,
+                attrs: attributes,
+                // I _think_ this is the best way to handle it, can replace this with a # placeholder
+                // as that's how you make a placeholder link in html
+                url: None,
+                handle,
+            };
+        }
+
+        let kind = if attributes
+            .contains(&(S::from("data-mention-type"), S::from("user")))
+        {
+            MentionNodeKind::User
+        } else {
+            MentionNodeKind::Room
+        };
+
+        Self {
+            display_text,
+            kind,
+            attrs: attributes,
+            url: Some(url),
+            handle,
+        }
+    }
+
+    /**
+     * LIFTED FROM LINE_BREAK_NODE.RS
+     */
     pub fn name(&self) -> S {
         "a".into()
     }
@@ -64,5 +109,29 @@ where
 
     pub fn text_len(&self) -> usize {
         self.display_text.len()
+    }
+
+    /**
+     * LIFTED FROM CONTAINER_NODE.RS
+     */
+    pub fn attributes(&self) -> &Vec<(S, S)> {
+        self.attrs.as_ref()
+    }
+
+    pub fn kind(&self) -> &MentionNodeKind {
+        &self.kind
+    }
+    pub(crate) fn get_mention_url(&self) -> Option<S> {
+        self.url.clone()
+    }
+
+    /// Returns true if the ContainerNode has no children.
+    pub fn is_empty(&self) -> bool {
+        self.display_text.len() == 0
+    }
+
+    /// Returns true if there is no text in this ContainerNode.
+    pub fn has_no_text(&self) -> bool {
+        self.display_text.len() == 0
     }
 }
