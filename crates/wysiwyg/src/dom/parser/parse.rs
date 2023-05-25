@@ -270,8 +270,7 @@ mod sys {
         {
             // initial implementation, firstly check if we have either `contenteditable=false` or `data-mention-type=`
             // attributes, if so then we're going to add a mention instead of a link
-            // TODO should this just use `data-mention-type` to simulate a mention? Would need to change some tests
-            // if so
+            // TODO we should make this just check the href but we need to update all the tests to account for this
             let is_mention = child.attrs.iter().any(|(k, v)| {
                 k == &String::from("contenteditable")
                     && v == &String::from("false")
