@@ -270,7 +270,7 @@ mod sys {
         {
             // initial implementation, firstly check if we have either `contenteditable=false` or `data-mention-type=`
             // attributes, if so then we're going to add a mention instead of a link
-            // TODO we should make this just check the href but we need to update all the tests to account for this
+            // TODO move to inferring link or mention from href when utils exist
             let is_mention = child.attrs.iter().any(|(k, v)| {
                 k == &String::from("contenteditable")
                     && v == &String::from("false")
@@ -749,7 +749,7 @@ mod js {
                     "A" => {
                         self.current_path.push(DomNodeKind::Link);
 
-                        // TODO add some logic here to determine if it's a mention or a link
+                        // TODO move to inferring link or mention from href when utils exist
                         let is_mention = node
                             .unchecked_ref::<Element>()
                             .has_attribute("data-mention-type");
