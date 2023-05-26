@@ -19,7 +19,7 @@ use widestring::{Utf16Str, Utf16String};
 
 use crate::char::CharExt;
 use crate::composer_model::menu_state::MenuStateComputeType;
-use crate::dom::nodes::{ContainerNode, LineBreakNode, TextNode};
+use crate::dom::nodes::{ContainerNode, LineBreakNode, MentionNode, TextNode};
 use crate::dom::parser::parse;
 use crate::dom::to_html::ToHtmlState;
 use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
@@ -369,6 +369,21 @@ impl SelectionWriter {
             for (str, i) in strings_to_add.into_iter().rev() {
                 // Index 1 in line breaks is actually at the end of the '<br />'
                 let i = if i == 0 { 0 } else { 6 };
+                buf.insert(pos + i, &S::from(str));
+            }
+        }
+    }
+
+    pub fn write_selection_mention_node<S: UnicodeString>(
+        &mut self,
+        buf: &mut S,
+        pos: usize,
+        node: &MentionNode<S>,
+    ) {
+        if let Some(loc) = self.locations.get(&node.handle()) {
+            let strings_to_add = self.state.advance(loc, 1);
+            for (str, i) in strings_to_add.into_iter().rev() {
+                let i = if i == 0 { 0 } else { buf.len() };
                 buf.insert(pos + i, &S::from(str));
             }
         }

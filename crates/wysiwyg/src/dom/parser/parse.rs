@@ -179,7 +179,12 @@ mod sys {
                 "a" => {
                     // TODO add some logic here to determine if it's a mention or a link
                     self.current_path.push(DomNodeKind::Link);
-                    let link = Self::new_link(child);
+
+                    // TODO: don't commit like this, refactor
+                    let first_grandchild =
+                        child.children.first().map(|gc| padom.get_node(gc));
+
+                    let link = Self::new_link(child, first_grandchild);
                     if link.is_container_node() {
                         node.append_child(link);
                         self.convert_children(
@@ -270,7 +275,10 @@ mod sys {
         }
 
         /// Create a link node
-        fn new_link<S>(child: &PaNodeContainer) -> DomNode<S>
+        fn new_link<S>(
+            child: &PaNodeContainer,
+            grandchild: Option<&PaDomNode>,
+        ) -> DomNode<S>
         where
             S: UnicodeString,
         {
@@ -284,12 +292,16 @@ mod sys {
             //        || k == &String::from("data-mention-type")
             //  });
             println!("creating link");
+            let text = match grandchild {
+                Some(PaDomNode::Text(text)) => Some(&text.content),
+                _ => None,
+            };
             let is_mention = child.attrs.iter().any(|(k, v)| {
                 println!("{} {}", k, v);
                 k == &String::from("href") && v.starts_with("https://matrix.to")
             });
 
-            if is_mention {
+            if is_mention && text.is_some() {
                 println!("is mention");
                 // if we have a mention, filtering out the href and contenteditable attributes because
                 // we add these attributes when creating the mention and don't want repetition
@@ -302,9 +314,10 @@ mod sys {
                     })
                     .map(|(k, v)| (k.as_str().into(), v.as_str().into()))
                     .collect();
+
                 DomNode::new_mention(
                     child.get_attr("href").unwrap_or("").into(),
-                    "TODO".into(),
+                    text.unwrap().as_str().into(),
                     attributes,
                 )
             } else {

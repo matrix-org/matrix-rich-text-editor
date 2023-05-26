@@ -864,7 +864,7 @@ fn html_delete_word_for_empty_list_item() {
 #[test]
 fn backspace_mention_multiple() {
     let mut model = cm(
-        "<a href=\"https://matrix.to/#/mention\">first</a><a href=\"https://matrix.to/#/mention\">second|</a>",
+        "<a href=\"https://matrix.to/#/mention\">first</a><a href=\"https://matrix.to/#/mention\">second</a>|",
     );
     model.backspace();
     assert_eq!(

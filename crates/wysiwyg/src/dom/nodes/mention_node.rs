@@ -51,8 +51,6 @@ where
     /// NOTE: Its handle() will be unset until you call set_handle() or
     /// append() it to another node.
     pub fn new(url: S, display_text: S, mut attributes: Vec<(S, S)>) -> Self {
-        // do the things we need to do for all cases - add the contenteditable attribute and create a handle and name
-        attributes.push(("contenteditable".into(), "false".into()));
         let handle = DomHandle::new_unset();
         let name = "mention".into();
 
@@ -92,8 +90,7 @@ where
         }
     }
 
-    // TODO: make public (private for debugging)
-    fn display_text(&self) -> &S {
+    pub fn display_text(&self) -> &S {
         &self.display_text
     }
 
@@ -161,7 +158,7 @@ impl<S: UnicodeString> MentionNode<S> {
     fn fmt_mention_html(
         &self,
         formatter: &mut S,
-        _: Option<&mut SelectionWriter>,
+        selection_writer: Option<&mut SelectionWriter>,
         _: ToHtmlState,
     ) {
         assert!(matches!(
@@ -170,6 +167,7 @@ impl<S: UnicodeString> MentionNode<S> {
                 | MentionNodeKind::User
                 | MentionNodeKind::AtRoom
         ));
+        let cur_pos = formatter.len();
 
         let name = S::from("a");
         self.fmt_tag_open(&name, formatter, self.attrs.clone());
@@ -177,6 +175,10 @@ impl<S: UnicodeString> MentionNode<S> {
         formatter.push(self.display_text.clone());
 
         self.fmt_tag_close(&name, formatter);
+
+        if let Some(sel_writer) = selection_writer {
+            sel_writer.write_selection_mention_node(formatter, cur_pos, self);
+        }
     }
 
     /**
