@@ -1332,7 +1332,7 @@ where
         #[inline(always)]
         fn fmt_mention<S>(
             buffer: &mut S,
-            _url: S,
+            _url: &S,
         ) -> Result<(), MarkdownError<S>>
         where
             S: UnicodeString,
