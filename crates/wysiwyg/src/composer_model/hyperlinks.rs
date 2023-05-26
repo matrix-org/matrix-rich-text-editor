@@ -45,7 +45,7 @@ where
                 self.state.dom.lookup_container(&first_loc.node_handle);
             // Edit the first link of the selection.
             LinkAction::Edit(first_link.get_link_url().unwrap())
-        } else if s == e || self.is_blank_selection(range) {
+        } else if s == e || self.is_blank_selection(range.clone()) {
             LinkAction::CreateWithText
         } else {
             LinkAction::Create
@@ -72,21 +72,30 @@ where
 
     fn is_blank_selection(&self, range: Range) -> bool {
         for leaf in range.leaves() {
-            if leaf.kind == LineBreak {
-                continue;
-            } else if leaf.kind == Text {
-                let text_node = self
-                    .state
-                    .dom
-                    .lookup_node(&leaf.node_handle)
-                    .as_text()
-                    .unwrap();
-                let selection_range = leaf.start_offset..leaf.end_offset;
-                if !text_node.is_blank_in_range(selection_range) {
-                    return false;
+            println!(" checking leaf in range {:?}", leaf);
+            match leaf.kind {
+                DomNodeKind::Text => {
+                    let text_node = self
+                        .state
+                        .dom
+                        .lookup_node(&leaf.node_handle)
+                        .as_text()
+                        .unwrap();
+                    let selection_range = leaf.start_offset..leaf.end_offset;
+                    if !text_node.is_blank_in_range(selection_range) {
+                        return false;
+                    }
                 }
-            } else {
-                return false;
+                DomNodeKind::LineBreak => continue,
+                DomNodeKind::Formatting(_)
+                | DomNodeKind::Link
+                | DomNodeKind::ListItem
+                | DomNodeKind::List
+                | DomNodeKind::CodeBlock
+                | DomNodeKind::Quote
+                | DomNodeKind::Generic
+                | DomNodeKind::Mention
+                | DomNodeKind::Paragraph => return false,
             }
         }
         true

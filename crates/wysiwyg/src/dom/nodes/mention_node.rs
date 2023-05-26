@@ -240,6 +240,8 @@ where
 
         if let Some(url) = &self.url {
             description.push(" \"");
+            description.push(self.display_text.clone());
+            description.push(", ");
             description.push(url.clone());
             description.push("\"");
         }

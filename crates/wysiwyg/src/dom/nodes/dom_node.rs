@@ -513,7 +513,17 @@ impl DomNodeKind {
     }
 
     pub fn is_leaf_kind(&self) -> bool {
-        matches!(self, Self::Text | Self::LineBreak)
+        match self {
+            Self::Text | Self::LineBreak | Self::Mention => true,
+            Self::Generic
+            | Self::Formatting(_)
+            | Self::Link
+            | Self::ListItem
+            | Self::List
+            | Self::CodeBlock
+            | Self::Quote
+            | Self::Paragraph => false,
+        }
     }
 
     pub fn is_code_kind(&self) -> bool {
