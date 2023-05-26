@@ -135,14 +135,10 @@ where
         &mut self,
         direction: Direction,
     ) -> ComposerUpdate<S> {
-        println!("remove_word_in_direction()");
         // if we have a selection, only remove the selection
         if self.has_selection() {
-            println!(" -- has selection");
             return self.delete_selection();
         }
-
-        println!(" -- no selection");
 
         let args = self.get_remove_word_arguments(&direction);
         match args {
@@ -162,10 +158,6 @@ where
         direction: Direction,
         location: DomLocation,
     ) -> ComposerUpdate<S> {
-        println!(
-            " -- remove_word({:?}, {:?}, {:?})",
-            start_type, direction, location
-        );
         match self.state.dom.lookup_node_mut(&location.node_handle) {
             // we should never be passed a container
             DomNode::Container(_) => ComposerUpdate::keep(),

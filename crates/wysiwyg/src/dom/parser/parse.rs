@@ -291,18 +291,15 @@ mod sys {
             //        && v == &String::from("false")
             //        || k == &String::from("data-mention-type")
             //  });
-            println!("creating link");
             let text = match grandchild {
                 Some(PaDomNode::Text(text)) => Some(&text.content),
                 _ => None,
             };
             let is_mention = child.attrs.iter().any(|(k, v)| {
-                println!("{} {}", k, v);
                 k == &String::from("href") && v.starts_with("https://matrix.to")
             });
 
             if is_mention && text.is_some() {
-                println!("is mention");
                 // if we have a mention, filtering out the href and contenteditable attributes because
                 // we add these attributes when creating the mention and don't want repetition
                 let attributes = child
