@@ -961,7 +961,7 @@ where
             }
 
             Mention(url) => {
-                fmt_mention(self, buffer, &options, url)?;
+                fmt_mention(buffer, url)?;
             }
         };
 
@@ -1331,17 +1331,13 @@ where
 
         #[inline(always)]
         fn fmt_mention<S>(
-            this: &ContainerNode<S>,
             buffer: &mut S,
-            options: &MarkdownOptions,
-            _url: &S,
+            _url: S,
         ) -> Result<(), MarkdownError<S>>
         where
             S: UnicodeString,
         {
-            fmt_children(this, buffer, options)?;
-
-            // TODO extract mxId from the url instead of hardcoding this
+            // TODO extract mxId from the _url instead of hardcoding this
 
             buffer.push("@mxId");
 
