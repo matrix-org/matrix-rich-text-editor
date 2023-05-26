@@ -1339,8 +1339,6 @@ where
         where
             S: UnicodeString,
         {
-            buffer.push('[');
-
             fmt_children(this, buffer, options)?;
 
             // TODO extract mxId from the url instead of hardcoding this
