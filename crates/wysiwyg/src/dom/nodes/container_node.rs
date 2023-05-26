@@ -1334,7 +1334,7 @@ where
             this: &ContainerNode<S>,
             buffer: &mut S,
             options: &MarkdownOptions,
-            url: &S,
+            _url: &S,
         ) -> Result<(), MarkdownError<S>>
         where
             S: UnicodeString,
