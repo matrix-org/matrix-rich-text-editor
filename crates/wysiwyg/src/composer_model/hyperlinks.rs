@@ -16,7 +16,6 @@ use std::cmp::{max, min};
 
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::DomNodeKind::{Link, List};
-use crate::dom::nodes::dom_node::{DomNodeKind::LineBreak, DomNodeKind::Text};
 use crate::dom::nodes::ContainerNodeKind;
 use crate::dom::nodes::DomNode;
 use crate::dom::unicode_string::UnicodeStrExt;
@@ -45,7 +44,7 @@ where
                 self.state.dom.lookup_container(&first_loc.node_handle);
             // Edit the first link of the selection.
             LinkAction::Edit(first_link.get_link_url().unwrap())
-        } else if s == e || self.is_blank_selection(range.clone()) {
+        } else if s == e || self.is_blank_selection(range) {
             LinkAction::CreateWithText
         } else {
             LinkAction::Create
@@ -57,7 +56,6 @@ where
         url: S,
         text: S,
         suggestion: SuggestionPattern,
-        attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
         // TODO - this function allows us to accept a Vec of attributes to add to the Link we create,
         // but these attributes will be present in the html of the message we output. We may need to
@@ -66,13 +64,12 @@ where
         self.do_replace_text_in(S::default(), suggestion.start, suggestion.end);
         self.state.start = Location::from(suggestion.start);
         self.state.end = self.state.start;
-        self.set_mention_with_text(url, text, attributes);
+        self.set_mention_with_text(url, text);
         self.do_replace_text(" ".into())
     }
 
     fn is_blank_selection(&self, range: Range) -> bool {
         for leaf in range.leaves() {
-            println!(" checking leaf in range {:?}", leaf);
             match leaf.kind {
                 DomNodeKind::Text => {
                     let text_node = self
@@ -107,21 +104,20 @@ where
         self.do_replace_text(text.clone());
         let e = s + text.len();
         let range = self.state.dom.find_range(s, e);
-        self.set_link_in_range(url, range, None)
+        self.set_link_in_range(url, range)
     }
 
     pub fn set_mention_with_text(
         &mut self,
         url: S,
         text: S,
-        attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
         let (s, _) = self.safe_selection();
         self.push_state_to_history();
         self.do_replace_text(text.clone());
         let e = s + text.len();
         let range = self.state.dom.find_range(s, e);
-        self.set_link_in_range(url, range, Some(attributes))
+        self.set_link_in_range(url, range)
     }
 
     pub fn set_link(&mut self, url: S) -> ComposerUpdate<S> {
@@ -130,14 +126,13 @@ where
 
         let range = self.state.dom.find_range(s, e);
 
-        self.set_link_in_range(url, range, None)
+        self.set_link_in_range(url, range)
     }
 
     fn set_link_in_range(
         &mut self,
         mut url: S,
         range: Range,
-        attributes: Option<Vec<(S, S)>>,
     ) -> ComposerUpdate<S> {
         self.add_http_scheme(&mut url);
 

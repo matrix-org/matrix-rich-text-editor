@@ -309,13 +309,12 @@ impl ComposerModel {
         url: &str,
         text: &str,
         suggestion: &SuggestionPattern,
-        attributes: js_sys::Map,
+        _: js_sys::Map, // TODO: remove
     ) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.set_mention_from_suggestion(
             Utf16String::from_str(url),
             Utf16String::from_str(text),
             wysiwyg::SuggestionPattern::from(suggestion.clone()),
-            attributes.into_vec(),
         ))
     }
 
