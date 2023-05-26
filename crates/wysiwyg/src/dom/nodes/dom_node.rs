@@ -126,7 +126,7 @@ where
             DomNode::Text(n) => n.data().len(),
             DomNode::LineBreak(n) => n.text_len(),
             DomNode::Container(n) => n.text_len(),
-            DomNode::Mention(_) => 1,
+            DomNode::Mention(n) => n.text_len(),
         }
     }
 

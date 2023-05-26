@@ -54,7 +54,7 @@ where
         // do the things we need to do for all cases - add the contenteditable attribute and create a handle and name
         attributes.push(("contenteditable".into(), "false".into()));
         let handle = DomHandle::new_unset();
-        let name = "a".into();
+        let name = "mention".into();
 
         // for now, we're going to check the display_text and attributes to figure out which
         // mention to build - this is a bit hacky and may change in the future when we
@@ -92,7 +92,8 @@ where
         }
     }
 
-    pub fn display_text(&self) -> &S {
+    // TODO: make public (private for debugging)
+    fn display_text(&self) -> &S {
         &self.display_text
     }
 
@@ -109,7 +110,8 @@ where
     }
 
     pub fn text_len(&self) -> usize {
-        self.display_text.len()
+        1
+        //self.display_text.len()
     }
 
     /**
@@ -169,12 +171,12 @@ impl<S: UnicodeString> MentionNode<S> {
                 | MentionNodeKind::AtRoom
         ));
 
-        let name = self.name();
-        self.fmt_tag_open(name, formatter, self.attrs.clone());
+        let name = S::from("a");
+        self.fmt_tag_open(&name, formatter, self.attrs.clone());
 
         formatter.push(self.display_text.clone());
 
-        self.fmt_tag_close(name, formatter);
+        self.fmt_tag_close(&name, formatter);
     }
 
     /**

@@ -179,12 +179,17 @@ mod sys {
                 "a" => {
                     // TODO add some logic here to determine if it's a mention or a link
                     self.current_path.push(DomNodeKind::Link);
-                    node.append_child(Self::new_link(child));
-                    self.convert_children(
-                        padom,
-                        child,
-                        last_container_mut_in(node),
-                    );
+                    let link = Self::new_link(child);
+                    if link.is_container_node() {
+                        node.append_child(link);
+                        self.convert_children(
+                            padom,
+                            child,
+                            last_container_mut_in(node),
+                        );
+                    } else {
+                        node.append_child(link);
+                    }
                     self.current_path.remove(cur_path_idx);
                 }
                 "pre" => {
@@ -273,13 +278,19 @@ mod sys {
             // attributes, if so then we're going to add a mention instead of a link
             // TODO should this just use `data-mention-type` to simulate a mention? Would need to change some tests
             // if so
+            //  let is_mention = child.attrs.iter().any(|(k, v)| {
+            //     k == &String::from("contenteditable")
+            //        && v == &String::from("false")
+            //        || k == &String::from("data-mention-type")
+            //  });
+            println!("creating link");
             let is_mention = child.attrs.iter().any(|(k, v)| {
-                k == &String::from("contenteditable")
-                    && v == &String::from("false")
-                    || k == &String::from("data-mention-type")
+                println!("{} {}", k, v);
+                k == &String::from("href") && v.starts_with("https://matrix.to")
             });
 
             if is_mention {
+                println!("is mention");
                 // if we have a mention, filtering out the href and contenteditable attributes because
                 // we add these attributes when creating the mention and don't want repetition
                 let attributes = child

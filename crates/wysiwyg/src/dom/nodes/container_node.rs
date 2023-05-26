@@ -320,16 +320,6 @@ where
         matches!(self.kind, ContainerNodeKind::Link(_))
     }
 
-    pub fn is_immutable(&self) -> bool {
-        self.attributes()
-            .unwrap_or(&vec![])
-            .contains(&("contenteditable".into(), "false".into()))
-    }
-
-    pub fn is_immutable_link(&self) -> bool {
-        matches!(self.kind, ContainerNodeKind::Link(_) if self.is_immutable())
-    }
-
     pub fn is_list_item(&self) -> bool {
         matches!(self.kind, ContainerNodeKind::ListItem)
     }

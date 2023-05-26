@@ -25,7 +25,7 @@ use crate::dom::to_html::ToHtmlState;
 use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
 use crate::dom::{Dom, DomLocation};
 use crate::{
-    ComposerModel, DomHandle, DomNode, Location, ToHtml, UnicodeString,
+    ComposerModel, DomHandle, DomNode, Location, ToHtml, ToTree, UnicodeString,
 };
 
 impl ComposerModel<Utf16String> {
@@ -78,12 +78,20 @@ impl ComposerModel<Utf16String> {
         let mut model = ComposerModel::new();
         model.state.dom = parse(text).unwrap();
 
+        println!("From example format {}", text);
+        println!("initial tree {}", model.state.dom.to_tree());
+        println!(" - start {:?}", model.state.start);
+        println!(" - end {:?}", model.state.end);
         let mut offset = 0;
         let (start, end, curs) = Self::find_selection_in(
             &model.state.dom,
             model.state.dom.document_node(),
             &mut offset,
         );
+        println!("found selection");
+        println!(" - start {:?}", start);
+        println!(" - end {:?}", end);
+        println!(" - curs {:?}", curs);
         let Some(curs) = curs else {
             panic!("Selection not found");
         };
@@ -93,6 +101,7 @@ impl ComposerModel<Utf16String> {
             loc: &SelectionLocation,
             len: usize,
         ) {
+            println!("delete range len {:?}, loc {:?}", len, loc);
             let mut needs_deletion = false;
             if let DomNode::Text(text_node) =
                 model.state.dom.lookup_node_mut(&loc.handle)
@@ -145,6 +154,10 @@ impl ComposerModel<Utf16String> {
             .dom
             .wrap_inline_nodes_into_paragraphs_if_needed(&DomHandle::root());
         model.state.dom.explicitly_assert_invariants();
+
+        println!("From example format {}", model.state.dom.to_tree());
+        println!(" - start {:?}", model.state.start);
+        println!(" - end {:?}", model.state.end);
 
         model
     }
@@ -212,6 +225,32 @@ impl ComposerModel<Utf16String> {
                     *offset += data.char_len(&ch);
                 }
             }
+            DomNode::Mention(mention_node) => {
+                let start_pos = *offset;
+                //  let data: &Utf16Str = mention_node.display_text();
+                //  for ch in data.chars() {
+                //      if ch == '{' {
+                //          start = Some(SelectionLocation::new(
+                //              node.handle(),
+                //              start_pos,
+                //              0,
+                //          ));
+                //      } else if ch == '}' {
+                //          end = Some(SelectionLocation::new(
+                //              node.handle(),
+                //              start_pos,
+                //              0,
+                //          ));
+                //      } else if ch == '|' {
+                //          curs = Some(SelectionLocation::new(
+                //              node.handle(),
+                //              start_pos,
+                //              0,
+                //          ));
+                //      }
+                //  }
+                *offset += mention_node.text_len();
+            }
             _ => {
                 *offset += node.text_len();
             }
@@ -233,6 +272,8 @@ impl ComposerModel<Utf16String> {
         // Find out which nodes are involved in the selection
         let range = dom.find_range(state.start.into(), state.end.into());
 
+        println!("{}", dom.to_tree());
+
         // Modify the text nodes to add {, } and |
         let selection_start = state.start.into();
         let selection_end = state.end.into();
@@ -248,6 +289,7 @@ impl ComposerModel<Utf16String> {
             .iter()
             .map(|l| (l.node_handle.clone(), l.clone()))
             .collect();
+        println!("locations {:?}", locations);
         let mut selection_writer = SelectionWriter { state, locations };
         root.fmt_html(
             &mut buf,
@@ -275,6 +317,7 @@ impl ComposerModel<Utf16String> {
     }
 }
 
+#[derive(Debug)]
 struct SelectionLocation {
     handle: DomHandle,
     pos: usize,

@@ -205,17 +205,15 @@ fn get_link_action_on_immutable_link_trailing() {
 }
 
 #[test]
-fn get_link_action_on_cross_selected_immutable_link() {
-    let model = cm(
-        "<a contenteditable=\"false\" href=\"https://matrix.org\">te{st</a>text}|",
-    );
+fn get_link_action_on_cross_selected_mention() {
+    let model = cm("{<a href=\"https://matrix.to/#/mention\">test</a>text}|");
     assert_eq!(model.get_link_action(), LinkAction::Disabled);
 }
 
 #[test]
-fn get_link_action_on_multiple_link_with_first_immutable() {
+fn get_link_action_on_multiple_link_with_first_is_mention() {
     let mut model = cm(indoc! {r#"
-        <a contenteditable="false" href="https://matrix.org">{Matrix_immut</a>
+        <a href="https://matrix.to/#/mention">{Matrix_immut</a>
         text
         <a href="https://rust-lang.org">Rust_mut}|</a>
     "#});
@@ -229,11 +227,11 @@ fn get_link_action_on_multiple_link_with_first_immutable() {
 }
 
 #[test]
-fn get_link_action_on_multiple_link_with_last_immutable() {
+fn get_link_action_on_multiple_link_with_last_is_mention() {
     let mut model = cm(indoc! {r#"
         <a href="https://rust-lang.org">{Rust_mut</a>
         text
-        <a contenteditable="false" href="https://matrix.org">Matrix_immut}|</a>
+        <a href="https://matrix.to/#/mention">mention}|</a>
     "#});
     assert_eq!(model.get_link_action(), LinkAction::Disabled);
     // Selecting the mutable link afterwards works

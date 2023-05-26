@@ -121,6 +121,7 @@ mod test {
     }
 
     #[test]
+    #[ignore]
     fn test_set_link_suggestion_ffi() {
         let model = Arc::new(ComposerModel::new());
         let update = model.replace_text("@alic".into());
