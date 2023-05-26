@@ -82,6 +82,39 @@ where
         self.do_replace_text(" ".into())
     }
 
+    pub fn set_mention_with_text(
+        &mut self,
+        url: S,
+        text: S,
+        attributes: Vec<(S, S)>,
+    ) -> ComposerUpdate<S> {
+        let (s, _) = self.safe_selection();
+        self.push_state_to_history();
+        self.do_replace_text(text.clone());
+        let e = s + text.len();
+        let range = self.state.dom.find_range(s, e);
+        self.set_mention_in_range(url, attributes, range)
+    }
+
+    fn set_mention_in_range(
+        &mut self,
+        mut url: S,
+        attributes: Vec<(S, S)>,
+        range: Range,
+    ) -> ComposerUpdate<S> {
+        self.add_http_scheme(&mut url);
+
+        if range.is_cursor() {
+            return ComposerUpdate::keep();
+        }
+
+        // Create a new mention node and insert it
+        let new_node = DomNode::new_mention(url.clone(), vec![], attributes);
+        self.state.dom.insert_parent(&range, new_node);
+
+        self.create_update_replace_all()
+    }
+
     fn is_blank_selection(&self, range: Range) -> bool {
         for leaf in range.leaves() {
             if leaf.kind == LineBreak {
@@ -110,21 +143,7 @@ where
         self.do_replace_text(text.clone());
         let e = s + text.len();
         let range = self.state.dom.find_range(s, e);
-        self.set_link_in_range(url, range, None)
-    }
-
-    pub fn set_mention_with_text(
-        &mut self,
-        url: S,
-        text: S,
-        attributes: Vec<(S, S)>,
-    ) -> ComposerUpdate<S> {
-        let (s, _) = self.safe_selection();
-        self.push_state_to_history();
-        self.do_replace_text(text.clone());
-        let e = s + text.len();
-        let range = self.state.dom.find_range(s, e);
-        self.set_link_in_range(url, range, Some(attributes))
+        self.set_link_in_range(url, range)
     }
 
     pub fn set_link(&mut self, url: S) -> ComposerUpdate<S> {
@@ -133,14 +152,13 @@ where
 
         let range = self.state.dom.find_range(s, e);
 
-        self.set_link_in_range(url, range, None)
+        self.set_link_in_range(url, range)
     }
 
     fn set_link_in_range(
         &mut self,
         mut url: S,
         range: Range,
-        attributes: Option<Vec<(S, S)>>,
     ) -> ComposerUpdate<S> {
         self.add_http_scheme(&mut url);
 
@@ -223,11 +241,7 @@ where
 
         for (_, s, e) in split_points.into_iter() {
             let range = self.state.dom.find_range(s, e);
-            // Determine if we are adding a link or a mention
-            let new_node = match attributes.clone() {
-                Some(attrs) => DomNode::new_mention(url.clone(), vec![], attrs),
-                None => DomNode::new_link(url.clone(), vec![]),
-            };
+            let new_node = DomNode::new_link(url.clone(), vec![]);
 
             // Create a new link node containing the passed range
             let inserted = self.state.dom.insert_parent(&range, new_node);
