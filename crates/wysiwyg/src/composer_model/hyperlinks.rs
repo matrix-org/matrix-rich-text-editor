@@ -45,7 +45,7 @@ where
                 self.state.dom.lookup_container(&first_loc.node_handle);
             // Edit the first link of the selection.
             LinkAction::Edit(first_link.get_link_url().unwrap())
-        } else if s == e || self.is_blank_selection(range.clone()) {
+        } else if s == e || self.is_blank_selection(range) {
             LinkAction::CreateWithText
         } else {
             LinkAction::Create
