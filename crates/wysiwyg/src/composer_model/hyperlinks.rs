@@ -99,8 +99,23 @@ where
     /// Will grow to deal with containers, for now it's only going to deal with text nodes
     fn insert_at_cursor(&mut self, node: DomNode<S>) {
         let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
 
+        // limit the functionality to a cursor initially, so do nothing if we don't have a cursor
         if s != e {
+            return;
+        }
+
+        // if range.locations is empty, we've cleared out the composer so insert into the composer
+        // and move the cursor to the end
+        if range.locations.is_empty() {
+            let new_cursor_position = node.text_len();
+
+            self.state.dom.append_at_end_of_document(node);
+
+            self.state.start = Location::from(new_cursor_position);
+            self.state.end = Location::from(new_cursor_position);
+
             return;
         }
     }
