@@ -42,6 +42,7 @@ mod sys {
     use crate::dom::nodes::dom_node::DomNodeKind;
     use crate::dom::nodes::dom_node::DomNodeKind::CodeBlock;
     use crate::dom::nodes::{ContainerNode, DomNode};
+    use crate::dom::parser::sys::PaNodeText;
     use crate::ListType;
 
     pub(super) struct HtmlParser {
@@ -177,23 +178,37 @@ mod sys {
                     self.current_path.remove(cur_path_idx);
                 }
                 "a" => {
-                    // TODO add some logic here to determine if it's a mention or a link
-                    self.current_path.push(DomNodeKind::Link);
+                    // TODO: Replace this logic with real mention detection
+                    // The only mention that is currently detected is the
+                    // example mxid, @test:example.org.
+                    let is_mention = child.attrs.iter().any(|(k, v)| {
+                        k == &String::from("href")
+                            && v.starts_with(
+                                "https://matrix.to/#/@test:example.org",
+                            )
+                    });
 
-                    // TODO: don't commit like this, refactor
-                    let first_grandchild =
+                    let text =
                         child.children.first().map(|gc| padom.get_node(gc));
+                    let text = match text {
+                        Some(PaDomNode::Text(text)) => Some(text),
+                        _ => None,
+                    };
 
-                    let link = Self::new_link(child, first_grandchild);
-                    if link.is_container_node() {
+                    if is_mention && matches!(text, Some(_)) {
+                        self.current_path.push(DomNodeKind::Mention);
+                        let mention = Self::new_mention(child, &text.unwrap());
+                        node.append_child(mention);
+                    } else {
+                        self.current_path.push(DomNodeKind::Link);
+
+                        let link = Self::new_link(child);
                         node.append_child(link);
                         self.convert_children(
                             padom,
                             child,
                             last_container_mut_in(node),
                         );
-                    } else {
-                        node.append_child(link);
                     }
                     self.current_path.remove(cur_path_idx);
                 }
@@ -275,61 +290,48 @@ mod sys {
         }
 
         /// Create a link node
-        fn new_link<S>(
-            child: &PaNodeContainer,
-            grandchild: Option<&PaDomNode>,
+        fn new_link<S>(child: &PaNodeContainer) -> DomNode<S>
+        where
+            S: UnicodeString,
+        {
+            let attributes = child
+                .attrs
+                .iter()
+                .filter(|(k, _)| k != &String::from("href"))
+                .map(|(k, v)| (k.as_str().into(), v.as_str().into()))
+                .collect();
+            DomNode::Container(ContainerNode::new_link(
+                child.get_attr("href").unwrap_or("").into(),
+                Vec::new(),
+                attributes,
+            ))
+        }
+
+        fn new_mention<S>(
+            link: &PaNodeContainer,
+            text: &PaNodeText,
         ) -> DomNode<S>
         where
             S: UnicodeString,
         {
-            // initial implementation, firstly check if we have either `contenteditable=false` or `data-mention-type=`
-            // attributes, if so then we're going to add a mention instead of a link
-            // TODO should this just use `data-mention-type` to simulate a mention? Would need to change some tests
-            // if so
-            //  let is_mention = child.attrs.iter().any(|(k, v)| {
-            //     k == &String::from("contenteditable")
-            //        && v == &String::from("false")
-            //        || k == &String::from("data-mention-type")
-            //  });
-            let text = match grandchild {
-                Some(PaDomNode::Text(text)) => Some(&text.content),
-                _ => None,
-            };
-            let is_mention = child.attrs.iter().any(|(k, v)| {
-                k == &String::from("href") && v.starts_with("https://matrix.to")
-            });
+            let text = &text.content;
+            // if we have a mention, filtering out the href and contenteditable attributes because
+            // we add these attributes when creating the mention and don't want repetition
+            let attributes = link
+                .attrs
+                .iter()
+                .filter(|(k, _)| {
+                    k != &String::from("href")
+                        && k != &String::from("contenteditable")
+                })
+                .map(|(k, v)| (k.as_str().into(), v.as_str().into()))
+                .collect();
 
-            if is_mention && text.is_some() {
-                // if we have a mention, filtering out the href and contenteditable attributes because
-                // we add these attributes when creating the mention and don't want repetition
-                let attributes = child
-                    .attrs
-                    .iter()
-                    .filter(|(k, _)| {
-                        k != &String::from("href")
-                            && k != &String::from("contenteditable")
-                    })
-                    .map(|(k, v)| (k.as_str().into(), v.as_str().into()))
-                    .collect();
-
-                DomNode::new_mention(
-                    child.get_attr("href").unwrap_or("").into(),
-                    text.unwrap().as_str().into(),
-                    attributes,
-                )
-            } else {
-                let attributes = child
-                    .attrs
-                    .iter()
-                    .filter(|(k, _)| k != &String::from("href"))
-                    .map(|(k, v)| (k.as_str().into(), v.as_str().into()))
-                    .collect();
-                DomNode::Container(ContainerNode::new_link(
-                    child.get_attr("href").unwrap_or("").into(),
-                    Vec::new(),
-                    attributes,
-                ))
-            }
+            DomNode::new_mention(
+                link.get_attr("href").unwrap_or("").into(),
+                text.as_str().into(),
+                attributes,
+            )
         }
 
         /// Create a list node

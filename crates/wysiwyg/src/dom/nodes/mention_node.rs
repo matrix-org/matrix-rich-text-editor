@@ -27,18 +27,16 @@ pub struct MentionNode<S>
 where
     S: UnicodeString,
 {
-    name: S,
-    display_text: S,
-    kind: MentionNodeKind,
-    attrs: Vec<(S, S)>,
-    url: Option<S>,
+    kind: MentionNodeKind<S>,
     handle: DomHandle,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum MentionNodeKind {
-    User,
-    Room,
+pub enum MentionNodeKind<S>
+where
+    S: UnicodeString,
+{
+    MatrixUrl { display_text: S, url: S },
     AtRoom,
 }
 
@@ -52,51 +50,36 @@ where
     /// append() it to another node.
     pub fn new(url: S, display_text: S, mut attributes: Vec<(S, S)>) -> Self {
         let handle = DomHandle::new_unset();
-        let name = "mention".into();
 
-        // for now, we're going to check the display_text and attributes to figure out which
-        // mention to build - this is a bit hacky and may change in the future when we
-        // can infer the type directly from the url
-        if display_text == "@room".into() {
-            // we set a placeholder here to ensure semantic html in the output
-            attributes.push(("href".into(), "#".into()));
-            return Self {
-                name,
-                display_text,
-                kind: MentionNodeKind::AtRoom,
-                attrs: attributes,
-                url: None,
-                handle,
-            };
-        }
-
-        attributes.push(("href".into(), url.clone()));
-
-        let kind = if attributes
-            .contains(&(S::from("data-mention-type"), S::from("user")))
-        {
-            MentionNodeKind::User
-        } else {
-            MentionNodeKind::Room
-        };
+        // TODO: do something with the attributes
 
         Self {
-            name,
-            display_text,
-            kind,
-            attrs: attributes,
-            url: Some(url),
+            kind: MentionNodeKind::MatrixUrl { display_text, url },
             handle,
         }
     }
 
-    pub fn display_text(&self) -> &S {
-        &self.display_text
+    pub fn new_at_room() -> Self {
+        let handle = DomHandle::new_unset();
+
+        Self {
+            kind: MentionNodeKind::AtRoom,
+            handle,
+        }
     }
 
-    /**
-     * LIFTED FROM LINE_BREAK_NODE.RS
-     */
+    pub fn name(&self) -> S {
+        S::from("mention")
+    }
+
+    pub fn display_text(&self) -> S {
+        match self.kind() {
+            MentionNodeKind::MatrixUrl { display_text, .. } => {
+                display_text.clone()
+            }
+            MentionNodeKind::AtRoom => S::from("@room"),
+        }
+    }
 
     pub fn set_handle(&mut self, handle: DomHandle) {
         self.handle = handle;
@@ -107,36 +90,13 @@ where
     }
 
     pub fn text_len(&self) -> usize {
+        // A mention needs to act as a single object rather than mutable
+        // text in the editor. So we treat it as having a length of 1.
         1
-        //self.display_text.len()
     }
 
-    /**
-     * LIFTED FROM CONTAINER_NODE.RS
-     */
-    pub fn name(&self) -> &S::Str {
-        &self.name
-    }
-
-    pub fn attributes(&self) -> &Vec<(S, S)> {
-        self.attrs.as_ref()
-    }
-
-    pub fn kind(&self) -> &MentionNodeKind {
+    pub fn kind(&self) -> &MentionNodeKind<S> {
         &self.kind
-    }
-    pub(crate) fn get_mention_url(&self) -> Option<S> {
-        self.url.clone()
-    }
-
-    /// Returns true if the ContainerNode has no children.
-    pub fn is_empty(&self) -> bool {
-        self.display_text.len() == 0
-    }
-
-    /// Returns true if there is no text in this ContainerNode.
-    pub fn has_no_text(&self) -> bool {
-        self.display_text.len() == 0
     }
 }
 
@@ -161,20 +121,28 @@ impl<S: UnicodeString> MentionNode<S> {
         selection_writer: Option<&mut SelectionWriter>,
         _: ToHtmlState,
     ) {
-        assert!(matches!(
-            self.kind,
-            MentionNodeKind::Room
-                | MentionNodeKind::User
-                | MentionNodeKind::AtRoom
-        ));
+        let tag = &S::from("a");
+
         let cur_pos = formatter.len();
+        match self.kind() {
+            MentionNodeKind::MatrixUrl { display_text, url } => {
+                // TODO: clean the attributes for message output
+                let attributes: Vec<(S, S)> = vec![
+                    (S::from("href"), url.clone()),
+                    (S::from("contenteditable"), S::from("false")),
+                    // TODO: data-mention-type = "user" | "room"
+                ];
 
-        let name = S::from("a");
-        self.fmt_tag_open(&name, formatter, self.attrs.clone());
+                self.fmt_tag_open(tag, formatter, attributes);
 
-        formatter.push(self.display_text.clone());
+                formatter.push(display_text.clone());
 
-        self.fmt_tag_close(&name, formatter);
+                self.fmt_tag_close(tag, formatter);
+            }
+            MentionNodeKind::AtRoom => {
+                formatter.push(self.display_text());
+            }
+        }
 
         if let Some(sel_writer) = selection_writer {
             sel_writer.write_selection_mention_node(formatter, cur_pos, self);
@@ -216,8 +184,7 @@ where
     S: UnicodeString,
 {
     fn to_raw_text(&self) -> S {
-        // no idea if this is correct
-        self.display_text.clone()
+        self.display_text()
     }
 }
 
@@ -226,8 +193,7 @@ where
     S: UnicodeString,
 {
     fn to_plain_text(&self) -> S {
-        // no idea if this is correct
-        self.display_text.clone()
+        self.display_text()
     }
 }
 
@@ -236,14 +202,18 @@ where
     S: UnicodeString,
 {
     fn to_tree_display(&self, continuous_positions: Vec<usize>) -> S {
-        let mut description = self.name.clone();
+        let mut description: S = self.name();
 
-        if let Some(url) = &self.url {
-            description.push(" \"");
-            description.push(self.display_text.clone());
-            description.push(", ");
-            description.push(url.clone());
-            description.push("\"");
+        description.push(" \"");
+        description.push(self.display_text());
+        description.push(" \"");
+        description.push(", ");
+
+        match self.kind() {
+            MentionNodeKind::MatrixUrl { url, .. } => {
+                description.push(url.clone());
+            }
+            MentionNodeKind::AtRoom => {}
         }
 
         let tree_part = self.tree_line(
@@ -269,7 +239,7 @@ where
 
         // There are two different functions to allow for fact one will use mxId later on
         match self.kind() {
-            User | Room => {
+            MatrixUrl { .. } => {
                 fmt_user_or_room_mention(self, buffer)?;
             }
             AtRoom => {
@@ -288,7 +258,7 @@ where
             S: UnicodeString,
         {
             // TODO make this use mxId, for now we use display_text
-            buffer.push(this.display_text.clone());
+            buffer.push(this.display_text());
             Ok(())
         }
 
@@ -300,8 +270,7 @@ where
         where
             S: UnicodeString,
         {
-            // should this be "@room".into()? not sure what's clearer
-            buffer.push(this.display_text.clone());
+            buffer.push(this.display_text());
             Ok(())
         }
     }
