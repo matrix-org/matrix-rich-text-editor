@@ -232,16 +232,25 @@ impl ComposerModel {
         url: String,
         text: String,
         suggestion: SuggestionPattern,
-        _: Vec<Attribute>, // TODO: remove
+        attributes: Vec<Attribute>,
     ) -> Arc<ComposerUpdate> {
         let url = Utf16String::from_str(&url);
         let text = Utf16String::from_str(&text);
         let suggestion = wysiwyg::SuggestionPattern::from(suggestion);
+        let attrs = attributes
+            .iter()
+            .map(|attr| {
+                (
+                    Utf16String::from_str(&attr.key),
+                    Utf16String::from_str(&attr.value),
+                )
+            })
+            .collect();
         Arc::new(ComposerUpdate::from(
             self.inner
                 .lock()
                 .unwrap()
-                .set_mention_from_suggestion(url, text, suggestion),
+                .set_mention_from_suggestion(url, text, suggestion, attrs),
         ))
     }
 
