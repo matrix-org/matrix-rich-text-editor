@@ -205,10 +205,23 @@ impl ComposerModel {
         Arc::new(ComposerUpdate::from(self.inner.lock().unwrap().redo()))
     }
 
-    pub fn set_link(self: &Arc<Self>, url: String) -> Arc<ComposerUpdate> {
+    pub fn set_link(
+        self: &Arc<Self>,
+        url: String,
+        attributes: Vec<Attribute>,
+    ) -> Arc<ComposerUpdate> {
         let url = Utf16String::from_str(&url);
+        let attrs = attributes
+            .iter()
+            .map(|attr| {
+                (
+                    Utf16String::from_str(&attr.key),
+                    Utf16String::from_str(&attr.value),
+                )
+            })
+            .collect();
         Arc::new(ComposerUpdate::from(
-            self.inner.lock().unwrap().set_link(url),
+            self.inner.lock().unwrap().set_link(url, attrs),
         ))
     }
 
@@ -216,11 +229,24 @@ impl ComposerModel {
         self: &Arc<Self>,
         url: String,
         text: String,
+        attributes: Vec<Attribute>,
     ) -> Arc<ComposerUpdate> {
         let url = Utf16String::from_str(&url);
         let text = Utf16String::from_str(&text);
+        let attrs = attributes
+            .iter()
+            .map(|attr| {
+                (
+                    Utf16String::from_str(&attr.key),
+                    Utf16String::from_str(&attr.value),
+                )
+            })
+            .collect();
         Arc::new(ComposerUpdate::from(
-            self.inner.lock().unwrap().set_link_with_text(url, text),
+            self.inner
+                .lock()
+                .unwrap()
+                .set_link_with_text(url, text, attrs),
         ))
     }
 
@@ -250,7 +276,7 @@ impl ComposerModel {
             self.inner
                 .lock()
                 .unwrap()
-                .set_mention_from_suggestion(url, text, suggestion, attrs),
+                .set_link_suggestion(url, text, suggestion, attrs),
         ))
     }
 

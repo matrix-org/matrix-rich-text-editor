@@ -862,6 +862,38 @@ fn html_delete_word_for_empty_list_item() {
 }
 
 #[test]
+fn backspace_immutable_link_from_edge_of_link() {
+    let mut model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">test|</a>",
+    );
+    model.backspace();
+    assert_eq!(restore_whitespace(&tx(&model)), "|");
+}
+
+#[test]
+fn backspace_immutable_link_from_inside_link() {
+    let mut model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">tes|t</a>",
+    );
+    model.backspace();
+    assert_eq!(restore_whitespace(&tx(&model)), "|");
+}
+
+#[test]
+fn backspace_immutable_link_multiple() {
+    let mut model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">first</a><a contenteditable=\"false\" href=\"https://matrix.org\">second|</a>",
+    );
+    model.backspace();
+    assert_eq!(
+        restore_whitespace(&tx(&model)),
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">first|</a>"
+    );
+    model.backspace();
+    assert_eq!(restore_whitespace(&tx(&model)), "|");
+}
+
+#[test]
 fn backspace_mention_multiple() {
     let mut model = cm(
         "<a href=\"https://matrix.to/#/mention\">first</a><a href=\"https://matrix.to/#/mention\">second</a>|",
@@ -876,6 +908,15 @@ fn backspace_mention_multiple() {
 }
 
 #[test]
+fn backspace_word_from_edge_of_immutable_link() {
+    let mut model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">two words|</a>",
+    );
+    model.backspace_word();
+    assert_eq!(restore_whitespace(&tx(&model)), "|");
+}
+
+#[test]
 fn backspace_mention_from_end() {
     let mut model = cm("<a href=\"https://matrix.to/#/mention\">mention</a>|");
     model.backspace_word();
@@ -883,8 +924,40 @@ fn backspace_mention_from_end() {
 }
 
 #[test]
+fn delete_immutable_link_from_edge_of_link() {
+    let mut model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">|test</a>",
+    );
+    model.delete();
+    assert_eq!(restore_whitespace(&tx(&model)), "|");
+}
+
+#[test]
+fn delete_immutable_link_from_inside_link() {
+    let mut model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">te|st</a>",
+    );
+    model.delete();
+    assert_eq!(restore_whitespace(&tx(&model)), "|");
+}
+
+#[test]
 fn delete_mention_from_start() {
     let mut model = cm("|<a href=\"https://matrix.to/#/mention\">test</a>");
+    model.delete();
+    assert_eq!(restore_whitespace(&tx(&model)), "|");
+}
+
+#[test]
+fn delete_first_immutable_link_of_multiple() {
+    let mut model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">|first</a><a contenteditable=\"false\" href=\"https://matrix.org\">second</a>",
+    );
+    model.delete();
+    assert_eq!(
+        restore_whitespace(&tx(&model)),
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">|second</a>"
+    );
     model.delete();
     assert_eq!(restore_whitespace(&tx(&model)), "|");
 }
@@ -900,6 +973,20 @@ fn delete_first_mention_of_multiple() {
         "|<a href=\"https://matrix.to/#/mention\">second</a>"
     );
     model.delete();
+    assert_eq!(restore_whitespace(&tx(&model)), "|");
+}
+
+#[test]
+fn delete_second_immutable_link_of_multiple() {
+    let mut model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">first</a><a contenteditable=\"false\" href=\"https://matrix.org\">second|</a>",
+    );
+    model.backspace();
+    assert_eq!(
+        restore_whitespace(&tx(&model)),
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">first|</a>"
+    );
+    model.backspace();
     assert_eq!(restore_whitespace(&tx(&model)), "|");
 }
 

@@ -121,7 +121,6 @@ mod test {
     }
 
     #[test]
-    #[ignore]
     fn test_set_link_suggestion_ffi() {
         let model = Arc::new(ComposerModel::new());
         let update = model.replace_text("@alic".into());
@@ -136,14 +135,20 @@ mod test {
             "https://matrix.to/#/@alice:matrix.org".into(),
             "Alice".into(),
             suggestion_pattern,
-            vec![Attribute {
-                key: "data-mention-type".into(),
-                value: "user".into(),
-            }],
+            vec![
+                Attribute {
+                    key: "contenteditable".into(),
+                    value: "false".into(),
+                },
+                Attribute {
+                    key: "data-mention-type".into(),
+                    value: "user".into(),
+                },
+            ],
         );
         assert_eq!(
             model.get_content_as_html(),
-            "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>\u{a0}",
+            "<a contenteditable=\"false\" data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>\u{a0}",
         )
     }
 

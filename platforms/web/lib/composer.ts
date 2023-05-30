@@ -73,14 +73,18 @@ export function processInput(
         case 'insertSuggestion': {
             if (suggestion && isSuggestionEvent(event)) {
                 const { text, url, attributes } = event.data;
-                const attributesMap = new Map(Object.entries(attributes));
+                const defaultMap = new Map();
+                defaultMap.set('contenteditable', 'false');
+                Object.entries(attributes).forEach(([key, value]) => {
+                    defaultMap.set(key, value);
+                });
 
                 return action(
                     composerModel.set_link_suggestion(
                         url,
                         text,
                         suggestion,
-                        attributesMap,
+                        defaultMap,
                     ),
                     'set_link_suggestion',
                 );
@@ -178,8 +182,8 @@ export function processInput(
                 const { text, url } = event.data;
                 return action(
                     text
-                        ? composerModel.set_link_with_text(url, text)
-                        : composerModel.set_link(url),
+                        ? composerModel.set_link_with_text(url, text, new Map())
+                        : composerModel.set_link(url, new Map()),
                     'insertLink',
                 );
             }

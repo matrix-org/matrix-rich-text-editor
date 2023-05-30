@@ -34,7 +34,7 @@ fn test_set_link_suggestion_no_attributes() {
     let MenuAction::Suggestion(suggestion) = update.menu_action else {
         panic!("No suggestion pattern found")
     };
-    model.set_mention_from_suggestion(
+    model.set_link_suggestion(
         "https://matrix.to/#/@alice:matrix.org".into(),
         "Alice".into(),
         suggestion,
@@ -42,7 +42,7 @@ fn test_set_link_suggestion_no_attributes() {
     );
     assert_eq!(
         tx(&model),
-        "<a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|",
+        "<a href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>&nbsp;|",
     );
 }
 
@@ -53,14 +53,17 @@ fn test_set_link_suggestion_with_attributes() {
     let MenuAction::Suggestion(suggestion) = update.menu_action else {
         panic!("No suggestion pattern found")
     };
-    model.set_mention_from_suggestion(
+    model.set_link_suggestion(
         "https://matrix.to/#/@alice:matrix.org".into(),
         "Alice".into(),
         suggestion,
-        vec![("data-mention-type".into(), "user".into())],
+        vec![
+            ("contenteditable".into(), "false".into()),
+            ("data-mention-type".into(), "user".into()),
+        ],
     );
     assert_eq!(
         tx(&model),
-        "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|",
+         "<a contenteditable=\"false\" data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>&nbsp;|",
     );
 }

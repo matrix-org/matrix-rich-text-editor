@@ -318,9 +318,16 @@ mod sys {
                     attributes,
                 )
             } else {
+                let attributes = child
+                    .attrs
+                    .iter()
+                    .filter(|(k, _)| k != &String::from("href"))
+                    .map(|(k, v)| (k.as_str().into(), v.as_str().into()))
+                    .collect();
                 DomNode::Container(ContainerNode::new_link(
                     child.get_attr("href").unwrap_or("").into(),
                     Vec::new(),
+                    attributes,
                 ))
             }
         }
@@ -778,7 +785,8 @@ mod js {
                             .has_attribute("data-mention-type");
 
                         let mut attributes = vec![];
-                        let valid_attributes = ["data-mention-type", "style"];
+                        let valid_attributes =
+                            ["contenteditable", "data-mention-type", "style"];
 
                         for attr in valid_attributes.into_iter() {
                             if node
@@ -808,7 +816,9 @@ mod js {
                                 url, children, attributes,
                             ));
                         } else {
-                            dom.append_child(DomNode::new_link(url, children));
+                            dom.append_child(DomNode::new_link(
+                                url, children, attributes,
+                            ));
                         }
 
                         self.current_path.pop();

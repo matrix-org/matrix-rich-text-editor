@@ -16,7 +16,6 @@ use std::cmp::{max, min};
 
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::DomNodeKind::{Link, List};
-use crate::dom::nodes::dom_node::{DomNodeKind::LineBreak, DomNodeKind::Text};
 use crate::dom::nodes::ContainerNodeKind;
 use crate::dom::nodes::DomNode;
 use crate::dom::unicode_string::UnicodeStrExt;
@@ -43,8 +42,20 @@ where
         if let Some(first_loc) = iter.next() {
             let first_link =
                 self.state.dom.lookup_container(&first_loc.node_handle);
-            // Edit the first link of the selection.
-            LinkAction::Edit(first_link.get_link_url().unwrap())
+            // If any of the link in the selection is immutable, link actions are disabled.
+            if first_link.is_immutable()
+                || iter.any(|loc| {
+                    self.state
+                        .dom
+                        .lookup_container(&loc.node_handle)
+                        .is_immutable()
+                })
+            {
+                LinkAction::Disabled
+            } else {
+                // Otherwise we edit the first link of the selection.
+                LinkAction::Edit(first_link.get_link_url().unwrap())
+            }
         } else if s == e || self.is_blank_selection(range) {
             LinkAction::CreateWithText
         } else {
@@ -52,7 +63,7 @@ where
         }
     }
 
-    pub fn set_mention_from_suggestion(
+    pub fn set_link_suggestion(
         &mut self,
         url: S,
         text: S,
@@ -66,7 +77,7 @@ where
         self.do_replace_text_in(S::default(), suggestion.start, suggestion.end);
         self.state.start = Location::from(suggestion.start);
         self.state.end = self.state.start;
-        self.set_mention_with_text(url, text, attributes);
+        self.set_link_with_text(url, text, attributes);
         self.do_replace_text(" ".into())
     }
 
@@ -101,16 +112,7 @@ where
         true
     }
 
-    pub fn set_link_with_text(&mut self, url: S, text: S) -> ComposerUpdate<S> {
-        let (s, _) = self.safe_selection();
-        self.push_state_to_history();
-        self.do_replace_text(text.clone());
-        let e = s + text.len();
-        let range = self.state.dom.find_range(s, e);
-        self.set_link_in_range(url, range, None)
-    }
-
-    pub fn set_mention_with_text(
+    pub fn set_link_with_text(
         &mut self,
         url: S,
         text: S,
@@ -121,23 +123,27 @@ where
         self.do_replace_text(text.clone());
         let e = s + text.len();
         let range = self.state.dom.find_range(s, e);
-        self.set_link_in_range(url, range, Some(attributes))
+        self.set_link_in_range(url, range, attributes)
     }
 
-    pub fn set_link(&mut self, url: S) -> ComposerUpdate<S> {
+    pub fn set_link(
+        &mut self,
+        url: S,
+        attributes: Vec<(S, S)>,
+    ) -> ComposerUpdate<S> {
         self.push_state_to_history();
         let (s, e) = self.safe_selection();
 
         let range = self.state.dom.find_range(s, e);
 
-        self.set_link_in_range(url, range, None)
+        self.set_link_in_range(url, range, attributes)
     }
 
     fn set_link_in_range(
         &mut self,
         mut url: S,
         range: Range,
-        attributes: Option<Vec<(S, S)>>,
+        attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
         self.add_http_scheme(&mut url);
 
@@ -220,10 +226,12 @@ where
 
         for (_, s, e) in split_points.into_iter() {
             let range = self.state.dom.find_range(s, e);
-            let new_node = DomNode::new_link(url.clone(), vec![]);
 
             // Create a new link node containing the passed range
-            let inserted = self.state.dom.insert_parent(&range, new_node);
+            let inserted = self.state.dom.insert_parent(
+                &range,
+                DomNode::new_link(url.clone(), vec![], attributes.clone()),
+            );
 
             // Remove any child links inside it
             self.delete_child_links(&inserted);

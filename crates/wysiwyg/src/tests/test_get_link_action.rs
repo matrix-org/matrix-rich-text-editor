@@ -182,6 +182,65 @@ fn get_link_action_on_blank_selection_after_a_link() {
 
 #[test]
 fn get_link_action_on_selected_immutable_link() {
+    let model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">{test}|</a>",
+    );
+    assert_eq!(model.get_link_action(), LinkAction::Disabled);
+}
+#[test]
+fn get_link_action_on_immutable_link_leading() {
+    let model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">|test</a>",
+    );
+    assert_eq!(model.get_link_action(), LinkAction::Disabled);
+}
+#[test]
+fn get_link_action_on_immutable_link_trailing() {
+    let model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">test|</a>",
+    );
+    assert_eq!(model.get_link_action(), LinkAction::Disabled);
+}
+#[test]
+fn get_link_action_on_cross_selected_immutable_link() {
+    let model = cm(
+        "<a contenteditable=\"false\" href=\"https://matrix.org\">te{st</a>text}|",
+    );
+    assert_eq!(model.get_link_action(), LinkAction::Disabled);
+}
+#[test]
+fn get_link_action_on_multiple_link_with_first_immutable() {
+    let mut model = cm(indoc! {r#"
+        <a contenteditable="false" href="https://matrix.org">{Matrix_immut</a>
+        text
+        <a href="https://rust-lang.org">Rust_mut}|</a>
+    "#});
+    assert_eq!(model.get_link_action(), LinkAction::Disabled);
+    // Selecting the mutable link afterwards works
+    model.select(Location::from(20), Location::from(20));
+    assert_eq!(
+        model.get_link_action(),
+        LinkAction::Edit("https://rust-lang.org".into()),
+    );
+}
+#[test]
+fn get_link_action_on_multiple_link_with_last_immutable() {
+    let mut model = cm(indoc! {r#"
+        <a href="https://rust-lang.org">{Rust_mut</a>
+        text
+        <a contenteditable="false" href="https://matrix.org">Matrix_immut}|</a>
+    "#});
+    assert_eq!(model.get_link_action(), LinkAction::Disabled);
+    // Selecting the mutable link afterwards works
+    model.select(Location::from(0), Location::from(0));
+    assert_eq!(
+        model.get_link_action(),
+        LinkAction::Edit("https://rust-lang.org".into()),
+    );
+}
+
+#[test]
+fn get_link_action_on_selected_mention() {
     let model =
         cm("{<a href=\"https://matrix.to/#/@test:example.org\">test</a>}|");
     assert_eq!(model.get_link_action(), LinkAction::Create);

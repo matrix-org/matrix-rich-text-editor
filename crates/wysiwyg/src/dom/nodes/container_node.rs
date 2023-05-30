@@ -324,6 +324,16 @@ where
         matches!(self.kind, ContainerNodeKind::ListItem)
     }
 
+    pub fn is_immutable(&self) -> bool {
+        self.attributes()
+            .unwrap_or(&vec![])
+            .contains(&("contenteditable".into(), "false".into()))
+    }
+
+    pub fn is_immutable_link(&self) -> bool {
+        matches!(self.kind, ContainerNodeKind::Link(_) if self.is_immutable())
+    }
+
     pub fn is_list(&self) -> bool {
         matches!(self.kind, ContainerNodeKind::List(_))
     }
@@ -369,9 +379,15 @@ where
         children_len + block_nodes_extra
     }
 
-    // links only ever have hrefs
-    pub fn new_link(url: S, children: Vec<DomNode<S>>) -> Self {
-        let attributes = vec![("href".into(), url.clone())];
+    pub fn new_link(
+        url: S,
+        children: Vec<DomNode<S>>,
+        mut attributes: Vec<(S, S)>,
+    ) -> Self {
+        // Hosting application may provide attributes but always provides url, this
+        // allows the Rust code to stay as generic as possible, since it should only care about
+        // `contenteditable="false"` to implement custom behaviours for immutable links.
+        attributes.push(("href".into(), url.clone()));
 
         Self {
             name: "a".into(),
