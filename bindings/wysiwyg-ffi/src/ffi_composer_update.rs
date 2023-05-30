@@ -121,7 +121,7 @@ mod test {
     }
 
     #[test]
-    fn test_set_link_suggestion_ffi() {
+    fn test_replace_whole_suggestion_with_mention_ffi() {
         let model = Arc::new(ComposerModel::new());
         let update = model.replace_text("@alic".into());
 
@@ -149,6 +149,92 @@ mod test {
         assert_eq!(
             model.get_content_as_html(),
             "<a contenteditable=\"false\" data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>\u{a0}",
+        )
+    }
+
+    #[test]
+    fn test_replace_end_of_text_node_with_mention_ffi() {
+        let model = Arc::new(ComposerModel::new());
+        model.replace_text("hello ".into());
+
+        let update = model.replace_text("@ali".into());
+
+        let MenuAction::Suggestion { suggestion_pattern } =
+            update.menu_action() else
+        {
+            panic!("No suggestion found");
+        };
+
+        model.set_link_suggestion(
+            "https://matrix.to/#/@alice:matrix.org".into(),
+            "Alice".into(),
+            suggestion_pattern,
+            vec![Attribute {
+                key: "data-mention-type".into(),
+                value: "user".into(),
+            }],
+        );
+        assert_eq!(
+            model.get_content_as_html(),
+            "hello <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>\u{a0}",
+        )
+    }
+
+    #[test]
+    fn test_replace_start_of_text_node_with_mention_ffi() {
+        let model = Arc::new(ComposerModel::new());
+        model.replace_text(" says hello".into());
+        model.select(0, 0);
+
+        let update = model.replace_text("@ali".into());
+
+        let MenuAction::Suggestion { suggestion_pattern } =
+            update.menu_action() else
+        {
+            panic!("No suggestion found");
+        };
+
+        model.set_link_suggestion(
+            "https://matrix.to/#/@alice:matrix.org".into(),
+            "Alice".into(),
+            suggestion_pattern,
+            vec![Attribute {
+                key: "data-mention-type".into(),
+                value: "user".into(),
+            }],
+        );
+        assert_eq!(
+            model.get_content_as_html(),
+            "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a> says hello",
+        )
+    }
+
+    #[test]
+    fn test_replace_text_in_middle_of_node_with_mention_ffi() {
+        let model = Arc::new(ComposerModel::new());
+        model.replace_text("Like  said".into());
+        model.select(5, 5); // "Like | said"
+
+        let update = model.replace_text("@ali".into());
+
+        let MenuAction::Suggestion { suggestion_pattern } =
+            update.menu_action() else
+        {
+            panic!("No suggestion found");
+        };
+
+        model.set_link_suggestion(
+            "https://matrix.to/#/@alice:matrix.org".into(),
+            "Alice".into(),
+            suggestion_pattern,
+            vec![Attribute {
+                key: "data-mention-type".into(),
+                value: "user".into(),
+            }],
+        );
+        assert_eq!(
+            model.get_content_as_html(),
+            "Like <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a> said",
         )
     }
 
