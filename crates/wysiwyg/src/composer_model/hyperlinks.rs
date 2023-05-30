@@ -70,15 +70,28 @@ where
         suggestion: SuggestionPattern,
         attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
-        // TODO - this function allows us to accept a Vec of attributes to add to the Link we create,
-        // but these attributes will be present in the html of the message we output. We may need to
-        // add a step in the future that strips these attributes from the html before it is sent.
+        // This function removes the text between the suggestion start and end points, updates the cursor position
+        // and then calls set_mention_with_text (for equivalence with stages for inserting a link)
 
         self.do_replace_text_in(S::default(), suggestion.start, suggestion.end);
         self.state.start = Location::from(suggestion.start);
         self.state.end = self.state.start;
-        self.set_link_with_text(url, text, attributes);
+
+        self.set_mention_with_text(url, text, attributes);
         self.do_replace_text(" ".into())
+    }
+
+    pub fn set_mention_with_text(
+        &mut self,
+        url: S,
+        text: S,
+        attributes: Vec<(S, S)>,
+    ) -> ComposerUpdate<S> {
+        // this function is similar to set_link_with_text, but now we call a new simpler insertion method
+        self.push_state_to_history();
+        let mention_node = DomNode::new_mention(url, text, attributes);
+        self.state.dom.insert_at_cursor(mention_node);
+        self.create_update_replace_all()
     }
 
     fn is_blank_selection(&self, range: Range) -> bool {
@@ -113,25 +126,16 @@ where
         true
     }
 
-    pub fn set_link_with_text(
-        &mut self,
-        url: S,
-        text: S,
-        attributes: Vec<(S, S)>,
-    ) -> ComposerUpdate<S> {
+    pub fn set_link_with_text(&mut self, url: S, text: S) -> ComposerUpdate<S> {
         let (s, _) = self.safe_selection();
         self.push_state_to_history();
         self.do_replace_text(text.clone());
         let e = s + text.len();
         let range = self.state.dom.find_range(s, e);
-        self.set_link_in_range(url, range, attributes)
+        self.set_link_in_range(url, range, None)
     }
 
-    pub fn set_link(
-        &mut self,
-        url: S,
-        attributes: Vec<(S, S)>,
-    ) -> ComposerUpdate<S> {
+    pub fn set_link(&mut self, url: S) -> ComposerUpdate<S> {
         self.push_state_to_history();
         let (s, e) = self.safe_selection();
 
