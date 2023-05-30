@@ -320,10 +320,6 @@ where
         matches!(self.kind, ContainerNodeKind::Link(_))
     }
 
-    pub fn is_list_item(&self) -> bool {
-        matches!(self.kind, ContainerNodeKind::ListItem)
-    }
-
     pub fn is_immutable(&self) -> bool {
         self.attributes()
             .unwrap_or(&vec![])
@@ -332,6 +328,10 @@ where
 
     pub fn is_immutable_link(&self) -> bool {
         matches!(self.kind, ContainerNodeKind::Link(_) if self.is_immutable())
+    }
+
+    pub fn is_list_item(&self) -> bool {
+        matches!(self.kind, ContainerNodeKind::ListItem)
     }
 
     pub fn is_list(&self) -> bool {
@@ -418,10 +418,10 @@ where
     }
 
     pub(crate) fn get_link_url(&self) -> Option<S> {
-        match self.kind.clone() {
-            ContainerNodeKind::Link(url) => Some(url),
-            _ => None,
-        }
+        let ContainerNodeKind::Link(url) = self.kind.clone() else {
+            return None
+        };
+        Some(url)
     }
 
     /// Creates a container with the same kind & attributes
@@ -850,7 +850,6 @@ where
 {
     fn to_tree_display(&self, continuous_positions: Vec<usize>) -> S {
         let mut description = self.name.clone();
-        // TODO need to handle mentions in the tree display
         if let ContainerNodeKind::Link(url) = self.kind() {
             description.push(" \"");
             description.push(url.clone());

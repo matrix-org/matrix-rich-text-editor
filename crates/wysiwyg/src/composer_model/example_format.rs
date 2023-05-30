@@ -25,7 +25,7 @@ use crate::dom::to_html::ToHtmlState;
 use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
 use crate::dom::{Dom, DomLocation};
 use crate::{
-    ComposerModel, DomHandle, DomNode, Location, ToHtml, ToTree, UnicodeString,
+    ComposerModel, DomHandle, DomNode, Location, ToHtml, UnicodeString,
 };
 
 impl ComposerModel<Utf16String> {
@@ -213,29 +213,6 @@ impl ComposerModel<Utf16String> {
                 }
             }
             DomNode::Mention(mention_node) => {
-                let start_pos = *offset;
-                //  let data: &Utf16Str = mention_node.display_text();
-                //  for ch in data.chars() {
-                //      if ch == '{' {
-                //          start = Some(SelectionLocation::new(
-                //              node.handle(),
-                //              start_pos,
-                //              0,
-                //          ));
-                //      } else if ch == '}' {
-                //          end = Some(SelectionLocation::new(
-                //              node.handle(),
-                //              start_pos,
-                //              0,
-                //          ));
-                //      } else if ch == '|' {
-                //          curs = Some(SelectionLocation::new(
-                //              node.handle(),
-                //              start_pos,
-                //              0,
-                //          ));
-                //      }
-                //  }
                 *offset += mention_node.text_len();
             }
             _ => {

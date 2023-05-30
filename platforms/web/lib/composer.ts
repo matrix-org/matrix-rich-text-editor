@@ -78,7 +78,6 @@ export function processInput(
                 Object.entries(attributes).forEach(([key, value]) => {
                     defaultMap.set(key, value);
                 });
-
                 return action(
                     composerModel.set_link_suggestion(
                         url,

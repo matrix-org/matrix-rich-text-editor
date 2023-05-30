@@ -187,6 +187,7 @@ fn get_link_action_on_selected_immutable_link() {
     );
     assert_eq!(model.get_link_action(), LinkAction::Disabled);
 }
+
 #[test]
 fn get_link_action_on_immutable_link_leading() {
     let model = cm(
@@ -194,6 +195,7 @@ fn get_link_action_on_immutable_link_leading() {
     );
     assert_eq!(model.get_link_action(), LinkAction::Disabled);
 }
+
 #[test]
 fn get_link_action_on_immutable_link_trailing() {
     let model = cm(
@@ -201,6 +203,7 @@ fn get_link_action_on_immutable_link_trailing() {
     );
     assert_eq!(model.get_link_action(), LinkAction::Disabled);
 }
+
 #[test]
 fn get_link_action_on_cross_selected_immutable_link() {
     let model = cm(
@@ -208,6 +211,7 @@ fn get_link_action_on_cross_selected_immutable_link() {
     );
     assert_eq!(model.get_link_action(), LinkAction::Disabled);
 }
+
 #[test]
 fn get_link_action_on_multiple_link_with_first_immutable() {
     let mut model = cm(indoc! {r#"
@@ -223,6 +227,7 @@ fn get_link_action_on_multiple_link_with_first_immutable() {
         LinkAction::Edit("https://rust-lang.org".into()),
     );
 }
+
 #[test]
 fn get_link_action_on_multiple_link_with_last_immutable() {
     let mut model = cm(indoc! {r#"

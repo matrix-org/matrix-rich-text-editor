@@ -83,7 +83,6 @@ where
 
     fn is_blank_selection(&self, range: Range) -> bool {
         for leaf in range.leaves() {
-            println!(" checking leaf in range {:?}", leaf);
             match leaf.kind {
                 DomNodeKind::Text => {
                     let text_node = self
