@@ -88,69 +88,66 @@ where
     ) -> ComposerUpdate<S> {
         // this function is similar to set_link_with_text, but now we call a new simpler insertion method
         self.push_state_to_history();
-        let mention_node = DomNode::new_mention(url, text, attributes);
-        self.insert_at_cursor(mention_node)
+        self.insert_node_at_cursor(DomNode::new_mention(url, text, attributes))
     }
 
-    // WIP
     /// Inserts the given node at the current cursor position
-    /// Will grow to deal with containers, for now it's only going to deal with text nodes
-    fn insert_at_cursor(&mut self, node: DomNode<S>) -> ComposerUpdate<S> {
+    fn insert_node_at_cursor(&mut self, node: DomNode<S>) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
 
+        // manually determine where the cursor will be after we finish the amendment
         let new_cursor_position = s + node.text_len();
 
-        // limit the functionality to a cursor initially, so do nothing if we don't have a cursor
+        let mut should_add_trailing_space = false;
+
+        // do nothing if we don't have a cursor
+        // TODO determine behaviour if we try to insert when we have a selection
         if range.is_selection() {
             ComposerUpdate::<S>::keep();
         }
 
-        // if range.locations is empty, we've cleared out the composer so insert into the composer
-        // and move the cursor to the end
+        // manipulate the state of the dom as required
         if range.is_empty() {
+            // this happens if we replace the whole of a single text node in the composer
             self.state.dom.append_at_end_of_document(node);
+            should_add_trailing_space = true;
+        } else if let Some(leaf) = range.leaves().next() {
+            // when we have a leaf, the way we treat the insertion depends on the cursor position inside that leaf
+            let cursor_at_end = leaf.start_offset == leaf.length;
+            let cursor_at_start = leaf.start_offset == 0;
 
-            self.state.start = Location::from(new_cursor_position);
-            self.state.end = Location::from(new_cursor_position);
-
-            self.do_replace_text(" ".into())
-        } else {
-            // if we have some locations, try and find a leaf to insert into
-            if let Some(leaf_location) = range.leaves().next() {
-                let parent_node =
-                    self.state.dom.parent(&leaf_location.node_handle);
-
-                if leaf_location.start_offset == leaf_location.length {
-                    // the cursor is at the end of the node, so append
-                    self.state.dom.append(&parent_node.handle(), node);
-                    self.state.start = Location::from(new_cursor_position);
-                    self.state.end = Location::from(new_cursor_position);
-                    self.create_update_replace_all();
-
-                    self.do_replace_text(" ".into())
-                } else if leaf_location.start_offset == 0 {
-                    // the cursor is at the beginning of the node, so 'prepend' by inserting at the current node
-                    self.state.dom.insert_at(&leaf_location.node_handle, node);
-                    self.state.start = Location::from(new_cursor_position);
-                    self.state.end = Location::from(new_cursor_position);
-                    self.create_update_replace_all()
-                } else {
-                    // we're in the middle of the node, so do some stuff
-                    // what we're going to do is replace the existing text node with text/mention/text nodes
-                    self.state.dom.insert_into_text(
-                        &leaf_location.node_handle,
-                        leaf_location.start_offset,
-                        node,
-                    );
-                    self.state.start = Location::from(new_cursor_position);
-                    self.state.end = Location::from(new_cursor_position);
-                    self.create_update_replace_all()
-                }
+            if cursor_at_start {
+                // insert the new node before a leaf that contains a cursor at the start
+                self.state.dom.insert_at(&leaf.node_handle, node);
+            } else if cursor_at_end {
+                // insert the new node after a leaf that contains a cursor at the end
+                let parent_node = self.state.dom.parent(&leaf.node_handle);
+                self.state.dom.append(&parent_node.handle(), node);
+                should_add_trailing_space = true;
             } else {
-                ComposerUpdate::keep()
+                // otherwise insert the new node in the middle of a text node
+                self.state.dom.insert_into_text(
+                    &leaf.node_handle,
+                    leaf.start_offset,
+                    node,
+                );
             }
+        } else {
+            // TODO this is the case where we have some locations, but none of them are leaves
+            // ie we are in a container node
+            panic!("TODO implement inserting mention in container node")
         }
+
+        // after manipulation, update cursor position, add a trailing space if desired, return
+        self.state.start = Location::from(new_cursor_position);
+        self.state.end = Location::from(new_cursor_position);
+
+        if should_add_trailing_space {
+            self.do_replace_text(" ".into());
+        }
+
+        self.create_update_replace_all()
     }
 
     fn is_blank_selection(&self, range: Range) -> bool {
