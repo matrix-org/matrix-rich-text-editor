@@ -755,7 +755,7 @@ impl DomHandle {
         match node {
             wysiwyg::DomNode::Container(_) => String::from(""),
             wysiwyg::DomNode::LineBreak(_) => String::from(""),
-            wysiwyg::DomNode::Mention(node) => String::from("TODO"), //node.display_text().to_string(),
+            wysiwyg::DomNode::Mention(node) => node.display_text().to_string(),
             wysiwyg::DomNode::Text(node) => node.data().to_string(),
         }
     }
