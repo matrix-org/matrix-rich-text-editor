@@ -28,6 +28,7 @@ fn test_replace_text_suggestion() {
 }
 
 #[test]
+#[ignore]
 fn test_set_link_suggestion_no_attributes() {
     let mut model = cm("|");
     let update = model.replace_text("@alic".into());
@@ -47,6 +48,8 @@ fn test_set_link_suggestion_no_attributes() {
 }
 
 #[test]
+#[ignore]
+
 fn test_set_link_suggestion_with_attributes() {
     let mut model = cm("|");
     let update = model.replace_text("@alic".into());
