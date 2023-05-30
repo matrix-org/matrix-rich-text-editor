@@ -243,8 +243,6 @@ where
         parent.insert_child(index, node).handle()
     }
 
-    pub fn insert_at_cursor(&mut self, node: DomNode<S>) {}
-
     /// Insert given [nodes] in order at the [node_handle] position,
     /// moving the node at that position forward, if any.
     pub fn insert(

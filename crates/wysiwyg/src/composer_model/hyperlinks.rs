@@ -90,8 +90,19 @@ where
         // this function is similar to set_link_with_text, but now we call a new simpler insertion method
         self.push_state_to_history();
         let mention_node = DomNode::new_mention(url, text, attributes);
-        self.state.dom.insert_at_cursor(mention_node);
+        self.insert_at_cursor(mention_node);
         self.create_update_replace_all()
+    }
+
+    // WIP
+    /// Inserts the given node at the current cursor position
+    /// Will grow to deal with containers, for now it's only going to deal with text nodes
+    fn insert_at_cursor(&mut self, node: DomNode<S>) {
+        let (s, e) = self.safe_selection();
+
+        if s != e {
+            return;
+        }
     }
 
     fn is_blank_selection(&self, range: Range) -> bool {
