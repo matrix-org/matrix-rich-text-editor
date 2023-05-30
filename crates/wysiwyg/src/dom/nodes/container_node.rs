@@ -1306,37 +1306,6 @@ where
 
             Ok(())
         }
-
-        #[inline(always)]
-        fn fmt_mention<S>(
-            this: &ContainerNode<S>,
-            buffer: &mut S,
-            options: &MarkdownOptions,
-            url: &S,
-        ) -> Result<(), MarkdownError<S>>
-        where
-            S: UnicodeString,
-        {
-            buffer.push('[');
-
-            fmt_children(this, buffer, options)?;
-
-            // TODO add some logic here to determine if it's a mention or a link
-            // For the time being, treat this as a link - will need to manipulate the url to get the mxId
-
-            buffer.push("](<");
-            buffer.push(
-                url.to_string()
-                    .replace('<', "\\<")
-                    .replace('>', "\\>")
-                    .replace('(', "\\(")
-                    .replace(')', "\\)")
-                    .as_str(),
-            );
-            buffer.push(">)");
-
-            Ok(())
-        }
     }
 }
 
