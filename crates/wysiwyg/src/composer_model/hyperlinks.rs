@@ -80,7 +80,7 @@ where
         self.set_mention_with_text(url, text, attributes)
     }
 
-    pub fn set_mention_with_text(
+    fn set_mention_with_text(
         &mut self,
         url: S,
         text: S,
