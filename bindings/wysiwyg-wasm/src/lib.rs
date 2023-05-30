@@ -120,6 +120,10 @@ impl ComposerModel {
         self.inner.get_content_as_html().to_string()
     }
 
+    pub fn get_content_as_message_html(&self) -> String {
+        self.inner.get_content_as_message_html().to_string()
+    }
+
     pub fn get_content_as_markdown(&self) -> String {
         self.inner.get_content_as_markdown().to_string()
     }

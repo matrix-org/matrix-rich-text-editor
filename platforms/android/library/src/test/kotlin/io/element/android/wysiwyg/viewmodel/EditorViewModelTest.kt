@@ -417,10 +417,10 @@ internal class EditorViewModelTest {
     }
 
     @Test
-    fun `given formatted text, getHtml function returns formatted HTML`() {
-        composer.givenGetContentAsHtml(htmlParagraphs)
+    fun `given formatted text, getContentAsMessageHtml function returns formatted HTML`() {
+        composer.givenGetContentAsMessageHtml(htmlParagraphs)
 
-        val html = viewModel.getHtml()
+        val html = viewModel.getContentAsMessageHtml()
 
         assertThat(html, equalTo(htmlParagraphs))
     }

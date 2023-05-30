@@ -403,8 +403,11 @@ class EditorEditText : TextInputEditText {
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
-    fun getHtmlOutput(): String {
-        return viewModel.getHtml()
+    /**
+     * Get the editor content as clean HTML suitable for sending as a message
+     */
+    fun getContentAsMessageHtml(): String {
+        return viewModel.getContentAsMessageHtml()
     }
 
     /**

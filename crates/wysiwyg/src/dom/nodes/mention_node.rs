@@ -109,8 +109,9 @@ where
         formatter: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
         state: ToHtmlState,
+        as_message: bool,
     ) {
-        self.fmt_mention_html(formatter, selection_writer, state)
+        self.fmt_mention_html(formatter, selection_writer, state, as_message)
     }
 }
 
@@ -120,18 +121,21 @@ impl<S: UnicodeString> MentionNode<S> {
         formatter: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
         _: ToHtmlState,
+        as_message: bool,
     ) {
         let tag = &S::from("a");
 
         let cur_pos = formatter.len();
         match self.kind() {
             MentionNodeKind::MatrixUrl { display_text, url } => {
-                // TODO: clean the attributes for message output
-                let attributes: Vec<(S, S)> = vec![
-                    (S::from("href"), url.clone()),
-                    (S::from("contenteditable"), S::from("false")),
+                let mut attributes: Vec<(S, S)> =
+                    vec![(S::from("href"), url.clone())];
+
+                if !as_message {
+                    attributes
+                        .push((S::from("contenteditable"), S::from("false")))
                     // TODO: data-mention-type = "user" | "room"
-                ];
+                }
 
                 self.fmt_tag_open(tag, formatter, attributes);
 
