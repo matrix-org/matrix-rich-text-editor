@@ -13,8 +13,8 @@
 // limitations under the License.
 
 use crate::{
-    dom::Range, ComposerModel, ComposerUpdate, DomNode, Location,
-    SuggestionPattern, UnicodeString,
+    ComposerModel, ComposerUpdate, DomNode, Location, SuggestionPattern,
+    UnicodeString,
 };
 
 impl<S> ComposerModel<S>

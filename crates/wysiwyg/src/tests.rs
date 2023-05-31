@@ -21,6 +21,7 @@ pub mod test_get_link_action;
 pub mod test_links;
 pub mod test_lists;
 pub mod test_lists_with_blocks;
+pub mod test_mentions;
 pub mod test_menu_action;
 pub mod test_menu_state;
 pub mod test_paragraphs;
