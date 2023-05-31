@@ -315,23 +315,12 @@ mod sys {
             S: UnicodeString,
         {
             let text = &text.content;
-            // if we have a mention, filtering out the href and contenteditable attributes because
-            // we add these attributes when creating the mention and don't want repetition
-            let attributes = link
-                .attrs
-                .iter()
-                .filter(|(k, _)| {
-                    k != &String::from("href")
-                        && k != &String::from("contenteditable")
-                        && k != &String::from("data-mention-type")
-                })
-                .map(|(k, v)| (k.as_str().into(), v.as_str().into()))
-                .collect();
 
             DomNode::new_mention(
                 link.get_attr("href").unwrap_or("").into(),
                 text.as_str().into(),
-                attributes,
+                // custom attributes are not required when cfg feature != "js"
+                vec![],
             )
         }
 
