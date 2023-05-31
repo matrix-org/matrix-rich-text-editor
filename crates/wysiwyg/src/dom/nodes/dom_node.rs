@@ -173,7 +173,7 @@ where
     /// Returns `true` if thie dom node is not a container i.e. a text node or
     /// a text-like node like a line break.
     pub fn is_leaf(&self) -> bool {
-        self.is_text_node() || self.is_line_break() || self.is_mention_node()
+        self.kind().is_leaf_kind()
     }
 
     pub fn is_structure_node(&self) -> bool {
