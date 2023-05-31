@@ -566,7 +566,7 @@ mod sys {
         }
 
         #[test]
-        fn at_room_mentions() {
+        fn parse_at_room_mentions() {
             let html = "\
                 <p>@room hello!</p>\
                 <pre><code>@room hello!</code></pre>\
@@ -588,6 +588,24 @@ mod sys {
                 └>p
                   ├>mention "@room"
                   └>mention "@room"
+                "#}
+            );
+        }
+
+        #[test]
+        fn parse_mentions() {
+            let html = r#"<p><a href="https://matrix.to/#/@test:example.org">test</a> hello!</p>"#;
+            let dom: Dom<Utf16String> =
+                HtmlParser::default().parse(html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+
+                └>p
+                  ├>mention "test", https://matrix.to/#/@test:example.org
+                  └>" hello!"
                 "#}
             );
         }
