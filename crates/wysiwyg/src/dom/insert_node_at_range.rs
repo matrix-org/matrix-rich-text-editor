@@ -48,8 +48,7 @@ where
                 self.insert_at(&leaf.node_handle, new_node)
             } else if cursor_at_end {
                 // insert the new node after a leaf that contains a cursor at the end
-                let parent_node = self.parent(&leaf.node_handle);
-                self.append(&parent_node.handle(), new_node)
+                self.append(&self.parent(&leaf.node_handle).handle(), new_node)
             } else {
                 // otherwise insert the new node in the middle of a text node
                 self.insert_into_text(
