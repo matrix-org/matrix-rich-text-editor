@@ -323,6 +323,7 @@ mod sys {
                 .filter(|(k, _)| {
                     k != &String::from("href")
                         && k != &String::from("contenteditable")
+                        && k != &String::from("data-mention-type")
                 })
                 .map(|(k, v)| (k.as_str().into(), v.as_str().into()))
                 .collect();
