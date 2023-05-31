@@ -197,7 +197,7 @@ mod sys {
 
                     if is_mention && matches!(text, Some(_)) {
                         self.current_path.push(DomNodeKind::Mention);
-                        let mention = Self::new_mention(child, &text.unwrap());
+                        let mention = Self::new_mention(child, text.unwrap());
                         node.append_child(mention);
                     } else {
                         self.current_path.push(DomNodeKind::Link);
