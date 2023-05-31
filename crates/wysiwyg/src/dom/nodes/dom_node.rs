@@ -146,6 +146,10 @@ where
         DomNode::Mention(MentionNode::new(url, display_text, attributes))
     }
 
+    pub fn new_at_room_mention(attributes: Vec<(S, S)>) -> DomNode<S> {
+        DomNode::Mention(MentionNode::new_at_room(attributes))
+    }
+
     pub fn is_container_node(&self) -> bool {
         matches!(self, DomNode::Container(_))
     }

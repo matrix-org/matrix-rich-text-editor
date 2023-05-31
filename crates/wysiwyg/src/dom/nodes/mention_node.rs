@@ -181,11 +181,11 @@ where
 
         description.push(" \"");
         description.push(self.display_text());
-        description.push(" \"");
-        description.push(", ");
+        description.push("\"");
 
         match self.kind() {
             MentionNodeKind::MatrixUrl { url, .. } => {
+                description.push(", ");
                 description.push(url.clone());
             }
             MentionNodeKind::AtRoom => {}

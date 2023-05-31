@@ -564,6 +564,33 @@ mod sys {
                 "#}
             );
         }
+
+        #[test]
+        fn at_room_mentions() {
+            let html = "\
+                <p>@room hello!</p>\
+                <pre><code>@room hello!</code></pre>\
+                <p>@room@room</p>";
+            let dom: Dom<Utf16String> =
+                HtmlParser::default().parse(html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+                
+                ├>p
+                │ ├>mention "@room"
+                │ └>" hello!"
+                ├>codeblock
+                │ └>p
+                │   └>"@room hello!"
+                └>p
+                  ├>mention "@room"
+                  └>mention "@room"
+                "#}
+            );
+        }
     }
 }
 
@@ -659,8 +686,17 @@ fn convert_text<S: UnicodeString>(
     } else {
         let contents = text;
         let is_nbsp = contents == "\u{A0}" || contents == "&nbsp;";
-        if !is_nbsp {
-            node.append_child(DomNode::new_text(contents.into()));
+        if is_nbsp {
+            return;
+        }
+
+        for (i, part) in contents.split("@room").into_iter().enumerate() {
+            if i > 0 {
+                node.append_child(DomNode::new_at_room_mention(vec![]));
+            }
+            if !part.is_empty() {
+                node.append_child(DomNode::new_text(part.into()));
+            }
         }
     }
 }
