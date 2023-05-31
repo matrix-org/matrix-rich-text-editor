@@ -781,11 +781,6 @@ mod js {
                     "A" => {
                         self.current_path.push(DomNodeKind::Link);
 
-                        // TODO add some logic here to determine if it's a mention or a link
-                        let is_mention = node
-                            .unchecked_ref::<Element>()
-                            .has_attribute("data-mention-type");
-
                         let mut attributes = vec![];
                         let valid_attributes =
                             ["contenteditable", "data-mention-type", "style"];
@@ -808,18 +803,38 @@ mod js {
                         let url = node
                             .unchecked_ref::<Element>()
                             .get_attribute("href")
-                            .unwrap_or_default()
-                            .into();
-                        let children =
-                            self.convert(node.child_nodes())?.take_children();
+                            .unwrap_or_default();
 
-                        if is_mention {
+                        // TODO: Replace this logic with real mention detection
+                        // The only mention that is currently detected is the
+                        // example mxid, @test:example.org.
+                        let is_mention = url.starts_with(
+                            "https://matrix.to/#/@test:example.org",
+                        );
+                        let text = node.child_nodes().get(0);
+                        let has_text = match text.clone() {
+                            Some(node) => {
+                                node.node_type() == web_sys::Node::TEXT_NODE
+                            }
+                            None => false,
+                        };
+                        if has_text && is_mention {
                             dom.append_child(DomNode::new_mention(
-                                url, children, attributes,
+                                url.into(),
+                                text.unwrap()
+                                    .node_value()
+                                    .unwrap_or_default()
+                                    .into(),
+                                attributes,
                             ));
                         } else {
+                            let children = self
+                                .convert(node.child_nodes())?
+                                .take_children();
                             dom.append_child(DomNode::new_link(
-                                url, children, attributes,
+                                url.into(),
+                                children,
+                                attributes,
                             ));
                         }
 
