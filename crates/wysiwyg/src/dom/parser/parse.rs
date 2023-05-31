@@ -1050,6 +1050,23 @@ mod js {
         }
 
         #[wasm_bindgen_test]
+        fn mention_with_attributes() {
+            roundtrip(
+                r#"<a contenteditable="false" data-mention-type="user" style="something" href="https://matrix.to/@test:example.org">test</a>"#,
+            );
+        }
+
+        #[wasm_bindgen_test]
+        fn mention_with_bad_attribute() {
+            let html = r#"<a invalidattribute="true" href="https://matrix.to/#/@test:example.org">test</a>"#;
+            let dom = HtmlParser::default().parse::<Utf16String>(html).unwrap();
+            assert_eq!(
+                dom.to_string(),
+                r#"<a href="https://matrix.to/#/@test:example.org" contenteditable="false">test</a>"#
+            );
+        }
+
+        #[wasm_bindgen_test]
         fn ul() {
             roundtrip("foo <ul><li>item1</li><li>item2</li></ul> bar");
         }
