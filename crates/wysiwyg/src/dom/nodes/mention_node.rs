@@ -28,6 +28,7 @@ where
     S: UnicodeString,
 {
     kind: MentionNodeKind<S>,
+    attributes: Vec<(S, S)>,
     handle: DomHandle,
 }
 
@@ -48,22 +49,22 @@ where
     ///
     /// NOTE: Its handle() will be unset until you call set_handle() or
     /// append() it to another node.
-    pub fn new(url: S, display_text: S, mut attributes: Vec<(S, S)>) -> Self {
+    pub fn new(url: S, display_text: S, attributes: Vec<(S, S)>) -> Self {
         let handle = DomHandle::new_unset();
-
-        // TODO: do something with the attributes
 
         Self {
             kind: MentionNodeKind::MatrixUrl { display_text, url },
+            attributes,
             handle,
         }
     }
 
-    pub fn new_at_room() -> Self {
+    pub fn new_at_room(attributes: Vec<(S, S)>) -> Self {
         let handle = DomHandle::new_unset();
 
         Self {
             kind: MentionNodeKind::AtRoom,
+            attributes,
             handle,
         }
     }
@@ -128,12 +129,11 @@ impl<S: UnicodeString> MentionNode<S> {
         let cur_pos = formatter.len();
         match self.kind() {
             MentionNodeKind::MatrixUrl { display_text, url } => {
-                let mut attributes: Vec<(S, S)> =
-                    vec![(S::from("href"), url.clone())];
+                let mut attributes = self.attributes.clone();
+                attributes.push(("href".into(), url.clone()));
 
                 if !as_message {
-                    attributes
-                        .push((S::from("contenteditable"), S::from("false")))
+                    attributes.push(("contenteditable".into(), "false".into()))
                     // TODO: data-mention-type = "user" | "room"
                 }
 
