@@ -284,7 +284,7 @@ impl ComposerModel {
             self.inner
                 .lock()
                 .unwrap()
-                .set_link_suggestion(url, text, suggestion, attrs),
+                .set_mention_from_suggestion(url, text, suggestion, attrs),
         ))
     }
 

@@ -322,7 +322,7 @@ impl ComposerModel {
         suggestion: &SuggestionPattern,
         attributes: js_sys::Map,
     ) -> ComposerUpdate {
-        ComposerUpdate::from(self.inner.set_link_suggestion(
+        ComposerUpdate::from(self.inner.set_mention_from_suggestion(
             Utf16String::from_str(url),
             Utf16String::from_str(text),
             wysiwyg::SuggestionPattern::from(suggestion.clone()),

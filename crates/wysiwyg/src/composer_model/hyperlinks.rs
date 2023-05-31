@@ -21,8 +21,7 @@ use crate::dom::nodes::DomNode;
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::Range;
 use crate::{
-    ComposerModel, ComposerUpdate, DomHandle, LinkAction, Location,
-    SuggestionPattern, UnicodeString,
+    ComposerModel, ComposerUpdate, DomHandle, LinkAction, UnicodeString,
 };
 use email_address::*;
 use url::{ParseError, Url};
@@ -95,16 +94,25 @@ where
         true
     }
 
-    pub fn set_link_with_text(&mut self, url: S, text: S) -> ComposerUpdate<S> {
+    pub fn set_link_with_text(
+        &mut self,
+        url: S,
+        text: S,
+        attributes: Vec<(S, S)>,
+    ) -> ComposerUpdate<S> {
         let (s, _) = self.safe_selection();
         self.push_state_to_history();
         self.do_replace_text(text.clone());
         let e = s + text.len();
         let range = self.state.dom.find_range(s, e);
-        self.set_link_in_range(url, range, None)
+        self.set_link_in_range(url, range, attributes)
     }
 
-    pub fn set_link(&mut self, url: S) -> ComposerUpdate<S> {
+    pub fn set_link(
+        &mut self,
+        url: S,
+        attributes: Vec<(S, S)>,
+    ) -> ComposerUpdate<S> {
         self.push_state_to_history();
         let (s, e) = self.safe_selection();
 
