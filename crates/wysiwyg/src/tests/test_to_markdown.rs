@@ -203,6 +203,19 @@ fn list_ordered_and_unordered() {
     );
 }
 
+#[test]
+fn mention() {
+    assert_to_md_no_roundtrip(
+        r#"<a href="https://matrix.to/#/@test:example.org">test</a>"#,
+        r#"test"#,
+    );
+}
+
+#[test]
+fn at_room_mention() {
+    assert_to_md("@room hello!", "@room hello!");
+}
+
 fn assert_to_md_no_roundtrip(html: &str, expected_markdown: &str) {
     let markdown = to_markdown(html);
     assert_eq!(markdown, expected_markdown);
