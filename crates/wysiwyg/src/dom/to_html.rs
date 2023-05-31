@@ -14,7 +14,7 @@
 
 use crate::composer_model::example_format::SelectionWriter;
 
-use super::UnicodeString;
+use super::{unicode_string::UnicodeStringExt, UnicodeString};
 
 pub trait ToHtml<S>
 where
@@ -45,6 +45,51 @@ where
         let mut buf = S::default();
         self.fmt_html(&mut buf, None, ToHtmlState::default(), false);
         buf
+    }
+}
+
+pub trait ToHtmlExt<S>: ToHtml<S>
+where
+    S: UnicodeString,
+{
+    fn fmt_tag_open(
+        &self,
+        name: &S::Str,
+        formatter: &mut S,
+        attrs: &Option<Vec<(S, S)>>,
+    );
+    fn fmt_tag_close(&self, name: &S::Str, formatter: &mut S);
+}
+
+impl<S, H: ToHtml<S>> ToHtmlExt<S> for H
+where
+    S: UnicodeString,
+{
+    fn fmt_tag_close(&self, name: &S::Str, formatter: &mut S) {
+        formatter.push("</");
+        formatter.push(name);
+        formatter.push('>');
+    }
+
+    fn fmt_tag_open(
+        &self,
+        name: &S::Str,
+        formatter: &mut S,
+        attrs: &Option<Vec<(S, S)>>,
+    ) {
+        formatter.push('<');
+        formatter.push(name);
+        if let Some(attrs) = attrs {
+            for attr in attrs {
+                let (attr_name, value) = attr;
+                formatter.push(' ');
+                formatter.push(&**attr_name);
+                formatter.push("=\"");
+                formatter.push(&**value);
+                formatter.push('"');
+            }
+        }
+        formatter.push('>');
     }
 }
 

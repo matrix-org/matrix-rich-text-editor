@@ -14,7 +14,7 @@
 
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
-use crate::dom::to_html::{ToHtml, ToHtmlState};
+use crate::dom::to_html::{ToHtml, ToHtmlExt, ToHtmlState};
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_plain_text::ToPlainText;
 use crate::dom::to_raw_text::ToRawText;
@@ -137,7 +137,7 @@ impl<S: UnicodeString> MentionNode<S> {
                     // TODO: data-mention-type = "user" | "room"
                 }
 
-                self.fmt_tag_open(tag, formatter, attributes);
+                self.fmt_tag_open(tag, formatter, &Some(attributes));
 
                 formatter.push(display_text.clone());
 
@@ -151,35 +151,6 @@ impl<S: UnicodeString> MentionNode<S> {
         if let Some(sel_writer) = selection_writer {
             sel_writer.write_selection_mention_node(formatter, cur_pos, self);
         }
-    }
-
-    /**
-     * LIFTED FROM CONTAINER_NODE.RS
-     * TODO could we export/import these to avoid repetition?
-     */
-    fn fmt_tag_open(
-        &self,
-        name: &S::Str,
-        formatter: &mut S,
-        attrs: Vec<(S, S)>,
-    ) {
-        formatter.push('<');
-        formatter.push(name);
-        for attr in attrs {
-            let (attr_name, value) = attr;
-            formatter.push(' ');
-            formatter.push(attr_name);
-            formatter.push("=\"");
-            formatter.push(value);
-            formatter.push('"');
-        }
-        formatter.push('>');
-    }
-
-    fn fmt_tag_close(&self, name: &S::Str, formatter: &mut S) {
-        formatter.push("</");
-        formatter.push(name);
-        formatter.push('>');
     }
 }
 
