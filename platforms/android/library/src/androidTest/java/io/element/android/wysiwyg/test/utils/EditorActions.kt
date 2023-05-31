@@ -1,7 +1,9 @@
 package io.element.android.wysiwyg.test.utils
 
+import android.net.Uri
 import android.text.Editable
 import android.view.View
+import androidx.core.view.ViewCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.test.espresso.UiController
 import androidx.test.espresso.ViewAction
@@ -10,6 +12,7 @@ import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.display.KeywordDisplayHandler
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.display.LinkDisplayHandler
+import io.element.android.wysiwyg.inputhandlers.UriContentListener
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import org.hamcrest.Matcher
 
@@ -201,6 +204,27 @@ object Editor {
         }
     }
 
+    class AddContentWatcher(
+        private val contentTypes: Array<String>,
+        private val contentWatcher: (Uri) -> Unit,
+    ) : ViewAction {
+        override fun getConstraints(): Matcher<View> = isDisplayed()
+
+        override fun getDescription(): String = "Add a content watcher"
+
+        override fun perform(uiController: UiController?, view: View?) {
+            val editor = view as? EditorEditText ?: return
+
+            ViewCompat.setOnReceiveContentListener(
+                editor,
+                contentTypes,
+                UriContentListener{
+                    contentWatcher(it)
+                }
+            )
+        }
+    }
+
     class TestCrash(
         private val errorCollector: RustErrorCollector?
     ) : ViewAction {
@@ -232,7 +256,8 @@ object EditorActions {
     fun undo() = Editor.Undo
     fun redo() = Editor.Redo
     fun toggleFormat(format: InlineFormat) = Editor.ToggleFormat(format)
-    fun addTextWatcher(watcher : (Editable?) -> Unit) = Editor.AddTextWatcher(watcher)
+    fun addTextWatcher(watcher: (Editable?) -> Unit) = Editor.AddTextWatcher(watcher)
+    fun addContentWatcher(contentTypes: Array<String>, watcher: (Uri) -> Unit) = Editor.AddContentWatcher(contentTypes, watcher)
     fun testCrash(
         errorCollector: RustErrorCollector? = null
     ) = Editor.TestCrash(errorCollector)
