@@ -403,3 +403,172 @@ fn list_item_replace_end() {
         "<ol><li>hello <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|</li></ol>",
     );
 }
+
+/**
+ * CodeBlock
+ */
+#[test]
+#[should_panic]
+fn codeblock_insert_anywhere() {
+    let mut model = cm("<code>regular | link</code>");
+    let update = model.replace_text("@ali".into());
+    let MenuAction::Suggestion(suggestion) = update.menu_action else {
+        panic!("No suggestion pattern found")
+    };
+}
+
+/**
+ * Quote
+ */
+#[test]
+fn quote_insert_into_empty() {
+    let mut model = cm("<blockquote><p>|</p></blockquote>");
+    let update = model.replace_text("@alic".into());
+    let MenuAction::Suggestion(suggestion) = update.menu_action else {
+        panic!("No suggestion pattern found")
+    };
+    model.set_mention_from_suggestion(
+        "https://matrix.to/#/@alice:matrix.org".into(),
+        "Alice".into(),
+        suggestion,
+        vec![],
+    );
+    assert_eq!(
+        tx(&model),
+        "<blockquote><p><a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|</p></blockquote>",
+    );
+}
+
+#[test]
+fn quote_replace_start() {
+    let mut model = cm("<blockquote><p>| says hello</p></blockquote>");
+    let update = model.replace_text("@ali".into());
+    let MenuAction::Suggestion(suggestion) = update.menu_action else {
+        panic!("No suggestion pattern found")
+    };
+    model.set_mention_from_suggestion(
+        "https://matrix.to/#/@alice:matrix.org".into(),
+        "Alice".into(),
+        suggestion,
+        vec![],
+    );
+    assert_eq!(
+        tx(&model),
+        "<blockquote><p><a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| says hello</p></blockquote>",
+    );
+}
+
+#[test]
+fn quote_replace_middle() {
+    let mut model = cm("<blockquote><p>Like | said</p></blockquote>");
+    let update = model.replace_text("@ali".into());
+
+    let MenuAction::Suggestion(suggestion) = update.menu_action else {
+        panic!("No suggestion pattern found")
+    };
+    model.set_mention_from_suggestion(
+        "https://matrix.to/#/@alice:matrix.org".into(),
+        "Alice".into(),
+        suggestion,
+        vec![],
+    );
+    assert_eq!(tx(&model),
+    "<blockquote><p>Like <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| said</p></blockquote>");
+}
+
+#[test]
+fn quote_replace_end() {
+    let mut model = cm("<blockquote><p>hello |</p></blockquote>");
+    let update = model.replace_text("@ali".into());
+    let MenuAction::Suggestion(suggestion) = update.menu_action else {
+        panic!("No suggestion pattern found")
+    };
+    model.set_mention_from_suggestion(
+        "https://matrix.to/#/@alice:matrix.org".into(),
+        "Alice".into(),
+        suggestion,
+        vec![],
+    );
+    assert_eq!(
+        tx(&model),
+        "<blockquote><p>hello <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|</p></blockquote>",
+    );
+}
+
+/**
+ * PARAGRAPH
+ */
+#[test]
+fn paragraph_insert_into_empty() {
+    let mut model = cm("<p>|</p>");
+    let update = model.replace_text("@alic".into());
+    let MenuAction::Suggestion(suggestion) = update.menu_action else {
+        panic!("No suggestion pattern found")
+    };
+    model.set_mention_from_suggestion(
+        "https://matrix.to/#/@alice:matrix.org".into(),
+        "Alice".into(),
+        suggestion,
+        vec![],
+    );
+    assert_eq!(
+        tx(&model),
+        "<p><a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|</p>",
+    );
+}
+
+#[test]
+fn paragraph_replace_start() {
+    let mut model = cm("<p>| says hello</p>");
+    let update = model.replace_text("@ali".into());
+    let MenuAction::Suggestion(suggestion) = update.menu_action else {
+        panic!("No suggestion pattern found")
+    };
+    model.set_mention_from_suggestion(
+        "https://matrix.to/#/@alice:matrix.org".into(),
+        "Alice".into(),
+        suggestion,
+        vec![],
+    );
+    assert_eq!(
+        tx(&model),
+        "<p><a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| says hello</p>",
+    );
+}
+
+#[test]
+fn paragraph_replace_middle() {
+    let mut model = cm("<p>Like | said</p>");
+    let update = model.replace_text("@ali".into());
+
+    let MenuAction::Suggestion(suggestion) = update.menu_action else {
+        panic!("No suggestion pattern found")
+    };
+    model.set_mention_from_suggestion(
+        "https://matrix.to/#/@alice:matrix.org".into(),
+        "Alice".into(),
+        suggestion,
+        vec![],
+    );
+    assert_eq!(tx(&model),
+    "<p>Like <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| said</p>");
+}
+
+#[test]
+fn paragraph_replace_end() {
+    let mut model = cm("<p>hello |</p>");
+    let update = model.replace_text("@ali".into());
+    let MenuAction::Suggestion(suggestion) = update.menu_action else {
+        panic!("No suggestion pattern found")
+    };
+    model.set_mention_from_suggestion(
+        "https://matrix.to/#/@alice:matrix.org".into(),
+        "Alice".into(),
+        suggestion,
+        vec![],
+    );
+    assert_eq!(
+        tx(&model),
+        "<p>hello <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|</p>",
+    );
+}
