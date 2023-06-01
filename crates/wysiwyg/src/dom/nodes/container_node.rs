@@ -1197,8 +1197,10 @@ where
                         return Err(MarkdownError::InvalidListItem(None))
                     }
 
-                    DomNode::Mention(_) => {
-                        return Err(MarkdownError::InvalidListItem(None))
+                    DomNode::Mention(mention) => {
+                        return Err(MarkdownError::InvalidListItem(Some(
+                            mention.name(),
+                        )))
                     }
                 };
 
