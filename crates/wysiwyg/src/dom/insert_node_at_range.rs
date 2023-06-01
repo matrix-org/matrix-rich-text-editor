@@ -62,6 +62,7 @@ where
             let first_location = range.locations.first();
 
             match first_location {
+                // if we haven't found anything, we're inserting into an empty dom
                 None => self.append_at_end_of_document(new_node),
                 Some(container) => {
                     self.append(&container.node_handle, new_node)
