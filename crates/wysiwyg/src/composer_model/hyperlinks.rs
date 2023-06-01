@@ -97,6 +97,7 @@ where
                     }
                 }
                 DomNodeKind::LineBreak => continue,
+                DomNodeKind::Mention => return false,
                 DomNodeKind::Formatting(_)
                 | DomNodeKind::Link
                 | DomNodeKind::ListItem
@@ -104,8 +105,9 @@ where
                 | DomNodeKind::CodeBlock
                 | DomNodeKind::Quote
                 | DomNodeKind::Generic
-                | DomNodeKind::Mention
-                | DomNodeKind::Paragraph => return false,
+                | DomNodeKind::Paragraph => {
+                    unreachable!("Inside leaf iterator and found a non-leaf")
+                }
             }
         }
         true
