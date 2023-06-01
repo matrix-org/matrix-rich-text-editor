@@ -354,20 +354,14 @@ impl SelectionWriter {
     pub fn write_selection_mention_node<S: UnicodeString>(
         &mut self,
         buf: &mut S,
-        pos: usize,
+        pos_start: usize,
         node: &MentionNode<S>,
     ) {
-        // TODO this isn't working quite right and is giving failing tests, see if I can fix it:
-        /**
-         * [crates/wysiwyg/src/composer_model/example_format.rs:349] buf.len() = 86
-         * [crates/wysiwyg/src/composer_model/example_format.rs:349] pos + i = 91
-         */
         if let Some(loc) = self.locations.get(&node.handle()) {
             let strings_to_add = self.state.advance(loc, 1);
             for (str, i) in strings_to_add.into_iter().rev() {
-                let i = if i == 0 { 0 } else { buf.len() };
-                dbg!(buf.len(), pos + i);
-                buf.insert(pos + i, &S::from(str));
+                let insert_pos = if i == 0 { pos_start } else { buf.len() };
+                buf.insert(insert_pos, &S::from(str));
             }
         }
     }
