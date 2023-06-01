@@ -310,7 +310,7 @@ where
             }
             DomNode::Text(t) => DomNode::Text(t.slice_before(position)),
             DomNode::LineBreak(_) => panic!("Can't slice a linebreak"),
-            DomNode::Mention(_) => panic!("Can't slice a linebreak"),
+            DomNode::Mention(_) => panic!("Can't slice a mention"),
         }
     }
 
