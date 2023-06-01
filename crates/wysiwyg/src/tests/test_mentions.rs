@@ -18,6 +18,47 @@ use crate::{
 };
 
 /**
+ * ATTRIBUTE TESTS
+ */
+#[test]
+fn mention_without_attributes() {
+    let mut model = cm("|");
+    let update = model.replace_text("@alic".into());
+    let MenuAction::Suggestion(suggestion) = update.menu_action else {
+        panic!("No suggestion pattern found")
+    };
+    model.set_mention_from_suggestion(
+        "https://matrix.to/#/@alice:matrix.org".into(),
+        "Alice".into(),
+        suggestion,
+        vec![],
+    );
+    assert_eq!(
+        tx(&model),
+        "<a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|",
+    );
+}
+
+#[test]
+fn mention_with_attributes() {
+    let mut model = cm("|");
+    let update = model.replace_text("@alic".into());
+    let MenuAction::Suggestion(suggestion) = update.menu_action else {
+        panic!("No suggestion pattern found")
+    };
+    model.set_mention_from_suggestion(
+        "https://matrix.to/#/@alice:matrix.org".into(),
+        "Alice".into(),
+        suggestion,
+        vec![("data-mention-type".into(), "user".into())],
+    );
+    assert_eq!(
+        tx(&model),
+        "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|",
+    );
+}
+
+/**
  * TEXT NODE
  */
 #[test]
