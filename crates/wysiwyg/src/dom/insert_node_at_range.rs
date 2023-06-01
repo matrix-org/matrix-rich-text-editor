@@ -47,6 +47,7 @@ where
                 // insert the new node before a leaf that contains a cursor at the start
                 self.insert_at(&leaf.node_handle, new_node)
             } else if cursor_at_end {
+                dbg!("here");
                 // insert the new node after a leaf that contains a cursor at the end
                 self.append(&self.parent(&leaf.node_handle).handle(), new_node)
             } else {
@@ -78,5 +79,94 @@ where
     ) -> DomHandle {
         // TODO
         return DomHandle::new_unset();
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::{
+        tests::{
+            testutils_composer_model::{cm, tx},
+            testutils_conversion::utf16,
+        },
+        DomNode, ToHtml,
+    };
+    #[test]
+    fn inserts_node_in_empty_model() {
+        let mut model = cm("|");
+        let (start, end) = model.safe_selection();
+        let range = model.state.dom.find_range(start, end);
+
+        model
+            .state
+            .dom
+            .insert_node_at_range(&range, DomNode::new_paragraph(vec![]));
+
+        assert_eq!(model.state.dom.to_html(), "<p>\u{a0}</p>")
+    }
+
+    #[test]
+    fn inserts_node_into_empty_container() {
+        let mut model = cm("<code>|</code>");
+        let (start, end) = model.safe_selection();
+        let range = model.state.dom.find_range(start, end);
+
+        model
+            .state
+            .dom
+            .insert_node_at_range(&range, DomNode::new_paragraph(vec![]));
+
+        assert_eq!(model.state.dom.to_html(), "<code><p>\u{a0}</p></code>")
+    }
+
+    #[test]
+    fn inserts_node_into_leaf_start() {
+        let mut model = cm("<p>|this is a leaf</p>");
+        let (start, end) = model.safe_selection();
+        let range = model.state.dom.find_range(start, end);
+
+        model
+            .state
+            .dom
+            .insert_node_at_range(&range, DomNode::new_paragraph(vec![]));
+
+        assert_eq!(
+            model.state.dom.to_html(),
+            "<p><p>\u{a0}</p>this is a leaf</p>"
+        )
+    }
+
+    #[test]
+    fn inserts_node_into_leaf_middle() {
+        let mut model = cm("<p>this is| a leaf</p>");
+        let (start, end) = model.safe_selection();
+        let range = model.state.dom.find_range(start, end);
+
+        model
+            .state
+            .dom
+            .insert_node_at_range(&range, DomNode::new_paragraph(vec![]));
+
+        assert_eq!(
+            model.state.dom.to_html(),
+            "<p>this is<p>\u{a0}</p> a leaf</p>"
+        )
+    }
+
+    #[test]
+    fn inserts_node_into_leaf_end() {
+        let mut model = cm("<p>this is a leaf|</p>");
+        let (start, end) = model.safe_selection();
+        let range = model.state.dom.find_range(start, end);
+
+        model
+            .state
+            .dom
+            .insert_node_at_range(&range, DomNode::new_paragraph(vec![]));
+
+        assert_eq!(
+            model.state.dom.to_html(),
+            "<p>this is a leaf<p>\u{a0}</p></p>"
+        )
     }
 }
