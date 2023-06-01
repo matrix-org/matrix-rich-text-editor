@@ -12,7 +12,6 @@ import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.display.KeywordDisplayHandler
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.display.LinkDisplayHandler
-import io.element.android.wysiwyg.inputhandlers.UriContentListener
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import org.hamcrest.Matcher
 

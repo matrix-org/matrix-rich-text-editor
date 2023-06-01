@@ -1,4 +1,4 @@
-package io.element.android.wysiwyg.inputhandlers
+package io.element.android.wysiwyg.test.utils
 
 import android.content.ClipData
 import android.net.Uri
