@@ -302,40 +302,55 @@ pub struct SelectionWriter {
 }
 
 impl SelectionWriter {
+    /// Write special selection (`{` and `}`) and cursor (`|`) characters
+    /// where needed throughout a text node
+    ///
+    /// * `buf` - the output buffer up to and including the given node
+    /// * `start_pos` - the buffer position immediately before the node
     pub fn write_selection_text_node<S: UnicodeString>(
         &mut self,
         buf: &mut S,
-        pos: usize,
+        start_pos: usize,
         node: &TextNode<S>,
     ) {
         if let Some(loc) = self.locations.get(&node.handle()) {
             let strings_to_add = self.state.advance(loc, node.data().len());
-            for (str, i) in strings_to_add.into_iter().rev() {
-                buf.insert(pos + i, &S::from(str));
+            for (string, i) in strings_to_add.into_iter().rev() {
+                buf.insert(start_pos + i, &S::from(string));
             }
         }
     }
 
+    /// Write special selection (`{` and `}`) and cursor (`|`) characters
+    /// before or after a line break node
+    ///
+    /// * `buf` - the output buffer up to and including the given node
+    /// * `start_pos` - the buffer position immediately before the node
     pub fn write_selection_line_break_node<S: UnicodeString>(
         &mut self,
         buf: &mut S,
-        pos: usize,
+        start_pos: usize,
         node: &LineBreakNode<S>,
     ) {
         if let Some(loc) = self.locations.get(&node.handle()) {
             let strings_to_add = self.state.advance(loc, 1);
-            for (str, i) in strings_to_add.into_iter().rev() {
+            for (string, i) in strings_to_add.into_iter().rev() {
                 // Index 1 in line breaks is actually at the end of the '<br />'
-                let i = if i == 0 { 0 } else { 6 };
-                buf.insert(pos + i, &S::from(str));
+                let length = if i == 0 { 0 } else { "<br />".len() };
+                buf.insert(start_pos + length, &S::from(string));
             }
         }
     }
 
+    /// Write special selection (`{` and `}`) and cursor (`|`) characters
+    /// after an empty container node
+    ///
+    /// * `buf` - the output buffer up to and including the given node
+    /// * `end_pos` - the buffer position immediately after the node
     pub fn write_selection_empty_container<S: UnicodeString>(
         &mut self,
         buf: &mut S,
-        pos: usize,
+        end_pos: usize,
         node: &ContainerNode<S>,
     ) {
         if let Some(loc) = self.locations.get(&node.handle()) {
@@ -344,7 +359,7 @@ impl SelectionWriter {
             }
             let strings_to_add = self.state.advance(loc, 1);
             for (str, _) in strings_to_add.into_iter().rev() {
-                buf.insert(pos, &S::from(str));
+                buf.insert(end_pos, &S::from(str));
             }
         }
     }
