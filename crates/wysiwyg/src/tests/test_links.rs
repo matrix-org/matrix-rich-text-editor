@@ -163,6 +163,18 @@ fn set_link_around_links() {
 }
 
 #[test]
+fn set_link_around_mentions() {
+    let mut model = cm(
+        r#"{X <a href="https://matrix.to/#/@test:example.org">test</a> <a href="https://matrix.to/#/@test:example.org">test</a> Y}|"#,
+    );
+    model.set_link(utf16("https://matrix.org"), vec![]);
+    assert_eq!(
+        tx(&model),
+        r#"<a href="https://matrix.org">{X test test Y}|</a>"#
+    );
+}
+
+#[test]
 fn add_text_at_end_of_link() {
     let mut model = cm("<a href=\"https://element.io\">link|</a>");
     model.replace_text(utf16("added_text"));

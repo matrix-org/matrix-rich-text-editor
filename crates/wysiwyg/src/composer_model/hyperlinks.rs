@@ -232,8 +232,9 @@ where
                 DomNode::new_link(url.clone(), vec![], attributes.clone()),
             );
 
-            // Remove any child links inside it
+            // Remove any child links or mentions inside it
             self.delete_child_links(&inserted);
+            self.convert_child_mentions_to_text(&inserted);
         }
 
         self.create_update_replace_all()
@@ -273,6 +274,31 @@ where
             .into_iter()
             .rev()
             .for_each(|h| self.state.dom.remove_and_keep_children(&h));
+    }
+
+    fn convert_child_mentions_to_text(&mut self, node_handle: &DomHandle) {
+        self.state
+            .dom
+            .lookup_node(node_handle)
+            .iter_subtree()
+            .filter_map(|node| match node {
+                DomNode::Mention(node) => {
+                    Some((node.handle(), node.display_text()))
+                }
+                _ => None,
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
+            .rev()
+            .for_each(|(handle, display_text)| {
+                self.state.dom.replace(
+                    &handle,
+                    vec![DomNode::new_text(display_text.clone())],
+                );
+                let selection_length_change: isize =
+                    (display_text.len() - 1).try_into().unwrap_or(0);
+                self.state.extend_selection(selection_length_change)
+            });
     }
 
     fn find_closest_ancestor_link(
