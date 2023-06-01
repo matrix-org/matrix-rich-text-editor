@@ -37,6 +37,11 @@ where
         range: &Range,
         new_node: DomNode<S>,
     ) -> DomHandle {
+        #[cfg(any(test, feature = "assert-invariants"))]
+        self.assert_invariants();
+
+        let inserted_handle: DomHandle;
+
         // manipulate the state of the dom as required
         if let Some(leaf) = range.leaves().next() {
             // when we have a leaf, the way we treat the insertion depends on the cursor position inside that leaf
@@ -45,14 +50,14 @@ where
 
             if cursor_at_start {
                 // insert the new node before a leaf that contains a cursor at the start
-                self.insert_at(&leaf.node_handle, new_node)
+                inserted_handle = self.insert_at(&leaf.node_handle, new_node);
             } else if cursor_at_end {
-                dbg!("here");
                 // insert the new node after a leaf that contains a cursor at the end
-                self.append(&self.parent(&leaf.node_handle).handle(), new_node)
+                inserted_handle = self
+                    .append(&self.parent(&leaf.node_handle).handle(), new_node);
             } else {
                 // otherwise insert the new node in the middle of a text node
-                self.insert_into_text(
+                inserted_handle = self.insert_into_text(
                     &leaf.node_handle,
                     leaf.start_offset,
                     new_node,
@@ -64,12 +69,20 @@ where
 
             match first_location {
                 // if we haven't found anything, we're inserting into an empty dom
-                None => self.append_at_end_of_document(new_node),
-                Some(container) => {
-                    self.append(&container.node_handle, new_node)
+                None => {
+                    inserted_handle = self.append_at_end_of_document(new_node);
                 }
-            }
+                Some(container) => {
+                    inserted_handle =
+                        self.append(&container.node_handle, new_node);
+                }
+            };
         }
+
+        #[cfg(any(test, feature = "assert-invariants"))]
+        self.assert_invariants();
+
+        inserted_handle
     }
 
     fn insert_node_at_selection(
@@ -85,10 +98,7 @@ where
 #[cfg(test)]
 mod test {
     use crate::{
-        tests::{
-            testutils_composer_model::{cm, tx},
-            testutils_conversion::utf16,
-        },
+        tests::{testutils_composer_model::cm, testutils_conversion::utf16},
         DomNode, ToHtml,
     };
     #[test]
@@ -97,26 +107,26 @@ mod test {
         let (start, end) = model.safe_selection();
         let range = model.state.dom.find_range(start, end);
 
-        model
-            .state
-            .dom
-            .insert_node_at_range(&range, DomNode::new_paragraph(vec![]));
+        model.state.dom.insert_node_at_range(
+            &range,
+            DomNode::new_link(utf16("href"), vec![], vec![]),
+        );
 
-        assert_eq!(model.state.dom.to_html(), "<p>\u{a0}</p>")
+        assert_eq!(model.state.dom.to_html(), "<a href=\"href\"></a>")
     }
 
     #[test]
     fn inserts_node_into_empty_container() {
-        let mut model = cm("<code>|</code>");
+        let mut model = cm("<p>|</p>");
         let (start, end) = model.safe_selection();
         let range = model.state.dom.find_range(start, end);
 
-        model
-            .state
-            .dom
-            .insert_node_at_range(&range, DomNode::new_paragraph(vec![]));
+        model.state.dom.insert_node_at_range(
+            &range,
+            DomNode::new_link(utf16("href"), vec![], vec![]),
+        );
 
-        assert_eq!(model.state.dom.to_html(), "<code><p>\u{a0}</p></code>")
+        assert_eq!(model.state.dom.to_html(), "<p><a href=\"href\"></a></p>")
     }
 
     #[test]
@@ -125,14 +135,14 @@ mod test {
         let (start, end) = model.safe_selection();
         let range = model.state.dom.find_range(start, end);
 
-        model
-            .state
-            .dom
-            .insert_node_at_range(&range, DomNode::new_paragraph(vec![]));
+        model.state.dom.insert_node_at_range(
+            &range,
+            DomNode::new_link(utf16("href"), vec![], vec![]),
+        );
 
         assert_eq!(
             model.state.dom.to_html(),
-            "<p><p>\u{a0}</p>this is a leaf</p>"
+            "<p><a href=\"href\"></a>this is a leaf</p>"
         )
     }
 
@@ -142,14 +152,14 @@ mod test {
         let (start, end) = model.safe_selection();
         let range = model.state.dom.find_range(start, end);
 
-        model
-            .state
-            .dom
-            .insert_node_at_range(&range, DomNode::new_paragraph(vec![]));
+        model.state.dom.insert_node_at_range(
+            &range,
+            DomNode::new_link(utf16("href"), vec![], vec![]),
+        );
 
         assert_eq!(
             model.state.dom.to_html(),
-            "<p>this is<p>\u{a0}</p> a leaf</p>"
+            "<p>this is<a href=\"href\"></a> a leaf</p>"
         )
     }
 
@@ -159,14 +169,14 @@ mod test {
         let (start, end) = model.safe_selection();
         let range = model.state.dom.find_range(start, end);
 
-        model
-            .state
-            .dom
-            .insert_node_at_range(&range, DomNode::new_paragraph(vec![]));
+        model.state.dom.insert_node_at_range(
+            &range,
+            DomNode::new_link(utf16("href"), vec![], vec![]),
+        );
 
         assert_eq!(
             model.state.dom.to_html(),
-            "<p>this is a leaf<p>\u{a0}</p></p>"
+            "<p>this is a leaf<a href=\"href\"></a></p>"
         )
     }
 }
