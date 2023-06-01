@@ -549,6 +549,10 @@ impl DomNodeKind {
             Self::CodeBlock | Self::Formatting(InlineFormatType::InlineCode)
         )
     }
+
+    pub fn is_link_kind(&self) -> bool {
+        matches!(self, Self::Link)
+    }
 }
 
 #[cfg(test)]

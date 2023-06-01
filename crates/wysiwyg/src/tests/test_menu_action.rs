@@ -91,6 +91,14 @@ fn at_pattern_is_not_detected_in_inline_code() {
     assert_eq!(model.compute_menu_action(), MenuAction::None);
 }
 
+// TODO - change behaviour to allow inserting mentions into links
+// see issue https://github.com/matrix-org/matrix-rich-text-editor/issues/702
+#[test]
+fn at_pattern_is_not_detected_in_link() {
+    let model = cm("<a href=\"https://www.somewhere.com\">some @abc| link</a>");
+    assert_eq!(model.compute_menu_action(), MenuAction::None);
+}
+
 #[test]
 fn at_pattern_is_detected_if_cursor_is_right_before() {
     let model = cm("|@alic");
