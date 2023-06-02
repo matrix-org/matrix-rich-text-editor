@@ -53,6 +53,9 @@ fn mention_with_attributes() {
 }
 
 /**
+ * INSERT AT CURSOR
+ */
+/**
  * TEXT NODE
  */
 #[test]
@@ -370,7 +373,147 @@ fn paragraph_replace_end() {
     );
 }
 
-// Helper function to reduce repetition in the tests
+/**
+ * INSERT INTO SELECTION
+ */
+
+#[test]
+fn selection_plain_text_replace() {
+    let mut model = cm("{replace_me}|");
+    insert_mention_at_selection(&mut model);
+    assert_eq!(
+        tx(&model),
+        "<a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|"
+    );
+}
+
+#[test]
+fn selection_plain_text_start() {
+    let mut model = cm("{replace}|_me");
+    insert_mention_at_selection(&mut model);
+    assert_eq!(
+        tx(&model),
+        "<a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|_me"
+    );
+}
+
+#[test]
+fn selection_plain_text_middle() {
+    let mut model = cm("replac{e}|_me");
+    insert_mention_at_selection(&mut model);
+    assert_eq!(
+        tx(&model),
+        "replac<a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|_me"
+    );
+}
+
+#[test]
+fn selection_formatting_inside() {
+    let mut model = cm("<strong>hello {replace_me}|!</strong>");
+    insert_mention_at_selection(&mut model);
+    assert_eq!(
+        tx(&model),
+       "<strong>hello <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|!</strong>"
+    );
+}
+
+#[test]
+fn selection_formatting_spanning() {
+    let mut model = cm("<strong>hello {replace</strong><em>_me}|!</em>");
+    insert_mention_at_selection(&mut model);
+    assert_eq!(tx(&model), "<strong>hello <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a></strong><em>&nbsp;|!</em>");
+}
+
+#[test]
+fn selection_formatting_inline_code() {
+    // should not allow insertion
+    let mut model = cm("<code>hello {replace_me}|!</code>");
+    insert_mention_at_selection(&mut model);
+    assert_eq!(tx(&model), "<code>hello {replace_me}|!</code>");
+}
+
+// TODO - change behaviour to allow inserting mentions into links
+// see issue https://github.com/matrix-org/matrix-rich-text-editor/issues/702
+#[test]
+fn selection_link_inside() {
+    let mut model = cm("<a href=\"something\">hello {replace_me}|!</a>");
+    insert_mention_at_selection(&mut model);
+    assert_eq!(tx(&model), "<a href=\"something\">hello {replace_me}|!</a>");
+}
+
+#[test]
+fn selection_link_spanning_partial() {
+    let mut model =
+        cm("hello {replace<a href=\"something\">_me}|something</a>");
+    insert_mention_at_selection(&mut model);
+    assert_eq!(
+        tx(&model),
+        "hello {replace<a href=\"something\">_me}|something</a>"
+    );
+}
+
+#[test]
+fn selection_link_spanning_all() {
+    let mut model =
+        cm("hello {replace<a href=\"something\">something</a>_me}|!");
+    insert_mention_at_selection(&mut model);
+    assert_eq!(
+        tx(&model),
+        "hello {replace<a href=\"something\">something</a>_me}|!"
+    );
+}
+
+#[test]
+fn selection_list_item_spanning() {
+    let mut model = cm("<ol><li>hello {replace</li><li>_me}|!</li></ol>");
+    insert_mention_at_selection(&mut model);
+    assert_eq!(
+        tx(&model),
+       "<ol><li>hello <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|!</li></ol>"
+    );
+}
+
+#[test]
+fn selection_codeblock() {
+    // should not allow insertion
+    let mut model = cm("<pre><code>hello {replace_me}|!</code></pre>");
+    insert_mention_at_selection(&mut model);
+    assert_eq!(tx(&model), "<pre><code>hello {replace_me}|!</code></pre>");
+}
+
+#[test]
+fn selection_quote() {
+    let mut model = cm("<blockquote><p>hello {replace_me}|!</p></blockquote>");
+    insert_mention_at_selection(&mut model);
+    assert_eq!(
+        tx(&model),
+        "<blockquote><p>hello <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|!</p></blockquote>"
+    );
+}
+
+#[test]
+fn selection_paragraph_middle() {
+    let mut model = cm("<p>hello {replace_me}|!</p>");
+    insert_mention_at_selection(&mut model);
+    assert_eq!(
+        tx(&model),
+        "<p>hello <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|!</p>"
+    );
+}
+
+#[test]
+fn selection_paragraph_spanning() {
+    let mut model = cm("<p>hello {replace</p><p>_me}|!</p>");
+    insert_mention_at_selection(&mut model);
+    assert_eq!(
+        tx(&model),
+        "<p>hello <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|!</p>"
+    );
+}
+
+/**
+ * HELPER FUNCTIONS
+ */
 fn insert_mention_at_cursor(model: &mut ComposerModel<Utf16String>) {
     let update = model.replace_text("@alic".into());
     let MenuAction::Suggestion(suggestion) = update.menu_action else {
@@ -380,6 +523,14 @@ fn insert_mention_at_cursor(model: &mut ComposerModel<Utf16String>) {
         "https://matrix.to/#/@alice:matrix.org".into(),
         "Alice".into(),
         suggestion,
+        vec![],
+    );
+}
+
+fn insert_mention_at_selection(model: &mut ComposerModel<Utf16String>) {
+    model.insert_mention(
+        "https://matrix.to/#/@alice:matrix.org".into(),
+        "Alice".into(),
         vec![],
     );
 }
