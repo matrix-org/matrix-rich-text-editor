@@ -193,31 +193,37 @@ export function computeNodeAndOffset(
             }
         }
 
-        if (codeunits <= (currentNode.textContent?.length || 0)) {
-            // we don't need to use that extra offset if we've found the answer
-
-            // special case to handle being inside a non-editable node
-            // such as a mention
-            if (
-                currentNode.parentElement?.getAttribute('contenteditable') ===
-                'false'
-            ) {
+        // Special case for mention nodes - they'll have a parent with a
+        // data-mention-type attribute and we consider them to have a
+        // length of 1
+        if (
+            currentNode.parentElement?.hasAttribute('data-mention-type') &&
+            codeunits <= 1
+        ) {
+            if (codeunits === 0) {
+                // if we hit the beginning of the node, select start of editor
+                // as this appears to be the only way this can occur
+                return { node: rootNode || currentNode, offset: 0 };
+            } else {
                 // setting node to null means if we end up inside or at end of a
                 // non-editable node somehow, we will return "node not found"
                 // and so we will keep searching
-                let node = null;
-
-                // if we hit the beginning of the node, select start of editor
-                // as this appears to be the only way this can occur
-                if (codeunits === 0) {
-                    node = rootNode || currentNode;
-                }
-
-                return { node, offset: 0 };
+                return { node: null, offset: 0 };
             }
+        } else if (
+            !currentNode.parentElement?.hasAttribute('data-mention-type') &&
+            codeunits <= (currentNode.textContent?.length || 0)
+        ) {
+            // we don't need to use that extra offset if we've found the answer
 
             return { node: currentNode, offset: codeunits };
         } else {
+            // Special case for mention nodes - they'll have a parent with a
+            // data-mention-type attribute and we consider them to have a
+            // length of 1
+            if (currentNode.parentElement?.hasAttribute('data-mention-type')) {
+                return { node: null, offset: codeunits - 1 };
+            }
             // but if we haven't found that answer, apply the extra offset
             return {
                 node: null,
@@ -370,6 +376,15 @@ function findCharacter(
                 return { found: false, offset: 0 };
             } else {
                 // Otherwise, we did
+
+                // Special case for mention nodes - they'll have a parent with a
+                // data-mention-type attribute and we consider them to have a
+                // length of 1
+                if (
+                    currentNode.parentElement?.hasAttribute('data-mention-type')
+                ) {
+                    return { found: true, offset: offsetToFind === 0 ? 0 : 1 };
+                }
                 return { found: true, offset: offsetToFind };
             }
         } else {
@@ -385,6 +400,13 @@ function findCharacter(
         if (currentNode.nodeType === Node.TEXT_NODE) {
             // Return how many steps forward we progress by skipping
             // this node.
+
+            // Special case for mention nodes - they'll have a parent with a
+            // data-mention-type attribute and we consider them to have a
+            // length of 1
+            if (currentNode.parentElement?.hasAttribute('data-mention-type')) {
+                return { found: false, offset: 1 };
+            }
 
             // The extra check for an offset here depends on the ancestor of the
             // text node and can be seen as the opposite to the equivalent call
