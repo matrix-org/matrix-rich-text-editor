@@ -40,7 +40,7 @@ fn mention_with_attributes() {
     let MenuAction::Suggestion(suggestion) = update.menu_action else {
         panic!("No suggestion pattern found")
     };
-    model.set_mention_from_suggestion(
+    model.insert_mention_at_suggestion(
         "https://matrix.to/#/@alice:matrix.org".into(),
         "Alice".into(),
         suggestion,
@@ -156,7 +156,7 @@ fn formatting_node_replace_all() {
     let MenuAction::Suggestion(suggestion) = update.menu_action else {
         panic!("No suggestion pattern found")
     };
-    model.set_mention_from_suggestion(
+    model.insert_mention_at_suggestion(
         "https://matrix.to/#/@alice:matrix.org".into(),
         "Alice".into(),
         suggestion,
@@ -519,7 +519,7 @@ fn insert_mention_at_cursor(model: &mut ComposerModel<Utf16String>) {
     let MenuAction::Suggestion(suggestion) = update.menu_action else {
         panic!("No suggestion pattern found")
     };
-    model.set_mention_from_suggestion(
+    model.insert_mention_at_suggestion(
         "https://matrix.to/#/@alice:matrix.org".into(),
         "Alice".into(),
         suggestion,

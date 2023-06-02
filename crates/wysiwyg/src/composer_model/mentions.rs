@@ -22,7 +22,7 @@ where
     S: UnicodeString,
 {
     /// Remove the suggestion text and then add a mention to the composer
-    pub fn set_mention_from_suggestion(
+    pub fn insert_mention_at_suggestion(
         &mut self,
         url: S,
         text: S,
