@@ -20,19 +20,7 @@ impl<S> Dom<S>
 where
     S: UnicodeString,
 {
-    pub fn insert_node_at_range(
-        &mut self,
-        range: &Range,
-        new_node: DomNode<S>,
-    ) -> DomHandle {
-        if range.is_cursor() {
-            self.insert_node_at_cursor(range, new_node)
-        } else {
-            self.insert_node_at_selection(range, new_node)
-        }
-    }
-
-    fn insert_node_at_cursor(
+    pub fn insert_node_at_cursor(
         &mut self,
         range: &Range,
         new_node: DomNode<S>,
@@ -84,15 +72,6 @@ where
 
         inserted_handle
     }
-
-    fn insert_node_at_selection(
-        &mut self,
-        range: &Range,
-        mut new_node: DomNode<S>,
-    ) -> DomHandle {
-        // TODO
-        return DomHandle::new_unset();
-    }
 }
 
 #[cfg(test)]
@@ -107,7 +86,7 @@ mod test {
         let (start, end) = model.safe_selection();
         let range = model.state.dom.find_range(start, end);
 
-        model.state.dom.insert_node_at_range(
+        model.state.dom.insert_node_at_cursor(
             &range,
             DomNode::new_link(utf16("href"), vec![], vec![]),
         );
@@ -121,7 +100,7 @@ mod test {
         let (start, end) = model.safe_selection();
         let range = model.state.dom.find_range(start, end);
 
-        model.state.dom.insert_node_at_range(
+        model.state.dom.insert_node_at_cursor(
             &range,
             DomNode::new_link(utf16("href"), vec![], vec![]),
         );
@@ -135,7 +114,7 @@ mod test {
         let (start, end) = model.safe_selection();
         let range = model.state.dom.find_range(start, end);
 
-        model.state.dom.insert_node_at_range(
+        model.state.dom.insert_node_at_cursor(
             &range,
             DomNode::new_link(utf16("href"), vec![], vec![]),
         );
@@ -152,7 +131,7 @@ mod test {
         let (start, end) = model.safe_selection();
         let range = model.state.dom.find_range(start, end);
 
-        model.state.dom.insert_node_at_range(
+        model.state.dom.insert_node_at_cursor(
             &range,
             DomNode::new_link(utf16("href"), vec![], vec![]),
         );
@@ -169,7 +148,7 @@ mod test {
         let (start, end) = model.safe_selection();
         let range = model.state.dom.find_range(start, end);
 
-        model.state.dom.insert_node_at_range(
+        model.state.dom.insert_node_at_cursor(
             &range,
             DomNode::new_link(utf16("href"), vec![], vec![]),
         );
