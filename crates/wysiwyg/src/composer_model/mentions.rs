@@ -13,8 +13,8 @@
 // limitations under the License.
 
 use crate::{
-    ComposerModel, ComposerUpdate, DomNode, Location, SuggestionPattern,
-    UnicodeString,
+    dom::DomLocation, ComposerModel, ComposerUpdate, DomNode, Location,
+    SuggestionPattern, UnicodeString,
 };
 
 impl<S> ComposerModel<S>
@@ -38,22 +38,51 @@ where
         self.insert_mention(url, text, attributes)
     }
 
-    /// Inserts a mention at the current selection
+    /// Inserts a mention into the composer. It uses the following rules:
+    /// - If the selection or cursor contains/is inside a link, do nothing (see
+    /// https://github.com/matrix-org/matrix-rich-text-editor/issues/702)
+    /// - If the composer contains a selection, remove the contents of the selection
+    /// prior to inserting a mention at the cursor.
+    /// - If the composer contains a cursor, insert a mention at the cursor
     pub fn insert_mention(
         &mut self,
         url: S,
         text: S,
         attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
-        let (s, e) = self.safe_selection();
-        let range = self.state.dom.find_range(s, e);
+        let (start, end) = self.safe_selection();
+        let range = self.state.dom.find_range(start, end);
+
+        if range.locations.iter().any(|l: &DomLocation| {
+            dbg!(l);
+            dbg!(l.is_covered());
+            l.kind.is_link_kind() || l.kind.is_code_kind()
+        }) {
+            return ComposerUpdate::keep();
+        }
+
+        if range.is_selection() {
+            self.replace_text(S::default());
+        }
+
+        self.do_insert_mention(url, text, attributes)
+    }
+
+    fn do_insert_mention(
+        &mut self,
+        url: S,
+        text: S,
+        attributes: Vec<(S, S)>,
+    ) -> ComposerUpdate<S> {
+        let (start, end) = self.safe_selection();
+        let range = self.state.dom.find_range(start, end);
 
         let new_node = DomNode::new_mention(url, text, attributes);
-        let new_cursor_index = s + new_node.text_len();
+        let new_cursor_index = start + new_node.text_len();
 
         self.push_state_to_history();
 
-        let handle = self.state.dom.insert_node_at_range(&range, new_node);
+        let handle = self.state.dom.insert_node_at_cursor(&range, new_node);
 
         // manually move the cursor to the end of the mention
         self.state.start = Location::from(new_cursor_index);
