@@ -84,6 +84,16 @@ export function refreshComposerView(
                 createNode(li, 'span', '"', new Map([['class', 'quote']]));
                 createNode(li, 'span', `${child.text(composerModel)}`);
                 createNode(li, 'span', '"', new Map([['class', 'quote']]));
+            } else if (nodeType === 'mention') {
+                const li = createNode(list, 'li');
+                createNode(
+                    li,
+                    'span',
+                    '"Mention - ',
+                    new Map([['class', 'quote']]),
+                );
+                createNode(li, 'span', `${child.text(composerModel)}`);
+                createNode(li, 'span', '"', new Map([['class', 'quote']]));
             } else {
                 console.error(`Unknown node type: ${nodeType}`);
             }
