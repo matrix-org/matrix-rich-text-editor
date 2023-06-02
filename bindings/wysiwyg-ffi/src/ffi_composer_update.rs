@@ -131,7 +131,7 @@ mod test {
             panic!("No suggestion found");
         };
 
-        model.set_link_suggestion(
+        model.insert_mention_at_suggestion(
             "https://matrix.to/#/@alice:matrix.org".into(),
             "Alice".into(),
             suggestion_pattern,
@@ -159,7 +159,7 @@ mod test {
             panic!("No suggestion found");
         };
 
-        model.set_link_suggestion(
+        model.insert_mention_at_suggestion(
             "https://matrix.to/#/@alice:matrix.org".into(),
             "Alice".into(),
             suggestion_pattern,
@@ -188,7 +188,7 @@ mod test {
             panic!("No suggestion found");
         };
 
-        model.set_link_suggestion(
+        model.insert_mention_at_suggestion(
             "https://matrix.to/#/@alice:matrix.org".into(),
             "Alice".into(),
             suggestion_pattern,
@@ -217,7 +217,7 @@ mod test {
             panic!("No suggestion found");
         };
 
-        model.set_link_suggestion(
+        model.insert_mention_at_suggestion(
             "https://matrix.to/#/@alice:matrix.org".into(),
             "Alice".into(),
             suggestion_pattern,
