@@ -429,7 +429,6 @@ describe('computeNodeAndOffset', () => {
         expect(offset).toBe(0);
     });
 
-    // eslint-disable-next-line max-len
     it('can find the beginning of a mention correctly', () => {
         // When
         setEditorHtml(
@@ -469,6 +468,19 @@ describe('computeNodeAndOffset', () => {
         // Then
         expect(node).toBe(editor.childNodes[1]);
         expect(offset).toBe(1);
+    });
+
+    it('can find the beginning of a mention inside a paragraph', () => {
+        // When
+        setEditorHtml(
+            // eslint-disable-next-line max-len
+            '<p><a data-mention-type="something" contenteditable="false">test</a>&nbsp;</p>',
+        );
+        const { node, offset } = computeNodeAndOffset(editor, 1);
+
+        // Then
+        expect(node).toBe(editor.childNodes[0]);
+        expect(offset).toBe(0);
     });
 });
 
