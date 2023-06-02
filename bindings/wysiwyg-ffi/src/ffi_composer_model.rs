@@ -258,9 +258,8 @@ impl ComposerModel {
         ))
     }
 
-    /// This function creates a link with the first argument being the href, the second being the
-    /// display text, the third being the (rust model) suggestion that is being replaced and the
-    /// final argument being a list of attributes that will be added to the Link.
+    /// This function creates a mention node and inserts it into the composer, replacing the
+    /// text content defined by the suggestion
     pub fn insert_mention_at_suggestion(
         self: &Arc<Self>,
         url: String,
