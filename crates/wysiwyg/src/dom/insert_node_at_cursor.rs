@@ -25,6 +25,9 @@ where
         range: &Range,
         new_node: DomNode<S>,
     ) -> DomHandle {
+        if range.is_selection() {
+            panic!("Attempted to use `insert_node_at_cursor` with a selection")
+        }
         #[cfg(any(test, feature = "assert-invariants"))]
         self.assert_invariants();
 
