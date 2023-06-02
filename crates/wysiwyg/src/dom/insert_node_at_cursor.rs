@@ -28,6 +28,7 @@ where
         if range.is_selection() {
             panic!("Attempted to use `insert_node_at_cursor` with a selection")
         }
+
         #[cfg(any(test, feature = "assert-invariants"))]
         self.assert_invariants();
 
@@ -83,6 +84,19 @@ mod test {
         tests::{testutils_composer_model::cm, testutils_conversion::utf16},
         DomNode, ToHtml,
     };
+    #[test]
+    #[should_panic]
+    fn panics_if_passed_selection() {
+        let mut model = cm("{something}|");
+        let (start, end) = model.safe_selection();
+        let range = model.state.dom.find_range(start, end);
+
+        model.state.dom.insert_node_at_cursor(
+            &range,
+            DomNode::new_link(utf16("href"), vec![], vec![]),
+        );
+    }
+
     #[test]
     fn inserts_node_in_empty_model() {
         let mut model = cm("|");
