@@ -20,6 +20,8 @@ impl<S> Dom<S>
 where
     S: UnicodeString,
 {
+    // Inserts the new node at the current cursor position if possible, panics if
+    // the range passed is a selection
     pub fn insert_node_at_cursor(
         &mut self,
         range: &Range,
