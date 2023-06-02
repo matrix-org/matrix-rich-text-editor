@@ -194,6 +194,9 @@ export function computeNodeAndOffset(
     const isTextNodeInsideMention =
         isTextNode &&
         currentNode.parentElement?.hasAttribute('data-mention-type');
+
+    // <<< TODO one of these approaches is the one to choose... think it will be the
+    // text node one
     if (isMention) {
         // we need to consider the mention as having a length of 1
         if (codeunits === 0) {
