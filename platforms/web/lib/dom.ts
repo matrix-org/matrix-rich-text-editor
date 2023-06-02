@@ -180,10 +180,57 @@ export function computeNodeAndOffset(
     node: Node | null;
     offset: number;
 } {
+    console.log(currentNode.nodeName);
     const isEmptyListItem =
         currentNode.nodeName === 'LI' && !currentNode.hasChildNodes();
 
-    if (currentNode.nodeType === Node.TEXT_NODE) {
+    // horribly hacky, but we need to identify elements with the data-mention-type attribute
+    const isMention =
+        currentNode.childNodes.length === 1 &&
+        currentNode.firstChild?.nodeType === Node.TEXT_NODE &&
+        currentNode.firstChild.parentElement?.hasAttribute('data-mention-type');
+    console.log(currentNode, isMention);
+    const isTextNode = currentNode.nodeType === Node.TEXT_NODE;
+    const isTextNodeInsideMention =
+        isTextNode &&
+        currentNode.parentElement?.hasAttribute('data-mention-type');
+    if (isMention) {
+        // we need to consider the mention as having a length of 1
+        if (codeunits === 0) {
+            return { node: currentNode, offset: 0 };
+        } else if (codeunits === 1) {
+            return { node: null, offset: 0 };
+        } else {
+            // We may need an extra offset if we're inside a p tag
+            const shouldAddOffset = textNodeNeedsExtraOffset(
+                currentNode.firstChild,
+            );
+            const extraOffset = shouldAddOffset ? 1 : 0;
+            return { node: null, offset: codeunits - extraOffset - 1 };
+        }
+    } else if (isTextNodeInsideMention) {
+        // Special case for mention nodes - they'll have a parent with a
+        // data-mention-type attribute and we consider them to have a
+        // length of 1
+
+        if (codeunits <= 1) {
+            if (codeunits === 0) {
+                // if we hit the beginning of the node, select start of editor
+                // as this appears to be the only way this can occur
+                return { node: rootNode || currentNode, offset: 0 };
+            } else {
+                // setting node to null means if we end up inside or at end of a
+                // non-editable node somehow, we will return "node not found"
+                // and so we will keep searching
+                return { node: null, offset: 0 };
+            }
+        } else {
+            // We may need an extra offset if we're inside a p tag
+            const shouldAddOffset = textNodeNeedsExtraOffset(currentNode);
+            const extraOffset = shouldAddOffset ? 1 : 0;
+            return { node: null, offset: codeunits - extraOffset - 1 };
+        }
+    } else if (isTextNode) {
         // For a text node, we need to check to see if it needs an extra offset
         // which involves climbing the tree through it's ancestors checking for
         // any of the nodes that require the extra offset.
@@ -203,24 +250,7 @@ export function computeNodeAndOffset(
             }
         }
 
-        // Special case for mention nodes - they'll have a parent with a
-        // data-mention-type attribute and we consider them to have a
-        // length of 1
         if (
-            currentNode.parentElement?.hasAttribute('data-mention-type') &&
-            codeunits <= 1
-        ) {
-            if (codeunits === 0) {
-                // if we hit the beginning of the node, select start of editor
-                // as this appears to be the only way this can occur
-                return { node: rootNode || currentNode, offset: 0 };
-            } else {
-                // setting node to null means if we end up inside or at end of a
-                // non-editable node somehow, we will return "node not found"
-                // and so we will keep searching
-                return { node: null, offset: 0 };
-            }
-        } else if (
             !currentNode.parentElement?.hasAttribute('data-mention-type') &&
             codeunits <= (currentNode.textContent?.length || 0)
         ) {
@@ -228,12 +258,6 @@ export function computeNodeAndOffset(
 
             return { node: currentNode, offset: codeunits };
         } else {
-            // Special case for mention nodes - they'll have a parent with a
-            // data-mention-type attribute and we consider them to have a
-            // length of 1
-            if (currentNode.parentElement?.hasAttribute('data-mention-type')) {
-                return { node: null, offset: codeunits - 1 };
-            }
             // but if we haven't found that answer, apply the extra offset
             return {
                 node: null,
