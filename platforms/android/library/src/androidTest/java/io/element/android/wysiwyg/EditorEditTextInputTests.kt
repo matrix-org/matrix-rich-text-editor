@@ -1,7 +1,6 @@
 package io.element.android.wysiwyg
 
 import android.content.ClipData
-import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Typeface
@@ -12,7 +11,6 @@ import android.text.style.ReplacementSpan
 import android.text.style.StyleSpan
 import android.view.KeyEvent
 import android.view.View
-import android.view.inputmethod.InputContentInfo
 import android.widget.EditText
 import android.widget.TextView
 import androidx.core.text.getSpans
@@ -29,7 +27,6 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.element.android.wysiwyg.display.TextDisplay
-import io.element.android.wysiwyg.fakes.SimpleKeywordDisplayHandler
 import io.element.android.wysiwyg.test.R
 import io.element.android.wysiwyg.test.utils.*
 import io.element.android.wysiwyg.utils.RustErrorCollector
@@ -87,9 +84,9 @@ class EditorEditTextInputTests {
     @Test
     fun testBackspacePill() {
         onView(withId(R.id.rich_text_edit_text))
-            .perform(EditorActions.setLinkDisplayHandler { _, _ -> TextDisplay.Pill })
+            .perform(EditorActions.setMentionDisplayHandler(TestMentionDisplayHandler(TextDisplay.Pill)))
             .perform(typeText("Hello @"))
-            .perform(EditorActions.setLinkSuggestion("alice", "link"))
+            .perform(EditorActions.insertMentionAtSuggestion("alice", "link"))
             .perform(pressKey(KeyEvent.KEYCODE_DEL)) // Delete the space added after the pill
             .perform(pressKey(KeyEvent.KEYCODE_DEL)) // Delete the pill
             .perform(pressKey(KeyEvent.KEYCODE_DEL)) // Delete the trailing space after "Hello"
@@ -281,8 +278,8 @@ class EditorEditTextInputTests {
     fun testSettingLinkSuggestion() {
         onView(withId(R.id.rich_text_edit_text))
             .perform(ImeActions.setComposingText("@jonny"))
-            .perform(EditorActions.setLinkDisplayHandler { _, _ -> TextDisplay.Pill })
-            .perform(EditorActions.setLinkSuggestion("jonny", "https://matrix.to/#/@test:matrix.org"))
+            .perform(EditorActions.setMentionDisplayHandler(TestMentionDisplayHandler(TextDisplay.Pill)))
+            .perform(EditorActions.insertMentionAtSuggestion("jonny", "https://matrix.to/#/@test:matrix.org"))
             .check(matches(TextViewMatcher {
                 it.editableText.getSpans<PillSpan>().isNotEmpty()
             }))
@@ -292,13 +289,17 @@ class EditorEditTextInputTests {
     fun testSettingMultipleLinkSuggestionWithCustomReplacements() {
         onView(withId(R.id.rich_text_edit_text))
             .perform(ImeActions.setComposingText("@jonny"))
-            .perform(EditorActions.setLinkDisplayHandler { _, _ -> TextDisplay.Custom(PillSpan(
-                R.color.fake_color
-            )) })
-            .perform(EditorActions.setLinkSuggestion("jonny", "https://matrix.to/#/@test:matrix.org"))
+            .perform(EditorActions.setMentionDisplayHandler(
+                TestMentionDisplayHandler(
+                    TextDisplay.Custom(
+                        PillSpan(R.color.fake_color)
+                    )
+                )
+            ))
+            .perform(EditorActions.insertMentionAtSuggestion("jonny", "https://matrix.to/#/@test:matrix.org"))
             .perform(typeText(" "))
             .perform(ImeActions.setComposingText("@jonny"))
-            .perform(EditorActions.setLinkSuggestion("jonny", "https://matrix.to/#/@test:matrix.org"))
+            .perform(EditorActions.insertMentionAtSuggestion("jonny", "https://matrix.to/#/@test:matrix.org"))
             .check(matches(TextViewMatcher {
                 it.editableText.getSpans<ReplacementSpan>().count() == 2
             }))
@@ -308,7 +309,7 @@ class EditorEditTextInputTests {
     fun testReplaceTextSuggestion() {
         onView(withId(R.id.rich_text_edit_text))
             .perform(ImeActions.setComposingText("@r"))
-            .perform(EditorActions.setKeywordDisplayHandler(SimpleKeywordDisplayHandler("@room")))
+            .perform(EditorActions.setMentionDisplayHandler(TestMentionDisplayHandler(TextDisplay.Pill)))
             .perform(EditorActions.replaceTextSuggestion("@room"))
             .check(matches(TextViewMatcher {
                     it.editableText.getSpans<ReplacementSpan>().isNotEmpty()
@@ -319,9 +320,9 @@ class EditorEditTextInputTests {
     fun testReplacingMultipleTextSuggestionsWithCustomReplacements() {
         onView(withId(R.id.rich_text_edit_text))
             .perform(ImeActions.setComposingText("@r"))
-            .perform(EditorActions.setKeywordDisplayHandler(
-                SimpleKeywordDisplayHandler("@room",
-                    displayAs = TextDisplay.Custom(PillSpan(R.color.fake_color)))
+            .perform(EditorActions.setMentionDisplayHandler(
+                TestMentionDisplayHandler(
+                    TextDisplay.Custom(PillSpan(R.color.fake_color)))
                 )
             )
             .perform(EditorActions.replaceTextSuggestion("@room"))

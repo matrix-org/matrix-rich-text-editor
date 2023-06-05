@@ -23,7 +23,7 @@ import androidx.annotation.FloatRange
 class InlineCodeSpan(
     @FloatRange(from = 0.0) relativeSizeProportion: Float =
         CodeSpanConstants.DEFAULT_RELATIVE_SIZE_PROPORTION,
-) : TypefaceSpan("monospace"), PlainKeywordDisplaySpan {
+) : TypefaceSpan("monospace"), PlainAtRoomMentionDisplaySpan {
     private val relativeSizeSpan = RelativeSizeSpan(relativeSizeProportion)
 
     override fun updateMeasureState(paint: TextPaint) {
