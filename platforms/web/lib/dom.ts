@@ -180,47 +180,46 @@ export function computeNodeAndOffset(
     node: Node | null;
     offset: number;
 } {
-    console.log(currentNode.nodeName);
     const isEmptyListItem =
         currentNode.nodeName === 'LI' && !currentNode.hasChildNodes();
 
-    // horribly hacky, but we need to identify elements with the data-mention-type attribute
-    const isMention =
-        currentNode.childNodes.length === 1 &&
-        currentNode.firstChild?.nodeType === Node.TEXT_NODE &&
-        currentNode.firstChild.parentElement?.hasAttribute('data-mention-type');
-    console.log(currentNode, isMention);
     const isTextNode = currentNode.nodeType === Node.TEXT_NODE;
     const isTextNodeInsideMention =
         isTextNode &&
         currentNode.parentElement?.hasAttribute('data-mention-type');
 
-    // <<< TODO one of these approaches is the one to choose... think it will be the
-    // text node one
-    if (isMention) {
-        // we need to consider the mention as having a length of 1
-        if (codeunits === 0) {
-            return { node: currentNode, offset: 0 };
-        } else if (codeunits === 1) {
-            return { node: null, offset: 0 };
-        } else {
-            // We may need an extra offset if we're inside a p tag
-            const shouldAddOffset = textNodeNeedsExtraOffset(
-                currentNode.firstChild,
-            );
-            const extraOffset = shouldAddOffset ? 1 : 0;
-            return { node: null, offset: codeunits - extraOffset - 1 };
-        }
-    } else if (isTextNodeInsideMention) {
-        // Special case for mention nodes - they'll have a parent with a
-        // data-mention-type attribute and we consider them to have a
-        // length of 1
+    if (isTextNodeInsideMention) {
+        // We may need an extra offset if we're inside a p tag
+        const shouldAddOffset = textNodeNeedsExtraOffset(currentNode);
+        const extraOffset = shouldAddOffset ? 1 : 0;
+        // Special case for mention nodes. They will be an anchor node (or span,
+        // TBC) with a single text node child. We can therefore guarantee that
+        // the text node will have both parent and grandparent (at the lowest
+        // possible amount of nesting, parent is the link, grandparent is the
+        // editor).
 
-        if (codeunits <= 1) {
-            if (codeunits === 0) {
-                // if we hit the beginning of the node, select start of editor
-                // as this appears to be the only way this can occur
-                return { node: rootNode || currentNode, offset: 0 };
+        const position = codeunits - extraOffset;
+
+        // We have only _found_ the node if we have codeunits remainng of 0 or 1
+        if (position <= 1) {
+            if (position === 0) {
+                // if we have hit the beginning of the node, we either want to
+                // put the cursor at the end of the previous sibling (if it has
+                // one) or at the 0th index of the parent otherwise
+                if (currentNode.previousSibling) {
+                    return {
+                        node: currentNode.previousSibling,
+                        offset: textLength(
+                            currentNode.previousSibling,
+                            Infinity,
+                        ),
+                    };
+                } else {
+                    return {
+                        node: currentNode.parentNode?.parentNode,
+                        offset: 0,
+                    };
+                }
             } else {
                 // setting node to null means if we end up inside or at end of a
                 // non-editable node somehow, we will return "node not found"
@@ -228,9 +227,6 @@ export function computeNodeAndOffset(
                 return { node: null, offset: 0 };
             }
         } else {
-            // We may need an extra offset if we're inside a p tag
-            const shouldAddOffset = textNodeNeedsExtraOffset(currentNode);
-            const extraOffset = shouldAddOffset ? 1 : 0;
             return { node: null, offset: codeunits - extraOffset - 1 };
         }
     } else if (isTextNode) {
@@ -404,9 +400,13 @@ function findCharacter(
     found: boolean;
     offset: number;
 } {
+    const isTextNode = currentNode.nodeType === Node.TEXT_NODE;
+    const isInsideMention =
+        currentNode.parentElement?.hasAttribute('data-mention-type');
+
     if (currentNode === nodeToFind) {
         // We've found the right node
-        if (currentNode.nodeType === Node.TEXT_NODE) {
+        if (isTextNode) {
             // Text node - use the offset to know where we are
             if (offsetToFind > (currentNode.textContent?.length ?? 0)) {
                 // If the offset is wrong, we didn't find it
@@ -417,9 +417,7 @@ function findCharacter(
                 // Special case for mention nodes - they'll have a parent with a
                 // data-mention-type attribute and we consider them to have a
                 // length of 1
-                if (
-                    currentNode.parentElement?.hasAttribute('data-mention-type')
-                ) {
+                if (isInsideMention) {
                     return { found: true, offset: offsetToFind === 0 ? 0 : 1 };
                 }
                 return { found: true, offset: offsetToFind };
@@ -434,14 +432,14 @@ function findCharacter(
     } else {
         // We have not found the right node yet
 
-        if (currentNode.nodeType === Node.TEXT_NODE) {
+        if (isTextNode) {
             // Return how many steps forward we progress by skipping
             // this node.
 
             // Special case for mention nodes - they'll have a parent with a
             // data-mention-type attribute and we consider them to have a
             // length of 1
-            if (currentNode.parentElement?.hasAttribute('data-mention-type')) {
+            if (isInsideMention) {
                 return { found: false, offset: 1 };
             }
 
