@@ -14,7 +14,7 @@
 
 use crate::{DomHandle, DomNode, UnicodeString};
 
-use super::{Dom, Range};
+use super::{Dom, DomLocation, Range};
 
 impl<S> Dom<S>
 where
@@ -41,7 +41,6 @@ where
             // when we have a leaf, the way we treat the insertion depends on the cursor position inside that leaf
             let cursor_at_end = leaf.start_offset == leaf.length;
             let cursor_at_start = leaf.start_offset == 0;
-
             let leaf_is_placeholder =
                 self.lookup_node(&leaf.node_handle).is_placeholder();
 
@@ -62,9 +61,9 @@ where
                 )
             }
         } else {
-            // if we haven't found a leaf node, try to find a container node
-            let first_location = range.locations.first();
-
+            // if we don't have a leaf, try to find the first container that we're inside
+            let first_location: Option<&DomLocation> =
+                range.locations.iter().find(|l| l.start_offset < l.length);
             match first_location {
                 // if we haven't found anything, we're inserting into an empty dom
                 None => {

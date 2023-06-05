@@ -232,6 +232,96 @@ mod test {
         )
     }
 
+    #[test]
+    fn test_replace_text_in_second_paragraph_node_with_mention_ffi() {
+        let model = Arc::new(ComposerModel::new());
+        model.replace_text("hello".into());
+        model.enter();
+
+        let update = model.replace_text("@ali".into());
+
+        let MenuAction::Suggestion { suggestion_pattern } =
+            update.menu_action() else
+        {
+            panic!("No suggestion found");
+        };
+
+        model.insert_mention_at_suggestion(
+            "https://matrix.to/#/@alice:matrix.org".into(),
+            "Alice".into(),
+            suggestion_pattern,
+            vec![Attribute {
+                key: "data-mention-type".into(),
+                value: "user".into(),
+            }],
+        );
+        assert_eq!(
+            model.get_content_as_html(),
+            "<p>hello</p><p><a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>\u{a0}</p>",
+        )
+    }
+
+    #[test]
+    fn test_replace_text_in_second_list_item_start_with_mention_ffi() {
+        let model = Arc::new(ComposerModel::new());
+        model.ordered_list();
+        model.replace_text("hello".into());
+        model.enter();
+
+        let update = model.replace_text("@ali".into());
+
+        let MenuAction::Suggestion { suggestion_pattern } =
+            update.menu_action() else
+        {
+            panic!("No suggestion found");
+        };
+
+        model.insert_mention_at_suggestion(
+            "https://matrix.to/#/@alice:matrix.org".into(),
+            "Alice".into(),
+            suggestion_pattern,
+            vec![Attribute {
+                key: "data-mention-type".into(),
+                value: "user".into(),
+            }],
+        );
+        assert_eq!(
+            model.get_content_as_html(),
+            "<ol><li>hello</li><li><a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>\u{a0}</li></ol>",
+        )
+    }
+
+    #[test]
+    fn test_replace_text_in_second_list_item_end_with_mention_ffi() {
+        let model = Arc::new(ComposerModel::new());
+        model.ordered_list();
+        model.replace_text("hello".into());
+        model.enter();
+        let update = model.replace_text("there @ali".into());
+
+        let MenuAction::Suggestion { suggestion_pattern } =
+            update.menu_action() else
+        {
+            panic!("No suggestion found");
+        };
+
+        dbg!(&suggestion_pattern);
+
+        model.insert_mention_at_suggestion(
+            "https://matrix.to/#/@alice:matrix.org".into(),
+            "Alice".into(),
+            suggestion_pattern,
+            vec![Attribute {
+                key: "data-mention-type".into(),
+                value: "user".into(),
+            }],
+        );
+        assert_eq!(
+            model.get_content_as_html(),
+            "<ol><li>hello</li><li>there <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>\u{a0}</li></ol>",
+        )
+    }
+
     fn redo_indent_unindent_disabled() -> HashMap<ComposerAction, ActionState> {
         HashMap::from([
             (ComposerAction::Bold, ActionState::Enabled),
