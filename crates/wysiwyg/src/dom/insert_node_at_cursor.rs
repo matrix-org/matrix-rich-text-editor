@@ -44,9 +44,8 @@ where
             let leaf_is_placeholder =
                 self.lookup_node(&leaf.node_handle).is_placeholder();
 
-            // special case where we replace a paragraph placeholder
             if leaf_is_placeholder || cursor_at_start {
-                // insert the new node before a leaf that contains a cursor at the start
+                // insert the new node before a placeholder leaf or one that contains a cursor at the start
                 inserted_handle = self.insert_at(&leaf.node_handle, new_node);
             } else if cursor_at_end {
                 // insert the new node after a leaf that contains a cursor at the end
@@ -178,6 +177,23 @@ mod test {
         assert_eq!(
             model.state.dom.to_html(),
             "<p>this is a leaf<a href=\"href\"></a></p>"
+        )
+    }
+
+    #[test]
+    fn inserts_node_into_empty_paragraph() {
+        let mut model = cm("<p>&nbsp;</p><p>&nbsp;|</p><p>&nbsp;</p>");
+        let (start, end) = model.safe_selection();
+        let range = model.state.dom.find_range(start, end);
+
+        model.state.dom.insert_node_at_cursor(
+            &range,
+            DomNode::new_link(utf16("href"), vec![], vec![]),
+        );
+
+        assert_eq!(
+            model.state.dom.to_html(),
+            "<p>\u{a0}</p><p><a href=\"href\"></a>\u{a0}</p><p>\u{a0}</p>"
         )
     }
 }

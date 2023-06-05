@@ -256,7 +256,7 @@ where
         }
     }
 
-    /// Returns if this node is a placeholder, as used in paragraphs
+    /// Returns if this node is a placeholder, as used in empty paragraphs
     pub fn is_placeholder(&self) -> bool {
         match self {
             DomNode::Text(n) => n.data() == "\u{A0}",

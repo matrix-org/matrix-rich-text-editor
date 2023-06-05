@@ -189,20 +189,20 @@ export function computeNodeAndOffset(
         currentNode.parentElement?.hasAttribute('data-mention-type');
 
     if (isTextNodeInsideMention) {
-        // We may need an extra offset if we're inside a p tag
+        // Special casing for mention nodes. They will be a node with a single
+        // text node child. We can therefore guarantee that the text node will
+        // have both parent and grandparent nodes.
+
+        // We _may_ need an extra offset if we're inside a p tag
         const shouldAddOffset = textNodeNeedsExtraOffset(currentNode);
         const extraOffset = shouldAddOffset ? 1 : 0;
-        // Special case for mention nodes. They will be an anchor node (or span,
-        // TBC) with a single text node child. We can therefore guarantee that
-        // the text node will have both parent and grandparent (at the lowest
-        // possible amount of nesting, parent is the link, grandparent is the
-        // editor).
 
-        const position = codeunits - extraOffset;
+        const remainingCodeunits = codeunits - extraOffset;
 
-        // We have only _found_ the node if we have codeunits remainng of 0 or 1
-        if (position <= 1) {
-            if (position === 0) {
+        // We have only _found_ the node if we have 0 or 1 remainingCodeunits
+        // as we treat a mention as having length 1
+        if (remainingCodeunits <= 1) {
+            if (remainingCodeunits === 0) {
                 // if we have hit the beginning of the node, we either want to
                 // put the cursor at the end of the previous sibling (if it has
                 // one) or at the 0th index of the parent otherwise
@@ -216,7 +216,7 @@ export function computeNodeAndOffset(
                     };
                 } else {
                     return {
-                        node: currentNode.parentNode?.parentNode,
+                        node: currentNode.parentNode?.parentNode ?? null,
                         offset: 0,
                     };
                 }
@@ -249,12 +249,8 @@ export function computeNodeAndOffset(
             }
         }
 
-        if (
-            !currentNode.parentElement?.hasAttribute('data-mention-type') &&
-            codeunits <= (currentNode.textContent?.length || 0)
-        ) {
+        if (codeunits <= (currentNode.textContent?.length || 0)) {
             // we don't need to use that extra offset if we've found the answer
-
             return { node: currentNode, offset: codeunits };
         } else {
             // but if we haven't found that answer, apply the extra offset
@@ -436,13 +432,6 @@ function findCharacter(
             // Return how many steps forward we progress by skipping
             // this node.
 
-            // Special case for mention nodes - they'll have a parent with a
-            // data-mention-type attribute and we consider them to have a
-            // length of 1
-            if (isInsideMention) {
-                return { found: false, offset: 1 };
-            }
-
             // The extra check for an offset here depends on the ancestor of the
             // text node and can be seen as the opposite to the equivalent call
             // in computeNodeAndOffset
@@ -454,6 +443,11 @@ function findCharacter(
             // paragraphs
             if (isPlaceholderParagraphNode(currentNode)) {
                 return { found: false, offset: extraOffset };
+            }
+
+            // ...and a special case where mentions alwasy have a length of 1
+            if (isInsideMention) {
+                return { found: false, offset: 1 + extraOffset };
             }
 
             return {
