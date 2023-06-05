@@ -47,6 +47,8 @@ final class StringDifferTests: XCTestCase {
         XCTAssertThrowsError(try StringDiffer.replacement(from: "text", to: "fexf"), "doubleReplacementIsNotHandled") { error in
             XCTAssertEqual(error as? StringDifferError,
                            StringDifferError.tooComplicated)
+            XCTAssertEqual(error.localizedDescription,
+                           StringDifferError.tooComplicated.localizedDescription)
         }
     }
 
@@ -54,6 +56,8 @@ final class StringDifferTests: XCTestCase {
         XCTAssertThrowsError(try StringDiffer.replacement(from: "text", to: "extab"), "insertionsDontMatchRemovalsLocation") { error in
             XCTAssertEqual(error as? StringDifferError,
                            StringDifferError.insertionsDontMatchRemovals)
+            XCTAssertEqual(error.localizedDescription,
+                           StringDifferError.insertionsDontMatchRemovals.localizedDescription)
         }
     }
 

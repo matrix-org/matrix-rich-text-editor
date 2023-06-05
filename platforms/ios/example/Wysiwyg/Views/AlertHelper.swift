@@ -42,7 +42,7 @@ struct AlertHelper<Content: View>: UIViewControllerRepresentable {
         uiViewController.rootView = content
         var alert = alert
         alert.dismissAction = {
-            self.isPresented = false
+            isPresented = false
         }
         if isPresented, uiViewController.presentedViewController == nil {
             context.coordinator.alertController = UIAlertController(alert: alert)

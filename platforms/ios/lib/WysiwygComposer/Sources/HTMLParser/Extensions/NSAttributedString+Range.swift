@@ -60,6 +60,15 @@ extension NSAttributedString {
         return NSRange(location: start, length: end - start)
     }
 
+    /// Computes a string with all characters of the `NSAttributedString` that are actually part of the HTML.
+    /// Positions in this string will return a range that conforms to the range returned by the Rust model.
+    public var htmlChars: String {
+        NSMutableAttributedString(attributedString: self)
+            .removeDiscardableContent()
+            .restoreReplacements()
+            .string
+    }
+
     // MARK: - Internal
 
     /// Compute an array of all detected occurences of discardable
@@ -82,30 +91,26 @@ extension NSAttributedString {
     }
 
     /// Compute an array of all parts of the attributed string that have been replaced
-    /// with `PermalinkReplacer` usage within the given range. Also computes
-    /// the offset between the replacement and the original part (i.e. if the original length
-    /// is greater than the replacement range, this offset will be negative).
+    /// with `PermalinkReplacer` usage within the given range.
     ///
     /// - Parameter range: the range on which the elements should be detected. Entire range if omitted
-    /// - Returns: an array of range and offsets.
-    func replacementTextRanges(in range: NSRange? = nil) -> [(range: NSRange, offset: Int)] {
-        var ranges = [(NSRange, Int)]()
+    /// - Returns: an array of `Replacement`.
+    func replacementTextRanges(in range: NSRange? = nil) -> [Replacement] {
+        var replacements = [Replacement]()
 
-        enumerateTypedAttribute(.replacementContent) { (replacementContent: ReplacementContent, range: NSRange, _) in
-            ranges.append((range, range.length - replacementContent.originalLength))
+        enumerateTypedAttribute(.originalContent) { (originalContent: OriginalContent, range: NSRange, _) in
+            replacements.append(Replacement(range: range, originalContent: originalContent))
         }
 
-        return ranges
+        return replacements
     }
 
     /// Compute an array of all parts of the attributed string that have been replaced
-    /// with `PermalinkReplacer` usage up to the provided index. Also computes
-    /// the offset between the replacement and the original part (i.e. if the original length
-    /// is greater than the replacement range, this offset will be negative).
+    /// with `PermalinkReplacer` usage up to the provided index.
     ///
     /// - Parameter attributedIndex: the position until which the ranges should be computed.
     /// - Returns: an array of range and offsets.
-    func replacementTextRanges(to attributedIndex: Int) -> [(range: NSRange, offset: Int)] {
+    func replacementTextRanges(to attributedIndex: Int) -> [Replacement] {
         replacementTextRanges(in: .init(location: 0, length: attributedIndex))
     }
 
@@ -165,5 +170,32 @@ extension NSAttributedString {
         }
 
         return attributedIndex
+    }
+}
+
+extension NSMutableAttributedString {
+    /// Remove all discardable elements from the attributed
+    /// string (i.e. list prefixes, zwsp placeholders, etc)
+    ///
+    /// - Returns: self (discardable)
+    @discardableResult
+    func removeDiscardableContent() -> Self {
+        discardableTextRanges().reversed().forEach {
+            replaceCharacters(in: $0, with: "")
+        }
+
+        return self
+    }
+
+    /// Restore original content from `Replacement` within the attributed string.
+    ///
+    /// - Returns: self (discardable)
+    @discardableResult
+    func restoreReplacements() -> Self {
+        replacementTextRanges().reversed().forEach {
+            replaceCharacters(in: $0.range, with: $0.originalContent.text)
+        }
+
+        return self
     }
 }

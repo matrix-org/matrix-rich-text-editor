@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-/// A struct that can be used as an attribute to reflect replaced content in the `NSAttributedString`.
-struct ReplacementContent {
-    /// The original length of the content that has been replaced.
-    let originalLength: Int
+/// A struct that can be used as an attribute to persist the original content of a replaced part of an `NSAttributedString`.
+struct OriginalContent {
+    /// The original text of the content that has been replaced.
+    let text: String
 }
