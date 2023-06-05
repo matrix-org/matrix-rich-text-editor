@@ -346,6 +346,16 @@ fn paragraph_insert_into_empty() {
 }
 
 #[test]
+fn paragraph_insert_into_empty_second() {
+    let mut model = cm("<p>hello</p><p>&nbsp;|</p>");
+    insert_mention_at_cursor(&mut model);
+    assert_eq!(
+        tx(&model),
+        "<p>hello</p><p><a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|</p>",
+    );
+}
+
+#[test]
 fn paragraph_replace_start() {
     let mut model = cm("<p>| says hello</p>");
     insert_mention_at_cursor(&mut model);

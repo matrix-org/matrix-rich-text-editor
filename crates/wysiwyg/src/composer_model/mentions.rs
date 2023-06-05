@@ -54,8 +54,6 @@ where
         let range = self.state.dom.find_range(start, end);
 
         if range.locations.iter().any(|l: &DomLocation| {
-            dbg!(l);
-            dbg!(l.is_covered());
             l.kind.is_link_kind() || l.kind.is_code_kind()
         }) {
             return ComposerUpdate::keep();

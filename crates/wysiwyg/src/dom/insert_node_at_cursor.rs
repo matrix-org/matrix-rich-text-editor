@@ -42,7 +42,11 @@ where
             let cursor_at_end = leaf.start_offset == leaf.length;
             let cursor_at_start = leaf.start_offset == 0;
 
-            if cursor_at_start {
+            let leaf_is_placeholder =
+                self.lookup_node(&leaf.node_handle).is_placeholder();
+
+            // special case where we replace a paragraph placeholder
+            if leaf_is_placeholder || cursor_at_start {
                 // insert the new node before a leaf that contains a cursor at the start
                 inserted_handle = self.insert_at(&leaf.node_handle, new_node);
             } else if cursor_at_end {
