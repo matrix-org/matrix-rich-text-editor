@@ -219,7 +219,9 @@ class EditorEditText : TextInputEditText {
             android.R.id.paste, android.R.id.pasteAsPlainText -> {
                 val clipBoardManager =
                     context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-                val copiedString = clipBoardManager.primaryClip?.getItemAt(0)?.text ?: return false
+                // Only special-case paste behaviour if it is text content, otherwise default to EditText implementation
+                // which calls ViewCompat.performReceiveContent and fires the expected listeners.
+                val copiedString = clipBoardManager.primaryClip?.getItemAt(0)?.text ?: return super.onTextContextMenuItem(id)
                 val result = viewModel.processInput(EditorInputAction.ReplaceText(copiedString))
 
                 if (result != null) {

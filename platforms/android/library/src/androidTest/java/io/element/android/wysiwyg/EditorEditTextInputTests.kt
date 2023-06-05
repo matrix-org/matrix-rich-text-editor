@@ -1,12 +1,18 @@
 package io.element.android.wysiwyg
 
+import android.content.ClipData
+import android.content.ClipDescription
+import android.content.ClipboardManager
+import android.content.Context
 import android.graphics.Typeface
+import android.net.Uri
 import android.text.Editable
 import android.text.style.BulletSpan
 import android.text.style.ReplacementSpan
 import android.text.style.StyleSpan
 import android.view.KeyEvent
 import android.view.View
+import android.view.inputmethod.InputContentInfo
 import android.widget.EditText
 import android.widget.TextView
 import androidx.core.text.getSpans
@@ -460,6 +466,79 @@ class EditorEditTextInputTests {
             textWatcher.invoke(match { it.toString() == "" })
         }
         confirmVerified(textWatcher)
+    }
+
+    @Test
+    fun testPasteImage() {
+        val imageUri = Uri.parse("content://fakeImage")
+        val contentWatcher = spyk<(uri: Uri) -> Unit>({ })
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(EditorActions.addContentWatcher(arrayOf("image/*"), contentWatcher))
+
+        scenarioRule.scenario.onActivity { activity ->
+            val editor = activity.findViewById<EditorEditText>(R.id.rich_text_edit_text)
+            val clipboardManager =
+                activity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clpData = ClipData.newRawUri("image", imageUri)
+            clipboardManager.setPrimaryClip(clpData)
+            editor.onTextContextMenuItem(android.R.id.paste)
+        }
+        verify(exactly = 1) {
+            contentWatcher.invoke(match { it == imageUri })
+        }
+
+        confirmVerified(contentWatcher)
+    }
+
+    @Test
+    fun testPastePlainText() {
+        val clipData = ClipData.newPlainText("text", ipsum)
+        val contentWatcher = spyk<(uri: Uri) -> Unit>({ })
+        val textWatcher = spyk<(text: Editable?) -> Unit>({ })
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(EditorActions.addTextWatcher(textWatcher))
+        pasteFromClipboard(clipData, false)
+
+        pasteFromClipboard(clipData, true)
+
+        verify(exactly = 2) {
+            textWatcher.invoke(match { it.toString() == ipsum + ipsum })
+        }
+
+        confirmVerified(contentWatcher)
+    }
+
+    @Test
+    fun testPasteHtlmText() {
+        val html = "<bold>$ipsum</bold>"
+        val clipData = ClipData.newHtmlText("html", ipsum, html)
+        val contentWatcher = spyk<(uri: Uri) -> Unit>({ })
+        val textWatcher = spyk<(text: Editable?) -> Unit>({ })
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(EditorActions.addTextWatcher(textWatcher))
+        pasteFromClipboard(clipData, false)
+
+        pasteFromClipboard(clipData, true)
+
+        verify(exactly = 2) {
+            // In future when we support parsing/loading of pasted html into the model
+            // we can make more assertions on that the corrrect formating is applied
+            textWatcher.invoke(match { it.toString() == ipsum + ipsum })
+        }
+
+        confirmVerified(contentWatcher)
+    }
+
+
+    private fun pasteFromClipboard(clipData: ClipData, pasteAsPlainText: Boolean){
+        scenarioRule.scenario.onActivity { activity ->
+            val editor = activity.findViewById<EditorEditText>(R.id.rich_text_edit_text)
+            val clipboardManager =
+                activity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            clipboardManager.setPrimaryClip(clipData)
+            val itemId = if (pasteAsPlainText) android.R.id.pasteAsPlainText else android.R.id.paste
+            editor.onTextContextMenuItem(itemId)
+        }
     }
 
     @Test

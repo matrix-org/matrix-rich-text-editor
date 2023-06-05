@@ -350,17 +350,17 @@ impl SelectionWriter {
     /// after a mention node
     ///
     /// * `buf` - the output buffer up to and including the given node
-    /// * `pos` - the buffer position immediately after the node
+    /// * `start_pos` - the buffer position immediately before the node
     pub fn write_selection_mention_node<S: UnicodeString>(
         &mut self,
         buf: &mut S,
-        pos_start: usize,
+        start_pos: usize,
         node: &MentionNode<S>,
     ) {
         if let Some(loc) = self.locations.get(&node.handle()) {
             let strings_to_add = self.state.advance(loc, 1);
             for (str, i) in strings_to_add.into_iter().rev() {
-                let insert_pos = if i == 0 { pos_start } else { buf.len() };
+                let insert_pos = if i == 0 { start_pos } else { buf.len() };
                 buf.insert(insert_pos, &S::from(str));
             }
         }
