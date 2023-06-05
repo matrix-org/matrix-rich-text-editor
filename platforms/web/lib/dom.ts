@@ -410,12 +410,11 @@ function findCharacter(
             } else {
                 // Otherwise, we did
 
-                // Special case for mention nodes - they'll have a parent with a
-                // data-mention-type attribute and we consider them to have a
-                // length of 1
+                // Special case for mention nodes which have length of 1
                 if (isInsideMention) {
                     return { found: true, offset: offsetToFind === 0 ? 0 : 1 };
                 }
+
                 return { found: true, offset: offsetToFind };
             }
         } else {
@@ -445,7 +444,7 @@ function findCharacter(
                 return { found: false, offset: extraOffset };
             }
 
-            // ...and a special case where mentions alwasy have a length of 1
+            // ...and a special case where mentions alwayd have a length of 1
             if (isInsideMention) {
                 return { found: false, offset: 1 + extraOffset };
             }
