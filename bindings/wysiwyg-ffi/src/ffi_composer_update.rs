@@ -122,24 +122,11 @@ mod test {
 
     #[test]
     fn test_replace_whole_suggestion_with_mention_ffi() {
-        let model = Arc::new(ComposerModel::new());
+        let mut model = Arc::new(ComposerModel::new());
         let update = model.replace_text("@alic".into());
 
-        let MenuAction::Suggestion { suggestion_pattern } =
-            update.menu_action() else
-        {
-            panic!("No suggestion found");
-        };
+        insert_mention_at_cursor(&mut model);
 
-        model.insert_mention_at_suggestion(
-            "https://matrix.to/#/@alice:matrix.org".into(),
-            "Alice".into(),
-            suggestion_pattern,
-            vec![Attribute {
-                key: "data-mention-type".into(),
-                value: "user".into(),
-            }],
-        );
         assert_eq!(
             model.get_content_as_html(),
             "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>\u{a0}",
@@ -148,26 +135,11 @@ mod test {
 
     #[test]
     fn test_replace_end_of_text_node_with_mention_ffi() {
-        let model = Arc::new(ComposerModel::new());
+        let mut model = Arc::new(ComposerModel::new());
         model.replace_text("hello ".into());
 
-        let update = model.replace_text("@ali".into());
+        insert_mention_at_cursor(&mut model);
 
-        let MenuAction::Suggestion { suggestion_pattern } =
-            update.menu_action() else
-        {
-            panic!("No suggestion found");
-        };
-
-        model.insert_mention_at_suggestion(
-            "https://matrix.to/#/@alice:matrix.org".into(),
-            "Alice".into(),
-            suggestion_pattern,
-            vec![Attribute {
-                key: "data-mention-type".into(),
-                value: "user".into(),
-            }],
-        );
         assert_eq!(
             model.get_content_as_html(),
             "hello <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>\u{a0}",
@@ -176,27 +148,12 @@ mod test {
 
     #[test]
     fn test_replace_start_of_text_node_with_mention_ffi() {
-        let model = Arc::new(ComposerModel::new());
+        let mut model = Arc::new(ComposerModel::new());
         model.replace_text(" says hello".into());
         model.select(0, 0);
 
-        let update = model.replace_text("@ali".into());
+        insert_mention_at_cursor(&mut model);
 
-        let MenuAction::Suggestion { suggestion_pattern } =
-            update.menu_action() else
-        {
-            panic!("No suggestion found");
-        };
-
-        model.insert_mention_at_suggestion(
-            "https://matrix.to/#/@alice:matrix.org".into(),
-            "Alice".into(),
-            suggestion_pattern,
-            vec![Attribute {
-                key: "data-mention-type".into(),
-                value: "user".into(),
-            }],
-        );
         assert_eq!(
             model.get_content_as_html(),
             "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a> says hello",
@@ -205,27 +162,12 @@ mod test {
 
     #[test]
     fn test_replace_text_in_middle_of_node_with_mention_ffi() {
-        let model = Arc::new(ComposerModel::new());
+        let mut model = Arc::new(ComposerModel::new());
         model.replace_text("Like  said".into());
         model.select(5, 5); // "Like | said"
 
-        let update = model.replace_text("@ali".into());
+        insert_mention_at_cursor(&mut model);
 
-        let MenuAction::Suggestion { suggestion_pattern } =
-            update.menu_action() else
-        {
-            panic!("No suggestion found");
-        };
-
-        model.insert_mention_at_suggestion(
-            "https://matrix.to/#/@alice:matrix.org".into(),
-            "Alice".into(),
-            suggestion_pattern,
-            vec![Attribute {
-                key: "data-mention-type".into(),
-                value: "user".into(),
-            }],
-        );
         assert_eq!(
             model.get_content_as_html(),
             "Like <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a> said",
@@ -234,27 +176,11 @@ mod test {
 
     #[test]
     fn test_replace_text_in_second_paragraph_node_with_mention_ffi() {
-        let model = Arc::new(ComposerModel::new());
+        let mut model = Arc::new(ComposerModel::new());
         model.replace_text("hello".into());
         model.enter();
+        insert_mention_at_cursor(&mut model);
 
-        let update = model.replace_text("@ali".into());
-
-        let MenuAction::Suggestion { suggestion_pattern } =
-            update.menu_action() else
-        {
-            panic!("No suggestion found");
-        };
-
-        model.insert_mention_at_suggestion(
-            "https://matrix.to/#/@alice:matrix.org".into(),
-            "Alice".into(),
-            suggestion_pattern,
-            vec![Attribute {
-                key: "data-mention-type".into(),
-                value: "user".into(),
-            }],
-        );
         assert_eq!(
             model.get_content_as_html(),
             "<p>hello</p><p><a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>\u{a0}</p>",
@@ -263,28 +189,14 @@ mod test {
 
     #[test]
     fn test_replace_text_in_second_list_item_start_with_mention_ffi() {
-        let model = Arc::new(ComposerModel::new());
+        let mut model = Arc::new(ComposerModel::new());
+
         model.ordered_list();
         model.replace_text("hello".into());
         model.enter();
 
-        let update = model.replace_text("@ali".into());
+        insert_mention_at_cursor(&mut model);
 
-        let MenuAction::Suggestion { suggestion_pattern } =
-            update.menu_action() else
-        {
-            panic!("No suggestion found");
-        };
-
-        model.insert_mention_at_suggestion(
-            "https://matrix.to/#/@alice:matrix.org".into(),
-            "Alice".into(),
-            suggestion_pattern,
-            vec![Attribute {
-                key: "data-mention-type".into(),
-                value: "user".into(),
-            }],
-        );
         assert_eq!(
             model.get_content_as_html(),
             "<ol><li>hello</li><li><a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>\u{a0}</li></ol>",
@@ -293,20 +205,25 @@ mod test {
 
     #[test]
     fn test_replace_text_in_second_list_item_end_with_mention_ffi() {
-        let model = Arc::new(ComposerModel::new());
+        let mut model = Arc::new(ComposerModel::new());
         model.ordered_list();
         model.replace_text("hello".into());
         model.enter();
-        let update = model.replace_text("there @ali".into());
+        model.replace_text("there ".into());
 
-        let MenuAction::Suggestion { suggestion_pattern } =
-            update.menu_action() else
-        {
-            panic!("No suggestion found");
-        };
+        insert_mention_at_cursor(&mut model);
 
-        dbg!(&suggestion_pattern);
+        assert_eq!(
+            model.get_content_as_html(),
+            "<ol><li>hello</li><li>there <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>\u{a0}</li></ol>",
+        )
+    }
 
+    fn insert_mention_at_cursor(model: &mut Arc<ComposerModel>) {
+        let update = model.replace_text("@alic".into());
+        let MenuAction::Suggestion{suggestion_pattern} = update.menu_action() else {
+        panic!("No suggestion pattern found")
+    };
         model.insert_mention_at_suggestion(
             "https://matrix.to/#/@alice:matrix.org".into(),
             "Alice".into(),
@@ -316,10 +233,6 @@ mod test {
                 value: "user".into(),
             }],
         );
-        assert_eq!(
-            model.get_content_as_html(),
-            "<ol><li>hello</li><li>there <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>\u{a0}</li></ol>",
-        )
     }
 
     fn redo_indent_unindent_disabled() -> HashMap<ComposerAction, ActionState> {
