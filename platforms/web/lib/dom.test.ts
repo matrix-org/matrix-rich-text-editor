@@ -476,11 +476,37 @@ describe('computeNodeAndOffset', () => {
             // eslint-disable-next-line max-len
             '<p><a data-mention-type="something" contenteditable="false">test</a>&nbsp;</p>',
         );
-        const { node, offset } = computeNodeAndOffset(editor, 1);
+        const { node, offset } = computeNodeAndOffset(editor, 0);
 
         // Then
         expect(node).toBe(editor.childNodes[0]);
         expect(offset).toBe(0);
+    });
+
+    it('can find the start of nbsp after a mention inside a paragraph', () => {
+        // When
+        setEditorHtml(
+            // eslint-disable-next-line max-len
+            '<p><a data-mention-type="something" contenteditable="false">test</a>&nbsp;</p>',
+        );
+        const { node, offset } = computeNodeAndOffset(editor, 1);
+
+        // Then
+        expect(node).toBe(editor.childNodes[0].childNodes[1]);
+        expect(offset).toBe(0);
+    });
+
+    it('can find the end of nbsp after a mention inside a paragraph', () => {
+        // When
+        setEditorHtml(
+            // eslint-disable-next-line max-len
+            '<p><a data-mention-type="something" contenteditable="false">test</a>&nbsp;</p>',
+        );
+        const { node, offset } = computeNodeAndOffset(editor, 2);
+
+        // Then
+        expect(node).toBe(editor.childNodes[0].childNodes[1]);
+        expect(offset).toBe(1);
     });
 });
 
