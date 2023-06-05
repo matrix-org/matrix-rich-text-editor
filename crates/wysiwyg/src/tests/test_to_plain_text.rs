@@ -151,6 +151,14 @@ fn link() {
 }
 
 #[test]
+fn mention() {
+    assert_to_plain(
+        r#"<a href="https://matrix.to/#/@test:example.org">test</a>"#,
+        "test",
+    );
+}
+
+#[test]
 fn list_unordered() {
     assert_to_plain(
         r#"<ul><li>item1</li><li>item2</li></ul>"#,

@@ -406,6 +406,10 @@ where
                     "Handle is invalid: refers to the child of a text node, \
                     but text nodes cannot have children."
                 ),
+                DomNode::Mention(_) => panic!(
+                    "Handle is invalid: refers to the child of a mention node, \
+                    but mention nodes cannot have children."
+                ),
             }
         }
 
@@ -440,14 +444,14 @@ where
             DomNode::Container(_) => {
                 panic!("Can't insert into a non-text node!")
             }
-            DomNode::LineBreak(_) => {
+            DomNode::LineBreak(_) | DomNode::Mention(_) => {
                 if offset == 0 {
                     Where::Before
                 } else if offset == 1 {
                     Where::After
                 } else {
                     panic!(
-                        "Attempting to insert a new line into a new line node, but offset wasn't \
+                        "Attempting to insert into a node of length 1, but offset wasn't \
                         either 0 or 1: {}",
                         offset
                     );
@@ -1048,7 +1052,7 @@ mod test {
     fn kids(node: &DomNode<Utf16String>) -> &Vec<DomNode<Utf16String>> {
         match node {
             DomNode::Container(n) => n.children(),
-            DomNode::LineBreak(_) => NO_CHILDREN,
+            DomNode::LineBreak(_) | DomNode::Mention(_) => NO_CHILDREN,
             DomNode::Text(_) => {
                 panic!("We expected an Element, but found Text")
             }

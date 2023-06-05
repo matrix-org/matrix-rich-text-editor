@@ -16,7 +16,6 @@ use std::cmp::{max, min};
 
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::DomNodeKind::{Link, List};
-use crate::dom::nodes::dom_node::{DomNodeKind::LineBreak, DomNodeKind::Text};
 use crate::dom::nodes::ContainerNodeKind;
 use crate::dom::nodes::DomNode;
 use crate::dom::unicode_string::UnicodeStrExt;
@@ -84,21 +83,31 @@ where
 
     fn is_blank_selection(&self, range: Range) -> bool {
         for leaf in range.leaves() {
-            if leaf.kind == LineBreak {
-                continue;
-            } else if leaf.kind == Text {
-                let text_node = self
-                    .state
-                    .dom
-                    .lookup_node(&leaf.node_handle)
-                    .as_text()
-                    .unwrap();
-                let selection_range = leaf.start_offset..leaf.end_offset;
-                if !text_node.is_blank_in_range(selection_range) {
-                    return false;
+            match leaf.kind {
+                DomNodeKind::Text => {
+                    let text_node = self
+                        .state
+                        .dom
+                        .lookup_node(&leaf.node_handle)
+                        .as_text()
+                        .unwrap();
+                    let selection_range = leaf.start_offset..leaf.end_offset;
+                    if !text_node.is_blank_in_range(selection_range) {
+                        return false;
+                    }
                 }
-            } else {
-                return false;
+                DomNodeKind::LineBreak => continue,
+                DomNodeKind::Mention => return false,
+                DomNodeKind::Formatting(_)
+                | DomNodeKind::Link
+                | DomNodeKind::ListItem
+                | DomNodeKind::List
+                | DomNodeKind::CodeBlock
+                | DomNodeKind::Quote
+                | DomNodeKind::Generic
+                | DomNodeKind::Paragraph => {
+                    unreachable!("Inside leaf iterator and found a non-leaf")
+                }
             }
         }
         true
@@ -218,13 +227,16 @@ where
 
         for (_, s, e) in split_points.into_iter() {
             let range = self.state.dom.find_range(s, e);
+
             // Create a new link node containing the passed range
             let inserted = self.state.dom.insert_parent(
                 &range,
                 DomNode::new_link(url.clone(), vec![], attributes.clone()),
             );
-            // Remove any child links inside it
+
+            // Remove any child links or mentions inside it
             self.delete_child_links(&inserted);
+            self.convert_child_mentions_to_text(&inserted);
         }
 
         self.create_update_replace_all()
@@ -264,6 +276,31 @@ where
             .into_iter()
             .rev()
             .for_each(|h| self.state.dom.remove_and_keep_children(&h));
+    }
+
+    fn convert_child_mentions_to_text(&mut self, node_handle: &DomHandle) {
+        self.state
+            .dom
+            .lookup_node(node_handle)
+            .iter_subtree()
+            .filter_map(|node| match node {
+                DomNode::Mention(node) => {
+                    Some((node.handle(), node.display_text()))
+                }
+                _ => None,
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
+            .rev()
+            .for_each(|(handle, display_text)| {
+                self.state.dom.replace(
+                    &handle,
+                    vec![DomNode::new_text(display_text.clone())],
+                );
+                let selection_length_change: isize =
+                    (display_text.len() - 1).try_into().unwrap_or(0);
+                self.state.extend_selection(selection_length_change)
+            });
     }
 
     fn find_closest_ancestor_link(

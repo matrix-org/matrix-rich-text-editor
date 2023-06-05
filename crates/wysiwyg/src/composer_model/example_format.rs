@@ -19,7 +19,7 @@ use widestring::{Utf16Str, Utf16String};
 
 use crate::char::CharExt;
 use crate::composer_model::menu_state::MenuStateComputeType;
-use crate::dom::nodes::{ContainerNode, LineBreakNode, TextNode};
+use crate::dom::nodes::{ContainerNode, LineBreakNode, MentionNode, TextNode};
 use crate::dom::parser::parse;
 use crate::dom::to_html::ToHtmlState;
 use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
@@ -212,6 +212,9 @@ impl ComposerModel<Utf16String> {
                     *offset += data.char_len(&ch);
                 }
             }
+            DomNode::Mention(mention_node) => {
+                *offset += mention_node.text_len();
+            }
             _ => {
                 *offset += node.text_len();
             }
@@ -276,6 +279,7 @@ impl ComposerModel<Utf16String> {
     }
 }
 
+#[derive(Debug)]
 struct SelectionLocation {
     handle: DomHandle,
     pos: usize,
@@ -338,6 +342,26 @@ impl SelectionWriter {
                 // Index 1 in line breaks is actually at the end of the '<br />'
                 let length = if i == 0 { 0 } else { "<br />".len() };
                 buf.insert(start_pos + length, &S::from(string));
+            }
+        }
+    }
+
+    /// Write special selection (`{` and `}`) and cursor (`|`) characters
+    /// after a mention node
+    ///
+    /// * `buf` - the output buffer up to and including the given node
+    /// * `pos` - the buffer position immediately after the node
+    pub fn write_selection_mention_node<S: UnicodeString>(
+        &mut self,
+        buf: &mut S,
+        pos: usize,
+        node: &MentionNode<S>,
+    ) {
+        if let Some(loc) = self.locations.get(&node.handle()) {
+            let strings_to_add = self.state.advance(loc, 1);
+            for (str, i) in strings_to_add.into_iter().rev() {
+                let i = if i == 0 { 0 } else { buf.len() };
+                buf.insert(pos + i, &S::from(str));
             }
         }
     }

@@ -236,6 +236,8 @@ where
                     _ => ComposerUpdate::keep(),
                 }
             }
+            DomNode::Mention(_) => self
+                .delete_to_cursor(direction.increment(location.index_in_dom())),
             DomNode::Text(node) => {
                 // we are guaranteed to get valid chars here, so can use unwrap
                 let mut current_offset = location.start_offset;
@@ -357,6 +359,7 @@ where
                 // we have to treat linebreaks as chars, this type fits best
                 Some(CharType::Whitespace)
             }
+            DomNode::Mention(_) => Some(CharType::Other),
             DomNode::Text(text_node) => {
                 text_node.char_type_at_offset(location.start_offset, direction)
             }

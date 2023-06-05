@@ -18,7 +18,7 @@ use crate::char::CharExt;
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
 use crate::dom::nodes::dom_node::{DomNode, DomNodeKind};
-use crate::dom::to_html::{ToHtml, ToHtmlState};
+use crate::dom::to_html::{ToHtml, ToHtmlExt, ToHtmlState};
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_plain_text::ToPlainText;
 use crate::dom::to_raw_text::ToRawText;
@@ -787,34 +787,6 @@ impl<S: UnicodeString> ContainerNode<S> {
             }
         }
     }
-
-    fn fmt_tag_open(
-        &self,
-        name: &S::Str,
-        formatter: &mut S,
-        attrs: &Option<Vec<(S, S)>>,
-    ) {
-        formatter.push('<');
-        formatter.push(name);
-        if let Some(attrs) = attrs {
-            for attr in attrs {
-                let (attr_name, value) = attr;
-                formatter.push(' ');
-                formatter.push(&**attr_name);
-                formatter.push("=\"");
-                formatter.push(&**value);
-                formatter.push('"');
-            }
-        }
-        formatter.push('>');
-    }
-
-    fn fmt_tag_close(&self, name: &S::Str, formatter: &mut S) {
-        formatter.push("</");
-        formatter.push(name);
-        formatter.push('>');
-    }
-
     fn updated_state(
         &self,
         initial_state: ToHtmlState,
@@ -1223,6 +1195,12 @@ where
 
                     DomNode::Text(_) => {
                         return Err(MarkdownError::InvalidListItem(None))
+                    }
+
+                    DomNode::Mention(mention) => {
+                        return Err(MarkdownError::InvalidListItem(Some(
+                            mention.name(),
+                        )))
                     }
                 };
 

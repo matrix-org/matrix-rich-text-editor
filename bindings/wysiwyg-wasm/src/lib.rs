@@ -725,6 +725,7 @@ impl DomHandle {
         String::from(match node {
             wysiwyg::DomNode::Container(_) => "container",
             wysiwyg::DomNode::LineBreak(_) => "line_break",
+            wysiwyg::DomNode::Mention(_) => "mention",
             wysiwyg::DomNode::Text(_) => "text",
         })
     }
@@ -758,6 +759,7 @@ impl DomHandle {
         match node {
             wysiwyg::DomNode::Container(_) => String::from(""),
             wysiwyg::DomNode::LineBreak(_) => String::from(""),
+            wysiwyg::DomNode::Mention(node) => node.display_text().to_string(),
             wysiwyg::DomNode::Text(node) => node.data().to_string(),
         }
     }
@@ -771,6 +773,7 @@ impl DomHandle {
         match node {
             wysiwyg::DomNode::Container(node) => node.name().to_string(),
             wysiwyg::DomNode::LineBreak(node) => node.name().to_string(),
+            wysiwyg::DomNode::Mention(node) => node.name().to_string(),
             wysiwyg::DomNode::Text(_) => String::from("-text-"),
         }
     }

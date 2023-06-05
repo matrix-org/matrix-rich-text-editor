@@ -43,4 +43,15 @@ where
         self.start += 1;
         self.end += 1;
     }
+
+    /// Extends the selection by the given number of code points by moving the
+    /// greater of the two selection points.
+    ///
+    pub(crate) fn extend_selection(&mut self, length: isize) {
+        if self.start > self.end {
+            self.start += length;
+        } else {
+            self.end += length;
+        }
+    }
 }

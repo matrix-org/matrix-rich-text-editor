@@ -704,6 +704,7 @@ mod test {
             DomNode::Container(c) => c.name().to_string(),
             DomNode::Text(t) => format!("'{}'", t.data()),
             DomNode::LineBreak(_) => String::from("br"),
+            DomNode::Mention(_) => String::from("mention"),
         }
     }
 }

@@ -243,3 +243,69 @@ fn get_link_action_on_multiple_link_with_last_immutable() {
         LinkAction::Edit("https://rust-lang.org".into()),
     );
 }
+
+#[test]
+fn get_link_action_on_selected_mention() {
+    let model =
+        cm("{<a href=\"https://matrix.to/#/@test:example.org\">test</a>}|");
+    assert_eq!(model.get_link_action(), LinkAction::Create);
+}
+
+#[test]
+fn get_link_action_on_mention_leading() {
+    let model =
+        cm("|<a href=\"https://matrix.to/#/@test:example.org\">test</a>");
+    assert_eq!(model.get_link_action(), LinkAction::CreateWithText);
+}
+
+#[test]
+fn get_link_action_on_mention_trailing() {
+    let model =
+        cm("<a href=\"https://matrix.to/#/@test:example.org\">test</a>|");
+    assert_eq!(model.get_link_action(), LinkAction::CreateWithText);
+}
+
+#[test]
+fn get_link_action_on_cross_selected_mention() {
+    let model =
+        cm("{<a href=\"https://matrix.to/#/@test:example.org\">test</a>text}|");
+    assert_eq!(model.get_link_action(), LinkAction::Create);
+}
+
+#[test]
+fn get_link_action_on_multiple_link_with_first_is_mention() {
+    let mut model = cm(indoc! {r#"
+        {<a href="https://matrix.to/#/@test:example.org">test</a>
+        text
+        <a href="https://rust-lang.org">Rust_mut}|</a>
+    "#});
+    assert_eq!(
+        model.get_link_action(),
+        LinkAction::Edit("https://rust-lang.org".into()),
+    );
+    // Selecting the link afterwards works
+    model.select(Location::from(10), Location::from(10));
+    assert_eq!(
+        model.get_link_action(),
+        LinkAction::Edit("https://rust-lang.org".into()),
+    );
+}
+
+#[test]
+fn get_link_action_on_multiple_link_with_last_is_mention() {
+    let mut model = cm(indoc! {r#"
+        <a href="https://rust-lang.org">{Rust_mut</a>
+        text
+        <a href="https://matrix.to/#/@test:example.org">test</a>}|
+    "#});
+    assert_eq!(
+        model.get_link_action(),
+        LinkAction::Edit("https://rust-lang.org".into()),
+    );
+    // Selecting the mutable link afterwards works
+    model.select(Location::from(0), Location::from(0));
+    assert_eq!(
+        model.get_link_action(),
+        LinkAction::Edit("https://rust-lang.org".into()),
+    );
+}
