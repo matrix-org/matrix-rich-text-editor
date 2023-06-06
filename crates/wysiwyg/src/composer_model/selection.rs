@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
+use crate::{
+    dom::Range, web_selection::WebSelection, ComposerModel, ComposerUpdate,
+    DomHandle, Location, UnicodeString,
+};
 
 impl<S> ComposerModel<S>
 where
@@ -71,6 +74,56 @@ where
         let (s, e) = self.safe_selection();
         s == e
     }
+
+    /// Attempt to reproduce window.getSelection as closely as practicable
+    /// https://developer.mozilla.org/en-US/docs/Web/API/Window/getSelection
+    ///
+    /// Returns the handles of the nodes, as opposed to the nodes themselves, which
+    /// allows web to then find the corresponding nodes in the real dom
+    pub fn get_web_selection(&self) -> WebSelection {
+        let (anchor_node, anchor_offset) = self.get_anchor_node_and_offset();
+        let (focus_node, focus_offset) = self.get_focus_node_and_offset();
+
+        WebSelection {
+            anchor_node,
+            anchor_offset,
+            focus_node,
+            focus_offset,
+            is_collapsed: self.has_cursor(),
+        }
+    }
+
+    fn get_anchor_node_and_offset(&self) -> (DomHandle, usize) {
+        let range = self
+            .state
+            .dom
+            .find_range(self.state.start.into(), self.state.start.into());
+
+        self.get_node_and_offset(range)
+    }
+
+    fn get_focus_node_and_offset(&self) -> (DomHandle, usize) {
+        let range = self
+            .state
+            .dom
+            .find_range(self.state.end.into(), self.state.end.into());
+
+        self.get_node_and_offset(range)
+    }
+
+    fn get_node_and_offset(&self, range: Range) -> (DomHandle, usize) {
+        range
+            .locations
+            .iter()
+            .find_map(|l| {
+                if l.start_offset <= l.length {
+                    Some((l.node_handle.clone(), l.start_offset))
+                } else {
+                    None
+                }
+            })
+            .unwrap_or((DomHandle::new_unset(), 0))
+    }
 }
 
 #[cfg(test)]
@@ -101,5 +154,51 @@ mod test {
         let mut model = cm("out <b>bol</b> {spot}|");
         model.state.end = Location::from(33);
         assert_eq!((8, 12), model.safe_selection());
+    }
+
+    /**
+     * get_anchor_node_and_offset
+     */
+    #[test]
+    fn finds_anchor_and_offset_plain_text() {
+        let model = cm("hello |there");
+
+        let (anchor_node, offset) = model.get_anchor_node_and_offset();
+
+        assert_eq!(anchor_node.raw(), &vec![0]);
+        assert_eq!(offset, 6)
+    }
+
+    #[test]
+    fn finds_anchor_and_offset_nested() {
+        let model = cm("<p>hi <em>there|</em></p>");
+
+        let (anchor_node, offset) = model.get_anchor_node_and_offset();
+
+        assert_eq!(anchor_node.raw(), &vec![0, 1, 0]);
+        assert_eq!(offset, 5)
+    }
+
+    /**
+     * get_focus_node_and_offset
+     */
+    #[test]
+    fn finds_focus_and_offset_plain_text() {
+        let model = cm("hello {there}|");
+
+        let (anchor_node, offset) = model.get_focus_node_and_offset();
+
+        assert_eq!(anchor_node.raw(), &vec![0]);
+        assert_eq!(offset, 11)
+    }
+
+    #[test]
+    fn finds_focus_and_offset_nested() {
+        let model = cm("<p>h{i <em>there}|</em></p>");
+
+        let (anchor_node, offset) = model.get_focus_node_and_offset();
+
+        assert_eq!(anchor_node.raw(), &vec![0, 1, 0]);
+        assert_eq!(offset, 5)
     }
 }

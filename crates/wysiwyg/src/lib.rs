@@ -29,6 +29,7 @@ mod pattern_key;
 mod suggestion_pattern;
 mod tests;
 mod text_update;
+mod web_selection;
 
 pub use crate::action_state::ActionState;
 pub use crate::composer_action::ComposerAction;
@@ -59,3 +60,4 @@ pub use crate::suggestion_pattern::SuggestionPattern;
 pub use crate::text_update::ReplaceAll;
 pub use crate::text_update::Selection;
 pub use crate::text_update::TextUpdate;
+pub use crate::web_selection::WebSelection;

@@ -100,6 +100,8 @@ pub struct ComposerModel {
 
 #[wasm_bindgen]
 impl ComposerModel {
+    // TODO implement once types figured out
+    // pub fn get_web_selection(&self) -> WebSelection {}
     pub fn new() -> Self {
         Self {
             inner: wysiwyg::ComposerModel::new(),
@@ -619,6 +621,29 @@ impl From<&ComposerAction> for wysiwyg::ComposerAction {
         }
     }
 }
+
+// TODO implement once types figured out
+// #[derive(Clone)]
+// #[wasm_bindgen(getter_with_clone)]
+// pub struct WebSelection {
+//     pub anchor_node: js_sys::Array,
+//     pub anchor_offset: u32,
+//     pub focus_node: js_sys::Array,
+//     pub focus_offset: u32,
+//     pub is_collapsed: bool,
+// }
+
+// impl From<wysiwyg::WebSelection> for WebSelection {
+//     fn from(inner: wysiwyg::WebSelection) -> Self {
+//         Self {
+//             anchor_node: js_sys::Array::from(vec![1, 2, 3]).unwrap(),
+//             anchor_offset: u32::try_from(inner.anchor_offset).unwrap(),
+//             focus_node: js_sys::Array::from(vec![3, 2, 1]).unwrap(),
+//             focus_offset: u32::try_from(inner.focus_offset).unwrap(),
+//             is_collapsed: bool::try_from(inner.is_collapsed).unwrap(),
+//         }
+//     }
+// }
 
 #[wasm_bindgen(getter_with_clone)]
 #[derive(Clone)]
