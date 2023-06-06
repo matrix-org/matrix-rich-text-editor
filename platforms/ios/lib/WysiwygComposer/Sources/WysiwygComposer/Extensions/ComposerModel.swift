@@ -56,6 +56,8 @@ extension ComposerModel {
         return update
     }
 
+    // swiftlint:enable cyclomatic_complexity
+
     /// Returns currently reversed (active) actions on the composer model.
     var reversedActions: Set<ComposerAction> {
         Set(actionStates().compactMap { (key: ComposerAction, value: ActionState) in
