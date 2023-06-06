@@ -23,11 +23,11 @@ extension HTMLParserTests {
         let attributed = try HTMLParser.parse(html: html, permalinkReplacer: CustomHTMLPermalinkReplacer())
         // A text attachment is added.
         XCTAssertTrue(attributed.attribute(.attachment, at: 0, effectiveRange: nil) is NSTextAttachment)
-        // The original length is added to the new part of the attributed string.
-        let replacementContent = attributed.attribute(.replacementContent, at: 0, effectiveRange: nil) as? ReplacementContent
+        // The original content is added to the new part of the attributed string.
+        let originalContent = attributed.attribute(.originalContent, at: 0, effectiveRange: nil) as? OriginalContent
         XCTAssertEqual(
-            replacementContent?.originalLength,
-            5
+            originalContent?.text,
+            "Alice"
         )
         // HTML and attributed range matches
         let htmlRange = NSRange(location: 0, length: 5)
@@ -39,6 +39,11 @@ extension HTMLParserTests {
         XCTAssertEqual(
             try attributed.htmlRange(from: attributedRange),
             htmlRange
+        )
+        // HTML chars match content.
+        XCTAssertEqual(
+            attributed.htmlChars,
+            "Alice:\(String.nbsp)"
         )
     }
 
@@ -88,6 +93,11 @@ extension HTMLParserTests {
         XCTAssertEqual(
             try attributed.htmlRange(from: secondLinkAttributedRange),
             secondLinkHtmlRange
+        )
+        // HTML chars match content.
+        XCTAssertEqual(
+            attributed.htmlChars,
+            "Alice Alice\(String.nbsp)"
         )
     }
 }

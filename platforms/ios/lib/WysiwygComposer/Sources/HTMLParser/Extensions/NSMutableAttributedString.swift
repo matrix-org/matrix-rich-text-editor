@@ -51,9 +51,10 @@ extension NSMutableAttributedString {
                 url.absoluteString,
                 text: self.mutableString.substring(with: range)
             ) {
+                let originalText = self.attributedSubstring(from: range).string
                 self.replaceCharacters(in: range, with: replacement)
-                self.addAttribute(.replacementContent,
-                                  value: ReplacementContent(originalLength: range.length),
+                self.addAttribute(.originalContent,
+                                  value: OriginalContent(text: originalText),
                                   range: .init(location: range.location, length: replacement.length))
             }
         }

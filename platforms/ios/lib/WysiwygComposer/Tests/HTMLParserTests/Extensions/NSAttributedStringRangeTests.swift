@@ -65,6 +65,7 @@ final class NSAttributedStringRangeTests: XCTestCase {
                        crossHtmlRange)
         XCTAssertEqual(attributed.attributedSubstring(from: crossAttributedRange).string,
                        "Item 1\n\t2.\tI")
+        assertHtmlCharsLengthMatchLastPosition(in: attributed)
     }
 
     func testAttributedBulletedLists() throws {
@@ -79,6 +80,7 @@ final class NSAttributedStringRangeTests: XCTestCase {
         XCTAssertEqual(try attributed.attributedPosition(at: 8), 14)
         XCTAssertEqual(try attributed.htmlPosition(at: 13), 7)
         XCTAssertEqual(try attributed.htmlPosition(at: 3), 0)
+        assertHtmlCharsLengthMatchLastPosition(in: attributed)
     }
 
     func testMultipleAttributedLists() throws {
@@ -97,6 +99,7 @@ final class NSAttributedStringRangeTests: XCTestCase {
                        NSRange(location: 4, length: 16))
         XCTAssertEqual(try attributed.htmlRange(from: .init(location: 4, length: 17)),
                        NSRange(location: 0, length: 13))
+        assertHtmlCharsLengthMatchLastPosition(in: attributed)
     }
 
     func testMultipleDigitsNumberedLists() throws {
@@ -115,6 +118,7 @@ final class NSAttributedStringRangeTests: XCTestCase {
         let attributed = try HTMLParser.parse(html: html)
         XCTAssertEqual(attributed.discardableTextRanges().count,
                        19)
+        assertHtmlCharsLengthMatchLastPosition(in: attributed)
     }
 
     func testPositionAfterList() throws {
@@ -128,6 +132,7 @@ final class NSAttributedStringRangeTests: XCTestCase {
             try attributed.attributedRange(from: .init(location: 6, length: 0)),
             NSRange(location: 12, length: 0)
         )
+        assertHtmlCharsLengthMatchLastPosition(in: attributed)
     }
 
     func testPositionAfterListWithInput() throws {
@@ -141,6 +146,21 @@ final class NSAttributedStringRangeTests: XCTestCase {
             try attributed.attributedRange(from: .init(location: 7, length: 0)),
             NSRange(location: 12, length: 0)
         )
+        assertHtmlCharsLengthMatchLastPosition(in: attributed)
+    }
+
+    func testPositionAfterDoubleLineBreak() throws {
+        let html = "<p>Test</p><p> </p><p>T</p>"
+        let attributed = try HTMLParser.parse(html: html)
+        XCTAssertEqual(
+            try attributed.htmlRange(from: .init(location: 7, length: 0)),
+            NSRange(location: 6, length: 0)
+        )
+        XCTAssertEqual(
+            try attributed.attributedRange(from: .init(location: 6, length: 0)),
+            NSRange(location: 7, length: 0)
+        )
+        assertHtmlCharsLengthMatchLastPosition(in: attributed)
     }
 
     func testOutOfBoundsIndexes() throws {
@@ -163,5 +183,16 @@ final class NSAttributedStringRangeTests: XCTestCase {
             XCTAssertEqual(error.localizedDescription,
                            "Provided attributed index is out of bounds (50)")
         }
+    }
+
+    /// Assert that the last computed HTML index inside given `NSAttributedString` matches the length of `htmlChars`.
+    ///
+    /// - Parameter attributedString: the attributed string to test.
+    private func assertHtmlCharsLengthMatchLastPosition(in attributedString: NSAttributedString) {
+        let lastHtmlIndex = try? attributedString.htmlPosition(at: attributedString.length)
+        XCTAssertEqual(
+            attributedString.htmlChars.count,
+            lastHtmlIndex
+        )
     }
 }

@@ -138,14 +138,14 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         model.delegate = self
         // Publish composer empty state.
         $attributedContent.sink { [unowned self] content in
-            self.isContentEmpty = content.text.length == 0
+            isContentEmpty = content.text.length == 0
         }
         .store(in: &cancellables)
         
         $isContentEmpty
             .removeDuplicates()
             .sink { [unowned self] isContentEmpty in
-                self.textView.shouldShowPlaceholder = isContentEmpty
+                textView.shouldShowPlaceholder = isContentEmpty
             }
             .store(in: &cancellables)
         
@@ -522,16 +522,17 @@ private extension WysiwygComposerViewModel {
     /// Reconciliate the content of the model with the content of the text view.
     func reconciliateIfNeeded() {
         do {
-            guard let replacement = try StringDiffer.replacement(from: attributedContent.text.string,
-                                                                 to: textView.text ?? "") else {
+            guard let replacement = try StringDiffer.replacement(from: attributedContent.text.htmlChars,
+                                                                 to: textView.attributedText.htmlChars) else {
                 return
             }
             // Reconciliate
-            let rustRange = try attributedContent.text.htmlRange(from: replacement.range)
+            Logger.viewModel.logDebug(["Reconciliate from \"\(attributedContent.text.string)\" to \"\(textView.text ?? "")\""],
+                                      functionName: #function)
 
             let replaceUpdate = model.replaceTextIn(newText: replacement.text,
-                                                    start: UInt32(rustRange.location),
-                                                    end: UInt32(rustRange.upperBound))
+                                                    start: UInt32(replacement.range.location),
+                                                    end: UInt32(replacement.range.upperBound))
             applyUpdate(replaceUpdate, skipTextViewUpdate: true)
 
             // Resync selectedRange
@@ -539,9 +540,6 @@ private extension WysiwygComposerViewModel {
             let selectUpdate = model.select(startUtf16Codeunit: UInt32(rustSelection.location),
                                             endUtf16Codeunit: UInt32(rustSelection.upperBound))
             applyUpdate(selectUpdate)
-
-            Logger.viewModel.logDebug(["Reconciliate from \"\(attributedContent.text.string)\" to \"\(textView.text ?? "")\""],
-                                      functionName: #function)
         } catch {
             switch error {
             case StringDifferError.tooComplicated,
