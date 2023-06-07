@@ -20,7 +20,7 @@ import XCTest
 extension HTMLParserTests {
     func testReplaceLinks() throws {
         let html = "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>:\(String.nbsp)"
-        let attributed = try HTMLParser.parse(html: html, permalinkReplacer: CustomHTMLPermalinkReplacer())
+        let attributed = try HTMLParser.parse(html: html, mentionReplacer: CustomHTMLMentionReplacer())
         // A text attachment is added.
         XCTAssertTrue(attributed.attribute(.attachment, at: 0, effectiveRange: nil) is NSTextAttachment)
         // The original content is added to the new part of the attributed string.
@@ -49,7 +49,7 @@ extension HTMLParserTests {
 
     func testMentionsAreNotReplaced() throws {
         let html = "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>:\(String.nbsp)"
-        let attributed = try HTMLParser.parse(html: html, permalinkReplacer: nil)
+        let attributed = try HTMLParser.parse(html: html, mentionReplacer: nil)
         // No text attachment.
         XCTAssertFalse(attributed.attribute(.attachment, at: 0, effectiveRange: nil) is NSTextAttachment)
         // The original content is still added to the new part of the attributed string.
@@ -88,7 +88,7 @@ extension HTMLParserTests {
         <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a> \
         <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>\(String.nbsp)
         """
-        let attributed = try HTMLParser.parse(html: html, permalinkReplacer: CustomHTMLPermalinkReplacer())
+        let attributed = try HTMLParser.parse(html: html, mentionReplacer: CustomHTMLMentionReplacer())
         // HTML position matches exactly (Rust model mention length is 1, and so is the length of a pill).
         XCTAssertEqual(try attributed.htmlPosition(at: 0), 0)
         XCTAssertEqual(try attributed.htmlPosition(at: 1), 1)
@@ -143,7 +143,7 @@ extension HTMLParserTests {
         <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a> \
         <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>\(String.nbsp)
         """
-        let attributed = try HTMLParser.parse(html: html, permalinkReplacer: nil)
+        let attributed = try HTMLParser.parse(html: html, mentionReplacer: nil)
         // HTML position matches.
         XCTAssertEqual(try attributed.htmlPosition(at: 0), 0)
         XCTAssertEqual(try attributed.htmlPosition(at: 5), 1)
@@ -194,8 +194,8 @@ extension HTMLParserTests {
     }
 }
 
-private class CustomHTMLPermalinkReplacer: HTMLPermalinkReplacer {
-    func replacementForLink(_ url: String, text: String) -> NSAttributedString? {
+private class CustomHTMLMentionReplacer: HTMLMentionReplacer {
+    func replacementForMention(_ url: String, text: String) -> NSAttributedString? {
         if url.starts(with: "https://matrix.to/#/"),
            let image = UIImage(systemName: "link") {
             // Set a text attachment with an arbitrary image.

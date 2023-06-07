@@ -41,13 +41,13 @@ extension NSMutableAttributedString {
         applyDiscardableToListPrefixes()
     }
 
-    /// Replace parts of the attributed string that represents links by
-    /// a new attributed string part provided by the hosting app `HTMLPermalinkReplacer`.
+    /// Replace parts of the attributed string that represents mentions by
+    /// a new attributed string part provided by the hosting app `MentionReplacer`.
     ///
-    /// - Parameter permalinkReplacer: The permalink replacer providing new attributed strings.
-    func replaceLinks(with permalinkReplacer: HTMLPermalinkReplacer?) {
+    /// - Parameter mentionReplacer: The mention replacer providing new attributed strings.
+    func replaceMentions(with mentionReplacer: HTMLMentionReplacer?) {
         enumerateTypedAttribute(.mention) { (originalContent: MentionContent, range: NSRange, _) in
-            if let replacement = permalinkReplacer?.replacementForLink(
+            if let replacement = mentionReplacer?.replacementForMention(
                 originalContent.url,
                 text: self.mutableString.substring(with: range)
             ) {

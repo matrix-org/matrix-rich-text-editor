@@ -18,8 +18,8 @@ import Foundation
 import UIKit
 import WysiwygComposer
 
-final class WysiwygPermalinkReplacer: PermalinkReplacer {
-    func replacementForLink(_ url: String, text: String) -> NSAttributedString? {
+final class WysiwygMentionReplacer: MentionReplacer {
+    func replacementForMention(_ url: String, text: String) -> NSAttributedString? {
         if #available(iOS 15.0, *),
            url.starts(with: "https://matrix.to/#/"),
            let attachment = WysiwygTextAttachment(displayName: text,

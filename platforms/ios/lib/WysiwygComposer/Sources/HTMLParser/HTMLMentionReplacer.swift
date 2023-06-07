@@ -16,16 +16,16 @@
 
 import Foundation
 
-/// Defines an API for permalink replacement with other objects (e.g. pills)
-public protocol HTMLPermalinkReplacer {
-    /// Called when the parser of the composer steps upon a link.
+/// Defines an API for mention replacement with other objects (e.g. pills)
+public protocol HTMLMentionReplacer {
+    /// Called when the parser of the composer steps upon a mention.
     /// This can be used to provide custom attributed string parts, such
-    /// as a pillified representation of a link.
+    /// as a pillified representation of a mention.
     /// If nothing is provided, the composer will use a standard link.
     ///
     /// - Parameters:
-    ///   - url: URL of the link
-    ///   - text: Text of the link
-    /// - Returns: Replacement for the attributed link.
-    func replacementForLink(_ url: String, text: String) -> NSAttributedString?
+    ///   - url: URL of the mention's permalink
+    ///   - text: Display text of the mention
+    /// - Returns: Replacement for the mention.
+    func replacementForMention(_ url: String, text: String) -> NSAttributedString?
 }

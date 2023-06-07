@@ -17,8 +17,8 @@
 import Foundation
 import HTMLParser
 
-/// Extension protocol for HTMLParser's `HTMLPermalinkReplacer` that handles replacement for markdown.
-public protocol PermalinkReplacer: HTMLPermalinkReplacer {
+/// Extension protocol for HTMLParser's `MentionReplacer` that handles replacement for markdown.
+public protocol MentionReplacer: HTMLMentionReplacer {
     /// Called when the composer switches to plain text mode or when
     /// the client sets an HTML body as the current content of the composer
     /// in plain text mode. Provides the ability for the client to replace

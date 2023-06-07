@@ -91,11 +91,11 @@ extension NSAttributedString {
     }
 
     /// Compute an array of all parts of the attributed string that have been replaced
-    /// with `PermalinkReplacer` usage within the given range.
+    /// with `MentionReplacer` usage within the given range.
     ///
     /// - Parameter range: the range on which the elements should be detected. Entire range if omitted
     /// - Returns: an array of `Replacement`.
-    func replacementTextRanges(in range: NSRange? = nil) -> [MentionReplacement] {
+    func mentionReplacementTextRanges(in range: NSRange? = nil) -> [MentionReplacement] {
         var replacements = [MentionReplacement]()
 
         enumerateTypedAttribute(.mention) { (mentionContent: MentionContent, range: NSRange, _) in
@@ -106,12 +106,12 @@ extension NSAttributedString {
     }
 
     /// Compute an array of all parts of the attributed string that have been replaced
-    /// with `PermalinkReplacer` usage up to the provided index.
+    /// with `MentionReplacer` usage up to the provided index.
     ///
     /// - Parameter attributedIndex: the position until which the ranges should be computed.
     /// - Returns: an array of range and offsets.
-    func replacementTextRanges(to attributedIndex: Int) -> [MentionReplacement] {
-        replacementTextRanges(in: .init(location: 0, length: attributedIndex))
+    func mentionReplacementTextRanges(to attributedIndex: Int) -> [MentionReplacement] {
+        mentionReplacementTextRanges(in: .init(location: 0, length: attributedIndex))
     }
 
     /// Find occurences of parts of the attributed string that have been replaced
@@ -122,7 +122,7 @@ extension NSAttributedString {
     /// - Parameter attributedIndex: the index inside the attributed representation
     /// - Returns: Total offset of replacement ranges
     func replacementsOffsetAt(at attributedIndex: Int) -> Int {
-        replacementTextRanges(to: attributedIndex)
+        mentionReplacementTextRanges(to: attributedIndex)
             .map { $0.range.upperBound <= attributedIndex
                 ? $0.offset
                 : attributedIndex > $0.range.location
@@ -166,7 +166,7 @@ extension NSAttributedString {
 
         // Iterate replacement ranges in order and only account those
         // that are still in range after previous offset update.
-        attributedIndex = replacementTextRanges(to: attributedIndex)
+        attributedIndex = mentionReplacementTextRanges(to: attributedIndex)
             .reduce(attributedIndex) { $1.range.location < $0 ? $0 + $1.offset : $0 }
 
         guard attributedIndex <= length else {
@@ -198,7 +198,7 @@ extension NSMutableAttributedString {
     /// - Returns: self (discardable)
     @discardableResult
     func addPlaceholderForReplacements() -> Self {
-        replacementTextRanges()
+        mentionReplacementTextRanges()
             .filter { $0.range.length != $0.content.rustLength }
             .reversed()
             .forEach {
