@@ -219,6 +219,8 @@ mod test {
         )
     }
 
+    // TODO remove attributes when Rust model can parse url directly
+    // https://github.com/matrix-org/matrix-rich-text-editor/issues/709
     fn insert_mention_at_cursor(model: &mut Arc<ComposerModel>) {
         let update = model.replace_text("@alic".into());
         let MenuAction::Suggestion{suggestion_pattern} = update.menu_action() else {

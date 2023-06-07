@@ -429,6 +429,8 @@ describe('computeNodeAndOffset', () => {
         expect(offset).toBe(0);
     });
 
+    // TODO remove attributes from mentions when Rust model can parse url
+    // https://github.com/matrix-org/matrix-rich-text-editor/issues/709
     it('can find the beginning of a mention correctly', () => {
         // When
         setEditorHtml(
