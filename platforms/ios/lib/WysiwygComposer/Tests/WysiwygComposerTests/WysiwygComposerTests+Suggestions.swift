@@ -31,7 +31,7 @@ extension WysiwygComposerTests {
 
         model
             .action {
-                $0.setLinkSuggestion(
+                $0.insertMentionAtSuggestion(
                     url: "https://matrix.to/#/@alice:matrix.org",
                     text: "Alice",
                     suggestion: suggestionPattern,
@@ -40,9 +40,40 @@ extension WysiwygComposerTests {
             }
             .assertHtml(
                 """
-                <a data-mention-type="user" contenteditable="false" href="https://matrix.to/#/@alice:matrix.org">Alice</a>\(String.nbsp)
+                <a data-mention-type="user" href="https://matrix.to/#/@alice:matrix.org" contenteditable="false">Alice</a>\(String.nbsp)
                 """
             )
+            .assertSelection(start: 2, end: 2)
+    }
+
+    func testNonLeadingSuggestionForAtPattern() {
+        let model = ComposerModelWrapper()
+        let update = model.replaceText(newText: "Hello @alic")
+
+        guard case .suggestion(suggestionPattern: let suggestionPattern) = update.menuAction(),
+              let attributes = suggestionPattern.key.mentionType?.attributes
+        else {
+            XCTFail("No user suggestion found")
+            return
+        }
+
+        model
+            .action {
+                $0.insertMentionAtSuggestion(
+                    url: "https://matrix.to/#/@alice:matrix.org",
+                    text: "Alice",
+                    suggestion: suggestionPattern,
+                    attributes: attributes
+                )
+            }
+            .assertHtml(
+                """
+                Hello <a data-mention-type="user" \
+                href="https://matrix.to/#/@alice:matrix.org" \
+                contenteditable="false">Alice</a>\(String.nbsp)
+                """
+            )
+            .assertSelection(start: 8, end: 8)
     }
 
     func testSuggestionForHashPattern() {
@@ -58,7 +89,7 @@ extension WysiwygComposerTests {
 
         model
             .action {
-                $0.setLinkSuggestion(
+                $0.insertMentionAtSuggestion(
                     url: "https://matrix.to/#/#room1:matrix.org",
                     text: "Room 1",
                     suggestion: suggestionPattern,
@@ -67,7 +98,7 @@ extension WysiwygComposerTests {
             }
             .assertHtml(
                 """
-                <a data-mention-type="room" contenteditable="false" href="https://matrix.to/#/#room1:matrix.org">Room 1</a>\(String.nbsp)
+                <a data-mention-type="room" href="https://matrix.to/#/#room1:matrix.org" contenteditable="false">Room 1</a>\(String.nbsp)
                 """
             )
     }

@@ -17,19 +17,19 @@
 import Foundation
 
 /// Represents a replacement in an instance of `NSAttributedString`
-struct Replacement {
+struct MentionReplacement {
     /// Range of the `NSAttributedString` where the replacement is located.
     let range: NSRange
     /// Data of the original content of the `NSAttributedString`.
-    let originalContent: OriginalContent
+    let content: MentionContent
 }
 
 // MARK: - Helpers
 
-extension Replacement {
+extension MentionReplacement {
     /// Computes the offset between the replacement and the original part (i.e. if the original length
     /// is greater than the replacement range, this offset will be negative).
     var offset: Int {
-        range.length - originalContent.text.count
+        range.length - content.rustLength
     }
 }

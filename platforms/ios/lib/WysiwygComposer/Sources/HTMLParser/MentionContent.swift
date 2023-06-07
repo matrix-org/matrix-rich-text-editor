@@ -15,7 +15,9 @@
 //
 
 /// A struct that can be used as an attribute to persist the original content of a replaced part of an `NSAttributedString`.
-struct OriginalContent {
-    /// The original text of the content that has been replaced.
-    let text: String
+struct MentionContent {
+    /// The length of the replaced content in the Rust model.
+    let rustLength: Int
+
+    let url: String
 }

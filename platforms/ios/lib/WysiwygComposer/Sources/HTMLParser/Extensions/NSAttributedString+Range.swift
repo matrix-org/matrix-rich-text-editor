@@ -65,7 +65,7 @@ extension NSAttributedString {
     public var htmlChars: String {
         NSMutableAttributedString(attributedString: self)
             .removeDiscardableContent()
-            .restoreReplacements()
+            .addPlaceholderForReplacements()
             .string
     }
 
@@ -95,11 +95,11 @@ extension NSAttributedString {
     ///
     /// - Parameter range: the range on which the elements should be detected. Entire range if omitted
     /// - Returns: an array of `Replacement`.
-    func replacementTextRanges(in range: NSRange? = nil) -> [Replacement] {
-        var replacements = [Replacement]()
+    func replacementTextRanges(in range: NSRange? = nil) -> [MentionReplacement] {
+        var replacements = [MentionReplacement]()
 
-        enumerateTypedAttribute(.originalContent) { (originalContent: OriginalContent, range: NSRange, _) in
-            replacements.append(Replacement(range: range, originalContent: originalContent))
+        enumerateTypedAttribute(.mention) { (mentionContent: MentionContent, range: NSRange, _) in
+            replacements.append(MentionReplacement(range: range, content: mentionContent))
         }
 
         return replacements
@@ -110,7 +110,7 @@ extension NSAttributedString {
     ///
     /// - Parameter attributedIndex: the position until which the ranges should be computed.
     /// - Returns: an array of range and offsets.
-    func replacementTextRanges(to attributedIndex: Int) -> [Replacement] {
+    func replacementTextRanges(to attributedIndex: Int) -> [MentionReplacement] {
         replacementTextRanges(in: .init(location: 0, length: attributedIndex))
     }
 
@@ -123,7 +123,12 @@ extension NSAttributedString {
     /// - Returns: Total offset of replacement ranges
     func replacementsOffsetAt(at attributedIndex: Int) -> Int {
         replacementTextRanges(to: attributedIndex)
-            .compactMap { $0.range.upperBound <= attributedIndex ? Optional($0.offset) : nil }
+            .map { $0.range.upperBound <= attributedIndex
+                ? $0.offset
+                : attributedIndex > $0.range.location
+                ? attributedIndex - $0.range.location - $0.content.rustLength
+                : 0
+            }
             .reduce(0, -)
     }
 
@@ -187,14 +192,20 @@ extension NSMutableAttributedString {
         return self
     }
 
-    /// Restore original content from `Replacement` within the attributed string.
+    /// Replace`Replacement` within the attributed string
+    /// by placeholders which have the expected Rust model length.
     ///
     /// - Returns: self (discardable)
     @discardableResult
-    func restoreReplacements() -> Self {
-        replacementTextRanges().reversed().forEach {
-            replaceCharacters(in: $0.range, with: $0.originalContent.text)
-        }
+    func addPlaceholderForReplacements() -> Self {
+        replacementTextRanges()
+            .filter { $0.range.length != $0.content.rustLength }
+            .reversed()
+            .forEach {
+                replaceCharacters(in: $0.range,
+                                  with: String(repeating: Character.object,
+                                               count: $0.content.rustLength))
+            }
 
         return self
     }

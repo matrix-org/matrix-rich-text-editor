@@ -97,10 +97,7 @@ public final class HTMLParser {
         
         let mutableAttributedString = NSMutableAttributedString(attributedString: attributedString)
         mutableAttributedString.applyPostParsingCustomAttributes(style: style)
-
-        if let permalinkReplacer {
-            mutableAttributedString.replaceLinks(with: permalinkReplacer)
-        }
+        mutableAttributedString.replaceLinks(with: permalinkReplacer)
 
         removeTrailingNewlineIfNeeded(from: mutableAttributedString, given: html)
 

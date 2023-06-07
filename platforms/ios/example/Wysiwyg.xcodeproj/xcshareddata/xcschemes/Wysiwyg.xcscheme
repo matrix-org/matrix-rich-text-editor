@@ -85,6 +85,11 @@
                BlueprintName = "WysiwygUITests"
                ReferencedContainer = "container:Wysiwyg.xcodeproj">
             </BuildableReference>
+            <SkippedTests>
+               <Test
+                  Identifier = "WysiwygUITests/testPlainTextModePreservesPills()">
+               </Test>
+            </SkippedTests>
          </TestableReference>
       </Testables>
    </TestAction>

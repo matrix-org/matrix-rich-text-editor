@@ -242,11 +242,12 @@ public extension WysiwygComposerViewModel {
     func setMention(url: String, name: String, mentionType: WysiwygMentionType) {
         let update: ComposerUpdate
         if let suggestionPattern, suggestionPattern.key == mentionType.patternKey {
-            update = model.setLinkSuggestion(url: url,
-                                             text: name,
-                                             suggestion: suggestionPattern,
-                                             attributes: mentionType.attributes)
+            update = model.insertMentionAtSuggestion(url: url,
+                                                     text: name,
+                                                     suggestion: suggestionPattern,
+                                                     attributes: mentionType.attributes)
         } else {
+            // FIXME: insert mention
             _ = model.setLinkWithText(url: url, text: name, attributes: mentionType.attributes)
             update = model.replaceText(newText: " ")
         }
