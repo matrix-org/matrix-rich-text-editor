@@ -38,12 +38,11 @@ where
             return ComposerUpdate::keep();
         }
 
-        self.push_state_to_history();
-
-        self.do_replace_text_in(S::default(), suggestion.start, suggestion.end);
+        self.replace_text_in(S::default(), suggestion.start, suggestion.end);
         self.state.start = Location::from(suggestion.start);
         self.state.end = self.state.start;
 
+        self.push_state_to_history();
         self.do_insert_mention(url, text, attributes)
     }
 
@@ -62,12 +61,11 @@ where
             return ComposerUpdate::keep();
         }
 
-        self.push_state_to_history();
-
         if self.has_selection() {
             self.replace_text(S::default());
         }
 
+        self.push_state_to_history();
         self.do_insert_mention(url, text, attributes)
     }
 
