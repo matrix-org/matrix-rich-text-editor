@@ -37,11 +37,10 @@ where
             return ComposerUpdate::keep();
         }
 
-        self.replace_text_in(S::default(), suggestion.start, suggestion.end);
+        self.push_state_to_history();
+        self.do_replace_text_in(S::default(), suggestion.start, suggestion.end);
         self.state.start = Location::from(suggestion.start);
         self.state.end = self.state.start;
-
-        self.push_state_to_history();
         self.do_insert_mention(url, text, attributes)
     }
 
