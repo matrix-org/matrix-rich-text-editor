@@ -59,11 +59,10 @@ where
             return ComposerUpdate::keep();
         }
 
-        if self.has_selection() {
-            self.replace_text(S::default());
-        }
-
         self.push_state_to_history();
+        if self.has_selection() {
+            self.do_replace_text(S::default());
+        }
         self.do_insert_mention(url, text, attributes)
     }
 
