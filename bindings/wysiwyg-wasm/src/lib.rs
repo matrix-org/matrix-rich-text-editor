@@ -312,7 +312,21 @@ impl ComposerModel {
         ))
     }
 
-    /// This function creates a mention node and inserts it into the composer, replacing the
+    /// Creates a mention node and inserts it into the composer at the current selection
+    pub fn insert_mention(
+        &mut self,
+        url: &str,
+        text: &str,
+        attributes: js_sys::Map,
+    ) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.insert_mention(
+            Utf16String::from_str(url),
+            Utf16String::from_str(text),
+            attributes.into_vec(),
+        ))
+    }
+
+    /// Creates a mention node and inserts it into the composer, replacing the
     /// text content defined by the suggestion
     pub fn insert_mention_at_suggestion(
         &mut self,
