@@ -13,15 +13,20 @@
 // limitations under the License.
 
 use crate::{
-    dom::DomLocation, ComposerModel, ComposerUpdate, DomNode, Location,
-    SuggestionPattern, UnicodeString,
+    dom::{DomLocation, Range},
+    ComposerModel, ComposerUpdate, DomNode, Location, SuggestionPattern,
+    UnicodeString,
 };
 
 impl<S> ComposerModel<S>
 where
     S: UnicodeString,
 {
-    /// Remove the suggestion text and then add a mention to the composer
+    /// Remove the suggestion text and then insert a mention into the composer, using the following rules
+    /// - Do not insert a mention if the range includes link or code leaves
+    /// - If the composer contains a selection, remove the contents of the selection
+    /// prior to inserting a mention at the cursor.
+    /// - If the composer contains a cursor, insert a mention at the cursor
     pub fn insert_mention_at_suggestion(
         &mut self,
         url: S,
@@ -29,18 +34,21 @@ where
         suggestion: SuggestionPattern,
         attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
-        // This function removes the text between the suggestion start and end points, updates the
-        // cursor position and then calls insert_mention (equivalent to link insertion steps)
+        if self.should_not_insert_mention() {
+            return ComposerUpdate::keep();
+        }
+
+        self.push_state_to_history();
+
         self.do_replace_text_in(S::default(), suggestion.start, suggestion.end);
         self.state.start = Location::from(suggestion.start);
         self.state.end = self.state.start;
 
-        self.insert_mention(url, text, attributes)
+        self.do_insert_mention(url, text, attributes)
     }
 
     /// Inserts a mention into the composer. It uses the following rules:
-    /// - If the selection or cursor contains/is inside a link, do nothing (see
-    /// https://github.com/matrix-org/matrix-rich-text-editor/issues/702)
+    /// - Do not insert a mention if the range includes link or code leaves
     /// - If the composer contains a selection, remove the contents of the selection
     /// prior to inserting a mention at the cursor.
     /// - If the composer contains a cursor, insert a mention at the cursor
@@ -50,22 +58,21 @@ where
         text: S,
         attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
-        let (start, end) = self.safe_selection();
-        let range = self.state.dom.find_range(start, end);
-
-        if range.locations.iter().any(|l: &DomLocation| {
-            l.kind.is_link_kind() || l.kind.is_code_kind()
-        }) {
+        if self.should_not_insert_mention() {
             return ComposerUpdate::keep();
         }
 
-        if range.is_selection() {
+        self.push_state_to_history();
+
+        if self.has_selection() {
             self.replace_text(S::default());
         }
 
         self.do_insert_mention(url, text, attributes)
     }
 
+    /// Creates a new mention node then inserts the node at the cursor position. It adds a trailing space when the inserted
+    /// mention is the last node in it's parent.
     fn do_insert_mention(
         &mut self,
         url: S,
@@ -77,8 +84,6 @@ where
 
         let new_node = DomNode::new_mention(url, text, attributes);
         let new_cursor_index = start + new_node.text_len();
-
-        self.push_state_to_history();
 
         let handle = self.state.dom.insert_node_at_cursor(&range, new_node);
 
@@ -92,5 +97,21 @@ where
         } else {
             self.create_update_replace_all()
         }
+    }
+
+    /// Utility function for the insert_mention* methods. It returns false if the range
+    /// includes any link or code type leaves.
+    ///
+    /// Related issue is here:
+    /// https://github.com/matrix-org/matrix-rich-text-editor/issues/702
+    /// We do not allow mentions to be inserted into links, the planned behaviour is
+    /// detailed in the above issue.
+    fn should_not_insert_mention(&self) -> bool {
+        let (start, end) = self.safe_selection();
+        let range = self.state.dom.find_range(start, end);
+
+        range.locations.iter().any(|l: &DomLocation| {
+            l.kind.is_link_kind() || l.kind.is_code_kind()
+        })
     }
 }
