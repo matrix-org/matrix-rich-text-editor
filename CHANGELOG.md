@@ -1,5 +1,24 @@
 # Changelog
 
+# [2.2.2] - 2023-06-08
+
+### Added
+
+- Common: New `MentionNode` to represent mentions in the Rust model
+- Common: Functions to output html specifically formatted for sending as a message
+- Common: Documentation for the example format selection writer
+- Android: Allow pasting of images
+- Web: New listener for `beforeinput` events
+
+### Changed
+
+- iOS: Run iOS coverage for unit and ui tests separately
+- Android: Now uses the html output in the message format
+
+### Fixed
+
+- iOS: Incorrect character placement after multiple newlines
+
 # [2.2.1] - 2023-05-23
 
 ### Fixed
