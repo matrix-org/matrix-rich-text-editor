@@ -247,9 +247,9 @@ public extension WysiwygComposerViewModel {
                                                      suggestion: suggestionPattern,
                                                      attributes: mentionType.attributes)
         } else {
-            // FIXME: insert mention
-            _ = model.setLinkWithText(url: url, text: name, attributes: mentionType.attributes)
-            update = model.replaceText(newText: " ")
+            update = model.insertMention(url: url,
+                                         text: name,
+                                         attributes: mentionType.attributes)
         }
         applyUpdate(update)
         hasPendingFormats = true

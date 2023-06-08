@@ -68,7 +68,7 @@ extension WysiwygComposerViewModelTests {
         XCTAssertEqual(
             viewModel.content.html,
             """
-            Text<a data-mention-type="user" href="https://matrix.to/#/@alice:matrix.org">Alice</a>\u{00A0}
+            Text<a data-mention-type="user" href="https://matrix.to/#/@alice:matrix.org" contenteditable="false">Alice</a>\u{00A0}
             """
         )
     }
@@ -81,7 +81,7 @@ extension WysiwygComposerViewModelTests {
         XCTAssertEqual(
             viewModel.content.html,
             """
-            <a data-mention-type="user" href="https://matrix.to/#/@alice:matrix.org">Alice</a> Text
+            <a data-mention-type="user" href="https://matrix.to/#/@alice:matrix.org" contenteditable="false">Alice</a>Text
             """
         )
     }
@@ -104,7 +104,7 @@ extension WysiwygComposerViewModelTests {
         XCTAssertEqual(
             viewModel.content.html,
             """
-            Text<a data-mention-type="room" href="https://matrix.to/#/#room1:matrix.org">Room 1</a>\u{00A0}
+            Text<a data-mention-type="room" href="https://matrix.to/#/#room1:matrix.org" contenteditable="false">Room 1</a>\u{00A0}
             """
         )
     }
@@ -116,7 +116,7 @@ extension WysiwygComposerViewModelTests {
         XCTAssertEqual(
             viewModel.content.html,
             """
-            <a data-mention-type="room" href="https://matrix.to/#/#room1:matrix.org">Room 1</a> Text
+            <a data-mention-type="room" href="https://matrix.to/#/#room1:matrix.org" contenteditable="false">Room 1</a>Text
             """
         )
     }
