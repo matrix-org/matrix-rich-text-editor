@@ -123,7 +123,6 @@ mod test {
     #[test]
     fn test_replace_whole_suggestion_with_mention_ffi() {
         let mut model = Arc::new(ComposerModel::new());
-        let update = model.replace_text("@alic".into());
 
         insert_mention_at_cursor(&mut model);
 

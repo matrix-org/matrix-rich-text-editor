@@ -258,7 +258,30 @@ impl ComposerModel {
         ))
     }
 
-    /// This function creates a mention node and inserts it into the composer, replacing the
+    /// Creates a mention node and inserts it into the composer at the current selection
+    pub fn insert_mention(
+        self: &Arc<Self>,
+        url: String,
+        text: String,
+        attributes: Vec<Attribute>,
+    ) -> Arc<ComposerUpdate> {
+        let url = Utf16String::from_str(&url);
+        let text = Utf16String::from_str(&text);
+        let attrs = attributes
+            .iter()
+            .map(|attr| {
+                (
+                    Utf16String::from_str(&attr.key),
+                    Utf16String::from_str(&attr.value),
+                )
+            })
+            .collect();
+        Arc::new(ComposerUpdate::from(
+            self.inner.lock().unwrap().insert_mention(url, text, attrs),
+        ))
+    }
+
+    /// Creates a mention node and inserts it into the composer, replacing the
     /// text content defined by the suggestion
     pub fn insert_mention_at_suggestion(
         self: &Arc<Self>,
