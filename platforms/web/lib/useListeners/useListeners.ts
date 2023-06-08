@@ -123,15 +123,24 @@ export function useListeners(
         const onInput = (e: Event) => isInputEvent(e) && _handleInput(e);
         editorNode.addEventListener('input', onInput);
 
-        const onPaste = (e: Event) => {
-            if (!isClipboardEvent(e)) {
-                return;
+        // Can be called by onPaste or onBeforeInput
+        const onPaste = (e: ClipboardEvent | InputEvent) => {
+            // this is required to handle edge case image pasting in Safari, see
+            // https://github.com/vector-im/element-web/issues/25327
+            const isSpecialCaseInputEvent =
+                isInputEvent(e) &&
+                e.inputType === 'insertFromPaste' &&
+                e.dataTransfer !== null;
+
+            const isEventToHandle =
+                isClipboardEvent(e) || isSpecialCaseInputEvent;
+
+            if (isEventToHandle) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                _handleInput(e);
             }
-
-            e.preventDefault();
-            e.stopPropagation();
-
-            _handleInput(e);
         };
         editorNode.addEventListener('paste', onPaste);
 
@@ -177,6 +186,11 @@ export function useListeners(
         };
         document.addEventListener('selectionchange', onSelectionChange);
 
+        // this is required to handle edge case image pasting in Safari, see
+        // https://github.com/vector-im/element-web/issues/25327
+        const onBeforeInput = onPaste;
+        editorNode.addEventListener('beforeinput', onBeforeInput);
+
         setAreListenersReady(true);
 
         return () => {
@@ -185,6 +199,7 @@ export function useListeners(
             editorNode.removeEventListener('paste', onPaste);
             editorNode.removeEventListener('wysiwygInput', onWysiwygInput);
             editorNode.removeEventListener('keydown', onKeyDown);
+            editorNode.removeEventListener('beforeinput', onBeforeInput);
             document.removeEventListener('selectionchange', onSelectionChange);
         };
     }, [
