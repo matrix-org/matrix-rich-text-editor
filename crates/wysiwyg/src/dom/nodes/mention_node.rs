@@ -150,7 +150,7 @@ impl<S: UnicodeString> MentionNode<S> {
                     formatter.push(self.display_text())
                 } else {
                     let mut attributes = self.attributes.clone();
-                    attributes.push(("href".into(), "#".into()));
+                    attributes.push(("href".into(), "#".into())); // designates a placeholder link in html
                     attributes.push(("contenteditable".into(), "false".into()));
 
                     self.fmt_tag_open(tag, formatter, &Some(attributes));
