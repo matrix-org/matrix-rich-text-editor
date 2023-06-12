@@ -75,7 +75,7 @@ function App() {
             if (debug.testRef.current) {
                 debug.traceAction(null, 'send', `${wysiwyg.content()}`);
             }
-            console.log(`SENDING: ${wysiwyg.messageContent()}`);
+            console.log(`SENDING MESSAGE HTML: ${wysiwyg.messageContent()}`);
             wysiwyg.actions.clear();
             return null;
         }
