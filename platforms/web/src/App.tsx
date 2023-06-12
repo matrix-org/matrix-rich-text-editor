@@ -97,6 +97,11 @@ function App() {
         actionStates.unorderedList === 'reversed' ||
         actionStates.orderedList === 'reversed';
 
+    const commandExists = suggestion && suggestion.type === 'command';
+    const mentionExists = suggestion && suggestion.type === 'mention';
+    const shouldDisplayAtMention = mentionExists && suggestion.keyChar === '@';
+    const shouldDisplayHashMention =
+        mentionExists && suggestion.keyChar === '#';
     return (
         <div className="wrapper">
             <div>
@@ -187,32 +192,22 @@ function App() {
                         <button type="button" onClick={(_e) => wysiwyg.clear()}>
                             clear
                         </button>
-                        {suggestion && suggestion.type === 'mention' && (
-                            <button
-                                type="button"
-                                onClick={(_e) =>
-                                    wysiwyg.mention(
-                                        'https://matrix.to/#/@alice_user:element.io',
-                                        'Alice',
-                                        {
-                                            'data-mention-type':
-                                                suggestion.keyChar === '@'
-                                                    ? 'user'
-                                                    : 'room',
-                                        },
-                                    )
-                                }
-                            >
-                                Add
-                                {suggestion.keyChar === '@'
-                                    ? ' user '
-                                    : ' room '}
-                                mention
-                            </button>
-                        )}
-                        {suggestion &&
-                            suggestion.type === 'mention' &&
-                            suggestion.keyChar === '@' && (
+                        {shouldDisplayAtMention && (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={(_e) =>
+                                        wysiwyg.mention(
+                                            'https://matrix.to/#/@alice_user:element.io',
+                                            'Alice',
+                                            {
+                                                'data-mention-type': 'user',
+                                            },
+                                        )
+                                    }
+                                >
+                                    Add User mention
+                                </button>
                                 <button
                                     type="button"
                                     onClick={(_e) =>
@@ -223,8 +218,25 @@ function App() {
                                 >
                                     Add at-room mention
                                 </button>
-                            )}
-                        {suggestion && suggestion.type === 'command' && (
+                            </>
+                        )}
+                        {shouldDisplayHashMention && (
+                            <button
+                                type="button"
+                                onClick={(_e) =>
+                                    wysiwyg.mention(
+                                        'https://matrix.to/#/#my_room:element.io',
+                                        'My room',
+                                        {
+                                            'data-mention-type': 'room',
+                                        },
+                                    )
+                                }
+                            >
+                                Add Room mention
+                            </button>
+                        )}
+                        {commandExists && (
                             <button
                                 type="button"
                                 onClick={(_e) => wysiwyg.command('/spoiler')}
