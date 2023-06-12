@@ -75,7 +75,7 @@ function App() {
             if (debug.testRef.current) {
                 debug.traceAction(null, 'send', `${wysiwyg.content()}`);
             }
-            console.log(`SENDING: ${wysiwyg.content()}`);
+            console.log(`SENDING: ${wysiwyg.messageContent()}`);
             wysiwyg.actions.clear();
             return null;
         }
@@ -203,9 +203,27 @@ function App() {
                                     )
                                 }
                             >
-                                Add {suggestion.keyChar}mention
+                                Add
+                                {suggestion.keyChar === '@'
+                                    ? ' user '
+                                    : ' room '}
+                                mention
                             </button>
                         )}
+                        {suggestion &&
+                            suggestion.type === 'mention' &&
+                            suggestion.keyChar === '@' && (
+                                <button
+                                    type="button"
+                                    onClick={(_e) =>
+                                        wysiwyg.mention('#', 'Alice', {
+                                            'data-mention-type': 'at-room',
+                                        })
+                                    }
+                                >
+                                    Add {suggestion.keyChar}mention
+                                </button>
+                            )}
                         {suggestion && suggestion.type === 'command' && (
                             <button
                                 type="button"

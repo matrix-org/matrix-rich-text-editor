@@ -50,6 +50,7 @@ export type FormattingFunctions = Record<
 export type Wysiwyg = {
     actions: FormattingFunctions;
     content: () => string;
+    messageContent: () => string;
 };
 
 export type InputEventProcessor = (
