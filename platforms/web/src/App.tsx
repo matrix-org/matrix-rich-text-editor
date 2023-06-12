@@ -216,12 +216,12 @@ function App() {
                                 <button
                                     type="button"
                                     onClick={(_e) =>
-                                        wysiwyg.mention('#', 'Alice', {
+                                        wysiwyg.mention('#', '@room', {
                                             'data-mention-type': 'at-room',
                                         })
                                     }
                                 >
-                                    Add {suggestion.keyChar}mention
+                                    Add at-room mention
                                 </button>
                             )}
                         {suggestion && suggestion.type === 'command' && (
