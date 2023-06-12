@@ -21,7 +21,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.core.graphics.withTranslation
 import androidx.lifecycle.*
 import com.google.android.material.textfield.TextInputEditText
-import io.element.android.wysiwyg.display.KeywordDisplayHandler
 import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelper
 import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelperFactory
 import io.element.android.wysiwyg.inputhandlers.InterceptInputConnection
@@ -31,10 +30,9 @@ import io.element.android.wysiwyg.view.models.LinkAction
 import io.element.android.wysiwyg.internal.viewmodel.ReplaceTextResult
 import io.element.android.wysiwyg.internal.view.EditorEditTextAttributeReader
 import io.element.android.wysiwyg.internal.view.viewModel
-import io.element.android.wysiwyg.internal.display.MemoizingLinkDisplayHandler
+import io.element.android.wysiwyg.internal.display.MemoizingMentionDisplayHandler
 import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
-import io.element.android.wysiwyg.display.LinkDisplayHandler
-import io.element.android.wysiwyg.internal.display.MemoizedKeywordDisplayHandler
+import io.element.android.wysiwyg.display.MentionDisplayHandler
 import io.element.android.wysiwyg.utils.*
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
 import io.element.android.wysiwyg.view.StyleConfig
@@ -61,8 +59,7 @@ class EditorEditText : TextInputEditText {
                     HtmlToSpansParser(
                         resourcesProvider, html,
                         styleConfig = styleConfig,
-                        linkDisplayHandler = linkDisplayHandler,
-                        keywordDisplayHandler = keywordDisplayHandler,
+                        mentionDisplayHandler = mentionDisplayHandler,
                     )
                 },
             )
@@ -109,20 +106,11 @@ class EditorEditText : TextInputEditText {
     }
 
     /**
-     * Set the link display handler to display links in a custom way.
-     * For example, to transform links into pills.
+     * Set the mention display handler to display mentions in a custom way.
      */
-    var linkDisplayHandler: LinkDisplayHandler? = null
+    var mentionDisplayHandler: MentionDisplayHandler? = null
         set(value) {
-            field = value?.let { MemoizingLinkDisplayHandler(it) }
-        }
-    /**
-     * Set the keyword display handler to display keywords in a custom way.
-     * For example, to transform keywords into pills.
-     */
-    var keywordDisplayHandler: KeywordDisplayHandler? = null
-        set(value) {
-            field = value?.let { MemoizedKeywordDisplayHandler(it) }
+            field = value?.let { MemoizingMentionDisplayHandler(it) }
         }
     var selectionChangeListener: OnSelectionChangeListener? = null
     var actionStatesChangedListener: OnActionStatesChangedListener? = null
