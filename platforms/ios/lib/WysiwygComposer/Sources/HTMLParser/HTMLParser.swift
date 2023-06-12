@@ -59,12 +59,12 @@ public final class HTMLParser {
     ///   - html: HTML to parse
     ///   - encoding: String encoding to use
     ///   - style: Style to apply for HTML parsing
-    ///   - permalinkReplacer:An object that might replace detected links.
+    ///   - mentionReplacer:An object that might replace detected mentions.
     /// - Returns: An attributed string representation of the HTML content
     public static func parse(html: String,
                              encoding: String.Encoding = .utf16,
                              style: HTMLParserStyle = .standard,
-                             permalinkReplacer: HTMLPermalinkReplacer? = nil) throws -> NSAttributedString {
+                             mentionReplacer: HTMLMentionReplacer? = nil) throws -> NSAttributedString {
         guard !html.isEmpty else {
             return NSAttributedString(string: "")
         }
@@ -97,10 +97,7 @@ public final class HTMLParser {
         
         let mutableAttributedString = NSMutableAttributedString(attributedString: attributedString)
         mutableAttributedString.applyPostParsingCustomAttributes(style: style)
-
-        if let permalinkReplacer {
-            mutableAttributedString.replaceLinks(with: permalinkReplacer)
-        }
+        mutableAttributedString.replaceMentions(with: mentionReplacer)
 
         removeTrailingNewlineIfNeeded(from: mutableAttributedString, given: html)
 

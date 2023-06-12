@@ -31,7 +31,6 @@ extension NSAttributedString.Key {
     /// Attribute for parts of the string that should be removed for HTML selection computation.
     /// Should include both placeholder characters such as NBSP and ZWSP, as well as list prefixes.
     static let discardableText: NSAttributedString.Key = .init(rawValue: "DiscardableAttributeKey")
-    /// Attribute for the original content of a replacement. This should be added anytime a part of the attributed string
-    /// is replaced, in order for the composer to compute the expected HTML/attributed range properly.
-    static let originalContent: NSAttributedString.Key = .init(rawValue: "OriginalContentAttributeKey")
+    /// Attribute for a mention It contains data the composer requires in order to compute the expected HTML/attributed range properly.
+    static let mention: NSAttributedString.Key = .init(rawValue: "mentionAttributeKey")
 }

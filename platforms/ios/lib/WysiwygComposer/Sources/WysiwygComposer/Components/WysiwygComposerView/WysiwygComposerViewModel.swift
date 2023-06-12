@@ -40,8 +40,8 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
 
     /// The composer minimal height.
     public let minHeight: CGFloat
-    /// The permalink replacer defined by the hosting application.
-    public var permalinkReplacer: PermalinkReplacer?
+    /// The mention replacer defined by the hosting application.
+    public var mentionReplacer: MentionReplacer?
     /// Published object for the composer attributed content.
     @Published public var attributedContent: WysiwygComposerAttributedContent = .init()
     /// Published value for the content of the text view in plain text mode.
@@ -126,12 +126,12 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
                 maxCompressedHeight: CGFloat = 200,
                 maxExpandedHeight: CGFloat = 300,
                 parserStyle: HTMLParserStyle = .standard,
-                permalinkReplacer: PermalinkReplacer? = nil) {
+                mentionReplacer: MentionReplacer? = nil) {
         self.minHeight = minHeight
         self.maxCompressedHeight = maxCompressedHeight
         self.maxExpandedHeight = maxExpandedHeight
         self.parserStyle = parserStyle
-        self.permalinkReplacer = permalinkReplacer
+        self.mentionReplacer = mentionReplacer
 
         textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
         model = ComposerModelWrapper()
@@ -162,7 +162,7 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     }
 
     deinit {
-        permalinkReplacer = nil
+        mentionReplacer = nil
     }
 }
 
@@ -242,13 +242,14 @@ public extension WysiwygComposerViewModel {
     func setMention(url: String, name: String, mentionType: WysiwygMentionType) {
         let update: ComposerUpdate
         if let suggestionPattern, suggestionPattern.key == mentionType.patternKey {
-            update = model.setLinkSuggestion(url: url,
-                                             text: name,
-                                             suggestion: suggestionPattern,
-                                             attributes: mentionType.attributes)
+            update = model.insertMentionAtSuggestion(url: url,
+                                                     text: name,
+                                                     suggestion: suggestionPattern,
+                                                     attributes: mentionType.attributes)
         } else {
-            _ = model.setLinkWithText(url: url, text: name, attributes: mentionType.attributes)
-            update = model.replaceText(newText: " ")
+            update = model.insertMention(url: url,
+                                         text: name,
+                                         attributes: mentionType.attributes)
         }
         applyUpdate(update)
         hasPendingFormats = true
@@ -446,7 +447,7 @@ private extension WysiwygComposerViewModel {
             let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count)
             let attributed = try HTMLParser.parse(html: html,
                                                   style: parserStyle,
-                                                  permalinkReplacer: permalinkReplacer)
+                                                  mentionReplacer: mentionReplacer)
             // FIXME: handle error for out of bounds index
             let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
             let textSelection = try attributed.attributedRange(from: htmlSelection)
@@ -506,8 +507,8 @@ private extension WysiwygComposerViewModel {
         if enabled {
             var attributed = NSAttributedString(string: model.getContentAsMarkdown(),
                                                 attributes: defaultTextAttributes)
-            if let permalinkReplacer {
-                attributed = permalinkReplacer.postProcessMarkdown(in: attributed)
+            if let mentionReplacer {
+                attributed = mentionReplacer.postProcessMarkdown(in: attributed)
             }
             textView.attributedText = attributed
             updateCompressedHeightIfNeeded()
@@ -575,9 +576,9 @@ private extension WysiwygComposerViewModel {
     /// - Returns: A markdown string.
     func computeMarkdownContent() -> String {
         let markdownContent: String
-        if let permalinkReplacer, let attributedText = textView.attributedText {
-            // `PermalinkReplacer` should restore altered content to valid markdown.
-            markdownContent = permalinkReplacer.restoreMarkdown(in: attributedText)
+        if let mentionReplacer, let attributedText = textView.attributedText {
+            // `MentionReplacer` should restore altered content to valid markdown.
+            markdownContent = mentionReplacer.restoreMarkdown(in: attributedText)
         } else {
             markdownContent = textView.text
         }

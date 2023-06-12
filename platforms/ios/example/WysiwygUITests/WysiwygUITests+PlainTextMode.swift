@@ -39,6 +39,7 @@ extension WysiwygUITests {
         assertTextViewContent("text __bold__ *italic*")
     }
 
+    // FIXME: disabled for now, should be re-enabled when this is supported
     func testPlainTextModePreservesPills() throws {
         // Create a Pill in RTE.
         textView.typeTextCharByChar("@ali")

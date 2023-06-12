@@ -40,3 +40,20 @@ final class PlaceholderTextHTMLElement: DTTextHTMLElement {
         return dict
     }
 }
+
+final class MentionTextNodeHTMLElement: DTTextHTMLElement {
+    init(from textNode: DTTextHTMLElement) {
+        super.init()
+        setText(textNode.text())
+    }
+
+    override func attributesForAttributedStringRepresentation() -> [AnyHashable: Any]! {
+        var dict = super.attributesForAttributedStringRepresentation() ?? [AnyHashable: Any]()
+        // Insert a key to mark this as a mention post-parsing.
+        dict[NSAttributedString.Key.mention] = MentionContent(
+            rustLength: 1,
+            url: parent().attributes["href"] as? String ?? ""
+        )
+        return dict
+    }
+}
