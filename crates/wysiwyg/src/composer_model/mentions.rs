@@ -77,7 +77,13 @@ where
         let (start, end) = self.safe_selection();
         let range = self.state.dom.find_range(start, end);
 
-        let new_node = DomNode::new_mention(url, text, attributes);
+        // use the display text to determine if it's an at-room or regular mention
+        let new_node = if text == "@room".into() {
+            DomNode::new_at_room_mention(attributes)
+        } else {
+            DomNode::new_mention(url, text, attributes)
+        };
+
         let new_cursor_index = start + new_node.text_len();
 
         let handle = self.state.dom.insert_node_at_cursor(&range, new_node);

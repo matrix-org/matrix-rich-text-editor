@@ -129,12 +129,16 @@ impl<S: UnicodeString> MentionNode<S> {
         let cur_pos = formatter.len();
         match self.kind() {
             MentionNodeKind::MatrixUrl { display_text, url } => {
-                let mut attributes = self.attributes.clone();
+                let mut attributes = if as_message {
+                    vec![]
+                } else {
+                    self.attributes.clone()
+                };
+
                 attributes.push(("href".into(), url.clone()));
 
                 if !as_message {
                     attributes.push(("contenteditable".into(), "false".into()))
-                    // TODO: data-mention-type = "user" | "room"
                 }
 
                 self.fmt_tag_open(tag, formatter, &Some(attributes));
@@ -144,7 +148,18 @@ impl<S: UnicodeString> MentionNode<S> {
                 self.fmt_tag_close(tag, formatter);
             }
             MentionNodeKind::AtRoom => {
-                formatter.push(self.display_text());
+                if as_message {
+                    formatter.push(self.display_text())
+                } else {
+                    let mut attributes = self.attributes.clone();
+                    attributes.push(("href".into(), "#".into()));
+                    attributes.push(("contenteditable".into(), "false".into()));
+                    self.fmt_tag_open(tag, formatter, &Some(attributes));
+
+                    formatter.push("@room");
+
+                    self.fmt_tag_close(tag, formatter);
+                };
             }
         }
 
