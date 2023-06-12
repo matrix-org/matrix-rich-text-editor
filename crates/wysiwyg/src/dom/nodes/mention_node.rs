@@ -129,35 +129,32 @@ impl<S: UnicodeString> MentionNode<S> {
         let cur_pos = formatter.len();
         match self.kind() {
             MentionNodeKind::MatrixUrl { display_text, url } => {
-                let mut attributes = if as_message {
-                    vec![]
+                // if formatting as a message, only include the href attribute
+                let attributes = if as_message {
+                    vec![("href".into(), url.clone())]
                 } else {
-                    self.attributes.clone()
+                    let mut attributes_for_composer = self.attributes.clone();
+                    attributes_for_composer.push(("href".into(), url.clone()));
+                    attributes_for_composer
+                        .push(("contenteditable".into(), "false".into()));
+                    attributes_for_composer
                 };
 
-                attributes.push(("href".into(), url.clone()));
-
-                if !as_message {
-                    attributes.push(("contenteditable".into(), "false".into()))
-                }
-
                 self.fmt_tag_open(tag, formatter, &Some(attributes));
-
                 formatter.push(display_text.clone());
-
                 self.fmt_tag_close(tag, formatter);
             }
             MentionNodeKind::AtRoom => {
+                // if formatting as a message, simply use the display text (@room)
                 if as_message {
                     formatter.push(self.display_text())
                 } else {
                     let mut attributes = self.attributes.clone();
                     attributes.push(("href".into(), "#".into()));
                     attributes.push(("contenteditable".into(), "false".into()));
+
                     self.fmt_tag_open(tag, formatter, &Some(attributes));
-
-                    formatter.push("@room");
-
+                    formatter.push(self.display_text());
                     self.fmt_tag_close(tag, formatter);
                 };
             }

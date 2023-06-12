@@ -58,7 +58,7 @@ fn only_outputs_href_attribute_on_room_mention() {
 fn only_outputs_href_inner_text_for_at_room_mention() {
     let mut model = cm("|");
     model.insert_mention(
-        "anything".into(),
+        "anything".into(), // this should be ignored in favour of a # placeholder
         "@room".into(),
         vec![
             ("data-mention-type".into(), "at-room".into()),
