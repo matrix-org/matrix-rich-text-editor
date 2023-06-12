@@ -429,18 +429,86 @@ describe('computeNodeAndOffset', () => {
         expect(offset).toBe(0);
     });
 
-    // eslint-disable-next-line max-len
-    it('returns the beginning of the editor if we try to select the leading edge of non-editable node', () => {
+    // TODO remove attributes from mentions when Rust model can parse url
+    // https://github.com/matrix-org/matrix-rich-text-editor/issues/709
+    it('can find the beginning of a mention correctly', () => {
         // When
-        // this simulates having a mention in the html
         setEditorHtml(
-            '<a data-mention-type="user" contenteditable="false">test</a>',
+            // eslint-disable-next-line max-len
+            '<a data-mention-type="something" contenteditable="false">test</a>&nbsp;',
         );
         const { node, offset } = computeNodeAndOffset(editor, 0);
 
         // Then
         expect(node).toBe(editor);
         expect(offset).toBe(0);
+    });
+
+    it('can find the end of a mention correctly', () => {
+        // When
+        // we have a mention, ie a tag with a data-mention-type attribute
+        setEditorHtml(
+            // eslint-disable-next-line max-len
+            '<a data-mention-type="something" contenteditable="false">test</a>&nbsp;',
+        );
+        const { node, offset } = computeNodeAndOffset(editor, 1);
+
+        // Then
+        expect(node).toBe(editor.childNodes[1]);
+        expect(offset).toBe(0);
+    });
+
+    it('can find the nbsp after a mention correctly', () => {
+        // When
+        // we have a mention, ie a tag with a data-mention-type attribute
+        setEditorHtml(
+            // eslint-disable-next-line max-len
+            '<a data-mention-type="something" contenteditable="false">test</a>&nbsp;',
+        );
+        const { node, offset } = computeNodeAndOffset(editor, 2);
+
+        // Then
+        expect(node).toBe(editor.childNodes[1]);
+        expect(offset).toBe(1);
+    });
+
+    it('can find the beginning of a mention inside a paragraph', () => {
+        // When
+        setEditorHtml(
+            // eslint-disable-next-line max-len
+            '<p><a data-mention-type="something" contenteditable="false">test</a>&nbsp;</p>',
+        );
+        const { node, offset } = computeNodeAndOffset(editor, 0);
+
+        // Then
+        expect(node).toBe(editor.childNodes[0]);
+        expect(offset).toBe(0);
+    });
+
+    it('can find the start of nbsp after a mention inside a paragraph', () => {
+        // When
+        setEditorHtml(
+            // eslint-disable-next-line max-len
+            '<p><a data-mention-type="something" contenteditable="false">test</a>&nbsp;</p>',
+        );
+        const { node, offset } = computeNodeAndOffset(editor, 1);
+
+        // Then
+        expect(node).toBe(editor.childNodes[0].childNodes[1]);
+        expect(offset).toBe(0);
+    });
+
+    it('can find the end of nbsp after a mention inside a paragraph', () => {
+        // When
+        setEditorHtml(
+            // eslint-disable-next-line max-len
+            '<p><a data-mention-type="something" contenteditable="false">test</a>&nbsp;</p>',
+        );
+        const { node, offset } = computeNodeAndOffset(editor, 2);
+
+        // Then
+        expect(node).toBe(editor.childNodes[0].childNodes[1]);
+        expect(offset).toBe(1);
     });
 });
 
@@ -544,6 +612,28 @@ describe('countCodeunit', () => {
         expect(countCodeunit(editor, thirdTextNode, 0)).toBe(9);
         expect(countCodeunit(editor, thirdTextNode, 1)).toBe(10);
         expect(countCodeunit(editor, thirdTextNode, 2)).toBe(11);
+    });
+
+    it('Should count mentions as having length 1', () => {
+        // When
+        // we use the presence of a data-mention-type attribute to determine
+        // if we have a mention, the tag is unimportant
+        setEditorHtml(
+            // eslint-disable-next-line max-len
+            'hello <span data-mention-type="something" contenteditable="false">Alice</span>',
+        );
+        const helloTextNode = editor.childNodes[0];
+        const mentionTextNode = editor.childNodes[1].childNodes[0];
+
+        // Then
+        expect(countCodeunit(editor, helloTextNode, 0)).toBe(0);
+        expect(countCodeunit(editor, helloTextNode, 6)).toBe(6);
+        expect(countCodeunit(editor, mentionTextNode, 0)).toBe(6);
+        expect(countCodeunit(editor, mentionTextNode, 1)).toBe(7);
+        expect(countCodeunit(editor, mentionTextNode, 2)).toBe(7);
+        expect(countCodeunit(editor, mentionTextNode, 3)).toBe(7);
+        expect(countCodeunit(editor, mentionTextNode, 4)).toBe(7);
+        expect(countCodeunit(editor, mentionTextNode, 5)).toBe(7);
     });
 });
 

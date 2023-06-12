@@ -256,6 +256,14 @@ where
         }
     }
 
+    /// Returns if this node is a placeholder, as used in empty paragraphs
+    pub fn is_placeholder(&self) -> bool {
+        match self {
+            DomNode::Text(n) => n.data() == "\u{A0}",
+            _ => false,
+        }
+    }
+
     /// Returns true if given node can be pushed into self without any specific change.
     pub(crate) fn can_push(&self, other_node: &DomNode<S>) -> bool {
         match (self, other_node) {
@@ -548,6 +556,10 @@ impl DomNodeKind {
             self,
             Self::CodeBlock | Self::Formatting(InlineFormatType::InlineCode)
         )
+    }
+
+    pub fn is_link_kind(&self) -> bool {
+        matches!(self, Self::Link)
     }
 }
 

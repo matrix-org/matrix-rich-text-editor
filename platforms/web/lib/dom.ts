@@ -84,6 +84,16 @@ export function refreshComposerView(
                 createNode(li, 'span', '"', new Map([['class', 'quote']]));
                 createNode(li, 'span', `${child.text(composerModel)}`);
                 createNode(li, 'span', '"', new Map([['class', 'quote']]));
+            } else if (nodeType === 'mention') {
+                const li = createNode(list, 'li');
+                createNode(
+                    li,
+                    'span',
+                    '"Mention - ',
+                    new Map([['class', 'quote']]),
+                );
+                createNode(li, 'span', `${child.text(composerModel)}`);
+                createNode(li, 'span', '"', new Map([['class', 'quote']]));
             } else {
                 console.error(`Unknown node type: ${nodeType}`);
             }
@@ -173,7 +183,53 @@ export function computeNodeAndOffset(
     const isEmptyListItem =
         currentNode.nodeName === 'LI' && !currentNode.hasChildNodes();
 
-    if (currentNode.nodeType === Node.TEXT_NODE) {
+    const isTextNode = currentNode.nodeType === Node.TEXT_NODE;
+    const isTextNodeInsideMention =
+        isTextNode &&
+        currentNode.parentElement?.hasAttribute('data-mention-type');
+
+    if (isTextNodeInsideMention) {
+        // Special casing for mention nodes. They will be a node with a single
+        // text node child. We can therefore guarantee that the text node will
+        // have both parent and grandparent nodes.
+
+        // We _may_ need an extra offset if we're inside a p tag
+        const shouldAddOffset = textNodeNeedsExtraOffset(currentNode);
+        const extraOffset = shouldAddOffset ? 1 : 0;
+
+        const remainingCodeunits = codeunits - extraOffset;
+
+        // We have only _found_ the node if we have 0 or 1 remainingCodeunits
+        // as we treat a mention as having length 1
+        if (remainingCodeunits <= 1) {
+            if (remainingCodeunits === 0) {
+                // if we have hit the beginning of the node, we either want to
+                // put the cursor at the end of the previous sibling (if it has
+                // one) or at the 0th index of the parent otherwise
+                if (currentNode.previousSibling) {
+                    return {
+                        node: currentNode.previousSibling,
+                        offset: textLength(
+                            currentNode.previousSibling,
+                            Infinity,
+                        ),
+                    };
+                } else {
+                    return {
+                        node: currentNode.parentNode?.parentNode ?? null,
+                        offset: 0,
+                    };
+                }
+            } else {
+                // setting node to null means if we end up inside or at end of a
+                // non-editable node somehow, we will return "node not found"
+                // and so we will keep searching
+                return { node: null, offset: 0 };
+            }
+        } else {
+            return { node: null, offset: codeunits - extraOffset - 1 };
+        }
+    } else if (isTextNode) {
         // For a text node, we need to check to see if it needs an extra offset
         // which involves climbing the tree through it's ancestors checking for
         // any of the nodes that require the extra offset.
@@ -195,27 +251,6 @@ export function computeNodeAndOffset(
 
         if (codeunits <= (currentNode.textContent?.length || 0)) {
             // we don't need to use that extra offset if we've found the answer
-
-            // special case to handle being inside a non-editable node
-            // such as a mention
-            if (
-                currentNode.parentElement?.getAttribute('contenteditable') ===
-                'false'
-            ) {
-                // setting node to null means if we end up inside or at end of a
-                // non-editable node somehow, we will return "node not found"
-                // and so we will keep searching
-                let node = null;
-
-                // if we hit the beginning of the node, select start of editor
-                // as this appears to be the only way this can occur
-                if (codeunits === 0) {
-                    node = rootNode || currentNode;
-                }
-
-                return { node, offset: 0 };
-            }
-
             return { node: currentNode, offset: codeunits };
         } else {
             // but if we haven't found that answer, apply the extra offset
@@ -361,15 +396,25 @@ function findCharacter(
     found: boolean;
     offset: number;
 } {
+    const isTextNode = currentNode.nodeType === Node.TEXT_NODE;
+    const isInsideMention =
+        currentNode.parentElement?.hasAttribute('data-mention-type');
+
     if (currentNode === nodeToFind) {
         // We've found the right node
-        if (currentNode.nodeType === Node.TEXT_NODE) {
+        if (isTextNode) {
             // Text node - use the offset to know where we are
             if (offsetToFind > (currentNode.textContent?.length ?? 0)) {
                 // If the offset is wrong, we didn't find it
                 return { found: false, offset: 0 };
             } else {
                 // Otherwise, we did
+
+                // Special case for mention nodes which have length of 1
+                if (isInsideMention) {
+                    return { found: true, offset: offsetToFind === 0 ? 0 : 1 };
+                }
+
                 return { found: true, offset: offsetToFind };
             }
         } else {
@@ -382,7 +427,7 @@ function findCharacter(
     } else {
         // We have not found the right node yet
 
-        if (currentNode.nodeType === Node.TEXT_NODE) {
+        if (isTextNode) {
             // Return how many steps forward we progress by skipping
             // this node.
 
@@ -397,6 +442,11 @@ function findCharacter(
             // paragraphs
             if (isPlaceholderParagraphNode(currentNode)) {
                 return { found: false, offset: extraOffset };
+            }
+
+            // ...and a special case where mentions alwayd have a length of 1
+            if (isInsideMention) {
+                return { found: false, offset: 1 + extraOffset };
             }
 
             return {

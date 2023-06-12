@@ -43,7 +43,6 @@ extension WysiwygMentionType {
     var attributes: [Attribute] {
         [
             Attribute(key: "data-mention-type", value: rawValue),
-            Attribute(key: "contenteditable", value: "false"),
         ]
     }
 }

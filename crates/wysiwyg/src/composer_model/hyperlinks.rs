@@ -21,8 +21,7 @@ use crate::dom::nodes::DomNode;
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::Range;
 use crate::{
-    ComposerModel, ComposerUpdate, DomHandle, LinkAction, Location,
-    SuggestionPattern, UnicodeString,
+    ComposerModel, ComposerUpdate, DomHandle, LinkAction, UnicodeString,
 };
 use email_address::*;
 use url::{ParseError, Url};
@@ -61,24 +60,6 @@ where
         } else {
             LinkAction::Create
         }
-    }
-
-    pub fn set_link_suggestion(
-        &mut self,
-        url: S,
-        text: S,
-        suggestion: SuggestionPattern,
-        attributes: Vec<(S, S)>,
-    ) -> ComposerUpdate<S> {
-        // TODO - this function allows us to accept a Vec of attributes to add to the Link we create,
-        // but these attributes will be present in the html of the message we output. We may need to
-        // add a step in the future that strips these attributes from the html before it is sent.
-
-        self.do_replace_text_in(S::default(), suggestion.start, suggestion.end);
-        self.state.start = Location::from(suggestion.start);
-        self.state.end = self.state.start;
-        self.set_link_with_text(url, text, attributes);
-        self.do_replace_text(" ".into())
     }
 
     fn is_blank_selection(&self, range: Range) -> bool {

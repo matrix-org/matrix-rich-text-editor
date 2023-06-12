@@ -20,6 +20,7 @@ pub mod format;
 mod format_inline_code;
 pub mod hyperlinks;
 pub mod lists;
+pub mod mentions;
 pub mod menu_action;
 pub mod menu_state;
 pub mod new_lines;

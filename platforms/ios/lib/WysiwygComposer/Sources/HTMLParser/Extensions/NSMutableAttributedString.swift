@@ -41,21 +41,21 @@ extension NSMutableAttributedString {
         applyDiscardableToListPrefixes()
     }
 
-    /// Replace parts of the attributed string that represents links by
-    /// a new attributed string part provided by the hosting app `HTMLPermalinkReplacer`.
+    /// Replace parts of the attributed string that represents mentions by
+    /// a new attributed string part provided by the hosting app `MentionReplacer`.
     ///
-    /// - Parameter permalinkReplacer: The permalink replacer providing new attributed strings.
-    func replaceLinks(with permalinkReplacer: HTMLPermalinkReplacer) {
-        enumerateTypedAttribute(.link) { (url: URL, range: NSRange, _) in
-            if let replacement = permalinkReplacer.replacementForLink(
-                url.absoluteString,
+    /// - Parameter mentionReplacer: The mention replacer providing new attributed strings.
+    func replaceMentions(with mentionReplacer: HTMLMentionReplacer?) {
+        enumerateTypedAttribute(.mention) { (originalContent: MentionContent, range: NSRange, _) in
+            if let replacement = mentionReplacer?.replacementForMention(
+                originalContent.url,
                 text: self.mutableString.substring(with: range)
             ) {
-                let originalText = self.attributedSubstring(from: range).string
                 self.replaceCharacters(in: range, with: replacement)
-                self.addAttribute(.originalContent,
-                                  value: OriginalContent(text: originalText),
-                                  range: .init(location: range.location, length: replacement.length))
+                // TODO: find a way to avoid re-applying the attribute (make the replacement mutable ?)
+                self.addAttribute(.mention,
+                                  value: originalContent,
+                                  range: NSRange(location: range.location, length: replacement.length))
             }
         }
     }
