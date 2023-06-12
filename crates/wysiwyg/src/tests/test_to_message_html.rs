@@ -15,6 +15,23 @@
 use crate::tests::testutils_composer_model::{cm, tx};
 
 #[test]
+fn replaces_empty_paragraphs_with_newline_characters() {
+    let mut model = cm("|");
+    model.replace_text("hello".into());
+    model.enter();
+    model.enter();
+    model.enter();
+    model.enter();
+    model.replace_text("Alice".into());
+
+    assert_eq!(
+        tx(&model),
+        "<p>hello</p><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p><p>Alice|</p>"
+    );
+    let message_output = model.get_content_as_message_html();
+    assert_eq!(message_output, "<p>hello</p>\n\n\n<p>Alice</p>");
+}
+#[test]
 fn only_outputs_href_attribute_on_user_mention() {
     let mut model = cm("|");
     model.insert_mention(
