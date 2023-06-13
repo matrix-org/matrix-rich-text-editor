@@ -312,7 +312,7 @@ impl<S: UnicodeStr + ?Sized> UnicodeStrExt for S {
 
 #[cfg(test)]
 mod test {
-    use crate::dom::unicode_string::UnicodeStrExt;
+    use crate::UnicodeStrExt;
     use widestring::{Utf16String, Utf32String};
 
     #[test]
