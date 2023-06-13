@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+use matrix_mentions::Mention;
 
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
@@ -37,6 +38,8 @@ pub enum MentionNodeKind<S>
 where
     S: UnicodeString,
 {
+    Room { mention: Mention },
+    User { mention: Mention },
     MatrixUrl { display_text: S, url: S },
     AtRoom,
 }
