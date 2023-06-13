@@ -18,7 +18,7 @@ use ruma_common::{matrix_uri::MatrixId, MatrixToUri, MatrixUri};
 pub struct Mention {
     uri: String,
     mx_id: String,
-    text: String,
+    display_text: String,
     kind: MentionKind,
 }
 
@@ -38,7 +38,7 @@ impl Mention {
         Mention {
             uri,
             mx_id,
-            text,
+            display_text: text,
             kind,
         }
     }
@@ -48,7 +48,7 @@ impl Mention {
     }
 
     pub fn text(&self) -> &str {
-        &self.text
+        &self.display_text
     }
 
     pub fn mx_id(&self) -> &str {
