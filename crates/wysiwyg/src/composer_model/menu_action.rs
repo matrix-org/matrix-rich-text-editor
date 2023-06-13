@@ -13,12 +13,9 @@
 // limitations under the License.
 
 use crate::{
-    dom::{
-        unicode_string::{UnicodeStr, UnicodeStringExt},
-        Range,
-    },
-    ComposerModel, MenuAction, PatternKey, SuggestionPattern, UnicodeString,
+    dom::Range, ComposerModel, MenuAction, PatternKey, SuggestionPattern,
 };
+use unicode_string::{UnicodeStr, UnicodeString, UnicodeStringExt};
 
 impl<S> ComposerModel<S>
 where

@@ -20,10 +20,11 @@ use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_plain_text::ToPlainText;
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
-use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt, UnicodeStringExt};
-use crate::dom::UnicodeString;
 use html_escape;
 use std::ops::Range;
+use unicode_string::{
+    UnicodeStr, UnicodeStrExt, UnicodeString, UnicodeStringExt,
+};
 
 // categories of character for backspace/delete word
 #[derive(PartialEq, Eq, Debug)]

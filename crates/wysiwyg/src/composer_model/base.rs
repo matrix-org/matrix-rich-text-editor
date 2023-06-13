@@ -18,12 +18,13 @@ use crate::composer_state::ComposerState;
 use crate::dom::parser::markdown::markdown_html_parser::MarkdownHTMLParser;
 use crate::dom::parser::parse;
 use crate::dom::to_plain_text::ToPlainText;
-use crate::dom::{Dom, DomCreationError, UnicodeString};
+use crate::dom::{Dom, DomCreationError};
 use crate::{
     ComposerAction, ComposerUpdate, DomHandle, Location, ToHtml, ToMarkdown,
     ToTree,
 };
 use std::collections::HashMap;
+use unicode_string::UnicodeString;
 
 #[derive(Clone, Default)]
 pub struct ComposerModel<S>

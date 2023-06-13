@@ -17,14 +17,13 @@
 
 use crate::dom::nodes::dom_node::DomNodeKind::{Generic, ListItem, Paragraph};
 use crate::dom::range::DomLocationPosition::After;
-use crate::dom::unicode_string::UnicodeStr;
 use crate::dom::DomLocation;
 use crate::{DomHandle, DomNode, UnicodeString};
+use unicode_string::{UnicodeStr, UnicodeStrExt, UnicodeStringExt};
 
 use super::action_list::{DomAction, DomActionList};
 use super::nodes::dom_node::DomNodeKind;
 use super::nodes::{ContainerNode, TextNode};
-use super::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use super::{Dom, Range};
 
 impl<S> Dom<S>

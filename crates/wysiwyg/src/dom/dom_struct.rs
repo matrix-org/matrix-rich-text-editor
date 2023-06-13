@@ -18,11 +18,11 @@ use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::nodes::{ContainerNode, DomNode};
 use crate::dom::to_html::ToHtmlState;
 use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
-use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{
-    find_range, to_raw_text::ToRawText, DomHandle, Range, ToTree, UnicodeString,
+    find_range, to_raw_text::ToRawText, DomHandle, Range, ToTree,
 };
 use crate::ToHtml;
+use unicode_string::{UnicodeStrExt, UnicodeString};
 
 use super::to_plain_text::ToPlainText;
 use super::FindResult;

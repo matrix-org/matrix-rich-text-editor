@@ -14,7 +14,7 @@
 
 use crate::composer_model::example_format::SelectionWriter;
 
-use super::{unicode_string::UnicodeStringExt, UnicodeString};
+use unicode_string::{UnicodeString, UnicodeStringExt};
 
 pub trait ToHtml<S>
 where

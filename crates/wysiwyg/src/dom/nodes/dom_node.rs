@@ -22,9 +22,8 @@ use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_plain_text::ToPlainText;
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
-use crate::dom::unicode_string::UnicodeStrExt;
-use crate::dom::{self, UnicodeString};
 use crate::{InlineFormatType, ListType};
+use unicode_string::{UnicodeString, UnicodeStringExt};
 
 use super::MentionNode;
 
@@ -39,7 +38,7 @@ where
     Mention(MentionNode<S>),
 }
 
-impl<S: dom::unicode_string::UnicodeString> Default for DomNode<S> {
+impl<S: UnicodeString> Default for DomNode<S> {
     fn default() -> DomNode<S> {
         Self::Container(ContainerNode::default())
     }

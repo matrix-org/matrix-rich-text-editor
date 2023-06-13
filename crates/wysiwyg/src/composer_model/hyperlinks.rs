@@ -18,12 +18,10 @@ use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::DomNodeKind::{Link, List};
 use crate::dom::nodes::ContainerNodeKind;
 use crate::dom::nodes::DomNode;
-use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::Range;
-use crate::{
-    ComposerModel, ComposerUpdate, DomHandle, LinkAction, UnicodeString,
-};
+use crate::{ComposerModel, ComposerUpdate, DomHandle, LinkAction};
 use email_address::*;
+use unicode_string::{UnicodeStrExt, UnicodeString};
 use url::{ParseError, Url};
 
 impl<S> ComposerModel<S>

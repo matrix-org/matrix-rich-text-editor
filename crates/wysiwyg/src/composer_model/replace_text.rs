@@ -14,13 +14,12 @@
 
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::DomNode;
-use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{DomLocation, Range};
 use crate::{
     ComposerModel, ComposerUpdate, DomHandle, Location, SuggestionPattern,
-    UnicodeString,
 };
 use std::cmp::min;
+use unicode_string::{UnicodeStrExt, UnicodeString};
 
 impl<S> ComposerModel<S>
 where

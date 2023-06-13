@@ -14,9 +14,9 @@
 
 use crate::composer_model::menu_state::MenuStateComputeType;
 use crate::dom::nodes::{DomNode, TextNode};
-use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{DomHandle, DomLocation};
-use crate::{ComposerModel, ComposerUpdate, InlineFormatType, UnicodeString};
+use crate::{ComposerModel, ComposerUpdate, InlineFormatType};
+use unicode_string::{UnicodeStrExt, UnicodeString};
 
 /// Special implementations of formatting for inline code
 impl<S> ComposerModel<S>

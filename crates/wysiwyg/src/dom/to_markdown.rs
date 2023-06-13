@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use super::UnicodeString;
 use std::{error::Error, fmt};
+use unicode_string::UnicodeString;
 
 #[derive(Debug)]
 pub enum MarkdownError<S>

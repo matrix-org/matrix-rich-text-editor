@@ -35,7 +35,6 @@ pub mod to_markdown;
 pub mod to_plain_text;
 pub mod to_raw_text;
 pub mod to_tree;
-pub mod unicode_string;
 
 pub use dom_creation_error::DomCreationError;
 pub use dom_creation_error::HtmlParseError;
@@ -49,4 +48,3 @@ pub use to_html::ToHtml;
 pub use to_markdown::{MarkdownError, ToMarkdown};
 pub use to_raw_text::ToRawText;
 pub use to_tree::ToTree;
-pub use unicode_string::UnicodeString;

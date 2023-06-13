@@ -17,11 +17,9 @@ use std::collections::HashMap;
 use crate::composer_model::menu_state::MenuStateComputeType;
 use crate::dom::action_list::DomActionList;
 use crate::dom::nodes::{ContainerNodeKind, DomNode};
-use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{Dom, DomHandle, DomLocation, Range};
-use crate::{
-    ComposerModel, ComposerUpdate, InlineFormatType, MenuAction, UnicodeString,
-};
+use crate::{ComposerModel, ComposerUpdate, InlineFormatType, MenuAction};
+use unicode_string::{UnicodeString, UnicodeStringExt};
 
 #[derive(Eq, PartialEq, Debug)]
 enum FormatSelectionType {

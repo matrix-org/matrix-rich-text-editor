@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::dom::UnicodeString;
 use crate::{
     Location, MenuAction, MenuState, ReplaceAll, Selection, TextUpdate,
 };
+use unicode_string::UnicodeString;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ComposerUpdate<S>

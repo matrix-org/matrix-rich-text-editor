@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use super::unicode_string::UnicodeStringExt;
-use super::UnicodeString;
+use unicode_string::UnicodeString;
 
 const DOUBLE_WHITESPACE: &str = "\u{0020}\u{0020}";
 const UP_RIGHT_AND_GT: &str = "\u{2514}\u{003E}";

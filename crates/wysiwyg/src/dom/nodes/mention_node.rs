@@ -19,8 +19,7 @@ use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_plain_text::ToPlainText;
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
-use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
-use crate::dom::UnicodeString;
+use unicode_string::{UnicodeStrExt, UnicodeString, UnicodeStringExt};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MentionNode<S>

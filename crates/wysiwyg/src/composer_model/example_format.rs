@@ -22,11 +22,9 @@ use crate::composer_model::menu_state::MenuStateComputeType;
 use crate::dom::nodes::{ContainerNode, LineBreakNode, MentionNode, TextNode};
 use crate::dom::parser::parse;
 use crate::dom::to_html::ToHtmlState;
-use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
 use crate::dom::{Dom, DomLocation};
-use crate::{
-    ComposerModel, DomHandle, DomNode, Location, ToHtml, UnicodeString,
-};
+use crate::{ComposerModel, DomHandle, DomNode, Location, ToHtml};
+use unicode_string::{UnicodeStr, UnicodeStrExt, UnicodeString};
 
 impl ComposerModel<Utf16String> {
     /// Convenience function to allow working with ComposerModel instances

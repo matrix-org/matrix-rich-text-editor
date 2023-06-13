@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use super::UnicodeString;
+use unicode_string::UnicodeString;
 
 pub trait ToPlainText<S>
 where

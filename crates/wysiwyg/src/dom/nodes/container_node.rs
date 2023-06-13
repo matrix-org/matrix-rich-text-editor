@@ -23,9 +23,10 @@ use crate::dom::to_markdown::{MarkdownError, MarkdownOptions, ToMarkdown};
 use crate::dom::to_plain_text::ToPlainText;
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
-use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt, UnicodeStringExt};
-use crate::dom::{self, UnicodeString};
 use crate::{InlineFormatType, ListType};
+use unicode_string::{
+    UnicodeStr, UnicodeStrExt, UnicodeString, UnicodeStringExt,
+};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ContainerNode<S>
@@ -54,7 +55,7 @@ where
     Paragraph,
 }
 
-impl<S: dom::unicode_string::UnicodeString> Default for ContainerNode<S> {
+impl<S: UnicodeString> Default for ContainerNode<S> {
     fn default() -> ContainerNode<S> {
         // implementation here is as per pub fn new in dom_struct.rs
         let mut document = Self::new(
