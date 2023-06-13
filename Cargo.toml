@@ -3,6 +3,7 @@ members = [
     "bindings/wysiwyg-ffi",
     "bindings/wysiwyg-wasm",
     "crates/wysiwyg",
+    "crates/unicode_string",
 ]
 resolver = "2"
 

@@ -1,0 +1,10 @@
+[package]
+name = "unicode_string"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+unicode-segmentation = "1.7.1"
+widestring = "1.0.2"
