@@ -15,7 +15,9 @@
 use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::DomNodeKind::*;
 use crate::dom::{Dom, DomLocation, Range};
-use crate::{DomHandle, DomNode, UnicodeString};
+use crate::{DomHandle, DomNode};
+use unicode_string::UnicodeString;
+
 use std::cmp::min;
 
 impl<S> Dom<S>

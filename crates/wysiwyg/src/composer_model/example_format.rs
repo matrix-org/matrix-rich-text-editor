@@ -63,7 +63,8 @@ impl ComposerModel<Utf16String> {
     /// ## Examples
     ///
     /// ```
-    /// use wysiwyg::{ComposerModel, Location, ToHtml, UnicodeString};
+    /// use wysiwyg::{ComposerModel, Location, ToHtml};
+    /// use unicode_string::{UnicodeString};
     ///
     /// let mut model = ComposerModel::from_example_format("aa{bb}|cc");
     /// assert_eq!(model.state.dom.to_html().to_string(), "aabbcc");

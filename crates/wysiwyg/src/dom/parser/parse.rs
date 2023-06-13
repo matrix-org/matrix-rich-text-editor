@@ -16,7 +16,8 @@ use crate::dom::dom_creation_error::HtmlParseError;
 use crate::dom::nodes::dom_node::DomNodeKind::CodeBlock;
 use crate::dom::nodes::ContainerNode;
 use crate::dom::Dom;
-use crate::{DomHandle, DomNode, UnicodeString};
+use crate::{DomHandle, DomNode};
+use unicode_string::UnicodeString;
 
 pub fn parse<S>(html: &str) -> Result<Dom<S>, HtmlParseError>
 where

@@ -15,7 +15,7 @@
 use crate::dom::action_list::{DomAction, DomActionList};
 use crate::dom::nodes::{ContainerNodeKind, DomNode};
 use crate::dom::{Dom, DomHandle, Range};
-use crate::UnicodeString;
+use unicode_string::UnicodeString;
 
 /// Handles joining together nodes after an edit event.
 ///

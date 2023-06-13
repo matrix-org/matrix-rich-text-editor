@@ -14,8 +14,9 @@
 
 use crate::{
     dom::DomLocation, ComposerModel, ComposerUpdate, DomNode, Location,
-    SuggestionPattern, UnicodeString,
+    SuggestionPattern,
 };
+use unicode_string::UnicodeString;
 
 impl<S> ComposerModel<S>
 where

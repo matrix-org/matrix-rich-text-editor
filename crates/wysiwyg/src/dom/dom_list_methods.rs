@@ -17,7 +17,8 @@
 
 use core::panic;
 
-use crate::{DomHandle, DomNode, ListType, UnicodeString};
+use crate::{DomHandle, DomNode, ListType};
+use unicode_string::UnicodeString;
 
 use super::nodes::dom_node::DomNodeKind::{CodeBlock, Quote};
 use super::nodes::ContainerNode;

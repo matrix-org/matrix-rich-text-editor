@@ -16,8 +16,8 @@ use crate::dom::nodes::dom_node::DomNodeKind::{Link, ListItem};
 use crate::dom::nodes::text_node::CharType;
 use crate::dom::nodes::{DomNode, TextNode};
 use crate::dom::{DomHandle, DomLocation, Range};
-use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
-use unicode_string::UnicodeStrExt;
+use crate::{ComposerModel, ComposerUpdate, Location};
+use unicode_string::{UnicodeStrExt, UnicodeString};
 
 #[derive(PartialEq, Eq, Debug)]
 pub enum Direction {

@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{DomHandle, DomNode, UnicodeString};
+use crate::{DomHandle, DomNode};
+use unicode_string::UnicodeString;
 
 /// Actions to be performed in the Dom, including all the needed info
 #[derive(Clone, PartialEq, Debug)]

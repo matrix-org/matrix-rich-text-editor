@@ -18,7 +18,8 @@ use crate::dom::nodes::DomNode;
 use crate::dom::range::DomLocationPosition;
 use crate::dom::range::DomLocationPosition::Before;
 use crate::dom::{DomHandle, DomLocation, Range};
-use crate::{ComposerModel, ComposerUpdate, ListType, UnicodeString};
+use crate::{ComposerModel, ComposerUpdate, ListType};
+use unicode_string::UnicodeString;
 
 impl<S> ComposerModel<S>
 where

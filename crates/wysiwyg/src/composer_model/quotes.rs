@@ -14,9 +14,8 @@
 
 use crate::dom::nodes::dom_node::DomNodeKind::{Generic, ListItem, Quote};
 use crate::dom::DomLocation;
-use crate::{
-    ComposerAction, ComposerModel, ComposerUpdate, DomNode, UnicodeString,
-};
+use crate::{ComposerAction, ComposerModel, ComposerUpdate, DomNode};
+use unicode_string::UnicodeString;
 
 impl<S> ComposerModel<S>
 where

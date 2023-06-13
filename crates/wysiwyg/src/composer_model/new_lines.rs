@@ -2,7 +2,8 @@ use crate::dom::nodes::dom_node::DomNodeKind::{
     Generic, Link, List, ListItem, Paragraph,
 };
 use crate::dom::{Dom, DomLocation};
-use crate::{ComposerModel, ComposerUpdate, DomNode, UnicodeString};
+use crate::{ComposerModel, ComposerUpdate, DomNode};
+use unicode_string::UnicodeString;
 
 impl<S> ComposerModel<S>
 where

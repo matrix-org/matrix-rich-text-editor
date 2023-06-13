@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{DomHandle, UnicodeString};
+use crate::DomHandle;
+use unicode_string::UnicodeString;
 
 use super::nodes::dom_node::DomNodeKind;
 use super::{find_range, Dom, DomLocation, Range};

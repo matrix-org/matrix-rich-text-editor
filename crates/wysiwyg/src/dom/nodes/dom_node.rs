@@ -23,7 +23,7 @@ use crate::dom::to_plain_text::ToPlainText;
 use crate::dom::to_raw_text::ToRawText;
 use crate::dom::to_tree::ToTree;
 use crate::{InlineFormatType, ListType};
-use unicode_string::{UnicodeString, UnicodeStringExt};
+use unicode_string::{UnicodeStrExt, UnicodeString};
 
 use super::MentionNode;
 
@@ -566,7 +566,8 @@ impl DomNodeKind {
 mod test {
     use widestring::Utf16String;
 
-    use crate::{DomHandle, DomNode, InlineFormatType, ToHtml, UnicodeString};
+    use crate::{DomHandle, DomNode, InlineFormatType, ToHtml};
+    use unicode_string::UnicodeString;
 
     #[test]
     fn pushing_nodes_of_same_kind() {

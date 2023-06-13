@@ -19,7 +19,7 @@ use crate::dom::action_list::DomActionList;
 use crate::dom::nodes::{ContainerNodeKind, DomNode};
 use crate::dom::{Dom, DomHandle, DomLocation, Range};
 use crate::{ComposerModel, ComposerUpdate, InlineFormatType, MenuAction};
-use unicode_string::{UnicodeString, UnicodeStringExt};
+use unicode_string::{UnicodeStrExt, UnicodeString};
 
 #[derive(Eq, PartialEq, Debug)]
 enum FormatSelectionType {

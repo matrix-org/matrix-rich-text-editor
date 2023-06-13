@@ -18,8 +18,10 @@
 use crate::dom::nodes::dom_node::DomNodeKind::{Generic, ListItem, Paragraph};
 use crate::dom::range::DomLocationPosition::After;
 use crate::dom::DomLocation;
-use crate::{DomHandle, DomNode, UnicodeString};
-use unicode_string::{UnicodeStr, UnicodeStrExt, UnicodeStringExt};
+use crate::{DomHandle, DomNode};
+use unicode_string::{
+    UnicodeStr, UnicodeStrExt, UnicodeString, UnicodeStringExt,
+};
 
 use super::action_list::{DomAction, DomActionList};
 use super::nodes::dom_node::DomNodeKind;

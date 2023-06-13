@@ -15,7 +15,8 @@
 use crate::dom::nodes::dom_node::DomNodeKind::*;
 use crate::dom::nodes::{ContainerNode, ContainerNodeKind, DomNode};
 use crate::dom::{DomHandle, DomLocation, Range};
-use crate::{ComposerAction, ComposerModel, ComposerUpdate, UnicodeString};
+use crate::{ComposerAction, ComposerModel, ComposerUpdate};
+use unicode_string::UnicodeString;
 
 impl<S> ComposerModel<S>
 where

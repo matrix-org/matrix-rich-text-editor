@@ -14,8 +14,8 @@
 
 use pulldown_cmark as md_parser;
 
-use crate::{dom::MarkdownParseError, UnicodeString};
-
+use crate::dom::MarkdownParseError;
+use unicode_string::UnicodeString;
 pub struct MarkdownHTMLParser {}
 
 impl MarkdownHTMLParser {

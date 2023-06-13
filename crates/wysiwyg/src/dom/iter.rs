@@ -19,8 +19,9 @@
 //! * No empty containers
 //! * List items must be inside lists
 
-use crate::{DomHandle, DomNode, UnicodeString};
+use crate::{DomHandle, DomNode};
 use std::collections::HashSet;
+use unicode_string::UnicodeString;
 
 use super::{
     nodes::{ContainerNode, TextNode},

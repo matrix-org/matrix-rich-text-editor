@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{ComposerAction, UnicodeString};
+use crate::ComposerAction;
+use unicode_string::UnicodeString;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum InlineFormatType {

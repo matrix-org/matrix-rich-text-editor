@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{ComposerModel, ComposerUpdate, Location, UnicodeString};
+use crate::{ComposerModel, ComposerUpdate, Location};
+use unicode_string::UnicodeString;
 
 impl<S> ComposerModel<S>
 where

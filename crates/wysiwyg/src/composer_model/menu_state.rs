@@ -25,8 +25,10 @@ use crate::ComposerAction::{
 };
 use crate::{
     ComposerAction, ComposerModel, DomHandle, DomNode, InlineFormatType,
-    LinkAction, ListType, MenuState, UnicodeString,
+    LinkAction, ListType, MenuState,
 };
+use unicode_string::UnicodeString;
+
 use std::collections::{HashMap, HashSet};
 
 pub(crate) enum MenuStateComputeType {
