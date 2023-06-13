@@ -77,11 +77,11 @@ where
         let (start, end) = self.safe_selection();
         let range = self.state.dom.find_range(start, end);
 
-        // use the display text or the presence of a `data-mention-type => at-room` attribute to decide the mention type
-        let new_node = if text == "@room".into()
-            || attributes.iter().any(|(k, v)| {
-                k == &S::from("data-mention-type") && v == &S::from("at-room")
-            }) {
+        // use the display text decide the mention type
+        // TODO extract this into a util function if it is reused when parsing the html prior to editing a message
+        // TODO decide if this do* function should be separated to handle mention vs at-room mention
+        // TODO handle invalid mention urls after permalink parsing methods have been created
+        let new_node = if text == "@room".into() {
             DomNode::new_at_room_mention(attributes)
         } else {
             DomNode::new_mention(url, text, attributes)
