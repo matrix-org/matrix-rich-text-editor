@@ -47,7 +47,7 @@ impl Mention {
         &self.uri
     }
 
-    pub fn text(&self) -> &str {
+    pub fn display_text(&self) -> &str {
         &self.display_text
     }
 
@@ -112,7 +112,7 @@ impl Mention {
 
                 Some(Mention::new(
                     user_uri.to_string(),
-                    "hello".into(),
+                    user_id.to_string(),
                     text.to_string(),
                     MentionKind::User,
                 ))
@@ -160,11 +160,12 @@ mod test {
 
     #[test]
     fn parse_uri_matrix_to_valid_user() {
-        let parsed = Mention::from_uri(matrix_to(
-            "https://matrix.to/#/@alice:example.org",
-        ))
-        .unwrap();
-        assert_eq!(parsed.text(), "@alice:example.org");
+        let uri = "https://matrix.to/#/@alice:example.org";
+        let parsed = Mention::from_uri(matrix_to(uri)).unwrap();
+
+        assert_eq!(parsed.uri(), uri);
+        assert_eq!(parsed.mx_id(), "@alice:example.org");
+        assert_eq!(parsed.display_text(), "@alice:example.org");
         assert_eq!(parsed.kind(), &MentionKind::User);
     }
 
@@ -173,7 +174,7 @@ mod test {
         let parsed =
             Mention::from_uri(matrix_uri("matrix:u/alice:example.org"))
                 .unwrap();
-        assert_eq!(parsed.text(), "@alice:example.org");
+        assert_eq!(parsed.display_text(), "@alice:example.org");
         assert_eq!(parsed.kind(), &MentionKind::User);
     }
 
@@ -183,7 +184,7 @@ mod test {
             "https://matrix.to/#/!roomid:example.org",
         ))
         .unwrap();
-        assert_eq!(parsed.text(), "!roomid:example.org");
+        assert_eq!(parsed.display_text(), "!roomid:example.org");
         assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
@@ -192,7 +193,7 @@ mod test {
         let parsed =
             Mention::from_uri(matrix_uri("matrix:roomid/roomid:example.org"))
                 .unwrap();
-        assert_eq!(parsed.text(), "!roomid:example.org");
+        assert_eq!(parsed.display_text(), "!roomid:example.org");
         assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
@@ -202,7 +203,7 @@ mod test {
             "https://matrix.to/#/#room:example.org",
         ))
         .unwrap();
-        assert_eq!(parsed.text(), "#room:example.org");
+        assert_eq!(parsed.display_text(), "#room:example.org");
         assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
@@ -210,7 +211,7 @@ mod test {
     fn parse_uri_matrix_uri_valid_room_alias() {
         let parsed =
             Mention::from_uri(matrix_uri("matrix:r/room:example.org")).unwrap();
-        assert_eq!(parsed.text(), "#room:example.org");
+        assert_eq!(parsed.display_text(), "#room:example.org");
         assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
@@ -252,7 +253,7 @@ mod test {
             "Alice",
         )
         .unwrap();
-        assert_eq!(parsed.text(), "Alice");
+        assert_eq!(parsed.display_text(), "Alice");
         assert_eq!(parsed.kind(), &MentionKind::User);
     }
 
@@ -263,7 +264,7 @@ mod test {
             "My room",
         )
         .unwrap();
-        assert_eq!(parsed.text(), "!room:example.org");
+        assert_eq!(parsed.display_text(), "!room:example.org");
         assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
@@ -274,7 +275,7 @@ mod test {
             "My room",
         )
         .unwrap();
-        assert_eq!(parsed.text(), "#room:example.org");
+        assert_eq!(parsed.display_text(), "#room:example.org");
         assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
