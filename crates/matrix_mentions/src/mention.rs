@@ -257,34 +257,43 @@ mod test {
 
     #[test]
     fn parse_link_user_text() {
-        let parsed = Mention::from_uri_with_display_text(
-            matrix_to("https://matrix.to/#/@alice:example.org"),
-            "Alice",
-        )
-        .unwrap();
-        assert_eq!(parsed.display_text(), "Alice");
+        let uri = "https://matrix.to/#/@alice:example.org";
+        let display_text = "Alice";
+        let parsed =
+            Mention::from_uri_with_display_text(matrix_to(uri), display_text)
+                .unwrap();
+
+        assert_eq!(parsed.uri(), uri);
+        assert_eq!(parsed.mx_id(), "@alice:example.org");
+        assert_eq!(parsed.display_text(), display_text);
         assert_eq!(parsed.kind(), &MentionKind::User);
     }
 
     #[test]
     fn parse_link_room_text() {
-        let parsed = Mention::from_uri_with_display_text(
-            matrix_to("https://matrix.to/#/!room:example.org"),
-            "My room",
-        )
-        .unwrap();
-        assert_eq!(parsed.display_text(), "!room:example.org");
+        let uri = "https://matrix.to/#/!room:example.org";
+        let display_text = "My room";
+        let parsed =
+            Mention::from_uri_with_display_text(matrix_to(uri), display_text)
+                .unwrap();
+
+        assert_eq!(parsed.uri(), uri);
+        assert_eq!(parsed.mx_id(), "!room:example.org");
+        assert_eq!(parsed.display_text(), "!room:example.org"); // note the display_text is overridden
         assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
     #[test]
     fn parse_link_room_alias_text() {
-        let parsed = Mention::from_uri_with_display_text(
-            matrix_to("https://matrix.to/#/#room:example.org"),
-            "My room",
-        )
-        .unwrap();
-        assert_eq!(parsed.display_text(), "#room:example.org");
+        let uri = "https://matrix.to/#/#room:example.org";
+        let display_text = "My room";
+        let parsed =
+            Mention::from_uri_with_display_text(matrix_to(uri), display_text)
+                .unwrap();
+
+        assert_eq!(parsed.uri(), uri);
+        assert_eq!(parsed.mx_id(), "#room:example.org");
+        assert_eq!(parsed.display_text(), "#room:example.org"); // note the display_text is overridden
         assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
