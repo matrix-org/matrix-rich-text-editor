@@ -38,8 +38,8 @@ pub enum MentionNodeKind<S>
 where
     S: UnicodeString,
 {
-    Room { mention: Mention },
-    User { mention: Mention },
+    Room { mention: Mention<S> },
+    User { mention: Mention<S> },
     MatrixUrl { display_text: S, url: S },
     AtRoom,
 }
@@ -81,6 +81,8 @@ where
             MentionNodeKind::MatrixUrl { display_text, .. } => {
                 display_text.clone()
             }
+            MentionNodeKind::User { mention } => mention.display_text().clone(),
+            MentionNodeKind::Room { mention } => mention.display_text().clone(),
             MentionNodeKind::AtRoom => S::from("@room"),
         }
     }
@@ -131,6 +133,12 @@ impl<S: UnicodeString> MentionNode<S> {
 
         let cur_pos = formatter.len();
         match self.kind() {
+            MentionNodeKind::User { mention } => {
+                // TODO do something
+            }
+            MentionNodeKind::Room { mention } => {
+                // TODO do something
+            }
             MentionNodeKind::MatrixUrl { display_text, url } => {
                 // if formatting as a message, only include the href attribute
                 let attributes = if as_message {
@@ -199,6 +207,12 @@ where
         description.push("\"");
 
         match self.kind() {
+            MentionNodeKind::User { mention } => {
+                // TODO do something
+            }
+            MentionNodeKind::Room { mention } => {
+                // TODO do something
+            }
             MentionNodeKind::MatrixUrl { url, .. } => {
                 description.push(", ");
                 description.push(url.clone());
@@ -229,6 +243,12 @@ where
 
         // There are two different functions to allow for fact one will use mxId later on
         match self.kind() {
+            User => {
+                // TODO do something
+            }
+            Room => {
+                // TODO do something
+            }
             MatrixUrl { .. } => {
                 fmt_user_or_room_mention(self, buffer)?;
             }
