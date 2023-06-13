@@ -135,7 +135,7 @@ impl Mention {
 
         Some(Mention::new(
             room_uri.to_string(),
-            "howdy".into(),
+            text.clone(),
             text,
             MentionKind::Room,
         ))
@@ -171,46 +171,55 @@ mod test {
 
     #[test]
     fn parse_uri_matrix_uri_valid_user() {
-        let parsed =
-            Mention::from_uri(matrix_uri("matrix:u/alice:example.org"))
-                .unwrap();
+        let uri = "matrix:u/alice:example.org";
+        let parsed = Mention::from_uri(matrix_uri(uri)).unwrap();
+
+        assert_eq!(parsed.uri(), uri);
+        assert_eq!(parsed.mx_id(), "@alice:example.org");
         assert_eq!(parsed.display_text(), "@alice:example.org");
         assert_eq!(parsed.kind(), &MentionKind::User);
     }
 
     #[test]
     fn parse_uri_matrix_to_valid_room() {
-        let parsed = Mention::from_uri(matrix_to(
-            "https://matrix.to/#/!roomid:example.org",
-        ))
-        .unwrap();
+        let uri = "https://matrix.to/#/!roomid:example.org";
+        let parsed = Mention::from_uri(matrix_to(uri)).unwrap();
+
+        assert_eq!(parsed.uri(), uri);
+        assert_eq!(parsed.mx_id(), "!roomid:example.org");
         assert_eq!(parsed.display_text(), "!roomid:example.org");
         assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
     #[test]
     fn parse_uri_matrix_uri_valid_room() {
-        let parsed =
-            Mention::from_uri(matrix_uri("matrix:roomid/roomid:example.org"))
-                .unwrap();
+        let uri = "matrix:roomid/roomid:example.org";
+        let parsed = Mention::from_uri(matrix_uri(uri)).unwrap();
+
+        assert_eq!(parsed.uri(), uri);
+        assert_eq!(parsed.mx_id(), "!roomid:example.org");
         assert_eq!(parsed.display_text(), "!roomid:example.org");
         assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
     #[test]
     fn parse_uri_matrix_to_valid_room_alias() {
-        let parsed = Mention::from_uri(matrix_to(
-            "https://matrix.to/#/#room:example.org",
-        ))
-        .unwrap();
+        let uri = "https://matrix.to/#/#room:example.org";
+        let parsed = Mention::from_uri(matrix_to(uri)).unwrap();
+
+        assert_eq!(parsed.uri(), uri);
+        assert_eq!(parsed.mx_id(), "#room:example.org");
         assert_eq!(parsed.display_text(), "#room:example.org");
         assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
     #[test]
     fn parse_uri_matrix_uri_valid_room_alias() {
-        let parsed =
-            Mention::from_uri(matrix_uri("matrix:r/room:example.org")).unwrap();
+        let uri = "matrix:r/room:example.org";
+        let parsed = Mention::from_uri(matrix_uri(uri)).unwrap();
+
+        assert_eq!(parsed.uri(), uri);
+        assert_eq!(parsed.mx_id(), "#room:example.org");
         assert_eq!(parsed.display_text(), "#room:example.org");
         assert_eq!(parsed.kind(), &MentionKind::Room);
     }
