@@ -32,13 +32,13 @@ impl Mention {
     fn new(
         uri: String,
         mx_id: String,
-        text: String,
+        display_text: String,
         kind: MentionKind,
     ) -> Self {
         Mention {
             uri,
             mx_id,
-            display_text: text,
+            display_text,
             kind,
         }
     }
@@ -76,16 +76,19 @@ impl Mention {
     /// Create a mention from a link
     ///
     /// If the URI is a valid room, it constructs a room mention, ignoring the
-    /// provided `anchor_text` and using the room Itext
+    /// provided `display_text` and using the room Itext
     ///
     /// If the URI is a valid user, it constructs a valid room mention, and
-    /// assumes the provided `anchor_text` is the user's display name.
-    pub fn from_link(href: &str, anchor_text: &str) -> Option<Mention> {
-        match parse_matrix_id(href)? {
+    /// assumes the provided `display_text` is the user's display name.
+    pub fn from_uri_with_display_text(
+        uri: &str,
+        display_text: &str,
+    ) -> Option<Mention> {
+        match parse_matrix_id(uri)? {
             MatrixId::Room(_) | MatrixId::RoomAlias(_) => {
-                Mention::from_room(href)
+                Mention::from_room(uri)
             }
-            MatrixId::User(_) => Mention::from_user(href, Some(anchor_text)),
+            MatrixId::User(_) => Mention::from_user(uri, Some(display_text)),
             _ => None,
         }
     }
@@ -161,7 +164,7 @@ mod test {
             "https://matrix.to/#/@alice:example.org",
         ))
         .unwrap();
-        assert!(parsed.text() == "@alice:example.org");
+        assert_eq!(parsed.text(), "@alice:example.org");
         assert_eq!(parsed.kind(), &MentionKind::User);
     }
 
@@ -170,7 +173,7 @@ mod test {
         let parsed =
             Mention::from_uri(matrix_uri("matrix:u/alice:example.org"))
                 .unwrap();
-        assert!(parsed.text() == "@alice:example.org");
+        assert_eq!(parsed.text(), "@alice:example.org");
         assert_eq!(parsed.kind(), &MentionKind::User);
     }
 
@@ -180,7 +183,7 @@ mod test {
             "https://matrix.to/#/!roomid:example.org",
         ))
         .unwrap();
-        assert!(parsed.text() == "!roomid:example.org");
+        assert_eq!(parsed.text(), "!roomid:example.org");
         assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
@@ -189,7 +192,7 @@ mod test {
         let parsed =
             Mention::from_uri(matrix_uri("matrix:roomid/roomid:example.org"))
                 .unwrap();
-        assert!(parsed.text() == "!roomid:example.org");
+        assert_eq!(parsed.text(), "!roomid:example.org");
         assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
@@ -199,7 +202,7 @@ mod test {
             "https://matrix.to/#/#room:example.org",
         ))
         .unwrap();
-        assert!(parsed.text() == "#room:example.org");
+        assert_eq!(parsed.text(), "#room:example.org");
         assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
@@ -207,7 +210,7 @@ mod test {
     fn parse_uri_matrix_uri_valid_room_alias() {
         let parsed =
             Mention::from_uri(matrix_uri("matrix:r/room:example.org")).unwrap();
-        assert!(parsed.text() == "#room:example.org");
+        assert_eq!(parsed.text(), "#room:example.org");
         assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
@@ -244,40 +247,40 @@ mod test {
 
     #[test]
     fn parse_link_user_text() {
-        let parsed = Mention::from_link(
+        let parsed = Mention::from_uri_with_display_text(
             matrix_to("https://matrix.to/#/@alice:example.org"),
             "Alice",
         )
         .unwrap();
-        assert!(parsed.text() == "Alice");
+        assert_eq!(parsed.text(), "Alice");
         assert_eq!(parsed.kind(), &MentionKind::User);
     }
 
     #[test]
     fn parse_link_room_text() {
-        let parsed = Mention::from_link(
+        let parsed = Mention::from_uri_with_display_text(
             matrix_to("https://matrix.to/#/!room:example.org"),
             "My room",
         )
         .unwrap();
-        assert!(parsed.text() == "!room:example.org");
+        assert_eq!(parsed.text(), "!room:example.org");
         assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
     #[test]
     fn parse_link_room_alias_text() {
-        let parsed = Mention::from_link(
+        let parsed = Mention::from_uri_with_display_text(
             matrix_to("https://matrix.to/#/#room:example.org"),
             "My room",
         )
         .unwrap();
-        assert!(parsed.text() == "#room:example.org");
+        assert_eq!(parsed.text(), "#room:example.org");
         assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
     #[test]
     fn parse_link_event_text() {
-        let parsed = Mention::from_link(
+        let parsed = Mention::from_uri_with_display_text(
             matrix_to("https://matrix.to/#/#room:example.org/$eventid"),
             "My event",
         );
