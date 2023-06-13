@@ -38,8 +38,8 @@ pub enum MentionNodeKind<S>
 where
     S: UnicodeString,
 {
-    Room { mention: Mention<S> },
-    User { mention: Mention<S> },
+    Room { mention: Mention },
+    User { mention: Mention },
     MatrixUrl { display_text: S, url: S },
     AtRoom,
 }
@@ -81,8 +81,12 @@ where
             MentionNodeKind::MatrixUrl { display_text, .. } => {
                 display_text.clone()
             }
-            MentionNodeKind::User { mention } => mention.display_text().clone(),
-            MentionNodeKind::Room { mention } => mention.display_text().clone(),
+            MentionNodeKind::User { mention } => {
+                S::from(mention.display_text())
+            }
+            MentionNodeKind::Room { mention } => {
+                S::from(mention.display_text())
+            }
             MentionNodeKind::AtRoom => S::from("@room"),
         }
     }
@@ -243,10 +247,10 @@ where
 
         // There are two different functions to allow for fact one will use mxId later on
         match self.kind() {
-            User => {
+            User { .. } => {
                 // TODO do something
             }
-            Room => {
+            Room { .. } => {
                 // TODO do something
             }
             MatrixUrl { .. } => {
