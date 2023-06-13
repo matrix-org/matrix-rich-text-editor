@@ -32,7 +32,8 @@ protocol ComposerModelWrapperProtocol {
     func enter() -> ComposerUpdate
     func setLink(url: String, attributes: [Attribute]) -> ComposerUpdate
     func setLinkWithText(url: String, text: String, attributes: [Attribute]) -> ComposerUpdate
-    func setLinkSuggestion(url: String, text: String, suggestion: SuggestionPattern, attributes: [Attribute]) -> ComposerUpdate
+    func insertMention(url: String, text: String, attributes: [Attribute]) -> ComposerUpdate
+    func insertMentionAtSuggestion(url: String, text: String, suggestion: SuggestionPattern, attributes: [Attribute]) -> ComposerUpdate
     func removeLinks() -> ComposerUpdate
     func toTree() -> String
     func getCurrentDomState() -> ComposerState
@@ -121,9 +122,12 @@ final class ComposerModelWrapper: ComposerModelWrapperProtocol {
         execute { try $0.setLinkWithText(url: url, text: text, attributes: attributes) }
     }
 
-    func setLinkSuggestion(url: String, text: String, suggestion: SuggestionPattern, attributes: [Attribute]) -> ComposerUpdate {
-        let attributes = suggestion.key.mentionType?.attributes ?? []
-        return execute { try $0.setLinkSuggestion(url: url, text: text, suggestion: suggestion, attributes: attributes) }
+    func insertMention(url: String, text: String, attributes: [Attribute]) -> ComposerUpdate {
+        execute { try $0.insertMention(url: url, text: text, attributes: attributes) }
+    }
+
+    func insertMentionAtSuggestion(url: String, text: String, suggestion: SuggestionPattern, attributes: [Attribute]) -> ComposerUpdate {
+        execute { try $0.insertMentionAtSuggestion(url: url, text: text, suggestion: suggestion, attributes: attributes) }
     }
 
     func removeLinks() -> ComposerUpdate {

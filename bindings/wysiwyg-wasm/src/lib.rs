@@ -312,17 +312,30 @@ impl ComposerModel {
         ))
     }
 
-    /// This function creates a link with the first argument being the href, the second being the
-    /// display text, the third being the (rust model) suggestion that is being replaced and the
-    /// final argument being a map of html attributes that will be added to the Link.
-    pub fn set_link_suggestion(
+    /// Creates a mention node and inserts it into the composer at the current selection
+    pub fn insert_mention(
+        &mut self,
+        url: &str,
+        text: &str,
+        attributes: js_sys::Map,
+    ) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.insert_mention(
+            Utf16String::from_str(url),
+            Utf16String::from_str(text),
+            attributes.into_vec(),
+        ))
+    }
+
+    /// Creates a mention node and inserts it into the composer, replacing the
+    /// text content defined by the suggestion
+    pub fn insert_mention_at_suggestion(
         &mut self,
         url: &str,
         text: &str,
         suggestion: &SuggestionPattern,
         attributes: js_sys::Map,
     ) -> ComposerUpdate {
-        ComposerUpdate::from(self.inner.set_link_suggestion(
+        ComposerUpdate::from(self.inner.insert_mention_at_suggestion(
             Utf16String::from_str(url),
             Utf16String::from_str(text),
             wysiwyg::SuggestionPattern::from(suggestion.clone()),
@@ -725,6 +738,7 @@ impl DomHandle {
         String::from(match node {
             wysiwyg::DomNode::Container(_) => "container",
             wysiwyg::DomNode::LineBreak(_) => "line_break",
+            wysiwyg::DomNode::Mention(_) => "mention",
             wysiwyg::DomNode::Text(_) => "text",
         })
     }
@@ -758,6 +772,7 @@ impl DomHandle {
         match node {
             wysiwyg::DomNode::Container(_) => String::from(""),
             wysiwyg::DomNode::LineBreak(_) => String::from(""),
+            wysiwyg::DomNode::Mention(node) => node.display_text().to_string(),
             wysiwyg::DomNode::Text(node) => node.data().to_string(),
         }
     }
@@ -771,6 +786,7 @@ impl DomHandle {
         match node {
             wysiwyg::DomNode::Container(node) => node.name().to_string(),
             wysiwyg::DomNode::LineBreak(node) => node.name().to_string(),
+            wysiwyg::DomNode::Mention(node) => node.name().to_string(),
             wysiwyg::DomNode::Text(_) => String::from("-text-"),
         }
     }

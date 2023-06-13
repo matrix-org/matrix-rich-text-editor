@@ -16,16 +16,20 @@
 
 import Foundation
 
-/// Defines an API for permalink replacement with other objects (e.g. pills)
-public protocol HTMLPermalinkReplacer {
-    /// Called when the parser of the composer steps upon a link.
-    /// This can be used to provide custom attributed string parts, such
-    /// as a pillified representation of a link.
-    /// If nothing is provided, the composer will use a standard link.
-    ///
-    /// - Parameters:
-    ///   - url: URL of the link
-    ///   - text: Text of the link
-    /// - Returns: Replacement for the attributed link.
-    func replacementForLink(_ url: String, text: String) -> NSAttributedString?
+/// Represents a replacement in an instance of `NSAttributedString`
+struct MentionReplacement {
+    /// Range of the `NSAttributedString` where the replacement is located.
+    let range: NSRange
+    /// Data of the original content of the `NSAttributedString`.
+    let content: MentionContent
+}
+
+// MARK: - Helpers
+
+extension MentionReplacement {
+    /// Computes the offset between the replacement and the original part (i.e. if the original length
+    /// is greater than the replacement range, this offset will be negative).
+    var offset: Int {
+        range.length - content.rustLength
+    }
 }

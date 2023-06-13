@@ -47,8 +47,9 @@ interface ComposerModel {
     ComposerUpdate unindent();
     ComposerUpdate set_link(string url, sequence<Attribute> attributes);
     ComposerUpdate set_link_with_text(string url, string text, sequence<Attribute> attributes);
-    ComposerUpdate set_link_suggestion(string url, string text, SuggestionPattern suggestion, sequence<Attribute> attributes);
     ComposerUpdate remove_links();
+    ComposerUpdate insert_mention(string url, string text, sequence<Attribute> attributes);
+    ComposerUpdate insert_mention_at_suggestion(string url, string text, SuggestionPattern suggestion, sequence<Attribute> attributes);
     ComposerUpdate code_block();
     ComposerUpdate quote();
     void debug_panic();

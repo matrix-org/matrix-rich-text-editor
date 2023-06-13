@@ -1,15 +1,16 @@
 package io.element.android.wysiwyg.test.utils
 
+import android.net.Uri
 import android.text.Editable
 import android.view.View
+import androidx.core.view.ViewCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.test.espresso.UiController
 import androidx.test.espresso.ViewAction
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import io.element.android.wysiwyg.EditorEditText
-import io.element.android.wysiwyg.display.KeywordDisplayHandler
 import io.element.android.wysiwyg.view.models.InlineFormat
-import io.element.android.wysiwyg.display.LinkDisplayHandler
+import io.element.android.wysiwyg.display.MentionDisplayHandler
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import org.hamcrest.Matcher
 
@@ -79,7 +80,7 @@ object Editor {
         }
     }
 
-    class SetLinkSuggestion(
+    class InsertMentionAtSuggestion(
         private val text: String,
         private val url: String,
     ) : ViewAction {
@@ -93,8 +94,8 @@ object Editor {
         }
     }
 
-    class SetLinkDisplayHandler(
-        private val linkDisplayHandler: LinkDisplayHandler,
+    class SetMentionDisplayHandler(
+        private val mentionDisplayHandler: MentionDisplayHandler,
     ) : ViewAction {
         override fun getConstraints(): Matcher<View> = isDisplayed()
 
@@ -102,20 +103,7 @@ object Editor {
 
         override fun perform(uiController: UiController?, view: View?) {
             val editor = view as? EditorEditText ?: return
-            editor.linkDisplayHandler = linkDisplayHandler
-        }
-    }
-
-    class SetKeywordDisplayHandler(
-        private val keywordDisplayHandler: KeywordDisplayHandler,
-    ) : ViewAction {
-        override fun getConstraints(): Matcher<View> = isDisplayed()
-
-        override fun getDescription(): String = "Set keyword display handler"
-
-        override fun perform(uiController: UiController?, view: View?) {
-            val editor = view as? EditorEditText ?: return
-            editor.keywordDisplayHandler = keywordDisplayHandler
+            editor.mentionDisplayHandler = mentionDisplayHandler
         }
     }
 
@@ -201,6 +189,27 @@ object Editor {
         }
     }
 
+    class AddContentWatcher(
+        private val contentTypes: Array<String>,
+        private val contentWatcher: (Uri) -> Unit,
+    ) : ViewAction {
+        override fun getConstraints(): Matcher<View> = isDisplayed()
+
+        override fun getDescription(): String = "Add a content watcher"
+
+        override fun perform(uiController: UiController?, view: View?) {
+            val editor = view as? EditorEditText ?: return
+
+            ViewCompat.setOnReceiveContentListener(
+                editor,
+                contentTypes,
+                UriContentListener{
+                    contentWatcher(it)
+                }
+            )
+        }
+    }
+
     class TestCrash(
         private val errorCollector: RustErrorCollector?
     ) : ViewAction {
@@ -224,15 +233,15 @@ object EditorActions {
     fun setLink(url: String) = Editor.SetLink(url)
     fun insertLink(text: String, url: String) = Editor.InsertLink(text, url)
     fun removeLink() = Editor.RemoveLink
-    fun setLinkSuggestion(text: String, url: String) = Editor.SetLinkSuggestion(text, url)
-    fun setLinkDisplayHandler(linkDisplayHandler: LinkDisplayHandler) = Editor.SetLinkDisplayHandler(linkDisplayHandler)
+    fun insertMentionAtSuggestion(text: String, url: String) = Editor.InsertMentionAtSuggestion(text, url)
+    fun setMentionDisplayHandler(mentionDisplayHandler: MentionDisplayHandler) = Editor.SetMentionDisplayHandler(mentionDisplayHandler)
     fun replaceTextSuggestion(text: String) = Editor.ReplaceTextSuggestion(text)
-    fun setKeywordDisplayHandler(keywordDisplayHandler: KeywordDisplayHandler) = Editor.SetKeywordDisplayHandler(keywordDisplayHandler)
     fun toggleList(ordered: Boolean) = Editor.ToggleList(ordered)
     fun undo() = Editor.Undo
     fun redo() = Editor.Redo
     fun toggleFormat(format: InlineFormat) = Editor.ToggleFormat(format)
-    fun addTextWatcher(watcher : (Editable?) -> Unit) = Editor.AddTextWatcher(watcher)
+    fun addTextWatcher(watcher: (Editable?) -> Unit) = Editor.AddTextWatcher(watcher)
+    fun addContentWatcher(contentTypes: Array<String>, watcher: (Uri) -> Unit) = Editor.AddContentWatcher(contentTypes, watcher)
     fun testCrash(
         errorCollector: RustErrorCollector? = null
     ) = Editor.TestCrash(errorCollector)

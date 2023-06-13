@@ -19,7 +19,7 @@ use widestring::{Utf16Str, Utf16String};
 
 use crate::char::CharExt;
 use crate::composer_model::menu_state::MenuStateComputeType;
-use crate::dom::nodes::{ContainerNode, LineBreakNode, TextNode};
+use crate::dom::nodes::{ContainerNode, LineBreakNode, MentionNode, TextNode};
 use crate::dom::parser::parse;
 use crate::dom::to_html::ToHtmlState;
 use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt};
@@ -212,6 +212,9 @@ impl ComposerModel<Utf16String> {
                     *offset += data.char_len(&ch);
                 }
             }
+            DomNode::Mention(mention_node) => {
+                *offset += mention_node.text_len();
+            }
             _ => {
                 *offset += node.text_len();
             }
@@ -276,6 +279,7 @@ impl ComposerModel<Utf16String> {
     }
 }
 
+#[derive(Debug)]
 struct SelectionLocation {
     handle: DomHandle,
     pos: usize,
@@ -302,40 +306,75 @@ pub struct SelectionWriter {
 }
 
 impl SelectionWriter {
+    /// Write special selection (`{` and `}`) and cursor (`|`) characters
+    /// where needed throughout a text node
+    ///
+    /// * `buf` - the output buffer up to and including the given node
+    /// * `start_pos` - the buffer position immediately before the node
     pub fn write_selection_text_node<S: UnicodeString>(
         &mut self,
         buf: &mut S,
-        pos: usize,
+        start_pos: usize,
         node: &TextNode<S>,
     ) {
         if let Some(loc) = self.locations.get(&node.handle()) {
             let strings_to_add = self.state.advance(loc, node.data().len());
-            for (str, i) in strings_to_add.into_iter().rev() {
-                buf.insert(pos + i, &S::from(str));
+            for (string, i) in strings_to_add.into_iter().rev() {
+                buf.insert(start_pos + i, &S::from(string));
             }
         }
     }
 
+    /// Write special selection (`{` and `}`) and cursor (`|`) characters
+    /// before or after a line break node
+    ///
+    /// * `buf` - the output buffer up to and including the given node
+    /// * `start_pos` - the buffer position immediately before the node
     pub fn write_selection_line_break_node<S: UnicodeString>(
         &mut self,
         buf: &mut S,
-        pos: usize,
+        start_pos: usize,
         node: &LineBreakNode<S>,
     ) {
         if let Some(loc) = self.locations.get(&node.handle()) {
             let strings_to_add = self.state.advance(loc, 1);
-            for (str, i) in strings_to_add.into_iter().rev() {
+            for (string, i) in strings_to_add.into_iter().rev() {
                 // Index 1 in line breaks is actually at the end of the '<br />'
-                let i = if i == 0 { 0 } else { 6 };
-                buf.insert(pos + i, &S::from(str));
+                let length = if i == 0 { 0 } else { "<br />".len() };
+                buf.insert(start_pos + length, &S::from(string));
             }
         }
     }
 
+    /// Write special selection (`{` and `}`) and cursor (`|`) characters
+    /// after a mention node
+    ///
+    /// * `buf` - the output buffer up to and including the given node
+    /// * `start_pos` - the buffer position immediately before the node
+    pub fn write_selection_mention_node<S: UnicodeString>(
+        &mut self,
+        buf: &mut S,
+        start_pos: usize,
+        node: &MentionNode<S>,
+    ) {
+        if let Some(loc) = self.locations.get(&node.handle()) {
+            let strings_to_add = self.state.advance(loc, 1);
+            for (str, i) in strings_to_add.into_iter().rev() {
+                let insert_pos = if i == 0 { start_pos } else { buf.len() };
+                buf.insert(insert_pos, &S::from(str));
+            }
+        }
+    }
+
+    /// Write special selection (`{` and `}`) and cursor (`|`) characters
+    /// after an empty container node
+    ///
+    /// * `buf` - the output buffer up to and including the given node
+    /// * `end_pos` - the buffer position immediately after the node
     pub fn write_selection_empty_container<S: UnicodeString>(
         &mut self,
         buf: &mut S,
-        pos: usize,
+        end_pos: usize,
         node: &ContainerNode<S>,
     ) {
         if let Some(loc) = self.locations.get(&node.handle()) {
@@ -344,7 +383,7 @@ impl SelectionWriter {
             }
             let strings_to_add = self.state.advance(loc, 1);
             for (str, _) in strings_to_add.into_iter().rev() {
-                buf.insert(pos, &S::from(str));
+                buf.insert(end_pos, &S::from(str));
             }
         }
     }

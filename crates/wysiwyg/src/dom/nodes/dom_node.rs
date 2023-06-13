@@ -26,6 +26,8 @@ use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{self, UnicodeString};
 use crate::{InlineFormatType, ListType};
 
+use super::MentionNode;
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum DomNode<S>
 where
@@ -34,6 +36,7 @@ where
     Container(ContainerNode<S>), // E.g. html, div
     Text(TextNode<S>),
     LineBreak(LineBreakNode<S>),
+    Mention(MentionNode<S>),
 }
 
 impl<S: dom::unicode_string::UnicodeString> Default for DomNode<S> {
@@ -105,6 +108,7 @@ where
             DomNode::Container(n) => n.handle(),
             DomNode::LineBreak(n) => n.handle(),
             DomNode::Text(n) => n.handle(),
+            DomNode::Mention(n) => n.handle(),
         }
     }
 
@@ -113,6 +117,7 @@ where
             DomNode::Container(n) => n.set_handle(handle),
             DomNode::LineBreak(n) => n.set_handle(handle),
             DomNode::Text(n) => n.set_handle(handle),
+            DomNode::Mention(n) => n.set_handle(handle),
         }
     }
 
@@ -121,6 +126,7 @@ where
             DomNode::Text(n) => n.data().len(),
             DomNode::LineBreak(n) => n.text_len(),
             DomNode::Container(n) => n.text_len(),
+            DomNode::Mention(n) => n.text_len(),
         }
     }
 
@@ -132,12 +138,28 @@ where
         DomNode::Container(ContainerNode::new_link(url, children, attributes))
     }
 
+    pub fn new_mention(
+        url: S,
+        display_text: S,
+        attributes: Vec<(S, S)>,
+    ) -> DomNode<S> {
+        DomNode::Mention(MentionNode::new(url, display_text, attributes))
+    }
+
+    pub fn new_at_room_mention(attributes: Vec<(S, S)>) -> DomNode<S> {
+        DomNode::Mention(MentionNode::new_at_room(attributes))
+    }
+
     pub fn is_container_node(&self) -> bool {
         matches!(self, DomNode::Container(_))
     }
 
     pub fn is_text_node(&self) -> bool {
         matches!(self, DomNode::Text(_))
+    }
+
+    pub fn is_mention_node(&self) -> bool {
+        matches!(self, DomNode::Mention(_))
     }
 
     /// Returns `true` if the dom node is [`LineBreak`].
@@ -151,7 +173,7 @@ where
     /// Returns `true` if thie dom node is not a container i.e. a text node or
     /// a text-like node like a line break.
     pub fn is_leaf(&self) -> bool {
-        self.is_text_node() || self.is_line_break()
+        self.kind().is_leaf_kind()
     }
 
     pub fn is_structure_node(&self) -> bool {
@@ -219,6 +241,7 @@ where
             DomNode::Text(_) => DomNodeKind::Text,
             DomNode::LineBreak(_) => DomNodeKind::LineBreak,
             DomNode::Container(n) => DomNodeKind::from_container_kind(n.kind()),
+            DomNode::Mention(_) => DomNodeKind::Mention,
         }
     }
 
@@ -229,6 +252,15 @@ where
             DomNode::Container(c) => c.has_leading_line_break(),
             DomNode::Text(_) => false,
             DomNode::LineBreak(_) => true,
+            DomNode::Mention(_) => false,
+        }
+    }
+
+    /// Returns if this node is a placeholder, as used in empty paragraphs
+    pub fn is_placeholder(&self) -> bool {
+        match self {
+            DomNode::Text(n) => n.data() == "\u{A0}",
+            _ => false,
         }
     }
 
@@ -271,6 +303,7 @@ where
             }
             DomNode::Text(t) => DomNode::Text(t.slice_after(position)),
             DomNode::LineBreak(_) => panic!("Can't slice a linebreak"),
+            DomNode::Mention(_) => panic!("Can't slice a mention"),
         }
     }
 
@@ -285,6 +318,7 @@ where
             }
             DomNode::Text(t) => DomNode::Text(t.slice_before(position)),
             DomNode::LineBreak(_) => panic!("Can't slice a linebreak"),
+            DomNode::Mention(_) => panic!("Can't slice a mention"),
         }
     }
 
@@ -320,6 +354,10 @@ where
                 ),
                 DomNode::Text(_) => panic!(
                     "Handle {:?} is invalid: refers to the child of a text node, \
+                    but text nodes cannot have children.", node_handle
+                ),
+                DomNode::Mention(_) => panic!(
+                    "Handle {:?} is invalid: refers to the child of a mention node, \
                     but text nodes cannot have children.", node_handle
                 ),
             }
@@ -381,6 +419,9 @@ where
             DomNode::Text(s) => {
                 s.fmt_html(buf, selection_writer, state, as_message)
             }
+            DomNode::Mention(s) => {
+                s.fmt_html(buf, selection_writer, state, as_message)
+            }
         }
     }
 }
@@ -394,6 +435,7 @@ where
             DomNode::Container(n) => n.to_raw_text(),
             DomNode::LineBreak(n) => n.to_raw_text(),
             DomNode::Text(n) => n.to_raw_text(),
+            DomNode::Mention(n) => n.to_raw_text(),
         }
     }
 }
@@ -407,6 +449,7 @@ where
             DomNode::Container(n) => n.to_plain_text(),
             DomNode::LineBreak(n) => n.to_plain_text(),
             DomNode::Text(n) => n.to_plain_text(),
+            DomNode::Mention(n) => n.to_plain_text(),
         }
     }
 }
@@ -420,6 +463,7 @@ where
             DomNode::Container(n) => n.to_tree_display(continuous_positions),
             DomNode::LineBreak(n) => n.to_tree_display(continuous_positions),
             DomNode::Text(n) => n.to_tree_display(continuous_positions),
+            DomNode::Mention(n) => n.to_tree_display(continuous_positions),
         }
     }
 }
@@ -439,6 +483,7 @@ where
             }
             DomNode::Text(text) => text.fmt_markdown(buffer, options),
             DomNode::LineBreak(node) => node.fmt_markdown(buffer, options),
+            DomNode::Mention(node) => node.fmt_markdown(buffer, options),
         }
     }
 }
@@ -448,6 +493,7 @@ pub enum DomNodeKind {
     Generic, // Should only be used for root node so far
     Text,
     LineBreak,
+    Mention,
     Formatting(InlineFormatType),
     Link,
     ListItem,
@@ -492,7 +538,17 @@ impl DomNodeKind {
     }
 
     pub fn is_leaf_kind(&self) -> bool {
-        matches!(self, Self::Text | Self::LineBreak)
+        match self {
+            Self::Text | Self::LineBreak | Self::Mention => true,
+            Self::Generic
+            | Self::Formatting(_)
+            | Self::Link
+            | Self::ListItem
+            | Self::List
+            | Self::CodeBlock
+            | Self::Quote
+            | Self::Paragraph => false,
+        }
     }
 
     pub fn is_code_kind(&self) -> bool {
@@ -500,6 +556,10 @@ impl DomNodeKind {
             self,
             Self::CodeBlock | Self::Formatting(InlineFormatType::InlineCode)
         )
+    }
+
+    pub fn is_link_kind(&self) -> bool {
+        matches!(self, Self::Link)
     }
 }
 

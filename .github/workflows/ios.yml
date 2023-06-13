@@ -52,30 +52,45 @@ jobs:
     - name: Build framework & bindings
       run: make ios
 
-    - name: Tests
-      working-directory: platforms/ios/example
-      run: exec ./ios-tests.sh
-
-    - name: Coverage
-      working-directory: platforms/ios/example
-      run: exec ./ios-test-coverage.sh
-
     - name: Extract branch name
       shell: bash
       run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
       id: get_branch
 
-    - name: Run Slather for Unit tests
+    - name: Unit test coverage
+      working-directory: platforms/ios/example
+      run: exec ./ios-test-coverage.sh
+
+    - name: Run slather for unit tests
       run: bundle exec slather
       env:
         GIT_BRANCH: ${{ steps.get_branch.outputs.branch }}
         CI_PULL_REQUEST: ${{ github.event.number }}
 
-    - name: Upload coverage to Codecov
+    - name: Upload unit test coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
         directory: platforms/ios/lib/coverage
         fail_ci_if_error: true
         flags: unittests-ios, unittests
+        # https://github.com/codecov/codecov-action/issues/557#issuecomment-1216749652
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: UI test coverage
+      working-directory: platforms/ios/example
+      run: exec ./ios-ui-test-coverage.sh
+
+    - name: Run slather for ui tests
+      run: bundle exec slather
+      env:
+        GIT_BRANCH: ${{ steps.get_branch.outputs.branch }}
+        CI_PULL_REQUEST: ${{ github.event.number }}
+
+    - name: Upload ui test coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        directory: platforms/ios/lib/coverage
+        fail_ci_if_error: true
+        flags: uitests-ios, uitests
         # https://github.com/codecov/codecov-action/issues/557#issuecomment-1216749652
         token: ${{ secrets.CODECOV_TOKEN }}

@@ -14,8 +14,10 @@
 // limitations under the License.
 //
 
-/// A struct that can be used as an attribute to reflect replaced content in the `NSAttributedString`.
-struct ReplacementContent {
-    /// The original length of the content that has been replaced.
-    let originalLength: Int
+/// A struct that can be used as an attribute to persist the original content of a replaced part of an `NSAttributedString`.
+struct MentionContent {
+    /// The length of the replaced content in the Rust model.
+    let rustLength: Int
+
+    let url: String
 }

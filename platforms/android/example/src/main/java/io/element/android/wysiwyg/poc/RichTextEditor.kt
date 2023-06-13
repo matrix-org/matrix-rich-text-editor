@@ -15,8 +15,7 @@ import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
 import io.element.android.wysiwyg.poc.databinding.ViewRichTextEditorBinding
 import io.element.android.wysiwyg.poc.matrix.Mention
-import io.element.android.wysiwyg.poc.matrix.MatrixMentionLinkDisplayHandler
-import io.element.android.wysiwyg.poc.matrix.MatrixRoomKeywordDisplayHandler
+import io.element.android.wysiwyg.poc.matrix.MatrixMentionMentionDisplayHandler
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
 import uniffi.wysiwyg_composer.MenuAction
@@ -120,8 +119,7 @@ class RichTextEditor : LinearLayout {
                 EditorEditText.OnMenuActionChangedListener { menuAction ->
                     updateSuggestions(menuAction)
                 }
-            richTextEditText.linkDisplayHandler = MatrixMentionLinkDisplayHandler()
-            richTextEditText.keywordDisplayHandler = MatrixRoomKeywordDisplayHandler()
+            richTextEditText.mentionDisplayHandler = MatrixMentionMentionDisplayHandler()
         }
     }
 

@@ -117,10 +117,7 @@ private struct StringDiff {
 private extension String {
     /// Converts all whitespaces to NBSP to avoid diffs caused by HTML translations.
     var withNBSP: String {
-        String(self
-            // FIXME: Not ideal, but avoids triggering reconciliate because of placeholder whitespaces
-            .filter { $0 != .zwsp }
-            .map { $0.isWhitespace ? Character.nbsp : $0 })
+        String(map { $0.isWhitespace ? Character.nbsp : $0 })
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 

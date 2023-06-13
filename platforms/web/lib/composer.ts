@@ -56,6 +56,7 @@ export function processInput(
         {
             actions: formattingFunctions,
             content: () => composerModel.get_content_as_html(),
+            messageContent: () => composerModel.get_content_as_message_html(),
         },
         editor,
         inputEventProcessor,
@@ -73,19 +74,16 @@ export function processInput(
         case 'insertSuggestion': {
             if (suggestion && isSuggestionEvent(event)) {
                 const { text, url, attributes } = event.data;
-                const defaultMap = new Map();
-                defaultMap.set('contenteditable', 'false');
-                Object.entries(attributes).forEach(([key, value]) => {
-                    defaultMap.set(key, value);
-                });
+                const attributesMap = new Map(Object.entries(attributes));
+
                 return action(
-                    composerModel.set_link_suggestion(
+                    composerModel.insert_mention_at_suggestion(
                         url,
                         text,
                         suggestion,
-                        defaultMap,
+                        attributesMap,
                     ),
-                    'set_link_suggestion',
+                    'insert_mention_at_suggestion',
                 );
             }
             break;

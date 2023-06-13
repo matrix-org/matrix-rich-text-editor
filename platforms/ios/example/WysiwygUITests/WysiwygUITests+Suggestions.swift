@@ -27,18 +27,10 @@ extension WysiwygUITests {
         assertTextViewContent("￼\u{00A0}")
         assertTreeEquals(
             """
-            ├>a "https://matrix.to/#/@alice:matrix.org"
-            │ └>"Alice"
+            ├>mention "Alice", https://matrix.to/#/@alice:matrix.org
             └>" "
             """
         )
-        // Removing the whitespace afterwards disables the
-        // link button as the caret is right after the pill.
-        app.keys["delete"].tap()
-        XCTAssertFalse(button(.linkButton).isEnabled)
-        // Link button can be re-enabled.
-        app.keys["space"].tap()
-        XCTAssertTrue(button(.linkButton).isEnabled)
     }
 
     func testHashMention() throws {
@@ -49,8 +41,7 @@ extension WysiwygUITests {
         // assertTextViewContent("￼ ")
         assertTreeEquals(
             """
-            ├>a "https://matrix.to/#/#room1:matrix.org"
-            │ └>"Room 1"
+            ├>mention "Room 1", https://matrix.to/#/#room1:matrix.org
             └>" "
             """
         )

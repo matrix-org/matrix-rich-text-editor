@@ -292,7 +292,7 @@ internal class EditorViewModelTest {
     }
 
     @Test
-    fun `when process set link suggestion action, it returns a text update`() {
+    fun `when process insert mention at suggestion action, it returns a text update`() {
         val name = "jonny"
         val url = "https://matrix.to/#/@test:matrix.org"
         val suggestionPattern =
@@ -302,11 +302,11 @@ internal class EditorViewModelTest {
         ))
         viewModel.processInput(EditorInputAction.ReplaceText("@jonny"))
 
-        composer.givenSetLinkSuggestionResult(name, url, composerStateUpdate)
+        composer.givenInsertMentionFromSuggestionResult(name, url, composerStateUpdate)
         val result = viewModel.processInput(EditorInputAction.SetLinkSuggestion(url, name))
 
         verify {
-            composer.instance.setLinkSuggestion(url, attributes = emptyList(), text = name, suggestion = suggestionPattern)
+            composer.instance.insertMentionAtSuggestion(url, attributes = emptyList(), text = name, suggestion = suggestionPattern)
         }
         assertThat(result, equalTo(replaceTextResult))
     }
@@ -417,10 +417,10 @@ internal class EditorViewModelTest {
     }
 
     @Test
-    fun `given formatted text, getHtml function returns formatted HTML`() {
-        composer.givenGetContentAsHtml(htmlParagraphs)
+    fun `given formatted text, getContentAsMessageHtml function returns formatted HTML`() {
+        composer.givenGetContentAsMessageHtml(htmlParagraphs)
 
-        val html = viewModel.getHtml()
+        val html = viewModel.getContentAsMessageHtml()
 
         assertThat(html, equalTo(htmlParagraphs))
     }

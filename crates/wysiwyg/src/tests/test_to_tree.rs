@@ -75,3 +75,16 @@ fn link_href_shows_up_in_tree() {
 "#,
     );
 }
+
+#[test]
+fn mention_shows_up_in_tree() {
+    let model =
+        cm("Some <a href=\"https://matrix.to/#/@test:example.org\">test</a>|");
+    assert_eq!(
+        model.state.dom.to_tree(),
+        r#"
+├>"Some "
+└>mention "test", https://matrix.to/#/@test:example.org
+"#,
+    );
+}

@@ -406,6 +406,10 @@ where
                     "Handle is invalid: refers to the child of a text node, \
                     but text nodes cannot have children."
                 ),
+                DomNode::Mention(_) => panic!(
+                    "Handle is invalid: refers to the child of a mention node, \
+                    but mention nodes cannot have children."
+                ),
             }
         }
 
@@ -424,12 +428,14 @@ where
     /// If handle points to a text node, this text node may be split if needed.
     /// If handle points to a line break node, offset should definitely be 1,
     /// and the new node will be inserted after it.
+    ///
+    /// Returns the handle of the inserted node.
     pub fn insert_into_text(
         &mut self,
         handle: &DomHandle,
         offset: usize,
         new_node: DomNode<S>,
-    ) {
+    ) -> DomHandle {
         enum Where {
             Before,
             During,
@@ -440,14 +446,14 @@ where
             DomNode::Container(_) => {
                 panic!("Can't insert into a non-text node!")
             }
-            DomNode::LineBreak(_) => {
+            DomNode::LineBreak(_) | DomNode::Mention(_) => {
                 if offset == 0 {
                     Where::Before
                 } else if offset == 1 {
                     Where::After
                 } else {
                     panic!(
-                        "Attempting to insert a new line into a new line node, but offset wasn't \
+                        "Attempting to insert into a node of length 1, but offset wasn't \
                         either 0 or 1: {}",
                         offset
                     );
@@ -465,10 +471,10 @@ where
         };
 
         match wh {
-            Where::Before => {
-                self.parent_mut(handle)
-                    .insert_child(handle.index_in_parent(), new_node);
-            }
+            Where::Before => self
+                .parent_mut(handle)
+                .insert_child(handle.index_in_parent(), new_node)
+                .handle(),
             Where::During => {
                 // Splice new_node in between this text node and a new one
                 let old_node = self.lookup_node_mut(handle);
@@ -479,19 +485,22 @@ where
                     old_text_node.set_data(before_text);
                     let new_text_node = DomNode::new_text(after_text);
                     let parent = self.parent_mut(handle);
-                    parent.insert_child(handle.index_in_parent() + 1, new_node);
+                    let inserted_handle = parent
+                        .insert_child(handle.index_in_parent() + 1, new_node)
+                        .handle();
                     parent.insert_child(
                         handle.index_in_parent() + 2,
                         new_text_node,
                     );
+                    inserted_handle
                 } else {
                     panic!("Can't insert in the middle of non-text node!");
                 }
             }
-            Where::After => {
-                self.parent_mut(handle)
-                    .insert_child(handle.index_in_parent() + 1, new_node);
-            }
+            Where::After => self
+                .parent_mut(handle)
+                .insert_child(handle.index_in_parent() + 1, new_node)
+                .handle(),
         }
     }
 
@@ -1048,7 +1057,7 @@ mod test {
     fn kids(node: &DomNode<Utf16String>) -> &Vec<DomNode<Utf16String>> {
         match node {
             DomNode::Container(n) => n.children(),
-            DomNode::LineBreak(_) => NO_CHILDREN,
+            DomNode::LineBreak(_) | DomNode::Mention(_) => NO_CHILDREN,
             DomNode::Text(_) => {
                 panic!("We expected an Element, but found Text")
             }

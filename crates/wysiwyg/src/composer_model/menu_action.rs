@@ -28,7 +28,12 @@ where
     pub(crate) fn compute_menu_action(&self) -> MenuAction {
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
-        if range.locations.iter().any(|l| l.kind.is_code_kind()) {
+
+        if range
+            .locations
+            .iter()
+            .any(|l| l.kind.is_code_kind() || l.kind.is_link_kind())
+        {
             return MenuAction::None;
         }
         let (raw_text, start, end) = self.extended_text(range);

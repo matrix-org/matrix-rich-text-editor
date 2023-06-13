@@ -1,6 +1,10 @@
 package io.element.android.wysiwyg
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.graphics.Typeface
+import android.net.Uri
 import android.text.Editable
 import android.text.style.BulletSpan
 import android.text.style.ReplacementSpan
@@ -23,7 +27,6 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.element.android.wysiwyg.display.TextDisplay
-import io.element.android.wysiwyg.fakes.SimpleKeywordDisplayHandler
 import io.element.android.wysiwyg.test.R
 import io.element.android.wysiwyg.test.utils.*
 import io.element.android.wysiwyg.utils.RustErrorCollector
@@ -81,9 +84,9 @@ class EditorEditTextInputTests {
     @Test
     fun testBackspacePill() {
         onView(withId(R.id.rich_text_edit_text))
-            .perform(EditorActions.setLinkDisplayHandler { _, _ -> TextDisplay.Pill })
+            .perform(EditorActions.setMentionDisplayHandler(TestMentionDisplayHandler(TextDisplay.Pill)))
             .perform(typeText("Hello @"))
-            .perform(EditorActions.setLinkSuggestion("alice", "link"))
+            .perform(EditorActions.insertMentionAtSuggestion("alice", "link"))
             .perform(pressKey(KeyEvent.KEYCODE_DEL)) // Delete the space added after the pill
             .perform(pressKey(KeyEvent.KEYCODE_DEL)) // Delete the pill
             .perform(pressKey(KeyEvent.KEYCODE_DEL)) // Delete the trailing space after "Hello"
@@ -275,8 +278,8 @@ class EditorEditTextInputTests {
     fun testSettingLinkSuggestion() {
         onView(withId(R.id.rich_text_edit_text))
             .perform(ImeActions.setComposingText("@jonny"))
-            .perform(EditorActions.setLinkDisplayHandler { _, _ -> TextDisplay.Pill })
-            .perform(EditorActions.setLinkSuggestion("jonny", "https://matrix.to/#/@test:matrix.org"))
+            .perform(EditorActions.setMentionDisplayHandler(TestMentionDisplayHandler(TextDisplay.Pill)))
+            .perform(EditorActions.insertMentionAtSuggestion("jonny", "https://matrix.to/#/@test:matrix.org"))
             .check(matches(TextViewMatcher {
                 it.editableText.getSpans<PillSpan>().isNotEmpty()
             }))
@@ -286,13 +289,17 @@ class EditorEditTextInputTests {
     fun testSettingMultipleLinkSuggestionWithCustomReplacements() {
         onView(withId(R.id.rich_text_edit_text))
             .perform(ImeActions.setComposingText("@jonny"))
-            .perform(EditorActions.setLinkDisplayHandler { _, _ -> TextDisplay.Custom(PillSpan(
-                R.color.fake_color
-            )) })
-            .perform(EditorActions.setLinkSuggestion("jonny", "https://matrix.to/#/@test:matrix.org"))
+            .perform(EditorActions.setMentionDisplayHandler(
+                TestMentionDisplayHandler(
+                    TextDisplay.Custom(
+                        PillSpan(R.color.fake_color)
+                    )
+                )
+            ))
+            .perform(EditorActions.insertMentionAtSuggestion("jonny", "https://matrix.to/#/@test:matrix.org"))
             .perform(typeText(" "))
             .perform(ImeActions.setComposingText("@jonny"))
-            .perform(EditorActions.setLinkSuggestion("jonny", "https://matrix.to/#/@test:matrix.org"))
+            .perform(EditorActions.insertMentionAtSuggestion("jonny", "https://matrix.to/#/@test:matrix.org"))
             .check(matches(TextViewMatcher {
                 it.editableText.getSpans<ReplacementSpan>().count() == 2
             }))
@@ -302,7 +309,7 @@ class EditorEditTextInputTests {
     fun testReplaceTextSuggestion() {
         onView(withId(R.id.rich_text_edit_text))
             .perform(ImeActions.setComposingText("@r"))
-            .perform(EditorActions.setKeywordDisplayHandler(SimpleKeywordDisplayHandler("@room")))
+            .perform(EditorActions.setMentionDisplayHandler(TestMentionDisplayHandler(TextDisplay.Pill)))
             .perform(EditorActions.replaceTextSuggestion("@room"))
             .check(matches(TextViewMatcher {
                     it.editableText.getSpans<ReplacementSpan>().isNotEmpty()
@@ -313,9 +320,9 @@ class EditorEditTextInputTests {
     fun testReplacingMultipleTextSuggestionsWithCustomReplacements() {
         onView(withId(R.id.rich_text_edit_text))
             .perform(ImeActions.setComposingText("@r"))
-            .perform(EditorActions.setKeywordDisplayHandler(
-                SimpleKeywordDisplayHandler("@room",
-                    displayAs = TextDisplay.Custom(PillSpan(R.color.fake_color)))
+            .perform(EditorActions.setMentionDisplayHandler(
+                TestMentionDisplayHandler(
+                    TextDisplay.Custom(PillSpan(R.color.fake_color)))
                 )
             )
             .perform(EditorActions.replaceTextSuggestion("@room"))
@@ -463,6 +470,79 @@ class EditorEditTextInputTests {
     }
 
     @Test
+    fun testPasteImage() {
+        val imageUri = Uri.parse("content://fakeImage")
+        val contentWatcher = spyk<(uri: Uri) -> Unit>({ })
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(EditorActions.addContentWatcher(arrayOf("image/*"), contentWatcher))
+
+        scenarioRule.scenario.onActivity { activity ->
+            val editor = activity.findViewById<EditorEditText>(R.id.rich_text_edit_text)
+            val clipboardManager =
+                activity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clpData = ClipData.newRawUri("image", imageUri)
+            clipboardManager.setPrimaryClip(clpData)
+            editor.onTextContextMenuItem(android.R.id.paste)
+        }
+        verify(exactly = 1) {
+            contentWatcher.invoke(match { it == imageUri })
+        }
+
+        confirmVerified(contentWatcher)
+    }
+
+    @Test
+    fun testPastePlainText() {
+        val clipData = ClipData.newPlainText("text", ipsum)
+        val contentWatcher = spyk<(uri: Uri) -> Unit>({ })
+        val textWatcher = spyk<(text: Editable?) -> Unit>({ })
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(EditorActions.addTextWatcher(textWatcher))
+        pasteFromClipboard(clipData, false)
+
+        pasteFromClipboard(clipData, true)
+
+        verify(exactly = 2) {
+            textWatcher.invoke(match { it.toString() == ipsum + ipsum })
+        }
+
+        confirmVerified(contentWatcher)
+    }
+
+    @Test
+    fun testPasteHtlmText() {
+        val html = "<bold>$ipsum</bold>"
+        val clipData = ClipData.newHtmlText("html", ipsum, html)
+        val contentWatcher = spyk<(uri: Uri) -> Unit>({ })
+        val textWatcher = spyk<(text: Editable?) -> Unit>({ })
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(EditorActions.addTextWatcher(textWatcher))
+        pasteFromClipboard(clipData, false)
+
+        pasteFromClipboard(clipData, true)
+
+        verify(exactly = 2) {
+            // In future when we support parsing/loading of pasted html into the model
+            // we can make more assertions on that the corrrect formating is applied
+            textWatcher.invoke(match { it.toString() == ipsum + ipsum })
+        }
+
+        confirmVerified(contentWatcher)
+    }
+
+
+    private fun pasteFromClipboard(clipData: ClipData, pasteAsPlainText: Boolean){
+        scenarioRule.scenario.onActivity { activity ->
+            val editor = activity.findViewById<EditorEditText>(R.id.rich_text_edit_text)
+            val clipboardManager =
+                activity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            clipboardManager.setPrimaryClip(clipData)
+            val itemId = if (pasteAsPlainText) android.R.id.pasteAsPlainText else android.R.id.paste
+            editor.onTextContextMenuItem(itemId)
+        }
+    }
+
+    @Test
     fun getMarkdownTranslatesDomToMarkdown() {
         scenarioRule.scenario.onActivity { activity ->
             val editor = activity.findViewById<EditorEditText>(R.id.rich_text_edit_text)
@@ -478,19 +558,19 @@ class EditorEditTextInputTests {
             val editor = activity.findViewById<EditorEditText>(R.id.rich_text_edit_text)
             editor.setMarkdown("__Test__")
             ViewMatchers.assertThat(
-                editor.getHtmlOutput(),
+                editor.getContentAsMessageHtml(),
                 CoreMatchers.equalTo("<strong>Test</strong>")
             )
             editor.setMarkdown("**Test**")
             ViewMatchers.assertThat(
-                editor.getHtmlOutput(),
+                editor.getContentAsMessageHtml(),
                 CoreMatchers.equalTo("<strong>Test</strong>")
             )
             editor.setMarkdown("**Test*")
-            ViewMatchers.assertThat(editor.getHtmlOutput(), CoreMatchers.equalTo("*<em>Test</em>"))
+            ViewMatchers.assertThat(editor.getContentAsMessageHtml(), CoreMatchers.equalTo("*<em>Test</em>"))
             editor.setMarkdown("<u>*Test*</u>")
             ViewMatchers.assertThat(
-                editor.getHtmlOutput(),
+                editor.getContentAsMessageHtml(),
                 CoreMatchers.equalTo("<u><em>Test</em></u>")
             )
         }

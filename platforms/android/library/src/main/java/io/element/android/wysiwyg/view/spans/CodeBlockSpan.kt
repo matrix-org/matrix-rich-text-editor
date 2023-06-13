@@ -19,7 +19,7 @@ class CodeBlockSpan(
     @FloatRange(from = 0.0) relativeSizeProportion: Float =
         CodeSpanConstants.DEFAULT_RELATIVE_SIZE_PROPORTION,
 ) : MetricAffectingSpan(), BlockSpan, LeadingMarginSpan, LineHeightSpan, UpdateAppearance,
-    PlainKeywordDisplaySpan {
+    PlainAtRoomMentionDisplaySpan {
 
     private val monoTypefaceSpan = TypefaceSpan("monospace")
     private val relativeSizeSpan = RelativeSizeSpan(relativeSizeProportion)

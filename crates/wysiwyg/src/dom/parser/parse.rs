@@ -42,6 +42,7 @@ mod sys {
     use crate::dom::nodes::dom_node::DomNodeKind;
     use crate::dom::nodes::dom_node::DomNodeKind::CodeBlock;
     use crate::dom::nodes::{ContainerNode, DomNode};
+    use crate::dom::parser::sys::PaNodeText;
     use crate::ListType;
 
     pub(super) struct HtmlParser {
@@ -177,13 +178,38 @@ mod sys {
                     self.current_path.remove(cur_path_idx);
                 }
                 "a" => {
-                    self.current_path.push(DomNodeKind::Link);
-                    node.append_child(Self::new_link(child));
-                    self.convert_children(
-                        padom,
-                        child,
-                        last_container_mut_in(node),
-                    );
+                    // TODO: Replace this logic with real mention detection
+                    // The only mention that is currently detected is the
+                    // example mxid, @test:example.org.
+                    let is_mention = child.attrs.iter().any(|(k, v)| {
+                        k == &String::from("href")
+                            && v.starts_with(
+                                "https://matrix.to/#/@test:example.org",
+                            )
+                    });
+
+                    let text =
+                        child.children.first().map(|gc| padom.get_node(gc));
+                    let text = match text {
+                        Some(PaDomNode::Text(text)) => Some(text),
+                        _ => None,
+                    };
+
+                    if is_mention && matches!(text, Some(_)) {
+                        self.current_path.push(DomNodeKind::Mention);
+                        let mention = Self::new_mention(child, text.unwrap());
+                        node.append_child(mention);
+                    } else {
+                        self.current_path.push(DomNodeKind::Link);
+
+                        let link = Self::new_link(child);
+                        node.append_child(link);
+                        self.convert_children(
+                            padom,
+                            child,
+                            last_container_mut_in(node),
+                        );
+                    }
                     self.current_path.remove(cur_path_idx);
                 }
                 "pre" => {
@@ -274,12 +300,28 @@ mod sys {
                 .filter(|(k, _)| k != &String::from("href"))
                 .map(|(k, v)| (k.as_str().into(), v.as_str().into()))
                 .collect();
-
             DomNode::Container(ContainerNode::new_link(
                 child.get_attr("href").unwrap_or("").into(),
                 Vec::new(),
                 attributes,
             ))
+        }
+
+        fn new_mention<S>(
+            link: &PaNodeContainer,
+            text: &PaNodeText,
+        ) -> DomNode<S>
+        where
+            S: UnicodeString,
+        {
+            let text = &text.content;
+
+            DomNode::new_mention(
+                link.get_attr("href").unwrap_or("").into(),
+                text.as_str().into(),
+                // custom attributes are not required when cfg feature != "js"
+                vec![],
+            )
         }
 
         /// Create a list node
@@ -522,6 +564,51 @@ mod sys {
                 "#}
             );
         }
+
+        #[test]
+        fn parse_at_room_mentions() {
+            let html = "\
+                <p>@room hello!</p>\
+                <pre><code>@room hello!</code></pre>\
+                <p>@room@room</p>";
+            let dom: Dom<Utf16String> =
+                HtmlParser::default().parse(html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+                
+                ├>p
+                │ ├>mention "@room"
+                │ └>" hello!"
+                ├>codeblock
+                │ └>p
+                │   └>"@room hello!"
+                └>p
+                  ├>mention "@room"
+                  └>mention "@room"
+                "#}
+            );
+        }
+
+        #[test]
+        fn parse_mentions() {
+            let html = r#"<p><a href="https://matrix.to/#/@test:example.org">test</a> hello!</p>"#;
+            let dom: Dom<Utf16String> =
+                HtmlParser::default().parse(html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+
+                └>p
+                  ├>mention "test", https://matrix.to/#/@test:example.org
+                  └>" hello!"
+                "#}
+            );
+        }
     }
 }
 
@@ -617,8 +704,17 @@ fn convert_text<S: UnicodeString>(
     } else {
         let contents = text;
         let is_nbsp = contents == "\u{A0}" || contents == "&nbsp;";
-        if !is_nbsp {
-            node.append_child(DomNode::new_text(contents.into()));
+        if is_nbsp {
+            return;
+        }
+
+        for (i, part) in contents.split("@room").into_iter().enumerate() {
+            if i > 0 {
+                node.append_child(DomNode::new_at_room_mention(vec![]));
+            }
+            if !part.is_empty() {
+                node.append_child(DomNode::new_text(part.into()));
+            }
         }
     }
 }
@@ -728,6 +824,7 @@ mod js {
 
                     "A" => {
                         self.current_path.push(DomNodeKind::Link);
+
                         let mut attributes = vec![];
                         let valid_attributes =
                             ["contenteditable", "data-mention-type", "style"];
@@ -747,14 +844,44 @@ mod js {
                             }
                         }
 
-                        dom.append_child(DomNode::new_link(
-                            node.unchecked_ref::<Element>()
-                                .get_attribute("href")
-                                .unwrap_or_default()
-                                .into(),
-                            self.convert(node.child_nodes())?.take_children(),
-                            attributes,
-                        ));
+                        let url = node
+                            .unchecked_ref::<Element>()
+                            .get_attribute("href")
+                            .unwrap_or_default();
+
+                        // TODO: Replace this logic with real mention detection
+                        // The only mention that is currently detected is the
+                        // example mxid, @test:example.org.
+                        let is_mention = url.starts_with(
+                            "https://matrix.to/#/@test:example.org",
+                        );
+                        let text = node.child_nodes().get(0);
+                        let has_text = match text.clone() {
+                            Some(node) => {
+                                node.node_type() == web_sys::Node::TEXT_NODE
+                            }
+                            None => false,
+                        };
+                        if has_text && is_mention {
+                            dom.append_child(DomNode::new_mention(
+                                url.into(),
+                                text.unwrap()
+                                    .node_value()
+                                    .unwrap_or_default()
+                                    .into(),
+                                attributes,
+                            ));
+                        } else {
+                            let children = self
+                                .convert(node.child_nodes())?
+                                .take_children();
+                            dom.append_child(DomNode::new_link(
+                                url.into(),
+                                children,
+                                attributes,
+                            ));
+                        }
+
                         self.current_path.pop();
                     }
 
@@ -962,6 +1089,23 @@ mod js {
             assert_eq!(
                 dom.to_string(),
                 r#"<a href="http://example.com">a user mention</a>"#
+            );
+        }
+
+        #[wasm_bindgen_test]
+        fn mention_with_attributes() {
+            roundtrip(
+                r#"<a contenteditable="false" data-mention-type="user" style="something" href="https://matrix.to/@test:example.org">test</a>"#,
+            );
+        }
+
+        #[wasm_bindgen_test]
+        fn mention_with_bad_attribute() {
+            let html = r#"<a invalidattribute="true" href="https://matrix.to/#/@test:example.org">test</a>"#;
+            let dom = HtmlParser::default().parse::<Utf16String>(html).unwrap();
+            assert_eq!(
+                dom.to_string(),
+                r#"<a href="https://matrix.to/#/@test:example.org" contenteditable="false">test</a>"#
             );
         }
 

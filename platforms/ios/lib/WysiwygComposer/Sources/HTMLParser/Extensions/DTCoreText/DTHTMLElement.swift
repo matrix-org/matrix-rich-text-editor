@@ -21,6 +21,16 @@ extension DTHTMLElement {
     func sanitize() {
         guard let childNodes = childNodes as? [DTHTMLElement] else { return }
 
+        if tag == .a,
+           attributes["data-mention-type"] != nil,
+           let textNode = self.childNodes.first as? DTTextHTMLElement {
+            let mentionTextNode = MentionTextNodeHTMLElement(from: textNode)
+            removeAllChildNodes()
+            addChildNode(mentionTextNode)
+            mentionTextNode.inheritAttributes(from: self)
+            mentionTextNode.interpretAttributes()
+        }
+
         if childNodes.count == 1, let child = childNodes.first as? DTTextHTMLElement {
             if child.text() == .nbsp {
                 // Removing NBSP character from e.g. <p>&nbsp;</p> since it is only used to
@@ -66,11 +76,14 @@ extension DTHTMLElement {
 private enum DTHTMLElementTag: String {
     case pre
     case code
+    case a
 }
 
 private extension DTHTMLElement {
     var tag: DTHTMLElementTag? {
-        DTHTMLElementTag(rawValue: name)
+        guard let name else { return nil }
+
+        return DTHTMLElementTag(rawValue: name)
     }
 
     func createDiscardableElement() -> PlaceholderTextHTMLElement {

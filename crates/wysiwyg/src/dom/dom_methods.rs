@@ -320,7 +320,7 @@ where
                     }
                 }
                 DomNode::Text(t) => Some(t),
-                DomNode::LineBreak(_) => None,
+                DomNode::LineBreak(_) | DomNode::Mention(_) => None,
             }
         }
 
@@ -375,7 +375,7 @@ where
                     }
                 }
                 DomNode::Text(t) => Some(t),
-                DomNode::LineBreak(_) => None,
+                DomNode::LineBreak(_) | DomNode::Mention(_) => None,
             }
         }
 
@@ -562,16 +562,16 @@ where
                         first_text_node = false;
                     }
                 }
-                DomNode::LineBreak(_) => {
+                DomNode::LineBreak(_) | DomNode::Mention(_) => {
                     match (loc.start_offset, loc.end_offset) {
                         (0, 1) => {
-                            // Whole line break is selected, delete it
+                            // Whole line break or mention is selected, delete it
                             action_list.push(DomAction::remove_node(
                                 loc.node_handle.clone(),
                             ));
                         }
                         (1, 1) => {
-                            // Cursor is after line break, no need to delete
+                            // Cursor is after the line break or mention, no need to delete
                         }
                         (0, 0) => {
                             if first_text_node && !new_text.is_empty() {
@@ -584,7 +584,7 @@ where
                             }
                         }
                         _ => panic!(
-                            "Tried to insert text into a line break with offset != 0 or 1. \
+                            "Tried to insert text into a line break or mention with offset != 0 or 1. \
                             Start offset: {}, end offset: {}",
                             loc.start_offset,
                             loc.end_offset,

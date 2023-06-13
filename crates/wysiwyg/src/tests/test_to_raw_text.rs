@@ -46,6 +46,12 @@ fn tags_are_stripped_from_raw_text() {
         "some link",
     );
 
+    // mention
+    assert_eq!(
+        raw("some <a href=\"https://matrix.to/#/@test:example.org\">test</a>|"),
+        "some test",
+    );
+
     assert_eq!(
         raw("list: <ol><li>ab</li><li>cd</li><li><b>e<i>f</i></b></li></ol>|"),
         "list: abcdef",
