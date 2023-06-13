@@ -1,4 +1,4 @@
-// Copyright 2022 The Matrix.org Foundation C.I.C.
+// Copyright 2023 The Matrix.org Foundation C.I.C.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,12 +17,30 @@ use ruma_common::{matrix_uri::MatrixId, MatrixToUri, MatrixUri};
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Mention {
     uri: String,
+    mx_id: String,
     text: String,
+    kind: MentionKind,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum MentionKind {
+    Room,
+    User,
 }
 
 impl Mention {
-    fn new(uri: String, text: String) -> Self {
-        Mention { uri, text }
+    fn new(
+        uri: String,
+        mx_id: String,
+        text: String,
+        kind: MentionKind,
+    ) -> Self {
+        Mention {
+            uri,
+            mx_id,
+            text,
+            kind,
+        }
     }
 
     pub fn uri(&self) -> &str {
@@ -31,6 +49,14 @@ impl Mention {
 
     pub fn text(&self) -> &str {
         &self.text
+    }
+
+    pub fn mx_id(&self) -> &str {
+        &self.mx_id
+    }
+
+    pub fn kind(&self) -> &MentionKind {
+        &self.kind
     }
 
     /// Create a mention from a URI
@@ -81,13 +107,18 @@ impl Mention {
                     // use the user’s ID.
                     .unwrap_or(user_id.as_str());
 
-                Some(Mention::new(user_uri.to_string(), text.to_string()))
+                Some(Mention::new(
+                    user_uri.to_string(),
+                    "hello".into(),
+                    text.to_string(),
+                    MentionKind::User,
+                ))
             }
             _ => None,
         }
     }
 
-    /// Create a mention from a room URI and an optional display name
+    /// Create a mention from a room URI
     ///
     /// If the URI is not a valid room, it returns None.
     fn from_room(room_uri: &str) -> Option<Mention> {
@@ -99,7 +130,12 @@ impl Mention {
             _ => return None,
         };
 
-        Some(Mention::new(room_uri.to_string(), text))
+        Some(Mention::new(
+            room_uri.to_string(),
+            "howdy".into(),
+            text,
+            MentionKind::Room,
+        ))
     }
 }
 
@@ -117,7 +153,7 @@ fn parse_matrix_id(uri: &str) -> Option<MatrixId> {
 mod test {
     use ruma_common::{MatrixToUri, MatrixUri};
 
-    use crate::mention::Mention;
+    use crate::mention::{Mention, MentionKind};
 
     #[test]
     fn parse_uri_matrix_to_valid_user() {
@@ -126,6 +162,7 @@ mod test {
         ))
         .unwrap();
         assert!(parsed.text() == "@alice:example.org");
+        assert_eq!(parsed.kind(), &MentionKind::User);
     }
 
     #[test]
@@ -134,6 +171,7 @@ mod test {
             Mention::from_uri(matrix_uri("matrix:u/alice:example.org"))
                 .unwrap();
         assert!(parsed.text() == "@alice:example.org");
+        assert_eq!(parsed.kind(), &MentionKind::User);
     }
 
     #[test]
@@ -143,6 +181,7 @@ mod test {
         ))
         .unwrap();
         assert!(parsed.text() == "!roomid:example.org");
+        assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
     #[test]
@@ -151,6 +190,7 @@ mod test {
             Mention::from_uri(matrix_uri("matrix:roomid/roomid:example.org"))
                 .unwrap();
         assert!(parsed.text() == "!roomid:example.org");
+        assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
     #[test]
@@ -160,6 +200,7 @@ mod test {
         ))
         .unwrap();
         assert!(parsed.text() == "#room:example.org");
+        assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
     #[test]
@@ -167,6 +208,7 @@ mod test {
         let parsed =
             Mention::from_uri(matrix_uri("matrix:r/room:example.org")).unwrap();
         assert!(parsed.text() == "#room:example.org");
+        assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
     #[test]
@@ -208,6 +250,7 @@ mod test {
         )
         .unwrap();
         assert!(parsed.text() == "Alice");
+        assert_eq!(parsed.kind(), &MentionKind::User);
     }
 
     #[test]
@@ -218,6 +261,7 @@ mod test {
         )
         .unwrap();
         assert!(parsed.text() == "!room:example.org");
+        assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
     #[test]
@@ -228,6 +272,7 @@ mod test {
         )
         .unwrap();
         assert!(parsed.text() == "#room:example.org");
+        assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
     #[test]
