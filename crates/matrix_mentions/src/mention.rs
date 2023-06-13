@@ -73,7 +73,7 @@ impl Mention {
         }
     }
 
-    /// Create a mention from a link
+    /// Create a mention from a URI with associated display text
     ///
     /// If the URI is a valid room, it constructs a room mention, ignoring the
     /// provided `display_text` and using the room Itext
