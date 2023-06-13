@@ -75,7 +75,7 @@ function App() {
             if (debug.testRef.current) {
                 debug.traceAction(null, 'send', `${wysiwyg.content()}`);
             }
-            console.log(`SENDING: ${wysiwyg.content()}`);
+            console.log(`SENDING MESSAGE HTML: ${wysiwyg.messageContent()}`);
             wysiwyg.actions.clear();
             return null;
         }
@@ -97,6 +97,11 @@ function App() {
         actionStates.unorderedList === 'reversed' ||
         actionStates.orderedList === 'reversed';
 
+    const commandExists = suggestion && suggestion.type === 'command';
+    const mentionExists = suggestion && suggestion.type === 'mention';
+    const shouldDisplayAtMention = mentionExists && suggestion.keyChar === '@';
+    const shouldDisplayHashMention =
+        mentionExists && suggestion.keyChar === '#';
     return (
         <div className="wrapper">
             <div>
@@ -187,26 +192,51 @@ function App() {
                         <button type="button" onClick={(_e) => wysiwyg.clear()}>
                             clear
                         </button>
-                        {suggestion && suggestion.type === 'mention' && (
+                        {shouldDisplayAtMention && (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={(_e) =>
+                                        wysiwyg.mention(
+                                            'https://matrix.to/#/@alice_user:element.io',
+                                            'Alice',
+                                            {
+                                                'data-mention-type': 'user',
+                                            },
+                                        )
+                                    }
+                                >
+                                    Add User mention
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={(_e) =>
+                                        wysiwyg.mention('#', '@room', {
+                                            'data-mention-type': 'at-room',
+                                        })
+                                    }
+                                >
+                                    Add at-room mention
+                                </button>
+                            </>
+                        )}
+                        {shouldDisplayHashMention && (
                             <button
                                 type="button"
                                 onClick={(_e) =>
                                     wysiwyg.mention(
-                                        'https://matrix.to/#/@alice_user:element.io',
-                                        'Alice',
+                                        'https://matrix.to/#/#my_room:element.io',
+                                        'My room',
                                         {
-                                            'data-mention-type':
-                                                suggestion.keyChar === '@'
-                                                    ? 'user'
-                                                    : 'room',
+                                            'data-mention-type': 'room',
                                         },
                                     )
                                 }
                             >
-                                Add {suggestion.keyChar}mention
+                                Add Room mention
                             </button>
                         )}
-                        {suggestion && suggestion.type === 'command' && (
+                        {commandExists && (
                             <button
                                 type="button"
                                 onClick={(_e) => wysiwyg.command('/spoiler')}

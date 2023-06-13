@@ -106,6 +106,7 @@ function getInputFromKeyDown(
         {
             actions: formattingFunctions,
             content: () => composerModel.get_content_as_html(),
+            messageContent: () => composerModel.get_content_as_message_html(),
         },
         editor,
         inputEventProcessor,
