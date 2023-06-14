@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-use matrix_mentions::Mention;
+use matrix_mentions::{Mention, MentionKind};
 
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
@@ -28,20 +28,18 @@ pub struct MentionNode<S>
 where
     S: UnicodeString,
 {
-    kind: MentionNodeKind<S>,
+    display_text: S,
+    kind: MentionNodeKind,
     attributes: Vec<(S, S)>,
     handle: DomHandle,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum MentionNodeKind<S>
-where
-    S: UnicodeString,
-{
+pub enum MentionNodeKind {
     Room { mention: Mention },
     User { mention: Mention },
-    MatrixUrl { display_text: S, url: S },
     AtRoom,
+    Failed,
 }
 
 impl<S> MentionNode<S>
@@ -55,16 +53,27 @@ where
     pub fn new(url: S, display_text: S, attributes: Vec<(S, S)>) -> Self {
         let handle = DomHandle::new_unset();
 
-        // convert S to whatever is needed by doing S.to_string.as_str()
-        let thing = Mention::from_uri_with_display_text(
+        if let Some(mention) = Mention::from_uri_with_display_text(
             &url.to_string(),
             &display_text.to_string(),
-        );
-
-        Self {
-            kind: MentionNodeKind::MatrixUrl { display_text, url },
-            attributes,
-            handle,
+        ) {
+            let kind = match mention.kind() {
+                MentionKind::Room => MentionNodeKind::Room { mention },
+                MentionKind::User => MentionNodeKind::User { mention },
+            };
+            Self {
+                display_text,
+                kind,
+                attributes,
+                handle,
+            }
+        } else {
+            Self {
+                display_text: S::from("failed to parse"),
+                kind: MentionNodeKind::Failed,
+                attributes: vec![],
+                handle,
+            }
         }
     }
 
@@ -72,6 +81,7 @@ where
         let handle = DomHandle::new_unset();
 
         Self {
+            display_text: S::from("@room"),
             kind: MentionNodeKind::AtRoom,
             attributes,
             handle,
@@ -84,16 +94,10 @@ where
 
     pub fn display_text(&self) -> S {
         match self.kind() {
-            MentionNodeKind::MatrixUrl { display_text, .. } => {
-                display_text.clone()
-            }
-            MentionNodeKind::User { mention } => {
-                S::from(mention.display_text())
-            }
-            MentionNodeKind::Room { mention } => {
-                S::from(mention.display_text())
-            }
+            MentionNodeKind::User { mention } => self.display_text.clone(),
+            MentionNodeKind::Room { mention } => self.display_text.clone(),
             MentionNodeKind::AtRoom => S::from("@room"),
+            MentionNodeKind::Failed => S::from("failed parsing"),
         }
     }
 
@@ -111,7 +115,7 @@ where
         1
     }
 
-    pub fn kind(&self) -> &MentionNodeKind<S> {
+    pub fn kind(&self) -> &MentionNodeKind {
         &self.kind
     }
 }
@@ -144,26 +148,41 @@ impl<S: UnicodeString> MentionNode<S> {
         let cur_pos = formatter.len();
         match self.kind() {
             MentionNodeKind::User { mention } => {
-                // TODO do something
-            }
-            MentionNodeKind::Room { mention } => {
-                // TODO do something
-            }
-            MentionNodeKind::MatrixUrl { display_text, url } => {
                 // if formatting as a message, only include the href attribute
                 let attributes = if as_message {
-                    vec![("href".into(), url.clone())]
+                    vec![("href".into(), S::from(mention.uri()))]
                 } else {
                     let mut attributes_for_composer = self.attributes.clone();
-                    attributes_for_composer.push(("href".into(), url.clone()));
+                    attributes_for_composer
+                        .push(("href".into(), S::from(mention.uri())));
                     attributes_for_composer
                         .push(("contenteditable".into(), "false".into()));
                     attributes_for_composer
                 };
 
                 self.fmt_tag_open(tag, formatter, &Some(attributes));
-                formatter.push(display_text.clone());
+                formatter.push(self.display_text());
                 self.fmt_tag_close(tag, formatter);
+            }
+            MentionNodeKind::Room { mention } => {
+                // if formatting as a message, only include the href attribute
+                let attributes = if as_message {
+                    vec![("href".into(), S::from(mention.uri()))]
+                } else {
+                    let mut attributes_for_composer = self.attributes.clone();
+                    attributes_for_composer
+                        .push(("href".into(), S::from(mention.uri())));
+                    attributes_for_composer
+                        .push(("contenteditable".into(), "false".into()));
+                    attributes_for_composer
+                };
+
+                self.fmt_tag_open(tag, formatter, &Some(attributes));
+                formatter.push(self.display_text());
+                self.fmt_tag_close(tag, formatter);
+            }
+            MentionNodeKind::Failed => {
+                // TODO do something
             }
             MentionNodeKind::AtRoom => {
                 // if formatting as a message, simply use the display text (@room)
@@ -218,14 +237,16 @@ where
 
         match self.kind() {
             MentionNodeKind::User { mention } => {
-                // TODO do something
+                description.push(", ");
+                description.push(mention.uri().clone());
             }
             MentionNodeKind::Room { mention } => {
-                // TODO do something
-            }
-            MentionNodeKind::MatrixUrl { url, .. } => {
                 description.push(", ");
-                description.push(url.clone());
+                description.push(mention.uri().clone());
+            }
+            MentionNodeKind::Failed => {
+                description.push(", ");
+                description.push("failed parsing");
             }
             MentionNodeKind::AtRoom => {}
         }
@@ -253,15 +274,20 @@ where
 
         // There are two different functions to allow for fact one will use mxId later on
         match self.kind() {
-            User { .. } => {
+            User { mention } => {
+                // TODO do something
+                fmt_user_or_room_mention(self, mention, buffer)?;
+            }
+            Room { mention } => {
+                // TODO do something
+                fmt_user_or_room_mention(self, mention, buffer)?;
+            }
+            Failed => {
                 // TODO do something
             }
-            Room { .. } => {
-                // TODO do something
-            }
-            MatrixUrl { .. } => {
-                fmt_user_or_room_mention(self, buffer)?;
-            }
+            // MatrixUrl { .. } => {
+            //     fmt_user_or_room_mention(self, buffer)?;
+            // }
             AtRoom => {
                 fmt_at_room_mention(self, buffer)?;
             }
@@ -272,13 +298,14 @@ where
         #[inline(always)]
         fn fmt_user_or_room_mention<S>(
             this: &MentionNode<S>,
+            mention: &Mention,
             buffer: &mut S,
         ) -> Result<(), MarkdownError<S>>
         where
             S: UnicodeString,
         {
             // TODO make this use mxId, for now we use display_text
-            buffer.push(this.display_text());
+            buffer.push(mention.mx_id());
             Ok(())
         }
 
