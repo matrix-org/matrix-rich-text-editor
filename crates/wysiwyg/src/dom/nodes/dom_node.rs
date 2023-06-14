@@ -140,15 +140,24 @@ where
 
     /// Create a new mention node. This function will perform a single check of the display
     /// text and return an at-room mention if that text exactly matches `@room`
+    ///
+    /// Returns a result as creating a mention node can fail with an invalid uri
     pub fn new_mention(
         url: S,
         display_text: S,
         attributes: Vec<(S, S)>,
-    ) -> DomNode<S> {
+    ) -> Result<DomNode<S>, ()> {
+        // special case for at-room
         if display_text == "@room".into() {
-            DomNode::Mention(MentionNode::new_at_room(attributes))
+            return Ok(DomNode::Mention(MentionNode::new_at_room(attributes)));
+        }
+
+        if let Ok(mention_node) =
+            MentionNode::new(url, display_text, attributes)
+        {
+            Ok(DomNode::Mention(mention_node))
         } else {
-            DomNode::Mention(MentionNode::new(url, display_text, attributes))
+            Err(())
         }
     }
 

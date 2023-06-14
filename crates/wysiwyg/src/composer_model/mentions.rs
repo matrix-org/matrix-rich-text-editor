@@ -82,21 +82,23 @@ where
         let (start, end) = self.safe_selection();
         let range = self.state.dom.find_range(start, end);
 
-        let new_node = DomNode::new_mention(url, text, attributes);
+        if let Ok(new_node) = DomNode::new_mention(url, text, attributes) {
+            let new_cursor_index = start + new_node.text_len();
 
-        let new_cursor_index = start + new_node.text_len();
+            let handle = self.state.dom.insert_node_at_cursor(&range, new_node);
 
-        let handle = self.state.dom.insert_node_at_cursor(&range, new_node);
+            // manually move the cursor to the end of the mention
+            self.state.start = Location::from(new_cursor_index);
+            self.state.end = self.state.start;
 
-        // manually move the cursor to the end of the mention
-        self.state.start = Location::from(new_cursor_index);
-        self.state.end = self.state.start;
-
-        // add a trailing space in cases when we do not have a next sibling
-        if self.state.dom.is_last_in_parent(&handle) {
-            self.do_replace_text(" ".into())
+            // add a trailing space in cases when we do not have a next sibling
+            if self.state.dom.is_last_in_parent(&handle) {
+                self.do_replace_text(" ".into())
+            } else {
+                self.create_update_replace_all()
+            }
         } else {
-            self.create_update_replace_all()
+            ComposerUpdate::keep()
         }
     }
 

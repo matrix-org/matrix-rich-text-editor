@@ -316,12 +316,19 @@ mod sys {
         {
             let text = &text.content;
 
-            DomNode::new_mention(
+            // as creating a new mention might fail, we need to do something in the case where it fails
+
+            let try_create = DomNode::new_mention(
                 link.get_attr("href").unwrap_or("").into(),
                 text.as_str().into(),
                 // custom attributes are not required when cfg feature != "js"
                 vec![],
-            )
+            );
+
+            match try_create {
+                Ok(node) => node,
+                Err(_) => Self::new_link(link),
+            }
         }
 
         /// Create a list node

@@ -46,11 +46,16 @@ impl<S> MentionNode<S>
 where
     S: UnicodeString,
 {
-    /// Create a new MentionNode
+    /// Create a new MentionNode. This may fail if the uri can not be parsed, so
+    /// it will return `Result<MentionNode>`
     ///
     /// NOTE: Its handle() will be unset until you call set_handle() or
     /// append() it to another node.
-    pub fn new(url: S, display_text: S, attributes: Vec<(S, S)>) -> Self {
+    pub fn new(
+        url: S,
+        display_text: S,
+        attributes: Vec<(S, S)>,
+    ) -> Result<Self, ()> {
         let handle = DomHandle::new_unset();
 
         if let Some(mention) = Mention::from_uri_with_display_text(
@@ -61,22 +66,21 @@ where
                 MentionKind::Room => MentionNodeKind::Room { mention },
                 MentionKind::User => MentionNodeKind::User { mention },
             };
-            Self {
+            Ok(Self {
                 display_text,
                 kind,
                 attributes,
                 handle,
-            }
+            })
         } else {
-            Self {
-                display_text: S::from("failed to parse"),
-                kind: MentionNodeKind::Failed,
-                attributes: vec![],
-                handle,
-            }
+            Err(())
         }
     }
 
+    /// Create a new at-room MentionNode.
+    ///
+    /// NOTE: Its handle() will be unset until you call set_handle() or
+    /// append() it to another node.
     pub fn new_at_room(attributes: Vec<(S, S)>) -> Self {
         let handle = DomHandle::new_unset();
 
