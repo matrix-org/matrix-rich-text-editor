@@ -35,7 +35,8 @@ where
         suggestion: SuggestionPattern,
         attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
-        if self.should_not_insert_mention(&url) {
+        // we _do_ want to insert a room mention, regardss or url
+        if text != "@room".into() && self.should_not_insert_mention(&url) {
             return ComposerUpdate::keep();
         }
 
@@ -58,7 +59,8 @@ where
         text: S,
         attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
-        if self.should_not_insert_mention(&url) {
+        // we _do_ want to insert a room mention, regardss or url
+        if text != "@room".into() && self.should_not_insert_mention(&url) {
             return ComposerUpdate::keep();
         }
 
