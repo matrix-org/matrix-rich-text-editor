@@ -138,12 +138,18 @@ where
         DomNode::Container(ContainerNode::new_link(url, children, attributes))
     }
 
+    /// Create a new mention node. This function will perform a single check of the display
+    /// text and return an at-room mention if that text exactly matches `@room`
     pub fn new_mention(
         url: S,
         display_text: S,
         attributes: Vec<(S, S)>,
     ) -> DomNode<S> {
-        DomNode::Mention(MentionNode::new(url, display_text, attributes))
+        if display_text == "@room".into() {
+            DomNode::Mention(MentionNode::new_at_room(attributes))
+        } else {
+            DomNode::Mention(MentionNode::new(url, display_text, attributes))
+        }
     }
 
     pub fn new_at_room_mention(attributes: Vec<(S, S)>) -> DomNode<S> {
