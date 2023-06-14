@@ -270,25 +270,20 @@ where
         buffer: &mut S,
         _: &MarkdownOptions,
     ) -> Result<(), MarkdownError<S>> {
-        use MentionNodeKind::*;
-
         // There are two different functions to allow for fact one will use mxId later on
         match self.kind() {
-            User { mention } => {
+            MentionNodeKind::User { mention } => {
                 // TODO do something
                 fmt_user_or_room_mention(self, mention, buffer)?;
             }
-            Room { mention } => {
+            MentionNodeKind::Room { mention } => {
                 // TODO do something
                 fmt_user_or_room_mention(self, mention, buffer)?;
             }
-            Failed => {
+            MentionNodeKind::Failed => {
                 // TODO do something
             }
-            // MatrixUrl { .. } => {
-            //     fmt_user_or_room_mention(self, buffer)?;
-            // }
-            AtRoom => {
+            MentionNodeKind::AtRoom => {
                 fmt_at_room_mention(self, buffer)?;
             }
         }
@@ -304,8 +299,14 @@ where
         where
             S: UnicodeString,
         {
-            // TODO make this use mxId, for now we use display_text
-            buffer.push(mention.mx_id());
+            // use the mx_id for a room mention, but the display text (name) for a user
+            let text = match this.kind() {
+                MentionNodeKind::User { .. } => this.display_text(),
+                MentionNodeKind::Room { mention } => S::from(mention.mx_id()),
+                _ => S::from("catch all"),
+            };
+
+            buffer.push(S::from(text));
             Ok(())
         }
 

@@ -100,7 +100,7 @@ where
 
     /// Utility function for the insert_mention* methods. It returns false if:
     /// - the range includes any link or code type leaves
-    /// - the url is not a valid matrix uri
+    /// - the url is not a valid matrix uri OR the `@room` special case
     ///
     /// Related issue is here:
     /// https://github.com/matrix-org/matrix-rich-text-editor/issues/702
