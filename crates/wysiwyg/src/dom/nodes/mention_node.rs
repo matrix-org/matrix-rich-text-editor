@@ -267,52 +267,25 @@ where
         buffer: &mut S,
         _: &MarkdownOptions,
     ) -> Result<(), MarkdownError<S>> {
-        // There are two different functions to allow for fact one will use mxId later on
-        match self.kind() {
-            MentionNodeKind::User { mention } => {
-                // TODO do something
-                fmt_user_or_room_mention(self, mention, buffer)?;
-            }
-            MentionNodeKind::Room { mention } => {
-                // TODO do something
-                fmt_user_or_room_mention(self, mention, buffer)?;
-            }
-            MentionNodeKind::AtRoom => {
-                fmt_at_room_mention(self, buffer)?;
-            }
-        }
-
+        fmt_mention(self, buffer)?;
         return Ok(());
 
         #[inline(always)]
-        fn fmt_user_or_room_mention<S>(
+        fn fmt_mention<S>(
             this: &MentionNode<S>,
-            mention: &Mention,
             buffer: &mut S,
         ) -> Result<(), MarkdownError<S>>
         where
             S: UnicodeString,
         {
-            // use the mx_id for a room mention, but the display text (name) for a user
             let text = match this.kind() {
-                MentionNodeKind::User { mention } => S::from(mention.mx_id()),
-                MentionNodeKind::Room { mention } => S::from(mention.mx_id()),
-                _ => S::from("catch all"),
+                // for User/Room type, we use the mx_id in the md output
+                MentionNodeKind::User { mention }
+                | MentionNodeKind::Room { mention } => S::from(mention.mx_id()),
+                MentionNodeKind::AtRoom => this.display_text(),
             };
 
-            buffer.push(S::from(text));
-            Ok(())
-        }
-
-        #[inline(always)]
-        fn fmt_at_room_mention<S>(
-            this: &MentionNode<S>,
-            buffer: &mut S,
-        ) -> Result<(), MarkdownError<S>>
-        where
-            S: UnicodeString,
-        {
-            buffer.push(this.display_text());
+            buffer.push(text);
             Ok(())
         }
     }
