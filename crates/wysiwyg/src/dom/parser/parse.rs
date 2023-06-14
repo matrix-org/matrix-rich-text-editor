@@ -831,8 +831,8 @@ mod js {
                         self.current_path.push(DomNodeKind::Link);
 
                         let mut attributes = vec![];
-                        let valid_attributes =
-                            ["contenteditable", "data-mention-type", "style"];
+                        // we only need to pass in a style attribute from web to allow CSS variable insertion
+                        let valid_attributes = ["style"];
 
                         for attr in valid_attributes.into_iter() {
                             if node

@@ -19,13 +19,42 @@ use crate::{
     ComposerModel, MenuAction,
 };
 /**
- * INSERTING INVALID URL
+ * INSERTING WITH PARSING
  */
 #[test]
 fn inserting_with_invalid_mention_url_does_nothing() {
     let mut model = cm("|");
     model.insert_mention("invalid mention url".into(), "@Alice".into(), vec![]);
     assert_eq!(tx(&model), "|");
+}
+
+#[test]
+fn inserting_with_room_url_inserts_room_type() {
+    let mut model = cm("|");
+    model.insert_mention(
+        "https://matrix.to/#/#test:example.org".into(),
+        "test room".into(),
+        vec![],
+    );
+    assert_eq!(tx(&model), "<a data-mention-type=\"room\" href=\"https://matrix.to/#/#test:example.org\" contenteditable=\"false\">test room</a>&nbsp;|");
+}
+
+#[test]
+fn inserting_with_user_url_inserts_user_type() {
+    let mut model = cm("|");
+    model.insert_mention(
+        "https://matrix.to/#/@test:example.org".into(),
+        "test user".into(),
+        vec![],
+    );
+    assert_eq!(tx(&model), "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@test:example.org\" contenteditable=\"false\">test user</a>&nbsp;|");
+}
+
+#[test]
+fn inserting_with_at_room_inner_text_inserts_at_room_type() {
+    let mut model = cm("|");
+    model.insert_mention("could_be_anything".into(), "@room".into(), vec![]);
+    assert_eq!(tx(&model), "<a data-mention-type=\"at-room\" href=\"#\" contenteditable=\"false\">@room</a>&nbsp;|");
 }
 
 /**
@@ -63,7 +92,7 @@ fn mention_without_attributes() {
 
     assert_eq!(
         tx(&model),
-        "<a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|",
+        "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|",
     );
 }
 
@@ -78,11 +107,11 @@ fn mention_with_attributes() {
         "https://matrix.to/#/@alice:matrix.org".into(),
         "Alice".into(),
         suggestion,
-        vec![("data-mention-type".into(), "user".into())],
+        vec![("style".into(), "{some: CSS}".into())],
     );
     assert_eq!(
         tx(&model),
-        "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|",
+        "<a style=\"{some: CSS}\" data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|",
     );
 }
 
@@ -98,7 +127,7 @@ fn text_node_replace_all() {
     insert_mention_at_cursor(&mut model);
     assert_eq!(
         tx(&model),
-        "<a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|",
+        "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|",
     );
 }
 
@@ -108,7 +137,7 @@ fn text_node_replace_start() {
     insert_mention_at_cursor(&mut model);
     assert_eq!(
         tx(&model),
-        "<a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| says hello",
+        "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| says hello",
     );
 }
 
@@ -117,7 +146,7 @@ fn text_node_replace_middle() {
     let mut model = cm("Like | said");
     insert_mention_at_cursor(&mut model);
     assert_eq!(tx(&model),
-    "Like <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| said");
+    "Like <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| said");
 }
 
 #[test]
@@ -126,7 +155,7 @@ fn text_node_replace_end() {
     insert_mention_at_cursor(&mut model);
     assert_eq!(
         tx(&model),
-        "hello <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|",
+        "hello <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|",
     );
 }
 
@@ -139,7 +168,7 @@ fn linebreak_insert_before() {
     insert_mention_at_cursor(&mut model);
     assert_eq!(
         tx(&model),
-        "<a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|<br />",
+        "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|<br />",
     );
 }
 
@@ -149,7 +178,7 @@ fn linebreak_insert_after() {
     insert_mention_at_cursor(&mut model);
     assert_eq!(
         tx(&model),
-        "<br /><a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|",
+        "<br /><a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|",
     );
 }
 
@@ -162,7 +191,7 @@ fn mention_insert_before() {
     insert_mention_at_cursor(&mut model);
     assert_eq!(
         tx(&model),
-        "<a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|<a href=\"https://matrix.to/#/@test:example.org\" contenteditable=\"false\">test</a>",
+        "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|<a data-mention-type=\"user\" href=\"https://matrix.to/#/@test:example.org\" contenteditable=\"false\">test</a>",
     );
 }
 
@@ -173,7 +202,7 @@ fn mention_insert_after() {
     insert_mention_at_cursor(&mut model);
     assert_eq!(
         tx(&model),
-        "<a href=\"https://matrix.to/#/@test:example.org\" contenteditable=\"false\">test</a><a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|",
+        "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@test:example.org\" contenteditable=\"false\">test</a><a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|",
     );
 }
 
@@ -198,7 +227,7 @@ fn formatting_node_replace_all() {
     );
     assert_eq!(
         tx(&model),
-        "<a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|",
+        "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|",
     );
 }
 
@@ -208,7 +237,7 @@ fn formatting_node_replace_start() {
     insert_mention_at_cursor(&mut model);
     assert_eq!(
         tx(&model),
-        "<strong><a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| says hello</strong>",
+        "<strong><a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| says hello</strong>",
     );
 }
 
@@ -218,7 +247,7 @@ fn formatting_node_replace_middle() {
     insert_mention_at_cursor(&mut model);
     assert_eq!(
         tx(&model),
-        "<strong>Like <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| said</strong>",
+        "<strong>Like <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| said</strong>",
     );
 }
 
@@ -228,7 +257,7 @@ fn formatting_node_replace_end() {
     insert_mention_at_cursor(&mut model);
     assert_eq!(
         tx(&model),
-        "<strong>hello <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|</strong>",
+        "<strong>hello <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|</strong>",
     );
 }
 
@@ -249,7 +278,7 @@ fn link_insert_before() {
     insert_mention_at_cursor(&mut model);
     assert_eq!(
         tx(&model),
-        "<a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| <a href=\"https://www.somelink.com\">regular link</a>",
+        "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| <a href=\"https://www.somelink.com\">regular link</a>",
     );
 }
 
@@ -270,7 +299,7 @@ fn link_insert_after() {
     insert_mention_at_cursor(&mut model);
     assert_eq!(
         tx(&model),
-        "<a href=\"https://www.somelink.com\">regular link</a> <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|",
+        "<a href=\"https://www.somelink.com\">regular link</a> <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|",
     );
 }
 
@@ -283,7 +312,7 @@ fn list_item_insert_into_empty() {
     insert_mention_at_cursor(&mut model);
     assert_eq!(
         tx(&model),
-        "<ol><li><a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|</li></ol>",
+        "<ol><li><a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|</li></ol>",
     );
 }
 
@@ -293,7 +322,7 @@ fn list_item_replace_start() {
     insert_mention_at_cursor(&mut model);
     assert_eq!(
         tx(&model),
-        "<ol><li><a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| says hello</li></ol>",
+        "<ol><li><a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| says hello</li></ol>",
     );
 }
 
@@ -302,7 +331,7 @@ fn list_item_replace_middle() {
     let mut model = cm("<ol><li>Like | said</li></ol>");
     insert_mention_at_cursor(&mut model);
     assert_eq!(tx(&model),
-    "<ol><li>Like <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| said</li></ol>");
+    "<ol><li>Like <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| said</li></ol>");
 }
 
 #[test]
@@ -311,7 +340,7 @@ fn list_item_replace_end() {
     insert_mention_at_cursor(&mut model);
     assert_eq!(
         tx(&model),
-        "<ol><li>hello <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|</li></ol>",
+        "<ol><li>hello <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|</li></ol>",
     );
 }
 
@@ -334,7 +363,7 @@ fn quote_insert_into_empty() {
     insert_mention_at_cursor(&mut model);
     assert_eq!(
         tx(&model),
-        "<blockquote><p><a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|</p></blockquote>",
+        "<blockquote><p><a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|</p></blockquote>",
     );
 }
 
@@ -344,7 +373,7 @@ fn quote_replace_start() {
     insert_mention_at_cursor(&mut model);
     assert_eq!(
         tx(&model),
-        "<blockquote><p><a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| says hello</p></blockquote>",
+        "<blockquote><p><a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| says hello</p></blockquote>",
     );
 }
 
@@ -353,7 +382,7 @@ fn quote_replace_middle() {
     let mut model = cm("<blockquote><p>Like | said</p></blockquote>");
     insert_mention_at_cursor(&mut model);
     assert_eq!(tx(&model),
-    "<blockquote><p>Like <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| said</p></blockquote>");
+    "<blockquote><p>Like <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| said</p></blockquote>");
 }
 
 #[test]
@@ -362,7 +391,7 @@ fn quote_replace_end() {
     insert_mention_at_cursor(&mut model);
     assert_eq!(
         tx(&model),
-        "<blockquote><p>hello <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|</p></blockquote>",
+        "<blockquote><p>hello <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|</p></blockquote>",
     );
 }
 
@@ -375,7 +404,7 @@ fn paragraph_insert_into_empty() {
     insert_mention_at_cursor(&mut model);
     assert_eq!(
         tx(&model),
-        "<p><a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|</p>",
+        "<p><a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|</p>",
     );
 }
 
@@ -385,7 +414,7 @@ fn paragraph_insert_into_empty_second() {
     insert_mention_at_cursor(&mut model);
     assert_eq!(
         tx(&model),
-        "<p>hello</p><p><a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|</p>",
+        "<p>hello</p><p><a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|</p>",
     );
 }
 
@@ -395,7 +424,7 @@ fn paragraph_replace_start() {
     insert_mention_at_cursor(&mut model);
     assert_eq!(
         tx(&model),
-        "<p><a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| says hello</p>",
+        "<p><a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| says hello</p>",
     );
 }
 
@@ -404,7 +433,7 @@ fn paragraph_replace_middle() {
     let mut model = cm("<p>Like | said</p>");
     insert_mention_at_cursor(&mut model);
     assert_eq!(tx(&model),
-    "<p>Like <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| said</p>");
+    "<p>Like <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>| said</p>");
 }
 
 #[test]
@@ -413,7 +442,7 @@ fn paragraph_replace_end() {
     insert_mention_at_cursor(&mut model);
     assert_eq!(
         tx(&model),
-        "<p>hello <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|</p>",
+        "<p>hello <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|</p>",
     );
 }
 
@@ -427,7 +456,7 @@ fn selection_plain_text_replace() {
     insert_mention_at_selection(&mut model);
     assert_eq!(
         tx(&model),
-        "<a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|"
+        "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|"
     );
 }
 
@@ -437,7 +466,7 @@ fn selection_plain_text_start() {
     insert_mention_at_selection(&mut model);
     assert_eq!(
         tx(&model),
-        "<a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|_me"
+        "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|_me"
     );
 }
 
@@ -447,7 +476,7 @@ fn selection_plain_text_middle() {
     insert_mention_at_selection(&mut model);
     assert_eq!(
         tx(&model),
-        "replac<a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|_me"
+        "replac<a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|_me"
     );
 }
 
@@ -457,7 +486,7 @@ fn selection_formatting_inside() {
     insert_mention_at_selection(&mut model);
     assert_eq!(
         tx(&model),
-       "<strong>hello <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|!</strong>"
+       "<strong>hello <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|!</strong>"
     );
 }
 
@@ -465,7 +494,7 @@ fn selection_formatting_inside() {
 fn selection_formatting_spanning() {
     let mut model = cm("<strong>hello {replace</strong><em>_me}|!</em>");
     insert_mention_at_selection(&mut model);
-    assert_eq!(tx(&model), "<strong>hello <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a></strong><em>&nbsp;|!</em>");
+    assert_eq!(tx(&model), "<strong>hello <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a></strong><em>&nbsp;|!</em>");
 }
 
 #[test]
@@ -513,7 +542,7 @@ fn selection_list_item_spanning() {
     insert_mention_at_selection(&mut model);
     assert_eq!(
         tx(&model),
-       "<ol><li>hello <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|!</li></ol>"
+       "<ol><li>hello <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|!</li></ol>"
     );
 }
 
@@ -531,7 +560,7 @@ fn selection_quote() {
     insert_mention_at_selection(&mut model);
     assert_eq!(
         tx(&model),
-        "<blockquote><p>hello <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|!</p></blockquote>"
+        "<blockquote><p>hello <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|!</p></blockquote>"
     );
 }
 
@@ -541,7 +570,7 @@ fn selection_paragraph_middle() {
     insert_mention_at_selection(&mut model);
     assert_eq!(
         tx(&model),
-        "<p>hello <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|!</p>"
+        "<p>hello <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|!</p>"
     );
 }
 
@@ -551,7 +580,7 @@ fn selection_paragraph_spanning() {
     insert_mention_at_selection(&mut model);
     assert_eq!(
         tx(&model),
-        "<p>hello <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|!</p>"
+        "<p>hello <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|!</p>"
     );
 }
 
