@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-use matrix_mentions::Mention;
 
 use crate::dom::dom_creation_error::HtmlParseError;
 use crate::dom::nodes::dom_node::DomNodeKind::CodeBlock;
@@ -36,6 +35,8 @@ where
 
 #[cfg(feature = "sys")]
 mod sys {
+    use matrix_mentions::Mention;
+
     use super::super::padom_node::PaDomNode;
     use super::super::PaNodeContainer;
     use super::super::{PaDom, PaDomCreationError, PaDomCreator};
