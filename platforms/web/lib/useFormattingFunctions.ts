@@ -18,7 +18,11 @@ import { RefObject, useMemo } from 'react';
 
 import { BlockType, FormattingFunctions } from './types';
 import { sendWysiwygInputEvent } from './useListeners';
-import { Attributes, LinkEvent, SuggestionEvent } from './useListeners/types';
+import {
+    AllowedMentionAttributes,
+    LinkEvent,
+    SuggestionEvent,
+} from './useListeners/types';
 import { ComposerModel } from '../generated/wysiwyg';
 
 export function useFormattingFunctions(
@@ -63,8 +67,11 @@ export function useFormattingFunctions(
             quote: () => sendEvent('insertQuote'),
             indent: () => sendEvent('formatIndent'),
             unindent: () => sendEvent('formatOutdent'),
-            mention: (url: string, text: string, attributes: Attributes) =>
-                sendEvent('insertSuggestion', { url, text, attributes }),
+            mention: (
+                url: string,
+                text: string,
+                attributes: AllowedMentionAttributes,
+            ) => sendEvent('insertSuggestion', { url, text, attributes }),
             command: (text: string) => sendEvent('insertCommand', text),
         };
     }, [editorRef, composerModel]);
