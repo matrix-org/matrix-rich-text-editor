@@ -28,6 +28,8 @@ pub struct MentionNode<S>
 where
     S: UnicodeString,
 {
+    // `display_text` refers to that passed by the client which may, in some cases, be different
+    // from the ruma derived `Mention.display_text`
     display_text: S,
     kind: MentionNodeKind,
     attributes: Vec<(S, S)>,
@@ -39,7 +41,6 @@ pub enum MentionNodeKind {
     Room { mention: Mention },
     User { mention: Mention },
     AtRoom,
-    Failed,
 }
 
 impl<S> MentionNode<S>
@@ -101,7 +102,6 @@ where
             MentionNodeKind::User { mention } => self.display_text.clone(),
             MentionNodeKind::Room { mention } => self.display_text.clone(),
             MentionNodeKind::AtRoom => S::from("@room"),
-            MentionNodeKind::Failed => S::from("failed parsing"),
         }
     }
 
@@ -185,9 +185,6 @@ impl<S: UnicodeString> MentionNode<S> {
                 formatter.push(self.display_text());
                 self.fmt_tag_close(tag, formatter);
             }
-            MentionNodeKind::Failed => {
-                // TODO do something
-            }
             MentionNodeKind::AtRoom => {
                 // if formatting as a message, simply use the display text (@room)
                 if as_message {
@@ -248,10 +245,6 @@ where
                 description.push(", ");
                 description.push(mention.uri().clone());
             }
-            MentionNodeKind::Failed => {
-                description.push(", ");
-                description.push("failed parsing");
-            }
             MentionNodeKind::AtRoom => {}
         }
 
@@ -283,9 +276,6 @@ where
             MentionNodeKind::Room { mention } => {
                 // TODO do something
                 fmt_user_or_room_mention(self, mention, buffer)?;
-            }
-            MentionNodeKind::Failed => {
-                // TODO do something
             }
             MentionNodeKind::AtRoom => {
                 fmt_at_room_mention(self, buffer)?;

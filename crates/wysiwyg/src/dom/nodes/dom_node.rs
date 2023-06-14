@@ -149,10 +149,8 @@ where
     ) -> Result<DomNode<S>, ()> {
         // special case for at-room
         if display_text == "@room".into() {
-            return Ok(DomNode::Mention(MentionNode::new_at_room(attributes)));
-        }
-
-        if let Ok(mention_node) =
+            Ok(DomNode::Mention(MentionNode::new_at_room(attributes)))
+        } else if let Ok(mention_node) =
             MentionNode::new(url, display_text, attributes)
         {
             Ok(DomNode::Mention(mention_node))
