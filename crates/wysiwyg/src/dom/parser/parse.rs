@@ -851,7 +851,8 @@ mod js {
                             .get_attribute("href")
                             .unwrap_or_default();
 
-                        let is_mention = Mention::is_valid_uri(url.to_string());
+                        let is_mention =
+                            Mention::is_valid_uri(&url.to_string());
                         let text = node.child_nodes().get(0);
                         let has_text = match text.clone() {
                             Some(node) => {
