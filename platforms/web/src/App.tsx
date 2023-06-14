@@ -200,9 +200,12 @@ function App() {
                                         wysiwyg.mention(
                                             'https://matrix.to/#/@alice_user:element.io',
                                             'Alice',
-                                            {
-                                                style: 'background-color:#d5f9d5',
-                                            },
+                                            new Map([
+                                                [
+                                                    'style',
+                                                    'background-color:#d5f9d5',
+                                                ],
+                                            ]),
                                         )
                                     }
                                 >
@@ -211,9 +214,16 @@ function App() {
                                 <button
                                     type="button"
                                     onClick={(_e) =>
-                                        wysiwyg.mention('#', '@room', {
-                                            style: 'background-color:#d5f9d5',
-                                        })
+                                        wysiwyg.mention(
+                                            '#',
+                                            '@room',
+                                            new Map([
+                                                [
+                                                    'style',
+                                                    'background-color:#d5f9d5',
+                                                ],
+                                            ]),
+                                        )
                                     }
                                 >
                                     Add at-room mention
@@ -227,9 +237,12 @@ function App() {
                                     wysiwyg.mention(
                                         'https://matrix.to/#/#my_room:element.io',
                                         'My room',
-                                        {
-                                            'data-mention-type': 'room',
-                                        },
+                                        new Map([
+                                            [
+                                                'style',
+                                                'background-color:#d5f9d5',
+                                            ],
+                                        ]),
                                     )
                                 }
                             >

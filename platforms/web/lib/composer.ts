@@ -74,7 +74,6 @@ export function processInput(
         case 'insertSuggestion': {
             if (suggestion && isSuggestionEvent(event)) {
                 const { text, url, attributes } = event.data;
-                const attributesMap = new Map(Object.entries(attributes));
 
                 if (text === '@room' && url === '#') {
                     return action(
@@ -91,7 +90,7 @@ export function processInput(
                         url,
                         text,
                         suggestion,
-                        attributesMap,
+                        attributes,
                     ),
                     'insert_mention_at_suggestion',
                 );

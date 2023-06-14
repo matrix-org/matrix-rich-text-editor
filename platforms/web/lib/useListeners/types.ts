@@ -26,9 +26,7 @@ export type LinkEvent = Omit<InputEvent, 'data'> & {
     data: { url: string; text?: string };
 };
 
-export type AllowedMentionAttributes = {
-    style?: string;
-};
+export type AllowedMentionAttributes = Map<'style', string>;
 
 export type SuggestionEvent = Omit<InputEvent, 'data'> & {
     inputType: 'insertSuggestion';
