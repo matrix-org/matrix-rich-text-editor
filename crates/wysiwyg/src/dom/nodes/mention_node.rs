@@ -89,7 +89,7 @@ where
         let handle = DomHandle::new_unset();
 
         Self {
-            display_text: S::from("@room"),
+            display_text: MentionNode::get_at_room_display_text(),
             kind: MentionNodeKind::AtRoom,
             attributes,
             handle,
@@ -105,7 +105,7 @@ where
             MentionNodeKind::User { .. } | MentionNodeKind::Room { .. } => {
                 self.display_text.clone()
             }
-            MentionNodeKind::AtRoom => S::from("@room"),
+            MentionNodeKind::AtRoom => MentionNode::get_at_room_display_text(),
         }
     }
 
@@ -125,6 +125,16 @@ where
 
     pub fn kind(&self) -> &MentionNodeKind {
         &self.kind
+    }
+
+    /// Util function to check if the display text is that of an at-room mention
+    pub fn is_at_room_display_text(text: &S) -> bool {
+        text == &S::from("@room")
+    }
+
+    /// Util function to get the display text for an at-room mention
+    pub fn get_at_room_display_text() -> S {
+        S::from("@room")
     }
 }
 

@@ -122,10 +122,20 @@ where
 
         // when we have an at-room mention, it doesn't matter about the url as we do not use
         // it, rendering the mention as raw text in the html output
-        if text == &S::from("@room") {
+        if Self::is_at_room_display_text(text) {
             range_contains_link_or_code_leaves
         } else {
             invalid_uri || range_contains_link_or_code_leaves
         }
+    }
+
+    /// Util function to check if the display text is that of an at-room mention
+    pub fn is_at_room_display_text(text: &S) -> bool {
+        text == &S::from("@room")
+    }
+
+    /// Util function to get the display text for an at-room mention
+    pub fn get_at_room_display_text() -> S {
+        S::from("@room")
     }
 }
