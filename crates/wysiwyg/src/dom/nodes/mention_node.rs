@@ -156,12 +156,10 @@ impl<S: UnicodeString> MentionNode<S> {
                 let attributes = if as_message {
                     vec![("href".into(), S::from(mention.uri()))]
                 } else {
-                    let mut attributes_for_composer = self.attributes.clone();
-                    attributes_for_composer
-                        .push(("href".into(), S::from(mention.uri())));
-                    attributes_for_composer
-                        .push(("contenteditable".into(), "false".into()));
-                    attributes_for_composer
+                    let mut attrs = self.attributes.clone();
+                    attrs.push(("href".into(), S::from(mention.uri())));
+                    attrs.push(("contenteditable".into(), "false".into()));
+                    attrs
                 };
 
                 self.fmt_tag_open(tag, formatter, &Some(attributes));
@@ -169,20 +167,22 @@ impl<S: UnicodeString> MentionNode<S> {
                 self.fmt_tag_close(tag, formatter);
             }
             MentionNodeKind::Room { mention } => {
-                // if formatting as a message, only include the href attribute
-                let attributes = if as_message {
-                    vec![("href".into(), S::from(mention.uri()))]
+                // if formatting as a message, only include the href attribute and also use the mx_id as
+                // the display text
+                let (attributes, display_text) = if as_message {
+                    (
+                        vec![("href".into(), S::from(mention.uri()))],
+                        S::from(mention.mx_id()),
+                    )
                 } else {
-                    let mut attributes_for_composer = self.attributes.clone();
-                    attributes_for_composer
-                        .push(("href".into(), S::from(mention.uri())));
-                    attributes_for_composer
-                        .push(("contenteditable".into(), "false".into()));
-                    attributes_for_composer
+                    let mut attrs = self.attributes.clone();
+                    attrs.push(("href".into(), S::from(mention.uri())));
+                    attrs.push(("contenteditable".into(), "false".into()));
+                    (attrs, self.display_text())
                 };
 
                 self.fmt_tag_open(tag, formatter, &Some(attributes));
-                formatter.push(self.display_text());
+                formatter.push(display_text);
                 self.fmt_tag_close(tag, formatter);
             }
             MentionNodeKind::AtRoom => {

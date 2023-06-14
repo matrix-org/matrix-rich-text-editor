@@ -53,7 +53,7 @@ fn only_outputs_href_attribute_on_user_mention() {
 }
 
 #[test]
-fn only_outputs_href_attribute_on_room_mention() {
+fn only_outputs_href_attribute_on_room_mention_and_uses_mx_id() {
     let mut model = cm("|");
     model.insert_mention(
         "https://matrix.to/#/#alice:matrix.org".into(),
@@ -68,7 +68,7 @@ fn only_outputs_href_attribute_on_room_mention() {
     let message_output = model.get_content_as_message_html();
     assert_eq!(
         message_output,
-        "<a href=\"https://matrix.to/#/#alice:matrix.org\">inner text</a>\u{a0}"
+        "<a href=\"https://matrix.to/#/#alice:matrix.org\">#alice:matrix.org</a>\u{a0}"
     );
 }
 
