@@ -35,8 +35,7 @@ where
         suggestion: SuggestionPattern,
         attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
-        // we _do_ want to insert a room mention, regardss or url
-        if text != "@room".into() && self.should_not_insert_mention(&url) {
+        if self.should_not_insert_mention(&url, &text) {
             return ComposerUpdate::keep();
         }
 
@@ -59,8 +58,7 @@ where
         text: S,
         attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
-        // we _do_ want to insert a room mention, regardss or url
-        if text != "@room".into() && self.should_not_insert_mention(&url) {
+        if self.should_not_insert_mention(&url, &text) {
             return ComposerUpdate::keep();
         }
 
@@ -71,8 +69,9 @@ where
         self.do_insert_mention(url, text, attributes)
     }
 
-    /// Creates a new mention node then inserts the node at the cursor position. It adds a trailing space when the inserted
-    /// mention is the last node in it's parent.
+    /// Creates a new mention node then inserts the node at the cursor position. If creation fails due to
+    /// an invalid uri, it will return `ComposerUpdate::keep()`.
+    /// It adds a trailing space when the inserted mention is the last node in it's parent.
     fn do_insert_mention(
         &mut self,
         url: S,
@@ -110,7 +109,7 @@ where
     /// https://github.com/matrix-org/matrix-rich-text-editor/issues/702
     /// We do not allow mentions to be inserted into links, the planned behaviour is
     /// detailed in the above issue.
-    fn should_not_insert_mention(&self, url: &S) -> bool {
+    fn should_not_insert_mention(&self, url: &S, text: &S) -> bool {
         let (start, end) = self.safe_selection();
         let range = self.state.dom.find_range(start, end);
 
@@ -121,6 +120,12 @@ where
                 l.kind.is_link_kind() || l.kind.is_code_kind()
             });
 
-        invalid_uri || range_contains_link_or_code_leaves
+        // when we have an at-room mention, it doesn't matter about the url as we do not use
+        // it, rendering the mention as raw text in the html output
+        if text == &S::from("@room") {
+            range_contains_link_or_code_leaves
+        } else {
+            invalid_uri || range_contains_link_or_code_leaves
+        }
     }
 }
