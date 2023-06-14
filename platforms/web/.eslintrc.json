@@ -27,7 +27,7 @@
                 "leadingUnderscore": "allow"
             }
         ],
-        "max-len": ["error", { "code": 80, "ignoreUrls": true }],
+        "max-len": ["error", { "code": 120, "ignoreUrls": true }],
         "matrix-org/require-copyright-header": "error",
         "prettier/prettier": "error"
     }
