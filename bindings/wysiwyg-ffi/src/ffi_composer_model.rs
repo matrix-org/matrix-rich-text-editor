@@ -282,7 +282,7 @@ impl ComposerModel {
         self: &Arc<Self>,
         url: String,
         text: String,
-        attributes: Vec<Attribute>, // TODO remove attributes
+        _attributes: Vec<Attribute>, // TODO remove attributes
     ) -> Arc<ComposerUpdate> {
         let url = Utf16String::from_str(&url);
         let text = Utf16String::from_str(&text);
@@ -324,7 +324,7 @@ impl ComposerModel {
         url: String,
         text: String,
         suggestion: SuggestionPattern,
-        attributes: Vec<Attribute>, // TODO remove attributes
+        _attributes: Vec<Attribute>, // TODO remove attributes
     ) -> Arc<ComposerUpdate> {
         let url = Utf16String::from_str(&url);
         let text = Utf16String::from_str(&text);
