@@ -201,7 +201,7 @@ function App() {
                                             'https://matrix.to/#/@alice_user:element.io',
                                             'Alice',
                                             {
-                                                'data-mention-type': 'user',
+                                                style: 'background-color:#d5f9d5',
                                             },
                                         )
                                     }
@@ -212,7 +212,7 @@ function App() {
                                     type="button"
                                     onClick={(_e) =>
                                         wysiwyg.mention('#', '@room', {
-                                            'data-mention-type': 'at-room',
+                                            style: 'background-color:#d5f9d5',
                                         })
                                     }
                                 >
