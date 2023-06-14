@@ -14,4 +14,4 @@
 
 mod mention;
 
-pub use crate::mention::Mention;
+pub use crate::mention::{Mention, MentionKind};
