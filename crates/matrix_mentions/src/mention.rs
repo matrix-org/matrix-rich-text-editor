@@ -60,7 +60,7 @@ impl Mention {
     }
 
     /// Determine if a uri is a valid matrix uri
-    pub fn is_matrix_uri(uri: &str) -> bool {
+    pub fn is_valid_uri(uri: &str) -> bool {
         parse_matrix_id(uri).is_some()
     }
 

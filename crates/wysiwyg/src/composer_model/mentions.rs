@@ -113,7 +113,7 @@ where
         let (start, end) = self.safe_selection();
         let range = self.state.dom.find_range(start, end);
 
-        let invalid_uri = !Mention::is_matrix_uri(url.to_string().as_str());
+        let invalid_uri = !Mention::is_valid_uri(url.to_string().as_str());
 
         let range_contains_link_or_code_leaves =
             range.locations.iter().any(|l: &DomLocation| {
