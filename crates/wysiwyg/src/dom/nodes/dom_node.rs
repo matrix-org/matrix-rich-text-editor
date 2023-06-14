@@ -26,6 +26,7 @@ use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{self, UnicodeString};
 use crate::{InlineFormatType, ListType};
 
+use super::mention_node::UriParseError;
 use super::MentionNode;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -146,7 +147,7 @@ where
         url: S,
         display_text: S,
         attributes: Vec<(S, S)>,
-    ) -> Result<DomNode<S>, ()> {
+    ) -> Result<DomNode<S>, UriParseError> {
         // special case for at-room
         if display_text == "@room".into() {
             Ok(DomNode::Mention(MentionNode::new_at_room(attributes)))
@@ -155,7 +156,7 @@ where
         {
             Ok(DomNode::Mention(mention_node))
         } else {
-            Err(())
+            Err(UriParseError)
         }
     }
 

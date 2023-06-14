@@ -23,6 +23,9 @@ use crate::dom::to_tree::ToTree;
 use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use crate::dom::UnicodeString;
 
+#[derive(Debug)]
+pub struct UriParseError;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MentionNode<S>
 where
@@ -56,7 +59,7 @@ where
         url: S,
         display_text: S,
         attributes: Vec<(S, S)>,
-    ) -> Result<Self, ()> {
+    ) -> Result<Self, UriParseError> {
         let handle = DomHandle::new_unset();
 
         if let Some(mention) = Mention::from_uri_with_display_text(
@@ -74,7 +77,7 @@ where
                 handle,
             })
         } else {
-            Err(())
+            Err(UriParseError)
         }
     }
 
@@ -99,8 +102,9 @@ where
 
     pub fn display_text(&self) -> S {
         match self.kind() {
-            MentionNodeKind::User { mention }
-            | MentionNodeKind::Room { mention } => self.display_text.clone(),
+            MentionNodeKind::User { .. } | MentionNodeKind::Room { .. } => {
+                self.display_text.clone()
+            }
             MentionNodeKind::AtRoom => S::from("@room"),
         }
     }
@@ -239,11 +243,11 @@ where
         match self.kind() {
             MentionNodeKind::User { mention } => {
                 description.push(", ");
-                description.push(mention.uri().clone());
+                description.push(S::from(mention.uri()));
             }
             MentionNodeKind::Room { mention } => {
                 description.push(", ");
-                description.push(mention.uri().clone());
+                description.push(S::from(mention.uri()));
             }
             MentionNodeKind::AtRoom => {}
         }
