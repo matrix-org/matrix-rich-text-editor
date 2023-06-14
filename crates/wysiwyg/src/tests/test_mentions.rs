@@ -18,6 +18,15 @@ use crate::{
     tests::testutils_composer_model::{cm, tx},
     ComposerModel, MenuAction,
 };
+/**
+ * INSERTING INVALID URL
+ */
+#[test]
+fn inserting_with_invalid_mention_url_does_nothing() {
+    let mut model = cm("|");
+    model.insert_mention("invalid mention url".into(), "@Alice".into(), vec![]);
+    assert_eq!(tx(&model), "|");
+}
 
 /**
  * ATTRIBUTE TESTS
