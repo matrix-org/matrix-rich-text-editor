@@ -295,7 +295,7 @@ where
         {
             // use the mx_id for a room mention, but the display text (name) for a user
             let text = match this.kind() {
-                MentionNodeKind::User { .. } => this.display_text(),
+                MentionNodeKind::User { mention } => S::from(mention.mx_id()),
                 MentionNodeKind::Room { mention } => S::from(mention.mx_id()),
                 _ => S::from("catch all"),
             };
