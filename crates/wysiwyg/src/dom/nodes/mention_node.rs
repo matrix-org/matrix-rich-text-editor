@@ -99,8 +99,8 @@ where
 
     pub fn display_text(&self) -> S {
         match self.kind() {
-            MentionNodeKind::User { mention } => self.display_text.clone(),
-            MentionNodeKind::Room { mention } => self.display_text.clone(),
+            MentionNodeKind::User { mention }
+            | MentionNodeKind::Room { mention } => self.display_text.clone(),
             MentionNodeKind::AtRoom => S::from("@room"),
         }
     }
