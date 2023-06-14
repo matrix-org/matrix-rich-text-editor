@@ -59,6 +59,11 @@ impl Mention {
         &self.kind
     }
 
+    /// Determine if a uri is a valid matrix uri
+    pub fn is_matrix_uri(uri: &str) -> bool {
+        parse_matrix_id(uri).is_some()
+    }
+
     /// Create a mention from a URI
     ///
     /// If the URI is a valid room or user, it creates a mention using the

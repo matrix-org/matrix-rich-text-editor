@@ -55,6 +55,12 @@ where
     pub fn new(url: S, display_text: S, attributes: Vec<(S, S)>) -> Self {
         let handle = DomHandle::new_unset();
 
+        // convert S to whatever is needed by doing S.to_string.as_str()
+        let thing = Mention::from_uri_with_display_text(
+            &url.to_string(),
+            &display_text.to_string(),
+        );
+
         Self {
             kind: MentionNodeKind::MatrixUrl { display_text, url },
             attributes,

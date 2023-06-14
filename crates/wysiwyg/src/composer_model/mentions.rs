@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+use matrix_mentions::Mention;
 
 use crate::{
     dom::DomLocation, ComposerModel, ComposerUpdate, DomNode, Location,
@@ -22,6 +23,7 @@ where
     S: UnicodeString,
 {
     /// Remove the suggestion text and then insert a mention into the composer, using the following rules
+    /// - Do not insert a mention if the uri is invalid
     /// - Do not insert a mention if the range includes link or code leaves
     /// - If the composer contains a selection, remove the contents of the selection
     /// prior to inserting a mention at the cursor.
@@ -33,7 +35,7 @@ where
         suggestion: SuggestionPattern,
         attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
-        if self.should_not_insert_mention() {
+        if self.should_not_insert_mention(&url) {
             return ComposerUpdate::keep();
         }
 
@@ -45,6 +47,7 @@ where
     }
 
     /// Inserts a mention into the composer. It uses the following rules:
+    /// - Do not insert a mention if the uri is invalid
     /// - Do not insert a mention if the range includes link or code leaves
     /// - If the composer contains a selection, remove the contents of the selection
     /// prior to inserting a mention at the cursor.
@@ -55,7 +58,7 @@ where
         text: S,
         attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
-        if self.should_not_insert_mention() {
+        if self.should_not_insert_mention(&url) {
             return ComposerUpdate::keep();
         }
 
@@ -103,19 +106,25 @@ where
         }
     }
 
-    /// Utility function for the insert_mention* methods. It returns false if the range
-    /// includes any link or code type leaves.
+    /// Utility function for the insert_mention* methods. It returns false if:
+    /// - the range includes any link or code type leaves
+    /// - the url is not a valid matrix uri
     ///
     /// Related issue is here:
     /// https://github.com/matrix-org/matrix-rich-text-editor/issues/702
     /// We do not allow mentions to be inserted into links, the planned behaviour is
     /// detailed in the above issue.
-    fn should_not_insert_mention(&self) -> bool {
+    fn should_not_insert_mention(&self, url: &S) -> bool {
         let (start, end) = self.safe_selection();
         let range = self.state.dom.find_range(start, end);
 
-        range.locations.iter().any(|l: &DomLocation| {
-            l.kind.is_link_kind() || l.kind.is_code_kind()
-        })
+        let invalid_uri = !Mention::is_matrix_uri(url.to_string().as_str());
+
+        let range_contains_link_or_code_leaves =
+            range.locations.iter().any(|l: &DomLocation| {
+                l.kind.is_link_kind() || l.kind.is_code_kind()
+            });
+
+        invalid_uri || range_contains_link_or_code_leaves
     }
 }
