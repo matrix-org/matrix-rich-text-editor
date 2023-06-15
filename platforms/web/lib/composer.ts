@@ -78,7 +78,7 @@ export function processInput(
 
                 if (text === '@room' && url === '#') {
                     return action(
-                        composerModel.insert_at_room_at_suggestion(
+                        composerModel.insert_at_room_mention_at_suggestion(
                             suggestion,
                             attributesMap,
                         ),
