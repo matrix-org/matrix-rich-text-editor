@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-use matrix_mentions::{Mention, MentionKind, AT_ROOM};
+use matrix_mentions::{get_at_room_display_text, Mention, MentionKind};
 
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
@@ -89,7 +89,7 @@ where
         let handle = DomHandle::new_unset();
 
         Self {
-            display_text: MentionNode::get_at_room_display_text(),
+            display_text: S::from(get_at_room_display_text()),
             kind: MentionNodeKind::AtRoom,
             attributes,
             handle,
@@ -105,7 +105,7 @@ where
             MentionNodeKind::User { .. } | MentionNodeKind::Room { .. } => {
                 self.display_text.clone()
             }
-            MentionNodeKind::AtRoom => MentionNode::get_at_room_display_text(),
+            MentionNodeKind::AtRoom => S::from(get_at_room_display_text()),
         }
     }
 
@@ -127,15 +127,15 @@ where
         &self.kind
     }
 
-    /// Util function to check if the display text is that of an at-room mention
-    pub fn is_at_room_display_text(text: &S) -> bool {
-        text == &S::from(AT_ROOM)
-    }
+    // /// Util function to check if the display text is that of an at-room mention
+    // pub fn is_at_room_display_text(text: &S) -> bool {
+    //     text == &S::from(AT_ROOM)
+    // }
 
-    /// Util function to get the display text for an at-room mention
-    pub fn get_at_room_display_text() -> S {
-        S::from(AT_ROOM)
-    }
+    // /// Util function to get the display text for an at-room mention
+    // pub fn get_at_room_display_text() -> S {
+    //     S::from(AT_ROOM)
+    // }
 }
 
 impl<S> ToHtml<S> for MentionNode<S>

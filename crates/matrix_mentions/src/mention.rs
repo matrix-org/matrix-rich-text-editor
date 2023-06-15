@@ -17,6 +17,16 @@ use ruma_common::{matrix_uri::MatrixId, IdParseError, MatrixToUri, MatrixUri};
 const MATRIX_TO_BASE_URL: &str = "https://matrix.to/#/";
 pub const AT_ROOM: &str = "@room";
 
+/// Util function to check if the display text is that of an at-room mention
+pub fn is_at_room_display_text(text: &str) -> bool {
+    text == AT_ROOM
+}
+
+/// Util function to get the display text for an at-room mention
+pub fn get_at_room_display_text() -> &'static str {
+    AT_ROOM
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Mention {
     uri: String,

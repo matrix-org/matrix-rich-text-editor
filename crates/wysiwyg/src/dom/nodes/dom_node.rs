@@ -1,3 +1,5 @@
+use matrix_mentions::is_at_room_display_text;
+
 // Copyright 2022 The Matrix.org Foundation C.I.C.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -148,7 +150,7 @@ where
         attributes: Vec<(S, S)>,
     ) -> Result<DomNode<S>, UriParseError> {
         // special case for at-room
-        if MentionNode::is_at_room_display_text(&display_text) {
+        if is_at_room_display_text(display_text.to_string().as_str()) {
             Ok(DomNode::Mention(MentionNode::new_at_room(attributes)))
         } else if let Ok(mention_node) =
             MentionNode::new(url, display_text, attributes)
