@@ -108,7 +108,6 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
             traceAction: testUtilities.traceAction,
         },
         suggestion: memoisedMappedSuggestion,
-        getMessageHTMLContent: () =>
-            composerModel?.get_content_as_message_html() ?? null,
+        messageContent: composerModel?.get_content_as_message_html() ?? null,
     };
 }
