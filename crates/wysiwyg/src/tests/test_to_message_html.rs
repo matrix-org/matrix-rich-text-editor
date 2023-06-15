@@ -38,12 +38,9 @@ fn only_outputs_href_attribute_on_user_mention() {
     model.insert_mention(
         "https://matrix.to/#/@alice:matrix.org".into(),
         "inner text".into(),
-        vec![
-            ("data-mention-type".into(), "user".into()),
-            ("style".into(), "some css".into()),
-        ],
+        vec![("style".into(), "some css".into())],
     );
-    assert_eq!(tx(&model), "<a data-mention-type=\"user\" style=\"some css\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">inner text</a>&nbsp;|");
+    assert_eq!(tx(&model), "<a style=\"some css\" data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">inner text</a>&nbsp;|");
 
     let message_output = model.get_content_as_message_html();
     assert_eq!(
@@ -58,12 +55,9 @@ fn only_outputs_href_attribute_on_room_mention_and_uses_mx_id() {
     model.insert_mention(
         "https://matrix.to/#/#alice:matrix.org".into(),
         "inner text".into(),
-        vec![
-            ("data-mention-type".into(), "room".into()),
-            ("style".into(), "some css".into()),
-        ],
+        vec![("style".into(), "some css".into())],
     );
-    assert_eq!(tx(&model), "<a data-mention-type=\"room\" style=\"some css\" href=\"https://matrix.to/#/#alice:matrix.org\" contenteditable=\"false\">inner text</a>&nbsp;|");
+    assert_eq!(tx(&model), "<a style=\"some css\" data-mention-type=\"room\" href=\"https://matrix.to/#/#alice:matrix.org\" contenteditable=\"false\">inner text</a>&nbsp;|");
 
     let message_output = model.get_content_as_message_html();
     assert_eq!(
