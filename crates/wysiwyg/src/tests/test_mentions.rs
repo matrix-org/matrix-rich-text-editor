@@ -556,6 +556,16 @@ fn selection_paragraph_spanning() {
 }
 
 /**
+ * AT-ROOM
+ */
+#[test]
+fn can_insert_at_room_mention() {
+    let mut model = cm("|");
+    model.insert_at_room_mention(vec![("style".into(), "some css".into())]);
+    assert_eq!(tx(&model), "<a style=\"some css\" href=\"#\" contenteditable=\"false\">@room</a>&nbsp;|")
+}
+
+/**
  * HELPER FUNCTIONS
  */
 fn insert_mention_at_cursor(model: &mut ComposerModel<Utf16String>) {
