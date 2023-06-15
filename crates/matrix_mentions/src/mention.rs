@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use ruma_common::{
-    matrix_uri::MatrixId, IdParseError, MatrixToUri, MatrixUri, UserId,
-};
+use ruma_common::{matrix_uri::MatrixId, IdParseError, MatrixToUri, MatrixUri};
 
 const MATRIX_TO_BASE_URL: &str = "https://matrix.to/#/";
 
