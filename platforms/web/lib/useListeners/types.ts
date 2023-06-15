@@ -32,3 +32,8 @@ export type SuggestionEvent = Omit<InputEvent, 'data'> & {
     inputType: 'insertSuggestion';
     data: { url: string; text: string; attributes: AllowedMentionAttributes };
 };
+
+export type AtRoomSuggestionEvent = Omit<InputEvent, 'data'> & {
+    inputType: 'insertAtRoomSuggestion';
+    data: { attributes: AllowedMentionAttributes };
+};

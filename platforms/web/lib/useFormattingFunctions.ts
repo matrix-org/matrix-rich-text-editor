@@ -20,6 +20,7 @@ import { BlockType, FormattingFunctions } from './types';
 import { sendWysiwygInputEvent } from './useListeners';
 import {
     AllowedMentionAttributes,
+    AtRoomSuggestionEvent,
     LinkEvent,
     SuggestionEvent,
 } from './useListeners/types';
@@ -36,7 +37,11 @@ export function useFormattingFunctions(
         // and we do not use the browser input event handling
         const sendEvent = (
             blockType: BlockType,
-            data?: string | LinkEvent['data'] | SuggestionEvent['data'],
+            data?:
+                | string
+                | LinkEvent['data']
+                | SuggestionEvent['data']
+                | AtRoomSuggestionEvent['data'],
         ) =>
             editorRef.current &&
             sendWysiwygInputEvent(
@@ -73,6 +78,8 @@ export function useFormattingFunctions(
                 attributes: AllowedMentionAttributes,
             ) => sendEvent('insertSuggestion', { url, text, attributes }),
             command: (text: string) => sendEvent('insertCommand', text),
+            mentionAtRoom: (attributes: AllowedMentionAttributes) =>
+                sendEvent('insertAtRoomSuggestion', { attributes }),
         };
     }, [editorRef, composerModel]);
 

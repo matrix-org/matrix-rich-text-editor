@@ -214,9 +214,7 @@ function App() {
                                 <button
                                     type="button"
                                     onClick={(_e) =>
-                                        wysiwyg.mention(
-                                            '#',
-                                            '@room',
+                                        wysiwyg.mentionAtRoom(
                                             new Map([
                                                 [
                                                     'style',

@@ -36,7 +36,7 @@ import {
 import { TestUtilities } from '../useTestCases/types';
 import { AllActionStates } from '../types';
 import { mapToAllActionStates } from './utils';
-import { LinkEvent } from './types';
+import { AtRoomSuggestionEvent, LinkEvent, SuggestionEvent } from './types';
 
 /**
  * Send a custom event named wysiwygInput
@@ -50,7 +50,11 @@ export function sendWysiwygInputEvent(
     editor: HTMLElement,
     blockType: BlockType,
     e?: ReactMouseEvent<HTMLElement, MouseEvent> | KeyboardEvent,
-    data?: string | LinkEvent['data'],
+    data?:
+        | string
+        | LinkEvent['data']
+        | SuggestionEvent['data']
+        | AtRoomSuggestionEvent['data'],
 ) {
     e?.preventDefault();
     e?.stopPropagation();

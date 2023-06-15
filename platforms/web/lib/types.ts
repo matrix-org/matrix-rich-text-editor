@@ -46,6 +46,7 @@ export type FormattingFunctions = Record<
         text: string,
         attributes: AllowedMentionAttributes,
     ) => void;
+    mentionAtRoom: (attributes: AllowedMentionAttributes) => void;
     command: (text: string) => void;
     removeLinks: () => void;
     getLink: () => string;

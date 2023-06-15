@@ -23,6 +23,7 @@ import {
     WysiwygEvent,
 } from './types';
 import {
+    isAtRoomSuggestionEvent,
     isClipboardEvent,
     isLinkEvent,
     isSuggestionEvent,
@@ -71,19 +72,22 @@ export function processInput(
     }
 
     switch (event.inputType) {
+        case 'insertAtRoomSuggestion': {
+            if (suggestion && isAtRoomSuggestionEvent(event)) {
+                const { attributes } = event.data;
+                return action(
+                    composerModel.insert_at_room_mention_at_suggestion(
+                        suggestion,
+                        attributes,
+                    ),
+                    'insert_at_room_mention_at_suggestion',
+                );
+            }
+            break;
+        }
         case 'insertSuggestion': {
             if (suggestion && isSuggestionEvent(event)) {
                 const { text, url, attributes } = event.data;
-
-                if (text === '@room' && url === '#') {
-                    return action(
-                        composerModel.insert_at_room_mention_at_suggestion(
-                            suggestion,
-                            attributes,
-                        ),
-                        'insert_at_room_mention_at_suggestion',
-                    );
-                }
 
                 return action(
                     composerModel.insert_mention_at_suggestion(
