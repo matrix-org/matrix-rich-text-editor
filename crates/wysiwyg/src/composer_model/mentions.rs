@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-use matrix_mentions::{is_at_room_display_text, Mention};
+use matrix_mentions::Mention;
 
 use crate::{
     dom::DomLocation, ComposerModel, ComposerUpdate, DomNode, Location,
@@ -182,11 +182,7 @@ where
 
         // when we have an at-room mention, it doesn't matter about the url as we do not use
         // it, rendering the mention as raw text in the html output
-        if is_at_room_display_text(text.to_string().as_str()) {
-            range_contains_link_or_code_leaves
-        } else {
-            invalid_uri || range_contains_link_or_code_leaves
-        }
+        invalid_uri || range_contains_link_or_code_leaves
     }
 
     fn should_not_insert_at_room_mention(&self) -> bool {

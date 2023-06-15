@@ -15,6 +15,5 @@
 mod mention;
 
 pub use crate::mention::{
-    get_at_room_display_text, is_at_room_display_text, Mention, MentionKind,
-    AT_ROOM,
+    get_at_room_display_text, Mention, MentionKind, AT_ROOM,
 };
