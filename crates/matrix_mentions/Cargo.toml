@@ -9,6 +9,8 @@ name = "matrix_mentions"
 version = "0.1.0"
 edition = "2021"
 
-[dependencies]
+[features]
+custom_matrix_urls = []
 
+[dependencies]
 ruma-common = "0.11.3"

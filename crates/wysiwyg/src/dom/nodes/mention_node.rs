@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-use matrix_mentions::{get_at_room_display_text, Mention, MentionKind};
+use matrix_mentions::{Mention, MentionKind};
 
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
@@ -23,6 +23,12 @@ use crate::dom::to_tree::ToTree;
 use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use crate::dom::UnicodeString;
 
+pub const AT_ROOM: &str = "@room";
+
+/// Util function to get the display text for an at-room mention
+pub fn get_at_room_display_text() -> &'static str {
+    AT_ROOM
+}
 #[derive(Debug)]
 pub struct UriParseError;
 
