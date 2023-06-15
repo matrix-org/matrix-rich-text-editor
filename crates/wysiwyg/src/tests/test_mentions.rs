@@ -29,6 +29,31 @@ fn inserting_with_invalid_mention_url_does_nothing() {
 }
 
 /**
+ * INSERTING EXTERNAL LINKS
+ */
+#[test]
+fn inserting_with_external_user_works() {
+    let mut model = cm("|");
+    model.insert_mention(
+        "https://custom.custom.com/?secretstuff/#/@alice:example.org".into(),
+        "@Alice".into(),
+        vec![],
+    );
+    assert_eq!(tx(&model), "<a href=\"https://custom.custom.com/?secretstuff/#/@alice:example.org\" contenteditable=\"false\">@Alice</a>&nbsp;|");
+}
+
+#[test]
+fn inserting_with_external_room_works() {
+    let mut model = cm("|");
+    model.insert_mention(
+        "https://custom.custom.com/?secretstuff/#/!roomid:example.org".into(),
+        "some room".into(),
+        vec![],
+    );
+    assert_eq!(tx(&model), "<a href=\"https://custom.custom.com/?secretstuff/#/!roomid:example.org\" contenteditable=\"false\">some room</a>&nbsp;|");
+}
+
+/**
  * ATTRIBUTE TESTS
  */
 #[test]
