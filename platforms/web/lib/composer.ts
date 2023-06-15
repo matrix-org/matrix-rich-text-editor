@@ -79,7 +79,7 @@ export function processInput(
                     return action(
                         composerModel.insert_at_room_mention_at_suggestion(
                             suggestion,
-                            attributesMap,
+                            attributes,
                         ),
                         'insert_at_room_mention_at_suggestion',
                     );
