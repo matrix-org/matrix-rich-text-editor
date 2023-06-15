@@ -313,7 +313,7 @@ impl ComposerModel {
     }
 
     /// Creates an at-room mention node and inserts it into the composer at the current selection
-    pub fn insert_at_room(
+    pub fn insert_at_room_mention(
         &mut self,
         attributes: js_sys::Map,
     ) -> ComposerUpdate {
@@ -338,7 +338,7 @@ impl ComposerModel {
 
     /// Creates an at-room mention node and inserts it into the composer, replacing the
     /// text content defined by the suggestion
-    pub fn insert_at_room_at_suggestion(
+    pub fn insert_at_room_mention_at_suggestion(
         &mut self,
         suggestion: &SuggestionPattern,
         attributes: js_sys::Map,
