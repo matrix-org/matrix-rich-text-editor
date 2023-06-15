@@ -15,6 +15,7 @@
 use ruma_common::{matrix_uri::MatrixId, IdParseError, MatrixToUri, MatrixUri};
 
 const MATRIX_TO_BASE_URL: &str = "https://matrix.to/#/";
+pub const AT_ROOM: &str = "@room";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Mention {
