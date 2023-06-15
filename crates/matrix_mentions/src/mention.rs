@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use ruma_common::{matrix_uri::MatrixId, MatrixToUri, MatrixUri, UserId};
+use ruma_common::{
+    matrix_uri::MatrixId, IdParseError, MatrixToUri, MatrixUri, UserId,
+};
 
 const MATRIX_TO_BASE_URL: &str = "https://matrix.to/#/";
 
@@ -161,35 +163,31 @@ fn parse_matrix_id(uri: &str) -> Option<MatrixId> {
         Some(matrix_uri.id().to_owned())
     } else if let Ok(matrix_to_uri) = MatrixToUri::parse(uri) {
         Some(matrix_to_uri.id().to_owned())
-    } else if let Some(matrix_id) = parse_external_id(uri) {
-        Some(matrix_id.to_owned())
+    } else if let Ok(matrix_to_uri) = parse_external_id(uri) {
+        Some(matrix_to_uri.id().to_owned())
     } else {
         None
     }
 }
 
-/// Splits an external uri on `/#/` and then attempts to find the relevant matrix information
-/// from after the split
+/// Attempts to split an external id on `/#/`, rebuild as a matrix to style permalink then parse
+/// using ruma.
 ///
-/// If successful return Some<MatrixId>. Else return None.
-fn parse_external_id(uri: &str) -> Option<MatrixId> {
+/// Returns the result of calling `parse` in ruma.
+fn parse_external_id(uri: &str) -> Result<MatrixToUri, IdParseError> {
     // first split the string into the parts we need
     let parts: Vec<&str> = uri.split("/#/").collect();
 
     // we expect this to split the uri into exactly two parts, if it's anything else, return early
     if parts.len() != 2 {
-        return None;
+        return Err(IdParseError::Empty);
     }
     let after_hash = parts[1];
 
-    // now rebuild the uri and try again...
-    let hacked_uri = format!("{}{}", MATRIX_TO_BASE_URL, after_hash);
+    // now rebuild the string as if it were a matrix to type link, then use ruma to parse
+    let uri_for_ruma = format!("{}{}", MATRIX_TO_BASE_URL, after_hash);
 
-    if let Ok(matrix_to_uri) = MatrixToUri::parse(&hacked_uri) {
-        Some(matrix_to_uri.id().to_owned())
-    } else {
-        None
-    }
+    MatrixToUri::parse(&uri_for_ruma)
 }
 
 #[cfg(test)]
