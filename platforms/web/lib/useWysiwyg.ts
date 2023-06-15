@@ -109,6 +109,6 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
         },
         suggestion: memoisedMappedSuggestion,
         getMessageHTMLContent: () =>
-            composerModel?.get_content_as_message_html() ?? '',
+            composerModel?.get_content_as_message_html() ?? null,
     };
 }
