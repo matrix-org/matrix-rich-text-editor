@@ -312,6 +312,16 @@ impl ComposerModel {
         ))
     }
 
+    /// Creates an at-room mention node and inserts it into the composer at the current selection
+    pub fn insert_at_room(
+        &mut self,
+        attributes: js_sys::Map,
+    ) -> ComposerUpdate {
+        ComposerUpdate::from(
+            self.inner.insert_at_room_mention(attributes.into_vec()),
+        )
+    }
+
     /// Creates a mention node and inserts it into the composer at the current selection
     pub fn insert_mention(
         &mut self,
@@ -322,6 +332,19 @@ impl ComposerModel {
         ComposerUpdate::from(self.inner.insert_mention(
             Utf16String::from_str(url),
             Utf16String::from_str(text),
+            attributes.into_vec(),
+        ))
+    }
+
+    /// Creates an at-room mention node and inserts it into the composer, replacing the
+    /// text content defined by the suggestion
+    pub fn insert_at_room_at_suggestion(
+        &mut self,
+        suggestion: &SuggestionPattern,
+        attributes: js_sys::Map,
+    ) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.insert_at_room_mention_at_suggestion(
+            wysiwyg::SuggestionPattern::from(suggestion.clone()),
             attributes.into_vec(),
         ))
     }

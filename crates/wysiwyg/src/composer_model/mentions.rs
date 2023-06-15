@@ -14,9 +14,8 @@
 use matrix_mentions::{is_at_room_display_text, Mention};
 
 use crate::{
-    dom::{nodes::MentionNode, DomLocation},
-    ComposerModel, ComposerUpdate, DomNode, Location, SuggestionPattern,
-    UnicodeString,
+    dom::DomLocation, ComposerModel, ComposerUpdate, DomNode, Location,
+    SuggestionPattern, UnicodeString,
 };
 
 impl<S> ComposerModel<S>
@@ -47,6 +46,22 @@ where
         self.do_insert_mention(url, text, attributes)
     }
 
+    pub fn insert_at_room_mention_at_suggestion(
+        &mut self,
+        suggestion: SuggestionPattern,
+        attributes: Vec<(S, S)>,
+    ) -> ComposerUpdate<S> {
+        if self.should_not_insert_at_room_mention() {
+            return ComposerUpdate::keep();
+        }
+
+        self.push_state_to_history();
+        self.do_replace_text_in(S::default(), suggestion.start, suggestion.end);
+        self.state.start = Location::from(suggestion.start);
+        self.state.end = self.state.start;
+        self.do_insert_at_room_mention(attributes)
+    }
+
     /// Inserts a mention into the composer. It uses the following rules:
     /// - Do not insert a mention if the uri is invalid
     /// - Do not insert a mention if the range includes link or code leaves
@@ -68,6 +83,22 @@ where
             self.do_replace_text(S::default());
         }
         self.do_insert_mention(url, text, attributes)
+    }
+
+    pub fn insert_at_room_mention(
+        &mut self,
+        attributes: Vec<(S, S)>,
+    ) -> ComposerUpdate<S> {
+        if self.should_not_insert_at_room_mention() {
+            return ComposerUpdate::keep();
+        }
+
+        self.push_state_to_history();
+        if self.has_selection() {
+            self.do_replace_text(S::default());
+        }
+
+        self.do_insert_at_room_mention(attributes)
     }
 
     /// Creates a new mention node then inserts the node at the cursor position. If creation fails due to
@@ -102,6 +133,34 @@ where
         }
     }
 
+    /// Creates a new mention node then inserts the node at the cursor position. If creation fails due to
+    /// an invalid uri, it will return `ComposerUpdate::keep()`.
+    /// It adds a trailing space when the inserted mention is the last node in it's parent.
+    fn do_insert_at_room_mention(
+        &mut self,
+        attributes: Vec<(S, S)>,
+    ) -> ComposerUpdate<S> {
+        let (start, end) = self.safe_selection();
+        let range = self.state.dom.find_range(start, end);
+
+        let new_node = DomNode::new_at_room_mention(attributes);
+
+        let new_cursor_index = start + new_node.text_len();
+
+        let handle = self.state.dom.insert_node_at_cursor(&range, new_node);
+
+        // manually move the cursor to the end of the mention
+        self.state.start = Location::from(new_cursor_index);
+        self.state.end = self.state.start;
+
+        // add a trailing space in cases when we do not have a next sibling
+        if self.state.dom.is_last_in_parent(&handle) {
+            self.do_replace_text(" ".into())
+        } else {
+            self.create_update_replace_all()
+        }
+    }
+
     /// Utility function for the insert_mention* methods. It returns false if:
     /// - the range includes any link or code type leaves
     /// - the url is not a valid matrix uri (with special case for at-room)
@@ -128,5 +187,19 @@ where
         } else {
             invalid_uri || range_contains_link_or_code_leaves
         }
+    }
+
+    fn should_not_insert_at_room_mention(&self) -> bool {
+        let (start, end) = self.safe_selection();
+        let range = self.state.dom.find_range(start, end);
+
+        let range_contains_link_or_code_leaves =
+            range.locations.iter().any(|l: &DomLocation| {
+                l.kind.is_link_kind() || l.kind.is_code_kind()
+            });
+
+        // when we have an at-room mention, it doesn't matter about the url as we do not use
+        // it, rendering the mention as raw text in the html output
+        range_contains_link_or_code_leaves
     }
 }
