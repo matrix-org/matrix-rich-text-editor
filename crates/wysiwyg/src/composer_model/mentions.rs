@@ -72,6 +72,7 @@ where
             ComposerUpdate::keep()
         }
     }
+
     /// Checks to see if the at-room mention should be inserted.
     /// If so it will remove the suggestion and then insert an at-room mention.
     pub fn insert_at_room_mention_at_suggestion(

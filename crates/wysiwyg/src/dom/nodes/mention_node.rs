@@ -41,8 +41,7 @@ where
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MentionNodeKind {
-    Room { mention: Mention },
-    User { mention: Mention },
+    MatrixURI { mention: Mention },
     AtRoom,
 }
 
@@ -66,10 +65,7 @@ where
             &url.to_string(),
             &display_text.to_string(),
         ) {
-            let kind = match mention.kind() {
-                MentionKind::Room => MentionNodeKind::Room { mention },
-                MentionKind::User => MentionNodeKind::User { mention },
-            };
+            let kind = MentionNodeKind::MatrixURI { mention };
             Ok(Self {
                 display_text,
                 kind,
@@ -102,9 +98,7 @@ where
 
     pub fn display_text(&self) -> S {
         match self.kind() {
-            MentionNodeKind::User { .. } | MentionNodeKind::Room { .. } => {
-                self.display_text.clone()
-            }
+            MentionNodeKind::MatrixURI { .. } => self.display_text.clone(),
             MentionNodeKind::AtRoom => S::from(get_at_room_display_text()),
         }
     }
@@ -165,7 +159,7 @@ impl<S: UnicodeString> MentionNode<S> {
 
         let cur_pos = formatter.len();
         match self.kind() {
-            MentionNodeKind::User { mention } => {
+            MentionNodeKind::MatrixURI { mention } => {
                 // if formatting as a message, only include the href attribute
                 let attributes = if as_message {
                     vec![("href".into(), S::from(mention.uri()))]
@@ -176,24 +170,12 @@ impl<S: UnicodeString> MentionNode<S> {
                     attrs
                 };
 
-                self.fmt_tag_open(tag, formatter, &Some(attributes));
-                formatter.push(self.display_text());
-                self.fmt_tag_close(tag, formatter);
-            }
-            MentionNodeKind::Room { mention } => {
-                // if formatting as a message, only include the href attribute and also use the mx_id as
-                // the display text
-                let (attributes, display_text) = if as_message {
-                    (
-                        vec![("href".into(), S::from(mention.uri()))],
-                        S::from(mention.mx_id()),
-                    )
-                } else {
-                    let mut attrs = self.attributes.clone();
-                    attrs.push(("href".into(), S::from(mention.uri())));
-                    attrs.push(("contenteditable".into(), "false".into()));
-                    (attrs, self.display_text())
-                };
+                let display_text =
+                    if as_message && mention.kind() == &MentionKind::Room {
+                        S::from(mention.mx_id())
+                    } else {
+                        self.display_text()
+                    };
 
                 self.fmt_tag_open(tag, formatter, &Some(attributes));
                 formatter.push(display_text);
@@ -251,11 +233,7 @@ where
         description.push("\"");
 
         match self.kind() {
-            MentionNodeKind::User { mention } => {
-                description.push(", ");
-                description.push(S::from(mention.uri()));
-            }
-            MentionNodeKind::Room { mention } => {
+            MentionNodeKind::MatrixURI { mention } => {
                 description.push(", ");
                 description.push(S::from(mention.uri()));
             }
@@ -294,8 +272,13 @@ where
         {
             let text = match this.kind() {
                 // for User/Room type, we use the mx_id in the md output
-                MentionNodeKind::User { .. } => this.display_text(),
-                MentionNodeKind::Room { mention } => S::from(mention.mx_id()),
+                MentionNodeKind::MatrixURI { mention } => {
+                    if mention.kind() == &MentionKind::Room {
+                        S::from(mention.mx_id())
+                    } else {
+                        this.display_text()
+                    }
+                }
                 MentionNodeKind::AtRoom => this.display_text(),
             };
 
