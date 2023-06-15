@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use ruma_common::{matrix_uri::MatrixId, MatrixToUri, MatrixUri};
+use ruma_common::{matrix_uri::MatrixId, MatrixToUri, MatrixUri, UserId};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Mention {
@@ -147,10 +147,41 @@ impl Mention {
     }
 }
 
+/// Determines if a uri can be parsed for a matrix id. Attempts to treat the uri in three
+/// ways when parsing:
+/// 1 - As a matrix uri
+/// 2 - As a matrix to uri
+/// 3 - As a custom uri
+///  
+/// If any of the above succeed, return Some<MatrixIdI. Else return None.
 fn parse_matrix_id(uri: &str) -> Option<MatrixId> {
     if let Ok(matrix_uri) = MatrixUri::parse(uri) {
         Some(matrix_uri.id().to_owned())
     } else if let Ok(matrix_to_uri) = MatrixToUri::parse(uri) {
+        Some(matrix_to_uri.id().to_owned())
+    } else if let Some(matrix_id) = parse_external_id(uri) {
+        Some(matrix_id.to_owned())
+    } else {
+        None
+    }
+}
+
+/// Splits an external uri on `/#/` and then attempts to find the relevant matrix information
+/// from after the split
+///
+/// If successful return Some<MatrixId>. Else return None.
+fn parse_external_id(uri: &str) -> Option<MatrixId> {
+    // first split the string into the parts we need
+    let parts: Vec<&str> = uri.split("/#/").collect();
+    let before_hash = parts[0];
+    let after_hash = parts[1];
+
+    // now rebuild the uri and try again...
+    let hacked_uri = format!("{}{}", "https://matrix.to/#/", after_hash);
+
+    if let Ok(matrix_uri) = MatrixUri::parse(&*hacked_uri) {
+        Some(matrix_uri.id().to_owned())
+    } else if let Ok(matrix_to_uri) = MatrixToUri::parse(&*hacked_uri) {
         Some(matrix_to_uri.id().to_owned())
     } else {
         None
@@ -261,6 +292,18 @@ mod test {
     }
 
     #[test]
+    fn parse_uri_external_room() {
+        let uri =
+            "https://custom.custom.com/?secretstuff/#/!roomid:example.org";
+        let parsed = Mention::from_uri(uri).unwrap();
+
+        assert_eq!(parsed.uri(), uri);
+        assert_eq!(parsed.mx_id(), "!roomid:example.org");
+        assert_eq!(parsed.display_text(), "!roomid:example.org");
+        assert_eq!(parsed.kind(), &MentionKind::Room);
+    }
+
+    #[test]
     fn parse_link_user_text() {
         let uri = "https://matrix.to/#/@alice:example.org";
         let display_text = "Alice";
@@ -284,7 +327,7 @@ mod test {
 
         assert_eq!(parsed.uri(), uri);
         assert_eq!(parsed.mx_id(), "!room:example.org");
-        assert_eq!(parsed.display_text(), "!room:example.org"); // note the display_text is overridden
+        assert_eq!(parsed.display_text(), "!room:example.org");
         assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
