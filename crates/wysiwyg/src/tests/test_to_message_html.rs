@@ -75,15 +75,8 @@ fn only_outputs_href_attribute_on_room_mention_and_uses_mx_id() {
 #[test]
 fn only_outputs_href_inner_text_for_at_room_mention() {
     let mut model = cm("|");
-    model.insert_mention(
-        "anything".into(), // this should be ignored in favour of a # placeholder
-        "@room".into(),
-        vec![
-            ("data-mention-type".into(), "at-room".into()),
-            ("style".into(), "some css".into()),
-        ],
-    );
-    assert_eq!(tx(&model), "<a data-mention-type=\"at-room\" style=\"some css\" href=\"#\" contenteditable=\"false\">@room</a>&nbsp;|");
+    model.insert_at_room_mention(vec![("style".into(), "some css".into())]);
+    assert_eq!(tx(&model), "<a style=\"some css\" href=\"#\" contenteditable=\"false\">@room</a>&nbsp;|");
 
     let message_output = model.get_content_as_message_html();
     assert_eq!(message_output, "@room\u{a0}");
