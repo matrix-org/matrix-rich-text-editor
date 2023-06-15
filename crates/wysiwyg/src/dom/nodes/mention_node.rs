@@ -164,7 +164,14 @@ impl<S: UnicodeString> MentionNode<S> {
                 } else {
                     // this is now only required for us to attach a custom style attribute for web
                     let mut attrs = self.attributes.clone();
-                    attrs.push(("data-mention-type".into(), "user".into()));
+                    let data_mention_type = match mention.kind() {
+                        MentionKind::Room => "room",
+                        MentionKind::User => "user",
+                    };
+                    attrs.push((
+                        "data-mention-type".into(),
+                        data_mention_type.into(),
+                    ));
                     attrs.push(("href".into(), S::from(mention.uri())));
                     attrs.push(("contenteditable".into(), "false".into()));
                     attrs

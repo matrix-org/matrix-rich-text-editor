@@ -53,7 +53,7 @@ fn inserting_with_user_url_inserts_user_type() {
 #[test]
 fn inserting_with_at_room_inner_text_inserts_at_room_type() {
     let mut model = cm("|");
-    model.insert_mention("could_be_anything".into(), "@room".into(), vec![]);
+    model.insert_at_room_mention(vec![]);
     assert_eq!(tx(&model), "<a data-mention-type=\"at-room\" href=\"#\" contenteditable=\"false\">@room</a>&nbsp;|");
 }
 
@@ -591,7 +591,7 @@ fn selection_paragraph_spanning() {
 fn can_insert_at_room_mention() {
     let mut model = cm("|");
     model.insert_at_room_mention(vec![("style".into(), "some css".into())]);
-    assert_eq!(tx(&model), "<a style=\"some css\" href=\"#\" contenteditable=\"false\">@room</a>&nbsp;|")
+    assert_eq!(tx(&model), "<a style=\"some css\" data-mention-type=\"at-room\" href=\"#\" contenteditable=\"false\">@room</a>&nbsp;|")
 }
 
 /**

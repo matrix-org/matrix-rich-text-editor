@@ -31,8 +31,8 @@ mod test {
     use std::{collections::HashMap, sync::Arc};
 
     use crate::{
-        ActionState, Attribute, ComposerAction, ComposerModel, MenuAction,
-        MenuState, SuggestionPattern,
+        ActionState, ComposerAction, ComposerModel, MenuAction, MenuState,
+        SuggestionPattern,
     };
 
     #[test]
