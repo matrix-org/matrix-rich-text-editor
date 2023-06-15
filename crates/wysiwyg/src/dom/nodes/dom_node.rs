@@ -149,10 +149,7 @@ where
         display_text: S,
         attributes: Vec<(S, S)>,
     ) -> Result<DomNode<S>, UriParseError> {
-        // special case for at-room
-        if is_at_room_display_text(display_text.to_string().as_str()) {
-            Ok(DomNode::Mention(MentionNode::new_at_room(attributes)))
-        } else if let Ok(mention_node) =
+        if let Ok(mention_node) =
             MentionNode::new(url, display_text, attributes)
         {
             Ok(DomNode::Mention(mention_node))
