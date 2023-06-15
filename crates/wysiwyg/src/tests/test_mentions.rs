@@ -68,7 +68,7 @@ fn inserting_with_external_user_works() {
         "@Alice".into(),
         vec![],
     );
-    assert_eq!(tx(&model), "<a href=\"https://custom.custom.com/?secretstuff/#/@alice:example.org\" contenteditable=\"false\">@Alice</a>&nbsp;|");
+    assert_eq!(tx(&model), "<a data-mention-type=\"user\" href=\"https://custom.custom.com/?secretstuff/#/@alice:example.org\" contenteditable=\"false\">@Alice</a>&nbsp;|");
 }
 
 #[test]
@@ -79,7 +79,7 @@ fn inserting_with_external_room_works() {
         "some room".into(),
         vec![],
     );
-    assert_eq!(tx(&model), "<a href=\"https://custom.custom.com/?secretstuff/#/!roomid:example.org\" contenteditable=\"false\">some room</a>&nbsp;|");
+    assert_eq!(tx(&model), "<a data-mention-type=\"room\" href=\"https://custom.custom.com/?secretstuff/#/!roomid:example.org\" contenteditable=\"false\">some room</a>&nbsp;|");
 }
 
 /**
