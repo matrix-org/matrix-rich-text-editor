@@ -294,8 +294,8 @@ where
         {
             let text = match this.kind() {
                 // for User/Room type, we use the mx_id in the md output
-                MentionNodeKind::User { mention }
-                | MentionNodeKind::Room { mention } => S::from(mention.mx_id()),
+                MentionNodeKind::User { .. } => this.display_text(),
+                MentionNodeKind::Room { mention } => S::from(mention.mx_id()),
                 MentionNodeKind::AtRoom => this.display_text(),
             };
 
