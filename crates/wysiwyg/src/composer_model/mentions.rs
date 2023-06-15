@@ -22,12 +22,8 @@ impl<S> ComposerModel<S>
 where
     S: UnicodeString,
 {
-    /// Remove the suggestion text and then insert a mention into the composer, using the following rules
-    /// - Do not do anthing if the uri is invalid
-    /// - Do not do anthing if the range includes link or code leaves
-    /// - If the composer contains a selection, remove the contents of the selection
-    /// prior to inserting a mention at the cursor.
-    /// - If the composer contains a cursor, insert a mention at the cursor
+    /// Checks to see if the mention should be inserted and also if the mention can be created.
+    /// If both of these checks are passed it will remove the suggestion and then insert a mention.
     pub fn insert_mention_at_suggestion(
         &mut self,
         url: S,
@@ -39,23 +35,45 @@ where
             return ComposerUpdate::keep();
         }
 
-        self.push_state_to_history();
-        self.do_replace_text_in(S::default(), suggestion.start, suggestion.end);
-        self.state.start = Location::from(suggestion.start);
-        self.state.end = self.state.start;
-
         if let Ok(mention_node) = DomNode::new_mention(url, text, attributes) {
+            self.push_state_to_history();
+            self.do_replace_text_in(
+                S::default(),
+                suggestion.start,
+                suggestion.end,
+            );
+            self.state.start = Location::from(suggestion.start);
+            self.state.end = self.state.start;
             self.do_insert_mention(mention_node)
         } else {
             ComposerUpdate::keep()
         }
     }
 
-    /// Remove the suggestion text and then insert an at-room mention into the composer, using the following rules
-    /// - Do not do anthing if the range includes link or code leaves
-    /// - If the composer contains a selection, remove the contents of the selection
-    /// prior to inserting a mention at the cursor.
-    /// - If the composer contains a cursor, insert a mention at the cursor
+    /// Checks to see if the mention should be inserted and also if the mention can be created.
+    /// If both of these checks are passed it will remove any selection if present and then insert a mention.
+    pub fn insert_mention(
+        &mut self,
+        url: S,
+        text: S,
+        attributes: Vec<(S, S)>,
+    ) -> ComposerUpdate<S> {
+        if self.should_not_insert_mention(&url) {
+            return ComposerUpdate::keep();
+        }
+
+        if let Ok(mention_node) = DomNode::new_mention(url, text, attributes) {
+            self.push_state_to_history();
+            if self.has_selection() {
+                self.do_replace_text(S::default());
+            }
+            self.do_insert_mention(mention_node)
+        } else {
+            ComposerUpdate::keep()
+        }
+    }
+    /// Checks to see if the at-room mention should be inserted.
+    /// If so it will remove the suggestion and then insert an at-room mention.
     pub fn insert_at_room_mention_at_suggestion(
         &mut self,
         suggestion: SuggestionPattern,
@@ -74,34 +92,8 @@ where
         self.do_insert_mention(mention_node)
     }
 
-    /// Inserts a mention into the composer. It uses the following rules:
-    /// - Do not insert a mention if the uri is invalid
-    /// - Do not insert a mention if the range includes link or code leaves
-    /// - If the composer contains a selection, remove the contents of the selection
-    /// prior to inserting a mention at the cursor.
-    /// - If the composer contains a cursor, insert a mention at the cursor
-    pub fn insert_mention(
-        &mut self,
-        url: S,
-        text: S,
-        attributes: Vec<(S, S)>,
-    ) -> ComposerUpdate<S> {
-        if self.should_not_insert_mention(&url) {
-            return ComposerUpdate::keep();
-        }
-
-        self.push_state_to_history();
-        if self.has_selection() {
-            self.do_replace_text(S::default());
-        }
-
-        if let Ok(mention_node) = DomNode::new_mention(url, text, attributes) {
-            self.do_insert_mention(mention_node)
-        } else {
-            ComposerUpdate::keep()
-        }
-    }
-
+    /// Checks to see if the at-room mention should be inserted.
+    /// If so it will remove any selection if present and then insert an at-room mention.
     pub fn insert_at_room_mention(
         &mut self,
         attributes: Vec<(S, S)>,
@@ -119,9 +111,8 @@ where
         self.do_insert_mention(mention_node)
     }
 
-    /// Creates a new mention node then inserts the node at the cursor position. If creation fails due to
-    /// an invalid uri, it will return `ComposerUpdate::keep()`.
-    /// It adds a trailing space when the inserted mention is the last node in it's parent.
+    /// Inserts the node at the cursor position. It adds a trailing space when the inserted
+    /// mention is the last node in it's parent.
     fn do_insert_mention(
         &mut self,
         mention_node: DomNode<S>,
@@ -149,19 +140,15 @@ where
         }
     }
 
-    /// Utility functions for the insert_mention* methods. It returns false if:
-    /// - the range includes any link or code type leaves
-    /// - the url is not a valid matrix uri
-    ///
-    /// Related issue is here:
-    /// https://github.com/matrix-org/matrix-rich-text-editor/issues/702
-    /// We do not allow mentions to be inserted into links, the planned behaviour is
-    /// detailed in the above issue.
+    /// We should not insert a mention if the uri is invalid or the range contains link
+    /// or code leaves. See issue https://github.com/matrix-org/matrix-rich-text-editor/issues/702.
     fn should_not_insert_mention(&self, url: &S) -> bool {
         !Mention::is_valid_uri(url.to_string().as_str())
             || self.range_contains_link_or_code_leaves()
     }
 
+    /// We should not insert an at-room mention if the range contains link or code leaves.
+    /// See issue https://github.com/matrix-org/matrix-rich-text-editor/issues/702.
     fn should_not_insert_at_room_mention(&self) -> bool {
         self.range_contains_link_or_code_leaves()
     }
