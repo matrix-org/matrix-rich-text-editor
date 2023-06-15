@@ -76,6 +76,16 @@ export function processInput(
                 const { text, url, attributes } = event.data;
                 const attributesMap = new Map(Object.entries(attributes));
 
+                if (text === '@room' && url === '#') {
+                    return action(
+                        composerModel.insert_at_room_at_suggestion(
+                            suggestion,
+                            attributesMap,
+                        ),
+                        'insert_at_room_mention_at_suggestion',
+                    );
+                }
+
                 return action(
                     composerModel.insert_mention_at_suggestion(
                         url,
