@@ -338,7 +338,7 @@ mod test {
 
         assert_eq!(parsed.uri(), uri);
         assert_eq!(parsed.mx_id(), "!room:example.org");
-        assert_eq!(parsed.display_text(), "!room:example.org");
+        assert_eq!(parsed.display_text(), "!room:example.org"); // note the display_text is overridden
         assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
