@@ -139,10 +139,8 @@ where
         DomNode::Container(ContainerNode::new_link(url, children, attributes))
     }
 
-    /// Create a new mention node. This function will perform a single check of the display
-    /// text and return an at-room mention if that text exactly matches `@room`
-    ///
-    /// Returns a result as creating a mention node can fail with an invalid uri
+    /// Attempts to create a new mention node. Returns a result as creating a
+    /// mention node can fail if attempted with an invalid uri.
     pub fn new_mention(
         url: S,
         display_text: S,
