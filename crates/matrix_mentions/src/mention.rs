@@ -14,6 +14,8 @@
 
 use ruma_common::{matrix_uri::MatrixId, MatrixToUri, MatrixUri, UserId};
 
+const MATRIX_TO_BASE_URL: &str = "https://matrix.to/#/";
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Mention {
     uri: String,
@@ -173,15 +175,17 @@ fn parse_matrix_id(uri: &str) -> Option<MatrixId> {
 fn parse_external_id(uri: &str) -> Option<MatrixId> {
     // first split the string into the parts we need
     let parts: Vec<&str> = uri.split("/#/").collect();
-    let before_hash = parts[0];
+
+    // we expect this to split the uri into exactly two parts, if it's anything else, return early
+    if parts.len() != 2 {
+        return None;
+    }
     let after_hash = parts[1];
 
     // now rebuild the uri and try again...
-    let hacked_uri = format!("{}{}", "https://matrix.to/#/", after_hash);
+    let hacked_uri = format!("{}{}", MATRIX_TO_BASE_URL, after_hash);
 
-    if let Ok(matrix_uri) = MatrixUri::parse(&*hacked_uri) {
-        Some(matrix_uri.id().to_owned())
-    } else if let Ok(matrix_to_uri) = MatrixToUri::parse(&*hacked_uri) {
+    if let Ok(matrix_to_uri) = MatrixToUri::parse(&hacked_uri) {
         Some(matrix_to_uri.id().to_owned())
     } else {
         None
@@ -289,6 +293,17 @@ mod test {
     #[test]
     fn parse_uri_not_uri() {
         assert!(Mention::from_uri("hello").is_none());
+    }
+
+    #[test]
+    fn parse_uri_external_user() {
+        let uri = "https://custom.custom.com/?secretstuff/#/@alice:example.org";
+        let parsed = Mention::from_uri(uri).unwrap();
+
+        assert_eq!(parsed.uri(), uri);
+        assert_eq!(parsed.mx_id(), "@alice:example.org");
+        assert_eq!(parsed.display_text(), "@alice:example.org");
+        assert_eq!(parsed.kind(), &MentionKind::User);
     }
 
     #[test]
