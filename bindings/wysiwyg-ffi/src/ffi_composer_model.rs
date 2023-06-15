@@ -282,19 +282,11 @@ impl ComposerModel {
         self: &Arc<Self>,
         url: String,
         text: String,
-        attributes: Vec<Attribute>,
+        attributes: Vec<Attribute>, // TODO remove attributes
     ) -> Arc<ComposerUpdate> {
         let url = Utf16String::from_str(&url);
         let text = Utf16String::from_str(&text);
-        let attrs = attributes
-            .iter()
-            .map(|attr| {
-                (
-                    Utf16String::from_str(&attr.key),
-                    Utf16String::from_str(&attr.value),
-                )
-            })
-            .collect();
+        let attrs = vec![];
         Arc::new(ComposerUpdate::from(
             self.inner.lock().unwrap().insert_mention(url, text, attrs),
         ))
@@ -332,20 +324,12 @@ impl ComposerModel {
         url: String,
         text: String,
         suggestion: SuggestionPattern,
-        attributes: Vec<Attribute>,
+        attributes: Vec<Attribute>, // TODO remove attributes
     ) -> Arc<ComposerUpdate> {
         let url = Utf16String::from_str(&url);
         let text = Utf16String::from_str(&text);
         let suggestion = wysiwyg::SuggestionPattern::from(suggestion);
-        let attrs = attributes
-            .iter()
-            .map(|attr| {
-                (
-                    Utf16String::from_str(&attr.key),
-                    Utf16String::from_str(&attr.value),
-                )
-            })
-            .collect();
+        let attrs = vec![];
         Arc::new(ComposerUpdate::from(
             self.inner
                 .lock()

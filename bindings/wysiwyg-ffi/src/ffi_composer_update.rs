@@ -229,10 +229,7 @@ mod test {
             "https://matrix.to/#/@alice:matrix.org".into(),
             "Alice".into(),
             suggestion_pattern,
-            vec![Attribute {
-                key: "data-mention-type".into(),
-                value: "user".into(),
-            }],
+            vec![], // TODO remove argument when function signature changes
         );
     }
 
