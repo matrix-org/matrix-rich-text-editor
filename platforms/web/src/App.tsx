@@ -205,6 +205,7 @@ function App() {
                                                     'style',
                                                     'background-color:#d5f9d5',
                                                 ],
+                                                ['data-mention-type', 'user'],
                                             ]),
                                         )
                                     }

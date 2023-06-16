@@ -75,6 +75,11 @@ export function processInput(
         case 'insertAtRoomSuggestion': {
             if (suggestion && isAtRoomSuggestionEvent(event)) {
                 const { attributes } = event.data;
+                // we need to track data-mention-type in element web, ensure we do not pass
+                // it in as rust model can handle this automatically
+                if (attributes.has('data-mention-type')) {
+                    attributes.delete('data-mention-type');
+                }
                 return action(
                     composerModel.insert_at_room_mention_at_suggestion(
                         suggestion,
@@ -88,7 +93,11 @@ export function processInput(
         case 'insertSuggestion': {
             if (suggestion && isSuggestionEvent(event)) {
                 const { text, url, attributes } = event.data;
-
+                // we need to track data-mention-type in element web, ensure we do not pass
+                // it in as rust model can handle this automatically
+                if (attributes.has('data-mention-type')) {
+                    attributes.delete('data-mention-type');
+                }
                 return action(
                     composerModel.insert_mention_at_suggestion(
                         url,
