@@ -57,6 +57,7 @@ export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
             | 'command'
             | 'indent'
             | 'unindent'
+            | 'mentionAtRoom'
         >
     >;
 
