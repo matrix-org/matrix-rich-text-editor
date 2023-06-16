@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-use matrix_mentions::Mention;
 
 use crate::{
     dom::{nodes::MentionNode, DomLocation},
@@ -32,7 +31,7 @@ where
         suggestion: SuggestionPattern,
         attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
-        if self.should_not_insert_mention(&url) {
+        if self.range_contains_link_or_code_leaves() {
             return ComposerUpdate::keep();
         }
 
@@ -59,8 +58,7 @@ where
         text: S,
         attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
-        // TODO change this as this will now be handled by the if let below
-        if self.should_not_insert_mention(&url) {
+        if self.range_contains_link_or_code_leaves() {
             return ComposerUpdate::keep();
         }
 
@@ -82,7 +80,7 @@ where
         suggestion: SuggestionPattern,
         attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
-        if self.should_not_insert_at_room_mention() {
+        if self.range_contains_link_or_code_leaves() {
             return ComposerUpdate::keep();
         }
 
@@ -101,7 +99,7 @@ where
         &mut self,
         attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
-        if self.should_not_insert_at_room_mention() {
+        if self.range_contains_link_or_code_leaves() {
             return ComposerUpdate::keep();
         }
 
@@ -144,17 +142,6 @@ where
 
     /// We should not insert a mention if the uri is invalid or the range contains link
     /// or code leaves. See issue https://github.com/matrix-org/matrix-rich-text-editor/issues/702.
-    fn should_not_insert_mention(&self, url: &S) -> bool {
-        !Mention::is_valid_uri(url.to_string().as_str())
-            || self.range_contains_link_or_code_leaves()
-    }
-
-    /// We should not insert an at-room mention if the range contains link or code leaves.
-    /// See issue https://github.com/matrix-org/matrix-rich-text-editor/issues/702.
-    fn should_not_insert_at_room_mention(&self) -> bool {
-        self.range_contains_link_or_code_leaves()
-    }
-
     fn range_contains_link_or_code_leaves(&self) -> bool {
         let (start, end) = self.safe_selection();
         let range = self.state.dom.find_range(start, end);
