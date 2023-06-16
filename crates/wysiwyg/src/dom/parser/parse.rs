@@ -1104,7 +1104,7 @@ mod js {
             let dom = HtmlParser::default().parse::<Utf16String>(html).unwrap();
             assert_eq!(
                 dom.to_string(),
-                r#"<a data-mention-type=\"user\" href=\"https://matrix.to/#/@test:example.org\" contenteditable=\"false\">test</a>"#
+                r#"<a data-mention-type="user" href="https://matrix.to/#/@test:example.org" contenteditable="false">test</a>"#
             );
         }
 
