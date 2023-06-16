@@ -57,6 +57,7 @@ export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
             | 'command'
             | 'indent'
             | 'unindent'
+            | 'mentionAtRoom'
         >
     >;
 
@@ -121,9 +122,7 @@ export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
                     wysiwyg.mention(
                         'https://matrix.to/#/@test_user:element.io',
                         'test user',
-                        {
-                            'data-mention-type': 'user',
-                        },
+                        new Map(),
                     );
                 }}
             >

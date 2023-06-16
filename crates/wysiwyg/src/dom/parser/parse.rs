@@ -831,8 +831,8 @@ mod js {
                         self.current_path.push(DomNodeKind::Link);
 
                         let mut attributes = vec![];
-                        let valid_attributes =
-                            ["contenteditable", "data-mention-type", "style"];
+                        // we only need to pass in a style attribute from web to allow CSS variable insertion
+                        let valid_attributes = ["style"];
 
                         for attr in valid_attributes.into_iter() {
                             if node
@@ -1082,26 +1082,9 @@ mod js {
         }
 
         #[wasm_bindgen_test]
-        fn a_with_attributes() {
-            roundtrip(
-                r#"<a contenteditable="false" data-mention-type="user" style="something" href="http://example.com">a user mention</a>"#,
-            );
-        }
-
-        #[wasm_bindgen_test]
-        fn a_with_bad_attribute() {
-            let html = r#"<a invalidattribute="true" href="http://example.com">a user mention</a>"#;
-            let dom = HtmlParser::default().parse::<Utf16String>(html).unwrap();
-            assert_eq!(
-                dom.to_string(),
-                r#"<a href="http://example.com">a user mention</a>"#
-            );
-        }
-
-        #[wasm_bindgen_test]
         fn mention_with_attributes() {
             roundtrip(
-                r#"<a contenteditable="false" data-mention-type="user" style="something" href="https://matrix.to/@test:example.org">test</a>"#,
+                r#"<a style="something" href="https://matrix.to/@test:example.org">test</a>"#,
             );
         }
 
@@ -1111,7 +1094,7 @@ mod js {
             let dom = HtmlParser::default().parse::<Utf16String>(html).unwrap();
             assert_eq!(
                 dom.to_string(),
-                r#"<a href="https://matrix.to/#/@test:example.org" contenteditable="false">test</a>"#
+                r#"<a data-mention-type="user" href="https://matrix.to/#/@test:example.org" contenteditable="false">test</a>"#
             );
         }
 

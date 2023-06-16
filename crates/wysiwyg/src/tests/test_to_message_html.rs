@@ -38,12 +38,9 @@ fn only_outputs_href_attribute_on_user_mention() {
     model.insert_mention(
         "https://matrix.to/#/@alice:matrix.org".into(),
         "inner text".into(),
-        vec![
-            ("data-mention-type".into(), "user".into()),
-            ("style".into(), "some css".into()),
-        ],
+        vec![("style".into(), "some css".into())],
     );
-    assert_eq!(tx(&model), "<a data-mention-type=\"user\" style=\"some css\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">inner text</a>&nbsp;|");
+    assert_eq!(tx(&model), "<a style=\"some css\" data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">inner text</a>&nbsp;|");
 
     let message_output = model.get_content_as_message_html();
     assert_eq!(
@@ -58,12 +55,9 @@ fn only_outputs_href_attribute_on_room_mention_and_uses_mx_id() {
     model.insert_mention(
         "https://matrix.to/#/#alice:matrix.org".into(),
         "inner text".into(),
-        vec![
-            ("data-mention-type".into(), "room".into()),
-            ("style".into(), "some css".into()),
-        ],
+        vec![("style".into(), "some css".into())],
     );
-    assert_eq!(tx(&model), "<a data-mention-type=\"room\" style=\"some css\" href=\"https://matrix.to/#/#alice:matrix.org\" contenteditable=\"false\">inner text</a>&nbsp;|");
+    assert_eq!(tx(&model), "<a style=\"some css\" data-mention-type=\"room\" href=\"https://matrix.to/#/#alice:matrix.org\" contenteditable=\"false\">inner text</a>&nbsp;|");
 
     let message_output = model.get_content_as_message_html();
     assert_eq!(
@@ -76,7 +70,7 @@ fn only_outputs_href_attribute_on_room_mention_and_uses_mx_id() {
 fn only_outputs_href_inner_text_for_at_room_mention() {
     let mut model = cm("|");
     model.insert_at_room_mention(vec![("style".into(), "some css".into())]);
-    assert_eq!(tx(&model), "<a style=\"some css\" href=\"#\" contenteditable=\"false\">@room</a>&nbsp;|");
+    assert_eq!(tx(&model), "<a style=\"some css\" data-mention-type=\"at-room\" href=\"#\" contenteditable=\"false\">@room</a>&nbsp;|");
 
     let message_output = model.get_content_as_message_html();
     assert_eq!(message_output, "@room\u{a0}");

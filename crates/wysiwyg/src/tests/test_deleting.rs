@@ -901,7 +901,7 @@ fn backspace_mention_multiple() {
     model.backspace();
     assert_eq!(
         restore_whitespace(&tx(&model)),
-        "<a href=\"https://matrix.to/#/@test:example.org\" contenteditable=\"false\">first</a>|"
+        "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@test:example.org\" contenteditable=\"false\">first</a>|"
     );
     model.backspace();
     assert_eq!(restore_whitespace(&tx(&model)), "|");
@@ -972,7 +972,7 @@ fn delete_first_mention_of_multiple() {
     model.delete();
     assert_eq!(
         restore_whitespace(&tx(&model)),
-        "|<a href=\"https://matrix.to/#/@test:example.org\" contenteditable=\"false\">second</a>"
+        "|<a data-mention-type=\"user\" href=\"https://matrix.to/#/@test:example.org\" contenteditable=\"false\">second</a>"
     );
     model.delete();
     assert_eq!(restore_whitespace(&tx(&model)), "|");
@@ -1000,7 +1000,7 @@ fn delete_second_mention_of_multiple() {
     model.delete();
     assert_eq!(
         restore_whitespace(&tx(&model)),
-        "<a href=\"https://matrix.to/#/@test:example.org\" contenteditable=\"false\">first</a> |"
+        "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@test:example.org\" contenteditable=\"false\">first</a> |"
     );
 }
 

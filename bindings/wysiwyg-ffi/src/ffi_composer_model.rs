@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use std::vec;
 
 use widestring::Utf16String;
 
@@ -259,21 +260,9 @@ impl ComposerModel {
     }
 
     /// Creates an at-room mention node and inserts it into the composer at the current selection
-    pub fn insert_at_room_mention(
-        self: &Arc<Self>,
-        attributes: Vec<Attribute>,
-    ) -> Arc<ComposerUpdate> {
-        let attrs = attributes
-            .iter()
-            .map(|attr| {
-                (
-                    Utf16String::from_str(&attr.key),
-                    Utf16String::from_str(&attr.value),
-                )
-            })
-            .collect();
+    pub fn insert_at_room_mention(self: &Arc<Self>) -> Arc<ComposerUpdate> {
         Arc::new(ComposerUpdate::from(
-            self.inner.lock().unwrap().insert_at_room_mention(attrs),
+            self.inner.lock().unwrap().insert_at_room_mention(vec![]),
         ))
     }
 
@@ -282,19 +271,11 @@ impl ComposerModel {
         self: &Arc<Self>,
         url: String,
         text: String,
-        attributes: Vec<Attribute>,
+        _attributes: Vec<Attribute>, // TODO remove attributes
     ) -> Arc<ComposerUpdate> {
         let url = Utf16String::from_str(&url);
         let text = Utf16String::from_str(&text);
-        let attrs = attributes
-            .iter()
-            .map(|attr| {
-                (
-                    Utf16String::from_str(&attr.key),
-                    Utf16String::from_str(&attr.value),
-                )
-            })
-            .collect();
+        let attrs = vec![];
         Arc::new(ComposerUpdate::from(
             self.inner.lock().unwrap().insert_mention(url, text, attrs),
         ))
@@ -305,18 +286,9 @@ impl ComposerModel {
     pub fn insert_at_room_mention_at_suggestion(
         self: &Arc<Self>,
         suggestion: SuggestionPattern,
-        attributes: Vec<Attribute>,
     ) -> Arc<ComposerUpdate> {
         let suggestion = wysiwyg::SuggestionPattern::from(suggestion);
-        let attrs = attributes
-            .iter()
-            .map(|attr| {
-                (
-                    Utf16String::from_str(&attr.key),
-                    Utf16String::from_str(&attr.value),
-                )
-            })
-            .collect();
+        let attrs = vec![];
         Arc::new(ComposerUpdate::from(
             self.inner
                 .lock()
@@ -332,20 +304,12 @@ impl ComposerModel {
         url: String,
         text: String,
         suggestion: SuggestionPattern,
-        attributes: Vec<Attribute>,
+        _attributes: Vec<Attribute>, // TODO remove attributes
     ) -> Arc<ComposerUpdate> {
         let url = Utf16String::from_str(&url);
         let text = Utf16String::from_str(&text);
         let suggestion = wysiwyg::SuggestionPattern::from(suggestion);
-        let attrs = attributes
-            .iter()
-            .map(|attr| {
-                (
-                    Utf16String::from_str(&attr.key),
-                    Utf16String::from_str(&attr.value),
-                )
-            })
-            .collect();
+        let attrs = vec![];
         Arc::new(ComposerUpdate::from(
             self.inner
                 .lock()
