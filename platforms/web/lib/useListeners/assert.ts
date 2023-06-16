@@ -28,6 +28,10 @@ export function isSuggestionEvent(e: Event): e is SuggestionEvent {
     return isInputEvent(e) && e.inputType === 'insertSuggestion';
 }
 
+export function isAtRoomSuggestionEvent(e: Event): e is SuggestionEvent {
+    return isInputEvent(e) && e.inputType === 'insertAtRoomSuggestion';
+}
+
 export function isLinkEvent(e: Event): e is LinkEvent {
     return isInputEvent(e) && e.inputType == 'insertLink';
 }

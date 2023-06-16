@@ -162,7 +162,16 @@ impl<S: UnicodeString> MentionNode<S> {
                 let attributes = if as_message {
                     vec![("href".into(), S::from(mention.uri()))]
                 } else {
+                    // this is now only required for us to attach a custom style attribute for web
                     let mut attrs = self.attributes.clone();
+                    let data_mention_type = match mention.kind() {
+                        MentionKind::Room => "room",
+                        MentionKind::User => "user",
+                    };
+                    attrs.push((
+                        "data-mention-type".into(),
+                        data_mention_type.into(),
+                    ));
                     attrs.push(("href".into(), S::from(mention.uri())));
                     attrs.push(("contenteditable".into(), "false".into()));
                     attrs
@@ -184,7 +193,10 @@ impl<S: UnicodeString> MentionNode<S> {
                 if as_message {
                     formatter.push(self.display_text())
                 } else {
+                    // this is now only required for us to attach a custom style attribute for web
                     let mut attributes = self.attributes.clone();
+                    attributes
+                        .push(("data-mention-type".into(), "at-room".into()));
                     attributes.push(("href".into(), "#".into())); // designates a placeholder link in html
                     attributes.push(("contenteditable".into(), "false".into()));
 

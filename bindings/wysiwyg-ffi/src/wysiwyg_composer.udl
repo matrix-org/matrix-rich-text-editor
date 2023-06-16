@@ -48,9 +48,9 @@ interface ComposerModel {
     ComposerUpdate set_link(string url, sequence<Attribute> attributes);
     ComposerUpdate set_link_with_text(string url, string text, sequence<Attribute> attributes);
     ComposerUpdate remove_links();
-    ComposerUpdate insert_at_room_mention(sequence<Attribute> attributes);
+    ComposerUpdate insert_at_room_mention();
     ComposerUpdate insert_mention(string url, string text, sequence<Attribute> attributes);
-    ComposerUpdate insert_at_room_mention_at_suggestion(SuggestionPattern suggestion, sequence<Attribute> attributes);
+    ComposerUpdate insert_at_room_mention_at_suggestion(SuggestionPattern suggestion);
     ComposerUpdate insert_mention_at_suggestion(string url, string text, SuggestionPattern suggestion, sequence<Attribute> attributes);
     ComposerUpdate code_block();
     ComposerUpdate quote();
