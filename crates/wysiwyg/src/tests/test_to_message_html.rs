@@ -31,58 +31,52 @@ fn replaces_empty_paragraphs_with_newline_characters() {
     let message_output = model.get_content_as_message_html();
     assert_eq!(message_output, "<p>hello</p>\n\n\n<p>Alice</p>");
 }
+
 #[test]
 fn only_outputs_href_attribute_on_user_mention() {
     let mut model = cm("|");
     model.insert_mention(
-        "www.url.com".into(),
+        "https://matrix.to/#/@alice:matrix.org".into(),
         "inner text".into(),
         vec![
             ("data-mention-type".into(), "user".into()),
             ("style".into(), "some css".into()),
         ],
     );
-    assert_eq!(tx(&model), "<a data-mention-type=\"user\" style=\"some css\" href=\"www.url.com\" contenteditable=\"false\">inner text</a>&nbsp;|");
+    assert_eq!(tx(&model), "<a data-mention-type=\"user\" style=\"some css\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">inner text</a>&nbsp;|");
 
     let message_output = model.get_content_as_message_html();
     assert_eq!(
         message_output,
-        "<a href=\"www.url.com\">inner text</a>\u{a0}"
+        "<a href=\"https://matrix.to/#/@alice:matrix.org\">inner text</a>\u{a0}"
     );
 }
 
 #[test]
-fn only_outputs_href_attribute_on_room_mention() {
+fn only_outputs_href_attribute_on_room_mention_and_uses_mx_id() {
     let mut model = cm("|");
     model.insert_mention(
-        "www.url.com".into(),
+        "https://matrix.to/#/#alice:matrix.org".into(),
         "inner text".into(),
         vec![
             ("data-mention-type".into(), "room".into()),
             ("style".into(), "some css".into()),
         ],
     );
-    assert_eq!(tx(&model), "<a data-mention-type=\"room\" style=\"some css\" href=\"www.url.com\" contenteditable=\"false\">inner text</a>&nbsp;|");
+    assert_eq!(tx(&model), "<a data-mention-type=\"room\" style=\"some css\" href=\"https://matrix.to/#/#alice:matrix.org\" contenteditable=\"false\">inner text</a>&nbsp;|");
 
     let message_output = model.get_content_as_message_html();
     assert_eq!(
         message_output,
-        "<a href=\"www.url.com\">inner text</a>\u{a0}"
+        "<a href=\"https://matrix.to/#/#alice:matrix.org\">#alice:matrix.org</a>\u{a0}"
     );
 }
 
 #[test]
 fn only_outputs_href_inner_text_for_at_room_mention() {
     let mut model = cm("|");
-    model.insert_mention(
-        "anything".into(), // this should be ignored in favour of a # placeholder
-        "@room".into(),
-        vec![
-            ("data-mention-type".into(), "at-room".into()),
-            ("style".into(), "some css".into()),
-        ],
-    );
-    assert_eq!(tx(&model), "<a data-mention-type=\"at-room\" style=\"some css\" href=\"#\" contenteditable=\"false\">@room</a>&nbsp;|");
+    model.insert_at_room_mention(vec![("style".into(), "some css".into())]);
+    assert_eq!(tx(&model), "<a style=\"some css\" href=\"#\" contenteditable=\"false\">@room</a>&nbsp;|");
 
     let message_output = model.get_content_as_message_html();
     assert_eq!(message_output, "@room\u{a0}");

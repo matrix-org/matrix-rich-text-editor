@@ -26,6 +26,7 @@ use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::{self, UnicodeString};
 use crate::{InlineFormatType, ListType};
 
+use super::mention_node::UriParseError;
 use super::MentionNode;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -138,16 +139,24 @@ where
         DomNode::Container(ContainerNode::new_link(url, children, attributes))
     }
 
+    /// Attempts to create a new mention node. Returns a result as creating a
+    /// mention node can fail if attempted with an invalid uri.
     pub fn new_mention(
         url: S,
         display_text: S,
         attributes: Vec<(S, S)>,
-    ) -> DomNode<S> {
-        DomNode::Mention(MentionNode::new(url, display_text, attributes))
+    ) -> Result<MentionNode<S>, UriParseError> {
+        if let Ok(mention_node) =
+            MentionNode::new(url, display_text, attributes)
+        {
+            Ok(mention_node)
+        } else {
+            Err(UriParseError)
+        }
     }
 
-    pub fn new_at_room_mention(attributes: Vec<(S, S)>) -> DomNode<S> {
-        DomNode::Mention(MentionNode::new_at_room(attributes))
+    pub fn new_at_room_mention(attributes: Vec<(S, S)>) -> MentionNode<S> {
+        MentionNode::new_at_room(attributes)
     }
 
     pub fn is_container_node(&self) -> bool {

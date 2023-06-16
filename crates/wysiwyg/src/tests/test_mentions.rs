@@ -18,6 +18,40 @@ use crate::{
     tests::testutils_composer_model::{cm, tx},
     ComposerModel, MenuAction,
 };
+/**
+ * INSERTING INVALID URL
+ */
+#[test]
+fn inserting_with_invalid_mention_url_does_nothing() {
+    let mut model = cm("|");
+    model.insert_mention("invalid mention url".into(), "@Alice".into(), vec![]);
+    assert_eq!(tx(&model), "|");
+}
+
+/**
+ * INSERTING EXTERNAL LINKS
+ */
+#[test]
+fn inserting_with_external_user_works() {
+    let mut model = cm("|");
+    model.insert_mention(
+        "https://custom.custom.com/?secretstuff/#/@alice:example.org".into(),
+        "@Alice".into(),
+        vec![],
+    );
+    assert_eq!(tx(&model), "<a href=\"https://custom.custom.com/?secretstuff/#/@alice:example.org\" contenteditable=\"false\">@Alice</a>&nbsp;|");
+}
+
+#[test]
+fn inserting_with_external_room_works() {
+    let mut model = cm("|");
+    model.insert_mention(
+        "https://custom.custom.com/?secretstuff/#/!roomid:example.org".into(),
+        "some room".into(),
+        vec![],
+    );
+    assert_eq!(tx(&model), "<a href=\"https://custom.custom.com/?secretstuff/#/!roomid:example.org\" contenteditable=\"false\">some room</a>&nbsp;|");
+}
 
 /**
  * ATTRIBUTE TESTS
@@ -519,6 +553,16 @@ fn selection_paragraph_spanning() {
         tx(&model),
         "<p>hello <a href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|!</p>"
     );
+}
+
+/**
+ * AT-ROOM
+ */
+#[test]
+fn can_insert_at_room_mention() {
+    let mut model = cm("|");
+    model.insert_at_room_mention(vec![("style".into(), "some css".into())]);
+    assert_eq!(tx(&model), "<a style=\"some css\" href=\"#\" contenteditable=\"false\">@room</a>&nbsp;|")
 }
 
 /**

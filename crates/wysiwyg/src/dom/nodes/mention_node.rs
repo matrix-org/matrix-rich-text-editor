@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+use matrix_mentions::{Mention, MentionKind};
 
 use crate::composer_model::example_format::SelectionWriter;
 use crate::dom::dom_handle::DomHandle;
@@ -22,22 +23,31 @@ use crate::dom::to_tree::ToTree;
 use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use crate::dom::UnicodeString;
 
+pub const AT_ROOM: &str = "@room";
+
+/// Util function to get the display text for an at-room mention
+pub fn get_at_room_display_text() -> &'static str {
+    AT_ROOM
+}
+#[derive(Debug)]
+pub struct UriParseError;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MentionNode<S>
 where
     S: UnicodeString,
 {
-    kind: MentionNodeKind<S>,
+    // `display_text` refers to that passed by the client which may, in some cases, be different
+    // from the ruma derived `Mention.display_text`
+    display_text: S,
+    kind: MentionNodeKind,
     attributes: Vec<(S, S)>,
     handle: DomHandle,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum MentionNodeKind<S>
-where
-    S: UnicodeString,
-{
-    MatrixUrl { display_text: S, url: S },
+pub enum MentionNodeKind {
+    MatrixUri { mention: Mention },
     AtRoom,
 }
 
@@ -45,24 +55,43 @@ impl<S> MentionNode<S>
 where
     S: UnicodeString,
 {
-    /// Create a new MentionNode
+    /// Create a new MentionNode. This may fail if the uri can not be parsed, so
+    /// it will return `Result<MentionNode>`
     ///
     /// NOTE: Its handle() will be unset until you call set_handle() or
     /// append() it to another node.
-    pub fn new(url: S, display_text: S, attributes: Vec<(S, S)>) -> Self {
+    pub fn new(
+        url: S,
+        display_text: S,
+        attributes: Vec<(S, S)>,
+    ) -> Result<Self, UriParseError> {
         let handle = DomHandle::new_unset();
 
-        Self {
-            kind: MentionNodeKind::MatrixUrl { display_text, url },
-            attributes,
-            handle,
+        if let Some(mention) = Mention::from_uri_with_display_text(
+            &url.to_string(),
+            &display_text.to_string(),
+        ) {
+            let kind = MentionNodeKind::MatrixUri { mention };
+            Ok(Self {
+                display_text,
+                kind,
+                attributes,
+                handle,
+            })
+        } else {
+            Err(UriParseError)
         }
     }
 
+    /// Create a new at-room MentionNode.
+    ///
+    /// NOTE: Its handle() will be unset until you call set_handle() or
+    /// append() it to another node.
     pub fn new_at_room(attributes: Vec<(S, S)>) -> Self {
         let handle = DomHandle::new_unset();
 
         Self {
+            display_text: S::from(get_at_room_display_text()),
             kind: MentionNodeKind::AtRoom,
             attributes,
             handle,
@@ -75,10 +104,8 @@ where
 
     pub fn display_text(&self) -> S {
         match self.kind() {
-            MentionNodeKind::MatrixUrl { display_text, .. } => {
-                display_text.clone()
-            }
-            MentionNodeKind::AtRoom => S::from("@room"),
+            MentionNodeKind::MatrixUri { .. } => self.display_text.clone(),
+            MentionNodeKind::AtRoom => S::from(get_at_room_display_text()),
         }
     }
 
@@ -96,10 +123,12 @@ where
         1
     }
 
-    pub fn kind(&self) -> &MentionNodeKind<S> {
+    pub fn kind(&self) -> &MentionNodeKind {
         &self.kind
     }
 }
+
+// TODO implment From trait to convert from MentionNode to DomNode to allow MentionNode.into() usage
 
 impl<S> ToHtml<S> for MentionNode<S>
 where
@@ -128,20 +157,26 @@ impl<S: UnicodeString> MentionNode<S> {
 
         let cur_pos = formatter.len();
         match self.kind() {
-            MentionNodeKind::MatrixUrl { display_text, url } => {
+            MentionNodeKind::MatrixUri { mention } => {
                 // if formatting as a message, only include the href attribute
                 let attributes = if as_message {
-                    vec![("href".into(), url.clone())]
+                    vec![("href".into(), S::from(mention.uri()))]
                 } else {
-                    let mut attributes_for_composer = self.attributes.clone();
-                    attributes_for_composer.push(("href".into(), url.clone()));
-                    attributes_for_composer
-                        .push(("contenteditable".into(), "false".into()));
-                    attributes_for_composer
+                    let mut attrs = self.attributes.clone();
+                    attrs.push(("href".into(), S::from(mention.uri())));
+                    attrs.push(("contenteditable".into(), "false".into()));
+                    attrs
                 };
 
+                let display_text =
+                    if as_message && mention.kind() == &MentionKind::Room {
+                        S::from(mention.mx_id())
+                    } else {
+                        self.display_text()
+                    };
+
                 self.fmt_tag_open(tag, formatter, &Some(attributes));
-                formatter.push(display_text.clone());
+                formatter.push(display_text);
                 self.fmt_tag_close(tag, formatter);
             }
             MentionNodeKind::AtRoom => {
@@ -196,9 +231,9 @@ where
         description.push("\"");
 
         match self.kind() {
-            MentionNodeKind::MatrixUrl { url, .. } => {
+            MentionNodeKind::MatrixUri { mention } => {
                 description.push(", ");
-                description.push(url.clone());
+                description.push(S::from(mention.uri()));
             }
             MentionNodeKind::AtRoom => {}
         }
@@ -222,42 +257,30 @@ where
         buffer: &mut S,
         _: &MarkdownOptions,
     ) -> Result<(), MarkdownError<S>> {
-        use MentionNodeKind::*;
-
-        // There are two different functions to allow for fact one will use mxId later on
-        match self.kind() {
-            MatrixUrl { .. } => {
-                fmt_user_or_room_mention(self, buffer)?;
-            }
-            AtRoom => {
-                fmt_at_room_mention(self, buffer)?;
-            }
-        }
-
+        fmt_mention(self, buffer)?;
         return Ok(());
 
         #[inline(always)]
-        fn fmt_user_or_room_mention<S>(
+        fn fmt_mention<S>(
             this: &MentionNode<S>,
             buffer: &mut S,
         ) -> Result<(), MarkdownError<S>>
         where
             S: UnicodeString,
         {
-            // TODO make this use mxId, for now we use display_text
-            buffer.push(this.display_text());
-            Ok(())
-        }
+            let text = match this.kind() {
+                // for User/Room type, we use the mx_id in the md output
+                MentionNodeKind::MatrixUri { mention } => {
+                    if mention.kind() == &MentionKind::Room {
+                        S::from(mention.mx_id())
+                    } else {
+                        this.display_text()
+                    }
+                }
+                MentionNodeKind::AtRoom => this.display_text(),
+            };
 
-        #[inline(always)]
-        fn fmt_at_room_mention<S>(
-            this: &MentionNode<S>,
-            buffer: &mut S,
-        ) -> Result<(), MarkdownError<S>>
-        where
-            S: UnicodeString,
-        {
-            buffer.push(this.display_text());
+            buffer.push(text);
             Ok(())
         }
     }

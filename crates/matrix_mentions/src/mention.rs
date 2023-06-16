@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use ruma_common::{matrix_uri::MatrixId, MatrixToUri, MatrixUri};
+use ruma_common::{matrix_uri::MatrixId, IdParseError, MatrixToUri, MatrixUri};
+
+const MATRIX_TO_BASE_URL: &str = "https://matrix.to/#/";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Mention {
@@ -57,6 +59,11 @@ impl Mention {
 
     pub fn kind(&self) -> &MentionKind {
         &self.kind
+    }
+
+    /// Determine if a uri is a valid matrix uri
+    pub fn is_valid_uri(uri: &str) -> bool {
+        parse_matrix_id(uri).is_some()
     }
 
     /// Create a mention from a URI
@@ -142,14 +149,51 @@ impl Mention {
     }
 }
 
+/// Determines if a uri can be parsed for a matrix id. Attempts to treat the uri in three
+/// ways when parsing:
+/// 1 - As a matrix uri
+/// 2 - As a matrix to uri
+/// 3 - As a custom uri
+///  
+/// If any of the above succeed, return Some<MatrixIdI. Else return None.
 fn parse_matrix_id(uri: &str) -> Option<MatrixId> {
     if let Ok(matrix_uri) = MatrixUri::parse(uri) {
-        Some(matrix_uri.id().to_owned())
+        return Some(matrix_uri.id().to_owned());
     } else if let Ok(matrix_to_uri) = MatrixToUri::parse(uri) {
-        Some(matrix_to_uri.id().to_owned())
-    } else {
-        None
+        return Some(matrix_to_uri.id().to_owned());
     }
+
+    cfg_if::cfg_if! {
+        if #[cfg(any(test, feature = "custom-matrix-urls"))] {
+             if let Ok(matrix_to_uri) = parse_external_id(uri) {
+            return Some(matrix_to_uri.id().to_owned());
+        }
+        }
+    }
+
+    None
+}
+
+/// Attempts to split an external id on `/#/`, rebuild as a matrix to style permalink then parse
+/// using ruma.
+///
+/// Returns the result of calling `parse` in ruma.
+
+#[cfg(any(test, feature = "custom-matrix-urls"))]
+fn parse_external_id(uri: &str) -> Result<MatrixToUri, IdParseError> {
+    // first split the string into the parts we need
+    let parts: Vec<&str> = uri.split("/#/").collect();
+
+    // we expect this to split the uri into exactly two parts, if it's anything else, return early
+    if parts.len() != 2 {
+        return Err(IdParseError::Empty);
+    }
+    let after_hash = parts[1];
+
+    // now rebuild the string as if it were a matrix to type link, then use ruma to parse
+    let uri_for_ruma = format!("{}{}", MATRIX_TO_BASE_URL, after_hash);
+
+    MatrixToUri::parse(&uri_for_ruma)
 }
 
 #[cfg(test)]
@@ -253,6 +297,29 @@ mod test {
     #[test]
     fn parse_uri_not_uri() {
         assert!(Mention::from_uri("hello").is_none());
+    }
+
+    #[test]
+    fn parse_uri_external_user() {
+        let uri = "https://custom.custom.com/?secretstuff/#/@alice:example.org";
+        let parsed = Mention::from_uri(uri).unwrap();
+
+        assert_eq!(parsed.uri(), uri);
+        assert_eq!(parsed.mx_id(), "@alice:example.org");
+        assert_eq!(parsed.display_text(), "@alice:example.org");
+        assert_eq!(parsed.kind(), &MentionKind::User);
+    }
+
+    #[test]
+    fn parse_uri_external_room() {
+        let uri =
+            "https://custom.custom.com/?secretstuff/#/!roomid:example.org";
+        let parsed = Mention::from_uri(uri).unwrap();
+
+        assert_eq!(parsed.uri(), uri);
+        assert_eq!(parsed.mx_id(), "!roomid:example.org");
+        assert_eq!(parsed.display_text(), "!roomid:example.org");
+        assert_eq!(parsed.kind(), &MentionKind::Room);
     }
 
     #[test]

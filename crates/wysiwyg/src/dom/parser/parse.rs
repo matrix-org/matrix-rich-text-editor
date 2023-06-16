@@ -35,6 +35,8 @@ where
 
 #[cfg(feature = "sys")]
 mod sys {
+    use matrix_mentions::Mention;
+
     use super::super::padom_node::PaDomNode;
     use super::super::PaNodeContainer;
     use super::super::{PaDom, PaDomCreationError, PaDomCreator};
@@ -178,14 +180,8 @@ mod sys {
                     self.current_path.remove(cur_path_idx);
                 }
                 "a" => {
-                    // TODO: Replace this logic with real mention detection
-                    // The only mention that is currently detected is the
-                    // example mxid, @test:example.org.
                     let is_mention = child.attrs.iter().any(|(k, v)| {
-                        k == &String::from("href")
-                            && v.starts_with(
-                                "https://matrix.to/#/@test:example.org",
-                            )
+                        k == &String::from("href") && Mention::is_valid_uri(v)
                     });
 
                     let text =
@@ -316,12 +312,18 @@ mod sys {
         {
             let text = &text.content;
 
-            DomNode::new_mention(
+            // creating a mention node could fail if the uri is invalid
+            let creation_result = DomNode::new_mention(
                 link.get_attr("href").unwrap_or("").into(),
                 text.as_str().into(),
                 // custom attributes are not required when cfg feature != "js"
                 vec![],
-            )
+            );
+
+            match creation_result {
+                Ok(node) => DomNode::Mention(node),
+                Err(_) => Self::new_link(link),
+            }
         }
 
         /// Create a list node
@@ -710,7 +712,9 @@ fn convert_text<S: UnicodeString>(
 
         for (i, part) in contents.split("@room").into_iter().enumerate() {
             if i > 0 {
-                node.append_child(DomNode::new_at_room_mention(vec![]));
+                node.append_child(DomNode::Mention(
+                    DomNode::new_at_room_mention(vec![]),
+                ));
             }
             if !part.is_empty() {
                 node.append_child(DomNode::new_text(part.into()));
@@ -727,6 +731,7 @@ mod js {
         dom::nodes::{ContainerNode, DomNode},
         InlineFormatType, ListType,
     };
+    use matrix_mentions::Mention;
     use std::fmt;
     use wasm_bindgen::JsCast;
     use web_sys::{Document, DomParser, Element, NodeList, SupportedType};
@@ -849,12 +854,8 @@ mod js {
                             .get_attribute("href")
                             .unwrap_or_default();
 
-                        // TODO: Replace this logic with real mention detection
-                        // The only mention that is currently detected is the
-                        // example mxid, @test:example.org.
-                        let is_mention = url.starts_with(
-                            "https://matrix.to/#/@test:example.org",
-                        );
+                        let is_mention =
+                            Mention::is_valid_uri(&url.to_string());
                         let text = node.child_nodes().get(0);
                         let has_text = match text.clone() {
                             Some(node) => {
@@ -863,14 +864,19 @@ mod js {
                             None => false,
                         };
                         if has_text && is_mention {
-                            dom.append_child(DomNode::new_mention(
-                                url.into(),
-                                text.unwrap()
-                                    .node_value()
-                                    .unwrap_or_default()
-                                    .into(),
-                                attributes,
-                            ));
+                            dom.append_child(
+                                DomNode::Mention(
+                                    DomNode::new_mention(
+                                        url.into(),
+                                        text.unwrap()
+                                            .node_value()
+                                            .unwrap_or_default()
+                                            .into(),
+                                        attributes,
+                                    )
+                                    .unwrap(),
+                                ), // we unwrap because we have already confirmed the uri is valid
+                            );
                         } else {
                             let children = self
                                 .convert(node.child_nodes())?

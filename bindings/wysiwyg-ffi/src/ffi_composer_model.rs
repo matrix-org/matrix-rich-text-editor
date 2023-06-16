@@ -258,6 +258,25 @@ impl ComposerModel {
         ))
     }
 
+    /// Creates an at-room mention node and inserts it into the composer at the current selection
+    pub fn insert_at_room_mention(
+        self: &Arc<Self>,
+        attributes: Vec<Attribute>,
+    ) -> Arc<ComposerUpdate> {
+        let attrs = attributes
+            .iter()
+            .map(|attr| {
+                (
+                    Utf16String::from_str(&attr.key),
+                    Utf16String::from_str(&attr.value),
+                )
+            })
+            .collect();
+        Arc::new(ComposerUpdate::from(
+            self.inner.lock().unwrap().insert_at_room_mention(attrs),
+        ))
+    }
+
     /// Creates a mention node and inserts it into the composer at the current selection
     pub fn insert_mention(
         self: &Arc<Self>,
@@ -278,6 +297,31 @@ impl ComposerModel {
             .collect();
         Arc::new(ComposerUpdate::from(
             self.inner.lock().unwrap().insert_mention(url, text, attrs),
+        ))
+    }
+
+    /// Creates an at-room mention node and inserts it into the composer, replacing the
+    /// text content defined by the suggestion
+    pub fn insert_at_room_mention_at_suggestion(
+        self: &Arc<Self>,
+        suggestion: SuggestionPattern,
+        attributes: Vec<Attribute>,
+    ) -> Arc<ComposerUpdate> {
+        let suggestion = wysiwyg::SuggestionPattern::from(suggestion);
+        let attrs = attributes
+            .iter()
+            .map(|attr| {
+                (
+                    Utf16String::from_str(&attr.key),
+                    Utf16String::from_str(&attr.value),
+                )
+            })
+            .collect();
+        Arc::new(ComposerUpdate::from(
+            self.inner
+                .lock()
+                .unwrap()
+                .insert_at_room_mention_at_suggestion(suggestion, attrs),
         ))
     }
 

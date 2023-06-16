@@ -204,10 +204,18 @@ fn list_ordered_and_unordered() {
 }
 
 #[test]
-fn mention() {
+fn user_mention() {
     assert_to_md_no_roundtrip(
-        r#"<a href="https://matrix.to/#/@test:example.org">test</a>"#,
+        r#"<a href="https://matrix.to/#/@alice:matrix.org">test</a>"#,
         r#"test"#,
+    );
+}
+
+#[test]
+fn room_mention() {
+    assert_to_md_no_roundtrip(
+        r#"<a href="https://matrix.to/#/#alice:matrix.org">test</a>"#,
+        r#"#alice:matrix.org"#,
     );
 }
 
