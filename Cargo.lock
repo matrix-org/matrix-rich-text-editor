@@ -452,6 +452,7 @@ dependencies = [
 name = "matrix_mentions"
 version = "0.1.0"
 dependencies = [
+ "cfg-if",
  "ruma-common",
 ]
 

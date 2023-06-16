@@ -158,20 +158,28 @@ impl Mention {
 /// If any of the above succeed, return Some<MatrixIdI. Else return None.
 fn parse_matrix_id(uri: &str) -> Option<MatrixId> {
     if let Ok(matrix_uri) = MatrixUri::parse(uri) {
-        Some(matrix_uri.id().to_owned())
+        return Some(matrix_uri.id().to_owned());
     } else if let Ok(matrix_to_uri) = MatrixToUri::parse(uri) {
-        Some(matrix_to_uri.id().to_owned())
-    } else if let Ok(matrix_to_uri) = parse_external_id(uri) {
-        Some(matrix_to_uri.id().to_owned())
-    } else {
-        None
+        return Some(matrix_to_uri.id().to_owned());
     }
+
+    cfg_if::cfg_if! {
+        if #[cfg(any(test, feature = "custom-matrix-urls"))] {
+             if let Ok(matrix_to_uri) = parse_external_id(uri) {
+            return Some(matrix_to_uri.id().to_owned());
+        }
+        }
+    }
+
+    None
 }
 
 /// Attempts to split an external id on `/#/`, rebuild as a matrix to style permalink then parse
 /// using ruma.
 ///
 /// Returns the result of calling `parse` in ruma.
+
+#[cfg(any(test, feature = "custom-matrix-urls"))]
 fn parse_external_id(uri: &str) -> Result<MatrixToUri, IdParseError> {
     // first split the string into the parts we need
     let parts: Vec<&str> = uri.split("/#/").collect();
