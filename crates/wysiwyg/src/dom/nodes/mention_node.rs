@@ -47,7 +47,7 @@ where
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MentionNodeKind {
-    MatrixURI { mention: Mention },
+    MatrixUri { mention: Mention },
     AtRoom,
 }
 
@@ -71,7 +71,7 @@ where
             &url.to_string(),
             &display_text.to_string(),
         ) {
-            let kind = MentionNodeKind::MatrixURI { mention };
+            let kind = MentionNodeKind::MatrixUri { mention };
             Ok(Self {
                 display_text,
                 kind,
@@ -104,7 +104,7 @@ where
 
     pub fn display_text(&self) -> S {
         match self.kind() {
-            MentionNodeKind::MatrixURI { .. } => self.display_text.clone(),
+            MentionNodeKind::MatrixUri { .. } => self.display_text.clone(),
             MentionNodeKind::AtRoom => S::from(get_at_room_display_text()),
         }
     }
@@ -127,6 +127,8 @@ where
         &self.kind
     }
 }
+
+// TODO implment From trait to convert from MentionNode to DomNode to allow MentionNode.into() usage
 
 impl<S> ToHtml<S> for MentionNode<S>
 where
@@ -155,7 +157,7 @@ impl<S: UnicodeString> MentionNode<S> {
 
         let cur_pos = formatter.len();
         match self.kind() {
-            MentionNodeKind::MatrixURI { mention } => {
+            MentionNodeKind::MatrixUri { mention } => {
                 // if formatting as a message, only include the href attribute
                 let attributes = if as_message {
                     vec![("href".into(), S::from(mention.uri()))]
@@ -229,7 +231,7 @@ where
         description.push("\"");
 
         match self.kind() {
-            MentionNodeKind::MatrixURI { mention } => {
+            MentionNodeKind::MatrixUri { mention } => {
                 description.push(", ");
                 description.push(S::from(mention.uri()));
             }
@@ -268,7 +270,7 @@ where
         {
             let text = match this.kind() {
                 // for User/Room type, we use the mx_id in the md output
-                MentionNodeKind::MatrixURI { mention } => {
+                MentionNodeKind::MatrixUri { mention } => {
                     if mention.kind() == &MentionKind::Room {
                         S::from(mention.mx_id())
                     } else {

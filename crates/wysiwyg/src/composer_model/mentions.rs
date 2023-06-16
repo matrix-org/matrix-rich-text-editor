@@ -116,7 +116,7 @@ where
     /// mention is the last node in it's parent.
     fn do_insert_mention(
         &mut self,
-        mention_node: MentionNode<S>, // TODO can we type this as a mention node somehow
+        mention_node: MentionNode<S>,
     ) -> ComposerUpdate<S> {
         let (start, end) = self.safe_selection();
         let range = self.state.dom.find_range(start, end);
