@@ -14,8 +14,9 @@
 use matrix_mentions::Mention;
 
 use crate::{
-    dom::DomLocation, ComposerModel, ComposerUpdate, DomNode, Location,
-    SuggestionPattern, UnicodeString,
+    dom::{nodes::MentionNode, DomLocation},
+    ComposerModel, ComposerUpdate, DomNode, Location, SuggestionPattern,
+    UnicodeString,
 };
 
 impl<S> ComposerModel<S>
@@ -58,6 +59,7 @@ where
         text: S,
         attributes: Vec<(S, S)>,
     ) -> ComposerUpdate<S> {
+        // TODO change this as this will now be handled by the if let below
         if self.should_not_insert_mention(&url) {
             return ComposerUpdate::keep();
         }
@@ -116,18 +118,17 @@ where
     /// mention is the last node in it's parent.
     fn do_insert_mention(
         &mut self,
-        mention_node: DomNode<S>,
+        mention_node: MentionNode<S>, // TODO can we type this as a mention node somehow
     ) -> ComposerUpdate<S> {
-        if !mention_node.is_mention_node() {
-            return ComposerUpdate::keep();
-        }
-
         let (start, end) = self.safe_selection();
         let range = self.state.dom.find_range(start, end);
 
         let new_cursor_index = start + mention_node.text_len();
 
-        let handle = self.state.dom.insert_node_at_cursor(&range, mention_node);
+        let handle = self
+            .state
+            .dom
+            .insert_node_at_cursor(&range, DomNode::Mention(mention_node));
 
         // manually move the cursor to the end of the mention
         self.state.start = Location::from(new_cursor_index);

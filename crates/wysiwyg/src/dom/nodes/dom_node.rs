@@ -145,18 +145,18 @@ where
         url: S,
         display_text: S,
         attributes: Vec<(S, S)>,
-    ) -> Result<DomNode<S>, UriParseError> {
+    ) -> Result<MentionNode<S>, UriParseError> {
         if let Ok(mention_node) =
             MentionNode::new(url, display_text, attributes)
         {
-            Ok(DomNode::Mention(mention_node))
+            Ok(mention_node)
         } else {
             Err(UriParseError)
         }
     }
 
-    pub fn new_at_room_mention(attributes: Vec<(S, S)>) -> DomNode<S> {
-        DomNode::Mention(MentionNode::new_at_room(attributes))
+    pub fn new_at_room_mention(attributes: Vec<(S, S)>) -> MentionNode<S> {
+        MentionNode::new_at_room(attributes)
     }
 
     pub fn is_container_node(&self) -> bool {

@@ -126,16 +126,6 @@ where
     pub fn kind(&self) -> &MentionNodeKind {
         &self.kind
     }
-
-    // /// Util function to check if the display text is that of an at-room mention
-    // pub fn is_at_room_display_text(text: &S) -> bool {
-    //     text == &S::from(AT_ROOM)
-    // }
-
-    // /// Util function to get the display text for an at-room mention
-    // pub fn get_at_room_display_text() -> S {
-    //     S::from(AT_ROOM)
-    // }
 }
 
 impl<S> ToHtml<S> for MentionNode<S>
