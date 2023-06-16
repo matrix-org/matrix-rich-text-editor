@@ -1,5 +1,19 @@
 # Changelog
 
+# [2.3.0] - 2023-06-16
+
+### Added
+
+- Common: Functions for inserting mentions and at-room mentions
+- Common: Function to output html formatted in accordance with the matrix spec
+- Common: A new crate to represent matrix mentions
+- Web: Expose html message output
+- Web: Expose new function for adding at-room mentions
+
+### Changed
+
+- Web: Types for the `attributes` argument when inserting a mention
+
 # [2.2.2] - 2023-06-08
 
 ### Added
