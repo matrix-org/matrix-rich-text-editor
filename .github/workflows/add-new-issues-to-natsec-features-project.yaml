@@ -14,4 +14,4 @@ jobs:
       - uses: actions/add-to-project@main
         with:
           project-url: https://github.com/orgs/vector-im/projects/57
-          github-token: ${{ secrets.RIOTROBOT_TOKEN_NatSec }}
+          github-token: ${{ secrets.RIOTROBOT_TOKEN_VERTICALS }}
