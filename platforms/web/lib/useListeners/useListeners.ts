@@ -204,8 +204,7 @@ export function useListeners(
                 inputType: 'insertCompositionText',
             });
 
-            // call _handleInput to bypass the isImeComposing check in `onInput`
-            // as we know that this is both an InputEvent and we are not in IME
+            // now process that new event
             onInput(inputEvent);
         };
         editorNode.addEventListener('compositionend', onCompositionEnd);
