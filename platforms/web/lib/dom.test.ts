@@ -36,6 +36,10 @@ beforeAll(() => {
     document.body.appendChild(afterEditor);
 });
 
+afterAll(() => {
+    document.body.innerHTML = '';
+});
+
 describe('computeNodeAndOffset', () => {
     it('Should find at the start of simple text', () => {
         // When
