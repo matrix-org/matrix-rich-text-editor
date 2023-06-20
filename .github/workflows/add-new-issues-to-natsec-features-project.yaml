@@ -1,0 +1,17 @@
+name: Add new issues to the NatSec Features project board
+
+on:
+  issues:
+    types:
+      - opened
+
+jobs:
+  add-to-project:
+    name: Add issue to project
+    runs-on: non-dind
+    container: ubuntu
+    steps:
+      - uses: actions/add-to-project@main
+        with:
+          project-url: https://github.com/orgs/vector-im/projects/57
+          github-token: ${{ secrets.RIOTROBOT_TOKEN_NatSec }}
