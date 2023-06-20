@@ -50,7 +50,6 @@ export function useListeners(
         actionStates: createDefaultActionStates(),
         suggestion: null,
     });
-    const [isImeComposing, setIsImeComposing] = useState(false);
 
     const plainTextContentRef = useRef<string>();
 
@@ -124,7 +123,7 @@ export function useListeners(
 
         // Also skip this if we are composing IME such as inputting accents or CJK
         const onInput = (e: Event) =>
-            isInputEvent(e) && !isImeComposing && _handleInput(e);
+            isInputEvent(e) && !e.isComposing && _handleInput(e);
         editorNode.addEventListener('input', onInput);
 
         // Can be called by onPaste or onBeforeInput
@@ -193,20 +192,13 @@ export function useListeners(
         // this is required to handle edge case image pasting in Safari, see
         // https://github.com/vector-im/element-web/issues/25327
         const onBeforeInput = (e: ClipboardEvent | InputEvent) => {
-            if (isImeComposing) return;
+            if (isInputEvent(e) && e.isComposing) return;
             return onPaste(e);
         };
         editorNode.addEventListener('beforeinput', onBeforeInput);
 
-        const onCompositionStart = (): void => {
-            setIsImeComposing(true);
-        };
-        editorNode.addEventListener('compositionstart', onCompositionStart);
-
         const onCompositionEnd = (e: CompositionEvent): void => {
-            setIsImeComposing(false);
             // create a new inputEvent for us to process
-
             const inputEvent = new InputEvent('input', {
                 data: e.data,
                 inputType: 'insertCompositionText',
@@ -214,7 +206,7 @@ export function useListeners(
 
             // call _handleInput to bypass the isImeComposing check in `onInput`
             // as we know that this is both an InputEvent and we are not in IME
-            _handleInput(inputEvent);
+            onInput(inputEvent);
         };
         editorNode.addEventListener('compositionend', onCompositionEnd);
 
@@ -227,10 +219,6 @@ export function useListeners(
             editorNode.removeEventListener('wysiwygInput', onWysiwygInput);
             editorNode.removeEventListener('keydown', onKeyDown);
             editorNode.removeEventListener('beforeinput', onBeforeInput);
-            editorNode.removeEventListener(
-                'compositionstart',
-                onCompositionStart,
-            );
             editorNode.removeEventListener('compositionend', onCompositionEnd);
             document.removeEventListener('selectionchange', onSelectionChange);
         };
@@ -244,7 +232,6 @@ export function useListeners(
         onError,
         plainTextContentRef,
         state.suggestion,
-        isImeComposing,
     ]);
 
     return { areListenersReady, ...state };
