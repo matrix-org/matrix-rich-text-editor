@@ -31,10 +31,10 @@
         "preview": "vite preview",
         "typecheck": "tsc --noEmit",
         "lint": "eslint .",
-        "test": "vitest --run",
+        "test": "vitest --run --no-threads",
         "test:cypress": "cypress run",
         "test:cypress:open": "cypress open",
-        "test:watch": "vitest",
+        "test:watch": "vitest --no-threads",
         "test:ui": "vitest --ui",
         "coverage": "vitest run --coverage",
         "update": "cd ../../bindings/wysiwyg-wasm && npm run build && cp -f ./pkg/*wysiwyg* ../../platforms/web/generated && cd ../../platforms/web && yarn build"
