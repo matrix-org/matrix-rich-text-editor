@@ -184,7 +184,6 @@ export function processInput(
             );
         }
         case 'insertCompositionText':
-        case 'insertFromComposition':
         case 'insertText':
             if (event.data) {
                 return action(
