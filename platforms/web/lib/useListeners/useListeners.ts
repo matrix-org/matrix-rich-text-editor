@@ -198,7 +198,6 @@ export function useListeners(
         editorNode.addEventListener('beforeinput', onBeforeInput);
 
         const onCompositionEnd = (e: CompositionEvent): void => {
-            console.log(e);
             // create a new inputEvent for us to process
             const inputEvent = new InputEvent('input', {
                 data: e.data,
