@@ -67,7 +67,7 @@ export async function richToPlain(richText: string) {
     return plainText;
 }
 
-export async function plainToRich(plainText: string, inMessageFormat = false) {
+export async function plainToRich(plainText: string, inMessageFormat: boolean) {
     if (plainText.length === 0) {
         return '';
     }
