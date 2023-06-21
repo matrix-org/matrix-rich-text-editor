@@ -83,7 +83,7 @@ export async function plainToRich(plainText: string) {
     // set the model and return the rich text
     const model = new_composer_model();
     model.set_content_from_markdown(markdown);
-    const richText = model.get_content_as_html();
+    const richText = model.get_content_as_message_html();
 
     return richText;
 }
