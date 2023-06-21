@@ -19,6 +19,7 @@ limitations under the License.
 // @ts-nocheck
 
 import '@testing-library/jest-dom';
+import { cleanup } from '@testing-library/react';
 import fs from 'node:fs/promises';
 import path from 'path';
 
@@ -36,3 +37,7 @@ globalThis.fetch = (url) => {
 // Work around missing ClipboardEvent type
 class MyClipboardEvent {}
 globalThis.ClipboardEvent = MyClipboardEvent as ClipboardEvent;
+
+afterEach(() => {
+    cleanup();
+});
