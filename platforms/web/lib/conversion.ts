@@ -67,7 +67,7 @@ export async function richToPlain(richText: string) {
     return plainText;
 }
 
-export async function plainToRich(plainText: string) {
+export async function plainToRich(plainText: string, inMessageFormat: boolean) {
     if (plainText.length === 0) {
         return '';
     }
@@ -83,7 +83,8 @@ export async function plainToRich(plainText: string) {
     // set the model and return the rich text
     const model = new_composer_model();
     model.set_content_from_markdown(markdown);
-    const richText = model.get_content_as_html();
 
-    return richText;
+    return inMessageFormat
+        ? model.get_content_as_message_html()
+        : model.get_content_as_html();
 }

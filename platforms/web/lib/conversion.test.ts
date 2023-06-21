@@ -35,7 +35,7 @@ describe('Rich text <=> plain text', () => {
     test.each(mappedTestCases)(
         'rich: `%s` - plain: `%s`',
         async (rich, plain) => {
-            const convertedRichText = await plainToRich(plain);
+            const convertedRichText = await plainToRich(plain, false);
             const convertedPlainText = await richToPlain(rich);
 
             expect(convertedRichText).toBe(rich);
@@ -53,7 +53,7 @@ describe('Rich text <=> plain text', () => {
 
     it('converts linebreaks for display plain => rich', async () => {
         const plainText = 'multi\nline';
-        const convertedRichText = await plainToRich(plainText);
+        const convertedRichText = await plainToRich(plainText, false);
         const expectedRichText = 'multi<br />line';
 
         expect(convertedRichText).toBe(expectedRichText);
@@ -96,5 +96,65 @@ describe('Plain text <=> markdown', () => {
         const expectedPlainText = 'multiple\nline\n\nbreaks\n\n\n\n';
 
         expect(convertedPlainText).toBe(expectedPlainText);
+    });
+});
+
+describe('Mentions', () => {
+    it('converts at-room mentions for composer as expected', async () => {
+        const input = '@room';
+        const asComposerHtml = await plainToRich(input, false);
+
+        expect(asComposerHtml).toBe(
+            '<a data-mention-type="at-room" href="#" contenteditable="false">@room</a>',
+        );
+    });
+
+    it('converts at-room mentions for message as expected', async () => {
+        const input = '@room';
+        const asMessageHtml = await plainToRich(input, true);
+
+        expect(asMessageHtml).toBe('@room');
+    });
+
+    it('converts user mentions for composer as expected', async () => {
+        const input =
+            '<a href="https://matrix.to/#/@test_user:element.io" contenteditable="false" data-mention-type="user" style="some styling">a test user</a> ';
+        const asComposerHtml = await plainToRich(input, false);
+
+        expect(asComposerHtml).toMatchInlineSnapshot(
+            '"<a style=\\"some styling\\" data-mention-type=\\"user\\" href=\\"https://matrix.to/#/@test_user:element.io\\" contenteditable=\\"false\\">a test user</a> "',
+        );
+    });
+
+    it('converts user mentions for message as expected', async () => {
+        const input =
+            '<a href="https://matrix.to/#/@test_user:element.io" contenteditable="false" data-mention-type="user" style="some styling">a test user</a> ';
+        const asMessageHtml = await plainToRich(input, true);
+
+        expect(asMessageHtml).toMatchInlineSnapshot(
+            '"<a href=\\"https://matrix.to/#/@test_user:element.io\\">a test user</a> "',
+        );
+    });
+
+    it('converts room mentions for composer as expected', async () => {
+        const input =
+            '<a href="https://matrix.to/#/#test_room:element.io" contenteditable="false" data-mention-type="user" style="some styling">a test user</a> ';
+        const asComposerHtml = await plainToRich(input, false);
+
+        // note inner text is the same as the input inner text
+        expect(asComposerHtml).toMatchInlineSnapshot(
+            '"<a style=\\"some styling\\" data-mention-type=\\"room\\" href=\\"https://matrix.to/#/#test_room:element.io\\" contenteditable=\\"false\\">a test user</a> "',
+        );
+    });
+
+    it('converts room mentions for message as expected', async () => {
+        const input =
+            '<a href="https://matrix.to/#/#test_room:element.io" contenteditable="false" data-mention-type="user" style="some styling">a test user</a> ';
+        const asMessageHtml = await plainToRich(input, true);
+
+        // note inner text is the mx id
+        expect(asMessageHtml).toMatchInlineSnapshot(
+            '"<a href=\\"https://matrix.to/#/#test_room:element.io\\">#test_room:element.io</a> "',
+        );
     });
 });
