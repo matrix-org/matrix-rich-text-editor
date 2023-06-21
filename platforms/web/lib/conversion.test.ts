@@ -98,3 +98,49 @@ describe('Plain text <=> markdown', () => {
         expect(convertedPlainText).toBe(expectedPlainText);
     });
 });
+
+describe('Mentions conversion from plain text to rich', () => {
+    it('converts at-room mentions as expected', async () => {
+        const input = '@room';
+        const asComposerHtml = await plainToRich(input);
+        const asMessageHtml = await plainToRich(input, true);
+
+        // for this case, we'd expect the composer html to be an <a> tag, whereas
+        // the message html should be the equivalent plain text
+        expect(asComposerHtml).toBe(
+            '<a data-mention-type="at-room" href="#" contenteditable="false">@room</a>',
+        );
+        expect(asMessageHtml).toBe('@room');
+    });
+
+    it('converts user mentions as expected', async () => {
+        const input =
+            '<a href="https://matrix.to/#/@test_user:element.io" contenteditable="false" data-mention-type="user" style="some styling">a test user</a> ';
+        const asComposerHtml = await plainToRich(input);
+        const asMessageHtml = await plainToRich(input, true);
+
+        // for this case, we'd expect the composer html to be an <a> tag, whereas
+        // the message html should be the equivalent plain text
+        expect(asComposerHtml).toMatchInlineSnapshot(
+            '"<a style=\\"some styling\\" data-mention-type=\\"user\\" href=\\"https://matrix.to/#/@test_user:element.io\\" contenteditable=\\"false\\">a test user</a> "',
+        );
+        expect(asMessageHtml).toMatchInlineSnapshot(
+            '"<a href=\\"https://matrix.to/#/@test_user:element.io\\">a test user</a> "',
+        );
+    });
+
+    it('converts room mentions as expected', async () => {
+        const input =
+            '<a href="https://matrix.to/#/#test_room:element.io" contenteditable="false" data-mention-type="user" style="some styling">a test user</a> ';
+        const asComposerHtml = await plainToRich(input);
+        const asMessageHtml = await plainToRich(input, true);
+
+        // note here that the message html includes the mx_id as the message content
+        expect(asComposerHtml).toMatchInlineSnapshot(
+            '"<a style=\\"some styling\\" data-mention-type=\\"room\\" href=\\"https://matrix.to/#/#test_room:element.io\\" contenteditable=\\"false\\">a test user</a> "',
+        );
+        expect(asMessageHtml).toMatchInlineSnapshot(
+            '"<a href=\\"https://matrix.to/#/#test_room:element.io\\">#test_room:element.io</a> "',
+        );
+    });
+});
