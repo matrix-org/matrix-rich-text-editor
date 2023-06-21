@@ -261,6 +261,7 @@ function App() {
                         className="editor"
                         ref={ref}
                         contentEditable={isWysiwygReady}
+                        role="textbox"
                     />
                 </div>
                 <div className="editor_options">

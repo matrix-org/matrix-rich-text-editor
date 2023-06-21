@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { Editor } from './testUtils/Editor';
 import { deleteRange } from './testUtils/selection';
@@ -28,7 +28,7 @@ describe('useWysiwyg', () => {
             editor.innerHTML = html + '<br />';
         }
 
-        beforeAll(async () => {
+        beforeEach(async () => {
             render(
                 <Editor
                     ref={(node) => {
@@ -108,6 +108,24 @@ describe('useWysiwyg', () => {
 
             //Then
             expect(editor).toContainHTML('cd');
+        });
+
+        it('Should render characters based on composition events', () => {
+            // simulate the event when entering `¨` (option+u on mac)
+            const startCompositionEvent = new CompositionEvent(
+                'compositionstart',
+            );
+
+            // simulate the event when then pressing `u`
+            const compositionData = 'ü';
+            const endCompositionEvent = new CompositionEvent('compositionend', {
+                data: compositionData,
+            });
+
+            fireEvent(editor, startCompositionEvent);
+            fireEvent(editor, endCompositionEvent);
+
+            expect(editor).toHaveTextContent(compositionData);
         });
     });
 

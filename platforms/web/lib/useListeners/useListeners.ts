@@ -120,7 +120,10 @@ export function useListeners(
 
         // React uses SyntheticEvent (https://reactjs.org/docs/events.html) and
         // doesn't catch manually fired event (myNode.dispatchEvent)
-        const onInput = (e: Event) => isInputEvent(e) && _handleInput(e);
+
+        // Also skip this if we are composing IME such as inputting accents or CJK
+        const onInput = (e: Event) =>
+            isInputEvent(e) && !e.isComposing && _handleInput(e);
         editorNode.addEventListener('input', onInput);
 
         // Can be called by onPaste or onBeforeInput
@@ -188,8 +191,23 @@ export function useListeners(
 
         // this is required to handle edge case image pasting in Safari, see
         // https://github.com/vector-im/element-web/issues/25327
-        const onBeforeInput = onPaste;
+        const onBeforeInput = (e: ClipboardEvent | InputEvent) => {
+            if (isInputEvent(e) && e.isComposing) return;
+            return onPaste(e);
+        };
         editorNode.addEventListener('beforeinput', onBeforeInput);
+
+        const onCompositionEnd = (e: CompositionEvent): void => {
+            // create a new inputEvent for us to process
+            const inputEvent = new InputEvent('input', {
+                data: e.data,
+                inputType: 'insertCompositionText',
+            });
+
+            // now process that new event
+            onInput(inputEvent);
+        };
+        editorNode.addEventListener('compositionend', onCompositionEnd);
 
         setAreListenersReady(true);
 
@@ -200,6 +218,7 @@ export function useListeners(
             editorNode.removeEventListener('wysiwygInput', onWysiwygInput);
             editorNode.removeEventListener('keydown', onKeyDown);
             editorNode.removeEventListener('beforeinput', onBeforeInput);
+            editorNode.removeEventListener('compositionend', onCompositionEnd);
             document.removeEventListener('selectionchange', onSelectionChange);
         };
     }, [
