@@ -197,10 +197,6 @@ export function useListeners(
         };
         editorNode.addEventListener('beforeinput', onBeforeInput);
 
-        const onCompositionStart = (e: CompositionEvent): void => {
-            console.log(e);
-        };
-        editorNode.addEventListener('compositionstart', onCompositionStart);
         const onCompositionEnd = (e: CompositionEvent): void => {
             console.log(e);
             // create a new inputEvent for us to process
@@ -223,11 +219,6 @@ export function useListeners(
             editorNode.removeEventListener('wysiwygInput', onWysiwygInput);
             editorNode.removeEventListener('keydown', onKeyDown);
             editorNode.removeEventListener('beforeinput', onBeforeInput);
-            editorNode.removeEventListener(
-                'compositionstart',
-                onCompositionStart,
-            );
-
             editorNode.removeEventListener('compositionend', onCompositionEnd);
             document.removeEventListener('selectionchange', onSelectionChange);
         };
