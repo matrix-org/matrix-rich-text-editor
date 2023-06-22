@@ -76,6 +76,8 @@ export function useComposerModel(
                     setComposerModel(newModel);
 
                     if (editorRef.current) {
+                        // we need to use the rust model as the source of truth, to allow it to do things
+                        // like add attributes to mentions automatically
                         const modelContent = newModel.get_content_as_html();
                         replaceEditor(
                             editorRef.current,
