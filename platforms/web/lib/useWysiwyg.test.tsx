@@ -140,6 +140,19 @@ describe('useWysiwyg', () => {
         );
     });
 
+    test.only('Initialising composer with a mention displays all mention attributes', async () => {
+        const testUser = 'TEST_USER';
+        const content = `<a href="https://matrix.to/#/@test_user:element.io">${testUser}</a> `;
+        render(<Editor initialContent={content} />);
+
+        // Wait for the mention to appear on the screen, then check it has the attributes
+        // required for correct display in the composer.
+        const mention = await screen.findByText(testUser);
+        expect(mention).toHaveAttribute('data-mention-type');
+        expect(mention).toHaveAttribute('style');
+        expect(mention).toHaveAttribute('contenteditable', 'false');
+    });
+
     test('Handle panic', async () => {
         // When
         const content = 'fo<strng>o</strng><br />b<em><kar</em>';
