@@ -79,7 +79,6 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
             testUtilities,
             formattingFunctions,
             onError,
-            wysiwygProps?.initialContent,
             wysiwygProps?.inputEventProcessor,
         );
 
