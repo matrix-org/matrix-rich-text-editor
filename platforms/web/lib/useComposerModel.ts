@@ -85,6 +85,7 @@ export function useComposerModel(
                         );
                     }
                 } catch (e) {
+                    // if the initialisation fails, due to a parsing failure of the html, fallback to an empty composer
                     setComposerModel(new_composer_model());
                 }
             } else {
@@ -100,10 +101,7 @@ export function useComposerModel(
         }
     }, [editorRef, initModel, initialContent]);
 
-    // If a panic occurs, call this function to attempt to reinitialise the composer
-    // with some plain text (called in useListeners). If this were to be called with invalid
-    // html, the initialisation may also fail, in that case fallback to initialising a new
-    // empty composer.
-
+    // If a panic occurs, we call onError to attempt to reinitialise the composer
+    // with some plain text (called in useListeners).
     return { composerModel, onError: initModel };
 }
