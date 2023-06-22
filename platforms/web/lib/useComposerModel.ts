@@ -68,20 +68,20 @@ export function useComposerModel(
 
             if (initialContent) {
                 try {
-                    setComposerModel(
-                        new_composer_model_from_html(
-                            initialContent,
-                            0,
-                            initialContent.length,
-                        ),
+                    const newModel = new_composer_model_from_html(
+                        initialContent,
+                        0,
+                        initialContent.length,
                     );
+                    setComposerModel(newModel);
 
                     if (editorRef.current) {
+                        const modelContent = newModel.get_content_as_html();
                         replaceEditor(
                             editorRef.current,
-                            initialContent,
+                            modelContent,
                             0,
-                            initialContent.length,
+                            modelContent.length,
                         );
                     }
                 } catch (e) {
@@ -100,5 +100,10 @@ export function useComposerModel(
         }
     }, [editorRef, initModel, initialContent]);
 
-    return { composerModel, initModel };
+    // If a panic occurs, call this function to attempt to reinitialise the composer
+    // with some plain text (called in useListeners). If this were to be called with invalid
+    // html, the initialisation may also fail, in that case fallback to initialising a new
+    // empty composer.
+
+    return { composerModel, onError: initModel };
 }

@@ -128,9 +128,26 @@ describe('useWysiwyg', () => {
             expect(editor).toHaveTextContent(compositionData);
         });
     });
+    test('Initialising composer with a mention displays all mention attributes', async () => {
+        const testUser = 'TEST_USER';
+        const testStyle = 'MOCK;STYLE';
+        const content = `<a href="https://matrix.to/#/@test_user:element.io" style=${testStyle}>${testUser}</a> `;
+        render(<Editor initialContent={content} />);
+
+        // Wait for the mention to appear on the screen, then check it has the attributes
+        // required for correct display in the composer.
+        const mention = await screen.findByText(testUser);
+
+        // these attributes are automatically added by the rust model
+        expect(mention).toHaveAttribute('data-mention-type', 'user');
+        expect(mention).toHaveAttribute('contenteditable', 'false');
+
+        // this attribute is passed through, from the html into the rust model
+        expect(mention).toHaveAttribute('style', testStyle);
+    });
 
     test('Create wysiwyg with initial content', async () => {
-        // when
+        // When
         const content = 'fo<strong>o</strong><br />b<em>ar</em>';
         render(<Editor initialContent={content} />);
 
@@ -140,27 +157,13 @@ describe('useWysiwyg', () => {
         );
     });
 
-    test.only('Initialising composer with a mention displays all mention attributes', async () => {
-        const testUser = 'TEST_USER';
-        const content = `<a href="https://matrix.to/#/@test_user:element.io">${testUser}</a> `;
-        render(<Editor initialContent={content} />);
-
-        // Wait for the mention to appear on the screen, then check it has the attributes
-        // required for correct display in the composer.
-        const mention = await screen.findByText(testUser);
-        expect(mention).toHaveAttribute('data-mention-type');
-        expect(mention).toHaveAttribute('style');
-        expect(mention).toHaveAttribute('contenteditable', 'false');
-    });
-
-    test('Handle panic', async () => {
-        // When
-        const content = 'fo<strng>o</strng><br />b<em><kar</em>';
-        render(<Editor initialContent={content} />);
+    test('Handle panic from invalid html in initial content', async () => {
+        // When we have an invalid tag
+        const invalidHtml = 'fo<strng>o</strng><br />b<em><kar</em>';
 
         // Then
-        await waitFor(() =>
-            expect(screen.getByRole('textbox')).not.toContainHTML(content),
-        );
+        expect(() =>
+            render(<Editor initialContent={invalidHtml} />),
+        ).not.toThrow();
     });
 });

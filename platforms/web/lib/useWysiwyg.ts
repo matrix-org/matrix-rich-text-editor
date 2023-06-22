@@ -60,7 +60,7 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
     const ref = useEditor();
     const modelRef = useRef<HTMLDivElement>(null);
 
-    const { composerModel, initModel } = useComposerModel(
+    const { composerModel, onError } = useComposerModel(
         ref,
         wysiwygProps?.initialContent,
     );
@@ -70,11 +70,6 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
     );
 
     const formattingFunctions = useFormattingFunctions(ref, composerModel);
-
-    const onError = useCallback(
-        (content?: string) => initModel(content),
-        [initModel],
-    );
 
     const { content, actionStates, areListenersReady, suggestion } =
         useListeners(
