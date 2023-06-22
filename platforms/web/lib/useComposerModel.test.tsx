@@ -21,17 +21,26 @@ import * as mockRustModel from '../generated/wysiwyg';
 import { useComposerModel } from './useComposerModel';
 
 describe('useComposerModel', () => {
-    const mockComposer = document.createElement('div');
-    const mockNullRef = { current: null } as RefObject<null>;
-    const mockComposerRef = { current: mockComposer } as RefObject<HTMLElement>;
+    let mockComposer: HTMLDivElement;
+    let mockNullRef: RefObject<null>;
+    let mockComposerRef: RefObject<HTMLElement>;
 
     beforeEach(() => {
+        mockComposer = document.createElement('div');
+        mockNullRef = { current: null };
+        mockComposerRef = {
+            current: mockComposer,
+        };
         vi.spyOn(mockRustModel, 'new_composer_model');
         vi.spyOn(mockRustModel, 'new_composer_model_from_html');
     });
 
     afterEach(() => {
         vi.clearAllMocks();
+    });
+
+    afterAll(() => {
+        vi.restoreAllMocks();
     });
 
     it('Does not create a composerModel without a ref', () => {
