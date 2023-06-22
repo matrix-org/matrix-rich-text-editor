@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { RefObject, useCallback, useEffect, useMemo, useRef } from 'react';
+import { RefObject, useEffect, useMemo, useRef } from 'react';
 
 import { InputEventProcessor } from './types.js';
 import { useFormattingFunctions } from './useFormattingFunctions';
@@ -60,7 +60,7 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
     const ref = useEditor();
     const modelRef = useRef<HTMLDivElement>(null);
 
-    const { composerModel, initModel } = useComposerModel(
+    const { composerModel, onError } = useComposerModel(
         ref,
         wysiwygProps?.initialContent,
     );
@@ -71,11 +71,6 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
 
     const formattingFunctions = useFormattingFunctions(ref, composerModel);
 
-    const onError = useCallback(
-        (content?: string) => initModel(content),
-        [initModel],
-    );
-
     const { content, actionStates, areListenersReady, suggestion } =
         useListeners(
             ref,
@@ -84,7 +79,6 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
             testUtilities,
             formattingFunctions,
             onError,
-            wysiwygProps?.initialContent,
             wysiwygProps?.inputEventProcessor,
         );
 

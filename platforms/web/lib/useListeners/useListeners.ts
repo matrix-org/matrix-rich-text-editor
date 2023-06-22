@@ -42,11 +42,10 @@ export function useListeners(
     testUtilities: TestUtilities,
     formattingFunctions: FormattingFunctions,
     onError: (content?: string) => void,
-    initialContent?: string,
     inputEventProcessor?: InputEventProcessor,
 ) {
     const [state, setState] = useState<State>({
-        content: initialContent || null,
+        content: null,
         actionStates: createDefaultActionStates(),
         suggestion: null,
     });

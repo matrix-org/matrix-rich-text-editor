@@ -68,23 +68,26 @@ export function useComposerModel(
 
             if (initialContent) {
                 try {
-                    setComposerModel(
-                        new_composer_model_from_html(
-                            initialContent,
-                            0,
-                            initialContent.length,
-                        ),
+                    const newModel = new_composer_model_from_html(
+                        initialContent,
+                        0,
+                        initialContent.length,
                     );
+                    setComposerModel(newModel);
 
                     if (editorRef.current) {
+                        // we need to use the rust model as the source of truth, to allow it to do things
+                        // like add attributes to mentions automatically
+                        const modelContent = newModel.get_content_as_html();
                         replaceEditor(
                             editorRef.current,
-                            initialContent,
+                            modelContent,
                             0,
-                            initialContent.length,
+                            modelContent.length,
                         );
                     }
                 } catch (e) {
+                    // if the initialisation fails, due to a parsing failure of the html, fallback to an empty composer
                     setComposerModel(new_composer_model());
                 }
             } else {
@@ -100,5 +103,7 @@ export function useComposerModel(
         }
     }, [editorRef, initModel, initialContent]);
 
-    return { composerModel, initModel };
+    // If a panic occurs, we call onError to attempt to reinitialise the composer
+    // with some plain text (called in useListeners).
+    return { composerModel, onError: initModel };
 }
