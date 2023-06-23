@@ -21,19 +21,6 @@ import {
 } from '../generated/wysiwyg.js';
 import { initOnce } from './useComposerModel.js';
 
-// In plain text, due to cursor positioning, ending at a linebreak will
-// include an extra \n, so trim that off if required.
-// We replace the remaining \n with valid markdown before
-// parsing by MarkdownHTMLParser::to_html.
-export const plainToMarkdown = (plainText: string) => {
-    let markdown = plainText;
-    if (markdown.endsWith('\n')) {
-        // manually remove the final linebreak
-        markdown = markdown.slice(0, -1);
-    }
-    return markdown.replaceAll(/\n/g, '<br />');
-};
-
 // In plain text, markdown newlines (displays '\' character followed by
 // a newline character) will be represented as \n for display as the
 // display box can not interpret markdown.
@@ -67,18 +54,14 @@ export async function richToPlain(richText: string) {
     return plainText;
 }
 
-export async function plainToRich(plainText: string, inMessageFormat: boolean) {
-    if (plainText.length === 0) {
+export async function plainToRich(markdown: string, inMessageFormat: boolean) {
+    if (markdown.length === 0) {
         return '';
     }
 
     // this function could be called before initialising the WASM
     // so we need to try to initialise
     await initOnce();
-
-    // convert the plain text into markdown so that we can use it to
-    // set the model
-    const markdown = plainToMarkdown(plainText);
 
     // set the model and return the rich text
     const model = new_composer_model();
