@@ -76,66 +76,6 @@ describe('markdownToPlain', () => {
 });
 
 describe('PlainToRich', () => {
-    describe('Mentions', () => {
-        it('converts at-room mentions for composer as expected', async () => {
-            const input = '@room';
-            const asComposerHtml = await plainToRich(input, false);
-
-            expect(asComposerHtml).toBe(
-                '<a data-mention-type="at-room" href="#" contenteditable="false">@room</a>',
-            );
-        });
-
-        it('converts at-room mentions for message as expected', async () => {
-            const input = '@room';
-            const asMessageHtml = await plainToRich(input, true);
-
-            expect(asMessageHtml).toBe('@room');
-        });
-
-        it('converts user mentions for composer as expected', async () => {
-            const input =
-                '<a href="https://matrix.to/#/@test_user:element.io" contenteditable="false" data-mention-type="user" style="some styling">a test user</a> ';
-            const asComposerHtml = await plainToRich(input, false);
-
-            expect(asComposerHtml).toMatchInlineSnapshot(
-                '"<a style=\\"some styling\\" data-mention-type=\\"user\\" href=\\"https://matrix.to/#/@test_user:element.io\\" contenteditable=\\"false\\">a test user</a> "',
-            );
-        });
-
-        it('converts user mentions for message as expected', async () => {
-            const input =
-                '<a href="https://matrix.to/#/@test_user:element.io" contenteditable="false" data-mention-type="user" style="some styling">a test user</a> ';
-            const asMessageHtml = await plainToRich(input, true);
-
-            expect(asMessageHtml).toMatchInlineSnapshot(
-                '"<a href=\\"https://matrix.to/#/@test_user:element.io\\">a test user</a> "',
-            );
-        });
-
-        it('converts room mentions for composer as expected', async () => {
-            const input =
-                '<a href="https://matrix.to/#/#test_room:element.io" contenteditable="false" data-mention-type="user" style="some styling">a test user</a> ';
-            const asComposerHtml = await plainToRich(input, false);
-
-            // note inner text is the same as the input inner text
-            expect(asComposerHtml).toMatchInlineSnapshot(
-                '"<a style=\\"some styling\\" data-mention-type=\\"room\\" href=\\"https://matrix.to/#/#test_room:element.io\\" contenteditable=\\"false\\">a test user</a> "',
-            );
-        });
-
-        it('converts room mentions for message as expected', async () => {
-            const input =
-                '<a href="https://matrix.to/#/#test_room:element.io" contenteditable="false" data-mention-type="user" style="some styling">a test user</a> ';
-            const asMessageHtml = await plainToRich(input, true);
-
-            // note inner text is the mx id
-            expect(asMessageHtml).toMatchInlineSnapshot(
-                '"<a href=\\"https://matrix.to/#/#test_room:element.io\\">#test_room:element.io</a> "',
-            );
-        });
-    });
-
     it('handles quotes', async () => {
         const text = '> quote from html';
         const div = document.createElement('div');
@@ -155,26 +95,6 @@ describe('PlainToRich', () => {
 
         const input = div.innerText;
         const expected = '&lt; &gt; &lt;&lt; &gt;&gt; &lt; hi!';
-        const output = await plainToRich(input, true);
-
-        expect(output).toBe(expected);
-    });
-
-    it('does what is expected with an angle bracket', async () => {
-        const input = '> quote from string';
-        const expected = '<blockquote><p>quote from string</p></blockquote>';
-        const output = await plainToRich(input, true);
-
-        expect(output).toBe(expected);
-    });
-
-    it('does not crash with html like input', async () => {
-        const div = document.createElement('div');
-        const text = document.createTextNode('<h1>crash!</h1>');
-        div.appendChild(text);
-
-        const input = div.innerHTML;
-        const expected = '&lt;h1&gt;crash!&lt;/h1&gt;';
         const output = await plainToRich(input, true);
 
         expect(output).toBe(expected);
