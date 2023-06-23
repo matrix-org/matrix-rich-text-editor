@@ -74,3 +74,10 @@ fn set_contents_with_line_break_in_code_block() {
     let model = cm("<pre>\n<code>|Test</code></pre>");
     assert_eq!(tx(&model), "<pre><code>|Test</code></pre>");
 }
+
+#[test]
+fn set_content_from_markdown_blockquote() {
+    let mut model = cm("|");
+    model.set_content_from_markdown(&utf16("> quote")).unwrap();
+    assert_eq!(tx(&model), "<blockquote><p>quote|</p></blockquote>");
+}
