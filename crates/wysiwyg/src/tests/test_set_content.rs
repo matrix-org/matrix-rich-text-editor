@@ -81,12 +81,3 @@ fn set_content_from_markdown_blockquote() {
     model.set_content_from_markdown(&utf16("> quote")).unwrap();
     assert_eq!(tx(&model), "<blockquote><p>quote|</p></blockquote>");
 }
-
-#[test]
-fn set_content_from_markdown_with_newlines() {
-    let mut model = cm("|");
-    model
-        .set_content_from_markdown(&utf16("hello\nthere"))
-        .unwrap();
-    assert_eq!(tx(&model), "hello<br />there|");
-}

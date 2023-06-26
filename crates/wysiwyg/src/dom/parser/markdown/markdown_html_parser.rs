@@ -62,8 +62,7 @@ impl MarkdownHTMLParser {
             .replace("<blockquote>\n", "<blockquote>")
             .replace("</blockquote>\n", "</blockquote>")
             .replace("<p>\n", "<p>")
-            .replace("</p>\n", "</p>")
-            .replace('\n', "<br />");
+            .replace("</p>\n", "</p>");
 
         Ok(S::try_from(html).unwrap())
     }
