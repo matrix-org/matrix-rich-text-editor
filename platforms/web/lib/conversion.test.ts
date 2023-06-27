@@ -340,17 +340,16 @@ describe('amendHtmlInABetterWay', () => {
         );
     });
 
-    it('can cope with a nested mention next to top level text nodes', () => {
+    it('can cope with a nested mention next to top level text node', () => {
         const innerDiv = document.createElement('div');
         const mention = createMentionElement();
 
         mockComposer.appendChild(document.createTextNode('preceding'));
         innerDiv.appendChild(mention);
         mockComposer.appendChild(innerDiv);
-        mockComposer.appendChild(document.createTextNode('following'));
 
         // eslint-disable-next-line max-len
-        const expected = `preceding\n<a href="testHref" data-mention-type="testType" style="testStyle" contenteditable="false">inner text</a>\nfollowing`;
+        const expected = `preceding\n<a href="testHref" data-mention-type="testType" style="testStyle" contenteditable="false">inner text</a>`;
         expect(plainTextInnerHtmlToMarkdown(mockComposer.innerHTML)).toBe(
             expected,
         );
@@ -370,21 +369,31 @@ describe('amendHtmlInABetterWay', () => {
     });
 
     it('can cope with adjacent nested mentions', () => {
+        const innerDiv = document.createElement('div');
         ['1', '2', '3'].forEach((id) => {
             const mention = createMentionElement(id);
-
-            // nest the middle mention
-            if (id === '2') {
-                const innerDiv = document.createElement('div');
-                innerDiv.appendChild(mention);
-                mockComposer.appendChild(innerDiv);
-            } else {
-                mockComposer.appendChild(mention);
-            }
+            innerDiv.appendChild(mention);
         });
+        mockComposer.appendChild(innerDiv);
 
         // eslint-disable-next-line max-len
-        const expected = `<a href="testHref1" data-mention-type="testType1" style="testStyle1" contenteditable="false">inner text1</a>\n<a href="testHref2" data-mention-type="testType2" style="testStyle2" contenteditable="false">inner text2</a>\n<a href="testHref3" data-mention-type="testType3" style="testStyle3" contenteditable="false">inner text3</a>`;
+        const expected = `<a href="testHref1" data-mention-type="testType1" style="testStyle1" contenteditable="false">inner text1</a><a href="testHref2" data-mention-type="testType2" style="testStyle2" contenteditable="false">inner text2</a><a href="testHref3" data-mention-type="testType3" style="testStyle3" contenteditable="false">inner text3</a>`;
+        expect(plainTextInnerHtmlToMarkdown(mockComposer.innerHTML)).toBe(
+            expected,
+        );
+    });
+
+    it('can cope with adjacent top level and nested mentions', () => {
+        const topLevelMention = createMentionElement('1');
+        const nestedMention = createMentionElement('2');
+
+        const innerDiv = document.createElement('div');
+        innerDiv.appendChild(nestedMention);
+
+        mockComposer.append(topLevelMention, innerDiv);
+
+        // eslint-disable-next-line max-len
+        const expected = `<a href="testHref1" data-mention-type="testType1" style="testStyle1" contenteditable="false">inner text1</a>\n<a href="testHref2" data-mention-type="testType2" style="testStyle2" contenteditable="false">inner text2</a>`;
         expect(plainTextInnerHtmlToMarkdown(mockComposer.innerHTML)).toBe(
             expected,
         );

@@ -96,7 +96,7 @@ of the composer in element web, there is a limited subset of html that the compo
 Currently, the innerHTML of the plain text composer can only contain:
   - text with `\n` line separation if `shift + enter` is used to insert the linebreak
     - in this case, inserting a newline after a single word will result in `word\n\n`, then
-      subsequent typing will replace the final `\n` to give `word\nother word`
+      subsequent typing will replace the final `\n` to give `word\nanother word`
   - text with <div> separation if `cmd + enter to send` is enabled and `enter` is used to insert
     the linebreak
     - in this case, inserting a newline inserts `<div><br></div>`, and then subsequent typing 
@@ -120,107 +120,53 @@ export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
         'text/html',
     );
 
+    // When we parse the nodes, we need to manually add newlines if the node is either
+    // adjacent to a div or is the last child and it's parent is adjacent to a div
+    function shouldAddNewlineCharacter(node: Node): boolean {
+        const nextSibling = node.nextSibling || node.parentElement?.nextSibling;
+
+        if (!nextSibling) return false;
+
+        return nextSibling?.nodeName === 'DIV';
+    }
+
     // Create an iterator to allow us to traverse the DOM node by node
     const i = document.createNodeIterator(composer, NodeFilter.SHOW_ALL);
     let node = i.nextNode();
-
-    // HELPERS
-    function isBreakNode(node: Node): boolean {
-        return node.nodeName === 'BR';
-    }
-
-    function isTextNode(node: Node): boolean {
-        return node.nodeName === '#text';
-    }
-
-    function isDiv(node: Node | null | undefined): boolean {
-        if (!node) return false;
-        return node.nodeName === 'DIV';
-    }
-
-    function isMentionElement(node: HTMLElement | null | undefined): boolean {
-        if (!node) return false;
-        return node.nodeName === 'A' && node.hasAttribute('data-mention-type');
-    }
 
     // Use this to store the manually built markdown output
     let markdownOutput = '';
 
     while (node !== null) {
-        const isTopLevel = composer.isSameNode(node.parentElement);
-        const isText = isTextNode(node);
-        const isMention = isMentionElement(node.parentElement);
+        // TEXT NODES - `node` represents the text node, only handle if not inside a mention
+        const isTextNodeToHandle =
+            node.nodeName === '#text' && node.parentElement?.nodeName !== 'A';
 
-        const isTopLevelTextNode = isText && isTopLevel;
-        const isNestedTextNode =
-            isText && !isTopLevel && isDiv(node.parentElement);
-        const isTopLevelMention =
-            isText &&
-            isMention &&
-            composer.isSameNode(node.parentElement?.parentElement ?? null);
-        const isNestedMention =
-            isText &&
-            isMention &&
-            isDiv(node.parentElement?.parentElement) &&
-            !composer.isSameNode(node.parentElement?.parentElement ?? null);
+        // MENTION NODES - `node` represents the enclosing <a> tag
+        const isMentionToHandle = node.nodeName === 'A';
+
+        // LINEBREAK DIVS - `node` represents the enclosing <div> tag
         const isDivContainingBreak =
-            isBreakNode(node) &&
-            isDiv(node.parentElement) &&
-            node.parentElement?.childElementCount === 1;
+            node.nodeName === 'DIV' &&
+            node.childNodes.length === 1 &&
+            node.firstChild?.nodeName === 'BR';
 
-        // if we find a br inside a div, replace it with an \n
         if (isDivContainingBreak) {
             markdownOutput += NEWLINE_CHAR;
-        }
-
-        // if we find a text node inside a nested div, take the text content
-        if (isNestedTextNode) {
+        } else if (isTextNodeToHandle) {
+            // content is the text itself, unescaped i.e. > is >, not &gt;
             let content = node.textContent;
-            const nextSibling =
-                node.nextSibling || node.parentElement?.nextSibling;
-            if (nextSibling && nextSibling.nodeName !== 'A') {
+            if (shouldAddNewlineCharacter(node)) {
                 content += NEWLINE_CHAR;
             }
             markdownOutput += content;
-        }
-
-        // if we find a top level text node, take the text content
-        if (isTopLevelTextNode) {
-            let content = node.textContent;
-            if (
-                node.nextSibling !== null &&
-                node.nextSibling.nodeName !== 'A'
-            ) {
+        } else if (isMentionToHandle) {
+            // content is the html of the mention i.e. <a ...attributes>text</a>
+            let content = node.firstChild?.parentElement?.outerHTML ?? '';
+            if (shouldAddNewlineCharacter(node)) {
                 content += NEWLINE_CHAR;
             }
             markdownOutput += content;
-        }
-
-        // for a top level mention, grab the outerHTML
-        if (isTopLevelMention) {
-            markdownOutput += node.parentElement?.outerHTML;
-            const nextSibling = node.parentElement?.nextSibling;
-            const isNextToBlockNode =
-                nextSibling && !['#text', 'A'].includes(nextSibling.nodeName);
-            if (isNextToBlockNode) {
-                markdownOutput += NEWLINE_CHAR;
-            }
-        }
-
-        // for a nested mention, grab the outerHTML but we need to consider if we add a newline or not
-        if (isNestedMention) {
-            markdownOutput += node.parentElement?.outerHTML;
-            const isNextToBlockNode =
-                node.parentElement?.nextSibling !== null &&
-                !['#text', 'A'].includes(
-                    node.parentElement?.nextSibling.nodeName ?? '',
-                );
-            const isInDivNextToAnything =
-                node.parentElement?.nextSibling === null &&
-                node.parentElement?.parentElement?.nextSibling !== null;
-            if (isInDivNextToAnything || isNextToBlockNode) {
-                markdownOutput += NEWLINE_CHAR;
-            }
         }
 
         node = i.nextNode();
