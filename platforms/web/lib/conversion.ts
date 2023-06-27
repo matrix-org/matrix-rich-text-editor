@@ -112,7 +112,8 @@ we do it manually so that we can extract:
     in the plain text composer can be parsed into mentions inside the rust model
 */
 
-export function plainTextInnerHtmlToMarkdown(composer: HTMLDivElement): string {
+export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
+    const composer = new DOMParser().parseFromString(innerHtml, 'text/html');
     const i = document.createNodeIterator(composer, NodeFilter.SHOW_ALL);
     let node = i.nextNode();
     // loop through every single node and do...something

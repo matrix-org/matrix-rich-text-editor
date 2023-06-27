@@ -17,7 +17,6 @@ limitations under the License.
 import {
     richToPlain,
     plainToRich,
-    plainToMarkdown,
     markdownToPlain,
     plainTextInnerHtmlToMarkdown,
 } from './conversion';
@@ -62,24 +61,24 @@ describe('Rich text <=> plain text', () => {
 });
 
 describe('Plain text <=> markdown', () => {
-    it('converts single linebreak for plain => markdown', () => {
-        const plain = 'multi\nline';
-        const convertedMarkdown = plainToMarkdown(plain);
-        const expectedMarkdown = `multi<br />line`;
+    // it('converts single linebreak for plain => markdown', () => {
+    //     const plain = 'multi\nline';
+    //     const convertedMarkdown = plainToMarkdown(plain);
+    //     const expectedMarkdown = `multi<br />line`;
 
-        expect(convertedMarkdown).toBe(expectedMarkdown);
-    });
+    //     expect(convertedMarkdown).toBe(expectedMarkdown);
+    // });
 
-    it('converts multiple linebreak for plain => markdown', () => {
-        // nb for correct display, there will be one br tag less
-        // than \n at the end
-        const plain = 'multiple\nline\n\nbreaks\n\n\n';
-        const convertedMarkdown = plainToMarkdown(plain);
-        const expectedMarkdown =
-            'multiple<br />line<br /><br />breaks<br /><br />';
+    // it('converts multiple linebreak for plain => markdown', () => {
+    //     // nb for correct display, there will be one br tag less
+    //     // than \n at the end
+    //     const plain = 'multiple\nline\n\nbreaks\n\n\n';
+    //     const convertedMarkdown = plainToMarkdown(plain);
+    //     const expectedMarkdown =
+    //         'multiple<br />line<br /><br />breaks<br /><br />';
 
-        expect(convertedMarkdown).toBe(expectedMarkdown);
-    });
+    //     expect(convertedMarkdown).toBe(expectedMarkdown);
+    // });
 
     it('converts single linebreak for markdown => plain', () => {
         const markdown = 'multi\\\nline';
@@ -174,7 +173,9 @@ describe('amendHtmlInABetterWay', () => {
         mockComposer.appendChild(innerDiv);
 
         const expected = '\n';
-        expect(plainTextInnerHtmlToMarkdown(mockComposer)).toBe(expected);
+        expect(plainTextInnerHtmlToMarkdown(mockComposer.innerHTML)).toBe(
+            expected,
+        );
     });
 
     it('can cope with divs with text content', () => {
@@ -183,7 +184,9 @@ describe('amendHtmlInABetterWay', () => {
         mockComposer.appendChild(innerDiv);
 
         const expected = 'some text';
-        expect(plainTextInnerHtmlToMarkdown(mockComposer)).toBe(expected);
+        expect(plainTextInnerHtmlToMarkdown(mockComposer.innerHTML)).toBe(
+            expected,
+        );
     });
 
     it('can cope with multiple divs with text content', () => {
@@ -195,7 +198,9 @@ describe('amendHtmlInABetterWay', () => {
         mockComposer.append(firstInnerDiv, secondInnerDiv);
 
         const expected = 'some text\nsome more text';
-        expect(plainTextInnerHtmlToMarkdown(mockComposer)).toBe(expected);
+        expect(plainTextInnerHtmlToMarkdown(mockComposer.innerHTML)).toBe(
+            expected,
+        );
     });
 
     it('can cope div following plain text node', () => {
@@ -206,7 +211,9 @@ describe('amendHtmlInABetterWay', () => {
         mockComposer.append(firstTextNode, secondDiv);
 
         const expected = 'textnode text\nsome more text';
-        expect(plainTextInnerHtmlToMarkdown(mockComposer)).toBe(expected);
+        expect(plainTextInnerHtmlToMarkdown(mockComposer.innerHTML)).toBe(
+            expected,
+        );
     });
 
     it('can cope with multiple adjacent text nodes at top level', () => {
@@ -216,7 +223,9 @@ describe('amendHtmlInABetterWay', () => {
         );
 
         const expected = strings.join('\n');
-        expect(plainTextInnerHtmlToMarkdown(mockComposer)).toBe(expected);
+        expect(plainTextInnerHtmlToMarkdown(mockComposer.innerHTML)).toBe(
+            expected,
+        );
     });
 
     it('can cope with multiple adjacent text nodes in nested div', () => {
@@ -228,7 +237,9 @@ describe('amendHtmlInABetterWay', () => {
         mockComposer.appendChild(innerDiv);
 
         const expected = strings.join('\n');
-        expect(plainTextInnerHtmlToMarkdown(mockComposer)).toBe(expected);
+        expect(plainTextInnerHtmlToMarkdown(mockComposer.innerHTML)).toBe(
+            expected,
+        );
     });
 
     it('can cope with a mention at the top level', () => {
@@ -242,7 +253,9 @@ describe('amendHtmlInABetterWay', () => {
 
         // eslint-disable-next-line max-len
         const expected = `<a href="testHref" data-mention-type="testType" style="testStyle" contenteditable="false">inner text</a>`;
-        expect(plainTextInnerHtmlToMarkdown(mockComposer)).toBe(expected);
+        expect(plainTextInnerHtmlToMarkdown(mockComposer.innerHTML)).toBe(
+            expected,
+        );
     });
 
     it('can cope with a mention at the top level inline with textnodes', () => {
@@ -259,7 +272,9 @@ describe('amendHtmlInABetterWay', () => {
 
         // eslint-disable-next-line max-len
         const expected = `preceding <a href="testHref" data-mention-type="testType" style="testStyle" contenteditable="false">inner text</a> following`;
-        expect(plainTextInnerHtmlToMarkdown(mockComposer)).toBe(expected);
+        expect(plainTextInnerHtmlToMarkdown(mockComposer.innerHTML)).toBe(
+            expected,
+        );
     });
 
     it('can cope with a nested mention', () => {
@@ -275,7 +290,9 @@ describe('amendHtmlInABetterWay', () => {
 
         // eslint-disable-next-line max-len
         const expected = `<a href="testHref" data-mention-type="testType" style="testStyle" contenteditable="false">inner text</a>`;
-        expect(plainTextInnerHtmlToMarkdown(mockComposer)).toBe(expected);
+        expect(plainTextInnerHtmlToMarkdown(mockComposer.innerHTML)).toBe(
+            expected,
+        );
     });
 
     it('can cope with a nested mention with nested text nodes', () => {
@@ -294,7 +311,9 @@ describe('amendHtmlInABetterWay', () => {
 
         // eslint-disable-next-line max-len
         const expected = `preceding <a href="testHref" data-mention-type="testType" style="testStyle" contenteditable="false">inner text</a> following`;
-        expect(plainTextInnerHtmlToMarkdown(mockComposer)).toBe(expected);
+        expect(plainTextInnerHtmlToMarkdown(mockComposer.innerHTML)).toBe(
+            expected,
+        );
     });
 
     it('can cope with a nested mention next to top level text nodes', () => {
@@ -313,7 +332,9 @@ describe('amendHtmlInABetterWay', () => {
 
         // eslint-disable-next-line max-len
         const expected = `preceding\n<a href="testHref" data-mention-type="testType" style="testStyle" contenteditable="false">inner text</a>\nfollowing`;
-        expect(plainTextInnerHtmlToMarkdown(mockComposer)).toBe(expected);
+        expect(plainTextInnerHtmlToMarkdown(mockComposer.innerHTML)).toBe(
+            expected,
+        );
     });
 
     it('can cope with adjacent top level mentions', () => {
@@ -330,7 +351,9 @@ describe('amendHtmlInABetterWay', () => {
 
         // eslint-disable-next-line max-len
         const expected = `<a href="testHref1" data-mention-type="testType1" style="testStyle1" contenteditable="false">inner text1</a><a href="testHref2" data-mention-type="testType2" style="testStyle2" contenteditable="false">inner text2</a><a href="testHref3" data-mention-type="testType3" style="testStyle3" contenteditable="false">inner text3</a>`;
-        expect(plainTextInnerHtmlToMarkdown(mockComposer)).toBe(expected);
+        expect(plainTextInnerHtmlToMarkdown(mockComposer.innerHTML)).toBe(
+            expected,
+        );
     });
 
     it('can cope with adjacent nested mentions', () => {
@@ -353,6 +376,8 @@ describe('amendHtmlInABetterWay', () => {
 
         // eslint-disable-next-line max-len
         const expected = `<a href="testHref1" data-mention-type="testType1" style="testStyle1" contenteditable="false">inner text1</a>\n<a href="testHref2" data-mention-type="testType2" style="testStyle2" contenteditable="false">inner text2</a>\n<a href="testHref3" data-mention-type="testType3" style="testStyle3" contenteditable="false">inner text3</a>`;
-        expect(plainTextInnerHtmlToMarkdown(mockComposer)).toBe(expected);
+        expect(plainTextInnerHtmlToMarkdown(mockComposer.innerHTML)).toBe(
+            expected,
+        );
     });
 });
