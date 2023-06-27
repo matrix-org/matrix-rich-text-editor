@@ -173,11 +173,14 @@ describe('Mentions', () => {
     });
 });
 
-// ;when
+// Although a bit clunky, all of these tests simulate a plain text composer by creating a content editable
+// div, appending children to it and then reading the composer's innerHTML. This way we can ensure that we
+// are giving the conversion function decent input for the tests.
 describe('amendHtmlInABetterWay', () => {
     let mockComposer: HTMLDivElement;
     beforeEach(() => {
         mockComposer = document.createElement('div');
+        mockComposer.setAttribute('contenteditable', 'true');
     });
 
     it('can cope with divs with a line break', () => {
