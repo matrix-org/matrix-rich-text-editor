@@ -72,6 +72,14 @@ describe('Rich text <=> plain text', () => {
 
         expect(convertedPlainText).toBe(expectedPlainText);
     });
+
+    it.skip('converts blockquotes from plain => rich', async () => {
+        const plainText = '> I am a quote';
+        const convertedRichText = await plainToRich(plainText, false);
+        const expectedRichText = '<blockquote><p>I am a quote</p></blockquote>';
+
+        expect(convertedRichText).toBe(expectedRichText);
+    });
 });
 
 describe('Plain text <=> markdown', () => {
@@ -157,7 +165,7 @@ describe('Mentions', () => {
 // Although a bit clunky, all of these tests simulate a plain text composer by creating a content editable
 // div, appending children to it and then reading the composer's innerHTML. This way we can ensure that we
 // are giving the conversion function decent input for the tests.
-describe('amendHtmlInABetterWay', () => {
+describe('plainTextInnerHtmlToMarkdown', () => {
     let mockComposer: HTMLDivElement;
 
     function createMentionElement(identifier = ''): HTMLAnchorElement {
