@@ -190,7 +190,7 @@ describe('plainTextInnerHtmlToMarkdown', () => {
         mockComposer.setAttribute('contenteditable', 'true');
     });
 
-    it('can cope with two lines of text, second line empty, for newline chars', () => {
+    it('handles two lines of text, second line empty, with newline char', () => {
         const textNode = document.createTextNode('firstline\n\n');
         mockComposer.appendChild(textNode);
 
@@ -200,7 +200,7 @@ describe('plainTextInnerHtmlToMarkdown', () => {
         );
     });
 
-    it('can cope with two lines of text, second line empty, for placeholder div', () => {
+    it('handles two lines of text, second line empty, with placeholder div', () => {
         const textNode = document.createTextNode('firstline');
 
         mockComposer.append(textNode, createPlaceholderDiv());
@@ -211,7 +211,7 @@ describe('plainTextInnerHtmlToMarkdown', () => {
         );
     });
 
-    it('can maintain consecutive newlines between text lines for newline chars', () => {
+    it('handles consecutive newlines between text lines for newline chars', () => {
         const textNode = document.createTextNode('first\n\n\n\nlast');
         mockComposer.appendChild(textNode);
 
@@ -221,7 +221,7 @@ describe('plainTextInnerHtmlToMarkdown', () => {
         );
     });
 
-    it('can maintain consecutive newlines between text lines for placeholder divs', () => {
+    it('handles consecutive newlines between text lines for placeholder divs', () => {
         const firstText = document.createTextNode('first');
 
         // after the placeholders have started, text can only be inserted inside divs
@@ -245,7 +245,7 @@ describe('plainTextInnerHtmlToMarkdown', () => {
         );
     });
 
-    it('can cope with divs with a line break', () => {
+    it('handles divs with a line break', () => {
         const innerDiv = document.createElement('div');
         const innerBreak = document.createElement('br');
         innerDiv.appendChild(innerBreak);
@@ -257,7 +257,7 @@ describe('plainTextInnerHtmlToMarkdown', () => {
         );
     });
 
-    it('can cope with divs with text content', () => {
+    it('handles divs with text content', () => {
         const innerDiv = document.createElement('div');
         innerDiv.appendChild(document.createTextNode('some text'));
         mockComposer.appendChild(innerDiv);
@@ -268,7 +268,7 @@ describe('plainTextInnerHtmlToMarkdown', () => {
         );
     });
 
-    it('can cope with multiple divs with text content', () => {
+    it('handles multiple divs with text content', () => {
         const firstInnerDiv = document.createElement('div');
         const secondInnerDiv = document.createElement('div');
         firstInnerDiv.appendChild(document.createTextNode('some text'));
@@ -282,7 +282,7 @@ describe('plainTextInnerHtmlToMarkdown', () => {
         );
     });
 
-    it('can cope div following plain text node', () => {
+    it('handles div following plain text node', () => {
         const firstTextNode = 'textnode text';
         const secondDiv = document.createElement('div');
         secondDiv.appendChild(document.createTextNode('some more text'));
@@ -295,7 +295,7 @@ describe('plainTextInnerHtmlToMarkdown', () => {
         );
     });
 
-    it('can cope with multiple adjacent text nodes at top level', () => {
+    it('handles multiple adjacent text nodes at top level', () => {
         // this is how chrome structures the child nodes
         const strings = [
             'first string',
@@ -315,7 +315,7 @@ describe('plainTextInnerHtmlToMarkdown', () => {
         );
     });
 
-    it('can cope with multiple adjacent text nodes in nested div', () => {
+    it('handles multiple adjacent text nodes in nested div', () => {
         const innerDiv = document.createElement('div');
         // this is how chrome structures the child nodes
         const strings = [
@@ -336,7 +336,7 @@ describe('plainTextInnerHtmlToMarkdown', () => {
         );
     });
 
-    it('can cope with a mention at the top level', () => {
+    it('handles a mention at the top level', () => {
         const mention = createMentionElement();
         mockComposer.appendChild(mention);
 
@@ -347,7 +347,7 @@ describe('plainTextInnerHtmlToMarkdown', () => {
         );
     });
 
-    it('can cope with a mention at the top level inline with textnodes', () => {
+    it('handles a mention at the top level inline with textnodes', () => {
         const mention = createMentionElement();
 
         mockComposer.appendChild(document.createTextNode('preceding '));
@@ -361,7 +361,7 @@ describe('plainTextInnerHtmlToMarkdown', () => {
         );
     });
 
-    it('can cope with a nested mention', () => {
+    it('handles a nested mention', () => {
         const innerDiv = document.createElement('div');
         const mention = createMentionElement();
         innerDiv.appendChild(mention);
@@ -374,7 +374,7 @@ describe('plainTextInnerHtmlToMarkdown', () => {
         );
     });
 
-    it('can cope with a nested mention with nested text nodes', () => {
+    it('handles a nested mention with nested text nodes', () => {
         const innerDiv = document.createElement('div');
         const mention = createMentionElement();
 
@@ -390,7 +390,7 @@ describe('plainTextInnerHtmlToMarkdown', () => {
         );
     });
 
-    it('can cope with a nested mention next to top level text node', () => {
+    it('handles a nested mention next to top level text node', () => {
         const innerDiv = document.createElement('div');
         const mention = createMentionElement();
 
@@ -405,7 +405,7 @@ describe('plainTextInnerHtmlToMarkdown', () => {
         );
     });
 
-    it('can cope with adjacent top level mentions', () => {
+    it('handles adjacent top level mentions', () => {
         ['1', '2', '3'].forEach((id) => {
             const mention = createMentionElement(id);
             mockComposer.appendChild(mention);
@@ -418,7 +418,7 @@ describe('plainTextInnerHtmlToMarkdown', () => {
         );
     });
 
-    it('can cope with adjacent nested mentions', () => {
+    it('handles adjacent nested mentions', () => {
         const innerDiv = document.createElement('div');
         ['1', '2', '3'].forEach((id) => {
             const mention = createMentionElement(id);
@@ -433,7 +433,7 @@ describe('plainTextInnerHtmlToMarkdown', () => {
         );
     });
 
-    it('can cope with adjacent top level and nested mentions', () => {
+    it('handles adjacent top level and nested mentions', () => {
         const topLevelMention = createMentionElement('1');
         const nestedMention = createMentionElement('2');
 
