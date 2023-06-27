@@ -82,7 +82,7 @@ describe('Rich text <=> plain text', () => {
     });
 });
 
-describe('Plain text <=> markdown', () => {
+describe('markdownToPlain', () => {
     it('converts single linebreak for markdown => plain', () => {
         const markdown = 'multi\\\nline';
         const convertedPlainText = markdownToPlain(markdown);
