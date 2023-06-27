@@ -75,25 +75,6 @@ describe('Rich text <=> plain text', () => {
 });
 
 describe('Plain text <=> markdown', () => {
-    // it('converts single linebreak for plain => markdown', () => {
-    //     const plain = 'multi\nline';
-    //     const convertedMarkdown = plainToMarkdown(plain);
-    //     const expectedMarkdown = `multi<br />line`;
-
-    //     expect(convertedMarkdown).toBe(expectedMarkdown);
-    // });
-
-    // it('converts multiple linebreak for plain => markdown', () => {
-    //     // nb for correct display, there will be one br tag less
-    //     // than \n at the end
-    //     const plain = 'multiple\nline\n\nbreaks\n\n\n';
-    //     const convertedMarkdown = plainToMarkdown(plain);
-    //     const expectedMarkdown =
-    //         'multiple<br />line<br /><br />breaks<br /><br />';
-
-    //     expect(convertedMarkdown).toBe(expectedMarkdown);
-    // });
-
     it('converts single linebreak for markdown => plain', () => {
         const markdown = 'multi\\\nline';
         const convertedPlainText = markdownToPlain(markdown);
@@ -181,6 +162,26 @@ describe('amendHtmlInABetterWay', () => {
     beforeEach(() => {
         mockComposer = document.createElement('div');
         mockComposer.setAttribute('contenteditable', 'true');
+    });
+
+    it('can cope with two lines of text, second line empty, shift+enter linebreak entry', () => {
+        const textNode = document.createTextNode('firstline\n\n');
+        mockComposer.appendChild(textNode);
+
+        const expected = 'firstline\n';
+        expect(plainTextInnerHtmlToMarkdown(mockComposer.innerHTML)).toBe(
+            expected,
+        );
+    });
+
+    it('can maintain consecutive newlines between text lines', () => {
+        const textNode = document.createTextNode('first\n\n\n\nlast');
+        mockComposer.appendChild(textNode);
+
+        const expected = 'first\n\n\n\nlast';
+        expect(plainTextInnerHtmlToMarkdown(mockComposer.innerHTML)).toBe(
+            expected,
+        );
     });
 
     it('can cope with divs with a line break', () => {

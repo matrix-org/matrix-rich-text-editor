@@ -200,5 +200,11 @@ export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
         node = i.nextNode();
     }
 
+    // finally, after the conversion, we need to trim a single `\n` off the end of the
+    // output if we have consecutive newlines, as this is a browser placeholder
+    if (outputStuff.endsWith('\n\n')) {
+        outputStuff = outputStuff.slice(0, -1);
+    }
+
     return outputStuff;
 }
