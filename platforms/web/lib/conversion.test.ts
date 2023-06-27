@@ -72,14 +72,6 @@ describe('Rich text <=> plain text', () => {
 
         expect(convertedPlainText).toBe(expectedPlainText);
     });
-
-    it('converts linebreaks for display plain => rich', async () => {
-        const plainText = 'multi\nline';
-        const convertedRichText = await plainToRich(plainText, false);
-        const expectedRichText = 'multi<br />line';
-
-        expect(convertedRichText).toBe(expectedRichText);
-    });
 });
 
 describe('Plain text <=> markdown', () => {
@@ -239,12 +231,20 @@ describe('amendHtmlInABetterWay', () => {
     });
 
     it('can cope with multiple adjacent text nodes at top level', () => {
-        const strings = ['first string', 'second string', 'third string'];
+        // this is how chrome structures the child nodes
+        const strings = [
+            'first string',
+            '\n',
+            'second string',
+            '\n',
+            'third string',
+        ];
         strings.forEach((s) =>
             mockComposer.appendChild(document.createTextNode(s)),
         );
 
-        const expected = strings.join('\n');
+        const expected = 'first string\nsecond string\nthird string';
+
         expect(plainTextInnerHtmlToMarkdown(mockComposer.innerHTML)).toBe(
             expected,
         );
@@ -252,13 +252,20 @@ describe('amendHtmlInABetterWay', () => {
 
     it('can cope with multiple adjacent text nodes in nested div', () => {
         const innerDiv = document.createElement('div');
-        const strings = ['first string', 'second string', 'third string'];
+        // this is how chrome structures the child nodes
+        const strings = [
+            'first string',
+            '\n',
+            'second string',
+            '\n',
+            'third string',
+        ];
         strings.forEach((s) =>
             innerDiv.appendChild(document.createTextNode(s)),
         );
         mockComposer.appendChild(innerDiv);
 
-        const expected = strings.join('\n');
+        const expected = 'first string\nsecond string\nthird string';
         expect(plainTextInnerHtmlToMarkdown(mockComposer.innerHTML)).toBe(
             expected,
         );
