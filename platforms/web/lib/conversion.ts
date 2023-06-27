@@ -112,6 +112,7 @@ we do it manually so that we can extract:
     in the plain text composer can be parsed into mentions inside the rust model
 */
 
+const NEWLINE_CHAR = '\n';
 export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
     const { body: composer } = new DOMParser().parseFromString(
         innerHtml,
@@ -142,9 +143,9 @@ export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
         const isLineBreak =
             node.nodeName === 'BR' && node.parentElement?.nodeName === 'DIV';
 
-        // if we find a br inside a div, take an \n
+        // if we find a br inside a div, replace it with an \n
         if (isLineBreak) {
-            outputStuff += '\n';
+            outputStuff += NEWLINE_CHAR;
         }
 
         // if we find a text node inside a nested div, take the text content
@@ -153,7 +154,7 @@ export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
             const nextSibling =
                 node.nextSibling || node.parentElement?.nextSibling;
             if (nextSibling && nextSibling.nodeName !== 'A') {
-                content += '\n';
+                content += NEWLINE_CHAR;
             }
             outputStuff += content;
         }
@@ -165,7 +166,7 @@ export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
                 node.nextSibling !== null &&
                 node.nextSibling.nodeName !== 'A'
             ) {
-                content += '\n';
+                content += NEWLINE_CHAR;
             }
             outputStuff += content;
         }
@@ -177,7 +178,7 @@ export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
             const isNextToBlockNode =
                 nextSibling && !['#text', 'A'].includes(nextSibling.nodeName);
             if (isNextToBlockNode) {
-                outputStuff += '\n';
+                outputStuff += NEWLINE_CHAR;
             }
         }
 
@@ -193,7 +194,7 @@ export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
                 node.parentElement?.nextSibling === null &&
                 node.parentElement?.parentElement?.nextSibling !== null;
             if (isInDivNextToAnything || isNextToBlockNode) {
-                outputStuff += '\n';
+                outputStuff += NEWLINE_CHAR;
             }
         }
 
@@ -202,7 +203,7 @@ export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
 
     // finally, after the conversion, we need to trim a single `\n` off the end of the
     // output if we have consecutive newlines, as this is a browser placeholder
-    if (outputStuff.endsWith('\n\n')) {
+    if (outputStuff.endsWith(NEWLINE_CHAR.repeat(2))) {
         outputStuff = outputStuff.slice(0, -1);
     }
 
