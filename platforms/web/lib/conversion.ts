@@ -114,38 +114,42 @@ we do it manually so that we can extract:
 
 const NEWLINE_CHAR = '\n';
 export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
+    // Parse the innerHtml into a DOM and treat the `body` as the `composer
     const { body: composer } = new DOMParser().parseFromString(
         innerHtml,
         'text/html',
     );
+
+    // Create an iterator to allow us to traverse the DOM node by node
     const i = document.createNodeIterator(composer, NodeFilter.SHOW_ALL);
     let node = i.nextNode();
 
-    // loop through every single node and do...something
-    let outputStuff = '';
+    // Use this to store the manually built markdown output
+    let markdownOutput = '';
+
     while (node !== null) {
         const isTopLevelTextNode =
             node.nodeName === '#text' &&
-            node.parentElement?.isSameNode(composer);
+            composer.isSameNode(node.parentElement);
         const isNestedTextNode =
             node.nodeName === '#text' &&
-            !node.parentElement?.isSameNode(composer) &&
+            !composer.isSameNode(node.parentElement) &&
             node.parentElement?.nodeName === 'DIV';
         const isTopLevelMention =
             node.nodeName === '#text' &&
             node.parentElement?.nodeName === 'A' &&
-            node.parentElement?.parentElement?.isSameNode(composer);
+            composer.isSameNode(node.parentElement.parentElement);
         const isNestedMention =
             node.nodeName === '#text' &&
             node.parentElement?.nodeName === 'A' &&
             node.parentElement?.parentElement?.nodeName === 'DIV' &&
-            !node.parentElement.parentElement.isSameNode(composer);
+            !composer.isSameNode(node.parentElement.parentElement);
         const isLineBreak =
             node.nodeName === 'BR' && node.parentElement?.nodeName === 'DIV';
 
         // if we find a br inside a div, replace it with an \n
         if (isLineBreak) {
-            outputStuff += NEWLINE_CHAR;
+            markdownOutput += NEWLINE_CHAR;
         }
 
         // if we find a text node inside a nested div, take the text content
@@ -156,7 +160,7 @@ export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
             if (nextSibling && nextSibling.nodeName !== 'A') {
                 content += NEWLINE_CHAR;
             }
-            outputStuff += content;
+            markdownOutput += content;
         }
 
         // if we find a top level text node, take the text content
@@ -168,23 +172,23 @@ export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
             ) {
                 content += NEWLINE_CHAR;
             }
-            outputStuff += content;
+            markdownOutput += content;
         }
 
         // for a top level mention, grab the outerHTML
         if (isTopLevelMention) {
-            outputStuff += node.parentElement?.outerHTML;
+            markdownOutput += node.parentElement?.outerHTML;
             const nextSibling = node.parentElement?.nextSibling;
             const isNextToBlockNode =
                 nextSibling && !['#text', 'A'].includes(nextSibling.nodeName);
             if (isNextToBlockNode) {
-                outputStuff += NEWLINE_CHAR;
+                markdownOutput += NEWLINE_CHAR;
             }
         }
 
         // for a nested mention, grab the outerHTML but we need to consider if we add a newline or not
         if (isNestedMention) {
-            outputStuff += node.parentElement?.outerHTML;
+            markdownOutput += node.parentElement?.outerHTML;
             const isNextToBlockNode =
                 node.parentElement?.nextSibling !== null &&
                 !['#text', 'A'].includes(
@@ -194,18 +198,18 @@ export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
                 node.parentElement?.nextSibling === null &&
                 node.parentElement?.parentElement?.nextSibling !== null;
             if (isInDivNextToAnything || isNextToBlockNode) {
-                outputStuff += NEWLINE_CHAR;
+                markdownOutput += NEWLINE_CHAR;
             }
         }
 
         node = i.nextNode();
     }
 
-    // finally, after the conversion, we need to trim a single `\n` off the end of the
+    // After converting the DOM, we need to trim a single `\n` off the end of the
     // output if we have consecutive newlines, as this is a browser placeholder
-    if (outputStuff.endsWith(NEWLINE_CHAR.repeat(2))) {
-        outputStuff = outputStuff.slice(0, -1);
+    if (markdownOutput.endsWith(NEWLINE_CHAR.repeat(2))) {
+        markdownOutput = markdownOutput.slice(0, -1);
     }
 
-    return outputStuff;
+    return markdownOutput;
 }
