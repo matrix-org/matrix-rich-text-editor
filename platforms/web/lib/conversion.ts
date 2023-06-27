@@ -124,28 +124,49 @@ export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
     const i = document.createNodeIterator(composer, NodeFilter.SHOW_ALL);
     let node = i.nextNode();
 
+    // HELPERS
+    function isComposer(node: Node | null | undefined): boolean {
+        if (!node) return false;
+        return composer.isSameNode(node);
+    }
+
+    function isBreakNode(node: Node): boolean {
+        return node.nodeName === 'BR';
+    }
+
+    function isTextNode(node: Node): boolean {
+        return node.nodeName === '#text';
+    }
+
+    function isDiv(node: Node | null | undefined): boolean {
+        if (!node) return false;
+        return node.nodeName === 'DIV';
+    }
+
+    function isMentionElement(node: HTMLElement | null | undefined): boolean {
+        if (!node) return false;
+        return node.nodeName === 'A' && node.hasAttribute('data-mention-type');
+    }
     // Use this to store the manually built markdown output
     let markdownOutput = '';
 
     while (node !== null) {
         const isTopLevelTextNode =
-            node.nodeName === '#text' &&
-            composer.isSameNode(node.parentElement);
+            isTextNode(node) && isComposer(node.parentElement);
         const isNestedTextNode =
-            node.nodeName === '#text' &&
-            !composer.isSameNode(node.parentElement) &&
-            node.parentElement?.nodeName === 'DIV';
+            isTextNode(node) &&
+            !isComposer(node.parentElement) &&
+            isDiv(node.parentElement);
         const isTopLevelMention =
-            node.nodeName === '#text' &&
-            node.parentElement?.nodeName === 'A' &&
-            composer.isSameNode(node.parentElement.parentElement);
+            isTextNode(node) &&
+            isMentionElement(node.parentElement) &&
+            isComposer(node.parentElement?.parentElement);
         const isNestedMention =
-            node.nodeName === '#text' &&
-            node.parentElement?.nodeName === 'A' &&
-            node.parentElement?.parentElement?.nodeName === 'DIV' &&
-            !composer.isSameNode(node.parentElement.parentElement);
-        const isLineBreak =
-            node.nodeName === 'BR' && node.parentElement?.nodeName === 'DIV';
+            isTextNode(node) &&
+            isMentionElement(node.parentElement) &&
+            isDiv(node.parentElement?.parentElement) &&
+            !isComposer(node.parentElement?.parentElement);
+        const isLineBreak = isBreakNode(node) && isDiv(node.parentElement);
 
         // if we find a br inside a div, replace it with an \n
         if (isLineBreak) {
