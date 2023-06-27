@@ -159,6 +159,17 @@ describe('Mentions', () => {
 // are giving the conversion function decent input for the tests.
 describe('amendHtmlInABetterWay', () => {
     let mockComposer: HTMLDivElement;
+
+    function createMentionElement(identifier = ''): HTMLAnchorElement {
+        const mention = document.createElement('a');
+        mention.appendChild(document.createTextNode(`inner text${identifier}`));
+        mention.setAttribute('href', `testHref${identifier}`);
+        mention.setAttribute('data-mention-type', `testType${identifier}`);
+        mention.setAttribute('style', `testStyle${identifier}`);
+        mention.setAttribute('contenteditable', 'false');
+        return mention;
+    }
+
     beforeEach(() => {
         mockComposer = document.createElement('div');
         mockComposer.setAttribute('contenteditable', 'true');
@@ -276,12 +287,7 @@ describe('amendHtmlInABetterWay', () => {
     });
 
     it('can cope with a mention at the top level', () => {
-        const mention = document.createElement('a');
-        mention.appendChild(document.createTextNode('inner text'));
-        mention.setAttribute('href', 'testHref');
-        mention.setAttribute('data-mention-type', 'testType');
-        mention.setAttribute('style', 'testStyle');
-        mention.setAttribute('contenteditable', 'false');
+        const mention = createMentionElement();
         mockComposer.appendChild(mention);
 
         // eslint-disable-next-line max-len
@@ -292,12 +298,7 @@ describe('amendHtmlInABetterWay', () => {
     });
 
     it('can cope with a mention at the top level inline with textnodes', () => {
-        const mention = document.createElement('a');
-        mention.appendChild(document.createTextNode('inner text'));
-        mention.setAttribute('href', 'testHref');
-        mention.setAttribute('data-mention-type', 'testType');
-        mention.setAttribute('style', 'testStyle');
-        mention.setAttribute('contenteditable', 'false');
+        const mention = createMentionElement();
 
         mockComposer.appendChild(document.createTextNode('preceding '));
         mockComposer.appendChild(mention);
@@ -312,12 +313,7 @@ describe('amendHtmlInABetterWay', () => {
 
     it('can cope with a nested mention', () => {
         const innerDiv = document.createElement('div');
-        const mention = document.createElement('a');
-        mention.appendChild(document.createTextNode('inner text'));
-        mention.setAttribute('href', 'testHref');
-        mention.setAttribute('data-mention-type', 'testType');
-        mention.setAttribute('style', 'testStyle');
-        mention.setAttribute('contenteditable', 'false');
+        const mention = createMentionElement();
         innerDiv.appendChild(mention);
         mockComposer.appendChild(innerDiv);
 
@@ -330,12 +326,7 @@ describe('amendHtmlInABetterWay', () => {
 
     it('can cope with a nested mention with nested text nodes', () => {
         const innerDiv = document.createElement('div');
-        const mention = document.createElement('a');
-        mention.appendChild(document.createTextNode('inner text'));
-        mention.setAttribute('href', 'testHref');
-        mention.setAttribute('data-mention-type', 'testType');
-        mention.setAttribute('style', 'testStyle');
-        mention.setAttribute('contenteditable', 'false');
+        const mention = createMentionElement();
 
         innerDiv.appendChild(document.createTextNode('preceding '));
         innerDiv.appendChild(mention);
@@ -351,12 +342,7 @@ describe('amendHtmlInABetterWay', () => {
 
     it('can cope with a nested mention next to top level text nodes', () => {
         const innerDiv = document.createElement('div');
-        const mention = document.createElement('a');
-        mention.appendChild(document.createTextNode('inner text'));
-        mention.setAttribute('href', 'testHref');
-        mention.setAttribute('data-mention-type', 'testType');
-        mention.setAttribute('style', 'testStyle');
-        mention.setAttribute('contenteditable', 'false');
+        const mention = createMentionElement();
 
         mockComposer.appendChild(document.createTextNode('preceding'));
         innerDiv.appendChild(mention);
@@ -372,13 +358,7 @@ describe('amendHtmlInABetterWay', () => {
 
     it('can cope with adjacent top level mentions', () => {
         ['1', '2', '3'].forEach((id) => {
-            const mention = document.createElement('a');
-            mention.appendChild(document.createTextNode('inner text' + id));
-            mention.setAttribute('href', 'testHref' + id);
-            mention.setAttribute('data-mention-type', 'testType' + id);
-            mention.setAttribute('style', 'testStyle' + id);
-            mention.setAttribute('contenteditable', 'false');
-
+            const mention = createMentionElement(id);
             mockComposer.appendChild(mention);
         });
 
@@ -391,13 +371,9 @@ describe('amendHtmlInABetterWay', () => {
 
     it('can cope with adjacent nested mentions', () => {
         ['1', '2', '3'].forEach((id) => {
-            const mention = document.createElement('a');
-            mention.appendChild(document.createTextNode('inner text' + id));
-            mention.setAttribute('href', 'testHref' + id);
-            mention.setAttribute('data-mention-type', 'testType' + id);
-            mention.setAttribute('style', 'testStyle' + id);
-            mention.setAttribute('contenteditable', 'false');
+            const mention = createMentionElement(id);
 
+            // nest the middle mention
             if (id === '2') {
                 const innerDiv = document.createElement('div');
                 innerDiv.appendChild(mention);
