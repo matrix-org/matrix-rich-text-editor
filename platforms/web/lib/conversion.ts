@@ -125,11 +125,6 @@ export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
     let node = i.nextNode();
 
     // HELPERS
-    function isComposer(node: Node | null | undefined): boolean {
-        if (!node) return false;
-        return composer.isSameNode(node);
-    }
-
     function isBreakNode(node: Node): boolean {
         return node.nodeName === 'BR';
     }
@@ -147,29 +142,34 @@ export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
         if (!node) return false;
         return node.nodeName === 'A' && node.hasAttribute('data-mention-type');
     }
+
     // Use this to store the manually built markdown output
     let markdownOutput = '';
 
     while (node !== null) {
-        const isTopLevelTextNode =
-            isTextNode(node) && isComposer(node.parentElement);
+        const isTopLevel = composer.isSameNode(node.parentElement);
+        const isText = isTextNode(node);
+        const isMention = isMentionElement(node.parentElement);
+
+        const isTopLevelTextNode = isText && isTopLevel;
         const isNestedTextNode =
-            isTextNode(node) &&
-            !isComposer(node.parentElement) &&
-            isDiv(node.parentElement);
+            isText && !isTopLevel && isDiv(node.parentElement);
         const isTopLevelMention =
-            isTextNode(node) &&
-            isMentionElement(node.parentElement) &&
-            isComposer(node.parentElement?.parentElement);
+            isText &&
+            isMention &&
+            composer.isSameNode(node.parentElement?.parentElement ?? null);
         const isNestedMention =
-            isTextNode(node) &&
-            isMentionElement(node.parentElement) &&
+            isText &&
+            isMention &&
             isDiv(node.parentElement?.parentElement) &&
-            !isComposer(node.parentElement?.parentElement);
-        const isLineBreak = isBreakNode(node) && isDiv(node.parentElement);
+            !composer.isSameNode(node.parentElement?.parentElement ?? null);
+        const isDivContainingBreak =
+            isBreakNode(node) &&
+            isDiv(node.parentElement) &&
+            node.parentElement?.childElementCount === 1;
 
         // if we find a br inside a div, replace it with an \n
-        if (isLineBreak) {
+        if (isDivContainingBreak) {
             markdownOutput += NEWLINE_CHAR;
         }
 
