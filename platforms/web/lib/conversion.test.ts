@@ -170,12 +170,19 @@ describe('amendHtmlInABetterWay', () => {
         return mention;
     }
 
+    function createPlaceholderDiv(): HTMLDivElement {
+        const div = document.createElement('div');
+        const br = document.createElement('br');
+        div.appendChild(br);
+        return div;
+    }
+
     beforeEach(() => {
         mockComposer = document.createElement('div');
         mockComposer.setAttribute('contenteditable', 'true');
     });
 
-    it('can cope with two lines of text, second line empty, shift+enter linebreak entry', () => {
+    it('can cope with two lines of text, second line empty, for newline chars', () => {
         const textNode = document.createTextNode('firstline\n\n');
         mockComposer.appendChild(textNode);
 
@@ -185,9 +192,44 @@ describe('amendHtmlInABetterWay', () => {
         );
     });
 
-    it('can maintain consecutive newlines between text lines', () => {
+    it('can cope with two lines of text, second line empty, for placeholder div', () => {
+        const textNode = document.createTextNode('firstline');
+
+        mockComposer.append(textNode, createPlaceholderDiv());
+
+        const expected = 'firstline\n';
+        expect(plainTextInnerHtmlToMarkdown(mockComposer.innerHTML)).toBe(
+            expected,
+        );
+    });
+
+    it('can maintain consecutive newlines between text lines for newline chars', () => {
         const textNode = document.createTextNode('first\n\n\n\nlast');
         mockComposer.appendChild(textNode);
+
+        const expected = 'first\n\n\n\nlast';
+        expect(plainTextInnerHtmlToMarkdown(mockComposer.innerHTML)).toBe(
+            expected,
+        );
+    });
+
+    it('can maintain consecutive newlines between text lines for placeholder divs', () => {
+        const firstText = document.createTextNode('first');
+
+        // after the placeholders have started, text can only be inserted inside divs
+        const lastDiv = document.createElement('div');
+        const lastText = document.createTextNode('last');
+        lastDiv.appendChild(lastText);
+
+        const children = [
+            firstText,
+            createPlaceholderDiv(),
+            createPlaceholderDiv(),
+            createPlaceholderDiv(),
+            lastDiv,
+        ];
+
+        mockComposer.append(...children);
 
         const expected = 'first\n\n\n\nlast';
         expect(plainTextInnerHtmlToMarkdown(mockComposer.innerHTML)).toBe(
