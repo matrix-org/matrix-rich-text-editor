@@ -25,14 +25,14 @@ import { initOnce } from './useComposerModel.js';
 // include an extra \n, so trim that off if required.
 // We replace the remaining \n with valid markdown before
 // parsing by MarkdownHTMLParser::to_html.
-export const plainToMarkdown = (plainText: string) => {
-    let markdown = plainText;
-    if (markdown.endsWith('\n')) {
-        // manually remove the final linebreak
-        markdown = markdown.slice(0, -1);
-    }
-    return markdown.replaceAll(/\n/g, '<br />');
-};
+// export const plainToMarkdown = (plainText: string) => {
+//     let markdown = plainText;
+//     if (markdown.endsWith('\n')) {
+//         // manually remove the final linebreak
+//         markdown = markdown.slice(0, -1);
+//     }
+//     return markdown.replaceAll(/\n/g, '<br />');
+// };
 
 // In plain text, markdown newlines (displays '\' character followed by
 // a newline character) will be represented as \n for display as the
@@ -78,7 +78,7 @@ export async function plainToRich(plainText: string, inMessageFormat: boolean) {
 
     // convert the plain text into markdown so that we can use it to
     // set the model
-    const markdown = plainToMarkdown(plainText);
+    const markdown = plainTextInnerHtmlToMarkdown(plainText);
 
     // set the model and return the rich text
     const model = new_composer_model();
@@ -89,10 +89,30 @@ export async function plainToRich(plainText: string, inMessageFormat: boolean) {
         : model.get_content_as_html();
 }
 
-// We need to do something better and less hacky to now account for the fact that mentions are html
-// The approach will be to manually build a string by parsing the html into a document then manually
-// creating a string of exactly the format required by the markdown parser of the rust model.
-export function amendInnerHtmlButBetter(composer: HTMLDivElement): string {
+/*
+The reason for requiring this function requires it's own explanation, so here it is.
+When manipulating a content editable div in a browser, as we do for the plain text version
+of the composer in element web, there is a limited subset of html that the composer can contain.
+Currently, the innerHTML of the plain text composer can only contain:
+  - text with `\n` line separation if `shift + enter` is used to insert the linebreak
+    - in this case, inserting a newline after a single word will result in `word\n\n`, then
+      subsequent typing will replace the final `\n` to give `word\nother word`
+  - text with <div> separation if `cmd + enter to send` is enabled and `enter` is used to insert
+    the linebreak
+    - in this case, inserting a newline inserts `<div><br></div>`, and then subsequent typing 
+      replaces the <br> tag with the new content
+  - mentions (ie <a> tags with special attributes) which can be at the top level, or nested inside
+    a div 
+What we need to do is to get this input into a good shape for the markdown parser in the rust model. 
+Because of some of the intricacies of how text content is parsed when you use `.innerHTML` vs `.innerText`
+we do it manually so that we can extract:
+  - text content from any text nodes exactly as the user has written it, so that there is no escaping
+    of html entities like < or &
+  - mentions in their pure html form so that they can be passed through as valid html, as the mentions
+    in the plain text composer can be parsed into mentions inside the rust model
+*/
+
+export function plainTextInnerHtmlToMarkdown(composer: HTMLDivElement): string {
     const i = document.createNodeIterator(composer, NodeFilter.SHOW_ALL);
     let node = i.nextNode();
     // loop through every single node and do...something
