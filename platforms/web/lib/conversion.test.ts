@@ -27,7 +27,6 @@ describe('Rich text <=> plain text', () => {
         { rich: 'plain', plain: 'plain' },
         { rich: '<strong>bold</strong>', plain: '__bold__' },
         { rich: '<em>italic</em>', plain: '*italic*' },
-        { rich: '<u>underline</u>', plain: '<u>underline</u>' },
         { rich: '<del>strike</del>', plain: '~~strike~~' },
     ];
     const mappedTestCases = testCases.map(({ rich, plain }) => [rich, plain]);
@@ -42,6 +41,29 @@ describe('Rich text <=> plain text', () => {
             expect(convertedPlainText).toBe(plain);
         },
     );
+
+    it('converts underline case rich => plain', async () => {
+        // This is the html representation of underlining
+        const rich = '<u>underline</u>';
+
+        // When we convert the plain text, we expect the output to be the `rich` string - it
+        // is then set as `.innerText` in element web so that handles html escaping entities
+        const expectedPlainText = '<u>underline</u>';
+
+        const convertedPlainText = await richToPlain(rich);
+        expect(convertedPlainText).toBe(expectedPlainText);
+    });
+
+    it('converts underline case plain => rich', async () => {
+        // When the above is typed by a user in the plain text editor, the innerHTML
+        // will look like this
+        const plain = '&lt;u&gt;underline&lt;/u&gt;';
+
+        const expectedRichText = '<u>underline</u>';
+
+        const convertedRichText = await plainToRich(plain, false);
+        expect(convertedRichText).toBe(expectedRichText);
+    });
 
     it('converts linebreaks for display rich => plain', async () => {
         const richText = 'multi<br />line';

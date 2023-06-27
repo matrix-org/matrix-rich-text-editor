@@ -113,9 +113,13 @@ we do it manually so that we can extract:
 */
 
 export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
-    const composer = new DOMParser().parseFromString(innerHtml, 'text/html');
+    const { body: composer } = new DOMParser().parseFromString(
+        innerHtml,
+        'text/html',
+    );
     const i = document.createNodeIterator(composer, NodeFilter.SHOW_ALL);
     let node = i.nextNode();
+
     // loop through every single node and do...something
     let outputStuff = '';
     while (node !== null) {
