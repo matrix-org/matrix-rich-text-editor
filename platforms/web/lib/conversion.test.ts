@@ -239,6 +239,7 @@ describe('amendHtmlInABetterWay', () => {
         mention.setAttribute('contenteditable', 'false');
         mockComposer.appendChild(mention);
 
+        // eslint-disable-next-line max-len
         const expected = `<a href="testHref" data-mention-type="testType" style="testStyle" contenteditable="false">inner text</a>`;
         expect(amendInnerHtmlButBetter(mockComposer)).toBe(expected);
     });
@@ -255,6 +256,7 @@ describe('amendHtmlInABetterWay', () => {
         mockComposer.appendChild(mention);
         mockComposer.appendChild(document.createTextNode(' following'));
 
+        // eslint-disable-next-line max-len
         const expected = `preceding <a href="testHref" data-mention-type="testType" style="testStyle" contenteditable="false">inner text</a> following`;
         expect(amendInnerHtmlButBetter(mockComposer)).toBe(expected);
     });
@@ -270,6 +272,7 @@ describe('amendHtmlInABetterWay', () => {
         innerDiv.appendChild(mention);
         mockComposer.appendChild(innerDiv);
 
+        // eslint-disable-next-line max-len
         const expected = `<a href="testHref" data-mention-type="testType" style="testStyle" contenteditable="false">inner text</a>`;
         expect(amendInnerHtmlButBetter(mockComposer)).toBe(expected);
     });
@@ -288,6 +291,7 @@ describe('amendHtmlInABetterWay', () => {
         innerDiv.appendChild(document.createTextNode(' following'));
         mockComposer.appendChild(innerDiv);
 
+        // eslint-disable-next-line max-len
         const expected = `preceding <a href="testHref" data-mention-type="testType" style="testStyle" contenteditable="false">inner text</a> following`;
         expect(amendInnerHtmlButBetter(mockComposer)).toBe(expected);
     });
@@ -306,6 +310,7 @@ describe('amendHtmlInABetterWay', () => {
         mockComposer.appendChild(innerDiv);
         mockComposer.appendChild(document.createTextNode('following'));
 
+        // eslint-disable-next-line max-len
         const expected = `preceding\n<a href="testHref" data-mention-type="testType" style="testStyle" contenteditable="false">inner text</a>\nfollowing`;
         expect(amendInnerHtmlButBetter(mockComposer)).toBe(expected);
     });
@@ -322,6 +327,7 @@ describe('amendHtmlInABetterWay', () => {
             mockComposer.appendChild(mention);
         });
 
+        // eslint-disable-next-line max-len
         const expected = `<a href="testHref1" data-mention-type="testType1" style="testStyle1" contenteditable="false">inner text1</a><a href="testHref2" data-mention-type="testType2" style="testStyle2" contenteditable="false">inner text2</a><a href="testHref3" data-mention-type="testType3" style="testStyle3" contenteditable="false">inner text3</a>`;
         expect(amendInnerHtmlButBetter(mockComposer)).toBe(expected);
     });
@@ -344,6 +350,7 @@ describe('amendHtmlInABetterWay', () => {
             }
         });
 
+        // eslint-disable-next-line max-len
         const expected = `<a href="testHref1" data-mention-type="testType1" style="testStyle1" contenteditable="false">inner text1</a>\n<a href="testHref2" data-mention-type="testType2" style="testStyle2" contenteditable="false">inner text2</a>\n<a href="testHref3" data-mention-type="testType3" style="testStyle3" contenteditable="false">inner text3</a>`;
         expect(amendInnerHtmlButBetter(mockComposer)).toBe(expected);
     });

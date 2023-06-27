@@ -100,22 +100,22 @@ export function amendInnerHtmlButBetter(composer: HTMLDivElement): string {
     while (node !== null) {
         const isTopLevelTextNode =
             node.nodeName === '#text' &&
-            node.parentElement.isSameNode(composer);
+            node.parentElement?.isSameNode(composer);
         const isNestedTextNode =
             node.nodeName === '#text' &&
-            !node.parentElement.isSameNode(composer) &&
-            node.parentElement.nodeName === 'DIV';
+            !node.parentElement?.isSameNode(composer) &&
+            node.parentElement?.nodeName === 'DIV';
         const isTopLevelMention =
             node.nodeName === '#text' &&
-            node.parentElement.nodeName === 'A' &&
-            node.parentElement.parentElement.isSameNode(composer);
+            node.parentElement?.nodeName === 'A' &&
+            node.parentElement?.parentElement?.isSameNode(composer);
         const isNestedMention =
             node.nodeName === '#text' &&
-            node.parentElement.nodeName === 'A' &&
-            node.parentElement.parentElement.nodeName === 'DIV' &&
+            node.parentElement?.nodeName === 'A' &&
+            node.parentElement?.parentElement?.nodeName === 'DIV' &&
             !node.parentElement.parentElement.isSameNode(composer);
         const isLineBreak =
-            node.nodeName === 'BR' && node.parentElement.nodeName === 'DIV';
+            node.nodeName === 'BR' && node.parentElement?.nodeName === 'DIV';
 
         // if we find a br inside a div, take an \n
         if (isLineBreak) {
@@ -126,7 +126,7 @@ export function amendInnerHtmlButBetter(composer: HTMLDivElement): string {
         if (isNestedTextNode) {
             let content = node.textContent;
             const nextSibling =
-                node.nextSibling || node.parentElement.nextSibling;
+                node.nextSibling || node.parentElement?.nextSibling;
             if (nextSibling && nextSibling.nodeName !== 'A') {
                 content += '\n';
             }
@@ -147,8 +147,8 @@ export function amendInnerHtmlButBetter(composer: HTMLDivElement): string {
 
         // for a top level mention, grab the outerHTML
         if (isTopLevelMention) {
-            outputStuff += node.parentElement.outerHTML;
-            const nextSibling = node.parentElement.nextSibling;
+            outputStuff += node.parentElement?.outerHTML;
+            const nextSibling = node.parentElement?.nextSibling;
             const isNextToBlockNode =
                 nextSibling && !['#text', 'A'].includes(nextSibling.nodeName);
             if (isNextToBlockNode) {
@@ -158,15 +158,15 @@ export function amendInnerHtmlButBetter(composer: HTMLDivElement): string {
 
         // for a nested mention, grab the outerHTML but we need to consider if we add a newline or not
         if (isNestedMention) {
-            outputStuff += node.parentElement.outerHTML;
+            outputStuff += node.parentElement?.outerHTML;
             const isNextToBlockNode =
-                node.parentElement.nextSibling !== null &&
+                node.parentElement?.nextSibling !== null &&
                 !['#text', 'A'].includes(
-                    node.parentElement.nextSibling.nodeName,
+                    node.parentElement?.nextSibling.nodeName ?? '',
                 );
             const isInDivNextToAnything =
-                node.parentElement.nextSibling === null &&
-                node.parentElement.parentElement.nextSibling !== null;
+                node.parentElement?.nextSibling === null &&
+                node.parentElement?.parentElement?.nextSibling !== null;
             if (isInDivNextToAnything || isNextToBlockNode) {
                 outputStuff += '\n';
             }
