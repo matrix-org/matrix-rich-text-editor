@@ -50,14 +50,18 @@ impl MarkdownHTMLParser {
             }
         };
 
-        // Format new lines.
+        // Remove any trailing newline characters from block tags
         let html = html
             .replace("<ul>\n", "<ul>")
             .replace("</ul>\n", "</ul>")
             .replace("<ol>\n", "<ol>")
             .replace("</ol>\n", "</ol>")
             .replace("</li>\n", "</li>")
-            .replace("<br />\n", "<br />");
+            .replace("<br />\n", "<br />")
+            .replace("<blockquote>\n", "<blockquote>")
+            .replace("</blockquote>\n", "</blockquote>")
+            .replace("<p>\n", "<p>")
+            .replace("</p>\n", "</p>");
 
         Ok(S::try_from(html).unwrap())
     }
