@@ -50,8 +50,7 @@ impl MarkdownHTMLParser {
             }
         };
 
-        // We need to remove any trailing newline characters from block tags, then
-        // finally replace any remaining newline characters with linebreaks
+        // Remove any trailing newline characters from block tags
         let html = html
             .replace("<ul>\n", "<ul>")
             .replace("</ul>\n", "</ul>")
