@@ -73,7 +73,7 @@ describe('Rich text <=> plain text', () => {
         expect(convertedPlainText).toBe(expectedPlainText);
     });
 
-    it.skip('converts blockquotes from plain => rich', async () => {
+    it('converts blockquotes from plain => rich', async () => {
         const plainText = '> I am a quote';
         const convertedRichText = await plainToRich(plainText, false);
         const expectedRichText = '<blockquote><p>I am a quote</p></blockquote>';
