@@ -101,7 +101,7 @@ we do it manually so that we can extract:
     in the plain text composer can be parsed into mentions inside the rust model
 */
 export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
-    // Parse the innerHtml into a DOM and treat the `body` as the `composer
+    // Parse the innerHtml into a DOM and treat the `body` as the `composer`
     const { body: composer } = new DOMParser().parseFromString(
         innerHtml,
         'text/html',
