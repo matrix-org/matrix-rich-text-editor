@@ -448,4 +448,39 @@ describe('plainTextInnerHtmlToMarkdown', () => {
             expected,
         );
     });
+
+    it('outputs to console.debug for unexpected node types', () => {
+        const debugSpy = vi
+            .spyOn(console, 'debug')
+            .mockImplementation(() => {});
+
+        const unorderedList = document.createElement('ul');
+        const listItem = document.createElement('li');
+        const textNode = document.createTextNode('list text');
+
+        listItem.appendChild(textNode);
+        unorderedList.appendChild(listItem);
+        mockComposer.appendChild(unorderedList);
+
+        // check that it pulls the inner text out correctly, despite the unexpected tags
+        const expected = `list text`;
+        expect(plainTextInnerHtmlToMarkdown(mockComposer.innerHTML)).toBe(
+            expected,
+        );
+
+        // check that it has also called console.debug with some useful output
+        expect(debugSpy.mock.calls).toMatchInlineSnapshot(`
+          [
+            [
+              "Converting unexpected node type UL",
+            ],
+            [
+              "Converting unexpected node type LI",
+            ],
+          ]
+        `);
+
+        // reset the spy
+        debugSpy.mockRestore();
+    });
 });

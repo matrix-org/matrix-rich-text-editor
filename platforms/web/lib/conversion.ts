@@ -132,6 +132,9 @@ export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
             node.childNodes.length === 1 &&
             node.firstChild?.nodeName === 'BR';
 
+        // UNEXPECTED NODE - `node` represents an unexpected tag type
+        const isUnexpectedNode = !expectedNodeNames.includes(node.nodeName);
+
         if (isDivContainingBreak) {
             markdownOutput += NEWLINE_CHAR;
         } else if (isTextNode) {
@@ -148,6 +151,8 @@ export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
                 content += NEWLINE_CHAR;
             }
             markdownOutput += content;
+        } else if (isUnexpectedNode) {
+            console.debug(`Converting unexpected node type ${node.nodeName}`);
         }
 
         node = iterator.nextNode();
@@ -161,6 +166,8 @@ export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
 
     return markdownOutput;
 }
+
+const expectedNodeNames = ['#text', 'BR', 'A', 'DIV', 'BODY'];
 
 // When we parse the nodes, we need to manually add newlines if the node is either
 // adjacent to a div or is the last child and it's parent is adjacent to a div
