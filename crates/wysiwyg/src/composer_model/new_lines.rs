@@ -162,6 +162,7 @@ where
                         first_leaf.start_offset,
                         block_location.node_handle.depth(),
                     );
+                    pre_process_sub_tree(&mut sub_tree);
                     let children = sub_tree.document_mut().remove_children();
                     self.state.dom.insert_at(
                         &block_location.node_handle.next_sibling(),

@@ -885,3 +885,61 @@ fn set_link_with_text_and_custom_attributes() {
         "<a customattribute=\"customvalue\" href=\"https://matrix.org\">link|</a>"
     )
 }
+
+#[test]
+fn set_link_in_list_then_exit_list() {
+    // start with empty model
+    let mut model = cm("|");
+
+    // start a list, add a link
+    model.unordered_list();
+    model.set_link_with_text(
+        "https://matrix.org".into(),
+        "test".into(),
+        vec![],
+    );
+
+    assert_eq!(
+        tx(&model),
+        "<ul><li><a href=\"https://matrix.org\">test|</a></li></ul>"
+    );
+
+    // exit the list by pressing enter twice
+    model.enter();
+    model.enter();
+
+    // check that the list has ended, a new paragraph has been started, and the link has not been split
+    // into two parts
+    assert_eq!(
+        tx(&model),
+        "<ul><li><a href=\"https://matrix.org\">test</a></li></ul><p>&nbsp;|</p>"
+    );
+}
+
+#[test]
+fn set_links_in_list_then_add_list_item() {
+    // start with empty model
+    let mut model = cm("|");
+
+    // start a list, add a link
+    model.unordered_list();
+    model.set_link_with_text(
+        "https://matrix.org".into(),
+        "test".into(),
+        vec![],
+    );
+
+    assert_eq!(
+        tx(&model),
+        "<ul><li><a href=\"https://matrix.org\">test|</a></li></ul>"
+    );
+
+    // press enter once to add a new list item
+    model.enter();
+
+    // check that the link has not been split into two, with one part empty
+    assert_eq!(
+        tx(&model),
+        "<ul><li><a href=\"https://matrix.org\">test</a></li><li>|</li></ul>"
+    );
+}
