@@ -21,18 +21,7 @@ import {
 } from '../generated/wysiwyg.js';
 import { initOnce } from './useComposerModel.js';
 
-// In plain text, due to cursor positioning, ending at a linebreak will
-// include an extra \n, so trim that off if required.
-// We replace the remaining \n with valid markdown before
-// parsing by MarkdownHTMLParser::to_html.
-// export const plainToMarkdown = (plainText: string) => {
-//     let markdown = plainText;
-//     if (markdown.endsWith('\n')) {
-//         // manually remove the final linebreak
-//         markdown = markdown.slice(0, -1);
-//     }
-//     return markdown.replaceAll(/\n/g, '<br />');
-// };
+const NEWLINE_CHAR = '\n';
 
 // In plain text, markdown newlines (displays '\' character followed by
 // a newline character) will be represented as \n for display as the
@@ -40,9 +29,9 @@ import { initOnce } from './useComposerModel.js';
 // We also may need to manually add a \n to account for trailing newlines.
 export const markdownToPlain = (markdown: string) => {
     let plainText = markdown;
-    if (plainText.endsWith('\n')) {
+    if (plainText.endsWith(NEWLINE_CHAR)) {
         // for cursor positioning we need to manually add another linebreak
-        plainText = `${plainText}\n`;
+        plainText = `${plainText}${NEWLINE_CHAR}`;
     }
     return plainText.replaceAll(/\\/g, '');
 };
@@ -111,8 +100,6 @@ we do it manually so that we can extract:
   - mentions in their pure html form so that they can be passed through as valid html, as the mentions
     in the plain text composer can be parsed into mentions inside the rust model
 */
-
-const NEWLINE_CHAR = '\n';
 export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
     // Parse the innerHtml into a DOM and treat the `body` as the `composer
     const { body: composer } = new DOMParser().parseFromString(
@@ -120,30 +107,24 @@ export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
         'text/html',
     );
 
-    // When we parse the nodes, we need to manually add newlines if the node is either
-    // adjacent to a div or is the last child and it's parent is adjacent to a div
-    function shouldAddNewlineCharacter(node: Node): boolean {
-        const nextSibling = node.nextSibling || node.parentElement?.nextSibling;
-
-        if (!nextSibling) return false;
-
-        return nextSibling?.nodeName === 'DIV';
-    }
-
-    // Create an iterator to allow us to traverse the DOM node by node
-    const i = document.createNodeIterator(composer, NodeFilter.SHOW_ALL);
-    let node = i.nextNode();
+    // Create an iterator to allow us to traverse the DOM node by node, excluding the
+    // text nodes inside mentions
+    const iterator = document.createNodeIterator(
+        composer,
+        undefined,
+        nodeFilter,
+    );
+    let node = iterator.nextNode();
 
     // Use this to store the manually built markdown output
     let markdownOutput = '';
 
     while (node !== null) {
-        // TEXT NODES - `node` represents the text node, only handle if not inside a mention
-        const isTextNodeToHandle =
-            node.nodeName === '#text' && node.parentElement?.nodeName !== 'A';
+        // TEXT NODES - `node` represents the text node
+        const isTextNode = node.nodeName === '#text';
 
         // MENTION NODES - `node` represents the enclosing <a> tag
-        const isMentionToHandle = node.nodeName === 'A';
+        const isMention = node.nodeName === 'A';
 
         // LINEBREAK DIVS - `node` represents the enclosing <div> tag
         const isDivContainingBreak =
@@ -153,14 +134,14 @@ export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
 
         if (isDivContainingBreak) {
             markdownOutput += NEWLINE_CHAR;
-        } else if (isTextNodeToHandle) {
+        } else if (isTextNode) {
             // content is the text itself, unescaped i.e. > is >, not &gt;
             let content = node.textContent;
             if (shouldAddNewlineCharacter(node)) {
                 content += NEWLINE_CHAR;
             }
             markdownOutput += content;
-        } else if (isMentionToHandle) {
+        } else if (isMention) {
             // content is the html of the mention i.e. <a ...attributes>text</a>
             let content = node.firstChild?.parentElement?.outerHTML ?? '';
             if (shouldAddNewlineCharacter(node)) {
@@ -169,7 +150,7 @@ export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
             markdownOutput += content;
         }
 
-        node = i.nextNode();
+        node = iterator.nextNode();
     }
 
     // After converting the DOM, we need to trim a single `\n` off the end of the
@@ -179,4 +160,23 @@ export function plainTextInnerHtmlToMarkdown(innerHtml: string): string {
     }
 
     return markdownOutput;
+}
+
+// When we parse the nodes, we need to manually add newlines if the node is either
+// adjacent to a div or is the last child and it's parent is adjacent to a div
+function shouldAddNewlineCharacter(node: Node): boolean {
+    const nextSibling = node.nextSibling || node.parentElement?.nextSibling;
+
+    return nextSibling?.nodeName === 'DIV';
+}
+
+// Filter to allow us to skip evaluating the text nodes inside mentions
+function nodeFilter(node: Node): number {
+    if (
+        node.nodeName === '#text' &&
+        node.parentElement?.hasAttribute('data-mention-type')
+    ) {
+        return NodeFilter.FILTER_REJECT;
+    }
+    return NodeFilter.FILTER_ACCEPT;
 }
