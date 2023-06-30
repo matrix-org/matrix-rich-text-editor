@@ -24,6 +24,7 @@ interface ComposerModel {
     string get_content_as_html();
     string get_content_as_message_html();
     string get_content_as_markdown();
+    string get_content_as_message_markdown();
     string get_content_as_plain_text();
     ComposerUpdate clear();
     ComposerUpdate select(u32 start_utf16_codeunit, u32 end_utf16_codeunit);
