@@ -80,6 +80,30 @@ describe('Rich text <=> plain text', () => {
 
         expect(convertedRichText).toBe(expectedRichText);
     });
+
+    it('converts code spans from plain => rich', async () => {
+        const plainText = '```I am a code span```';
+        const convertedRichText = await plainToRich(plainText, false);
+        const expectedRichText = '<code>I am a code span</code>';
+
+        expect(convertedRichText).toBe(expectedRichText);
+    });
+
+    it('converts code blocks from plain => rich with newline separation', async () => {
+        const plainText = '```\nI am a code block\n```';
+        const convertedRichText = await plainToRich(plainText, false);
+        const expectedRichText = '<pre><code>I am a code block</code></pre>';
+
+        expect(convertedRichText).toBe(expectedRichText);
+    });
+
+    it('converts code blocks from plain => rich with div separation', async () => {
+        const plainText = '```<div>I codeblock</div><div>```</div>';
+        const convertedRichText = await plainToRich(plainText, false);
+        const expectedRichText = '<pre><code>I codeblock</code></pre>';
+
+        expect(convertedRichText).toBe(expectedRichText);
+    });
 });
 
 describe('markdownToPlain', () => {
@@ -92,11 +116,9 @@ describe('markdownToPlain', () => {
     });
 
     it('converts multiple linebreak for markdown => plain', () => {
-        // nb for correct display, there will be one \n more
-        // than \\\n at the end
         const markdown = 'multiple\\\nline\\\n\\\nbreaks\\\n\\\n\\\n';
         const convertedPlainText = markdownToPlain(markdown);
-        const expectedPlainText = 'multiple\nline\n\nbreaks\n\n\n\n';
+        const expectedPlainText = 'multiple\nline\n\nbreaks\n\n';
 
         expect(convertedPlainText).toBe(expectedPlainText);
     });

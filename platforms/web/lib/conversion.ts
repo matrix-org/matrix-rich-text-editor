@@ -24,14 +24,14 @@ import { initOnce } from './useComposerModel.js';
 const NEWLINE_CHAR = '\n';
 
 // In plain text, markdown newlines (displays '\' character followed by
-// a newline character) will be represented as \n for display as the
-// display box can not interpret markdown.
-// We also may need to manually add a \n to account for trailing newlines.
+// a newline character) will be represented as \n for setting in the composer.
+// If we have a trailing newline character, we trim it off so that the cursor
+// will always be at the last character of the string, not on a new line in the
+// composer.
 export const markdownToPlain = (markdown: string) => {
     let plainText = markdown;
     if (plainText.endsWith(NEWLINE_CHAR)) {
-        // for cursor positioning we need to manually add another linebreak
-        plainText = `${plainText}${NEWLINE_CHAR}`;
+        plainText = plainText.slice(0, -1);
     }
     return plainText.replaceAll(/\\/g, '');
 };
