@@ -270,31 +270,82 @@ where
         _: &MarkdownOptions,
         as_message: bool,
     ) -> Result<(), MarkdownError<S>> {
-        fmt_mention(self, buffer)?;
+        fmt_mention(self, buffer, as_message)?;
         return Ok(());
 
         #[inline(always)]
         fn fmt_mention<S>(
             this: &MentionNode<S>,
             buffer: &mut S,
+            as_message: bool,
         ) -> Result<(), MarkdownError<S>>
         where
             S: UnicodeString,
         {
-            let text = match this.kind() {
-                // for User/Room type, we use the mx_id in the md output
-                MentionNodeKind::MatrixUri { mention } => {
-                    if mention.kind() == &MentionKind::Room {
-                        S::from(mention.mx_id())
-                    } else {
-                        this.display_text()
+            if as_message {
+                // For a mention in a message, display the `display_text` for a user or at-room
+                // mention, or the `mx_id` for a room mention
+                let text = match this.kind() {
+                    MentionNodeKind::MatrixUri { mention } => {
+                        if mention.kind() == &MentionKind::Room {
+                            S::from(mention.mx_id())
+                        } else {
+                            this.display_text()
+                        }
                     }
-                }
-                MentionNodeKind::AtRoom => this.display_text(),
-            };
+                    MentionNodeKind::AtRoom => this.display_text(),
+                };
 
-            buffer.push(text);
-            Ok(())
+                buffer.push(text);
+                Ok(())
+            } else {
+                let attributes = match this.kind() {
+                    MentionNodeKind::MatrixUri { mention } => {
+                        let mut attrs = this.attributes.clone();
+                        let data_mention_type = match mention.kind() {
+                            MentionKind::Room => "room",
+                            MentionKind::User => "user",
+                        };
+                        attrs.push((
+                            "data-mention-type".into(),
+                            data_mention_type.into(),
+                        ));
+                        attrs.push(("href".into(), S::from(mention.uri())));
+                        attrs.push(("contenteditable".into(), "false".into()));
+                        attrs
+                    }
+                    MentionNodeKind::AtRoom => {
+                        // this is now only required for us to attach a custom style attribute for web
+                        let mut attrs = this.attributes.clone();
+                        attrs.push((
+                            "data-mention-type".into(),
+                            "at-room".into(),
+                        ));
+                        attrs.push(("href".into(), "#".into())); // designates a placeholder link in html
+                        attrs.push(("contenteditable".into(), "false".into()));
+                        attrs
+                    }
+                };
+
+                // HTML is valid markdown. For a mention in a composer, output it as HTML.
+                buffer.push("<a");
+
+                for (attr, value) in attributes {
+                    buffer.push(' ');
+                    buffer.push(attr);
+                    buffer.push("=\"");
+                    buffer.push(value);
+                    buffer.push('"');
+                }
+
+                buffer.push('>');
+
+                buffer.push(this.display_text());
+
+                buffer.push("</a>");
+
+                Ok(())
+            }
         }
     }
 }
