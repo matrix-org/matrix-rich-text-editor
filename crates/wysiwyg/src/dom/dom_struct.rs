@@ -669,8 +669,9 @@ where
         &self,
         buffer: &mut S,
         options: &MarkdownOptions,
+        as_message: bool,
     ) -> Result<(), MarkdownError<S>> {
-        self.document.fmt_markdown(buffer, options)
+        self.document.fmt_markdown(buffer, options, as_message)
     }
 }
 
