@@ -491,7 +491,9 @@ where
             DomNode::Container(container) => {
                 container.fmt_markdown(buffer, options, as_message)
             }
-            DomNode::Text(text) => text.fmt_markdown(buffer, options),
+            DomNode::Text(text) => {
+                text.fmt_markdown(buffer, options, as_message)
+            }
             DomNode::LineBreak(node) => node.fmt_markdown(buffer, options),
             DomNode::Mention(node) => node.fmt_markdown(buffer, options),
         }
