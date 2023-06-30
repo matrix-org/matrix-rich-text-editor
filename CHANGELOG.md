@@ -1,5 +1,23 @@
 # Changelog
 
+# [2.3.1] - 2023-06-30
+
+### Added
+
+- Web: Listener to handle composition events
+
+### Changed
+
+- Web: Enable choice of outputting rich text in message or composer format
+- Web: Initialising behaviour to support initialising a composer containing mentions
+- Web: Improved consistency when converting plain text composer output into a Rust model
+
+### Fixed
+
+- Common: Newline handng when parsing block quotes from markdown
+- Common: Issue where links were being split incorrectly inside list items
+- Web: Running tests with coverage no longer hangs in CI
+
 # [2.3.0] - 2023-06-16
 
 ### Added
