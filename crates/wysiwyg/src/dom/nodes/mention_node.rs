@@ -268,6 +268,7 @@ where
         &self,
         buffer: &mut S,
         _: &MarkdownOptions,
+        as_message: bool,
     ) -> Result<(), MarkdownError<S>> {
         fmt_mention(self, buffer)?;
         return Ok(());
