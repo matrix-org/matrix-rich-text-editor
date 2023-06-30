@@ -60,8 +60,14 @@ impl MarkdownHTMLParser {
             .replace("<br />\n", "<br />")
             .replace("<blockquote>\n", "<blockquote>")
             .replace("</blockquote>\n", "</blockquote>")
+            .replace("<pre>\n", "<pre>")
+            .replace("</pre>\n", "</pre>")
             .replace("<p>\n", "<p>")
             .replace("</p>\n", "</p>");
+
+        // Remove the newline from the end of the single code tag that wraps the content
+        // of a formatted codeblock
+        let html = html.replace("\n</code>", "</code>");
 
         Ok(S::try_from(html).unwrap())
     }

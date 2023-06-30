@@ -93,3 +93,12 @@ fn set_content_from_markdown_blockquote_multiline() {
         "<blockquote><p>quote</p></blockquote><p>following text|</p>"
     );
 }
+
+#[test]
+fn set_content_from_markdown_codeblock_with_newlines() {
+    let mut model = cm("|");
+    model
+        .set_content_from_markdown(&utf16("```\nI am a code block\n```"))
+        .unwrap();
+    assert_eq!(tx(&model), "<pre><code>I am a code block|</code></pre>");
+}
