@@ -485,10 +485,11 @@ where
         &self,
         buffer: &mut S,
         options: &MarkdownOptions,
+        as_message: bool,
     ) -> Result<(), MarkdownError<S>> {
         match self {
             DomNode::Container(container) => {
-                container.fmt_markdown(buffer, options)
+                container.fmt_markdown(buffer, options, as_message)
             }
             DomNode::Text(text) => text.fmt_markdown(buffer, options),
             DomNode::LineBreak(node) => node.fmt_markdown(buffer, options),
