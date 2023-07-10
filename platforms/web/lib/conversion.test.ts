@@ -204,35 +204,35 @@ describe('Mentions', () => {
 
         it('keeps user mentions as html for composer', async () => {
             const input =
-                '<a href="https://matrix.to/#/@test_user:element.io" contenteditable="false" data-mention-type="user" style="some styling">a test user</a> ';
+                '<a href="https://matrix.to/#/@test_user:element.io">a test user</a> ';
             const asComposerMarkdown = await richToPlain(input, false);
 
             expect(asComposerMarkdown).toMatchInlineSnapshot(
-                '"<a style=\\"some styling\\" data-mention-type=\\"user\\" href=\\"https://matrix.to/#/@test_user:element.io\\" contenteditable=\\"false\\">a test user</a> "',
+                '"<a data-mention-type=\\"user\\" href=\\"https://matrix.to/#/@test_user:element.io\\" contenteditable=\\"false\\">a test user</a> "',
             );
         });
 
         it('converts user mentions to inner text for message', async () => {
             const input =
-                '<a href="https://matrix.to/#/@test_user:element.io" contenteditable="false" data-mention-type="user" style="some styling">a test user</a> ';
+                '<a href="https://matrix.to/#/@test_user:element.io">a test user</a> ';
             const asMessageMarkdown = await richToPlain(input, true);
 
-            expect(asMessageMarkdown).toMatchInlineSnapshot('"a test user "');
+            expect(asMessageMarkdown).toBe('a test user ');
         });
 
         it('keeps room mentions as html for composer', async () => {
             const input =
-                '<a href="https://matrix.to/#/#test_room:element.io" contenteditable="false" data-mention-type="user" style="some styling">a test user</a> ';
+                '<a href="https://matrix.to/#/#test_room:element.io">a test user</a> ';
             const asComposerMarkdown = await richToPlain(input, false);
 
             expect(asComposerMarkdown).toMatchInlineSnapshot(
-                '"<a style=\\"some styling\\" data-mention-type=\\"room\\" href=\\"https://matrix.to/#/#test_room:element.io\\" contenteditable=\\"false\\">a test user</a> "',
+                '"<a data-mention-type=\\"room\\" href=\\"https://matrix.to/#/#test_room:element.io\\" contenteditable=\\"false\\">a test user</a> "',
             );
         });
 
         it('converts room mentions to mxId for message', async () => {
             const input =
-                '<a href="https://matrix.to/#/#test_room:element.io" contenteditable="false" data-mention-type="user" style="some styling">a test user</a> ';
+                '<a href="https://matrix.to/#/#test_room:element.io">a test user</a> ';
             const asMessageMarkdown = await richToPlain(input, true);
 
             // note inner text is the mx id
