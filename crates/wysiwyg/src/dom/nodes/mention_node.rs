@@ -283,25 +283,24 @@ where
             S: UnicodeString,
         {
             if as_message {
-                // For a mention in a message, display the `display_text` for a user or at-room
-                // mention, or the `mx_id` for a room mention
+                // For a mention in a message, display the `mx_id` for a room mention, `display_text` otherwise
                 let text = match this.kind() {
-                    MentionNodeKind::MatrixUri { mention } => {
-                        if mention.kind() == &MentionKind::Room {
-                            S::from(mention.mx_id())
-                        } else {
-                            this.display_text()
-                        }
+                    MentionNodeKind::MatrixUri { mention }
+                        if mention.kind() == &MentionKind::Room =>
+                    {
+                        S::from(mention.mx_id())
                     }
-                    MentionNodeKind::AtRoom => this.display_text(),
+                    _ => this.display_text(),
                 };
 
                 buffer.push(text);
                 Ok(())
             } else {
-                let attributes = match this.kind() {
+                // clone the attributes, then push in anything extra required
+                let mut attrs = this.attributes.clone();
+
+                match this.kind() {
                     MentionNodeKind::MatrixUri { mention } => {
-                        let mut attrs = this.attributes.clone();
                         let data_mention_type = match mention.kind() {
                             MentionKind::Room => "room",
                             MentionKind::User => "user",
@@ -312,25 +311,22 @@ where
                         ));
                         attrs.push(("href".into(), S::from(mention.uri())));
                         attrs.push(("contenteditable".into(), "false".into()));
-                        attrs
                     }
                     MentionNodeKind::AtRoom => {
                         // this is now only required for us to attach a custom style attribute for web
-                        let mut attrs = this.attributes.clone();
                         attrs.push((
                             "data-mention-type".into(),
                             "at-room".into(),
                         ));
                         attrs.push(("href".into(), "#".into())); // designates a placeholder link in html
                         attrs.push(("contenteditable".into(), "false".into()));
-                        attrs
                     }
                 };
 
                 // HTML is valid markdown. For a mention in a composer, output it as HTML.
                 buffer.push("<a");
 
-                for (attr, value) in attributes {
+                for (attr, value) in attrs {
                     buffer.push(' ');
                     buffer.push(attr);
                     buffer.push("=\"");
