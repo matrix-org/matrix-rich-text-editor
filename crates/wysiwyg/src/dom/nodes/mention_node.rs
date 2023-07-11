@@ -296,32 +296,33 @@ where
                 buffer.push(text);
                 Ok(())
             } else {
-                // clone the attributes, then push in anything extra required
+                // clone the attributes and set up variables to assign attributes to
                 let mut attrs = this.attributes.clone();
+                let data_mention_type;
+                let href;
 
+                // assign values based on the mention type
                 match this.kind() {
                     MentionNodeKind::MatrixUri { mention } => {
-                        let data_mention_type = match mention.kind() {
+                        data_mention_type = match mention.kind() {
                             MentionKind::Room => "room",
                             MentionKind::User => "user",
                         };
-                        attrs.push((
-                            "data-mention-type".into(),
-                            data_mention_type.into(),
-                        ));
-                        attrs.push(("href".into(), S::from(mention.uri())));
-                        attrs.push(("contenteditable".into(), "false".into()));
+                        href = mention.uri();
                     }
                     MentionNodeKind::AtRoom => {
-                        // this is now only required for us to attach a custom style attribute for web
-                        attrs.push((
-                            "data-mention-type".into(),
-                            "at-room".into(),
-                        ));
-                        attrs.push(("href".into(), "#".into())); // designates a placeholder link in html
-                        attrs.push(("contenteditable".into(), "false".into()));
+                        data_mention_type = "at-room";
+                        href = "#";
                     }
                 };
+
+                // push the attributes into the vec for writing
+                attrs.push((
+                    "data-mention-type".into(),
+                    data_mention_type.into(),
+                ));
+                attrs.push(("href".into(), href.into()));
+                attrs.push(("contenteditable".into(), "false".into()));
 
                 // HTML is valid markdown. For a mention in a composer, output it as HTML.
                 buffer.push("<a");
