@@ -36,7 +36,7 @@ export const markdownToPlain = (markdown: string) => {
     return plainText.replaceAll(/\\/g, '');
 };
 
-export async function richToPlain(richText: string) {
+export async function richToPlain(richText: string, inMessageFormat: boolean) {
     if (richText.length === 0) {
         return '';
     }
@@ -49,8 +49,11 @@ export async function richToPlain(richText: string) {
     const model = new_composer_model();
     model.set_content_from_html(richText);
 
-    // transform the markdown to plain text for display
-    const markdown = model.get_content_as_markdown();
+    // get the markdown in either composer or message format as required
+    const markdown = inMessageFormat
+        ? model.get_content_as_message_markdown()
+        : model.get_content_as_markdown();
+
     const plainText = markdownToPlain(markdown);
 
     return plainText;

@@ -128,6 +128,7 @@ where
         &self,
         buffer: &mut S,
         options: &MarkdownOptions,
+        _as_message: bool,
     ) -> Result<(), MarkdownError<S>> {
         if options.contains(MarkdownOptions::IGNORE_LINE_BREAK) {
             // Replace the line break by a single space.

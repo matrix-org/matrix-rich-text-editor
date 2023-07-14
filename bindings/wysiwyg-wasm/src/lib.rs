@@ -128,6 +128,10 @@ impl ComposerModel {
         self.inner.get_content_as_markdown().to_string()
     }
 
+    pub fn get_content_as_message_markdown(&self) -> String {
+        self.inner.get_content_as_message_markdown().to_string()
+    }
+
     pub fn get_content_as_plain_text(&self) -> String {
         self.inner.get_content_as_plain_text().to_string()
     }

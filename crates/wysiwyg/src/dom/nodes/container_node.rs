@@ -906,6 +906,7 @@ where
         &self,
         buffer: &mut S,
         options: &MarkdownOptions,
+        as_message: bool,
     ) -> Result<(), MarkdownError<S>> {
         use ContainerNodeKind::*;
         use InlineFormatType::*;
@@ -914,53 +915,53 @@ where
 
         match self.kind() {
             Generic => {
-                fmt_children(self, buffer, &options)?;
+                fmt_children(self, buffer, &options, as_message)?;
             }
 
             // Simple emphasis.
             Formatting(Italic) => {
-                fmt_italic(self, buffer, &options)?;
+                fmt_italic(self, buffer, &options, as_message)?;
             }
 
             // Strong emphasis.
             Formatting(Bold) => {
-                fmt_bold(self, buffer, &options)?;
+                fmt_bold(self, buffer, &options, as_message)?;
             }
 
             Formatting(StrikeThrough) => {
-                fmt_strikethrough(self, buffer, &options)?;
+                fmt_strikethrough(self, buffer, &options, as_message)?;
             }
 
             Formatting(Underline) => {
-                fmt_underline(self, buffer, &options)?;
+                fmt_underline(self, buffer, &options, as_message)?;
             }
 
             Formatting(InlineCode) => {
-                fmt_inline_code(self, buffer, &mut options)?;
+                fmt_inline_code(self, buffer, &mut options, as_message)?;
             }
 
             Link(url) => {
-                fmt_link(self, buffer, &options, url)?;
+                fmt_link(self, buffer, &options, url, as_message)?;
             }
 
             List(_) => {
-                fmt_list(self, buffer, &options)?;
+                fmt_list(self, buffer, &options, as_message)?;
             }
 
             ListItem => {
-                fmt_list_item(self, buffer, &options)?;
+                fmt_list_item(self, buffer, &options, as_message)?;
             }
 
             CodeBlock => {
-                fmt_code_block(self, buffer, &options)?;
+                fmt_code_block(self, buffer, &options, as_message)?;
             }
 
             Quote => {
-                fmt_quote(self, buffer, &options)?;
+                fmt_quote(self, buffer, &options, as_message)?;
             }
 
             Paragraph => {
-                fmt_paragraph(self, buffer, &options)?;
+                fmt_paragraph(self, buffer, &options, as_message)?;
             }
         };
 
@@ -974,6 +975,7 @@ where
             this: &ContainerNode<S>,
             buffer: &mut S,
             options: &MarkdownOptions,
+            as_message: bool,
         ) -> Result<(), MarkdownError<S>>
         where
             S: UnicodeString,
@@ -983,7 +985,7 @@ where
                     buffer.push("\n");
                 }
 
-                child.fmt_markdown(buffer, options)?;
+                child.fmt_markdown(buffer, options, as_message)?;
             }
 
             Ok(())
@@ -994,6 +996,7 @@ where
             this: &ContainerNode<S>,
             buffer: &mut S,
             options: &MarkdownOptions,
+            as_message: bool,
         ) -> Result<(), MarkdownError<S>>
         where
             S: UnicodeString,
@@ -1005,7 +1008,7 @@ where
             // trend to avoid unexpected behaviours for our users.
 
             buffer.push("*");
-            fmt_children(this, buffer, options)?;
+            fmt_children(this, buffer, options, as_message)?;
             buffer.push("*");
 
             Ok(())
@@ -1016,6 +1019,7 @@ where
             this: &ContainerNode<S>,
             buffer: &mut S,
             options: &MarkdownOptions,
+            as_message: bool,
         ) -> Result<(), MarkdownError<S>>
         where
             S: UnicodeString,
@@ -1031,7 +1035,7 @@ where
             // there. Instead, it will produce `*__…__*`.
 
             buffer.push("__");
-            fmt_children(this, buffer, options)?;
+            fmt_children(this, buffer, options, as_message)?;
             buffer.push("__");
 
             Ok(())
@@ -1042,6 +1046,7 @@ where
             this: &ContainerNode<S>,
             buffer: &mut S,
             options: &MarkdownOptions,
+            as_message: bool,
         ) -> Result<(), MarkdownError<S>>
         where
             S: UnicodeString,
@@ -1053,7 +1058,7 @@ where
             // do not support this format extension.
 
             buffer.push("~~");
-            fmt_children(this, buffer, options)?;
+            fmt_children(this, buffer, options, as_message)?;
             buffer.push("~~");
 
             Ok(())
@@ -1064,6 +1069,7 @@ where
             this: &ContainerNode<S>,
             buffer: &mut S,
             options: &MarkdownOptions,
+            as_message: bool,
         ) -> Result<(), MarkdownError<S>>
         where
             S: UnicodeString,
@@ -1072,7 +1078,7 @@ where
             // use raw HTML.
 
             buffer.push("<u>");
-            fmt_children(this, buffer, options)?;
+            fmt_children(this, buffer, options, as_message)?;
             buffer.push("</u>");
 
             Ok(())
@@ -1083,6 +1089,7 @@ where
             this: &ContainerNode<S>,
             buffer: &mut S,
             options: &mut MarkdownOptions,
+            as_message: bool,
         ) -> Result<(), MarkdownError<S>>
         where
             S: UnicodeString,
@@ -1102,7 +1109,7 @@ where
             buffer.push("`` ");
 
             options.insert(MarkdownOptions::IGNORE_LINE_BREAK);
-            fmt_children(this, buffer, options)?;
+            fmt_children(this, buffer, options, as_message)?;
 
             buffer.push(" ``");
 
@@ -1115,13 +1122,14 @@ where
             buffer: &mut S,
             options: &MarkdownOptions,
             url: &S,
+            as_message: bool,
         ) -> Result<(), MarkdownError<S>>
         where
             S: UnicodeString,
         {
             buffer.push('[');
 
-            fmt_children(this, buffer, options)?;
+            fmt_children(this, buffer, options, as_message)?;
 
             // A link destination can be delimited by `<` and
             // `>`.
@@ -1150,6 +1158,7 @@ where
             this: &ContainerNode<S>,
             buffer: &mut S,
             options: &MarkdownOptions,
+            as_message: bool,
         ) -> Result<(), MarkdownError<S>>
         where
             S: UnicodeString,
@@ -1240,7 +1249,11 @@ where
                 {
                     // Let's create a new buffer for the child formatting.
                     let mut child_buffer = S::default();
-                    child.fmt_markdown(&mut child_buffer, options)?;
+                    child.fmt_markdown(
+                        &mut child_buffer,
+                        options,
+                        as_message,
+                    )?;
 
                     // Generate the indentation of form `\n` followed by
                     // $x$ spaces where $x$ is `indentation`.
@@ -1279,11 +1292,12 @@ where
             this: &ContainerNode<S>,
             buffer: &mut S,
             options: &MarkdownOptions,
+            as_message: bool,
         ) -> Result<(), MarkdownError<S>>
         where
             S: UnicodeString,
         {
-            fmt_children(this, buffer, options)?;
+            fmt_children(this, buffer, options, as_message)?;
 
             Ok(())
         }
@@ -1293,12 +1307,13 @@ where
             this: &ContainerNode<S>,
             buffer: &mut S,
             options: &MarkdownOptions,
+            as_message: bool,
         ) -> Result<(), MarkdownError<S>>
         where
             S: UnicodeString,
         {
             buffer.push("```\n");
-            fmt_children(this, buffer, options)?;
+            fmt_children(this, buffer, options, as_message)?;
             buffer.push("\n```\n");
 
             Ok(())
@@ -1309,12 +1324,13 @@ where
             this: &ContainerNode<S>,
             buffer: &mut S,
             options: &MarkdownOptions,
+            as_message: bool,
         ) -> Result<(), MarkdownError<S>>
         where
             S: UnicodeString,
         {
             buffer.push("> ");
-            fmt_children(this, buffer, options)?;
+            fmt_children(this, buffer, options, as_message)?;
             buffer.push("\n");
 
             Ok(())
@@ -1325,11 +1341,12 @@ where
             this: &ContainerNode<S>,
             buffer: &mut S,
             options: &MarkdownOptions,
+            as_message: bool,
         ) -> Result<(), MarkdownError<S>>
         where
             S: UnicodeString,
         {
-            fmt_children(this, buffer, options)?;
+            fmt_children(this, buffer, options, as_message)?;
 
             Ok(())
         }

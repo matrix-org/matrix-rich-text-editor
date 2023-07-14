@@ -203,6 +203,10 @@ where
         self.state.dom.to_markdown().unwrap()
     }
 
+    pub fn get_content_as_message_markdown(&self) -> S {
+        self.state.dom.to_message_markdown().unwrap()
+    }
+
     pub fn get_content_as_plain_text(&self) -> S {
         self.state.dom.to_plain_text()
     }

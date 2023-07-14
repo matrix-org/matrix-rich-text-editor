@@ -46,11 +46,18 @@ where
         &self,
         buffer: &mut S,
         options: &MarkdownOptions,
+        as_message: bool,
     ) -> Result<(), MarkdownError<S>>;
 
+    fn to_message_markdown(&self) -> Result<S, MarkdownError<S>> {
+        let mut buffer = S::default();
+        self.fmt_markdown(&mut buffer, &MarkdownOptions::empty(), true)?;
+
+        Ok(buffer)
+    }
     fn to_markdown(&self) -> Result<S, MarkdownError<S>> {
         let mut buffer = S::default();
-        self.fmt_markdown(&mut buffer, &MarkdownOptions::empty())?;
+        self.fmt_markdown(&mut buffer, &MarkdownOptions::empty(), false)?;
 
         Ok(buffer)
     }

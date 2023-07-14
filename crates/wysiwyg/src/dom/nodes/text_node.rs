@@ -294,6 +294,7 @@ where
         &self,
         buffer: &mut S,
         _options: &MarkdownOptions,
+        _as_message: bool,
     ) -> Result<(), MarkdownError<S>> {
         buffer.push(self.data.to_owned());
 
