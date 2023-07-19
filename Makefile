@@ -26,38 +26,7 @@ IOS_PACKAGE_DIR := ../../platforms/ios/lib/WysiwygComposer
 IOS_GENERATION_DIR := .generated/ios
 
 ios: setup
-	cd bindings/wysiwyg-ffi && \
-	cargo build --release --target aarch64-apple-ios && \
-	cargo build --release --target aarch64-apple-ios-sim && \
-	cargo build --release --target x86_64-apple-ios && \
-	mkdir -p ../../target/ios-simulator && \
-	lipo -create \
-	  ../../target/x86_64-apple-ios/release/libuniffi_wysiwyg_composer.a \
-	  ../../target/aarch64-apple-ios-sim/release/libuniffi_wysiwyg_composer.a \
-	  -output ../../target/ios-simulator/libuniffi_wysiwyg_composer.a && \
-	rm -rf ${IOS_PACKAGE_DIR}/WysiwygComposerFFI.xcframework && \
-	rm -f ${IOS_PACKAGE_DIR}/Sources/WysiwygComposer/WysiwygComposer.swift && \
-	rm -rf ${IOS_GENERATION_DIR} && \
-	mkdir -p ${IOS_GENERATION_DIR} && \
-	uniffi-bindgen \
-		generate src/wysiwyg_composer.udl \
-		--language swift \
-		--config uniffi.toml \
-		--out-dir ${IOS_GENERATION_DIR} && \
-	mkdir -p ${IOS_GENERATION_DIR}/headers && \
-	mv ${IOS_GENERATION_DIR}/*.h         ${IOS_GENERATION_DIR}/headers/ && \
-	mv ${IOS_GENERATION_DIR}/*.modulemap ${IOS_GENERATION_DIR}/headers/module.modulemap && \
-	mv ${IOS_GENERATION_DIR}/*.swift     ${IOS_PACKAGE_DIR}/Sources/WysiwygComposer/ && \
-	xcodebuild -create-xcframework \
-	  -library ../../target/aarch64-apple-ios/release/libuniffi_wysiwyg_composer.a \
-	  -headers ${IOS_GENERATION_DIR}/headers \
-	  -library ../../target/ios-simulator/libuniffi_wysiwyg_composer.a \
-	  -headers ${IOS_GENERATION_DIR}/headers \
-	  -output ${IOS_PACKAGE_DIR}/WysiwygComposerFFI.xcframework && \
-	sed -i "" -e '1h;2,$$H;$$!d;g' -e 's/) -> ComposerUpdate {\n        return try! FfiConverterTypeComposerUpdate.lift(\n            try!/) throws -> ComposerUpdate {\n        return try FfiConverterTypeComposerUpdate.lift(\n            try/g' ${IOS_PACKAGE_DIR}/Sources/WysiwygComposer/WysiwygComposer.swift && \
-	sed -i "" -e '1h;2,$$H;$$!d;g' -e 's/) -> ComposerUpdate/) throws -> ComposerUpdate/g' ${IOS_PACKAGE_DIR}/Sources/WysiwygComposer/WysiwygComposer.swift
-# Note: we use sed to tweak the generated Swift bindings and catch Rust panics, 
-# this should be removed when the Rust code is 100% safe (see `ComposerModelWrapper.swift`).
+	@sh build_xcframework.sh
 
 web: setup
 	cd bindings/wysiwyg-wasm && \

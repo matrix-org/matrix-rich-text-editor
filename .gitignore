@@ -5,7 +5,7 @@
 # Generated
 /target/
 /bindings/wysiwyg-ffi/.cargo/
-/bindings/wysiwyg-ffi/.generated/
+/.generated/
 /bindings/wysiwyg-wasm/pkg/
 /bindings/wysiwyg-wasm/node_modules/
 /platforms/android/example/.idea/
