@@ -21,7 +21,7 @@ let package = Package(
         ),
         .package(
             url: "https://github.com/Cocoanetics/DTCoreText",
-            from: "1.6.27"
+            exact: "1.6.26"
         ),
     ],
     targets: [
