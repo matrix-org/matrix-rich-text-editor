@@ -26,12 +26,6 @@ pub struct HtmlParseError {
 }
 
 impl HtmlParseError {
-    pub fn default() -> Self {
-        Self {
-            parse_errors: vec![],
-        }
-    }
-
     pub fn new(parse_errors: Vec<String>) -> Self {
         Self { parse_errors }
     }

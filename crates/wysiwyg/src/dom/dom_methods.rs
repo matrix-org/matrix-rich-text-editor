@@ -255,8 +255,7 @@ where
 
         // We repeatedly delete to ensure anything that became empty because
         // of deletions is itself deleted.
-        while !to_delete.is_empty() {
-            let handle = to_delete.pop().unwrap();
+        while let Some(handle) = to_delete.pop() {
             if handle.is_root() {
                 continue;
             }

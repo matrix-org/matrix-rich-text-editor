@@ -710,7 +710,7 @@ fn convert_text<S: UnicodeString>(
             return;
         }
 
-        for (i, part) in contents.split("@room").into_iter().enumerate() {
+        for (i, part) in contents.split("@room").enumerate() {
             if i > 0 {
                 node.append_child(DomNode::Mention(
                     DomNode::new_at_room_mention(vec![]),
