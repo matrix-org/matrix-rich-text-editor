@@ -8,6 +8,7 @@ license = "Apache-2.0"
 name = "matrix_mentions"
 version = "0.1.0"
 edition = "2021"
+rust-version = { workspace = true }
 
 [features]
 default = ["custom-matrix-urls"]
