@@ -1367,17 +1367,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "uniffi-wysiwyg-composer"
-version = "2.3.1"
-dependencies = [
- "uniffi",
- "uniffi_build",
- "uniffi_macros",
- "widestring",
- "wysiwyg",
-]
-
-[[package]]
 name = "uniffi_bindgen"
 version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1719,6 +1708,17 @@ dependencies = [
  "wasm-bindgen-test",
  "web-sys",
  "widestring",
+]
+
+[[package]]
+name = "wysiwyg-ffi"
+version = "2.3.1"
+dependencies = [
+ "uniffi",
+ "uniffi_build",
+ "uniffi_macros",
+ "widestring",
+ "wysiwyg",
 ]
 
 [[package]]

@@ -1,0 +1,4 @@
+framework module WysiwygComposerFFI {
+    umbrella header "WysiwygComposerFFI.h"
+    export *
+}
