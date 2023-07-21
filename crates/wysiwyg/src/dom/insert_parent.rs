@@ -6,7 +6,7 @@ impl<S> Dom<S>
 where
     S: UnicodeString,
 {
-    #[allow(dead_code)]
+    #[allow(dead_code, clippy::let_and_return)]
     /// Insert a node and make this node the parent of a given range.
     pub fn insert_parent(
         &mut self,

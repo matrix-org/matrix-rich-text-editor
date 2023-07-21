@@ -7,6 +7,9 @@ members = [
 ]
 resolver = "2"
 
+[workspace.package]
+rust-version = "1.71"
+
 [profile.release]
 opt-level = 'z'     # Optimize for size.
 lto = true          # Enable Link Time Optimization
