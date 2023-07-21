@@ -4,11 +4,21 @@ members = [
     "bindings/wysiwyg-wasm",
     "crates/wysiwyg",
     "crates/matrix_mentions",
+    "uniffi-bindgen",
+]
+default-members = [
+    "crates/wysiwyg",
+    "crates/matrix_mentions",
 ]
 resolver = "2"
 
 [workspace.package]
 rust-version = "1.71"
+
+[workspace.dependencies]
+uniffi = "=0.24.1"
+uniffi_macros = "=0.24.1"
+uniffi_build = "=0.24.1"
 
 [profile.release]
 opt-level = 'z'     # Optimize for size.

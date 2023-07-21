@@ -42,7 +42,7 @@ rm -rf $GENERATION_PATH
 
 # Generate headers & Swift bindings
 mkdir -p $GENERATION_PATH
-uniffi-bindgen generate $UDL_FILE_PATH -l swift --config $UNIFFI_CONFIG_FILE_PATH --out-dir $GENERATION_PATH
+cargo uniffi-bindgen generate $UDL_FILE_PATH -l swift --config $UNIFFI_CONFIG_FILE_PATH --out-dir $GENERATION_PATH
 
 # Move Swift file to expected location
 #

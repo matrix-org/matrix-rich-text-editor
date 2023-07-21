@@ -7,18 +7,7 @@ Rust code that can be used to generate Kotlin and Swift bindings for wysiwyg-rus
 ### 1. Install Rust
 See the [installation guide](https://www.rust-lang.org/tools/install).
 
-### 2. Install `uniffi-bindgen`
-`uniffi-bindgen` is used to generate the Kotlin and Swift bindings.
-
-It's important that the version of `uniffi-bindgen` that you install globally matches the version of `uniffi` declared in this project.
-
-Find the version of `uniffi` in `bindings/wysiwyg-ffi/Cargo.toml` and install `uniffi-bindgen` using the following command:
-
-```bash
-cargo install uniffi_bindgen --version <uniffi-version>
-```
-
-### 3. Configure cross compilation
+### 2. Configure cross compilation
 Configure Rust for [cross compilation](https://rust-lang.github.io/rustup/cross-compilation.html) to any target platforms you'll need.
 
 ```bash
@@ -132,12 +121,8 @@ lipo -create \
 
 * Generate the bindings inside given output dir:
 
-⚠️ The installed version should always match the version used by Cargo, see
-`Cargo.toml` content inside this directory to retrieve it and use
-`cargo install uniffi_bindgen --version <VERSION_NUMBER>` if needed.
-
 ```bash
-uniffi-bindgen \
+cargo uniffi-bindgen \
     generate src/wysiwyg_composer.udl \
     --language swift \
     --config uniffi.toml \
@@ -163,6 +148,11 @@ xcodebuild -create-xcframework \
   -headers MY_OUTPUT_DIR/headers \
   -output MY_OUTPUT_DIR/ExampleRustBindings.xcframework"
 ```
+
+Note: Generating with xcodebuild is not recommended as it might
+make the resulting library clash with other Rust libraries or even
+some C/C++ libraries. See this [script](../../build_xcframework.sh) in the
+root directory for further details.
 
 Now you can use the framework wherever you see fit, just add the framework (as
 well as the generated Swift code from `MY_OUTPUT_DIR/Sources/`) as a dependency
