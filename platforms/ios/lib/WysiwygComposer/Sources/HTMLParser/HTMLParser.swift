@@ -77,7 +77,9 @@ public final class HTMLParser {
         
         let parsingOptions: [String: Any] = [
             DTUseiOS6Attributes: true,
-            DTDefaultFontDescriptor: defaultFont.fontDescriptor,
+            DTDefaultFontFamily: defaultFont.familyName,
+            DTDefaultFontName: defaultFont.fontName,
+            DTDefaultFontSize: defaultFont.pointSize,
             DTDefaultStyleSheet: DTCSSStylesheet(styleBlock: defaultCSS) as Any,
             DTDocumentPreserveTrailingSpaces: true,
         ]
