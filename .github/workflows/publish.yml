@@ -33,10 +33,7 @@ jobs:
           override: true
           
       - name: Install targets
-        run: |
-          rustup target add aarch64-apple-ios
-          rustup target add aarch64-apple-ios-sim
-          rustup target add x86_64-apple-ios
+        run: make targets-ios
           
       - name: Set XCode 14.2
         run: sudo xcode-select -switch /Applications/Xcode_14.2.app
@@ -77,11 +74,7 @@ jobs:
         run: make setup
 
       - name: 🦀 Install Rust targets
-        run: |
-          rustup target add i686-linux-android
-          rustup target add x86_64-linux-android
-          rustup target add armv7-linux-androideabi
-          rustup target add aarch64-linux-android
+        run: make targets-android
 
       - name: ⬆️ Publish to Sonatype
         uses: gradle/gradle-build-action@v2
