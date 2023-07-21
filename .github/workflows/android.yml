@@ -44,9 +44,6 @@ jobs:
         with:
           cache-on-failure: true
 
-      - name: Install Rust & Uniffi
-        run: make setup
-
       - name: Install Rust targets
         run: make targets-android
 
