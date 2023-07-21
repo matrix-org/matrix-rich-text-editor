@@ -15,7 +15,7 @@ apply plugin: "com.vanniktech.maven.publish"
 
 cargo {
     module = "../../../crates"       // Or whatever directory contains your Cargo.toml
-    libname = "wysiwyg-ffi"          // Or whatever matches Cargo.toml's [package] name.
+    libname = "uniffi-wysiwyg-composer"          // Or whatever matches Cargo.toml's [package] name.
     targets = ["arm", "x86", "x86_64", "arm64"]
     targetIncludes = ["libuniffi_wysiwyg_composer.so"]
     targetDirectory = '../../../target'

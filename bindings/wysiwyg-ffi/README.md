@@ -107,16 +107,16 @@ cargo build --release --target x86_64-apple-ios
 
 mkdir -p ../../target/ios-simulator
 lipo -create \
-  ../../target/x86_64-apple-ios/release/libwysiwyg_ffi.a \
-  ../../target/aarch64-apple-ios-sim/release/libwysiwyg_ffi.a \
-  -output ../../target/ios-simulator/libwysiwyg_ffi.a
+  ../../target/x86_64-apple-ios/release/libuniffi_wysiwyg_composer.a \
+  ../../target/aarch64-apple-ios-sim/release/libuniffi_wysiwyg_composer.a \
+  -output ../../target/ios-simulator/libuniffi_wysiwyg_composer.a
 ```
 
 * This will create static libraries for both iOS devices and simulators:
 
 ```
-../../target/x86_64-apple-ios/debug/libwysiwyg_ffi.a
-../../target/ios-simulator/libwysiwyg_ffi.a
+../../target/x86_64-apple-ios/debug/libuniffi_wysiwyg_composer.a
+../../target/ios-simulator/libuniffi_wysiwyg_composer.a
 ```
 
 * Generate the bindings inside given output dir:

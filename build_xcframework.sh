@@ -5,10 +5,10 @@ GENERATION_PATH=.generated/ios
 UDL_FILE_PATH=bindings/wysiwyg-ffi/src/wysiwyg_composer.udl
 UNIFFI_CONFIG_FILE_PATH=bindings/wysiwyg-ffi/uniffi.toml
 
-ARM64_LIB_PATH=target/aarch64-apple-ios/release/libwysiwyg_ffi.a
-ARM64_SIM_LIB_PATH=target/aarch64-apple-ios-sim/release/libwysiwyg_ffi.a
-X86_LIB_PATH=target/x86_64-apple-ios/release/libwysiwyg_ffi.a
-SIM_LIB_PATH=target/ios-simulator/libwysiwyg_ffi.a
+ARM64_LIB_PATH=target/aarch64-apple-ios/release/libuniffi_wysiwyg_composer.a
+ARM64_SIM_LIB_PATH=target/aarch64-apple-ios-sim/release/libuniffi_wysiwyg_composer.a
+X86_LIB_PATH=target/x86_64-apple-ios/release/libuniffi_wysiwyg_composer.a
+SIM_LIB_PATH=target/ios-simulator/libuniffi_wysiwyg_composer.a
 
 IOS_PATH=platforms/ios
 TOOLS_PATH="${IOS_PATH}/tools"
@@ -27,9 +27,9 @@ XCFRAMEWORK_ARM64_MODULES_PATH="${XCFRAMEWORK_ARM64_PATH}/Modules"
 XCFRAMEWORK_ARM64_LIBRARY_PATH="${XCFRAMEWORK_ARM64_PATH}/WysiwygComposerFFI"
 
 # Build libraries for each platform
-cargo build -p wysiwyg-ffi --release --target aarch64-apple-ios
-cargo build -p wysiwyg-ffi --release --target aarch64-apple-ios-sim
-cargo build -p wysiwyg-ffi --release --target x86_64-apple-ios
+cargo build -p uniffi-wysiwyg-composer --release --target aarch64-apple-ios
+cargo build -p uniffi-wysiwyg-composer --release --target aarch64-apple-ios-sim
+cargo build -p uniffi-wysiwyg-composer --release --target x86_64-apple-ios
 
 # Merge x86 and simulator arm libraries with lipo
 mkdir -p target/ios-simulator
