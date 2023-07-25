@@ -10,6 +10,10 @@ name = "uniffi-wysiwyg-composer"
 version = "2.3.1"
 rust-version = { workspace = true }
 
+[features]
+default = []
+assert-invariants = ["wysiwyg/assert-invariants"]
+
 [lib]
 crate-type = ["cdylib", "staticlib"]
 
