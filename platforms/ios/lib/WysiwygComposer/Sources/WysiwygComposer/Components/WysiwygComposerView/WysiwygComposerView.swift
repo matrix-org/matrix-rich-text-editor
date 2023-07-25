@@ -18,6 +18,7 @@ import OSLog
 import SwiftUI
 
 /// Provides a SwiftUI displayable view for the composer UITextView component.
+@MainActor
 public struct WysiwygComposerView: UIViewRepresentable {
     // MARK: - Public
 
