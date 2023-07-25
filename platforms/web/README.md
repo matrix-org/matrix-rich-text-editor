@@ -27,7 +27,7 @@ return (
 
 #### Generate WASM bindings
 
-The composer uses a cross-platform rust library. In order to work as intended, the WASM bindings must be generated according to the [Matrix Rich Text Editor README.md](../../../README.md)
+The composer uses a cross-platform rust library. In order to work as intended, the WASM bindings must be generated according to the [Matrix Rich Text Editor README.md](../../README.md)
 
 #### Yarn install
 
