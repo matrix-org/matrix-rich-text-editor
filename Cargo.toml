@@ -16,9 +16,9 @@ resolver = "2"
 rust-version = "1.71"
 
 [workspace.dependencies]
-uniffi = "=0.24.1"
-uniffi_macros = "=0.24.1"
-uniffi_build = "=0.24.1"
+uniffi = { git = "https://github.com/aringenbach/uniffi-rs.git", rev = "7fea5def9b7a00cec35b94bd1916172cd0ca60fb" }
+uniffi_macros = { git = "https://github.com/aringenbach/uniffi-rs.git", rev = "7fea5def9b7a00cec35b94bd1916172cd0ca60fb" }
+uniffi_build = { git = "https://github.com/aringenbach/uniffi-rs.git", rev = "7fea5def9b7a00cec35b94bd1916172cd0ca60fb" }
 
 [profile.release]
 opt-level = 'z'     # Optimize for size.
