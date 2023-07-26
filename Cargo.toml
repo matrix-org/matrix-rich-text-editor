@@ -16,6 +16,8 @@ resolver = "2"
 rust-version = "1.71"
 
 [workspace.dependencies]
+# We use a custom version of Uniffi that renames symbols that might clash
+# with other Rust libraries. See https://github.com/mozilla/uniffi-rs/issues/1670
 uniffi = { git = "https://github.com/aringenbach/uniffi-rs.git", rev = "7fea5def9b7a00cec35b94bd1916172cd0ca60fb" }
 uniffi_macros = { git = "https://github.com/aringenbach/uniffi-rs.git", rev = "7fea5def9b7a00cec35b94bd1916172cd0ca60fb" }
 uniffi_build = { git = "https://github.com/aringenbach/uniffi-rs.git", rev = "7fea5def9b7a00cec35b94bd1916172cd0ca60fb" }
