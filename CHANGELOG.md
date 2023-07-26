@@ -1,5 +1,11 @@
 # Changelog
 
+# [2.4.1] - 2023-07-26
+
+### Fixed
+
+- Web: CTRL+Backspace behaviour on Windows
+
 # [2.4.0] - 2023-07-26
 
 ### Changed
