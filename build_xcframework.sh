@@ -2,7 +2,6 @@
 
 GENERATION_PATH=.generated/ios
 
-UDL_FILE_PATH=bindings/wysiwyg-ffi/src/wysiwyg_composer.udl
 UNIFFI_CONFIG_FILE_PATH=bindings/wysiwyg-ffi/uniffi.toml
 
 ARM64_LIB_PATH=target/aarch64-apple-ios/release/libuniffi_wysiwyg_composer.a
