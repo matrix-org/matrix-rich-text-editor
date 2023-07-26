@@ -15,7 +15,8 @@ default = []
 assert-invariants = ["wysiwyg/assert-invariants"]
 
 [lib]
-crate-type = ["cdylib", "staticlib"]
+# lib crate-type shouldn't be required anymore when https://github.com/mozilla/uniffi-rs/pull/1671 lands
+crate-type = ["cdylib", "staticlib", "lib"]
 
 [dependencies]
 # Keep the uniffi version here in sync with the installed version of

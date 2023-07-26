@@ -95,7 +95,7 @@ dependencies {
 android.libraryVariants.all { variant ->
     def generateBindingTasks = tasks.register("generate${variant.name.capitalize()}UniFFIBindings", Exec) {
         workingDir "${project.projectDir}"
-        commandLine 'cargo', 'uniffi-bindgen', 'generate', '../../../bindings/wysiwyg-ffi/src/wysiwyg_composer.udl', '--language', 'kotlin', '--out-dir', "${buildDir}/generated/source/uniffi/${variant.name}/java"
+        commandLine 'cargo', 'uniffi-bindgen', 'generate', '--library', "${buildDir}/rustJniLibs/android/x86_64/libuniffi_wysiwyg_composer.so", '--language', 'kotlin', '--out-dir', "${buildDir}/generated/source/uniffi/${variant.name}/java"
         dependsOn("cargoBuild")
     }
     tasks.preBuild.dependsOn(generateBindingTasks)
