@@ -1,5 +1,18 @@
 # Changelog
 
+# [2.4.0] - 2023-07-26
+
+### Changed
+
+- Common: API for getting Markdown content now depends on context (composer usage or final output)
+- Common: Set Rust version to 1.71 and Uniffi version to 0.24.1
+
+### Fixed
+
+- Common: Fix an inconsistency with code blocks when parsing back and forth between Markdown & HTML
+- iOS: Fixed XCFramework hierarchy to avoid modulemap files conflicting with other C or Rust libraries
+- iOS: Fixed an issue with Uniffi C symbols conflicting with other Rust libraries in a shared namespace
+
 # [2.3.1] - 2023-06-30
 
 ### Added
