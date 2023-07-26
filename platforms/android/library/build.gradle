@@ -14,8 +14,8 @@ if (project.hasProperty("coverage")) {
 apply plugin: "com.vanniktech.maven.publish"
 
 cargo {
-    module = "../../../crates"       // Or whatever directory contains your Cargo.toml
-    libname = "wysiwyg-ffi"          // Or whatever matches Cargo.toml's [package] name.
+    module = "../../../bindings/wysiwyg-ffi"    // The directory which contains Cargo.toml
+    libname = "uniffi-wysiwyg-composer"         // The Cargo.toml's [package] name.
     targets = ["arm", "x86", "x86_64", "arm64"]
     targetIncludes = ["libuniffi_wysiwyg_composer.so"]
     targetDirectory = '../../../target'
@@ -95,8 +95,7 @@ dependencies {
 android.libraryVariants.all { variant ->
     def generateBindingTasks = tasks.register("generate${variant.name.capitalize()}UniFFIBindings", Exec) {
         workingDir "${project.projectDir}"
-        // Runs the bindings generation, note that you must have uniffi-bindgen installed and in your PATH environment variable
-        commandLine 'uniffi-bindgen', 'generate', '../../../bindings/wysiwyg-ffi/src/wysiwyg_composer.udl', '--language', 'kotlin', '--out-dir', "${buildDir}/generated/source/uniffi/${variant.name}/java"
+        commandLine 'cargo', 'uniffi-bindgen', 'generate', '../../../bindings/wysiwyg-ffi/src/wysiwyg_composer.udl', '--language', 'kotlin', '--out-dir', "${buildDir}/generated/source/uniffi/${variant.name}/java"
         dependsOn("cargoBuild")
     }
     tasks.preBuild.dependsOn(generateBindingTasks)

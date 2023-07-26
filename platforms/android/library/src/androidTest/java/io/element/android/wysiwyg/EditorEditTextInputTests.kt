@@ -86,7 +86,7 @@ class EditorEditTextInputTests {
         onView(withId(R.id.rich_text_edit_text))
             .perform(EditorActions.setMentionDisplayHandler(TestMentionDisplayHandler(TextDisplay.Pill)))
             .perform(typeText("Hello @"))
-            .perform(EditorActions.insertMentionAtSuggestion("alice", "link"))
+            .perform(EditorActions.insertMentionAtSuggestion("alice", "https://matrix.to/#/@alice:example.org"))
             .perform(pressKey(KeyEvent.KEYCODE_DEL)) // Delete the space added after the pill
             .perform(pressKey(KeyEvent.KEYCODE_DEL)) // Delete the pill
             .perform(pressKey(KeyEvent.KEYCODE_DEL)) // Delete the trailing space after "Hello"

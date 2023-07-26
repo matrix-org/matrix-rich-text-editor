@@ -1,7 +1,7 @@
 all: android ios web
 
 # The gradle plugin will take care of building the bindings too
-android: setup
+android: targets-android
 	cd platforms/android && \
 		./gradlew publishToMavenLocal
 
@@ -21,14 +21,10 @@ android-bindings-x86_64:
 	# Not copying into the Android project here, since the gradle plugin
 	# actually performs this build itself.
 
-
-IOS_PACKAGE_DIR := ../../platforms/ios/lib/WysiwygComposer
-IOS_GENERATION_DIR := .generated/ios
-
-ios: setup
+ios: targets-ios
 	@sh build_xcframework.sh
 
-web: setup
+web:
 	cd bindings/wysiwyg-wasm && \
 	npm install && \
 	npm run build && \
@@ -45,6 +41,17 @@ web-format:
 	cd platforms/web && \
 	yarn prettier --write .
 
+targets-android:
+	rustup target add aarch64-linux-android
+	rustup target add x86_64-linux-android
+	rustup target add i686-linux-android
+	rustup target add armv7-linux-androideabi
+
+targets-ios:
+	rustup target add aarch64-apple-ios
+	rustup target add aarch64-apple-ios-sim
+	rustup target add x86_64-apple-ios
+
 clean:
 	cargo clean
 	rm -rf bindings/wysiwyg-wasm/node_modules
@@ -52,7 +59,6 @@ clean:
 	rm -rf bindings/wysiwyg-ffi/src/generated
 	rm -rf platforms/android/out
 	cd platforms/android && ./gradlew clean
-
 
 test:
 	cargo test
@@ -62,7 +68,3 @@ coverage:
 	@echo "Requires `rustup component add llvm-tools-preview`"
 	@echo "Requires `cargo install cargo-llvm-cov`"
 	cargo llvm-cov --open
-
-setup:
-	cargo install uniffi_bindgen --version 0.21.0
-
