@@ -37,6 +37,7 @@ import { TestUtilities } from '../useTestCases/types';
 import { AllActionStates } from '../types';
 import { mapToAllActionStates } from './utils';
 import { AtRoomSuggestionEvent, LinkEvent, SuggestionEvent } from './types';
+import { getUserOperatingSystem } from '../utils';
 
 /**
  * Send a custom event named wysiwygInput
@@ -79,6 +80,16 @@ function getInputFromKeyDown(
         switch (e.key) {
             case '5':
                 return 'formatStrikeThrough';
+        }
+    }
+
+    const operatingSystem = getUserOperatingSystem();
+    if (operatingSystem === 'Windows' || operatingSystem === 'Linux') {
+        if (e.ctrlKey) {
+            switch (e.key) {
+                case 'Backspace':
+                    return 'deleteWordBackward';
+            }
         }
     }
 

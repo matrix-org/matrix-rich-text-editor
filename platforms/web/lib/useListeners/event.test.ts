@@ -19,6 +19,7 @@ import init, { new_composer_model } from '../../generated/wysiwyg';
 import { extractActionStates, handleKeyDown } from './event';
 import { FormatBlockEvent } from './types';
 import { FormattingFunctions } from '../types';
+import { WINDOWS_UA, mockUserAgent } from '../utils.test';
 
 beforeAll(async () => {
     await init();
@@ -44,6 +45,16 @@ describe('getFormattingState', () => {
 });
 
 describe('handleKeyDown', () => {
+    let originalUserAgent = '';
+
+    beforeAll(() => {
+        originalUserAgent = navigator.userAgent;
+    });
+
+    afterAll(() => {
+        mockUserAgent(originalUserAgent);
+    });
+
     it.each([
         ['formatBold', { ctrlKey: true, key: 'b' }],
         ['formatBold', { metaKey: true, key: 'b' }],
@@ -60,21 +71,31 @@ describe('handleKeyDown', () => {
         ['sendMessage', { ctrlKey: true, key: 'Enter' }],
         ['sendMessage', { metaKey: true, key: 'Enter' }],
         ['formatStrikeThrough', { shiftKey: true, altKey: true, key: '5' }],
-    ])('Should dispatch %s when %o', async (expected, input) => {
-        const elem = document.createElement('input');
-        const event = new KeyboardEvent('keydown', input);
+        ['deleteWordBackward', { ctrlKey: true, key: 'Backspace' }, WINDOWS_UA],
+    ])(
+        'Should dispatch %s when %o',
+        async (expected, input, userAgent?: string) => {
+            if (userAgent) {
+                mockUserAgent(userAgent);
+            } else {
+                mockUserAgent(originalUserAgent);
+            }
 
-        const result = new Promise((resolve) => {
-            elem.addEventListener('wysiwygInput', (({
-                detail: { blockType },
-            }: FormatBlockEvent) => {
-                resolve(blockType);
-            }) as EventListener);
-        });
+            const elem = document.createElement('input');
+            const event = new KeyboardEvent('keydown', input);
 
-        const model = new_composer_model();
+            const result = new Promise((resolve) => {
+                elem.addEventListener('wysiwygInput', (({
+                    detail: { blockType },
+                }: FormatBlockEvent) => {
+                    resolve(blockType);
+                }) as EventListener);
+            });
 
-        handleKeyDown(event, elem, model, {} as FormattingFunctions);
-        expect(await result).toBe(expected);
-    });
+            const model = new_composer_model();
+
+            handleKeyDown(event, elem, model, {} as FormattingFunctions);
+            expect(await result).toBe(expected);
+        },
+    );
 });
