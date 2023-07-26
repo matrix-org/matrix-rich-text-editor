@@ -1,6 +1,7 @@
 use widestring::Utf16String;
 use wysiwyg::ToHtml;
 
+#[derive(uniffi::Record)]
 pub struct ComposerState {
     pub html: Vec<u16>,
     pub start: u32,

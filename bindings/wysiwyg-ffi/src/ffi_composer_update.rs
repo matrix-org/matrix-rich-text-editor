@@ -4,6 +4,7 @@ use crate::ffi_menu_state::MenuState;
 use crate::ffi_text_update::TextUpdate;
 use crate::MenuAction;
 
+#[derive(uniffi::Object)]
 pub struct ComposerUpdate {
     inner: wysiwyg::ComposerUpdate<Utf16String>,
 }
@@ -12,7 +13,10 @@ impl ComposerUpdate {
     pub fn from(inner: wysiwyg::ComposerUpdate<Utf16String>) -> Self {
         Self { inner }
     }
+}
 
+#[uniffi::export]
+impl ComposerUpdate {
     pub fn text_update(&self) -> TextUpdate {
         TextUpdate::from(self.inner.text_update.clone())
     }

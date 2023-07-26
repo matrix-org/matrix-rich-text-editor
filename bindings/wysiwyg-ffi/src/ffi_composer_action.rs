@@ -1,4 +1,4 @@
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, uniffi::Enum)]
 pub enum ComposerAction {
     Bold,
     Italic,
