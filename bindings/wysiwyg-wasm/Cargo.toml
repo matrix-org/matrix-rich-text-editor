@@ -7,7 +7,7 @@ description = "WASM bindings for wysiwyg-rust"
 keywords = ["matrix", "chat", "messaging", "composer", "wysiwyg"]
 license = "Apache-2.0"
 name = "wysiwyg-wasm"
-version = "2.3.1"
+version = "2.4.0"
 rust-version = { workspace = true }
 
 [package.metadata.wasm-pack.profile.profiling]
