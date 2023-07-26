@@ -77,8 +77,6 @@ describe('handleKeyDown', () => {
         async (expected, input, userAgent?: string) => {
             if (userAgent) {
                 mockUserAgent(userAgent);
-            } else {
-                mockUserAgent(originalUserAgent);
             }
 
             const elem = document.createElement('input');
