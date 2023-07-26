@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 /**
- * Findss the operating system of the user
+ * Finds the operating system of the user
  * @returns {string|null} the operating system, `null` if the operating system is unknown
  */
 export function getUserOperatingSystem():
