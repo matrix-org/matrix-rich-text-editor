@@ -14,7 +14,7 @@
 
 use crate::SuggestionPattern;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, uniffi::Enum)]
 pub enum MenuAction {
     Keep,
     None,

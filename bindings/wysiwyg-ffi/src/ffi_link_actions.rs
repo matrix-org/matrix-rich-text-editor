@@ -1,5 +1,6 @@
 use widestring::Utf16String;
 
+#[derive(uniffi::Enum)]
 pub enum LinkAction {
     CreateWithText,
     Create,

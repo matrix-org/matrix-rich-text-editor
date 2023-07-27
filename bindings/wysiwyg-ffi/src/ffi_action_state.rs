@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, uniffi::Enum)]
 pub enum ActionState {
     Enabled,
     Reversed,

@@ -14,7 +14,7 @@
 
 use crate::PatternKey;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, uniffi::Record)]
 pub struct SuggestionPattern {
     pub key: PatternKey,
     pub text: String,

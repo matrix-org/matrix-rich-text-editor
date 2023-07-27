@@ -44,6 +44,7 @@ pub use crate::ffi_pattern_key::PatternKey;
 pub use crate::ffi_suggestion_pattern::SuggestionPattern;
 pub use crate::ffi_text_update::TextUpdate;
 
+#[uniffi::export]
 pub fn new_composer_model() -> Arc<ComposerModel> {
     Arc::new(ComposerModel::new())
 }

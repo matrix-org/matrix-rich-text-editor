@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::into_ffi::IntoFfi;
 use crate::{ActionState, ComposerAction};
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, uniffi::Enum)]
 pub enum MenuState {
     Keep,
     Update {

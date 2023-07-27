@@ -14,7 +14,7 @@
 
 use std::fmt::Display;
 
-#[derive(Debug)]
+#[derive(Debug, uniffi::Error)]
 pub enum DomCreationError {
     HtmlParseError,
     MarkdownParseError,

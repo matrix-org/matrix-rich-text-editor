@@ -2,7 +2,6 @@
 
 GENERATION_PATH=.generated/ios
 
-UDL_FILE_PATH=bindings/wysiwyg-ffi/src/wysiwyg_composer.udl
 UNIFFI_CONFIG_FILE_PATH=bindings/wysiwyg-ffi/uniffi.toml
 
 ARM64_LIB_PATH=target/aarch64-apple-ios/release/libuniffi_wysiwyg_composer.a
@@ -42,7 +41,7 @@ rm -rf $GENERATION_PATH
 
 # Generate headers & Swift bindings
 mkdir -p $GENERATION_PATH
-cargo uniffi-bindgen generate $UDL_FILE_PATH -l swift --config $UNIFFI_CONFIG_FILE_PATH --out-dir $GENERATION_PATH
+cargo uniffi-bindgen generate --library $ARM64_LIB_PATH -l swift --out-dir $GENERATION_PATH
 
 # Move Swift file to expected location
 #

@@ -11,7 +11,7 @@ use crate::ffi_link_actions::LinkAction;
 use crate::into_ffi::IntoFfi;
 use crate::{ActionState, ComposerAction, SuggestionPattern};
 
-#[derive(Default)]
+#[derive(Default, uniffi::Object)]
 pub struct ComposerModel {
     inner: Mutex<wysiwyg::ComposerModel<Utf16String>>,
 }
@@ -22,7 +22,10 @@ impl ComposerModel {
             inner: Mutex::new(wysiwyg::ComposerModel::new()),
         }
     }
+}
 
+#[uniffi::export]
+impl ComposerModel {
     pub fn set_content_from_html(
         self: &Arc<Self>,
         html: String,
@@ -367,18 +370,14 @@ impl ComposerModel {
         self.inner.lock().unwrap().get_link_action().into()
     }
 
-    #[cfg(not(debug_assertions))]
-    pub fn debug_panic(self: &Arc<Self>) {
-        // No-op
-    }
-
     /// Force a panic for test purposes
-    #[cfg(debug_assertions)]
     pub fn debug_panic(self: &Arc<Self>) {
+        #[cfg(debug_assertions)]
         panic!("This should only happen in tests.");
     }
 }
 
+#[derive(uniffi::Record)]
 pub struct Attribute {
     pub key: String,
     pub value: String,

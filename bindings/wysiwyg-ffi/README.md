@@ -123,7 +123,7 @@ lipo -create \
 
 ```bash
 cargo uniffi-bindgen \
-    generate src/wysiwyg_composer.udl \
+    --library ../../target/aarch64-apple-ios/release/libuniffi_wysiwyg_composer.a \
     --language swift \
     --config uniffi.toml \
     --out-dir MY_OUTPUT_DIR
@@ -133,6 +133,8 @@ mv *.h         headers/
 mv *.modulemap headers/module.modulemap
 mv *.swift     Sources/
 ```
+
+The used library file is arbitrary the ARM64 one, but any could be used.
 
 Note: The project should always have a single Swift modulemap file, and it
 should be named `module.modulemap` otherwise the generated framework will not
