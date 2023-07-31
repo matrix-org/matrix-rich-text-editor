@@ -4,6 +4,8 @@ plugins {
 }
 
 android {
+    namespace = "io.element.android.wysiwyg.poc"
+
     compileSdk 32
 
     defaultConfig {

@@ -15,9 +15,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import io.element.wysiwyg.compose.ui.components.EditorAction
+import io.element.android.wysiwyg.compose.EditorAction
+import io.element.android.wysiwyg.compose.RichTextEditor
 import io.element.wysiwyg.compose.ui.components.FormattingButtons
-import io.element.wysiwyg.compose.ui.components.RichTextEditor
 import io.element.wysiwyg.compose.ui.theme.RichTextEditorTheme
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch

@@ -22,6 +22,8 @@ cargo {
 }
 
 android {
+    namespace = "io.element.android.wysiwyg"
+
     compileSdk 32
 
     defaultConfig {
