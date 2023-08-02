@@ -14,21 +14,24 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:hint="Rich text editor"
-        app:layout_constraintBottom_toBottomOf="parent"
+    <TextView
+        android:id="@+id/label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:labelFor="@+id/rich_text_edit_text"
+        android:text="Rich text editor"
+        android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/styledTextView">
+        app:layout_constraintTop_toBottomOf="@id/styledTextView" />
 
-        <io.element.android.wysiwyg.EditorEditText
-            android:id="@id/rich_text_edit_text"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="text|textNoSuggestions" />
-
-    </com.google.android.material.textfield.TextInputLayout>
+    <io.element.android.wysiwyg.EditorEditText
+        android:id="@id/rich_text_edit_text"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:inputType="text|textNoSuggestions"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/label" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

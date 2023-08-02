@@ -19,10 +19,9 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.widget.EditText
 import androidx.annotation.VisibleForTesting
+import androidx.appcompat.widget.AppCompatEditText
 import androidx.core.graphics.withTranslation
 import androidx.lifecycle.*
-import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.textfield.TextInputLayout
 import io.element.android.wysiwyg.display.MentionDisplayHandler
 import io.element.android.wysiwyg.inputhandlers.InterceptInputConnection
 import io.element.android.wysiwyg.internal.display.MemoizingMentionDisplayHandler
@@ -42,11 +41,8 @@ import uniffi.wysiwyg_composer.*
 
 /**
  * An [EditText] that handles rich text editing.
- *
- * The base class is [TextInputEditText] so that apps can easily provide
- * hint text and accessibility support through a [TextInputLayout].
  */
-class EditorEditText : TextInputEditText {
+class EditorEditText : AppCompatEditText {
 
     private var inputConnection: InterceptInputConnection? = null
 
