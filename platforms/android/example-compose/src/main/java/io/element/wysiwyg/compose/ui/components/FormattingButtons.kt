@@ -2,6 +2,7 @@ package io.element.wysiwyg.compose.ui.components
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -20,33 +21,44 @@ import uniffi.wysiwyg_composer.ComposerAction
 
 @Composable
 fun FormattingButtons(
-    onResetText: () -> Unit,
-    onBoldClick: () -> Unit,
-    onItalicClick: () -> Unit,
     actionStates: Map<ComposerAction, ActionState>,
     modifier: Modifier = Modifier,
+    onResetText: () -> Unit = {},
+    onBoldClick: () -> Unit = {},
+    onItalicClick: () -> Unit = {},
 ) {
-    Row(
+    val rowArrangement = Arrangement.spacedBy(2.dp)
+    val buttonArrangement = Arrangement.spacedBy(4.dp)
+
+    Column(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = rowArrangement
     ) {
-        TextButton(
-            onClick = onResetText
+        Row(
+            horizontalArrangement = buttonArrangement
         ) {
-            Text("Reset")
+            FormattingButton(
+                contentDescription = "Bold",
+                icon = R.drawable.ic_format_bold,
+                onClick = onBoldClick,
+                actionState = actionStates.getOrDefault(ComposerAction.BOLD, ActionState.DISABLED)
+            )
+            FormattingButton(
+                contentDescription = "Italic",
+                icon = R.drawable.ic_format_italic,
+                onClick = onItalicClick,
+                actionState = actionStates.getOrDefault(ComposerAction.ITALIC, ActionState.DISABLED)
+            )
         }
-        FormattingButton(
-            contentDescription = "Bold",
-            icon = R.drawable.ic_format_bold,
-            onClick = onBoldClick,
-            actionState = actionStates.getOrDefault(ComposerAction.BOLD, ActionState.DISABLED)
-        )
-        FormattingButton(
-            contentDescription = "Italic",
-            icon = R.drawable.ic_format_italic,
-            onClick = onItalicClick,
-            actionState = actionStates.getOrDefault(ComposerAction.ITALIC, ActionState.DISABLED)
-        )
+        Row(
+            horizontalArrangement = buttonArrangement
+        ) {
+            TextButton(
+                onClick = onResetText
+            ) {
+                Text("Reset")
+            }
+        }
     }
 }
 
@@ -82,9 +94,6 @@ private fun FormattingButton(
 @Composable
 private fun FormattingButtonsPreview() =
     FormattingButtons(
-        onResetText = {},
-        onBoldClick = {},
-        onItalicClick = {},
         actionStates = mapOf(
             ComposerAction.BOLD to ActionState.ENABLED,
             ComposerAction.ITALIC to ActionState.REVERSED,
@@ -96,9 +105,6 @@ private fun FormattingButtonsPreview() =
 @Composable
 private fun FormattingButtonsDefaultPreview() =
     FormattingButtons(
-        onResetText = {},
-        onBoldClick = {},
-        onItalicClick = {},
         actionStates = emptyMap()
     )
 
