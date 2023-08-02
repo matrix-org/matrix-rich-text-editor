@@ -141,6 +141,15 @@ internal class EditorViewModel(
         return stringToSpans(getContentAsMessageHtml())
     }
 
+    /**
+     * Get the Rust model's internal representation of it's content.
+     *
+     * Note that this should not be used for messages; instead [getContentAsMessageHtml] should be used.
+     */
+    internal fun getInternalHtml(): String {
+        return composer?.getContentAsHtml().orEmpty()
+    }
+
     fun actionStates(): Map<ComposerAction, ActionState>? {
         return composer?.actionStates()
     }

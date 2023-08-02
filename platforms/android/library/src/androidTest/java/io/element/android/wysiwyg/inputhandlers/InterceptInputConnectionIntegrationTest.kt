@@ -25,10 +25,11 @@ class InterceptInputConnectionIntegrationTest {
         provideComposer = { newComposerModel() },
         htmlConverter = AndroidHtmlConverter(
             provideHtmlToSpansParser = { html ->
+                val styleConfig = createFakeStyleConfig()
                 HtmlToSpansParser(
                     AndroidResourcesHelper(app),
                     html,
-                    createFakeStyleConfig(),
+                    styleConfig = { styleConfig },
                     mentionDisplayHandler = null,
                 )
             },

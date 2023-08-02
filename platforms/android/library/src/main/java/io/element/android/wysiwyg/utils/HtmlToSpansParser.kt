@@ -43,7 +43,7 @@ import kotlin.math.roundToInt
 internal class HtmlToSpansParser(
     private val resourcesHelper: ResourcesHelper,
     private val html: String,
-    private val styleConfig: StyleConfig,
+    private val styleConfig: () -> StyleConfig,
     private val mentionDisplayHandler: MentionDisplayHandler?,
 ) : ContentHandler {
 
@@ -240,9 +240,9 @@ internal class HtmlToSpansParser(
                 }
 
                 val codeSpan = CodeBlockSpan(
-                    leadingMargin = styleConfig.codeBlock.leadingMargin,
-                    verticalPadding = styleConfig.codeBlock.verticalPadding,
-                    relativeSizeProportion = styleConfig.codeBlock.relativeTextSize,
+                    leadingMargin = styleConfig().codeBlock.leadingMargin,
+                    verticalPadding = styleConfig().codeBlock.verticalPadding,
+                    relativeSizeProportion = styleConfig().codeBlock.relativeTextSize,
                 )
                 replacePlaceholderWithPendingSpan(
                     placeholder = last.span,
@@ -299,7 +299,7 @@ internal class HtmlToSpansParser(
             InlineFormat.Underline -> UnderlineSpan()
             InlineFormat.StrikeThrough -> StrikethroughSpan()
             InlineFormat.InlineCode -> InlineCodeSpan(
-                relativeSizeProportion = styleConfig.inlineCode.relativeTextSize
+                relativeSizeProportion = styleConfig().inlineCode.relativeTextSize
             )
         }
         replacePlaceholderWithPendingSpan(last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -349,7 +349,7 @@ internal class HtmlToSpansParser(
                 )
             }
             TextDisplay.Pill -> {
-                val span = PillSpan(resourcesHelper.getColor(styleConfig.pill.backgroundColor))
+                val span = PillSpan(resourcesHelper.getColor(styleConfig().pill.backgroundColor))
                 replacePlaceholderWithPendingSpan(
                     last.span,
                     span,
@@ -373,8 +373,8 @@ internal class HtmlToSpansParser(
     }
 
     private fun createListSpan(last: PlaceholderSpan.ListItem): ParagraphStyle {
-        val gapWidth = styleConfig.bulletList.bulletGapWidth.roundToInt()
-        val bulletRadius = styleConfig.bulletList.bulletRadius.roundToInt()
+        val gapWidth = styleConfig().bulletList.bulletGapWidth.roundToInt()
+        val bulletRadius = styleConfig().bulletList.bulletRadius.roundToInt()
 
         return if (last.ordered) {
             // TODO: provide typeface and textSize somehow
@@ -517,7 +517,7 @@ internal class HtmlToSpansParser(
                 val span = when (display) {
                     is TextDisplay.Custom -> CustomReplacementSpan(display.customSpan)
                     TextDisplay.Pill -> PillSpan(
-                        resourcesHelper.getColor(styleConfig.pill.backgroundColor)
+                        resourcesHelper.getColor(styleConfig().pill.backgroundColor)
                     )
                     TextDisplay.Plain -> null
                 }

@@ -7,6 +7,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.widget.addTextChangedListener
 import io.element.android.wysiwyg.EditorEditText
+import io.element.android.wysiwyg.compose.internal.toStyleConfig
 import io.element.android.wysiwyg.compose.internal.ViewConnection
 import io.element.android.wysiwyg.view.models.InlineFormat
 
@@ -17,11 +18,13 @@ import io.element.android.wysiwyg.view.models.InlineFormat
  *
  * @param state The state holder for this composable. See [rememberRichTextEditorState].
  * @param modifier The modifier for the layout
+ * @param style The styles to use for any customisable elements
  */
 @Composable
 fun RichTextEditor(
     state: RichTextEditorState,
     modifier: Modifier = Modifier,
+    style: RichTextEditorStyle = RichTextEditorDefaults.style(),
 ) {
     val context = LocalContext.current
 
@@ -88,5 +91,8 @@ fun RichTextEditor(
 
             view
         },
+        update = { view ->
+            view.setStyleConfig(style.toStyleConfig(view.context))
+        }
     )
 }

@@ -5,7 +5,6 @@ import io.element.android.wysiwyg.display.TextDisplay
 import io.element.android.wysiwyg.display.MentionDisplayHandler
 import io.element.android.wysiwyg.test.fakes.createFakeStyleConfig
 import io.element.android.wysiwyg.test.utils.dumpSpans
-import io.element.android.wysiwyg.view.spans.PillSpan
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.Test
@@ -161,10 +160,11 @@ class HtmlToSpansParserTest {
         mentionDisplayHandler: MentionDisplayHandler? = null,
     ): Spanned {
         val app = RuntimeEnvironment.getApplication()
+        val styleConfig = createFakeStyleConfig()
         return HtmlToSpansParser(
             resourcesHelper = AndroidResourcesHelper(application = app),
             html = html,
-            styleConfig = createFakeStyleConfig(),
+            styleConfig = { styleConfig },
             mentionDisplayHandler = mentionDisplayHandler,
         ).convert()
     }
