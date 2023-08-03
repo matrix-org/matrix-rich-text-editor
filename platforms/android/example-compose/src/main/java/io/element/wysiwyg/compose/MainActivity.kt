@@ -9,31 +9,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import io.element.android.wysiwyg.compose.EditorAction
 import io.element.android.wysiwyg.compose.RichTextEditor
+import io.element.android.wysiwyg.compose.rememberRichTextEditorState
 import io.element.wysiwyg.compose.ui.components.FormattingButtons
 import io.element.wysiwyg.compose.ui.theme.RichTextEditorTheme
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.launch
-import uniffi.wysiwyg_composer.ActionState
-import uniffi.wysiwyg_composer.ComposerAction
-
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             RichTextEditorTheme {
-                var actionStates by remember { mutableStateOf(emptyMap<ComposerAction, ActionState>()) }
-                val scope = rememberCoroutineScope()
-
-                val actions = MutableSharedFlow<EditorAction>()
+                val state = rememberRichTextEditorState()
 
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -43,21 +30,18 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
-                        RichTextEditor(
-                            actions = actions,
-                            onActionsChanged = { actionStates = it },
-                        )
+                        RichTextEditor(state = state)
                         FormattingButtons(
                             onResetText = {
-                                scope.launch { actions.emit(EditorAction.SetHtml("")) }
+                                state.setHtml("")
                             },
                             onBoldClick = {
-                                scope.launch { actions.emit(EditorAction.Bold) }
+                                state.toggleBold()
                             },
                             onItalicClick = {
-                                scope.launch { actions.emit(EditorAction.Italic) }
+                                state.toggleItalic()
                             },
-                            actionStates = actionStates,
+                            actionStates = state.actions,
                         )
                     }
                 }
