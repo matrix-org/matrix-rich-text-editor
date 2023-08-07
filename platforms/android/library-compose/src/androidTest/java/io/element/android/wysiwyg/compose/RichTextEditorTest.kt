@@ -1,10 +1,11 @@
 package io.element.android.wysiwyg.compose
 
+import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.replaceText
 import androidx.test.espresso.assertion.ViewAssertions.matches
@@ -12,13 +13,8 @@ import androidx.test.espresso.matcher.ViewMatchers.isAssignableFrom
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import io.element.android.wysiwyg.EditorEditText
-import io.mockk.confirmVerified
-import io.mockk.mockk
-import io.mockk.spyk
-import io.mockk.verify
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import uniffi.wysiwyg_composer.ActionState
@@ -27,154 +23,84 @@ import uniffi.wysiwyg_composer.MenuAction
 
 class RichTextEditorTest {
     @get:Rule
-    val composeTestRule = createComposeRule()
-
-    private val actions = MutableSharedFlow<EditorAction>()
-    private val onMarkdownChanged = mockk<(String) -> Unit>(relaxed = true) {
-    }
-    private val onHtmlChanged = mockk<(String) -> Unit>(relaxed = true)
-    private val onActionsChanged =
-        mockk<(actions: Map<ComposerAction, ActionState>) -> Unit>(relaxed = true)
-    private val onSelectionChanged = mockk<(start: Int, end: Int) -> Unit>(relaxed = true)
-    private val onMenuActionChanged = mockk<(menuAction: MenuAction) -> Unit>(relaxed = true)
+    val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
     @Test
     fun testTypeText() = runTest {
-        composeTestRule.showContent()
+        val state = createState()
+        composeTestRule.showContent(state)
 
         onView(isRichTextEditor())
             // Note that ViewAction.typeText is not working in this setup
             // so use ViewAction.replaceText instead
             .perform(replaceText("Hello, world"))
 
-        verify {
-            onActionsChanged(DEFAULT_ACTIONS.copy(mapOf(ComposerAction.UNDO to ActionState.ENABLED)))
-            onSelectionChanged(12, 12)
-            onMenuActionChanged(MenuAction.None)
-            onHtmlChanged("Hello, world")
-            onMarkdownChanged("Hello, world")
-        }
-
-        confirmNoMoreChanges()
+        assertEquals(
+            DEFAULT_ACTIONS.copy(mapOf(ComposerAction.UNDO to ActionState.ENABLED)),
+            state.actions
+        )
+        assertEquals(MenuAction.None, state.menuAction)
+        assertEquals(12 to 12, state.selection)
+        assertEquals("Hello, world", state.messageHtml)
+        assertEquals("Hello, world", state.messageMarkdown)
     }
 
     @Test
-    fun testSetHtml() = runTest {
-        composeTestRule.showContent()
+    fun testSetHtml() {
+        val state = createState()
+        composeTestRule.showContent(state)
 
-        actions.emit(EditorAction.SetHtml("Hello, world"))
+        state.setHtml("Hello, world")
 
         onView(withText("Hello, world")).check(matches(isDisplayed()))
 
-        verify {
-            onActionsChanged(DEFAULT_ACTIONS)
-            onSelectionChanged(12, 12)
-            onMenuActionChanged(MenuAction.None)
-            onHtmlChanged("Hello, world")
-            onMarkdownChanged("Hello, world")
-        }
-
-        confirmNoMoreChanges()
+        assertEquals(DEFAULT_ACTIONS, state.actions)
+        assertEquals(12 to 12, state.selection)
+        assertEquals(MenuAction.None, state.menuAction)
+        assertEquals("Hello, world", state.messageHtml)
+        assertEquals("Hello, world", state.messageMarkdown)
     }
 
     @Test
     fun testSetHtmlFormatted() = runTest {
-        composeTestRule.showContent()
+        val state = createState()
+        composeTestRule.showContent(state)
 
-        actions.emit(EditorAction.SetHtml("Hello, <b><i>world</i></b>"))
+        state.setHtml("Hello, <b><i>world</i></b>")
 
         onView(withText("Hello, world")).check(matches(isDisplayed()))
 
-        verify {
-            onActionsChanged(
-                DEFAULT_ACTIONS.copy(
-                    mapOf(
-                        ComposerAction.BOLD to ActionState.REVERSED,
-                        ComposerAction.ITALIC to ActionState.REVERSED,
-                    )
+        assertEquals(
+            DEFAULT_ACTIONS.copy(
+                mapOf(
+                    ComposerAction.BOLD to ActionState.REVERSED,
+                    ComposerAction.ITALIC to ActionState.REVERSED,
                 )
+            ), state.actions
+        )
+        assertEquals(12 to 12, state.selection)
+        assertEquals(MenuAction.None, state.menuAction)
+        assertEquals("Hello, <b><i>world</i></b>", state.messageHtml)
+        assertEquals("Hello, __*world*__", state.messageMarkdown)
+    }
+
+    private fun ComposeContentTestRule.showContent(
+        state: RichTextEditorState,
+    ) = setContent {
+        MaterialTheme {
+            RichTextEditor(
+                state, modifier = Modifier.fillMaxWidth()
             )
-            onSelectionChanged(12, 12)
-            onMenuActionChanged(MenuAction.None)
-            onHtmlChanged("Hello, <b><i>world</i></b>")
-            onMarkdownChanged("Hello, __*world*__")
         }
-        confirmNoMoreChanges()
     }
 
-    /**
-     * Test that new markdown / html callbacks are registered properly on recomposition
-     */
-    @Test
-    fun testUpdateCallbacks() = runTest {
-        val markdownCallbacks = MutableStateFlow(onMarkdownChanged)
-        val htmlCallbacks = MutableStateFlow(onHtmlChanged)
-        val newOnMarkdownChanged = spyk<(String) -> Unit>({ })
-        val newOnHtmlChanged = spyk<(String) -> Unit>({ })
-
-        composeTestRule.setContent {
-            MaterialTheme {
-                val onMarkdownChanged by markdownCallbacks.collectAsState()
-                val onHtmlChanged by htmlCallbacks.collectAsState()
-
-                RichTextEditor(
-                    actions = actions,
-                    onMarkdownChanged = onMarkdownChanged,
-                    onHtmlChanged = onHtmlChanged,
-                    onActionsChanged = onActionsChanged,
-                    onMenuActionChanged = onMenuActionChanged,
-                    onSelectionChanged = onSelectionChanged,
-                )
-
-            }
-        }
-
-        actions.emit(EditorAction.SetHtml("<b>Text 1</b>"))
-
-        markdownCallbacks.emit(newOnMarkdownChanged)
-        htmlCallbacks.emit(newOnHtmlChanged)
-
-        composeTestRule.awaitIdle()
-
-        actions.emit(EditorAction.SetHtml("<b>Text 2</b>"))
-
-        verify {
-            onHtmlChanged("<b>Text 1</b>")
-            onMarkdownChanged("__Text 1__")
-            newOnHtmlChanged("<b>Text 2</b>")
-            newOnMarkdownChanged("__Text 2__")
-        }
-        confirmVerified(
-            onHtmlChanged, onMarkdownChanged, newOnHtmlChanged, newOnMarkdownChanged
+    private fun createState(): RichTextEditorState {
+        val context = composeTestRule.activity
+        return RichTextEditorState(
+            EditorEditText(
+                context
+            )
         )
-    }
-
-    private fun confirmNoMoreChanges() =
-        confirmVerified(
-            onMarkdownChanged,
-            onHtmlChanged,
-            onActionsChanged,
-            onSelectionChanged,
-            onMenuActionChanged
-        )
-
-    private fun ComposeContentTestRule.showContent() {
-        setContent {
-            MaterialTheme {
-                RichTextEditor(
-                    actions = actions,
-                    onMarkdownChanged = onMarkdownChanged,
-                    onHtmlChanged = onHtmlChanged,
-                    onActionsChanged = onActionsChanged,
-                    onMenuActionChanged = onMenuActionChanged,
-                    onSelectionChanged = onSelectionChanged,
-                )
-            }
-        }
-
-        verify {
-            onActionsChanged(DEFAULT_ACTIONS)
-        }
     }
 
     companion object {
