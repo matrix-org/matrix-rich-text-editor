@@ -9,6 +9,7 @@ import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import io.element.android.wysiwyg.compose.internal.ViewConnection
+import io.element.android.wysiwyg.view.models.InlineFormat
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
 import uniffi.wysiwyg_composer.MenuAction
@@ -25,14 +26,64 @@ class RichTextEditorState internal constructor() {
     internal var viewConnection: ViewConnection? = null
 
     /**
-     * Toggle bold formatting on the current selection.
+     * Toggle inline formatting on the current selection.
+     *
+     * @param inlineFormat which format to toggle (e.g. [InlineFormat.Bold])
      */
-    fun toggleBold() = viewConnection?.toggleBold()
+    fun toggleInlineFormat(inlineFormat: InlineFormat) {
+        viewConnection?.toggleInlineFormat(inlineFormat)
+    }
 
     /**
-     * Toggle italic formatting on the current selection.
+     * Undo the last action.
      */
-    fun toggleItalic() = viewConnection?.toggleItalic()
+    fun undo() {
+        viewConnection?.undo()
+    }
+
+    /**
+     * Redo the last undone action.
+     */
+    fun redo() {
+        viewConnection?.redo()
+    }
+
+    /**
+     * Toggle list formatting on the current selection.
+     *
+     * @param ordered Whether the list should be ordered (numbered) or unordered (bulleted).
+     */
+    fun toggleList(ordered: Boolean) {
+        viewConnection?.toggleList(ordered)
+    }
+
+    /**
+     * Indent the current selection.
+     */
+    fun indent() {
+        viewConnection?.indent()
+    }
+
+    /**
+     * Unindent the current selection.
+     */
+    fun unindent() {
+        viewConnection?.unindent()
+    }
+
+    /**
+     * Toggle code block formatting on the current selection.
+     */
+    fun toggleCodeBlock() {
+        viewConnection?.toggleCodeBlock()
+    }
+
+    /**
+     * Toggle quote formatting on the current selection.
+     */
+    fun toggleQuote() {
+        viewConnection?.toggleQuote()
+    }
 
     /**
      * Set the HTML content of the editor.
