@@ -94,14 +94,7 @@ class RichTextEditorTest {
         }
     }
 
-    private fun createState(): RichTextEditorState {
-        val context = composeTestRule.activity
-        return RichTextEditorState(
-            EditorEditText(
-                context
-            )
-        )
-    }
+    private fun createState(): RichTextEditorState = RichTextEditorState()
 
     companion object {
         val DEFAULT_ACTIONS =

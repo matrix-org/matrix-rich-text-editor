@@ -4,48 +4,49 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.SaverScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
-import io.element.android.wysiwyg.EditorEditText
-import io.element.android.wysiwyg.view.models.InlineFormat
+import io.element.android.wysiwyg.compose.internal.ViewConnection
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
 import uniffi.wysiwyg_composer.MenuAction
 
 /**
  * A state holder for the [RichTextEditor] composable.
+ *
+ * Create an instance using [rememberRichTextEditorState].
  */
 @Stable
-class RichTextEditorState internal constructor(
-    internal val view: EditorEditText,
-) {
+class RichTextEditorState internal constructor() {
+    internal var viewConnection: ViewConnection? = null
 
     /**
      * Toggle bold formatting on the current selection.
      */
-    fun toggleBold() = view.toggleInlineFormat(inlineFormat = InlineFormat.Bold)
+    fun toggleBold() = viewConnection?.toggleBold()
 
     /**
      * Toggle italic formatting on the current selection.
      */
-    fun toggleItalic() = view.toggleInlineFormat(inlineFormat = InlineFormat.Italic)
+    fun toggleItalic() = viewConnection?.toggleItalic()
 
     /**
      * Set the HTML content of the editor.
      */
-    fun setHtml(html: String) = view.setHtml(html)
+    fun setHtml(html: String) = viewConnection?.setHtml(html)
 
     /**
      * The content of the editor as HTML formatted for sending as a message.
      */
-    var messageHtml by mutableStateOf(view.getContentAsMessageHtml())
+    var messageHtml by mutableStateOf("")
         internal set
 
     /**
      * The content of the editor as markdown formatted for sending as a message.
      */
-    var messageMarkdown by mutableStateOf(view.getMarkdown())
+    var messageMarkdown by mutableStateOf("")
         internal set
 
     /**
@@ -72,10 +73,19 @@ class RichTextEditorState internal constructor(
  */
 @Composable
 fun rememberRichTextEditorState(): RichTextEditorState {
-    val context = LocalContext.current
-
-    return remember {
-        RichTextEditorState(view = EditorEditText(context))
+    return rememberSaveable(saver = RichTextEditorStateSaver()) {
+        RichTextEditorState()
     }
 }
 
+class RichTextEditorStateSaver : Saver<RichTextEditorState, String> {
+    override fun restore(value: String): RichTextEditorState {
+        return RichTextEditorState().apply {
+            messageHtml = value
+        }
+    }
+
+    override fun SaverScope.save(value: RichTextEditorState): String {
+        return value.messageHtml
+    }
+}
