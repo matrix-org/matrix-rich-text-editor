@@ -30,7 +30,10 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
-                        RichTextEditor(state = state)
+                        RichTextEditor(
+                            state = state,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                         FormattingButtons(
                             onResetText = {
                                 state.setHtml("")

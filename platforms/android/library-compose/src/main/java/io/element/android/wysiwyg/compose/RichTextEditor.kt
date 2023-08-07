@@ -1,6 +1,5 @@
 package io.element.android.wysiwyg.compose
 
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
@@ -21,7 +20,7 @@ fun RichTextEditor(
     modifier: Modifier = Modifier,
 ) {
     AndroidView(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier,
         factory = {
             state.view.apply {
                 actionStatesChangedListener =
