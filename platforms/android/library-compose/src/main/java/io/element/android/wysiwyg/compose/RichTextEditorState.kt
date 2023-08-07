@@ -74,13 +74,12 @@ class RichTextEditorState internal constructor() {
  * Create an instance of the [RichTextEditorState].
  */
 @Composable
-fun rememberRichTextEditorState(): RichTextEditorState {
-    return rememberSaveable(saver = RichTextEditorStateSaver()) {
+fun rememberRichTextEditorState(): RichTextEditorState =
+    rememberSaveable(saver = RichTextEditorStateSaver) {
         RichTextEditorState()
     }
-}
 
-class RichTextEditorStateSaver : Saver<RichTextEditorState, String> {
+object RichTextEditorStateSaver : Saver<RichTextEditorState, String> {
     override fun restore(value: String): RichTextEditorState {
         return RichTextEditorState().apply {
             messageHtml = value
