@@ -17,6 +17,8 @@ import uniffi.wysiwyg_composer.MenuAction
  * A state holder for the [RichTextEditor] composable.
  *
  * Create an instance using [rememberRichTextEditorState].
+ * Ensure that [RichTextEditorState] is not shared between
+ * multiple [RichTextEditor] composables.
  */
 @Stable
 class RichTextEditorState internal constructor() {
