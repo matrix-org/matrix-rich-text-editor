@@ -17,28 +17,32 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
+import android.widget.EditText
 import androidx.annotation.VisibleForTesting
+import androidx.appcompat.widget.AppCompatEditText
 import androidx.core.graphics.withTranslation
 import androidx.lifecycle.*
-import com.google.android.material.textfield.TextInputEditText
-import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelper
-import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelperFactory
+import io.element.android.wysiwyg.display.MentionDisplayHandler
 import io.element.android.wysiwyg.inputhandlers.InterceptInputConnection
-import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
-import io.element.android.wysiwyg.view.models.InlineFormat
-import io.element.android.wysiwyg.view.models.LinkAction
-import io.element.android.wysiwyg.internal.viewmodel.ReplaceTextResult
+import io.element.android.wysiwyg.internal.display.MemoizingMentionDisplayHandler
 import io.element.android.wysiwyg.internal.view.EditorEditTextAttributeReader
 import io.element.android.wysiwyg.internal.view.viewModel
-import io.element.android.wysiwyg.internal.display.MemoizingMentionDisplayHandler
+import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
 import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
-import io.element.android.wysiwyg.display.MentionDisplayHandler
+import io.element.android.wysiwyg.internal.viewmodel.ReplaceTextResult
 import io.element.android.wysiwyg.utils.*
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
 import io.element.android.wysiwyg.view.StyleConfig
+import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelper
+import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelperFactory
+import io.element.android.wysiwyg.view.models.InlineFormat
+import io.element.android.wysiwyg.view.models.LinkAction
 import uniffi.wysiwyg_composer.*
 
-class EditorEditText : TextInputEditText {
+/**
+ * An [EditText] that handles rich text editing.
+ */
+class EditorEditText : AppCompatEditText {
 
     private var inputConnection: InterceptInputConnection? = null
 
@@ -77,7 +81,7 @@ class EditorEditText : TextInputEditText {
 
     private var isInitialized = false
 
-    constructor(context: Context) : super(context)
+    constructor(context: Context) : this(context, null)
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
         styleConfig = EditorEditTextAttributeReader(context, attrs).styleConfig
@@ -134,7 +138,9 @@ class EditorEditText : TextInputEditText {
      * When not null, it will serve as an error callback for the client integrating this lib.
      */
     var rustErrorCollector: RustErrorCollector?
-        set(value) { viewModel.rustErrorCollector = value }
+        set(value) {
+            viewModel.rustErrorCollector = value
+        }
         get() = viewModel.rustErrorCollector
 
     /**
@@ -204,12 +210,14 @@ class EditorEditText : TextInputEditText {
 
                 return false
             }
+
             android.R.id.paste, android.R.id.pasteAsPlainText -> {
                 val clipBoardManager =
                     context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
                 // Only special-case paste behaviour if it is text content, otherwise default to EditText implementation
                 // which calls ViewCompat.performReceiveContent and fires the expected listeners.
-                val copiedString = clipBoardManager.primaryClip?.getItemAt(0)?.text ?: return super.onTextContextMenuItem(id)
+                val copiedString = clipBoardManager.primaryClip?.getItemAt(0)?.text
+                    ?: return super.onTextContextMenuItem(id)
                 val result = viewModel.processInput(EditorInputAction.ReplaceText(copiedString))
 
                 if (result != null) {
@@ -219,6 +227,7 @@ class EditorEditText : TextInputEditText {
 
                 return false
             }
+
             else -> return super.onTextContextMenuItem(id)
         }
     }
@@ -240,7 +249,8 @@ class EditorEditText : TextInputEditText {
                 false
             } else if (event.isPrintableCharacter() ||
                 keyCode == KeyEvent.KEYCODE_DEL ||
-                keyCode == KeyEvent.KEYCODE_FORWARD_DEL) {
+                keyCode == KeyEvent.KEYCODE_FORWARD_DEL
+            ) {
                 // Consume printable characters
                 inputConnection?.sendHardwareKeyboardInput(event)
                 true
@@ -409,7 +419,8 @@ class EditorEditText : TextInputEditText {
      * Set the text as markdown, it will be turned into to HTML internally.
      */
     fun setMarkdown(markdown: String) {
-        val result = viewModel.processInput(EditorInputAction.ReplaceAllMarkdown(markdown)) ?: return
+        val result =
+            viewModel.processInput(EditorInputAction.ReplaceAllMarkdown(markdown)) ?: return
         setTextFromComposerUpdate(result)
         setSelectionFromComposerUpdate(result.selection.last)
     }
@@ -421,10 +432,12 @@ class EditorEditText : TextInputEditText {
      * @param text The text to insert into the current suggestion range
      */
     fun setLinkSuggestion(url: String, text: String) {
-        val result = viewModel.processInput(EditorInputAction.SetLinkSuggestion(
-            text = text,
-            url = url,
-        )) ?: return
+        val result = viewModel.processInput(
+            EditorInputAction.SetLinkSuggestion(
+                text = text,
+                url = url,
+            )
+        ) ?: return
         setTextFromComposerUpdate(result)
         setSelectionFromComposerUpdate(result.selection.last)
     }
@@ -435,9 +448,11 @@ class EditorEditText : TextInputEditText {
      * @param text The text to insert into the current suggestion range
      */
     fun replaceTextSuggestion(text: String) {
-        val result = viewModel.processInput(EditorInputAction.ReplaceTextSuggestion(
-            value = text,
-        )) ?: return
+        val result = viewModel.processInput(
+            EditorInputAction.ReplaceTextSuggestion(
+                value = text,
+            )
+        ) ?: return
         setTextFromComposerUpdate(result)
         setSelectionFromComposerUpdate(result.selection.last)
     }

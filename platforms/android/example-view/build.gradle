@@ -4,6 +4,8 @@ plugins {
 }
 
 android {
+    namespace = "io.element.android.wysiwyg.poc"
+
     compileSdk 32
 
     defaultConfig {
@@ -35,10 +37,9 @@ android {
 
 dependencies {
     implementation project(":library")
-    implementation 'androidx.core:core-ktx:1.7.0'
-    implementation 'androidx.appcompat:appcompat:1.4.2'
-    implementation 'com.google.android.material:material:1.6.1'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation libs.androidx.core
+    implementation libs.androidx.appcompat
+    implementation libs.androidx.constraintlayout
 
-    implementation 'com.jakewharton.timber:timber:5.0.1'
+    implementation libs.timber
 }

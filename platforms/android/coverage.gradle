@@ -14,6 +14,9 @@ def unitTestExcludes = [
         '**/*EditorEditTextAttributeReader*',
         '**/internal/view/**/*',
         '**/view/**/*',
+
+        // Compose
+        '**/compose/*RichTextEditor*',
 ]
 
 def instrumentationTestExcludes = []
@@ -106,5 +109,5 @@ task unitTestsWithCoverage(type: GradleBuild) {
 
 task instrumentationTestsWithCoverage(type: GradleBuild) {
     startParameter.projectProperties.coverage = "true"
-    tasks = [':library:connectedDebugAndroidTest']
+    tasks = [':library:connectedDebugAndroidTest', ':library-compose:connectedDebugAndroidTest']
 }
