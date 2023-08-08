@@ -11,6 +11,8 @@ if (project.hasProperty("coverage")) {
 
 android {
     namespace 'io.element.android.wysiwyg.compose'
+    testNamespace 'io.element.android.wysiwyg.compose.test'
+
     compileSdk 33
 
     defaultConfig {

@@ -23,6 +23,7 @@ cargo {
 
 android {
     namespace = "io.element.android.wysiwyg"
+    testNamespace = "io.element.android.wysiwyg.test"
 
     compileSdk 33
 
