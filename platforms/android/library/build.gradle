@@ -65,6 +65,12 @@ android {
     }
 
     ndkVersion = "25.2.9519653"
+
+    packagingOptions {
+        resources.excludes += 'META-INF/LICENSE.md'
+        resources.excludes += 'META-INF/LICENSE-notice.md'
+    }
+
 }
 
 dependencies {
