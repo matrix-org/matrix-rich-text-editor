@@ -119,6 +119,35 @@ class RichTextEditorState internal constructor() {
      */
     var menuAction: MenuAction by mutableStateOf(MenuAction.None)
         internal set
+
+    /**
+     * Handle any of the actions in [ComposerAction].
+     *
+     * Note that formatting actions simply delegate to their respective `toggleX()` functions.
+     * So, for example, calling `handleAction(ComposerAction.BOLD)` is equivalent to calling
+     * `toggleInlineFormat(InlineFormat.Bold)`.
+     *
+     * @param action The action to handle.
+     */
+    fun handleAction(action: ComposerAction) {
+        when (action) {
+            ComposerAction.BOLD -> toggleInlineFormat(InlineFormat.Bold)
+            ComposerAction.ITALIC -> toggleInlineFormat(InlineFormat.Italic)
+            ComposerAction.STRIKE_THROUGH -> toggleInlineFormat(InlineFormat.StrikeThrough)
+            ComposerAction.UNDERLINE -> toggleInlineFormat(InlineFormat.Underline)
+            ComposerAction.INLINE_CODE -> toggleInlineFormat(InlineFormat.InlineCode)
+            ComposerAction.LINK -> throw NotImplementedError("Links are not yet supported")
+            ComposerAction.UNDO -> undo()
+            ComposerAction.REDO -> redo()
+            ComposerAction.ORDERED_LIST -> toggleList(ordered = true)
+            ComposerAction.UNORDERED_LIST -> toggleList(ordered = false)
+            ComposerAction.INDENT -> indent()
+            ComposerAction.UNINDENT -> unindent()
+            ComposerAction.CODE_BLOCK -> toggleCodeBlock()
+            ComposerAction.QUOTE -> toggleQuote()
+        }
+    }
+
 }
 
 /**
