@@ -16,7 +16,7 @@ def unitTestExcludes = [
         '**/view/**/*',
 
         // Compose
-        '**/compose/*RichTextEditor*',
+        '**/compose/*RichTextEditorKt*',
 ]
 
 def instrumentationTestExcludes = []

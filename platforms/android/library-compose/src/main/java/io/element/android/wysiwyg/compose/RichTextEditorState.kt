@@ -9,6 +9,7 @@ import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import io.element.android.wysiwyg.compose.internal.ViewConnection
+import io.element.android.wysiwyg.view.models.InlineFormat
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
 import uniffi.wysiwyg_composer.MenuAction
@@ -25,14 +26,64 @@ class RichTextEditorState internal constructor() {
     internal var viewConnection: ViewConnection? = null
 
     /**
-     * Toggle bold formatting on the current selection.
+     * Toggle inline formatting on the current selection.
+     *
+     * @param inlineFormat which format to toggle (e.g. [InlineFormat.Bold])
      */
-    fun toggleBold() = viewConnection?.toggleBold()
+    fun toggleInlineFormat(inlineFormat: InlineFormat) {
+        viewConnection?.toggleInlineFormat(inlineFormat)
+    }
 
     /**
-     * Toggle italic formatting on the current selection.
+     * Undo the last action.
      */
-    fun toggleItalic() = viewConnection?.toggleItalic()
+    fun undo() {
+        viewConnection?.undo()
+    }
+
+    /**
+     * Redo the last undone action.
+     */
+    fun redo() {
+        viewConnection?.redo()
+    }
+
+    /**
+     * Toggle list formatting on the current selection.
+     *
+     * @param ordered Whether the list should be ordered (numbered) or unordered (bulleted).
+     */
+    fun toggleList(ordered: Boolean) {
+        viewConnection?.toggleList(ordered)
+    }
+
+    /**
+     * Indent the current selection.
+     */
+    fun indent() {
+        viewConnection?.indent()
+    }
+
+    /**
+     * Unindent the current selection.
+     */
+    fun unindent() {
+        viewConnection?.unindent()
+    }
+
+    /**
+     * Toggle code block formatting on the current selection.
+     */
+    fun toggleCodeBlock() {
+        viewConnection?.toggleCodeBlock()
+    }
+
+    /**
+     * Toggle quote formatting on the current selection.
+     */
+    fun toggleQuote() {
+        viewConnection?.toggleQuote()
+    }
 
     /**
      * Set the HTML content of the editor.
@@ -68,6 +119,35 @@ class RichTextEditorState internal constructor() {
      */
     var menuAction: MenuAction by mutableStateOf(MenuAction.None)
         internal set
+
+    /**
+     * Handle any of the actions in [ComposerAction].
+     *
+     * Note that formatting actions simply delegate to their respective `toggleX()` functions.
+     * So, for example, calling `handleAction(ComposerAction.BOLD)` is equivalent to calling
+     * `toggleInlineFormat(InlineFormat.Bold)`.
+     *
+     * @param action The action to handle.
+     */
+    fun handleAction(action: ComposerAction) {
+        when (action) {
+            ComposerAction.BOLD -> toggleInlineFormat(InlineFormat.Bold)
+            ComposerAction.ITALIC -> toggleInlineFormat(InlineFormat.Italic)
+            ComposerAction.STRIKE_THROUGH -> toggleInlineFormat(InlineFormat.StrikeThrough)
+            ComposerAction.UNDERLINE -> toggleInlineFormat(InlineFormat.Underline)
+            ComposerAction.INLINE_CODE -> toggleInlineFormat(InlineFormat.InlineCode)
+            ComposerAction.LINK -> throw NotImplementedError("Links are not yet supported")
+            ComposerAction.UNDO -> undo()
+            ComposerAction.REDO -> redo()
+            ComposerAction.ORDERED_LIST -> toggleList(ordered = true)
+            ComposerAction.UNORDERED_LIST -> toggleList(ordered = false)
+            ComposerAction.INDENT -> indent()
+            ComposerAction.UNINDENT -> unindent()
+            ComposerAction.CODE_BLOCK -> toggleCodeBlock()
+            ComposerAction.QUOTE -> toggleQuote()
+        }
+    }
+
 }
 
 /**

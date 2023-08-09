@@ -65,9 +65,23 @@ fun RichTextEditor(
             }
 
             state.viewConnection = object : ViewConnection {
-                override fun toggleBold() = view.toggleInlineFormat(InlineFormat.Bold)
+                override fun toggleInlineFormat(inlineFormat: InlineFormat) =
+                    view.toggleInlineFormat(inlineFormat)
 
-                override fun toggleItalic() = view.toggleInlineFormat(InlineFormat.Italic)
+                override fun undo() = view.undo()
+
+                override fun redo() = view.redo()
+
+                override fun toggleList(ordered: Boolean) =
+                    view.toggleList(ordered)
+
+                override fun indent() = view.indent()
+
+                override fun unindent() = view.unindent()
+
+                override fun toggleCodeBlock() = view.toggleCodeBlock()
+
+                override fun toggleQuote() = view.toggleQuote()
 
                 override fun setHtml(html: String) = view.setHtml(html)
             }

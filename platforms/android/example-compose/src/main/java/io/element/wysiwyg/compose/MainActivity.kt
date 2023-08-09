@@ -38,13 +38,8 @@ class MainActivity : ComponentActivity() {
                             onResetText = {
                                 state.setHtml("")
                             },
-                            onBoldClick = {
-                                state.toggleBold()
-                            },
-                            onItalicClick = {
-                                state.toggleItalic()
-                            },
                             actionStates = state.actions,
+                            onActionClick = state::handleAction,
                         )
                     }
                 }
