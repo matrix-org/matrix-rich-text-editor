@@ -14,5 +14,3 @@ dependencyResolutionManagement {
 }
 rootProject.name = "Rich Text Editor"
 include ':example-view', ':example-compose', ':library', ':library-compose'
-
-enableFeaturePreview("VERSION_CATALOGS")
