@@ -1,3 +1,5 @@
+import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
+
 plugins {
     id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
@@ -7,6 +9,16 @@ plugins {
 
 if (project.hasProperty("coverage")) {
     apply plugin: 'jacoco'
+}
+
+apply plugin: "com.vanniktech.maven.publish.base"
+
+mavenPublishing {
+    pomFromGradleProperties()
+
+    def publishJavaDoc = false // https://github.com/Kotlin/dokka/issues/2956
+    def publishSources = true
+    configure(new AndroidSingleVariantLibrary("release", publishSources, publishJavaDoc))
 }
 
 android {

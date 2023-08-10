@@ -31,7 +31,7 @@ android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin-android" }
 rust-android = { id = "org.mozilla.rust-android-gradle.rust-android", version = "0.9.3" }
 sonarqube = { id = "org.sonarqube", version = "3.4.0.2513" }
-maven-publish = { id = "com.vanniktech.maven.publish", version = "0.22.0" }
+maven-publish = { id = "com.vanniktech.maven.publish", version = "0.25.3" }
 jacoco-android = { id = "com.mxalbert.gradle.jacoco-android", version = "0.2.1" }
 
 [libraries]
