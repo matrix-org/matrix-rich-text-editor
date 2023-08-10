@@ -1,6 +1,12 @@
 plugins {
     id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
+
+    alias libs.plugins.jacoco.android
+}
+
+if (project.hasProperty("coverage")) {
+    apply plugin: 'jacoco'
 }
 
 android {
@@ -15,6 +21,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            testCoverageEnabled true
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -26,6 +35,9 @@ android {
     }
     kotlinOptions {
         jvmTarget = '1.8'
+    }
+    testCoverage {
+        jacocoVersion = "0.8.8"
     }
     buildFeatures {
         compose true
@@ -52,10 +64,16 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-tooling"
 
     testImplementation libs.test.junit
+    testImplementation libs.test.mockk
     androidTestImplementation libs.test.androidx.junit
     androidTestImplementation libs.test.androidx.espresso
     androidTestImplementation libs.test.mockk.android
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
+}
+
+tasks.withType(Test) {
+    jacoco.includeNoLocationClasses = true
+    jacoco.excludes = ['jdk.internal.*']
 }

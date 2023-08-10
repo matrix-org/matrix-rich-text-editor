@@ -83,7 +83,7 @@ task generateCoverageReport(type: JacocoReport) {
 task generateUnitTestCoverageReport(type: JacocoReport) {
     outputs.upToDateWhen { false }
     rootProject.apply plugin: 'jacoco'
-    def projects = collectProjects { ['library'].contains(it.name) }
+    def projects = collectProjects { ['library', 'library-compose'].contains(it.name) }
     def executionDataPaths = [
             "**/build/outputs/unit_test_code_coverage/**/*.exec",
     ]
@@ -94,7 +94,7 @@ task generateUnitTestCoverageReport(type: JacocoReport) {
 task generateInstrumentationTestCoverageReport(type: JacocoReport) {
     outputs.upToDateWhen { false }
     rootProject.apply plugin: 'jacoco'
-    def projects = collectProjects { ['library'].contains(it.name) }
+    def projects = collectProjects { ['library', 'library-compose'].contains(it.name) }
     def executionDataPaths = [
             "**/build/outputs/code_coverage/*AndroidTest/connected/**/coverage.ec",
     ]
@@ -104,7 +104,7 @@ task generateInstrumentationTestCoverageReport(type: JacocoReport) {
 
 task unitTestsWithCoverage(type: GradleBuild) {
     startParameter.projectProperties.coverage = "true"
-    tasks = [':library:testDebugUnitTest']
+    tasks = [':library:testDebugUnitTest', 'library-compose:testDebugUnitTest']
 }
 
 task instrumentationTestsWithCoverage(type: GradleBuild) {
