@@ -147,9 +147,9 @@
 				A6472CAA2886CF830021A0E8 /* WysiwygApp.swift */,
 				A6472CAE2886CF840021A0E8 /* Assets.xcassets */,
 				A6F3FC0228D4659E00C170E8 /* Extensions */,
+				A6E13E4629A7AB3600A85A55 /* Mocks */,
 				A6F4D0CD29AE0BE100087A3E /* Pills */,
 				A6472CB02886CF840021A0E8 /* Preview Content */,
-				A6E13E4629A7AB3600A85A55 /* Mocks */,
 				A6C2157A28C0F63400C8E727 /* Views */,
 			);
 			path = Wysiwyg;

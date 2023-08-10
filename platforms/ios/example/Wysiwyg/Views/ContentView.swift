@@ -34,7 +34,19 @@ struct ContentView: View {
     var body: some View {
         Spacer()
             .frame(width: nil, height: 50, alignment: .center)
-        Composer(viewModel: viewModel)
+        Composer(viewModel: viewModel,
+                 itemProviderHelper: nil,
+                 keyCommandHandler: { keyCommand in
+                     switch keyCommand {
+                     case .enter:
+                         sentMessage = viewModel.content
+                         viewModel.clearContent()
+                         return true
+                     case .shiftEnter:
+                         return false
+                     }
+                 },
+                 pasteHandler: { _ in })
         Button("Force crash") {
             viewModel.setHtmlContent("<//strong>")
         }

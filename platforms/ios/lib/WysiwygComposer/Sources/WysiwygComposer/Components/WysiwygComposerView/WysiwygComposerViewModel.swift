@@ -301,16 +301,7 @@ public extension WysiwygComposerViewModel {
             update = model.backspace()
             shouldAcceptChange = false
         } else if replacementText.count == 1, replacementText[String.Index(utf16Offset: 0, in: replacementText)].isNewline {
-            update = model.enter()
-            // Pending formats need to be reapplied to the
-            // NSAttributedString upon next character input if we
-            // are in a structure that might add non-formatted
-            // representation chars to it (e.g. NBSP/ZWSP, list prefixes)
-            if !model
-                .reversedActions
-                .isDisjoint(with: [.codeBlock, .quote, .orderedList, .unorderedList]) {
-                hasPendingFormats = true
-            }
+            update = createEnterUpdate()
             shouldAcceptChange = false
         } else {
             update = model.replaceText(newText: replacementText)
@@ -385,6 +376,10 @@ public extension WysiwygComposerViewModel {
     
     func getLinkAction() -> LinkAction {
         model.getLinkAction()
+    }
+
+    func enter() {
+        applyUpdate(createEnterUpdate(), skipTextViewUpdate: false)
     }
 }
 
@@ -584,6 +579,20 @@ private extension WysiwygComposerViewModel {
         }
 
         return markdownContent
+    }
+
+    func createEnterUpdate() -> ComposerUpdate {
+        let update = model.enter()
+        // Pending formats need to be reapplied to the
+        // NSAttributedString upon next character input if we
+        // are in a structure that might add non-formatted
+        // representation chars to it (e.g. NBSP/ZWSP, list prefixes)
+        if !model
+            .reversedActions
+            .isDisjoint(with: [.codeBlock, .quote, .orderedList, .unorderedList]) {
+            hasPendingFormats = true
+        }
+        return update
     }
 }
 

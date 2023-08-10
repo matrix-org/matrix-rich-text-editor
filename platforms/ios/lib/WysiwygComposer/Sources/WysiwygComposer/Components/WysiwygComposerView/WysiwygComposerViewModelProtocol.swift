@@ -38,4 +38,7 @@ public protocol WysiwygComposerViewModelProtocol: AnyObject {
 
     /// Notify that the text view content has changed.
     func didUpdateText()
+
+    /// Apply an enter/return key event.
+    func enter()
 }

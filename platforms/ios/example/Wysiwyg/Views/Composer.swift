@@ -21,6 +21,9 @@ import WysiwygComposer
 /// that grows to a max height.
 struct Composer: View {
     @ObservedObject var viewModel: WysiwygComposerViewModel
+    let itemProviderHelper: WysiwygItemProviderHelper?
+    let keyCommandHandler: KeyCommandHandler?
+    let pasteHandler: PasteHandler?
     let minTextViewHeight: CGFloat = 20
     let borderHeight: CGFloat = 40
     @State var focused = false
@@ -34,7 +37,10 @@ struct Composer: View {
             HStack {
                 WysiwygComposerView(
                     focused: $focused,
-                    viewModel: viewModel
+                    viewModel: viewModel,
+                    itemProviderHelper: itemProviderHelper,
+                    keyCommandHandler: keyCommandHandler,
+                    pasteHandler: pasteHandler
                 )
                 .tintColor(.green)
                 .placeholder("Placeholder", color: .gray)
@@ -75,6 +81,9 @@ struct Composer: View {
 struct Composer_Previews: PreviewProvider {
     static let viewModel = WysiwygComposerViewModel()
     static var previews: some View {
-        Composer(viewModel: viewModel)
+        Composer(viewModel: viewModel,
+                 itemProviderHelper: nil,
+                 keyCommandHandler: nil,
+                 pasteHandler: nil)
     }
 }
