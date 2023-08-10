@@ -16,7 +16,34 @@
 
 import UIKit
 
+/// An internal delegate for the `WysiwygTextView`, used to bring paste and key commands events
+/// to SwiftUI through the `WysiwygComposerView` coordinator class.
+protocol WysiwygTextViewDelegate: AnyObject {
+    /// Asks the delegate if the item attached to given item provider can be pasted into the application.
+    ///
+    /// - Parameter itemProvider: The item provider.
+    /// - Returns: True if it can be pasted, false otherwise.
+    func isPasteSupported(for itemProvider: NSItemProvider) -> Bool
+
+    /// Notify the delegate that a key command has been received by the text view.
+    ///
+    /// - Parameters:
+    ///   - textView: Composer text view.
+    ///   - keyCommand: Key command received.
+    func textViewDidReceiveKeyCommand(_ textView: UITextView, keyCommand: WysiwygKeyCommand)
+
+    /// Notify the delegate that a paste event has beeb received by the text view.
+    ///
+    /// - Parameters:
+    ///   - textView: Composer text view.
+    ///   - provider: Item provider for the paste event.
+    func textView(_ textView: UITextView, didReceivePasteWith provider: NSItemProvider)
+}
+
 public class WysiwygTextView: UITextView {
+    /// Internal delegate for the text view.
+    weak var wysiwygDelegate: WysiwygTextViewDelegate?
+
     var shouldShowPlaceholder = true {
         didSet {
             setNeedsDisplay()
@@ -126,6 +153,49 @@ public class WysiwygTextView: UITextView {
                       y: glyphRect.minY - Constants.caretVerticalOffset,
                       width: rect.width,
                       height: glyphRect.height + 2 * Constants.caretVerticalOffset)
+    }
+
+    // Enter Key commands support
+
+    override public var keyCommands: [UIKeyCommand]? {
+        WysiwygKeyCommand.allCases.map { UIKeyCommand(input: $0.input,
+                                                      modifierFlags: $0.modifierFlags,
+                                                      action: #selector(keyCommandAction)) }
+    }
+
+    @objc func keyCommandAction(sender: UIKeyCommand) {
+        guard let command = WysiwygKeyCommand.from(sender) else { return }
+
+        wysiwygDelegate?.textViewDidReceiveKeyCommand(self, keyCommand: command)
+    }
+
+    // Paste support
+
+    override public func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+        guard !super.canPerformAction(action, withSender: sender) else {
+            return true
+        }
+
+        guard action == #selector(paste(_:)),
+              let itemProvider = UIPasteboard.general.itemProviders.first,
+              let wysiwygDelegate else {
+            return false
+        }
+
+        return wysiwygDelegate.isPasteSupported(for: itemProvider)
+    }
+
+    override public func paste(_ sender: Any?) {
+        guard let provider = UIPasteboard.general.itemProviders.first,
+              let wysiwygDelegate,
+              wysiwygDelegate.isPasteSupported(for: provider) else {
+            // If the item is not supported by the hosting application
+            // just try pasting its contents into the textfield
+            super.paste(sender)
+            return
+        }
+
+        wysiwygDelegate.textView(self, didReceivePasteWith: provider)
     }
 }
 

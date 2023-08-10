@@ -28,7 +28,11 @@ class SnapshotTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         let binding: Binding<Bool> = .init(get: { true }, set: { _ in })
-        let composerView = WysiwygComposerView(focused: binding, viewModel: viewModel)
+        let composerView = WysiwygComposerView(focused: binding,
+                                               viewModel: viewModel,
+                                               itemProviderHelper: nil,
+                                               keyCommandHandler: nil,
+                                               pasteHandler: nil)
             .placeholder("Placeholder")
         hostingController = UIHostingController(rootView: composerView)
     }
