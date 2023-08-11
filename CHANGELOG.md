@@ -1,5 +1,21 @@
 # Changelog
 
+# [2.5.0] - 2023-08-11
+
+### Added
+
+- Android: Support for a Compose version of the library
+- iOS: Support for overriding behaviour for `enter` and `shift` + `enter` keyboard inputs
+
+### Changed
+
+- Common: Uniffi bindings build now uses library path and macros instead of UDL file
+- iOS: Improved support for delegating items pasting to the hosting application 
+
+### Fixed
+
+- iOS: Composer focused state being published within view updates
+
 # [2.4.1] - 2023-07-26
 
 ### Fixed
