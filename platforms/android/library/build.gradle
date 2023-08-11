@@ -4,14 +4,14 @@ plugins {
 
     // Rust
     id 'org.mozilla.rust-android-gradle.rust-android'
+
     alias libs.plugins.jacoco.android
+    alias libs.plugins.maven.publish
 }
 
 if (project.hasProperty("coverage")) {
     apply plugin: 'jacoco'
 }
-
-apply plugin: "com.vanniktech.maven.publish"
 
 cargo {
     module = "../../../bindings/wysiwyg-ffi"    // The directory which contains Cargo.toml
