@@ -36,8 +36,6 @@ public typealias PasteHandler = (NSItemProvider) -> Void
 public struct WysiwygComposerView: UIViewRepresentable {
     // MARK: - Public
 
-    /// Binding var handling whether the composer is currently focused or not.
-    @Binding public var focused: Bool
     /// A helper to determine if an item can be pasted into the hosting application.
     /// If omitted, most non-text paste events will be ignored.
     let itemProviderHelper: WysiwygItemProviderHelper?
@@ -55,12 +53,10 @@ public struct WysiwygComposerView: UIViewRepresentable {
 
     // MARK: - Public
 
-    public init(focused: Binding<Bool>,
-                viewModel: WysiwygComposerViewModelProtocol,
+    public init(viewModel: WysiwygComposerViewModelProtocol,
                 itemProviderHelper: WysiwygItemProviderHelper?,
                 keyCommandHandler: KeyCommandHandler?,
                 pasteHandler: PasteHandler?) {
-        _focused = focused
         self.itemProviderHelper = itemProviderHelper
         self.keyCommandHandler = keyCommandHandler
         self.pasteHandler = pasteHandler
@@ -95,17 +91,10 @@ public struct WysiwygComposerView: UIViewRepresentable {
         uiView.tintColor = UIColor(tintColor)
         uiView.placeholderColor = UIColor(placeholderColor)
         uiView.placeholder = placeholder
-        
-        switch (focused, uiView.isFirstResponder) {
-        case (true, false): uiView.becomeFirstResponder()
-        case (false, true): uiView.resignFirstResponder()
-        default: break
-        }
     }
 
     public func makeCoordinator() -> Coordinator {
-        Coordinator($focused,
-                    viewModel.replaceText,
+        Coordinator(viewModel.replaceText,
                     viewModel.select,
                     viewModel.didUpdateText,
                     viewModel.enter,
@@ -116,7 +105,6 @@ public struct WysiwygComposerView: UIViewRepresentable {
 
     /// Coordinates UIKit communication.
     public class Coordinator: NSObject, UITextViewDelegate, NSTextStorageDelegate, WysiwygTextViewDelegate {
-        var focused: Binding<Bool>
         var replaceText: (NSRange, String) -> Bool
         var select: (NSRange) -> Void
         var didUpdateText: () -> Void
@@ -126,15 +114,13 @@ public struct WysiwygComposerView: UIViewRepresentable {
         private let keyCommandHandler: KeyCommandHandler?
         private let pasteHandler: PasteHandler?
 
-        init(_ focused: Binding<Bool>,
-             _ replaceText: @escaping (NSRange, String) -> Bool,
+        init(_ replaceText: @escaping (NSRange, String) -> Bool,
              _ select: @escaping (NSRange) -> Void,
              _ didUpdateText: @escaping () -> Void,
              _ enter: @escaping () -> Void,
              itemProviderHelper: WysiwygItemProviderHelper?,
              keyCommandHandler: KeyCommandHandler?,
              pasteHandler: PasteHandler?) {
-            self.focused = focused
             self.replaceText = replaceText
             self.select = select
             self.didUpdateText = didUpdateText
@@ -168,14 +154,6 @@ public struct WysiwygComposerView: UIViewRepresentable {
             Logger.textView.logDebug([textView.logSelection],
                                      functionName: #function)
             select(textView.selectedRange)
-        }
-        
-        public func textViewDidBeginEditing(_ textView: UITextView) {
-            focused.wrappedValue = true
-        }
-        
-        public func textViewDidEndEditing(_ textView: UITextView) {
-            focused.wrappedValue = false
         }
         
         public func textView(_ textView: UITextView,

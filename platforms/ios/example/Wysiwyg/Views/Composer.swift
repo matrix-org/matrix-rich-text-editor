@@ -26,7 +26,7 @@ struct Composer: View {
     let pasteHandler: PasteHandler?
     let minTextViewHeight: CGFloat = 20
     let borderHeight: CGFloat = 40
-    @State var focused = false
+    @FocusState var focused: Bool
     var verticalPadding: CGFloat {
         (borderHeight - minTextViewHeight) / 2
     }
@@ -36,7 +36,6 @@ struct Composer: View {
             let rect = RoundedRectangle(cornerRadius: borderHeight / 2)
             HStack {
                 WysiwygComposerView(
-                    focused: $focused,
                     viewModel: viewModel,
                     itemProviderHelper: itemProviderHelper,
                     keyCommandHandler: keyCommandHandler,
@@ -49,6 +48,7 @@ struct Composer: View {
                 .onAppear {
                     viewModel.setup()
                 }
+                .focused($focused, equals: true)
             }
             .padding(.vertical, verticalPadding)
             .clipShape(rect)
@@ -56,12 +56,6 @@ struct Composer: View {
             .padding(.horizontal, 12)
             .onTapGesture {
                 focused = true
-            }
-            if viewModel.textView.autocorrectionType == .yes {
-                Image(systemName: "text.badge.checkmark")
-                    .foregroundColor(.green)
-                    .padding(.horizontal, 16)
-                    .accessibilityIdentifier(.autocorrectionIndicator)
             }
             if let suggestion = viewModel.suggestionPattern {
                 WysiwygSuggestionList(suggestion: suggestion)

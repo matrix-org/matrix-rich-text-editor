@@ -30,10 +30,63 @@ struct ContentView: View {
         maxExpandedHeight: WysiwygSharedConstants.composerMaxExtendedHeight,
         mentionReplacer: WysiwygMentionReplacer()
     )
+    @FocusState var composerFocused: Bool
 
     var body: some View {
-        Spacer()
-            .frame(width: nil, height: 50, alignment: .center)
+        HStack {
+            Button {
+                viewModel.plainTextMode.toggle()
+            } label: {
+                Image(systemName: "textformat.alt")
+            }
+            .accessibilityIdentifier(.plainRichButton)
+            Button {
+                composerFocused.toggle()
+            } label: {
+                Image(systemName: "keyboard")
+            }
+            .accessibilityIdentifier(.toggleFocusButton)
+            Button {
+                viewModel.setHtmlContent("<//strong>")
+            } label: {
+                Image(systemName: "bolt.trianglebadge.exclamationmark.fill")
+            }
+            .accessibilityIdentifier(.forceCrashButton)
+            Button("HTML") {
+                isShowingUrlAlert.toggle()
+            }
+            .accessibilityIdentifier(.setHtmlButton)
+            Button {
+                viewModel.maximised.toggle()
+            } label: {
+                Image(systemName: viewModel.maximised ? "rectangle.compress.vertical" : "rectangle.expand.vertical")
+            }
+            .accessibilityIdentifier(.minMaxButton)
+            Button {
+                showTree.toggle()
+            } label: {
+                Image(systemName: showTree ? "tree" : "tree.fill")
+            }
+            .accessibilityIdentifier(.showTreeButton)
+            Button {
+                sentMessage = viewModel.content
+                viewModel.clearContent()
+            } label: {
+                Image(systemName: "chevron.right.circle")
+            }
+            .disabled(viewModel.isContentEmpty)
+            .accessibilityIdentifier(.sendButton)
+        }
+        HStack {
+            Spacer()
+            if viewModel.textView.autocorrectionType == .yes {
+                Image(systemName: "text.badge.checkmark")
+                    .foregroundColor(.green)
+                    .padding(.horizontal, 16)
+                    .accessibilityIdentifier(.autocorrectionIndicator)
+            }
+        }
+        .frame(width: nil, height: 50, alignment: .center)
         Composer(viewModel: viewModel,
                  itemProviderHelper: nil,
                  keyCommandHandler: { keyCommand in
@@ -47,32 +100,7 @@ struct ContentView: View {
                      }
                  },
                  pasteHandler: { _ in })
-        Button("Force crash") {
-            viewModel.setHtmlContent("<//strong>")
-        }
-        .accessibilityIdentifier(.forceCrashButton)
-        Button("Set HTML") {
-            isShowingUrlAlert.toggle()
-        }
-        .accessibilityIdentifier(.setHtmlButton)
-        Button("Min/Max") {
-            viewModel.maximised.toggle()
-        }
-        .accessibilityIdentifier(.minMaxButton)
-        Button("Plain/Rich") {
-            viewModel.plainTextMode.toggle()
-        }
-        .accessibilityIdentifier(.plainRichButton)
-        Button("Send") {
-            sentMessage = viewModel.content
-            viewModel.clearContent()
-        }
-        .disabled(viewModel.isContentEmpty)
-        .accessibilityIdentifier(.sendButton)
-        Button(showTree ? "Hide tree" : "Show tree") {
-            showTree.toggle()
-        }
-        .accessibilityIdentifier(.showTreeButton)
+            .focused($composerFocused, equals: true)
         ScrollView {
             if showTree {
                 Text(viewModel.treeRepresentation())
