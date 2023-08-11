@@ -45,11 +45,13 @@ class RichTextEditorTest {
     }
 
     @Test
-    fun testSetHtml() {
+    fun testSetHtml() = runTest {
         val state = createState()
         composeTestRule.showContent(state)
 
-        state.setHtml("Hello, world")
+        composeTestRule.runOnUiThread {
+            state.setHtml("Hello, world")
+        }
 
         onView(withText("Hello, world")).check(matches(isDisplayed()))
 
@@ -65,7 +67,9 @@ class RichTextEditorTest {
         val state = createState()
         composeTestRule.showContent(state)
 
-        state.setHtml("Hello, <b><i>world</i></b>")
+        composeTestRule.runOnUiThread {
+            state.setHtml("Hello, <b><i>world</i></b>")
+        }
 
         onView(withText("Hello, world")).check(matches(isDisplayed()))
 

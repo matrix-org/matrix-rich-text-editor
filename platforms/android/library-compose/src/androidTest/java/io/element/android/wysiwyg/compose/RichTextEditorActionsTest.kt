@@ -22,7 +22,9 @@ class RichTextEditorActionsTest {
         val state = StateFactory.createState()
         composeTestRule.showContent(state)
 
-        state.toggleInlineFormat(InlineFormat.Bold)
+        composeTestRule.runOnUiThread {
+            state.toggleInlineFormat(InlineFormat.Bold)
+        }
 
         assertEquals(
             ComposerActions.DEFAULT_ACTIONS.copy(
@@ -40,7 +42,9 @@ class RichTextEditorActionsTest {
         val state = StateFactory.createState()
         composeTestRule.showContent(state)
 
-        state.toggleInlineFormat(InlineFormat.Italic)
+        composeTestRule.runOnUiThread {
+            state.toggleInlineFormat(InlineFormat.Italic)
+        }
 
         assertEquals(
             ComposerActions.DEFAULT_ACTIONS.copy(
@@ -58,7 +62,9 @@ class RichTextEditorActionsTest {
         val state = StateFactory.createState()
         composeTestRule.showContent(state)
 
-        state.toggleInlineFormat(InlineFormat.StrikeThrough)
+        composeTestRule.runOnUiThread {
+            state.toggleInlineFormat(InlineFormat.StrikeThrough)
+        }
 
         assertEquals(
             ComposerActions.DEFAULT_ACTIONS.copy(
@@ -76,7 +82,9 @@ class RichTextEditorActionsTest {
         val state = StateFactory.createState()
         composeTestRule.showContent(state)
 
-        state.toggleInlineFormat(InlineFormat.Underline)
+        composeTestRule.runOnUiThread {
+            state.toggleInlineFormat(InlineFormat.Underline)
+        }
 
         assertEquals(
             ComposerActions.DEFAULT_ACTIONS.copy(
@@ -94,7 +102,9 @@ class RichTextEditorActionsTest {
         val state = StateFactory.createState()
         composeTestRule.showContent(state)
 
-        state.toggleQuote()
+        composeTestRule.runOnUiThread {
+            state.toggleQuote()
+        }
 
         assertEquals(
             ComposerActions.DEFAULT_ACTIONS.copy(
@@ -111,7 +121,9 @@ class RichTextEditorActionsTest {
         val state = StateFactory.createState()
         composeTestRule.showContent(state)
 
-        state.toggleCodeBlock()
+        composeTestRule.runOnUiThread {
+            state.toggleCodeBlock()
+        }
 
         assertEquals(
             ComposerActions.DEFAULT_ACTIONS.copy(
@@ -156,7 +168,9 @@ class RichTextEditorActionsTest {
         val state = StateFactory.createState()
         composeTestRule.showContent(state)
 
-        state.toggleInlineFormat(InlineFormat.Bold)
+        composeTestRule.runOnUiThread {
+            state.toggleInlineFormat(InlineFormat.Bold)
+        }
 
         assertEquals(
             ComposerActions.DEFAULT_ACTIONS.copy(
@@ -198,9 +212,10 @@ class RichTextEditorActionsTest {
 
         composeTestRule.showContent(state)
 
-        state.toggleList(ordered = true)
-
-        assertEquals(
+        composeTestRule.runOnUiThread {
+            state.toggleList(ordered = true)
+        }
+               assertEquals(
             ComposerActions.DEFAULT_ACTIONS.copy(
                 mapOf(
                     ComposerAction.UNDO to ActionState.ENABLED,
@@ -215,7 +230,9 @@ class RichTextEditorActionsTest {
 
         composeTestRule.showContent(state)
 
-        state.toggleList(ordered = false)
+        composeTestRule.runOnUiThread {
+            state.toggleList(ordered = false)
+        }
 
         assertEquals(
             ComposerActions.DEFAULT_ACTIONS.copy(
@@ -233,7 +250,9 @@ class RichTextEditorActionsTest {
 
         composeTestRule.showContent(state)
 
-        state.setHtml("<ol><li>Test</li><li>Test</li></ol>")
+        composeTestRule.runOnUiThread {
+            state.setHtml("<ol><li>Test</li><li>Test</li></ol>")
+        }
 
         assertEquals(
             ComposerActions.DEFAULT_ACTIONS.copy(
@@ -244,7 +263,9 @@ class RichTextEditorActionsTest {
                 )
             ), state.actions)
 
-        state.indent()
+        composeTestRule.runOnUiThread {
+            state.indent()
+        }
 
         assertEquals(
             ComposerActions.DEFAULT_ACTIONS.copy(
@@ -263,7 +284,9 @@ class RichTextEditorActionsTest {
 
         composeTestRule.showContent(state)
 
-        state.setHtml("<ol><li>Test</li><li><ol><li>Test</li></ol></li></ol>")
+        composeTestRule.runOnUiThread {
+            state.setHtml("<ol><li>Test</li><li><ol><li>Test</li></ol></li></ol>")
+        }
 
         assertEquals(
             ComposerActions.DEFAULT_ACTIONS.copy(
@@ -274,7 +297,9 @@ class RichTextEditorActionsTest {
                 )
             ), state.actions)
 
-        state.unindent()
+        composeTestRule.runOnUiThread {
+            state.unindent()
+        }
 
         assertEquals(
             ComposerActions.DEFAULT_ACTIONS.copy(

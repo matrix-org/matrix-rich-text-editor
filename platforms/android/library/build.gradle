@@ -23,12 +23,13 @@ cargo {
 
 android {
     namespace = "io.element.android.wysiwyg"
+    testNamespace = "io.element.android.wysiwyg.test"
 
-    compileSdk 32
+    compileSdk 33
 
     defaultConfig {
         minSdk 21
-        targetSdk 32
+        targetSdk 33
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -42,12 +43,14 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = '1.8'
+
+    buildFeatures {
+        buildConfig = true
     }
 
     testOptions {
@@ -65,6 +68,15 @@ android {
     }
 
     ndkVersion = "25.2.9519653"
+
+    packagingOptions {
+        resources.excludes += 'META-INF/LICENSE.md'
+        resources.excludes += 'META-INF/LICENSE-notice.md'
+    }
+}
+
+kotlin {
+    jvmToolchain(17)
 }
 
 dependencies {

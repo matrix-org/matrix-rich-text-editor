@@ -11,6 +11,8 @@ if (project.hasProperty("coverage")) {
 
 android {
     namespace 'io.element.android.wysiwyg.compose'
+    testNamespace 'io.element.android.wysiwyg.compose.test'
+
     compileSdk 33
 
     defaultConfig {
@@ -30,12 +32,10 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = '1.8'
-    }
+
     testCoverage {
         jacocoVersion = "0.8.8"
     }
@@ -45,6 +45,14 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion '1.5.1'
     }
+    packagingOptions {
+        resources.excludes += 'META-INF/LICENSE.md'
+        resources.excludes += 'META-INF/LICENSE-notice.md'
+    }
+}
+
+kotlin {
+    jvmToolchain(17)
 }
 
 dependencies {
