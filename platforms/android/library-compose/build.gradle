@@ -35,9 +35,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = '17'
-    }
+
     testCoverage {
         jacocoVersion = "0.8.8"
     }
@@ -51,6 +49,10 @@ android {
         resources.excludes += 'META-INF/LICENSE.md'
         resources.excludes += 'META-INF/LICENSE-notice.md'
     }
+}
+
+kotlin {
+    jvmToolchain(17)
 }
 
 dependencies {
