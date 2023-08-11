@@ -8,7 +8,7 @@ internal interface HtmlConverter {
 }
 
 internal class AndroidHtmlConverter(
-    private val provideHtmlToSpansParser: (html: String) -> HtmlToSpansParser
+    private val htmlToSpansParser: HtmlToSpansParser
 ): HtmlConverter {
     /**
      * Get the content with formatting removed.
@@ -20,5 +20,5 @@ internal class AndroidHtmlConverter(
         ).toString()
 
     override fun fromHtmlToSpans(html: String): CharSequence =
-        provideHtmlToSpansParser(html).convert()
+        htmlToSpansParser.convert(html)
 }

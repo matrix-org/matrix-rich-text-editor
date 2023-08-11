@@ -58,14 +58,13 @@ class EditorEditText : AppCompatEditText {
         viewModelInitializer = {
             val applicationContext = context.applicationContext as Application
             val resourcesProvider = AndroidResourcesHelper(applicationContext)
+            val parser = HtmlToSpansParser(
+                resourcesProvider,
+                styleConfig = styleConfig,
+                mentionDisplayHandler = mentionDisplayHandler,
+            )
             val htmlConverter = AndroidHtmlConverter(
-                provideHtmlToSpansParser = { html ->
-                    HtmlToSpansParser(
-                        resourcesProvider, html,
-                        styleConfig = styleConfig,
-                        mentionDisplayHandler = mentionDisplayHandler,
-                    )
-                },
+                htmlToSpansParser = parser,
             )
             val provideComposer = { if (!isInEditMode) newComposerModel() else null }
             EditorViewModel(provideComposer, htmlConverter)

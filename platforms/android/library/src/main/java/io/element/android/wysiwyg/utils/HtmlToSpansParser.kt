@@ -42,7 +42,6 @@ import kotlin.math.roundToInt
  */
 internal class HtmlToSpansParser(
     private val resourcesHelper: ResourcesHelper,
-    private val html: String,
     private val styleConfig: StyleConfig,
     private val mentionDisplayHandler: MentionDisplayHandler?,
 ) : ContentHandler {
@@ -100,7 +99,7 @@ internal class HtmlToSpansParser(
     private val parser = Parser().also { it.contentHandler = this }
     private val text = SpannableStringBuilder()
 
-    fun convert(): Spanned {
+    fun convert(html: String): Spanned {
         spansToAdd.clear()
         parser.parse(InputSource(StringReader(html)))
         for (spanToAdd in spansToAdd) {
