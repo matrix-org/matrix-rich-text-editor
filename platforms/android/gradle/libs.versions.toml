@@ -24,6 +24,7 @@ espresso = "3.5.1"
 agp = "8.1.0"
 kotlin-android = "1.9.0"
 jacoco = "0.8.8"
+maven-publish = "0.25.3"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -31,7 +32,8 @@ android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin-android" }
 rust-android = { id = "org.mozilla.rust-android-gradle.rust-android", version = "0.9.3" }
 sonarqube = { id = "org.sonarqube", version = "3.4.0.2513" }
-maven-publish = { id = "com.vanniktech.maven.publish", version = "0.25.3" }
+maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }
+maven-publish-base = { id = "com.vanniktech.maven.publish.base", version.ref = "maven-publish" }
 jacoco-android = { id = "com.mxalbert.gradle.jacoco-android", version = "0.2.1" }
 
 [libraries]

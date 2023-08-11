@@ -5,13 +5,12 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 
     alias libs.plugins.jacoco.android
+    alias libs.plugins.maven.publish.base
 }
 
 if (project.hasProperty("coverage")) {
     apply plugin: 'jacoco'
 }
-
-apply plugin: "com.vanniktech.maven.publish.base"
 
 mavenPublishing {
     pomFromGradleProperties()
