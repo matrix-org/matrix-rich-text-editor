@@ -58,12 +58,26 @@ class WysiwygUITests: XCTestCase {
             """
         )
     }
+
+    func testRemoveFocus() throws {
+        textView.typeTextCharByChar("Test")
+        XCTAssertTrue(keyboardIsDisplayed)
+        button(.toggleFocusButton).tap()
+        XCTAssertFalse(keyboardIsDisplayed)
+        button(.toggleFocusButton).tap()
+        XCTAssertTrue(keyboardIsDisplayed)
+    }
 }
 
 internal extension WysiwygUITests {
     /// Returns the text view component of the composer.
     var textView: XCUIElement {
         app.textViews[rawIdentifier(.composerTextView)]
+    }
+
+    /// Returns true if the application is currently displaying a keyboard.
+    var keyboardIsDisplayed: Bool {
+        app.keyboards.count > 0
     }
 
     /// Get the button with given id
