@@ -11,6 +11,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import io.element.android.wysiwyg.compose.RichTextEditor
+import io.element.android.wysiwyg.compose.RichTextEditorDefaults
 import io.element.android.wysiwyg.compose.rememberRichTextEditorState
 import io.element.wysiwyg.compose.ui.components.FormattingButtons
 import io.element.wysiwyg.compose.ui.theme.RichTextEditorTheme
@@ -33,6 +34,7 @@ class MainActivity : ComponentActivity() {
                         RichTextEditor(
                             state = state,
                             modifier = Modifier.fillMaxWidth(),
+                            style = RichTextEditorDefaults.style(),
                         )
                         FormattingButtons(
                             onResetText = {

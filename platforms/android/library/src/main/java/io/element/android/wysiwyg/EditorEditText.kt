@@ -47,12 +47,9 @@ class EditorEditText : AppCompatEditText {
     private var inputConnection: InterceptInputConnection? = null
 
     private lateinit var styleConfig: StyleConfig
-    private val inlineCodeBgHelper: SpanBackgroundHelper by lazy {
-        SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(styleConfig.inlineCode)
-    }
-    private val codeBlockBgHelper: SpanBackgroundHelper by lazy {
-        SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(styleConfig.codeBlock)
-    }
+
+    private lateinit var inlineCodeBgHelper: SpanBackgroundHelper
+    private lateinit var codeBlockBgHelper: SpanBackgroundHelper
 
     private val viewModel: EditorViewModel by viewModel(
         viewModelInitializer = {
@@ -62,7 +59,7 @@ class EditorEditText : AppCompatEditText {
                 provideHtmlToSpansParser = { html ->
                     HtmlToSpansParser(
                         resourcesProvider, html,
-                        styleConfig = styleConfig,
+                        styleConfig = { styleConfig },
                         mentionDisplayHandler = mentionDisplayHandler,
                     )
                 },
@@ -84,7 +81,7 @@ class EditorEditText : AppCompatEditText {
     constructor(context: Context) : this(context, null)
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-        styleConfig = EditorEditTextAttributeReader(context, attrs).styleConfig
+        setStyleConfig(EditorEditTextAttributeReader(context, attrs).styleConfig)
     }
 
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) :
@@ -259,6 +256,17 @@ class EditorEditText : AppCompatEditText {
                 false
             }
         }
+    }
+
+    /**
+     * Apply custom style. This overrides any style set in the layout XML.
+     */
+    fun setStyleConfig(styleConfig: StyleConfig) {
+        this.styleConfig = styleConfig
+        inlineCodeBgHelper = SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(styleConfig.inlineCode)
+        codeBlockBgHelper = SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(styleConfig.codeBlock)
+
+        rerender()
     }
 
     override fun setText(text: CharSequence?, type: BufferType?) {
@@ -470,6 +478,16 @@ class EditorEditText : AppCompatEditText {
             }
         }
         super.onDraw(canvas)
+    }
+
+    /**
+     * Force redisplay the current editor model.
+     *
+     * If the style of the content should change, the content of the EditText
+     * will be updated to reflect this.
+     */
+    private fun rerender() {
+        setHtml(viewModel.getInternalHtml())
     }
 
     private fun setTextFromComposerUpdate(result: ReplaceTextResult) {
