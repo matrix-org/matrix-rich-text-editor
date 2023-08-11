@@ -6,12 +6,12 @@ plugins {
 android {
     namespace = "io.element.android.wysiwyg.poc"
 
-    compileSdk 32
+    compileSdk 33
 
     defaultConfig {
         applicationId "io.element.android.wysiwyg.poc"
         minSdk 21
-        targetSdk 32
+        targetSdk 33
         versionCode 1
         versionName "1.0"
     }
