@@ -9,6 +9,8 @@ data class RichTextEditorStyle internal constructor(
     val codeBlock: CodeBlockStyle,
     val inlineCode: InlineCodeStyle,
     val pill: PillStyle,
+    val text: TextStyle,
+    val cursor: CursorStyle,
 )
 
 data class BulletListStyle internal constructor(
@@ -40,4 +42,12 @@ data class InlineCodeStyle internal constructor(
 
 data class PillStyle(
     val backgroundColor: Color,
+)
+
+data class TextStyle(
+    val color: Color,
+)
+
+data class CursorStyle(
+    val color: Color,
 )

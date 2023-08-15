@@ -23,7 +23,8 @@ class RichTextEditorStyleTest {
     val composeTestRule = createComposeRule()
 
     private val state = createState()
-    private val styleFlow = MutableStateFlow(RichTextEditorDefaults.style())
+    private val bulletRadius = MutableStateFlow(2.dp)
+    private val codeBg = MutableStateFlow(io.element.android.wysiwyg.R.drawable.code_block_bg)
 
     @Test
     fun testContentIsStillDisplayedAfterSetStyle() = runTest {
@@ -33,13 +34,8 @@ class RichTextEditorStyleTest {
             state.setHtml("<ul><li>Hello, world</li></ul>")
         }
 
-        styleFlow.emit(
-            RichTextEditorDefaults.style(
-                bulletList = RichTextEditorDefaults.bulletListStyle(
-                    bulletRadius = 20.dp
-                )
-            )
-        )
+        bulletRadius.emit(20.dp)
+
         composeTestRule.awaitIdle()
 
         onView(isRichTextEditor())
@@ -51,25 +47,28 @@ class RichTextEditorStyleTest {
         val nonExistentDrawable = 0
         showContent()
 
-        styleFlow.emit(
-            RichTextEditorDefaults.style(
-                codeBlock = RichTextEditorDefaults.codeBlockStyle(
-                    backgroundDrawable = nonExistentDrawable
-                )
-            )
-        )
+        codeBg.emit(nonExistentDrawable)
 
         composeTestRule.awaitIdle()
     }
 
     private fun showContent() =
         composeTestRule.setContent {
-            val styleState by styleFlow.collectAsState()
+            val bulletRadius by bulletRadius.collectAsState()
+            val codeBg by codeBg.collectAsState()
+            val style = RichTextEditorDefaults.style(
+                bulletList = RichTextEditorDefaults.bulletListStyle(
+                    bulletRadius = bulletRadius
+                ),
+                codeBlock = RichTextEditorDefaults.codeBlockStyle(
+                    backgroundDrawable = codeBg
+                )
+            )
             MaterialTheme {
                 RichTextEditor(
                     state = state,
                     modifier = Modifier.fillMaxWidth(),
-                    style = styleState
+                    style = style
                 )
             }
         }

@@ -1,14 +1,18 @@
 package io.element.android.wysiwyg.compose
 
+import android.os.Build
+import android.view.View
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 import io.element.android.wysiwyg.EditorEditText
-import io.element.android.wysiwyg.compose.internal.toStyleConfig
 import io.element.android.wysiwyg.compose.internal.ViewConnection
+import io.element.android.wysiwyg.compose.internal.toStyleConfig
 import io.element.android.wysiwyg.view.models.InlineFormat
 
 /**
@@ -102,6 +106,12 @@ fun RichTextEditor(
         },
         update = { view ->
             view.setStyleConfig(style.toStyleConfig(view.context))
+            view.setTextColor(style.text.color.toArgb())
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val cursorDrawable = ContextCompat.getDrawable(view.context, R.drawable.cursor)
+                cursorDrawable?.setTint(style.cursor.color.toArgb())
+                view.textCursorDrawable = cursorDrawable
+            }
         }
     )
 }

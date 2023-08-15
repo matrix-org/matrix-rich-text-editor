@@ -2,6 +2,8 @@ package io.element.android.wysiwyg.compose
 
 import io.element.android.wysiwyg.R as BaseR
 import androidx.annotation.DrawableRes
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -18,17 +20,25 @@ object RichTextEditorDefaults {
      * @param codeBlock A custom style for code blocks.
      * @param inlineCode A custom style for inline code.
      * @param pill A custom style for pills.
+     * @param textColor Color of the text displayed in the editor.
+     * @param cursorDrawable Color of the cursor displayed in the editor.
+     *                    Only supported on API 29 and above.
      */
+    @Composable
     fun style(
         bulletList: BulletListStyle = bulletListStyle(),
         codeBlock: CodeBlockStyle = codeBlockStyle(),
         inlineCode: InlineCodeStyle = inlineCodeStyle(),
         pill: PillStyle = pillStyle(),
+        text: TextStyle = textStyle(),
+        cursor: CursorStyle = cursorStyle(),
     ): RichTextEditorStyle = RichTextEditorStyle(
         bulletList = bulletList,
         codeBlock = codeBlock,
         inlineCode = inlineCode,
         pill = pill,
+        text = text,
+        cursor = cursor,
     )
 
     /**
@@ -108,5 +118,29 @@ object RichTextEditorDefaults {
         backgroundColor: Color = Color.Transparent,
     ) = PillStyle(
         backgroundColor = backgroundColor,
+    )
+
+    /**
+     * Creates the default text style for [RichTextEditor].
+     *
+     * @param color The text color to apply
+     */
+    @Composable
+    fun textStyle(
+        color: Color = MaterialTheme.colorScheme.onSurface,
+    ) = TextStyle(
+        color = color,
+    )
+
+    /**
+     * Creates the default cursor style for [RichTextEditor].
+     *
+     * @param color The color to apply to the cursor
+     */
+    @Composable
+    fun cursorStyle(
+        color: Color = MaterialTheme.colorScheme.primary,
+    ) = CursorStyle(
+        color = color,
     )
 }
