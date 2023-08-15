@@ -65,6 +65,10 @@ fun RichTextEditor(
                     state.messageMarkdown = getMarkdown()
                 }
 
+                // Set the style closer to a BasicTextField composable
+                setBackgroundDrawable(null)
+                setPadding(0, 0, 0, 0)
+
                 // Restore the state of the view with the saved state
                 setHtml(state.messageHtml)
             }
