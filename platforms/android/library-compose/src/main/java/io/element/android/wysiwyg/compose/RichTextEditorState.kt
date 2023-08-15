@@ -133,6 +133,12 @@ class RichTextEditorState internal constructor() {
         viewConnection?.requestFocus() ?: false
 
     /**
+     * The number of lines displayed in the editor.
+     */
+    var lineCount: Int by mutableStateOf(1)
+        internal set
+
+    /**
      * Handle any of the actions in [ComposerAction].
      *
      * Note that formatting actions simply delegate to their respective `toggleX()` functions.

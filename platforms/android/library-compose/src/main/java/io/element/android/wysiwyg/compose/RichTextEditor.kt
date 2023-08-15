@@ -63,6 +63,7 @@ fun RichTextEditor(
                 addTextChangedListener {
                     state.messageHtml = getContentAsMessageHtml()
                     state.messageMarkdown = getMarkdown()
+                    state.lineCount = lineCount
                 }
 
                 // Set the style closer to a BasicTextField composable
