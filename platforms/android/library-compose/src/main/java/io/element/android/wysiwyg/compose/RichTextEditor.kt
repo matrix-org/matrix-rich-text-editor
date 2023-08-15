@@ -57,6 +57,8 @@ fun RichTextEditor(
                 menuActionListener = EditorEditText.OnMenuActionChangedListener { menuAction ->
                     state.menuAction = menuAction
                 }
+                onFocusChangeListener =
+                    View.OnFocusChangeListener { _, hasFocus -> state.hasFocus = hasFocus }
 
                 addTextChangedListener {
                     state.messageHtml = getContentAsMessageHtml()
@@ -87,6 +89,8 @@ fun RichTextEditor(
                 override fun toggleQuote() = view.toggleQuote()
 
                 override fun setHtml(html: String) = view.setHtml(html)
+
+                override fun requestFocus() = view.requestFocus()
             }
 
             view

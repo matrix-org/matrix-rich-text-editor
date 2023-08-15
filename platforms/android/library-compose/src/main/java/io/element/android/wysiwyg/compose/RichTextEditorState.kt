@@ -121,6 +121,18 @@ class RichTextEditorState internal constructor() {
         internal set
 
     /**
+     * Whether the editor input field currently has focus.
+     */
+    var hasFocus: Boolean by mutableStateOf(false)
+        internal set
+
+    /**
+     * Request focus of the editor input field.
+     */
+    fun requestFocus(): Boolean =
+        viewConnection?.requestFocus() ?: false
+
+    /**
      * Handle any of the actions in [ComposerAction].
      *
      * Note that formatting actions simply delegate to their respective `toggleX()` functions.

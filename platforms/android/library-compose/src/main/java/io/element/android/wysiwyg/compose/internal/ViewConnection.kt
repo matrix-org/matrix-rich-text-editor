@@ -12,4 +12,5 @@ internal interface ViewConnection {
     fun indent()
     fun unindent()
     fun setHtml(html: String)
+    fun requestFocus(): Boolean
 }
