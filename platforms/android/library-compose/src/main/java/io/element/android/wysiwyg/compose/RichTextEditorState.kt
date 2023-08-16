@@ -22,7 +22,19 @@ import uniffi.wysiwyg_composer.MenuAction
  * multiple [RichTextEditor] composables.
  */
 @Stable
-class RichTextEditorState internal constructor() {
+class RichTextEditorState internal constructor(
+    initialHtml: String = "",
+) {
+    /**
+     * The content of the editor as HTML formatted for sending as a message.
+     */
+    var messageHtml by mutableStateOf("")
+        internal set
+
+    init {
+        messageHtml = initialHtml
+    }
+
     internal var viewConnection: ViewConnection? = null
 
     /**
@@ -88,13 +100,9 @@ class RichTextEditorState internal constructor() {
     /**
      * Set the HTML content of the editor.
      */
-    fun setHtml(html: String) = viewConnection?.setHtml(html)
-
-    /**
-     * The content of the editor as HTML formatted for sending as a message.
-     */
-    var messageHtml by mutableStateOf("")
-        internal set
+    fun setHtml(html: String) {
+        viewConnection?.setHtml(html)
+    }
 
     /**
      * The content of the editor as markdown formatted for sending as a message.
@@ -172,16 +180,16 @@ class RichTextEditorState internal constructor() {
  * Create an instance of the [RichTextEditorState].
  */
 @Composable
-fun rememberRichTextEditorState(): RichTextEditorState =
+fun rememberRichTextEditorState(
+    initialHtml: String = "",
+): RichTextEditorState =
     rememberSaveable(saver = RichTextEditorStateSaver) {
-        RichTextEditorState()
+        RichTextEditorState(initialHtml = initialHtml)
     }
 
 object RichTextEditorStateSaver : Saver<RichTextEditorState, String> {
     override fun restore(value: String): RichTextEditorState {
-        return RichTextEditorState().apply {
-            messageHtml = value
-        }
+        return RichTextEditorState(initialHtml = value)
     }
 
     override fun SaverScope.save(value: RichTextEditorState): String {
