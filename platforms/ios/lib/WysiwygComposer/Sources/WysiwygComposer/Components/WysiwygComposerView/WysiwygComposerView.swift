@@ -32,18 +32,33 @@ public typealias KeyCommandHandler = (WysiwygKeyCommand) -> Bool
 /// Handler for paste events.
 public typealias PasteHandler = (NSItemProvider) -> Void
 
+/// Main component of the Rich Text Editor, this can be added anywhere into the
+/// SwiftUI hierarchy. Using the same instance of the provided view model, it's
+/// possible to trigger specific actions on the composer such as formatting
+/// selection, clearing content, etc
 public struct WysiwygComposerView: View {
-    /// Placeholder for empty composer.
+    // MARK: - Private
+
     private let placeholder: String
     private let viewModel: WysiwygComposerViewModelProtocol
-    /// A helper to determine if an item can be pasted into the hosting application.
-    /// If omitted, most non-text paste events will be ignored.
     private let itemProviderHelper: WysiwygItemProviderHelper?
-    /// A handler for key commands. If omitted, default behaviour will be applied. See `WysiwygKeyCommand.swift`.
     private let keyCommandHandler: KeyCommandHandler?
-    /// A handler for paste events. If omitted, the composer will try to paste content as raw text.
     private let pasteHandler: PasteHandler?
 
+    // MARK: - Public
+
+    /// Init a `WysiwygComposerView`.
+    ///
+    /// - Parameters:
+    ///   - placeholder: Placeholder for empty composer.
+    ///   - viewModel: The main view model of the composer.
+    ///   See `WysiwygComposerViewModel.swift` for triggerable actions.
+    ///   - itemProviderHelper: A helper to determine if an item can be pasted into the hosting application.
+    ///   If omitted, most non-text paste events will be ignored.
+    ///   - keyCommandHandler: A handler for key commands.
+    ///   If omitted, default behaviour will be applied. See `WysiwygKeyCommand.swift`.
+    ///   - pasteHandler: A handler for paste events.
+    ///   If omitted, the composer will try to paste content as raw text.
     public init(placeholder: String,
                 viewModel: WysiwygComposerViewModelProtocol,
                 itemProviderHelper: WysiwygItemProviderHelper?,
@@ -64,6 +79,8 @@ public struct WysiwygComposerView: View {
             .accessibilityLabel(placeholder)
             .background(placeholderView, alignment: .topLeading)
     }
+
+    // MARK: - Private
 
     @ViewBuilder
     private var placeholderView: some View {
