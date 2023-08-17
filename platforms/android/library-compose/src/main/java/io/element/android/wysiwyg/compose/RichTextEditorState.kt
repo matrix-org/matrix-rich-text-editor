@@ -8,6 +8,7 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalInspectionMode
 import io.element.android.wysiwyg.compose.internal.ViewConnection
 import io.element.android.wysiwyg.view.models.InlineFormat
 import uniffi.wysiwyg_composer.ActionState
@@ -20,10 +21,22 @@ import uniffi.wysiwyg_composer.MenuAction
  * Create an instance using [rememberRichTextEditorState].
  * Ensure that [RichTextEditorState] is not shared between
  * multiple [RichTextEditor] composables.
+ *
+ * @param initialHtml The HTML formatted content to initialise the state with.
+ * @param localInspectionMode If true, initialise the state for use in preview environment.
  */
 @Stable
-class RichTextEditorState internal constructor() {
+class RichTextEditorState internal constructor(
+    initialHtml: String = "",
+    localInspectionMode: Boolean = false,
+) {
     internal var viewConnection: ViewConnection? = null
+
+    private val initialLineCount = if (localInspectionMode) {
+        initialHtml.count { it == '\n' } + 1
+    } else {
+        1
+    }
 
     /**
      * Toggle inline formatting on the current selection.
@@ -88,12 +101,14 @@ class RichTextEditorState internal constructor() {
     /**
      * Set the HTML content of the editor.
      */
-    fun setHtml(html: String) = viewConnection?.setHtml(html)
+    fun setHtml(html: String) {
+        viewConnection?.setHtml(html)
+    }
 
     /**
      * The content of the editor as HTML formatted for sending as a message.
      */
-    var messageHtml by mutableStateOf("")
+    var messageHtml by mutableStateOf(initialHtml)
         internal set
 
     /**
@@ -135,7 +150,7 @@ class RichTextEditorState internal constructor() {
     /**
      * The number of lines displayed in the editor.
      */
-    var lineCount: Int by mutableStateOf(1)
+    var lineCount: Int by mutableStateOf(initialLineCount)
         internal set
 
     /**
@@ -166,22 +181,40 @@ class RichTextEditorState internal constructor() {
         }
     }
 
+    companion object Factory {
+        /**
+         * Create an instance of the state for use in preview mode.
+         *
+         * @param initialText Initial content in plain text format.
+         */
+        fun createForLocalInspectionMode(
+            initialText: String
+        ): RichTextEditorState = RichTextEditorState(
+            initialHtml = initialText,
+            localInspectionMode = true
+        )
+    }
 }
 
 /**
  * Create an instance of the [RichTextEditorState].
  */
 @Composable
-fun rememberRichTextEditorState(): RichTextEditorState =
-    rememberSaveable(saver = RichTextEditorStateSaver) {
-        RichTextEditorState()
+fun rememberRichTextEditorState(
+    initialHtml: String = "",
+): RichTextEditorState {
+    val previewMode = LocalInspectionMode.current
+    return rememberSaveable(saver = RichTextEditorStateSaver) {
+        RichTextEditorState(
+            initialHtml = initialHtml,
+            localInspectionMode = previewMode,
+        )
     }
+}
 
 object RichTextEditorStateSaver : Saver<RichTextEditorState, String> {
     override fun restore(value: String): RichTextEditorState {
-        return RichTextEditorState().apply {
-            messageHtml = value
-        }
+        return RichTextEditorState(initialHtml = value)
     }
 
     override fun SaverScope.save(value: RichTextEditorState): String {

@@ -2,11 +2,13 @@ package io.element.android.wysiwyg.compose
 
 import android.os.Build
 import android.view.View
+import androidx.appcompat.widget.AppCompatEditText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
@@ -30,8 +32,22 @@ fun RichTextEditor(
     modifier: Modifier = Modifier,
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
 ) {
-    val context = LocalContext.current
+    val isPreview = LocalInspectionMode.current
 
+    if (isPreview) {
+        PreviewEditor(state, modifier, style)
+    } else {
+        RealEditor(state, modifier, style)
+    }
+}
+
+@Composable
+private fun RealEditor(
+    state: RichTextEditorState,
+    modifier: Modifier = Modifier,
+    style: RichTextEditorStyle = RichTextEditorDefaults.style(),
+) {
+    val context = LocalContext.current
     // Clean up the connection between view and state holder
     DisposableEffect(Unit) {
         onDispose {
@@ -70,9 +86,7 @@ fun RichTextEditor(
                     state.lineCount = lineCount
                 }
 
-                // Set the style closer to a BasicTextField composable
-                setBackgroundDrawable(null)
-                setPadding(0, 0, 0, 0)
+                applyDefaultStyle()
 
                 // Restore the state of the view with the saved state
                 setHtml(state.messageHtml)
@@ -106,12 +120,51 @@ fun RichTextEditor(
         },
         update = { view ->
             view.setStyleConfig(style.toStyleConfig(view.context))
-            view.setTextColor(style.text.color.toArgb())
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val cursorDrawable = ContextCompat.getDrawable(view.context, R.drawable.cursor)
-                cursorDrawable?.setTint(style.cursor.color.toArgb())
-                view.textCursorDrawable = cursorDrawable
-            }
+            view.applyStyle(style)
         }
     )
+}
+
+@Composable
+private fun PreviewEditor(
+    state: RichTextEditorState,
+    modifier: Modifier = Modifier,
+    style: RichTextEditorStyle = RichTextEditorDefaults.style(),
+) {
+    if (!LocalInspectionMode.current) {
+        throw IllegalStateException("PreviewEditor should only be used in preview mode")
+    }
+
+    val context = LocalContext.current
+
+    AndroidView(
+        modifier = modifier,
+        factory = {
+            val view = AppCompatEditText(context).apply {
+                applyDefaultStyle()
+
+                setText(state.messageHtml)
+            }
+
+            view
+        },
+        update = { view ->
+            view.applyStyle(style)
+        }
+    )
+}
+
+private fun AppCompatEditText.applyStyle(style: RichTextEditorStyle) {
+    setTextColor(style.text.color.toArgb())
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        val cursorDrawable = ContextCompat.getDrawable(context, R.drawable.cursor)
+        cursorDrawable?.setTint(style.cursor.color.toArgb())
+        textCursorDrawable = cursorDrawable
+    }
+}
+
+private fun AppCompatEditText.applyDefaultStyle() {
+    // Set the style closer to a BasicTextField composable
+    setBackgroundDrawable(null)
+    setPadding(0, 0, 0, 0)
 }

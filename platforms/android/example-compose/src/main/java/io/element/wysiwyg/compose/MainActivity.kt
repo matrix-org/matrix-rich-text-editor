@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import io.element.android.wysiwyg.compose.RichTextEditor
 import io.element.android.wysiwyg.compose.RichTextEditorDefaults
 import io.element.android.wysiwyg.compose.rememberRichTextEditorState
@@ -47,6 +49,18 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+}
+
+@Preview
+@Composable
+fun EditorPreview() {
+    RichTextEditorTheme {
+        val state = rememberRichTextEditorState("Hello, world")
+        RichTextEditor(
+            state = state,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
