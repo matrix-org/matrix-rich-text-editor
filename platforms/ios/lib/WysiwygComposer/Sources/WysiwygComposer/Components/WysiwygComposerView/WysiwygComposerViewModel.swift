@@ -25,7 +25,7 @@ import UIKit
 public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, ObservableObject {
     // MARK: - Public
 
-    /// The textView that the model manages
+    /// The textView that the model manages.
     public private(set) var textView = {
         // Default text container have a slightly different behaviour
         // than what iOS would use if textContainer is nil, this
