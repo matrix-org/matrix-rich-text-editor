@@ -70,6 +70,7 @@ pub struct MarkdownOptions {
 
 impl MarkdownOptions {
     pub const IGNORE_LINE_BREAK: Self = Self { bits: 0b0001 };
+    pub const NO_ESCAPE: Self = Self { bits: 0b0010 };
 
     pub const fn empty() -> Self {
         Self { bits: 0 }
