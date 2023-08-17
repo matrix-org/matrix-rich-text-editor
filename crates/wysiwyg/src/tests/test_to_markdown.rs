@@ -29,6 +29,15 @@ fn text() {
 }
 
 #[test]
+fn text_with_ascii_punctuation() {
+    assert_to_message_md(r"<em>**b**</em>", r"*\*\*b\*\**");
+    assert_to_message_md(
+        r##"!&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\]^_`{|}~"##,
+        r##"\!\"\#\$\%\&\'\(\)\*\+\,\-\.\/\:\;\<\=\>\?\@\[\\\]\^\_\`\{\|\}\~"##,
+    );
+}
+
+#[test]
 fn text_with_linebreaks() {
     // One new line.
     assert_to_message_md(
@@ -149,6 +158,14 @@ fn text_with_inline_code() {
 }
 
 #[test]
+fn text_with_code_block() {
+    assert_to_message_md(
+        "<pre><code>**abc**</code></pre>",
+        "```\n**abc**\n```\n",
+    );
+}
+
+#[test]
 fn link() {
     assert_to_message_md(r#"<a href="url">abc</a>"#, "[abc](<url>)");
     // Empty link.
@@ -243,7 +260,7 @@ fn room_mention_for_composer() {
 
 #[test]
 fn at_room_mention_for_message() {
-    assert_to_message_md("@room hello!", "@room hello!");
+    assert_to_message_md("@room hello!", "@room hello\\!");
 }
 
 #[test]
@@ -252,8 +269,8 @@ fn at_room_mention_for_composer() {
 
     assert_eq!(tx(&model), "<a data-mention-type=\"at-room\" href=\"#\" contenteditable=\"false\">@room</a> hello!|");
 
-    assert_eq!(model.get_content_as_markdown(), "<a data-mention-type=\"at-room\" href=\"#\" contenteditable=\"false\">@room</a> hello!");
-    assert_eq!(model.get_content_as_message_markdown(), "@room hello!");
+    assert_eq!(model.get_content_as_markdown(), "<a data-mention-type=\"at-room\" href=\"#\" contenteditable=\"false\">@room</a> hello\\!");
+    assert_eq!(model.get_content_as_message_markdown(), "@room hello\\!");
 }
 
 fn assert_to_md_no_roundtrip(html: &str, expected_markdown: &str) {

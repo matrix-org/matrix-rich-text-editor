@@ -953,7 +953,7 @@ where
             }
 
             CodeBlock => {
-                fmt_code_block(self, buffer, &options, as_message)?;
+                fmt_code_block(self, buffer, &mut options, as_message)?;
             }
 
             Quote => {
@@ -1109,6 +1109,7 @@ where
             buffer.push("`` ");
 
             options.insert(MarkdownOptions::IGNORE_LINE_BREAK);
+            options.insert(MarkdownOptions::NO_ESCAPE);
             fmt_children(this, buffer, options, as_message)?;
 
             buffer.push(" ``");
@@ -1306,13 +1307,14 @@ where
         fn fmt_code_block<S>(
             this: &ContainerNode<S>,
             buffer: &mut S,
-            options: &MarkdownOptions,
+            options: &mut MarkdownOptions,
             as_message: bool,
         ) -> Result<(), MarkdownError<S>>
         where
             S: UnicodeString,
         {
             buffer.push("```\n");
+            options.insert(MarkdownOptions::NO_ESCAPE);
             fmt_children(this, buffer, options, as_message)?;
             buffer.push("\n```\n");
 
