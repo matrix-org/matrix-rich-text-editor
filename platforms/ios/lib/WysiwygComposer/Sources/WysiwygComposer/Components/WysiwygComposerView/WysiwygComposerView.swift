@@ -84,7 +84,7 @@ public struct WysiwygComposerView: View {
 
     @ViewBuilder
     private var placeholderView: some View {
-        if viewModel.textView.text.isEmpty {
+        if viewModel.isContentEmpty {
             Text(placeholder)
                 .font(Font(UIFont.preferredFont(forTextStyle: .body)))
                 .foregroundColor(Color(UIColor.placeholderText))

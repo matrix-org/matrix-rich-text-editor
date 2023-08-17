@@ -128,6 +128,7 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
                 parserStyle: HTMLParserStyle = .standard,
                 mentionReplacer: MentionReplacer? = nil) {
         self.minHeight = minHeight
+        idealHeight = minHeight
         self.maxCompressedHeight = maxCompressedHeight
         self.maxExpandedHeight = maxExpandedHeight
         self.parserStyle = parserStyle
