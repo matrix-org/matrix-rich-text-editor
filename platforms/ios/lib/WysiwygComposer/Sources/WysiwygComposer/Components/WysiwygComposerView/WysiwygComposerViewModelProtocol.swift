@@ -17,7 +17,7 @@
 import UIKit
 
 public protocol WysiwygComposerViewModelProtocol: AnyObject {
-    /// The textView with placeholder support that the model manages
+    /// The textView with that the model manages
     var textView: WysiwygTextView { get }
 
     /// Update the composer compressed required height if it has changed.

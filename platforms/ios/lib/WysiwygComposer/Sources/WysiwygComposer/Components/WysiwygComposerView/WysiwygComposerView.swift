@@ -32,38 +32,77 @@ public typealias KeyCommandHandler = (WysiwygKeyCommand) -> Bool
 /// Handler for paste events.
 public typealias PasteHandler = (NSItemProvider) -> Void
 
-/// Provides a SwiftUI displayable view for the composer UITextView component.
-public struct WysiwygComposerView: UIViewRepresentable {
-    // MARK: - Public
-
+public struct WysiwygComposerView: View {
+    /// Placeholder for empty composer.
+    private let placeholder: String
+    private let viewModel: WysiwygComposerViewModelProtocol
     /// A helper to determine if an item can be pasted into the hosting application.
     /// If omitted, most non-text paste events will be ignored.
-    let itemProviderHelper: WysiwygItemProviderHelper?
+    private let itemProviderHelper: WysiwygItemProviderHelper?
     /// A handler for key commands. If omitted, default behaviour will be applied. See `WysiwygKeyCommand.swift`.
-    let keyCommandHandler: KeyCommandHandler?
+    private let keyCommandHandler: KeyCommandHandler?
     /// A handler for paste events. If omitted, the composer will try to paste content as raw text.
-    let pasteHandler: PasteHandler?
+    private let pasteHandler: PasteHandler?
 
-    // MARK: - Private
-
-    private var viewModel: WysiwygComposerViewModelProtocol
-    private var tintColor = Color.accentColor
-    private var placeholderColor = Color(UIColor.placeholderText)
-    private var placeholder: String?
-
-    // MARK: - Public
-
-    public init(viewModel: WysiwygComposerViewModelProtocol,
+    public init(placeholder: String,
+                viewModel: WysiwygComposerViewModelProtocol,
                 itemProviderHelper: WysiwygItemProviderHelper?,
                 keyCommandHandler: KeyCommandHandler?,
                 pasteHandler: PasteHandler?) {
+        self.placeholder = placeholder
+        self.viewModel = viewModel
+        self.itemProviderHelper = itemProviderHelper
+        self.keyCommandHandler = keyCommandHandler
+        self.pasteHandler = pasteHandler
+    }
+
+    public var body: some View {
+        UITextViewWrapper(viewModel: viewModel,
+                          itemProviderHelper: itemProviderHelper,
+                          keyCommandHandler: keyCommandHandler,
+                          pasteHandler: pasteHandler)
+            .accessibilityLabel(placeholder)
+            .background(placeholderView, alignment: .topLeading)
+    }
+
+    @ViewBuilder
+    private var placeholderView: some View {
+        if viewModel.textView.text.isEmpty {
+            Text(placeholder)
+                .font(Font(UIFont.preferredFont(forTextStyle: .body)))
+                .foregroundColor(Color(UIColor.placeholderText))
+                .accessibilityHidden(true)
+        }
+    }
+}
+
+/// Provides a SwiftUI displayable view for the composer UITextView component.
+struct UITextViewWrapper: UIViewRepresentable {
+    // MARK: - Private
+
+    /// A helper to determine if an item can be pasted into the hosting application.
+    /// If omitted, most non-text paste events will be ignored.
+    private let itemProviderHelper: WysiwygItemProviderHelper?
+    /// A handler for key commands. If omitted, default behaviour will be applied. See `WysiwygKeyCommand.swift`.
+    private let keyCommandHandler: KeyCommandHandler?
+    /// A handler for paste events. If omitted, the composer will try to paste content as raw text.
+    private let pasteHandler: PasteHandler?
+
+    private var viewModel: WysiwygComposerViewModelProtocol
+
+    // MARK: - Internal
+
+    init(viewModel: WysiwygComposerViewModelProtocol,
+         itemProviderHelper: WysiwygItemProviderHelper?,
+         keyCommandHandler: KeyCommandHandler?,
+         pasteHandler: PasteHandler?) {
         self.itemProviderHelper = itemProviderHelper
         self.keyCommandHandler = keyCommandHandler
         self.pasteHandler = pasteHandler
         self.viewModel = viewModel
     }
     
-    public func makeUIView(context: Context) -> WysiwygTextView {
+    func makeUIView(context: Context) -> WysiwygTextView {
         let textView = viewModel.textView
         
         textView.accessibilityIdentifier = "WysiwygComposer"
@@ -77,23 +116,17 @@ public struct WysiwygComposerView: UIViewRepresentable {
         textView.textContainer.lineFragmentPadding = 0
         textView.adjustsFontForContentSizeCategory = true
         textView.backgroundColor = .clear
-        textView.tintColor = UIColor(tintColor)
         textView.clipsToBounds = false
+        textView.tintColor = UIColor.tintColor
         textView.wysiwygDelegate = context.coordinator
-        textView.placeholderFont = UIFont.preferredFont(forTextStyle: .body)
-        textView.placeholderColor = UIColor(placeholderColor)
-        textView.placeholder = placeholder
         viewModel.updateCompressedHeightIfNeeded()
+
         return textView
     }
 
-    public func updateUIView(_ uiView: WysiwygTextView, context: Context) {
-        uiView.tintColor = UIColor(tintColor)
-        uiView.placeholderColor = UIColor(placeholderColor)
-        uiView.placeholder = placeholder
-    }
+    func updateUIView(_ uiView: WysiwygTextView, context: Context) { }
 
-    public func makeCoordinator() -> Coordinator {
+    func makeCoordinator() -> Coordinator {
         Coordinator(viewModel.replaceText,
                     viewModel.select,
                     viewModel.didUpdateText,
@@ -104,7 +137,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
     }
 
     /// Coordinates UIKit communication.
-    public class Coordinator: NSObject, UITextViewDelegate, NSTextStorageDelegate, WysiwygTextViewDelegate {
+    class Coordinator: NSObject, UITextViewDelegate, NSTextStorageDelegate, WysiwygTextViewDelegate {
         var replaceText: (NSRange, String) -> Bool
         var select: (NSRange) -> Void
         var didUpdateText: () -> Void
@@ -130,7 +163,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
             self.pasteHandler = pasteHandler
         }
 
-        public func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
             Logger.textView.logDebug(["Sel(att): \(range)",
                                       textView.logText,
                                       "Replacement: \"\(text)\""],
@@ -138,7 +171,7 @@ public struct WysiwygComposerView: UIViewRepresentable {
             return replaceText(range, text)
         }
         
-        public func textViewDidChange(_ textView: UITextView) {
+        func textViewDidChange(_ textView: UITextView) {
             Logger.textView.logDebug(
                 [
                     textView.logSelection,
@@ -150,16 +183,16 @@ public struct WysiwygComposerView: UIViewRepresentable {
             textView.toggleAutocorrectionIfNeeded()
         }
 
-        public func textViewDidChangeSelection(_ textView: UITextView) {
+        func textViewDidChangeSelection(_ textView: UITextView) {
             Logger.textView.logDebug([textView.logSelection],
                                      functionName: #function)
             select(textView.selectedRange)
         }
         
-        public func textView(_ textView: UITextView,
-                             shouldInteractWith URL: URL,
-                             in characterRange: NSRange,
-                             interaction: UITextItemInteraction) -> Bool {
+        func textView(_ textView: UITextView,
+                      shouldInteractWith URL: URL,
+                      in characterRange: NSRange,
+                      interaction: UITextItemInteraction) -> Bool {
             guard interaction == .invokeDefaultAction else {
                 return true
             }
@@ -197,27 +230,6 @@ public struct WysiwygComposerView: UIViewRepresentable {
                 enter()
             }
         }
-    }
-}
-
-public extension WysiwygComposerView {
-    /// Sets the tintColor of the rich text editor textView, if not used the default value is Color.accent.
-    func tintColor(_ tintColor: Color) -> Self {
-        var newSelf = self
-        newSelf.tintColor = tintColor
-        return newSelf
-    }
-    
-    /// Apply a placeholder text to the composer
-    ///
-    /// - Parameters:
-    ///   - placeholder: The placeholder text to display, if nil, no placeholder is displayed.
-    ///   - color: The color of the placeholder text when displayed, default value is Color(UIColor.placeholderText).
-    func placeholder(_ placeholder: String?, color: Color = Color(UIColor.placeholderText)) -> Self {
-        var newSelf = self
-        newSelf.placeholder = placeholder
-        newSelf.placeholderColor = color
-        return newSelf
     }
 }
 

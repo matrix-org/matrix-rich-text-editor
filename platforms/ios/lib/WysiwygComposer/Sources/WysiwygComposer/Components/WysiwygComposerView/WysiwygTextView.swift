@@ -44,30 +44,6 @@ public class WysiwygTextView: UITextView {
     /// Internal delegate for the text view.
     weak var wysiwygDelegate: WysiwygTextViewDelegate?
 
-    var shouldShowPlaceholder = true {
-        didSet {
-            setNeedsDisplay()
-        }
-    }
-    
-    var placeholder: String? {
-        didSet {
-            setNeedsDisplay()
-        }
-    }
-    
-    var placeholderColor: UIColor = .placeholderText {
-        didSet {
-            setNeedsDisplay()
-        }
-    }
-    
-    var placeholderFont = UIFont.preferredFont(forTextStyle: .body) {
-        didSet {
-            setNeedsDisplay()
-        }
-    }
-
     private let flusher = WysiwygPillsFlusher()
 
     override public init(frame: CGRect, textContainer: NSTextContainer?) {
@@ -125,19 +101,6 @@ public class WysiwygTextView: UITextView {
         super.draw(rect)
 
         drawBackgroundStyleLayers()
-
-        guard shouldShowPlaceholder, let placeholder = placeholder else {
-            return
-        }
-        
-        let attributes: [NSAttributedString.Key: Any] = [.foregroundColor: placeholderColor, .font: placeholderFont]
-        
-        let frame = rect.inset(by: .init(top: textContainerInset.top,
-                                         left: textContainerInset.left + textContainer.lineFragmentPadding,
-                                         bottom: textContainerInset.bottom,
-                                         right: textContainerInset.right))
-        
-        placeholder.draw(in: frame, withAttributes: attributes)
     }
 
     override public func caretRect(for position: UITextPosition) -> CGRect {
