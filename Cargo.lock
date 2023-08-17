@@ -1382,7 +1382,7 @@ checksum = "0fdbf052a0783de01e944a6ce7a8cb939e295b1e7be835a1112c3b9a7f047a5a"
 [[package]]
 name = "uniffi"
 version = "0.24.1"
-source = "git+https://github.com/aringenbach/uniffi-rs.git?rev=7fea5def9b7a00cec35b94bd1916172cd0ca60fb#7fea5def9b7a00cec35b94bd1916172cd0ca60fb"
+source = "git+https://github.com/aringenbach/uniffi-rs.git?rev=737286e8fb43cda66f17b7efd6d3b351d72d70e1#737286e8fb43cda66f17b7efd6d3b351d72d70e1"
 dependencies = [
  "anyhow",
  "camino",
@@ -1413,7 +1413,7 @@ dependencies = [
 [[package]]
 name = "uniffi_bindgen"
 version = "0.24.1"
-source = "git+https://github.com/aringenbach/uniffi-rs.git?rev=7fea5def9b7a00cec35b94bd1916172cd0ca60fb#7fea5def9b7a00cec35b94bd1916172cd0ca60fb"
+source = "git+https://github.com/aringenbach/uniffi-rs.git?rev=737286e8fb43cda66f17b7efd6d3b351d72d70e1#737286e8fb43cda66f17b7efd6d3b351d72d70e1"
 dependencies = [
  "anyhow",
  "askama",
@@ -1437,7 +1437,7 @@ dependencies = [
 [[package]]
 name = "uniffi_build"
 version = "0.24.1"
-source = "git+https://github.com/aringenbach/uniffi-rs.git?rev=7fea5def9b7a00cec35b94bd1916172cd0ca60fb#7fea5def9b7a00cec35b94bd1916172cd0ca60fb"
+source = "git+https://github.com/aringenbach/uniffi-rs.git?rev=737286e8fb43cda66f17b7efd6d3b351d72d70e1#737286e8fb43cda66f17b7efd6d3b351d72d70e1"
 dependencies = [
  "anyhow",
  "camino",
@@ -1447,7 +1447,7 @@ dependencies = [
 [[package]]
 name = "uniffi_checksum_derive"
 version = "0.24.1"
-source = "git+https://github.com/aringenbach/uniffi-rs.git?rev=7fea5def9b7a00cec35b94bd1916172cd0ca60fb#7fea5def9b7a00cec35b94bd1916172cd0ca60fb"
+source = "git+https://github.com/aringenbach/uniffi-rs.git?rev=737286e8fb43cda66f17b7efd6d3b351d72d70e1#737286e8fb43cda66f17b7efd6d3b351d72d70e1"
 dependencies = [
  "quote",
  "syn 2.0.27",
@@ -1456,7 +1456,7 @@ dependencies = [
 [[package]]
 name = "uniffi_core"
 version = "0.24.1"
-source = "git+https://github.com/aringenbach/uniffi-rs.git?rev=7fea5def9b7a00cec35b94bd1916172cd0ca60fb#7fea5def9b7a00cec35b94bd1916172cd0ca60fb"
+source = "git+https://github.com/aringenbach/uniffi-rs.git?rev=737286e8fb43cda66f17b7efd6d3b351d72d70e1#737286e8fb43cda66f17b7efd6d3b351d72d70e1"
 dependencies = [
  "anyhow",
  "bytes",
@@ -1471,7 +1471,7 @@ dependencies = [
 [[package]]
 name = "uniffi_macros"
 version = "0.24.1"
-source = "git+https://github.com/aringenbach/uniffi-rs.git?rev=7fea5def9b7a00cec35b94bd1916172cd0ca60fb#7fea5def9b7a00cec35b94bd1916172cd0ca60fb"
+source = "git+https://github.com/aringenbach/uniffi-rs.git?rev=737286e8fb43cda66f17b7efd6d3b351d72d70e1#737286e8fb43cda66f17b7efd6d3b351d72d70e1"
 dependencies = [
  "bincode",
  "camino",
@@ -1489,7 +1489,7 @@ dependencies = [
 [[package]]
 name = "uniffi_meta"
 version = "0.24.1"
-source = "git+https://github.com/aringenbach/uniffi-rs.git?rev=7fea5def9b7a00cec35b94bd1916172cd0ca60fb#7fea5def9b7a00cec35b94bd1916172cd0ca60fb"
+source = "git+https://github.com/aringenbach/uniffi-rs.git?rev=737286e8fb43cda66f17b7efd6d3b351d72d70e1#737286e8fb43cda66f17b7efd6d3b351d72d70e1"
 dependencies = [
  "anyhow",
  "bytes",
@@ -1502,7 +1502,7 @@ dependencies = [
 [[package]]
 name = "uniffi_testing"
 version = "0.24.1"
-source = "git+https://github.com/aringenbach/uniffi-rs.git?rev=7fea5def9b7a00cec35b94bd1916172cd0ca60fb#7fea5def9b7a00cec35b94bd1916172cd0ca60fb"
+source = "git+https://github.com/aringenbach/uniffi-rs.git?rev=737286e8fb43cda66f17b7efd6d3b351d72d70e1#737286e8fb43cda66f17b7efd6d3b351d72d70e1"
 dependencies = [
  "anyhow",
  "camino",
@@ -1657,7 +1657,7 @@ dependencies = [
 [[package]]
 name = "weedle2"
 version = "4.0.0"
-source = "git+https://github.com/aringenbach/uniffi-rs.git?rev=7fea5def9b7a00cec35b94bd1916172cd0ca60fb#7fea5def9b7a00cec35b94bd1916172cd0ca60fb"
+source = "git+https://github.com/aringenbach/uniffi-rs.git?rev=737286e8fb43cda66f17b7efd6d3b351d72d70e1#737286e8fb43cda66f17b7efd6d3b351d72d70e1"
 dependencies = [
  "nom",
 ]

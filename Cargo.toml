@@ -18,9 +18,9 @@ rust-version = "1.71"
 [workspace.dependencies]
 # We use a custom version of Uniffi that renames symbols that might clash
 # with other Rust libraries. See https://github.com/mozilla/uniffi-rs/issues/1670
-uniffi = { git = "https://github.com/aringenbach/uniffi-rs.git", rev = "7fea5def9b7a00cec35b94bd1916172cd0ca60fb" }
-uniffi_macros = { git = "https://github.com/aringenbach/uniffi-rs.git", rev = "7fea5def9b7a00cec35b94bd1916172cd0ca60fb" }
-uniffi_build = { git = "https://github.com/aringenbach/uniffi-rs.git", rev = "7fea5def9b7a00cec35b94bd1916172cd0ca60fb" }
+uniffi = { git = "https://github.com/aringenbach/uniffi-rs.git", rev = "737286e8fb43cda66f17b7efd6d3b351d72d70e1" }
+uniffi_macros = { git = "https://github.com/aringenbach/uniffi-rs.git", rev = "737286e8fb43cda66f17b7efd6d3b351d72d70e1" }
+uniffi_build = { git = "https://github.com/aringenbach/uniffi-rs.git", rev = "737286e8fb43cda66f17b7efd6d3b351d72d70e1" }
 
 [profile.release]
 opt-level = 'z'     # Optimize for size.
