@@ -1,8 +1,10 @@
 --swiftversion 5.6
 
---disable redundantStaticSelf
 --disable wrapMultiLineStatementBraces
 --disable hoistPatternLet
+
+# Disabled until https://github.com/nicklockwood/SwiftFormat/issues/1510 is fixed
+--disable redundantStaticSelf
 
 --ifdef no-indent
 --nospaceoperators ...,..<
