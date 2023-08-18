@@ -17,7 +17,7 @@
 import XCTest
 
 class WysiwygUITests: XCTestCase {
-    internal let app = XCUIApplication(bundleIdentifier: "org.matrix.Wysiwyg")
+    let app = XCUIApplication(bundleIdentifier: "org.matrix.Wysiwyg")
 
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -69,7 +69,7 @@ class WysiwygUITests: XCTestCase {
     }
 }
 
-internal extension WysiwygUITests {
+extension WysiwygUITests {
     /// Returns the text view component of the composer.
     var textView: XCUIElement {
         app.textViews[rawIdentifier(.composerTextView)]
@@ -178,7 +178,7 @@ internal extension WysiwygUITests {
     }
 }
 
-internal extension XCUIElement {
+extension XCUIElement {
     /// Types a text inside the UI element character by character.
     /// This is especially useful to avoid missing some characters on
     /// UI tests running on a rather slow CI.
