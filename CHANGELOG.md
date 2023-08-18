@@ -1,5 +1,21 @@
 # Changelog
 
+# [2.6.0] - 2023-08-18
+
+### Added
+
+- Android: More compose APIs (focus, line count, text and cursor style)
+- Android: Compose preview support
+
+### Changed
+
+- Android: Remove default padding on the composable editor 
+
+### Fixed
+
+- Android: Compatibility with apps compiled with JDK 11 
+- iOS: Reduce library size
+
 # [2.5.0] - 2023-08-11
 
 ### Added
