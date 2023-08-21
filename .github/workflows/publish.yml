@@ -18,7 +18,7 @@ env:
 jobs:
   ios:
     name: Create Release PR on SwiftPM Repo
-    runs-on: macos-12
+    runs-on: macos-13
     steps:
       - name: 🧮 Checkout code
         uses: actions/checkout@v3
@@ -35,8 +35,8 @@ jobs:
       - name: Install targets
         run: make targets-ios
           
-      - name: Set XCode 14.2
-        run: sudo xcode-select -switch /Applications/Xcode_14.2.app
+      - name: Set XCode 14.3.1
+        run: sudo xcode-select -switch /Applications/Xcode_14.3.1.app
 
       - name: Set SwiftPM Repo credentials
         uses: de-vri-es/setup-git-credentials@v2
