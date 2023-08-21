@@ -1,5 +1,15 @@
 # Changelog
 
+# [2.6.1] - 2023-08-21
+
+### Changed
+
+- iOS: Reworked placeholder text implementation
+
+### Fixed
+
+- iOS: Ideal composer height not being initially published
+
 # [2.6.0] - 2023-08-18
 
 ### Added
