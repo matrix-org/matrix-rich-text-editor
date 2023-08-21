@@ -25,7 +25,7 @@ import UIKit
 public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, ObservableObject {
     // MARK: - Public
 
-    /// The textView with placeholder support that the model manages
+    /// The textView that the model manages.
     public private(set) var textView = {
         // Default text container have a slightly different behaviour
         // than what iOS would use if textContainer is nil, this
@@ -128,6 +128,7 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
                 parserStyle: HTMLParserStyle = .standard,
                 mentionReplacer: MentionReplacer? = nil) {
         self.minHeight = minHeight
+        idealHeight = minHeight
         self.maxCompressedHeight = maxCompressedHeight
         self.maxExpandedHeight = maxExpandedHeight
         self.parserStyle = parserStyle
@@ -141,13 +142,6 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
             isContentEmpty = content.text.length == 0
         }
         .store(in: &cancellables)
-        
-        $isContentEmpty
-            .removeDuplicates()
-            .sink { [unowned self] isContentEmpty in
-                textView.shouldShowPlaceholder = isContentEmpty
-            }
-            .store(in: &cancellables)
         
         $idealHeight
             .removeDuplicates()
@@ -357,7 +351,6 @@ public extension WysiwygComposerViewModel {
             applyPendingFormatsIfNeeded()
         }
 
-        textView.shouldShowPlaceholder = textView.attributedText.length == 0
         updateCompressedHeightIfNeeded()
     }
     

@@ -36,13 +36,12 @@ struct Composer: View {
             let rect = RoundedRectangle(cornerRadius: borderHeight / 2)
             HStack {
                 WysiwygComposerView(
+                    placeholder: "Placeholder",
                     viewModel: viewModel,
                     itemProviderHelper: itemProviderHelper,
                     keyCommandHandler: keyCommandHandler,
                     pasteHandler: pasteHandler
                 )
-                .tintColor(.green)
-                .placeholder("Placeholder", color: .gray)
                 .frame(height: viewModel.idealHeight)
                 .padding(.horizontal, 12)
                 .onAppear {
