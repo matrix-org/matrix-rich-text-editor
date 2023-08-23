@@ -11,6 +11,7 @@ let package = Package(
     products: [
         .library(
             name: "WysiwygComposer",
+            type: .dynamic,
             targets: ["WysiwygComposer"]
         ),
     ],
