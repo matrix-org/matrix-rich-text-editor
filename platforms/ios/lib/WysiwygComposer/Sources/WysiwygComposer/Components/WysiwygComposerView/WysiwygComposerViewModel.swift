@@ -18,6 +18,7 @@ import Combine
 import Foundation
 import HTMLParser
 import OSLog
+import SwiftUI
 import UIKit
 
 // swiftlint:disable file_length
@@ -48,7 +49,9 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     @Published public var plainTextContent = NSAttributedString()
     /// Published boolean for the composer empty content state.
     @Published public var isContentEmpty = true
-    /// Published value for the composer required height to fit entirely without scrolling.
+    /// Published value for the composer ideal height to fit.
+    /// Note: with SwiftUI & iOS > 16.0, the `UIViewRepresentable` will
+    /// use `sizeThatFits` making registering to that publisher usually unnecessary.
     @Published public var idealHeight: CGFloat = .zero
     /// Published value for the composer current action states.
     @Published public var actionStates: [ComposerAction: ActionState] = [:]
@@ -373,6 +376,18 @@ public extension WysiwygComposerViewModel {
 
     func enter() {
         applyUpdate(createEnterUpdate(), skipTextViewUpdate: false)
+    }
+
+    @available(iOS 16.0, *)
+    func getIdealSize(_ proposal: ProposedViewSize) -> CGSize {
+        guard let width = proposal.width else { return .zero }
+
+        let idealHeight = textView
+            .sizeThatFits(CGSize(width: width, height: CGFloat.greatestFiniteMagnitude))
+            .height
+
+        return CGSize(width: width,
+                      height: maximised ? maxExpandedHeight : min(maxCompressedHeight, max(minHeight, idealHeight)))
     }
 }
 

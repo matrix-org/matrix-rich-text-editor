@@ -153,6 +153,11 @@ struct UITextViewWrapper: UIViewRepresentable {
                     pasteHandler: pasteHandler)
     }
 
+    @available(iOS 16.0, *)
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: WysiwygTextView, context: Context) -> CGSize? {
+        viewModel.getIdealSize(proposal)
+    }
+
     /// Coordinates UIKit communication.
     class Coordinator: NSObject, UITextViewDelegate, NSTextStorageDelegate, WysiwygTextViewDelegate {
         var replaceText: (NSRange, String) -> Bool
@@ -198,6 +203,7 @@ struct UITextViewWrapper: UIViewRepresentable {
             )
             didUpdateText()
             textView.toggleAutocorrectionIfNeeded()
+            textView.invalidateIntrinsicContentSize()
         }
 
         func textViewDidChangeSelection(_ textView: UITextView) {

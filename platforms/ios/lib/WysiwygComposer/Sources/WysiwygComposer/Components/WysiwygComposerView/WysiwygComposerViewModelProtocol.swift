@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 
+import SwiftUI
 import UIKit
 
 public protocol WysiwygComposerViewModelProtocol: AnyObject {
@@ -44,4 +45,11 @@ public protocol WysiwygComposerViewModelProtocol: AnyObject {
 
     /// Apply an enter/return key event.
     func enter()
+
+    /// Get the ideal size for the composer's text view inside a SwiftUI context.
+    ///
+    /// - Parameter proposal: Proposed view size.
+    /// - Returns: Ideal size for current context.
+    @available(iOS 16.0, *)
+    func getIdealSize(_ proposal: ProposedViewSize) -> CGSize
 }
