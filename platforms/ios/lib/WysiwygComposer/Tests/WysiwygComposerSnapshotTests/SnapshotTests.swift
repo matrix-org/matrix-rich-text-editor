@@ -32,7 +32,11 @@ class SnapshotTests: XCTestCase {
                                                itemProviderHelper: nil,
                                                keyCommandHandler: nil,
                                                pasteHandler: nil)
-        hostingController = UIHostingController(rootView: composerView)
+        hostingController = UIHostingController(rootView: VStack {
+            // Set the composer's text view at the top of the controller.
+            composerView
+            Spacer()
+        })
     }
     
     override func tearDownWithError() throws {
