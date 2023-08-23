@@ -1,5 +1,16 @@
 # Changelog
 
+# [2.6.2] - 2023-08-23
+
+### Changed
+
+- iOS: Library is now exposed as dynamic
+- iOS: Now uses sizeThatFits to handle text view height on iOS 16.0 and higher
+
+### Fixed
+
+- iOS: Composer text view not being resized after backspacing multiline content
+
 # [2.6.1] - 2023-08-21
 
 ### Changed
