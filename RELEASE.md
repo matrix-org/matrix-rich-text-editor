@@ -64,7 +64,7 @@ signing.secretKeyRingFile=<path-to-keyring>
 3. Build and publish the artifact
 
 ```
-cd platforms/android && ./gradlew publish closeAndReleaseRepository`
+cd platforms/android && ./gradlew publish closeAndReleaseRepository
 ```
   
 ### Swift/iOS:
