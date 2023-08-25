@@ -1,5 +1,15 @@
 # Changelog
 
+# [2.6.3] - 2023-08-25
+
+### Changed
+
+- iOS: Revert library back to be exposed as static
+
+### Fixed
+
+- Android: Publishing configuration for Compose library
+
 # [2.6.2] - 2023-08-23
 
 ### Changed
