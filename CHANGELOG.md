@@ -1,5 +1,11 @@
 # Changelog
 
+# [2.7.0] - 2023-08-29
+
+### Added
+
+- Android: Compose error callback
+
 # [2.6.3] - 2023-08-25
 
 ### Changed
