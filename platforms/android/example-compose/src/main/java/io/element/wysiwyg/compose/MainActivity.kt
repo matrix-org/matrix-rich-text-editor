@@ -17,6 +17,7 @@ import io.element.android.wysiwyg.compose.RichTextEditorDefaults
 import io.element.android.wysiwyg.compose.rememberRichTextEditorState
 import io.element.wysiwyg.compose.ui.components.FormattingButtons
 import io.element.wysiwyg.compose.ui.theme.RichTextEditorTheme
+import timber.log.Timber
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,6 +38,7 @@ class MainActivity : ComponentActivity() {
                             state = state,
                             modifier = Modifier.fillMaxWidth(),
                             style = RichTextEditorDefaults.style(),
+                            onError = Timber::e
                         )
                         FormattingButtons(
                             onResetText = {
