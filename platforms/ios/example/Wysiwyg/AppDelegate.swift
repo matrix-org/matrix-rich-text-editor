@@ -14,11 +14,13 @@
 // limitations under the License.
 //
 
+import OSLog
 import UIKit
 
 final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        Logger.wysywygLogLevel = .debug
         if #available(iOS 15.0, *) {
             NSTextAttachment.registerViewProviderClass(WysiwygAttachmentViewProvider.self,
                                                        forFileType: WysiwygAttachmentViewProvider.pillUTType)

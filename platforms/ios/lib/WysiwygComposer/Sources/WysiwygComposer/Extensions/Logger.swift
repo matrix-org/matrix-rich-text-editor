@@ -22,6 +22,21 @@ import UIKit
 extension Logger {
     // MARK: Internal
 
+    /// Describes a log level for the library.
+    public enum LogLevel: Int {
+        /// Every log is reported
+        case debug = 0
+        /// Warning and errors are reported
+        case warning
+        /// Only errors are reported
+        case error
+        /// No logs are reported
+        case none
+    }
+
+    /// Current log level reported to OSLog. Default: only errors are reported.
+    public static var wysywygLogLevel: LogLevel = .error
+
     static var subsystem = "org.matrix.WysiwygComposer"
 
     /// Creates a customized log for debug.
@@ -30,6 +45,7 @@ extension Logger {
     ///   - elements: Elements to log.
     ///   - functionName: Name from the function where it is called.
     func logDebug(_ elements: [String], functionName: String) {
+        guard Logger.wysywygLogLevel == .debug else { return }
         debug("\(customLog(elements, functionName: functionName))")
     }
 
@@ -39,6 +55,7 @@ extension Logger {
     ///   - elements: Elements to log.
     ///   - functionName: Name from the function where it is called.
     func logError(_ elements: [String], functionName: String) {
+        guard Logger.wysywygLogLevel.rawValue <= LogLevel.error.rawValue else { return }
         error("\(customLog(elements, functionName: functionName))")
     }
 
@@ -48,6 +65,7 @@ extension Logger {
     ///   - elements: Elements to log.
     ///   - functionName: Name from the function where it is called.
     func logWarning(_ elements: [String], functionName: String) {
+        guard Logger.wysywygLogLevel.rawValue <= LogLevel.warning.rawValue else { return }
         warning("\(customLog(elements, functionName: functionName))")
     }
 
