@@ -17,8 +17,8 @@
 import SwiftUI
 import WysiwygComposer
 
-extension WysiwygAction: CaseIterable, Identifiable {
-    public static var allCases: [WysiwygAction] = [
+extension ComposerAction: CaseIterable, Identifiable {
+    public static var allCases: [ComposerAction] = [
         .bold, .italic, .strikeThrough, .underline, .inlineCode,
         .link, .undo, .redo, .orderedList, .unorderedList, .indent, .unindent, .codeBlock, .quote,
     ]
@@ -32,7 +32,7 @@ extension WysiwygAction: CaseIterable, Identifiable {
     /// - Parameter viewModel: Composer's view model.
     /// - Returns: Tint color that the button should use.
     public func color(_ viewModel: WysiwygComposerViewModel) -> Color {
-        switch viewModel.actionStates[composerAction] {
+        switch viewModel.actionStates[self] {
         case .enabled:
             return Color.primary
         case .reversed:
@@ -47,7 +47,7 @@ extension WysiwygAction: CaseIterable, Identifiable {
     /// - Parameter viewModel: Composer's view model.
     /// - Returns: True if the action is disabled, false otherwise.
     public func isDisabled(_ viewModel: WysiwygComposerViewModel) -> Bool {
-        viewModel.actionStates[composerAction] == ActionState.disabled
+        viewModel.actionStates[self] == ActionState.disabled
     }
 
     /// Compute visibility status for action.
@@ -127,41 +127,6 @@ extension WysiwygAction: CaseIterable, Identifiable {
             return "note.text"
         case .quote:
             return "text.quote"
-        }
-    }
-}
-
-private extension WysiwygAction {
-    private var composerAction: ComposerAction {
-        switch self {
-        case .bold:
-            return .bold
-        case .italic:
-            return .italic
-        case .strikeThrough:
-            return .strikeThrough
-        case .underline:
-            return .underline
-        case .inlineCode:
-            return .inlineCode
-        case .link:
-            return .link
-        case .undo:
-            return .undo
-        case .redo:
-            return .redo
-        case .orderedList:
-            return .orderedList
-        case .unorderedList:
-            return .unorderedList
-        case .indent:
-            return .indent
-        case .unindent:
-            return .unindent
-        case .codeBlock:
-            return .codeBlock
-        case .quote:
-            return .quote
         }
     }
 }

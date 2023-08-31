@@ -176,7 +176,7 @@ public extension WysiwygComposerViewModel {
     ///
     /// - Parameters:
     ///   - action: Action to apply.
-    func apply(_ action: WysiwygAction) {
+    func apply(_ action: ComposerAction) {
         Logger.viewModel.logDebug([attributedContent.logSelection,
                                    "Apply action: \(action)"],
                                   functionName: #function)
