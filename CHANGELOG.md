@@ -1,5 +1,15 @@
 # Changelog
 
+# [2.8.0] - 2023-08-31
+
+### Added
+
+- iOS: Setting to override library's log level
+
+### Changed
+
+- iOS: Removed `WysiwygAction` enum in favour of bindings `ComposerAction`
+
 # [2.7.0] - 2023-08-29
 
 ### Added
