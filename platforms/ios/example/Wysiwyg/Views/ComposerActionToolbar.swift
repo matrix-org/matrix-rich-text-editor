@@ -17,16 +17,16 @@
 import SwiftUI
 import WysiwygComposer
 
-struct WysiwygActionToolbar: View {
+struct ComposerActionToolbar: View {
     @EnvironmentObject private var viewModel: WysiwygComposerViewModel
-    var toolbarAction: (WysiwygAction) -> Void
+    var toolbarAction: (ComposerAction) -> Void
     @State private var isShowingUrlAlert = false
     @State private var linkAttributedRange = NSRange.zero
     @State private var linkAction: LinkAction?
     
     var body: some View {
         HStack {
-            ForEach(WysiwygAction.allCases.filter { $0.isVisible(viewModel) }) { action in
+            ForEach(ComposerAction.allCases.filter { $0.isVisible(viewModel) }) { action in
                 Button {
                     if action == .link {
                         linkAttributedRange = viewModel.attributedContent.selection
@@ -85,7 +85,7 @@ struct WysiwygActionToolbar: View {
     }
 }
 
-private extension WysiwygActionToolbar {
+private extension ComposerActionToolbar {
     private func createAction(singleTextAction: @escaping ([String]) -> Void) -> AlertConfig.Action {
         .textAction(
             title: "Ok",

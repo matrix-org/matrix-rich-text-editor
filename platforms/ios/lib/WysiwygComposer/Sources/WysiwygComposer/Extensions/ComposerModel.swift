@@ -20,7 +20,7 @@ extension ComposerModel {
     ///
     /// - Parameters:
     ///   - action: Action to apply.
-    func apply(_ action: WysiwygAction) throws -> ComposerUpdate {
+    func apply(_ action: ComposerAction) throws -> ComposerUpdate {
         let update: ComposerUpdate
         switch action {
         case .bold:

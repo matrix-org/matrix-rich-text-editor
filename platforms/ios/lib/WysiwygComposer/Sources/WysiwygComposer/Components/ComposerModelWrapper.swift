@@ -41,7 +41,7 @@ protocol ComposerModelWrapperProtocol {
     func getLinkAction() -> LinkAction
 
     // Extensions
-    func apply(_ action: WysiwygAction) -> ComposerUpdate
+    func apply(_ action: ComposerAction) -> ComposerUpdate
     var reversedActions: Set<ComposerAction> { get }
 }
 
@@ -152,7 +152,7 @@ final class ComposerModelWrapper: ComposerModelWrapperProtocol {
 
     // MARK: Extensions
 
-    func apply(_ action: WysiwygAction) -> ComposerUpdate {
+    func apply(_ action: ComposerAction) -> ComposerUpdate {
         execute { try $0.apply(action) }
     }
 

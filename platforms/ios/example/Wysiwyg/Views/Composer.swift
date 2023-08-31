@@ -61,7 +61,7 @@ struct Composer: View {
                     .environmentObject(viewModel)
             }
             if !viewModel.plainTextMode {
-                WysiwygActionToolbar { action in
+                ComposerActionToolbar { action in
                     viewModel.apply(action)
                 }
                 .environmentObject(viewModel)
