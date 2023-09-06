@@ -1,7 +1,6 @@
 package io.element.android.wysiwyg.compose
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.Saver
@@ -9,6 +8,7 @@ import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalInspectionMode
+import io.element.android.wysiwyg.compose.internal.FakeViewConnection
 import io.element.android.wysiwyg.compose.internal.ViewConnection
 import io.element.android.wysiwyg.view.models.InlineFormat
 import uniffi.wysiwyg_composer.ActionState
@@ -19,20 +19,27 @@ import uniffi.wysiwyg_composer.MenuAction
  * A state holder for the [RichTextEditor] composable.
  *
  * Create an instance using [rememberRichTextEditorState].
- * Ensure that [RichTextEditorState] is not shared between
- * multiple [RichTextEditor] composables.
+ * Ensure that [RichTextEditorState] is not shared between multiple [RichTextEditor] composables.
+ *
+ * Note that fake mode is only intended for use in preview or test environments and behaviour will
+ * not mirror that of the real editor.
  *
  * @param initialHtml The HTML formatted content to initialise the state with.
- * @param localInspectionMode If true, initialise the state for use in preview environment.
+ * @param fake If true, initialise the state for use in preview or test environment.
  */
-@Stable
-class RichTextEditorState internal constructor(
+class RichTextEditorState(
     initialHtml: String = "",
-    localInspectionMode: Boolean = false,
+    fake: Boolean = false,
 ) {
     internal var viewConnection: ViewConnection? = null
 
-    private val initialLineCount = if (localInspectionMode) {
+    init {
+        if (fake) {
+            viewConnection = FakeViewConnection(this)
+        }
+    }
+
+    private val initialLineCount = if (fake) {
         initialHtml.count { it == '\n' } + 1
     } else {
         1
@@ -180,34 +187,26 @@ class RichTextEditorState internal constructor(
             ComposerAction.QUOTE -> toggleQuote()
         }
     }
-
-    companion object Factory {
-        /**
-         * Create an instance of the state for use in preview mode.
-         *
-         * @param initialText Initial content in plain text format.
-         */
-        fun createForLocalInspectionMode(
-            initialText: String
-        ): RichTextEditorState = RichTextEditorState(
-            initialHtml = initialText,
-            localInspectionMode = true
-        )
-    }
 }
 
 /**
  * Create an instance of the [RichTextEditorState].
+ *
+ * Note that fake mode is only intended for use in preview or test environments and behaviour will
+ * not mirror that of the real editor.
+ *
+ * @param initialHtml The HTML formatted content to initialise the state with.
+ * @param fake If true, initialise the state for use in preview or test environment.
  */
 @Composable
 fun rememberRichTextEditorState(
     initialHtml: String = "",
+    fake: Boolean = LocalInspectionMode.current,
 ): RichTextEditorState {
-    val previewMode = LocalInspectionMode.current
     return rememberSaveable(saver = RichTextEditorStateSaver) {
         RichTextEditorState(
             initialHtml = initialHtml,
-            localInspectionMode = previewMode,
+            fake = fake,
         )
     }
 }
