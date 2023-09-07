@@ -1,5 +1,15 @@
 # Changelog
 
+# [2.9.0] - 2023-09-07
+
+### Added
+
+- Android: Add fake/test mode for compose state
+
+### Fixed
+
+- Android: Fix compose error callback not getting called
+
 # [2.8.0] - 2023-08-31
 
 ### Added
