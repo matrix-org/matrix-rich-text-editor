@@ -86,4 +86,46 @@ class RichTextEditorTest {
         assertEquals("Hello, <b><i>world</i></b>", state.messageHtml)
         assertEquals("Hello\\, __*world*__", state.messageMarkdown)
     }
+
+    @Test
+    fun testInsertLink() = runTest {
+        val state = createState()
+        composeTestRule.showContent(state)
+
+        composeTestRule.runOnUiThread {
+            state.setHtml("Hello, ")
+            state.insertLink("https://element.io", "element")
+        }
+
+        assertEquals("Hello, <a href=\"https://element.io\">element</a>", state.messageHtml)
+        assertEquals("Hello\\, [element](<https://element.io>)", state.messageMarkdown)
+    }
+
+    @Test
+    fun testRemoveLink() = runTest {
+        val state = createState()
+        composeTestRule.showContent(state)
+
+        composeTestRule.runOnUiThread {
+            state.setHtml("Hello, <a href=\"https://element.io\">element</a>")
+            state.removeLink()
+        }
+
+        assertEquals("Hello, element", state.messageHtml)
+        assertEquals("Hello\\, element", state.messageMarkdown)
+    }
+
+    @Test
+    fun testSetLink() = runTest {
+        val state = createState()
+        composeTestRule.showContent(state)
+
+        composeTestRule.runOnUiThread {
+            state.setHtml("Hello, <a href=\"https://element.io\">element</a>")
+            state.setLink("https://matrix.org")
+        }
+
+        assertEquals("Hello, <a href=\"https://matrix.org\">element</a>", state.messageHtml)
+        assertEquals("Hello\\, [element](<https://matrix.org>)", state.messageMarkdown)
+    }
 }

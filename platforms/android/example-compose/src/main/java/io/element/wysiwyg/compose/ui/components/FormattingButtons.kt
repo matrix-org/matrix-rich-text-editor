@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import io.element.android.wysiwyg.view.models.LinkAction
 import io.element.wysiwyg.compose.R
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
@@ -102,6 +103,15 @@ fun FormattingButtons(
                 onClick = { onActionClick(ComposerAction.QUOTE) },
                 actionState = actionStates.getOrDefault(
                     ComposerAction.QUOTE,
+                    ActionState.DISABLED
+                )
+            )
+            FormattingButton(
+                contentDescription = "Link",
+                icon = R.drawable.ic_link,
+                onClick = { onActionClick(ComposerAction.LINK) },
+                actionState = actionStates.getOrDefault(
+                    ComposerAction.LINK,
                     ActionState.DISABLED
                 )
             )

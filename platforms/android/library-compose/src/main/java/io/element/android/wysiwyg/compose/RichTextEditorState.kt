@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import io.element.android.wysiwyg.compose.internal.FakeViewConnection
 import io.element.android.wysiwyg.compose.internal.ViewConnection
 import io.element.android.wysiwyg.view.models.InlineFormat
+import io.element.android.wysiwyg.view.models.LinkAction
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
 import uniffi.wysiwyg_composer.MenuAction
@@ -113,6 +114,28 @@ class RichTextEditorState(
     }
 
     /**
+     * Set a link for the current selection. This method does nothing if there is no text selected.
+     *
+     * @param url The link URL to set or null to remove
+     */
+    fun setLink(url: String?) = viewConnection?.setLink(url)
+
+    /**
+     * Remove a link for the current selection. Convenience for setLink(null).
+     *
+     * @see [setLink]
+     */
+    fun removeLink() = viewConnection?.removeLink()
+
+    /**
+     * Insert new text with a link.
+     *
+     * @param url The link URL to set
+     * @param text The new text to insert
+     */
+    fun insertLink(url: String, text: String) = viewConnection?.insertLink(url, text)
+
+    /**
      * The content of the editor as HTML formatted for sending as a message.
      */
     var messageHtml by mutableStateOf(initialHtml)
@@ -160,33 +183,9 @@ class RichTextEditorState(
     var lineCount: Int by mutableStateOf(initialLineCount)
         internal set
 
-    /**
-     * Handle any of the actions in [ComposerAction].
-     *
-     * Note that formatting actions simply delegate to their respective `toggleX()` functions.
-     * So, for example, calling `handleAction(ComposerAction.BOLD)` is equivalent to calling
-     * `toggleInlineFormat(InlineFormat.Bold)`.
-     *
-     * @param action The action to handle.
-     */
-    fun handleAction(action: ComposerAction) {
-        when (action) {
-            ComposerAction.BOLD -> toggleInlineFormat(InlineFormat.Bold)
-            ComposerAction.ITALIC -> toggleInlineFormat(InlineFormat.Italic)
-            ComposerAction.STRIKE_THROUGH -> toggleInlineFormat(InlineFormat.StrikeThrough)
-            ComposerAction.UNDERLINE -> toggleInlineFormat(InlineFormat.Underline)
-            ComposerAction.INLINE_CODE -> toggleInlineFormat(InlineFormat.InlineCode)
-            ComposerAction.LINK -> throw NotImplementedError("Links are not yet supported")
-            ComposerAction.UNDO -> undo()
-            ComposerAction.REDO -> redo()
-            ComposerAction.ORDERED_LIST -> toggleList(ordered = true)
-            ComposerAction.UNORDERED_LIST -> toggleList(ordered = false)
-            ComposerAction.INDENT -> indent()
-            ComposerAction.UNINDENT -> unindent()
-            ComposerAction.CODE_BLOCK -> toggleCodeBlock()
-            ComposerAction.QUOTE -> toggleQuote()
-        }
-    }
+    var linkAction: LinkAction? by mutableStateOf(null)
+        internal set
+
 }
 
 /**

@@ -49,7 +49,7 @@ private fun RealEditor(
     state: RichTextEditorState,
     modifier: Modifier = Modifier,
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
-    onError: (Throwable) -> Unit = {},
+    onError: (Throwable) -> Unit,
 ) {
     val context = LocalContext.current
     // Clean up the connection between view and state holder
@@ -84,10 +84,12 @@ private fun RealEditor(
                 onFocusChangeListener =
                     View.OnFocusChangeListener { _, hasFocus -> state.hasFocus = hasFocus }
 
+
                 addTextChangedListener {
                     state.messageHtml = getContentAsMessageHtml()
                     state.messageMarkdown = getMarkdown()
                     state.lineCount = lineCount
+                    state.linkAction = getLinkAction()
                 }
 
                 applyDefaultStyle()
@@ -118,6 +120,13 @@ private fun RealEditor(
                 override fun setHtml(html: String) = view.setHtml(html)
 
                 override fun requestFocus() = view.requestFocus()
+
+                override fun setLink(url: String?) = view.setLink(url)
+
+                override fun removeLink() = view.removeLink()
+
+                override fun insertLink(url: String, text: String) =
+                    view.insertLink(url, text)
             }
 
             view

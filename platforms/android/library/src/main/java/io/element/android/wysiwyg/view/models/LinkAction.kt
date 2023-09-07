@@ -7,7 +7,7 @@ sealed class LinkAction {
     /**
      * Insert new text with a link (only available when no text is selected)
      */
-    object InsertLink : LinkAction()
+    data object InsertLink : LinkAction()
 
     /**
      * Add or change the link url for the current selection, without supplying text.
