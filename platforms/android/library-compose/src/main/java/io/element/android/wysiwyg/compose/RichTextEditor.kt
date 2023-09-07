@@ -40,7 +40,7 @@ fun RichTextEditor(
     if (isPreview) {
         PreviewEditor(state, modifier, style)
     } else {
-        RealEditor(state, modifier, style)
+        RealEditor(state, modifier, style, onError)
     }
 }
 
