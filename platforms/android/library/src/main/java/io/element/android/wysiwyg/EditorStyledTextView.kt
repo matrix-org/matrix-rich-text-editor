@@ -20,10 +20,10 @@ open class EditorStyledTextView : AppCompatTextView {
     private lateinit var codeBlockStyleConfig: CodeBlockStyleConfig
     private var styleAttributesReady = false
     private val inlineCodeBgHelper: SpanBackgroundHelper by lazy {
-        SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(inlineCodeStyleConfig)
+        SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(inlineCodeStyleConfig, context)
     }
     private val codeBlockBgHelper: SpanBackgroundHelper by lazy {
-        SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(codeBlockStyleConfig)
+        SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(codeBlockStyleConfig, context)
     }
 
     constructor(context: Context) : super(context)

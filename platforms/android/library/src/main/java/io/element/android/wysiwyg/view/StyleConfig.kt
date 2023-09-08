@@ -1,7 +1,7 @@
 package io.element.android.wysiwyg.view
 
-import android.graphics.drawable.Drawable
 import androidx.annotation.ColorRes
+import androidx.annotation.DrawableRes
 import androidx.annotation.Px
 import io.element.android.wysiwyg.EditorEditText
 
@@ -50,10 +50,10 @@ data class InlineCodeStyleConfig(
     @Px val horizontalPadding: Int,
     @Px val verticalPadding: Int,
     val relativeTextSize: Float,
-    val singleLineBg: Drawable,
-    val multiLineBgLeft: Drawable,
-    val multiLineBgMid: Drawable,
-    val multiLineBgRight: Drawable,
+    @DrawableRes val singleLineBg: Int,
+    @DrawableRes val multiLineBgLeft: Int,
+    @DrawableRes val multiLineBgMid: Int,
+    @DrawableRes val multiLineBgRight: Int,
 )
 
 /**
@@ -68,7 +68,7 @@ data class CodeBlockStyleConfig(
     @Px val leadingMargin: Int,
     @Px val verticalPadding: Int,
     val relativeTextSize: Float,
-    val backgroundDrawable: Drawable,
+    @DrawableRes val backgroundDrawable: Int,
 )
 
 /**

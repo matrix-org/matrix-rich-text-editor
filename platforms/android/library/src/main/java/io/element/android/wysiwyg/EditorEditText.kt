@@ -262,9 +262,18 @@ class EditorEditText : AppCompatEditText {
      * Apply custom style. This overrides any style set in the layout XML.
      */
     fun setStyleConfig(styleConfig: StyleConfig) {
+        if (this::styleConfig.isInitialized && styleConfig == this.styleConfig) {
+            return
+        }
         this.styleConfig = styleConfig
-        inlineCodeBgHelper = SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(styleConfig.inlineCode)
-        codeBlockBgHelper = SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(styleConfig.codeBlock)
+        inlineCodeBgHelper = SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(
+            styleConfig.inlineCode,
+            context
+        )
+        codeBlockBgHelper = SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(
+            styleConfig.codeBlock,
+            context
+        )
 
         rerender()
     }
