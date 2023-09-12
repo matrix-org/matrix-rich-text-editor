@@ -31,7 +31,7 @@ class RichTextEditorState(
     initialHtml: String = "",
     fake: Boolean = false,
 ) {
-    internal var viewConnection: ViewConnection? = null
+    internal var viewConnection: ViewConnection? by mutableStateOf(null)
 
     init {
         if (fake) {
