@@ -6,13 +6,14 @@ import androidx.lifecycle.ViewModel
 import io.element.android.wysiwyg.BuildConfig
 import io.element.android.wysiwyg.extensions.log
 import io.element.android.wysiwyg.extensions.string
+import io.element.android.wysiwyg.internal.view.models.toApiModel
 import io.element.android.wysiwyg.utils.EditorIndexMapper
 import io.element.android.wysiwyg.utils.HtmlConverter
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
 import uniffi.wysiwyg_composer.*
-import uniffi.wysiwyg_composer.LinkAction as ComposerLinkAction
+import uniffi.wysiwyg_composer.LinkAction as InternalLinkAction
 
 internal class EditorViewModel(
     private val provideComposer: () -> ComposerModelInterface?,
@@ -25,8 +26,10 @@ internal class EditorViewModel(
 
     private var actionStatesCallback: ((Map<ComposerAction, ActionState>) -> Unit)? = null
     var menuActionCallback: ((MenuAction) -> Unit)? = null
+    var linkActionCallback: ((LinkAction?) -> Unit)? = null
 
     private var curMenuAction: MenuAction = MenuAction.None
+    private var curLinkAction: LinkAction? = null
 
     // If there is an internal error in the Rust model, we can manually recover to this state.
     private var recoveryContentPlainText: String = ""
@@ -48,10 +51,8 @@ internal class EditorViewModel(
             .onFailure(::onComposerFailure)
             .getOrNull()
 
-        val menuState = update?.menuState()
-        if (menuState is MenuState.Update) {
-            actionStatesCallback?.invoke(menuState.actionStates)
-        }
+        handleComposerUpdates(update)
+
         composer?.log()
     }
 
@@ -62,10 +63,16 @@ internal class EditorViewModel(
                     // This conversion to a plain String might be too simple
                     composer?.replaceText(action.value.toString())
                 }
+
                 is EditorInputAction.ReplaceTextIn -> {
                     // This conversion to a plain String might be too simple
-                    composer?.replaceTextIn(action.value.toString(), action.start.toUInt(), action.end.toUInt())
+                    composer?.replaceTextIn(
+                        action.value.toString(),
+                        action.start.toUInt(),
+                        action.end.toUInt()
+                    )
                 }
+
                 is EditorInputAction.ReplaceTextSuggestion -> replaceTextSuggestion(action)
                 is EditorInputAction.InsertParagraph -> composer?.enter()
                 is EditorInputAction.BackPress -> composer?.backspace()
@@ -76,20 +83,32 @@ internal class EditorViewModel(
                     InlineFormat.StrikeThrough -> composer?.strikeThrough()
                     InlineFormat.InlineCode -> composer?.inlineCode()
                 }
+
                 is EditorInputAction.DeleteIn -> composer?.deleteIn(
                     action.start.toUInt(),
                     action.end.toUInt()
                 )
+
                 is EditorInputAction.Delete -> composer?.delete()
-                is EditorInputAction.SetLink -> composer?.setLink(url = action.url, attributes = emptyList())
+                is EditorInputAction.SetLink -> composer?.setLink(
+                    url = action.url,
+                    attributes = emptyList()
+                )
+
                 is EditorInputAction.RemoveLink -> composer?.removeLinks()
-                is EditorInputAction.SetLinkWithText -> composer?.setLinkWithText(action.link, action.text, attributes = emptyList())
+                is EditorInputAction.SetLinkWithText -> composer?.setLinkWithText(
+                    action.link,
+                    action.text,
+                    attributes = emptyList()
+                )
+
                 is EditorInputAction.ReplaceAllHtml -> composer?.setContentFromHtml(action.html)
                 is EditorInputAction.ReplaceAllMarkdown -> composer?.setContentFromMarkdown(action.markdown)
                 is EditorInputAction.Undo -> composer?.undo()
                 is EditorInputAction.Redo -> composer?.redo()
                 is EditorInputAction.ToggleList ->
                     if (action.ordered) composer?.orderedList() else composer?.unorderedList()
+
                 is EditorInputAction.CodeBlock -> composer?.codeBlock()
                 is EditorInputAction.Quote -> composer?.quote()
                 is EditorInputAction.Indent -> composer?.indent()
@@ -101,15 +120,26 @@ internal class EditorViewModel(
 
         composer?.log()
 
-        val menuState = update?.menuState()
-        if (menuState is MenuState.Update) {
-            actionStatesCallback?.invoke(menuState.actionStates)
-        }
+        return handleComposerUpdates(update)
+    }
 
-        update?.menuAction()?.let { menuAction ->
-            curMenuAction = menuAction
+    private fun handleComposerUpdates(update: ComposerUpdate?): ReplaceTextResult? {
+        if (update != null) {
+            val menuState = update.menuState()
+            if (menuState is MenuState.Update) {
+                actionStatesCallback?.invoke(menuState.actionStates)
+            }
+
+            val menuAction = update.menuAction()
             if (menuAction !is MenuAction.Keep) {
+                curMenuAction = menuAction
                 menuActionCallback?.invoke(menuAction)
+            }
+
+            val linkAction = update.linkAction()
+            if (linkAction !is InternalLinkAction.Keep) {
+                curLinkAction = update.linkAction().toApiModel(curLinkAction)
+                linkActionCallback?.invoke(curLinkAction)
             }
         }
 
@@ -124,6 +154,7 @@ internal class EditorViewModel(
                     selection = textUpdate.startUtf16Codeunit.toInt()..textUpdate.endUtf16Codeunit.toInt(),
                 )
             }
+
             is TextUpdate.Select,
             is TextUpdate.Keep,
             null -> null
@@ -155,14 +186,7 @@ internal class EditorViewModel(
     }
 
     fun getLinkAction(): LinkAction? =
-        composer?.getLinkAction()?.let {
-            when (it) {
-                is ComposerLinkAction.Edit -> LinkAction.SetLink(currentUrl = it.url)
-                is ComposerLinkAction.Create -> LinkAction.SetLink(currentUrl = null)
-                is ComposerLinkAction.CreateWithText -> LinkAction.InsertLink
-                is ComposerLinkAction.Disabled -> null
-            }
-        }
+        composer?.getLinkAction()?.toApiModel(curLinkAction)
 
     private fun onComposerFailure(error: Throwable, attemptContentRecovery: Boolean = true) {
         rustErrorCollector?.onRustError(error)

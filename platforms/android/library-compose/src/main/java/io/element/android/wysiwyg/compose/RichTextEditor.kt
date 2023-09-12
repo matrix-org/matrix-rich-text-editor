@@ -81,6 +81,9 @@ private fun RealEditor(
                 menuActionListener = EditorEditText.OnMenuActionChangedListener { menuAction ->
                     state.menuAction = menuAction
                 }
+                linkActionChangedListener = EditorEditText.OnLinkActionChangedListener { linkAction ->
+                    state.linkAction = linkAction
+                }
                 onFocusChangeListener =
                     View.OnFocusChangeListener { _, hasFocus -> state.hasFocus = hasFocus }
 
@@ -89,7 +92,6 @@ private fun RealEditor(
                     state.messageHtml = getContentAsMessageHtml()
                     state.messageMarkdown = getMarkdown()
                     state.lineCount = lineCount
-                    state.linkAction = getLinkAction()
                 }
 
                 applyDefaultStyle()

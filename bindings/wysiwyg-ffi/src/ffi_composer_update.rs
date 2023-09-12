@@ -1,5 +1,6 @@
 use widestring::Utf16String;
 
+use crate::ffi_link_actions::LinkAction;
 use crate::ffi_menu_state::MenuState;
 use crate::ffi_text_update::TextUpdate;
 use crate::MenuAction;
@@ -27,6 +28,10 @@ impl ComposerUpdate {
 
     pub fn menu_action(&self) -> MenuAction {
         MenuAction::from(self.inner.menu_action.clone())
+    }
+
+    pub fn link_action(&self) -> LinkAction {
+        LinkAction::from(self.inner.link_action.clone())
     }
 }
 

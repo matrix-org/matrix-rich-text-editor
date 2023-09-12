@@ -14,7 +14,8 @@
 
 use crate::dom::UnicodeString;
 use crate::{
-    Location, MenuAction, MenuState, ReplaceAll, Selection, TextUpdate,
+    LinkAction, Location, MenuAction, MenuState, ReplaceAll, Selection,
+    TextUpdate,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -25,6 +26,7 @@ where
     pub text_update: TextUpdate<S>,
     pub menu_state: MenuState,
     pub menu_action: MenuAction,
+    pub link_action: LinkAction<S>,
 }
 
 impl<S> ComposerUpdate<S>
@@ -36,6 +38,7 @@ where
             text_update: TextUpdate::<S>::Keep,
             menu_state: MenuState::Keep,
             menu_action: MenuAction::Keep,
+            link_action: LinkAction::Keep,
         }
     }
 
@@ -47,6 +50,7 @@ where
             text_update: TextUpdate::<S>::Keep,
             menu_state,
             menu_action,
+            link_action: LinkAction::Keep,
         }
     }
 
@@ -55,11 +59,13 @@ where
         end: Location,
         menu_state: MenuState,
         menu_action: MenuAction,
+        link_action: LinkAction<S>,
     ) -> Self {
         Self {
             text_update: TextUpdate::<S>::Select(Selection { start, end }),
             menu_state,
             menu_action,
+            link_action,
         }
     }
 
@@ -69,6 +75,7 @@ where
         end: Location,
         menu_state: MenuState,
         menu_action: MenuAction,
+        link_action: LinkAction<S>,
     ) -> Self {
         Self {
             text_update: TextUpdate::ReplaceAll(ReplaceAll {
@@ -78,6 +85,7 @@ where
             }),
             menu_state,
             menu_action,
+            link_action,
         }
     }
 }

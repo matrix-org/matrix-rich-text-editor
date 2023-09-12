@@ -106,6 +106,10 @@ class EditorEditText : AppCompatEditText {
         fun onMenuActionChanged(menuAction: MenuAction)
     }
 
+    fun interface OnLinkActionChangedListener {
+        fun onLinkActionChanged(linkAction: LinkAction?)
+    }
+
     /**
      * Set the mention display handler to display mentions in a custom way.
      */
@@ -128,6 +132,18 @@ class EditorEditText : AppCompatEditText {
 
             viewModel.menuActionCallback = { menuAction ->
                 value?.onMenuActionChanged(menuAction)
+            }
+        }
+
+    /**
+     * Set the link action listener to be notified when the available link action changes.
+     */
+    var linkActionChangedListener: OnLinkActionChangedListener? = null
+        set(value) {
+            field = value
+
+            viewModel.linkActionCallback = { linkAction ->
+                value?.onLinkActionChanged(linkAction)
             }
         }
 

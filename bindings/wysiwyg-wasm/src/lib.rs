@@ -843,6 +843,7 @@ pub struct LinkAction {
     pub create: Option<Create>,
     pub edit_link: Option<Edit>,
     pub disabled: Option<Disabled>,
+    pub keep: Option<Keep>,
 }
 
 impl From<wysiwyg::LinkAction<Utf16String>> for LinkAction {
@@ -853,12 +854,14 @@ impl From<wysiwyg::LinkAction<Utf16String>> for LinkAction {
                 create: None,
                 edit_link: None,
                 disabled: None,
+                keep: None,
             },
             wysiwyg::LinkAction::Create => Self {
                 create_with_text: None,
                 create: Some(Create),
                 edit_link: None,
                 disabled: None,
+                keep: None,
             },
             wysiwyg::LinkAction::Edit(url) => {
                 let url = url.to_string();
@@ -867,6 +870,7 @@ impl From<wysiwyg::LinkAction<Utf16String>> for LinkAction {
                     create: None,
                     edit_link: Some(Edit { url }),
                     disabled: None,
+                    keep: None,
                 }
             }
             wysiwyg::LinkAction::Disabled => Self {
@@ -874,6 +878,14 @@ impl From<wysiwyg::LinkAction<Utf16String>> for LinkAction {
                 create: None,
                 edit_link: None,
                 disabled: Some(Disabled),
+                keep: None,
+            },
+            wysiwyg::LinkAction::Keep => Self {
+                create_with_text: None,
+                create: None,
+                edit_link: None,
+                disabled: None,
+                keep: Some(Keep),
             },
         }
     }

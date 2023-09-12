@@ -14,8 +14,9 @@
 
 use crate::UnicodeString;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LinkAction<S: UnicodeString> {
+    Keep,
     CreateWithText,
     Create,
     Edit(S),

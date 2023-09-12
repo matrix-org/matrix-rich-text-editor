@@ -156,6 +156,7 @@ where
             self.state.end,
             menu_state,
             self.compute_menu_action(),
+            self.get_link_action(),
         )
     }
 
@@ -169,6 +170,7 @@ where
             self.state.end,
             self.compute_menu_state(MenuStateComputeType::KeepIfUnchanged),
             self.compute_menu_action(),
+            self.get_link_action(),
         )
     }
 
@@ -184,6 +186,7 @@ where
             self.state.end,
             self.compute_menu_state(MenuStateComputeType::AlwaysUpdate),
             self.compute_menu_action(),
+            self.get_link_action(),
         )
     }
 
