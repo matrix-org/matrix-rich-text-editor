@@ -1,6 +1,7 @@
 package io.element.android.wysiwyg.compose
 
 import io.element.android.wysiwyg.view.models.InlineFormat
+import io.element.android.wysiwyg.view.models.LinkAction
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
@@ -87,6 +88,25 @@ class FakeRichTextEditorStateTest {
     fun `unindent updates the state`() {
         state.unindent()
         assertThat(state.actions[ComposerAction.UNINDENT], equalTo(ActionState.REVERSED))
+    }
+
+    @Test
+    fun `setLink updates the state`() {
+        state.setLink("https://element.io")
+        assertThat(state.linkAction, equalTo(LinkAction.SetLink("https://element.io")))
+    }
+
+    @Test
+    fun `removeLink updates the state`() {
+        state.setLink("https://element.io")
+        state.removeLink()
+        assertThat(state.linkAction, equalTo(LinkAction.InsertLink))
+    }
+
+    @Test
+    fun `insertLink updates the state`() {
+        state.insertLink("https://element.io", "hello!")
+        assertThat(state.linkAction, equalTo(LinkAction.SetLink("https://element.io")))
     }
 
     @Test

@@ -13,4 +13,7 @@ internal interface ViewConnection {
     fun unindent()
     fun setHtml(html: String)
     fun requestFocus(): Boolean
+    fun setLink(url: String?)
+    fun removeLink()
+    fun insertLink(url: String, text: String)
 }

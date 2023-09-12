@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Compose Example</string>
+    <string name="link_remove">Remove link</string>
+    <string name="link_set">Set link</string>
+    <string name="link_insert">Insert link</string>
+    <string name="link_text">Text</string>
+    <string name="link_url">Link</string>
 </resources>
