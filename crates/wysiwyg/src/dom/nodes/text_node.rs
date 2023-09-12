@@ -293,31 +293,10 @@ where
     fn fmt_markdown(
         &self,
         buffer: &mut S,
-        options: &MarkdownOptions,
+        _options: &MarkdownOptions,
         _as_message: bool,
     ) -> Result<(), MarkdownError<S>> {
-        if options.contains(MarkdownOptions::NO_ESCAPE) {
-            buffer.push(self.data());
-            return Ok(());
-        }
-
-        let mut escaped = S::default();
-
-        for c in self.data().chars() {
-            match c {
-                // https://spec.commonmark.org/0.30/#ascii-punctuation-character
-                '!' | '"' | '#' | '$' | '%' | '&' | '\'' | '(' | ')' | '*'
-                | '+' | ',' | '-' | '.' | '/' | ':' | ';' | '<' | '=' | '>'
-                | '?' | '@' | '[' | '\\' | ']' | '^' | '_' | '`' | '{'
-                | '|' | '}' | '~' => {
-                    escaped.push('\\');
-                    escaped.push(c);
-                }
-                _ => escaped.push(c),
-            }
-        }
-
-        buffer.push(escaped);
+        buffer.push(self.data.to_owned());
 
         Ok(())
     }

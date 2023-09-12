@@ -28,12 +28,16 @@ fn text() {
     assert_to_message_md("abc   def", "abc   def");
 }
 
+// Markdown output contains unescaped special characters but this is ok.
+// Athough the plain text content of a Matrix message _may_ contain markdown,
+// the format is not specified. It is more important for the message to be
+// human readable than valid or machine readable markdown.
 #[test]
 fn text_with_ascii_punctuation() {
-    assert_to_message_md(r"<em>**b**</em>", r"*\*\*b\*\**");
-    assert_to_message_md(
+    assert_to_md_no_roundtrip(r"<em>**b**</em>", r"***b***");
+    assert_to_md_no_roundtrip(
         r##"!&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\]^_`{|}~"##,
-        r##"\!\"\#\$\%\&\'\(\)\*\+\,\-\.\/\:\;\<\=\>\?\@\[\\\]\^\_\`\{\|\}\~"##,
+        r##"!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"##,
     );
 }
 
@@ -260,7 +264,7 @@ fn room_mention_for_composer() {
 
 #[test]
 fn at_room_mention_for_message() {
-    assert_to_message_md("@room hello!", "@room hello\\!");
+    assert_to_message_md("@room hello!", "@room hello!");
 }
 
 #[test]
@@ -269,8 +273,8 @@ fn at_room_mention_for_composer() {
 
     assert_eq!(tx(&model), "<a data-mention-type=\"at-room\" href=\"#\" contenteditable=\"false\">@room</a> hello!|");
 
-    assert_eq!(model.get_content_as_markdown(), "<a data-mention-type=\"at-room\" href=\"#\" contenteditable=\"false\">@room</a> hello\\!");
-    assert_eq!(model.get_content_as_message_markdown(), "@room hello\\!");
+    assert_eq!(model.get_content_as_markdown(), "<a data-mention-type=\"at-room\" href=\"#\" contenteditable=\"false\">@room</a> hello!");
+    assert_eq!(model.get_content_as_message_markdown(), "@room hello!");
 }
 
 fn assert_to_md_no_roundtrip(html: &str, expected_markdown: &str) {
