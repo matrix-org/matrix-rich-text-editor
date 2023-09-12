@@ -1,5 +1,19 @@
 # Changelog
 
+# [2.10.0] - 2023-09-12
+
+### Added
+
+- Android: Add link support to compose library (#801)
+
+### Changed
+
+- Common: Remove unnecessary escape characters in markdown output (#800)
+
+### Fixed
+
+- Android: Fix performance issue caused by excessive recomposition (#803)
+
 # [2.9.0] - 2023-09-07
 
 ### Added
