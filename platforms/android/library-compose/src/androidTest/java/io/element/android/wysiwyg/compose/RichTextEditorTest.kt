@@ -41,7 +41,7 @@ class RichTextEditorTest {
         assertEquals(MenuAction.None, state.menuAction)
         assertEquals(12 to 12, state.selection)
         assertEquals("Hello, world", state.messageHtml)
-        assertEquals("Hello\\, world", state.messageMarkdown)
+        assertEquals("Hello, world", state.messageMarkdown)
     }
 
     @Test
@@ -59,7 +59,7 @@ class RichTextEditorTest {
         assertEquals(12 to 12, state.selection)
         assertEquals(MenuAction.None, state.menuAction)
         assertEquals("Hello, world", state.messageHtml)
-        assertEquals("Hello\\, world", state.messageMarkdown)
+        assertEquals("Hello, world", state.messageMarkdown)
     }
 
     @Test
@@ -84,7 +84,7 @@ class RichTextEditorTest {
         assertEquals(12 to 12, state.selection)
         assertEquals(MenuAction.None, state.menuAction)
         assertEquals("Hello, <b><i>world</i></b>", state.messageHtml)
-        assertEquals("Hello\\, __*world*__", state.messageMarkdown)
+        assertEquals("Hello, __*world*__", state.messageMarkdown)
     }
 
     @Test
@@ -98,7 +98,7 @@ class RichTextEditorTest {
         }
 
         assertEquals("Hello, <a href=\"https://element.io\">element</a>", state.messageHtml)
-        assertEquals("Hello\\, [element](<https://element.io>)", state.messageMarkdown)
+        assertEquals("Hello, [element](<https://element.io>)", state.messageMarkdown)
     }
 
     @Test
@@ -112,7 +112,7 @@ class RichTextEditorTest {
         }
 
         assertEquals("Hello, element", state.messageHtml)
-        assertEquals("Hello\\, element", state.messageMarkdown)
+        assertEquals("Hello, element", state.messageMarkdown)
     }
 
     @Test
@@ -126,6 +126,6 @@ class RichTextEditorTest {
         }
 
         assertEquals("Hello, <a href=\"https://matrix.org\">element</a>", state.messageHtml)
-        assertEquals("Hello\\, [element](<https://matrix.org>)", state.messageMarkdown)
+        assertEquals("Hello, [element](<https://matrix.org>)", state.messageMarkdown)
     }
 }
