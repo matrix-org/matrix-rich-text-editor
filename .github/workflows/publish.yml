@@ -41,7 +41,7 @@ jobs:
       - name: Set SwiftPM Repo credentials
         uses: de-vri-es/setup-git-credentials@v2
         with:
-          credentials: ${{secrets.PAT}}
+          credentials: https://${{secrets.PAT_USER}}:${{secrets.PAT}}@github.com/
 
       - name: Get tag
         id: tag
