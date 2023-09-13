@@ -1,5 +1,9 @@
 # Changelog
 
+# [2.10.1] - 2023-09-13
+
+No changes except to publishing workflow.
+
 # [2.10.0] - 2023-09-12
 
 ### Added
