@@ -48,6 +48,7 @@ pub use crate::dom::UnicodeString;
 pub use crate::dom::{MarkdownError, ToMarkdown};
 pub use crate::format_type::InlineFormatType;
 pub use crate::link_action::LinkAction;
+pub use crate::link_action::LinkActionUpdate;
 pub use crate::list_type::ListType;
 pub use crate::location::Location;
 pub use crate::menu_action::MenuAction;

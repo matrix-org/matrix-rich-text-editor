@@ -13,9 +13,9 @@
 // limitations under the License.
 
 use crate::dom::UnicodeString;
+use crate::link_action::LinkActionUpdate;
 use crate::{
-    LinkAction, Location, MenuAction, MenuState, ReplaceAll, Selection,
-    TextUpdate,
+    Location, MenuAction, MenuState, ReplaceAll, Selection, TextUpdate,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -26,7 +26,7 @@ where
     pub text_update: TextUpdate<S>,
     pub menu_state: MenuState,
     pub menu_action: MenuAction,
-    pub link_action: LinkAction<S>,
+    pub link_action: LinkActionUpdate<S>,
 }
 
 impl<S> ComposerUpdate<S>
@@ -38,7 +38,7 @@ where
             text_update: TextUpdate::<S>::Keep,
             menu_state: MenuState::Keep,
             menu_action: MenuAction::Keep,
-            link_action: LinkAction::Keep,
+            link_action: LinkActionUpdate::Keep,
         }
     }
 
@@ -50,7 +50,7 @@ where
             text_update: TextUpdate::<S>::Keep,
             menu_state,
             menu_action,
-            link_action: LinkAction::Keep,
+            link_action: LinkActionUpdate::Keep,
         }
     }
 
@@ -59,7 +59,7 @@ where
         end: Location,
         menu_state: MenuState,
         menu_action: MenuAction,
-        link_action: LinkAction<S>,
+        link_action: LinkActionUpdate<S>,
     ) -> Self {
         Self {
             text_update: TextUpdate::<S>::Select(Selection { start, end }),
@@ -75,7 +75,7 @@ where
         end: Location,
         menu_state: MenuState,
         menu_action: MenuAction,
-        link_action: LinkAction<S>,
+        link_action: LinkActionUpdate<S>,
     ) -> Self {
         Self {
             text_update: TextUpdate::ReplaceAll(ReplaceAll {

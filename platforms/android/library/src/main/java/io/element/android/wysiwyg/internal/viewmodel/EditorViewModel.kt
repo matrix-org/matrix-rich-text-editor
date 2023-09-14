@@ -13,7 +13,6 @@ import io.element.android.wysiwyg.utils.RustErrorCollector
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
 import uniffi.wysiwyg_composer.*
-import uniffi.wysiwyg_composer.LinkAction as InternalLinkAction
 
 internal class EditorViewModel(
     private val provideComposer: () -> ComposerModelInterface?,
@@ -136,9 +135,9 @@ internal class EditorViewModel(
                 menuActionCallback?.invoke(menuAction)
             }
 
-            val linkAction = update.linkAction()
-            if (linkAction !is InternalLinkAction.Keep) {
-                curLinkAction = update.linkAction().toApiModel(curLinkAction)
+            val linkActionUpdate = update.linkAction()
+            if (linkActionUpdate is LinkActionUpdate.Update) {
+                curLinkAction = linkActionUpdate.linkAction.toApiModel()
                 linkActionCallback?.invoke(curLinkAction)
             }
         }
@@ -186,7 +185,7 @@ internal class EditorViewModel(
     }
 
     fun getLinkAction(): LinkAction? =
-        composer?.getLinkAction()?.toApiModel(curLinkAction)
+        composer?.getLinkAction()?.toApiModel()
 
     private fun onComposerFailure(error: Throwable, attemptContentRecovery: Boolean = true) {
         rustErrorCollector?.onRustError(error)
