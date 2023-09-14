@@ -1,5 +1,11 @@
 # Changelog
 
+# [2.10.2] - 2023-09-14
+
+### Fixed
+
+- Android: Fix missing link action updates in compose library (#804)
+
 # [2.10.1] - 2023-09-13
 
 No changes except to publishing workflow.
