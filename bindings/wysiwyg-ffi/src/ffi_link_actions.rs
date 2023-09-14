@@ -20,3 +20,20 @@ impl From<wysiwyg::LinkAction<Utf16String>> for LinkAction {
         }
     }
 }
+
+#[derive(uniffi::Enum)]
+pub enum LinkActionUpdate {
+    Keep,
+    Update { link_action: LinkAction },
+}
+
+impl From<wysiwyg::LinkActionUpdate<Utf16String>> for LinkActionUpdate {
+    fn from(inner: wysiwyg::LinkActionUpdate<Utf16String>) -> Self {
+        match inner {
+            wysiwyg::LinkActionUpdate::Keep => Self::Keep,
+            wysiwyg::LinkActionUpdate::Update(action) => Self::Update {
+                link_action: action.into(),
+            },
+        }
+    }
+}

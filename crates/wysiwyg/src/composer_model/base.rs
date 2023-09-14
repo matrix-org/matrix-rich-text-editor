@@ -19,6 +19,7 @@ use crate::dom::parser::markdown::markdown_html_parser::MarkdownHTMLParser;
 use crate::dom::parser::parse;
 use crate::dom::to_plain_text::ToPlainText;
 use crate::dom::{Dom, DomCreationError, UnicodeString};
+use crate::link_action::LinkActionUpdate;
 use crate::{
     ComposerAction, ComposerUpdate, DomHandle, Location, ToHtml, ToMarkdown,
     ToTree,
@@ -156,6 +157,7 @@ where
             self.state.end,
             menu_state,
             self.compute_menu_action(),
+            LinkActionUpdate::Update(self.get_link_action()),
         )
     }
 
@@ -169,6 +171,7 @@ where
             self.state.end,
             self.compute_menu_state(MenuStateComputeType::KeepIfUnchanged),
             self.compute_menu_action(),
+            LinkActionUpdate::Update(self.get_link_action()),
         )
     }
 
@@ -184,6 +187,7 @@ where
             self.state.end,
             self.compute_menu_state(MenuStateComputeType::AlwaysUpdate),
             self.compute_menu_action(),
+            LinkActionUpdate::Update(self.get_link_action()),
         )
     }
 

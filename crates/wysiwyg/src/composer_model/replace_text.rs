@@ -241,11 +241,13 @@ mod test {
     use widestring::Utf16String;
 
     use crate::action_state::ActionState;
+    use crate::link_action::LinkActionUpdate;
     use crate::menu_state::MenuStateUpdate;
     use crate::tests::testutils_composer_model::cm;
     use crate::tests::testutils_conversion::utf16;
     use crate::{
-        ComposerAction, ComposerUpdate, Location, MenuAction, MenuState,
+        ComposerAction, ComposerUpdate, LinkAction, Location, MenuAction,
+        MenuState,
     };
     use strum::IntoEnumIterator;
 
@@ -263,6 +265,7 @@ mod test {
                     action_states: indent_unindent_redo_disabled()
                 }),
                 MenuAction::None,
+                LinkActionUpdate::Update(LinkAction::CreateWithText),
             ),
         );
     }
