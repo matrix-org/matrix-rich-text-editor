@@ -40,6 +40,7 @@ public struct WysiwygComposerView: View {
     // MARK: - Private
 
     private let placeholder: String
+    private let placeholderColor: Color
     private let viewModel: WysiwygComposerViewModelProtocol
     private let itemProviderHelper: WysiwygItemProviderHelper?
     private let keyCommandHandler: KeyCommandHandler?
@@ -51,6 +52,7 @@ public struct WysiwygComposerView: View {
     ///
     /// - Parameters:
     ///   - placeholder: Placeholder for empty composer.
+    ///   - placeholderColor: The color of the placeholder.
     ///   - viewModel: The main view model of the composer.
     ///   See `WysiwygComposerViewModel.swift` for triggerable actions.
     ///   - itemProviderHelper: A helper to determine if an item can be pasted into the hosting application.
@@ -60,11 +62,13 @@ public struct WysiwygComposerView: View {
     ///   - pasteHandler: A handler for paste events.
     ///   If omitted, the composer will try to paste content as raw text.
     public init(placeholder: String,
+                placeholderColor: Color = .init(UIColor.placeholderText),
                 viewModel: WysiwygComposerViewModelProtocol,
                 itemProviderHelper: WysiwygItemProviderHelper?,
                 keyCommandHandler: KeyCommandHandler?,
                 pasteHandler: PasteHandler?) {
         self.placeholder = placeholder
+        self.placeholderColor = placeholderColor
         self.viewModel = viewModel
         self.itemProviderHelper = itemProviderHelper
         self.keyCommandHandler = keyCommandHandler
@@ -87,7 +91,7 @@ public struct WysiwygComposerView: View {
         if viewModel.isContentEmpty {
             Text(placeholder)
                 .font(Font(UIFont.preferredFont(forTextStyle: .body)))
-                .foregroundColor(Color(UIColor.placeholderText))
+                .foregroundColor(placeholderColor)
                 .accessibilityHidden(true)
         }
     }
