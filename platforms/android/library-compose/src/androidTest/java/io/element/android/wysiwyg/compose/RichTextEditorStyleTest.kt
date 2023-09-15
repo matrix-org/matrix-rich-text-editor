@@ -6,6 +6,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.espresso.Espresso.onView
@@ -24,7 +25,7 @@ class RichTextEditorStyleTest {
 
     private val state = createState()
     private val bulletRadius = MutableStateFlow(2.dp)
-    private val codeBg = MutableStateFlow(io.element.android.wysiwyg.R.drawable.code_block_bg)
+    private val codeBgColor = MutableStateFlow(Color.Blue)
 
     @Test
     fun testContentIsStillDisplayedAfterSetStyle() = runTest {
@@ -44,10 +45,9 @@ class RichTextEditorStyleTest {
 
     @Test(expected = NotFoundException::class)
     fun testBadResourceThrows() = runTest {
-        val nonExistentDrawable = 0
         showContent()
 
-        codeBg.emit(nonExistentDrawable)
+        codeBgColor.emit(Color.Red)
 
         composeTestRule.awaitIdle()
     }
@@ -55,13 +55,15 @@ class RichTextEditorStyleTest {
     private fun showContent() =
         composeTestRule.setContent {
             val bulletRadius by bulletRadius.collectAsState()
-            val codeBg by codeBg.collectAsState()
+            val codeBgColor by codeBgColor.collectAsState()
             val style = RichTextEditorDefaults.style(
                 bulletList = RichTextEditorDefaults.bulletListStyle(
                     bulletRadius = bulletRadius
                 ),
                 codeBlock = RichTextEditorDefaults.codeBlockStyle(
-                    backgroundDrawable = codeBg
+                    background = RichTextEditorDefaults.codeBlockBackgroundStyle(
+                        color = codeBgColor
+                    )
                 )
             )
             MaterialTheme {

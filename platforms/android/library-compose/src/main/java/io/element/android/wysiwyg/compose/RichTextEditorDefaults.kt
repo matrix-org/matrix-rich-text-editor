@@ -1,12 +1,15 @@
 package io.element.android.wysiwyg.compose
 
-import io.element.android.wysiwyg.R as BaseR
-import androidx.annotation.DrawableRes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+
+private val defaultCodeCornerRadius = 4.dp
+private val defaultCodeBorderWidth = 1.dp
+
 
 /**
  * Default config for the [RichTextEditor] composable.
@@ -63,19 +66,19 @@ object RichTextEditorDefaults {
      * @param leadingMargin The leading margin to apply
      * @param verticalPadding The vertical padding to apply
      * @param relativeTextSize The relative font scale to apply to code text
-     * @param backgroundDrawable The background drawable to use
+     * @param background The background style to apply
      */
+    @Composable
     fun codeBlockStyle(
         leadingMargin: Dp = 16.dp,
         verticalPadding: Dp = 8.dp,
         relativeTextSize: Float = 0.85f,
-        @DrawableRes
-        backgroundDrawable: Int = BaseR.drawable.code_block_bg,
+        background: CodeBackgroundStyle = codeBlockBackgroundStyle(),
     ) = CodeBlockStyle(
         leadingMargin = leadingMargin,
         verticalPadding = verticalPadding,
         relativeTextSize = relativeTextSize,
-        backgroundDrawable = backgroundDrawable,
+        background = background,
     )
 
     /**
@@ -84,31 +87,19 @@ object RichTextEditorDefaults {
      * @param horizontalPadding The horizontal padding to apply
      * @param verticalPadding The vertical padding to apply
      * @param relativeTextSize The relative font scale to apply to code text
-     * @param singleLineBg The background drawable to apply for single line code blocks
-     * @param multiLineBgLeft The background drawable to apply for the left side of multi line inline code
-     * @param multiLineBgMid The background drawable to apply for the middle of multi line inline code
-     * @param multiLineBgRight The background drawable to apply for the right side of multi line inline code
+     * @param background The background style to apply for single line code blocks
      */
+    @Composable
     fun inlineCodeStyle(
         horizontalPadding: Dp = 4.dp,
         verticalPadding: Dp = 2.dp,
         relativeTextSize: Float = 0.85f,
-        @DrawableRes
-        singleLineBg: Int = BaseR.drawable.inline_code_single_line_bg,
-        @DrawableRes
-        multiLineBgLeft: Int = BaseR.drawable.inline_code_multi_line_bg_left,
-        @DrawableRes
-        multiLineBgMid: Int = BaseR.drawable.inline_code_multi_line_bg_mid,
-        @DrawableRes
-        multiLineBgRight: Int = BaseR.drawable.inline_code_multi_line_bg_right,
+        background: InlineCodeBackgroundStyle = inlineCodeBackgroundStyle(),
     ) = InlineCodeStyle(
         horizontalPadding = horizontalPadding,
         verticalPadding = verticalPadding,
         relativeTextSize = relativeTextSize,
-        singleLineBg = singleLineBg,
-        multiLineBgLeft = multiLineBgLeft,
-        multiLineBgMid = multiLineBgMid,
-        multiLineBgRight = multiLineBgRight,
+        background = background,
     )
 
     /**
@@ -157,4 +148,79 @@ object RichTextEditorDefaults {
     ) = LinkStyle(
         color = color,
     )
+
+    /**
+     * Creates a default code block background.
+     */
+    @Composable
+    fun codeBlockBackgroundStyle(
+        color: Color = MaterialTheme.colorScheme.secondaryContainer,
+        borderColor: Color = MaterialTheme.colorScheme.onSecondaryContainer,
+        cornerRadius: Dp = defaultCodeCornerRadius,
+        borderWidth: Dp = defaultCodeBorderWidth,
+    ): CodeBackgroundStyle = CodeBackgroundStyle(
+        density = LocalDensity.current,
+        color = color,
+        borderColor = borderColor,
+        borderWidth = borderWidth,
+        cornerRadiusTopLeft = cornerRadius,
+        cornerRadiusTopRight = cornerRadius,
+        cornerRadiusBottomRight = cornerRadius,
+        cornerRadiusBottomLeft = cornerRadius,
+    )
+
+    /**
+     * Creates a default inline code background.
+     */
+    @Composable
+    fun inlineCodeBackgroundStyle(
+        color: Color = MaterialTheme.colorScheme.secondaryContainer,
+        borderColor: Color = MaterialTheme.colorScheme.onSecondaryContainer,
+        cornerRadius: Dp = defaultCodeCornerRadius,
+        borderWidth: Dp = defaultCodeBorderWidth
+    ): InlineCodeBackgroundStyle {
+        val density = LocalDensity.current
+        return InlineCodeBackgroundStyle(
+            singleLine = CodeBackgroundStyle(
+                density = density,
+                color = color,
+                borderColor = borderColor,
+                borderWidth = borderWidth,
+                cornerRadiusTopLeft = cornerRadius,
+                cornerRadiusTopRight = cornerRadius,
+                cornerRadiusBottomRight = cornerRadius,
+                cornerRadiusBottomLeft = cornerRadius,
+            ),
+            multiLineLeft = CodeBackgroundStyle(
+                density = density,
+                color = color,
+                borderColor = borderColor,
+                borderWidth = borderWidth,
+                cornerRadiusTopLeft = cornerRadius,
+                cornerRadiusTopRight = 0.dp,
+                cornerRadiusBottomRight = 0.dp,
+                cornerRadiusBottomLeft = cornerRadius,
+            ),
+            multiLineRight = CodeBackgroundStyle(
+                density = density,
+                color = color,
+                borderColor = borderColor,
+                borderWidth = borderWidth,
+                cornerRadiusTopLeft = 0.dp,
+                cornerRadiusTopRight = cornerRadius,
+                cornerRadiusBottomRight = cornerRadius,
+                cornerRadiusBottomLeft = 0.dp,
+            ),
+            multiLineMiddle = CodeBackgroundStyle(
+                density = density,
+                color = color,
+                borderColor = borderColor,
+                borderWidth = borderWidth,
+                cornerRadiusTopLeft = 0.dp,
+                cornerRadiusTopRight = 0.dp,
+                cornerRadiusBottomRight = 0.dp,
+                cornerRadiusBottomLeft = 0.dp,
+            ),
+        )
+    }
 }

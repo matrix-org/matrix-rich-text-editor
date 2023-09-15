@@ -1,8 +1,12 @@
 package io.element.android.wysiwyg.compose
 
-import androidx.annotation.DrawableRes
+import android.graphics.drawable.GradientDrawable
+import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import kotlin.math.roundToInt
 
 data class RichTextEditorStyle internal constructor(
     val bulletList: BulletListStyle,
@@ -23,22 +27,14 @@ data class CodeBlockStyle internal constructor(
     val leadingMargin: Dp,
     val verticalPadding: Dp,
     val relativeTextSize: Float,
-    @DrawableRes
-    val backgroundDrawable: Int,
+    val background: CodeBackgroundStyle,
 )
 
 data class InlineCodeStyle internal constructor(
     val horizontalPadding: Dp,
     val verticalPadding: Dp,
     val relativeTextSize: Float,
-    @DrawableRes
-    val singleLineBg: Int,
-    @DrawableRes
-    val multiLineBgLeft: Int,
-    @DrawableRes
-    val multiLineBgMid: Int,
-    @DrawableRes
-    val multiLineBgRight: Int,
+    val background: InlineCodeBackgroundStyle,
 )
 
 data class PillStyle(
@@ -55,4 +51,42 @@ data class CursorStyle(
 
 data class LinkStyle(
     val color: Color,
+)
+
+@Immutable
+data class CodeBackgroundStyle(
+    val density: Density,
+    val color: Color,
+    val borderColor: Color,
+    val cornerRadiusTopLeft: Dp,
+    val cornerRadiusTopRight: Dp,
+    val cornerRadiusBottomLeft: Dp,
+    val cornerRadiusBottomRight: Dp,
+    val borderWidth: Dp,
+) {
+    internal val drawable by lazy {
+        GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            setColor(this@CodeBackgroundStyle.color.toArgb())
+            setStroke(
+                with(density) { borderWidth.toPx() }.roundToInt(),
+                borderColor.toArgb()
+            )
+            cornerRadii = with(density) {
+                floatArrayOf(
+                    cornerRadiusTopLeft.toPx(), cornerRadiusTopLeft.toPx(),
+                    cornerRadiusTopRight.toPx(), cornerRadiusTopRight.toPx(),
+                    cornerRadiusBottomRight.toPx(), cornerRadiusBottomRight.toPx(),
+                    cornerRadiusBottomLeft.toPx(), cornerRadiusBottomLeft.toPx()
+                )
+            }
+        }
+    }
+}
+
+data class InlineCodeBackgroundStyle(
+    val singleLine: CodeBackgroundStyle,
+    val multiLineLeft: CodeBackgroundStyle,
+    val multiLineMiddle: CodeBackgroundStyle,
+    val multiLineRight: CodeBackgroundStyle,
 )

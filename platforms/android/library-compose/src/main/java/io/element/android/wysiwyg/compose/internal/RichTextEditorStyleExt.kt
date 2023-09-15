@@ -1,11 +1,8 @@
 package io.element.android.wysiwyg.compose.internal
 
 import android.content.Context
-import android.content.res.Resources.NotFoundException
-import androidx.annotation.DrawableRes
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Density
-import androidx.core.content.ContextCompat
 import io.element.android.wysiwyg.compose.BulletListStyle
 import io.element.android.wysiwyg.compose.CodeBlockStyle
 import io.element.android.wysiwyg.compose.InlineCodeStyle
@@ -39,10 +36,10 @@ internal fun InlineCodeStyle.toStyleConfig(context: Context): InlineCodeStyleCon
         horizontalPadding = with(density) { horizontalPadding.toPx().roundToInt() },
         verticalPadding = with(density) { verticalPadding.toPx().roundToInt() },
         relativeTextSize = relativeTextSize,
-        singleLineBg = context.requireDrawable(singleLineBg),
-        multiLineBgLeft = context.requireDrawable(multiLineBgLeft),
-        multiLineBgMid = context.requireDrawable(multiLineBgMid),
-        multiLineBgRight = context.requireDrawable(multiLineBgRight),
+        singleLineBg = background.singleLine.drawable,
+        multiLineBgLeft = background.multiLineLeft.drawable,
+        multiLineBgMid = background.multiLineMiddle.drawable,
+        multiLineBgRight = background.multiLineRight.drawable
     )
 }
 
@@ -52,7 +49,7 @@ internal fun CodeBlockStyle.toStyleConfig(context: Context): CodeBlockStyleConfi
         leadingMargin = with(density) { leadingMargin.toPx().roundToInt() },
         verticalPadding = with(density) { verticalPadding.toPx().roundToInt() },
         relativeTextSize = relativeTextSize,
-        backgroundDrawable = context.requireDrawable(backgroundDrawable),
+        backgroundDrawable = background.drawable,
     )
 }
 
@@ -61,7 +58,3 @@ internal fun PillStyle.toStyleConfig(): PillStyleConfig =
         backgroundColor = backgroundColor.toArgb(),
     )
 
-private fun Context.requireDrawable(
-    @DrawableRes drawable: Int
-) = ContextCompat.getDrawable(this, drawable)
-    ?: throw NotFoundException("Drawable not found")
