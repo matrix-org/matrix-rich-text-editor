@@ -1,5 +1,9 @@
 # Changelog
 
+# [2.11.0] - 2023-09-15
+
+- iOS: Add API to change the text view placeholder color (#810)
+
 # [2.10.2] - 2023-09-14
 
 ### Fixed
