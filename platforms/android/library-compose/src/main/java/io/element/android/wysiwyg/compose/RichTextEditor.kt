@@ -176,6 +176,7 @@ private fun AppCompatEditText.applyStyle(style: RichTextEditorStyle) {
         val cursorDrawable = ContextCompat.getDrawable(context, R.drawable.cursor)
         cursorDrawable?.setTint(style.cursor.color.toArgb())
         textCursorDrawable = cursorDrawable
+        setLinkTextColor(style.link.color.toArgb())
     }
 }
 

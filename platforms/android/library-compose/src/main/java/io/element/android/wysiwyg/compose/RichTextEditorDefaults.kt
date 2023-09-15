@@ -20,9 +20,9 @@ object RichTextEditorDefaults {
      * @param codeBlock A custom style for code blocks.
      * @param inlineCode A custom style for inline code.
      * @param pill A custom style for pills.
-     * @param textColor Color of the text displayed in the editor.
-     * @param cursorDrawable Color of the cursor displayed in the editor.
-     *                    Only supported on API 29 and above.
+     * @param text A custom style for text displayed in the editor.
+     * @param cursor A custom style for the cursor for API 29 and above.
+     * @param link A custom style for links.
      */
     @Composable
     fun style(
@@ -32,6 +32,7 @@ object RichTextEditorDefaults {
         pill: PillStyle = pillStyle(),
         text: TextStyle = textStyle(),
         cursor: CursorStyle = cursorStyle(),
+        link: LinkStyle = linkStyle(),
     ): RichTextEditorStyle = RichTextEditorStyle(
         bulletList = bulletList,
         codeBlock = codeBlock,
@@ -39,6 +40,7 @@ object RichTextEditorDefaults {
         pill = pill,
         text = text,
         cursor = cursor,
+        link = link,
     )
 
     /**
@@ -141,6 +143,18 @@ object RichTextEditorDefaults {
     fun cursorStyle(
         color: Color = MaterialTheme.colorScheme.primary,
     ) = CursorStyle(
+        color = color,
+    )
+
+    /**
+     * Creates the default link style for [RichTextEditor].
+     *
+     * @param color The color to apply
+     */
+    @Composable
+    fun linkStyle(
+        color: Color = MaterialTheme.colorScheme.scrim,
+    ) = LinkStyle(
         color = color,
     )
 }

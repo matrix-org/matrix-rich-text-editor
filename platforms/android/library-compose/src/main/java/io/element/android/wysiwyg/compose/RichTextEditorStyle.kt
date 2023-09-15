@@ -11,6 +11,7 @@ data class RichTextEditorStyle internal constructor(
     val pill: PillStyle,
     val text: TextStyle,
     val cursor: CursorStyle,
+    val link: LinkStyle,
 )
 
 data class BulletListStyle internal constructor(
@@ -49,5 +50,9 @@ data class TextStyle(
 )
 
 data class CursorStyle(
+    val color: Color,
+)
+
+data class LinkStyle(
     val color: Color,
 )
