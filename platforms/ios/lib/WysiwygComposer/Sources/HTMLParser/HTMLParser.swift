@@ -30,17 +30,15 @@ public final class HTMLParser {
         pre {
             background-color: \(TempColor.codeBlock.toHexString());
             display: block;
-            font-family: monospace;
             white-space: pre;
-            -coretext-fontname: Menlo-Regular;
+            -coretext-fontname: .AppleSystemUIFontMonospaced-Regular;
             font-size: inherit;
         }
         code {
             background-color: \(TempColor.inlineCode.toHexString());
             display: inline;
-            font-family: monospace;
             white-space: pre;
-            -coretext-fontname: Menlo-Regular;
+            -coretext-fontname: .AppleSystemUIFontMonospaced-Regular;
             font-size: inherit;
         }
         h1,h2,h3 {
