@@ -51,6 +51,11 @@ android {
 
     buildFeatures {
         buildConfig = true
+        compose true // Enable classes to be marked as stable
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion '1.5.1'
     }
 
     testOptions {
@@ -96,6 +101,8 @@ dependencies {
     implementation libs.androidx.lifecycle.viewmodel
     api libs.google.material
     implementation libs.androidx.constraintlayout
+    implementation platform(libs.androidx.compose.bom)
+    implementation 'androidx.compose.runtime:runtime'
     testImplementation libs.test.junit
     testImplementation libs.test.robolectric
     testImplementation libs.test.mockk

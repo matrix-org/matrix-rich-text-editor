@@ -42,6 +42,7 @@ androidx-activity-compose = { module = "androidx.activity:activity-compose", ver
 androidx-core-ktx-1_10_1 = { module = "androidx.core:core-ktx", version.ref = "core-ktx" }
 kotlin-coroutines = { module="org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref="coroutines" }
 kotlin-coroutines-android = { module="org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref="coroutines" }
+kotlin-collections-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version = "0.3.5" }
 
 # Android / Google
 androidx-appcompat = { module="androidx.appcompat:appcompat", version.ref="appcompat" }

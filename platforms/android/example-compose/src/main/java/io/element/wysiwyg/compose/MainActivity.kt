@@ -27,6 +27,7 @@ import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
 import io.element.wysiwyg.compose.ui.components.FormattingButtons
 import io.element.wysiwyg.compose.ui.theme.RichTextEditorTheme
+import kotlinx.collections.immutable.toPersistentMap
 import timber.log.Timber
 import uniffi.wysiwyg_composer.ComposerAction
 
@@ -77,7 +78,7 @@ class MainActivity : ComponentActivity() {
                             onResetText = {
                                 state.setHtml("")
                             },
-                            actionStates = state.actions,
+                            actionStates = state.actions.toPersistentMap(),
                             onActionClick = {
                                 when (it) {
                                     ComposerAction.BOLD -> state.toggleInlineFormat(InlineFormat.Bold)

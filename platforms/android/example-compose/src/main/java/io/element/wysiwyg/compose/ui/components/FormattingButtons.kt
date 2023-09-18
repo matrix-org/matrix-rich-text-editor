@@ -17,14 +17,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import io.element.android.wysiwyg.view.models.LinkAction
 import io.element.wysiwyg.compose.R
+import kotlinx.collections.immutable.ImmutableMap
+import kotlinx.collections.immutable.persistentMapOf
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
 
 @Composable
 fun FormattingButtons(
-    actionStates: Map<ComposerAction, ActionState>,
+    actionStates: ImmutableMap<ComposerAction, ActionState>,
     modifier: Modifier = Modifier,
     onResetText: () -> Unit = {},
     onActionClick: (ComposerAction) -> Unit = {},
@@ -214,7 +215,7 @@ private fun FormattingButton(
 @Composable
 private fun FormattingButtonsPreview() =
     FormattingButtons(
-        actionStates = mapOf(
+        actionStates = persistentMapOf(
             ComposerAction.BOLD to ActionState.ENABLED,
             ComposerAction.ITALIC to ActionState.REVERSED,
             ComposerAction.UNDERLINE to ActionState.DISABLED,
@@ -225,6 +226,6 @@ private fun FormattingButtonsPreview() =
 @Composable
 private fun FormattingButtonsDefaultPreview() =
     FormattingButtons(
-        actionStates = emptyMap()
+        actionStates = persistentMapOf()
     )
 
