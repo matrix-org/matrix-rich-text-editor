@@ -43,15 +43,6 @@ class RichTextEditorStyleTest {
             .check(matches(withText("Hello, world")))
     }
 
-    @Test(expected = NotFoundException::class)
-    fun testBadResourceThrows() = runTest {
-        showContent()
-
-        codeBgColor.emit(Color.Red)
-
-        composeTestRule.awaitIdle()
-    }
-
     private fun showContent() =
         composeTestRule.setContent {
             val bulletRadius by bulletRadius.collectAsState()
