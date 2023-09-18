@@ -1,5 +1,19 @@
 # Changelog
 
+# [2.12.0] - 2023-09-18
+
+### Added
+
+- Android: Add customisation options for links and code (#813)
+
+### Changed
+
+- Android: [API breaking change] Simplifiy API for setting code background (#813)
+
+### Fixed
+
+- iOS: Fix code block and inline code fonts (#814)
+
 # [2.11.0] - 2023-09-15
 
 - iOS: Add API to change the text view placeholder color (#810)
