@@ -423,6 +423,13 @@ class EditorEditTextInputTests {
     }
 
     @Test
+    fun testSetHtml() {
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(EditorActions.setHtml("<p><strong>hello</strong></p>\n"))
+            .check(matches(withText("hello")))
+    }
+
+    @Test
     fun testMenuStateChangedListener() {
         var isItalicHighlighted = false
         scenarioRule.scenario.onActivity {

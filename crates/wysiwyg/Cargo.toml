@@ -31,6 +31,7 @@ widestring = "1.0.2"
 indoc = "1.0"
 url="2.3.1"
 email_address="0.2.4"
+regex="1.9.5"
 matrix_mentions = { path = "../matrix_mentions" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]

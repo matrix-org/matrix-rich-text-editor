@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use indoc::indoc;
 use widestring::Utf16String;
 
 use crate::{
@@ -40,6 +41,97 @@ fn set_content_from_html_invalid() {
         DomCreationError::HtmlParseError(HtmlParseError::new(vec![
             "Unexpected open tag at end of body".into()
         ]))
+    );
+}
+
+#[test]
+fn set_content_from_html_containing_newlines() {
+    let mut model = cm("|");
+    model
+        .set_content_from_html(&utf16(
+            "<p> \n <strong> \n \n Hello world! \n \n </strong> \n \n </p> \n\n\n",
+        ))
+        .unwrap();
+    assert_eq!(
+        &model.to_tree(),
+        indoc! {
+        r#"
+
+        └>p
+          └>strong
+            └>"Hello world!"
+        "#}
+    );
+    assert_eq!(tx(&model), "<p><strong>Hello world!|</strong></p>");
+}
+
+#[test]
+fn set_content_from_html_paragraphs() {
+    let mut model = cm("|");
+    model
+        .set_content_from_html(&utf16(
+            "<p>\n  paragraph 1\n</p>\n<p> \n  paragraph 2\n</p>",
+        ))
+        .unwrap();
+    assert_eq!(
+        &model.to_tree(),
+        indoc! {
+        r#"
+
+        ├>p
+        │ └>"paragraph 1"
+        └>p
+          └>"paragraph 2"
+        "#}
+    );
+    assert_eq!(tx(&model), "<p>paragraph 1</p><p>paragraph 2|</p>");
+}
+
+#[test]
+fn set_content_from_html_paragraphs_containing_newline() {
+    let mut model = cm("|");
+    model
+        .set_content_from_html(&utf16(
+            "<p>\n  paragraph\n  across two lines\n</p>\n",
+        ))
+        .unwrap();
+    assert_eq!(
+        &model.to_tree(),
+        indoc! {
+        r#"
+
+        └>p
+          └>"paragraph across two lines"
+        "#}
+    );
+    assert_eq!(tx(&model), "<p>paragraph across two lines|</p>");
+}
+
+#[test]
+fn set_content_from_html_paragraphs_and_inline() {
+    let mut model = cm("|");
+    model
+        .set_content_from_html(&utf16(
+            "<p>\n  paragraph 1\n</p>\n<b>\n  inline\n</b>\n<p>\n  paragraph 2\n</p>",
+        ))
+        .unwrap();
+    assert_eq!(
+        &model.to_tree(),
+        indoc! {
+        r#"
+
+        ├>p
+        │ └>"paragraph 1"
+        ├>p
+        │ └>b
+        │   └>"inline"
+        └>p
+          └>"paragraph 2"
+        "#}
+    );
+    assert_eq!(
+        tx(&model),
+        "<p>paragraph 1</p><p><b>inline</b></p><p>paragraph 2|</p>"
     );
 }
 
