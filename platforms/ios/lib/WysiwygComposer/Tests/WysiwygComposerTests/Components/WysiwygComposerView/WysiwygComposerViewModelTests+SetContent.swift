@@ -20,6 +20,7 @@ import XCTest
 
 private enum Constants {
     static let sampleHtml = "some <strong>bold</strong> text"
+    static let sampleHtmlNewline = "<p><strong>bold</strong></p>\n"
     static let sampleMarkdown = "some __bold__ text"
     static let samplePlainText = "some bold text"
     static let sampleHtml2 = "<ol><li><strong>A</strong></li><li><em>B</em></li></ol>"
@@ -35,6 +36,13 @@ extension WysiwygComposerViewModelTests {
         viewModel.setHtmlContent(Constants.sampleHtml2)
         XCTAssertEqual(viewModel.content.html, Constants.sampleHtml2)
         XCTAssertEqual(viewModel.content.markdown, Constants.sampleMarkdown2)
+    }
+
+    func testSetHtmlContentTrailingNewline() throws {
+        viewModel.setHtmlContent(Constants.sampleHtmlNewline)
+        XCTAssertEqual(viewModel.content.html, "<p><strong>bold</strong></p><p>\n</p>")
+        XCTAssertEqual(viewModel.content.markdown, "__bold__\n\n")
+        XCTAssertEqual(viewModel.attributedContent.selection, NSRange(location: 5, length: 0))
     }
 
     func testSetMarkdownContent() throws {
