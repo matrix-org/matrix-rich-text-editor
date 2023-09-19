@@ -451,9 +451,16 @@ private extension WysiwygComposerViewModel {
             let attributed = try HTMLParser.parse(html: html,
                                                   style: parserStyle,
                                                   mentionReplacer: mentionReplacer)
-            // FIXME: handle error for out of bounds index
             let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
-            let textSelection = try attributed.attributedRange(from: htmlSelection)
+            let textSelection: NSRange
+
+            // Workaround for the "out of bounds index" error
+            if start == end, start > attributed.length {
+                textSelection = .init(location: attributed.length, length: 0)
+            } else {
+                textSelection = try attributed.attributedRange(from: htmlSelection)
+            }
+
             attributedContent = WysiwygComposerAttributedContent(text: attributed,
                                                                  selection: textSelection,
                                                                  plainText: model.getContentAsPlainText())
