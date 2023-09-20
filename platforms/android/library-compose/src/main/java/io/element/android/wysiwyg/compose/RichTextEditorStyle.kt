@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import kotlin.math.roundToInt
 
 data class RichTextEditorStyle internal constructor(
@@ -43,6 +44,7 @@ data class PillStyle(
 
 data class TextStyle(
     val color: Color,
+    val fontSize: TextUnit,
 )
 
 data class CursorStyle(

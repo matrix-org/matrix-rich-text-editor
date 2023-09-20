@@ -1,6 +1,7 @@
 package io.element.android.wysiwyg.compose
 
 import android.os.Build
+import android.util.TypedValue
 import android.view.View
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.compose.runtime.Composable
@@ -172,6 +173,7 @@ private fun PreviewEditor(
 
 private fun AppCompatEditText.applyStyle(style: RichTextEditorStyle) {
     setTextColor(style.text.color.toArgb())
+    setTextSize(TypedValue.COMPLEX_UNIT_SP, style.text.fontSize.value)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
         val cursorDrawable = ContextCompat.getDrawable(context, R.drawable.cursor)
         cursorDrawable?.setTint(style.cursor.color.toArgb())
