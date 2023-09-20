@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use regex::Regex;
+
 use crate::dom::dom_creation_error::HtmlParseError;
 use crate::dom::nodes::dom_node::DomNodeKind::CodeBlock;
 use crate::dom::nodes::ContainerNode;
@@ -709,6 +711,15 @@ fn convert_text<S: UnicodeString>(
         if is_nbsp {
             return;
         }
+
+        // Trim any surrounding indentation
+        let surrounding_indent =
+            Regex::new(r"^(\s*\n\s*)+|(\s*\n\s*)+$").unwrap();
+        let contents = &surrounding_indent.replace_all(contents, "");
+
+        // Replace any internal indentation with a single space
+        let internal_indent = Regex::new(r"s*\n\s*").unwrap();
+        let contents = &internal_indent.replace_all(contents, " ");
 
         for (i, part) in contents.split("@room").enumerate() {
             if i > 0 {
