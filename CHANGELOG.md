@@ -1,5 +1,13 @@
 # Changelog
 
+# [2.13.0] - 2023-09-20
+
+### Added
+- Android: allow font size customisation in compose (#819)
+
+### Fixed
+- Fix unwanted extra paragraphs after HTML parsing (#820)
+
 # [2.12.0] - 2023-09-18
 
 ### Added
