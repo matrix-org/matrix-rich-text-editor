@@ -176,7 +176,7 @@ internal class EditorViewModel(
      *
      * Note that this should not be used for messages; instead [getContentAsMessageHtml] should be used.
      */
-    internal fun getInternalHtml(): String {
+    fun getInternalHtml(): String {
         return composer?.getContentAsHtml().orEmpty()
     }
 
@@ -186,6 +186,9 @@ internal class EditorViewModel(
 
     fun getLinkAction(): LinkAction? =
         composer?.getLinkAction()?.toApiModel()
+
+    fun rerender(): CharSequence =
+        stringToSpans(getInternalHtml())
 
     private fun onComposerFailure(error: Throwable, attemptContentRecovery: Boolean = true) {
         rustErrorCollector?.onRustError(error)

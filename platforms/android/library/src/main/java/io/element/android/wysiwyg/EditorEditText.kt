@@ -29,7 +29,6 @@ import io.element.android.wysiwyg.internal.view.EditorEditTextAttributeReader
 import io.element.android.wysiwyg.internal.view.viewModel
 import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
 import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
-import io.element.android.wysiwyg.internal.viewmodel.ReplaceTextResult
 import io.element.android.wysiwyg.utils.*
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
 import io.element.android.wysiwyg.view.StyleConfig
@@ -217,7 +216,7 @@ class EditorEditText : AppCompatEditText {
                 )
 
                 if (result != null) {
-                    setTextFromComposerUpdate(result)
+                    setTextFromComposerUpdate(result.text)
                     setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
                 }
 
@@ -234,7 +233,7 @@ class EditorEditText : AppCompatEditText {
                 val result = viewModel.processInput(EditorInputAction.ReplaceText(copiedString))
 
                 if (result != null) {
-                    setTextFromComposerUpdate(result)
+                    setTextFromComposerUpdate(result.text)
                     setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
                 }
 
@@ -302,7 +301,7 @@ class EditorEditText : AppCompatEditText {
         val result = viewModel.processInput(EditorInputAction.ReplaceText(text.toString()))
             ?: return super.setText(text, type)
 
-        setTextFromComposerUpdate(result)
+        setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
     }
 
@@ -310,7 +309,7 @@ class EditorEditText : AppCompatEditText {
         val result = viewModel.processInput(EditorInputAction.ReplaceText(text.toString()))
             ?: return super.append(text, start, end)
 
-        setTextFromComposerUpdate(result)
+        setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
     }
 
@@ -318,7 +317,7 @@ class EditorEditText : AppCompatEditText {
         val result = viewModel.processInput(EditorInputAction.ApplyInlineFormat(inlineFormat))
             ?: return false
 
-        setTextFromComposerUpdate(result)
+        setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
         return true
     }
@@ -326,7 +325,7 @@ class EditorEditText : AppCompatEditText {
     fun toggleCodeBlock(): Boolean {
         val result = viewModel.processInput(EditorInputAction.CodeBlock)
             ?: return false
-        setTextFromComposerUpdate(result)
+        setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
         return true
     }
@@ -334,7 +333,7 @@ class EditorEditText : AppCompatEditText {
     fun toggleQuote(): Boolean {
         val result = viewModel.processInput(EditorInputAction.Quote)
             ?: return false
-        setTextFromComposerUpdate(result)
+        setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
         return true
     }
@@ -342,14 +341,14 @@ class EditorEditText : AppCompatEditText {
     fun undo() {
         val result = viewModel.processInput(EditorInputAction.Undo) ?: return
 
-        setTextFromComposerUpdate(result)
+        setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
     }
 
     fun redo() {
         val result = viewModel.processInput(EditorInputAction.Redo) ?: return
 
-        setTextFromComposerUpdate(result)
+        setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
@@ -375,7 +374,7 @@ class EditorEditText : AppCompatEditText {
             if (url != null) EditorInputAction.SetLink(url) else EditorInputAction.RemoveLink
         ) ?: return
 
-        setTextFromComposerUpdate(result)
+        setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
@@ -395,35 +394,35 @@ class EditorEditText : AppCompatEditText {
     fun insertLink(url: String, text: String) {
         val result = viewModel.processInput(EditorInputAction.SetLinkWithText(url, text)) ?: return
 
-        setTextFromComposerUpdate(result)
+        setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
     fun toggleList(ordered: Boolean) {
         val result = viewModel.processInput(EditorInputAction.ToggleList(ordered)) ?: return
 
-        setTextFromComposerUpdate(result)
+        setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
     fun indent() {
         val result = viewModel.processInput(EditorInputAction.Indent) ?: return
 
-        setTextFromComposerUpdate(result)
+        setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
     fun unindent() {
         val result = viewModel.processInput(EditorInputAction.Unindent) ?: return
 
-        setTextFromComposerUpdate(result)
+        setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
     fun setHtml(html: String) {
         val result = viewModel.processInput(EditorInputAction.ReplaceAllHtml(html)) ?: return
 
-        setTextFromComposerUpdate(result)
+        setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
@@ -432,6 +431,10 @@ class EditorEditText : AppCompatEditText {
      */
     fun getContentAsMessageHtml(): String {
         return viewModel.getContentAsMessageHtml()
+    }
+
+    fun getInternalHtml(): String {
+        return viewModel.getInternalHtml()
     }
 
     /**
@@ -445,7 +448,7 @@ class EditorEditText : AppCompatEditText {
     fun setMarkdown(markdown: String) {
         val result =
             viewModel.processInput(EditorInputAction.ReplaceAllMarkdown(markdown)) ?: return
-        setTextFromComposerUpdate(result)
+        setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
@@ -462,7 +465,7 @@ class EditorEditText : AppCompatEditText {
                 url = url,
             )
         ) ?: return
-        setTextFromComposerUpdate(result)
+        setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
@@ -477,7 +480,7 @@ class EditorEditText : AppCompatEditText {
                 value = text,
             )
         ) ?: return
-        setTextFromComposerUpdate(result)
+        setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
@@ -503,13 +506,14 @@ class EditorEditText : AppCompatEditText {
      * will be updated to reflect this.
      */
     private fun rerender() {
-        setHtml(viewModel.getInternalHtml())
+        val text = viewModel.rerender()
+        setTextFromComposerUpdate(text)
     }
 
-    private fun setTextFromComposerUpdate(result: ReplaceTextResult) {
+    private fun setTextFromComposerUpdate(text: CharSequence) {
         beginBatchEdit()
         editableText.removeFormattingSpans()
-        editableText.replace(0, editableText.length, result.text)
+        editableText.replace(0, editableText.length, text)
         endBatchEdit()
     }
 

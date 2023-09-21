@@ -51,9 +51,8 @@ class RichTextEditorTest {
         val state = createState()
         composeTestRule.showContent(state)
 
-        composeTestRule.runOnUiThread {
-            state.setHtml("Hello, world")
-        }
+        state.setHtml("Hello, world")
+        composeTestRule.awaitIdle()
 
         onView(withText("Hello, world")).check(matches(isDisplayed()))
 
@@ -69,9 +68,8 @@ class RichTextEditorTest {
         val state = createState()
         composeTestRule.showContent(state)
 
-        composeTestRule.runOnUiThread {
-            state.setHtml("Hello, <b><i>world</i></b>")
-        }
+        state.setHtml("Hello, <b><i>world</i></b>")
+        composeTestRule.awaitIdle()
 
         onView(withText("Hello, world")).check(matches(isDisplayed()))
 
@@ -94,10 +92,9 @@ class RichTextEditorTest {
         val state = createState()
         composeTestRule.showContent(state)
 
-        composeTestRule.runOnUiThread {
-            state.setHtml("Hello, ")
-            state.insertLink("https://element.io", "element")
-        }
+        state.setHtml("Hello, ")
+        state.insertLink("https://element.io", "element")
+        composeTestRule.awaitIdle()
 
         assertEquals("Hello, <a href=\"https://element.io\">element</a>", state.messageHtml)
         assertEquals("Hello, [element](<https://element.io>)", state.messageMarkdown)
@@ -108,10 +105,9 @@ class RichTextEditorTest {
         val state = createState()
         composeTestRule.showContent(state)
 
-        composeTestRule.runOnUiThread {
-            state.setHtml("Hello, <a href=\"https://element.io\">element</a>")
-            state.removeLink()
-        }
+        state.setHtml("Hello, <a href=\"https://element.io\">element</a>")
+        state.removeLink()
+        composeTestRule.awaitIdle()
 
         assertEquals("Hello, element", state.messageHtml)
         assertEquals("Hello, element", state.messageMarkdown)
@@ -122,10 +118,9 @@ class RichTextEditorTest {
         val state = createState()
         composeTestRule.showContent(state)
 
-        composeTestRule.runOnUiThread {
-            state.setHtml("Hello, <a href=\"https://element.io\">element</a>")
-            state.setLink("https://matrix.org")
-        }
+        state.setHtml("Hello, <a href=\"https://element.io\">element</a>")
+        state.setLink("https://matrix.org")
+        composeTestRule.awaitIdle()
 
         assertEquals("Hello, <a href=\"https://matrix.org\">element</a>", state.messageHtml)
         assertEquals("Hello, [element](<https://matrix.org>)", state.messageMarkdown)
@@ -136,9 +131,8 @@ class RichTextEditorTest {
         val state = createState()
         composeTestRule.showContent(state)
 
-        composeTestRule.runOnUiThread {
-            state.setHtml("<a href=\"https://matrix.org\">matrix</a> <a href=\"https://element.io\">element</a> plain")
-        }
+        state.setHtml("<a href=\"https://matrix.org\">matrix</a> <a href=\"https://element.io\">element</a> plain")
+        composeTestRule.awaitIdle()
 
         onView(withText("matrix element plain")).perform(EditorActions.setSelection(0, 0))
         assertEquals(LinkAction.SetLink("https://matrix.org"), state.linkAction)

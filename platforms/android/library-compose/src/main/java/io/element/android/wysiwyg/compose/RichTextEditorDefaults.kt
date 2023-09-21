@@ -16,6 +16,9 @@ private val defaultCodeBorderWidth = 1.dp
  * Default config for the [RichTextEditor] composable.
  */
 object RichTextEditorDefaults {
+    internal const val initialLineCount = 1
+    internal const val initialHtml = ""
+    internal const val initialFocus = false
 
     /**
      * Creates the default set of style customisations for [RichTextEditor].

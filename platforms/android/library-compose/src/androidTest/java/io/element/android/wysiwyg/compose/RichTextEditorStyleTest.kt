@@ -1,6 +1,5 @@
 package io.element.android.wysiwyg.compose
 
-import android.content.res.Resources.NotFoundException
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.collectAsState
@@ -31,9 +30,7 @@ class RichTextEditorStyleTest {
     fun testContentIsStillDisplayedAfterSetStyle() = runTest {
         showContent()
 
-        composeTestRule.runOnUiThread {
-            state.setHtml("<ul><li>Hello, world</li></ul>")
-        }
+        state.setHtml("<ul><li>Hello, world</li></ul>")
 
         bulletRadius.emit(20.dp)
 

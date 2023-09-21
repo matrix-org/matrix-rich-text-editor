@@ -27,7 +27,7 @@ android {
     namespace 'io.element.android.wysiwyg.compose'
     testNamespace 'io.element.android.wysiwyg.compose.test'
 
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         minSdk 23
@@ -53,11 +53,14 @@ android {
     testCoverage {
         jacocoVersion = "0.8.8"
     }
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
     buildFeatures {
         compose true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion '1.5.1'
+        kotlinCompilerExtensionVersion '1.5.3'
     }
     packagingOptions {
         resources.excludes += 'META-INF/LICENSE.md'
@@ -87,6 +90,9 @@ dependencies {
 
     testImplementation libs.test.junit
     testImplementation libs.test.mockk
+    testImplementation libs.test.kotlin.coroutines
+    testImplementation libs.test.turbine
+    testImplementation libs.molecule.runtime
     androidTestImplementation libs.test.androidx.junit
     androidTestImplementation libs.test.androidx.espresso
     androidTestImplementation libs.test.mockk.android
