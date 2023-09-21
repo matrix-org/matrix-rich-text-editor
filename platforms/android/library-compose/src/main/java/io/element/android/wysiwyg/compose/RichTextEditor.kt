@@ -149,6 +149,11 @@ private fun RealEditor(
             view
         },
         update = { view ->
+            if(view.onFocusChangeListener == null) {
+                view.onFocusChangeListener = View.OnFocusChangeListener { view, hasFocus ->
+                    onFocusChangeListener(view.hashCode(), hasFocus)
+                }
+            }
             Timber.i("RTE: update style (subcomposing=$subcomposing)")
             view.setStyleConfig(style.toStyleConfig(view.context))
             view.applyStyle(style)
