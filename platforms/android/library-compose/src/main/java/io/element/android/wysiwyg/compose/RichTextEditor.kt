@@ -4,7 +4,10 @@ import android.os.Build
 import android.view.View
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -13,10 +16,12 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 import io.element.android.wysiwyg.EditorEditText
-import io.element.android.wysiwyg.compose.internal.ViewConnection
+import io.element.android.wysiwyg.compose.internal.ViewAction
 import io.element.android.wysiwyg.compose.internal.toStyleConfig
 import io.element.android.wysiwyg.utils.RustErrorCollector
-import io.element.android.wysiwyg.view.models.InlineFormat
+import kotlinx.coroutines.launch
+import timber.log.Timber
+
 
 /**
  * A composable rich text editor.
@@ -31,6 +36,7 @@ import io.element.android.wysiwyg.view.models.InlineFormat
 @Composable
 fun RichTextEditor(
     state: RichTextEditorState,
+    subcomposing: Boolean = false,
     modifier: Modifier = Modifier,
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
     onError: (Throwable) -> Unit = {},
@@ -40,100 +46,110 @@ fun RichTextEditor(
     if (isPreview) {
         PreviewEditor(state, modifier, style)
     } else {
-        RealEditor(state, modifier, style, onError)
+        RealEditor(state, subcomposing, modifier, style, onError)
     }
 }
 
 @Composable
 private fun RealEditor(
     state: RichTextEditorState,
+    subcomposing: Boolean,
     modifier: Modifier = Modifier,
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
     onError: (Throwable) -> Unit,
 ) {
     val context = LocalContext.current
-    // Clean up the connection between view and state holder
-    DisposableEffect(Unit) {
-        onDispose {
-            state.viewConnection = null
+    val coroutineScope = rememberCoroutineScope()
+
+    /**
+     * This focus change listener ignores updates from any views that are not
+     * currently active.
+     */
+    val onFocusChangeListener: (viewHash: Int, hasFocus: Boolean) -> Unit by remember(state.curActiveViewHash) {
+        derivedStateOf {
+            listener@ { viewHash: Int, hasFocus: Boolean ->
+                if (viewHash != state.curActiveViewHash) {
+                    return@listener
+                }
+
+                state.hasFocus = hasFocus
+            }
         }
     }
 
     AndroidView(
         modifier = modifier,
         factory = {
-            if (state.viewConnection != null) {
-                throw IllegalStateException(
-                    "Instance of RichTextEditorState is already set up with another RichTextEditor."
-                )
-            }
-
             val view = EditorEditText(context).apply {
-                actionStatesChangedListener =
-                    EditorEditText.OnActionStatesChangedListener { actionStates ->
-                        state.actions = actionStates
+
+                // If this is a subcomposition, don't subscribe to any updates
+                // that may update the state
+                if(!subcomposing) {
+                    state.curActiveViewHash = hashCode()
+                    actionStatesChangedListener =
+                        EditorEditText.OnActionStatesChangedListener { actionStates ->
+                            state.actions = actionStates
+                        }
+
+                    selectionChangeListener =
+                        EditorEditText.OnSelectionChangeListener { start, end ->
+                            state.selection = start to end
+                        }
+                    menuActionListener = EditorEditText.OnMenuActionChangedListener { menuAction ->
+                        state.menuAction = menuAction
                     }
-
-                selectionChangeListener =
-                    EditorEditText.OnSelectionChangeListener { start, end ->
-                        state.selection = start to end
+                    linkActionChangedListener =
+                        EditorEditText.OnLinkActionChangedListener { linkAction ->
+                            state.linkAction = linkAction
+                        }
+                    addTextChangedListener {
+                        // Todo combine into a single mutable state
+                        state.internalHtml = getInternalHtml()
+                        state.messageHtml = getContentAsMessageHtml()
+                        state.messageMarkdown = getMarkdown()
+                        state.lineCount = lineCount
                     }
-                menuActionListener = EditorEditText.OnMenuActionChangedListener { menuAction ->
-                    state.menuAction = menuAction
-                }
-                linkActionChangedListener = EditorEditText.OnLinkActionChangedListener { linkAction ->
-                    state.linkAction = linkAction
-                }
-                onFocusChangeListener =
-                    View.OnFocusChangeListener { _, hasFocus -> state.hasFocus = hasFocus }
-
-
-                addTextChangedListener {
-                    state.messageHtml = getContentAsMessageHtml()
-                    state.messageMarkdown = getMarkdown()
-                    state.lineCount = lineCount
+                    val shouldRestoreFocus = state.hasFocus
+                    if(shouldRestoreFocus) {
+                        requestFocus()
+                    }
                 }
 
                 applyDefaultStyle()
 
                 // Restore the state of the view with the saved state
-                setHtml(state.messageHtml)
-            }
+                setHtml(state.internalHtml)
 
-            state.viewConnection = object : ViewConnection {
-                override fun toggleInlineFormat(inlineFormat: InlineFormat) =
-                    view.toggleInlineFormat(inlineFormat)
-
-                override fun undo() = view.undo()
-
-                override fun redo() = view.redo()
-
-                override fun toggleList(ordered: Boolean) =
-                    view.toggleList(ordered)
-
-                override fun indent() = view.indent()
-
-                override fun unindent() = view.unindent()
-
-                override fun toggleCodeBlock() = view.toggleCodeBlock()
-
-                override fun toggleQuote() = view.toggleQuote()
-
-                override fun setHtml(html: String) = view.setHtml(html)
-
-                override fun requestFocus() = view.requestFocus()
-
-                override fun setLink(url: String?) = view.setLink(url)
-
-                override fun removeLink() = view.removeLink()
-
-                override fun insertLink(url: String, text: String) =
-                    view.insertLink(url, text)
+                // Only start listening for text changes after the initial state has been restored
+                if (!subcomposing) {
+                    coroutineScope.launch {
+                        state.viewActions.collect {
+                            when (it) {
+                                is ViewAction.ToggleInlineFormat -> toggleInlineFormat(it.inlineFormat)
+                                is ViewAction.ToggleList -> toggleList(it.ordered)
+                                is ViewAction.ToggleCodeBlock -> toggleCodeBlock()
+                                is ViewAction.ToggleQuote -> toggleQuote()
+                                is ViewAction.Undo -> undo()
+                                is ViewAction.Redo -> redo()
+                                is ViewAction.Indent -> indent()
+                                is ViewAction.Unindent -> unindent()
+                                is ViewAction.SetHtml -> setHtml(it.html)
+                                is ViewAction.RequestFocus -> {
+                                    requestFocus()
+                                }
+                                is ViewAction.SetLink -> setLink(it.url)
+                                is ViewAction.RemoveLink -> removeLink()
+                                is ViewAction.InsertLink -> insertLink(it.url, it.text)
+                            }
+                        }
+                    }
+                }
             }
 
             view
         },
         update = { view ->
+            Timber.i("RTE: update style (subcomposing=$subcomposing)")
             view.setStyleConfig(style.toStyleConfig(view.context))
             view.applyStyle(style)
             view.rustErrorCollector = RustErrorCollector(onError)

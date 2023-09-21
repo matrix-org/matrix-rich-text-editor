@@ -2,6 +2,8 @@ package io.element.android.wysiwyg.compose
 
 import android.graphics.drawable.GradientDrawable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Density
@@ -64,7 +66,7 @@ data class CodeBackgroundStyle(
     val cornerRadiusBottomRight: Dp,
     val borderWidth: Dp,
 ) {
-    internal val drawable by lazy {
+    internal val drawable by mutableStateOf(
         GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
             setColor(this@CodeBackgroundStyle.color.toArgb())
@@ -81,7 +83,7 @@ data class CodeBackgroundStyle(
                 )
             }
         }
-    }
+    )
 }
 
 data class InlineCodeBackgroundStyle(

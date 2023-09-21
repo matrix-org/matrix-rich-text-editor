@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -28,6 +29,7 @@ import io.element.android.wysiwyg.view.models.LinkAction
 import io.element.wysiwyg.compose.ui.components.FormattingButtons
 import io.element.wysiwyg.compose.ui.theme.RichTextEditorTheme
 import kotlinx.collections.immutable.toPersistentMap
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import uniffi.wysiwyg_composer.ComposerAction
 
@@ -39,13 +41,22 @@ class MainActivity : ComponentActivity() {
                 val state = rememberRichTextEditorState()
 
                 var linkDialogAction by remember { mutableStateOf<LinkAction?>(null) }
+                val coroutineScope = rememberCoroutineScope()
+
 
                 linkDialogAction?.let { linkAction ->
                     LinkDialog(
                         linkAction = linkAction,
-                        onRemoveLink = state::removeLink,
-                        onSetLink = state::setLink,
-                        onInsertLink = state::insertLink,
+                        onRemoveLink = { coroutineScope.launch { state.removeLink() } },
+                        onSetLink = { coroutineScope.launch { state.setLink(it) } },
+                        onInsertLink = { url, text ->
+                            coroutineScope.launch {
+                                state.insertLink(
+                                    url,
+                                    text
+                                )
+                            }
+                        },
                         onDismissRequest = { linkDialogAction = null }
                     )
                 }
@@ -61,10 +72,12 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier
                                 .padding(8.dp)
                                 .border(
-                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                    border = BorderStroke(
+                                        1.dp,
+                                        MaterialTheme.colorScheme.outlineVariant
+                                    ),
                                 )
-                                .padding(8.dp)
-                            ,
+                                .padding(8.dp),
                             color = MaterialTheme.colorScheme.surface,
                         ) {
                             RichTextEditor(
@@ -76,36 +89,49 @@ class MainActivity : ComponentActivity() {
                         }
                         FormattingButtons(
                             onResetText = {
-                                state.setHtml("")
+                                coroutineScope.launch {
+                                    state.setHtml("")
+                                }
                             },
                             actionStates = state.actions.toPersistentMap(),
                             onActionClick = {
-                                when (it) {
-                                    ComposerAction.BOLD -> state.toggleInlineFormat(InlineFormat.Bold)
-                                    ComposerAction.ITALIC -> state.toggleInlineFormat(InlineFormat.Italic)
-                                    ComposerAction.STRIKE_THROUGH -> state.toggleInlineFormat(
-                                        InlineFormat.StrikeThrough
-                                    )
+                                coroutineScope.launch {
+                                    when (it) {
+                                        ComposerAction.BOLD -> state.toggleInlineFormat(
+                                            InlineFormat.Bold
+                                        )
 
-                                    ComposerAction.UNDERLINE -> state.toggleInlineFormat(
-                                        InlineFormat.Underline
-                                    )
+                                        ComposerAction.ITALIC -> state.toggleInlineFormat(
+                                            InlineFormat.Italic
+                                        )
 
-                                    ComposerAction.INLINE_CODE -> state.toggleInlineFormat(
-                                        InlineFormat.InlineCode
-                                    )
+                                        ComposerAction.STRIKE_THROUGH -> state.toggleInlineFormat(
+                                            InlineFormat.StrikeThrough
+                                        )
 
-                                    ComposerAction.LINK ->
-                                        linkDialogAction = state.linkAction
+                                        ComposerAction.UNDERLINE -> state.toggleInlineFormat(
+                                            InlineFormat.Underline
+                                        )
 
-                                    ComposerAction.UNDO -> state.undo()
-                                    ComposerAction.REDO -> state.redo()
-                                    ComposerAction.ORDERED_LIST -> state.toggleList(ordered = true)
-                                    ComposerAction.UNORDERED_LIST -> state.toggleList(ordered = false)
-                                    ComposerAction.INDENT -> state.indent()
-                                    ComposerAction.UNINDENT -> state.unindent()
-                                    ComposerAction.CODE_BLOCK -> state.toggleCodeBlock()
-                                    ComposerAction.QUOTE -> state.toggleQuote()
+                                        ComposerAction.INLINE_CODE -> state.toggleInlineFormat(
+                                            InlineFormat.InlineCode
+                                        )
+
+                                        ComposerAction.LINK ->
+                                            linkDialogAction = state.linkAction
+
+                                        ComposerAction.UNDO -> state.undo()
+                                        ComposerAction.REDO -> state.redo()
+                                        ComposerAction.ORDERED_LIST -> state.toggleList(ordered = true)
+                                        ComposerAction.UNORDERED_LIST -> state.toggleList(
+                                            ordered = false
+                                        )
+
+                                        ComposerAction.INDENT -> state.indent()
+                                        ComposerAction.UNINDENT -> state.unindent()
+                                        ComposerAction.CODE_BLOCK -> state.toggleCodeBlock()
+                                        ComposerAction.QUOTE -> state.toggleQuote()
+                                    }
                                 }
                             }
                         )

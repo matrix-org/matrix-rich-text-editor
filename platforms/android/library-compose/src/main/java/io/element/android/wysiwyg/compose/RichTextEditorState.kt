@@ -8,10 +8,11 @@ import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalInspectionMode
-import io.element.android.wysiwyg.compose.internal.FakeViewConnection
-import io.element.android.wysiwyg.compose.internal.ViewConnection
+import io.element.android.wysiwyg.compose.internal.ViewAction
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
 import uniffi.wysiwyg_composer.MenuAction
@@ -32,13 +33,12 @@ class RichTextEditorState(
     initialHtml: String = "",
     fake: Boolean = false,
 ) {
-    internal var viewConnection: ViewConnection? by mutableStateOf(null)
+    // Only one view may be associated at a time
+    internal var curActiveViewHash: Int? by mutableStateOf(-1)
+        internal set
 
-    init {
-        if (fake) {
-            viewConnection = FakeViewConnection(this)
-        }
-    }
+    private val _viewActions = MutableSharedFlow<ViewAction>()
+    internal val viewActions: Flow<ViewAction> = _viewActions
 
     private val initialLineCount = if (fake) {
         initialHtml.count { it == '\n' } + 1
@@ -51,22 +51,22 @@ class RichTextEditorState(
      *
      * @param inlineFormat which format to toggle (e.g. [InlineFormat.Bold])
      */
-    fun toggleInlineFormat(inlineFormat: InlineFormat) {
-        viewConnection?.toggleInlineFormat(inlineFormat)
+    suspend fun toggleInlineFormat(inlineFormat: InlineFormat) {
+        _viewActions.emit(ViewAction.ToggleInlineFormat(inlineFormat))
     }
 
     /**
      * Undo the last action.
      */
-    fun undo() {
-        viewConnection?.undo()
+    suspend fun undo() {
+        _viewActions.emit(ViewAction.Undo)
     }
 
     /**
      * Redo the last undone action.
      */
-    fun redo() {
-        viewConnection?.redo()
+    suspend fun redo() {
+        _viewActions.emit(ViewAction.Redo)
     }
 
     /**
@@ -74,43 +74,43 @@ class RichTextEditorState(
      *
      * @param ordered Whether the list should be ordered (numbered) or unordered (bulleted).
      */
-    fun toggleList(ordered: Boolean) {
-        viewConnection?.toggleList(ordered)
+    suspend fun toggleList(ordered: Boolean) {
+        _viewActions.emit(ViewAction.ToggleList(ordered))
     }
 
     /**
      * Indent the current selection.
      */
-    fun indent() {
-        viewConnection?.indent()
+    suspend fun indent() {
+        _viewActions.emit(ViewAction.Indent)
     }
 
     /**
      * Unindent the current selection.
      */
-    fun unindent() {
-        viewConnection?.unindent()
+    suspend fun unindent() {
+        _viewActions.emit(ViewAction.Indent)
     }
 
     /**
      * Toggle code block formatting on the current selection.
      */
-    fun toggleCodeBlock() {
-        viewConnection?.toggleCodeBlock()
+    suspend fun toggleCodeBlock() {
+        _viewActions.emit(ViewAction.ToggleCodeBlock)
     }
 
     /**
      * Toggle quote formatting on the current selection.
      */
-    fun toggleQuote() {
-        viewConnection?.toggleQuote()
+    suspend fun toggleQuote() {
+        _viewActions.emit(ViewAction.ToggleQuote)
     }
 
     /**
      * Set the HTML content of the editor.
      */
-    fun setHtml(html: String) {
-        viewConnection?.setHtml(html)
+    suspend fun setHtml(html: String) {
+        _viewActions.emit(ViewAction.SetHtml(html))
     }
 
     /**
@@ -118,14 +118,18 @@ class RichTextEditorState(
      *
      * @param url The link URL to set or null to remove
      */
-    fun setLink(url: String?) = viewConnection?.setLink(url)
+    suspend fun setLink(url: String?) {
+        _viewActions.emit(ViewAction.SetLink(url))
+    }
 
     /**
      * Remove a link for the current selection. Convenience for setLink(null).
      *
      * @see [setLink]
      */
-    fun removeLink() = viewConnection?.removeLink()
+    suspend fun removeLink() {
+        _viewActions.emit(ViewAction.RemoveLink)
+    }
 
     /**
      * Insert new text with a link.
@@ -133,12 +137,17 @@ class RichTextEditorState(
      * @param url The link URL to set
      * @param text The new text to insert
      */
-    fun insertLink(url: String, text: String) = viewConnection?.insertLink(url, text)
+    suspend fun insertLink(url: String, text: String) {
+        _viewActions.emit(ViewAction.InsertLink(url, text))
+    }
 
     /**
      * The content of the editor as HTML formatted for sending as a message.
      */
     var messageHtml by mutableStateOf(initialHtml)
+        internal set
+
+    internal var internalHtml by mutableStateOf(initialHtml)
         internal set
 
     /**
@@ -174,8 +183,9 @@ class RichTextEditorState(
     /**
      * Request focus of the editor input field.
      */
-    fun requestFocus(): Boolean =
-        viewConnection?.requestFocus() ?: false
+    suspend fun requestFocus() {
+        _viewActions.emit(ViewAction.RequestFocus)
+    }
 
     /**
      * The number of lines displayed in the editor.
@@ -216,6 +226,6 @@ object RichTextEditorStateSaver : Saver<RichTextEditorState, String> {
     }
 
     override fun SaverScope.save(value: RichTextEditorState): String {
-        return value.messageHtml
+        return value.internalHtml
     }
 }
