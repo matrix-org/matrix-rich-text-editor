@@ -14,12 +14,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
 import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.compose.internal.ViewAction
 import io.element.android.wysiwyg.compose.internal.toStyleConfig
 import io.element.android.wysiwyg.utils.RustErrorCollector
+import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 import timber.log.Timber
 
 
@@ -61,10 +64,8 @@ private fun RealEditor(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    /**
-     * This focus change listener ignores updates from any views that are not
-     * currently active.
-     */
+    Timber.i("RTE: recomposing (subcomposing=$subcomposing)")
+
     val onFocusChangeListener: (viewHash: Int, hasFocus: Boolean) -> Unit by remember(state.curActiveViewHash) {
         derivedStateOf {
             listener@ { viewHash: Int, hasFocus: Boolean ->
@@ -81,9 +82,7 @@ private fun RealEditor(
         modifier = modifier,
         factory = {
             val view = EditorEditText(context).apply {
-
-                // If this is a subcomposition, don't subscribe to any updates
-                // that may update the state
+                Timber.i("RTE: factory creating new view ${this.hashCode()} (subcomposing=$subcomposing)")
                 if(!subcomposing) {
                     state.curActiveViewHash = hashCode()
                     actionStatesChangedListener =
@@ -110,8 +109,15 @@ private fun RealEditor(
                         state.lineCount = lineCount
                     }
                     val shouldRestoreFocus = state.hasFocus
+                    val viewHash = hashCode()
                     if(shouldRestoreFocus) {
-                        requestFocus()
+                        Timber.i("RTE: ${this@apply.hashCode()} Needs to restore focus")
+
+                        coroutineScope.launch {
+                            awaitFrame()
+
+                            requestFocus()
+                        }
                     }
                 }
 
@@ -149,16 +155,29 @@ private fun RealEditor(
             view
         },
         update = { view ->
-            if(view.onFocusChangeListener == null) {
-                view.onFocusChangeListener = View.OnFocusChangeListener { view, hasFocus ->
-                    onFocusChangeListener(view.hashCode(), hasFocus)
+            if(!subcomposing) {
+                if(view.onFocusChangeListener == null) {
+                    view.onFocusChangeListener = View.OnFocusChangeListener { view, hasFocus ->
+                        if (hasFocus) {
+                            view.requestFocus()
+                        }
+                        onFocusChangeListener(view.hashCode(), hasFocus)
+                    }
                 }
             }
             Timber.i("RTE: update style (subcomposing=$subcomposing)")
             view.setStyleConfig(style.toStyleConfig(view.context))
             view.applyStyle(style)
             view.rustErrorCollector = RustErrorCollector(onError)
-        }
+        },
+//        onReset = {
+//            Timber.i("RTE: reset ${it.hashCode()} (subcomposing=$subcomposing)")
+//            it.onFocusChangeListener = null
+//        },
+//        onRelease = {
+//            Timber.i("RTE: release ${it.hashCode()} (subcomposing=$subcomposing)")
+//            it.onFocusChangeListener = null
+//        }
     )
 }
 
