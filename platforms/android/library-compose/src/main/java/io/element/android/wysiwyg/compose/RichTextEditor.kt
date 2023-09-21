@@ -14,7 +14,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
 import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.compose.internal.ViewAction
@@ -22,7 +21,6 @@ import io.element.android.wysiwyg.compose.internal.toStyleConfig
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.yield
 import timber.log.Timber
 
 
@@ -109,15 +107,10 @@ private fun RealEditor(
                         state.lineCount = lineCount
                     }
                     val shouldRestoreFocus = state.hasFocus
-                    val viewHash = hashCode()
                     if(shouldRestoreFocus) {
                         Timber.i("RTE: ${this@apply.hashCode()} Needs to restore focus")
 
-                        coroutineScope.launch {
-                            awaitFrame()
-
-                            requestFocus()
-                        }
+                        requestFocus()
                     }
                 }
 
@@ -155,14 +148,9 @@ private fun RealEditor(
             view
         },
         update = { view ->
-            if(!subcomposing) {
-                if(view.onFocusChangeListener == null) {
-                    view.onFocusChangeListener = View.OnFocusChangeListener { view, hasFocus ->
-                        if (hasFocus) {
-                            view.requestFocus()
-                        }
-                        onFocusChangeListener(view.hashCode(), hasFocus)
-                    }
+            if (view.onFocusChangeListener == null) {
+                view.onFocusChangeListener = View.OnFocusChangeListener { view, hasFocus ->
+                    onFocusChangeListener(view.hashCode(), hasFocus)
                 }
             }
             Timber.i("RTE: update style (subcomposing=$subcomposing)")
