@@ -152,6 +152,37 @@ final class WysiwygComposerViewModelTests: XCTestCase {
                 .contains([.traitBold, .traitItalic])
         )
     }
+
+    func testPendingFormatFlagInNewList() {
+        viewModel.apply(.bold)
+        viewModel.apply(.italic)
+        mockTrailingTyping("Text")
+        viewModel.enter()
+        // After creating a list, pending format flag is on
+        viewModel.apply(.orderedList)
+        XCTAssertTrue(viewModel.hasPendingFormats)
+        // Typing consumes the flag
+        mockTrailingTyping("Item")
+        XCTAssertFalse(viewModel.hasPendingFormats)
+        // Creating a second list item re-enables the flag
+        viewModel.enter()
+        XCTAssertTrue(viewModel.hasPendingFormats)
+    }
+
+    func testPendingFormatFlagAfterReselectingListItem() {
+        viewModel.apply(.bold)
+        viewModel.apply(.italic)
+        mockTrailingTyping("Text")
+        viewModel.enter()
+        viewModel.apply(.orderedList)
+        let inListSelection = viewModel.attributedContent.selection
+        let insertedText = "Text"
+        mockTyping(insertedText, at: 0)
+        // After re-selecting the empty list item, pending format flag is still on
+        viewModel.select(range: NSRange(location: inListSelection.location + insertedText.utf16Length,
+                                        length: inListSelection.length))
+        XCTAssertTrue(viewModel.hasPendingFormats)
+    }
 }
 
 // MARK: - WysiwygTestExpectation
@@ -216,6 +247,7 @@ extension WysiwygComposerViewModelTests {
         if shouldAcceptChange {
             // Force apply since the text view should've updated by itself
             viewModel.textView.apply(viewModel.attributedContent)
+            viewModel.didUpdateText()
         }
     }
 
@@ -239,6 +271,7 @@ extension WysiwygComposerViewModelTests {
         if shouldAcceptChange {
             // Force apply since the text view should've updated by itself
             viewModel.textView.apply(viewModel.attributedContent)
+            viewModel.didUpdateText()
         }
     }
 

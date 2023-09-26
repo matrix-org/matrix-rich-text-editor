@@ -121,7 +121,7 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
          .foregroundColor: parserStyle.textColor]
     }
 
-    private var hasPendingFormats = false
+    private(set) var hasPendingFormats = false
 
     // MARK: - Public
 
@@ -183,8 +183,8 @@ public extension WysiwygComposerViewModel {
         let update = model.apply(action)
         if update.textUpdate() == .keep {
             hasPendingFormats = true
-        } else if action == .codeBlock || action == .quote, attributedContent.selection.length == 0 {
-            // Add code block/quote as a pending format to improve block display.
+        } else if attributedContent.selection.length == 0, action.requiresReapplyFormattingOnEmptySelection {
+            // Set pending format if current action requires it.
             hasPendingFormats = true
         }
         applyUpdate(update)
@@ -479,7 +479,12 @@ private extension WysiwygComposerViewModel {
         do {
             let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
             let textSelection = try attributedContent.text.attributedRange(from: htmlSelection)
-            attributedContent.selection = textSelection
+            if textSelection != attributedContent.selection {
+                attributedContent.selection = textSelection
+                // Ensure we re-apply required pending formats when switching to a zero-length selection.
+                // This fixes selecting in and out of a list / quote / etc
+                hasPendingFormats = textSelection.length == 0 && !model.reversedActions.isEmpty
+            }
             Logger.viewModel.logDebug(["Sel(att): \(textSelection)",
                                        "Sel: \(htmlSelection)"],
                                       functionName: #function)
