@@ -6,7 +6,7 @@ plugins {
 android {
     namespace = "io.element.android.wysiwyg.poc"
 
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "io.element.android.wysiwyg.poc"

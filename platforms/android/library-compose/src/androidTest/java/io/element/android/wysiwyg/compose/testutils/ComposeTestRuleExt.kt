@@ -14,7 +14,7 @@ fun ComposeContentTestRule.showContent(
 ) = setContent {
     MaterialTheme {
         RichTextEditor(
-            state, modifier = Modifier.fillMaxWidth().background(Color.Cyan)
+            state = state, modifier = Modifier.fillMaxWidth().background(Color.Cyan)
         )
     }
 }

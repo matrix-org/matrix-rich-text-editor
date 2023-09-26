@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace 'io.element.wysiwyg.compose'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "io.element.wysiwyg.compose"
@@ -34,7 +34,7 @@ android {
         compose true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion '1.5.1'
+        kotlinCompilerExtensionVersion '1.5.3'
     }
     packagingOptions {
         resources {
