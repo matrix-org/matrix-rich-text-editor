@@ -28,11 +28,9 @@ import uniffi.wysiwyg_composer.MenuAction
  * Ensure that [RichTextEditorState] is not shared between multiple [RichTextEditor] composables
  * that are displayed at the same time.
  *
- * Note that fake mode is only intended for use in preview or test environments and behaviour will
- * not mirror that of the real editor.
- *
  * @param initialHtml The HTML formatted content to initialise the state with.
- * @param fake If true, initialise the state for use in preview or test environment.
+ * @param initialLineCount The line count to initialise the state with.
+ * @param initialFocus The focus value to initialise the state with.
  */
 @Stable
 class RichTextEditorState(
