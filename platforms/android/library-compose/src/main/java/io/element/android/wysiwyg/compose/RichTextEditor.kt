@@ -28,16 +28,16 @@ import kotlinx.coroutines.launch
  *
  * To use within a subcomposition, set the [registerStateUpdates] parameter to false.
  *
- * @param state The state holder for this composable. See [rememberRichTextEditorState].
  * @param modifier The modifier for the layout
+ * @param state The state holder for this composable. See [rememberRichTextEditorState].
  * @param registerStateUpdates If true, register the state for updates.
  * @param style The styles to use for any customisable elements
  * @param onError Called when an internal error occurs
  */
 @Composable
 fun RichTextEditor(
-    state: RichTextEditorState,
     modifier: Modifier = Modifier,
+    state: RichTextEditorState = rememberRichTextEditorState(),
     registerStateUpdates: Boolean = true,
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
     onError: (Throwable) -> Unit = {},
@@ -56,7 +56,7 @@ private fun RealEditor(
     state: RichTextEditorState,
     registerStateUpdates: Boolean,
     modifier: Modifier = Modifier,
-    style: RichTextEditorStyle = RichTextEditorDefaults.style(),
+    style: RichTextEditorStyle,
     onError: (Throwable) -> Unit,
 ) {
     val context = LocalContext.current
@@ -118,9 +118,7 @@ private fun RealEditor(
                                 is ViewAction.Indent -> indent()
                                 is ViewAction.Unindent -> unindent()
                                 is ViewAction.SetHtml -> setHtml(it.html)
-                                is ViewAction.RequestFocus -> {
-                                    requestFocus()
-                                }
+                                is ViewAction.RequestFocus -> requestFocus()
                                 is ViewAction.SetLink -> setLink(it.url)
                                 is ViewAction.RemoveLink -> removeLink()
                                 is ViewAction.InsertLink -> insertLink(it.url, it.text)
@@ -144,7 +142,7 @@ private fun RealEditor(
 private fun PreviewEditor(
     state: RichTextEditorState,
     modifier: Modifier = Modifier,
-    style: RichTextEditorStyle = RichTextEditorDefaults.style(),
+    style: RichTextEditorStyle,
 ) {
     if (!LocalInspectionMode.current) {
         throw IllegalStateException("PreviewEditor should only be used in preview mode")

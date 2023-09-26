@@ -29,10 +29,10 @@ class RichTextEditorStateTest {
                 val showAlt by showAlternateEditor.collectAsState()
                 if(!showAlt) {
                     Text("Main editor")
-                    RichTextEditor(state)
+                    RichTextEditor(state = state)
                 } else {
                     Text("Alternative editor")
-                    RichTextEditor(state)
+                    RichTextEditor(state = state)
                 }
             }
         }
@@ -58,7 +58,7 @@ class RichTextEditorStateTest {
         composeTestRule.setContent {
             MaterialTheme {
                 RichTextEditor(
-                    state,
+                    state = state,
                     registerStateUpdates = false
                 )
             }
