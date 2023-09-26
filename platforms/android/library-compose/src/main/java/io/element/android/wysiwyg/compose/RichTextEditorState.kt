@@ -16,6 +16,8 @@ import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
@@ -42,7 +44,7 @@ class RichTextEditorState(
     internal var activeViewKey: Any? by mutableStateOf(-1)
 
     private val _viewActions = MutableSharedFlow<ViewAction>()
-    internal val viewActions: Flow<ViewAction> = _viewActions
+    internal val viewActions: SharedFlow<ViewAction> = _viewActions.asSharedFlow()
 
     /**
      * Toggle inline formatting on the current selection.
