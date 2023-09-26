@@ -352,6 +352,32 @@ mod test {
     }
 
     #[test]
+    fn finding_a_node_within_a_single_text_node_with_emoji_is_found() {
+        let d = dom(&[tn("🤗")]);
+        assert_eq!(
+            find_pos(&d, &d.document_handle(), 2, 2),
+            FindResult::Found(vec![
+                make_single_location(
+                    DomHandle::from_raw(vec![0]),
+                    0,
+                    2,
+                    2,
+                    2,
+                    DomNodeKind::Text
+                ),
+                make_single_location(
+                    DomHandle::root(),
+                    0,
+                    2,
+                    2,
+                    2,
+                    DomNodeKind::Generic
+                ),
+            ])
+        );
+    }
+
+    #[test]
     fn finding_first_node_within_flat_text_nodes_is_found() {
         let d = dom(&[tn("foo"), tn("bar")]);
         assert_eq!(

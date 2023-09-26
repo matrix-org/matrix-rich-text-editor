@@ -354,6 +354,13 @@ mod test {
     }
 
     #[test]
+    fn test_new_line_after_emoji() {
+        let mut model = cm("🤗|");
+        model.enter();
+        assert_eq!(tx(&model), "<p>🤗</p><p>&nbsp;|</p>");
+    }
+
+    #[test]
     fn test_new_line_in_formatted_text() {
         let mut model = cm("<b>Test| lines</b>");
         model.enter();

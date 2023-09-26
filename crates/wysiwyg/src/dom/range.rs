@@ -38,7 +38,7 @@ pub struct DomLocation {
     pub node_handle: DomHandle,
 
     /// The position inside this node of the start of the range. In a text
-    /// node this will be the number of code points through the text to
+    /// node this will be the number of code units through the text to
     /// get to the start of the range. In a container node this will be how
     /// far through children nodes you need to count to get to the start.
     /// In a text-like node like a line break, this will be 0 or 1.
@@ -46,7 +46,7 @@ pub struct DomLocation {
     pub start_offset: usize,
 
     /// The position inside this node of the end of the range. In a text
-    /// node this will be the number of code points through the text to
+    /// node this will be the number of code units through the text to
     /// get to the end of the range. In a container node this will be how
     /// far through children nodes you need to count to get to the end.
     /// In a text-like node like a line break, this will be 0 or 1.
