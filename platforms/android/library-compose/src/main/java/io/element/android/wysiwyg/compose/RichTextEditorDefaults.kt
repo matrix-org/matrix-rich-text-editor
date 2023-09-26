@@ -19,6 +19,7 @@ object RichTextEditorDefaults {
     internal const val initialLineCount = 1
     internal const val initialHtml = ""
     internal const val initialFocus = false
+    internal val initialSelection = 0 to 0
 
     /**
      * Creates the default set of style customisations for [RichTextEditor].
