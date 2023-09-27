@@ -29,7 +29,7 @@
         android:id="@id/rich_text_edit_text"
         android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:inputType="text|textNoSuggestions"
+        android:inputType="textMultiLine|textNoSuggestions"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/label" />

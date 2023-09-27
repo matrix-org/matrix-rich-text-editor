@@ -17,7 +17,6 @@
 
 use crate::dom::nodes::dom_node::DomNodeKind::{Generic, ListItem, Paragraph};
 use crate::dom::range::DomLocationPosition::After;
-use crate::dom::unicode_string::UnicodeStr;
 use crate::dom::DomLocation;
 use crate::{DomHandle, DomNode, UnicodeString};
 
@@ -1019,7 +1018,7 @@ where
         if (cur_handle == *from_handle
             || (from_handle.is_ancestor_of(&cur_handle)
                 && cur_handle.index_in_parent() == 0))
-            && (1..=text_node.data().chars().count()).contains(&start_offset)
+            && (1..=text_node.data().len()).contains(&start_offset)
         {
             let left_data = text_node.data()[..start_offset].to_owned();
             let right_data = text_node.data()[start_offset..].to_owned();
@@ -1029,7 +1028,7 @@ where
             }
         } else if to_handle.is_some()
             && cur_handle == to_handle.unwrap()
-            && (1..=text_node.data().chars().count()).contains(&end_offset)
+            && (1..=text_node.data().len()).contains(&end_offset)
         {
             let left_data = text_node.data()[..end_offset].to_owned();
             let right_data = text_node.data()[end_offset..].to_owned();
@@ -1163,6 +1162,18 @@ mod test {
         );
         assert_eq!(model.state.dom.to_html(), "Text<b>bo</b>");
         assert_eq!(ret.to_html().to_string(), "<b>ld</b><i>italic</i>");
+    }
+
+    #[test]
+    fn split_dom_with_emojis() {
+        let mut model = cm("👍👍|<b>👍👍</b><i>👍👍</i>");
+        let ret = model.state.dom.split_sub_tree_from(
+            &DomHandle::from_raw(vec![1, 0]),
+            2,
+            0,
+        );
+        assert_eq!(model.state.dom.to_html(), "👍👍<b>👍</b>");
+        assert_eq!(ret.to_html().to_string(), "<b>👍</b><i>👍👍</i>");
     }
 
     #[test]

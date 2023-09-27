@@ -39,6 +39,7 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
 import org.hamcrest.CoreMatchers
+import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.Description
 import org.junit.*
 import org.junit.runner.RunWith
@@ -121,6 +122,17 @@ class EditorEditTextInputTests {
             .perform(AnyViewAction { view -> (view as EditText).setSelection(0) })
             .perform(pressKey(KeyEvent.KEYCODE_FORWARD_DEL))
             .check(matches(withText("")))
+    }
+
+    @Test
+    fun testEnterAfterEmoji() {
+        val emoji = "\uD83E\uDD17"
+        onView(withId(R.id.rich_text_edit_text))
+            // pressKey doesn't seem to work if no `typeText` is used before
+            .perform(pressKey(KeyEvent.KEYCODE_A))
+            .perform(replaceText(emoji))
+            .perform(pressKey(KeyEvent.KEYCODE_ENTER))
+            .check(matches(withText(containsString(emoji + "\n"))))
     }
 
     @Test
