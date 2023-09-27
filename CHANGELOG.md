@@ -1,11 +1,25 @@
 # Changelog
 
+# [2.14.0] - 2023-09-27
+
+### Added
+
+- Android: [API breaking change] Add support for subcomposition and sharing state (#822)
+
+### Fixed
+
+- Common: Fix crash on pressing enter after emoji (#824)
+- Android Fix selection state restoration (#825)
+- iOS: Fix pending format inconsistencies (#823)
+
 # [2.13.0] - 2023-09-20
 
 ### Added
+
 - Android: allow font size customisation in compose (#819)
 
 ### Fixed
+
 - Fix unwanted extra paragraphs after HTML parsing (#820)
 
 # [2.12.0] - 2023-09-18
