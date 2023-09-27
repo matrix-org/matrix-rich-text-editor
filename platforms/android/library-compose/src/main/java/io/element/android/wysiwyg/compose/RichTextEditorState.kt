@@ -1,11 +1,11 @@
 package io.element.android.wysiwyg.compose
 
+import android.os.Parcelable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -14,11 +14,10 @@ import io.element.android.wysiwyg.compose.internal.FakeViewConnection
 import io.element.android.wysiwyg.compose.internal.ViewAction
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.launch
+import kotlinx.parcelize.Parcelize
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
 import uniffi.wysiwyg_composer.MenuAction
@@ -39,6 +38,7 @@ class RichTextEditorState(
     initialHtml: String = RichTextEditorDefaults.initialHtml,
     initialLineCount: Int = RichTextEditorDefaults.initialLineCount,
     initialFocus: Boolean = RichTextEditorDefaults.initialFocus,
+    initialSelection: Pair<Int, Int> = RichTextEditorDefaults.initialSelection,
 ) {
     // A unique key for the most recent view to subscribe
     internal var activeViewKey: Any? by mutableStateOf(-1)
@@ -153,7 +153,6 @@ class RichTextEditorState(
      * Can be used to restore the editor state.
      */
     internal var internalHtml by mutableStateOf(initialHtml)
-        internal set
 
     /**
      * The content of the editor as markdown formatted for sending as a message.
@@ -170,7 +169,7 @@ class RichTextEditorState(
     /**
      * The current selection of the editor.
      */
-    var selection by mutableStateOf(0 to 0)
+    var selection by mutableStateOf(initialSelection)
         internal set
 
     /**
@@ -230,6 +229,7 @@ fun rememberRichTextEditorState(
     initialHtml: String = RichTextEditorDefaults.initialHtml,
     initialLineCount: Int = RichTextEditorDefaults.initialLineCount,
     initialFocus: Boolean = RichTextEditorDefaults.initialFocus,
+    initialSelection: Pair<Int, Int> = RichTextEditorDefaults.initialSelection,
     fake: Boolean = false,
 ): RichTextEditorState {
     val state = rememberSaveable(saver = RichTextEditorStateSaver) {
@@ -237,8 +237,8 @@ fun rememberRichTextEditorState(
             initialHtml = initialHtml,
             initialLineCount = initialLineCount,
             initialFocus = initialFocus,
+            initialSelection = initialSelection,
         )
-
     }
 
     if (fake) {
@@ -248,12 +248,21 @@ fun rememberRichTextEditorState(
     return state
 }
 
-object RichTextEditorStateSaver : Saver<RichTextEditorState, String> {
-    override fun restore(value: String): RichTextEditorState {
-        return RichTextEditorState(initialHtml = value)
+object RichTextEditorStateSaver : Saver<RichTextEditorState, SavedState> {
+    override fun restore(value: SavedState): RichTextEditorState {
+        return RichTextEditorState(initialHtml = value.initialHtml, initialSelection = value.selection)
     }
 
-    override fun SaverScope.save(value: RichTextEditorState): String {
-        return value.internalHtml
+    override fun SaverScope.save(value: RichTextEditorState): SavedState {
+        return SavedState(
+            initialHtml = value.internalHtml,
+            selection = value.selection,
+        )
     }
 }
+
+@Parcelize
+data class SavedState(
+    val initialHtml: String,
+    val selection: Pair<Int, Int>,
+): Parcelable

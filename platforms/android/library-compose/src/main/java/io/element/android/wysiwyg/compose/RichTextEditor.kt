@@ -103,6 +103,7 @@ private fun RealEditor(
 
                 // Restore the state of the view with the saved state
                 setHtml(state.internalHtml)
+                setSelection(state.selection.first, state.selection.second)
 
                 // Only start listening for text changes after the initial state has been restored
                 if (registerStateUpdates) {
