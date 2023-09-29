@@ -71,6 +71,16 @@ final class StringDifferTests: XCTestCase {
         XCTAssertNil(try StringDiffer.replacement(from: whitespaceString,
                                                   to: String(repeating: Character.nbsp, count: whitespaceString.utf16Length)))
     }
+
+    func testDiffingWithLeadingWhitespaces() throws {
+        XCTAssertEqual(try StringDiffer.replacement(from: " text", to: " test"),
+                       .init(location: 3, length: 1, text: "s"))
+    }
+
+    func testDiffingWithMultipleLeadingWhitespaces() throws {
+        XCTAssertEqual(try StringDiffer.replacement(from: " \u{00A0} text", to: " \u{00A0} test"),
+                       .init(location: 5, length: 1, text: "s"))
+    }
 }
 
 private extension CharacterSet {
