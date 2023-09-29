@@ -1,6 +1,7 @@
 package io.element.wysiwyg.compose
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
@@ -19,11 +20,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.element.android.wysiwyg.compose.RichTextEditor
 import io.element.android.wysiwyg.compose.RichTextEditorDefaults
 import io.element.android.wysiwyg.compose.rememberRichTextEditorState
+import io.element.android.wysiwyg.compose.selection.SelectionAction
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
 import io.element.wysiwyg.compose.ui.components.FormattingButtons
@@ -42,7 +45,7 @@ class MainActivity : ComponentActivity() {
 
                 var linkDialogAction by remember { mutableStateOf<LinkAction?>(null) }
                 val coroutineScope = rememberCoroutineScope()
-
+                val context = LocalContext.current
 
                 linkDialogAction?.let { linkAction ->
                     LinkDialog(
@@ -84,7 +87,13 @@ class MainActivity : ComponentActivity() {
                                 state = state,
                                 modifier = Modifier.fillMaxWidth(),
                                 style = RichTextEditorDefaults.style(),
-                                onError = Timber::e
+                                onError = Timber::e,
+                                customSelectionActions = listOf(
+                                    SelectionAction(R.id.custom_action, getString(R.string.custom_action))
+                                ),
+                                onCustomSelectionActionSelected = {
+                                    Toast.makeText(context, getString(R.string.custom_action_clicked), Toast.LENGTH_SHORT).show()
+                                },
                             )
                         }
                         FormattingButtons(

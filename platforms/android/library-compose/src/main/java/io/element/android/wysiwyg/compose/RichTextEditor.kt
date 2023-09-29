@@ -2,6 +2,9 @@ package io.element.android.wysiwyg.compose
 
 import android.os.Build
 import android.util.TypedValue
+import android.view.ActionMode
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.compose.runtime.Composable
@@ -16,6 +19,7 @@ import androidx.core.widget.addTextChangedListener
 import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.compose.internal.ViewAction
 import io.element.android.wysiwyg.compose.internal.toStyleConfig
+import io.element.android.wysiwyg.compose.selection.SelectionAction
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -32,6 +36,8 @@ import kotlinx.coroutines.launch
  * @param state The state holder for this composable. See [rememberRichTextEditorState].
  * @param registerStateUpdates If true, register the state for updates.
  * @param style The styles to use for any customisable elements
+ * @param customSelectionActions A list of custom actions to add to the selection context menu.
+ * @param onCustomSelectionActionSelected Called when a custom selection action is selected.
  * @param onError Called when an internal error occurs
  */
 @Composable
@@ -40,6 +46,8 @@ fun RichTextEditor(
     state: RichTextEditorState = rememberRichTextEditorState(),
     registerStateUpdates: Boolean = true,
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
+    customSelectionActions: List<SelectionAction> = emptyList(),
+    onCustomSelectionActionSelected: (SelectionAction) -> Unit = {},
     onError: (Throwable) -> Unit = {},
 ) {
     val isPreview = LocalInspectionMode.current
@@ -47,7 +55,15 @@ fun RichTextEditor(
     if (isPreview) {
         PreviewEditor(state, modifier, style)
     } else {
-        RealEditor(state, registerStateUpdates, modifier, style, onError)
+        RealEditor(
+            state,
+            registerStateUpdates,
+            modifier,
+            style,
+            customSelectionActions,
+            onCustomSelectionActionSelected,
+            onError,
+        )
     }
 }
 
@@ -57,6 +73,8 @@ private fun RealEditor(
     registerStateUpdates: Boolean,
     modifier: Modifier = Modifier,
     style: RichTextEditorStyle,
+    customSelectionActions: List<SelectionAction>,
+    onCustomSelectionActionSelected: (SelectionAction) -> Unit,
     onError: (Throwable) -> Unit,
 ) {
     val context = LocalContext.current
@@ -96,6 +114,32 @@ private fun RealEditor(
                     }
                     onFocusChangeListener = View.OnFocusChangeListener { view, hasFocus ->
                         state.onFocusChanged(view.hashCode(), hasFocus)
+                    }
+                    customSelectionActionModeCallback = object : ActionMode.Callback {
+                        override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
+                            customSelectionActions.forEach {
+                                menu?.add(Menu.NONE, it.id, Menu.NONE, it.title)
+                            }
+                            return true
+                        }
+
+                        override fun onActionItemClicked(
+                            mode: ActionMode?,
+                            item: MenuItem?
+                        ): Boolean {
+                            val action = customSelectionActions.find { it.id == item?.itemId }
+                                    ?: return false
+
+                            onCustomSelectionActionSelected(action)
+                            mode?.finish()
+                            return true
+                        }
+
+                        override fun onDestroyActionMode(mode: ActionMode?) {}
+
+                        override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
+                            return false
+                        }
                     }
                 }
 

@@ -5,4 +5,6 @@
     <string name="link_insert">Insert link</string>
     <string name="link_text">Text</string>
     <string name="link_url">Link</string>
+    <string name="custom_action">Custom action</string>
+    <string name="custom_action_clicked">Custom action clicked</string>
 </resources>
