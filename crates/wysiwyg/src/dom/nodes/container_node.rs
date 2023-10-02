@@ -706,19 +706,10 @@ impl<S: UnicodeString> ContainerNode<S> {
     ) {
         let as_message = true;
         assert!(matches!(self.kind, ContainerNodeKind::Paragraph));
-        let name = self.name();
+        self.fmt_children_html(formatter, selection_writer, state, as_message);
 
-        if self.is_empty() {
-            formatter.push('\n');
-        } else {
-            self.fmt_tag_open(name, formatter, &self.attrs);
-            self.fmt_children_html(
-                formatter,
-                selection_writer,
-                state,
-                as_message,
-            );
-            self.fmt_tag_close(name, formatter);
+        if !state.is_last_node_in_parent {
+            formatter.push("<br />");
         }
     }
 
@@ -1573,7 +1564,10 @@ mod test {
     #[test]
     fn paragraph_to_message_html() {
         let model = cm("<p>&nbsp;</p><p>&nbsp;</p><p>Hello!</p><p>&nbsp;</p>|");
-        assert_eq!(&model.state.dom.to_message_html(), "\n\n<p>Hello!</p>\n");
+        assert_eq!(
+            &model.state.dom.to_message_html(),
+            "<br /><br />Hello!<br />"
+        );
     }
 
     #[test]
