@@ -925,6 +925,13 @@ fn backspace_mention_from_end() {
 }
 
 #[test]
+fn backspace_word_returns_replace_all_update() {
+    let mut model = cm("Some text with multiple words|");
+    let update = model.backspace_word();
+    assert!(matches!(update.text_update, TextUpdate::ReplaceAll(_)))
+}
+
+#[test]
 fn delete_immutable_link_from_edge_of_link() {
     let mut model = cm(
         "<a contenteditable=\"false\" href=\"https://matrix.org\">|test</a>",
