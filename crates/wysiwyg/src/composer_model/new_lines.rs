@@ -174,7 +174,10 @@ where
             Generic => {
                 self.do_new_line_in_paragraph(first_leaf, block_location);
             }
-            _ => panic!("Unexpected kind block node with inline contents"),
+            _ => panic!(
+                "Unexpected kind {:?} with inline contents",
+                block_location.kind
+            ),
         }
         self.create_update_replace_all()
     }
