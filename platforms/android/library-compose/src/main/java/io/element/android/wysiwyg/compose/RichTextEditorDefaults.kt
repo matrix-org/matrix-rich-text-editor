@@ -4,6 +4,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontSynthesis
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -127,9 +131,17 @@ object RichTextEditorDefaults {
     fun textStyle(
         color: Color = MaterialTheme.colorScheme.onSurface,
         fontSize: TextUnit = MaterialTheme.typography.bodyLarge.fontSize,
+        fontFamily: FontFamily? = MaterialTheme.typography.bodyLarge.fontFamily,
+        fontWeight: FontWeight? = MaterialTheme.typography.bodyLarge.fontWeight,
+        fontStyle: FontStyle? = MaterialTheme.typography.bodyLarge.fontStyle,
+        fontSynthesis: FontSynthesis? = MaterialTheme.typography.bodyLarge.fontSynthesis,
     ) = TextStyle(
         color = color,
         fontSize = fontSize,
+        fontFamily = fontFamily,
+        fontWeight = fontWeight,
+        fontStyle = fontStyle,
+        fontSynthesis = fontSynthesis,
     )
 
     /**

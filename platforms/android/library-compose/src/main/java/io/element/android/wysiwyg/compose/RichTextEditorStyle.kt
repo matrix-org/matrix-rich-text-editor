@@ -6,6 +6,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontSynthesis
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
@@ -47,6 +51,10 @@ data class PillStyle(
 data class TextStyle(
     val color: Color,
     val fontSize: TextUnit,
+    val fontFamily: FontFamily?,
+    val fontWeight: FontWeight?,
+    val fontStyle: FontStyle?,
+    val fontSynthesis: FontSynthesis?,
 )
 
 data class CursorStyle(
@@ -68,24 +76,25 @@ data class CodeBackgroundStyle(
     val cornerRadiusBottomRight: Dp,
     val borderWidth: Dp,
 ) {
-    internal val drawable by mutableStateOf(
-        GradientDrawable().apply {
-            shape = GradientDrawable.RECTANGLE
-            setColor(this@CodeBackgroundStyle.color.toArgb())
-            setStroke(
-                with(density) { borderWidth.toPx() }.roundToInt(),
-                borderColor.toArgb()
+    internal val drawable by mutableStateOf(GradientDrawable().apply {
+        shape = GradientDrawable.RECTANGLE
+        setColor(this@CodeBackgroundStyle.color.toArgb())
+        setStroke(
+            with(density) { borderWidth.toPx() }.roundToInt(), borderColor.toArgb()
+        )
+        cornerRadii = with(density) {
+            floatArrayOf(
+                cornerRadiusTopLeft.toPx(),
+                cornerRadiusTopLeft.toPx(),
+                cornerRadiusTopRight.toPx(),
+                cornerRadiusTopRight.toPx(),
+                cornerRadiusBottomRight.toPx(),
+                cornerRadiusBottomRight.toPx(),
+                cornerRadiusBottomLeft.toPx(),
+                cornerRadiusBottomLeft.toPx()
             )
-            cornerRadii = with(density) {
-                floatArrayOf(
-                    cornerRadiusTopLeft.toPx(), cornerRadiusTopLeft.toPx(),
-                    cornerRadiusTopRight.toPx(), cornerRadiusTopRight.toPx(),
-                    cornerRadiusBottomRight.toPx(), cornerRadiusBottomRight.toPx(),
-                    cornerRadiusBottomLeft.toPx(), cornerRadiusBottomLeft.toPx()
-                )
-            }
         }
-    )
+    })
 }
 
 data class InlineCodeBackgroundStyle(

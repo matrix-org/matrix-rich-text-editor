@@ -1,13 +1,22 @@
 package io.element.android.wysiwyg.compose.internal
 
 import android.content.Context
+import android.graphics.Typeface
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalFontFamilyResolver
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontSynthesis
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
 import io.element.android.wysiwyg.compose.BulletListStyle
 import io.element.android.wysiwyg.compose.CodeBlockStyle
 import io.element.android.wysiwyg.compose.InlineCodeStyle
 import io.element.android.wysiwyg.compose.PillStyle
 import io.element.android.wysiwyg.compose.RichTextEditorStyle
+import io.element.android.wysiwyg.compose.TextStyle
 import io.element.android.wysiwyg.view.BulletListStyleConfig
 import io.element.android.wysiwyg.view.CodeBlockStyleConfig
 import io.element.android.wysiwyg.view.InlineCodeStyleConfig
@@ -53,8 +62,19 @@ internal fun CodeBlockStyle.toStyleConfig(context: Context): CodeBlockStyleConfi
     )
 }
 
-internal fun PillStyle.toStyleConfig(): PillStyleConfig =
-    PillStyleConfig(
-        backgroundColor = backgroundColor.toArgb(),
-    )
+internal fun PillStyle.toStyleConfig(): PillStyleConfig = PillStyleConfig(
+    backgroundColor = backgroundColor.toArgb(),
+)
 
+@Composable
+internal fun TextStyle.rememberTypeface(): Typeface {
+    val resolver: FontFamily.Resolver = LocalFontFamilyResolver.current
+    return remember(resolver, this) {
+        resolver.resolve(
+            fontFamily = fontFamily,
+            fontWeight = fontWeight ?: FontWeight.Normal,
+            fontStyle = fontStyle ?: FontStyle.Normal,
+            fontSynthesis = fontSynthesis ?: FontSynthesis.All,
+        )
+    }.value as Typeface
+}
