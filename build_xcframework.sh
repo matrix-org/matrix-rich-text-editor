@@ -40,6 +40,14 @@ rm -f $SWIFT_BINDINGS_FILE_PATH
 rm -rf $GENERATION_PATH
 
 # Generate headers & Swift bindings
+#
+# Note: swiftformat is automatically run by uniffi-bindgen if available
+# and mandatory for the `sed` tweaks below to work properly.
+if ! command -v swiftformat &> /dev/null
+then
+    echo "swiftformat could not be found"
+    exit 1
+fi
 mkdir -p $GENERATION_PATH
 cargo uniffi-bindgen generate --library $ARM64_LIB_PATH -l swift --out-dir $GENERATION_PATH
 
