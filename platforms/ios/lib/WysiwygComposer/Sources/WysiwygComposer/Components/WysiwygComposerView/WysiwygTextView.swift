@@ -72,7 +72,10 @@ public class WysiwygTextView: UITextView {
     /// - Parameters:
     ///   - content: Content to apply.
     func apply(_ content: WysiwygComposerAttributedContent) {
-        guard content.text != attributedText || content.selection != selectedRange else { return }
+        guard content.text.length == 0
+            || content.text != attributedText
+            || content.selection != selectedRange
+        else { return }
 
         performWithoutDelegate {
             self.attributedText = content.text
