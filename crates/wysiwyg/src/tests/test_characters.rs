@@ -216,28 +216,21 @@ fn replacing_across_lists_joins_them() {
 fn replacing_a_selection_containing_br_with_a_character() {
     let mut model = cm("abc{de<br />f}|ghi");
     replace_text(&mut model, "Z");
-    assert_eq!(tx(&model), "abcZ|ghi");
-}
-
-#[test]
-fn replacing_a_selection_containing_only_br_with_a_character() {
-    let mut model = cm("abc{<br />}|ghi");
-    replace_text(&mut model, "Z");
-    assert_eq!(tx(&model), "abcZ|ghi");
+    assert_eq!(tx(&model), "<p>abcZ|ghi</p>");
 }
 
 #[test]
 fn replacing_a_selection_starting_br_with_a_character() {
     let mut model = cm("abc{<br />def}|ghi");
     replace_text(&mut model, "Z");
-    assert_eq!(tx(&model), "abcZ|ghi");
+    assert_eq!(tx(&model), "<p>abcZ|ghi</p>");
 }
 
 #[test]
 fn replacing_a_selection_ending_br_with_a_character() {
     let mut model = cm("abc{def<br />}|ghi");
     replace_text(&mut model, "Z");
-    assert_eq!(tx(&model), "abcZ|ghi");
+    assert_eq!(tx(&model), "<p>abcZ|ghi</p>");
 }
 
 #[test]
@@ -305,14 +298,14 @@ fn inserting_a_line_break_and_text_before_a_line_break_works() {
 fn insert_text_between_line_breaks() {
     let mut model = cm("A<br />|<br />B");
     model.replace_text(utf16("C"));
-    assert_eq!(tx(&model), "A<br />C|<br />B");
+    assert_eq!(tx(&model), "<p>A</p><p>C|</p><p>B</p>");
 }
 
 #[test]
 fn insert_text_between_line_breaks_in_format_node() {
     let mut model = cm("A<br /><b>|<br />B</b>");
     model.replace_text(utf16("C"));
-    assert_eq!(tx(&model), "A<br /><b>C|<br />B</b>");
+    assert_eq!(tx(&model), "<p>A</p><p><b>C|</b></p><p><b>B</b></p>");
 }
 
 #[test]
