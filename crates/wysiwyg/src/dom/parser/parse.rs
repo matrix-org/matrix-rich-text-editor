@@ -866,21 +866,23 @@ mod sys {
 }
 
 fn post_process_blocks<S: UnicodeString>(mut dom: Dom<S>) -> Dom<S> {
-    let block_handles = find_block_handles(&dom);
+    let block_handles = find_deepest_block_handles(&dom);
     for handle in block_handles.iter().rev() {
         dom = post_process_block_lines(dom, handle);
     }
     dom
 }
 
-fn find_block_handles<S: UnicodeString>(dom: &Dom<S>) -> Vec<DomHandle> {
-    // Get blocks that only contain inline nodes to process
+// Find blocks that only contain inline nodes
+fn find_deepest_block_handles<S: UnicodeString>(
+    dom: &Dom<S>,
+) -> Vec<DomHandle> {
     dom.iter()
         .filter(|n| {
             n.is_block_node()
                 && !n
                     .as_container()
-                    .unwrap()
+                    .expect("it is a block")
                     .children()
                     .iter()
                     .any(|c| c.is_block_node())
@@ -889,81 +891,88 @@ fn find_block_handles<S: UnicodeString>(dom: &Dom<S>) -> Vec<DomHandle> {
         .collect()
 }
 
+// Process block nodes by converting line breaks into paragraphs.
 fn post_process_block_lines<S: UnicodeString>(
     mut dom: Dom<S>,
     handle: &DomHandle,
 ) -> Dom<S> {
     assert!(dom.lookup_node(handle).is_container_node());
+    let container_node = dom.lookup_node(handle).as_container().unwrap();
     let last_handle = dom.last_node_handle_in_sub_tree(handle);
-    let mut next_handle = last_handle.clone();
-    let mut children = Vec::new();
-    let mut line_handles: Vec<DomHandle> = Vec::new();
-    let mut line_break_handles: Vec<Option<DomHandle>> = Vec::new();
 
-    // All the leaf nodes and the root container
-    let nodes = dom
-        .iter_from_handle(&last_handle)
-        .filter(|n| n.is_leaf() || n.handle() == *handle)
-        .rev();
+    // Collect the positions of all the line breaks and the lines following them
+    let (line_breaks, lines) = {
+        let mut line_breaks: Vec<Option<DomHandle>> = Vec::new();
+        let mut next_lines: Vec<DomHandle> = Vec::new();
 
-    for node in nodes {
-        if node.is_line_break() {
-            let next_line = if node.handle() == last_handle {
-                last_handle.next_sibling()
-            } else {
-                next_handle.clone()
-            };
+        let nodes = dom
+            .iter_from_handle(&last_handle)
+            .filter(|n| n.is_leaf() && handle.is_ancestor_of(&n.handle()))
+            .rev()
+            .collect::<Vec<_>>();
+        let mut next_handle = if nodes.is_empty() {
+            last_handle.clone()
+        } else {
+            last_handle.next_sibling()
+        };
 
-            line_break_handles.push(Some(node.handle()));
-            line_handles.push(next_line);
-        } else if node.handle() == *handle {
-            line_break_handles.push(None);
-            line_handles.push(next_handle.clone());
+        for node in nodes {
+            if node.is_line_break() {
+                line_breaks.push(Some(node.handle()));
+                next_lines.push(next_handle.clone());
+            }
+            next_handle = node.handle();
         }
-        next_handle = node.handle();
 
-        // After handling the container, stop
-        if node.handle().depth() == handle.depth() {
-            break;
-        }
-    }
+        line_breaks.push(None);
+        next_lines.push(next_handle.clone());
 
-    if line_handles.len() <= 1 // line_handles always contains at least the container
-        // Code blocks need inline content to be wrapped in a paragraph
+        (line_breaks, next_lines)
+    };
+
+    // If there were no line breaks we might stop here
+    if lines.len() <= 1 // (<= 1 because lines will always contain at least the container)
+        // Code blocks require all inline content to be wrapped in a paragraph
         && dom.lookup_node(handle).kind() != DomNodeKind::CodeBlock
     {
-        // No line breaks, no need to do anything
         return dom;
     }
 
-    let old_node = dom.lookup_node(handle).as_container().unwrap();
-    let new_node = match old_node.kind() {
+    // Create a new node to hold the processed contents if necessary
+    let new_node = match container_node.kind() {
         ContainerNodeKind::Paragraph => None,
-        _ => Some(old_node.clone_with_new_children(vec![])),
+        _ => Some(container_node.clone_with_new_children(vec![])),
     };
 
-    for (i, line_handle) in line_handles.iter().enumerate() {
-        let mut sub_tree =
-            dom.split_sub_tree_from(line_handle, 0, handle.depth());
+    // Remove each line from the DOM and collect it in a vector
+    let contents = {
+        let mut contents = Vec::new();
+        for (i, line_handle) in lines.iter().enumerate() {
+            let mut sub_tree =
+                dom.split_sub_tree_from(line_handle, 0, handle.depth());
 
-        if let Some(line_break_handle) = &line_break_handles[i] {
-            dom.remove(line_break_handle);
+            if let Some(line_break_handle) = &line_breaks[i] {
+                dom.remove(line_break_handle);
+            }
+
+            // Create a paragraph if it doesn't already exist
+            let node = if sub_tree.children().get(0).map(|n| n.kind())
+                == Some(DomNodeKind::Paragraph)
+            {
+                sub_tree.document_mut().remove_children().remove(0)
+            } else {
+                DomNode::new_paragraph(
+                    sub_tree.document_mut().remove_children(),
+                )
+            };
+
+            contents.insert(0, node);
         }
-
-        // Create a paragraph if it doesn't already exist
-        let node = if sub_tree.children().get(0).map(|n| n.kind())
-            == Some(DomNodeKind::Paragraph)
-        {
-            sub_tree.document_mut().remove_children().remove(0)
-        } else {
-            DomNode::new_paragraph(sub_tree.document_mut().remove_children())
-        };
-
-        children.insert(0, node);
-    }
+        contents
+    };
 
     if handle.is_root() {
-        return Dom::new(children);
+        return Dom::new(contents);
     }
 
     let needs_removal = if dom.contains(handle) {
@@ -977,14 +986,15 @@ fn post_process_block_lines<S: UnicodeString>(
         dom.remove(handle);
     }
 
+    // Insert the processed contents back into the dom
     match new_node {
         Some(mut n) => {
             n.set_handle(handle.clone());
-            n.append_children(children);
+            n.append_children(contents);
             dom.insert_at(handle, DomNode::Container(n));
         }
         None => {
-            dom.insert(handle, children);
+            dom.insert(handle, contents);
         }
     }
     dom
