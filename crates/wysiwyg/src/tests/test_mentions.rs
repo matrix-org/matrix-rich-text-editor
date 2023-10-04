@@ -168,7 +168,7 @@ fn linebreak_insert_before() {
     insert_mention_at_cursor(&mut model);
     assert_eq!(
         tx(&model),
-        "<a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>|<br />",
+        "<p><a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|</p><p>&nbsp;</p>",
     );
 }
 
@@ -178,7 +178,7 @@ fn linebreak_insert_after() {
     insert_mention_at_cursor(&mut model);
     assert_eq!(
         tx(&model),
-        "<br /><a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|",
+        "<p>&nbsp;</p><p><a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>&nbsp;|</p>",
     );
 }
 
