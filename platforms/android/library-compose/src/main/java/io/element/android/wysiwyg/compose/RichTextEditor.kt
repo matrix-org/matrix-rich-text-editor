@@ -1,22 +1,21 @@
 package io.element.android.wysiwyg.compose
 
-import android.os.Build
-import android.util.TypedValue
 import android.view.View
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.compose.internal.ViewAction
+import io.element.android.wysiwyg.compose.internal.applyDefaultStyle
+import io.element.android.wysiwyg.compose.internal.applyStyle
 import io.element.android.wysiwyg.compose.internal.rememberTypeface
 import io.element.android.wysiwyg.compose.internal.toStyleConfig
+import io.element.android.wysiwyg.display.MentionDisplayHandler
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -41,6 +40,7 @@ fun RichTextEditor(
     state: RichTextEditorState = rememberRichTextEditorState(),
     registerStateUpdates: Boolean = true,
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
+    mentionDisplayHandler: MentionDisplayHandler? = null,
     onError: (Throwable) -> Unit = {},
 ) {
     val isPreview = LocalInspectionMode.current
@@ -48,7 +48,7 @@ fun RichTextEditor(
     if (isPreview) {
         PreviewEditor(state, modifier, style)
     } else {
-        RealEditor(state, registerStateUpdates, modifier, style, onError)
+        RealEditor(state, registerStateUpdates, modifier, style, onError, mentionDisplayHandler)
     }
 }
 
@@ -59,6 +59,7 @@ private fun RealEditor(
     modifier: Modifier = Modifier,
     style: RichTextEditorStyle,
     onError: (Throwable) -> Unit,
+    mentionDisplayHandler: MentionDisplayHandler?,
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -134,6 +135,7 @@ private fun RealEditor(
         view.applyStyle(style)
         view.typeface = textStyleTypeface
         view.rustErrorCollector = RustErrorCollector(onError)
+        view.mentionDisplayHandler = mentionDisplayHandler
     })
 }
 
@@ -160,21 +162,4 @@ private fun PreviewEditor(
     }, update = { view ->
         view.applyStyle(style)
     })
-}
-
-private fun AppCompatEditText.applyStyle(style: RichTextEditorStyle) {
-    setTextColor(style.text.color.toArgb())
-    setTextSize(TypedValue.COMPLEX_UNIT_SP, style.text.fontSize.value)
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        val cursorDrawable = ContextCompat.getDrawable(context, R.drawable.cursor)
-        cursorDrawable?.setTint(style.cursor.color.toArgb())
-        textCursorDrawable = cursorDrawable
-        setLinkTextColor(style.link.color.toArgb())
-    }
-}
-
-private fun AppCompatEditText.applyDefaultStyle() {
-    // Set the style closer to a BasicTextField composable
-    setBackgroundDrawable(null)
-    setPadding(0, 0, 0, 0)
 }

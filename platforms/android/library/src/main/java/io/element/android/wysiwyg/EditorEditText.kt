@@ -1,6 +1,5 @@
 package io.element.android.wysiwyg
 
-import android.app.Application
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -9,8 +8,6 @@ import android.graphics.Canvas
 import android.os.Build
 import android.os.Parcelable
 import android.text.Selection
-import android.text.Spannable
-import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.util.AttributeSet
 import android.view.KeyEvent
@@ -36,6 +33,7 @@ import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelper
 import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelperFactory
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
+import io.element.android.wysiwyg.view.spans.ReuseSourceSpannableFactory
 import uniffi.wysiwyg_composer.*
 
 /**
@@ -52,28 +50,17 @@ class EditorEditText : AppCompatEditText {
 
     private val viewModel: EditorViewModel by viewModel(
         viewModelInitializer = {
-            val applicationContext = context.applicationContext as Application
-            val resourcesProvider = AndroidResourcesHelper(applicationContext)
-            val htmlConverter = AndroidHtmlConverter(
-                provideHtmlToSpansParser = { html ->
-                    HtmlToSpansParser(
-                        resourcesProvider, html,
-                        styleConfig = { styleConfig },
-                        mentionDisplayHandler = mentionDisplayHandler,
-                    )
-                },
+            val htmlConverter = HtmlConverter.Factory.create(
+                context = context.applicationContext,
+                styleConfigProvider = {styleConfig},
+                mentionDisplayHandlerProvider = {mentionDisplayHandler},
             )
             val provideComposer = { if (!isInEditMode) newComposerModel() else null }
             EditorViewModel(provideComposer, htmlConverter)
         }
     )
 
-    private val spannableFactory = object : Spannable.Factory() {
-        override fun newSpannable(source: CharSequence?): Spannable {
-            // Try to reuse current source if possible to improve performance
-            return source as? Spannable ?: SpannableStringBuilder(source)
-        }
-    }
+    private val spannableFactory = ReuseSourceSpannableFactory()
 
     private var isInitialized = false
 
@@ -108,6 +95,7 @@ class EditorEditText : AppCompatEditText {
     fun interface OnLinkActionChangedListener {
         fun onLinkActionChanged(linkAction: LinkAction?)
     }
+
 
     /**
      * Set the mention display handler to display mentions in a custom way.
