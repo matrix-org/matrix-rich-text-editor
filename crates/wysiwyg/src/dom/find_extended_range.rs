@@ -146,7 +146,10 @@ mod test {
     #[test]
     fn find_extended_selection_stops_at_leading_trailing_line_breaks() {
         let dom = cm("abc<br />def<br />ghi|").state.dom;
-        assert_eq!(dom.find_extended_selection(5, 6), (3, 8));
+
+        assert_eq!(dom.find_extended_selection(1, 2), (0, 3));
+        assert_eq!(dom.find_extended_selection(5, 6), (4, 7));
+        assert_eq!(dom.find_extended_selection(9, 10), (8, 11));
     }
 
     #[test]
@@ -166,8 +169,8 @@ mod test {
     #[test]
     fn find_extended_selection_stops_immediately_on_selected_linebreaks() {
         let dom = cm("abc<br />def<br />ghi|").state.dom;
-        assert_eq!(dom.find_extended_selection(3, 8), (3, 8));
-        assert_eq!(dom.find_extended_selection(4, 6), (3, 8));
+        assert_eq!(dom.find_extended_selection(4, 7), (4, 7));
+        assert_eq!(dom.find_extended_selection(5, 6), (4, 7));
     }
 
     #[test]
