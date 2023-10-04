@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.14.1] - 2023-10-04
+
+### Fixed
+
+- iOS: Fix background drawing when clearing quote / code block (#829)
+- iOS: Fix reconciliate breaking with leading whitespaces (#831)
+
 # [2.14.0] - 2023-09-27
 
 ### Added
