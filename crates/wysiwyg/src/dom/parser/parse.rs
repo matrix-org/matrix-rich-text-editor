@@ -1404,7 +1404,9 @@ mod js {
 
         #[wasm_bindgen_test]
         fn br() {
-            roundtrip("foo<br />bar");
+            let html = "foo<br />bar";
+            let dom = HtmlParser::default().parse::<Utf16String>(html).unwrap();
+            assert_eq!(dom.to_string(), "<p>foo</p><p>bar</p>");
         }
 
         #[wasm_bindgen_test]

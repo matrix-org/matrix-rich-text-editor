@@ -147,13 +147,17 @@ describe('useWysiwyg', () => {
     });
 
     test('Create wysiwyg with initial content', async () => {
-        // When
+        // Given
         const content = 'fo<strong>o</strong><br />b<em>ar</em>';
+        const processedContent =
+            '<p>fo<strong>o</strong></p><p>b<em>ar</em></p>';
+
+        // When
         render(<Editor initialContent={content} />);
 
         // Then
         await waitFor(() =>
-            expect(screen.getByRole('textbox')).toContainHTML(content),
+            expect(screen.getByRole('textbox')).toContainHTML(processedContent),
         );
     });
 
