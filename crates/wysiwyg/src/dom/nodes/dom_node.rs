@@ -415,7 +415,7 @@ where
         &self,
         buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        state: ToHtmlState,
+        state: &ToHtmlState,
         as_message: bool,
     ) {
         match self {
@@ -504,7 +504,7 @@ where
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DomNodeKind {
     Generic, // Should only be used for root node so far
     Text,

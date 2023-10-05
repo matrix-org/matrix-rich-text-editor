@@ -31,7 +31,7 @@ where
         &self,
         buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        state: ToHtmlState,
+        state: &ToHtmlState,
         as_message: bool,
     );
 
@@ -39,14 +39,14 @@ where
     /// for sending as a message
     fn to_message_html(&self) -> S {
         let mut buf = S::default();
-        self.fmt_html(&mut buf, None, ToHtmlState::default(), true);
+        self.fmt_html(&mut buf, None, &ToHtmlState::default(), true);
         buf
     }
 
     /// Convert to a literal HTML represention of the source object
     fn to_html(&self) -> S {
         let mut buf = S::default();
-        self.fmt_html(&mut buf, None, ToHtmlState::default(), false);
+        self.fmt_html(&mut buf, None, &ToHtmlState::default(), false);
         buf
     }
 }
@@ -98,7 +98,7 @@ where
 
 /// State of the HTML generation at every `fmt_html` call, usually used to pass info from ancestor
 /// nodes to their descendants.
-#[derive(Copy, Clone, Default)]
+#[derive(Clone, Default)]
 pub struct ToHtmlState {
     pub is_inside_code_block: bool,
     pub prev_sibling: Option<DomNodeKind>,

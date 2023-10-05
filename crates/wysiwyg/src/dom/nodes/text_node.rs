@@ -215,7 +215,7 @@ where
         &self,
         buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        state: ToHtmlState,
+        state: &ToHtmlState,
         _as_message: bool,
     ) {
         let cur_pos = buf.len();

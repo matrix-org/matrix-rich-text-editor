@@ -607,7 +607,7 @@ where
         &self,
         formatter: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        state: ToHtmlState,
+        state: &ToHtmlState,
         as_message: bool,
     ) {
         match self.kind() {
@@ -639,7 +639,7 @@ impl<S: UnicodeString> ContainerNode<S> {
         &self,
         formatter: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        state: ToHtmlState,
+        state: &ToHtmlState,
         as_message: bool,
     ) {
         let name = self.name();
@@ -658,7 +658,7 @@ impl<S: UnicodeString> ContainerNode<S> {
         &self,
         formatter: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        state: ToHtmlState,
+        state: &ToHtmlState,
         as_message: bool,
     ) {
         assert!(matches!(self.kind, ContainerNodeKind::Paragraph));
@@ -684,7 +684,7 @@ impl<S: UnicodeString> ContainerNode<S> {
         &self,
         formatter: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        state: ToHtmlState,
+        state: &ToHtmlState,
     ) {
         let as_message = false;
         assert!(matches!(self.kind, ContainerNodeKind::Paragraph));
@@ -702,7 +702,7 @@ impl<S: UnicodeString> ContainerNode<S> {
         &self,
         formatter: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        state: ToHtmlState,
+        state: &ToHtmlState,
     ) {
         let as_message = true;
         assert!(matches!(self.kind, ContainerNodeKind::Paragraph));
@@ -711,6 +711,7 @@ impl<S: UnicodeString> ContainerNode<S> {
         // be a block node and break onto a new line.
         if state
             .prev_sibling
+            .as_ref()
             .is_some_and(|k| matches!(k, DomNodeKind::Paragraph))
         {
             formatter.push("<br />");
@@ -720,7 +721,11 @@ impl<S: UnicodeString> ContainerNode<S> {
 
         // If the next node is a block node, no need to add a line break as
         // one is implicitly added.
-        if state.next_sibling.is_some_and(|k| !k.is_block_kind()) {
+        if state
+            .next_sibling
+            .as_ref()
+            .is_some_and(|k| !k.is_block_kind())
+        {
             formatter.push("<br />");
         }
     }
@@ -729,7 +734,7 @@ impl<S: UnicodeString> ContainerNode<S> {
         &self,
         formatter: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        state: ToHtmlState,
+        state: &ToHtmlState,
         as_message: bool,
     ) {
         assert!(matches!(self.kind, ContainerNodeKind::Paragraph));
@@ -748,17 +753,17 @@ impl<S: UnicodeString> ContainerNode<S> {
         &self,
         formatter: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        state: ToHtmlState,
+        state: &ToHtmlState,
         as_message: bool,
     ) {
         assert!(matches!(self.kind, ContainerNodeKind::CodeBlock));
         self.fmt_tag_open(&S::from("pre"), formatter, &self.attrs);
-        let mut state = state;
+        let mut state = state.clone();
         state.is_inside_code_block = true;
 
         self.fmt_tag_open(&S::from("code"), formatter, &None::<Vec<(S, S)>>);
 
-        self.fmt_children_html(formatter, selection_writer, state, as_message);
+        self.fmt_children_html(formatter, selection_writer, &state, as_message);
 
         self.fmt_tag_close(&S::from("code"), formatter);
         self.fmt_tag_close(&S::from("pre"), formatter);
@@ -768,13 +773,13 @@ impl<S: UnicodeString> ContainerNode<S> {
         &self,
         formatter: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        state: ToHtmlState,
+        state: &ToHtmlState,
         as_message: bool,
     ) {
         if let Some(w) = selection_writer {
             for (i, child) in self.children.iter().enumerate() {
                 let state = self.updated_state(state, i);
-                child.fmt_html(formatter, Some(w), state, as_message);
+                child.fmt_html(formatter, Some(w), &state, as_message);
             }
             if self.is_empty() {
                 w.write_selection_empty_container(
@@ -786,16 +791,16 @@ impl<S: UnicodeString> ContainerNode<S> {
         } else {
             for (i, child) in self.children.iter().enumerate() {
                 let state = self.updated_state(state, i);
-                child.fmt_html(formatter, None, state, as_message);
+                child.fmt_html(formatter, None, &state, as_message);
             }
         }
     }
     fn updated_state(
         &self,
-        initial_state: ToHtmlState,
+        initial_state: &ToHtmlState,
         child_index: usize,
     ) -> ToHtmlState {
-        let mut state = initial_state;
+        let mut state = initial_state.clone();
         state.next_sibling =
             self.children().get(child_index + 1).map(|n| n.kind());
         state.prev_sibling = if child_index == 0 {

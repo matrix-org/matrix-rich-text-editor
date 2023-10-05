@@ -255,7 +255,7 @@ impl ComposerModel<Utf16String> {
         root.fmt_html(
             &mut buf,
             Some(&mut selection_writer),
-            ToHtmlState::default(),
+            &ToHtmlState::default(),
             false,
         );
         if range.is_empty().not() {
