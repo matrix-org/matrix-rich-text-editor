@@ -33,6 +33,14 @@ fn outputs_paragraphs_as_line_breaks() {
 }
 
 #[test]
+fn outputs_paragraphs_content_without_linebreak_when_followed_by_block() {
+    let model = cm("<p>foo</p><blockquote>bar|</blockquote>");
+    assert_eq!(tx(&model), "<p>foo</p><blockquote>bar|</blockquote>");
+    let message_output = model.get_content_as_message_html();
+    assert_eq!(message_output, "foo<blockquote>bar</blockquote>");
+}
+
+#[test]
 fn only_outputs_href_attribute_on_user_mention() {
     let mut model = cm("|");
     model.insert_mention(

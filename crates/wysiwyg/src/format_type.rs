@@ -14,7 +14,7 @@
 
 use crate::{ComposerAction, UnicodeString};
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum InlineFormatType {
     Bold,
     Italic,

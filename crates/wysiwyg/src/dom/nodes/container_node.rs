@@ -706,9 +706,21 @@ impl<S: UnicodeString> ContainerNode<S> {
     ) {
         let as_message = true;
         assert!(matches!(self.kind, ContainerNodeKind::Paragraph));
+
+        // If the previous node was a paragraph, it expected this node to
+        // be a block node and break onto a new line.
+        if state
+            .prev_sibling
+            .is_some_and(|k| matches!(k, DomNodeKind::Paragraph))
+        {
+            formatter.push("<br />");
+        }
+
         self.fmt_children_html(formatter, selection_writer, state, as_message);
 
-        if !state.is_last_node_in_parent {
+        // If the next node is a block node, no need to add a line break as
+        // one is implicitly added.
+        if state.next_sibling.is_some_and(|k| !k.is_block_kind()) {
             formatter.push("<br />");
         }
     }
@@ -722,12 +734,12 @@ impl<S: UnicodeString> ContainerNode<S> {
     ) {
         assert!(matches!(self.kind, ContainerNodeKind::Paragraph));
         if self.is_empty()
-            && (state.is_last_node_in_parent || state.is_first_node_in_parent)
+            && (state.next_sibling.is_none() || state.prev_sibling.is_none())
         {
             formatter.push(char::nbsp());
         }
         self.fmt_children_html(formatter, selection_writer, state, as_message);
-        if !state.is_last_node_in_parent {
+        if state.next_sibling.is_some() {
             formatter.push('\n');
         }
     }
@@ -783,11 +795,14 @@ impl<S: UnicodeString> ContainerNode<S> {
         initial_state: ToHtmlState,
         child_index: usize,
     ) -> ToHtmlState {
-        let is_last = self.children().len() == child_index + 1;
-        let is_first = child_index == 0;
         let mut state = initial_state;
-        state.is_last_node_in_parent = is_last;
-        state.is_first_node_in_parent = is_first;
+        state.next_sibling =
+            self.children().get(child_index + 1).map(|n| n.kind());
+        state.prev_sibling = if child_index == 0 {
+            None
+        } else {
+            self.children().get(child_index - 1).map(|n| n.kind())
+        };
         state
     }
 }

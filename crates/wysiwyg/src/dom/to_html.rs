@@ -14,7 +14,10 @@
 
 use crate::composer_model::example_format::SelectionWriter;
 
-use super::{unicode_string::UnicodeStringExt, UnicodeString};
+use super::{
+    nodes::dom_node::DomNodeKind, unicode_string::UnicodeStringExt,
+    UnicodeString,
+};
 
 pub trait ToHtml<S>
 where
@@ -98,6 +101,6 @@ where
 #[derive(Copy, Clone, Default)]
 pub struct ToHtmlState {
     pub is_inside_code_block: bool,
-    pub is_last_node_in_parent: bool,
-    pub is_first_node_in_parent: bool,
+    pub prev_sibling: Option<DomNodeKind>,
+    pub next_sibling: Option<DomNodeKind>,
 }

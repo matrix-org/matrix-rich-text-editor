@@ -504,7 +504,7 @@ where
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DomNodeKind {
     Generic, // Should only be used for root node so far
     Text,
