@@ -1139,7 +1139,9 @@ mod js {
                     )
                 })?;
 
-            self.webdom_to_dom(document).map_err(to_dom_creation_error)
+            self.webdom_to_dom(document)
+                .map_err(to_dom_creation_error)
+                .map(post_process_blocks)
         }
 
         fn webdom_to_dom<S>(
@@ -1162,8 +1164,6 @@ mod js {
             let dom_document = dom.document_mut();
 
             self.convert_container(nodes, dom_document)?;
-
-            dom = post_process_blocks(dom);
 
             Ok(dom)
         }
