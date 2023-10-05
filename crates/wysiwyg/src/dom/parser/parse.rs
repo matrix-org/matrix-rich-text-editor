@@ -567,6 +567,29 @@ mod sys {
         }
 
         #[test]
+        fn parse_line_breaks_br_before_p() {
+            let html = "abc<br /><p>def<br />gh</p>ijk";
+            let dom: Dom<Utf16String> =
+                HtmlParser::default().parse(html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+                
+                ├>p
+                │ └>"abc"
+                ├>p
+                │ └>"def"
+                ├>p
+                │ └>"gh"
+                └>p
+                  └>"ijk"
+                "#}
+            );
+        }
+
+        #[test]
         fn parse_line_breaks_br_in_bold() {
             let html = r#"<b>foo<br /></b>"#;
             let dom: Dom<Utf16String> =
@@ -628,7 +651,7 @@ mod sys {
 
         #[test]
         fn parse_line_breaks_br_in_list() {
-            let html = r#"<ul><li>foo<br />bar<br /></li></ul>"#;
+            let html = r#"<ul><li>foo<br />bar<br /><p>baz</p></li></ul>"#;
             let dom: Dom<Utf16String> =
                 HtmlParser::default().parse(html).unwrap();
             let tree = dom.to_tree().to_string();
@@ -644,13 +667,14 @@ mod sys {
                     ├>p
                     │ └>"bar"
                     └>p
+                      └>"baz"
                 "#}
             );
         }
 
         #[test]
         fn parse_line_breaks_br_in_p() {
-            let html = r#"<p>foo<br /></p>"#;
+            let html = r#"<p>foo<br />bar<br />baz<br /></p>"#;
             let dom: Dom<Utf16String> =
                 HtmlParser::default().parse(html).unwrap();
             let tree = dom.to_tree().to_string();
@@ -661,6 +685,10 @@ mod sys {
                 
                 ├>p
                 │ └>"foo"
+                ├>p
+                │ └>"bar"
+                ├>p
+                │ └>"baz"
                 └>p
                 "#}
             );
@@ -866,29 +894,18 @@ mod sys {
 }
 
 fn post_process_blocks<S: UnicodeString>(mut dom: Dom<S>) -> Dom<S> {
-    let block_handles = find_deepest_block_handles(&dom);
+    let block_handles = find_blocks(&dom);
     for handle in block_handles.iter().rev() {
         dom = post_process_block_lines(dom, handle);
     }
     dom
 }
 
-// Find blocks that only contain inline nodes
-fn find_deepest_block_handles<S: UnicodeString>(
-    dom: &Dom<S>,
-) -> Vec<DomHandle> {
+fn find_blocks<S: UnicodeString>(dom: &Dom<S>) -> Vec<DomHandle> {
     dom.iter()
-        .filter(|n| {
-            n.is_block_node()
-                && !n
-                    .as_container()
-                    .expect("it is a block")
-                    .children()
-                    .iter()
-                    .any(|c| c.is_block_node())
-        })
+        .filter(|n| n.is_block_node())
         .map(|n| n.handle())
-        .collect()
+        .collect::<Vec<_>>()
 }
 
 // Process block nodes by converting line breaks into paragraphs.
@@ -955,18 +972,10 @@ fn post_process_block_lines<S: UnicodeString>(
                 dom.remove(line_break_handle);
             }
 
-            // Create a paragraph if it doesn't already exist
-            let node = if sub_tree.children().get(0).map(|n| n.kind())
-                == Some(DomNodeKind::Paragraph)
-            {
-                sub_tree.document_mut().remove_children().remove(0)
-            } else {
-                DomNode::new_paragraph(
-                    sub_tree.document_mut().remove_children(),
-                )
-            };
-
-            contents.insert(0, node);
+            group_inline_nodes(sub_tree.document_mut().remove_children())
+                .iter()
+                .rev()
+                .for_each(|n| contents.insert(0, n.clone()));
         }
         contents
     };
@@ -998,6 +1007,37 @@ fn post_process_block_lines<S: UnicodeString>(
         }
     }
     dom
+}
+
+// Group consecutive inline nodes into paragraphs.
+//
+// Always returns at least one empty paragraph.
+fn group_inline_nodes<S: UnicodeString>(
+    nodes: Vec<DomNode<S>>,
+) -> Vec<DomNode<S>> {
+    let mut output: Vec<DomNode<S>> = Vec::new();
+    let mut cur_group: Vec<DomNode<S>> = Vec::new();
+
+    for node in nodes.clone() {
+        if node.is_block_node() {
+            // If there are inline elements waiting to be grouped, create a new block with them
+            if !cur_group.is_empty() {
+                output.push(DomNode::new_paragraph(cur_group.clone()));
+                cur_group.clear();
+            }
+
+            // Then add the current block
+            output.push(node);
+        } else {
+            cur_group.push(node)
+        }
+    }
+
+    if !cur_group.is_empty() || output.is_empty() {
+        output.push(DomNode::new_paragraph(cur_group));
+    }
+
+    output
 }
 
 #[cfg(feature = "sys")]
