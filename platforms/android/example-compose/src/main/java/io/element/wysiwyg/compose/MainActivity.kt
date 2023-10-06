@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import io.element.android.wysiwyg.compose.EditorStyledText
 import io.element.android.wysiwyg.compose.RichTextEditor
 import io.element.android.wysiwyg.compose.RichTextEditorDefaults
+import io.element.android.wysiwyg.compose.StyledHtmlConverter
 import io.element.android.wysiwyg.compose.rememberRichTextEditorState
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
@@ -37,13 +38,18 @@ import uniffi.wysiwyg_composer.ComposerAction
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val mentionDisplayHandler = DefaultMentionDisplayHandler()
+        val htmlConverter = StyledHtmlConverter(this, mentionDisplayHandler)
         setContent {
+            val style = RichTextEditorDefaults.style()
+            htmlConverter.configureWith(style = style)
             RichTextEditorTheme {
                 val state = rememberRichTextEditorState()
 
                 var linkDialogAction by remember { mutableStateOf<LinkAction?>(null) }
                 val coroutineScope = rememberCoroutineScope()
 
+                val htmlText = htmlConverter.fromHtmlToSpans(state.messageHtml)
 
                 linkDialogAction?.let { linkAction ->
                     LinkDialog(linkAction = linkAction,
@@ -81,15 +87,14 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier.fillMaxWidth(),
                                 style = RichTextEditorDefaults.style(),
                                 onError = Timber::e,
-                                mentionDisplayHandler = DefaultMentionDisplayHandler()
+                                mentionDisplayHandler = mentionDisplayHandler
                             )
                         }
                         EditorStyledText(
-                            text = state.messageHtml,
+                            text = htmlText,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp),
-                            mentionDisplayHandler = DefaultMentionDisplayHandler()
                         )
                         FormattingButtons(onResetText = {
                             coroutineScope.launch {
