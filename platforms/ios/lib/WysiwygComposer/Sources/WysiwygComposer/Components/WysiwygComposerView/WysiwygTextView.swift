@@ -40,11 +40,16 @@ protocol WysiwygTextViewDelegate: AnyObject {
     func textView(_ textView: UITextView, didReceivePasteWith provider: NSItemProvider)
 }
 
+/// A markdown protocol used to provide additional context to the text view when handling mentions through the text attachment provider
+public protocol MentionContext: AnyObject { }
+
 public class WysiwygTextView: UITextView {
     /// Internal delegate for the text view.
     weak var wysiwygDelegate: WysiwygTextViewDelegate?
-
+    
     private let flusher = WysiwygPillsFlusher()
+    
+    public weak var mentionContext: MentionContext?
 
     override public init(frame: CGRect, textContainer: NSTextContainer?) {
         super.init(frame: frame, textContainer: textContainer)
