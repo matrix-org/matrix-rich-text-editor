@@ -316,6 +316,19 @@ impl ComposerModel {
         ))
     }
 
+    pub fn edit_link_with_text(
+        &mut self,
+        url: &str,
+        text: &str,
+        attributes: js_sys::Map,
+    ) -> ComposerUpdate {
+        ComposerUpdate::from(self.inner.edit_link_with_text(
+            Utf16String::from_str(url),
+            Utf16String::from_str(text),
+            attributes.into_vec(),
+        ))
+    }
+
     /// Creates an at-room mention node and inserts it into the composer at the current selection
     pub fn insert_at_room_mention(
         &mut self,
@@ -831,6 +844,7 @@ pub struct Create;
 #[wasm_bindgen(getter_with_clone)]
 pub struct Edit {
     pub url: String,
+    pub text: String,
 }
 
 #[derive(Clone)]
@@ -860,12 +874,13 @@ impl From<wysiwyg::LinkAction<Utf16String>> for LinkAction {
                 edit_link: None,
                 disabled: None,
             },
-            wysiwyg::LinkAction::Edit(url) => {
+            wysiwyg::LinkAction::Edit(url, text) => {
                 let url = url.to_string();
+                let text = text.to_string();
                 Self {
                     create_with_text: None,
                     create: None,
-                    edit_link: Some(Edit { url }),
+                    edit_link: Some(Edit { url, text }),
                     disabled: None,
                 }
             }

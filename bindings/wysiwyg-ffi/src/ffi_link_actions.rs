@@ -4,7 +4,7 @@ use widestring::Utf16String;
 pub enum LinkAction {
     CreateWithText,
     Create,
-    Edit { url: String },
+    Edit { url: String, text: String },
     Disabled,
 }
 
@@ -13,8 +13,9 @@ impl From<wysiwyg::LinkAction<Utf16String>> for LinkAction {
         match inner {
             wysiwyg::LinkAction::CreateWithText => Self::CreateWithText,
             wysiwyg::LinkAction::Create => Self::Create,
-            wysiwyg::LinkAction::Edit(url) => Self::Edit {
+            wysiwyg::LinkAction::Edit(url, text) => Self::Edit {
                 url: url.to_string(),
+                text: text.to_string(),
             },
             wysiwyg::LinkAction::Disabled => Self::Disabled,
         }

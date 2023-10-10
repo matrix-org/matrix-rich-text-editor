@@ -18,6 +18,7 @@ use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::DomNodeKind::{Link, List};
 use crate::dom::nodes::ContainerNodeKind;
 use crate::dom::nodes::DomNode;
+use crate::dom::to_plain_text::ToPlainText;
 use crate::dom::unicode_string::UnicodeStrExt;
 use crate::dom::Range;
 use crate::{
@@ -53,7 +54,10 @@ where
                 LinkAction::Disabled
             } else {
                 // Otherwise we edit the first link of the selection.
-                LinkAction::Edit(first_link.get_link_url().unwrap())
+                LinkAction::Edit(
+                    first_link.get_link_url().unwrap(),
+                    first_link.to_plain_text(),
+                )
             }
         } else if s == e || self.is_blank_selection(range) {
             LinkAction::CreateWithText
@@ -118,6 +122,29 @@ where
 
         let range = self.state.dom.find_range(s, e);
 
+        self.set_link_in_range(url, range, attributes)
+    }
+
+    pub fn edit_link_with_text(
+        &mut self,
+        url: S,
+        text: S,
+        attributes: Vec<(S, S)>,
+    ) -> ComposerUpdate<S> {
+        self.push_state_to_history();
+        let (s, e) = self.safe_selection();
+        let range = self.state.dom.find_range(s, e);
+        let Some(link_loc) = range
+            .locations
+            .iter()
+            .find(|loc| loc.kind == DomNodeKind::Link) else {
+                panic!("Attempting to edit a link on a range that doesn't contain one")
+        };
+        let start = link_loc.position;
+        let end = start + link_loc.length;
+        let new_end = start + text.len();
+        self.do_replace_text_in(text, start, end);
+        let range = self.state.dom.find_range(start, new_end);
         self.set_link_in_range(url, range, attributes)
     }
 

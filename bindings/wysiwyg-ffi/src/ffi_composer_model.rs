@@ -270,6 +270,31 @@ impl ComposerModel {
         ))
     }
 
+    pub fn edit_link_with_text(
+        self: &Arc<Self>,
+        url: String,
+        text: String,
+        attributes: Vec<Attribute>,
+    ) -> Arc<ComposerUpdate> {
+        let url = Utf16String::from_str(&url);
+        let text = Utf16String::from_str(&text);
+        let attrs = attributes
+            .iter()
+            .map(|attr| {
+                (
+                    Utf16String::from_str(&attr.key),
+                    Utf16String::from_str(&attr.value),
+                )
+            })
+            .collect();
+        Arc::new(ComposerUpdate::from(
+            self.inner
+                .lock()
+                .unwrap()
+                .edit_link_with_text(url, text, attrs),
+        ))
+    }
+
     /// Creates an at-room mention node and inserts it into the composer at the current selection
     pub fn insert_at_room_mention(self: &Arc<Self>) -> Arc<ComposerUpdate> {
         Arc::new(ComposerUpdate::from(
