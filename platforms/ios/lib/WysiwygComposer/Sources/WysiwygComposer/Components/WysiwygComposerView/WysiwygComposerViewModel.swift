@@ -362,6 +362,8 @@ public extension WysiwygComposerViewModel {
         switch linkOperation {
         case let .createLink(urlString, text):
             update = model.setLinkWithText(url: urlString, text: text, attributes: [])
+        case let .editLink(urlString, text):
+            update = model.editLinkWithText(url: urlString, text: text, attributes: [])
         case let .setLink(urlString):
             update = model.setLink(url: urlString, attributes: [])
         case .removeLinks:
