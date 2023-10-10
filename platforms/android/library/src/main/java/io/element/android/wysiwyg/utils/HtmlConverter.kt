@@ -7,7 +7,7 @@ import io.element.android.wysiwyg.internal.utils.AndroidHtmlConverter
 import io.element.android.wysiwyg.view.StyleConfig
 
 interface HtmlConverter {
-    fun fromHtmlToPlainText(html: String): String
+
     fun fromHtmlToSpans(html: String): CharSequence
 
     object Factory {

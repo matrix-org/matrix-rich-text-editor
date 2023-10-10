@@ -26,10 +26,6 @@ class StyledHtmlConverter(
         )
     }
 
-    override fun fromHtmlToPlainText(html: String): String {
-        return htmlConverter?.fromHtmlToPlainText(html) ?: errorNotConfigured()
-    }
-
     override fun fromHtmlToSpans(html: String): CharSequence {
         return htmlConverter?.fromHtmlToSpans(html) ?: errorNotConfigured()
     }
