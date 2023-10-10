@@ -40,11 +40,16 @@ protocol WysiwygTextViewDelegate: AnyObject {
     func textView(_ textView: UITextView, didReceivePasteWith provider: NSItemProvider)
 }
 
+/// A markdown protocol used to provide additional context to the text view when displaying mentions through the text attachment provider
+public protocol MentionDisplayHelper {}
+
 public class WysiwygTextView: UITextView {
     /// Internal delegate for the text view.
     weak var wysiwygDelegate: WysiwygTextViewDelegate?
-
+    
     private let flusher = WysiwygPillsFlusher()
+    
+    public var mentionDisplayHelper: MentionDisplayHelper?
 
     override public init(frame: CGRect, textContainer: NSTextContainer?) {
         super.init(frame: frame, textContainer: textContainer)
@@ -62,6 +67,10 @@ public class WysiwygTextView: UITextView {
     /// - Parameter pillView: View to register.
     public func registerPillView(_ pillView: UIView) {
         flusher.registerPillView(pillView)
+    }
+    
+    public func flushPills() {
+        flusher.flush()
     }
 
     /// Apply given content to the text view. This will temporary disrupt the text view
