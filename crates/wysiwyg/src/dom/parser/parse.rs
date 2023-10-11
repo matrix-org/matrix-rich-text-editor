@@ -972,6 +972,9 @@ fn post_process_block_lines<S: UnicodeString>(
                 dom.remove(line_break_handle);
             }
 
+            // If the nodes following the line break start with inline nodes,
+            // ensure they are wrapped in a paragraph in order to add an
+            // implicit line break here.
             group_inline_nodes(sub_tree.document_mut().remove_children())
                 .iter()
                 .rev()
@@ -1010,6 +1013,12 @@ fn post_process_block_lines<S: UnicodeString>(
 }
 
 // Group consecutive inline nodes into paragraphs.
+//
+// This function accepts a list of nodes of any type, inline or block.
+// For example: [b, codeblock, b, i, p].
+//
+// It will first group any inline nodes: [[b], codeblock, [b, i], p].
+// And wrap each group in a pararaph: [p, codeblock, p, p].
 //
 // Always returns at least one empty paragraph.
 fn group_inline_nodes<S: UnicodeString>(
