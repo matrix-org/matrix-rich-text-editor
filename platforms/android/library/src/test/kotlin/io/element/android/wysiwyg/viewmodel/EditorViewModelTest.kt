@@ -214,12 +214,13 @@ internal class EditorViewModelTest {
 
     @Test
     fun `given internal edit link action, when get, it returns the right action`() {
-        composer.givenLinkAction(ComposerLinkAction.Edit(linkUrl))
+        composer.givenLinkAction(ComposerLinkAction.Edit(linkUrl, linkText))
 
         assertThat(
             viewModel.getLinkAction(), equalTo(
-                LinkAction.SetLink(
-                    currentUrl = linkUrl
+                LinkAction.EditLink(
+                    currentUrl = linkUrl,
+                    currentText = linkText
                 )
             )
         )
