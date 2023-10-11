@@ -254,8 +254,13 @@ public extension WysiwygComposerViewModel {
     
     /// Sets the @room mention at the suggestion position
     func setAtRoomMention() {
-        guard let suggestionPattern, suggestionPattern.key == .at else { return }
-        applyUpdate(model.insertAtRoomMentionAtSuggestion(suggestionPattern))
+        let update: ComposerUpdate
+        if let suggestionPattern, suggestionPattern.key == .at {
+            update = model.insertAtRoomMentionAtSuggestion(suggestionPattern)
+        } else {
+            update = model.insertAtRoomMention()
+        }
+        applyUpdate(update)
         hasPendingFormats = true
     }
 
