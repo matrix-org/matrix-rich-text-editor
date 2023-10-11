@@ -56,6 +56,26 @@ class MainActivity : AppCompatActivity() {
 
                 dialogBinding.link.performClick()
             }
+            override fun openEditLinkDialog(
+                currentText: String?,
+                currentLink: String?,
+                callback: (text: String, url: String) -> Unit
+            ) {
+                val dialogBinding = DialogSetLinkBinding.inflate(LayoutInflater.from(context))
+                val title = R.string.edit_link
+                dialogBinding.link.setText(currentLink)
+                dialogBinding.text.setText(currentText)
+                AlertDialog.Builder(context)
+                    .setTitle(title)
+                    .setView(dialogBinding.root)
+                    .setPositiveButton(android.R.string.ok) { _, _ ->
+                        callback(dialogBinding.text.text.toString(), dialogBinding.link.text.toString())
+                    }
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show()
+
+                dialogBinding.link.performClick()
+            }
         }
     }
 

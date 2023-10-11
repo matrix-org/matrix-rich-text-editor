@@ -44,6 +44,7 @@ internal class FakeViewActionCollector(
             ViewAction.RequestFocus -> requestFocus()
             is ViewAction.SetHtml -> setHtml(value.html)
             is ViewAction.SetLink -> setLink(value.url)
+            is ViewAction.EditLink -> editLink(value.url, value.text)
             ViewAction.ToggleCodeBlock -> toggleCodeBlock()
             is ViewAction.ToggleInlineFormat -> toggleInlineFormat(value.inlineFormat)
             is ViewAction.ToggleList -> toggleList(value.ordered)
@@ -105,6 +106,10 @@ internal class FakeViewActionCollector(
 
     private fun setLink(url: String?) {
         state.linkAction = url?.let { LinkAction.SetLink(it) } ?: LinkAction.InsertLink
+    }
+
+    private fun editLink(url: String?, text: String?) {
+        state.linkAction = LinkAction.EditLink(currentText = text, currentUrl = url)
     }
 
     private fun removeLink() {

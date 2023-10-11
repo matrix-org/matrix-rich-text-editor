@@ -89,6 +89,10 @@ class RichTextEditor : LinearLayout {
                         onSetLinkListener?.openSetLinkDialog(linkAction.currentUrl) { url ->
                             richTextEditText.setLink(url)
                         }
+                    is LinkAction.EditLink ->
+                        onSetLinkListener?.openEditLinkDialog(linkAction.currentText, linkAction.currentUrl) { text, url ->
+                            richTextEditText.editLink(url = url, text = text)
+                        }
                 }
             }
             undoButton.setOnClickListener {
@@ -199,4 +203,5 @@ class RichTextEditor : LinearLayout {
 interface OnSetLinkListener {
     fun openSetLinkDialog(currentLink: String?, callback: (url: String?) -> Unit)
     fun openInsertLinkDialog(callback: (text: String, url: String) -> Unit)
+    fun openEditLinkDialog(currentText: String?, currentLink: String?, callback: (text: String, url: String) -> Unit)
 }

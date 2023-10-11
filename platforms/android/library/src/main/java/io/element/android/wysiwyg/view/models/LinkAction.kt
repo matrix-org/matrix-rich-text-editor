@@ -13,4 +13,9 @@ sealed class LinkAction {
      * Add or change the link url for the current selection, without supplying text.
      */
     data class SetLink(val currentUrl: String?) : LinkAction()
+
+    /**
+     * Change the link url and text for the current selection.
+     */
+    data class EditLink(val currentUrl: String?, val currentText: String?) : LinkAction()
 }

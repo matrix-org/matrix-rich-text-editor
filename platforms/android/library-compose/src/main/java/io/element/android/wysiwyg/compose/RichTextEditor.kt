@@ -123,6 +123,7 @@ private fun RealEditor(
                             is ViewAction.SetLink -> setLink(it.url)
                             is ViewAction.RemoveLink -> removeLink()
                             is ViewAction.InsertLink -> insertLink(it.url, it.text)
+                            is ViewAction.EditLink -> editLink(it.url, it.text)
                         }
                     }
                 }

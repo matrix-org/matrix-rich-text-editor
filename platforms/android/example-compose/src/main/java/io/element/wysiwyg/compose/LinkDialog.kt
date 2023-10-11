@@ -29,11 +29,13 @@ fun LinkDialog(
     onRemoveLink: () -> Unit,
     onSetLink: (url: String) -> Unit,
     onInsertLink: (url: String, text: String) -> Unit,
+    onEditLink: (url: String, text: String) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    val currentUrl = (linkAction as? LinkAction.SetLink)?.currentUrl
+    val currentUrl = (linkAction as? LinkAction.SetLink)?.currentUrl ?: (linkAction as? LinkAction.EditLink)?.currentUrl
+    val currentText = (linkAction as? LinkAction.EditLink)?.currentText
 
-    var newText by remember { mutableStateOf("") }
+    var newText by remember { mutableStateOf(currentText ?: "") }
     var newLink by remember { mutableStateOf(currentUrl ?: "") }
 
     Dialog(onDismissRequest = onDismissRequest) {
@@ -45,7 +47,7 @@ fun LinkDialog(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                if (linkAction is LinkAction.InsertLink) {
+                if (linkAction is LinkAction.InsertLink || linkAction is LinkAction.EditLink) {
                     OutlinedTextField(
                         value = newText, onValueChange = { newText = it }, placeholder = {
                             Text(text = stringResource(R.string.link_text))
@@ -71,6 +73,7 @@ fun LinkDialog(
                             when (linkAction) {
                                 LinkAction.InsertLink -> onInsertLink(newLink, newText)
                                 is LinkAction.SetLink -> onSetLink(newLink)
+                                is LinkAction.EditLink -> onEditLink(newLink, newText)
                             }
                             onDismissRequest()
                         }) {
@@ -80,6 +83,7 @@ fun LinkDialog(
                                 when (linkAction) {
                                     LinkAction.InsertLink -> R.string.link_insert
                                     is LinkAction.SetLink -> R.string.link_set
+                                    is LinkAction.EditLink -> R.string.link_edit
                                 }
                             )
                         )
@@ -98,6 +102,7 @@ fun PreviewSetLinkDialog() {
         onRemoveLink = {},
         onSetLink = {},
         onInsertLink = { _, _ -> },
+        onEditLink = { _, _ -> },
         onDismissRequest = {}
     )
 }
@@ -110,6 +115,7 @@ fun PreviewInsertLinkDialog() {
         onRemoveLink = {},
         onSetLink = {},
         onInsertLink = { _, _ -> },
+        onEditLink = { _, _ -> },
         onDismissRequest = {}
     )
 }

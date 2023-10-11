@@ -5,4 +5,5 @@
     <string name="link_insert">Insert link</string>
     <string name="link_text">Text</string>
     <string name="link_url">Link</string>
+    <string name="link_edit">Edit link</string>
 </resources>

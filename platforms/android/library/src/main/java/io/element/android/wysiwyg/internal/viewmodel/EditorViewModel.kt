@@ -94,6 +94,12 @@ internal class EditorViewModel(
                     attributes = emptyList()
                 )
 
+                is EditorInputAction.EditLink -> composer?.editLinkWithText(
+                    url = action.url,
+                    text = action.text,
+                    attributes = emptyList()
+                )
+
                 is EditorInputAction.RemoveLink -> composer?.removeLinks()
                 is EditorInputAction.SetLinkWithText -> composer?.setLinkWithText(
                     action.link,

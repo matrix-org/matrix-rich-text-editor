@@ -62,6 +62,13 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         },
+                        onEditLink = { url, text ->
+                            coroutineScope.launch {
+                                state.editLink(
+                                    url, text
+                                )
+                            }
+                        },
                         onDismissRequest = { linkDialogAction = null })
                 }
                 Surface(

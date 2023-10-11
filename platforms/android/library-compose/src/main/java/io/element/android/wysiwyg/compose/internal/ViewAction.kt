@@ -16,4 +16,5 @@ internal sealed class ViewAction {
     data class SetLink(val url: String?): ViewAction()
     data object RemoveLink: ViewAction()
     data class InsertLink(val url: String, val text: String): ViewAction()
+    data class EditLink(val url: String, val text: String): ViewAction()
 }
