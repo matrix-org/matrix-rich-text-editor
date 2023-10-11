@@ -139,6 +139,10 @@ final class ComposerModelWrapper: ComposerModelWrapperProtocol {
     func insertMentionAtSuggestion(url: String, text: String, suggestion: SuggestionPattern, attributes: [Attribute]) -> ComposerUpdate {
         execute { try $0.insertMentionAtSuggestion(url: url, text: text, suggestion: suggestion, attributes: attributes) }
     }
+    
+    func insertAtRoomMentionAtSuggestion(_ suggestion: SuggestionPattern) -> ComposerUpdate {
+        execute { try $0.insertAtRoomMentionAtSuggestion(suggestion: suggestion) }
+    }
 
     func removeLinks() -> ComposerUpdate {
         execute { try $0.removeLinks() }
