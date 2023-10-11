@@ -21,7 +21,9 @@ protocol ComposerModelWrapperProtocol {
     func setContentFromHtml(html: String) -> ComposerUpdate
     func setContentFromMarkdown(markdown: String) -> ComposerUpdate
     func getContentAsHtml() -> String
+    func getContentAsMessageHtml() -> String
     func getContentAsMarkdown() -> String
+    func getContentAsMessageMarkdown() -> String
     func getContentAsPlainText() -> String
     func clear() -> ComposerUpdate
     func select(startUtf16Codeunit: UInt32, endUtf16Codeunit: UInt32) -> ComposerUpdate
@@ -78,10 +80,18 @@ final class ComposerModelWrapper: ComposerModelWrapperProtocol {
         model.getContentAsHtml()
     }
 
+    func getContentAsMessageHtml() -> String {
+        model.getContentAsMessageHtml()
+    }
+    
     func getContentAsMarkdown() -> String {
         model.getContentAsMarkdown()
     }
 
+    func getContentAsMessageMarkdown() -> String {
+        model.getContentAsMessageMarkdown()
+    }
+    
     func getContentAsPlainText() -> String {
         model.getContentAsPlainText()
     }

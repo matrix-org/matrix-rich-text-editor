@@ -41,7 +41,7 @@ protocol WysiwygTextViewDelegate: AnyObject {
 }
 
 /// A markdown protocol used to provide additional context to the text view when displaying mentions through the text attachment provider
-public protocol MentionDisplayHelper {}
+public protocol MentionDisplayHelper { }
 
 public class WysiwygTextView: UITextView {
     /// Internal delegate for the text view.
