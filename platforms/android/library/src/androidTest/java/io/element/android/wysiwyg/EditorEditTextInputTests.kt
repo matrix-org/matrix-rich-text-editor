@@ -251,6 +251,23 @@ class EditorEditTextInputTests {
             }))
     }
 
+
+    @Test
+    fun testCreatingAndEditingALink() {
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(ImeActions.setComposingText("link"))
+            .perform(ImeActions.setSelection(0, 4))
+            .perform(EditorActions.setLink("https://element.io"))
+            .check(matches(TextViewMatcher {
+                it.editableText.getSpans<LinkSpan>().first().url == "https://element.io"
+            }))
+            .perform(EditorActions.editLink("matrix", "https://matrix.org"))
+            .check(matches(withText("matrix")))
+            .check(matches(TextViewMatcher {
+                it.editableText.getSpans<LinkSpan>().first().url == "https://matrix.org"
+            }))
+    }
+
     @Test
     fun testRemovingLink() {
         onView(withId(R.id.rich_text_edit_text))

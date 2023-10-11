@@ -66,6 +66,20 @@ object Editor {
         }
     }
 
+    data class EditLink(
+        val text: String,
+        val url: String,
+    ) : ViewAction {
+        override fun getConstraints(): Matcher<View> = isDisplayed()
+
+        override fun getDescription(): String = "Edit link with text: ($text) and url: $url"
+
+        override fun perform(uiController: UiController?, view: View?) {
+            val editor = view as? EditorEditText ?: return
+            editor.editLink(url = url, text = text)
+        }
+    }
+
     data class InsertLink(
         val text: String,
         val url: String,
@@ -231,6 +245,7 @@ object EditorActions {
     fun setText(text: String) = Editor.SetText(text)
     fun setHtml(html: String) = Editor.SetHtml(html)
     fun setLink(url: String) = Editor.SetLink(url)
+    fun editLink(text: String, url: String) = Editor.EditLink(text, url)
     fun insertLink(text: String, url: String) = Editor.InsertLink(text, url)
     fun removeLink() = Editor.RemoveLink
     fun insertMentionAtSuggestion(text: String, url: String) = Editor.InsertMentionAtSuggestion(text, url)
