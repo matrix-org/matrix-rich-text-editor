@@ -165,7 +165,7 @@ class HtmlToSpansParserTest {
             resourcesHelper = AndroidResourcesHelper(application = app),
             html = html,
             styleConfig = { styleConfig },
-            mentionDisplayHandler = mentionDisplayHandler,
+            mentionDisplayHandler = { mentionDisplayHandler },
         ).convert()
     }
 }
