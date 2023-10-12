@@ -36,7 +36,7 @@ final class BlocksSnapshotTests: SnapshotTests {
     }
 
     func testQuoteContent() throws {
-        viewModel.setHtmlContent("<blockquote><p>Some quote with</p><p></p><p></p><p></p><p>line breaks inside</p></blockquote>")
+        viewModel.setHtmlContent("<blockquote>Some quote with<br/><br/><br/><br/>line breaks inside</blockquote>")
         assertSnapshot(
             matching: hostingController,
             as: .image(on: .iPhone13),
