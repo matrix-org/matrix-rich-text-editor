@@ -251,6 +251,18 @@ public extension WysiwygComposerViewModel {
         applyUpdate(update)
         hasPendingFormats = true
     }
+    
+    /// Sets the @room mention at the suggestion position
+    func setAtRoomMention() {
+        let update: ComposerUpdate
+        if let suggestionPattern, suggestionPattern.key == .at {
+            update = model.insertAtRoomMentionAtSuggestion(suggestionPattern)
+        } else {
+            update = model.insertAtRoomMention()
+        }
+        applyUpdate(update)
+        hasPendingFormats = true
+    }
 
     /// Set a command with `Slash` pattern.
     ///
