@@ -75,6 +75,40 @@ extension WysiwygComposerTests {
             )
             .assertSelection(start: 8, end: 8)
     }
+    
+    func testSuggestionForAtRoomPattern() {
+        let model = ComposerModelWrapper()
+        let update = model.replaceText(newText: "@roo")
+
+        guard case .suggestion(suggestionPattern: let suggestionPattern) = update.menuAction() else {
+            XCTFail("No user suggestion found")
+            return
+        }
+
+        model
+            .action {
+                $0.insertAtRoomMentionAtSuggestion(suggestionPattern)
+            }
+            .assertHtml("<a data-mention-type=\"at-room\" href=\"#\" contenteditable=\"false\">@room</a> ")
+            .assertSelection(start: 2, end: 2)
+    }
+    
+    func testForNonLeadingSuggestionForAtRoomPattern() {
+        let model = ComposerModelWrapper()
+        let update = model.replaceText(newText: "Hello @roo")
+
+        guard case .suggestion(suggestionPattern: let suggestionPattern) = update.menuAction() else {
+            XCTFail("No user suggestion found")
+            return
+        }
+
+        model
+            .action {
+                $0.insertAtRoomMentionAtSuggestion(suggestionPattern)
+            }
+            .assertHtml("Hello <a data-mention-type=\"at-room\" href=\"#\" contenteditable=\"false\">@room</a> ")
+            .assertSelection(start: 8, end: 8)
+    }
 
     func testSuggestionForHashPattern() {
         let model = ComposerModelWrapper()
