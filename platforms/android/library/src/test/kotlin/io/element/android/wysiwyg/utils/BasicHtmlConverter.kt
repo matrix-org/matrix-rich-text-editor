@@ -4,9 +4,6 @@ package io.element.android.wysiwyg.utils
  * HTML converter that is not depend on Android, for unit tests.
  */
 class BasicHtmlConverter: HtmlConverter {
-    override fun fromHtmlToPlainText(html: String): String =
-        html.replace("<[^>]*>".toRegex(), "")
 
-    override fun fromHtmlToSpans(html: String): CharSequence =
-        fromHtmlToPlainText(html)
+    override fun fromHtmlToSpans(html: String): CharSequence = html.replace("<[^>]*>".toRegex(), "")
 }

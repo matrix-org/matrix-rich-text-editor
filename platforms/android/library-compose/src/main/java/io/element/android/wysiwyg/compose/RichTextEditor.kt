@@ -1,21 +1,21 @@
 package io.element.android.wysiwyg.compose
 
-import android.os.Build
-import android.util.TypedValue
 import android.view.View
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.compose.internal.ViewAction
+import io.element.android.wysiwyg.compose.internal.applyDefaultStyle
+import io.element.android.wysiwyg.compose.internal.applyStyle
+import io.element.android.wysiwyg.compose.internal.rememberTypeface
 import io.element.android.wysiwyg.compose.internal.toStyleConfig
+import io.element.android.wysiwyg.display.MentionDisplayHandler
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -40,6 +40,7 @@ fun RichTextEditor(
     state: RichTextEditorState = rememberRichTextEditorState(),
     registerStateUpdates: Boolean = true,
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
+    mentionDisplayHandler: MentionDisplayHandler? = null,
     onError: (Throwable) -> Unit = {},
 ) {
     val isPreview = LocalInspectionMode.current
@@ -47,7 +48,7 @@ fun RichTextEditor(
     if (isPreview) {
         PreviewEditor(state, modifier, style)
     } else {
-        RealEditor(state, registerStateUpdates, modifier, style, onError)
+        RealEditor(state, registerStateUpdates, modifier, style, onError, mentionDisplayHandler)
     }
 }
 
@@ -58,85 +59,84 @@ private fun RealEditor(
     modifier: Modifier = Modifier,
     style: RichTextEditorStyle,
     onError: (Throwable) -> Unit,
+    mentionDisplayHandler: MentionDisplayHandler?,
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val textStyleTypeface = style.text.rememberTypeface()
 
-    AndroidView(
-        modifier = modifier,
-        factory = {
-            val view = EditorEditText(context).apply {
-                if (registerStateUpdates) {
-                    state.activeViewKey = hashCode()
-                    actionStatesChangedListener =
-                        EditorEditText.OnActionStatesChangedListener { actionStates ->
-                            state.actions = actionStates
-                        }
+    AndroidView(modifier = modifier, factory = {
+        val view = EditorEditText(context).apply {
+            if (registerStateUpdates) {
+                state.activeViewKey = hashCode()
+                actionStatesChangedListener =
+                    EditorEditText.OnActionStatesChangedListener { actionStates ->
+                        state.actions = actionStates
+                    }
 
-                    selectionChangeListener =
-                        EditorEditText.OnSelectionChangeListener { start, end ->
-                            state.selection = start to end
-                        }
-                    menuActionListener = EditorEditText.OnMenuActionChangedListener { menuAction ->
-                        state.menuAction = menuAction
-                    }
-                    linkActionChangedListener =
-                        EditorEditText.OnLinkActionChangedListener { linkAction ->
-                            state.linkAction = linkAction
-                        }
-                    addTextChangedListener {
-                        state.internalHtml = getInternalHtml()
-                        state.messageHtml = getContentAsMessageHtml()
-                        state.messageMarkdown = getMarkdown()
-                        state.lineCount = lineCount
-                    }
-                    val shouldRestoreFocus = state.hasFocus
-                    if (shouldRestoreFocus) {
-                        requestFocus()
-                    }
-                    onFocusChangeListener = View.OnFocusChangeListener { view, hasFocus ->
-                        state.onFocusChanged(view.hashCode(), hasFocus)
-                    }
+                selectionChangeListener = EditorEditText.OnSelectionChangeListener { start, end ->
+                    state.selection = start to end
                 }
+                menuActionListener = EditorEditText.OnMenuActionChangedListener { menuAction ->
+                    state.menuAction = menuAction
+                }
+                linkActionChangedListener =
+                    EditorEditText.OnLinkActionChangedListener { linkAction ->
+                        state.linkAction = linkAction
+                    }
+                addTextChangedListener {
+                    state.internalHtml = getInternalHtml()
+                    state.messageHtml = getContentAsMessageHtml()
+                    state.messageMarkdown = getMarkdown()
+                    state.lineCount = lineCount
+                }
+                val shouldRestoreFocus = state.hasFocus
+                if (shouldRestoreFocus) {
+                    requestFocus()
+                }
+                onFocusChangeListener = View.OnFocusChangeListener { view, hasFocus ->
+                    state.onFocusChanged(view.hashCode(), hasFocus)
+                }
+            }
 
-                applyDefaultStyle()
+            applyDefaultStyle()
 
-                // Restore the state of the view with the saved state
-                setHtml(state.internalHtml)
-                setSelection(state.selection.first, state.selection.second)
+            // Restore the state of the view with the saved state
+            setHtml(state.internalHtml)
+            setSelection(state.selection.first, state.selection.second)
 
-                // Only start listening for text changes after the initial state has been restored
-                if (registerStateUpdates) {
-                    coroutineScope.launch(context = Dispatchers.Main) {
-                        state.viewActions.collect {
-                            when (it) {
-                                is ViewAction.ToggleInlineFormat -> toggleInlineFormat(it.inlineFormat)
-                                is ViewAction.ToggleList -> toggleList(it.ordered)
-                                is ViewAction.ToggleCodeBlock -> toggleCodeBlock()
-                                is ViewAction.ToggleQuote -> toggleQuote()
-                                is ViewAction.Undo -> undo()
-                                is ViewAction.Redo -> redo()
-                                is ViewAction.Indent -> indent()
-                                is ViewAction.Unindent -> unindent()
-                                is ViewAction.SetHtml -> setHtml(it.html)
-                                is ViewAction.RequestFocus -> requestFocus()
-                                is ViewAction.SetLink -> setLink(it.url)
-                                is ViewAction.RemoveLink -> removeLink()
-                                is ViewAction.InsertLink -> insertLink(it.url, it.text)
-                            }
+            // Only start listening for text changes after the initial state has been restored
+            if (registerStateUpdates) {
+                coroutineScope.launch(context = Dispatchers.Main) {
+                    state.viewActions.collect {
+                        when (it) {
+                            is ViewAction.ToggleInlineFormat -> toggleInlineFormat(it.inlineFormat)
+                            is ViewAction.ToggleList -> toggleList(it.ordered)
+                            is ViewAction.ToggleCodeBlock -> toggleCodeBlock()
+                            is ViewAction.ToggleQuote -> toggleQuote()
+                            is ViewAction.Undo -> undo()
+                            is ViewAction.Redo -> redo()
+                            is ViewAction.Indent -> indent()
+                            is ViewAction.Unindent -> unindent()
+                            is ViewAction.SetHtml -> setHtml(it.html)
+                            is ViewAction.RequestFocus -> requestFocus()
+                            is ViewAction.SetLink -> setLink(it.url)
+                            is ViewAction.RemoveLink -> removeLink()
+                            is ViewAction.InsertLink -> insertLink(it.url, it.text)
                         }
                     }
                 }
             }
-
-            view
-        },
-        update = { view ->
-            view.setStyleConfig(style.toStyleConfig(view.context))
-            view.applyStyle(style)
-            view.rustErrorCollector = RustErrorCollector(onError)
         }
-    )
+
+        view
+    }, update = { view ->
+        view.setStyleConfig(style.toStyleConfig(view.context))
+        view.applyStyle(style)
+        view.typeface = textStyleTypeface
+        view.rustErrorCollector = RustErrorCollector(onError)
+        view.mentionDisplayHandler = mentionDisplayHandler
+    })
 }
 
 @Composable
@@ -151,36 +151,15 @@ private fun PreviewEditor(
 
     val context = LocalContext.current
 
-    AndroidView(
-        modifier = modifier,
-        factory = {
-            val view = AppCompatEditText(context).apply {
-                applyDefaultStyle()
+    AndroidView(modifier = modifier, factory = {
+        val view = AppCompatEditText(context).apply {
+            applyDefaultStyle()
 
-                setText(state.messageHtml)
-            }
-
-            view
-        },
-        update = { view ->
-            view.applyStyle(style)
+            setText(state.messageHtml)
         }
-    )
-}
 
-private fun AppCompatEditText.applyStyle(style: RichTextEditorStyle) {
-    setTextColor(style.text.color.toArgb())
-    setTextSize(TypedValue.COMPLEX_UNIT_SP, style.text.fontSize.value)
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        val cursorDrawable = ContextCompat.getDrawable(context, R.drawable.cursor)
-        cursorDrawable?.setTint(style.cursor.color.toArgb())
-        textCursorDrawable = cursorDrawable
-        setLinkTextColor(style.link.color.toArgb())
-    }
-}
-
-private fun AppCompatEditText.applyDefaultStyle() {
-    // Set the style closer to a BasicTextField composable
-    setBackgroundDrawable(null)
-    setPadding(0, 0, 0, 0)
+        view
+    }, update = { view ->
+        view.applyStyle(style)
+    })
 }

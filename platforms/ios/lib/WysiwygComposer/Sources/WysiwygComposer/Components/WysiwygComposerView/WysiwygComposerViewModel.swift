@@ -108,8 +108,8 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         if plainTextMode {
             _ = model.setContentFromMarkdown(markdown: computeMarkdownContent())
         }
-        return WysiwygComposerContent(markdown: model.getContentAsMarkdown(),
-                                      html: model.getContentAsHtml())
+        return WysiwygComposerContent(markdown: model.getContentAsMessageMarkdown(),
+                                      html: model.getContentAsMessageHtml())
     }
 
     // MARK: - Private

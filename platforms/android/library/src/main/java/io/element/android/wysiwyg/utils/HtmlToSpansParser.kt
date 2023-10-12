@@ -10,8 +10,8 @@ import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
 import androidx.core.text.getSpans
 import io.element.android.wysiwyg.BuildConfig
-import io.element.android.wysiwyg.display.TextDisplay
 import io.element.android.wysiwyg.display.MentionDisplayHandler
+import io.element.android.wysiwyg.display.TextDisplay
 import io.element.android.wysiwyg.view.StyleConfig
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.spans.BlockSpan
@@ -20,9 +20,9 @@ import io.element.android.wysiwyg.view.spans.CustomReplacementSpan
 import io.element.android.wysiwyg.view.spans.ExtraCharacterSpan
 import io.element.android.wysiwyg.view.spans.InlineCodeSpan
 import io.element.android.wysiwyg.view.spans.LinkSpan
-import io.element.android.wysiwyg.view.spans.PlainAtRoomMentionDisplaySpan
 import io.element.android.wysiwyg.view.spans.OrderedListSpan
 import io.element.android.wysiwyg.view.spans.PillSpan
+import io.element.android.wysiwyg.view.spans.PlainAtRoomMentionDisplaySpan
 import io.element.android.wysiwyg.view.spans.QuoteSpan
 import io.element.android.wysiwyg.view.spans.UnorderedListSpan
 import org.ccil.cowan.tagsoup.Parser
@@ -44,14 +44,14 @@ internal class HtmlToSpansParser(
     private val resourcesHelper: ResourcesHelper,
     private val html: String,
     private val styleConfig: () -> StyleConfig,
-    private val mentionDisplayHandler: MentionDisplayHandler?,
+    private val mentionDisplayHandler: () -> MentionDisplayHandler?,
 ) : ContentHandler {
 
     /**
      * Class used to hold information about what spans should be added to the text, keeping the
      * natural order of insertion that would otherwise be broken by the parsing order.
      */
-    private class PendingSpan<T: Any>(
+    private class PendingSpan<T : Any>(
         val span: T,
         val start: Int,
         val end: Int,
@@ -61,17 +61,17 @@ internal class HtmlToSpansParser(
 
     // Spans created to be used as 'marks' while parsing
     private sealed interface PlaceholderSpan {
-        data class Hyperlink(val link: String, val contentEditable: Boolean): PlaceholderSpan
-        sealed interface ListBlock: PlaceholderSpan {
-            class Ordered: ListBlock
-            class Unordered: ListBlock
+        data class Hyperlink(val link: String, val contentEditable: Boolean) : PlaceholderSpan
+        sealed interface ListBlock : PlaceholderSpan {
+            class Ordered : ListBlock
+            class Unordered : ListBlock
         }
-        class CodeBlock: PlaceholderSpan
-        class Quote: PlaceholderSpan
+
+        class CodeBlock : PlaceholderSpan
+        class Quote : PlaceholderSpan
         class Paragraph : BlockSpan, PlaceholderSpan
         data class ListItem(
-            val ordered: Boolean,
-            val order: Int? = null
+            val ordered: Boolean, val order: Int? = null
         ) : BlockSpan, PlaceholderSpan
     }
 
@@ -150,14 +150,16 @@ internal class HtmlToSpansParser(
             "u" -> handleFormatStartTag(InlineFormat.Underline)
             "del" -> handleFormatStartTag(InlineFormat.StrikeThrough)
             "code" -> {
-                if(getLastPending<PlaceholderSpan.CodeBlock>() != null) return
+                if (getLastPending<PlaceholderSpan.CodeBlock>() != null) return
                 handleFormatStartTag(InlineFormat.InlineCode)
             }
+
             "a" -> {
                 val url = attrs?.getValue("href") ?: return
                 val contentEditable = attrs?.getValue("contenteditable")?.toBoolean()
                 handleHyperlinkStart(url, contentEditable ?: true)
             }
+
             "ul", "ol" -> {
                 addLeadingLineBreakIfNeeded(text.length)
                 val mark: PlaceholderSpan = if (name == "ol") {
@@ -167,6 +169,7 @@ internal class HtmlToSpansParser(
                 }
                 addPlaceHolderSpan(mark)
             }
+
             "li" -> {
                 addLeadingLineBreakIfNeeded(text.length)
                 val lastListBlock = getLastPending<PlaceholderSpan.ListBlock>() ?: return
@@ -179,20 +182,24 @@ internal class HtmlToSpansParser(
                         val order = (lastListItem?.order ?: 0) + 1
                         PlaceholderSpan.ListItem(true, order)
                     }
+
                     is PlaceholderSpan.ListBlock.Unordered -> PlaceholderSpan.ListItem(false)
                 }
                 addPlaceHolderSpan(newItem)
             }
+
             "pre" -> {
                 addLeadingLineBreakIfNeeded(text.length)
                 val placeholder = PlaceholderSpan.CodeBlock()
                 addPlaceHolderSpan(placeholder)
             }
+
             "blockquote" -> {
                 addLeadingLineBreakIfNeeded(text.length)
                 val placeholder = PlaceholderSpan.Quote()
                 addPlaceHolderSpan(placeholder)
             }
+
             "p" -> {
                 addLeadingLineBreakIfNeeded(text.length)
                 val placeholder = PlaceholderSpan.Paragraph()
@@ -207,6 +214,7 @@ internal class HtmlToSpansParser(
                 addLeadingLineBreakIfNeeded(text.length)
                 text.append("\n")
             }
+
             "b", "strong" -> handleFormatEndTag(InlineFormat.Bold)
             "i", "em" -> handleFormatEndTag(InlineFormat.Italic)
             "u" -> handleFormatEndTag(InlineFormat.Underline)
@@ -227,12 +235,13 @@ internal class HtmlToSpansParser(
                     flags = Spanned.SPAN_EXCLUSIVE_INCLUSIVE
                 )
             }
+
             "pre" -> {
                 val last = getLastPending<PlaceholderSpan.CodeBlock>() ?: return
                 val start = last.start
 
                 handleNbspInBlock(start)
-                for (i in start+1 until text.length) {
+                for (i in start + 1 until text.length) {
                     if (text[i] == NBSP) {
                         // Extra char to properly render empty new lines in code blocks
                         handleNbspInBlock(i)
@@ -251,6 +260,7 @@ internal class HtmlToSpansParser(
                     flags = Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
             }
+
             "blockquote" -> {
                 val last = getLastPending<PlaceholderSpan.Quote>() ?: return
                 val start = last.start
@@ -270,6 +280,7 @@ internal class HtmlToSpansParser(
                     flags = Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
             }
+
             "p" -> {
                 val last = getLastPending<PlaceholderSpan.Paragraph>() ?: return
                 val start = last.start
@@ -277,9 +288,7 @@ internal class HtmlToSpansParser(
                 handleNbspInBlock(start)
 
                 replacePlaceholderWithPendingSpan(
-                    placeholder = last.span,
-                    start = start,
-                    flags = Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                    placeholder = last.span, start = start, flags = Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
             }
         }
@@ -302,7 +311,9 @@ internal class HtmlToSpansParser(
                 relativeSizeProportion = styleConfig().inlineCode.relativeTextSize
             )
         }
-        replacePlaceholderWithPendingSpan(last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        replacePlaceholderWithPendingSpan(
+            last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
     }
 
     private fun handleHyperlinkStart(url: String, contentEditable: Boolean) {
@@ -321,18 +332,14 @@ internal class HtmlToSpansParser(
         val isContentEditable = !last.span.contentEditable
         if (isContentEditable && text.length > 1) {
             addPendingSpan(
-                ExtraCharacterSpan(),
-                last.start + 1,
-                text.length,
-                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                ExtraCharacterSpan(), last.start + 1, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
             )
         }
         // TODO: use data-mention-type instead
         //  https://github.com/matrix-org/matrix-rich-text-editor/issues/709
         val isMention = !last.span.contentEditable
-        val textDisplay = if(isMention) {
-            mentionDisplayHandler?.resolveMentionDisplay(innerText, url)
-                ?: TextDisplay.Plain
+        val textDisplay = if (isMention) {
+            mentionDisplayHandler()?.resolveMentionDisplay(innerText, url) ?: TextDisplay.Plain
         } else {
             TextDisplay.Plain
         }
@@ -341,31 +348,21 @@ internal class HtmlToSpansParser(
             is TextDisplay.Custom -> {
                 val span = CustomReplacementSpan(textDisplay.customSpan)
                 replacePlaceholderWithPendingSpan(
-                    last.span,
-                    span,
-                    last.start,
-                    text.length,
-                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                    last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
             }
+
             TextDisplay.Pill -> {
-                val span = PillSpan(resourcesHelper.getColor(styleConfig().pill.backgroundColor))
+                val span = PillSpan(styleConfig().pill.backgroundColor)
                 replacePlaceholderWithPendingSpan(
-                    last.span,
-                    span,
-                    last.start,
-                    text.length,
-                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                    last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
             }
+
             TextDisplay.Plain -> {
                 val span = LinkSpan((last.span).link)
                 replacePlaceholderWithPendingSpan(
-                    last.span,
-                    span,
-                    last.start,
-                    text.length,
-                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                    last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
             }
         }
@@ -395,7 +392,7 @@ internal class HtmlToSpansParser(
      */
     private fun addLeadingLineBreakIfNeeded(start: Int): Int {
         val previousBlock = spansToAdd.findLast {
-            it.span is BlockSpan && !it.isPlaceholder && (it.start >= start -1 || it.end <= start)
+            it.span is BlockSpan && !it.isPlaceholder && (it.start >= start - 1 || it.end <= start)
         }
         return if (previousBlock == null) {
             start
@@ -421,7 +418,7 @@ internal class HtmlToSpansParser(
             addPendingSpan(ExtraCharacterSpan(), pos, pos + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
         } else if (text.length > pos && text[pos] == NBSP) {
             // If there was one, set it as an extra character
-            addPendingSpan(ExtraCharacterSpan(), pos, pos+1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            addPendingSpan(ExtraCharacterSpan(), pos, pos + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
         }
     }
 
@@ -434,10 +431,8 @@ internal class HtmlToSpansParser(
      * This is used to 'book' a position inside the list of pending spans when we read a starting
      * HTML tag so we can replace it later with its real version and range in the text.
      */
-    private fun <T: Any> addPlaceHolderSpan(
-        span: T,
-        start: Int = text.length,
-        end: Int = text.length
+    private fun <T : Any> addPlaceHolderSpan(
+        span: T, start: Int = text.length, end: Int = text.length
     ) {
         val pendingSpan = PendingSpan(span, start, end, 0, true)
         spansToAdd.add(pendingSpan)
@@ -447,11 +442,8 @@ internal class HtmlToSpansParser(
      * Adds the final version of a span to the list of pending spans to be inserted in the text,
      * with valid type, [start], [end], and [flags].
      */
-    private fun <T: Any> addPendingSpan(
-        span: T,
-        start: Int = text.length,
-        end: Int = text.length,
-        flags: Int
+    private fun <T : Any> addPendingSpan(
+        span: T, start: Int = text.length, end: Int = text.length, flags: Int
     ) {
         spansToAdd.add(PendingSpan(span, start, end, flags, false))
     }
@@ -480,8 +472,7 @@ internal class HtmlToSpansParser(
      * in the range ([from], [to]).
      */
     private inline fun <reified T : Any> getLastPending(
-        from: Int = 0,
-        to: Int = text.length
+        from: Int = 0, to: Int = text.length
     ): PendingSpan<T>? {
         return getLastPending(T::class.java, from, to)
     }
@@ -492,9 +483,7 @@ internal class HtmlToSpansParser(
      */
     @Suppress("UNCHECKED_CAST")
     private fun <T : Any> getLastPending(
-        type: Class<T>,
-        from: Int = 0,
-        to: Int = text.length
+        type: Class<T>, from: Int = 0, to: Int = text.length
     ): PendingSpan<T>? {
         return spansToAdd.findLast {
             type.isInstance(it.span) && from <= it.start && to >= it.end
@@ -506,23 +495,23 @@ internal class HtmlToSpansParser(
     }
 
     private fun Editable.addAtRoomSpans() {
-        val display = mentionDisplayHandler?.resolveAtRoomMentionDisplay() ?: return
-        Regex(Regex.escape("@room"))
-            .findAll(text).forEach eachMatch@{ match ->
-                val start = match.range.first
-                val end = match.range.last + 1
-                if (text.getSpans(start, end, PlainAtRoomMentionDisplaySpan::class.java).isNotEmpty()) {
-                    return@eachMatch
-                }
-                val span = when (display) {
-                    is TextDisplay.Custom -> CustomReplacementSpan(display.customSpan)
-                    TextDisplay.Pill -> PillSpan(
-                        resourcesHelper.getColor(styleConfig().pill.backgroundColor)
-                    )
-                    TextDisplay.Plain -> null
-                }
-                text.setSpan(span, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        val display = mentionDisplayHandler()?.resolveAtRoomMentionDisplay() ?: return
+        Regex(Regex.escape("@room")).findAll(this).forEach eachMatch@{ match ->
+            val start = match.range.first
+            val end = match.range.last + 1
+            if (getSpans(start, end, PlainAtRoomMentionDisplaySpan::class.java).isNotEmpty()) {
+                return@eachMatch
             }
+            val span = when (display) {
+                is TextDisplay.Custom -> CustomReplacementSpan(display.customSpan)
+                TextDisplay.Pill -> PillSpan(
+                    styleConfig().pill.backgroundColor
+                )
+
+                TextDisplay.Plain -> null
+            }
+            setSpan(span, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
     }
 
 
@@ -561,19 +550,17 @@ internal class HtmlToSpansParser(
             QuoteSpan::class.java,
         )
 
-        fun Editable.removeFormattingSpans() =
-            spans.flatMap { type ->
-                getSpans(0, length, type).toList()
-            }.forEach {
-                removeSpan(it)
-            }
+        fun Editable.removeFormattingSpans() = spans.flatMap { type ->
+            getSpans(0, length, type).toList()
+        }.forEach {
+            removeSpan(it)
+        }
 
-        fun Editable.removePlaceholderSpans() =
-            spans.flatMap { _ ->
-                getSpans<PlaceholderSpan>(0, length).toList()
-            }.forEach {
-                removeSpan(it)
-            }
+        fun Editable.removePlaceholderSpans() = spans.flatMap { _ ->
+            getSpans<PlaceholderSpan>(0, length).toList()
+        }.forEach {
+            removeSpan(it)
+        }
 
         fun Spanned.assertOnlyAllowedSpans() {
             val textSpans = getSpans(0, length, Any::class.java)

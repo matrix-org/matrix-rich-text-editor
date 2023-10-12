@@ -6,13 +6,11 @@ import android.widget.EditText
 import androidx.test.core.app.ApplicationProvider
 import io.element.android.wysiwyg.fakes.createFakeStyleConfig
 import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
-import io.element.android.wysiwyg.view.models.InlineFormat
-import io.element.android.wysiwyg.test.utils.dumpSpans
-import io.element.android.wysiwyg.utils.AndroidHtmlConverter
-import io.element.android.wysiwyg.utils.AndroidResourcesHelper
-import io.element.android.wysiwyg.utils.HtmlToSpansParser
-import io.element.android.wysiwyg.utils.NBSP
 import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
+import io.element.android.wysiwyg.test.utils.dumpSpans
+import io.element.android.wysiwyg.utils.HtmlConverter
+import io.element.android.wysiwyg.utils.NBSP
+import io.element.android.wysiwyg.view.models.InlineFormat
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.Test
@@ -21,18 +19,12 @@ import uniffi.wysiwyg_composer.newComposerModel
 class InterceptInputConnectionIntegrationTest {
 
     private val app: Application = ApplicationProvider.getApplicationContext()
+    private val styleConfig = createFakeStyleConfig()
     private val viewModel = EditorViewModel(
         provideComposer = { newComposerModel() },
-        htmlConverter = AndroidHtmlConverter(
-            provideHtmlToSpansParser = { html ->
-                val styleConfig = createFakeStyleConfig()
-                HtmlToSpansParser(
-                    AndroidResourcesHelper(app),
-                    html,
-                    styleConfig = { styleConfig },
-                    mentionDisplayHandler = null,
-                )
-            },
+        htmlConverter = HtmlConverter.Factory.create(context = app,
+            styleConfigProvider = { styleConfig },
+            mentionDisplayHandlerProvider = { null }
         )
     )
     private val textView = EditText(ApplicationProvider.getApplicationContext())
@@ -519,7 +511,9 @@ class InterceptInputConnectionIntegrationTest {
         // Add some extra text
         inputConnection.setComposingText("whitespaces", 1)
 
-        assertThat(viewModel.getContentAsMessageHtml(), equalTo("<strong>test</strong> whitespaces"))
+        assertThat(
+            viewModel.getContentAsMessageHtml(), equalTo("<strong>test</strong> whitespaces")
+        )
     }
 
     private fun simulateInput(editorInputAction: EditorInputAction) =
