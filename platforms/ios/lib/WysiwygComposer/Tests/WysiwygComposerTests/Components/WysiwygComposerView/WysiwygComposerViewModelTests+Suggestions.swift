@@ -58,6 +58,17 @@ extension WysiwygComposerViewModelTests {
             """
         )
     }
+    
+    func testAtRoomSuggestionCanBeUsed() {
+        _ = viewModel.replaceText(range: .zero, replacementText: "@ro")
+        viewModel.setAtRoomMention()
+        XCTAssertEqual(
+            viewModel.content.html,
+            """
+            @room\u{00A0}
+            """
+        )
+    }
 
     func testAtMentionWithNoSuggestion() {
         _ = viewModel.replaceText(range: .zero, replacementText: "Text")
@@ -72,6 +83,21 @@ extension WysiwygComposerViewModelTests {
             """
         )
     }
+    
+    func testAtRoomMentionWithNoSuggestion() {
+        _ = viewModel.replaceText(range: .zero, replacementText: "Text")
+        viewModel.select(range: .init(location: 0, length: 4))
+        viewModel.setAtRoomMention()
+        // Text is not removed, and the
+        // mention is added after the text
+        XCTAssertEqual(
+            viewModel.content.html,
+            """
+            Text@room\u{00A0}
+            """
+        )
+    }
+    
 
     func testAtMentionWithNoSuggestionAtLeading() {
         _ = viewModel.replaceText(range: .zero, replacementText: "Text")
@@ -82,6 +108,19 @@ extension WysiwygComposerViewModelTests {
             viewModel.content.html,
             """
             <a href="https://matrix.to/#/@alice:matrix.org">Alice</a>Text
+            """
+        )
+    }
+    
+    func testAtRoomMentionWithNoSuggestionAtLeading() {
+        _ = viewModel.replaceText(range: .zero, replacementText: "Text")
+        viewModel.select(range: .init(location: 0, length: 0))
+        viewModel.setAtRoomMention()
+        // Text is not removed, and the mention is added before the text
+        XCTAssertEqual(
+            viewModel.content.html,
+            """
+            @roomText
             """
         )
     }
