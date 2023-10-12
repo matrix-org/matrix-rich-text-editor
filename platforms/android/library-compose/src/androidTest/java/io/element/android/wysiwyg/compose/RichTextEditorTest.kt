@@ -148,10 +148,10 @@ class RichTextEditorTest {
         composeTestRule.awaitIdle()
 
         onView(withText("matrix element plain")).perform(EditorActions.setSelection(0, 0))
-        assertEquals(LinkAction.SetLink("https://matrix.org"), state.linkAction)
+        assertEquals(LinkAction.EditLink("https://matrix.org", "matrix"), state.linkAction)
 
         onView(withText("matrix element plain")).perform(EditorActions.setSelection(8, 8))
-        assertEquals(LinkAction.SetLink("https://element.io"), state.linkAction)
+        assertEquals(LinkAction.EditLink("https://element.io", "element"), state.linkAction)
 
         onView(withText("matrix element plain")).perform(EditorActions.setSelection(16, 16))
         assertEquals(LinkAction.InsertLink, state.linkAction)
