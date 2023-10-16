@@ -47,15 +47,17 @@ final class BlocksSnapshotTests: SnapshotTests {
     func testMultipleBlocksContent() throws {
         viewModel.setHtmlContent(
             """
-            <blockquote><p>Some</p>\
-            <p>multi-line</p>\
-            <p>quote</p></blockquote>\
-            <p></p>\
-            <p>Some text</p>\
-            <p></p>\
+            <blockquote>Some<br/>\
+            multi-line<br/>\
+            quote</blockquote>\
+            <br/>\
+            <br/>\
+            Some text<br/>\
+            <br/>\
             <pre>A\n\tcode\nblock</pre>\
-            <p></p>\
-            <p>Some <code>inline</code> code</p>
+            <br/>\
+            <br/>\
+            Some <code>inline</code> code
             """
         )
         assertSnapshot(
