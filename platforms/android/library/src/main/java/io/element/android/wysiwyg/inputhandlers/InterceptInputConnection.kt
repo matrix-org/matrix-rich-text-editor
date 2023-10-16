@@ -4,8 +4,6 @@ import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.Selection
-import android.text.Spannable
-import android.text.style.BackgroundColorSpan
 import android.view.KeyEvent
 import android.view.inputmethod.*
 import android.widget.TextView
@@ -78,6 +76,7 @@ internal class InterceptInputConnection(
         return baseInputConnection.performPrivateCommand(action, data)
     }
 
+    @RequiresApi(Build.VERSION_CODES.S)
     override fun setImeConsumesInput(imeConsumesInput: Boolean): Boolean {
         baseInputConnection.setImeConsumesInput(imeConsumesInput)
         return super.setImeConsumesInput(imeConsumesInput)
@@ -103,25 +102,15 @@ internal class InterceptInputConnection(
     }
 
     // Called when started typing
-    override fun setComposingText(text: CharSequence?, newCursorPosition: Int): Boolean {
+    override fun setComposingText(text: CharSequence, newCursorPosition: Int): Boolean {
         val (start, end) = getCurrentCompositionOrSelection()
         val result = processTextEntry(text, start, end)
 
         return if (result != null) {
-            val newTextLength = text?.length ?: 0
-            val newEnd = min(result.text.length, start + newTextLength)
-            val newText = result.text.subSequence(start, newEnd)
+            val newStart = start.coerceIn(0, result.text.length)
+            val newEnd = (newStart + text.length).coerceIn(newStart, result.text.length)
 
-            // Calculate the new composition range.
-            val compositionStart = start
-            val compositionEnd = newEnd
-
-            // Here we restore the background color spans from the IME input. This seems to be
-            // important for Japanese input.
-            if (newText is Spannable && result.text is Spannable) {
-                copyImeHighlightSpans(newText, result.text, start)
-            }
-            replaceAll(result.text, compositionStart = compositionStart, compositionEnd = compositionEnd)
+            replaceAll(result.text, compositionStart = newStart, compositionEnd = newEnd)
             setSelectionOnEditable(editable, result.selection.last, result.selection.last)
             true
         } else {
@@ -307,7 +296,7 @@ internal class InterceptInputConnection(
         return baseInputConnection.requestCursorUpdates(cursorUpdateMode)
     }
 
-    fun getCurrentCompositionOrSelection(): Pair<Int, Int> {
+    private fun getCurrentCompositionOrSelection(): Pair<Int, Int> {
         val content = editable
         var start = getComposingSpanStart(content)
         var end = getComposingSpanEnd(content)
@@ -335,16 +324,6 @@ internal class InterceptInputConnection(
         editable.replace(0, editable.length, charSequence)
         setComposingRegion(compositionStart, compositionEnd)
         endBatchEdit()
-    }
-
-    private fun copyImeHighlightSpans(from: Spannable, to: Spannable, offset: Int) {
-        val highlightSpans = from.getSpans(0, from.count(), BackgroundColorSpan::class.java)
-            .orEmpty()
-        for (span in highlightSpans) {
-            val spanStart = from.getSpanStart(span) + offset
-            val spanEnd = from.getSpanEnd(span) + offset
-            to.setSpan(span, spanStart, spanEnd, 0)
-        }
     }
 
     private fun setSelectionOnEditable(editable: Editable, start: Int, end: Int = start) {
