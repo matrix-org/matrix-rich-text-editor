@@ -120,23 +120,21 @@ fn formatting_twice_adds_no_formatting() {
 
 #[test]
 fn formatting_nested_format_nodes_and_line_breaks() {
-    let mut model =
-        cm("aa<strong>a</strong><strong><br />{bbb<br />}|cc</strong>c");
+    let mut model = cm("aa<strong>a<br />{bbb<br />}|cc</strong>c");
     model.italic();
     assert_eq!(
         tx(&model),
-        "aa<strong>a<br /><em>{bbb<br />}|</em>cc</strong>c"
+        "<p>aa<strong>a</strong></p><p><strong><em>{bbb</em></strong></p><p><strong>cc</strong>c</p>"
     );
 }
 
 #[test]
 fn formatting_deeper_nested_format_nodes_and_nested_line_breaks() {
-    let mut model =
-        cm("aa<strong>a</strong><strong><u><br />{b</u>bb<br />}|cc</strong>c");
+    let mut model = cm("aa<strong>a<u><br />{b</u>bb<br />}|cc</strong>c");
     model.italic();
     assert_eq!(
         tx(&model),
-        "aa<strong>a<u><br /><em>{b</em></u><em>bb<br />}|</em>cc</strong>c"
+        "<p>aa<strong>a<u></u></strong></p><p><strong><u><em>{b</em></u><em>bb</em></strong></p><p><strong>cc</strong>c</p>",
     );
 }
 
@@ -217,7 +215,7 @@ fn unformatting_consecutive_same_formatting_nodes() {
 fn unformatting_consecutive_same_formatting_nodes_with_nested_line_break() {
     let mut model = cm("{<strong>Test</strong><strong> </strong><strong>te<br />st</strong><strong> test</strong>}|");
     model.bold();
-    assert_eq!(tx(&model), "{Test te<br />st test}|");
+    assert_eq!(tx(&model), "<p>{Test te</p><p>st test}|</p>");
 }
 
 #[test]
@@ -276,7 +274,10 @@ fn formatting_some_char_in_word_with_inline_code() {
 fn formatting_multiple_lines_with_inline_code() {
     let mut model = cm("fo{o<br />b}|ar");
     model.inline_code();
-    assert_eq!(tx(&model), "fo<code>{o<br />b}|</code>ar");
+    assert_eq!(
+        tx(&model),
+        "<p>fo<code>{o</code></p><p><code>b}|</code>ar</p>"
+    );
 }
 
 #[test]

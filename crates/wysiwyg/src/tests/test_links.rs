@@ -514,7 +514,7 @@ fn set_link_with_text_on_blank_selection_with_line_break() {
     );
     assert_eq!(
         tx(&model),
-        "test<a href=\"https://element.io\">added_link|</a>test"
+        "<p>test<a href=\"https://element.io\">added_link|</a>test</p>"
     );
 }
 
@@ -526,7 +526,7 @@ fn set_link_with_text_on_blank_selection_with_different_containers() {
         utf16("added_link"),
         vec![],
     );
-    assert_eq!(tx(&model), "<b>test_bold<a href=\"https://element.io\">added_link|</a></b><i>test_italic</i>");
+    assert_eq!(tx(&model), "<p><b>test_bold<a href=\"https://element.io\">added_link|</a></b><i>test_italic</i></p>");
 }
 
 #[test]

@@ -221,11 +221,7 @@ mod test {
             .dom;
         dom.wrap_nodes_in_list(
             ListType::Ordered,
-            vec![
-                &DomHandle::from_raw(vec![0]),
-                &DomHandle::from_raw(vec![1]),
-                &DomHandle::from_raw(vec![2]),
-            ],
+            vec![&DomHandle::from_raw(vec![0]), &DomHandle::from_raw(vec![1])],
         );
         assert_eq!(
             ds(&dom),
@@ -242,11 +238,7 @@ mod test {
         let mut dom = cm("abc<br />def|").state.dom;
         dom.wrap_nodes_in_list(
             ListType::Ordered,
-            vec![
-                &DomHandle::from_raw(vec![0]),
-                &DomHandle::from_raw(vec![1]),
-                &DomHandle::from_raw(vec![2]),
-            ],
+            vec![&DomHandle::from_raw(vec![0]), &DomHandle::from_raw(vec![1])],
         );
         assert_eq!(ds(&dom), "<ol><li>abc</li><li>def</li></ol>");
 
@@ -263,8 +255,6 @@ mod test {
                 &DomHandle::from_raw(vec![0]),
                 &DomHandle::from_raw(vec![1]),
                 &DomHandle::from_raw(vec![2]),
-                &DomHandle::from_raw(vec![3]),
-                &DomHandle::from_raw(vec![4]),
             ],
         );
         assert_eq!(ds(&dom), "<ol><li>abc</li><li>def</li><li>ghi</li></ol>");
@@ -278,11 +268,7 @@ mod test {
         let mut dom = cm("abc<br />def|").state.dom;
         dom.wrap_nodes_in_list(
             ListType::Ordered,
-            vec![
-                &DomHandle::from_raw(vec![0]),
-                &DomHandle::from_raw(vec![1]),
-                &DomHandle::from_raw(vec![2]),
-            ],
+            vec![&DomHandle::from_raw(vec![0]), &DomHandle::from_raw(vec![1])],
         );
         assert_eq!(ds(&dom), "<ol><li>abc</li><li>def</li></ol>");
 
@@ -299,8 +285,6 @@ mod test {
                 &DomHandle::from_raw(vec![0]),
                 &DomHandle::from_raw(vec![1]),
                 &DomHandle::from_raw(vec![2]),
-                &DomHandle::from_raw(vec![3]),
-                &DomHandle::from_raw(vec![4]),
             ],
         );
         assert_eq!(ds(&dom), "<ol><li>abc</li><li>def</li><li>ghi</li></ol>");
@@ -319,9 +303,6 @@ mod test {
                 &DomHandle::from_raw(vec![1]),
                 &DomHandle::from_raw(vec![2]),
                 &DomHandle::from_raw(vec![3]),
-                &DomHandle::from_raw(vec![4]),
-                &DomHandle::from_raw(vec![5]),
-                &DomHandle::from_raw(vec![6]),
             ],
         );
         assert_eq!(
@@ -346,9 +327,6 @@ mod test {
                 &DomHandle::from_raw(vec![1]),
                 &DomHandle::from_raw(vec![2]),
                 &DomHandle::from_raw(vec![3]),
-                &DomHandle::from_raw(vec![4]),
-                &DomHandle::from_raw(vec![5]),
-                &DomHandle::from_raw(vec![6]),
             ],
         );
         assert_eq!(
@@ -385,8 +363,6 @@ mod test {
                 &DomHandle::from_raw(vec![0]),
                 &DomHandle::from_raw(vec![1]),
                 &DomHandle::from_raw(vec![2]),
-                &DomHandle::from_raw(vec![3]),
-                &DomHandle::from_raw(vec![4]),
             ],
         );
         assert_eq!(ds(&dom), "<ol><li>abc</li><li>def</li><li>ghi</li></ol>");

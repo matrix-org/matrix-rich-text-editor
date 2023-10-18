@@ -255,7 +255,7 @@ impl ComposerModel<Utf16String> {
         root.fmt_html(
             &mut buf,
             Some(&mut selection_writer),
-            ToHtmlState::default(),
+            &ToHtmlState::default(),
             false,
         );
         if range.is_empty().not() {
@@ -591,24 +591,95 @@ mod test {
 
     #[test]
     fn cm_creates_correct_component_model_newlines() {
-        let t0 = cm("|<br />");
-        assert_eq!(t0.state.start, 0);
-        assert_eq!(t0.state.end, 0);
-        assert_eq!(t0.get_content_as_html(), utf16("<br />"));
-        // TODO: There should only be one node for the br tag
-        //assert_eq!(t0.state.dom.children().len(), 1);
-
-        let t1 = cm("<br />|<br />");
-        assert_eq!(t1.state.start, 1);
-        assert_eq!(t1.state.end, 1);
-        assert_eq!(t1.get_content_as_html(), utf16("<br /><br />"));
-        // TODO: assert_eq!(t1.state.dom.children().len(), 2);
-
-        let t2 = cm("<br /><br />|");
-        assert_eq!(t2.state.start, 2);
-        assert_eq!(t2.state.end, 2);
-        assert_eq!(t2.get_content_as_html(), utf16("<br /><br />"));
-        // TODO: assert_eq!(t1.state.dom.children().len(), 2);
+        assert_eq!(
+            cm("<br />|").get_content_as_html(),
+            "<p>\u{a0}</p><p>\u{a0}</p>"
+        );
+        assert_eq!(
+            cm("<br /><br />|").get_content_as_html(),
+            "<p>\u{a0}</p><p>\u{a0}</p><p>\u{a0}</p>"
+        );
+        assert_eq!(
+            cm("<br />|<br />").get_content_as_html(),
+            "<p>\u{a0}</p><p>\u{a0}</p><p>\u{a0}</p>"
+        );
+        assert_eq!(cm("a<br />b|").get_content_as_html(), "<p>a</p><p>b</p>");
+        assert_eq!(
+            cm("a<br />|<br />b").get_content_as_html(),
+            "<p>a</p><p>\u{a0}</p><p>b</p>"
+        );
+        assert_eq!(
+            cm("a<br />b|<br />c").get_content_as_html(),
+            "<p>a</p><p>b</p><p>c</p>"
+        );
+        assert_eq!(
+            cm("a<br />|b<br />c").get_content_as_html(),
+            "<p>a</p><p>b</p><p>c</p>"
+        );
+        assert_eq!(
+            cm("<b>a<br />|b<br />c</b>").get_content_as_html(),
+            "<p><b>a</b></p><p><b>b</b></p><p><b>c</b></p>"
+        );
+        assert_eq!(
+            cm("|<br />").get_content_as_html(),
+            "<p>\u{a0}</p><p>\u{a0}</p>"
+        );
+        assert_eq!(
+            cm("aaa<br />|bbb").get_content_as_html(),
+            "<p>aaa</p><p>bbb</p>"
+        );
+        assert_eq!(
+            cm("aaa|<br />bbb").get_content_as_html(),
+            "<p>aaa</p><p>bbb</p>"
+        );
+        assert_eq!(
+            cm("aa{a<br />b}|bb").get_content_as_html(),
+            "<p>aaa</p><p>bbb</p>"
+        );
+        assert_eq!(cm("aa{a<br />b}|bb").state.start, 2);
+        assert_eq!(cm("aa{a<br />b}|bb").state.end, 5);
+        assert_eq!(
+            cm("aa|{a<br />b}bb").get_content_as_html(),
+            "<p>aaa</p><p>bbb</p>"
+        );
+        assert_eq!(cm("aa|{a<br />b}bb").state.start, 5);
+        assert_eq!(cm("aa|{a<br />b}bb").state.end, 2);
+        assert_eq!(
+            cm("aa{<br />b}|bb").get_content_as_html(),
+            "<p>aa</p><p>bbb</p>"
+        );
+        assert_eq!(cm("aa{<br />b}|bb").state.start, 2);
+        assert_eq!(cm("aa{<br />b}|bb").state.end, 4);
+        assert_eq!(
+            cm("aa|{<br />b}bb").get_content_as_html(),
+            "<p>aa</p><p>bbb</p>"
+        );
+        assert_eq!(cm("aa|{<br />b}bb").state.start, 4);
+        assert_eq!(cm("aa|{<br />b}bb").state.end, 2);
+        assert_eq!(
+            cm("aa{a<br />b}|bb").get_content_as_html(),
+            "<p>aaa</p><p>bbb</p>"
+        );
+        assert_eq!(cm("aa{a<br />b}|bb").state.start, 2);
+        assert_eq!(cm("aa{a<br />b}|bb").state.end, 5);
+        assert_eq!(
+            cm("aa|{a<br />}bb").get_content_as_html(),
+            "<p>aaa</p><p>bb</p>"
+        );
+        assert_eq!(cm("aa|{a<br />}bb").state.start, 4);
+        assert_eq!(cm("aa|{a<br />}bb").state.end, 2);
+        assert_eq!(
+            cm("aa{<br />}|bb").get_content_as_html(),
+            "<p>aa</p><p>bb</p>"
+        );
+        assert_eq!(cm("aa{<br />}|bb").state.start, 2);
+        assert_eq!(cm("aa{<br />}|bb").state.end, 3);
+        assert_eq!(
+            cm("aa|{<br />}bb").get_content_as_html(),
+            "<p>aa</p><p>bb</p>"
+        );
+        assert_eq!(cm("aa|{<br />}bb").state.start, 3);
+        assert_eq!(cm("aa|{<br />}bb").state.end, 2);
     }
 
     #[test]
@@ -814,27 +885,27 @@ mod test {
         assert_that!("AAA<b>B{BB</b>C}|CC").roundtrips();
         assert_that!("AAA<b>B|{BB</b>C}CC").roundtrips();
         assert_that!("<ul><li>~|</li></ul>").roundtrips();
-        assert_that!("<br />|").roundtrips();
-        assert_that!("<br /><br />|").roundtrips();
-        assert_that!("<br />|<br />").roundtrips();
-        assert_that!("<br />|<br />").roundtrips();
-        assert_that!("a<br />b|").roundtrips();
-        assert_that!("a<br />|<br />b").roundtrips();
-        assert_that!("a<br />b|<br />c").roundtrips();
-        assert_that!("a<br />|b<br />c").roundtrips();
-        assert_that!("<b>a<br />|b<br />c</b>").roundtrips();
-        assert_that!("|<br />").roundtrips();
-        assert_that!("aaa<br />|bbb").roundtrips();
-        assert_that!("aaa|<br />bbb").roundtrips();
-        assert_that!("aa{a<br />b}|bb").roundtrips();
-        assert_that!("aa|{a<br />b}bb").roundtrips();
-        assert_that!("aa{<br />b}|bb").roundtrips();
-        assert_that!("aa|{<br />b}bb").roundtrips();
-        assert_that!("aa{a<br />b}|bb").roundtrips();
-        assert_that!("aa|{a<br />}bb").roundtrips();
-        assert_that!("aa{<br />}|bb").roundtrips();
-        assert_that!("aa|{<br />}bb").roundtrips();
         assert_that!("<ol><li>a|</li></ol>").roundtrips();
+        assert_that!("<p>aa{a</p><p>b}|bb</p>").roundtrips();
+        assert_that!("<p>aa|{a}</p><p>bb</p>").roundtrips();
+        assert_that!("<p> </p><p> |</p>").roundtrips();
+        assert_that!("<p> </p><p> |</p><p> </p>").roundtrips();
+        assert_that!("<p>a</p><p>b|</p>").roundtrips();
+        assert_that!("<p>a</p><p>|b</p>").roundtrips();
+        assert_that!("<p>a</p><p>b|</p><p>c</p>").roundtrips();
+        assert_that!("<p>a</p><p>|b</p><p>c</p>").roundtrips();
+        assert_that!("<p><b>a</b></p><p><b>|b</b></p><p><b>c</b></p>")
+            .roundtrips();
+        assert_that!("<p> |</p><p> </p>").roundtrips();
+        assert_that!("<p>aaa</p><p>|bbb</p>").roundtrips();
+        assert_that!("<p>aaa|</p><p>bbb</p>").roundtrips();
+        assert_that!("<p>aa{a</p><p>b}|bb</p>").roundtrips();
+        assert_that!("<p>aa|{a</p><p>b}bb</p>").roundtrips();
+        assert_that!("<p>aa</p><p>{b}|bb</p>").roundtrips();
+        assert_that!("<p>aa</p><p>|{b}bb</p>").roundtrips();
+        assert_that!("<p>aa|{a}</p><p>bb</p>").roundtrips();
+        assert_that!("<p>aa</p><p>|bb</p>").roundtrips();
+        assert_that!("<p>aa|</p><p>bb</p>").roundtrips();
     }
 
     #[test]

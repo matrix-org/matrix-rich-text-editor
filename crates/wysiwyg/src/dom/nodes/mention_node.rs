@@ -138,7 +138,7 @@ where
         &self,
         formatter: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        state: ToHtmlState,
+        state: &ToHtmlState,
         as_message: bool,
     ) {
         self.fmt_mention_html(formatter, selection_writer, state, as_message)
@@ -150,7 +150,7 @@ impl<S: UnicodeString> MentionNode<S> {
         &self,
         formatter: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        _: ToHtmlState,
+        _: &ToHtmlState,
         as_message: bool,
     ) {
         let tag = &S::from("a");

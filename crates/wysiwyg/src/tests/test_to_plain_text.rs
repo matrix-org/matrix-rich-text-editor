@@ -31,7 +31,8 @@ fn text_with_linebreaks() {
         "abc<br />def",
         indoc! {
             r#"abc
-            def"#
+            def
+            "#
         },
     );
 
@@ -41,7 +42,8 @@ fn text_with_linebreaks() {
         indoc! {
             r#"abc
 
-            def"#
+            def
+            "#
         },
     );
 }
@@ -56,7 +58,8 @@ fn text_with_italic() {
             r#"abc line1
             line2
 
-            line3 def"#
+            line3 def
+            "#
         },
     );
 
@@ -75,7 +78,8 @@ fn text_with_bold() {
             r#"abc line1
             line2
 
-            line3 def"#
+            line3 def
+            "#
         },
     );
 
@@ -92,7 +96,8 @@ fn text_with_italic_and_bold() {
         "abc <em><strong>line1<br />line2</strong> def</em>",
         indoc! {
             r#"abc line1
-            line2 def"#
+            line2 def
+            "#
         },
     );
 }
@@ -107,7 +112,8 @@ fn text_with_strikethrough() {
             r#"abc line1
             line2
 
-            line3 def"#
+            line3 def
+            "#
         },
     );
 }
@@ -133,7 +139,8 @@ fn text_with_inline_code() {
             r#"abc line1
             line2
 
-            line3 def"#
+            line3 def
+            "#
         },
     );
 }

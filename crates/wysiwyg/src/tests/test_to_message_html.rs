@@ -15,7 +15,7 @@
 use crate::tests::testutils_composer_model::{cm, tx};
 
 #[test]
-fn replaces_empty_paragraphs_with_newline_characters() {
+fn outputs_paragraphs_as_line_breaks() {
     let mut model = cm("|");
     model.replace_text("hello".into());
     model.enter();
@@ -29,7 +29,15 @@ fn replaces_empty_paragraphs_with_newline_characters() {
         "<p>hello</p><p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p><p>Alice|</p>"
     );
     let message_output = model.get_content_as_message_html();
-    assert_eq!(message_output, "<p>hello</p>\n\n\n<p>Alice</p>");
+    assert_eq!(message_output, "hello<br /><br /><br /><br />Alice");
+}
+
+#[test]
+fn outputs_paragraphs_content_without_linebreak_when_followed_by_block() {
+    let model = cm("<p>foo</p><blockquote>bar|</blockquote>");
+    assert_eq!(tx(&model), "<p>foo</p><blockquote>bar|</blockquote>");
+    let message_output = model.get_content_as_message_html();
+    assert_eq!(message_output, "foo<blockquote>bar</blockquote>");
 }
 
 #[test]

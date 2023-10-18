@@ -215,7 +215,7 @@ where
         &self,
         buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        state: ToHtmlState,
+        state: &ToHtmlState,
         _as_message: bool,
     ) {
         let cur_pos = buf.len();
@@ -228,7 +228,7 @@ where
         if !state.is_inside_code_block {
             escaped = escaped.replace("  ", "\u{A0}\u{A0}");
 
-            if state.is_last_node_in_parent
+            if state.next_sibling.is_none()
                 && escaped.chars().next_back().map_or(false, |c| c == ' ')
             {
                 // If this is the last node and it ends in a space, replace that
@@ -236,7 +236,7 @@ where
                 escaped.replace_range(escaped.len() - 1.., "\u{A0}");
             }
 
-            if state.is_first_node_in_parent
+            if state.prev_sibling.is_none()
                 && escaped.chars().next().map_or(false, |c| c == ' ')
             {
                 // If this is the first node and it starts with a space, replace that

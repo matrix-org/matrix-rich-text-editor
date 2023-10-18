@@ -218,7 +218,10 @@ mod test {
     fn inline_code_with_formatting_preserves_line_breaks() {
         let mut model = cm("<b>{bold</b><br /><i>text}|</i>");
         model.inline_code();
-        assert_eq!(tx(&model), "<code>{bold<br />text}|</code>");
+        assert_eq!(
+            tx(&model),
+            "<p><code>{bold</code></p><p><code>text}|</code></p>"
+        );
     }
 
     #[test]
@@ -249,7 +252,8 @@ mod test {
         model.inline_code();
         assert_eq!(
             tx(&model),
-            "<b><u>bo</u></b><code>{ld<br />te}|</code><i>xt</i>"
+            "<p><b><u>bo</u></b><code>{ld</code></p><p><code>te}|</code><i>xt</i></p>",
+
         );
     }
 
@@ -260,7 +264,7 @@ mod test {
         model.inline_code();
         assert_eq!(
             tx(&model),
-            "<b><u>bo</u></b><code>{ld<br />te}|</code><i>xt</i>"
+            "<p><b><u>bo</u></b><code>{ld</code></p><p><code>te}|</code><i>xt</i></p>",
         );
     }
 
@@ -328,7 +332,7 @@ mod test {
     fn unformat_inline_code_same_row_with_line_breaks() {
         let mut model = cm("<code>{bold<br />text}|</code>");
         model.inline_code();
-        assert_eq!(tx(&model), "{bold<br />text}|");
+        assert_eq!(tx(&model), "<p>{bold</p><p>text}|</p>");
     }
 
     #[test]
