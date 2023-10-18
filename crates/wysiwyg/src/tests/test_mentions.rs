@@ -656,7 +656,7 @@ fn get_mentions_state_for_user_mention_with_custom_link() {
 }
 
 #[test]
-fn get_mentions_state_empty_for_non_intentional_room_mention() {
+fn get_mentions_state_empty_for_non_intentional_at_room_mention() {
     let model = cm("<pre>hello @room!|</pre>");
     assert_eq!(model.get_mentions_state(), MentionsState::default())
 }
