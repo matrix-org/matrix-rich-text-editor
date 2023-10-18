@@ -628,6 +628,16 @@ fn get_mentions_state_for_at_room_mention() {
 }
 
 #[test]
+fn get_mentions_state_for_at_room_plain_mention() {
+    let model = cm("<p>hello @room|");
+    let state = MentionsState {
+        user_ids: Default::default(),
+        has_at_room_mention: true,
+    };
+    assert_eq!(model.get_mentions_state(), state)
+}
+
+#[test]
 fn get_mentions_state_for_multiple_user_and_at_room_mentions() {
     let model = cm("<p>hello <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>, <a data-mention-type=\"user\" href=\"https://matrix.to/#/@bob:matrix.org\" contenteditable=\"false\">Bob</a> and <a data-mention-type=\"at-room\" href=\"#\" contenteditable=\"false\">@room</a>!|</p>");
     let mut state = MentionsState::default();
@@ -643,6 +653,12 @@ fn get_mentions_state_for_user_mention_with_custom_link() {
     let mut state = MentionsState::default();
     state.user_ids.insert("@alice:matrix.org".into());
     assert_eq!(model.get_mentions_state(), state)
+}
+
+#[test]
+fn get_mentions_state_empty_for_non_intentional_room_mention() {
+    let model = cm("<pre>hello @room!|</pre>");
+    assert_eq!(model.get_mentions_state(), MentionsState::default())
 }
 
 /**
