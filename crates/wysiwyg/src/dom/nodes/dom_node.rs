@@ -245,6 +245,14 @@ where
         }
     }
 
+    pub(crate) fn as_mention(&self) -> Option<&MentionNode<S>> {
+        if let Self::Mention(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
     pub fn kind(&self) -> DomNodeKind {
         match self {
             DomNode::Text(_) => DomNodeKind::Text,

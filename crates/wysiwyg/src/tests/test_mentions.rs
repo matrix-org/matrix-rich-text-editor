@@ -16,7 +16,7 @@ use widestring::Utf16String;
 
 use crate::{
     tests::testutils_composer_model::{cm, tx},
-    ComposerModel, MenuAction,
+    ComposerModel, MentionsState, MenuAction,
 };
 /**
  * INSERTING WITH PARSING
@@ -592,6 +592,57 @@ fn can_insert_at_room_mention() {
     let mut model = cm("|");
     model.insert_at_room_mention(vec![("style".into(), "some css".into())]);
     assert_eq!(tx(&model), "<a style=\"some css\" data-mention-type=\"at-room\" href=\"#\" contenteditable=\"false\">@room</a>&nbsp;|")
+}
+
+#[test]
+fn get_mentions_state_for_no_mentions() {
+    let model = cm("<p>hello!|</p>");
+    assert_eq!(model.get_mentions_state(), MentionsState::default())
+}
+
+#[test]
+fn get_mentions_state_for_user_mention() {
+    let model = cm("<p>hello <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>!|</p>");
+    let mut state = MentionsState::default();
+    state.user_ids.insert("@alice:matrix.org".into());
+    assert_eq!(model.get_mentions_state(), state)
+}
+
+#[test]
+fn get_mentions_state_for_multiple_user_mentions() {
+    let model = cm("<p>hello <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a> and <a data-mention-type=\"user\" href=\"https://matrix.to/#/@bob:matrix.org\" contenteditable=\"false\">Bob</a>!|</p>");
+    let mut state = MentionsState::default();
+    state.user_ids.insert("@alice:matrix.org".into());
+    state.user_ids.insert("@bob:matrix.org".into());
+    assert_eq!(model.get_mentions_state(), state)
+}
+
+#[test]
+fn get_mentions_state_for_at_room_mention() {
+    let model = cm("<p>hello <a data-mention-type=\"at-room\" href=\"#\" contenteditable=\"false\">@room</a>|");
+    let state = MentionsState {
+        user_ids: Default::default(),
+        has_at_room_mention: true,
+    };
+    assert_eq!(model.get_mentions_state(), state)
+}
+
+#[test]
+fn get_mentions_state_for_multiple_user_and_at_room_mentions() {
+    let model = cm("<p>hello <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>, <a data-mention-type=\"user\" href=\"https://matrix.to/#/@bob:matrix.org\" contenteditable=\"false\">Bob</a> and <a data-mention-type=\"at-room\" href=\"#\" contenteditable=\"false\">@room</a>!|</p>");
+    let mut state = MentionsState::default();
+    state.user_ids.insert("@alice:matrix.org".into());
+    state.user_ids.insert("@bob:matrix.org".into());
+    state.has_at_room_mention = true;
+    assert_eq!(model.get_mentions_state(), state)
+}
+
+#[test]
+fn get_mentions_state_for_user_mention_with_custom_link() {
+    let model = cm("<p>hello <a data-mention-type=\"user\" href=\"https://custom.link/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>!|</p>");
+    let mut state = MentionsState::default();
+    state.user_ids.insert("@alice:matrix.org".into());
+    assert_eq!(model.get_mentions_state(), state)
 }
 
 /**

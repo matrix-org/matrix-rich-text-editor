@@ -23,7 +23,7 @@ use crate::{DomHandle, DomNode, UnicodeString};
 use std::collections::HashSet;
 
 use super::{
-    nodes::{ContainerNode, TextNode},
+    nodes::{ContainerNode, MentionNode, TextNode},
     Dom,
 };
 
@@ -46,6 +46,12 @@ where
     /// order
     pub fn iter_containers(&self) -> impl Iterator<Item = &ContainerNode<S>> {
         self.iter().filter_map(DomNode::as_container)
+    }
+
+    /// Returns an iterator over all the mention nodes of this DOM, in depth-first
+    /// order
+    pub fn iter_mentions(&self) -> impl Iterator<Item = &MentionNode<S>> {
+        self.iter().filter_map(DomNode::as_mention)
     }
 
     /// Return an iterator over all nodes of the DOM from the passed node,
