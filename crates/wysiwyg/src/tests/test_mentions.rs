@@ -602,7 +602,7 @@ fn get_mentions_state_for_no_mentions() {
 
 #[test]
 fn get_mentions_state_for_user_mention() {
-    let model = cm("<p>hello <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>!|</p>");
+    let model = cm("<p>hello <a href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>!|</p>");
     let mut state = MentionsState::default();
     state.user_ids.insert("@alice:matrix.org".into());
     assert_eq!(model.get_mentions_state(), state)
@@ -610,7 +610,7 @@ fn get_mentions_state_for_user_mention() {
 
 #[test]
 fn get_mentions_state_for_multiple_user_mentions() {
-    let model = cm("<p>hello <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a> and <a data-mention-type=\"user\" href=\"https://matrix.to/#/@bob:matrix.org\" contenteditable=\"false\">Bob</a>!|</p>");
+    let model = cm("<p>hello <a href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a> and <a href=\"https://matrix.to/#/@bob:matrix.org\">Bob</a>!|</p>");
     let mut state = MentionsState::default();
     state.user_ids.insert("@alice:matrix.org".into());
     state.user_ids.insert("@bob:matrix.org".into());
@@ -619,9 +619,11 @@ fn get_mentions_state_for_multiple_user_mentions() {
 
 #[test]
 fn get_mentions_state_for_at_room_mention() {
-    let model = cm("<p>hello <a data-mention-type=\"at-room\" href=\"#\" contenteditable=\"false\">@room</a>|");
+    let model = cm("<p>hello <a href=\"#\">@room</a>|");
     let state = MentionsState {
         user_ids: Default::default(),
+        room_ids: Default::default(),
+        room_aliases: Default::default(),
         has_at_room_mention: true,
     };
     assert_eq!(model.get_mentions_state(), state)
@@ -632,6 +634,8 @@ fn get_mentions_state_for_at_room_plain_mention() {
     let model = cm("<p>hello @room|");
     let state = MentionsState {
         user_ids: Default::default(),
+        room_ids: Default::default(),
+        room_aliases: Default::default(),
         has_at_room_mention: true,
     };
     assert_eq!(model.get_mentions_state(), state)
@@ -639,7 +643,7 @@ fn get_mentions_state_for_at_room_plain_mention() {
 
 #[test]
 fn get_mentions_state_for_multiple_user_and_at_room_mentions() {
-    let model = cm("<p>hello <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>, <a data-mention-type=\"user\" href=\"https://matrix.to/#/@bob:matrix.org\" contenteditable=\"false\">Bob</a> and <a data-mention-type=\"at-room\" href=\"#\" contenteditable=\"false\">@room</a>!|</p>");
+    let model = cm("<p>hello <a href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>, <a href=\"https://matrix.to/#/@bob:matrix.org\">Bob</a> and <a href=\"#\">@room</a>!|</p>");
     let mut state = MentionsState::default();
     state.user_ids.insert("@alice:matrix.org".into());
     state.user_ids.insert("@bob:matrix.org".into());
@@ -649,7 +653,7 @@ fn get_mentions_state_for_multiple_user_and_at_room_mentions() {
 
 #[test]
 fn get_mentions_state_for_user_mention_with_custom_link() {
-    let model = cm("<p>hello <a data-mention-type=\"user\" href=\"https://custom.link/#/@alice:matrix.org\" contenteditable=\"false\">Alice</a>!|</p>");
+    let model = cm("<p>hello <a href=\"https://custom.link/#/@alice:matrix.org\">Alice</a>!|</p>");
     let mut state = MentionsState::default();
     state.user_ids.insert("@alice:matrix.org".into());
     assert_eq!(model.get_mentions_state(), state)
@@ -659,6 +663,52 @@ fn get_mentions_state_for_user_mention_with_custom_link() {
 fn get_mentions_state_empty_for_non_intentional_at_room_mention() {
     let model = cm("<pre>hello @room!|</pre>");
     assert_eq!(model.get_mentions_state(), MentionsState::default())
+}
+
+#[test]
+fn get_mentions_state_with_duplications() {
+    let model = cm("<p>hello <a href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>, <a href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>, @room and @room, be sure to check <a href=\"https://matrix.to/#/#room:matrix.org\">Room</a> and <a href=\"https://matrix.to/#/#room:matrix.org\">Room</a>|</p>");
+    let mut state = MentionsState::default();
+    state.user_ids.insert("@alice:matrix.org".into());
+    state.has_at_room_mention = true;
+    state.room_aliases.insert("#room:matrix.org".into());
+    assert_eq!(model.get_mentions_state(), state)
+}
+
+#[test]
+fn get_mentions_state_for_room_alias() {
+    let model = cm("<p>check this <a href=\"https://matrix.to/#/#room:matrix.org\">Room</a>|</p>");
+    let mut state = MentionsState::default();
+    state.room_aliases.insert("#room:matrix.org".into());
+    assert_eq!(model.get_mentions_state(), state)
+}
+
+#[test]
+fn get_mentions_state_for_room_id() {
+    let model = cm("<p>check this <a href=\"https://matrix.to/#/!room:matrix.org\">Room</a>|</p>");
+    let mut state = MentionsState::default();
+    state.room_ids.insert("!room:matrix.org".into());
+    assert_eq!(model.get_mentions_state(), state)
+}
+
+#[test]
+fn get_mentions_state_for_room_id_and_room_alias() {
+    let model = cm("<p>check this <a href=\"https://matrix.to/#/!room:matrix.org\">Room</a> and this check this <a href=\"https://matrix.to/#/#other_room:matrix.org\">Room</a>|</p>");
+    let mut state = MentionsState::default();
+    state.room_ids.insert("!room:matrix.org".into());
+    state.room_aliases.insert("#other_room:matrix.org".into());
+    assert_eq!(model.get_mentions_state(), state)
+}
+
+#[test]
+fn get_mentions_state_for_multiple_mentions() {
+    let model = cm("<p>hello <a href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a> and <a href=\"https://matrix.to/#/@bob:matrix.org\">Bob</a> check this <a href=\"https://matrix.to/#/!room:matrix.org\">Room</a> and this check this <a href=\"https://matrix.to/#/#other_room:matrix.org\">Room</a>|</p>");
+    let mut state = MentionsState::default();
+    state.room_ids.insert("!room:matrix.org".into());
+    state.room_aliases.insert("#other_room:matrix.org".into());
+    state.user_ids.insert("@alice:matrix.org".into());
+    state.user_ids.insert("@bob:matrix.org".into());
+    assert_eq!(model.get_mentions_state(), state)
 }
 
 /**

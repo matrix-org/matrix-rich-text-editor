@@ -33,18 +33,27 @@ where
                 MentionNodeKind::AtRoom => {
                     mentions_state.has_at_room_mention = true
                 }
-                MentionNodeKind::MatrixUri { mention } => {
-                    match mention.kind() {
-                        matrix_mentions::MentionKind::Room => {
-                            // Not required yet
-                        }
-                        matrix_mentions::MentionKind::User => {
-                            mentions_state
-                                .user_ids
-                                .insert(mention.mx_id().to_string());
+                MentionNodeKind::MatrixUri { mention } => match mention.kind() {
+                    matrix_mentions::MentionKind::Room(id_type) => {
+                        match id_type {
+                            matrix_mentions::RoomIdentificationType::Id => {
+                                mentions_state
+                                    .room_ids
+                                    .insert(mention.mx_id().to_string());
+                            }
+                            matrix_mentions::RoomIdentificationType::Alias => {
+                                mentions_state
+                                    .room_aliases
+                                    .insert(mention.mx_id().to_string());
+                            }
                         }
                     }
-                }
+                    matrix_mentions::MentionKind::User => {
+                        mentions_state
+                            .user_ids
+                            .insert(mention.mx_id().to_string());
+                    }
+                },
             }
         }
         mentions_state

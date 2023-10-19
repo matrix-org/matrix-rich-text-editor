@@ -17,5 +17,7 @@ use std::collections::HashSet;
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct MentionsState {
     pub user_ids: HashSet<String>,
+    pub room_ids: HashSet<String>,
+    pub room_aliases: HashSet<String>,
     pub has_at_room_mention: bool,
 }
