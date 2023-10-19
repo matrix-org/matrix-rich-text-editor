@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod mention;
+use std::collections::HashSet;
 
-pub use crate::mention::{Mention, MentionKind, RoomIdentificationType};
+#[derive(Default, Debug, PartialEq, Eq)]
+pub struct MentionsState {
+    pub user_ids: HashSet<String>,
+    pub room_ids: HashSet<String>,
+    pub room_aliases: HashSet<String>,
+    pub has_at_room_mention: bool,
+}

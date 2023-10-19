@@ -26,8 +26,20 @@ pub struct Mention {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MentionKind {
-    Room,
+    Room(RoomIdentificationType),
     User,
+}
+
+impl MentionKind {
+    pub fn is_room(&self) -> bool {
+        matches!(self, MentionKind::Room(_))
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum RoomIdentificationType {
+    Id,
+    Alias,
 }
 
 impl Mention {
@@ -134,9 +146,16 @@ impl Mention {
     fn from_room(room_uri: &str) -> Option<Mention> {
         // In all cases, use the alias/room ID being linked to as the
         // anchor’s text.
+        let room_id_type: RoomIdentificationType;
         let text = match parse_matrix_id(room_uri)? {
-            MatrixId::Room(room_id) => room_id.to_string(),
-            MatrixId::RoomAlias(room_alias) => room_alias.to_string(),
+            MatrixId::Room(room_id) => {
+                room_id_type = RoomIdentificationType::Id;
+                room_id.to_string()
+            }
+            MatrixId::RoomAlias(room_alias) => {
+                room_id_type = RoomIdentificationType::Alias;
+                room_alias.to_string()
+            }
             _ => return None,
         };
 
@@ -144,7 +163,7 @@ impl Mention {
             room_uri.to_string(),
             text.clone(),
             text,
-            MentionKind::Room,
+            MentionKind::Room(room_id_type),
         ))
     }
 }
@@ -200,7 +219,7 @@ fn parse_external_id(uri: &str) -> Result<MatrixToUri, IdParseError> {
 mod test {
     use ruma_common::{MatrixToUri, MatrixUri};
 
-    use crate::mention::{Mention, MentionKind};
+    use crate::mention::{Mention, MentionKind, RoomIdentificationType};
 
     #[test]
     fn parse_uri_matrix_to_valid_user() {
@@ -232,7 +251,10 @@ mod test {
         assert_eq!(parsed.uri(), uri);
         assert_eq!(parsed.mx_id(), "!roomid:example.org");
         assert_eq!(parsed.display_text(), "!roomid:example.org");
-        assert_eq!(parsed.kind(), &MentionKind::Room);
+        assert_eq!(
+            parsed.kind(),
+            &MentionKind::Room(RoomIdentificationType::Id)
+        );
     }
 
     #[test]
@@ -243,7 +265,10 @@ mod test {
         assert_eq!(parsed.uri(), uri);
         assert_eq!(parsed.mx_id(), "!roomid:example.org");
         assert_eq!(parsed.display_text(), "!roomid:example.org");
-        assert_eq!(parsed.kind(), &MentionKind::Room);
+        assert_eq!(
+            parsed.kind(),
+            &MentionKind::Room(RoomIdentificationType::Id)
+        );
     }
 
     #[test]
@@ -254,7 +279,10 @@ mod test {
         assert_eq!(parsed.uri(), uri);
         assert_eq!(parsed.mx_id(), "#room:example.org");
         assert_eq!(parsed.display_text(), "#room:example.org");
-        assert_eq!(parsed.kind(), &MentionKind::Room);
+        assert_eq!(
+            parsed.kind(),
+            &MentionKind::Room(RoomIdentificationType::Alias)
+        );
     }
 
     #[test]
@@ -265,7 +293,10 @@ mod test {
         assert_eq!(parsed.uri(), uri);
         assert_eq!(parsed.mx_id(), "#room:example.org");
         assert_eq!(parsed.display_text(), "#room:example.org");
-        assert_eq!(parsed.kind(), &MentionKind::Room);
+        assert_eq!(
+            parsed.kind(),
+            &MentionKind::Room(RoomIdentificationType::Alias)
+        );
     }
 
     #[test]
@@ -319,7 +350,10 @@ mod test {
         assert_eq!(parsed.uri(), uri);
         assert_eq!(parsed.mx_id(), "!roomid:example.org");
         assert_eq!(parsed.display_text(), "!roomid:example.org");
-        assert_eq!(parsed.kind(), &MentionKind::Room);
+        assert_eq!(
+            parsed.kind(),
+            &MentionKind::Room(RoomIdentificationType::Id)
+        );
     }
 
     #[test]
@@ -347,7 +381,10 @@ mod test {
         assert_eq!(parsed.uri(), uri);
         assert_eq!(parsed.mx_id(), "!room:example.org");
         assert_eq!(parsed.display_text(), "!room:example.org"); // note the display_text is overridden
-        assert_eq!(parsed.kind(), &MentionKind::Room);
+        assert_eq!(
+            parsed.kind(),
+            &MentionKind::Room(RoomIdentificationType::Id)
+        );
     }
 
     #[test]
@@ -361,7 +398,10 @@ mod test {
         assert_eq!(parsed.uri(), uri);
         assert_eq!(parsed.mx_id(), "#room:example.org");
         assert_eq!(parsed.display_text(), "#room:example.org"); // note the display_text is overridden
-        assert_eq!(parsed.kind(), &MentionKind::Room);
+        assert_eq!(
+            parsed.kind(),
+            &MentionKind::Room(RoomIdentificationType::Alias)
+        );
     }
 
     #[test]

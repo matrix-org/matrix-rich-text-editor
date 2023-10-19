@@ -13,15 +13,52 @@
 // limitations under the License.
 
 use crate::{
-    dom::{nodes::MentionNode, DomLocation},
-    ComposerModel, ComposerUpdate, DomNode, Location, SuggestionPattern,
-    UnicodeString,
+    dom::{
+        nodes::{MentionNode, MentionNodeKind},
+        DomLocation,
+    },
+    ComposerModel, ComposerUpdate, DomNode, Location, MentionsState,
+    SuggestionPattern, UnicodeString,
 };
 
 impl<S> ComposerModel<S>
 where
     S: UnicodeString,
 {
+    /// Returns the current mentions state of the content of the RTE editor.
+    pub fn get_mentions_state(&self) -> MentionsState {
+        let mut mentions_state = MentionsState::default();
+        for node in self.state.dom.iter_mentions() {
+            match node.kind() {
+                MentionNodeKind::AtRoom => {
+                    mentions_state.has_at_room_mention = true
+                }
+                MentionNodeKind::MatrixUri { mention } => match mention.kind() {
+                    matrix_mentions::MentionKind::Room(id_type) => {
+                        match id_type {
+                            matrix_mentions::RoomIdentificationType::Id => {
+                                mentions_state
+                                    .room_ids
+                                    .insert(mention.mx_id().to_string());
+                            }
+                            matrix_mentions::RoomIdentificationType::Alias => {
+                                mentions_state
+                                    .room_aliases
+                                    .insert(mention.mx_id().to_string());
+                            }
+                        }
+                    }
+                    matrix_mentions::MentionKind::User => {
+                        mentions_state
+                            .user_ids
+                            .insert(mention.mx_id().to_string());
+                    }
+                },
+            }
+        }
+        mentions_state
+    }
+
     /// Checks to see if the mention should be inserted and also if the mention can be created.
     /// If both of these checks are passed it will remove the suggestion and then insert a mention.
     pub fn insert_mention_at_suggestion(

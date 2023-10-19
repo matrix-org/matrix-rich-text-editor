@@ -8,6 +8,7 @@ use crate::ffi_composer_state::ComposerState;
 use crate::ffi_composer_update::ComposerUpdate;
 use crate::ffi_dom_creation_error::DomCreationError;
 use crate::ffi_link_actions::LinkAction;
+use crate::ffi_mentions_state::MentionsState;
 use crate::into_ffi::IntoFfi;
 use crate::{ActionState, ComposerAction, SuggestionPattern};
 
@@ -368,6 +369,10 @@ impl ComposerModel {
 
     pub fn get_link_action(self: &Arc<Self>) -> LinkAction {
         self.inner.lock().unwrap().get_link_action().into()
+    }
+
+    pub fn get_mentions_state(self: &Arc<Self>) -> MentionsState {
+        self.inner.lock().unwrap().get_mentions_state().into()
     }
 
     /// Force a panic for test purposes
