@@ -167,6 +167,10 @@ final class ComposerModelWrapper: ComposerModelWrapperProtocol {
     func getLinkAction() -> LinkAction {
         model.getLinkAction()
     }
+    
+    func getMentionsState() -> MentionsState {
+        model.getMentionsState()
+    }
 
     // MARK: Extensions
 

@@ -385,6 +385,11 @@ public extension WysiwygComposerViewModel {
     func getLinkAction() -> LinkAction {
         model.getLinkAction()
     }
+    
+    /// Get the current mentions present in the composer
+    func getMentionsState() -> MentionsState {
+        model.getMentionsState()
+    }
 
     func enter() {
         applyUpdate(createEnterUpdate(), skipTextViewUpdate: false)
