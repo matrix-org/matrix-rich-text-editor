@@ -24,6 +24,6 @@ pub enum LinkActionUpdate<S: UnicodeString> {
 pub enum LinkAction<S: UnicodeString> {
     CreateWithText,
     Create,
-    Edit(S),
+    Edit(S, S),
     Disabled,
 }

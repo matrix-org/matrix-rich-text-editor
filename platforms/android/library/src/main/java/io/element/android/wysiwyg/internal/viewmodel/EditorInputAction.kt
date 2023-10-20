@@ -78,6 +78,11 @@ internal sealed interface EditorInputAction {
     data class SetLink(val url: String): EditorInputAction
 
     /**
+     * Edit a link to the [url] and [text] in the current selection.
+     */
+    data class EditLink(val url: String, val text: String): EditorInputAction
+
+    /**
      * Remove link on the current selection.
      */
     object RemoveLink: EditorInputAction

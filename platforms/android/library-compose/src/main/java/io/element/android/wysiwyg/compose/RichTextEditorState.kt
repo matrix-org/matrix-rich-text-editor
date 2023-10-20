@@ -142,6 +142,16 @@ class RichTextEditorState(
     }
 
     /**
+     * Edit a link with new URL and text.
+     *
+     * @param url The link URL to set
+     * @param text The new text to insert
+     */
+    suspend fun  editLink(url: String, text: String) {
+        _viewActions.emit(ViewAction.EditLink(url, text))
+    }
+
+    /**
      * The content of the editor as HTML formatted for sending as a message.
      */
     var messageHtml by mutableStateOf(initialHtml)

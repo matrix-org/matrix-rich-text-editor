@@ -35,24 +35,27 @@ extension WysiwygUITests {
 
         // Edit
         button(.linkButton).tap()
-        XCTAssertFalse(textField(.linkTextTextField).exists)
+        XCTAssertTrue(textField(.linkUrlTextField).exists)
+        XCTAssertTrue(textField(.linkTextTextField).exists)
         textField(.linkUrlTextField).doubleTap()
         textField(.linkUrlTextField).typeTextCharByChar("new_url")
+        textField(.linkTextTextField).doubleTap()
+        textField(.linkTextTextField).typeTextCharByChar("new text")
         app.buttons["Ok"].tap()
         assertTreeEquals(
             """
             └>a "https://new_url"
-              └>"text"
+              └>"new text"
             """
         )
 
         // Remove
         button(.linkButton).tap()
-        XCTAssertFalse(textField(.linkTextTextField).exists)
+        XCTAssertTrue(textField(.linkTextTextField).exists)
         app.buttons["Remove"].tap()
         assertTreeEquals(
             """
-            └>"text"
+            └>"new text"
             """
         )
     }

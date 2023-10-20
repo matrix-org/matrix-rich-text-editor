@@ -34,6 +34,7 @@ protocol ComposerModelWrapperProtocol {
     func enter() -> ComposerUpdate
     func setLink(url: String, attributes: [Attribute]) -> ComposerUpdate
     func setLinkWithText(url: String, text: String, attributes: [Attribute]) -> ComposerUpdate
+    func editLinkWithText(url: String, text: String, attributes: [Attribute]) -> ComposerUpdate
     func insertMention(url: String, text: String, attributes: [Attribute]) -> ComposerUpdate
     func insertMentionAtSuggestion(url: String, text: String, suggestion: SuggestionPattern, attributes: [Attribute]) -> ComposerUpdate
     func removeLinks() -> ComposerUpdate
@@ -130,6 +131,10 @@ final class ComposerModelWrapper: ComposerModelWrapperProtocol {
 
     func setLinkWithText(url: String, text: String, attributes: [Attribute]) -> ComposerUpdate {
         execute { try $0.setLinkWithText(url: url, text: text, attributes: attributes) }
+    }
+    
+    func editLinkWithText(url: String, text: String, attributes: [Attribute]) -> ComposerUpdate {
+        execute { try $0.editLinkWithText(url: url, text: text, attributes: attributes) }
     }
 
     func insertMention(url: String, text: String, attributes: [Attribute]) -> ComposerUpdate {

@@ -127,6 +127,19 @@ class RichTextEditorTest {
     }
 
     @Test
+    fun testEditLink() = runTest {
+        val state = createState()
+        composeTestRule.showContent(state)
+
+        state.setHtml("Hello, <a href=\"https://element.io\">element</a>")
+        state.editLink("https://matrix.org", "matrix")
+        composeTestRule.awaitIdle()
+
+        assertEquals("Hello, <a href=\"https://matrix.org\">matrix</a>", state.messageHtml)
+        assertEquals("Hello, [matrix](<https://matrix.org>)", state.messageMarkdown)
+    }
+
+    @Test
     fun testLinkActionUpdates() = runTest {
         val state = createState()
         composeTestRule.showContent(state)
@@ -135,10 +148,10 @@ class RichTextEditorTest {
         composeTestRule.awaitIdle()
 
         onView(withText("matrix element plain")).perform(EditorActions.setSelection(0, 0))
-        assertEquals(LinkAction.SetLink("https://matrix.org"), state.linkAction)
+        assertEquals(LinkAction.EditLink("https://matrix.org", "matrix"), state.linkAction)
 
         onView(withText("matrix element plain")).perform(EditorActions.setSelection(8, 8))
-        assertEquals(LinkAction.SetLink("https://element.io"), state.linkAction)
+        assertEquals(LinkAction.EditLink("https://element.io", "element"), state.linkAction)
 
         onView(withText("matrix element plain")).perform(EditorActions.setSelection(16, 16))
         assertEquals(LinkAction.InsertLink, state.linkAction)

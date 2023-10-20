@@ -6,7 +6,7 @@ import uniffi.wysiwyg_composer.LinkAction as InternalLinkAction
 
 internal fun InternalLinkAction.toApiModel(): LinkAction? =
     when (this) {
-        is InternalLinkAction.Edit -> LinkAction.SetLink(currentUrl = url)
+        is InternalLinkAction.Edit -> LinkAction.EditLink(currentUrl = url, currentText = text)
         is InternalLinkAction.Create -> LinkAction.SetLink(currentUrl = null)
         is InternalLinkAction.CreateWithText -> LinkAction.InsertLink
         is InternalLinkAction.Disabled -> null

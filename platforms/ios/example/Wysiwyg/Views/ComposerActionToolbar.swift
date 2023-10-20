@@ -52,13 +52,13 @@ struct ComposerActionToolbar: View {
     func makeAlertConfig() -> AlertConfig {
         var actions: [AlertConfig.Action] = [.cancel(title: "Cancel")]
         let createLinkTitle = "Create Link"
-        let singleTextAction: ([String]) -> Void = { strings in
-            let urlString = strings[0]
-            viewModel.select(range: linkAttributedRange)
-            viewModel.applyLinkOperation(.setLink(urlString: urlString))
-        }
         switch linkAction {
         case .create:
+            let singleTextAction: ([String]) -> Void = { strings in
+                let urlString = strings[0]
+                viewModel.select(range: linkAttributedRange)
+                viewModel.applyLinkOperation(.setLink(urlString: urlString))
+            }
             actions.append(createAction(singleTextAction: singleTextAction))
             return AlertConfig(title: createLinkTitle, actions: actions)
         case .createWithText:
@@ -70,9 +70,15 @@ struct ComposerActionToolbar: View {
             }
             actions.append(createWithTextAction(doubleTextAction: doubleTextAction))
             return AlertConfig(title: createLinkTitle, actions: actions)
-        case let .edit(url):
+        case let .edit(url, text):
             let editLinktitle = "Edit Link URL"
-            actions.append(editTextAction(singleTextAction: singleTextAction, url: url))
+            let doubleTextAction: ([String]) -> Void = { strings in
+                let urlString = strings[0]
+                let text = strings[1]
+                viewModel.select(range: linkAttributedRange)
+                viewModel.applyLinkOperation(.editLink(urlString: urlString, text: text))
+            }
+            actions.append(editTextAction(doubleTextAction: doubleTextAction, url: url, text: text))
             let removeAction = {
                 viewModel.select(range: linkAttributedRange)
                 viewModel.applyLinkOperation(.removeLinks)
@@ -119,7 +125,7 @@ private extension ComposerActionToolbar {
         )
     }
 
-    private func editTextAction(singleTextAction: @escaping ([String]) -> Void, url: String) -> AlertConfig.Action {
+    private func editTextAction(doubleTextAction: @escaping ([String]) -> Void, url: String, text: String) -> AlertConfig.Action {
         .textAction(
             title: "Ok",
             textFieldsData: [
@@ -128,8 +134,13 @@ private extension ComposerActionToolbar {
                     placeholder: "URL",
                     defaultValue: url
                 ),
+                .init(
+                    accessibilityIdentifier: .linkTextTextField,
+                    placeholder: "Text",
+                    defaultValue: text
+                ),
             ],
-            action: singleTextAction
+            action: doubleTextAction
         )
     }
 }

@@ -367,6 +367,21 @@ class EditorEditText : AppCompatEditText {
     }
 
     /**
+     * Edit text and url for selected link. This method does nothing if there is no link in selection.
+     *
+     * @param url The updated link URL
+     * @param text The updated link text
+     */
+    fun editLink(url: String, text: String) {
+        val result = viewModel.processInput(
+            EditorInputAction.EditLink(url, text)
+        ) ?: return
+
+        setTextFromComposerUpdate(result.text)
+        setSelectionFromComposerUpdate(result.selection.last)
+    }
+
+    /**
      * Remove a link for the current selection. Convenience for setLink(null).
      *
      * @see [setLink]

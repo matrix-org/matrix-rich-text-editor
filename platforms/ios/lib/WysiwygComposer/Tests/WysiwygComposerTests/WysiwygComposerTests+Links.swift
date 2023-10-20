@@ -34,7 +34,7 @@ extension WysiwygComposerTests {
         let url = "test_url"
         ComposerModelWrapper()
             .action { $0.setLinkWithText(url: url, text: "test", attributes: []) }
-            .assertLinkAction(.edit(url: "https://\(url)"))
+            .assertLinkAction(.edit(url: "https://\(url)", text: "test"))
     }
 
     func testSetLinkWithText() {
