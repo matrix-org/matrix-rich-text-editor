@@ -1,3 +1,7 @@
+# paths to ignore during linting. Takes precedence over `included`.
+excluded:
+  - DerivedData
+
 # rule identifiers to exclude from running
 disabled_rules:
   - todo
