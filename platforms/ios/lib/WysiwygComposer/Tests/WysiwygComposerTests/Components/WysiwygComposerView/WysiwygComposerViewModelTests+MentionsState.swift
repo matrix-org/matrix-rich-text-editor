@@ -1,4 +1,4 @@
-// 
+//
 // Copyright 2023 The Matrix.org Foundation C.I.C
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,7 +30,8 @@ extension WysiwygComposerViewModelTests {
     
     func testMentionsStatBySettingUserMention() {
         viewModel.setMention(url: "https://matrix.to/#/@alice:matrix.org", name: "Alice", mentionType: .user)
-        XCTAssertEqual(viewModel.getMentionsState(), MentionsState(userIds: ["@alice:matrix.org"], roomIds: [], roomAliases: [], hasAtRoomMention: false))
+        XCTAssertEqual(viewModel.getMentionsState(),
+                       MentionsState(userIds: ["@alice:matrix.org"], roomIds: [], roomAliases: [], hasAtRoomMention: false))
     }
     
     func testMentionsStateBySettingUserMentionFromContent() {
@@ -44,7 +45,8 @@ extension WysiwygComposerViewModelTests {
     
     func testMentionsStatBySettingRoomAliasMention() {
         viewModel.setMention(url: "https://matrix.to/#/#room:matrix.org", name: "Room", mentionType: .room)
-        XCTAssertEqual(viewModel.getMentionsState(), MentionsState(userIds: [], roomIds: [], roomAliases: ["#room:matrix.org"], hasAtRoomMention: false))
+        XCTAssertEqual(viewModel.getMentionsState(),
+                       MentionsState(userIds: [], roomIds: [], roomAliases: ["#room:matrix.org"], hasAtRoomMention: false))
     }
     
     func testMentionsStateBySettingRoomAliasMentionFromContent() {
@@ -87,18 +89,35 @@ extension WysiwygComposerViewModelTests {
         viewModel.setMention(url: "https://matrix.to/#/@alice:matrix.org", name: "Alice", mentionType: .user)
         viewModel.setMention(url: "https://matrix.to/#/@alice:matrix.org", name: "Alice", mentionType: .user)
         
-        XCTAssertEqual(viewModel.getMentionsState(), MentionsState(userIds: ["@alice:matrix.org"], roomIds: [], roomAliases: [], hasAtRoomMention: false))
+        XCTAssertEqual(viewModel.getMentionsState(),
+                       MentionsState(userIds: ["@alice:matrix.org"], roomIds: [], roomAliases: [], hasAtRoomMention: false))
     }
     
     func testMultipleMentionsBySettingThemWithContent() {
-        viewModel.setHtmlContent("<p><a href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>, <a href=\"https://matrix.to/#/!room:matrix.org\">Room</a>, <a href=\"https://matrix.to/#/@bob:matrix.org\">Bob</a>, <a href=\"https://matrix.to/#/#room:matrix.org\">Room</a>, @room</p>")
+        viewModel.setHtmlContent(
+            """
+            <p><a href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>, \
+            <a href=\"https://matrix.to/#/!room:matrix.org\">Room</a>, \
+            <a href=\"https://matrix.to/#/@bob:matrix.org\">Bob</a>, \
+            <a href=\"https://matrix.to/#/#room:matrix.org\">Room</a>, \
+            @room</p>
+            """
+        )
         var mentionState = viewModel.getMentionsState()
         XCTAssertEqual(Set(mentionState.userIds), ["@alice:matrix.org", "@bob:matrix.org"])
         XCTAssertEqual(mentionState.roomAliases, ["#room:matrix.org"])
         XCTAssertEqual(mentionState.roomIds, ["!room:matrix.org"])
         XCTAssertTrue(mentionState.hasAtRoomMention)
         
-        viewModel.setMarkdownContent("[Room](https://matrix.to/#/!room:matrix.org), [Room](https://matrix.to/#/#room:matrix.org), [Alice](https://matrix.to/#/@alice:matrix.org), [Bob](https://matrix.to/#/@bob:matrix.org), @room")
+        viewModel.setMarkdownContent(
+            """
+            [Room](https://matrix.to/#/!room:matrix.org), \
+            [Room](https://matrix.to/#/#room:matrix.org), \
+            [Alice](https://matrix.to/#/@alice:matrix.org), \
+            [Bob](https://matrix.to/#/@bob:matrix.org), \
+            @room
+            """
+        )
         mentionState = viewModel.getMentionsState()
         XCTAssertEqual(Set(mentionState.userIds), ["@alice:matrix.org", "@bob:matrix.org"])
         XCTAssertEqual(mentionState.roomAliases, ["#room:matrix.org"])
