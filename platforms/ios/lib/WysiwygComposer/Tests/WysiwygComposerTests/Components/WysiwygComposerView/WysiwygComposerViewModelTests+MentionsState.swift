@@ -93,7 +93,7 @@ extension WysiwygComposerViewModelTests {
                        MentionsState(userIds: ["@alice:matrix.org"], roomIds: [], roomAliases: [], hasAtRoomMention: false))
     }
     
-    func testMultipleMentionsBySettingThemWithContent() {
+    func testMultipleMentionsBySettingThemWithHtmlContent() {
         viewModel.setHtmlContent(
             """
             <p><a href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>, \
@@ -103,12 +103,14 @@ extension WysiwygComposerViewModelTests {
             @room</p>
             """
         )
-        var mentionState = viewModel.getMentionsState()
+        let mentionState = viewModel.getMentionsState()
         XCTAssertEqual(Set(mentionState.userIds), ["@alice:matrix.org", "@bob:matrix.org"])
         XCTAssertEqual(mentionState.roomAliases, ["#room:matrix.org"])
         XCTAssertEqual(mentionState.roomIds, ["!room:matrix.org"])
         XCTAssertTrue(mentionState.hasAtRoomMention)
-        
+    }
+    
+    func testMultipleMentionsBySettingThemWithMarkdownContent() {
         viewModel.setMarkdownContent(
             """
             [Room](https://matrix.to/#/!room:matrix.org), \
@@ -118,7 +120,7 @@ extension WysiwygComposerViewModelTests {
             @room
             """
         )
-        mentionState = viewModel.getMentionsState()
+        let mentionState = viewModel.getMentionsState()
         XCTAssertEqual(Set(mentionState.userIds), ["@alice:matrix.org", "@bob:matrix.org"])
         XCTAssertEqual(mentionState.roomAliases, ["#room:matrix.org"])
         XCTAssertEqual(mentionState.roomIds, ["!room:matrix.org"])
