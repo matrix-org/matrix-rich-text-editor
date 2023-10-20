@@ -98,7 +98,6 @@ extension WysiwygComposerViewModelTests {
         )
     }
     
-
     func testAtMentionWithNoSuggestionAtLeading() {
         _ = viewModel.replaceText(range: .zero, replacementText: "Text")
         viewModel.select(range: .init(location: 0, length: 0))
