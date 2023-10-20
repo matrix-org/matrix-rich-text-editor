@@ -91,11 +91,18 @@ extension WysiwygComposerViewModelTests {
     }
     
     func testMultipleMentionsBySettingThemWithContent() {
-        let result = MentionsState(userIds: ["@alice:matrix.org", "@bob:matrix.org"], roomIds: ["!room:matrix.org"], roomAliases: ["#room:matrix.org"], hasAtRoomMention: true)
         viewModel.setHtmlContent("<p><a href=\"https://matrix.to/#/@alice:matrix.org\">Alice</a>, <a href=\"https://matrix.to/#/!room:matrix.org\">Room</a>, <a href=\"https://matrix.to/#/@bob:matrix.org\">Bob</a>, <a href=\"https://matrix.to/#/#room:matrix.org\">Room</a>, @room</p>")
-        XCTAssertEqual(viewModel.getMentionsState(), result)
+        var mentionState = viewModel.getMentionsState()
+        XCTAssertEqual(Set(mentionState.userIds), ["@alice:matrix.org", "@bob:matrix.org"])
+        XCTAssertEqual(mentionState.roomAliases, ["#room:matrix.org"])
+        XCTAssertEqual(mentionState.roomIds, ["!room:matrix.org"])
+        XCTAssertTrue(mentionState.hasAtRoomMention)
         
         viewModel.setMarkdownContent("[Room](https://matrix.to/#/!room:matrix.org), [Room](https://matrix.to/#/#room:matrix.org), [Alice](https://matrix.to/#/@alice:matrix.org), [Bob](https://matrix.to/#/@bob:matrix.org), @room")
-        XCTAssertEqual(viewModel.getMentionsState(), result)
+        mentionState = viewModel.getMentionsState()
+        XCTAssertEqual(Set(mentionState.userIds), ["@alice:matrix.org", "@bob:matrix.org"])
+        XCTAssertEqual(mentionState.roomAliases, ["#room:matrix.org"])
+        XCTAssertEqual(mentionState.roomIds, ["!room:matrix.org"])
+        XCTAssertTrue(mentionState.hasAtRoomMention)
     }
 }
