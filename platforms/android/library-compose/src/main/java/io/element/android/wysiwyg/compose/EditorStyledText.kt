@@ -24,7 +24,7 @@ import io.element.android.wysiwyg.display.MentionDisplayHandler
 fun EditorStyledText(
     text: CharSequence,
     modifier: Modifier = Modifier,
-    mentionDisplayHandler: MentionDisplayHandler? = null,
+    mentionDisplayHandler: (() -> MentionDisplayHandler)? = null,
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
 ) {
     val typeface = style.text.rememberTypeface()
@@ -34,7 +34,7 @@ fun EditorStyledText(
         view.setStyleConfig(style.toStyleConfig(view.context))
         view.applyStyle(style)
         view.typeface = typeface
-        view.mentionDisplayHandler = mentionDisplayHandler
+        view.mentionDisplayHandler = mentionDisplayHandler?.invoke()
         if (text is Spanned) {
             view.text = text
         } else {

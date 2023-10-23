@@ -106,7 +106,7 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier.fillMaxWidth().padding(10.dp),
                                 style = RichTextEditorDefaults.style(),
                                 onError = Timber::e,
-                                mentionDisplayHandler = mentionDisplayHandler
+                                mentionDisplayHandler = { mentionDisplayHandler }
                             )
                         }
                         EditorStyledText(

@@ -3,11 +3,7 @@ package io.element.android.wysiwyg.compose
 import android.view.View
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
@@ -23,6 +19,7 @@ import io.element.android.wysiwyg.display.MentionDisplayHandler
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 
 /**
@@ -44,7 +41,7 @@ fun RichTextEditor(
     state: RichTextEditorState = rememberRichTextEditorState(),
     registerStateUpdates: Boolean = true,
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
-    mentionDisplayHandler: MentionDisplayHandler? = null,
+    mentionDisplayHandler: (() -> MentionDisplayHandler)? = null,
     onError: (Throwable) -> Unit = {},
 ) {
     val isPreview = LocalInspectionMode.current
@@ -63,13 +60,12 @@ private fun RealEditor(
     modifier: Modifier = Modifier,
     style: RichTextEditorStyle,
     onError: (Throwable) -> Unit,
-    mentionDisplayHandler: MentionDisplayHandler?,
+    mentionDisplayHandler: (() -> MentionDisplayHandler)?,
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val textStyleTypeface = style.text.rememberTypeface()
 
-    var previousStyle by remember { mutableStateOf<RichTextEditorStyle?>(null) }
+    val textStyleTypeface = style.text.rememberTypeface()
 
     AndroidView(modifier = modifier, factory = {
         val view = EditorEditText(context).apply {
@@ -139,14 +135,12 @@ private fun RealEditor(
 
         view
     }, update = { view ->
-        if (style != previousStyle) {
-            view.setStyleConfig(style.toStyleConfig(view.context))
-            view.applyStyle(style)
-            previousStyle = style
-        }
+        Timber.d("RealEditor's update block called, recomposing")
+        view.setStyleConfig(style.toStyleConfig(view.context))
+        view.applyStyle(style)
         view.typeface = textStyleTypeface
         view.rustErrorCollector = RustErrorCollector(onError)
-        view.mentionDisplayHandler = mentionDisplayHandler
+        view.mentionDisplayHandler = mentionDisplayHandler?.invoke()
     })
 }
 
