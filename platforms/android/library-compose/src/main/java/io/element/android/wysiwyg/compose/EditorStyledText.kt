@@ -2,6 +2,7 @@ package io.element.android.wysiwyg.compose
 
 import android.text.Spanned
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import io.element.android.wysiwyg.EditorStyledTextView
@@ -27,7 +28,7 @@ fun EditorStyledText(
     mentionDisplayHandler: (() -> MentionDisplayHandler)? = null,
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
 ) {
-    val typeface = style.text.rememberTypeface()
+    val typeface by style.text.rememberTypeface()
     AndroidView(modifier = modifier, factory = { context ->
         EditorStyledTextView(context)
     }, update = { view ->

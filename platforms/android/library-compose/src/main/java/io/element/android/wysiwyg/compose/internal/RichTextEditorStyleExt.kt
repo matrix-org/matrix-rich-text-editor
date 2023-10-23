@@ -7,6 +7,7 @@ import android.util.TypedValue
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalFontFamilyResolver
@@ -73,8 +74,9 @@ internal fun PillStyle.toStyleConfig(): PillStyleConfig = PillStyleConfig(
 )
 
 @Composable
-internal fun TextStyle.rememberTypeface(): Typeface {
+internal fun TextStyle.rememberTypeface(): State<Typeface> {
     val resolver: FontFamily.Resolver = LocalFontFamilyResolver.current
+    @Suppress("UNCHECKED_CAST")
     return remember(resolver, this) {
         resolver.resolve(
             fontFamily = fontFamily,
@@ -82,7 +84,7 @@ internal fun TextStyle.rememberTypeface(): Typeface {
             fontStyle = fontStyle ?: FontStyle.Normal,
             fontSynthesis = fontSynthesis ?: FontSynthesis.All,
         )
-    }.value as Typeface
+    } as State<Typeface>
 }
 
 internal fun TextView.applyStyle(style: RichTextEditorStyle) {

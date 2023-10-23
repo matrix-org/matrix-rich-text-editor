@@ -3,6 +3,7 @@ package io.element.android.wysiwyg.compose
 import android.view.View
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -65,7 +66,7 @@ private fun RealEditor(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    val textStyleTypeface = style.text.rememberTypeface()
+    val typeface by style.text.rememberTypeface()
 
     AndroidView(modifier = modifier, factory = {
         val view = EditorEditText(context).apply {
@@ -138,7 +139,7 @@ private fun RealEditor(
         Timber.d("RealEditor's update block called, recomposing")
         view.setStyleConfig(style.toStyleConfig(view.context))
         view.applyStyle(style)
-        view.typeface = textStyleTypeface
+        view.typeface = typeface
         view.rustErrorCollector = RustErrorCollector(onError)
         view.mentionDisplayHandler = mentionDisplayHandler?.invoke()
     })
