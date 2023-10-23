@@ -116,8 +116,9 @@ object RichTextEditorDefaults {
      *
      * @param backgroundColor The background color to apply
      */
+    @Composable
     fun pillStyle(
-        backgroundColor: Color = Color.LightGray,
+        backgroundColor: Color = MaterialTheme.colorScheme.surfaceVariant,
     ) = PillStyle(
         backgroundColor = backgroundColor,
     )
