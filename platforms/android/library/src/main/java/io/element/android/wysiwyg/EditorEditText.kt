@@ -441,14 +441,14 @@ class EditorEditText : AppCompatEditText {
     }
 
     /**
-     * Set a link that applies to the current suggestion range
+     * Set a mention link that applies to the current suggestion range
      *
      * @param url The url of the new link
      * @param text The text to insert into the current suggestion range
      */
-    fun setLinkSuggestion(url: String, text: String) {
+    fun insertMentionAtSuggestion(url: String, text: String) {
         val result = viewModel.processInput(
-            EditorInputAction.SetLinkSuggestion(
+            EditorInputAction.InsertMentionAtSuggestion(
                 text = text,
                 url = url,
             )

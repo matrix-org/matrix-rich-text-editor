@@ -171,7 +171,7 @@ class RichTextEditor : LinearLayout {
                         if(item == Mention.NotifyEveryone) {
                             binding.richTextEditText.replaceTextSuggestion(item.text)
                         } else {
-                            binding.richTextEditText.setLinkSuggestion(
+                            binding.richTextEditText.insertMentionAtSuggestion(
                                 item.link, item.text
                             )
                         }

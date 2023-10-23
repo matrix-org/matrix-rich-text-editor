@@ -207,8 +207,8 @@ class RichTextEditorState(
         _viewActions.emit(ViewAction.ReplaceSuggestionText(text))
     }
 
-    suspend fun setLinkSuggestion(text: String, link: String) {
-        _viewActions.emit(ViewAction.SetSuggestionLink(text, link))
+    suspend fun insertMentionAtSuggestion(text: String, link: String) {
+        _viewActions.emit(ViewAction.InsertMentionAtSuggestion(text, link))
     }
 
     /**

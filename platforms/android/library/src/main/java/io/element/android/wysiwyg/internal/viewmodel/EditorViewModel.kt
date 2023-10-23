@@ -112,7 +112,7 @@ internal class EditorViewModel(
                 is EditorInputAction.Quote -> composer?.quote()
                 is EditorInputAction.Indent -> composer?.indent()
                 is EditorInputAction.Unindent -> composer?.unindent()
-                is EditorInputAction.SetLinkSuggestion -> insertMentionAtSuggestion(action)
+                is EditorInputAction.InsertMentionAtSuggestion -> insertMentionAtSuggestion(action)
             }
         }.onFailure(::onComposerFailure)
             .getOrNull()
@@ -211,7 +211,7 @@ internal class EditorViewModel(
         }
     }
 
-    private fun insertMentionAtSuggestion(action: EditorInputAction.SetLinkSuggestion): ComposerUpdate? {
+    private fun insertMentionAtSuggestion(action: EditorInputAction.InsertMentionAtSuggestion): ComposerUpdate? {
         val (url, text) = action
 
         val suggestion = (curMenuAction as? MenuAction.Suggestion)

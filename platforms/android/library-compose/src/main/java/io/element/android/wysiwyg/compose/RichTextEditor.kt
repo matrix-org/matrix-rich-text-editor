@@ -130,7 +130,7 @@ private fun RealEditor(
                             is ViewAction.RemoveLink -> removeLink()
                             is ViewAction.InsertLink -> insertLink(it.url, it.text)
                             is ViewAction.ReplaceSuggestionText -> replaceTextSuggestion(it.text)
-                            is ViewAction.SetSuggestionLink -> setLinkSuggestion(url = it.url, text = it.text)
+                            is ViewAction.InsertMentionAtSuggestion -> insertMentionAtSuggestion(url = it.url, text = it.text)
                         }
                     }
                 }

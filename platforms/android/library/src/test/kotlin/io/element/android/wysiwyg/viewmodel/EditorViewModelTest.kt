@@ -303,7 +303,7 @@ internal class EditorViewModelTest {
         viewModel.processInput(EditorInputAction.ReplaceText("@jonny"))
 
         composer.givenInsertMentionFromSuggestionResult(name, url, composerStateUpdate)
-        val result = viewModel.processInput(EditorInputAction.SetLinkSuggestion(url, name))
+        val result = viewModel.processInput(EditorInputAction.InsertMentionAtSuggestion(url, name))
 
         verify {
             composer.instance.insertMentionAtSuggestion(url, attributes = emptyList(), text = name, suggestion = suggestionPattern)
