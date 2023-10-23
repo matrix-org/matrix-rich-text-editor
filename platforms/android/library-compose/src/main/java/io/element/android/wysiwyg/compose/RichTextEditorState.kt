@@ -203,6 +203,14 @@ class RichTextEditorState(
         this.hasFocus = hasFocus
     }
 
+    suspend fun replaceSuggestion(text: String) {
+        _viewActions.emit(ViewAction.ReplaceSuggestionText(text))
+    }
+
+    suspend fun setLinkSuggestion(text: String, link: String) {
+        _viewActions.emit(ViewAction.SetSuggestionLink(text, link))
+    }
+
     /**
      * The number of lines displayed in the editor.
      */

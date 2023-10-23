@@ -50,6 +50,8 @@ internal class FakeViewActionCollector(
             ViewAction.ToggleQuote -> toggleQuote()
             ViewAction.Undo -> undo()
             ViewAction.Unindent -> unindent()
+            is ViewAction.ReplaceSuggestionText -> Unit
+            is ViewAction.SetSuggestionLink -> Unit
         }
     }
     private fun toggleInlineFormat(inlineFormat: InlineFormat): Boolean {

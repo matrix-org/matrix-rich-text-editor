@@ -3,7 +3,11 @@ package io.element.android.wysiwyg.compose
 import android.view.View
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
@@ -65,6 +69,8 @@ private fun RealEditor(
     val coroutineScope = rememberCoroutineScope()
     val textStyleTypeface = style.text.rememberTypeface()
 
+    var previousStyle by remember { mutableStateOf<RichTextEditorStyle?>(null) }
+
     AndroidView(modifier = modifier, factory = {
         val view = EditorEditText(context).apply {
             if (registerStateUpdates) {
@@ -123,6 +129,8 @@ private fun RealEditor(
                             is ViewAction.SetLink -> setLink(it.url)
                             is ViewAction.RemoveLink -> removeLink()
                             is ViewAction.InsertLink -> insertLink(it.url, it.text)
+                            is ViewAction.ReplaceSuggestionText -> replaceTextSuggestion(it.text)
+                            is ViewAction.SetSuggestionLink -> setLinkSuggestion(url = it.url, text = it.text)
                         }
                     }
                 }
@@ -131,8 +139,11 @@ private fun RealEditor(
 
         view
     }, update = { view ->
-        view.setStyleConfig(style.toStyleConfig(view.context))
-        view.applyStyle(style)
+        if (style != previousStyle) {
+            view.setStyleConfig(style.toStyleConfig(view.context))
+            view.applyStyle(style)
+            previousStyle = style
+        }
         view.typeface = textStyleTypeface
         view.rustErrorCollector = RustErrorCollector(onError)
         view.mentionDisplayHandler = mentionDisplayHandler

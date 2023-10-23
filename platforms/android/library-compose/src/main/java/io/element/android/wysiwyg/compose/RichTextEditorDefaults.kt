@@ -117,7 +117,7 @@ object RichTextEditorDefaults {
      * @param backgroundColor The background color to apply
      */
     fun pillStyle(
-        backgroundColor: Color = Color.Transparent,
+        backgroundColor: Color = Color.LightGray,
     ) = PillStyle(
         backgroundColor = backgroundColor,
     )
