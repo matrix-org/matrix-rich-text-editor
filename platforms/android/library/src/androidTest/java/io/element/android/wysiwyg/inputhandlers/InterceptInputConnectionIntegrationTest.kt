@@ -22,11 +22,12 @@ class InterceptInputConnectionIntegrationTest {
     private val styleConfig = createFakeStyleConfig()
     private val viewModel = EditorViewModel(
         provideComposer = { newComposerModel() },
-        htmlConverter = HtmlConverter.Factory.create(context = app,
-            styleConfig = { styleConfig },
-            mentionDisplayHandlerProvider = { null }
+    ).also {
+        it.htmlConverter = HtmlConverter.Factory.create(context = app,
+            styleConfig = styleConfig,
+            mentionDisplayHandler = null,
         )
-    )
+    }
     private val textView = EditText(ApplicationProvider.getApplicationContext())
     private val inputConnection = InterceptInputConnection(
         viewModel = viewModel,

@@ -164,7 +164,7 @@ object RichTextEditorDefaults {
      */
     @Composable
     fun linkStyle(
-        color: Color = MaterialTheme.colorScheme.scrim,
+        color: Color = Color.Blue,
     ) = LinkStyle(
         color = color,
     )
