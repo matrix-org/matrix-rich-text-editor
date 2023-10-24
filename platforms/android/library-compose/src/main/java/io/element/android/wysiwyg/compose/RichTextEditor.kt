@@ -13,7 +13,7 @@ import androidx.core.widget.addTextChangedListener
 import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.compose.internal.ViewAction
 import io.element.android.wysiwyg.compose.internal.applyDefaultStyle
-import io.element.android.wysiwyg.compose.internal.applyStyle
+import io.element.android.wysiwyg.compose.internal.applyStyleInCompose
 import io.element.android.wysiwyg.compose.internal.rememberTypeface
 import io.element.android.wysiwyg.compose.internal.toStyleConfig
 import io.element.android.wysiwyg.display.MentionDisplayHandler
@@ -137,8 +137,8 @@ private fun RealEditor(
         view
     }, update = { view ->
         Timber.d("RealEditor's update block called, recomposing")
-        view.setStyleConfig(style.toStyleConfig(view.context))
-        view.applyStyle(style)
+        view.applyStyleInCompose(style)
+        view.styleConfig = style.toStyleConfig(view.context)
         view.typeface = typeface
         view.rustErrorCollector = RustErrorCollector(onError)
         view.mentionDisplayHandler = mentionDisplayHandler?.invoke()
@@ -166,6 +166,6 @@ private fun PreviewEditor(
 
         view
     }, update = { view ->
-        view.applyStyle(style)
+        view.applyStyleInCompose(style)
     })
 }

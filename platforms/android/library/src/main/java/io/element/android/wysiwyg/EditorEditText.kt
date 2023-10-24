@@ -43,22 +43,52 @@ class EditorEditText : AppCompatEditText {
 
     private var inputConnection: InterceptInputConnection? = null
 
-    private lateinit var styleConfig: StyleConfig
+    var styleConfig: StyleConfig? = null
+        set(value) {
+            field = value
+
+            htmlConverter = value?.let { createHtmlConverter(it) }
+
+            if (value != null) {
+                inlineCodeBgHelper = SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(value.inlineCode)
+                codeBlockBgHelper = SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(value.codeBlock)
+            }
+        }
 
     private lateinit var inlineCodeBgHelper: SpanBackgroundHelper
     private lateinit var codeBlockBgHelper: SpanBackgroundHelper
 
     private val viewModel: EditorViewModel by viewModel(
         viewModelInitializer = {
-            val htmlConverter = HtmlConverter.Factory.create(
-                context = context.applicationContext,
-                styleConfigProvider = {styleConfig},
-                mentionDisplayHandlerProvider = {mentionDisplayHandler},
-            )
-            val provideComposer = { if (!isInEditMode) newComposerModel() else null }
-            EditorViewModel(provideComposer, htmlConverter)
+            val provideComposer = if (!isInEditMode) { { newComposerModel() } } else { { null } }
+            EditorViewModel(provideComposer)
         }
     )
+
+    /**
+     * Set the mention display handler to display mentions in a custom way.
+     */
+    var mentionDisplayHandler: MentionDisplayHandler? = null
+        set(value) {
+            field = value?.let { MemoizingMentionDisplayHandler(it) }
+            htmlConverter = styleConfig?.let { createHtmlConverter(it) }
+        }
+
+    private var htmlConverter: HtmlConverter? = null
+        set(value) {
+            field = value
+            viewModel.htmlConverter = value
+
+            rerender()
+        }
+
+    private fun createHtmlConverter(styleConfig: StyleConfig): HtmlConverter? {
+        return HtmlConverter.Factory.create(
+            context = context.applicationContext,
+            styleConfig = styleConfig,
+            mentionDisplayHandler = mentionDisplayHandler,
+        )
+    }
 
     private val spannableFactory = ReuseSourceSpannableFactory()
 
@@ -67,11 +97,12 @@ class EditorEditText : AppCompatEditText {
     constructor(context: Context) : this(context, null)
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-        setStyleConfig(EditorEditTextAttributeReader(context, attrs).styleConfig)
+        styleConfig = EditorEditTextAttributeReader(context, attrs).styleConfig
     }
 
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) :
-            super(context, attrs, defStyleAttr)
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
+        styleConfig = EditorEditTextAttributeReader(context, attrs).styleConfig
+    }
 
     init {
         setSpannableFactory(spannableFactory)
@@ -96,14 +127,6 @@ class EditorEditText : AppCompatEditText {
         fun onLinkActionChanged(linkAction: LinkAction?)
     }
 
-
-    /**
-     * Set the mention display handler to display mentions in a custom way.
-     */
-    var mentionDisplayHandler: MentionDisplayHandler? = null
-        set(value) {
-            field = value?.let { MemoizingMentionDisplayHandler(it) }
-        }
     var selectionChangeListener: OnSelectionChangeListener? = null
     var actionStatesChangedListener: OnActionStatesChangedListener? = null
         set(value) {
@@ -259,17 +282,6 @@ class EditorEditText : AppCompatEditText {
                 false
             }
         }
-    }
-
-    /**
-     * Apply custom style. This overrides any style set in the layout XML.
-     */
-    fun setStyleConfig(styleConfig: StyleConfig) {
-        this.styleConfig = styleConfig
-        inlineCodeBgHelper = SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(styleConfig.inlineCode)
-        codeBlockBgHelper = SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(styleConfig.codeBlock)
-
-        rerender()
     }
 
     override fun setText(text: CharSequence?, type: BufferType?) {

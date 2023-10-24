@@ -87,7 +87,7 @@ internal fun TextStyle.rememberTypeface(): State<Typeface> {
     } as State<Typeface>
 }
 
-internal fun TextView.applyStyle(style: RichTextEditorStyle) {
+internal fun TextView.applyStyleInCompose(style: RichTextEditorStyle) {
     setTextColor(style.text.color.toArgb())
     setTextSize(TypedValue.COMPLEX_UNIT_SP, style.text.fontSize.value)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

@@ -21,8 +21,8 @@ class StyledHtmlConverter(
         Timber.d("Configure with style: $style")
         htmlConverter = HtmlConverter.Factory.create(
             context = context,
-            styleConfigProvider = { style.toStyleConfig(context) },
-            mentionDisplayHandlerProvider = { mentionDisplayHandler },
+            styleConfig = style.toStyleConfig(context),
+            mentionDisplayHandler = mentionDisplayHandler,
         )
     }
 

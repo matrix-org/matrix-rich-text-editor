@@ -16,9 +16,9 @@ import uniffi.wysiwyg_composer.*
 
 internal class EditorViewModel(
     private val provideComposer: () -> ComposerModelInterface?,
-    private val htmlConverter: HtmlConverter,
 ) : ViewModel() {
 
+    var htmlConverter: HtmlConverter? = null
     private var composer: ComposerModelInterface? = provideComposer()
 
     var rustErrorCollector: RustErrorCollector? = null
@@ -256,6 +256,6 @@ internal class EditorViewModel(
     }
 
     private fun stringToSpans(string: String): CharSequence =
-        htmlConverter.fromHtmlToSpans(string)
+        htmlConverter?.fromHtmlToSpans(string) ?: ""
 
 }

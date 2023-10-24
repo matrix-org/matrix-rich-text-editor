@@ -50,9 +50,10 @@ class MainActivity : ComponentActivity() {
         val mentionDisplayHandler = DefaultMentionDisplayHandler(if (window.decorView.isInEditMode) null else newMentionDetector())
         val htmlConverter = StyledHtmlConverter(this, mentionDisplayHandler)
         setContent {
-            val style = RichTextEditorDefaults.style()
-            htmlConverter.configureWith(style = style)
             RichTextEditorTheme {
+                val style = RichTextEditorDefaults.style()
+                htmlConverter.configureWith(style = style)
+
                 val state = rememberRichTextEditorState(initialFocus = true)
 
                 LaunchedEffect(state.menuAction) {

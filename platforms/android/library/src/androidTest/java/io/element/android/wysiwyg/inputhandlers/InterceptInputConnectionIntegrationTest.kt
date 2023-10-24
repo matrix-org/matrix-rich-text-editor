@@ -23,7 +23,7 @@ class InterceptInputConnectionIntegrationTest {
     private val viewModel = EditorViewModel(
         provideComposer = { newComposerModel() },
         htmlConverter = HtmlConverter.Factory.create(context = app,
-            styleConfigProvider = { styleConfig },
+            styleConfig = { styleConfig },
             mentionDisplayHandlerProvider = { null }
         )
     )

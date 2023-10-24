@@ -1,12 +1,13 @@
 package io.element.android.wysiwyg.compose
 
 import android.text.Spanned
+import android.widget.TextView
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import io.element.android.wysiwyg.EditorStyledTextView
-import io.element.android.wysiwyg.compose.internal.applyStyle
+import io.element.android.wysiwyg.compose.internal.applyStyleInCompose
 import io.element.android.wysiwyg.compose.internal.rememberTypeface
 import io.element.android.wysiwyg.compose.internal.toStyleConfig
 import io.element.android.wysiwyg.display.MentionDisplayHandler
@@ -32,12 +33,12 @@ fun EditorStyledText(
     AndroidView(modifier = modifier, factory = { context ->
         EditorStyledTextView(context)
     }, update = { view ->
-        view.setStyleConfig(style.toStyleConfig(view.context))
-        view.applyStyle(style)
+        view.styleConfig = style.toStyleConfig(view.context)
+        view.applyStyleInCompose(style)
         view.typeface = typeface
         view.mentionDisplayHandler = mentionDisplayHandler?.invoke()
         if (text is Spanned) {
-            view.text = text
+            view.setText(text, TextView.BufferType.SPANNABLE)
         } else {
             view.setHtml(text.toString())
         }

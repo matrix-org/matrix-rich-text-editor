@@ -13,8 +13,8 @@ interface HtmlConverter {
     object Factory {
         fun create(
             context: Context,
-            styleConfigProvider: () -> StyleConfig,
-            mentionDisplayHandlerProvider: () -> MentionDisplayHandler?,
+            styleConfig: StyleConfig,
+            mentionDisplayHandler: MentionDisplayHandler?,
         ): HtmlConverter {
             val resourcesProvider =
                 AndroidResourcesHelper(context.applicationContext as Application)
@@ -22,8 +22,8 @@ interface HtmlConverter {
                 HtmlToSpansParser(
                     resourcesHelper = resourcesProvider,
                     html = html,
-                    styleConfig = styleConfigProvider,
-                    mentionDisplayHandler = mentionDisplayHandlerProvider,
+                    styleConfig = styleConfig,
+                    mentionDisplayHandler = mentionDisplayHandler,
                 )
             })
         }
