@@ -139,6 +139,8 @@ class HtmlToSpansParserTest {
 
             override fun resolveMentionDisplay(text: String, url: String): TextDisplay =
                 TextDisplay.Pill
+
+            override fun isMention(url: String): Boolean = url.startsWith("https://matrix.to/#/@")
         })
         assertThat(
             spanned.dumpSpans(), equalTo(
