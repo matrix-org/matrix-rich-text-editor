@@ -8,8 +8,4 @@ class TestMentionDisplayHandler(
 ) : MentionDisplayHandler {
     override fun resolveAtRoomMentionDisplay(): TextDisplay = textDisplay
     override fun resolveMentionDisplay(text: String, url: String): TextDisplay = textDisplay
-
-    override fun isMention(url: String): Boolean {
-        return true
-    }
 }

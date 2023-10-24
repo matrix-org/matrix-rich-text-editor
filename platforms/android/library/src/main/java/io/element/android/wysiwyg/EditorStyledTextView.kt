@@ -2,11 +2,8 @@ package io.element.android.wysiwyg
 
 import android.content.Context
 import android.graphics.Canvas
-import android.os.Parcel
-import android.os.Parcelable
 import android.text.Spanned
 import android.util.AttributeSet
-import android.widget.TextView
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.graphics.withTranslation
 import io.element.android.wysiwyg.display.MentionDisplayHandler
@@ -16,11 +13,15 @@ import io.element.android.wysiwyg.view.StyleConfig
 import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelper
 import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelperFactory
 import io.element.android.wysiwyg.view.spans.ReuseSourceSpannableFactory
+import uniffi.wysiwyg_composer.MentionDetector
+import uniffi.wysiwyg_composer.newMentionDetector
 
 /**
  * This TextView can display all spans used by the editor.
  */
 open class EditorStyledTextView : AppCompatTextView {
+
+    private var mentionDetector: MentionDetector? = null
 
     private lateinit var inlineCodeBgHelper: SpanBackgroundHelper
     private lateinit var codeBlockBgHelper: SpanBackgroundHelper
@@ -49,11 +50,6 @@ open class EditorStyledTextView : AppCompatTextView {
             htmlConverter = styleConfig?.let { createHtmlConverter(it) }
         }
     private var htmlConverter: HtmlConverter? = null
-        set(value) {
-            field = value
-
-            invalidate()
-        }
 
     init {
         setSpannableFactory(spannableFactory)
@@ -102,7 +98,29 @@ open class EditorStyledTextView : AppCompatTextView {
         super.onDraw(canvas)
     }
 
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+
+        mentionDetector = if (isInEditMode) null else newMentionDetector()
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+
+        mentionDetector?.destroy()
+        mentionDetector = null
+    }
+
     private fun createHtmlConverter(styleConfig: StyleConfig): HtmlConverter {
-        return HtmlConverter.Factory.create(context, styleConfig, mentionDisplayHandler)
+        return HtmlConverter.Factory.create(
+            context = context,
+            styleConfig = styleConfig,
+            mentionDisplayHandler = mentionDisplayHandler,
+            mentionDetector = mentionDetector?.let { detector ->
+                { _, url ->
+                    detector.isUserMention(url)
+                }
+            }
+        )
     }
 }

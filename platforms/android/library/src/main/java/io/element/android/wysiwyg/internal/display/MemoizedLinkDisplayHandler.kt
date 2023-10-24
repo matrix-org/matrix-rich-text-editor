@@ -38,6 +38,4 @@ internal class MemoizingMentionDisplayHandler(
 
         return calculated
     }
-
-    override fun isMention(url: String): Boolean = delegate.isMention(url)
 }

@@ -31,8 +31,9 @@ internal class EditorViewModelTest {
     private val htmlConverter = BasicHtmlConverter()
     private val viewModel = EditorViewModel(
         provideComposer = { composer.instance },
-        htmlConverter = htmlConverter,
-    )
+    ).also {
+        it.htmlConverter = htmlConverter
+    }
     private val actionsStatesCallback = mockk<(
         Map<ComposerAction, ActionState>
     ) -> Unit>(relaxed = true)

@@ -15,3 +15,7 @@
 mod mention;
 
 pub use crate::mention::{Mention, MentionKind, RoomIdentificationType};
+
+pub fn is_mention(url: &str) -> bool {
+    Mention::from_uri(url).is_some()
+}

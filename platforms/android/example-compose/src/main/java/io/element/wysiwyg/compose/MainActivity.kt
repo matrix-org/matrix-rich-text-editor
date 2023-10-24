@@ -30,6 +30,7 @@ import io.element.android.wysiwyg.compose.RichTextEditor
 import io.element.android.wysiwyg.compose.RichTextEditorDefaults
 import io.element.android.wysiwyg.compose.StyledHtmlConverter
 import io.element.android.wysiwyg.compose.rememberRichTextEditorState
+import io.element.android.wysiwyg.display.TextDisplay
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
 import io.element.wysiwyg.compose.matrix.Mention
@@ -101,7 +102,8 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier.fillMaxWidth().padding(10.dp),
                                 style = RichTextEditorDefaults.style(),
                                 onError = Timber::e,
-                                mentionDisplayHandler = { mentionDisplayHandler }
+                                resolveMentionDisplay = { _,_ -> TextDisplay.Pill },
+                                resolveRoomMentionDisplay = { TextDisplay.Pill },
                             )
                         }
                         EditorStyledText(
@@ -109,6 +111,8 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp),
+                            resolveMentionDisplay = { _,_ -> TextDisplay.Pill },
+                            resolveRoomMentionDisplay = { TextDisplay.Pill },
                         )
 
                         Spacer(modifier = Modifier.weight(1f))

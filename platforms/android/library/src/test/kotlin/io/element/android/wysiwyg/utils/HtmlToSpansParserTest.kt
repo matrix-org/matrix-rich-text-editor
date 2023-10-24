@@ -139,8 +139,6 @@ class HtmlToSpansParserTest {
 
             override fun resolveMentionDisplay(text: String, url: String): TextDisplay =
                 TextDisplay.Pill
-
-            override fun isMention(url: String): Boolean = url.startsWith("https://matrix.to/#/@")
         })
         assertThat(
             spanned.dumpSpans(), equalTo(
@@ -166,8 +164,11 @@ class HtmlToSpansParserTest {
         return HtmlToSpansParser(
             resourcesHelper = AndroidResourcesHelper(application = app),
             html = html,
-            styleConfig = { styleConfig },
-            mentionDisplayHandler = { mentionDisplayHandler },
+            styleConfig = styleConfig,
+            mentionDisplayHandler = mentionDisplayHandler,
+            mentionDetector = { _, url ->
+                url.startsWith("https://matrix.to/#/@")
+            }
         ).convert()
     }
 }

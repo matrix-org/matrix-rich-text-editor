@@ -11,6 +11,7 @@ import io.element.android.wysiwyg.compose.internal.applyStyleInCompose
 import io.element.android.wysiwyg.compose.internal.rememberTypeface
 import io.element.android.wysiwyg.compose.internal.toStyleConfig
 import io.element.android.wysiwyg.display.MentionDisplayHandler
+import io.element.android.wysiwyg.display.TextDisplay
 
 /**
  * A composable EditorStyledText.
@@ -26,7 +27,8 @@ import io.element.android.wysiwyg.display.MentionDisplayHandler
 fun EditorStyledText(
     text: CharSequence,
     modifier: Modifier = Modifier,
-    mentionDisplayHandler: (() -> MentionDisplayHandler)? = null,
+    resolveMentionDisplay: ((text: String, url: String) -> TextDisplay)? = null,
+    resolveRoomMentionDisplay: (() -> TextDisplay)? = null,
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
 ) {
     val typeface by style.text.rememberTypeface()
@@ -36,7 +38,16 @@ fun EditorStyledText(
         view.styleConfig = style.toStyleConfig(view.context)
         view.applyStyleInCompose(style)
         view.typeface = typeface
-        view.mentionDisplayHandler = mentionDisplayHandler?.invoke()
+        view.mentionDisplayHandler = object : MentionDisplayHandler {
+            override fun resolveMentionDisplay(text: String, url: String): TextDisplay {
+                return resolveMentionDisplay?.invoke(text, url) ?: TextDisplay.Plain
+            }
+
+            override fun resolveAtRoomMentionDisplay(): TextDisplay {
+                return resolveRoomMentionDisplay?.invoke() ?: TextDisplay.Plain
+            }
+
+        }
         if (text is Spanned) {
             view.setText(text, TextView.BufferType.SPANNABLE)
         } else {

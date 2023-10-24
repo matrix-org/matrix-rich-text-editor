@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use widestring::Utf16String;
 
 #[derive(Default, uniffi::Object)]
 pub struct MentionDetector {}
@@ -13,7 +12,6 @@ impl MentionDetector {
 #[uniffi::export]
 impl MentionDetector {
     pub fn is_user_mention(self: &Arc<Self>, url: String) -> bool {
-        let url = Utf16String::from_str(&url);
-        wysiwyg::is_user_mention(&url)
+        matrix_mentions::is_mention(&url)
     }
 }

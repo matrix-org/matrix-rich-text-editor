@@ -16,8 +16,4 @@ class MatrixMentionMentionDisplayHandler(
 
     override fun resolveAtRoomMentionDisplay(): TextDisplay =
         TextDisplay.Pill
-
-    override fun isMention(url: String): Boolean {
-        return mentionDetector?.isUserMention(url) ?: false
-    }
 }

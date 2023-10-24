@@ -17,6 +17,7 @@ import io.element.android.wysiwyg.compose.internal.applyStyleInCompose
 import io.element.android.wysiwyg.compose.internal.rememberTypeface
 import io.element.android.wysiwyg.compose.internal.toStyleConfig
 import io.element.android.wysiwyg.display.MentionDisplayHandler
+import io.element.android.wysiwyg.display.TextDisplay
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -42,7 +43,8 @@ fun RichTextEditor(
     state: RichTextEditorState = rememberRichTextEditorState(),
     registerStateUpdates: Boolean = true,
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
-    mentionDisplayHandler: (() -> MentionDisplayHandler)? = null,
+    resolveMentionDisplay: ((text: String, url: String) -> TextDisplay)? = null,
+    resolveRoomMentionDisplay: (() -> TextDisplay)? = null,
     onError: (Throwable) -> Unit = {},
 ) {
     val isPreview = LocalInspectionMode.current
@@ -50,7 +52,15 @@ fun RichTextEditor(
     if (isPreview) {
         PreviewEditor(state, modifier, style)
     } else {
-        RealEditor(state, registerStateUpdates, modifier, style, onError, mentionDisplayHandler)
+        RealEditor(
+            state = state,
+            registerStateUpdates = registerStateUpdates,
+            modifier = modifier,
+            style = style,
+            onError = onError,
+            resolveMentionDisplay = resolveMentionDisplay,
+            resolveRoomMentionDisplay = resolveRoomMentionDisplay
+        )
     }
 }
 
@@ -61,7 +71,8 @@ private fun RealEditor(
     modifier: Modifier = Modifier,
     style: RichTextEditorStyle,
     onError: (Throwable) -> Unit,
-    mentionDisplayHandler: (() -> MentionDisplayHandler)?,
+    resolveMentionDisplay: ((text: String, url: String) -> TextDisplay)?,
+    resolveRoomMentionDisplay: (() -> TextDisplay)?,
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -141,7 +152,16 @@ private fun RealEditor(
         view.styleConfig = style.toStyleConfig(view.context)
         view.typeface = typeface
         view.rustErrorCollector = RustErrorCollector(onError)
-        view.mentionDisplayHandler = mentionDisplayHandler?.invoke()
+        view.mentionDisplayHandler = object : MentionDisplayHandler {
+            override fun resolveMentionDisplay(text: String, url: String): TextDisplay {
+                return resolveMentionDisplay?.invoke(text, url) ?: TextDisplay.Plain
+            }
+
+            override fun resolveAtRoomMentionDisplay(): TextDisplay {
+                return resolveRoomMentionDisplay?.invoke() ?: TextDisplay.Plain
+            }
+
+        }
     })
 }
 

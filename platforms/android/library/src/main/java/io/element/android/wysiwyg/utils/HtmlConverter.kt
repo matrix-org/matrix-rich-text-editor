@@ -15,6 +15,7 @@ interface HtmlConverter {
             context: Context,
             styleConfig: StyleConfig,
             mentionDisplayHandler: MentionDisplayHandler?,
+            mentionDetector: ((text: String, url: String) -> Boolean)? = null,
         ): HtmlConverter {
             val resourcesProvider =
                 AndroidResourcesHelper(context.applicationContext as Application)
@@ -24,6 +25,7 @@ interface HtmlConverter {
                     html = html,
                     styleConfig = styleConfig,
                     mentionDisplayHandler = mentionDisplayHandler,
+                    mentionDetector = mentionDetector,
                 )
             })
         }

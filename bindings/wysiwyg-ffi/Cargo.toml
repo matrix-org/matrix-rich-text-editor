@@ -21,6 +21,7 @@ crate-type = ["cdylib", "staticlib"]
 # Keep the uniffi version here in sync with the installed version of
 # uniffi-bindgen that is called from
 # ../../examples/example-android/app/build.gradle
+matrix_mentions = { path = "../../crates/matrix_mentions" }
 uniffi = { workspace = true }
 uniffi_macros = { workspace = true }
 widestring = "1.0.2"

@@ -45,6 +45,7 @@ internal class HtmlToSpansParser(
     private val html: String,
     private val styleConfig: StyleConfig,
     private val mentionDisplayHandler: MentionDisplayHandler?,
+    private val mentionDetector: ((text: String, url: String) -> Boolean)? = null,
 ) : ContentHandler {
 
     /**
@@ -61,7 +62,7 @@ internal class HtmlToSpansParser(
 
     // Spans created to be used as 'marks' while parsing
     private sealed interface PlaceholderSpan {
-        data class Hyperlink(val link: String, val contentEditable: Boolean) : PlaceholderSpan
+        data class Hyperlink(val link: String, val contentEditable: Boolean, val data: Map<String, String>) : PlaceholderSpan
         sealed interface ListBlock : PlaceholderSpan {
             class Ordered : ListBlock
             class Unordered : ListBlock
@@ -156,8 +157,14 @@ internal class HtmlToSpansParser(
 
             "a" -> {
                 val url = attrs?.getValue("href") ?: return
-                val contentEditable = attrs?.getValue("contenteditable")?.toBoolean()
-                handleHyperlinkStart(url, contentEditable ?: true)
+                val contentEditable = attrs.getValue("contenteditable")?.toBoolean()
+                val data = buildMap<String, String> {
+                    for (i in 0..attrs.length) {
+                        val key = attrs.getLocalName(i) ?: continue
+                        set(key, attrs.getValue(i))
+                    }
+                }
+                handleHyperlinkStart(url, contentEditable ?: true, data)
             }
 
             "ul", "ol" -> {
@@ -316,8 +323,8 @@ internal class HtmlToSpansParser(
         )
     }
 
-    private fun handleHyperlinkStart(url: String, contentEditable: Boolean) {
-        val hyperlink = PlaceholderSpan.Hyperlink(url, contentEditable)
+    private fun handleHyperlinkStart(url: String, contentEditable: Boolean, data: Map<String, String>) {
+        val hyperlink = PlaceholderSpan.Hyperlink(url, contentEditable, data)
         addPlaceHolderSpan(hyperlink)
     }
 
@@ -336,10 +343,9 @@ internal class HtmlToSpansParser(
             )
         }
 
-        val handler = mentionDisplayHandler
-        val isMention = handler?.isMention(url) ?: false
+        val isMention = last.span.data.containsKey("data-mention-type") || mentionDetector?.invoke(innerText, url) == true
         val textDisplay = if (isMention) {
-            handler?.resolveMentionDisplay(innerText, url) ?: TextDisplay.Plain
+            mentionDisplayHandler?.resolveMentionDisplay(innerText, url) ?: TextDisplay.Plain
         } else {
             TextDisplay.Plain
         }
