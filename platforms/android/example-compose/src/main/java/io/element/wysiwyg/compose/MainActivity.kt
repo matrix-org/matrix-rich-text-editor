@@ -5,7 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -13,12 +12,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,8 +39,6 @@ import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import uniffi.wysiwyg_composer.ComposerAction
-import uniffi.wysiwyg_composer.MenuAction
-import uniffi.wysiwyg_composer.PatternKey
 
 class MainActivity : ComponentActivity() {
 
@@ -62,7 +55,7 @@ class MainActivity : ComponentActivity() {
                 val state = rememberRichTextEditorState(initialFocus = true)
 
                 LaunchedEffect(state.menuAction) {
-                    processMenuAction(state.menuAction)
+                    processMenuAction(state.menuAction, roomMemberSuggestions)
                 }
 
                 var linkDialogAction by remember { mutableStateOf<LinkAction?>(null) }
@@ -117,27 +110,20 @@ class MainActivity : ComponentActivity() {
                         )
 
                         Spacer(modifier = Modifier.weight(1f))
-                        LazyColumn(
-                            modifier = Modifier.fillMaxWidth()
-                                .heightIn(max = 320.dp)
-                        ) {
-                            items(roomMemberSuggestions) { item ->
-                                Column {
-                                    Text(
-                                        text = item.display,
-                                        modifier = Modifier.fillMaxWidth()
-                                            .padding(10.dp)
-                                            .clickable {
-                                                if (item == Mention.NotifyEveryone) {
-                                                    coroutineScope.launch { state.replaceSuggestion(item.text) }
-                                                } else {
-                                                    coroutineScope.launch { state.insertMentionAtSuggestion(item.text, item.link) }
-                                                }
-                                            })
-                                    Divider(modifier = Modifier.fillMaxWidth())
+                        SuggestionView(
+                            modifier = Modifier.heightIn(max = 320.dp),
+                            roomMemberSuggestions = roomMemberSuggestions,
+                            onReplaceSuggestionText = {
+                                coroutineScope.launch {
+                                    state.replaceSuggestion(it)
                                 }
-                            }
-                        }
+                            },
+                            onInsertMentionAtSuggestion = { text, link ->
+                                coroutineScope.launch {
+                                    state.insertMentionAtSuggestion(text, link)
+                                }
+                            },
+                        )
 
                         FormattingButtons(onResetText = {
                             coroutineScope.launch {
@@ -186,34 +172,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
-
-    private fun processMenuAction(menuAction: MenuAction?) {
-        when (menuAction) {
-            is MenuAction.Suggestion -> {
-                processSuggestion(menuAction)
-            }
-            else -> {
-                roomMemberSuggestions.clear()
-            }
-        }
-    }
-
-    private fun processSuggestion(suggestion: MenuAction.Suggestion) {
-        val text = suggestion.suggestionPattern.text
-        val people = listOf("alice", "bob", "carol", "dan").map(Mention::User)
-        val rooms = listOf("matrix", "element").map(Mention::Room)
-        val everyone = Mention.NotifyEveryone
-        val names = when (suggestion.suggestionPattern.key) {
-            PatternKey.AT -> people + everyone
-            PatternKey.HASH -> rooms
-            PatternKey.SLASH ->
-                emptyList() // TODO
-        }
-        val suggestions = names
-            .filter { it.display.contains(text) }
-        roomMemberSuggestions.clear()
-        roomMemberSuggestions.addAll(suggestions)
     }
 }
 
