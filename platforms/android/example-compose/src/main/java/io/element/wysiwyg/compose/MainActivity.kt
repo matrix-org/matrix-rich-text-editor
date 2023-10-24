@@ -39,6 +39,7 @@ import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import uniffi.wysiwyg_composer.ComposerAction
+import uniffi.wysiwyg_composer.newMentionDetector
 
 class MainActivity : ComponentActivity() {
 
@@ -46,7 +47,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val mentionDisplayHandler = DefaultMentionDisplayHandler()
+        val mentionDisplayHandler = DefaultMentionDisplayHandler(if (window.decorView.isInEditMode) null else newMentionDetector())
         val htmlConverter = StyledHtmlConverter(this, mentionDisplayHandler)
         setContent {
             val style = RichTextEditorDefaults.style()

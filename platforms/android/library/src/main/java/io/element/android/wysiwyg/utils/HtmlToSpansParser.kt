@@ -335,11 +335,11 @@ internal class HtmlToSpansParser(
                 ExtraCharacterSpan(), last.start + 1, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
             )
         }
-        // TODO: use data-mention-type instead
-        //  https://github.com/matrix-org/matrix-rich-text-editor/issues/709
-        val isMention = !last.span.contentEditable
+
+        val handler = mentionDisplayHandler()
+        val isMention = handler?.isMention(url) ?: false
         val textDisplay = if (isMention) {
-            mentionDisplayHandler()?.resolveMentionDisplay(innerText, url) ?: TextDisplay.Plain
+            handler?.resolveMentionDisplay(innerText, url) ?: TextDisplay.Plain
         } else {
             TextDisplay.Plain
         }

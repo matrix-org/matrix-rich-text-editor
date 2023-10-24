@@ -62,3 +62,7 @@ pub use crate::suggestion_pattern::SuggestionPattern;
 pub use crate::text_update::ReplaceAll;
 pub use crate::text_update::Selection;
 pub use crate::text_update::TextUpdate;
+
+pub fn is_user_mention<S: UnicodeString>(url: &S) -> bool {
+    matrix_mentions::Mention::from_uri(&url.to_string()).is_some()
+}

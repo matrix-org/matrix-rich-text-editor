@@ -175,7 +175,7 @@ impl Mention {
 /// 3 - As a custom uri
 ///  
 /// If any of the above succeed, return Some<MatrixIdI. Else return None.
-fn parse_matrix_id(uri: &str) -> Option<MatrixId> {
+pub fn parse_matrix_id(uri: &str) -> Option<MatrixId> {
     if let Ok(matrix_uri) = MatrixUri::parse(uri) {
         return Some(matrix_uri.id().to_owned());
     } else if let Ok(matrix_to_uri) = MatrixToUri::parse(uri) {

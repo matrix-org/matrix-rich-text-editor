@@ -18,8 +18,11 @@ import io.element.android.wysiwyg.poc.matrix.Mention
 import io.element.android.wysiwyg.poc.matrix.MatrixMentionMentionDisplayHandler
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
+import uniffi.wysiwyg_composer.MentionDetector
 import uniffi.wysiwyg_composer.MenuAction
 import uniffi.wysiwyg_composer.PatternKey
+import uniffi.wysiwyg_composer.newComposerModel
+import uniffi.wysiwyg_composer.newMentionDetector
 
 class RichTextEditor : LinearLayout {
 
@@ -119,7 +122,7 @@ class RichTextEditor : LinearLayout {
                 EditorEditText.OnMenuActionChangedListener { menuAction ->
                     updateSuggestions(menuAction)
                 }
-            richTextEditText.mentionDisplayHandler = MatrixMentionMentionDisplayHandler()
+            richTextEditText.mentionDisplayHandler = MatrixMentionMentionDisplayHandler(if (isInEditMode) null else newMentionDetector())
         }
     }
 

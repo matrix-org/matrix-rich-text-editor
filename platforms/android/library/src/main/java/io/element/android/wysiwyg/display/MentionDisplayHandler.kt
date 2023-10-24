@@ -14,4 +14,9 @@ interface MentionDisplayHandler {
      * Return the method with which to display an at-room mention
      */
     fun resolveAtRoomMentionDisplay(): TextDisplay
+
+    /**
+     * Return true if the given URL is a mention one
+     */
+    fun isMention(url: String): Boolean
 }
