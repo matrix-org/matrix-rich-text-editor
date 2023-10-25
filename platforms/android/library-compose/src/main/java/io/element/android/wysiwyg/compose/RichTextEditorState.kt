@@ -203,10 +203,16 @@ class RichTextEditorState(
         this.hasFocus = hasFocus
     }
 
+    /**
+     * Replaces the text in the current mention suggestion by [text].
+     */
     suspend fun replaceSuggestion(text: String) {
         _viewActions.emit(ViewAction.ReplaceSuggestionText(text))
     }
 
+    /**
+     * Inserts a mention at the current mention suggestion, with the text [text] and the [link] url.
+     */
     suspend fun insertMentionAtSuggestion(text: String, link: String) {
         _viewActions.emit(ViewAction.InsertMentionAtSuggestion(text, link))
     }
