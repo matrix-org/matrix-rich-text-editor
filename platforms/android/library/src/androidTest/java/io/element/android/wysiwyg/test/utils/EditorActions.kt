@@ -103,7 +103,7 @@ object Editor {
 
         override fun perform(uiController: UiController?, view: View?) {
             val editor = view as? EditorEditText ?: return
-            editor.mentionDisplayHandler = mentionDisplayHandler
+            editor.setupHtmlConverter(editor.styleConfig, mentionDisplayHandler = mentionDisplayHandler)
         }
     }
 
