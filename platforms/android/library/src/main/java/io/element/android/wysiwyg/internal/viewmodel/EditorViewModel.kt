@@ -256,6 +256,6 @@ internal class EditorViewModel(
     }
 
     private fun stringToSpans(string: String): CharSequence =
-        htmlConverter?.fromHtmlToSpans(string) ?: ""
+        htmlConverter?.fromHtmlToSpans(string) ?: error("HtmlConverter not set. This seems like a configuration issue.")
 
 }
