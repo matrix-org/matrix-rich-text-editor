@@ -26,31 +26,17 @@ open class EditorStyledTextView : AppCompatTextView {
     private lateinit var inlineCodeBgHelper: SpanBackgroundHelper
     private lateinit var codeBlockBgHelper: SpanBackgroundHelper
 
-    var styleConfig: StyleConfig? = null
-        set(value) {
-            field = value
-
-            htmlConverter = value?.let { createHtmlConverter(it) }
-
-            if (value != null) {
-                inlineCodeBgHelper =
-                    SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(value.inlineCode)
-                codeBlockBgHelper =
-                    SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(value.codeBlock)
-            }
-        }
+    /**
+     * The [StyleConfig] used to style the spans generated from the HTML in this TextView.
+     */
+    lateinit var styleConfig: StyleConfig
+        private set
 
     private var isInit = false
 
     private val spannableFactory = ReuseSourceSpannableFactory()
 
-    var mentionDisplayHandler: MentionDisplayHandler? = null
-        set(value) {
-            if (field !== value) {
-                field = value
-                htmlConverter = styleConfig?.let { createHtmlConverter(it) }
-            }
-        }
+    private var mentionDisplayHandler: MentionDisplayHandler? = null
     private var htmlConverter: HtmlConverter? = null
 
     init {
@@ -80,6 +66,21 @@ open class EditorStyledTextView : AppCompatTextView {
     }
 
     /**
+     * Sets up the [HtmlConverter] used to translate HTML to Spanned text.
+     * @param styleConfig The styles to use for the generated spans.
+     * @param mentionDisplayHandler Used to decide how to display any mentions found in the HTML text.
+     */
+    fun setupHtmlConverter(styleConfig: StyleConfig, mentionDisplayHandler: MentionDisplayHandler?) {
+        this.styleConfig = styleConfig
+        this.mentionDisplayHandler = mentionDisplayHandler
+
+        inlineCodeBgHelper = SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(styleConfig.inlineCode)
+        codeBlockBgHelper = SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(styleConfig.codeBlock)
+
+        htmlConverter = createHtmlConverter(styleConfig, mentionDisplayHandler)
+    }
+
+    /**
      * Set the text of the TextView with HTML formatting.
      * @param htmlText The text to display, with HTML formatting.
      * Consider using [HtmlConverter.fromHtmlToSpans] and [setText] instead.
@@ -105,7 +106,7 @@ open class EditorStyledTextView : AppCompatTextView {
 
         mentionDetector = if (isInEditMode) null else newMentionDetector()
 
-        htmlConverter = styleConfig?.let { createHtmlConverter(it) }
+        setupHtmlConverter(styleConfig, mentionDisplayHandler)
     }
 
     override fun onDetachedFromWindow() {
@@ -115,7 +116,7 @@ open class EditorStyledTextView : AppCompatTextView {
         mentionDetector = null
     }
 
-    private fun createHtmlConverter(styleConfig: StyleConfig): HtmlConverter {
+    private fun createHtmlConverter(styleConfig: StyleConfig, mentionDisplayHandler: MentionDisplayHandler?): HtmlConverter {
         return HtmlConverter.Factory.create(
             context = context,
             styleConfig = styleConfig,

@@ -4,9 +4,7 @@ import android.text.Spanned
 import android.widget.TextView
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import io.element.android.wysiwyg.EditorStyledTextView
@@ -37,7 +35,6 @@ fun EditorStyledText(
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
 ) {
     val typeface by style.text.rememberTypeface()
-    var previousStyle by remember { mutableStateOf<RichTextEditorStyle?>(null) }
     val mentionDisplayHandler = remember(resolveMentionDisplay, resolveRoomMentionDisplay) {
         object : MentionDisplayHandler {
             override fun resolveMentionDisplay(text: String, url: String): TextDisplay {
@@ -49,22 +46,25 @@ fun EditorStyledText(
             }
         }
     }
-    AndroidView(modifier = modifier, factory = { context ->
-        EditorStyledTextView(context)
-    }, update = remember(style != previousStyle, typeface, mentionDisplayHandler, text) {
-        { view ->
-            if (style != previousStyle) {
-                view.styleConfig = style.toStyleConfig(view.context)
+    AndroidView(
+        modifier = modifier,
+        factory = { context ->
+            EditorStyledTextView(context)
+        },
+        // The `update` lambda is called when the view is first created, and then again whenever the actual `update` lambda changes. That is, it's replaced with
+        // a new lambda capturing different variables from the surrounding scope. However, there seems to be an issue that causes the `update` lambda to change
+        // more than it's strictly necessary. To avoid this, we can use a `remember` block to cache the `update` lambda, and only update it when needed.
+        update = remember(style, typeface, mentionDisplayHandler, text) {
+            { view ->
                 view.applyStyleInCompose(style)
-                previousStyle = style
-            }
-            view.typeface = typeface
-            view.mentionDisplayHandler = mentionDisplayHandler
-            if (text is Spanned) {
-                view.setText(text, TextView.BufferType.SPANNABLE)
-            } else {
-                view.setHtml(text.toString())
+                view.typeface = typeface
+                view.setupHtmlConverter(style.toStyleConfig(view.context), mentionDisplayHandler)
+                if (text is Spanned) {
+                    view.setText(text, TextView.BufferType.SPANNABLE)
+                } else {
+                    view.setHtml(text.toString())
+                }
             }
         }
-    })
+    )
 }

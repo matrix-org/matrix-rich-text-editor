@@ -94,83 +94,89 @@ private fun RealEditor(
         }
     }
 
-    AndroidView(modifier = modifier, factory = {
-        val view = EditorEditText(context).apply {
-            if (registerStateUpdates) {
-                state.activeViewKey = hashCode()
-                actionStatesChangedListener =
-                    EditorEditText.OnActionStatesChangedListener { actionStates ->
-                        state.actions = actionStates
+    AndroidView(
+        modifier = modifier,
+        factory = {
+            val view = EditorEditText(context).apply {
+                if (registerStateUpdates) {
+                    state.activeViewKey = hashCode()
+                    actionStatesChangedListener =
+                        EditorEditText.OnActionStatesChangedListener { actionStates ->
+                            state.actions = actionStates
+                        }
+
+                    selectionChangeListener = EditorEditText.OnSelectionChangeListener { start, end ->
+                        state.selection = start to end
                     }
-
-                selectionChangeListener = EditorEditText.OnSelectionChangeListener { start, end ->
-                    state.selection = start to end
-                }
-                menuActionListener = EditorEditText.OnMenuActionChangedListener { menuAction ->
-                    state.menuAction = menuAction
-                }
-                linkActionChangedListener =
-                    EditorEditText.OnLinkActionChangedListener { linkAction ->
-                        state.linkAction = linkAction
+                    menuActionListener = EditorEditText.OnMenuActionChangedListener { menuAction ->
+                        state.menuAction = menuAction
                     }
-                addTextChangedListener {
-                    state.internalHtml = getInternalHtml()
-                    state.messageHtml = getContentAsMessageHtml()
-                    state.messageMarkdown = getMarkdown()
-                    state.lineCount = lineCount
+                    linkActionChangedListener =
+                        EditorEditText.OnLinkActionChangedListener { linkAction ->
+                            state.linkAction = linkAction
+                        }
+                    addTextChangedListener {
+                        state.internalHtml = getInternalHtml()
+                        state.messageHtml = getContentAsMessageHtml()
+                        state.messageMarkdown = getMarkdown()
+                        state.lineCount = lineCount
+                    }
+                    val shouldRestoreFocus = state.hasFocus
+                    if (shouldRestoreFocus) {
+                        requestFocus()
+                    }
+                    onFocusChangeListener = View.OnFocusChangeListener { view, hasFocus ->
+                        state.onFocusChanged(view.hashCode(), hasFocus)
+                    }
                 }
-                val shouldRestoreFocus = state.hasFocus
-                if (shouldRestoreFocus) {
-                    requestFocus()
-                }
-                onFocusChangeListener = View.OnFocusChangeListener { view, hasFocus ->
-                    state.onFocusChanged(view.hashCode(), hasFocus)
-                }
-            }
 
-            applyDefaultStyle()
+                applyDefaultStyle()
 
-            // Restore the state of the view with the saved state
-            setHtml(state.internalHtml)
-            setSelection(state.selection.first, state.selection.second)
+                // Restore the state of the view with the saved state
+                setHtml(state.internalHtml)
+                setSelection(state.selection.first, state.selection.second)
 
-            // Only start listening for text changes after the initial state has been restored
-            if (registerStateUpdates) {
-                coroutineScope.launch(context = Dispatchers.Main) {
-                    state.viewActions.collect {
-                        when (it) {
-                            is ViewAction.ToggleInlineFormat -> toggleInlineFormat(it.inlineFormat)
-                            is ViewAction.ToggleList -> toggleList(it.ordered)
-                            is ViewAction.ToggleCodeBlock -> toggleCodeBlock()
-                            is ViewAction.ToggleQuote -> toggleQuote()
-                            is ViewAction.Undo -> undo()
-                            is ViewAction.Redo -> redo()
-                            is ViewAction.Indent -> indent()
-                            is ViewAction.Unindent -> unindent()
-                            is ViewAction.SetHtml -> setHtml(it.html)
-                            is ViewAction.RequestFocus -> requestFocus()
-                            is ViewAction.SetLink -> setLink(it.url)
-                            is ViewAction.RemoveLink -> removeLink()
-                            is ViewAction.InsertLink -> insertLink(it.url, it.text)
-                            is ViewAction.ReplaceSuggestionText -> replaceTextSuggestion(it.text)
-                            is ViewAction.InsertMentionAtSuggestion -> insertMentionAtSuggestion(url = it.url, text = it.text)
+                // Only start listening for text changes after the initial state has been restored
+                if (registerStateUpdates) {
+                    coroutineScope.launch(context = Dispatchers.Main) {
+                        state.viewActions.collect {
+                            when (it) {
+                                is ViewAction.ToggleInlineFormat -> toggleInlineFormat(it.inlineFormat)
+                                is ViewAction.ToggleList -> toggleList(it.ordered)
+                                is ViewAction.ToggleCodeBlock -> toggleCodeBlock()
+                                is ViewAction.ToggleQuote -> toggleQuote()
+                                is ViewAction.Undo -> undo()
+                                is ViewAction.Redo -> redo()
+                                is ViewAction.Indent -> indent()
+                                is ViewAction.Unindent -> unindent()
+                                is ViewAction.SetHtml -> setHtml(it.html)
+                                is ViewAction.RequestFocus -> requestFocus()
+                                is ViewAction.SetLink -> setLink(it.url)
+                                is ViewAction.RemoveLink -> removeLink()
+                                is ViewAction.InsertLink -> insertLink(it.url, it.text)
+                                is ViewAction.ReplaceSuggestionText -> replaceTextSuggestion(it.text)
+                                is ViewAction.InsertMentionAtSuggestion -> insertMentionAtSuggestion(url = it.url, text = it.text)
+                            }
                         }
                     }
                 }
             }
-        }
 
-        view
-    }, update = remember(style, typeface, mentionDisplayHandler) {
-        { view ->
-            Timber.d("RealEditor's update block called, recomposing!")
-            view.applyStyleInCompose(style)
-            view.styleConfig = style.toStyleConfig(view.context)
-            view.typeface = typeface
-            view.rustErrorCollector = RustErrorCollector(onError)
-            view.mentionDisplayHandler = mentionDisplayHandler
+            view
+        },
+        // The `update` lambda is called when the view is first created, and then again whenever the actual `update` lambda changes. That is, it's replaced with
+        // a new lambda capturing different variables from the surrounding scope. However, there seems to be an issue that causes the `update` lambda to change
+        // more than it's strictly necessary. To avoid this, we can use a `remember` block to cache the `update` lambda, and only update it when needed.
+        update = remember(style, typeface, mentionDisplayHandler) {
+            { view ->
+                Timber.d("RealEditor's update block called, recomposing!")
+                view.applyStyleInCompose(style)
+                view.typeface = typeface
+                view.setupHtmlConverter(style.toStyleConfig(view.context), mentionDisplayHandler)
+                view.rustErrorCollector = RustErrorCollector(onError)
+            }
         }
-    })
+    )
 }
 
 @Composable

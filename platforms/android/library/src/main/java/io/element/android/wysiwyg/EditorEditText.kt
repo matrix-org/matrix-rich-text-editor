@@ -43,17 +43,11 @@ class EditorEditText : AppCompatEditText {
 
     private var inputConnection: InterceptInputConnection? = null
 
-    var styleConfig: StyleConfig? = null
-        set(value) {
-            field = value
-
-            htmlConverter = value?.let { createHtmlConverter(it) }
-
-            if (value != null) {
-                inlineCodeBgHelper = SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(value.inlineCode)
-                codeBlockBgHelper = SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(value.codeBlock)
-            }
-        }
+    /**
+     * The [StyleConfig] used to style the spans generated from the HTML in this EditText.
+     */
+    lateinit var styleConfig: StyleConfig
+        private set
 
     private lateinit var inlineCodeBgHelper: SpanBackgroundHelper
     private lateinit var codeBlockBgHelper: SpanBackgroundHelper
@@ -65,13 +59,9 @@ class EditorEditText : AppCompatEditText {
         }
     )
 
-    /**
-     * Set the mention display handler to display mentions in a custom way.
-     */
-    var mentionDisplayHandler: MentionDisplayHandler? = null
+    private var mentionDisplayHandler: MentionDisplayHandler? = null
         set(value) {
             field = value?.let { MemoizingMentionDisplayHandler(it) }
-            htmlConverter = styleConfig?.let { createHtmlConverter(it) }
         }
 
     private var htmlConverter: HtmlConverter? = null
@@ -82,7 +72,7 @@ class EditorEditText : AppCompatEditText {
             rerender()
         }
 
-    private fun createHtmlConverter(styleConfig: StyleConfig): HtmlConverter? {
+    private fun createHtmlConverter(styleConfig: StyleConfig, mentionDisplayHandler: MentionDisplayHandler?): HtmlConverter? {
         return HtmlConverter.Factory.create(
             context = context.applicationContext,
             styleConfig = styleConfig,
@@ -97,11 +87,11 @@ class EditorEditText : AppCompatEditText {
     constructor(context: Context) : this(context, null)
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-        styleConfig = EditorEditTextAttributeReader(context, attrs).styleConfig
+        setupHtmlConverter(styleConfig = EditorEditTextAttributeReader(context, attrs).styleConfig, mentionDisplayHandler = mentionDisplayHandler)
     }
 
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
-        styleConfig = EditorEditTextAttributeReader(context, attrs).styleConfig
+        setupHtmlConverter(styleConfig = EditorEditTextAttributeReader(context, attrs).styleConfig, mentionDisplayHandler = mentionDisplayHandler)
     }
 
     init {
@@ -253,6 +243,21 @@ class EditorEditText : AppCompatEditText {
 
             else -> return super.onTextContextMenuItem(id)
         }
+    }
+
+    /**
+     * Sets up the [HtmlConverter] used to translate HTML to Spanned text.
+     * @param styleConfig The styles to use for the generated spans.
+     * @param mentionDisplayHandler Used to decide how to display any mentions found in the HTML text.
+     */
+    fun setupHtmlConverter(styleConfig: StyleConfig, mentionDisplayHandler: MentionDisplayHandler?) {
+        this.styleConfig = styleConfig
+        this.mentionDisplayHandler = mentionDisplayHandler
+
+        inlineCodeBgHelper = SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(styleConfig.inlineCode)
+        codeBlockBgHelper = SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(styleConfig.codeBlock)
+
+        htmlConverter = createHtmlConverter(styleConfig, mentionDisplayHandler)
     }
 
     private fun addHardwareKeyInterceptor() {
