@@ -46,8 +46,10 @@ open class EditorStyledTextView : AppCompatTextView {
 
     var mentionDisplayHandler: MentionDisplayHandler? = null
         set(value) {
-            field = value
-            htmlConverter = styleConfig?.let { createHtmlConverter(it) }
+            if (field !== value) {
+                field = value
+                htmlConverter = styleConfig?.let { createHtmlConverter(it) }
+            }
         }
     private var htmlConverter: HtmlConverter? = null
 
@@ -102,6 +104,8 @@ open class EditorStyledTextView : AppCompatTextView {
         super.onAttachedToWindow()
 
         mentionDetector = if (isInEditMode) null else newMentionDetector()
+
+        htmlConverter = styleConfig?.let { createHtmlConverter(it) }
     }
 
     override fun onDetachedFromWindow() {
@@ -116,9 +120,9 @@ open class EditorStyledTextView : AppCompatTextView {
             context = context,
             styleConfig = styleConfig,
             mentionDisplayHandler = mentionDisplayHandler,
-            mentionDetector = mentionDetector?.let { detector ->
+            isMention = mentionDetector?.let { detector ->
                 { _, url ->
-                    detector.isUserMention(url)
+                    detector.isMention(url)
                 }
             }
         )

@@ -166,7 +166,7 @@ class HtmlToSpansParserTest {
             html = html,
             styleConfig = styleConfig,
             mentionDisplayHandler = mentionDisplayHandler,
-            mentionDetector = { _, url ->
+            isMention = { _, url ->
                 url.startsWith("https://matrix.to/#/@")
             }
         ).convert()

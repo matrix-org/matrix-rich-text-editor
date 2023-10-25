@@ -4,9 +4,7 @@ import io.element.android.wysiwyg.display.MentionDisplayHandler
 import io.element.android.wysiwyg.display.TextDisplay
 import uniffi.wysiwyg_composer.MentionDetector
 
-class DefaultMentionDisplayHandler(
-    private val mentionDetector: MentionDetector?
-) : MentionDisplayHandler {
+class DefaultMentionDisplayHandler : MentionDisplayHandler {
 
     override fun resolveMentionDisplay(
         text: String, url: String

@@ -45,7 +45,7 @@ internal class HtmlToSpansParser(
     private val html: String,
     private val styleConfig: StyleConfig,
     private val mentionDisplayHandler: MentionDisplayHandler?,
-    private val mentionDetector: ((text: String, url: String) -> Boolean)? = null,
+    private val isMention: ((text: String, url: String) -> Boolean)? = null,
 ) : ContentHandler {
 
     /**
@@ -343,7 +343,7 @@ internal class HtmlToSpansParser(
             )
         }
 
-        val isMention = last.span.data.containsKey("data-mention-type") || mentionDetector?.invoke(innerText, url) == true
+        val isMention = last.span.data.containsKey("data-mention-type") || this.isMention?.invoke(innerText, url) == true
         val textDisplay = if (isMention) {
             mentionDisplayHandler?.resolveMentionDisplay(innerText, url) ?: TextDisplay.Plain
         } else {

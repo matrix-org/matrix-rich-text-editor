@@ -4,6 +4,7 @@ import android.view.View
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -35,6 +36,8 @@ import timber.log.Timber
  * @param state The state holder for this composable. See [rememberRichTextEditorState].
  * @param registerStateUpdates If true, register the state for updates.
  * @param style The styles to use for any customisable elements
+ * @param resolveMentionDisplay A function to resolve the [TextDisplay] of a mention.
+ * @param resolveRoomMentionDisplay A function to resolve the [TextDisplay] of an `@room` mention.
  * @param onError Called when an internal error occurs
  */
 @Composable
@@ -78,6 +81,18 @@ private fun RealEditor(
     val coroutineScope = rememberCoroutineScope()
 
     val typeface by style.text.rememberTypeface()
+
+    val mentionDisplayHandler = remember(resolveMentionDisplay, resolveRoomMentionDisplay) {
+        object : MentionDisplayHandler {
+            override fun resolveMentionDisplay(text: String, url: String): TextDisplay {
+                return resolveMentionDisplay?.invoke(text, url) ?: TextDisplay.Plain
+            }
+
+            override fun resolveAtRoomMentionDisplay(): TextDisplay {
+                return resolveRoomMentionDisplay?.invoke() ?: TextDisplay.Plain
+            }
+        }
+    }
 
     AndroidView(modifier = modifier, factory = {
         val view = EditorEditText(context).apply {
@@ -146,21 +161,14 @@ private fun RealEditor(
         }
 
         view
-    }, update = { view ->
-        Timber.d("RealEditor's update block called, recomposing")
-        view.applyStyleInCompose(style)
-        view.styleConfig = style.toStyleConfig(view.context)
-        view.typeface = typeface
-        view.rustErrorCollector = RustErrorCollector(onError)
-        view.mentionDisplayHandler = object : MentionDisplayHandler {
-            override fun resolveMentionDisplay(text: String, url: String): TextDisplay {
-                return resolveMentionDisplay?.invoke(text, url) ?: TextDisplay.Plain
-            }
-
-            override fun resolveAtRoomMentionDisplay(): TextDisplay {
-                return resolveRoomMentionDisplay?.invoke() ?: TextDisplay.Plain
-            }
-
+    }, update = remember(style, typeface, mentionDisplayHandler) {
+        { view ->
+            Timber.d("RealEditor's update block called, recomposing!")
+            view.applyStyleInCompose(style)
+            view.styleConfig = style.toStyleConfig(view.context)
+            view.typeface = typeface
+            view.rustErrorCollector = RustErrorCollector(onError)
+            view.mentionDisplayHandler = mentionDisplayHandler
         }
     })
 }

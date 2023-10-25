@@ -4,6 +4,9 @@ import android.text.Spanned
 import android.widget.TextView
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import io.element.android.wysiwyg.EditorStyledTextView
@@ -21,6 +24,8 @@ import io.element.android.wysiwyg.display.TextDisplay
  * If it's spanned it will be rendered as is, otherwise it will go first to HtmlConverter.
  * Your might want to use HtmlConverter before the rendering to avoid the conversion at each recomposition.
  * @param modifier The modifier for the layout.
+ * @param resolveMentionDisplay A function to resolve the [TextDisplay] of a mention.
+ * @param resolveRoomMentionDisplay A function to resolve the [TextDisplay] of an `@room` mention.
  * @param style The styles to use for any customisable elements.
  */
 @Composable
@@ -32,13 +37,9 @@ fun EditorStyledText(
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
 ) {
     val typeface by style.text.rememberTypeface()
-    AndroidView(modifier = modifier, factory = { context ->
-        EditorStyledTextView(context)
-    }, update = { view ->
-        view.styleConfig = style.toStyleConfig(view.context)
-        view.applyStyleInCompose(style)
-        view.typeface = typeface
-        view.mentionDisplayHandler = object : MentionDisplayHandler {
+    var previousStyle by remember { mutableStateOf<RichTextEditorStyle?>(null) }
+    val mentionDisplayHandler = remember(resolveMentionDisplay, resolveRoomMentionDisplay) {
+        object : MentionDisplayHandler {
             override fun resolveMentionDisplay(text: String, url: String): TextDisplay {
                 return resolveMentionDisplay?.invoke(text, url) ?: TextDisplay.Plain
             }
@@ -46,12 +47,24 @@ fun EditorStyledText(
             override fun resolveAtRoomMentionDisplay(): TextDisplay {
                 return resolveRoomMentionDisplay?.invoke() ?: TextDisplay.Plain
             }
-
         }
-        if (text is Spanned) {
-            view.setText(text, TextView.BufferType.SPANNABLE)
-        } else {
-            view.setHtml(text.toString())
+    }
+    AndroidView(modifier = modifier, factory = { context ->
+        EditorStyledTextView(context)
+    }, update = remember(style != previousStyle, typeface, mentionDisplayHandler, text) {
+        { view ->
+            if (style != previousStyle) {
+                view.styleConfig = style.toStyleConfig(view.context)
+                view.applyStyleInCompose(style)
+                previousStyle = style
+            }
+            view.typeface = typeface
+            view.mentionDisplayHandler = mentionDisplayHandler
+            if (text is Spanned) {
+                view.setText(text, TextView.BufferType.SPANNABLE)
+            } else {
+                view.setHtml(text.toString())
+            }
         }
     })
 }

@@ -48,8 +48,17 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val mentionDisplayHandler = DefaultMentionDisplayHandler(if (window.decorView.isInEditMode) null else newMentionDetector())
-        val htmlConverter = StyledHtmlConverter(this, mentionDisplayHandler)
+        val mentionDisplayHandler = DefaultMentionDisplayHandler()
+        val mentionDetector = if (window.decorView.isInEditMode) null else newMentionDetector()
+        val htmlConverter = StyledHtmlConverter(
+            context = this,
+            mentionDisplayHandler = mentionDisplayHandler,
+            isMention = mentionDetector?.let { detector ->
+                { _, url ->
+                    detector.isMention(url)
+                }
+            }
+        )
         setContent {
             RichTextEditorTheme {
                 val style = RichTextEditorDefaults.style()

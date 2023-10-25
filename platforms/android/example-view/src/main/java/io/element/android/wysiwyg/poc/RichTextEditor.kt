@@ -122,7 +122,7 @@ class RichTextEditor : LinearLayout {
                 EditorEditText.OnMenuActionChangedListener { menuAction ->
                     updateSuggestions(menuAction)
                 }
-            richTextEditText.mentionDisplayHandler = MatrixMentionMentionDisplayHandler(if (isInEditMode) null else newMentionDetector())
+            richTextEditText.mentionDisplayHandler = MatrixMentionMentionDisplayHandler
         }
     }
 

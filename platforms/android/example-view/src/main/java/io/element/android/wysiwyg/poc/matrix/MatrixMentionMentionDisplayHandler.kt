@@ -8,9 +8,7 @@ import uniffi.wysiwyg_composer.MentionDetector
  * Convenience implementation of a [MentionDisplayHandler] that detects Matrix mentions and
  * displays them as default pills.
  */
-class MatrixMentionMentionDisplayHandler(
-    private val mentionDetector: MentionDetector?
-) : MentionDisplayHandler {
+object MatrixMentionMentionDisplayHandler: MentionDisplayHandler {
     override fun resolveMentionDisplay(text: String, url: String): TextDisplay =
         TextDisplay.Pill
 

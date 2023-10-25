@@ -11,7 +11,7 @@ impl MentionDetector {
 
 #[uniffi::export]
 impl MentionDetector {
-    pub fn is_user_mention(self: &Arc<Self>, url: String) -> bool {
+    pub fn is_mention(self: &Arc<Self>, url: String) -> bool {
         matrix_mentions::is_mention(&url)
     }
 }
