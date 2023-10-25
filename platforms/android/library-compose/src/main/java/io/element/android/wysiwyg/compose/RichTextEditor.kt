@@ -46,8 +46,8 @@ fun RichTextEditor(
     state: RichTextEditorState = rememberRichTextEditorState(),
     registerStateUpdates: Boolean = true,
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
-    resolveMentionDisplay: ((text: String, url: String) -> TextDisplay)? = null,
-    resolveRoomMentionDisplay: (() -> TextDisplay)? = null,
+    resolveMentionDisplay: (text: String, url: String) -> TextDisplay = RichTextEditorDefaults.MentionDisplay,
+    resolveRoomMentionDisplay: () -> TextDisplay = RichTextEditorDefaults.RoomMentionDisplay,
     onError: (Throwable) -> Unit = {},
 ) {
     val isPreview = LocalInspectionMode.current
@@ -74,8 +74,8 @@ private fun RealEditor(
     modifier: Modifier = Modifier,
     style: RichTextEditorStyle,
     onError: (Throwable) -> Unit,
-    resolveMentionDisplay: ((text: String, url: String) -> TextDisplay)?,
-    resolveRoomMentionDisplay: (() -> TextDisplay)?,
+    resolveMentionDisplay: (text: String, url: String) -> TextDisplay,
+    resolveRoomMentionDisplay: () -> TextDisplay,
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -85,11 +85,11 @@ private fun RealEditor(
     val mentionDisplayHandler = remember(resolveMentionDisplay, resolveRoomMentionDisplay) {
         object : MentionDisplayHandler {
             override fun resolveMentionDisplay(text: String, url: String): TextDisplay {
-                return resolveMentionDisplay?.invoke(text, url) ?: TextDisplay.Plain
+                return resolveMentionDisplay(text, url)
             }
 
             override fun resolveAtRoomMentionDisplay(): TextDisplay {
-                return resolveRoomMentionDisplay?.invoke() ?: TextDisplay.Plain
+                return resolveRoomMentionDisplay()
             }
         }
     }

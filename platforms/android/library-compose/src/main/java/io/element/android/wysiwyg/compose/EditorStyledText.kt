@@ -32,8 +32,8 @@ import io.element.android.wysiwyg.display.TextDisplay
 fun EditorStyledText(
     text: CharSequence,
     modifier: Modifier = Modifier,
-    resolveMentionDisplay: ((text: String, url: String) -> TextDisplay)? = null,
-    resolveRoomMentionDisplay: (() -> TextDisplay)? = null,
+    resolveMentionDisplay: (text: String, url: String) -> TextDisplay = RichTextEditorDefaults.MentionDisplay,
+    resolveRoomMentionDisplay: () -> TextDisplay = RichTextEditorDefaults.RoomMentionDisplay,
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
 ) {
     val typeface by style.text.rememberTypeface()
@@ -41,11 +41,11 @@ fun EditorStyledText(
     val mentionDisplayHandler = remember(resolveMentionDisplay, resolveRoomMentionDisplay) {
         object : MentionDisplayHandler {
             override fun resolveMentionDisplay(text: String, url: String): TextDisplay {
-                return resolveMentionDisplay?.invoke(text, url) ?: TextDisplay.Plain
+                return resolveMentionDisplay(text, url)
             }
 
             override fun resolveAtRoomMentionDisplay(): TextDisplay {
-                return resolveRoomMentionDisplay?.invoke() ?: TextDisplay.Plain
+                return resolveRoomMentionDisplay()
             }
         }
     }
