@@ -62,7 +62,7 @@ internal class HtmlToSpansParser(
 
     // Spans created to be used as 'marks' while parsing
     private sealed interface PlaceholderSpan {
-        data class Hyperlink(val link: String, val contentEditable: Boolean, val data: Map<String, String>) : PlaceholderSpan
+        data class Hyperlink(val link: String, val data: Map<String, String>) : PlaceholderSpan
         sealed interface ListBlock : PlaceholderSpan {
             class Ordered : ListBlock
             class Unordered : ListBlock
@@ -157,14 +157,13 @@ internal class HtmlToSpansParser(
 
             "a" -> {
                 val url = attrs?.getValue("href") ?: return
-                val contentEditable = attrs.getValue("contenteditable")?.toBoolean()
                 val data = buildMap<String, String> {
                     for (i in 0..attrs.length) {
                         val key = attrs.getLocalName(i) ?: continue
                         set(key, attrs.getValue(i))
                     }
                 }
-                handleHyperlinkStart(url, contentEditable ?: true, data)
+                handleHyperlinkStart(url, data)
             }
 
             "ul", "ol" -> {
@@ -323,8 +322,8 @@ internal class HtmlToSpansParser(
         )
     }
 
-    private fun handleHyperlinkStart(url: String, contentEditable: Boolean, data: Map<String, String>) {
-        val hyperlink = PlaceholderSpan.Hyperlink(url, contentEditable, data)
+    private fun handleHyperlinkStart(url: String, data: Map<String, String>) {
+        val hyperlink = PlaceholderSpan.Hyperlink(url, data)
         addPlaceHolderSpan(hyperlink)
     }
 
@@ -336,7 +335,7 @@ internal class HtmlToSpansParser(
         // If the link is not editable, tag all but the first character of the anchor text with
         // ExtraCharacterSpans. These characters will then be taken into account when translating
         // between editor and composer model indices (see [EditorIndexMapper]).
-        val isContentEditable = !last.span.contentEditable
+        val isContentEditable = last.span.data.containsKey("contenteditable")
         if (isContentEditable && text.length > 1) {
             addPendingSpan(
                 ExtraCharacterSpan(), last.start + 1, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
