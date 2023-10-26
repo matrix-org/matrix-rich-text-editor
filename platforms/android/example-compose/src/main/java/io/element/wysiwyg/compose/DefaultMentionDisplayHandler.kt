@@ -2,7 +2,6 @@ package io.element.wysiwyg.compose
 
 import io.element.android.wysiwyg.display.MentionDisplayHandler
 import io.element.android.wysiwyg.display.TextDisplay
-import uniffi.wysiwyg_composer.MentionDetector
 
 class DefaultMentionDisplayHandler : MentionDisplayHandler {
 
