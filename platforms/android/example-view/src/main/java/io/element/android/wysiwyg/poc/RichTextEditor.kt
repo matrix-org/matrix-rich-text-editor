@@ -119,7 +119,7 @@ class RichTextEditor : LinearLayout {
                 EditorEditText.OnMenuActionChangedListener { menuAction ->
                     updateSuggestions(menuAction)
                 }
-            richTextEditText.setupHtmlConverter(richTextEditText.styleConfig, mentionDisplayHandler = MatrixMentionMentionDisplayHandler)
+            richTextEditText.updateStyle(richTextEditText.styleConfig, mentionDisplayHandler = MatrixMentionMentionDisplayHandler)
         }
     }
 

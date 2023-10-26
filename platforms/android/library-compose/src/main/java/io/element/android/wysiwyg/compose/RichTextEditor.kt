@@ -172,7 +172,7 @@ private fun RealEditor(
                 Timber.d("RealEditor's update block called, recomposing!")
                 view.applyStyleInCompose(style)
                 view.typeface = typeface
-                view.setupHtmlConverter(style.toStyleConfig(view.context), mentionDisplayHandler)
+                view.updateStyle(style.toStyleConfig(view.context), mentionDisplayHandler)
                 view.rustErrorCollector = RustErrorCollector(onError)
             }
         }

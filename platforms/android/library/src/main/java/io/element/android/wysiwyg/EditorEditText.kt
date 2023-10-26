@@ -87,11 +87,11 @@ class EditorEditText : AppCompatEditText {
     constructor(context: Context) : this(context, null)
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-        setupHtmlConverter(styleConfig = EditorEditTextAttributeReader(context, attrs).styleConfig, mentionDisplayHandler = mentionDisplayHandler)
+        updateStyle(styleConfig = EditorEditTextAttributeReader(context, attrs).styleConfig, mentionDisplayHandler = mentionDisplayHandler)
     }
 
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
-        setupHtmlConverter(styleConfig = EditorEditTextAttributeReader(context, attrs).styleConfig, mentionDisplayHandler = mentionDisplayHandler)
+        updateStyle(styleConfig = EditorEditTextAttributeReader(context, attrs).styleConfig, mentionDisplayHandler = mentionDisplayHandler)
     }
 
     init {
@@ -246,11 +246,11 @@ class EditorEditText : AppCompatEditText {
     }
 
     /**
-     * Sets up the [HtmlConverter] used to translate HTML to Spanned text.
+     * Sets up the styling used to translate HTML to Spanned text.
      * @param styleConfig The styles to use for the generated spans.
      * @param mentionDisplayHandler Used to decide how to display any mentions found in the HTML text.
      */
-    fun setupHtmlConverter(styleConfig: StyleConfig, mentionDisplayHandler: MentionDisplayHandler?) {
+    fun updateStyle(styleConfig: StyleConfig, mentionDisplayHandler: MentionDisplayHandler?) {
         this.styleConfig = styleConfig
         this.mentionDisplayHandler = mentionDisplayHandler
 
