@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.launch
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
+import uniffi.wysiwyg_composer.MenuAction
 
 /**
  * Fake behaviour for use in preview and test environments.
@@ -50,8 +51,8 @@ internal class FakeViewActionCollector(
             ViewAction.ToggleQuote -> toggleQuote()
             ViewAction.Undo -> undo()
             ViewAction.Unindent -> unindent()
-            is ViewAction.ReplaceSuggestionText -> Unit
-            is ViewAction.InsertMentionAtSuggestion -> Unit
+            is ViewAction.ReplaceSuggestionText -> state.menuAction = MenuAction.None
+            is ViewAction.InsertMentionAtSuggestion -> state.menuAction = MenuAction.None
         }
     }
     private fun toggleInlineFormat(inlineFormat: InlineFormat): Boolean {
