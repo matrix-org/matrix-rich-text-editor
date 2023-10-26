@@ -12,6 +12,7 @@ import io.element.android.wysiwyg.utils.HtmlConverter
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
+import timber.log.Timber
 import uniffi.wysiwyg_composer.*
 
 internal class EditorViewModel(
@@ -255,7 +256,9 @@ internal class EditorViewModel(
         this.crashOnComposerFailure = crashOnComposerFailure
     }
 
-    private fun stringToSpans(string: String): CharSequence =
-        htmlConverter?.fromHtmlToSpans(string) ?: error("HtmlConverter not set. This seems like a configuration issue.")
+    private fun stringToSpans(string: String): CharSequence = htmlConverter?.fromHtmlToSpans(string) ?: run {
+            Timber.e("HtmlConverter not set. This seems like a configuration issue.")
+            ""
+        }
 
 }
