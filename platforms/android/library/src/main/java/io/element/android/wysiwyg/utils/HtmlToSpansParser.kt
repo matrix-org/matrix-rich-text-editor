@@ -332,17 +332,18 @@ internal class HtmlToSpansParser(
         val url = last.span.link
         val innerText = text.subSequence(last.start, text.length).toString()
 
-        // If the link is not editable, tag all but the first character of the anchor text with
+        val isMention = this.isMention?.invoke(innerText, url) == true
+
+        // If the link is not editable or is a mention, tag all but the first character of the anchor text with
         // ExtraCharacterSpans. These characters will then be taken into account when translating
         // between editor and composer model indices (see [EditorIndexMapper]).
-        val isContentEditable = last.span.data.containsKey("contenteditable")
-        if (isContentEditable && text.length > 1) {
+        val isContentEditable = last.span.data.containsKey("contenteditable") && last.span.data["contenteditable"] != "false"
+        if ((isContentEditable || isMention) && text.length > 1) {
             addPendingSpan(
                 ExtraCharacterSpan(), last.start + 1, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
             )
         }
 
-        val isMention = last.span.data.containsKey("data-mention-type") || this.isMention?.invoke(innerText, url) == true
         val textDisplay = if (isMention) {
             mentionDisplayHandler?.resolveMentionDisplay(innerText, url) ?: TextDisplay.Plain
         } else {
