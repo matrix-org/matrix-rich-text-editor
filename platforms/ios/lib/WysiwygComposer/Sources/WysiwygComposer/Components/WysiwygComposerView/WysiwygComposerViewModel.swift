@@ -64,7 +64,7 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         }
     }
 
-    /// Whether the composer should take any input in.
+    /// Whether the composer should take any keyboard input.
     /// When set to `false`, the underlying text won't change.
     /// Otherwise `replaceText(range:,replacementText:)` is evaluated.
     public var shouldReplaceText = true
