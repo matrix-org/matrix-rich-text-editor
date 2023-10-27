@@ -46,9 +46,9 @@ internal class EditorViewModel(
 
         val update = runCatching {
             composer?.select(newStart, newEnd)
-        }
-            .onFailure(::onComposerFailure)
-            .getOrNull()
+        }.onFailure(
+            ::onComposerFailure
+        ).getOrNull()
 
         handleComposerUpdates(update)
 
@@ -160,15 +160,25 @@ internal class EditorViewModel(
         }
     }
 
-    fun getContentAsMessageHtml(): String {
-        return composer?.getContentAsMessageHtml().orEmpty()
+    fun getContentAsMessageHtml(): String =
+        runCatching {
+            composer?.getContentAsMessageHtml().orEmpty()
+        }.onFailure {
+            rustErrorCollector?.onRustError(it)
+        }.getOrElse {
+            recoveryContentPlainText
+        }
+
+    fun getMarkdown(): String = runCatching {
+        composer?.getContentAsMarkdown().orEmpty()
+    }.onFailure(
+        ::onComposerFailure
+    ).getOrElse {
+        recoveryContentPlainText
     }
 
-    fun getMarkdown(): String =
-        composer?.getContentAsMarkdown().orEmpty()
-
     fun getCurrentFormattedText(): CharSequence {
-        return stringToSpans(getContentAsMessageHtml())
+        return stringToSpans(getInternalHtml())
     }
 
     /**
@@ -176,16 +186,25 @@ internal class EditorViewModel(
      *
      * Note that this should not be used for messages; instead [getContentAsMessageHtml] should be used.
      */
-    fun getInternalHtml(): String {
-        return composer?.getContentAsHtml().orEmpty()
+    fun getInternalHtml(): String = runCatching {
+        composer?.getContentAsHtml().orEmpty()
+    }.onFailure(
+        ::onComposerFailure
+    ).getOrElse {
+        recoveryContentPlainText
     }
 
-    fun actionStates(): Map<ComposerAction, ActionState>? {
-        return composer?.actionStates()
-    }
+    fun actionStates(): Map<ComposerAction, ActionState>? = runCatching {
+        composer?.actionStates()
+    }.onFailure(
+        ::onComposerFailure
+    ).getOrNull()
 
-    fun getLinkAction(): LinkAction? =
+    fun getLinkAction(): LinkAction? = runCatching {
         composer?.getLinkAction()?.toApiModel()
+    }.onFailure(
+        ::onComposerFailure
+    ).getOrNull()
 
     fun rerender(): CharSequence =
         stringToSpans(getInternalHtml())
@@ -218,12 +237,16 @@ internal class EditorViewModel(
             ?.suggestionPattern
             ?: return null
 
-        return composer?.insertMentionAtSuggestion(
-            url = url,
-            text = text,
-            suggestion = suggestion,
-            attributes = emptyList()
-        )
+        return runCatching {
+            composer?.insertMentionAtSuggestion(
+                url = url,
+                text = text,
+                suggestion = suggestion,
+                attributes = emptyList()
+            )
+        }.onFailure(
+            ::onComposerFailure
+        ).getOrNull()
     }
 
     private fun replaceTextSuggestion(action: EditorInputAction.ReplaceTextSuggestion): ComposerUpdate? {
@@ -231,10 +254,14 @@ internal class EditorViewModel(
             ?.suggestionPattern
             ?: return null
 
-        return composer?.replaceTextSuggestion(
-            suggestion = suggestion,
-            newText = action.value,
-        )
+        return runCatching {
+            composer?.replaceTextSuggestion(
+                suggestion = suggestion,
+                newText = action.value,
+            )
+        }.onFailure(
+            ::onComposerFailure
+        ).getOrNull()
     }
 
     @VisibleForTesting
