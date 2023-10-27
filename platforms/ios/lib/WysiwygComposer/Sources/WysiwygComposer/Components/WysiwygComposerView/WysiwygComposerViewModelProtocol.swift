@@ -27,11 +27,6 @@ public protocol WysiwygComposerViewModelProtocol: AnyObject {
     /// Update the composer compressed required height if it has changed.
     func updateCompressedHeightIfNeeded()
 
-    /// Whether the composer should take any keyboard input.
-    /// When set to `false`, the underlying text won't change.
-    /// Otherwise `replaceText(range:,replacementText:)` is evaluated.
-    var shouldReplaceText: Bool { get set }
-
     /// Replace text in the model.
     ///
     /// - Parameters:
