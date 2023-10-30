@@ -64,6 +64,10 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         }
     }
 
+    /// Whether the composer should take any keyboard input.
+    /// When set to `false`, `replaceText(range:replacementText:)` returns `false` as well.
+    public var shouldReplaceText = true
+
     /// Published value for the composer plain text mode.
     @Published public var plainTextMode = false {
         didSet {
@@ -289,6 +293,10 @@ public extension WysiwygComposerViewModel {
     }
 
     func replaceText(range: NSRange, replacementText: String) -> Bool {
+        guard shouldReplaceText else {
+            return false
+        }
+
         guard !plainTextMode else {
             return true
         }
