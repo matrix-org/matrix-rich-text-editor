@@ -1,5 +1,11 @@
 # Changelog
 
+# [2.15.0] - 2023-10-30
+
+### Added
+
+- iOS: Add "shouldReplaceText" API to ignore keyboard input (#857)
+
 # [2.14.1] - 2023-10-04
 
 ### Fixed
