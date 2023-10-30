@@ -1,5 +1,20 @@
 # Changelog
 
+# [2.15.0] - 2023-10-30
+
+### Fixed
+- iOS: Use message content APIs (#842)
+- Android: Fix crash due to out of bounds error (#845)
+- Android: Handle and track more internal exceptions (#846)
+
+### Added
+- iOS: Add "shouldReplaceText" API to ignore keyboard input (#857)
+- iOS: Add getMentionsState API (#850)
+- Common: get_mentions_state() implemented on the Rust side (#849)
+- iOS: Expose the set at room mention function (#843)
+- iOS: Enhanced `MentionDisplayHelper` (#840) 
+- Android: Add rich text styled view (#837)
+
 # [2.14.1] - 2023-10-04
 
 ### Fixed
