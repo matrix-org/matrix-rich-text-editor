@@ -53,9 +53,11 @@ internal class FakeViewActionCollector(
             ViewAction.Unindent -> unindent()
             is ViewAction.ReplaceSuggestionText -> {
                 state.messageHtml = state.messageHtml.replaceLast(Regex("(@\\w+)"), value.text)
+                state.messageMarkdown = state.messageMarkdown.replaceLast(Regex("(@\\w+)"), value.text)
             }
             is ViewAction.InsertMentionAtSuggestion -> {
                 state.messageHtml = state.messageHtml.replaceLast(Regex("(@\\w+)"), "<a href='${value.url}'>${value.text}</a>")
+                state.messageMarkdown = state.messageMarkdown.replaceLast(Regex("(@\\w+)"), "[${value.text}](${value.url})")
             }
         }
     }
