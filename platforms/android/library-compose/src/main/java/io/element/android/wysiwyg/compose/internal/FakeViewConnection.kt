@@ -51,8 +51,12 @@ internal class FakeViewActionCollector(
             ViewAction.ToggleQuote -> toggleQuote()
             ViewAction.Undo -> undo()
             ViewAction.Unindent -> unindent()
-            is ViewAction.ReplaceSuggestionText -> state.menuAction = MenuAction.None
-            is ViewAction.InsertMentionAtSuggestion -> state.menuAction = MenuAction.None
+            is ViewAction.ReplaceSuggestionText -> {
+                state.messageHtml = state.messageHtml.replaceLast(Regex("(@\\w+)"), value.text)
+            }
+            is ViewAction.InsertMentionAtSuggestion -> {
+                state.messageHtml = state.messageHtml.replaceLast(Regex("(@\\w+)"), "<a href='${value.url}'>${value.text}</a>")
+            }
         }
     }
     private fun toggleInlineFormat(inlineFormat: InlineFormat): Boolean {
@@ -129,6 +133,13 @@ internal class FakeViewActionCollector(
         }
         actions[action] = newAction
         state.actions = actions
+    }
+
+    private fun String.replaceLast(regex: Regex, value: String): String {
+        val lastMatch = regex.findAll(this).lastOrNull()
+        return lastMatch?.let {
+            replaceRange(it.range, value)
+        } ?: this
     }
 }
 
