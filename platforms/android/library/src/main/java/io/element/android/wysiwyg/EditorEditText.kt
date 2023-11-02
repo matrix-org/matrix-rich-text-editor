@@ -55,7 +55,8 @@ class EditorEditText : AppCompatEditText {
     private val viewModel: EditorViewModel by viewModel(
         viewModelInitializer = {
             val provideComposer = if (!isInEditMode) { { newComposerModel() } } else { { null } }
-            EditorViewModel(provideComposer)
+            val provideMentionDetector = if (!isInEditMode) { { newMentionDetector() } } else { { null } }
+            EditorViewModel(provideComposer, provideMentionDetector)
         }
     )
 
@@ -77,6 +78,7 @@ class EditorEditText : AppCompatEditText {
             context = context.applicationContext,
             styleConfig = styleConfig,
             mentionDisplayHandler = mentionDisplayHandler,
+            isMention = { _, url -> viewModel.isMention(url) }
         )
     }
 
