@@ -23,6 +23,12 @@ sealed class Mention(
         override val key: String = "@"
     }
 
+    class Command(
+        display: String
+    ): Mention(display) {
+        override val key: String = "/"
+    }
+
     object NotifyEveryone: Mention("room") {
         override val key: String = "@"
     }

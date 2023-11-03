@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import io.element.android.wysiwyg.compose.RichTextEditor
 import io.element.android.wysiwyg.compose.RichTextEditorState
+import io.element.android.wysiwyg.display.TextDisplay
 
 fun ComposeContentTestRule.showContent(
     state: RichTextEditorState,

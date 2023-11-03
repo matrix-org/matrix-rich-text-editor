@@ -266,13 +266,27 @@ class FakeRichTextEditorStateTest {
     @Test
     fun `replaceSuggestion updates the state`() = runTest {
         moleculeFlow(RecompositionMode.Immediate) {
+            val state = rememberRichTextEditorState(initialHtml = "/shr", initialSelection = 3 to 3, fake = true)
+            remember(state.messageHtml, state.messageMarkdown) { state }
+        }.test {
+            val initialState = awaitItem()
+            initialState.replaceSuggestion("/shrug")
+            val nextState = awaitItem()
+            assertThat(nextState.messageHtml, equalTo("/shrug"))
+        }
+    }
+
+    @Test
+    fun `insertAtRoomMentionAtSuggestion updates the state`() = runTest {
+        val htmlReplacement = "<a data-mention-type=\"at-room\" href=\"#\" contenteditable=\"false\">@room</a>"
+        moleculeFlow(RecompositionMode.Immediate) {
             val state = rememberRichTextEditorState(initialHtml = "@ro", initialSelection = 2 to 2, fake = true)
             remember(state.messageHtml, state.messageMarkdown) { state }
         }.test {
             val initialState = awaitItem()
-            initialState.replaceSuggestion("@room")
+            initialState.insertAtRoomMentionAtSuggestion()
             val nextState = awaitItem()
-            assertThat(nextState.messageHtml, equalTo("@room"))
+            assertThat(nextState.messageHtml, equalTo(htmlReplacement))
         }
     }
 

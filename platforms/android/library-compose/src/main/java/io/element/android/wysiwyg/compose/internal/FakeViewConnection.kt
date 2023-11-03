@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.launch
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
-import uniffi.wysiwyg_composer.MenuAction
 
 /**
  * Fake behaviour for use in preview and test environments.
@@ -52,12 +51,17 @@ internal class FakeViewActionCollector(
             ViewAction.Undo -> undo()
             ViewAction.Unindent -> unindent()
             is ViewAction.ReplaceSuggestionText -> {
-                state.messageHtml = state.messageHtml.replaceLast(Regex("(@\\w+)"), value.text)
-                state.messageMarkdown = state.messageMarkdown.replaceLast(Regex("(@\\w+)"), value.text)
+                state.messageHtml = state.messageHtml.replaceLast(Regex("(/\\w+)"), value.text)
+                state.messageMarkdown = state.messageMarkdown.replaceLast(Regex("(/\\w+)"), value.text)
             }
             is ViewAction.InsertMentionAtSuggestion -> {
                 state.messageHtml = state.messageHtml.replaceLast(Regex("(@\\w+)"), "<a href='${value.url}'>${value.text}</a>")
                 state.messageMarkdown = state.messageMarkdown.replaceLast(Regex("(@\\w+)"), "[${value.text}](${value.url})")
+            }
+            is ViewAction.InsertAtRoomMentionAtSuggestion -> {
+                val htmlReplacement = "<a data-mention-type=\"at-room\" href=\"#\" contenteditable=\"false\">@room</a>"
+                state.messageHtml = state.messageHtml.replaceLast(Regex("(@\\w+)"), htmlReplacement)
+                state.messageMarkdown = state.messageMarkdown.replaceLast(Regex("(@\\w+)"), "@room")
             }
         }
     }

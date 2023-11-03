@@ -128,6 +128,10 @@ private fun RealEditor(
                     onFocusChangeListener = View.OnFocusChangeListener { view, hasFocus ->
                         state.onFocusChanged(view.hashCode(), hasFocus)
                     }
+
+                    mentionsStateChangedListener = EditorEditText.OnMentionsStateChangedListener { mentionsState ->
+                        state.mentionsState = mentionsState
+                    }
                 }
 
                 applyDefaultStyle()
@@ -156,6 +160,7 @@ private fun RealEditor(
                                 is ViewAction.InsertLink -> insertLink(it.url, it.text)
                                 is ViewAction.ReplaceSuggestionText -> replaceTextSuggestion(it.text)
                                 is ViewAction.InsertMentionAtSuggestion -> insertMentionAtSuggestion(url = it.url, text = it.text)
+                                is ViewAction.InsertAtRoomMentionAtSuggestion -> insertAtRoomMentionAtSuggestion()
                             }
                         }
                     }
