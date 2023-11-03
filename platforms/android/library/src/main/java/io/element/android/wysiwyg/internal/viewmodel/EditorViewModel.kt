@@ -12,13 +12,14 @@ import io.element.android.wysiwyg.utils.HtmlConverter
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
+import timber.log.Timber
 import uniffi.wysiwyg_composer.*
 
 internal class EditorViewModel(
     private val provideComposer: () -> ComposerModelInterface?,
-    private val htmlConverter: HtmlConverter,
 ) : ViewModel() {
 
+    var htmlConverter: HtmlConverter? = null
     private var composer: ComposerModelInterface? = provideComposer()
 
     var rustErrorCollector: RustErrorCollector? = null
@@ -112,7 +113,7 @@ internal class EditorViewModel(
                 is EditorInputAction.Quote -> composer?.quote()
                 is EditorInputAction.Indent -> composer?.indent()
                 is EditorInputAction.Unindent -> composer?.unindent()
-                is EditorInputAction.SetLinkSuggestion -> insertMentionAtSuggestion(action)
+                is EditorInputAction.InsertMentionAtSuggestion -> insertMentionAtSuggestion(action)
             }
         }.onFailure(::onComposerFailure)
             .getOrNull()
@@ -230,7 +231,7 @@ internal class EditorViewModel(
         }
     }
 
-    private fun insertMentionAtSuggestion(action: EditorInputAction.SetLinkSuggestion): ComposerUpdate? {
+    private fun insertMentionAtSuggestion(action: EditorInputAction.InsertMentionAtSuggestion): ComposerUpdate? {
         val (url, text) = action
 
         val suggestion = (curMenuAction as? MenuAction.Suggestion)
@@ -282,7 +283,9 @@ internal class EditorViewModel(
         this.crashOnComposerFailure = crashOnComposerFailure
     }
 
-    private fun stringToSpans(string: String): CharSequence =
-        htmlConverter.fromHtmlToSpans(string)
+    private fun stringToSpans(string: String): CharSequence = htmlConverter?.fromHtmlToSpans(string) ?: run {
+            Timber.e("HtmlConverter not set. This seems like a configuration issue.")
+            ""
+        }
 
 }

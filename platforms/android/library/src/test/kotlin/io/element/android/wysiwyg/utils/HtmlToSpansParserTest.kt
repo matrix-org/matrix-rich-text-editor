@@ -164,8 +164,11 @@ class HtmlToSpansParserTest {
         return HtmlToSpansParser(
             resourcesHelper = AndroidResourcesHelper(application = app),
             html = html,
-            styleConfig = { styleConfig },
-            mentionDisplayHandler = { mentionDisplayHandler },
+            styleConfig = styleConfig,
+            mentionDisplayHandler = mentionDisplayHandler,
+            isMention = { _, url ->
+                url.startsWith("https://matrix.to/#/@")
+            }
         ).convert()
     }
 }

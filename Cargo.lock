@@ -1415,6 +1415,7 @@ dependencies = [
 name = "uniffi-wysiwyg-composer"
 version = "2.14.1"
 dependencies = [
+ "matrix_mentions",
  "uniffi",
  "uniffi_build",
  "uniffi_macros",

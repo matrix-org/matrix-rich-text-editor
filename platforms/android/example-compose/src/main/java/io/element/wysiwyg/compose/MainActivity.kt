@@ -7,13 +7,17 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -26,25 +30,45 @@ import io.element.android.wysiwyg.compose.RichTextEditor
 import io.element.android.wysiwyg.compose.RichTextEditorDefaults
 import io.element.android.wysiwyg.compose.StyledHtmlConverter
 import io.element.android.wysiwyg.compose.rememberRichTextEditorState
+import io.element.android.wysiwyg.display.TextDisplay
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
+import io.element.wysiwyg.compose.matrix.Mention
 import io.element.wysiwyg.compose.ui.components.FormattingButtons
 import io.element.wysiwyg.compose.ui.theme.RichTextEditorTheme
 import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import uniffi.wysiwyg_composer.ComposerAction
+import uniffi.wysiwyg_composer.newMentionDetector
 
 class MainActivity : ComponentActivity() {
+
+    private val roomMemberSuggestions = mutableStateListOf<Mention>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val mentionDisplayHandler = DefaultMentionDisplayHandler()
-        val htmlConverter = StyledHtmlConverter(this, mentionDisplayHandler)
+        val mentionDetector = if (window.decorView.isInEditMode) null else newMentionDetector()
+        val htmlConverter = StyledHtmlConverter(
+            context = this,
+            mentionDisplayHandler = mentionDisplayHandler,
+            isMention = mentionDetector?.let { detector ->
+                { _, url ->
+                    detector.isMention(url)
+                }
+            }
+        )
         setContent {
-            val style = RichTextEditorDefaults.style()
-            htmlConverter.configureWith(style = style)
             RichTextEditorTheme {
-                val state = rememberRichTextEditorState()
+                val style = RichTextEditorDefaults.style()
+                htmlConverter.configureWith(style = style)
+
+                val state = rememberRichTextEditorState(initialFocus = true)
+
+                LaunchedEffect(state.menuAction) {
+                    processMenuAction(state.menuAction, roomMemberSuggestions)
+                }
 
                 var linkDialogAction by remember { mutableStateOf<LinkAction?>(null) }
                 val coroutineScope = rememberCoroutineScope()
@@ -84,10 +108,11 @@ class MainActivity : ComponentActivity() {
                         ) {
                             RichTextEditor(
                                 state = state,
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth().padding(10.dp),
                                 style = RichTextEditorDefaults.style(),
                                 onError = Timber::e,
-                                mentionDisplayHandler = mentionDisplayHandler
+                                resolveMentionDisplay = { _,_ -> TextDisplay.Pill },
+                                resolveRoomMentionDisplay = { TextDisplay.Pill },
                             )
                         }
                         EditorStyledText(
@@ -95,7 +120,26 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp),
+                            resolveMentionDisplay = { _,_ -> TextDisplay.Pill },
+                            resolveRoomMentionDisplay = { TextDisplay.Pill },
                         )
+
+                        Spacer(modifier = Modifier.weight(1f))
+                        SuggestionView(
+                            modifier = Modifier.heightIn(max = 320.dp),
+                            roomMemberSuggestions = roomMemberSuggestions,
+                            onReplaceSuggestionText = {
+                                coroutineScope.launch {
+                                    state.replaceSuggestion(it)
+                                }
+                            },
+                            onInsertMentionAtSuggestion = { text, link ->
+                                coroutineScope.launch {
+                                    state.insertMentionAtSuggestion(text, link)
+                                }
+                            },
+                        )
+
                         FormattingButtons(onResetText = {
                             coroutineScope.launch {
                                 state.setHtml("")

@@ -90,7 +90,7 @@ object Editor {
 
         override fun perform(uiController: UiController?, view: View?) {
             val editor = view as? EditorEditText ?: return
-            editor.setLinkSuggestion(url = url, text = text)
+            editor.insertMentionAtSuggestion(url = url, text = text)
         }
     }
 
@@ -103,7 +103,7 @@ object Editor {
 
         override fun perform(uiController: UiController?, view: View?) {
             val editor = view as? EditorEditText ?: return
-            editor.mentionDisplayHandler = mentionDisplayHandler
+            editor.updateStyle(editor.styleConfig, mentionDisplayHandler = mentionDisplayHandler)
         }
     }
 

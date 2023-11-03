@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.launch
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
+import uniffi.wysiwyg_composer.MenuAction
 
 /**
  * Fake behaviour for use in preview and test environments.
@@ -50,6 +51,14 @@ internal class FakeViewActionCollector(
             ViewAction.ToggleQuote -> toggleQuote()
             ViewAction.Undo -> undo()
             ViewAction.Unindent -> unindent()
+            is ViewAction.ReplaceSuggestionText -> {
+                state.messageHtml = state.messageHtml.replaceLast(Regex("(@\\w+)"), value.text)
+                state.messageMarkdown = state.messageMarkdown.replaceLast(Regex("(@\\w+)"), value.text)
+            }
+            is ViewAction.InsertMentionAtSuggestion -> {
+                state.messageHtml = state.messageHtml.replaceLast(Regex("(@\\w+)"), "<a href='${value.url}'>${value.text}</a>")
+                state.messageMarkdown = state.messageMarkdown.replaceLast(Regex("(@\\w+)"), "[${value.text}](${value.url})")
+            }
         }
     }
     private fun toggleInlineFormat(inlineFormat: InlineFormat): Boolean {
@@ -126,6 +135,13 @@ internal class FakeViewActionCollector(
         }
         actions[action] = newAction
         state.actions = actions
+    }
+
+    private fun String.replaceLast(regex: Regex, value: String): String {
+        val lastMatch = regex.findAll(this).lastOrNull()
+        return lastMatch?.let {
+            replaceRange(it.range, value)
+        } ?: this
     }
 }
 

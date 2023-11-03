@@ -11,11 +11,11 @@ import android.widget.LinearLayout
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import io.element.android.wysiwyg.EditorEditText
+import io.element.android.wysiwyg.poc.databinding.ViewRichTextEditorBinding
+import io.element.android.wysiwyg.poc.matrix.MatrixMentionMentionDisplayHandler
+import io.element.android.wysiwyg.poc.matrix.Mention
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
-import io.element.android.wysiwyg.poc.databinding.ViewRichTextEditorBinding
-import io.element.android.wysiwyg.poc.matrix.Mention
-import io.element.android.wysiwyg.poc.matrix.MatrixMentionMentionDisplayHandler
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
 import uniffi.wysiwyg_composer.MenuAction
@@ -119,7 +119,7 @@ class RichTextEditor : LinearLayout {
                 EditorEditText.OnMenuActionChangedListener { menuAction ->
                     updateSuggestions(menuAction)
                 }
-            richTextEditText.mentionDisplayHandler = MatrixMentionMentionDisplayHandler()
+            richTextEditText.updateStyle(richTextEditText.styleConfig, mentionDisplayHandler = MatrixMentionMentionDisplayHandler)
         }
     }
 
@@ -171,7 +171,7 @@ class RichTextEditor : LinearLayout {
                         if(item == Mention.NotifyEveryone) {
                             binding.richTextEditText.replaceTextSuggestion(item.text)
                         } else {
-                            binding.richTextEditText.setLinkSuggestion(
+                            binding.richTextEditText.insertMentionAtSuggestion(
                                 item.link, item.text
                             )
                         }

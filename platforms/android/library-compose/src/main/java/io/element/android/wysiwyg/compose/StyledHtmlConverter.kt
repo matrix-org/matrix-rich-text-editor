@@ -8,11 +8,11 @@ import timber.log.Timber
 
 /**
  * An [HtmlConverter] that can be configured with a [RichTextEditorStyle].
- *
  */
 class StyledHtmlConverter(
     private val context: Context,
     private val mentionDisplayHandler: MentionDisplayHandler?,
+    private val isMention: ((text: String, url: String) -> Boolean)?,
 ) : HtmlConverter {
 
     private var htmlConverter: HtmlConverter? = null
@@ -21,8 +21,9 @@ class StyledHtmlConverter(
         Timber.d("Configure with style: $style")
         htmlConverter = HtmlConverter.Factory.create(
             context = context,
-            styleConfigProvider = { style.toStyleConfig(context) },
-            mentionDisplayHandlerProvider = { mentionDisplayHandler },
+            styleConfig = style.toStyleConfig(context),
+            mentionDisplayHandler = mentionDisplayHandler,
+            isMention = isMention,
         )
     }
 

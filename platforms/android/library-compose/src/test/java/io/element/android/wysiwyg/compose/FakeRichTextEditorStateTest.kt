@@ -264,6 +264,33 @@ class FakeRichTextEditorStateTest {
     }
 
     @Test
+    fun `replaceSuggestion updates the state`() = runTest {
+        moleculeFlow(RecompositionMode.Immediate) {
+            val state = rememberRichTextEditorState(initialHtml = "@ro", initialSelection = 2 to 2, fake = true)
+            remember(state.messageHtml, state.messageMarkdown) { state }
+        }.test {
+            val initialState = awaitItem()
+            initialState.replaceSuggestion("@room")
+            val nextState = awaitItem()
+            assertThat(nextState.messageHtml, equalTo("@room"))
+        }
+    }
+
+    @Test
+    fun `insertMentionAtSuggestion updates the state with a mention link`() = runTest {
+        val url = "https://matrix.to/#/@user:matrix.org"
+        moleculeFlow(RecompositionMode.Immediate) {
+            val state = rememberRichTextEditorState(initialHtml = "@ro", initialSelection = 2 to 2, fake = true)
+            remember(state.messageHtml, state.messageMarkdown) { state }
+        }.test {
+            val initialState = awaitItem()
+            initialState.insertMentionAtSuggestion("@room", url)
+            val nextState = awaitItem()
+            assertThat(nextState.messageHtml, equalTo("<a href='$url'>@room</a>"))
+        }
+    }
+
+    @Test
     fun `requestFocus updates the state`() = runTest {
         moleculeFlow(RecompositionMode.Immediate) {
             val state = rememberRichTextEditorState(fake = true)

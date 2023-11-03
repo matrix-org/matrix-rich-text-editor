@@ -529,7 +529,7 @@ class EditorEditTextInputTests {
     }
 
     @Test
-    fun testPasteHtlmText() {
+    fun testPasteHtmlText() {
         val html = "<bold>$ipsum</bold>"
         val clipData = ClipData.newHtmlText("html", ipsum, html)
         val contentWatcher = spyk<(uri: Uri) -> Unit>({ })
