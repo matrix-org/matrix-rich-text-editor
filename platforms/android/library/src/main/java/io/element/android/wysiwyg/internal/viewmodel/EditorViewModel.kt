@@ -17,12 +17,10 @@ import uniffi.wysiwyg_composer.*
 
 internal class EditorViewModel(
     private val provideComposer: () -> ComposerModelInterface?,
-    private val provideMentionDetector: () -> MentionDetector?,
 ) : ViewModel() {
 
     var htmlConverter: HtmlConverter? = null
     private var composer: ComposerModelInterface? = provideComposer()
-    private var mentionDetector: MentionDetectorInterface? = provideMentionDetector()
 
     var rustErrorCollector: RustErrorCollector? = null
 
@@ -193,8 +191,6 @@ internal class EditorViewModel(
     fun rerender(): CharSequence =
         stringToSpans(getInternalHtml())
 
-    fun isMention(url: String) = mentionDetector?.isMention(url) ?: false
-
     private fun onComposerFailure(error: Throwable, attemptContentRecovery: Boolean = true) {
         rustErrorCollector?.onRustError(error)
 
@@ -205,7 +201,6 @@ internal class EditorViewModel(
         if (error is InternalException) { // InternalException means Rust panic
             // Recover from the crash
             composer = provideComposer()
-            mentionDetector = provideMentionDetector()
 
             if (attemptContentRecovery) {
                 runCatching {

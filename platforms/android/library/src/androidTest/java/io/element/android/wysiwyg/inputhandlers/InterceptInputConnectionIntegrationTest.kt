@@ -15,7 +15,6 @@ import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.equalTo
 import org.junit.Test
 import uniffi.wysiwyg_composer.newComposerModel
-import uniffi.wysiwyg_composer.newMentionDetector
 
 class InterceptInputConnectionIntegrationTest {
 
@@ -23,7 +22,6 @@ class InterceptInputConnectionIntegrationTest {
     private val styleConfig = createFakeStyleConfig()
     private val viewModel = EditorViewModel(
         provideComposer = { newComposerModel() },
-        provideMentionDetector = { newMentionDetector() },
     ).also {
         it.htmlConverter = HtmlConverter.Factory.create(context = app,
             styleConfig = styleConfig,

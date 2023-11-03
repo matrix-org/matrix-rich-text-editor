@@ -31,7 +31,6 @@ internal class EditorViewModelTest {
     private val htmlConverter = BasicHtmlConverter()
     private val viewModel = EditorViewModel(
         provideComposer = { composer.instance },
-        provideMentionDetector = { null },
     ).also {
         it.htmlConverter = htmlConverter
     }
