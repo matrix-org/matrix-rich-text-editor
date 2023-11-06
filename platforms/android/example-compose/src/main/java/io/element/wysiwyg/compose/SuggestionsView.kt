@@ -20,8 +20,9 @@ import uniffi.wysiwyg_composer.PatternKey
 fun SuggestionView(
     modifier: Modifier = Modifier,
     roomMemberSuggestions: SnapshotStateList<Mention>,
-    onReplaceSuggestionText: (String) -> Unit,
+    onReplaceSuggestion: (String) -> Unit,
     onInsertMentionAtSuggestion: (text: String, link: String) -> Unit,
+    onInsertAtRoomMentionAtSuggestion: () -> Unit,
 ) {
     LazyColumn(
         modifier = modifier.fillMaxWidth()
@@ -33,10 +34,19 @@ fun SuggestionView(
                     modifier = Modifier.fillMaxWidth()
                         .padding(10.dp)
                         .clickable {
-                            if (item == Mention.NotifyEveryone) {
-                                onReplaceSuggestionText(item.text)
-                            } else {
-                                onInsertMentionAtSuggestion(item.text, item.link)
+                            when (item) {
+                                Mention.NotifyEveryone -> {
+                                    onInsertAtRoomMentionAtSuggestion()
+                                }
+                                is Mention.SlashCommand -> {
+                                    onReplaceSuggestion(item.text)
+                                }
+                                is Mention.Room -> {
+                                    // TODO Handle room mention
+                                }
+                                else -> {
+                                    onInsertMentionAtSuggestion(item.text, item.link)
+                                }
                             }
                         })
                 Divider(modifier = Modifier.fillMaxWidth())
@@ -65,12 +75,12 @@ private fun processSuggestion(suggestion: MenuAction.Suggestion, roomMemberSugge
     val text = suggestion.suggestionPattern.text
     val people = listOf("alice", "bob", "carol", "dan").map(Mention::User)
     val rooms = listOf("matrix", "element").map(Mention::Room)
+    val slashCommands = listOf("leave", "shrug").map(Mention::SlashCommand)
     val everyone = Mention.NotifyEveryone
     val names = when (suggestion.suggestionPattern.key) {
         PatternKey.AT -> people + everyone
         PatternKey.HASH -> rooms
-        PatternKey.SLASH ->
-            emptyList() // TODO
+        PatternKey.SLASH -> slashCommands
     }
     val suggestions = names
         .filter { it.display.contains(text) }

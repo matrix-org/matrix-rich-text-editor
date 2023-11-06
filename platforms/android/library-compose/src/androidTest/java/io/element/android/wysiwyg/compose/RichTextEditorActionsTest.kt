@@ -5,6 +5,7 @@ import io.element.android.wysiwyg.compose.testutils.ComposerActions
 import io.element.android.wysiwyg.compose.testutils.StateFactory
 import io.element.android.wysiwyg.compose.testutils.copy
 import io.element.android.wysiwyg.compose.testutils.showContent
+import io.element.android.wysiwyg.utils.NBSP
 import io.element.android.wysiwyg.view.models.InlineFormat
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -12,6 +13,7 @@ import org.junit.Rule
 import org.junit.Test
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
+import uniffi.wysiwyg_composer.MentionsState
 
 class RichTextEditorActionsTest {
     @get:Rule
@@ -302,6 +304,67 @@ class RichTextEditorActionsTest {
                 )
             ), state.actions)
 
+    }
+
+    @Test
+    fun testReplaceSuggestionText() = runTest {
+        val state = StateFactory.createState()
+
+        composeTestRule.showContent(state)
+
+        state.setHtml("/")
+        composeTestRule.awaitIdle()
+
+        state.replaceSuggestion("/shrug")
+        composeTestRule.awaitIdle()
+
+        assertEquals("/shrug$NBSP", state.messageHtml)
+    }
+
+    @Test
+    fun testInsertMentionAtSuggestion() = runTest {
+        val state = StateFactory.createState()
+
+        composeTestRule.showContent(state)
+
+        state.setHtml("@")
+        composeTestRule.awaitIdle()
+
+        state.insertMentionAtSuggestion("@jonny", "https://matrix.to/#/@jonny:matrix.org")
+        composeTestRule.awaitIdle()
+
+        assertEquals(
+            MentionsState(
+                userIds = listOf("@jonny:matrix.org"),
+                roomIds = emptyList(),
+                roomAliases = emptyList(),
+                hasAtRoomMention = false,
+            ),
+            state.mentionsState
+        )
+    }
+
+    @Test
+    fun testInsertAtRoomMentionAtSuggestion() = runTest {
+        val state = StateFactory.createState()
+
+        composeTestRule.showContent(state)
+
+        state.setHtml("@")
+        composeTestRule.awaitIdle()
+
+        state.insertAtRoomMentionAtSuggestion()
+        composeTestRule.awaitIdle()
+
+        assertEquals(
+            MentionsState(
+                userIds = emptyList(),
+                roomIds = emptyList(),
+                roomAliases = emptyList(),
+                hasAtRoomMention = true
+            ),
+            state.mentionsState
+        )
     }
 
 }

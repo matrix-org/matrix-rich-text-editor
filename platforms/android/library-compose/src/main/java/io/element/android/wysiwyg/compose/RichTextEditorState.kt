@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.parcelize.Parcelize
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
+import uniffi.wysiwyg_composer.MentionsState
 import uniffi.wysiwyg_composer.MenuAction
 
 /**
@@ -218,6 +219,13 @@ class RichTextEditorState(
     }
 
     /**
+     * Inserts an `@room` mention at the current mention suggestion.
+     */
+    suspend fun insertAtRoomMentionAtSuggestion() {
+        _viewActions.emit(ViewAction.InsertAtRoomMentionAtSuggestion)
+    }
+
+    /**
      * The number of lines displayed in the editor.
      */
     var lineCount: Int by mutableIntStateOf(initialLineCount)
@@ -225,6 +233,11 @@ class RichTextEditorState(
 
     var linkAction: LinkAction? by mutableStateOf(null)
         internal set
+
+    /**
+     * The current [MentionsState] of the editor.
+     */
+    var mentionsState: MentionsState? by mutableStateOf(null)
 
 }
 

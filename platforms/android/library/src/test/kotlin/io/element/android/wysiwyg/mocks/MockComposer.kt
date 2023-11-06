@@ -7,6 +7,7 @@ import uniffi.wysiwyg_composer.ComposerModelInterface
 import uniffi.wysiwyg_composer.ComposerState
 import uniffi.wysiwyg_composer.ComposerUpdate
 import uniffi.wysiwyg_composer.LinkAction
+import uniffi.wysiwyg_composer.MentionsState
 
 class MockComposer {
     val instance = mockk<ComposerModelInterface>()
@@ -16,6 +17,7 @@ class MockComposer {
         givenActionStates()
         givenDummyToExampleFormat()
         givenGetContentAsPlainText()
+        givenMentionsState(MentionsState(userIds = emptyList(), roomIds = emptyList(), roomAliases = emptyList(), hasAtRoomMention = false))
     }
 
     fun givenCurrentDomState(
@@ -93,6 +95,10 @@ class MockComposer {
         update: ComposerUpdate = MockComposerUpdateFactory.create(),
     ) = every { instance.insertMentionAtSuggestion(url = link, attributes = emptyList(), text = name, suggestion = any()) } returns update
 
+    fun givenInsertAtMentionFromSuggestionResult(
+        update: ComposerUpdate = MockComposerUpdateFactory.create(),
+    ) = every { instance.insertAtRoomMentionAtSuggestion(suggestion = any()) } returns update
+
     fun givenReplaceAllHtmlResult(
         html: String,
         update: ComposerUpdate = MockComposerUpdateFactory.create(),
@@ -144,4 +150,6 @@ class MockComposer {
     ) = every { instance.getContentAsPlainText() } returns plainText
 
     fun givenDummyToExampleFormat() = every { instance.toExampleFormat() } returns ""
+
+    fun givenMentionsState(mentionsState: MentionsState) = every { instance.getMentionsState() } returns mentionsState
 }

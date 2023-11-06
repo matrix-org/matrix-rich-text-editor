@@ -117,6 +117,10 @@ class EditorEditText : AppCompatEditText {
         fun onLinkActionChanged(linkAction: LinkAction?)
     }
 
+    fun interface OnMentionsStateChangedListener {
+        fun onMentionsStateChanged(mentionsState: MentionsState?)
+    }
+
     var selectionChangeListener: OnSelectionChangeListener? = null
     var actionStatesChangedListener: OnActionStatesChangedListener? = null
         set(value) {
@@ -144,6 +148,18 @@ class EditorEditText : AppCompatEditText {
 
             viewModel.linkActionCallback = { linkAction ->
                 value?.onLinkActionChanged(linkAction)
+            }
+        }
+
+    /**
+     * Set the [MentionsState] change listener to be notified when the state of mentions in the composer changes.
+     */
+    var mentionsStateChangedListener: OnMentionsStateChangedListener? = null
+        set(value) {
+            field = value
+
+            viewModel.setMentionsStateCallback { mentionsState ->
+                value?.onMentionsStateChanged(mentionsState)
             }
         }
 
@@ -475,6 +491,20 @@ class EditorEditText : AppCompatEditText {
     }
 
     /**
+     * Set a mention link that applies to the current suggestion range
+     *
+     * @param url The url of the new link
+     * @param text The text to insert into the current suggestion range
+     */
+    fun insertAtRoomMentionAtSuggestion() {
+        val result = viewModel.processInput(
+            EditorInputAction.InsertAtRoomMentionAtSuggestion
+        ) ?: return
+        setTextFromComposerUpdate(result.text)
+        setSelectionFromComposerUpdate(result.selection.last)
+    }
+
+    /**
      * Replace text in the current suggestion range
      *
      * @param text The text to insert into the current suggestion range
@@ -487,6 +517,13 @@ class EditorEditText : AppCompatEditText {
         ) ?: return
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
+    }
+
+    /**
+     * Get the current [MentionsState] of the editor.
+     */
+    fun getMentionsState(): MentionsState? {
+        return viewModel.getMentionsState()
     }
 
     @VisibleForTesting

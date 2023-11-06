@@ -25,6 +25,7 @@ internal class EditorViewModel(
     var rustErrorCollector: RustErrorCollector? = null
 
     private var actionStatesCallback: ((Map<ComposerAction, ActionState>) -> Unit)? = null
+    private var mentionsStateCallback: ((MentionsState?) -> Unit)? = null
     var menuActionCallback: ((MenuAction) -> Unit)? = null
     var linkActionCallback: ((LinkAction?) -> Unit)? = null
 
@@ -39,6 +40,11 @@ internal class EditorViewModel(
     fun setActionStatesCallback(callback: ((Map<ComposerAction, ActionState>) -> Unit)?) {
         this.actionStatesCallback = callback
         actionStates()?.let { actionStatesCallback?.invoke(it) }
+    }
+
+    fun setMentionsStateCallback(callback: ((MentionsState?) -> Unit)?) {
+        this.mentionsStateCallback = callback
+        getMentionsState()?.let { mentionsStateCallback?.invoke(it) }
     }
 
     fun updateSelection(editable: Editable, start: Int, end: Int) {
@@ -114,6 +120,7 @@ internal class EditorViewModel(
                 is EditorInputAction.Indent -> composer?.indent()
                 is EditorInputAction.Unindent -> composer?.unindent()
                 is EditorInputAction.InsertMentionAtSuggestion -> insertMentionAtSuggestion(action)
+                is EditorInputAction.InsertAtRoomMentionAtSuggestion -> insertAtRoomMentionAtSuggestion()
             }
         }.onFailure(::onComposerFailure)
             .getOrNull()
@@ -148,6 +155,9 @@ internal class EditorViewModel(
                 val replacementHtml = textUpdate.replacementHtml.string()
 
                 recoveryContentPlainText = composer?.getContentAsPlainText() ?: ""
+
+                val mentionsState = getMentionsState()
+                mentionsStateCallback?.invoke(mentionsState)
 
                 ReplaceTextResult(
                     text = stringToSpans(replacementHtml),
@@ -207,6 +217,12 @@ internal class EditorViewModel(
         ::onComposerFailure
     ).getOrNull()
 
+    fun getMentionsState(): MentionsState? = runCatching {
+        composer?.getMentionsState()
+    }.onFailure(
+        ::onComposerFailure
+    ).getOrNull()
+
     fun rerender(): CharSequence =
         stringToSpans(getInternalHtml())
 
@@ -245,6 +261,18 @@ internal class EditorViewModel(
                 suggestion = suggestion,
                 attributes = emptyList()
             )
+        }.onFailure(
+            ::onComposerFailure
+        ).getOrNull()
+    }
+
+    private fun insertAtRoomMentionAtSuggestion(): ComposerUpdate? {
+        val suggestion = (curMenuAction as? MenuAction.Suggestion)
+            ?.suggestionPattern
+            ?: return null
+
+        return runCatching {
+            composer?.insertAtRoomMentionAtSuggestion(suggestion)
         }.onFailure(
             ::onComposerFailure
         ).getOrNull()

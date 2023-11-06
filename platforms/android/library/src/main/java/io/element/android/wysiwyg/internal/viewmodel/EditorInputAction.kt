@@ -96,6 +96,11 @@ internal sealed interface EditorInputAction {
     ): EditorInputAction
 
     /**
+     * Replaces the suggesetion with an `@room` mention
+     */
+    object InsertAtRoomMentionAtSuggestion : EditorInputAction
+
+    /**
      * Creates a list, [ordered] if true or unordered in the current selection.
      */
     data class ToggleList(val ordered: Boolean): EditorInputAction

@@ -94,6 +94,17 @@ object Editor {
         }
     }
 
+    class InsertAtRoomMentionAtSuggestion() : ViewAction {
+        override fun getConstraints(): Matcher<View> = isDisplayed()
+
+        override fun getDescription(): String = "Set @room mention at suggestion"
+
+        override fun perform(uiController: UiController?, view: View?) {
+            val editor = view as? EditorEditText ?: return
+            editor.insertAtRoomMentionAtSuggestion()
+        }
+    }
+
     class SetMentionDisplayHandler(
         private val mentionDisplayHandler: MentionDisplayHandler,
     ) : ViewAction {
@@ -234,6 +245,7 @@ object EditorActions {
     fun insertLink(text: String, url: String) = Editor.InsertLink(text, url)
     fun removeLink() = Editor.RemoveLink
     fun insertMentionAtSuggestion(text: String, url: String) = Editor.InsertMentionAtSuggestion(text, url)
+    fun insertAtRoomMentionAtSuggestion() = Editor.InsertAtRoomMentionAtSuggestion()
     fun setMentionDisplayHandler(mentionDisplayHandler: MentionDisplayHandler) = Editor.SetMentionDisplayHandler(mentionDisplayHandler)
     fun replaceTextSuggestion(text: String) = Editor.ReplaceTextSuggestion(text)
     fun toggleList(ordered: Boolean) = Editor.ToggleList(ordered)

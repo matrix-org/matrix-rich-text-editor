@@ -287,7 +287,7 @@ class EditorEditTextInputTests {
     }
 
     @Test
-    fun testSettingLinkSuggestion() {
+    fun testSettingUserMentionSuggestion() {
         onView(withId(R.id.rich_text_edit_text))
             .perform(ImeActions.setComposingText("@jonny"))
             .perform(EditorActions.setMentionDisplayHandler(TestMentionDisplayHandler(TextDisplay.Pill)))
@@ -298,7 +298,7 @@ class EditorEditTextInputTests {
     }
 
     @Test
-    fun testSettingMultipleLinkSuggestionWithCustomReplacements() {
+    fun testSettingMultipleUserMentionSuggestionsWithCustomReplacements() {
         onView(withId(R.id.rich_text_edit_text))
             .perform(ImeActions.setComposingText("@jonny"))
             .perform(EditorActions.setMentionDisplayHandler(
@@ -314,6 +314,17 @@ class EditorEditTextInputTests {
             .perform(EditorActions.insertMentionAtSuggestion("jonny", "https://matrix.to/#/@test:matrix.org"))
             .check(matches(TextViewMatcher {
                 it.editableText.getSpans<ReplacementSpan>().count() == 2
+            }))
+    }
+
+    @Test
+    fun testSettingAtRoomMentionAtSuggestion() {
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(ImeActions.setComposingText("@room"))
+            .perform(EditorActions.setMentionDisplayHandler(TestMentionDisplayHandler(TextDisplay.Pill)))
+            .perform(EditorActions.insertAtRoomMentionAtSuggestion())
+            .check(matches(TextViewMatcher {
+                it.editableText.getSpans<PillSpan>().isNotEmpty()
             }))
     }
 

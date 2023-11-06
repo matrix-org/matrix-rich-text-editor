@@ -128,9 +128,14 @@ class MainActivity : ComponentActivity() {
                         SuggestionView(
                             modifier = Modifier.heightIn(max = 320.dp),
                             roomMemberSuggestions = roomMemberSuggestions,
-                            onReplaceSuggestionText = {
+                            onReplaceSuggestion = { text ->
                                 coroutineScope.launch {
-                                    state.replaceSuggestion(it)
+                                    state.replaceSuggestion(text)
+                                }
+                            },
+                            onInsertAtRoomMentionAtSuggestion = {
+                                coroutineScope.launch {
+                                    state.insertAtRoomMentionAtSuggestion()
                                 }
                             },
                             onInsertMentionAtSuggestion = { text, link ->

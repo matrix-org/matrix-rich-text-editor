@@ -16,6 +16,7 @@ import io.element.android.wysiwyg.poc.matrix.MatrixMentionMentionDisplayHandler
 import io.element.android.wysiwyg.poc.matrix.Mention
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
+import timber.log.Timber
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
 import uniffi.wysiwyg_composer.MenuAction
@@ -168,8 +169,8 @@ class RichTextEditor : LinearLayout {
                 binding.menuSuggestion.onItemClickListener =
                     OnItemClickListener { _, _, position, _ ->
                         val item = suggestions[position]
-                        if(item == Mention.NotifyEveryone) {
-                            binding.richTextEditText.replaceTextSuggestion(item.text)
+                        if (item == Mention.NotifyEveryone) {
+                            binding.richTextEditText.insertAtRoomMentionAtSuggestion()
                         } else {
                             binding.richTextEditText.insertMentionAtSuggestion(
                                 item.link, item.text
