@@ -10,6 +10,7 @@ import kotlin.math.roundToInt
 internal class PillSpan(
     @ColorInt
     val backgroundColor: Int,
+    val url: String? = null,
 ) : ReplacementSpan() {
     override fun getSize(
         paint: Paint,

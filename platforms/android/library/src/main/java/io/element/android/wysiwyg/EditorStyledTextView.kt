@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.text.Spanned
 import android.util.AttributeSet
+import android.view.MotionEvent
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.graphics.withTranslation
 import io.element.android.wysiwyg.display.MentionDisplayHandler
@@ -12,6 +13,9 @@ import io.element.android.wysiwyg.utils.HtmlConverter
 import io.element.android.wysiwyg.view.StyleConfig
 import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelper
 import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelperFactory
+import io.element.android.wysiwyg.view.spans.CustomMentionSpan
+import io.element.android.wysiwyg.view.spans.LinkSpan
+import io.element.android.wysiwyg.view.spans.PillSpan
 import io.element.android.wysiwyg.view.spans.ReuseSourceSpannableFactory
 import uniffi.wysiwyg_composer.MentionDetector
 import uniffi.wysiwyg_composer.newMentionDetector
@@ -38,6 +42,8 @@ open class EditorStyledTextView : AppCompatTextView {
 
     private var mentionDisplayHandler: MentionDisplayHandler? = null
     private var htmlConverter: HtmlConverter? = null
+
+    var onLinkClickedListener: ((String) -> Unit)? = null
 
     init {
         setSpannableFactory(spannableFactory)
@@ -127,5 +133,39 @@ open class EditorStyledTextView : AppCompatTextView {
                 }
             }
         )
+    }
+
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        return when (event?.action) {
+            MotionEvent.ACTION_DOWN -> {
+                // Allow ACTION_UP to be called
+                super.onTouchEvent(event)
+                true
+            }
+            MotionEvent.ACTION_UP -> {
+                // Find selection matching the pointer coordinates
+                val offset = getOffsetForPosition(event.x, event.y)
+                // Look for clickable spans in that position
+                val spans = (text as? Spanned)?.getSpans(offset, offset, Any::class.java) ?: return false
+                val linkSpans = spans.filterIsInstance<LinkSpan>()
+                val pillSpans = spans.filterIsInstance<PillSpan>()
+                val customMentionSpans = spans.filterIsInstance<CustomMentionSpan>()
+                // Notify the link has been clicked
+                for (span in linkSpans) {
+                    if (span.url == null) continue
+                    onLinkClickedListener?.invoke(span.url)
+                }
+                for (span in pillSpans) {
+                    if (span.url == null) continue
+                    onLinkClickedListener?.invoke(span.url)
+                }
+                for (span in customMentionSpans) {
+                    if (span.url == null) continue
+                    onLinkClickedListener?.invoke(span.url)
+                }
+                true
+            }
+            else -> super.onTouchEvent(event)
+        }
     }
 }
