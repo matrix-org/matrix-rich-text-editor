@@ -23,7 +23,7 @@ sealed class Mention(
         override val key: String = "@"
     }
 
-    class Command(
+    class SlashCommand(
         display: String
     ): Mention(display) {
         override val key: String = "/"

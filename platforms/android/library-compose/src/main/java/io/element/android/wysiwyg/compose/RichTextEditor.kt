@@ -22,7 +22,6 @@ import io.element.android.wysiwyg.display.TextDisplay
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import timber.log.Timber
 
 
 /**
@@ -174,7 +173,6 @@ private fun RealEditor(
         // more than it's strictly necessary. To avoid this, we can use a `remember` block to cache the `update` lambda, and only update it when needed.
         update = remember(style, typeface, mentionDisplayHandler, onError) {
             { view ->
-                Timber.d("RealEditor's update block called, recomposing!")
                 view.applyStyleInCompose(style)
                 view.typeface = typeface
                 view.updateStyle(style.toStyleConfig(view.context), mentionDisplayHandler)

@@ -176,7 +176,6 @@ class RichTextEditor : LinearLayout {
                                 item.link, item.text
                             )
                         }
-                        Timber.d("Mentions state: ${binding.richTextEditText.getMentionsState()}}")
                     }
             }
         }

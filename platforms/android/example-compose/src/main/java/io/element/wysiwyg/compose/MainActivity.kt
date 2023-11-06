@@ -66,8 +66,6 @@ class MainActivity : ComponentActivity() {
 
                 val state = rememberRichTextEditorState(initialFocus = true)
 
-                Timber.d("Mentions state: ${state.mentionsState}")
-
                 LaunchedEffect(state.menuAction) {
                     processMenuAction(state.menuAction, roomMemberSuggestions)
                 }
@@ -130,7 +128,7 @@ class MainActivity : ComponentActivity() {
                         SuggestionView(
                             modifier = Modifier.heightIn(max = 320.dp),
                             roomMemberSuggestions = roomMemberSuggestions,
-                            onReplaceSuggestionText = { text ->
+                            onReplaceSuggestion = { text ->
                                 coroutineScope.launch {
                                     state.replaceSuggestion(text)
                                 }
