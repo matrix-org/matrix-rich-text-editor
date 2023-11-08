@@ -7,6 +7,7 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.graphics.withTranslation
+import androidx.core.text.getSpans
 import io.element.android.wysiwyg.display.MentionDisplayHandler
 import io.element.android.wysiwyg.internal.view.EditorEditTextAttributeReader
 import io.element.android.wysiwyg.utils.HtmlConverter
@@ -19,6 +20,7 @@ import io.element.android.wysiwyg.view.spans.PillSpan
 import io.element.android.wysiwyg.view.spans.ReuseSourceSpannableFactory
 import uniffi.wysiwyg_composer.MentionDetector
 import uniffi.wysiwyg_composer.newMentionDetector
+import kotlin.math.hypot
 
 /**
  * This TextView can display all spans used by the editor.
@@ -135,37 +137,64 @@ open class EditorStyledTextView : AppCompatTextView {
         )
     }
 
+    // Tracks the initial touch coordinates of a touch event, they will be used to determine if a click event happened
+    private var initialTouchCoordinates: Pair<Float, Float>? = null
+    // Tracks whether a click event may be happening between touch event phases
+    private var maybeClickEvent = false
+
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        return when (event?.action) {
+        when (event?.action) {
             MotionEvent.ACTION_DOWN -> {
-                // Allow ACTION_UP to be called
+                // A press was detected, this may be a click
+                maybeClickEvent = true
+                // Call default touch handler to detect the start of normal taps and gestures
                 super.onTouchEvent(event)
-                true
+                // Store initial touch coordinates
+                initialTouchCoordinates = event.x to event.y
+                // Return that we handled the event, it'll allow us to receive `ACTION_UP` later
+                return true
+            }
+            MotionEvent.ACTION_MOVE -> {
+                val distance = initialTouchCoordinates?.let { hypot(it.first - event.x, it.second - event.y) } ?: 0f
+                // If the distance between the initial coordinates and the current ones is too big (4dp), we can assume it's not a click
+                if (distance >= 4 * context.resources.displayMetrics.density) {
+                    maybeClickEvent = false
+                }
             }
             MotionEvent.ACTION_UP -> {
-                // Find selection matching the pointer coordinates
-                val offset = getOffsetForPosition(event.x, event.y)
-                // Look for clickable spans in that position
-                val spans = (text as? Spanned)?.getSpans(offset, offset, Any::class.java) ?: return false
-                val linkSpans = spans.filterIsInstance<LinkSpan>()
-                val pillSpans = spans.filterIsInstance<PillSpan>()
-                val customMentionSpans = spans.filterIsInstance<CustomMentionSpan>()
-                // Notify the link has been clicked
-                for (span in linkSpans) {
-                    if (span.url == null) continue
-                    onLinkClickedListener?.invoke(span.url)
+                if (maybeClickEvent) {
+                    // Reset touch flag
+                    maybeClickEvent = false
+
+                    // Find any spans in the coordinates
+                    val spans = findSpansForTouchEvent(event)
+
+                    // Notify the link has been clicked
+                    for (span in spans) {
+                        when (span) {
+                            is LinkSpan -> {
+                                onLinkClickedListener?.invoke(span.url)
+                            }
+                            is PillSpan -> {
+                                span.url?.let { onLinkClickedListener?.invoke(it) }
+                            }
+                            is CustomMentionSpan -> {
+                                span.url?.let { onLinkClickedListener?.invoke(it) }
+                            }
+                            else -> Unit
+                        }
+                    }
                 }
-                for (span in pillSpans) {
-                    if (span.url == null) continue
-                    onLinkClickedListener?.invoke(span.url)
-                }
-                for (span in customMentionSpans) {
-                    if (span.url == null) continue
-                    onLinkClickedListener?.invoke(span.url)
-                }
-                true
             }
-            else -> super.onTouchEvent(event)
+            else -> Unit
         }
+        // Call default touch handler, needed to detect other gestures and default taps
+        return super.onTouchEvent(event)
+    }
+
+    private fun findSpansForTouchEvent(event: MotionEvent): Array<out Any> {
+        // Find selection matching the pointer coordinates
+        val offset = getOffsetForPosition(event.x, event.y)
+        return (text as? Spanned)?.getSpans<Any>(offset, offset).orEmpty()
     }
 }
