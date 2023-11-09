@@ -4,10 +4,12 @@ import android.content.Context
 import android.graphics.Canvas
 import android.text.Spanned
 import android.util.AttributeSet
+import android.view.GestureDetector
 import android.view.MotionEvent
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.graphics.withTranslation
 import androidx.core.text.getSpans
+import androidx.core.view.GestureDetectorCompat
 import io.element.android.wysiwyg.display.MentionDisplayHandler
 import io.element.android.wysiwyg.internal.view.EditorEditTextAttributeReader
 import io.element.android.wysiwyg.utils.HtmlConverter
@@ -20,7 +22,6 @@ import io.element.android.wysiwyg.view.spans.PillSpan
 import io.element.android.wysiwyg.view.spans.ReuseSourceSpannableFactory
 import uniffi.wysiwyg_composer.MentionDetector
 import uniffi.wysiwyg_composer.newMentionDetector
-import kotlin.math.hypot
 
 /**
  * This TextView can display all spans used by the editor.
@@ -46,6 +47,31 @@ open class EditorStyledTextView : AppCompatTextView {
     private var htmlConverter: HtmlConverter? = null
 
     var onLinkClickedListener: ((String) -> Unit)? = null
+
+    // This gesture detector will be used to detect clicks on spans
+    private val gestureDetector = GestureDetectorCompat(context, object : GestureDetector.SimpleOnGestureListener() {
+        override fun onSingleTapUp(e: MotionEvent): Boolean {
+            // Find any spans in the coordinates
+            val spans = findSpansForTouchEvent(e)
+
+            // Notify the link has been clicked
+            for (span in spans) {
+                when (span) {
+                    is LinkSpan -> {
+                        onLinkClickedListener?.invoke(span.url)
+                    }
+                    is PillSpan -> {
+                        span.url?.let { onLinkClickedListener?.invoke(it) }
+                    }
+                    is CustomMentionSpan -> {
+                        span.url?.let { onLinkClickedListener?.invoke(it) }
+                    }
+                    else -> Unit
+                }
+            }
+            return true
+        }
+    })
 
     init {
         setSpannableFactory(spannableFactory)
@@ -137,59 +163,13 @@ open class EditorStyledTextView : AppCompatTextView {
         )
     }
 
-    // Tracks the initial touch coordinates of a touch event, they will be used to determine if a click event happened
-    private var initialTouchCoordinates: Pair<Float, Float>? = null
-    // Tracks whether a click event may be happening between touch event phases
-    private var maybeClickEvent = false
-
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        when (event?.action) {
-            MotionEvent.ACTION_DOWN -> {
-                // A press was detected, this may be a click
-                maybeClickEvent = true
-                // Call default touch handler to detect the start of normal taps and gestures
-                super.onTouchEvent(event)
-                // Store initial touch coordinates
-                initialTouchCoordinates = event.x to event.y
-                // Return that we handled the event, it'll allow us to receive `ACTION_UP` later
-                return true
-            }
-            MotionEvent.ACTION_MOVE -> {
-                val distance = initialTouchCoordinates?.let { hypot(it.first - event.x, it.second - event.y) } ?: 0f
-                // If the distance between the initial coordinates and the current ones is too big (4dp), we can assume it's not a click
-                if (distance >= 4 * context.resources.displayMetrics.density) {
-                    maybeClickEvent = false
-                }
-            }
-            MotionEvent.ACTION_UP -> {
-                if (maybeClickEvent) {
-                    // Reset touch flag
-                    maybeClickEvent = false
-
-                    // Find any spans in the coordinates
-                    val spans = findSpansForTouchEvent(event)
-
-                    // Notify the link has been clicked
-                    for (span in spans) {
-                        when (span) {
-                            is LinkSpan -> {
-                                onLinkClickedListener?.invoke(span.url)
-                            }
-                            is PillSpan -> {
-                                span.url?.let { onLinkClickedListener?.invoke(it) }
-                            }
-                            is CustomMentionSpan -> {
-                                span.url?.let { onLinkClickedListener?.invoke(it) }
-                            }
-                            else -> Unit
-                        }
-                    }
-                }
-            }
-            else -> Unit
-        }
-        // Call default touch handler, needed to detect other gestures and default taps
-        return super.onTouchEvent(event)
+        // We pass the event to the gesture detector
+        event?.let { gestureDetector.onTouchEvent(it) }
+        // This will handle the default actions for any touch event in the TextView
+        super.onTouchEvent(event)
+        // We need to return true to be able to detect any events
+        return true
     }
 
     private fun findSpansForTouchEvent(event: MotionEvent): Array<out Any> {
