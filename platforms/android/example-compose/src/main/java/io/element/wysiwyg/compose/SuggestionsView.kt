@@ -41,9 +41,6 @@ fun SuggestionView(
                                 is Mention.SlashCommand -> {
                                     onReplaceSuggestion(item.text)
                                 }
-                                is Mention.Room -> {
-                                    // TODO Handle room mention
-                                }
                                 else -> {
                                     onInsertMentionAtSuggestion(item.text, item.link)
                                 }

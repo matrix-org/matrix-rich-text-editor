@@ -16,7 +16,7 @@ import io.element.android.wysiwyg.view.StyleConfig
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.spans.BlockSpan
 import io.element.android.wysiwyg.view.spans.CodeBlockSpan
-import io.element.android.wysiwyg.view.spans.CustomReplacementSpan
+import io.element.android.wysiwyg.view.spans.CustomMentionSpan
 import io.element.android.wysiwyg.view.spans.ExtraCharacterSpan
 import io.element.android.wysiwyg.view.spans.InlineCodeSpan
 import io.element.android.wysiwyg.view.spans.LinkSpan
@@ -352,7 +352,7 @@ internal class HtmlToSpansParser(
 
         when (textDisplay) {
             is TextDisplay.Custom -> {
-                val span = CustomReplacementSpan(textDisplay.customSpan)
+                val span = CustomMentionSpan(textDisplay.customSpan, url)
                 replacePlaceholderWithPendingSpan(
                     last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
@@ -360,7 +360,7 @@ internal class HtmlToSpansParser(
 
             TextDisplay.Pill -> {
                 val pillBackground = styleConfig.pill.backgroundColor
-                val span = PillSpan(pillBackground)
+                val span = PillSpan(pillBackground, url)
                 replacePlaceholderWithPendingSpan(
                     last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
@@ -510,7 +510,7 @@ internal class HtmlToSpansParser(
                 return@eachMatch
             }
             val span = when (display) {
-                is TextDisplay.Custom -> CustomReplacementSpan(display.customSpan)
+                is TextDisplay.Custom -> CustomMentionSpan(display.customSpan)
                 TextDisplay.Pill -> PillSpan(
                     styleConfig.pill.backgroundColor
                 )
@@ -544,7 +544,7 @@ internal class HtmlToSpansParser(
             // Links
             LinkSpan::class.java,
             PillSpan::class.java,
-            CustomReplacementSpan::class.java,
+            CustomMentionSpan::class.java,
 
             // Lists
             UnorderedListSpan::class.java,

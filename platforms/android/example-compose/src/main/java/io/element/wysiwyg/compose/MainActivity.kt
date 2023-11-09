@@ -1,6 +1,7 @@
 package io.element.wysiwyg.compose
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
@@ -92,7 +93,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
                 ) {
                     Column(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
                         Surface(
@@ -122,6 +123,9 @@ class MainActivity : ComponentActivity() {
                                 .padding(16.dp),
                             resolveMentionDisplay = { _,_ -> TextDisplay.Pill },
                             resolveRoomMentionDisplay = { TextDisplay.Pill },
+                            onLinkClickedListener = { url ->
+                                Toast.makeText(this@MainActivity, "Clicked: $url", Toast.LENGTH_SHORT).show()
+                            }
                         )
 
                         Spacer(modifier = Modifier.weight(1f))

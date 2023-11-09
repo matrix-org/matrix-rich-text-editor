@@ -32,6 +32,7 @@ fun EditorStyledText(
     modifier: Modifier = Modifier,
     resolveMentionDisplay: (text: String, url: String) -> TextDisplay = RichTextEditorDefaults.MentionDisplay,
     resolveRoomMentionDisplay: () -> TextDisplay = RichTextEditorDefaults.RoomMentionDisplay,
+    onLinkClickedListener: ((String) -> Unit) = {},
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
 ) {
     val typeface by style.text.rememberTypeface()
@@ -54,7 +55,7 @@ fun EditorStyledText(
         // The `update` lambda is called when the view is first created, and then again whenever the actual `update` lambda changes. That is, it's replaced with
         // a new lambda capturing different variables from the surrounding scope. However, there seems to be an issue that causes the `update` lambda to change
         // more than it's strictly necessary. To avoid this, we can use a `remember` block to cache the `update` lambda, and only update it when needed.
-        update = remember(style, typeface, mentionDisplayHandler, text) {
+        update = remember(style, typeface, mentionDisplayHandler, text, onLinkClickedListener) {
             { view ->
                 view.applyStyleInCompose(style)
                 view.typeface = typeface
@@ -64,6 +65,7 @@ fun EditorStyledText(
                 } else {
                     view.setHtml(text.toString())
                 }
+                view.onLinkClickedListener = onLinkClickedListener
             }
         }
     )

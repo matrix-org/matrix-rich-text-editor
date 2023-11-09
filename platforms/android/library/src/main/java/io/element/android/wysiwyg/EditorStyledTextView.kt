@@ -4,14 +4,21 @@ import android.content.Context
 import android.graphics.Canvas
 import android.text.Spanned
 import android.util.AttributeSet
+import android.view.GestureDetector
+import android.view.MotionEvent
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.graphics.withTranslation
+import androidx.core.text.getSpans
+import androidx.core.view.GestureDetectorCompat
 import io.element.android.wysiwyg.display.MentionDisplayHandler
 import io.element.android.wysiwyg.internal.view.EditorEditTextAttributeReader
 import io.element.android.wysiwyg.utils.HtmlConverter
 import io.element.android.wysiwyg.view.StyleConfig
 import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelper
 import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelperFactory
+import io.element.android.wysiwyg.view.spans.CustomMentionSpan
+import io.element.android.wysiwyg.view.spans.LinkSpan
+import io.element.android.wysiwyg.view.spans.PillSpan
 import io.element.android.wysiwyg.view.spans.ReuseSourceSpannableFactory
 import uniffi.wysiwyg_composer.MentionDetector
 import uniffi.wysiwyg_composer.newMentionDetector
@@ -38,6 +45,33 @@ open class EditorStyledTextView : AppCompatTextView {
 
     private var mentionDisplayHandler: MentionDisplayHandler? = null
     private var htmlConverter: HtmlConverter? = null
+
+    var onLinkClickedListener: ((String) -> Unit)? = null
+
+    // This gesture detector will be used to detect clicks on spans
+    private val gestureDetector = GestureDetectorCompat(context, object : GestureDetector.SimpleOnGestureListener() {
+        override fun onSingleTapUp(e: MotionEvent): Boolean {
+            // Find any spans in the coordinates
+            val spans = findSpansForTouchEvent(e)
+
+            // Notify the link has been clicked
+            for (span in spans) {
+                when (span) {
+                    is LinkSpan -> {
+                        onLinkClickedListener?.invoke(span.url)
+                    }
+                    is PillSpan -> {
+                        span.url?.let { onLinkClickedListener?.invoke(it) }
+                    }
+                    is CustomMentionSpan -> {
+                        span.url?.let { onLinkClickedListener?.invoke(it) }
+                    }
+                    else -> Unit
+                }
+            }
+            return true
+        }
+    })
 
     init {
         setSpannableFactory(spannableFactory)
@@ -127,5 +161,20 @@ open class EditorStyledTextView : AppCompatTextView {
                 }
             }
         )
+    }
+
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        // We pass the event to the gesture detector
+        event?.let { gestureDetector.onTouchEvent(it) }
+        // This will handle the default actions for any touch event in the TextView
+        super.onTouchEvent(event)
+        // We need to return true to be able to detect any events
+        return true
+    }
+
+    private fun findSpansForTouchEvent(event: MotionEvent): Array<out Any> {
+        // Find selection matching the pointer coordinates
+        val offset = getOffsetForPosition(event.x, event.y)
+        return (text as? Spanned)?.getSpans<Any>(offset, offset).orEmpty()
     }
 }
