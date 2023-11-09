@@ -1,5 +1,19 @@
 # Changelog
 
+# [2.16.0] - 2023-11-09
+
+### Fixed
+- Android: [API breaking change] replaced the existing `mentionDisplayHandler` parameter in both `RichTextEditor` and `EditorStyledText` with a couple of `resolveMentionDisplay` and `resolveRoomMentionDisplay` lambdas.
+- Android: fixed an issue that caused unnecessary recompositions in the Compose components.
+- Android: `EditorEditText` was being leaked by the ViewModel on activity recreations, also causing the right styles to not be applied properly.
+- Android: change several default theme colors.
+- Android: add `MentionsState` to get the intentional mentions in the text.
+- Android: make `LinkSpan`, `PillSpan` and `CustomMentionSpan` clickable in the TextView component.
+
+### Added
+- Common: Added `MentionDetector` to the FFI bindings so we can use the same method for detecting mentions in all platforms.
+- Android: Added `replaceSuggestion` and `insertMentionAtSuggestion` methods to the Compose implementation of the RTE composer.
+
 # [2.15.0] - 2023-10-30
 
 ### Fixed
