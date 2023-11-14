@@ -1,9 +1,11 @@
 package io.element.android.wysiwyg.utils
 
+import android.text.Spanned
 import android.text.style.BulletSpan
 import androidx.core.text.buildSpannedString
 import androidx.core.text.inSpans
 import io.element.android.wysiwyg.view.spans.ExtraCharacterSpan
+import io.element.android.wysiwyg.view.spans.PillSpan
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -187,4 +189,34 @@ class EditorIndexMapperTests {
         Assert.assertEquals(end-1, newEnd.toInt())
     }
     // endregion
+
+    // region Mentions
+    @Test
+    fun `given indexes from composer before and after the mention, they're correctly positioned`() {
+        var mentionStart = 0
+        var mentionEnd = 0
+        val mentionText = buildSpannedString {
+            append("Hello, ")
+            mentionStart = length // 7 in composer, 7 in editor
+            inSpans(PillSpan(0, "")) {
+                append("@Jorge")
+            }
+            setSpan(ExtraCharacterSpan(), mentionStart + 1, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            mentionEnd = length + 1 // 8 in composer, 14 in editor
+            append("$NBSP")
+        }
+        val textLength = mentionText.length + 1 // Length + 1 extra char span
+        EditorIndexMapper.run {
+            fromComposerToEditor(7, 7, mentionText).matches(mentionStart, mentionStart)
+            fromComposerToEditor(8, 8, mentionText).matches(mentionEnd, mentionEnd)
+            fromComposerToEditor(7, 8, mentionText).matches(mentionStart, mentionEnd)
+            fromComposerToEditor(9, 9, mentionText).matches(textLength, textLength)
+        }
+    }
+    // endregion
+}
+
+private fun Pair<Int, Int>.matches(start: Int, end: Int) {
+    Assert.assertEquals(start, first)
+    Assert.assertEquals(end, second)
 }
