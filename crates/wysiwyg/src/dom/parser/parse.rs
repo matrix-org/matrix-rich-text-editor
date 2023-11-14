@@ -126,7 +126,7 @@ mod sys {
                         let is_inside_code_block =
                             self.current_path.contains(&CodeBlock);
                         let is_only_child_in_parent =
-                            node.children().len() == 0;
+                            node.children().is_empty();
                         convert_text(
                             &text.content,
                             node,
