@@ -317,4 +317,19 @@ class FakeRichTextEditorStateTest {
             assertThat(hasFocus, equalTo(true))
         }
     }
+
+    @Test
+    fun `setSelection updates the state`() = runTest {
+        moleculeFlow(RecompositionMode.Immediate) {
+            val state = rememberRichTextEditorState(fake = true)
+            remember(state.selection) { state }
+        }.test {
+            val initialState = awaitItem()
+            assertThat(initialState.selection, equalTo(0 to 0))
+            initialState.setSelection(1)
+            assertThat(awaitItem().selection, equalTo(1 to 1))
+            initialState.setSelection(0, 1)
+            assertThat(awaitItem().selection, equalTo(0 to 1))
+        }
+    }
 }
