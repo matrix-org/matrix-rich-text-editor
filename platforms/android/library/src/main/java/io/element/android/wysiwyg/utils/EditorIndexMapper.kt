@@ -56,31 +56,49 @@ object EditorIndexMapper {
     }
 
     /**
-     * Translates the [index] coming from the [ComposerModel] into one that can be safely used
-     * in the [editableText].
+     * Translates the [composerIndex] coming from the [ComposerModel] into one that can be safely
+     * used in the [editableText].
      */
-    fun editorIndexFromComposer(index: Int, editableText: Spanned): Int {
+    fun editorIndexFromComposer(composerIndex: Int, editableText: Spanned): Int {
         // Usually we could just use `editableText.getSpans<ExtraCharacterSpan>(0, 0)` and iterate
         // through its contents until the desired index, but the index from the ComposerModel can be
         // smaller than the one in the editableText and every span found means an extra character
         // to take into account and to add to the index actual position.
+
+        // Actual indexes in the Editable we've iterated through
         var consumed = 0
-        var i = 0
-        while (index > consumed) {
-            val extraCharSpans = editableText.getSpans<ExtraCharacterSpan>(start = i, end = i + 1)
-            if (extraCharSpans.isEmpty()) {
-                // No extra character span found, we can increment the index
-                val replacementSpans = editableText.getSpans<ReplacementSpan>(start = i, end = i + 1)
-                // We need to skip 1 character for every replacement span found
-                if (replacementSpans.isEmpty()) {
-                    consumed++
-                }
-                i++
+        // How many extra characters we've found
+        var extraOffset = 0
+
+        while (consumed < composerIndex) {
+            val indexInEditor = consumed + extraOffset
+
+            val extraCharSpans = editableText.getSpans<ExtraCharacterSpan>(
+                start = indexInEditor,
+                end = indexInEditor + 1
+            )
+            if (extraCharSpans.isNotEmpty()) {
+                // Found some extra character spans, add them to the extra offset
+                // Don't increment the consumed positions
+                extraOffset += extraCharSpans.count()
             } else {
-                i += extraCharSpans.count()
+                // Increment the consumed positions by default
+                consumed++
+
+                val foundReplacementSpan = editableText.getSpans<ReplacementSpan>(
+                    start = indexInEditor,
+                    end = indexInEditor + 1
+                ).isNotEmpty()
+                if (foundReplacementSpan) {
+                    // If a ReplacementSpan is found, cancel the increment of consumed positions
+                    // so we get an extra iteration
+                    consumed--
+                    // Increment the extra offset instead to keep advancing positions
+                    extraOffset++
+                }
             }
         }
-        return i
+        return consumed + extraOffset
     }
 
 }
