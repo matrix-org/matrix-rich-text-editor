@@ -1,5 +1,6 @@
 package io.element.android.wysiwyg.compose
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.collectAsState
@@ -11,6 +12,7 @@ import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withText
+import io.element.android.wysiwyg.utils.NBSP
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
@@ -27,12 +29,14 @@ class RichTextEditorStateTest {
         composeTestRule.setContent {
             MaterialTheme {
                 val showAlt by showAlternateEditor.collectAsState()
-                if(!showAlt) {
-                    Text("Main editor")
-                    RichTextEditor(state = state)
-                } else {
-                    Text("Alternative editor")
-                    RichTextEditor(state = state)
+                Column {
+                    if (!showAlt) {
+                        Text("Main editor")
+                        RichTextEditor(state = state)
+                    } else {
+                        Text("Alternative editor")
+                        RichTextEditor(state = state)
+                    }
                 }
             }
         }
@@ -48,6 +52,22 @@ class RichTextEditorStateTest {
 
         composeTestRule.onNodeWithText("Alternative editor").assertIsDisplayed()
         onView(withText("Hello, world")).check(matches(isDisplayed()))
+    }
+
+    @Test
+    fun setHtmlWithTrailingNbspKeepsIt() = runTest {
+        val state = RichTextEditorState()
+        composeTestRule.setContent {
+            MaterialTheme {
+                RichTextEditor(state = state)
+            }
+        }
+
+        state.setHtml("<b>Hey</b>$NBSP")
+        composeTestRule.awaitIdle()
+
+        onView(withText("Hey ")).check(matches(isDisplayed()))
+        state.setSelection(4)
     }
 
     @Test

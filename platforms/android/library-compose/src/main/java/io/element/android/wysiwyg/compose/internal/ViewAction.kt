@@ -19,4 +19,5 @@ internal sealed class ViewAction {
     data class ReplaceSuggestionText(val text: String): ViewAction()
     data class InsertMentionAtSuggestion(val text: String, val url: String): ViewAction()
     data object InsertAtRoomMentionAtSuggestion: ViewAction()
+    data class SetSelection(val start: Int, val end: Int): ViewAction()
 }

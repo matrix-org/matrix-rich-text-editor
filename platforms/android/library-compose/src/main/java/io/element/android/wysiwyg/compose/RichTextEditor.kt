@@ -160,6 +160,7 @@ private fun RealEditor(
                                 is ViewAction.ReplaceSuggestionText -> replaceTextSuggestion(it.text)
                                 is ViewAction.InsertMentionAtSuggestion -> insertMentionAtSuggestion(url = it.url, text = it.text)
                                 is ViewAction.InsertAtRoomMentionAtSuggestion -> insertAtRoomMentionAtSuggestion()
+                                is ViewAction.SetSelection -> setSelection(it.start, it.end)
                             }
                         }
                     }

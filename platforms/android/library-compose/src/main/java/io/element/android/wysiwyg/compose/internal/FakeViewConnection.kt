@@ -63,6 +63,9 @@ internal class FakeViewActionCollector(
                 state.messageHtml = state.messageHtml.replaceLast(Regex("(@\\w+)"), htmlReplacement)
                 state.messageMarkdown = state.messageMarkdown.replaceLast(Regex("(@\\w+)"), "@room")
             }
+            is ViewAction.SetSelection -> {
+                state.selection = value.start to value.end
+            }
         }
     }
     private fun toggleInlineFormat(inlineFormat: InlineFormat): Boolean {
