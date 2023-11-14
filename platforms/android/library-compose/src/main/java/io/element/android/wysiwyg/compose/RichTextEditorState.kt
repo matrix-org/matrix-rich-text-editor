@@ -143,6 +143,15 @@ class RichTextEditorState(
     }
 
     /**
+     * Sets the text selection to the provided indexes.
+     * @param start The start index of the selection
+     * @param end The end index of the selection. If not provided, the selection will be a cursor.
+     */
+    suspend fun setSelection(start: Int, end: Int = start) {
+        _viewActions.emit(ViewAction.SetSelection(start, end))
+    }
+
+    /**
      * The content of the editor as HTML formatted for sending as a message.
      */
     var messageHtml by mutableStateOf(initialHtml)

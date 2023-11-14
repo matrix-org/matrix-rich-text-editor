@@ -125,7 +125,14 @@ mod sys {
                         // Special case for code block, translate '\n' into <br /> nodes
                         let is_inside_code_block =
                             self.current_path.contains(&CodeBlock);
-                        convert_text(&text.content, node, is_inside_code_block);
+                        let is_only_child_in_parent =
+                            panode.children.len() == 1;
+                        convert_text(
+                            &text.content,
+                            node,
+                            is_inside_code_block,
+                            is_only_child_in_parent,
+                        );
                     }
                 }
             }
@@ -890,6 +897,23 @@ mod sys {
                 "#}
             );
         }
+
+        #[test]
+        fn parse_nbsp_after_container_keeps_it() {
+            let html = r#"<a href="https://matrix.to/#/@test:example.org">test</a>&nbsp;"#;
+            let dom: Dom<Utf16String> =
+                HtmlParser::default().parse(html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+
+                  ├>mention "test", https://matrix.to/#/@test:example.org
+                  └>" "
+                "#}
+            );
+        }
     }
 }
 
@@ -1060,6 +1084,7 @@ fn convert_text<S: UnicodeString>(
     text: &str,
     node: &mut ContainerNode<S>,
     is_inside_code_block: bool,
+    is_only_child_in_parent: bool,
 ) {
     if is_inside_code_block {
         let text_nodes: Vec<_> = text.split('\n').collect();
@@ -1077,7 +1102,7 @@ fn convert_text<S: UnicodeString>(
     } else {
         let contents = text;
         let is_nbsp = contents == "\u{A0}" || contents == "&nbsp;";
-        if is_nbsp {
+        if is_nbsp && is_only_child_in_parent {
             return;
         }
 
@@ -1199,10 +1224,12 @@ mod js {
                         Some(value) => {
                             let is_inside_code_block =
                                 self.current_path.contains(&CodeBlock);
+                            let is_only_child_in_parent = number_of_nodes == 1;
                             convert_text(
                                 value.as_str(),
                                 dom,
                                 is_inside_code_block,
+                                is_only_child_in_parent,
                             );
                         }
                         _ => {}
