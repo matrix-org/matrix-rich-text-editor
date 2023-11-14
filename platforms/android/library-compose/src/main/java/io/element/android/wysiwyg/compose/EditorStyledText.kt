@@ -52,21 +52,16 @@ fun EditorStyledText(
         factory = { context ->
             EditorStyledTextView(context)
         },
-        // The `update` lambda is called when the view is first created, and then again whenever the actual `update` lambda changes. That is, it's replaced with
-        // a new lambda capturing different variables from the surrounding scope. However, there seems to be an issue that causes the `update` lambda to change
-        // more than it's strictly necessary. To avoid this, we can use a `remember` block to cache the `update` lambda, and only update it when needed.
-        update = remember(style, typeface, mentionDisplayHandler, text, onLinkClickedListener) {
-            { view ->
-                view.applyStyleInCompose(style)
-                view.typeface = typeface
-                view.updateStyle(style.toStyleConfig(view.context), mentionDisplayHandler)
-                if (text is Spanned) {
-                    view.setText(text, TextView.BufferType.SPANNABLE)
-                } else {
-                    view.setHtml(text.toString())
-                }
-                view.onLinkClickedListener = onLinkClickedListener
+        update = { view ->
+            view.applyStyleInCompose(style)
+            view.typeface = typeface
+            view.updateStyle(style.toStyleConfig(view.context), mentionDisplayHandler)
+            if (text is Spanned) {
+                view.setText(text, TextView.BufferType.SPANNABLE)
+            } else {
+                view.setHtml(text.toString())
             }
+            view.onLinkClickedListener = onLinkClickedListener
         }
     )
 }

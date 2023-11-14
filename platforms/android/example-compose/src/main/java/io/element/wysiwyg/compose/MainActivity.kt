@@ -111,7 +111,7 @@ class MainActivity : ComponentActivity() {
                                 state = state,
                                 modifier = Modifier.fillMaxWidth().padding(10.dp),
                                 style = RichTextEditorDefaults.style(),
-                                onError = Timber::e,
+                                onError = { Timber.e(it) },
                                 resolveMentionDisplay = { _,_ -> TextDisplay.Pill },
                                 resolveRoomMentionDisplay = { TextDisplay.Pill },
                             )
