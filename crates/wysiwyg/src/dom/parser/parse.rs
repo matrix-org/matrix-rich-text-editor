@@ -125,8 +125,14 @@ mod sys {
                         // Special case for code block, translate '\n' into <br /> nodes
                         let is_inside_code_block =
                             self.current_path.contains(&CodeBlock);
-                        let is_only_child_in_parent = node.children().len() == 0;
-                        convert_text(&text.content, node, is_inside_code_block, is_only_child_in_parent);
+                        let is_only_child_in_parent =
+                            node.children().len() == 0;
+                        convert_text(
+                            &text.content,
+                            node,
+                            is_inside_code_block,
+                            is_only_child_in_parent,
+                        );
                     }
                 }
             }
