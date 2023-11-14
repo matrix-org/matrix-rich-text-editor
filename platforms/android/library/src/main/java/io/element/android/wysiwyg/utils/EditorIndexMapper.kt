@@ -2,6 +2,7 @@ package io.element.android.wysiwyg.utils
 
 import android.text.Editable
 import android.text.Spanned
+import android.text.style.ReplacementSpan
 import androidx.core.text.getSpans
 import io.element.android.wysiwyg.view.spans.ExtraCharacterSpan
 import kotlin.math.absoluteValue
@@ -66,12 +67,17 @@ object EditorIndexMapper {
         var consumed = 0
         var i = 0
         while (index > consumed) {
-            val spans = editableText.getSpans<ExtraCharacterSpan>(start = i, end = i + 1)
-            if (spans.isEmpty()) {
-                consumed++
+            val extraCharSpans = editableText.getSpans<ExtraCharacterSpan>(start = i, end = i + 1)
+            if (extraCharSpans.isEmpty()) {
+                // No extra character span found, we can increment the index
+                val replacementSpans = editableText.getSpans<ReplacementSpan>(start = i, end = i + 1)
+                // We need to skip 1 character for every replacement span found
+                if (replacementSpans.isEmpty()) {
+                    consumed++
+                }
                 i++
             } else {
-                i += spans.count()
+                i += extraCharSpans.count()
             }
         }
         return i
