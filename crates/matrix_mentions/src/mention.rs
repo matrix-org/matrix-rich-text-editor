@@ -88,6 +88,7 @@ impl Mention {
                 Mention::from_room(uri)
             }
             MatrixId::User(_) => Mention::from_user(uri, None),
+            // TODO: handle MatrixId::Event
             _ => None,
         }
     }
@@ -193,15 +194,16 @@ fn parse_matrix_id(uri: &str) -> Option<MatrixId> {
     None
 }
 
-/// Attempts to split an external id on `/#/`, rebuild as a matrix to style permalink then parse
-/// using ruma.
+/// Attempts to split an external id on `/#/` (or `/#/room/` or /#/user/` if this is based on a URL
+/// into a client like Element Web) and rebuild as a matrix.to style permalink then parse using
+/// ruma.
 ///
 /// Returns the result of calling `parse` in ruma.
 
 #[cfg(any(test, feature = "custom-matrix-urls"))]
 fn parse_external_id(uri: &str) -> Result<MatrixToUri, IdParseError> {
     // first split the string into the parts we need
-    let parts: Vec<&str> = uri.split("/#/").collect();
+    let parts: Vec<&str> = split_uri_on_prefix(uri);
 
     // we expect this to split the uri into exactly two parts, if it's anything else, return early
     if parts.len() != 2 {
@@ -213,6 +215,19 @@ fn parse_external_id(uri: &str) -> Result<MatrixToUri, IdParseError> {
     let uri_for_ruma = format!("{}{}", MATRIX_TO_BASE_URL, after_hash);
 
     MatrixToUri::parse(&uri_for_ruma)
+}
+
+/// Attempt to find `/#/user/` or `/#/room/` in the supplied URI, and split it on one of those if
+/// found, meaning it is a URI into a client like Element Web. Otherwise split it on `/#/`,
+/// treating it as if it were a matrix.to URI.
+fn split_uri_on_prefix(uri: &str) -> Vec<&str> {
+    for pattern in &["/#/user/", "/#/room/", "/#/"] {
+        let s: Vec<&str> = uri.split(pattern).collect();
+        if s.len() == 2 {
+            return s;
+        }
+    }
+    vec![uri]
 }
 
 #[cfg(test)]
@@ -353,6 +368,54 @@ mod test {
         assert_eq!(
             parsed.kind(),
             &MentionKind::Room(RoomIdentificationType::Id)
+        );
+    }
+
+    #[test]
+    fn parse_uri_external_permalink_user() {
+        // See https://github.com/matrix-org/matrix-react-sdk/blob/9564009eba7986f6a982128175aa45e326823794/src/utils/permalinks/ElementPermalinkConstructor.ts#L34
+        // - when configured with a permalink_prefix config value, Element Web creates URLs with
+        // "room" or "user" in them.
+        // TODO: handle MatrixId::Event in parse_external_id . For example, a URL like:
+        // "http://foobar.com/#/room/!roomid:matrix.org/$eventid?via=matrix.org";
+
+        let uri =
+            "https://custom.custom.com/?secretstuff/#/user/@alice:example.org";
+        let parsed = Mention::from_uri(uri).unwrap();
+
+        assert_eq!(parsed.uri(), uri);
+        assert_eq!(parsed.mx_id(), "@alice:example.org");
+        assert_eq!(parsed.display_text(), "@alice:example.org");
+        assert_eq!(parsed.kind(), &MentionKind::User);
+    }
+
+    #[test]
+    fn parse_uri_external_permalink_room() {
+        let uri =
+            "https://custom.custom.com/?secretstuff/#/room/!roomid:example.org";
+        let parsed = Mention::from_uri(uri).unwrap();
+
+        assert_eq!(parsed.uri(), uri);
+        assert_eq!(parsed.mx_id(), "!roomid:example.org");
+        assert_eq!(parsed.display_text(), "!roomid:example.org");
+        assert_eq!(
+            parsed.kind(),
+            &MentionKind::Room(RoomIdentificationType::Id)
+        );
+    }
+
+    #[test]
+    fn parse_uri_external_permalink_room_alias() {
+        let uri =
+            "https://custom.custom.com/?secretstuff/#/room/#room_name:example.org";
+        let parsed = Mention::from_uri(uri).unwrap();
+
+        assert_eq!(parsed.uri(), uri);
+        assert_eq!(parsed.mx_id(), "#room_name:example.org");
+        assert_eq!(parsed.display_text(), "#room_name:example.org");
+        assert_eq!(
+            parsed.kind(),
+            &MentionKind::Room(RoomIdentificationType::Alias)
         );
     }
 
