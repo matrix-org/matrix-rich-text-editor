@@ -15,6 +15,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import io.element.android.wysiwyg.utils.NBSP
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
 
@@ -52,6 +53,37 @@ class RichTextEditorStateTest {
 
         composeTestRule.onNodeWithText("Alternative editor").assertIsDisplayed()
         onView(withText("Hello, world")).check(matches(isDisplayed()))
+    }
+
+    @Test
+    fun testStateRestoration() = runTest {
+        val state = RichTextEditorState()
+        val hideEditor = MutableStateFlow(false)
+        composeTestRule.setContent {
+            MaterialTheme {
+                val hide by hideEditor.collectAsState()
+                Column {
+                    if (!hide) {
+                        Text("Editor")
+                        RichTextEditor(state = state)
+                    }
+                }
+            }
+        }
+
+        state.setHtml("Hello, world")
+        // Ensure line count is set
+        Assert.assertEquals(1, state.lineCount)
+
+        // Hide and show the editor to simulate a configuration change
+        hideEditor.emit(true)
+        hideEditor.emit(false)
+        composeTestRule.awaitIdle()
+
+        // If the text is found, the state was restored
+        onView(withText("Hello, world")).check(matches(isDisplayed()))
+        // Line count is kept
+        Assert.assertEquals(1, state.lineCount)
     }
 
     @Test
