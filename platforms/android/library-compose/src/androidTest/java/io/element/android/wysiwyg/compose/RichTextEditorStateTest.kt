@@ -1,10 +1,12 @@
 package io.element.android.wysiwyg.compose
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -62,10 +64,10 @@ class RichTextEditorStateTest {
         composeTestRule.setContent {
             MaterialTheme {
                 val hide by hideEditor.collectAsState()
-                Column {
+                Column() {
                     if (!hide) {
                         Text("Editor")
-                        RichTextEditor(state = state)
+                        RichTextEditor(modifier = Modifier.fillMaxWidth(), state = state)
                     }
                 }
             }
