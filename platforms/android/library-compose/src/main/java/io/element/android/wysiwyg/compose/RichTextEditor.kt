@@ -118,7 +118,7 @@ private fun RealEditor(
                         state.internalHtml = getInternalHtml()
                         state.messageHtml = getContentAsMessageHtml()
                         state.messageMarkdown = getMarkdown()
-                        // Prevent the line count from being reset before onRestoreInstanceState
+                        // Prevent the line count from being reset when the text Layout is not set
                         if (lineCount > 0) {
                             state.lineCount = lineCount
                         }
@@ -138,11 +138,9 @@ private fun RealEditor(
 
                 applyDefaultStyle()
 
-                // Set initial HTML and selection, state will be restored automatically in the view
-                if (editableText.isEmpty()) {
-                    setHtml(state.internalHtml)
-                    setSelection(state.selection.first, state.selection.second)
-                }
+                // Set initial HTML and selection based on the provided state
+                setHtml(state.internalHtml)
+                setSelection(state.selection.first, state.selection.second)
 
                 // Only start listening for text changes after the initial state has been restored
                 if (registerStateUpdates) {
