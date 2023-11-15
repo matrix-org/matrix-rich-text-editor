@@ -24,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.element.android.wysiwyg.compose.EditorStyledText
@@ -51,19 +52,23 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val mentionDisplayHandler = DefaultMentionDisplayHandler()
         val mentionDetector = if (window.decorView.isInEditMode) null else newMentionDetector()
-        val htmlConverter = StyledHtmlConverter(
-            context = this,
-            mentionDisplayHandler = mentionDisplayHandler,
-            isMention = mentionDetector?.let { detector ->
-                { _, url ->
-                    detector.isMention(url)
-                }
-            }
-        )
         setContent {
+            val context = LocalContext.current
             RichTextEditorTheme {
                 val style = RichTextEditorDefaults.style()
-                htmlConverter.configureWith(style = style)
+                val htmlConverter = remember(style) {
+                    StyledHtmlConverter(
+                        context = context,
+                        mentionDisplayHandler = mentionDisplayHandler,
+                        isMention = mentionDetector?.let { detector ->
+                            { _, url ->
+                                detector.isMention(url)
+                            }
+                        }
+                    ).apply {
+                        configureWith(style = style)
+                    }
+                }
 
                 val state = rememberRichTextEditorState(initialFocus = true)
 
@@ -109,7 +114,9 @@ class MainActivity : ComponentActivity() {
                         ) {
                             RichTextEditor(
                                 state = state,
-                                modifier = Modifier.fillMaxWidth().padding(10.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(10.dp),
                                 style = RichTextEditorDefaults.style(),
                                 onError = { Timber.e(it) },
                                 resolveMentionDisplay = { _,_ -> TextDisplay.Pill },
