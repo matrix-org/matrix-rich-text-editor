@@ -74,6 +74,7 @@ class RichTextEditorStateTest {
         }
 
         state.setHtml("Hello<br/>world")
+        state.setSelection(4)
         composeTestRule.awaitIdle()
         // Ensure line count is set
         Assert.assertEquals(2, state.lineCount)
@@ -86,6 +87,7 @@ class RichTextEditorStateTest {
 
         // If the text is found, the state was restored
         onView(withText("Hello\nworld")).check(matches(isDisplayed()))
+        Assert.assertEquals(state.selection, 4 to 4)
         // Line count is kept
         Assert.assertEquals(2, state.lineCount)
     }
