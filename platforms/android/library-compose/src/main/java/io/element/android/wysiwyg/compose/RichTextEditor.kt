@@ -22,6 +22,7 @@ import io.element.android.wysiwyg.display.TextDisplay
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 
 /**
@@ -169,16 +170,12 @@ private fun RealEditor(
 
             view
         },
-        // The `update` lambda is called when the view is first created, and then again whenever the actual `update` lambda changes. That is, it's replaced with
-        // a new lambda capturing different variables from the surrounding scope. However, there seems to be an issue that causes the `update` lambda to change
-        // more than it's strictly necessary. To avoid this, we can use a `remember` block to cache the `update` lambda, and only update it when needed.
-        update = remember(style, typeface, mentionDisplayHandler, onError) {
-            { view ->
-                view.applyStyleInCompose(style)
-                view.typeface = typeface
-                view.updateStyle(style.toStyleConfig(view.context), mentionDisplayHandler)
-                view.rustErrorCollector = RustErrorCollector(onError)
-            }
+        update = { view ->
+            Timber.i("RichTextEditor update() called")
+            view.applyStyleInCompose(style)
+            view.typeface = typeface
+            view.updateStyle(style.toStyleConfig(view.context), mentionDisplayHandler)
+            view.rustErrorCollector = RustErrorCollector(onError)
         }
     )
 }
