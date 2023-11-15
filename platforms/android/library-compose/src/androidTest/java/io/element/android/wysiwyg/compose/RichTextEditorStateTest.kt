@@ -35,10 +35,10 @@ class RichTextEditorStateTest {
                 Column {
                     if (!showAlt) {
                         Text("Main editor")
-                        RichTextEditor(state = state)
+                        RichTextEditor(state = state, modifier = Modifier.fillMaxWidth())
                     } else {
                         Text("Alternative editor")
-                        RichTextEditor(state = state)
+                        RichTextEditor(state = state, modifier = Modifier.fillMaxWidth())
                     }
                 }
             }
@@ -64,7 +64,7 @@ class RichTextEditorStateTest {
         composeTestRule.setContent {
             MaterialTheme {
                 val hide by hideEditor.collectAsState()
-                Column() {
+                Column {
                     if (!hide) {
                         Text("Editor")
                         RichTextEditor(modifier = Modifier.fillMaxWidth(), state = state)
@@ -73,19 +73,21 @@ class RichTextEditorStateTest {
             }
         }
 
-        state.setHtml("Hello, world")
+        state.setHtml("Hello<br/>world")
+        composeTestRule.awaitIdle()
         // Ensure line count is set
-        Assert.assertEquals(1, state.lineCount)
+        Assert.assertEquals(2, state.lineCount)
 
         // Hide and show the editor to simulate a configuration change
         hideEditor.emit(true)
+        composeTestRule.awaitIdle()
         hideEditor.emit(false)
         composeTestRule.awaitIdle()
 
         // If the text is found, the state was restored
-        onView(withText("Hello, world")).check(matches(isDisplayed()))
+        onView(withText("Hello\nworld")).check(matches(isDisplayed()))
         // Line count is kept
-        Assert.assertEquals(1, state.lineCount)
+        Assert.assertEquals(2, state.lineCount)
     }
 
     @Test
