@@ -1,10 +1,12 @@
 package io.element.android.wysiwyg.compose
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -34,32 +36,33 @@ class RichTextEditorStateTest {
                 Column {
                     if (!showAlt) {
                         Text("Main editor")
-                        RichTextEditor(state = state)
+                        RichTextEditor(state = state, modifier = Modifier.fillMaxWidth())
                     } else {
                         Text("Alternative editor")
-                        RichTextEditor(state = state)
+                        RichTextEditor(state = state, modifier = Modifier.fillMaxWidth())
                     }
                 }
             }
         }
 
-        state.setHtml("Hello, world")
+        state.setHtml("Hello,<br />world")
         state.setSelection(0, 5)
         composeTestRule.awaitIdle()
 
         composeTestRule.onNodeWithText("Main editor").assertIsDisplayed()
-        onView(withText("Hello, world")).check(matches(isDisplayed()))
+        onView(withText("Hello,\nworld")).check(matches(isDisplayed()))
 
         showAlternateEditor.emit(true)
         composeTestRule.awaitIdle()
 
         composeTestRule.onNodeWithText("Alternative editor").assertIsDisplayed()
-        onView(withText("Hello, world")).check(matches(isDisplayed()))
+        onView(withText("Hello,\nworld")).check(matches(isDisplayed()))
+        assertEquals(0, state.lineCount) // FIXME - line count should be 2
 
         state.toggleInlineFormat(InlineFormat.Bold)
         composeTestRule.awaitIdle()
 
-        assertEquals("<strong>Hello</strong>, world", state.messageHtml)
+        assertEquals("<strong>Hello</strong>,<br />world", state.messageHtml)
     }
 
     @Test
