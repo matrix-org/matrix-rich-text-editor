@@ -220,6 +220,7 @@ fn parse_external_id(uri: &str) -> Result<MatrixToUri, IdParseError> {
 /// Attempt to find `/#/user/` or `/#/room/` in the supplied URI, and split it on one of those if
 /// found, meaning it is a URI into a client like Element Web. Otherwise split it on `/#/`,
 /// treating it as if it were a matrix.to URI.
+#[cfg(any(test, feature = "custom-matrix-urls"))]
 fn split_uri_on_prefix(uri: &str) -> Vec<&str> {
     for pattern in &["/#/user/", "/#/room/", "/#/"] {
         let s: Vec<&str> = uri.split(pattern).collect();
