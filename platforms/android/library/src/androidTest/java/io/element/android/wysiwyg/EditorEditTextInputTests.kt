@@ -54,6 +54,9 @@ class EditorEditTextInputTests {
     @get:Rule
     val scenarioRule = ActivityScenarioRule(TestActivity::class.java)
 
+    @get:Rule
+    val dismissAnrRule = DismissAnrRule()
+
     private val ipsum = "Lorem Ipsum is simply dummy text of the printing and typesetting industry."
 
     init {
