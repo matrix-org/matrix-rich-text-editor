@@ -15,8 +15,10 @@ import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import io.element.android.wysiwyg.utils.NBSP
+import io.element.android.wysiwyg.view.models.InlineFormat
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
@@ -44,17 +46,24 @@ class RichTextEditorStateTest {
             }
         }
 
-        state.setHtml("Hello, world")
+        state.setHtml("Hello,<br />world")
+        state.setSelection(0, 5)
         composeTestRule.awaitIdle()
 
         composeTestRule.onNodeWithText("Main editor").assertIsDisplayed()
-        onView(withText("Hello, world")).check(matches(isDisplayed()))
+        onView(withText("Hello,\nworld")).check(matches(isDisplayed()))
 
         showAlternateEditor.emit(true)
         composeTestRule.awaitIdle()
 
         composeTestRule.onNodeWithText("Alternative editor").assertIsDisplayed()
-        onView(withText("Hello, world")).check(matches(isDisplayed()))
+        onView(withText("Hello,\nworld")).check(matches(isDisplayed()))
+        assertEquals(2, state.lineCount)
+
+        state.toggleInlineFormat(InlineFormat.Bold)
+        composeTestRule.awaitIdle()
+
+        assertEquals("<strong>Hello</strong>,<br />world", state.messageHtml)
     }
 
     @Test
