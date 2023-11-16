@@ -1,10 +1,12 @@
 package io.element.android.wysiwyg.compose
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -15,6 +17,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import io.element.android.wysiwyg.utils.NBSP
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
 
@@ -32,10 +35,10 @@ class RichTextEditorStateTest {
                 Column {
                     if (!showAlt) {
                         Text("Main editor")
-                        RichTextEditor(state = state)
+                        RichTextEditor(state = state, modifier = Modifier.fillMaxWidth())
                     } else {
                         Text("Alternative editor")
-                        RichTextEditor(state = state)
+                        RichTextEditor(state = state, modifier = Modifier.fillMaxWidth())
                     }
                 }
             }
@@ -52,6 +55,41 @@ class RichTextEditorStateTest {
 
         composeTestRule.onNodeWithText("Alternative editor").assertIsDisplayed()
         onView(withText("Hello, world")).check(matches(isDisplayed()))
+    }
+
+    @Test
+    fun testStateRestoration() = runTest {
+        val state = RichTextEditorState()
+        val hideEditor = MutableStateFlow(false)
+        composeTestRule.setContent {
+            MaterialTheme {
+                val hide by hideEditor.collectAsState()
+                Column {
+                    if (!hide) {
+                        Text("Editor")
+                        RichTextEditor(modifier = Modifier.fillMaxWidth(), state = state)
+                    }
+                }
+            }
+        }
+
+        state.setHtml("Hello<br/>world")
+        state.setSelection(4)
+        composeTestRule.awaitIdle()
+        // Ensure line count is set
+        Assert.assertEquals(2, state.lineCount)
+
+        // Hide and show the editor to simulate a configuration change
+        hideEditor.emit(true)
+        composeTestRule.awaitIdle()
+        hideEditor.emit(false)
+        composeTestRule.awaitIdle()
+
+        // If the text is found, the state was restored
+        onView(withText("Hello\nworld")).check(matches(isDisplayed()))
+        Assert.assertEquals(state.selection, 4 to 4)
+        // Line count is kept
+        Assert.assertEquals(2, state.lineCount)
     }
 
     @Test

@@ -119,7 +119,10 @@ private fun RealEditor(
                         state.internalHtml = getInternalHtml()
                         state.messageHtml = getContentAsMessageHtml()
                         state.messageMarkdown = getMarkdown()
-                        state.lineCount = lineCount
+                        // Prevent the line count from being reset when the text Layout is not set
+                        if (lineCount > 0) {
+                            state.lineCount = lineCount
+                        }
                     }
                     val shouldRestoreFocus = state.hasFocus
                     if (shouldRestoreFocus) {
@@ -136,7 +139,7 @@ private fun RealEditor(
 
                 applyDefaultStyle()
 
-                // Restore the state of the view with the saved state
+                // Set initial HTML and selection based on the provided state
                 setHtml(state.internalHtml)
                 setSelection(state.selection.first, state.selection.second)
 
