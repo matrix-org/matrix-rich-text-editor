@@ -1,5 +1,17 @@
 # Changelog
 
+# [2.17.0] - 2023-11-16
+
+### Fixed
+- Android: removed workaround for excessive recompositions from the Compose components.
+- Android: fix indexes not working properly for mentions.
+- Android: add a workaround to always get a valid `lineCount` in the Composables.
+- Common: prevent trailing NBSP characters from being removed when parsing. They should only be removed if they are the whole content of a container node.
+
+### Added
+
+- Common: added support for parsing mentions using a different prefix from the default `https://matrix.to` one.
+
 # [2.16.0] - 2023-11-09
 
 ### Fixed
