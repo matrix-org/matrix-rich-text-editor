@@ -1,6 +1,6 @@
 {
     "name": "@matrix-org/matrix-wysiwyg",
-    "version": "2.16.0",
+    "version": "2.17.0",
     "type": "module",
     "description": "Wysiwyg composer for matrix.org using React",
     "author": "matrix.org",
