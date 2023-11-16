@@ -19,6 +19,7 @@ import io.element.android.wysiwyg.view.models.InlineFormat
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
 
@@ -57,12 +58,47 @@ class RichTextEditorStateTest {
 
         composeTestRule.onNodeWithText("Alternative editor").assertIsDisplayed()
         onView(withText("Hello,\nworld")).check(matches(isDisplayed()))
-        assertEquals(0, state.lineCount) // FIXME - line count should be 2
+        assertEquals(2, state.lineCount)
 
         state.toggleInlineFormat(InlineFormat.Bold)
         composeTestRule.awaitIdle()
 
         assertEquals("<strong>Hello</strong>,<br />world", state.messageHtml)
+    }
+
+    @Test
+    fun testStateRestoration() = runTest {
+        val state = RichTextEditorState()
+        val hideEditor = MutableStateFlow(false)
+        composeTestRule.setContent {
+            MaterialTheme {
+                val hide by hideEditor.collectAsState()
+                Column {
+                    if (!hide) {
+                        Text("Editor")
+                        RichTextEditor(modifier = Modifier.fillMaxWidth(), state = state)
+                    }
+                }
+            }
+        }
+
+        state.setHtml("Hello<br/>world")
+        state.setSelection(4)
+        composeTestRule.awaitIdle()
+        // Ensure line count is set
+        Assert.assertEquals(2, state.lineCount)
+
+        // Hide and show the editor to simulate a configuration change
+        hideEditor.emit(true)
+        composeTestRule.awaitIdle()
+        hideEditor.emit(false)
+        composeTestRule.awaitIdle()
+
+        // If the text is found, the state was restored
+        onView(withText("Hello\nworld")).check(matches(isDisplayed()))
+        Assert.assertEquals(state.selection, 4 to 4)
+        // Line count is kept
+        Assert.assertEquals(2, state.lineCount)
     }
 
     @Test
