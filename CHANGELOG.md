@@ -1,5 +1,14 @@
 # Changelog
 
+# [2.18.0] - 2023-11-17
+
+### Fixed
+- iOS: fixed a bug that made the system speech to text functionality suddenly stop after a few seconds.
+
+### Added
+- Android: Improved reliability of UI tests running on CI emulator (#872) 
+- Android: CI takes a screenshot when instrumentation tests fail
+
 # [2.17.0] - 2023-11-16
 
 ### Fixed
