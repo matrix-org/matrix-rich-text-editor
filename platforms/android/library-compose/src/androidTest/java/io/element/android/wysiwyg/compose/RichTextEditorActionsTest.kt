@@ -5,6 +5,7 @@ import io.element.android.wysiwyg.compose.testutils.ComposerActions
 import io.element.android.wysiwyg.compose.testutils.StateFactory
 import io.element.android.wysiwyg.compose.testutils.copy
 import io.element.android.wysiwyg.compose.testutils.showContent
+import io.element.android.wysiwyg.test.rules.createFlakyEmulatorRule
 import io.element.android.wysiwyg.utils.NBSP
 import io.element.android.wysiwyg.view.models.InlineFormat
 import kotlinx.coroutines.test.runTest
@@ -18,6 +19,9 @@ import uniffi.wysiwyg_composer.MentionsState
 class RichTextEditorActionsTest {
     @get:Rule
     val composeTestRule = createComposeRule()
+
+    @get:Rule
+    val flakyEmulatorRule = createFlakyEmulatorRule()
 
     @Test
     fun testBold() = runTest {

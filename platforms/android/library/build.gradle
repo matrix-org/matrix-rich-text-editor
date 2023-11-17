@@ -107,6 +107,7 @@ dependencies {
     testImplementation libs.test.robolectric
     testImplementation libs.test.mockk
     testImplementation libs.test.hamcrest
+    androidTestImplementation project(":test")
     androidTestImplementation libs.test.androidx.junit
     androidTestImplementation libs.test.androidx.espresso
     androidTestImplementation libs.test.androidx.espresso.accessibility

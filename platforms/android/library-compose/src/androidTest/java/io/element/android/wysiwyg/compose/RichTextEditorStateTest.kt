@@ -14,6 +14,7 @@ import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withText
+import io.element.android.wysiwyg.test.rules.createFlakyEmulatorRule
 import io.element.android.wysiwyg.utils.NBSP
 import io.element.android.wysiwyg.view.models.InlineFormat
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +27,9 @@ import org.junit.Test
 class RichTextEditorStateTest {
     @get:Rule
     val composeTestRule = createComposeRule()
+
+    @get:Rule
+    val flakyEmulatorRule = createFlakyEmulatorRule()
 
     @Test
     fun testSharingState() = runTest {

@@ -94,6 +94,7 @@ dependencies {
     testImplementation libs.test.kotlin.coroutines
     testImplementation libs.test.turbine
     testImplementation libs.molecule.runtime
+    androidTestImplementation project(":test")
     androidTestImplementation libs.test.androidx.junit
     androidTestImplementation libs.test.androidx.espresso
     androidTestImplementation libs.test.mockk.android

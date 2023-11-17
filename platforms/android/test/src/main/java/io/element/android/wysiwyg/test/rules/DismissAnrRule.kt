@@ -1,4 +1,5 @@
-package io.element.android.wysiwyg.test.utils
+package io.element.android.wysiwyg.test.rules
+
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject
@@ -6,7 +7,7 @@ import androidx.test.uiautomator.UiSelector
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 
-class DismissAnrRule : TestWatcher() {
+internal class DismissAnrRule : TestWatcher() {
     override fun starting(description: Description) {
         dismissAnr()
     }
