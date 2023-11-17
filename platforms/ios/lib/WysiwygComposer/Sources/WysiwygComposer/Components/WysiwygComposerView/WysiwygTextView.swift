@@ -44,6 +44,8 @@ protocol WysiwygTextViewDelegate: AnyObject {
 public protocol MentionDisplayHelper { }
 
 public class WysiwygTextView: UITextView {
+    private(set) var isDictationRunning = false
+    
     /// Internal delegate for the text view.
     weak var wysiwygDelegate: WysiwygTextViewDelegate?
     
@@ -53,12 +55,42 @@ public class WysiwygTextView: UITextView {
 
     override public init(frame: CGRect, textContainer: NSTextContainer?) {
         super.init(frame: frame, textContainer: textContainer)
-        contentMode = .redraw
+        commonInit()
     }
     
     required init?(coder: NSCoder) {
         super.init(coder: coder)
+        commonInit()
+    }
+    
+    private func commonInit() {
         contentMode = .redraw
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(textInputCurrentInputModeDidChange),
+                                               name: UITextInputMode.currentInputModeDidChangeNotification,
+                                               object: nil)
+    }
+    
+    @objc private func textInputCurrentInputModeDidChange(notification: Notification) {
+        // We don't care about the input mode if this is not the first responder
+        guard isFirstResponder else {
+            return
+        }
+        
+        guard let inputMode = textInputMode?.primaryLanguage,
+              inputMode == "dictation" else {
+            isDictationRunning = false
+            return
+        }
+        isDictationRunning = true
+    }
+    
+    override public func dictationRecordingDidEnd() {
+        isDictationRunning = false
+    }
+    
+    override public func dictationRecognitionFailed() {
+        isDictationRunning = false
     }
 
     /// Register a pill view that has been added through `NSTextAttachmentViewProvider`.
