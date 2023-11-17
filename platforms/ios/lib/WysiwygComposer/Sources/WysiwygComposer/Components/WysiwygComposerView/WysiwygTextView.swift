@@ -72,8 +72,12 @@ public class WysiwygTextView: UITextView {
     }
     
     @objc private func textInputCurrentInputModeDidChange(notification: Notification) {
-        guard isFirstResponder,
-              let inputMode = textInputMode?.primaryLanguage,
+        // We don't care about the input mode if this is not the first responder
+        guard isFirstResponder else {
+            return
+        }
+        
+        guard let inputMode = textInputMode?.primaryLanguage,
               inputMode == "dictation" else {
             isDictationRunning = false
             return
