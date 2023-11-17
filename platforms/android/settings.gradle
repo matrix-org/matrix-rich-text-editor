@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "Rich Text Editor"
-include ':example-view', ':example-compose', ':library', ':library-compose'
+include ':example-view', ':example-compose', ':library', ':library-compose', ':test'

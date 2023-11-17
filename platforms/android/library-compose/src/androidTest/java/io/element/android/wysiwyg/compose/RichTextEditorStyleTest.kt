@@ -13,6 +13,7 @@ import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import io.element.android.wysiwyg.compose.testutils.StateFactory.createState
 import io.element.android.wysiwyg.compose.testutils.ViewMatchers.isRichTextEditor
+import io.element.android.wysiwyg.test.rules.createFlakyEmulatorRule
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
@@ -21,6 +22,9 @@ import org.junit.Test
 class RichTextEditorStyleTest {
     @get:Rule
     val composeTestRule = createComposeRule()
+
+    @get:Rule
+    val flakyEmulatorRule = createFlakyEmulatorRule()
 
     private val state = createState()
     private val bulletRadius = MutableStateFlow(2.dp)

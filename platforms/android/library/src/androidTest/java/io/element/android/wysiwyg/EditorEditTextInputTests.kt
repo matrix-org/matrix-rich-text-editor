@@ -30,6 +30,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.element.android.wysiwyg.display.TextDisplay
 import io.element.android.wysiwyg.test.R
+import io.element.android.wysiwyg.test.rules.createFlakyEmulatorRule
 import io.element.android.wysiwyg.test.utils.*
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import io.element.android.wysiwyg.view.models.InlineFormat
@@ -53,6 +54,9 @@ class EditorEditTextInputTests {
 
     @get:Rule
     val scenarioRule = ActivityScenarioRule(TestActivity::class.java)
+
+    @get:Rule
+    val flakyEmulatorRule = createFlakyEmulatorRule()
 
     private val ipsum = "Lorem Ipsum is simply dummy text of the printing and typesetting industry."
 
