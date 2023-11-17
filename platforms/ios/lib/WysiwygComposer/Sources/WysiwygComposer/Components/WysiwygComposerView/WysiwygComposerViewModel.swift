@@ -556,7 +556,8 @@ private extension WysiwygComposerViewModel {
     /// Reconciliate the content of the model with the content of the text view.
     func reconciliateIfNeeded() {
         do {
-            guard let replacement = try StringDiffer.replacement(from: attributedContent.text.htmlChars,
+            guard !textView.isDictationRunning,
+                  let replacement = try StringDiffer.replacement(from: attributedContent.text.htmlChars,
                                                                  to: textView.attributedText.htmlChars) else {
                 return
             }

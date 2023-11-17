@@ -88,7 +88,7 @@ public struct WysiwygComposerView: View {
 
     @ViewBuilder
     private var placeholderView: some View {
-        if viewModel.isContentEmpty {
+        if viewModel.isContentEmpty, !viewModel.textView.isDictationRunning {
             Text(placeholder)
                 .font(Font(UIFont.preferredFont(forTextStyle: .body)))
                 .foregroundColor(placeholderColor)
