@@ -111,6 +111,7 @@ dependencies {
     androidTestImplementation libs.test.androidx.espresso
     androidTestImplementation libs.test.androidx.espresso.accessibility
     androidTestImplementation libs.test.mockk.android
+    androidTestImplementation libs.test.androidx.uiautomator
 }
 
 android.libraryVariants.all { variant ->

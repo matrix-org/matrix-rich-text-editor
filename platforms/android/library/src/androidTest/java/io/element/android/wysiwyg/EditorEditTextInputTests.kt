@@ -14,7 +14,9 @@ import android.view.View
 import android.widget.EditText
 import android.widget.TextView
 import androidx.core.text.getSpans
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.Espresso.setFailureHandler
 import androidx.test.espresso.accessibility.AccessibilityChecks
 import androidx.test.espresso.action.ViewActions.pressKey
 import androidx.test.espresso.action.ViewActions.replaceText
@@ -56,6 +58,13 @@ class EditorEditTextInputTests {
 
     init {
         AccessibilityChecks.enable()
+    }
+
+    @Before
+    fun setUp() {
+        setFailureHandler(
+            ScreenshotFailureHandler(ApplicationProvider.getApplicationContext())
+        )
     }
 
     @After
