@@ -1,5 +1,6 @@
 package io.element.android.wysiwyg.compose
 
+import android.text.InputType
 import android.view.View
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.compose.runtime.Composable
@@ -46,6 +47,7 @@ fun RichTextEditor(
     state: RichTextEditorState = rememberRichTextEditorState(),
     registerStateUpdates: Boolean = true,
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
+    inputType: Int = RichTextEditorDefaults.inputType,
     resolveMentionDisplay: (text: String, url: String) -> TextDisplay = RichTextEditorDefaults.MentionDisplay,
     resolveRoomMentionDisplay: () -> TextDisplay = RichTextEditorDefaults.RoomMentionDisplay,
     onError: (Throwable) -> Unit = {},
@@ -60,6 +62,7 @@ fun RichTextEditor(
             registerStateUpdates = registerStateUpdates,
             modifier = modifier,
             style = style,
+            inputType = inputType,
             onError = onError,
             resolveMentionDisplay = resolveMentionDisplay,
             resolveRoomMentionDisplay = resolveRoomMentionDisplay
@@ -73,6 +76,7 @@ private fun RealEditor(
     registerStateUpdates: Boolean,
     modifier: Modifier = Modifier,
     style: RichTextEditorStyle,
+    inputType: Int,
     onError: (Throwable) -> Unit,
     resolveMentionDisplay: (text: String, url: String) -> TextDisplay,
     resolveRoomMentionDisplay: () -> TextDisplay,
@@ -175,6 +179,7 @@ private fun RealEditor(
         },
         update = { view ->
             Timber.i("RichTextEditor update() called")
+            if (inputType != view.inputType) { view.inputType = inputType }
             view.applyStyleInCompose(style)
             view.typeface = typeface
             view.updateStyle(style.toStyleConfig(view.context), mentionDisplayHandler)
