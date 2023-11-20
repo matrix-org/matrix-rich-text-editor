@@ -9,6 +9,7 @@ import android.view.inputmethod.*
 import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
+import androidx.core.text.isDigitsOnly
 import io.element.android.wysiwyg.internal.utils.TextRangeHelper
 import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
 import io.element.android.wysiwyg.internal.viewmodel.ReplaceTextResult
@@ -259,7 +260,7 @@ internal class InterceptInputConnection(
                 processInput(action)
             }
             if (result != null) {
-                replaceAll(result.text, 0, editable.length)
+                replaceAll(result.text, result.selection.first, result.selection.last)
                 setSelectionOnEditable(editable, result.selection.first, result.selection.last)
                 setComposingRegion(result.selection.first, result.selection.last)
             }
@@ -280,7 +281,7 @@ internal class InterceptInputConnection(
                 processInput(EditorInputAction.BackPress)
             }
             if (result != null) {
-                replaceAll(result.text, 0, editable.length)
+                replaceAll(result.text, result.selection.first, result.selection.last)
                 setSelectionOnEditable(editable, result.selection.first, result.selection.last)
                 setComposingRegion(result.selection.first, result.selection.last)
             }
@@ -322,7 +323,10 @@ internal class InterceptInputConnection(
         beginBatchEdit()
         editable.removeFormattingSpans()
         editable.replace(0, editable.length, charSequence)
-        setComposingRegion(compositionStart, compositionEnd)
+        val newComposition = editable.substring(compositionStart, compositionEnd)
+        if (newComposition.isEmpty() || !newComposition.isDigitsOnly()) {
+            setComposingRegion(compositionStart, compositionEnd)
+        }
         endBatchEdit()
     }
 

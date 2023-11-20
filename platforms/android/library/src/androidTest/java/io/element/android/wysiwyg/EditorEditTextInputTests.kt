@@ -32,6 +32,7 @@ import io.element.android.wysiwyg.display.TextDisplay
 import io.element.android.wysiwyg.test.R
 import io.element.android.wysiwyg.test.rules.createFlakyEmulatorRule
 import io.element.android.wysiwyg.test.utils.*
+import io.element.android.wysiwyg.utils.NBSP
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.spans.LinkSpan
@@ -510,6 +511,16 @@ class EditorEditTextInputTests {
             textWatcher.invoke(match { it.toString() == "" })
         }
         confirmVerified(textWatcher)
+    }
+
+    @Test
+    fun testWritingOnlyDigits() {
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(ImeActions.setComposingText("1"))
+            .perform(ImeActions.setComposingText("2"))
+            .perform(ImeActions.setComposingText("3"))
+            .perform(ImeActions.commitText(" "))
+            .check(matches(withText("123$NBSP")))
     }
 
     @Test
