@@ -36,7 +36,7 @@ final class BlocksSnapshotTests: SnapshotTests {
     }
 
     func testQuoteContent() throws {
-        viewModel.setHtmlContent("<blockquote><p>Some quote with</p><p></p><p></p><p></p><p>line breaks inside</p></blockquote>")
+        viewModel.setHtmlContent("<blockquote>Some quote with<br/><br/><br/><br/>line breaks inside</blockquote>")
         assertSnapshot(
             matching: hostingController,
             as: .image(on: .iPhone13),
@@ -47,15 +47,17 @@ final class BlocksSnapshotTests: SnapshotTests {
     func testMultipleBlocksContent() throws {
         viewModel.setHtmlContent(
             """
-            <blockquote><p>Some</p>\
-            <p>multi-line</p>\
-            <p>quote</p></blockquote>\
-            <p></p>\
-            <p>Some text</p>\
-            <p></p>\
+            <blockquote>Some<br/>\
+            multi-line<br/>\
+            quote</blockquote>\
+            <br/>\
+            <br/>\
+            Some text<br/>\
+            <br/>\
             <pre>A\n\tcode\nblock</pre>\
-            <p></p>\
-            <p>Some <code>inline</code> code</p>
+            <br/>\
+            <br/>\
+            Some <code>inline</code> code
             """
         )
         assertSnapshot(

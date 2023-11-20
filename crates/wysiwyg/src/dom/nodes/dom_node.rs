@@ -245,6 +245,14 @@ where
         }
     }
 
+    pub(crate) fn as_mention(&self) -> Option<&MentionNode<S>> {
+        if let Self::Mention(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
     pub fn kind(&self) -> DomNodeKind {
         match self {
             DomNode::Text(_) => DomNodeKind::Text,
@@ -415,7 +423,7 @@ where
         &self,
         buf: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        state: ToHtmlState,
+        state: &ToHtmlState,
         as_message: bool,
     ) {
         match self {

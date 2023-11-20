@@ -7,7 +7,7 @@ description = "Swift and Kotlin bindings for wysiwyg-rust"
 keywords = ["matrix", "chat", "messaging", "composer", "wysiwyg"]
 license = "Apache-2.0"
 name = "uniffi-wysiwyg-composer"
-version = "2.14.1"
+version = "2.18.0"
 rust-version = { workspace = true }
 
 [features]
@@ -21,6 +21,7 @@ crate-type = ["cdylib", "staticlib"]
 # Keep the uniffi version here in sync with the installed version of
 # uniffi-bindgen that is called from
 # ../../examples/example-android/app/build.gradle
+matrix_mentions = { path = "../../crates/matrix_mentions" }
 uniffi = { workspace = true }
 uniffi_macros = { workspace = true }
 widestring = "1.0.2"

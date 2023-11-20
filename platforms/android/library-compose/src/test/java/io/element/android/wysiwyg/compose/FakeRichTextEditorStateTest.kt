@@ -264,6 +264,47 @@ class FakeRichTextEditorStateTest {
     }
 
     @Test
+    fun `replaceSuggestion updates the state`() = runTest {
+        moleculeFlow(RecompositionMode.Immediate) {
+            val state = rememberRichTextEditorState(initialHtml = "/shr", initialSelection = 3 to 3, fake = true)
+            remember(state.messageHtml, state.messageMarkdown) { state }
+        }.test {
+            val initialState = awaitItem()
+            initialState.replaceSuggestion("/shrug")
+            val nextState = awaitItem()
+            assertThat(nextState.messageHtml, equalTo("/shrug"))
+        }
+    }
+
+    @Test
+    fun `insertAtRoomMentionAtSuggestion updates the state`() = runTest {
+        val htmlReplacement = "<a data-mention-type=\"at-room\" href=\"#\" contenteditable=\"false\">@room</a>"
+        moleculeFlow(RecompositionMode.Immediate) {
+            val state = rememberRichTextEditorState(initialHtml = "@ro", initialSelection = 2 to 2, fake = true)
+            remember(state.messageHtml, state.messageMarkdown) { state }
+        }.test {
+            val initialState = awaitItem()
+            initialState.insertAtRoomMentionAtSuggestion()
+            val nextState = awaitItem()
+            assertThat(nextState.messageHtml, equalTo(htmlReplacement))
+        }
+    }
+
+    @Test
+    fun `insertMentionAtSuggestion updates the state with a mention link`() = runTest {
+        val url = "https://matrix.to/#/@user:matrix.org"
+        moleculeFlow(RecompositionMode.Immediate) {
+            val state = rememberRichTextEditorState(initialHtml = "@ro", initialSelection = 2 to 2, fake = true)
+            remember(state.messageHtml, state.messageMarkdown) { state }
+        }.test {
+            val initialState = awaitItem()
+            initialState.insertMentionAtSuggestion("@room", url)
+            val nextState = awaitItem()
+            assertThat(nextState.messageHtml, equalTo("<a href='$url'>@room</a>"))
+        }
+    }
+
+    @Test
     fun `requestFocus updates the state`() = runTest {
         moleculeFlow(RecompositionMode.Immediate) {
             val state = rememberRichTextEditorState(fake = true)
@@ -274,6 +315,21 @@ class FakeRichTextEditorStateTest {
             initialState.requestFocus()
             val hasFocus = awaitItem().hasFocus
             assertThat(hasFocus, equalTo(true))
+        }
+    }
+
+    @Test
+    fun `setSelection updates the state`() = runTest {
+        moleculeFlow(RecompositionMode.Immediate) {
+            val state = rememberRichTextEditorState(fake = true)
+            remember(state.selection) { state }
+        }.test {
+            val initialState = awaitItem()
+            assertThat(initialState.selection, equalTo(0 to 0))
+            initialState.setSelection(1)
+            assertThat(awaitItem().selection, equalTo(1 to 1))
+            initialState.setSelection(0, 1)
+            assertThat(awaitItem().selection, equalTo(0 to 1))
         }
     }
 }

@@ -12,18 +12,20 @@ import io.element.android.wysiwyg.utils.HtmlConverter
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
+import timber.log.Timber
 import uniffi.wysiwyg_composer.*
 
 internal class EditorViewModel(
     private val provideComposer: () -> ComposerModelInterface?,
-    private val htmlConverter: HtmlConverter,
 ) : ViewModel() {
 
+    var htmlConverter: HtmlConverter? = null
     private var composer: ComposerModelInterface? = provideComposer()
 
     var rustErrorCollector: RustErrorCollector? = null
 
     private var actionStatesCallback: ((Map<ComposerAction, ActionState>) -> Unit)? = null
+    private var mentionsStateCallback: ((MentionsState?) -> Unit)? = null
     var menuActionCallback: ((MenuAction) -> Unit)? = null
     var linkActionCallback: ((LinkAction?) -> Unit)? = null
 
@@ -40,15 +42,20 @@ internal class EditorViewModel(
         actionStates()?.let { actionStatesCallback?.invoke(it) }
     }
 
+    fun setMentionsStateCallback(callback: ((MentionsState?) -> Unit)?) {
+        this.mentionsStateCallback = callback
+        getMentionsState()?.let { mentionsStateCallback?.invoke(it) }
+    }
+
     fun updateSelection(editable: Editable, start: Int, end: Int) {
         val (newStart, newEnd) = EditorIndexMapper.fromEditorToComposer(start, end, editable)
             ?: return
 
         val update = runCatching {
             composer?.select(newStart, newEnd)
-        }
-            .onFailure(::onComposerFailure)
-            .getOrNull()
+        }.onFailure(
+            ::onComposerFailure
+        ).getOrNull()
 
         handleComposerUpdates(update)
 
@@ -118,7 +125,8 @@ internal class EditorViewModel(
                 is EditorInputAction.Quote -> composer?.quote()
                 is EditorInputAction.Indent -> composer?.indent()
                 is EditorInputAction.Unindent -> composer?.unindent()
-                is EditorInputAction.SetLinkSuggestion -> insertMentionAtSuggestion(action)
+                is EditorInputAction.InsertMentionAtSuggestion -> insertMentionAtSuggestion(action)
+                is EditorInputAction.InsertAtRoomMentionAtSuggestion -> insertAtRoomMentionAtSuggestion()
             }
         }.onFailure(::onComposerFailure)
             .getOrNull()
@@ -154,6 +162,9 @@ internal class EditorViewModel(
 
                 recoveryContentPlainText = composer?.getContentAsPlainText() ?: ""
 
+                val mentionsState = getMentionsState()
+                mentionsStateCallback?.invoke(mentionsState)
+
                 ReplaceTextResult(
                     text = stringToSpans(replacementHtml),
                     selection = textUpdate.startUtf16Codeunit.toInt()..textUpdate.endUtf16Codeunit.toInt(),
@@ -166,15 +177,25 @@ internal class EditorViewModel(
         }
     }
 
-    fun getContentAsMessageHtml(): String {
-        return composer?.getContentAsMessageHtml().orEmpty()
+    fun getContentAsMessageHtml(): String =
+        runCatching {
+            composer?.getContentAsMessageHtml().orEmpty()
+        }.onFailure {
+            rustErrorCollector?.onRustError(it)
+        }.getOrElse {
+            recoveryContentPlainText
+        }
+
+    fun getMarkdown(): String = runCatching {
+        composer?.getContentAsMarkdown().orEmpty()
+    }.onFailure(
+        ::onComposerFailure
+    ).getOrElse {
+        recoveryContentPlainText
     }
 
-    fun getMarkdown(): String =
-        composer?.getContentAsMarkdown().orEmpty()
-
     fun getCurrentFormattedText(): CharSequence {
-        return stringToSpans(getContentAsMessageHtml())
+        return stringToSpans(getInternalHtml())
     }
 
     /**
@@ -182,16 +203,31 @@ internal class EditorViewModel(
      *
      * Note that this should not be used for messages; instead [getContentAsMessageHtml] should be used.
      */
-    fun getInternalHtml(): String {
-        return composer?.getContentAsHtml().orEmpty()
+    fun getInternalHtml(): String = runCatching {
+        composer?.getContentAsHtml().orEmpty()
+    }.onFailure(
+        ::onComposerFailure
+    ).getOrElse {
+        recoveryContentPlainText
     }
 
-    fun actionStates(): Map<ComposerAction, ActionState>? {
-        return composer?.actionStates()
-    }
+    fun actionStates(): Map<ComposerAction, ActionState>? = runCatching {
+        composer?.actionStates()
+    }.onFailure(
+        ::onComposerFailure
+    ).getOrNull()
 
-    fun getLinkAction(): LinkAction? =
+    fun getLinkAction(): LinkAction? = runCatching {
         composer?.getLinkAction()?.toApiModel()
+    }.onFailure(
+        ::onComposerFailure
+    ).getOrNull()
+
+    fun getMentionsState(): MentionsState? = runCatching {
+        composer?.getMentionsState()
+    }.onFailure(
+        ::onComposerFailure
+    ).getOrNull()
 
     fun rerender(): CharSequence =
         stringToSpans(getInternalHtml())
@@ -217,19 +253,35 @@ internal class EditorViewModel(
         }
     }
 
-    private fun insertMentionAtSuggestion(action: EditorInputAction.SetLinkSuggestion): ComposerUpdate? {
+    private fun insertMentionAtSuggestion(action: EditorInputAction.InsertMentionAtSuggestion): ComposerUpdate? {
         val (url, text) = action
 
         val suggestion = (curMenuAction as? MenuAction.Suggestion)
             ?.suggestionPattern
             ?: return null
 
-        return composer?.insertMentionAtSuggestion(
-            url = url,
-            text = text,
-            suggestion = suggestion,
-            attributes = emptyList()
-        )
+        return runCatching {
+            composer?.insertMentionAtSuggestion(
+                url = url,
+                text = text,
+                suggestion = suggestion,
+                attributes = emptyList()
+            )
+        }.onFailure(
+            ::onComposerFailure
+        ).getOrNull()
+    }
+
+    private fun insertAtRoomMentionAtSuggestion(): ComposerUpdate? {
+        val suggestion = (curMenuAction as? MenuAction.Suggestion)
+            ?.suggestionPattern
+            ?: return null
+
+        return runCatching {
+            composer?.insertAtRoomMentionAtSuggestion(suggestion)
+        }.onFailure(
+            ::onComposerFailure
+        ).getOrNull()
     }
 
     private fun replaceTextSuggestion(action: EditorInputAction.ReplaceTextSuggestion): ComposerUpdate? {
@@ -237,10 +289,14 @@ internal class EditorViewModel(
             ?.suggestionPattern
             ?: return null
 
-        return composer?.replaceTextSuggestion(
-            suggestion = suggestion,
-            newText = action.value,
-        )
+        return runCatching {
+            composer?.replaceTextSuggestion(
+                suggestion = suggestion,
+                newText = action.value,
+            )
+        }.onFailure(
+            ::onComposerFailure
+        ).getOrNull()
     }
 
     @VisibleForTesting
@@ -261,7 +317,9 @@ internal class EditorViewModel(
         this.crashOnComposerFailure = crashOnComposerFailure
     }
 
-    private fun stringToSpans(string: String): CharSequence =
-        htmlConverter.fromHtmlToSpans(string)
+    private fun stringToSpans(string: String): CharSequence = htmlConverter?.fromHtmlToSpans(string) ?: run {
+            Timber.e("HtmlConverter not set. This seems like a configuration issue.")
+            ""
+        }
 
 }

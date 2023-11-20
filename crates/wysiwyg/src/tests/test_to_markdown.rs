@@ -44,17 +44,17 @@ fn text_with_ascii_punctuation() {
 #[test]
 fn text_with_linebreaks() {
     // One new line.
-    assert_to_message_md(
+    assert_to_message_md_no_roundtrip(
         "abc<br />def",
-        r#"abc\
+        r#"abc
 def"#,
     );
 
     // Two new lines (isn't transformed into a new block).
-    assert_to_message_md(
+    assert_to_message_md_no_roundtrip(
         "abc<br /><br />def",
-        r#"abc\
-\
+        r#"abc
+
 def"#,
     );
 }
@@ -63,12 +63,12 @@ def"#,
 fn text_with_italic() {
     assert_to_message_md("<em>abc</em>", "*abc*");
     assert_to_message_md("abc <em>def</em> ghi", "abc *def* ghi");
-    assert_to_message_md(
+    assert_to_message_md_no_roundtrip(
         "abc <em>line1<br />line2<br /><br />line3</em> def",
-        r#"abc *line1\
-line2\
-\
-line3* def"#,
+        r#"abc *line1*
+*line2*
+**
+*line3* def"#,
     );
 
     // Intraword emphasis is restricted to `*` so it works here!
@@ -82,12 +82,12 @@ line3* def"#,
 fn text_with_bold() {
     assert_to_message_md("<strong>abc</strong>", "__abc__");
     assert_to_message_md("abc <strong>def</strong> ghi", "abc __def__ ghi");
-    assert_to_message_md(
+    assert_to_message_md_no_roundtrip(
         "abc <strong>line1<br />line2<br /><br />line3</strong> def",
-        r#"abc __line1\
-line2\
-\
-line3__ def"#,
+        r#"abc __line1__
+__line2__
+____
+__line3__ def"#,
     );
 
     // Intraword emphasis is restricted to `*` (simple emphasis, i.e. italic),
@@ -108,10 +108,10 @@ fn text_with_italic_and_bold() {
         "<em>abc <strong>def</strong></em> ghi",
         "*abc __def__* ghi",
     );
-    assert_to_message_md(
+    assert_to_message_md_no_roundtrip(
         "abc <em><strong>line1<br />line2</strong> def</em>",
-        r#"abc *__line1\
-line2__ def*"#,
+        r#"abc *__line1__*
+*__line2__ def*"#,
     );
 }
 
@@ -119,12 +119,12 @@ line2__ def*"#,
 fn text_with_strikethrough() {
     assert_to_message_md("<del>abc</del>", "~~abc~~");
     assert_to_message_md("abc <del>def</del> ghi", "abc ~~def~~ ghi");
-    assert_to_message_md(
+    assert_to_message_md_no_roundtrip(
         "abc <del>line1<br />line2<br /><br />line3</del> def",
-        r#"abc ~~line1\
-line2\
-\
-line3~~ def"#,
+        r#"abc ~~line1~~
+~~line2~~
+~~~~
+~~line3~~ def"#,
     );
 
     // Intraword strikethrough isn't supported in the specification.
@@ -152,7 +152,7 @@ fn text_with_inline_code() {
     // It's impossible to get a line break inside an inline code with Markdown.
     assert_to_md_no_roundtrip(
         "abc <code>line1<br />line2<br /><br />line3</code> def",
-        "abc `` line1 line2  line3 `` def",
+        "abc `` line1 ``\n`` line2 ``\n``  ``\n`` line3 `` def",
     );
     // Inline formatting inside an inline code is ignored.
     assert_to_md_no_roundtrip(
@@ -290,6 +290,11 @@ fn assert_to_message_md(html: &str, expected_markdown: &str) {
     let html = MarkdownHTMLParser::to_html(&markdown).unwrap();
 
     assert_eq!(html, expected_html);
+}
+
+fn assert_to_message_md_no_roundtrip(html: &str, expected_markdown: &str) {
+    let markdown = to_message_markdown(html);
+    assert_eq!(markdown, expected_markdown);
 }
 
 fn assert_to_composer_md(html: &str, expected_markdown: &str) {

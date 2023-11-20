@@ -240,7 +240,7 @@ mod test {
         model.quote();
         assert_eq!(
             tx(&model),
-            "<blockquote><p><b>Some |text</b></p></blockquote><b><br />Next line</b>"
+            "<blockquote><p><b>Some |text</b></p></blockquote><p><b>Next line</b></p>"
         )
     }
 
@@ -263,7 +263,7 @@ mod test {
         model.quote();
         assert_eq!(
             tx(&model),
-            "<blockquote><ul><li><b>Some {text<br />Next line</b></li><li><i>Second}| item</i></li></ul></blockquote><ul><li>Third item</li></ul>"
+            "<blockquote><ul><li><p><b>Some {text</b></p><p><b>Next line</b></p></li><li><i>Second}| item</i></li></ul></blockquote><ul><li>Third item</li></ul>"
         )
     }
 

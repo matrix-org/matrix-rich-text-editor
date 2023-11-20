@@ -15,8 +15,8 @@
 use regex::Regex;
 
 use crate::dom::dom_creation_error::HtmlParseError;
-use crate::dom::nodes::dom_node::DomNodeKind::CodeBlock;
-use crate::dom::nodes::ContainerNode;
+use crate::dom::nodes::dom_node::DomNodeKind::{self};
+use crate::dom::nodes::{ContainerNode, ContainerNodeKind};
 use crate::dom::Dom;
 use crate::{DomHandle, DomNode, UnicodeString};
 
@@ -69,7 +69,7 @@ mod sys {
             PaDomCreator::parse(html)
                 .map(|pa_dom| {
                     let dom = self.padom_to_dom(pa_dom);
-                    post_process_code_blocks(dom)
+                    post_process_blocks(dom)
                 })
                 .map_err(|err| {
                     self.padom_creation_error_to_html_parse_error(err)
@@ -125,7 +125,14 @@ mod sys {
                         // Special case for code block, translate '\n' into <br /> nodes
                         let is_inside_code_block =
                             self.current_path.contains(&CodeBlock);
-                        convert_text(&text.content, node, is_inside_code_block);
+                        let is_only_child_in_parent =
+                            panode.children.len() == 1;
+                        convert_text(
+                            &text.content,
+                            node,
+                            is_inside_code_block,
+                            is_only_child_in_parent,
+                        );
                     }
                 }
             }
@@ -450,7 +457,19 @@ mod sys {
 
         #[test]
         fn parse_br_tag() {
-            assert_that!("<br />").roundtrips();
+            let html = "<br />";
+            let dom: Dom<Utf16String> =
+                HtmlParser::default().parse(html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+                
+                ├>p
+                └>p
+                "#}
+            );
         }
 
         #[test]
@@ -479,6 +498,273 @@ mod sys {
         }
 
         #[test]
+        fn parse_line_breaks_none() {
+            let html = r#"foo"#;
+            let dom: Dom<Utf16String> =
+                HtmlParser::default().parse(html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+                
+                └>"foo"
+                "#}
+            );
+        }
+
+        #[test]
+        fn parse_line_breaks_br_end() {
+            let html = r#"foo<br />"#;
+            let dom: Dom<Utf16String> =
+                HtmlParser::default().parse(html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+                
+                ├>p
+                │ └>"foo"
+                └>p
+                "#}
+            );
+        }
+
+        #[test]
+        fn parse_line_breaks_br_start() {
+            let html = r#"<br />foo"#;
+            let dom: Dom<Utf16String> =
+                HtmlParser::default().parse(html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+                
+                ├>p
+                └>p
+                  └>"foo"
+                "#}
+            );
+        }
+
+        #[test]
+        fn parse_line_breaks_br_before_inline_format() {
+            let html = "abc<br /><strong>def<br />gh</strong>ijk";
+            let dom: Dom<Utf16String> =
+                HtmlParser::default().parse(html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+                
+                ├>p
+                │ └>"abc"
+                ├>p
+                │ └>strong
+                │   └>"def"
+                └>p
+                  ├>strong
+                  │ └>"gh"
+                  └>"ijk"
+                "#}
+            );
+        }
+
+        #[test]
+        fn parse_line_breaks_br_before_p() {
+            let html = "abc<br /><p>def<br />gh</p>ijk";
+            let dom: Dom<Utf16String> =
+                HtmlParser::default().parse(html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+                
+                ├>p
+                │ └>"abc"
+                ├>p
+                │ └>"def"
+                ├>p
+                │ └>"gh"
+                └>p
+                  └>"ijk"
+                "#}
+            );
+        }
+
+        #[test]
+        fn parse_line_breaks_br_in_bold() {
+            let html = r#"<b>foo<br /></b>"#;
+            let dom: Dom<Utf16String> =
+                HtmlParser::default().parse(html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+                
+                ├>p
+                │ └>b
+                │   └>"foo"
+                └>p
+                  └>b
+                "#}
+            );
+        }
+
+        #[test]
+        fn parse_line_breaks_br_in_code() {
+            let html = r#"<pre><code>foo<br /></code></pre>"#;
+            let dom: Dom<Utf16String> =
+                HtmlParser::default().parse(html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+                
+                └>codeblock
+                  ├>p
+                  │ └>"foo"
+                  └>p
+                "#}
+            );
+        }
+
+        #[test]
+        fn parse_line_breaks_br_in_quote() {
+            let html = r#"<blockquote>foo<br />bar<br /></blockquote>"#;
+            let dom: Dom<Utf16String> =
+                HtmlParser::default().parse(html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+                
+                └>blockquote
+                  ├>p
+                  │ └>"foo"
+                  ├>p
+                  │ └>"bar"
+                  └>p
+                "#}
+            );
+        }
+
+        #[test]
+        fn parse_line_breaks_br_in_list() {
+            let html = r#"<ul><li>foo<br />bar<br /><p>baz</p></li></ul>"#;
+            let dom: Dom<Utf16String> =
+                HtmlParser::default().parse(html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+                
+                └>ul
+                  └>li
+                    ├>p
+                    │ └>"foo"
+                    ├>p
+                    │ └>"bar"
+                    └>p
+                      └>"baz"
+                "#}
+            );
+        }
+
+        #[test]
+        fn parse_line_breaks_br_in_p() {
+            let html = r#"<p>foo<br />bar<br />baz<br /></p>"#;
+            let dom: Dom<Utf16String> =
+                HtmlParser::default().parse(html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+                
+                ├>p
+                │ └>"foo"
+                ├>p
+                │ └>"bar"
+                ├>p
+                │ └>"baz"
+                └>p
+                "#}
+            );
+        }
+
+        #[test]
+        fn parse_line_breaks_in_nested_p_in_blockquote() {
+            let html = r#"<blockquote><p><b>foo<br />bar</b><i>foo<br /></i></p></blockquote>"#;
+            let dom: Dom<Utf16String> =
+                HtmlParser::default().parse(html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+                
+                └>blockquote
+                  ├>p
+                  │ └>b
+                  │   └>"foo"
+                  ├>p
+                  │ ├>b
+                  │ │ └>"bar"
+                  │ └>i
+                  │   └>"foo"
+                  └>p
+                    └>i
+                "#}
+            );
+        }
+
+        #[test]
+        fn parse_line_breaks_in_nested_blocks() {
+            let html = r#"<blockquote><p><b>foo<br />bar</b><i>foo<br /></i></p><pre><code><br /></code></pre><ol><li><b>a<br />b</b></li></ol></blockquote>"#;
+            let dom: Dom<Utf16String> =
+                HtmlParser::default().parse(html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+                
+                └>blockquote
+                  ├>p
+                  │ └>b
+                  │   └>"foo"
+                  ├>p
+                  │ ├>b
+                  │ │ └>"bar"
+                  │ └>i
+                  │   └>"foo"
+                  ├>p
+                  │ └>i
+                  ├>codeblock
+                  │ ├>p
+                  │ └>p
+                  └>ol
+                    └>li
+                      ├>p
+                      │ └>b
+                      │   └>"a"
+                      └>p
+                        └>b
+                          └>"b"
+                "#}
+            );
+        }
+
+        #[test]
         fn parse_code_block_roundtrips() {
             assert_that!(
                 "<p>foo</p><pre><code>Some code</code></pre><p>bar</p>"
@@ -500,10 +786,8 @@ mod sys {
                 "<pre><code><b>Test<br />Code</b></code></pre>"
             );
             // Then these line breaks are post-processed and we get the actual paragraphs
-            let dom = post_process_code_blocks_lines(
-                dom,
-                &DomHandle::from_raw(vec![0]),
-            );
+            let dom =
+                post_process_block_lines(dom, &DomHandle::from_raw(vec![0]));
             assert_eq!(
                 dom.to_html().to_string(),
                 "<pre><code><b>Test</b>\n<b>Code</b></code></pre>"
@@ -613,71 +897,180 @@ mod sys {
                 "#}
             );
         }
+
+        #[test]
+        fn parse_nbsp_after_container_keeps_it() {
+            let html = r#"<a href="https://matrix.to/#/@test:example.org">test</a>&nbsp;"#;
+            let dom: Dom<Utf16String> =
+                HtmlParser::default().parse(html).unwrap();
+            let tree = dom.to_tree().to_string();
+            assert_eq!(
+                tree,
+                indoc! {
+                r#"
+
+                  ├>mention "test", https://matrix.to/#/@test:example.org
+                  └>" "
+                "#}
+            );
+        }
     }
 }
 
-fn post_process_code_blocks<S: UnicodeString>(mut dom: Dom<S>) -> Dom<S> {
-    let code_block_handles = find_code_block_handles(&dom);
-    for handle in code_block_handles.iter().rev() {
-        dom = post_process_code_blocks_lines(dom, handle);
+fn post_process_blocks<S: UnicodeString>(mut dom: Dom<S>) -> Dom<S> {
+    let block_handles = find_blocks(&dom);
+    for handle in block_handles.iter().rev() {
+        dom = post_process_block_lines(dom, handle);
     }
     dom
 }
 
-fn find_code_block_handles<S: UnicodeString>(dom: &Dom<S>) -> Vec<DomHandle> {
+fn find_blocks<S: UnicodeString>(dom: &Dom<S>) -> Vec<DomHandle> {
     dom.iter()
-        .filter(|n| n.kind() == CodeBlock)
+        .filter(|n| n.is_block_node())
         .map(|n| n.handle())
-        .collect()
+        .collect::<Vec<_>>()
 }
 
-fn post_process_code_blocks_lines<S: UnicodeString>(
+// Process block nodes by converting line breaks into paragraphs.
+fn post_process_block_lines<S: UnicodeString>(
     mut dom: Dom<S>,
     handle: &DomHandle,
 ) -> Dom<S> {
-    assert_eq!(dom.lookup_node(handle).kind(), CodeBlock);
+    assert!(dom.lookup_node(handle).is_container_node());
+    let container_node = dom.lookup_node(handle).as_container().unwrap();
     let last_handle = dom.last_node_handle_in_sub_tree(handle);
-    let mut next_handle = last_handle.clone();
-    let mut children = Vec::new();
-    let mut line_break_handles = Vec::new();
-    for node in dom.iter_from_handle(&last_handle).rev() {
-        if node.is_line_break() || node.handle() == *handle {
-            if node.handle() == next_handle {
-                line_break_handles.push(next_handle.next_sibling());
-            } else {
-                line_break_handles.push(next_handle.clone());
+
+    // Collect the positions of all the line breaks and the lines following them
+    let (line_breaks, lines) = {
+        let mut line_breaks: Vec<Option<DomHandle>> = Vec::new();
+        let mut next_lines: Vec<DomHandle> = Vec::new();
+
+        let nodes = dom
+            .iter_from_handle(&last_handle)
+            .filter(|n| n.is_leaf() && handle.is_ancestor_of(&n.handle()))
+            .rev()
+            .collect::<Vec<_>>();
+        let mut next_handle = if nodes.is_empty() {
+            last_handle.clone()
+        } else {
+            last_handle.next_sibling()
+        };
+
+        for node in nodes {
+            if node.is_line_break() {
+                line_breaks.push(Some(node.handle()));
+                next_lines.push(next_handle.clone());
             }
+            next_handle = node.handle();
         }
-        next_handle = node.handle();
-        if node.handle().depth() <= handle.depth() {
-            break;
-        }
+
+        line_breaks.push(None);
+        next_lines.push(next_handle.clone());
+
+        (line_breaks, next_lines)
+    };
+
+    // If there were no line breaks we might stop here
+    if lines.len() <= 1 // (<= 1 because lines will always contain at least the container)
+        // Code blocks require all inline content to be wrapped in a paragraph
+        && dom.lookup_node(handle).kind() != DomNodeKind::CodeBlock
+    {
+        return dom;
     }
 
-    for line_break_handle in line_break_handles {
-        let mut sub_tree =
-            dom.split_sub_tree_from(&line_break_handle, 0, handle.depth());
-        if line_break_handle.index_in_parent() > 0 {
-            // Remove line break too
-            dom.remove(&line_break_handle.prev_sibling());
+    // Create a new node to hold the processed contents if necessary
+    let new_node = match container_node.kind() {
+        ContainerNodeKind::Paragraph => None,
+        _ => Some(container_node.clone_with_new_children(vec![])),
+    };
+
+    // Remove each line from the DOM and collect it in a vector
+    let contents = {
+        let mut contents = Vec::new();
+        for (i, line_handle) in lines.iter().enumerate() {
+            let mut sub_tree =
+                dom.split_sub_tree_from(line_handle, 0, handle.depth());
+
+            if let Some(line_break_handle) = &line_breaks[i] {
+                dom.remove(line_break_handle);
+            }
+
+            // If the nodes following the line break start with inline nodes,
+            // ensure they are wrapped in a paragraph in order to add an
+            // implicit line break here.
+            group_inline_nodes(sub_tree.document_mut().remove_children())
+                .iter()
+                .rev()
+                .for_each(|n| contents.insert(0, n.clone()));
         }
-        let node =
-            DomNode::new_paragraph(sub_tree.document_mut().remove_children());
-        children.insert(0, node);
+        contents
+    };
+
+    if handle.is_root() {
+        return Dom::new(contents);
     }
 
     let needs_removal = if dom.contains(handle) {
         let block = dom.lookup_node(handle);
-        block.kind() == CodeBlock && block.is_empty()
+        block.is_empty()
     } else {
         false
     };
+
     if needs_removal {
         dom.remove(handle);
     }
 
-    dom.insert_at(handle, DomNode::new_code_block(children));
+    // Insert the processed contents back into the dom
+    match new_node {
+        Some(mut n) => {
+            n.set_handle(handle.clone());
+            n.append_children(contents);
+            dom.insert_at(handle, DomNode::Container(n));
+        }
+        None => {
+            dom.insert(handle, contents);
+        }
+    }
     dom
+}
+
+// Group consecutive inline nodes into paragraphs.
+//
+// This function accepts a list of nodes of any type, inline or block.
+// For example: [b, codeblock, b, i, p].
+//
+// It will first group any inline nodes: [[b], codeblock, [b, i], p].
+// And wrap each group in a pararaph: [p, codeblock, p, p].
+//
+// Always returns at least one empty paragraph.
+fn group_inline_nodes<S: UnicodeString>(
+    nodes: Vec<DomNode<S>>,
+) -> Vec<DomNode<S>> {
+    let mut output: Vec<DomNode<S>> = Vec::new();
+    let mut cur_group: Vec<DomNode<S>> = Vec::new();
+
+    for node in nodes.clone() {
+        if node.is_block_node() {
+            // If there are inline elements waiting to be grouped, create a new block with them
+            if !cur_group.is_empty() {
+                output.push(DomNode::new_paragraph(cur_group.clone()));
+                cur_group.clear();
+            }
+
+            // Then add the current block
+            output.push(node);
+        } else {
+            cur_group.push(node)
+        }
+    }
+
+    if !cur_group.is_empty() || output.is_empty() {
+        output.push(DomNode::new_paragraph(cur_group));
+    }
+
+    output
 }
 
 #[cfg(feature = "sys")]
@@ -691,6 +1084,7 @@ fn convert_text<S: UnicodeString>(
     text: &str,
     node: &mut ContainerNode<S>,
     is_inside_code_block: bool,
+    is_only_child_in_parent: bool,
 ) {
     if is_inside_code_block {
         let text_nodes: Vec<_> = text.split('\n').collect();
@@ -708,7 +1102,7 @@ fn convert_text<S: UnicodeString>(
     } else {
         let contents = text;
         let is_nbsp = contents == "\u{A0}" || contents == "&nbsp;";
-        if is_nbsp {
+        if is_nbsp && is_only_child_in_parent {
             return;
         }
 
@@ -738,6 +1132,7 @@ fn convert_text<S: UnicodeString>(
 mod js {
     use super::*;
     use crate::dom::nodes::dom_node::DomNodeKind;
+    use crate::dom::nodes::dom_node::DomNodeKind::CodeBlock;
     use crate::{
         dom::nodes::{ContainerNode, DomNode},
         InlineFormatType, ListType,
@@ -778,7 +1173,9 @@ mod js {
                     )
                 })?;
 
-            self.webdom_to_dom(document).map_err(to_dom_creation_error)
+            self.webdom_to_dom(document)
+                .map_err(to_dom_creation_error)
+                .map(post_process_blocks)
         }
 
         fn webdom_to_dom<S>(
@@ -801,8 +1198,6 @@ mod js {
             let dom_document = dom.document_mut();
 
             self.convert_container(nodes, dom_document)?;
-
-            dom = post_process_code_blocks(dom);
 
             Ok(dom)
         }
@@ -829,10 +1224,12 @@ mod js {
                         Some(value) => {
                             let is_inside_code_block =
                                 self.current_path.contains(&CodeBlock);
+                            let is_only_child_in_parent = number_of_nodes == 1;
                             convert_text(
                                 value.as_str(),
                                 dom,
                                 is_inside_code_block,
+                                is_only_child_in_parent,
                             );
                         }
                         _ => {}
@@ -1083,7 +1480,9 @@ mod js {
 
         #[wasm_bindgen_test]
         fn br() {
-            roundtrip("foo<br />bar");
+            let html = "foo<br />bar";
+            let dom = HtmlParser::default().parse::<Utf16String>(html).unwrap();
+            assert_eq!(dom.to_string(), "<p>foo</p><p>bar</p>");
         }
 
         #[wasm_bindgen_test]

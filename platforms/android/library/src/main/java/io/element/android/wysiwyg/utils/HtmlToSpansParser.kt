@@ -16,7 +16,7 @@ import io.element.android.wysiwyg.view.StyleConfig
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.spans.BlockSpan
 import io.element.android.wysiwyg.view.spans.CodeBlockSpan
-import io.element.android.wysiwyg.view.spans.CustomReplacementSpan
+import io.element.android.wysiwyg.view.spans.CustomMentionSpan
 import io.element.android.wysiwyg.view.spans.ExtraCharacterSpan
 import io.element.android.wysiwyg.view.spans.InlineCodeSpan
 import io.element.android.wysiwyg.view.spans.LinkSpan
@@ -43,8 +43,9 @@ import kotlin.math.roundToInt
 internal class HtmlToSpansParser(
     private val resourcesHelper: ResourcesHelper,
     private val html: String,
-    private val styleConfig: () -> StyleConfig,
-    private val mentionDisplayHandler: () -> MentionDisplayHandler?,
+    private val styleConfig: StyleConfig,
+    private val mentionDisplayHandler: MentionDisplayHandler?,
+    private val isMention: ((text: String, url: String) -> Boolean)? = null,
 ) : ContentHandler {
 
     /**
@@ -61,7 +62,7 @@ internal class HtmlToSpansParser(
 
     // Spans created to be used as 'marks' while parsing
     private sealed interface PlaceholderSpan {
-        data class Hyperlink(val link: String, val contentEditable: Boolean) : PlaceholderSpan
+        data class Hyperlink(val link: String, val data: Map<String, String>) : PlaceholderSpan
         sealed interface ListBlock : PlaceholderSpan {
             class Ordered : ListBlock
             class Unordered : ListBlock
@@ -156,8 +157,13 @@ internal class HtmlToSpansParser(
 
             "a" -> {
                 val url = attrs?.getValue("href") ?: return
-                val contentEditable = attrs?.getValue("contenteditable")?.toBoolean()
-                handleHyperlinkStart(url, contentEditable ?: true)
+                val data = buildMap<String, String> {
+                    for (i in 0..attrs.length) {
+                        val key = attrs.getLocalName(i) ?: continue
+                        set(key, attrs.getValue(i))
+                    }
+                }
+                handleHyperlinkStart(url, data)
             }
 
             "ul", "ol" -> {
@@ -249,9 +255,9 @@ internal class HtmlToSpansParser(
                 }
 
                 val codeSpan = CodeBlockSpan(
-                    leadingMargin = styleConfig().codeBlock.leadingMargin,
-                    verticalPadding = styleConfig().codeBlock.verticalPadding,
-                    relativeSizeProportion = styleConfig().codeBlock.relativeTextSize,
+                    leadingMargin = styleConfig.codeBlock.leadingMargin,
+                    verticalPadding = styleConfig.codeBlock.verticalPadding,
+                    relativeSizeProportion = styleConfig.codeBlock.relativeTextSize,
                 )
                 replacePlaceholderWithPendingSpan(
                     placeholder = last.span,
@@ -308,7 +314,7 @@ internal class HtmlToSpansParser(
             InlineFormat.Underline -> UnderlineSpan()
             InlineFormat.StrikeThrough -> StrikethroughSpan()
             InlineFormat.InlineCode -> InlineCodeSpan(
-                relativeSizeProportion = styleConfig().inlineCode.relativeTextSize
+                relativeSizeProportion = styleConfig.inlineCode.relativeTextSize
             )
         }
         replacePlaceholderWithPendingSpan(
@@ -316,8 +322,8 @@ internal class HtmlToSpansParser(
         )
     }
 
-    private fun handleHyperlinkStart(url: String, contentEditable: Boolean) {
-        val hyperlink = PlaceholderSpan.Hyperlink(url, contentEditable)
+    private fun handleHyperlinkStart(url: String, data: Map<String, String>) {
+        val hyperlink = PlaceholderSpan.Hyperlink(url, data)
         addPlaceHolderSpan(hyperlink)
     }
 
@@ -326,34 +332,35 @@ internal class HtmlToSpansParser(
         val url = last.span.link
         val innerText = text.subSequence(last.start, text.length).toString()
 
-        // If the link is not editable, tag all but the first character of the anchor text with
+        val isMention = isMention?.invoke(innerText, url) == true ||
+                last.span.data.containsKey("data-mention-type")
+
+        // If the link is a mention, tag all but the first character of the anchor text with
         // ExtraCharacterSpans. These characters will then be taken into account when translating
         // between editor and composer model indices (see [EditorIndexMapper]).
-        val isContentEditable = !last.span.contentEditable
-        if (isContentEditable && text.length > 1) {
+        if (isMention && text.length > 1) {
             addPendingSpan(
                 ExtraCharacterSpan(), last.start + 1, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
             )
         }
-        // TODO: use data-mention-type instead
-        //  https://github.com/matrix-org/matrix-rich-text-editor/issues/709
-        val isMention = !last.span.contentEditable
+
         val textDisplay = if (isMention) {
-            mentionDisplayHandler()?.resolveMentionDisplay(innerText, url) ?: TextDisplay.Plain
+            mentionDisplayHandler?.resolveMentionDisplay(innerText, url) ?: TextDisplay.Plain
         } else {
             TextDisplay.Plain
         }
 
         when (textDisplay) {
             is TextDisplay.Custom -> {
-                val span = CustomReplacementSpan(textDisplay.customSpan)
+                val span = CustomMentionSpan(textDisplay.customSpan, url)
                 replacePlaceholderWithPendingSpan(
                     last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
             }
 
             TextDisplay.Pill -> {
-                val span = PillSpan(styleConfig().pill.backgroundColor)
+                val pillBackground = styleConfig.pill.backgroundColor
+                val span = PillSpan(pillBackground, url)
                 replacePlaceholderWithPendingSpan(
                     last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 )
@@ -370,8 +377,8 @@ internal class HtmlToSpansParser(
     }
 
     private fun createListSpan(last: PlaceholderSpan.ListItem): ParagraphStyle {
-        val gapWidth = styleConfig().bulletList.bulletGapWidth.roundToInt()
-        val bulletRadius = styleConfig().bulletList.bulletRadius.roundToInt()
+        val gapWidth = styleConfig.bulletList.bulletGapWidth.roundToInt()
+        val bulletRadius = styleConfig.bulletList.bulletRadius.roundToInt()
 
         return if (last.ordered) {
             // TODO: provide typeface and textSize somehow
@@ -495,7 +502,7 @@ internal class HtmlToSpansParser(
     }
 
     private fun Editable.addAtRoomSpans() {
-        val display = mentionDisplayHandler()?.resolveAtRoomMentionDisplay() ?: return
+        val display = mentionDisplayHandler?.resolveAtRoomMentionDisplay() ?: return
         Regex(Regex.escape("@room")).findAll(this).forEach eachMatch@{ match ->
             val start = match.range.first
             val end = match.range.last + 1
@@ -503,9 +510,9 @@ internal class HtmlToSpansParser(
                 return@eachMatch
             }
             val span = when (display) {
-                is TextDisplay.Custom -> CustomReplacementSpan(display.customSpan)
+                is TextDisplay.Custom -> CustomMentionSpan(display.customSpan)
                 TextDisplay.Pill -> PillSpan(
-                    styleConfig().pill.backgroundColor
+                    styleConfig.pill.backgroundColor
                 )
 
                 TextDisplay.Plain -> null
@@ -537,7 +544,7 @@ internal class HtmlToSpansParser(
             // Links
             LinkSpan::class.java,
             PillSpan::class.java,
-            CustomReplacementSpan::class.java,
+            CustomMentionSpan::class.java,
 
             // Lists
             UnorderedListSpan::class.java,

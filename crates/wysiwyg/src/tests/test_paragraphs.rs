@@ -19,6 +19,8 @@ use crate::{
     ComposerModel,
 };
 
+use super::testutils_conversion::utf16;
+
 #[test]
 #[allow(deprecated)]
 fn pressing_enter_with_a_brand_new_model() {
@@ -30,8 +32,8 @@ fn pressing_enter_with_a_brand_new_model() {
 #[test]
 #[allow(deprecated)]
 fn adding_line_break_after_replacing_with_empty_html() {
-    let mut model = ComposerModel::new();
-    model.set_content_from_html(&Utf16String::new()).unwrap();
+    let mut model = ComposerModel::<Utf16String>::new();
+    model.set_content_from_html(&utf16("")).unwrap();
     model.add_line_break();
     assert_eq!(tx(&model), "<br />|");
 }
@@ -98,14 +100,17 @@ fn multiple_line_breaks_can_be_added() {
 }
 
 #[test]
-fn can_place_cursor_inside_brs_and_delete() {
+fn can_place_cursor_inside_brs_and_backspace() {
     let mut model = cm("123<br />|<br />abc");
     model.backspace();
-    assert_eq!(tx(&model), "123|<br />abc");
+    assert_eq!(tx(&model), "<p>123|</p><p>abc</p>");
+}
 
+#[test]
+fn can_place_cursor_inside_brs_and_delete() {
     let mut model = cm("123<br />|<br />abc");
     model.delete();
-    assert_eq!(tx(&model), "123<br />|abc");
+    assert_eq!(tx(&model), "<p>123</p><p>|abc</p>");
 }
 
 #[test]
@@ -120,21 +125,21 @@ fn can_add_line_break_on_later_lines() {
 fn backspace_to_beginning_of_line() {
     let mut model = cm("123<br />a|bc");
     model.backspace();
-    assert_eq!(tx(&model), "123<br />|bc");
+    assert_eq!(tx(&model), "<p>123</p><p>|bc</p>");
 }
 
 #[test]
 fn backspace_deletes_br() {
     let mut model = cm("123<br />|abc");
     model.backspace();
-    assert_eq!(tx(&model), "123|abc");
+    assert_eq!(tx(&model), "<p>123|abc</p>");
 }
 
 #[test]
 fn delete_deletes_br() {
     let mut model = cm("123|<br />abc");
     model.delete();
-    assert_eq!(tx(&model), "123|abc");
+    assert_eq!(tx(&model), "<p>123|abc</p>");
 }
 
 #[test]
@@ -161,14 +166,14 @@ fn can_backspace_to_beginning_after_adding_a_line_break() {
 fn test_replace_text_in_first_line_with_line_break() {
     let mut model = cm("{AAA}|<br />BBB");
     model.add_line_break();
-    assert_eq!(tx(&model), "<br />|<br />BBB");
+    assert_eq!(tx(&model), "<p>&nbsp;</p><p>|BBB</p><br />");
 }
 
 #[test]
 fn backspace_merges_text_nodes() {
     let mut model = cm("a<br />|b");
     model.backspace();
-    assert_eq!(tx(&model), "a|b");
+    assert_eq!(tx(&model), "<p>a|b</p>");
     // The two text nodes were merged
     assert_eq!(model.state.dom.document().children().len(), 1);
 }
@@ -177,7 +182,7 @@ fn backspace_merges_text_nodes() {
 fn backspace_merges_formatting_nodes() {
     let mut model = cm("<b>a</b><br />|<b>b</b>");
     model.backspace();
-    assert_eq!(tx(&model), "<b>a|b</b>");
+    assert_eq!(tx(&model), "<p><b>a|b</b></p>");
 }
 
 #[test]

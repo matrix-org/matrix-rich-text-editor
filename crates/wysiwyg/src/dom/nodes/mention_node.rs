@@ -138,7 +138,7 @@ where
         &self,
         formatter: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        state: ToHtmlState,
+        state: &ToHtmlState,
         as_message: bool,
     ) {
         self.fmt_mention_html(formatter, selection_writer, state, as_message)
@@ -150,7 +150,7 @@ impl<S: UnicodeString> MentionNode<S> {
         &self,
         formatter: &mut S,
         selection_writer: Option<&mut SelectionWriter>,
-        _: ToHtmlState,
+        _: &ToHtmlState,
         as_message: bool,
     ) {
         let tag = &S::from("a");
@@ -165,7 +165,7 @@ impl<S: UnicodeString> MentionNode<S> {
                     // this is now only required for us to attach a custom style attribute for web
                     let mut attrs = self.attributes.clone();
                     let data_mention_type = match mention.kind() {
-                        MentionKind::Room => "room",
+                        MentionKind::Room(_) => "room",
                         MentionKind::User => "user",
                     };
                     attrs.push((
@@ -177,12 +177,11 @@ impl<S: UnicodeString> MentionNode<S> {
                     attrs
                 };
 
-                let display_text =
-                    if as_message && mention.kind() == &MentionKind::Room {
-                        S::from(mention.mx_id())
-                    } else {
-                        self.display_text()
-                    };
+                let display_text = if as_message && mention.kind().is_room() {
+                    S::from(mention.mx_id())
+                } else {
+                    self.display_text()
+                };
 
                 self.fmt_tag_open(tag, formatter, &Some(attributes));
                 formatter.push(display_text);
@@ -286,7 +285,7 @@ where
                 // For a mention in a message, display the `mx_id` for a room mention, `display_text` otherwise
                 let text = match this.kind() {
                     MentionNodeKind::MatrixUri { mention }
-                        if mention.kind() == &MentionKind::Room =>
+                        if mention.kind().is_room() =>
                     {
                         S::from(mention.mx_id())
                     }
@@ -305,7 +304,7 @@ where
                 match this.kind() {
                     MentionNodeKind::MatrixUri { mention } => {
                         data_mention_type = match mention.kind() {
-                            MentionKind::Room => "room",
+                            MentionKind::Room(_) => "room",
                             MentionKind::User => "user",
                         };
                         href = mention.uri();

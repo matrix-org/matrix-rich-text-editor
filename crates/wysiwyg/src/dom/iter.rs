@@ -23,7 +23,7 @@ use crate::{DomHandle, DomNode, UnicodeString};
 use std::collections::HashSet;
 
 use super::{
-    nodes::{ContainerNode, TextNode},
+    nodes::{ContainerNode, MentionNode, TextNode},
     Dom,
 };
 
@@ -46,6 +46,12 @@ where
     /// order
     pub fn iter_containers(&self) -> impl Iterator<Item = &ContainerNode<S>> {
         self.iter().filter_map(DomNode::as_container)
+    }
+
+    /// Returns an iterator over all the mention nodes of this DOM, in depth-first
+    /// order
+    pub fn iter_mentions(&self) -> impl Iterator<Item = &MentionNode<S>> {
+        self.iter().filter_map(DomNode::as_mention)
     }
 
     /// Return an iterator over all nodes of the DOM from the passed node,
@@ -433,7 +439,7 @@ mod test {
             text_nodes,
             vec![
                 "", "ul", "li", "'b'", "strong", "'c'", "li", "'foo'", "p",
-                "i", "'d'", "'e'", "br", "b", "'x'"
+                "i", "'d'", "'e'", "p", "b", "'x'"
             ]
         );
     }
@@ -464,7 +470,7 @@ mod test {
     #[test]
     fn can_walk_all_nodes_of_a_trailing_subtree() {
         let dom = cm(EXAMPLE_HTML).state.dom;
-        let sub_tree = dom.lookup_node(&DomHandle::from_raw(vec![1, 3]));
+        let sub_tree = dom.lookup_node(&DomHandle::from_raw(vec![2, 0]));
         let text_nodes: Vec<String> =
             sub_tree.iter_subtree().map(node_txt).collect();
 
@@ -523,7 +529,7 @@ mod test {
     #[test]
     fn can_walk_all_text_nodes_of_a_trailing_subtree() {
         let dom = cm(EXAMPLE_HTML).state.dom;
-        let sub_tree = &dom.lookup_node(&DomHandle::from_raw(vec![1, 3]));
+        let sub_tree = &dom.lookup_node(&DomHandle::from_raw(vec![2, 0]));
         let text_nodes: Vec<String> = sub_tree
             .iter_text_in_subtree()
             .map(|text| text.data().to_string())
@@ -559,7 +565,7 @@ mod test {
             text_nodes,
             vec![
                 "ul", "li", "'b'", "strong", "'c'", "li", "'foo'", "p", "i",
-                "'d'", "'e'", "br", "b", "'x'"
+                "'d'", "'e'", "p", "b", "'x'"
             ]
         )
     }
@@ -573,9 +579,7 @@ mod test {
 
         assert_eq!(
             text_nodes,
-            vec![
-                "'c'", "li", "'foo'", "p", "i", "'d'", "'e'", "br", "b", "'x'"
-            ]
+            vec!["'c'", "li", "'foo'", "p", "i", "'d'", "'e'", "p", "b", "'x'"]
         )
     }
 
@@ -589,7 +593,7 @@ mod test {
             text_nodes,
             vec![
                 "", "ul", "li", "'b'", "strong", "'c'", "li", "'foo'", "p",
-                "i", "'d'", "'e'", "br", "b", "'x'"
+                "i", "'d'", "'e'", "p", "b", "'x'"
             ]
         )
     }
@@ -614,7 +618,7 @@ mod test {
         assert_eq!(
             text_nodes,
             vec![
-                "'x'", "b", "br", "'e'", "i", "'d'", "p", "ul", "li", "'foo'",
+                "'x'", "b", "p", "p", "'e'", "i", "'d'", "ul", "li", "'foo'",
                 "li", "strong", "'c'", "'b'", "",
             ]
         )
@@ -671,7 +675,7 @@ mod test {
     fn can_walk_all_nodes_of_the_tree_from_a_node_reversed() {
         let dom = cm(EXAMPLE_HTML).state.dom;
         // Start from the last <b> tag.
-        let handle = DomHandle::from_raw(vec![1, 3]);
+        let handle = DomHandle::from_raw(vec![2, 0]);
         let last_child = dom.lookup_node(&handle);
         let text_nodes: Vec<String> =
             dom.iter_from(last_child).rev().map(node_txt).collect();
@@ -679,7 +683,7 @@ mod test {
         assert_eq!(
             text_nodes,
             vec![
-                "b", "br", "'e'", "i", "'d'", "p", "ul", "li", "'foo'", "li",
+                "b", "p", "p", "'e'", "i", "'d'", "ul", "li", "'foo'", "li",
                 "strong", "'c'", "'b'", ""
             ]
         )
@@ -695,7 +699,7 @@ mod test {
 
         assert_eq!(
             container_nodes,
-            vec!["", "ul", "li", "strong", "li", "p", "i", "b"]
+            vec!["", "ul", "li", "strong", "li", "p", "i", "p", "b"]
         );
     }
 

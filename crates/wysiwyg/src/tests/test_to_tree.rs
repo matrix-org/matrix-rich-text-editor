@@ -56,9 +56,10 @@ fn br_within_text_shows_up_in_tree() {
     assert_eq!(
         model.state.dom.to_tree(),
         r#"
-├>"a"
-├>br
-└>"b"
+├>p
+│ └>"a"
+└>p
+  └>"b"
 "#,
     );
 }

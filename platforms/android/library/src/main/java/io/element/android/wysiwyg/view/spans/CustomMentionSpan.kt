@@ -10,8 +10,9 @@ import android.text.style.ReplacementSpan
  * It is used to allow reuse of the same underlying span across multiple ranges
  * of a spanned text.
  */
-internal class CustomReplacementSpan(
-    private val providedSpan: ReplacementSpan
+internal class CustomMentionSpan(
+    private val providedSpan: ReplacementSpan,
+    val url: String? = null,
 ) : ReplacementSpan() {
     override fun draw(
         canvas: Canvas,

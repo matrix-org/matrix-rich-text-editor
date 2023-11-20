@@ -208,9 +208,10 @@ mod test {
         let model = cm("Some text| <b>and bold </b><br/><i>and italic</i>");
         let (s, e) = model.safe_selection();
         let ret = model.state.dom.find_nodes_to_wrap_in_block(s, e).unwrap();
-        assert_eq!(ret.ancestor_handle, DomHandle::from_raw(Vec::new()));
-        assert_eq!(ret.start_handle, DomHandle::from_raw(vec![0]));
-        assert_eq!(ret.end_handle, DomHandle::from_raw(vec![1, 0]));
+        // <br> has been converted to <p> hence the extra depth
+        assert_eq!(ret.ancestor_handle, DomHandle::from_raw(vec![]));
+        assert_eq!(ret.start_handle, DomHandle::from_raw(vec![0, 0]));
+        assert_eq!(ret.end_handle, DomHandle::from_raw(vec![0, 1, 0]));
     }
 
     #[test]
@@ -218,9 +219,10 @@ mod test {
         let model = cm("Some text <br/><b>and bold </b><i>|and italic</i>");
         let (s, e) = model.safe_selection();
         let ret = model.state.dom.find_nodes_to_wrap_in_block(s, e).unwrap();
-        assert_eq!(ret.ancestor_handle, DomHandle::from_raw(Vec::new()));
-        assert_eq!(ret.start_handle, DomHandle::from_raw(vec![2, 0]));
-        assert_eq!(ret.end_handle, DomHandle::from_raw(vec![3, 0]));
+        // <br> has been converted to <p> hence the extra depth
+        assert_eq!(ret.ancestor_handle, DomHandle::from_raw(vec![]));
+        assert_eq!(ret.start_handle, DomHandle::from_raw(vec![1, 0, 0]));
+        assert_eq!(ret.end_handle, DomHandle::from_raw(vec![1, 1, 0]));
     }
 
     #[test]
@@ -242,9 +244,10 @@ mod test {
         );
         let (s, e) = model.safe_selection();
         let ret = model.state.dom.find_nodes_to_wrap_in_block(s, e).unwrap();
-        assert_eq!(ret.ancestor_handle, DomHandle::from_raw(vec![0, 0]));
-        assert_eq!(ret.start_handle, DomHandle::from_raw(vec![0, 0, 3, 0]));
-        assert_eq!(ret.end_handle, DomHandle::from_raw(vec![0, 0, 3, 0]));
+        // <br> has been converted to <p> hence the extra depth
+        assert_eq!(ret.ancestor_handle, DomHandle::from_raw(vec![0, 0, 1]));
+        assert_eq!(ret.start_handle, DomHandle::from_raw(vec![0, 0, 1, 0, 0]));
+        assert_eq!(ret.end_handle, DomHandle::from_raw(vec![0, 0, 1, 0, 0]));
     }
 
     #[test]

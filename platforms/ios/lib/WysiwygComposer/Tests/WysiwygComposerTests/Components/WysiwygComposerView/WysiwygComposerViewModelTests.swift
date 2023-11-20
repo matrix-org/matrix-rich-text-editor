@@ -19,14 +19,11 @@ import Combine
 import XCTest
 
 final class WysiwygComposerViewModelTests: XCTestCase {
-    let viewModel = WysiwygComposerViewModel()
+    var viewModel: WysiwygComposerViewModel!
 
     override func setUpWithError() throws {
+        viewModel = WysiwygComposerViewModel()
         viewModel.clearContent()
-    }
-
-    override func tearDownWithError() throws {
-        viewModel.plainTextMode = false
     }
 
     func testIsContentEmpty() throws {
@@ -49,6 +46,13 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         let shouldChange = viewModel.replaceText(range: .zero,
                                                  replacementText: "A")
         XCTAssertTrue(shouldChange)
+    }
+
+    func testSimpleTextInputIsNotAccepted() throws {
+        viewModel.shouldReplaceText = false
+        let shouldChange = viewModel.replaceText(range: .zero,
+                                                 replacementText: "A")
+        XCTAssertFalse(shouldChange)
     }
 
     func testNewlineIsNotAccepted() throws {

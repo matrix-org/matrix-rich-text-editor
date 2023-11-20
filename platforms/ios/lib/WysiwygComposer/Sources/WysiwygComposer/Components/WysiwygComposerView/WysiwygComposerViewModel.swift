@@ -64,6 +64,10 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         }
     }
 
+    /// Whether the composer should take any keyboard input.
+    /// When set to `false`, `replaceText(range:replacementText:)` returns `false` as well.
+    public var shouldReplaceText = true
+
     /// Published value for the composer plain text mode.
     @Published public var plainTextMode = false {
         didSet {
@@ -251,6 +255,18 @@ public extension WysiwygComposerViewModel {
         applyUpdate(update)
         hasPendingFormats = true
     }
+    
+    /// Sets the @room mention at the suggestion position
+    func setAtRoomMention() {
+        let update: ComposerUpdate
+        if let suggestionPattern, suggestionPattern.key == .at {
+            update = model.insertAtRoomMentionAtSuggestion(suggestionPattern)
+        } else {
+            update = model.insertAtRoomMention()
+        }
+        applyUpdate(update)
+        hasPendingFormats = true
+    }
 
     /// Set a command with `Slash` pattern.
     ///
@@ -277,6 +293,10 @@ public extension WysiwygComposerViewModel {
     }
 
     func replaceText(range: NSRange, replacementText: String) -> Bool {
+        guard shouldReplaceText else {
+            return false
+        }
+
         guard !plainTextMode else {
             return true
         }
@@ -374,6 +394,11 @@ public extension WysiwygComposerViewModel {
     
     func getLinkAction() -> LinkAction {
         model.getLinkAction()
+    }
+    
+    /// Get the current mentions present in the composer
+    func getMentionsState() -> MentionsState {
+        model.getMentionsState()
     }
 
     func enter() {
@@ -533,7 +558,8 @@ private extension WysiwygComposerViewModel {
     /// Reconciliate the content of the model with the content of the text view.
     func reconciliateIfNeeded() {
         do {
-            guard let replacement = try StringDiffer.replacement(from: attributedContent.text.htmlChars,
+            guard !textView.isDictationRunning,
+                  let replacement = try StringDiffer.replacement(from: attributedContent.text.htmlChars,
                                                                  to: textView.attributedText.htmlChars) else {
                 return
             }

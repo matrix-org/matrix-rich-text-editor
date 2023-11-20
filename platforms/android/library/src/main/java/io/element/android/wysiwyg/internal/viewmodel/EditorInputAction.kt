@@ -92,10 +92,18 @@ internal sealed interface EditorInputAction {
      */
     data class SetLinkWithText(val link: String, val text: String): EditorInputAction
 
-    data class SetLinkSuggestion(
+    /**
+     * Replaces the suggestion text with a mention.
+     */
+    data class InsertMentionAtSuggestion(
         val url: String,
         val text: String,
     ): EditorInputAction
+
+    /**
+     * Replaces the suggesetion with an `@room` mention
+     */
+    object InsertAtRoomMentionAtSuggestion : EditorInputAction
 
     /**
      * Creates a list, [ordered] if true or unordered in the current selection.

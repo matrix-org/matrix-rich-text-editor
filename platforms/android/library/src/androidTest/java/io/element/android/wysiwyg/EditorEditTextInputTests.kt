@@ -14,7 +14,9 @@ import android.view.View
 import android.widget.EditText
 import android.widget.TextView
 import androidx.core.text.getSpans
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.Espresso.setFailureHandler
 import androidx.test.espresso.accessibility.AccessibilityChecks
 import androidx.test.espresso.action.ViewActions.pressKey
 import androidx.test.espresso.action.ViewActions.replaceText
@@ -28,7 +30,9 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.element.android.wysiwyg.display.TextDisplay
 import io.element.android.wysiwyg.test.R
+import io.element.android.wysiwyg.test.rules.createFlakyEmulatorRule
 import io.element.android.wysiwyg.test.utils.*
+import io.element.android.wysiwyg.utils.NBSP
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.spans.LinkSpan
@@ -52,10 +56,20 @@ class EditorEditTextInputTests {
     @get:Rule
     val scenarioRule = ActivityScenarioRule(TestActivity::class.java)
 
+    @get:Rule
+    val flakyEmulatorRule = createFlakyEmulatorRule()
+
     private val ipsum = "Lorem Ipsum is simply dummy text of the printing and typesetting industry."
 
     init {
         AccessibilityChecks.enable()
+    }
+
+    @Before
+    fun setUp() {
+        setFailureHandler(
+            ScreenshotFailureHandler(ApplicationProvider.getApplicationContext())
+        )
     }
 
     @After
@@ -304,7 +318,7 @@ class EditorEditTextInputTests {
     }
 
     @Test
-    fun testSettingLinkSuggestion() {
+    fun testSettingUserMentionSuggestion() {
         onView(withId(R.id.rich_text_edit_text))
             .perform(ImeActions.setComposingText("@jonny"))
             .perform(EditorActions.setMentionDisplayHandler(TestMentionDisplayHandler(TextDisplay.Pill)))
@@ -315,7 +329,7 @@ class EditorEditTextInputTests {
     }
 
     @Test
-    fun testSettingMultipleLinkSuggestionWithCustomReplacements() {
+    fun testSettingMultipleUserMentionSuggestionsWithCustomReplacements() {
         onView(withId(R.id.rich_text_edit_text))
             .perform(ImeActions.setComposingText("@jonny"))
             .perform(EditorActions.setMentionDisplayHandler(
@@ -331,6 +345,17 @@ class EditorEditTextInputTests {
             .perform(EditorActions.insertMentionAtSuggestion("jonny", "https://matrix.to/#/@test:matrix.org"))
             .check(matches(TextViewMatcher {
                 it.editableText.getSpans<ReplacementSpan>().count() == 2
+            }))
+    }
+
+    @Test
+    fun testSettingAtRoomMentionAtSuggestion() {
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(ImeActions.setComposingText("@room"))
+            .perform(EditorActions.setMentionDisplayHandler(TestMentionDisplayHandler(TextDisplay.Pill)))
+            .perform(EditorActions.insertAtRoomMentionAtSuggestion())
+            .check(matches(TextViewMatcher {
+                it.editableText.getSpans<PillSpan>().isNotEmpty()
             }))
     }
 
@@ -506,6 +531,16 @@ class EditorEditTextInputTests {
     }
 
     @Test
+    fun testWritingOnlyDigits() {
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(ImeActions.setComposingText("1"))
+            .perform(ImeActions.setComposingText("2"))
+            .perform(ImeActions.setComposingText("3"))
+            .perform(ImeActions.commitText(" "))
+            .check(matches(withText("123$NBSP")))
+    }
+
+    @Test
     fun testPasteImage() {
         val imageUri = Uri.parse("content://fakeImage")
         val contentWatcher = spyk<(uri: Uri) -> Unit>({ })
@@ -546,7 +581,7 @@ class EditorEditTextInputTests {
     }
 
     @Test
-    fun testPasteHtlmText() {
+    fun testPasteHtmlText() {
         val html = "<bold>$ipsum</bold>"
         val clipData = ClipData.newHtmlText("html", ipsum, html)
         val contentWatcher = spyk<(uri: Uri) -> Unit>({ })

@@ -224,18 +224,12 @@ where
             };
         }
         match self.state.dom.lookup_node_mut(&location.node_handle) {
-            // we should never be passed a container
-            DomNode::Container(_) => ComposerUpdate::keep(),
-            DomNode::LineBreak(_) => {
-                // for a linebreak, remove it if we started the operation from the whitespace
-                // char type, otherwise keep it
-                match start_type {
-                    CharType::Whitespace => self.delete_to_cursor(
-                        direction.increment(location.index_in_dom()),
-                    ),
-                    _ => ComposerUpdate::keep(),
-                }
-            }
+            DomNode::Container(_) | DomNode::LineBreak(_) => match start_type {
+                CharType::Whitespace => self.delete_to_cursor(
+                    direction.increment(location.index_in_dom()),
+                ),
+                _ => ComposerUpdate::keep(),
+            },
             DomNode::Mention(_) => self
                 .delete_to_cursor(direction.increment(location.index_in_dom())),
             DomNode::Text(node) => {
@@ -354,7 +348,13 @@ where
     ) -> Option<CharType> {
         let node = self.state.dom.lookup_node(&location.node_handle);
         match node {
-            DomNode::Container(_) => None,
+            DomNode::Container(node) => {
+                if node.is_empty() {
+                    Some(CharType::Whitespace)
+                } else {
+                    None
+                }
+            }
             DomNode::LineBreak(_) => {
                 // we have to treat linebreaks as chars, this type fits best
                 Some(CharType::Whitespace)

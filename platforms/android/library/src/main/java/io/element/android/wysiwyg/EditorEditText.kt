@@ -43,22 +43,42 @@ class EditorEditText : AppCompatEditText {
 
     private var inputConnection: InterceptInputConnection? = null
 
-    private lateinit var styleConfig: StyleConfig
+    /**
+     * The [StyleConfig] used to style the spans generated from the HTML in this EditText.
+     */
+    lateinit var styleConfig: StyleConfig
+        private set
 
     private lateinit var inlineCodeBgHelper: SpanBackgroundHelper
     private lateinit var codeBlockBgHelper: SpanBackgroundHelper
 
     private val viewModel: EditorViewModel by viewModel(
         viewModelInitializer = {
-            val htmlConverter = HtmlConverter.Factory.create(
-                context = context.applicationContext,
-                styleConfigProvider = {styleConfig},
-                mentionDisplayHandlerProvider = {mentionDisplayHandler},
-            )
-            val provideComposer = { if (!isInEditMode) newComposerModel() else null }
-            EditorViewModel(provideComposer, htmlConverter)
+            val provideComposer = if (!isInEditMode) { { newComposerModel() } } else { { null } }
+            EditorViewModel(provideComposer)
         }
     )
+
+    private var mentionDisplayHandler: MentionDisplayHandler? = null
+        set(value) {
+            field = value?.let { MemoizingMentionDisplayHandler(it) }
+        }
+
+    private var htmlConverter: HtmlConverter? = null
+        set(value) {
+            field = value
+            viewModel.htmlConverter = value
+
+            rerender()
+        }
+
+    private fun createHtmlConverter(styleConfig: StyleConfig, mentionDisplayHandler: MentionDisplayHandler?): HtmlConverter? {
+        return HtmlConverter.Factory.create(
+            context = context.applicationContext,
+            styleConfig = styleConfig,
+            mentionDisplayHandler = mentionDisplayHandler,
+        )
+    }
 
     private val spannableFactory = ReuseSourceSpannableFactory()
 
@@ -67,11 +87,12 @@ class EditorEditText : AppCompatEditText {
     constructor(context: Context) : this(context, null)
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-        setStyleConfig(EditorEditTextAttributeReader(context, attrs).styleConfig)
+        updateStyle(styleConfig = EditorEditTextAttributeReader(context, attrs).styleConfig, mentionDisplayHandler = mentionDisplayHandler)
     }
 
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) :
-            super(context, attrs, defStyleAttr)
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
+        updateStyle(styleConfig = EditorEditTextAttributeReader(context, attrs).styleConfig, mentionDisplayHandler = mentionDisplayHandler)
+    }
 
     init {
         setSpannableFactory(spannableFactory)
@@ -96,14 +117,10 @@ class EditorEditText : AppCompatEditText {
         fun onLinkActionChanged(linkAction: LinkAction?)
     }
 
+    fun interface OnMentionsStateChangedListener {
+        fun onMentionsStateChanged(mentionsState: MentionsState?)
+    }
 
-    /**
-     * Set the mention display handler to display mentions in a custom way.
-     */
-    var mentionDisplayHandler: MentionDisplayHandler? = null
-        set(value) {
-            field = value?.let { MemoizingMentionDisplayHandler(it) }
-        }
     var selectionChangeListener: OnSelectionChangeListener? = null
     var actionStatesChangedListener: OnActionStatesChangedListener? = null
         set(value) {
@@ -131,6 +148,18 @@ class EditorEditText : AppCompatEditText {
 
             viewModel.linkActionCallback = { linkAction ->
                 value?.onLinkActionChanged(linkAction)
+            }
+        }
+
+    /**
+     * Set the [MentionsState] change listener to be notified when the state of mentions in the composer changes.
+     */
+    var mentionsStateChangedListener: OnMentionsStateChangedListener? = null
+        set(value) {
+            field = value
+
+            viewModel.setMentionsStateCallback { mentionsState ->
+                value?.onMentionsStateChanged(mentionsState)
             }
         }
 
@@ -232,6 +261,21 @@ class EditorEditText : AppCompatEditText {
         }
     }
 
+    /**
+     * Sets up the styling used to translate HTML to Spanned text.
+     * @param styleConfig The styles to use for the generated spans.
+     * @param mentionDisplayHandler Used to decide how to display any mentions found in the HTML text.
+     */
+    fun updateStyle(styleConfig: StyleConfig, mentionDisplayHandler: MentionDisplayHandler?) {
+        this.styleConfig = styleConfig
+        this.mentionDisplayHandler = mentionDisplayHandler
+
+        inlineCodeBgHelper = SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(styleConfig.inlineCode)
+        codeBlockBgHelper = SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(styleConfig.codeBlock)
+
+        htmlConverter = createHtmlConverter(styleConfig, mentionDisplayHandler)
+    }
+
     private fun addHardwareKeyInterceptor() {
         // This seems to be the only way to prevent EditText from automatically handling key strokes
         setOnKeyListener { _, keyCode, event ->
@@ -259,17 +303,6 @@ class EditorEditText : AppCompatEditText {
                 false
             }
         }
-    }
-
-    /**
-     * Apply custom style. This overrides any style set in the layout XML.
-     */
-    fun setStyleConfig(styleConfig: StyleConfig) {
-        this.styleConfig = styleConfig
-        inlineCodeBgHelper = SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(styleConfig.inlineCode)
-        codeBlockBgHelper = SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(styleConfig.codeBlock)
-
-        rerender()
     }
 
     override fun setText(text: CharSequence?, type: BufferType?) {
@@ -456,17 +489,31 @@ class EditorEditText : AppCompatEditText {
     }
 
     /**
-     * Set a link that applies to the current suggestion range
+     * Set a mention link that applies to the current suggestion range
      *
      * @param url The url of the new link
      * @param text The text to insert into the current suggestion range
      */
-    fun setLinkSuggestion(url: String, text: String) {
+    fun insertMentionAtSuggestion(url: String, text: String) {
         val result = viewModel.processInput(
-            EditorInputAction.SetLinkSuggestion(
+            EditorInputAction.InsertMentionAtSuggestion(
                 text = text,
                 url = url,
             )
+        ) ?: return
+        setTextFromComposerUpdate(result.text)
+        setSelectionFromComposerUpdate(result.selection.last)
+    }
+
+    /**
+     * Set a mention link that applies to the current suggestion range
+     *
+     * @param url The url of the new link
+     * @param text The text to insert into the current suggestion range
+     */
+    fun insertAtRoomMentionAtSuggestion() {
+        val result = viewModel.processInput(
+            EditorInputAction.InsertAtRoomMentionAtSuggestion
         ) ?: return
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
@@ -485,6 +532,13 @@ class EditorEditText : AppCompatEditText {
         ) ?: return
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
+    }
+
+    /**
+     * Get the current [MentionsState] of the editor.
+     */
+    fun getMentionsState(): MentionsState? {
+        return viewModel.getMentionsState()
     }
 
     @VisibleForTesting

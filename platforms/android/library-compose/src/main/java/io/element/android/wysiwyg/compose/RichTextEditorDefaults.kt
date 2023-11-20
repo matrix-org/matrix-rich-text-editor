@@ -1,5 +1,6 @@
 package io.element.android.wysiwyg.compose
 
+import android.text.InputType
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -11,6 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import io.element.android.wysiwyg.display.TextDisplay
 
 private val defaultCodeCornerRadius = 4.dp
 private val defaultCodeBorderWidth = 1.dp
@@ -24,6 +26,16 @@ object RichTextEditorDefaults {
     internal const val initialHtml = ""
     internal const val initialFocus = false
     internal val initialSelection = 0 to 0
+
+    /**
+     * Default [TextDisplay] for mentions: they will appear as plain text.
+     */
+    val MentionDisplay: (String, String) -> TextDisplay = { _, _ -> TextDisplay.Plain }
+
+    /**
+     * Default [TextDisplay] for `@room` mentions: they will appear as plain text.
+     */
+    val RoomMentionDisplay: () -> TextDisplay = { TextDisplay.Plain }
 
     /**
      * Creates the default set of style customisations for [RichTextEditor].
@@ -116,8 +128,9 @@ object RichTextEditorDefaults {
      *
      * @param backgroundColor The background color to apply
      */
+    @Composable
     fun pillStyle(
-        backgroundColor: Color = Color.Transparent,
+        backgroundColor: Color = MaterialTheme.colorScheme.surfaceVariant,
     ) = PillStyle(
         backgroundColor = backgroundColor,
     )
@@ -163,7 +176,7 @@ object RichTextEditorDefaults {
      */
     @Composable
     fun linkStyle(
-        color: Color = MaterialTheme.colorScheme.scrim,
+        color: Color = Color.Blue,
     ) = LinkStyle(
         color = color,
     )
@@ -242,4 +255,10 @@ object RichTextEditorDefaults {
             ),
         )
     }
+
+    const val inputType: Int = InputType.TYPE_CLASS_TEXT or
+            InputType.TYPE_TEXT_FLAG_MULTI_LINE or
+            InputType.TYPE_TEXT_FLAG_CAP_SENTENCES or
+            InputType.TYPE_TEXT_FLAG_AUTO_CORRECT or
+            InputType.TYPE_TEXT_FLAG_AUTO_COMPLETE
 }

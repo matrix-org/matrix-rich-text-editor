@@ -51,6 +51,22 @@ internal class FakeViewActionCollector(
             ViewAction.ToggleQuote -> toggleQuote()
             ViewAction.Undo -> undo()
             ViewAction.Unindent -> unindent()
+            is ViewAction.ReplaceSuggestionText -> {
+                state.messageHtml = state.messageHtml.replaceLast(Regex("(/\\w+)"), value.text)
+                state.messageMarkdown = state.messageMarkdown.replaceLast(Regex("(/\\w+)"), value.text)
+            }
+            is ViewAction.InsertMentionAtSuggestion -> {
+                state.messageHtml = state.messageHtml.replaceLast(Regex("(@\\w+)"), "<a href='${value.url}'>${value.text}</a>")
+                state.messageMarkdown = state.messageMarkdown.replaceLast(Regex("(@\\w+)"), "[${value.text}](${value.url})")
+            }
+            is ViewAction.InsertAtRoomMentionAtSuggestion -> {
+                val htmlReplacement = "<a data-mention-type=\"at-room\" href=\"#\" contenteditable=\"false\">@room</a>"
+                state.messageHtml = state.messageHtml.replaceLast(Regex("(@\\w+)"), htmlReplacement)
+                state.messageMarkdown = state.messageMarkdown.replaceLast(Regex("(@\\w+)"), "@room")
+            }
+            is ViewAction.SetSelection -> {
+                state.selection = value.start to value.end
+            }
         }
     }
     private fun toggleInlineFormat(inlineFormat: InlineFormat): Boolean {
@@ -131,6 +147,13 @@ internal class FakeViewActionCollector(
         }
         actions[action] = newAction
         state.actions = actions
+    }
+
+    private fun String.replaceLast(regex: Regex, value: String): String {
+        val lastMatch = regex.findAll(this).lastOrNull()
+        return lastMatch?.let {
+            replaceRange(it.range, value)
+        } ?: this
     }
 }
 

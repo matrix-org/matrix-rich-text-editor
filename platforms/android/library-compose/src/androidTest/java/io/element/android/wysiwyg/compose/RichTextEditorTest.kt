@@ -13,6 +13,7 @@ import io.element.android.wysiwyg.compose.testutils.StateFactory.createState
 import io.element.android.wysiwyg.compose.testutils.ViewMatchers.isRichTextEditor
 import io.element.android.wysiwyg.compose.testutils.copy
 import io.element.android.wysiwyg.compose.testutils.showContent
+import io.element.android.wysiwyg.test.rules.createFlakyEmulatorRule
 import io.element.android.wysiwyg.view.models.LinkAction
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -25,6 +26,9 @@ import uniffi.wysiwyg_composer.MenuAction
 class RichTextEditorTest {
     @get:Rule
     val composeTestRule = createAndroidComposeRule<ComponentActivity>()
+
+    @get:Rule
+    val flakyEmulatorRule = createFlakyEmulatorRule()
 
     @Test
     fun testTypeText() {

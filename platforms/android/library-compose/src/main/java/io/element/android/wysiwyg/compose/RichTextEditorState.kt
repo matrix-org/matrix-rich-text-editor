@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.parcelize.Parcelize
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
+import uniffi.wysiwyg_composer.MentionsState
 import uniffi.wysiwyg_composer.MenuAction
 
 /**
@@ -152,6 +153,15 @@ class RichTextEditorState(
     }
 
     /**
+     * Sets the text selection to the provided indexes.
+     * @param start The start index of the selection
+     * @param end The end index of the selection. If not provided, the selection will be a cursor.
+     */
+    suspend fun setSelection(start: Int, end: Int = start) {
+        _viewActions.emit(ViewAction.SetSelection(start, end))
+    }
+
+    /**
      * The content of the editor as HTML formatted for sending as a message.
      */
     var messageHtml by mutableStateOf(initialHtml)
@@ -214,6 +224,27 @@ class RichTextEditorState(
     }
 
     /**
+     * Replaces the text in the current mention suggestion by [text].
+     */
+    suspend fun replaceSuggestion(text: String) {
+        _viewActions.emit(ViewAction.ReplaceSuggestionText(text))
+    }
+
+    /**
+     * Inserts a mention at the current mention suggestion, with the text [text] and the [link] url.
+     */
+    suspend fun insertMentionAtSuggestion(text: String, link: String) {
+        _viewActions.emit(ViewAction.InsertMentionAtSuggestion(text, link))
+    }
+
+    /**
+     * Inserts an `@room` mention at the current mention suggestion.
+     */
+    suspend fun insertAtRoomMentionAtSuggestion() {
+        _viewActions.emit(ViewAction.InsertAtRoomMentionAtSuggestion)
+    }
+
+    /**
      * The number of lines displayed in the editor.
      */
     var lineCount: Int by mutableIntStateOf(initialLineCount)
@@ -221,6 +252,11 @@ class RichTextEditorState(
 
     var linkAction: LinkAction? by mutableStateOf(null)
         internal set
+
+    /**
+     * The current [MentionsState] of the editor.
+     */
+    var mentionsState: MentionsState? by mutableStateOf(null)
 
 }
 

@@ -31,8 +31,9 @@ internal class EditorViewModelTest {
     private val htmlConverter = BasicHtmlConverter()
     private val viewModel = EditorViewModel(
         provideComposer = { composer.instance },
-        htmlConverter = htmlConverter,
-    )
+    ).also {
+        it.htmlConverter = htmlConverter
+    }
     private val actionsStatesCallback = mockk<(
         Map<ComposerAction, ActionState>
     ) -> Unit>(relaxed = true)
@@ -304,10 +305,28 @@ internal class EditorViewModelTest {
         viewModel.processInput(EditorInputAction.ReplaceText("@jonny"))
 
         composer.givenInsertMentionFromSuggestionResult(name, url, composerStateUpdate)
-        val result = viewModel.processInput(EditorInputAction.SetLinkSuggestion(url, name))
+        val result = viewModel.processInput(EditorInputAction.InsertMentionAtSuggestion(url, name))
 
         verify {
             composer.instance.insertMentionAtSuggestion(url, attributes = emptyList(), text = name, suggestion = suggestionPattern)
+        }
+        assertThat(result, equalTo(replaceTextResult))
+    }
+
+    @Test
+    fun `when process insert @room mention at suggestion action, it returns a text update`() {
+        val suggestionPattern =
+            SuggestionPattern(PatternKey.AT, text = "room", 0.toUInt(), 4.toUInt())
+        composer.givenReplaceTextResult(MockComposerUpdateFactory.create(
+            menuAction = MenuAction.Suggestion(suggestionPattern)
+        ))
+        viewModel.processInput(EditorInputAction.ReplaceText("@room"))
+
+        composer.givenInsertAtMentionFromSuggestionResult(composerStateUpdate)
+        val result = viewModel.processInput(EditorInputAction.InsertAtRoomMentionAtSuggestion)
+
+        verify {
+            composer.instance.insertAtRoomMentionAtSuggestion(suggestion = suggestionPattern)
         }
         assertThat(result, equalTo(replaceTextResult))
     }
