@@ -260,7 +260,7 @@ internal class InterceptInputConnection(
                 processInput(action)
             }
             if (result != null) {
-                replaceAll(result.text, 0, editable.length)
+                replaceAll(result.text, result.selection.first, result.selection.last)
                 setSelectionOnEditable(editable, result.selection.first, result.selection.last)
                 setComposingRegion(result.selection.first, result.selection.last)
             }
@@ -281,7 +281,7 @@ internal class InterceptInputConnection(
                 processInput(EditorInputAction.BackPress)
             }
             if (result != null) {
-                replaceAll(result.text, 0, editable.length)
+                replaceAll(result.text, result.selection.first, result.selection.last)
                 setSelectionOnEditable(editable, result.selection.first, result.selection.last)
                 setComposingRegion(result.selection.first, result.selection.last)
             }
@@ -323,11 +323,9 @@ internal class InterceptInputConnection(
         beginBatchEdit()
         editable.removeFormattingSpans()
         editable.replace(0, editable.length, charSequence)
-        val start = compositionStart.coerceIn(0, editable.length)
-        val end = compositionEnd.coerceIn(0, editable.length)
-        val newComposition = editable.substring(start, end)
+        val newComposition = editable.substring(compositionStart, compositionEnd)
         if (newComposition.isEmpty() || !newComposition.isDigitsOnly()) {
-            setComposingRegion(start, end)
+            setComposingRegion(compositionStart, compositionEnd)
         }
         endBatchEdit()
     }
