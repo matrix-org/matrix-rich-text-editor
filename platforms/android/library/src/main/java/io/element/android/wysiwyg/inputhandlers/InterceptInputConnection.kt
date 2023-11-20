@@ -115,10 +115,7 @@ internal class InterceptInputConnection(
             replaceAll(result.text)
             val editorEnd = editorIndex(result.selection.last, editable)
             setSelection(editorEnd, editorEnd)
-            val newComposition = editable.substring(newStart, newEnd)
-            if (newComposition.isEmpty() || !newComposition.isDigitsOnly()) {
-                setComposingRegion(newStart, newEnd)
-            }
+            setComposingRegion(newStart, newEnd)
             endBatchEdit()
             true
         } else {
@@ -246,7 +243,11 @@ internal class InterceptInputConnection(
         // append to the current composition with the hardware keyboard.
         finishComposingText()
 
-        return setComposingText(newChars, 1)
+        return if (newChars.isDigitsOnly()) {
+            commitText(newChars, 1)
+        } else {
+            setComposingText(newChars, 1)
+        }
     }
 
     override fun deleteSurroundingText(beforeLength: Int, afterLength: Int): Boolean {
