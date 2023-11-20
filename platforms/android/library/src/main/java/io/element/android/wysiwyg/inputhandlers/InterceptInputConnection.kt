@@ -113,8 +113,8 @@ internal class InterceptInputConnection(
             val newEnd = (newStart + text.length).coerceIn(newStart, result.text.length)
 
             replaceAll(result.text)
-            val editorEnd = editorIndex(result.selection.last, editable)
-            setSelection(editorEnd, editorEnd)
+            val editorSelectionIndex = editorIndex(result.selection.last, editable)
+            setSelection(editorSelectionIndex, editorSelectionIndex)
             setComposingRegion(newStart, newEnd)
             endBatchEdit()
             true
@@ -131,9 +131,9 @@ internal class InterceptInputConnection(
         return if (result != null) {
             beginBatchEdit()
             replaceAll(result.text)
-            val editorEnd = editorIndex(result.selection.last, editable)
-            setSelection(editorEnd, editorEnd)
-            setComposingRegion(editorEnd, editorEnd)
+            val editorSelectionIndex = editorIndex(result.selection.last, editable)
+            setSelection(editorSelectionIndex, editorSelectionIndex)
+            setComposingRegion(editorSelectionIndex, editorSelectionIndex)
             endBatchEdit()
             true
         } else {
@@ -244,8 +244,10 @@ internal class InterceptInputConnection(
         finishComposingText()
 
         return if (newChars.isDigitsOnly()) {
+            // Digits should be sent using `commitText`, as that's the default behaviour in the IME
             commitText(newChars, 1)
         } else {
+            // Any other printable character can be sent using `setComposingText`
             setComposingText(newChars, 1)
         }
     }
@@ -273,10 +275,9 @@ internal class InterceptInputConnection(
             }
             if (result != null) {
                 replaceAll(result.text)
-                val editorStart = editorIndex(result.selection.first, editable)
-                val editorEnd = editorIndex(result.selection.first, editable)
-                setSelection(editorStart, editorEnd)
-                setComposingRegion(editorStart, editorEnd)
+                val editorSelectionIndex = editorIndex(result.selection.first, editable)
+                setSelection(editorSelectionIndex, editorSelectionIndex)
+                setComposingRegion(editorSelectionIndex, editorSelectionIndex)
             }
             // TODO: handle result == null
             handled = true
@@ -296,10 +297,9 @@ internal class InterceptInputConnection(
             }
             if (result != null) {
                 replaceAll(result.text)
-                val editorStart = editorIndex(result.selection.first, editable)
-                val editorEnd = editorIndex(result.selection.first, editable)
-                setSelection(editorStart, editorEnd)
-                setComposingRegion(editorStart, editorEnd)
+                val editorSelectionIndex = editorIndex(result.selection.first, editable)
+                setSelection(editorSelectionIndex, editorSelectionIndex)
+                setComposingRegion(editorSelectionIndex, editorSelectionIndex)
             }
             // TODO: handle result == null
             handled = true
