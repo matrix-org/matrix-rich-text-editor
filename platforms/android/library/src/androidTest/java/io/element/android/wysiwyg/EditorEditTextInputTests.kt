@@ -45,6 +45,8 @@ import io.mockk.verify
 import org.hamcrest.CoreMatchers
 import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.Description
+import org.hamcrest.MatcherAssert
+import org.hamcrest.Matchers
 import org.junit.*
 import org.junit.runner.RunWith
 import uniffi.wysiwyg_composer.ActionState
@@ -514,16 +516,6 @@ class EditorEditTextInputTests {
     }
 
     @Test
-    fun testWritingOnlyDigits() {
-        onView(withId(R.id.rich_text_edit_text))
-            .perform(ImeActions.setComposingText("1"))
-            .perform(ImeActions.setComposingText("2"))
-            .perform(ImeActions.setComposingText("3"))
-            .perform(ImeActions.commitText(" "))
-            .check(matches(withText("123$NBSP")))
-    }
-
-    @Test
     fun testPasteImage() {
         val imageUri = Uri.parse("content://fakeImage")
         val contentWatcher = spyk<(uri: Uri) -> Unit>({ })
@@ -647,6 +639,46 @@ class EditorEditTextInputTests {
                         it.message == "This should only happen in tests."
             })
         }
+    }
+
+    @Test
+    fun testImeInputWithDigits() {
+        // This test emulates Gboard input
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(EditorActions.setText(""))
+            .perform(ImeActions.commitText("1"))
+            .perform(ImeActions.commitText("2"))
+            .perform(ImeActions.commitText("3"))
+            .perform(ImeActions.commitText(" "))
+            .perform(ImeActions.setComposingText("hey"))
+            .perform(ImeActions.commitText("hey"))
+            .perform(ImeActions.commitText(" "))
+            .perform(ImeActions.setComposingText("1"))
+            .perform(ImeActions.commitText("1"))
+            .perform(ImeActions.commitText("2"))
+            .perform(ImeActions.commitText("3"))
+            .perform(ImeActions.commitText(" "))
+            .check(matches(withText("123 hey 123$NBSP")))
+    }
+
+    @Test
+    fun testHardwareKeyboardInputWithDigits() {
+        // This test emulates the input on AnySoftKeyboard, Simple Keyboard or SwiftKey
+        onView(withId(R.id.rich_text_edit_text))
+            .perform(EditorActions.setText(""))
+            .perform(pressKey(KeyEvent.KEYCODE_1))
+            .perform(pressKey(KeyEvent.KEYCODE_2))
+            .perform(pressKey(KeyEvent.KEYCODE_3))
+            .perform(pressKey(KeyEvent.KEYCODE_SPACE))
+            .perform(pressKey(KeyEvent.KEYCODE_H))
+            .perform(pressKey(KeyEvent.KEYCODE_E))
+            .perform(pressKey(KeyEvent.KEYCODE_Y))
+            .perform(pressKey(KeyEvent.KEYCODE_SPACE))
+            .perform(pressKey(KeyEvent.KEYCODE_1))
+            .perform(pressKey(KeyEvent.KEYCODE_2))
+            .perform(pressKey(KeyEvent.KEYCODE_3))
+            .perform(pressKey(KeyEvent.KEYCODE_SPACE))
+            .check(matches(withText("123 hey 123$NBSP")))
     }
 }
 
