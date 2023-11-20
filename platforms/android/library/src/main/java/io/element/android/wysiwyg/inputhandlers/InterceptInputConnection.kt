@@ -325,7 +325,8 @@ internal class InterceptInputConnection(
         editable.replace(0, editable.length, charSequence)
         val start = compositionStart.coerceIn(0, editable.length)
         val end = compositionEnd.coerceIn(0, editable.length)
-        if (!editable.substring(start, end).isDigitsOnly()) {
+        val newComposition = editable.substring(start, end)
+        if (newComposition.isEmpty() || !newComposition.isDigitsOnly()) {
             setComposingRegion(start, end)
         }
         endBatchEdit()
