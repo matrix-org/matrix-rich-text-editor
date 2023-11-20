@@ -1,5 +1,6 @@
 package io.element.android.wysiwyg.compose
 
+import android.text.InputType
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -254,4 +255,10 @@ object RichTextEditorDefaults {
             ),
         )
     }
+
+    const val inputType: Int = InputType.TYPE_CLASS_TEXT or
+            InputType.TYPE_TEXT_FLAG_MULTI_LINE or
+            InputType.TYPE_TEXT_FLAG_CAP_SENTENCES or
+            InputType.TYPE_TEXT_FLAG_AUTO_CORRECT or
+            InputType.TYPE_TEXT_FLAG_AUTO_COMPLETE
 }
