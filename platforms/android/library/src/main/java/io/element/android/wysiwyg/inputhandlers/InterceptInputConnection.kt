@@ -108,11 +108,18 @@ internal class InterceptInputConnection(
         val result = processTextEntry(text, start, end)
 
         return if (result != null) {
+            beginBatchEdit()
             val newStart = start.coerceIn(0, result.text.length)
             val newEnd = (newStart + text.length).coerceIn(newStart, result.text.length)
 
-            replaceAll(result.text, compositionStart = newStart, compositionEnd = newEnd)
-            setSelectionOnEditable(editable, result.selection.last, result.selection.last)
+            replaceAll(result.text)
+            val editorEnd = editorIndex(result.selection.last, editable)
+            setSelection(editorEnd, editorEnd)
+            val newComposition = editable.substring(newStart, newEnd)
+            if (newComposition.isEmpty() || !newComposition.isDigitsOnly()) {
+                setComposingRegion(newStart, newEnd)
+            }
+            endBatchEdit()
             true
         } else {
             super.setComposingText(text, newCursorPosition)
@@ -125,8 +132,12 @@ internal class InterceptInputConnection(
         val result = processTextEntry(text, start, end)
 
         return if (result != null) {
-            replaceAll(result.text, compositionStart = end, compositionEnd = end)
-            setSelectionOnEditable(editable, result.selection.last, result.selection.last)
+            beginBatchEdit()
+            replaceAll(result.text)
+            val editorEnd = editorIndex(result.selection.last, editable)
+            setSelection(editorEnd, editorEnd)
+            setComposingRegion(editorEnd, editorEnd)
+            endBatchEdit()
             true
         } else {
             super.commitText(text, newCursorPosition)
@@ -260,9 +271,11 @@ internal class InterceptInputConnection(
                 processInput(action)
             }
             if (result != null) {
-                replaceAll(result.text, result.selection.first, result.selection.last)
-                setSelectionOnEditable(editable, result.selection.first, result.selection.last)
-                setComposingRegion(result.selection.first, result.selection.last)
+                replaceAll(result.text)
+                val editorStart = editorIndex(result.selection.first, editable)
+                val editorEnd = editorIndex(result.selection.first, editable)
+                setSelection(editorStart, editorEnd)
+                setComposingRegion(editorStart, editorEnd)
             }
             // TODO: handle result == null
             handled = true
@@ -281,9 +294,11 @@ internal class InterceptInputConnection(
                 processInput(EditorInputAction.BackPress)
             }
             if (result != null) {
-                replaceAll(result.text, result.selection.first, result.selection.last)
-                setSelectionOnEditable(editable, result.selection.first, result.selection.last)
-                setComposingRegion(result.selection.first, result.selection.last)
+                replaceAll(result.text)
+                val editorStart = editorIndex(result.selection.first, editable)
+                val editorEnd = editorIndex(result.selection.first, editable)
+                setSelection(editorStart, editorEnd)
+                setComposingRegion(editorStart, editorEnd)
             }
             // TODO: handle result == null
             handled = true
@@ -315,25 +330,13 @@ internal class InterceptInputConnection(
         return start to end
     }
 
-    private fun replaceAll(
-        charSequence: CharSequence,
-        compositionStart: Int,
-        compositionEnd: Int,
-    ) {
-        beginBatchEdit()
+    private fun replaceAll(charSequence: CharSequence) {
         editable.removeFormattingSpans()
         editable.replace(0, editable.length, charSequence)
-        val newComposition = editable.substring(compositionStart, compositionEnd)
-        if (newComposition.isEmpty() || !newComposition.isDigitsOnly()) {
-            setComposingRegion(compositionStart, compositionEnd)
-        }
-        endBatchEdit()
     }
 
-    private fun setSelectionOnEditable(editable: Editable, start: Int, end: Int = start) {
-        val newStart = min(EditorIndexMapper.editorIndexFromComposer(start, editable), editable.length)
-        val newEnd = min(EditorIndexMapper.editorIndexFromComposer(end, editable), editable.length)
-        Selection.setSelection(editable, newStart, newEnd)
+    private fun editorIndex(composerIndex: Int, editable: Editable): Int {
+        return min(EditorIndexMapper.editorIndexFromComposer(composerIndex, editable), editable.length)
     }
 
     private fun <T> withProcessor(block: EditorViewModel.() -> T): T {
