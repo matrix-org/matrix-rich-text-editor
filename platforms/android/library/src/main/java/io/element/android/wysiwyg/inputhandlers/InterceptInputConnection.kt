@@ -9,6 +9,7 @@ import android.view.inputmethod.*
 import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
+import androidx.core.text.isDigitsOnly
 import io.element.android.wysiwyg.internal.utils.TextRangeHelper
 import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
 import io.element.android.wysiwyg.internal.viewmodel.ReplaceTextResult
@@ -322,7 +323,11 @@ internal class InterceptInputConnection(
         beginBatchEdit()
         editable.removeFormattingSpans()
         editable.replace(0, editable.length, charSequence)
-        setComposingRegion(compositionStart, compositionEnd)
+        val start = compositionStart.coerceIn(0, editable.length)
+        val end = compositionEnd.coerceIn(0, editable.length)
+        if (!editable.substring(start, end).isDigitsOnly()) {
+            setComposingRegion(start, end)
+        }
         endBatchEdit()
     }
 
