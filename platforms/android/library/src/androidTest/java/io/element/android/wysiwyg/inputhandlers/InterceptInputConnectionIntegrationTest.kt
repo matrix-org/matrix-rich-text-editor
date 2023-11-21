@@ -517,6 +517,28 @@ class InterceptInputConnectionIntegrationTest {
         )
     }
 
+    @Test
+    fun testAddingAndRemovingEmojiInMiddleOfComposition() {
+        // Set initial text
+        simulateInput(
+            EditorInputAction.ReplaceAllHtml("Test")
+        )
+        textView.setSelection(2)
+
+        // Insert emoji at index 2. This would normally cause a crash.
+        inputConnection.commitText("\uD83D\uDE00", 1)
+        assertThat(viewModel.getContentAsMessageHtml(), equalTo("Te\uD83D\uDE00st"))
+        // Since an emoji of length 2 was added, the selection is now at index 4
+        assertThat(textView.selectionStart, equalTo(4))
+        assertThat(textView.selectionEnd, equalTo(4))
+
+        // Remove the emoji. This would also cause some issues with some keyboards.
+        inputConnection.deleteSurroundingText(1, 0)
+        assertThat(viewModel.getContentAsMessageHtml(), equalTo("Test"))
+        assertThat(textView.selectionStart, equalTo(2))
+        assertThat(textView.selectionEnd, equalTo(2))
+    }
+
     private fun simulateInput(editorInputAction: EditorInputAction) =
         viewModel.processInput(editorInputAction)?.let { (text, selection) ->
             textView.setText(text)

@@ -333,7 +333,8 @@ internal class InterceptInputConnection(
 
     private fun replaceAll(charSequence: CharSequence) {
         editable.removeFormattingSpans()
-        editable.replace(0, editable.length, charSequence)
+        editable.clear()
+        editable.append(charSequence)
     }
 
     private fun editorIndex(composerIndex: Int, editable: Editable): Int {
