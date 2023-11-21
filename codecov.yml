@@ -1,0 +1,28 @@
+flag_management:
+  default_rules:
+    carryforward: false
+  individual_flags:
+    - name: unittests
+      paths:
+        - platforms
+      carryforward: true
+    - name: uitests
+      paths:
+        - platforms
+      carryforward: true
+    - name: unittests-android
+      paths:
+        - platforms/android
+      carryforward: true
+    - name: uitests-android
+      paths:
+        - platforms/android
+      carryforward: true
+    - name: unittests-ios
+      paths: 
+      - platforms/ios
+      carryforward: true
+    - name: uitests-ios
+      paths: 
+      - platforms/ios
+      carryforward: true
