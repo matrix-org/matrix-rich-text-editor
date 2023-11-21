@@ -3,15 +3,18 @@
 # [2.18.0] - 2023-11-17
 
 ### Fixed
+
 - iOS: fixed a bug that made the system speech to text functionality suddenly stop after a few seconds.
 
 ### Added
+
 - Android: Improved reliability of UI tests running on CI emulator.
 - Android: CI takes a screenshot when instrumentation tests fail.
 
 # [2.17.0] - 2023-11-16
 
 ### Fixed
+
 - Android: removed workaround for excessive recompositions from the Compose components.
 - Android: fix indexes not working properly for mentions.
 - Android: add a workaround to always get a valid `lineCount` in the Composables.
@@ -24,6 +27,7 @@
 # [2.16.0] - 2023-11-09
 
 ### Fixed
+
 - Android: [API breaking change] replaced the existing `mentionDisplayHandler` parameter in both `RichTextEditor` and `EditorStyledText` with a couple of `resolveMentionDisplay` and `resolveRoomMentionDisplay` lambdas.
 - Android: fixed an issue that caused unnecessary recompositions in the Compose components.
 - Android: `EditorEditText` was being leaked by the ViewModel on activity recreations, also causing the right styles to not be applied properly.
@@ -32,23 +36,30 @@
 - Android: make `LinkSpan`, `PillSpan` and `CustomMentionSpan` clickable in the TextView component.
 
 ### Added
+
 - Common: Added `MentionDetector` to the FFI bindings so we can use the same method for detecting mentions in all platforms.
 - Android: Added `replaceSuggestion` and `insertMentionAtSuggestion` methods to the Compose implementation of the RTE composer.
 
 # [2.15.0] - 2023-10-30
 
 ### Fixed
+
 - iOS: Use message content APIs (#842)
 - Android: Fix crash due to out of bounds error (#845)
 - Android: Handle and track more internal exceptions (#846)
 
 ### Added
+
 - iOS: Add "shouldReplaceText" API to ignore keyboard input (#857)
 - iOS: Add getMentionsState API (#850)
 - Common: get_mentions_state() implemented on the Rust side (#849)
 - iOS: Expose the set at room mention function (#843)
 - iOS: Enhanced `MentionDisplayHelper` (#840) 
 - Android: Add rich text styled view (#837)
+
+### Changed
+
+- Common: Replace paragraphs with line breaks in message output (#834)
 
 # [2.14.1] - 2023-10-04
 
