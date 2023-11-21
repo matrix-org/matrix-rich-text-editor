@@ -81,6 +81,11 @@ final class StringDifferTests: XCTestCase {
         XCTAssertEqual(try StringDiffer.replacement(from: " \u{00A0} text", to: " \u{00A0} test"),
                        .init(location: 5, length: 1, text: "s"))
     }
+    
+    func testDoubleSpaceDotConversion() throws {
+        XCTAssertEqual(try StringDiffer.replacement(from: "a  ", to: "a."),
+                       .init(location: 1, length: 2, text: "."))
+    }
 }
 
 private extension CharacterSet {
