@@ -5,7 +5,6 @@ on:
     branches: [ main, "version-*" ]
   pull_request:
     branches: [ "main" ]
-    types: [ labeled, synchronize, opened, reopened ]
     paths:
       - 'platforms/android/**'
       - 'crates/**'
@@ -24,9 +23,6 @@ concurrency:
 
 jobs:
   tests:
-    if: |
-      github.event_name == 'push' ||
-      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'Android'))
     name: Run all tests
     runs-on: macos-12
     strategy:
