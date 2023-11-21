@@ -117,17 +117,7 @@ private struct StringDiff {
 private extension String {
     /// Converts all whitespaces to NBSP to avoid diffs caused by HTML translations.
     var withNBSP: String {
-        String(map { $0.isWhitespace ? Character.nbsp : $0 }).trailingTrimmed
-    }
-
-    var trailingTrimmed: String {
-        var view = self[...]
-
-        while view.last?.isWhitespace == true || view.last?.isNewline == true {
-            view = view.dropLast()
-        }
-
-        return String(view)
+        String(map { $0.isWhitespace ? Character.nbsp : $0 })
     }
 
     /// Computes the diff from provided string to self. Outputs UTF16 locations and lengths.
