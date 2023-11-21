@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ "main" ]
     types: [ labeled, synchronize, opened, reopened ]
+    paths:
+      - 'platforms/android/**'
+      - 'crates/**'
 
 env:
   CARGO_TERM_COLOR: always
