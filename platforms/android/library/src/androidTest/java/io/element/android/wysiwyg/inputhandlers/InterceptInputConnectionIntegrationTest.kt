@@ -53,13 +53,13 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans(), equalTo(
                 listOf(
                     "hello: android.widget.TextView.ChangeWatcher (0-5) fl=#6553618",
+                    "hello: android.text.style.StyleSpan (0-5) fl=#33",
                     "hello: android.text.method.TextKeyListener (0-5) fl=#18",
+                    "hello: android.text.style.UnderlineSpan (0-5) fl=#289",
+                    "hello: android.view.inputmethod.ComposingText (0-5) fl=#289",
                     "hello: android.widget.Editor.SpanController (0-5) fl=#18",
                     ": android.text.Selection.START (5-5) fl=#546",
                     ": android.text.Selection.END (5-5) fl=#34",
-                    "hello: android.text.style.StyleSpan (0-5) fl=#33",
-                    "hello: android.text.style.UnderlineSpan (0-5) fl=#289",
-                    "hello: android.view.inputmethod.ComposingText (0-5) fl=#289",
                 )
             )
         )
@@ -75,9 +75,9 @@ class InterceptInputConnectionIntegrationTest {
 
         assertThat(
             textView.text.dumpSpans(), equalTo(
-                baseEditedSpans + listOf(
-                    "world: android.text.style.StyleSpan (0-5) fl=#33",
-                )
+                baseEditedSpans.toMutableList().apply {
+                    add(1, "world: android.text.style.StyleSpan (0-5) fl=#33")
+                }
             )
         )
     }
@@ -92,9 +92,9 @@ class InterceptInputConnectionIntegrationTest {
 
         assertThat(
             textView.text.dumpSpans(), equalTo(
-                baseEditedSpans + listOf(
-                    "world: android.text.style.UnderlineSpan (0-5) fl=#33",
-                )
+                baseEditedSpans.toMutableList().apply {
+                    add(1, "world: android.text.style.UnderlineSpan (0-5) fl=#33")
+                }
             )
         )
     }
@@ -109,9 +109,9 @@ class InterceptInputConnectionIntegrationTest {
 
         assertThat(
             textView.text.dumpSpans(), equalTo(
-                baseEditedSpans + listOf(
-                    "world: android.text.style.StrikethroughSpan (0-5) fl=#33",
-                )
+                baseEditedSpans.toMutableList().apply {
+                    add(1, "world: android.text.style.StrikethroughSpan (0-5) fl=#33")
+                }
             )
         )
     }
@@ -126,9 +126,9 @@ class InterceptInputConnectionIntegrationTest {
 
         assertThat(
             textView.text.dumpSpans(), equalTo(
-                baseEditedSpans + listOf(
-                    "world: io.element.android.wysiwyg.view.spans.InlineCodeSpan (0-5) fl=#33",
-                )
+                baseEditedSpans.toMutableList().apply {
+                    add(1, "world: io.element.android.wysiwyg.view.spans.InlineCodeSpan (0-5) fl=#33")
+                }
             )
         )
     }
@@ -143,13 +143,13 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans(), equalTo(
                 listOf(
                     "hello: android.widget.TextView.ChangeWatcher (0-5) fl=#6553618",
+                    "hello: io.element.android.wysiwyg.view.spans.OrderedListSpan (0-5) fl=#34",
+                    "hello: android.text.style.UnderlineSpan (0-5) fl=#289",
+                    "hello: android.view.inputmethod.ComposingText (0-5) fl=#289",
                     "hello: android.text.method.TextKeyListener (0-5) fl=#18",
                     "hello: android.widget.Editor.SpanController (0-5) fl=#18",
                     ": android.text.Selection.START (5-5) fl=#546",
                     ": android.text.Selection.END (5-5) fl=#34",
-                    "hello: io.element.android.wysiwyg.view.spans.OrderedListSpan (0-5) fl=#34",
-                    "hello: android.text.style.UnderlineSpan (0-5) fl=#289",
-                    "hello: android.view.inputmethod.ComposingText (0-5) fl=#289",
                 )
             )
         )
@@ -169,13 +169,13 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans().joinToString(",\n"), equalTo(
                 """
                     hello: android.widget.TextView.ChangeWatcher (0-5) fl=#6553618,
+                    hello: io.element.android.wysiwyg.view.spans.UnorderedListSpan (0-5) fl=#34,
+                    hello: android.text.style.UnderlineSpan (0-5) fl=#289,
+                    hello: android.view.inputmethod.ComposingText (0-5) fl=#289,
                     hello: android.text.method.TextKeyListener (0-5) fl=#18,
                     hello: android.widget.Editor.SpanController (0-5) fl=#18,
                     : android.text.Selection.START (5-5) fl=#546,
-                    : android.text.Selection.END (5-5) fl=#34,
-                    hello: io.element.android.wysiwyg.view.spans.UnorderedListSpan (0-5) fl=#34,
-                    hello: android.text.style.UnderlineSpan (0-5) fl=#289,
-                    hello: android.view.inputmethod.ComposingText (0-5) fl=#289
+                    : android.text.Selection.END (5-5) fl=#34
                 """.trimIndent()
             )
         )
@@ -191,13 +191,13 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans().joinToString(",\n"), equalTo(
                 """
                     hello: android.widget.TextView.ChangeWatcher (0-5) fl=#6553618,
+                    hello: io.element.android.wysiwyg.view.spans.UnorderedListSpan (0-5) fl=#34,
+                    hello: android.text.style.UnderlineSpan (0-5) fl=#289,
+                    hello: android.view.inputmethod.ComposingText (0-5) fl=#289,
                     hello: android.text.method.TextKeyListener (0-5) fl=#18,
                     hello: android.widget.Editor.SpanController (0-5) fl=#18,
                     : android.text.Selection.START (5-5) fl=#546,
-                    : android.text.Selection.END (5-5) fl=#34,
-                    hello: io.element.android.wysiwyg.view.spans.UnorderedListSpan (0-5) fl=#34,
-                    hello: android.text.style.UnderlineSpan (0-5) fl=#289,
-                    hello: android.view.inputmethod.ComposingText (0-5) fl=#289
+                    : android.text.Selection.END (5-5) fl=#34
                 """.trimIndent()
             )
         )
@@ -217,13 +217,13 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans().joinToString(",\n"), equalTo(
                 """
                     hello: android.widget.TextView.ChangeWatcher (0-5) fl=#6553618,
+                    hello: io.element.android.wysiwyg.view.spans.OrderedListSpan (0-5) fl=#34,
+                    hello: android.text.style.UnderlineSpan (0-5) fl=#289,
+                    hello: android.view.inputmethod.ComposingText (0-5) fl=#289,
                     hello: android.text.method.TextKeyListener (0-5) fl=#18,
                     hello: android.widget.Editor.SpanController (0-5) fl=#18,
                     : android.text.Selection.START (5-5) fl=#546,
-                    : android.text.Selection.END (5-5) fl=#34,
-                    hello: io.element.android.wysiwyg.view.spans.OrderedListSpan (0-5) fl=#34,
-                    hello: android.text.style.UnderlineSpan (0-5) fl=#289,
-                    hello: android.view.inputmethod.ComposingText (0-5) fl=#289
+                    : android.text.Selection.END (5-5) fl=#34
                 """.trimIndent()
             )
         )
@@ -240,13 +240,13 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans(), equalTo(
                 listOf(
                     "😋😋: android.widget.TextView.ChangeWatcher (0-4) fl=#6553618",
+                    "😋😋: io.element.android.wysiwyg.view.spans.OrderedListSpan (0-4) fl=#34",
+                    "😋😋: android.text.style.UnderlineSpan (0-4) fl=#289",
+                    "😋😋: android.view.inputmethod.ComposingText (0-4) fl=#289",
                     "😋😋: android.text.method.TextKeyListener (0-4) fl=#18",
                     "😋😋: android.widget.Editor.SpanController (0-4) fl=#18",
                     ": android.text.Selection.START (4-4) fl=#546",
                     ": android.text.Selection.END (4-4) fl=#34",
-                    "😋😋: io.element.android.wysiwyg.view.spans.OrderedListSpan (0-4) fl=#34",
-                    "😋😋: android.text.style.UnderlineSpan (0-4) fl=#289",
-                    "😋😋: android.view.inputmethod.ComposingText (0-4) fl=#289",
                 )
             )
         )
@@ -266,13 +266,13 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans(), equalTo(
                 listOf(
                     "hello: android.widget.TextView.ChangeWatcher (0-5) fl=#6553618",
+                    "hello: io.element.android.wysiwyg.view.spans.CodeBlockSpan (0-5) fl=#33",
+                    "hello: android.text.style.UnderlineSpan (0-5) fl=#289",
+                    "hello: android.view.inputmethod.ComposingText (0-5) fl=#289",
                     "hello: android.text.method.TextKeyListener (0-5) fl=#18",
                     "hello: android.widget.Editor.SpanController (0-5) fl=#18",
                     ": android.text.Selection.START (5-5) fl=#546",
-                    ": android.text.Selection.END (5-5) fl=#34",
-                    "hello: io.element.android.wysiwyg.view.spans.CodeBlockSpan (0-5) fl=#33",
-                    "hello: android.text.style.UnderlineSpan (0-5) fl=#289",
-                    "hello: android.view.inputmethod.ComposingText (0-5) fl=#289"
+                    ": android.text.Selection.END (5-5) fl=#34"
                 )
             )
         )
@@ -290,11 +290,11 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans(), equalTo(
                 listOf(
                     "$NBSP: android.widget.TextView.ChangeWatcher (0-1) fl=#6553618",
+                    "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (0-1) fl=#17",
                     "$NBSP: android.text.method.TextKeyListener (0-1) fl=#18",
                     "$NBSP: android.widget.Editor.SpanController (0-1) fl=#18",
                     ": android.text.Selection.START (0-0) fl=#546",
-                    ": android.text.Selection.END (0-0) fl=#34",
-                    "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (0-1) fl=#17"
+                    ": android.text.Selection.END (0-0) fl=#34"
                 )
             )
         )
@@ -313,12 +313,12 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans(), equalTo(
                 listOf(
                     "Test\n$NBSP: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
+                    "Test\n$NBSP: io.element.android.wysiwyg.view.spans.CodeBlockSpan (0-6) fl=#33",
+                    "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (5-6) fl=#17",
                     "Test\n$NBSP: android.text.method.TextKeyListener (0-6) fl=#18",
                     "Test\n$NBSP: android.widget.Editor.SpanController (0-6) fl=#18",
                     ": android.text.Selection.START (5-5) fl=#546",
                     ": android.text.Selection.END (5-5) fl=#34",
-                    "Test\n$NBSP: io.element.android.wysiwyg.view.spans.CodeBlockSpan (0-6) fl=#33",
-                    "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (5-6) fl=#17",
                 )
             )
         )
@@ -331,12 +331,12 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans(), equalTo(
                 listOf(
                     "Test\n$NBSP: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
-                    "Test\n$NBSP: android.text.method.TextKeyListener (0-6) fl=#18",
-                    "Test\n$NBSP: android.widget.Editor.SpanController (0-6) fl=#18",
-                    ": android.text.Selection.START (5-5) fl=#34",
-                    ": android.text.Selection.END (5-5) fl=#34",
                     "Test: io.element.android.wysiwyg.view.spans.CodeBlockSpan (0-4) fl=#33",
                     "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (5-6) fl=#17",
+                    "Test\n$NBSP: android.text.method.TextKeyListener (0-6) fl=#18",
+                    "Test\n$NBSP: android.widget.Editor.SpanController (0-6) fl=#18",
+                    ": android.text.Selection.START (5-5) fl=#546",
+                    ": android.text.Selection.END (5-5) fl=#34",
                 )
             )
         )
@@ -356,13 +356,13 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans().joinToString(",\n"), equalTo(
                 """
                     hello: android.widget.TextView.ChangeWatcher (0-5) fl=#6553618,
+                    hello: io.element.android.wysiwyg.view.spans.QuoteSpan (0-5) fl=#33,
+                    hello: android.text.style.UnderlineSpan (0-5) fl=#289,
+                    hello: android.view.inputmethod.ComposingText (0-5) fl=#289,
                     hello: android.text.method.TextKeyListener (0-5) fl=#18,
                     hello: android.widget.Editor.SpanController (0-5) fl=#18,
                     : android.text.Selection.START (5-5) fl=#546,
-                    : android.text.Selection.END (5-5) fl=#34,
-                    hello: io.element.android.wysiwyg.view.spans.QuoteSpan (0-5) fl=#33,
-                    hello: android.text.style.UnderlineSpan (0-5) fl=#289,
-                    hello: android.view.inputmethod.ComposingText (0-5) fl=#289
+                    : android.text.Selection.END (5-5) fl=#34
                 """.trimIndent()
             )
         )
@@ -380,11 +380,11 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans(), equalTo(
                 listOf(
                     "$NBSP: android.widget.TextView.ChangeWatcher (0-1) fl=#6553618",
+                    "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (0-1) fl=#17",
                     "$NBSP: android.text.method.TextKeyListener (0-1) fl=#18",
                     "$NBSP: android.widget.Editor.SpanController (0-1) fl=#18",
                     ": android.text.Selection.START (0-0) fl=#546",
-                    ": android.text.Selection.END (0-0) fl=#34",
-                    "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (0-1) fl=#17"
+                    ": android.text.Selection.END (0-0) fl=#34"
                 )
             )
         )
@@ -403,12 +403,12 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans(), equalTo(
                 listOf(
                     "Test\n$NBSP: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
+                    "Test\n$NBSP: io.element.android.wysiwyg.view.spans.QuoteSpan (0-6) fl=#33",
+                    "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (5-6) fl=#17",
                     "Test\n$NBSP: android.text.method.TextKeyListener (0-6) fl=#18",
                     "Test\n$NBSP: android.widget.Editor.SpanController (0-6) fl=#18",
                     ": android.text.Selection.START (5-5) fl=#546",
                     ": android.text.Selection.END (5-5) fl=#34",
-                    "Test\n$NBSP: io.element.android.wysiwyg.view.spans.QuoteSpan (0-6) fl=#33",
-                    "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (5-6) fl=#17",
                 )
             )
         )
@@ -421,12 +421,12 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans(), equalTo(
                 listOf(
                     "Test\n$NBSP: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
-                    "Test\n$NBSP: android.text.method.TextKeyListener (0-6) fl=#18",
-                    "Test\n$NBSP: android.widget.Editor.SpanController (0-6) fl=#18",
-                    ": android.text.Selection.START (5-5) fl=#34",
-                    ": android.text.Selection.END (5-5) fl=#34",
                     "Test: io.element.android.wysiwyg.view.spans.QuoteSpan (0-4) fl=#33",
                     "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (5-6) fl=#17",
+                    "Test\n$NBSP: android.text.method.TextKeyListener (0-6) fl=#18",
+                    "Test\n$NBSP: android.widget.Editor.SpanController (0-6) fl=#18",
+                    ": android.text.Selection.START (5-5) fl=#546",
+                    ": android.text.Selection.END (5-5) fl=#34",
                 )
             )
         )
@@ -442,12 +442,12 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans(), equalTo(
                 listOf(
                     "$NBSP\n$NBSP: android.widget.TextView.ChangeWatcher (0-3) fl=#6553618",
+                    "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (0-1) fl=#17",
                     "$NBSP\n$NBSP: android.text.method.TextKeyListener (0-3) fl=#18",
+                    "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (2-3) fl=#17",
                     "$NBSP\n$NBSP: android.widget.Editor.SpanController (0-3) fl=#18",
                     ": android.text.Selection.START (2-2) fl=#546",
-                    ": android.text.Selection.END (2-2) fl=#34",
-                    "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (0-1) fl=#17",
-                    "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (2-3) fl=#17"
+                    ": android.text.Selection.END (2-2) fl=#34"
                 )
             )
         )
@@ -515,6 +515,28 @@ class InterceptInputConnectionIntegrationTest {
         assertThat(
             viewModel.getContentAsMessageHtml(), equalTo("<strong>test</strong> whitespaces")
         )
+    }
+
+    @Test
+    fun testAddingAndRemovingEmojiInMiddleOfComposition() {
+        // Set initial text
+        simulateInput(
+            EditorInputAction.ReplaceAllHtml("Test")
+        )
+        textView.setSelection(2)
+
+        // Insert emoji at index 2. This would normally cause a crash.
+        inputConnection.commitText("\uD83D\uDE00", 1)
+        assertThat(viewModel.getContentAsMessageHtml(), equalTo("Te\uD83D\uDE00st"))
+        // Since an emoji of length 2 was added, the selection is now at index 4
+        assertThat(textView.selectionStart, equalTo(4))
+        assertThat(textView.selectionEnd, equalTo(4))
+
+        // Remove the emoji. This would also cause some issues with some keyboards.
+        inputConnection.deleteSurroundingText(1, 0)
+        assertThat(viewModel.getContentAsMessageHtml(), equalTo("Test"))
+        assertThat(textView.selectionStart, equalTo(2))
+        assertThat(textView.selectionEnd, equalTo(2))
     }
 
     private fun simulateInput(editorInputAction: EditorInputAction) =
