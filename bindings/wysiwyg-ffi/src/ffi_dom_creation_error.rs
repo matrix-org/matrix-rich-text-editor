@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::fmt::Display;
+use std::{error::Error, fmt::Display};
 
 #[derive(Debug, uniffi::Error)]
 pub enum DomCreationError {
@@ -51,3 +51,5 @@ impl From<DomCreationError> for wysiwyg::DomCreationError {
         unimplemented!("Error is not needed as input")
     }
 }
+
+impl Error for DomCreationError {}
