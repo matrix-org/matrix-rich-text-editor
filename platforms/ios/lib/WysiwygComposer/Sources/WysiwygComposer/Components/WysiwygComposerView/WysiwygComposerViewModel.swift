@@ -322,7 +322,6 @@ public extension WysiwygComposerViewModel {
         // The system handles certain auto-compelete use-cases with somewhat unusual replacementText/range
         // combinations, some of those edge cases are handled below.
         
-        
         // Are we backspacing from an inline predictive text suggestion.
         // When this happens a range/replacementText of this combination is sent.
         let isExitingPredictiveText = replacementText == ""
@@ -597,7 +596,7 @@ private extension WysiwygComposerViewModel {
     }
     
     func applyAtributedContent() {
-        textView.apply(attributedContent, source: &committedAttributedText)
+        textView.apply(attributedContent, committed: &committedAttributedText)
     }
 
     /// Compute the current content of the `UITextView`, as markdown.

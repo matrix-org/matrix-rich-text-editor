@@ -44,7 +44,6 @@ protocol WysiwygTextViewDelegate: AnyObject {
 public protocol MentionDisplayHelper { }
 
 public class WysiwygTextView: UITextView {
-    
     /// Internal delegate for the text view.
     weak var wysiwygDelegate: WysiwygTextViewDelegate?
     
@@ -65,6 +64,7 @@ public class WysiwygTextView: UITextView {
     private func commonInit() {
         contentMode = .redraw
     }
+
     /// Register a pill view that has been added through `NSTextAttachmentViewProvider`.
     /// Should be called within the `loadView` function in order to clear the pills properly on text updates.
     ///
