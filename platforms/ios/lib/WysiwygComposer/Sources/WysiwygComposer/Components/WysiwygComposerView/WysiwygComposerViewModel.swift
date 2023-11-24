@@ -131,6 +131,8 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     /// that could be in the editor that is not yet committed (e.g. from intine predictive text or dictation ).
     private lazy var committedAttributedText = NSAttributedString(string: "", attributes: defaultTextAttributes)
     
+    private var lastReplaceTextUpdate: ReplaceTextUpdate?
+    
     /// Wether the view contains uncommitted text(e.g. a predictive suggestion is shown in grey).
     private var viewHasUncommitedText: Bool {
         textView.attributedText.htmlChars.withNBSP != committedAttributedText.htmlChars.withNBSP
@@ -301,12 +303,22 @@ public extension WysiwygComposerViewModel {
         compressedHeight = min(maxCompressedHeight, max(minHeight, idealTextHeight))
     }
 
+    // swiftlint:disable cyclomatic_complexity
     func replaceText(range: NSRange, replacementText: String) -> Bool {
         guard shouldReplaceText else {
             return false
         }
 
         guard !plainTextMode else {
+            return true
+        }
+        
+        let nextTextUpdate = ReplaceTextUpdate(date: Date.now, range: range, text: replacementText)
+        // This is to specifically to work around an issue when tapping on an inline predictive text suggestion within the text view.
+        // Even though we have the delegate disabled during modifications to the textview we still get some duplicate
+        // calls to this method in this case specifically. It's very unlikely we would get a valid subsequent call
+        // with the same range and replacement text within such a short period of time, so should be safe.
+        if let lastReplaceTextUpdate, lastReplaceTextUpdate.isDuplicate(of: nextTextUpdate) {
             return true
         }
         
@@ -369,7 +381,7 @@ public extension WysiwygComposerViewModel {
         }
         
         applyUpdate(update, skipTextViewUpdate: skipTextViewUpdate)
-
+        lastReplaceTextUpdate = nextTextUpdate
         return skipTextViewUpdate
     }
     
@@ -394,6 +406,7 @@ public extension WysiwygComposerViewModel {
     }
 
     func didUpdateText() {
+        checkForDoubleSpaceToDotConversion()
         if plainTextMode {
             if textView.text.isEmpty != isContentEmpty {
                 isContentEmpty = textView.text.isEmpty
@@ -406,6 +419,34 @@ public extension WysiwygComposerViewModel {
         updateCompressedHeightIfNeeded()
     }
     
+    func checkForDoubleSpaceToDotConversion() {
+        let text = textView.attributedText.htmlChars.withNBSP
+        guard text.count > 0 else {
+            return
+        }
+        let content = attributedContent.text.htmlChars.withNBSP
+        let dotStart = textView.selectedRange.location - 1
+        let dotEnd = textView.selectedRange.location
+        let dotStartIndex = text.index(text.startIndex, offsetBy: textView.selectedRange.location - 1)
+        let dotEndIndex = text.index(after: dotStartIndex)
+        guard dotStartIndex < text.endIndex,
+              dotEndIndex <= text.endIndex,
+              dotStartIndex < content.endIndex,
+              dotEndIndex <= content.endIndex
+        else {
+            return
+        }
+        let dotRange = dotStartIndex..<dotEndIndex
+        let textPotentialDot = String(text[dotRange])
+        let contentPotentialDot = String(content[dotRange])
+        if textPotentialDot == ".", contentPotentialDot != "." {
+            let replaceUpdate = model.replaceTextIn(newText: ".",
+                                                    start: UInt32(dotStart),
+                                                    end: UInt32(dotEnd))
+            applyUpdate(replaceUpdate, skipTextViewUpdate: true)
+        }
+    }
+
     func applyLinkOperation(_ linkOperation: WysiwygLinkOperation) {
         let update: ComposerUpdate
         switch linkOperation {
@@ -649,4 +690,19 @@ extension WysiwygComposerViewModel: ComposerModelWrapperDelegate {
 
 private extension Logger {
     static let viewModel = Logger(subsystem: subsystem, category: "ViewModel")
+}
+
+private struct ReplaceTextUpdate {
+    static let debounceThreshold = 0.1
+    var date: Date
+    var range: NSRange
+    var text: String
+}
+
+private extension ReplaceTextUpdate {
+    func isDuplicate(of other: ReplaceTextUpdate) -> Bool {
+        range == other.range
+            && text == other.text
+            && fabs(date.timeIntervalSince(other.date)) < Self.debounceThreshold
+    }
 }
