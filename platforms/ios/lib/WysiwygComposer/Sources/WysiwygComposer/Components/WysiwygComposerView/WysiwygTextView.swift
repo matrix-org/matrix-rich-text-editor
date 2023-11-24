@@ -44,7 +44,6 @@ protocol WysiwygTextViewDelegate: AnyObject {
 public protocol MentionDisplayHelper { }
 
 public class WysiwygTextView: UITextView {
-    private(set) var isDictationRunning = false
     
     /// Internal delegate for the text view.
     weak var wysiwygDelegate: WysiwygTextViewDelegate?
@@ -65,34 +64,7 @@ public class WysiwygTextView: UITextView {
     
     private func commonInit() {
         contentMode = .redraw
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(textInputCurrentInputModeDidChange),
-                                               name: UITextInputMode.currentInputModeDidChangeNotification,
-                                               object: nil)
     }
-    
-    @objc private func textInputCurrentInputModeDidChange(notification: Notification) {
-        // We don't care about the input mode if this is not the first responder
-        guard isFirstResponder else {
-            return
-        }
-        
-        guard let inputMode = textInputMode?.primaryLanguage,
-              inputMode == "dictation" else {
-            isDictationRunning = false
-            return
-        }
-        isDictationRunning = true
-    }
-    
-    override public func dictationRecordingDidEnd() {
-        isDictationRunning = false
-    }
-    
-    override public func dictationRecognitionFailed() {
-        isDictationRunning = false
-    }
-
     /// Register a pill view that has been added through `NSTextAttachmentViewProvider`.
     /// Should be called within the `loadView` function in order to clear the pills properly on text updates.
     ///
@@ -112,13 +84,15 @@ public class WysiwygTextView: UITextView {
     ///
     /// - Parameters:
     ///   - content: Content to apply.
-    func apply(_ content: WysiwygComposerAttributedContent) {
+    func apply(_ content: WysiwygComposerAttributedContent, committed: inout NSAttributedString) {
         guard content.text.length == 0
             || content.text != attributedText
             || content.selection != selectedRange
         else { return }
 
         performWithoutDelegate {
+            // Update committed text at the same time we update the text view.
+            committed = content.text
             self.attributedText = content.text
             // Set selection to {0, 0} then to expected position
             // avoids an issue with autocapitalization.

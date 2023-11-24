@@ -88,7 +88,9 @@ public struct WysiwygComposerView: View {
 
     @ViewBuilder
     private var placeholderView: some View {
-        if viewModel.isContentEmpty, !viewModel.textView.isDictationRunning {
+        // The content can be empty but the textview not, e.g. if you start dictation
+        // but have not committed the text yet.
+        if viewModel.textView.attributedText.length == 0 {
             Text(placeholder)
                 .font(Font(UIFont.preferredFont(forTextStyle: .body)))
                 .foregroundColor(placeholderColor)
@@ -172,6 +174,7 @@ struct UITextViewWrapper: UIViewRepresentable {
         private let itemProviderHelper: WysiwygItemProviderHelper?
         private let keyCommandHandler: KeyCommandHandler?
         private let pasteHandler: PasteHandler?
+        private var lastTextUpdate: TextViewUpdate?
 
         init(_ replaceText: @escaping (NSRange, String) -> Bool,
              _ select: @escaping (NSRange) -> Void,
@@ -190,10 +193,19 @@ struct UITextViewWrapper: UIViewRepresentable {
         }
 
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+            let nextTextUpdate = TextViewUpdate(date: Date.now, range: range, text: text)
+            // This is to specifically to work around an issue when tapping on an inline predictive text suggestion within the text view.
+            // Even though we have the delegate disabled during modifications to the textview we still get some duplicate
+            // calls to this method in this case specifically. It's very unlikely we would get a valid subsequent call
+            // with the same range and replacement text within such a short period of time, so should be safe.
+            if let lastTextUpdate, lastTextUpdate.isDuplicate(of: nextTextUpdate) {
+                return true
+            }
             Logger.textView.logDebug(["Sel(att): \(range)",
                                       textView.logText,
                                       "Replacement: \"\(text)\""],
                                      functionName: #function)
+            lastTextUpdate = nextTextUpdate
             return replaceText(range, text)
         }
         
@@ -264,4 +276,19 @@ struct UITextViewWrapper: UIViewRepresentable {
 
 private extension Logger {
     static let textView = Logger(subsystem: subsystem, category: "TextView")
+}
+
+private struct TextViewUpdate {
+    static let debounceThreshold = 0.1
+    var date: Date
+    var range: NSRange
+    var text: String
+}
+
+private extension TextViewUpdate {
+    func isDuplicate(of other: TextViewUpdate) -> Bool {
+        range == other.range
+            && text == other.text
+            && fabs(date.timeIntervalSince(other.date)) < Self.debounceThreshold
+    }
 }
