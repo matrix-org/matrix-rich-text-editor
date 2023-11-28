@@ -144,6 +144,7 @@ object RichTextEditorDefaults {
     fun textStyle(
         color: Color = MaterialTheme.colorScheme.onSurface,
         fontSize: TextUnit = MaterialTheme.typography.bodyLarge.fontSize,
+        lineHeight: TextUnit = MaterialTheme.typography.bodyLarge.lineHeight,
         fontFamily: FontFamily? = MaterialTheme.typography.bodyLarge.fontFamily,
         fontWeight: FontWeight? = MaterialTheme.typography.bodyLarge.fontWeight,
         fontStyle: FontStyle? = MaterialTheme.typography.bodyLarge.fontStyle,
@@ -151,6 +152,7 @@ object RichTextEditorDefaults {
     ) = TextStyle(
         color = color,
         fontSize = fontSize,
+        lineHeight = lineHeight,
         fontFamily = fontFamily,
         fontWeight = fontWeight,
         fontStyle = fontStyle,

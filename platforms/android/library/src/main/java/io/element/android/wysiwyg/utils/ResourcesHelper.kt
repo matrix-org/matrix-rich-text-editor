@@ -6,6 +6,9 @@ import androidx.annotation.ColorRes
 import androidx.annotation.Dimension
 import androidx.core.content.res.ResourcesCompat
 
+/**
+ * This class provides access to resources needed to convert HTML to spans.
+ */
 internal interface ResourcesHelper {
     fun getDisplayMetrics(): DisplayMetrics
 
@@ -14,6 +17,9 @@ internal interface ResourcesHelper {
     fun getColor(@ColorRes colorId: Int): Int
 }
 
+/**
+ * This class provides access to Android resources needed to convert HTML to spans.
+ */
 internal class AndroidResourcesHelper(
     private val application: Application,
 ) : ResourcesHelper {

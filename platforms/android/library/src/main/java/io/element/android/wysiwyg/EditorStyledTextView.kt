@@ -10,9 +10,11 @@ import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.graphics.withTranslation
 import androidx.core.text.getSpans
 import androidx.core.view.GestureDetectorCompat
+import com.sun.jna.internal.Cleaner
 import io.element.android.wysiwyg.display.MentionDisplayHandler
 import io.element.android.wysiwyg.internal.view.EditorEditTextAttributeReader
 import io.element.android.wysiwyg.utils.HtmlConverter
+import io.element.android.wysiwyg.utils.RustCleanerTask
 import io.element.android.wysiwyg.view.StyleConfig
 import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelper
 import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelperFactory
@@ -28,7 +30,18 @@ import uniffi.wysiwyg_composer.newMentionDetector
  */
 open class EditorStyledTextView : AppCompatTextView {
 
-    private var mentionDetector: MentionDetector? = null
+    // Used to automatically clean up the native resources when this instance is GCed
+    private val cleaner = Cleaner.getCleaner()
+
+    private val mentionDetector: MentionDetector? by lazy {
+        if (!isInEditMode) {
+            val detector = newMentionDetector()
+            cleaner.register(this, RustCleanerTask(detector))
+            detector
+        } else {
+            null
+        }
+    }
 
     private lateinit var inlineCodeBgHelper: SpanBackgroundHelper
     private lateinit var codeBlockBgHelper: SpanBackgroundHelper
@@ -43,13 +56,20 @@ open class EditorStyledTextView : AppCompatTextView {
 
     private val spannableFactory = ReuseSourceSpannableFactory()
 
-    private var mentionDisplayHandler: MentionDisplayHandler? = null
+    var mentionDisplayHandler: MentionDisplayHandler? = null
     private var htmlConverter: HtmlConverter? = null
 
     var onLinkClickedListener: ((String) -> Unit)? = null
 
     // This gesture detector will be used to detect clicks on spans
     private val gestureDetector = GestureDetectorCompat(context, object : GestureDetector.SimpleOnGestureListener() {
+
+        override fun onDown(e: MotionEvent): Boolean {
+            // Find any spans in the coordinates
+            val spans = findSpansForTouchEvent(e)
+            return spans.any { it is LinkSpan || it is PillSpan || it is CustomMentionSpan }
+        }
+
         override fun onSingleTapUp(e: MotionEvent): Boolean {
             // Find any spans in the coordinates
             val spans = findSpansForTouchEvent(e)
@@ -59,17 +79,20 @@ open class EditorStyledTextView : AppCompatTextView {
                 when (span) {
                     is LinkSpan -> {
                         onLinkClickedListener?.invoke(span.url)
+                        return true
                     }
                     is PillSpan -> {
                         span.url?.let { onLinkClickedListener?.invoke(it) }
+                        return true
                     }
                     is CustomMentionSpan -> {
                         span.url?.let { onLinkClickedListener?.invoke(it) }
+                        return true
                     }
                     else -> Unit
                 }
             }
-            return true
+            return false
         }
     })
 
@@ -138,16 +161,7 @@ open class EditorStyledTextView : AppCompatTextView {
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
 
-        mentionDetector = if (isInEditMode) null else newMentionDetector()
-
         updateStyle(styleConfig, mentionDisplayHandler)
-    }
-
-    override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
-
-        mentionDetector?.destroy()
-        mentionDetector = null
     }
 
     private fun createHtmlConverter(styleConfig: StyleConfig, mentionDisplayHandler: MentionDisplayHandler?): HtmlConverter {
@@ -165,11 +179,11 @@ open class EditorStyledTextView : AppCompatTextView {
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         // We pass the event to the gesture detector
-        event?.let { gestureDetector.onTouchEvent(it) }
+        val handled = event?.let { gestureDetector.onTouchEvent(it) }
         // This will handle the default actions for any touch event in the TextView
         super.onTouchEvent(event)
-        // We need to return true to be able to detect any events
-        return true
+        // We return if we handled the event and want to intercept it or not
+        return handled ?: false
     }
 
     private fun findSpansForTouchEvent(event: MotionEvent): Array<out Any> {

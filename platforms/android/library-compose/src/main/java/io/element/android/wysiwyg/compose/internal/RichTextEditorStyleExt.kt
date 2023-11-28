@@ -89,6 +89,14 @@ internal fun TextStyle.rememberTypeface(): State<Typeface> {
 
 internal fun TextView.applyStyleInCompose(style: RichTextEditorStyle) {
     setTextColor(style.text.color.toArgb())
+    val lineHeightInPx = TypedValue.applyDimension(
+        TypedValue.COMPLEX_UNIT_DIP,
+        style.text.lineHeight.value,
+        context.resources.displayMetrics
+    )
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        lineHeight = lineHeightInPx.roundToInt()
+    }
     setTextSize(TypedValue.COMPLEX_UNIT_SP, style.text.fontSize.value)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
         val cursorDrawable = ContextCompat.getDrawable(context, R.drawable.cursor)
