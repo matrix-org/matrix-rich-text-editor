@@ -10,9 +10,11 @@ import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.graphics.withTranslation
 import androidx.core.text.getSpans
 import androidx.core.view.GestureDetectorCompat
+import com.sun.jna.internal.Cleaner
 import io.element.android.wysiwyg.display.MentionDisplayHandler
 import io.element.android.wysiwyg.internal.view.EditorEditTextAttributeReader
 import io.element.android.wysiwyg.utils.HtmlConverter
+import io.element.android.wysiwyg.utils.RustCleanerTask
 import io.element.android.wysiwyg.view.StyleConfig
 import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelper
 import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelperFactory
@@ -28,7 +30,18 @@ import uniffi.wysiwyg_composer.newMentionDetector
  */
 open class EditorStyledTextView : AppCompatTextView {
 
-    private var mentionDetector: MentionDetector? = if (isInEditMode) null else newMentionDetector()
+    // Used to automatically clean up the native resources when this instance is GCed
+    private val cleaner = Cleaner.getCleaner()
+
+    private val mentionDetector: MentionDetector? by lazy {
+        if (!isInEditMode) {
+            val detector = newMentionDetector()
+            cleaner.register(this, RustCleanerTask(detector))
+            detector
+        } else {
+            null
+        }
+    }
 
     private lateinit var inlineCodeBgHelper: SpanBackgroundHelper
     private lateinit var codeBlockBgHelper: SpanBackgroundHelper
@@ -151,11 +164,6 @@ open class EditorStyledTextView : AppCompatTextView {
         updateStyle(styleConfig, mentionDisplayHandler)
     }
 
-    fun finalize() {
-        mentionDetector?.destroy()
-        mentionDetector = null
-    }
-
     private fun createHtmlConverter(styleConfig: StyleConfig, mentionDisplayHandler: MentionDisplayHandler?): HtmlConverter {
         return HtmlConverter.Factory.create(
             context = context,
@@ -174,7 +182,7 @@ open class EditorStyledTextView : AppCompatTextView {
         val handled = event?.let { gestureDetector.onTouchEvent(it) }
         // This will handle the default actions for any touch event in the TextView
         super.onTouchEvent(event)
-        // We need to return true to be able to detect any events
+        // We return if we handled the event and want to intercept it or not
         return handled ?: false
     }
 
