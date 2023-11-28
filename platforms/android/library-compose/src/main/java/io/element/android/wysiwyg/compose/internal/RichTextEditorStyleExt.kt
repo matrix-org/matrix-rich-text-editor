@@ -31,14 +31,14 @@ import io.element.android.wysiwyg.view.PillStyleConfig
 import io.element.android.wysiwyg.view.StyleConfig
 import kotlin.math.roundToInt
 
-internal fun RichTextEditorStyle.toStyleConfig(context: Context): StyleConfig = StyleConfig(
+fun RichTextEditorStyle.toStyleConfig(context: Context): StyleConfig = StyleConfig(
     bulletList = bulletList.toStyleConfig(context),
     inlineCode = inlineCode.toStyleConfig(context),
     codeBlock = codeBlock.toStyleConfig(context),
     pill = pill.toStyleConfig(),
 )
 
-internal fun BulletListStyle.toStyleConfig(context: Context): BulletListStyleConfig =
+fun BulletListStyle.toStyleConfig(context: Context): BulletListStyleConfig =
     with(Density(context)) {
         BulletListStyleConfig(
             bulletGapWidth = bulletGapWidth.toPx(),
@@ -46,7 +46,7 @@ internal fun BulletListStyle.toStyleConfig(context: Context): BulletListStyleCon
         )
     }
 
-internal fun InlineCodeStyle.toStyleConfig(context: Context): InlineCodeStyleConfig {
+fun InlineCodeStyle.toStyleConfig(context: Context): InlineCodeStyleConfig {
     val density = Density(context)
     return InlineCodeStyleConfig(
         horizontalPadding = with(density) { horizontalPadding.toPx().roundToInt() },
@@ -59,7 +59,7 @@ internal fun InlineCodeStyle.toStyleConfig(context: Context): InlineCodeStyleCon
     )
 }
 
-internal fun CodeBlockStyle.toStyleConfig(context: Context): CodeBlockStyleConfig {
+fun CodeBlockStyle.toStyleConfig(context: Context): CodeBlockStyleConfig {
     val density = Density(context)
     return CodeBlockStyleConfig(
         leadingMargin = with(density) { leadingMargin.toPx().roundToInt() },
@@ -69,7 +69,7 @@ internal fun CodeBlockStyle.toStyleConfig(context: Context): CodeBlockStyleConfi
     )
 }
 
-internal fun PillStyle.toStyleConfig(): PillStyleConfig = PillStyleConfig(
+fun PillStyle.toStyleConfig(): PillStyleConfig = PillStyleConfig(
     backgroundColor = backgroundColor.toArgb(),
 )
 
@@ -89,6 +89,14 @@ internal fun TextStyle.rememberTypeface(): State<Typeface> {
 
 internal fun TextView.applyStyleInCompose(style: RichTextEditorStyle) {
     setTextColor(style.text.color.toArgb())
+    val lineHeightInPx = TypedValue.applyDimension(
+        TypedValue.COMPLEX_UNIT_DIP,
+        style.text.lineHeight.value,
+        context.resources.displayMetrics
+    )
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        lineHeight = lineHeightInPx.roundToInt()
+    }
     setTextSize(TypedValue.COMPLEX_UNIT_SP, style.text.fontSize.value)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
         val cursorDrawable = ContextCompat.getDrawable(context, R.drawable.cursor)
