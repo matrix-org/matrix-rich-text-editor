@@ -8,6 +8,7 @@
 - Android: fix disappearing numbers with some keyboards.
 - Android: fix using emojis inside composing regions.
 - iOS: fix the position of the caret.
+- iOS: fix double space to full stop conversion shortcut
 
 ### Changed
 - Common: remove uniffi fork from dependencies
