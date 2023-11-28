@@ -31,14 +31,14 @@ import io.element.android.wysiwyg.view.PillStyleConfig
 import io.element.android.wysiwyg.view.StyleConfig
 import kotlin.math.roundToInt
 
-fun RichTextEditorStyle.toStyleConfig(context: Context): StyleConfig = StyleConfig(
+internal fun RichTextEditorStyle.toStyleConfig(context: Context): StyleConfig = StyleConfig(
     bulletList = bulletList.toStyleConfig(context),
     inlineCode = inlineCode.toStyleConfig(context),
     codeBlock = codeBlock.toStyleConfig(context),
     pill = pill.toStyleConfig(),
 )
 
-fun BulletListStyle.toStyleConfig(context: Context): BulletListStyleConfig =
+internal fun BulletListStyle.toStyleConfig(context: Context): BulletListStyleConfig =
     with(Density(context)) {
         BulletListStyleConfig(
             bulletGapWidth = bulletGapWidth.toPx(),
@@ -46,7 +46,7 @@ fun BulletListStyle.toStyleConfig(context: Context): BulletListStyleConfig =
         )
     }
 
-fun InlineCodeStyle.toStyleConfig(context: Context): InlineCodeStyleConfig {
+internal fun InlineCodeStyle.toStyleConfig(context: Context): InlineCodeStyleConfig {
     val density = Density(context)
     return InlineCodeStyleConfig(
         horizontalPadding = with(density) { horizontalPadding.toPx().roundToInt() },
@@ -59,7 +59,7 @@ fun InlineCodeStyle.toStyleConfig(context: Context): InlineCodeStyleConfig {
     )
 }
 
-fun CodeBlockStyle.toStyleConfig(context: Context): CodeBlockStyleConfig {
+internal fun CodeBlockStyle.toStyleConfig(context: Context): CodeBlockStyleConfig {
     val density = Density(context)
     return CodeBlockStyleConfig(
         leadingMargin = with(density) { leadingMargin.toPx().roundToInt() },
@@ -69,7 +69,7 @@ fun CodeBlockStyle.toStyleConfig(context: Context): CodeBlockStyleConfig {
     )
 }
 
-fun PillStyle.toStyleConfig(): PillStyleConfig = PillStyleConfig(
+internal fun PillStyle.toStyleConfig(): PillStyleConfig = PillStyleConfig(
     backgroundColor = backgroundColor.toArgb(),
 )
 
