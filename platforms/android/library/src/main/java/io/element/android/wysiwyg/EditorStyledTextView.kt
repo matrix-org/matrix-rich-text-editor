@@ -28,7 +28,7 @@ import uniffi.wysiwyg_composer.newMentionDetector
  */
 open class EditorStyledTextView : AppCompatTextView {
 
-    private var mentionDetector: MentionDetector? = null
+    private var mentionDetector: MentionDetector? = if (isInEditMode) null else newMentionDetector()
 
     private lateinit var inlineCodeBgHelper: SpanBackgroundHelper
     private lateinit var codeBlockBgHelper: SpanBackgroundHelper
@@ -43,7 +43,7 @@ open class EditorStyledTextView : AppCompatTextView {
 
     private val spannableFactory = ReuseSourceSpannableFactory()
 
-    private var mentionDisplayHandler: MentionDisplayHandler? = null
+    var mentionDisplayHandler: MentionDisplayHandler? = null
     private var htmlConverter: HtmlConverter? = null
 
     var onLinkClickedListener: ((String) -> Unit)? = null
@@ -148,14 +148,10 @@ open class EditorStyledTextView : AppCompatTextView {
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
 
-        mentionDetector = if (isInEditMode) null else newMentionDetector()
-
         updateStyle(styleConfig, mentionDisplayHandler)
     }
 
-    override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
-
+    fun finalize() {
         mentionDetector?.destroy()
         mentionDetector = null
     }
