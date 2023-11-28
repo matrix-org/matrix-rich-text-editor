@@ -1,5 +1,18 @@
 # Changelog
 
+# [2.19.0] - 2023-11-28
+
+### Fixed
+
+- Android: fix a bug with auto capitalisation.
+- Android: fix disappearing numbers with some keyboards.
+- Android: fix using emojis inside composing regions.
+- iOS: fix the position of the caret.
+- iOS: fix double space to full stop conversion shortcut
+
+### Changed
+- Common: remove uniffi fork from dependencies
+
 # [2.18.0] - 2023-11-17
 
 ### Fixed
