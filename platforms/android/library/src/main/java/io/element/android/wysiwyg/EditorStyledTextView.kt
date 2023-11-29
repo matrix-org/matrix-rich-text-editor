@@ -3,6 +3,8 @@ package io.element.android.wysiwyg
 import android.content.Context
 import android.graphics.Canvas
 import android.text.Spanned
+import android.text.style.ClickableSpan
+import android.text.style.URLSpan
 import android.util.AttributeSet
 import android.view.GestureDetector
 import android.view.MotionEvent
@@ -65,28 +67,31 @@ open class EditorStyledTextView : AppCompatTextView {
     private val gestureDetector = GestureDetectorCompat(context, object : GestureDetector.SimpleOnGestureListener() {
 
         override fun onDown(e: MotionEvent): Boolean {
-            // Find any spans in the coordinates
+            // Find any spans with URLs in the coordinates
             val spans = findSpansForTouchEvent(e)
-            return spans.any { it is LinkSpan || it is PillSpan || it is CustomMentionSpan }
+            return spans.any { it is URLSpan || it is PillSpan || it is CustomMentionSpan }
         }
 
         override fun onSingleTapUp(e: MotionEvent): Boolean {
+            // No need to detect user interaction if there is no listener
+            val onLinkClickedListener = this@EditorStyledTextView.onLinkClickedListener ?: return false
+
             // Find any spans in the coordinates
             val spans = findSpansForTouchEvent(e)
 
             // Notify the link has been clicked
             for (span in spans) {
                 when (span) {
-                    is LinkSpan -> {
-                        onLinkClickedListener?.invoke(span.url)
+                    is URLSpan -> { // This includes LinkSpan
+                        onLinkClickedListener(span.url)
                         return true
                     }
                     is PillSpan -> {
-                        span.url?.let { onLinkClickedListener?.invoke(it) }
+                        span.url?.let(onLinkClickedListener)
                         return true
                     }
                     is CustomMentionSpan -> {
-                        span.url?.let { onLinkClickedListener?.invoke(it) }
+                        span.url?.let(onLinkClickedListener)
                         return true
                     }
                     else -> Unit
