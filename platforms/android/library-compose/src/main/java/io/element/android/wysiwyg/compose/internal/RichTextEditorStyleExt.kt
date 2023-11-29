@@ -16,6 +16,8 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontSynthesis
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.TextUnitType
+import androidx.compose.ui.unit.isSpecified
 import androidx.core.content.ContextCompat
 import io.element.android.wysiwyg.compose.BulletListStyle
 import io.element.android.wysiwyg.compose.CodeBlockStyle
@@ -89,13 +91,23 @@ internal fun TextStyle.rememberTypeface(): State<Typeface> {
 
 internal fun TextView.applyStyleInCompose(style: RichTextEditorStyle) {
     setTextColor(style.text.color.toArgb())
-    val lineHeightInPx = TypedValue.applyDimension(
-        TypedValue.COMPLEX_UNIT_DIP,
-        style.text.lineHeight.value,
-        context.resources.displayMetrics
-    )
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-        lineHeight = lineHeightInPx.roundToInt()
+    if (style.text.lineHeight.isSpecified && style.text.lineHeight.value > 0f) {
+        val lineHeightInPx = TypedValue.applyDimension(
+            style.text.lineHeight.type.toTypeUnit(),
+            style.text.lineHeight.value,
+            context.resources.displayMetrics
+        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            lineHeight = lineHeightInPx.roundToInt()
+        } else {
+            val fontHeightInPx = TypedValue.applyDimension(
+                style.text.fontSize.type.toTypeUnit(),
+                style.text.fontSize.value,
+                context.resources.displayMetrics
+            )
+            val extra = lineHeightInPx - fontHeightInPx
+            setLineSpacing(extra, 1f)
+        }
     }
     setTextSize(TypedValue.COMPLEX_UNIT_SP, style.text.fontSize.value)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -104,6 +116,12 @@ internal fun TextView.applyStyleInCompose(style: RichTextEditorStyle) {
         textCursorDrawable = cursorDrawable
         setLinkTextColor(style.link.color.toArgb())
     }
+}
+
+private fun TextUnitType.toTypeUnit() = when (this) {
+    TextUnitType.Sp -> TypedValue.COMPLEX_UNIT_SP
+    TextUnitType.Em -> TypedValue.COMPLEX_UNIT_FRACTION_PARENT
+    else -> TypedValue.COMPLEX_UNIT_PX
 }
 
 internal fun AppCompatEditText.applyDefaultStyle() {
