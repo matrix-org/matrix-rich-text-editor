@@ -1,5 +1,18 @@
 # Changelog
 
+# [2.20.0] - 2023-11-29
+
+### Fixed
+
+- Android: fix link click detection in `EditorStyledTextView`, as previously it consumed the touch event even when no link or mention was clicked.
+- Android: fix race condition when creating a new `MentionDetector` for `EditorStyledTextView`, which caused mentions to only be detected sometimes.
+- Android: handle all spans with URLs in the gesture detector of `EditorStyledTextView`.
+
+### Changed
+
+- Android: added `TextStyle.lineHeight` property to customise line height on `EditorStyledTextView`.
+- Android: bump JNA version to `v5.13.0`.
+
 # [2.19.0] - 2023-11-28
 
 ### Fixed
