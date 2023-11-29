@@ -36,6 +36,28 @@ internal class EditorStyledTextViewTest {
     }
 
     @Test
+    fun testSetHtml() {
+        scenarioRule.scenario.onActivity {
+            it.findViewById<EditorStyledTextView>(R.id.styledTextView).apply {
+                setHtml("<p>Hello, world</p>")
+            }
+        }
+        onView(ViewMatchers.withId(R.id.styledTextView))
+            .check(matches(withText("Hello, world")))
+    }
+
+    @Test
+    fun testSetHtmlWithMention() {
+        scenarioRule.scenario.onActivity {
+            it.findViewById<EditorStyledTextView>(R.id.styledTextView).apply {
+                setHtml("<p>Hello, <a href='https://matrix.to/#/@alice:matrix.org'>@Alice</a></p>")
+            }
+        }
+        onView(ViewMatchers.withId(R.id.styledTextView))
+            .check(matches(withText("Hello, @Alice")))
+    }
+
+    @Test
     fun testUrlClicks() {
         var pass = false
         scenarioRule.scenario.onActivity {

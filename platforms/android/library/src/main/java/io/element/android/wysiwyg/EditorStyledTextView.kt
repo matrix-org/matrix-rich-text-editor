@@ -67,12 +67,15 @@ open class EditorStyledTextView : AppCompatTextView {
     private val gestureDetector = GestureDetectorCompat(context, object : GestureDetector.SimpleOnGestureListener() {
 
         override fun onDown(e: MotionEvent): Boolean {
-            // Find any spans in the coordinates
+            // Find any spans with URLs in the coordinates
             val spans = findSpansForTouchEvent(e)
-            return spans.any { it is LinkSpan || it is PillSpan || it is CustomMentionSpan || it is ClickableSpan }
+            return spans.any { it is URLSpan || it is PillSpan || it is CustomMentionSpan }
         }
 
         override fun onSingleTapUp(e: MotionEvent): Boolean {
+            // No need to detect user interaction if there is no listener
+            val onLinkClickedListener = this@EditorStyledTextView.onLinkClickedListener ?: return false
+
             // Find any spans in the coordinates
             val spans = findSpansForTouchEvent(e)
 
@@ -80,15 +83,15 @@ open class EditorStyledTextView : AppCompatTextView {
             for (span in spans) {
                 when (span) {
                     is URLSpan -> { // This includes LinkSpan
-                        onLinkClickedListener?.invoke(span.url)
+                        onLinkClickedListener(span.url)
                         return true
                     }
                     is PillSpan -> {
-                        span.url?.let { onLinkClickedListener?.invoke(it) }
+                        span.url?.let(onLinkClickedListener)
                         return true
                     }
                     is CustomMentionSpan -> {
-                        span.url?.let { onLinkClickedListener?.invoke(it) }
+                        span.url?.let(onLinkClickedListener)
                         return true
                     }
                     else -> Unit
