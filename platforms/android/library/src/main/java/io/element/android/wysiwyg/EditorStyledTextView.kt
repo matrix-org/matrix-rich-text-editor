@@ -3,6 +3,8 @@ package io.element.android.wysiwyg
 import android.content.Context
 import android.graphics.Canvas
 import android.text.Spanned
+import android.text.style.ClickableSpan
+import android.text.style.URLSpan
 import android.util.AttributeSet
 import android.view.GestureDetector
 import android.view.MotionEvent
@@ -67,7 +69,7 @@ open class EditorStyledTextView : AppCompatTextView {
         override fun onDown(e: MotionEvent): Boolean {
             // Find any spans in the coordinates
             val spans = findSpansForTouchEvent(e)
-            return spans.any { it is LinkSpan || it is PillSpan || it is CustomMentionSpan }
+            return spans.any { it is LinkSpan || it is PillSpan || it is CustomMentionSpan || it is ClickableSpan }
         }
 
         override fun onSingleTapUp(e: MotionEvent): Boolean {
@@ -77,7 +79,7 @@ open class EditorStyledTextView : AppCompatTextView {
             // Notify the link has been clicked
             for (span in spans) {
                 when (span) {
-                    is LinkSpan -> {
+                    is URLSpan -> { // This includes LinkSpan
                         onLinkClickedListener?.invoke(span.url)
                         return true
                     }
