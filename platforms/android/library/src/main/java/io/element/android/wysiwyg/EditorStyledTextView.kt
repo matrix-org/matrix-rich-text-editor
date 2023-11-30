@@ -63,6 +63,10 @@ open class EditorStyledTextView : AppCompatTextView {
 
     var onLinkClickedListener: ((String) -> Unit)? = null
 
+    /**
+     * In some contexts, such as screenshot tests, [isInEditMode] is may be forced to be false, when we
+     * need it to be true to disable native library loading. With this we can override this behaviour.
+     */
     var isNativeCodeEnabled: Boolean = !isInEditMode
 
     // This gesture detector will be used to detect clicks on spans
