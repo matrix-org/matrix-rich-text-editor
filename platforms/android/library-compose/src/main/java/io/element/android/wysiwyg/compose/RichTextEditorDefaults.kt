@@ -1,6 +1,8 @@
 package io.element.android.wysiwyg.compose
 
 import android.text.InputType
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -139,16 +141,24 @@ object RichTextEditorDefaults {
      * Creates the default text style for [RichTextEditor].
      *
      * @param color The text color to apply
+     * @param fontSize The font size to apply
+     * @param lineHeight The line height to apply
+     * @param fontFamily The font family to apply
+     * @param fontWeight The font weight to apply
+     * @param fontStyle The font style to apply
+     * @param fontSynthesis The font synthesis to apply
+     * @param includeFontPadding Whether to include font padding in line height or not. Defaults to `true`.
      */
     @Composable
     fun textStyle(
-        color: Color = MaterialTheme.colorScheme.onSurface,
-        fontSize: TextUnit = MaterialTheme.typography.bodyLarge.fontSize,
-        lineHeight: TextUnit = MaterialTheme.typography.bodyLarge.lineHeight,
-        fontFamily: FontFamily? = MaterialTheme.typography.bodyLarge.fontFamily,
-        fontWeight: FontWeight? = MaterialTheme.typography.bodyLarge.fontWeight,
-        fontStyle: FontStyle? = MaterialTheme.typography.bodyLarge.fontStyle,
+        color: Color = LocalContentColor.current,
+        fontSize: TextUnit = LocalTextStyle.current.fontSize,
+        lineHeight: TextUnit = LocalTextStyle.current.lineHeight,
+        fontFamily: FontFamily? = LocalTextStyle.current.fontFamily,
+        fontWeight: FontWeight? = LocalTextStyle.current.fontWeight,
+        fontStyle: FontStyle? = LocalTextStyle.current.fontStyle,
         fontSynthesis: FontSynthesis? = MaterialTheme.typography.bodyLarge.fontSynthesis,
+        includeFontPadding: Boolean = true,
     ) = TextStyle(
         color = color,
         fontSize = fontSize,
@@ -157,6 +167,7 @@ object RichTextEditorDefaults {
         fontWeight = fontWeight,
         fontStyle = fontStyle,
         fontSynthesis = fontSynthesis,
+        includeFontPadding = includeFontPadding,
     )
 
     /**

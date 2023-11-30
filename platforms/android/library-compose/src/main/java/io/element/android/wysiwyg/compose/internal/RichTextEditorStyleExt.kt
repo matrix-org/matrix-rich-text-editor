@@ -90,6 +90,7 @@ internal fun TextStyle.rememberTypeface(): State<Typeface> {
 }
 
 internal fun TextView.applyStyleInCompose(style: RichTextEditorStyle) {
+    includeFontPadding = style.text.includeFontPadding
     setTextColor(style.text.color.toArgb())
     setTextSize(TypedValue.COMPLEX_UNIT_SP, style.text.fontSize.value)
     if (style.text.lineHeight.isSpecified && style.text.lineHeight.value > 0f) {
