@@ -17,8 +17,7 @@ interface HtmlConverter {
             mentionDisplayHandler: MentionDisplayHandler?,
             isMention: ((text: String, url: String) -> Boolean)? = null,
         ): HtmlConverter {
-            val resourcesProvider =
-                AndroidResourcesHelper(context.applicationContext as Application)
+            val resourcesProvider = AndroidResourcesHelper(context)
             return AndroidHtmlConverter(provideHtmlToSpansParser = { html ->
                 HtmlToSpansParser(
                     resourcesHelper = resourcesProvider,
