@@ -36,7 +36,7 @@ open class EditorStyledTextView : AppCompatTextView {
     private val cleaner = Cleaner.getCleaner()
 
     private val mentionDetector: MentionDetector? by lazy {
-        if (!isInEditMode) {
+        if (!isInEditMode && isNativeCodeEnabled) {
             val detector = newMentionDetector()
             cleaner.register(this, RustCleanerTask(detector))
             detector
@@ -62,6 +62,8 @@ open class EditorStyledTextView : AppCompatTextView {
     private var htmlConverter: HtmlConverter? = null
 
     var onLinkClickedListener: ((String) -> Unit)? = null
+
+    var isNativeCodeEnabled: Boolean = !isInEditMode
 
     // This gesture detector will be used to detect clicks on spans
     private val gestureDetector = GestureDetectorCompat(context, object : GestureDetector.SimpleOnGestureListener() {
