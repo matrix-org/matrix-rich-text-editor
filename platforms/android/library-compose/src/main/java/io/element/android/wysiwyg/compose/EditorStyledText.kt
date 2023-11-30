@@ -53,8 +53,8 @@ fun EditorStyledText(
             EditorStyledTextView(context)
         },
         update = { view ->
-            view.updateStyle(style.toStyleConfig(view.context), mentionDisplayHandler)
             view.applyStyleInCompose(style)
+            view.updateStyle(style.toStyleConfig(view.context), mentionDisplayHandler)
             view.typeface = typeface
             if (text is Spanned) {
                 view.setText(text, TextView.BufferType.SPANNABLE)
