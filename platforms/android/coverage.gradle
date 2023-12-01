@@ -109,5 +109,5 @@ task unitTestsWithCoverage(type: GradleBuild) {
 
 task instrumentationTestsWithCoverage(type: GradleBuild) {
     startParameter.projectProperties.coverage = "true"
-    tasks = [':library:connectedDebugAndroidTest', ':library-compose:connectedDebugAndroidTest']
+    tasks = [':library:uninstallDebugAndroidTest', ':library-compose:uninstallDebugAndroidTest', ':library:connectedDebugAndroidTest', ':library-compose:connectedDebugAndroidTest']
 }
