@@ -1,6 +1,5 @@
 package io.element.android.wysiwyg.compose
 
-import android.text.InputType
 import android.view.View
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.compose.runtime.Composable
@@ -37,8 +36,10 @@ import timber.log.Timber
  * @param state The state holder for this composable. See [rememberRichTextEditorState].
  * @param registerStateUpdates If true, register the state for updates.
  * @param style The styles to use for any customisable elements
+ * @param inputType The input type for the editor. Defaults to [RichTextEditorDefaults.inputType].
  * @param resolveMentionDisplay A function to resolve the [TextDisplay] of a mention.
  * @param resolveRoomMentionDisplay A function to resolve the [TextDisplay] of an `@room` mention.
+ * @param onTyping Called when the user starts or stops typing in the editor.
  * @param onError Called when an internal error occurs
  */
 @Composable
@@ -50,6 +51,7 @@ fun RichTextEditor(
     inputType: Int = RichTextEditorDefaults.inputType,
     resolveMentionDisplay: (text: String, url: String) -> TextDisplay = RichTextEditorDefaults.MentionDisplay,
     resolveRoomMentionDisplay: () -> TextDisplay = RichTextEditorDefaults.RoomMentionDisplay,
+    onTyping: (Boolean) -> Unit = {},
     onError: (Throwable) -> Unit = {},
 ) {
     val isPreview = LocalInspectionMode.current
@@ -65,7 +67,8 @@ fun RichTextEditor(
             inputType = inputType,
             onError = onError,
             resolveMentionDisplay = resolveMentionDisplay,
-            resolveRoomMentionDisplay = resolveRoomMentionDisplay
+            resolveRoomMentionDisplay = resolveRoomMentionDisplay,
+            onTyping = onTyping,
         )
     }
 }
@@ -80,6 +83,7 @@ private fun RealEditor(
     onError: (Throwable) -> Unit,
     resolveMentionDisplay: (text: String, url: String) -> TextDisplay,
     resolveRoomMentionDisplay: () -> TextDisplay,
+    onTyping: (Boolean) -> Unit,
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -123,6 +127,9 @@ private fun RealEditor(
                         state.internalHtml = getInternalHtml()
                         state.messageHtml = getContentAsMessageHtml()
                         state.messageMarkdown = getMarkdown()
+
+                        onTyping(state.internalHtml.isNotEmpty())
+
                         // Prevent the line count from being reset when the text Layout is not set
                         if (lineCount > 0) {
                             state.lineCount = lineCount
