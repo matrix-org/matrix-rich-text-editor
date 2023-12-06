@@ -1,5 +1,18 @@
 # Changelog
 
+# [2.21.0] - 2023-12-06
+
+### Fixed
+
+- [Android] Fix line height changes in `EditorStyledText`
+- [Android] Fixes needed to get `EditorSyledTextView` to work with screenshot tests
+
+### Changed
+
+- [Android] Refactor text view test (#896)
+- [Android] Allow specifying line height for all API versions (#897)
+- [Android] Add typing callback (#900)
+
 # [2.20.0] - 2023-11-29
 
 ### Fixed
