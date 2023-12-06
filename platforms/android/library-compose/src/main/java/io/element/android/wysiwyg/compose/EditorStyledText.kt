@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.viewinterop.AndroidView
 import io.element.android.wysiwyg.EditorStyledTextView
 import io.element.android.wysiwyg.compose.internal.applyStyleInCompose
@@ -47,10 +48,14 @@ fun EditorStyledText(
             }
         }
     }
+
+    val isInEditMode = LocalInspectionMode.current
     AndroidView(
         modifier = modifier,
         factory = { context ->
-            EditorStyledTextView(context)
+            EditorStyledTextView(context).apply {
+                isNativeCodeEnabled = !isInEditMode
+            }
         },
         update = { view ->
             view.applyStyleInCompose(style)
