@@ -90,7 +90,9 @@ internal fun TextStyle.rememberTypeface(): State<Typeface> {
 }
 
 internal fun TextView.applyStyleInCompose(style: RichTextEditorStyle) {
+    includeFontPadding = style.text.includeFontPadding
     setTextColor(style.text.color.toArgb())
+    setTextSize(TypedValue.COMPLEX_UNIT_SP, style.text.fontSize.value)
     if (style.text.lineHeight.isSpecified && style.text.lineHeight.value > 0f) {
         val lineHeightInPx = TypedValue.applyDimension(
             style.text.lineHeight.type.toTypeUnit(),
@@ -109,7 +111,6 @@ internal fun TextView.applyStyleInCompose(style: RichTextEditorStyle) {
             setLineSpacing(extra, 1f)
         }
     }
-    setTextSize(TypedValue.COMPLEX_UNIT_SP, style.text.fontSize.value)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
         val cursorDrawable = ContextCompat.getDrawable(context, R.drawable.cursor)
         cursorDrawable?.setTint(style.cursor.color.toArgb())

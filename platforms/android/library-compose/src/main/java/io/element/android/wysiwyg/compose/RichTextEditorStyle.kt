@@ -56,6 +56,7 @@ data class TextStyle(
     val fontWeight: FontWeight?,
     val fontStyle: FontStyle?,
     val fontSynthesis: FontSynthesis?,
+    val includeFontPadding: Boolean,
 )
 
 data class CursorStyle(
