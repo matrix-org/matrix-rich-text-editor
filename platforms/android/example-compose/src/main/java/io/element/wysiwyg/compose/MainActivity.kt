@@ -1,11 +1,13 @@
 package io.element.wysiwyg.compose
 
+import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -14,6 +16,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -26,18 +30,30 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.Placeholder
+import androidx.compose.ui.text.PlaceholderVerticalAlign
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 import io.element.android.wysiwyg.compose.EditorStyledText
 import io.element.android.wysiwyg.compose.RichTextEditor
 import io.element.android.wysiwyg.compose.RichTextEditorDefaults
 import io.element.android.wysiwyg.compose.StyledHtmlConverter
+import io.element.android.wysiwyg.compose.internal.Mention
 import io.element.android.wysiwyg.compose.rememberRichTextEditorState
+import io.element.android.wysiwyg.compose.text.HtmlToComposeTextParser
+import io.element.android.wysiwyg.compose.text.RichText
 import io.element.android.wysiwyg.display.TextDisplay
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
-import io.element.wysiwyg.compose.matrix.Mention
 import io.element.wysiwyg.compose.ui.components.FormattingButtons
 import io.element.wysiwyg.compose.ui.theme.RichTextEditorTheme
 import kotlinx.collections.immutable.toPersistentMap
@@ -82,6 +98,18 @@ class MainActivity : ComponentActivity() {
                 val coroutineScope = rememberCoroutineScope()
 
                 val htmlText = htmlConverter.fromHtmlToSpans(state.messageHtml)
+                val htmlToComposeTextParser = HtmlToComposeTextParser(
+                    richTextEditorStyle = style,
+                    getLinkMention = { text, url ->
+                        mentionDetector?.let { detector ->
+                            if (detector.isMention(url)) {
+                                Mention.User(text, url)
+                            } else {
+                                null
+                            }
+                        }
+                    }
+                )
 
                 linkDialogAction?.let { linkAction ->
                     LinkDialog(linkAction = linkAction,
@@ -138,17 +166,66 @@ class MainActivity : ComponentActivity() {
                         } else {
                             Spacer(Modifier.height(32.dp))
                         }
-                        EditorStyledText(
-                            text = htmlText,
+
+                        val density = LocalDensity.current
+                        val textMeasurer = rememberTextMeasurer()
+                        val result = htmlToComposeTextParser.parse(state.messageHtml)
+                        val inlineContent = buildMap<String, InlineTextContent> {
+                            val extraPadding = 10.dp
+                            for (mention in result.mentions) {
+                                val width = with(density) {
+                                    val measuredWidth = textMeasurer.measure(
+                                        text = mention.text,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        overflow = TextOverflow.Clip,
+                                    ).size.width
+                                    (measuredWidth + extraPadding.toPx()).toSp()
+                                }
+                                val content = InlineTextContent(
+                                    placeholder = Placeholder(
+                                        width = TextUnit(width.value, TextUnitType.Sp),
+                                        height = style.text.lineHeight.takeIf { it.isSpecified } ?: style.text.fontSize,
+                                        placeholderVerticalAlign = PlaceholderVerticalAlign.Center
+                                    ),
+                                    children = {
+                                        Text(
+                                            text = mention.text,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .background(Color.LightGray)
+                                                .clickable { Timber.i("Clicked $mention") }
+                                                .padding(horizontal = extraPadding / 2)
+                                        )
+                                    }
+                                )
+                                when (mention) {
+                                    is Mention.User -> put("mention:${mention.link}", content)
+                                    is Mention.Room -> put("mention:${mention.link}", content)
+                                    is Mention.NotifyEveryone -> put("mention:@room", content)
+                                    else -> Unit
+                                }
+                            }
+                        }
+                        RichText(
+                            text = result.annotatedString,
+                            inlineContent = inlineContent,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp),
-                            resolveMentionDisplay = { _,_ -> TextDisplay.Pill },
-                            resolveRoomMentionDisplay = { TextDisplay.Pill },
-                            onLinkClickedListener = { url ->
-                                Toast.makeText(this@MainActivity, "Clicked: $url", Toast.LENGTH_SHORT).show()
-                            }
                         )
+
+//                        EditorStyledText(
+//                            text = htmlText,
+//                            modifier = Modifier
+//                                .fillMaxWidth()
+//                                .padding(16.dp),
+//                            resolveMentionDisplay = { _,_ -> TextDisplay.Pill },
+//                            resolveRoomMentionDisplay = { TextDisplay.Pill },
+//                            onLinkClickedListener = { url ->
+//                                Toast.makeText(this@MainActivity, "Clicked: $url", Toast.LENGTH_SHORT).show()
+//                            }
+//                        )
 
                         Spacer(modifier = Modifier.weight(1f))
                         SuggestionView(

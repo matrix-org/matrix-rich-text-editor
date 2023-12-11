@@ -29,7 +29,7 @@ sealed class Mention(
         override val key: String = "/"
     }
 
-    object NotifyEveryone: Mention("room") {
+    data object NotifyEveryone: Mention("room") {
         override val key: String = "@"
     }
 }

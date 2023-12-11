@@ -23,6 +23,7 @@ data class RichTextEditorStyle internal constructor(
     val text: TextStyle,
     val cursor: CursorStyle,
     val link: LinkStyle,
+    val indentation: IndentStyle,
 )
 
 data class BulletListStyle internal constructor(
@@ -98,6 +99,12 @@ data class CodeBackgroundStyle(
         }
     })
 }
+
+data class IndentStyle(
+    val listItem: TextUnit,
+    val quote: TextUnit,
+    val codeBlock: TextUnit,
+)
 
 data class InlineCodeBackgroundStyle(
     val singleLine: CodeBackgroundStyle,

@@ -12,7 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import io.element.wysiwyg.compose.matrix.Mention
+import io.element.android.wysiwyg.compose.internal.Mention
 import uniffi.wysiwyg_composer.MenuAction
 import uniffi.wysiwyg_composer.PatternKey
 
@@ -42,7 +42,7 @@ fun SuggestionView(
                                     onReplaceSuggestion(item.text)
                                 }
                                 else -> {
-                                    onInsertMentionAtSuggestion(item.text, item.link)
+                                    onInsertMentionAtSuggestion(item.text, item.link.orEmpty())
                                 }
                             }
                         })
@@ -70,8 +70,8 @@ fun processMenuAction(menuAction: MenuAction?, roomMemberSuggestions: SnapshotSt
 
 private fun processSuggestion(suggestion: MenuAction.Suggestion, roomMemberSuggestions: SnapshotStateList<Mention>) {
     val text = suggestion.suggestionPattern.text
-    val people = listOf("alice", "bob", "carol", "dan").map(Mention::User)
-    val rooms = listOf("matrix", "element").map(Mention::Room)
+    val people = listOf("alice", "bob", "carol", "dan").map { Mention.User(it, "https://matrix.to/#/@$it:matrix.org") }
+    val rooms = listOf("matrix", "element").map { Mention.Room(it, "https://matrix.to/#/!$it:matrix.org") }
     val slashCommands = listOf("leave", "shrug").map(Mention::SlashCommand)
     val everyone = Mention.NotifyEveryone
     val names = when (suggestion.suggestionPattern.key) {

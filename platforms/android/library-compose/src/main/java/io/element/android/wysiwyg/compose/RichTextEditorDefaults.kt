@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import io.element.android.wysiwyg.display.TextDisplay
 
 private val defaultCodeCornerRadius = 4.dp
@@ -59,6 +60,7 @@ object RichTextEditorDefaults {
         text: TextStyle = textStyle(),
         cursor: CursorStyle = cursorStyle(),
         link: LinkStyle = linkStyle(),
+        indentation: IndentStyle = indentStyle(),
     ): RichTextEditorStyle = RichTextEditorStyle(
         bulletList = bulletList,
         codeBlock = codeBlock,
@@ -67,6 +69,7 @@ object RichTextEditorDefaults {
         text = text,
         cursor = cursor,
         link = link,
+        indentation = indentation,
     )
 
     /**
@@ -268,6 +271,17 @@ object RichTextEditorDefaults {
             ),
         )
     }
+
+    @Composable
+    fun indentStyle(
+        listItem: TextUnit = 20.sp,
+        codeBlock: TextUnit = 20.sp,
+        quote: TextUnit = 20.sp,
+    ) = IndentStyle(
+        listItem = listItem,
+        codeBlock = codeBlock,
+        quote = quote,
+    )
 
     const val inputType: Int = InputType.TYPE_CLASS_TEXT or
             InputType.TYPE_TEXT_FLAG_MULTI_LINE or
