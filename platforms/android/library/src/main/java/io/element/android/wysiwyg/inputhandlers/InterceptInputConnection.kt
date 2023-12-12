@@ -126,19 +126,7 @@ internal class InterceptInputConnection(
     // Called for suggestion from IME selected
     override fun commitText(text: CharSequence?, newCursorPosition: Int): Boolean {
         val (start, end) = getCurrentCompositionOrSelection()
-        val result = processTextEntry(text, start, end)
-
-        return if (result != null) {
-            beginBatchEdit()
-            replaceAll(result.text)
-            val editorSelectionIndex = editorIndex(result.selection.last, editable)
-            setSelection(editorSelectionIndex, editorSelectionIndex)
-            setComposingRegion(editorSelectionIndex, editorSelectionIndex)
-            endBatchEdit()
-            true
-        } else {
-            super.commitText(text, newCursorPosition)
-        }
+        return replaceTextInternal(start, end, text)
     }
 
     // In Android 13+, this is called instead of [commitText] when selecting suggestions from IME
@@ -148,6 +136,14 @@ internal class InterceptInputConnection(
         text: CharSequence,
         newCursorPosition: Int,
         textAttribute: TextAttribute?
+    ): Boolean {
+        return replaceTextInternal(start, end, text)
+    }
+
+    private fun replaceTextInternal(
+        start: Int,
+        end: Int,
+        text: CharSequence?,
     ): Boolean {
         val result = processTextEntry(text, start, end)
 
@@ -160,7 +156,7 @@ internal class InterceptInputConnection(
             endBatchEdit()
             true
         } else {
-            super.replaceText(start, end, text, newCursorPosition, textAttribute)
+            false
         }
     }
 
