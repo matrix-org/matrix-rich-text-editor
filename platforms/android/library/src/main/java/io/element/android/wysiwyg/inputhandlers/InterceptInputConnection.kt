@@ -141,6 +141,29 @@ internal class InterceptInputConnection(
         }
     }
 
+    // In Android 13+, this is called instead of [commitText] when selecting suggestions from IME
+    override fun replaceText(
+        start: Int,
+        end: Int,
+        text: CharSequence,
+        newCursorPosition: Int,
+        textAttribute: TextAttribute?
+    ): Boolean {
+        val result = processTextEntry(text, start, end)
+
+        return if (result != null) {
+            beginBatchEdit()
+            replaceAll(result.text)
+            val editorSelectionIndex = editorIndex(result.selection.last, editable)
+            setSelection(editorSelectionIndex, editorSelectionIndex)
+            setComposingRegion(editorSelectionIndex, editorSelectionIndex)
+            endBatchEdit()
+            true
+        } else {
+            super.replaceText(start, end, text, newCursorPosition, textAttribute)
+        }
+    }
+
     private fun processTextEntry(newText: CharSequence?, start: Int, end: Int): ReplaceTextResult? {
         val previousText = editable.substring(start until end)
         return withProcessor {
