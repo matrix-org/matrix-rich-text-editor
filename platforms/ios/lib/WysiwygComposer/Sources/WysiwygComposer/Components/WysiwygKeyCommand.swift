@@ -16,33 +16,14 @@
 
 import UIKit
 
-/// An enum describing key commands that can be handled by the hosting application.
-/// This can be done by providing a `KeyCommandHandler` to the `WysiwygComposerView`.
-/// If handler is nil, or if the handler returns false, a default behaviour will be applied (see cases description).
-public enum WysiwygKeyCommand: CaseIterable {
-    /// User pressed `enter`. Default behaviour: a line feed is created.
-    /// Note: in the context of a messaging app, this is usually used to send a message.
-    case enter
-    /// User pressed `shift` + `enter`. Default behaviour: a line feed is created.
-    case shiftEnter
-
-    var input: String {
-        switch self {
-        case .enter, .shiftEnter:
-            return "\r"
-        }
+/// An class that describes key commands that can be handled by the hosting application wth their associated action
+public struct WysiwygKeyCommand {
+    /// A default initialiser for the enter command which is most commonly used
+    public static func enter(action: @escaping () -> Void) -> WysiwygKeyCommand {
+        WysiwygKeyCommand(input: "\r", modifierFlags: [], action: action)
     }
-
-    var modifierFlags: UIKeyModifierFlags {
-        switch self {
-        case .enter:
-            return []
-        case .shiftEnter:
-            return .shift
-        }
-    }
-
-    static func from(_ keyCommand: UIKeyCommand) -> WysiwygKeyCommand? {
-        WysiwygKeyCommand.allCases.first(where: { $0.input == keyCommand.input && $0.modifierFlags == keyCommand.modifierFlags })
-    }
+    
+    let input: String
+    let modifierFlags: UIKeyModifierFlags
+    let action: () -> Void
 }
