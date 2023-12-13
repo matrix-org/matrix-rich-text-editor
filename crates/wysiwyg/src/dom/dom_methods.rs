@@ -904,10 +904,12 @@ where
 
         let is_container_node: bool;
         let is_text_node: bool;
+        let is_mention_node: bool;
         {
             let node = self.lookup_node(&cur_handle);
             is_container_node = node.is_container_node();
             is_text_node = node.is_text_node();
+            is_mention_node = node.is_mention_node();
         }
 
         if is_container_node {
@@ -926,6 +928,13 @@ where
                 from_handle,
                 to_handle,
             ));
+        } else if is_mention_node {
+            // Mentions only have 1 char length:
+            // If the offset is 0 the selection was before the node and the mention should be part of the new subtree.
+            // If it's 1 it should be kept in the current DOM (do nothing).
+            if start_offset == 0 {
+                nodes.push(self.remove(&cur_handle));
+            }
         } else {
             nodes.push(self.remove(&cur_handle));
         }

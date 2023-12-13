@@ -480,4 +480,28 @@ mod test {
         </ul>"
         );
     }
+
+    #[test]
+    fn test_enter_before_mention() {
+        let mut model = cm(
+            r#"|<a data-mention-type="user" href="https://matrix.to/#/@carol:matrix.org" contenteditable="false">@carol</a>"#,
+        );
+        model.enter();
+        assert_eq!(
+            tx(&model),
+            r#"<p>&nbsp;</p><p>|<a data-mention-type="user" href="https://matrix.to/#/@carol:matrix.org" contenteditable="false">@carol</a></p>"#
+        )
+    }
+
+    #[test]
+    fn test_enter_after_mention() {
+        let mut model = cm(
+            r#"<a data-mention-type="user" href="https://matrix.to/#/@carol:matrix.org" contenteditable="false">@carol</a>|"#,
+        );
+        model.enter();
+        assert_eq!(
+            tx(&model),
+            r#"<p><a data-mention-type="user" href="https://matrix.to/#/@carol:matrix.org" contenteditable="false">@carol</a></p><p>&nbsp;|</p>"#
+        )
+    }
 }
