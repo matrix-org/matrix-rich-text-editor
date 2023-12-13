@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use md_parser::Event;
 use pulldown_cmark as md_parser;
 
 use crate::{dom::MarkdownParseError, UnicodeString};
@@ -28,12 +29,17 @@ impl MarkdownHTMLParser {
         let mut options = Options::empty();
         options.insert(Options::ENABLE_STRIKETHROUGH);
 
-        let markdown = dbg!(markdown.to_string());
-        let parser = Parser::new_ext(&markdown, options);
+        let markdown = markdown.to_string();
+        let parser_events: Vec<_> = Parser::new_ext(&markdown, options)
+            .map(|event| match event {
+                Event::SoftBreak => Event::HardBreak,
+                _ => event,
+            })
+            .collect();
 
         let mut html = String::new();
 
-        compile_to_html(&mut html, parser);
+        compile_to_html(&mut html, parser_events.into_iter());
 
         // By default, there is a `<p>…</p>\n` around the HTML content. That's the
         // correct way to handle a text block in Markdown. But it breaks our
@@ -45,9 +51,9 @@ impl MarkdownHTMLParser {
                 let p = "<p>".len();
                 let ppnl = "</p>\n".len();
 
-                &html[p..html.len() - ppnl]
+                html[p..html.len() - ppnl].to_string()
             } else {
-                &html[..]
+                html[..].to_string()
             }
         };
 

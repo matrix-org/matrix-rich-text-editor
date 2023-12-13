@@ -150,6 +150,22 @@ fn set_content_from_html_moves_cursor_to_the_end() {
 }
 
 #[test]
+fn set_content_from_html_single_br() {
+    let mut model = cm("|");
+    model.set_content_from_html(&utf16("test<br>test")).unwrap();
+    assert_eq!(tx(&model), "<p>test</p><p>test|</p>");
+}
+
+#[test]
+fn set_content_from_html_multiple_br() {
+    let mut model = cm("|");
+    model
+        .set_content_from_html(&utf16("test<br><br>test"))
+        .unwrap();
+    assert_eq!(tx(&model), "<p>test</p><p>&nbsp;</p><p>test|</p>");
+}
+
+#[test]
 fn clear() {
     let mut model = cm("|");
     model
@@ -196,10 +212,28 @@ fn set_content_from_markdown_codeblock_with_newlines() {
 }
 
 #[test]
+fn set_content_from_markdown_codeblock_with_newlines_in_the_middle() {
+    let mut model = cm("|");
+    model
+        .set_content_from_markdown(&utf16("```\nI am\na code block\n```"))
+        .unwrap();
+    assert_eq!(tx(&model), "<pre><code>I am\na code block|</code></pre>");
+}
+
+#[test]
 fn set_content_from_markdown_multiple_new_lines() {
     let mut model = cm("|");
     model
         .set_content_from_markdown(&utf16("test\n\ntest"))
+        .unwrap();
+    assert_eq!(tx(&model), "<p>test</p><p>test|</p>");
+}
+
+#[test]
+fn set_content_from_markdown_one_new_line() {
+    let mut model = cm("|");
+    model
+        .set_content_from_markdown(&utf16("test\ntest"))
         .unwrap();
     assert_eq!(tx(&model), "<p>test</p><p>test|</p>");
 }
