@@ -23,12 +23,10 @@ public enum WysiwygKeyCommand: CaseIterable {
     /// User pressed `enter`. Default behaviour: a line feed is created.
     /// Note: in the context of a messaging app, this is usually used to send a message.
     case enter
-    /// User pressed `shift` + `enter`. Default behaviour: a line feed is created.
-    case shiftEnter
 
     var input: String {
         switch self {
-        case .enter, .shiftEnter:
+        case .enter:
             return "\r"
         }
     }
@@ -37,8 +35,6 @@ public enum WysiwygKeyCommand: CaseIterable {
         switch self {
         case .enter:
             return []
-        case .shiftEnter:
-            return .shift
         }
     }
 

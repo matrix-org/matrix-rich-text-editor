@@ -253,7 +253,7 @@ struct UITextViewWrapper: UIViewRepresentable {
 
         private func processDefault(for keyCommand: WysiwygKeyCommand) {
             switch keyCommand {
-            case .enter, .shiftEnter:
+            case .enter:
                 enter()
             }
         }

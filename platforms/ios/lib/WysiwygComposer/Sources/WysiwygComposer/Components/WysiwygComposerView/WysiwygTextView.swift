@@ -31,7 +31,7 @@ protocol WysiwygTextViewDelegate: AnyObject {
     ///   - textView: Composer text view.
     ///   - keyCommand: Key command received.
     func textViewDidReceiveKeyCommand(_ textView: UITextView, keyCommand: WysiwygKeyCommand)
-
+    
     /// Notify the delegate that a paste event has beeb received by the text view.
     ///
     /// - Parameters:

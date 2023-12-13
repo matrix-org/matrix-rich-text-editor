@@ -28,8 +28,7 @@ impl MarkdownHTMLParser {
         let mut options = Options::empty();
         options.insert(Options::ENABLE_STRIKETHROUGH);
 
-        let markdown = markdown.to_string();
-
+        let markdown = dbg!(markdown.to_string());
         let parser = Parser::new_ext(&markdown, options);
 
         let mut html = String::new();
@@ -39,14 +38,16 @@ impl MarkdownHTMLParser {
         // By default, there is a `<p>…</p>\n` around the HTML content. That's the
         // correct way to handle a text block in Markdown. But it breaks our
         // assumption regarding the HTML markup. So let's remove it.
+        // write me a function that gives me the number of substrings contained in a string:
+
         let html = {
-            if !html.starts_with("<p>") {
-                &html[..]
-            } else {
+            if html.starts_with("<p>") && html.matches("<p>").count() == 1 {
                 let p = "<p>".len();
                 let ppnl = "</p>\n".len();
 
                 &html[p..html.len() - ppnl]
+            } else {
+                &html[..]
             }
         };
 

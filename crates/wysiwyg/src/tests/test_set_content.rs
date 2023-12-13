@@ -194,3 +194,12 @@ fn set_content_from_markdown_codeblock_with_newlines() {
         .unwrap();
     assert_eq!(tx(&model), "<pre><code>I am a code block|</code></pre>");
 }
+
+#[test]
+fn set_content_from_markdown_multiple_new_lines() {
+    let mut model = cm("|");
+    model
+        .set_content_from_markdown(&utf16("test\n\ntest"))
+        .unwrap();
+    assert_eq!(tx(&model), "<p>test</p><p>test|</p>");
+}

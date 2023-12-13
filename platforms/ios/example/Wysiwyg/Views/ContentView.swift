@@ -93,10 +93,9 @@ struct ContentView: View {
                      switch keyCommand {
                      case .enter:
                          sentMessage = viewModel.content
+                         
                          viewModel.clearContent()
                          return true
-                     case .shiftEnter:
-                         return false
                      }
                  },
                  pasteHandler: { _ in })
