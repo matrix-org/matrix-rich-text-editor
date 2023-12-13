@@ -28,6 +28,7 @@ data class RichTextEditorStyle internal constructor(
 data class BulletListStyle internal constructor(
     val bulletGapWidth: Dp,
     val bulletRadius: Dp,
+    val leadingMargin: Dp,
 )
 
 data class CodeBlockStyle internal constructor(

@@ -2,6 +2,7 @@
 <resources>
     <attr name="bulletGap" format="dimension" />
     <attr name="bulletRadius" format="dimension" />
+    <attr name="unorderedListLeadingMargin" format="dimension" />
     <attr name="codeBlockLeadingMargin" format="dimension" />
     <attr name="codeBlockVerticalPadding" format="dimension" />
     <attr name="codeBlockBackgroundDrawable" format="reference" />
@@ -18,6 +19,7 @@
     <declare-styleable name="EditorEditText">
         <attr name="bulletGap" />
         <attr name="bulletRadius" />
+        <attr name="unorderedListLeadingMargin" />
         <attr name="codeBlockLeadingMargin" />
         <attr name="codeBlockVerticalPadding" />
         <attr name="codeBlockBackgroundDrawable" />
@@ -30,6 +32,7 @@
         <attr name="inlineCodeMultiLineBgRight" />
         <attr name="inlineCodeRelativeTextSize" />
         <attr name="pillBackgroundColor" />
+        <attr name="android:textSize" />
     </declare-styleable>
 
     <declare-styleable name="EditorStyledTextView">
@@ -45,5 +48,6 @@
         <attr name="inlineCodeMultiLineBgRight" />
         <attr name="inlineCodeRelativeTextSize" />
         <attr name="pillBackgroundColor" />
+        <attr name="android:textSize" />
     </declare-styleable>
 </resources>

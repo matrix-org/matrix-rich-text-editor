@@ -1,9 +1,11 @@
 package io.element.android.wysiwyg.view
 
+import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import androidx.annotation.ColorInt
 import androidx.annotation.ColorRes
 import androidx.annotation.Px
+import androidx.compose.runtime.Immutable
 import io.element.android.wysiwyg.EditorEditText
 
 
@@ -23,6 +25,20 @@ data class StyleConfig(
     val codeBlock: CodeBlockStyleConfig,
 
     val pill: PillStyleConfig,
+
+    val text: TextConfig,
+)
+
+/**
+ * Style configuration for the text.
+ *
+ * @property typeface The typeface to apply.
+ * @property textSize The text size to apply, in pixels.
+ */
+@Immutable
+data class TextConfig(
+    val typeface: Typeface,
+    @Px val textSize: Float,
 )
 
 /**
@@ -34,6 +50,7 @@ data class StyleConfig(
 data class BulletListStyleConfig(
     @Px val bulletGapWidth: Float,
     @Px val bulletRadius: Float,
+    @Px val leadingMargin: Float,
 )
 
 /**

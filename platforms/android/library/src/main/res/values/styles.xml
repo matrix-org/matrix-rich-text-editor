@@ -3,6 +3,7 @@
     <style name="EditorStyledTextView">
         <item name="inlineCodeHorizontalPadding">2dp</item>
         <item name="inlineCodeVerticalPadding">0dp</item>
+        <item name="unorderedListLeadingMargin">6dp</item>
         <item name="inlineCodeRelativeTextSize">@integer/defaultCodeTextSizeProportion</item>
         <item name="inlineCodeSingleLineBg">@drawable/inline_code_single_line_bg</item>
         <item name="inlineCodeMultiLineBgLeft">@drawable/inline_code_multi_line_bg_left</item>
@@ -13,10 +14,12 @@
         <item name="codeBlockVerticalPadding">4dp</item>
         <item name="codeBlockBackgroundDrawable">@drawable/code_block_bg</item>
         <item name="pillBackgroundColor">@color/default_pill_bg</item>
+        <item name="android:textSize">16sp</item>
     </style>
 
     <style name="EditorEditText" parent="EditorStyledTextView">
-        <item name="bulletGap">2dp</item>
+        <item name="bulletGap">6dp</item>
         <item name="bulletRadius">2dp</item>
+        <item name="unorderedListLeadingMargin">22dp</item>
     </style>
 </resources>

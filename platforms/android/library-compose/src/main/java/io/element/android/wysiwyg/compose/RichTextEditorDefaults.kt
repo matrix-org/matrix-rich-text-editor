@@ -76,11 +76,13 @@ object RichTextEditorDefaults {
      * @param bulletRadius The radius of the bullet.
      */
     fun bulletListStyle(
-        bulletGapWidth: Dp = 2.dp,
+        bulletGapWidth: Dp = 6.dp,
         bulletRadius: Dp = 2.dp,
+        leadingMargin: Dp = 22.dp,
     ) = BulletListStyle(
         bulletGapWidth = bulletGapWidth,
         bulletRadius = bulletRadius,
+        leadingMargin = leadingMargin,
     )
 
     /**

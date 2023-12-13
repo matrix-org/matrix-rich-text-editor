@@ -15,9 +15,11 @@ class UnorderedListSpan(
     @Px
     @IntRange(from = 0)
     private val bulletRadius: Int,
+    @Px
+    private val leadingMargin: Int,
 ) : LeadingMarginSpan, BlockSpan {
     override fun getLeadingMargin(first: Boolean): Int {
-        return 2 * bulletRadius + gapWidth
+        return leadingMargin
     }
 
     override fun drawLeadingMargin(
@@ -38,7 +40,8 @@ class UnorderedListSpan(
         }
 
         val yPosition = (baseline - bounds.height() / 2f)
-        val xPosition = (x + dir * bulletRadius).toFloat()
+        val relativeXPosition = getLeadingMargin(true) - bulletRadius - gapWidth
+        val xPosition = (x + relativeXPosition * dir).toFloat()
 
         canvas.drawCircle(xPosition, yPosition, bulletRadius.toFloat(), paint)
         paint.style = style

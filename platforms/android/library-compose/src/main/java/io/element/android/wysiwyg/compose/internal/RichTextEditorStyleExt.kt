@@ -31,6 +31,7 @@ import io.element.android.wysiwyg.view.CodeBlockStyleConfig
 import io.element.android.wysiwyg.view.InlineCodeStyleConfig
 import io.element.android.wysiwyg.view.PillStyleConfig
 import io.element.android.wysiwyg.view.StyleConfig
+import io.element.android.wysiwyg.view.TextConfig
 import kotlin.math.roundToInt
 
 internal fun RichTextEditorStyle.toStyleConfig(context: Context): StyleConfig = StyleConfig(
@@ -38,6 +39,7 @@ internal fun RichTextEditorStyle.toStyleConfig(context: Context): StyleConfig = 
     inlineCode = inlineCode.toStyleConfig(context),
     codeBlock = codeBlock.toStyleConfig(context),
     pill = pill.toStyleConfig(),
+    text = text.toStyleConfig(context),
 )
 
 internal fun BulletListStyle.toStyleConfig(context: Context): BulletListStyleConfig =
@@ -45,6 +47,7 @@ internal fun BulletListStyle.toStyleConfig(context: Context): BulletListStyleCon
         BulletListStyleConfig(
             bulletGapWidth = bulletGapWidth.toPx(),
             bulletRadius = bulletRadius.toPx(),
+            leadingMargin = leadingMargin.toPx(),
         )
     }
 
@@ -87,6 +90,14 @@ internal fun TextStyle.rememberTypeface(): State<Typeface> {
             fontSynthesis = fontSynthesis ?: FontSynthesis.All,
         )
     } as State<Typeface>
+}
+
+internal fun TextStyle.toStyleConfig(context: Context): TextConfig {
+    val density = Density(context)
+    return TextConfig(
+        typeface = Typeface.defaultFromStyle(fontStyle?.value ?: FontStyle.Normal.value),
+        textSize = with(density) { fontSize.toPx() },
+    )
 }
 
 internal fun TextView.applyStyleInCompose(style: RichTextEditorStyle) {

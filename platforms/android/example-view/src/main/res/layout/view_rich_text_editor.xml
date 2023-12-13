@@ -20,9 +20,7 @@
             android:inputType="textMultiLine"
             android:minHeight="48dp"
             android:background="?colorSurface"
-            android:singleLine="false"
-            app:bulletRadius="4dp"
-            app:bulletGap="8dp" />
+            android:singleLine="false" />
 
     </com.google.android.material.textfield.TextInputLayout>
 

@@ -379,14 +379,14 @@ internal class HtmlToSpansParser(
     private fun createListSpan(last: PlaceholderSpan.ListItem): ParagraphStyle {
         val gapWidth = styleConfig.bulletList.bulletGapWidth.roundToInt()
         val bulletRadius = styleConfig.bulletList.bulletRadius.roundToInt()
+        val leadingMargin = styleConfig.bulletList.leadingMargin.roundToInt()
+        val typeface = styleConfig.text.typeface
+        val textSize = styleConfig.text.textSize
 
         return if (last.ordered) {
-            // TODO: provide typeface and textSize somehow
-            val typeface = Typeface.defaultFromStyle(Typeface.NORMAL)
-            val textSize = 16.dpToPx()
-            OrderedListSpan(typeface, textSize, last.order ?: 1, gapWidth)
+            OrderedListSpan(typeface, textSize, last.order ?: 1, gapWidth / 2)
         } else {
-            UnorderedListSpan(gapWidth, bulletRadius)
+            UnorderedListSpan(gapWidth, bulletRadius, leadingMargin)
         }
     }
 
