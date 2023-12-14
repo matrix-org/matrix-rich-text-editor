@@ -1,4 +1,11 @@
 # Changelog
+# [2.22.0] - 2023-12-06
+
+### Fixed
+- [Android] Fix for user suggestions not updating the RTE text properly sometimes.
+- [Android] Fix for the editor crashign after entering right, next to a mention.
+- [iOS] Fix for shift+enter key not working properly and refactored the Key Commands handling.
+- [Rust] Fix for markdown mode now correctly parsing multilined text.
 
 # [2.21.0] - 2023-12-06
 
