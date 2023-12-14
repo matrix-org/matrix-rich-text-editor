@@ -32,6 +32,7 @@ impl MarkdownHTMLParser {
         let markdown = markdown.to_string();
         let parser_events: Vec<_> = Parser::new_ext(&markdown, options)
             .map(|event| match event {
+                // this allows for line breaks to be parsed correctly from markdown
                 Event::SoftBreak => Event::HardBreak,
                 _ => event,
             })
@@ -45,6 +46,7 @@ impl MarkdownHTMLParser {
         // correct way to handle a text block in Markdown. But it breaks our
         // assumption regarding the HTML markup. So let's remove it.
         let html = {
+            // only remove the external <p> if there is only one
             if html.starts_with("<p>") && html.matches("<p>").count() == 1 {
                 let p = "<p>".len();
                 let ppnl = "</p>\n".len();
