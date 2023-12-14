@@ -57,8 +57,10 @@ impl MarkdownHTMLParser {
             }
         };
 
-        // Remove any trailing newline characters from block tags
         let html = html
+            // Allow for having a newline between paragraphs
+            .replace("</p>\n<p>", "</p><p>&nbsp;</p><p>")
+            // Remove any trailing newline characters from block tags
             .replace("<ul>\n", "<ul>")
             .replace("</ul>\n", "</ul>")
             .replace("<ol>\n", "<ol>")
@@ -70,11 +72,10 @@ impl MarkdownHTMLParser {
             .replace("<pre>\n", "<pre>")
             .replace("</pre>\n", "</pre>")
             .replace("<p>\n", "<p>")
-            .replace("</p>\n", "</p>");
-
-        // Remove the newline from the end of the single code tag that wraps the content
-        // of a formatted codeblock
-        let html = html.replace("\n</code>", "</code>");
+            .replace("</p>\n", "</p>")
+            // Remove the newline from the end of the single code tag that wraps the content
+            // of a formatted codeblock
+            .replace("\n</code>", "</code>");
 
         Ok(S::try_from(html).unwrap())
     }

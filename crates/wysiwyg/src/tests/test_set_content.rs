@@ -224,9 +224,9 @@ fn set_content_from_markdown_codeblock_with_newlines_in_the_middle() {
 fn set_content_from_markdown_multiple_new_lines() {
     let mut model = cm("|");
     model
-        .set_content_from_markdown(&utf16("test\n\ntest"))
+        .set_content_from_markdown(&utf16("test\n\n\ntest"))
         .unwrap();
-    assert_eq!(tx(&model), "<p>test</p><p>test|</p>");
+    assert_eq!(tx(&model), "<p>test</p><p>&nbsp;</p><p>test|</p>");
 }
 
 #[test]
