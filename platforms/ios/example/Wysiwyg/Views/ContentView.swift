@@ -89,15 +89,12 @@ struct ContentView: View {
         .frame(width: nil, height: 50, alignment: .center)
         Composer(viewModel: viewModel,
                  itemProviderHelper: nil,
-                 keyCommandHandler: { keyCommand in
-                     switch keyCommand {
-                     case .enter:
+                 keyCommands: [
+                     .enter {
                          sentMessage = viewModel.content
-                         
                          viewModel.clearContent()
-                         return true
-                     }
-                 },
+                     },
+                 ],
                  pasteHandler: { _ in })
             .focused($composerFocused, equals: true)
         ScrollView {
