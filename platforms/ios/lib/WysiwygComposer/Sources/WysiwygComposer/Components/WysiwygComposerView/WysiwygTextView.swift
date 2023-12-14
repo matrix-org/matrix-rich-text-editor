@@ -24,20 +24,16 @@ protocol WysiwygTextViewDelegate: AnyObject {
     /// - Parameter itemProvider: The item provider.
     /// - Returns: True if it can be pasted, false otherwise.
     func isPasteSupported(for itemProvider: NSItemProvider) -> Bool
-
-    /// Notify the delegate that a key command has been received by the text view.
-    ///
-    /// - Parameters:
-    ///   - textView: Composer text view.
-    ///   - keyCommand: Key command received.
-    func textViewDidReceiveKeyCommand(_ textView: UITextView, keyCommand: WysiwygKeyCommand)
-
+    
     /// Notify the delegate that a paste event has beeb received by the text view.
     ///
     /// - Parameters:
     ///   - textView: Composer text view.
     ///   - provider: Item provider for the paste event.
     func textView(_ textView: UITextView, didReceivePasteWith provider: NSItemProvider)
+    
+    /// The supported key commands for the text view.
+    var keyCommands: [WysiwygKeyCommand]? { get }
 }
 
 /// A markdown protocol used to provide additional context to the text view when displaying mentions through the text attachment provider
@@ -161,15 +157,14 @@ public class WysiwygTextView: UITextView {
     // Enter Key commands support
 
     override public var keyCommands: [UIKeyCommand]? {
-        WysiwygKeyCommand.allCases.map { UIKeyCommand(input: $0.input,
-                                                      modifierFlags: $0.modifierFlags,
-                                                      action: #selector(keyCommandAction)) }
+        wysiwygDelegate?.keyCommands?.map { UIKeyCommand(input: $0.input,
+                                                         modifierFlags: $0.modifierFlags,
+                                                         action: #selector(keyCommandAction)) }
     }
-
-    @objc func keyCommandAction(sender: UIKeyCommand) {
-        guard let command = WysiwygKeyCommand.from(sender) else { return }
-
-        wysiwygDelegate?.textViewDidReceiveKeyCommand(self, keyCommand: command)
+    
+    // This needs to be handled here, if the selector was directly added to the WysiwygKeyCommand it would not work properly.
+    @objc private func keyCommandAction(sender: UIKeyCommand) {
+        wysiwygDelegate?.keyCommands?.first(where: { $0.input == sender.input && $0.modifierFlags == sender.modifierFlags })?.action()
     }
 
     // Paste support

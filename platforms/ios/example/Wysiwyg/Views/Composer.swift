@@ -22,7 +22,7 @@ import WysiwygComposer
 struct Composer: View {
     @ObservedObject var viewModel: WysiwygComposerViewModel
     let itemProviderHelper: WysiwygItemProviderHelper?
-    let keyCommandHandler: KeyCommandHandler?
+    let keyCommands: [WysiwygKeyCommand]?
     let pasteHandler: PasteHandler?
     let minTextViewHeight: CGFloat = 20
     let borderHeight: CGFloat = 40
@@ -39,7 +39,7 @@ struct Composer: View {
                     placeholder: "Placeholder",
                     viewModel: viewModel,
                     itemProviderHelper: itemProviderHelper,
-                    keyCommandHandler: keyCommandHandler,
+                    keyCommands: keyCommands,
                     pasteHandler: pasteHandler
                 )
                 .frame(height: viewModel.idealHeight)
@@ -76,7 +76,7 @@ struct Composer_Previews: PreviewProvider {
     static var previews: some View {
         Composer(viewModel: viewModel,
                  itemProviderHelper: nil,
-                 keyCommandHandler: nil,
+                 keyCommands: nil,
                  pasteHandler: nil)
     }
 }
