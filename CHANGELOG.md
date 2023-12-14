@@ -3,7 +3,7 @@
 
 ### Fixed
 - [Android] Fix for user suggestions not updating the RTE text properly sometimes.
-- [Android] Fix for the editor crashign after entering right, next to a mention.
+- [Common] Fix for the editor crashing when adding a new line just after a mention.
 - [iOS] Fix for shift+enter key not working properly and refactored the Key Commands handling.
 - [Rust] Fix for markdown mode now correctly parsing multilined text.
 
