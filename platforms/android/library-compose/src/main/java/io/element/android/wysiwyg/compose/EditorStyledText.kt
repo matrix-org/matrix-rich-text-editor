@@ -69,7 +69,7 @@ fun EditorStyledText(
                 view.setHtml(text.toString())
             }
             view.onLinkClickedListener = onLinkClickedListener
-            view.onTextLayoutChanged = onTextLayout
+            view.onTextLayout = onTextLayout
         }
     )
 }

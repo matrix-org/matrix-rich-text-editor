@@ -62,7 +62,7 @@ open class EditorStyledTextView : AppCompatTextView {
 
     var onLinkClickedListener: ((String) -> Unit)? = null
 
-    var onTextLayoutChanged: ((Layout) -> Unit)? = null
+    var onTextLayout: ((Layout) -> Unit)? = null
 
     /**
      * In some contexts, such as screenshot tests, [isInEditMode] is may be forced to be false, when we
@@ -162,7 +162,7 @@ open class EditorStyledTextView : AppCompatTextView {
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
 
-        layout?.let { onTextLayoutChanged?.invoke(it) }
+        layout?.let { onTextLayout?.invoke(it) }
     }
 
     override fun onDraw(canvas: Canvas) {
