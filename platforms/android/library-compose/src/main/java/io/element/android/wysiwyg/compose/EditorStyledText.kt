@@ -1,5 +1,6 @@
 package io.element.android.wysiwyg.compose
 
+import android.text.Layout
 import android.text.Spanned
 import android.widget.TextView
 import androidx.compose.runtime.Composable
@@ -34,6 +35,7 @@ fun EditorStyledText(
     resolveMentionDisplay: (text: String, url: String) -> TextDisplay = RichTextEditorDefaults.MentionDisplay,
     resolveRoomMentionDisplay: () -> TextDisplay = RichTextEditorDefaults.RoomMentionDisplay,
     onLinkClickedListener: ((String) -> Unit) = {},
+    onTextLayout: (Layout) -> Unit = {},
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
 ) {
     val typeface by style.text.rememberTypeface()
@@ -67,6 +69,7 @@ fun EditorStyledText(
                 view.setHtml(text.toString())
             }
             view.onLinkClickedListener = onLinkClickedListener
+            view.onTextLayoutChanged = onTextLayout
         }
     )
 }
