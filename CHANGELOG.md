@@ -1,4 +1,11 @@
 # Changelog
+
+# [2.23.0] - 2023-12-26
+
+### Changed
+- [Android] `EditorStyledTextView` and `EditorStyledText` now have an `onTextLayout` lambda parameter to publish its text layout results.
+- [Android] Add `releaseOnDetach` param to `EditorStyledText` so it can be reused in lazy composables.
+
 # [2.22.0] - 2023-12-06
 
 ### Fixed
