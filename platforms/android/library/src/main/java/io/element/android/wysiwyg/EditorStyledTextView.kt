@@ -2,8 +2,8 @@ package io.element.android.wysiwyg
 
 import android.content.Context
 import android.graphics.Canvas
+import android.text.Layout
 import android.text.Spanned
-import android.text.style.ClickableSpan
 import android.text.style.URLSpan
 import android.util.AttributeSet
 import android.view.GestureDetector
@@ -21,7 +21,6 @@ import io.element.android.wysiwyg.view.StyleConfig
 import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelper
 import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelperFactory
 import io.element.android.wysiwyg.view.spans.CustomMentionSpan
-import io.element.android.wysiwyg.view.spans.LinkSpan
 import io.element.android.wysiwyg.view.spans.PillSpan
 import io.element.android.wysiwyg.view.spans.ReuseSourceSpannableFactory
 import uniffi.wysiwyg_composer.MentionDetector
@@ -62,6 +61,8 @@ open class EditorStyledTextView : AppCompatTextView {
     private var htmlConverter: HtmlConverter? = null
 
     var onLinkClickedListener: ((String) -> Unit)? = null
+
+    var onTextLayout: ((Layout) -> Unit)? = null
 
     /**
      * In some contexts, such as screenshot tests, [isInEditMode] is may be forced to be false, when we
@@ -156,6 +157,12 @@ open class EditorStyledTextView : AppCompatTextView {
     fun setHtml(htmlText: String) {
         if (!isInit) return
         htmlConverter?.fromHtmlToSpans(htmlText)?.let { setText(it, BufferType.SPANNABLE) }
+    }
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+
+        layout?.let { onTextLayout?.invoke(it) }
     }
 
     override fun onDraw(canvas: Canvas) {
