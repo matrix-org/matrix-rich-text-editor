@@ -57,9 +57,11 @@ class HtmlToComposeTextParser(
             }
             is TextNode -> {
                 val hasPreParent = node.hasAncestorWithTagName("pre")
-                val plainText = node.wholeText.apply {
+                val plainText = node.wholeText.run {
                     if (!hasPreParent) {
-                        replace("\n", " ")
+                        replace("\n", "")
+                    } else {
+                        this
                     }
                 }
                 append(plainText)
