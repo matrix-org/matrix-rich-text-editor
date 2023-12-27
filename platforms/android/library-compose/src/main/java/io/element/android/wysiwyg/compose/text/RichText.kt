@@ -37,6 +37,7 @@ fun RichText(
     modifier: Modifier = Modifier,
     inlineContent: Map<String, InlineTextContent> = emptyMap(),
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
+    onTextLayout: (TextLayoutResult) -> Unit = {},
 ) {
     var textLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
     val textMeasurer = rememberTextMeasurer()
@@ -46,6 +47,7 @@ fun RichText(
             inlineContent = inlineContent,
             onTextLayout = {
                 textLayout = it
+                onTextLayout(it)
             },
             modifier = modifier.drawWithCache {
                 val allAnnotations = text.getStringAnnotations(0, text.length)
