@@ -3,16 +3,20 @@ package io.element.android.wysiwyg.compose.text
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.ParagraphStyle
+import androidx.compose.ui.text.PlatformParagraphStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.UrlAnnotation
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineBreak
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
+import androidx.compose.ui.unit.em
+import io.element.android.wysiwyg.compose.BuildConfig
 import io.element.android.wysiwyg.compose.RichTextEditorStyle
 import io.element.android.wysiwyg.compose.internal.Mention
 import kotlinx.collections.immutable.ImmutableList
@@ -21,6 +25,7 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import org.jsoup.nodes.Node
 import org.jsoup.nodes.TextNode
+import timber.log.Timber
 
 class HtmlToComposeTextParser(
     private val richTextEditorStyle: RichTextEditorStyle,
@@ -38,6 +43,9 @@ class HtmlToComposeTextParser(
             for (child in document.children()) {
                 processNode(child)
             }
+        }
+        if (BuildConfig.DEBUG) {
+            Timber.d(annotatedString.dump())
         }
         return ParsingResult(annotatedString, mentions.toImmutableList())
     }
@@ -96,11 +104,21 @@ class HtmlToComposeTextParser(
                 toPop += 1
             }
             "code" -> {
-                if (element.parent()?.tagName()?.lowercase() != "pre") {
+                val isInsideCodeBlock = element.parent()?.tagName()?.lowercase() == "pre"
+                if (!isInsideCodeBlock) {
                     pushStringAnnotation(tagName, "")
                     toPop += 1
                 }
-                pushStyle(SpanStyle(fontFamily = FontFamily.Monospace))
+                pushStyle(
+                    SpanStyle(
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = if (isInsideCodeBlock) {
+                            richTextEditorStyle.codeBlock.relativeTextSize.em
+                        } else {
+                            richTextEditorStyle.inlineCode.relativeTextSize.em
+                        }
+                    )
+                )
                 toPop += 1
             }
             "p" -> {
@@ -136,7 +154,16 @@ class HtmlToComposeTextParser(
             "pre" -> {
                 pushStringAnnotation(tagName, "")
                 currentIndentation += richTextEditorStyle.indentation.codeBlock
-                pushStyle(ParagraphStyle(textIndent = TextIndent(currentIndentation, currentIndentation), lineBreak = LineBreak.Simple))
+                pushStyle(ParagraphStyle(
+                    textIndent = TextIndent(currentIndentation, currentIndentation),
+                    lineBreak = LineBreak.Simple,
+                    lineHeight = 1.5.em,
+                    platformStyle = PlatformParagraphStyle(includeFontPadding = false),
+                    lineHeightStyle = LineHeightStyle(
+                        LineHeightStyle.Alignment.Center,
+                        LineHeightStyle.Trim.None
+                    )
+                ))
                 toPop += 2
             }
             "a" -> {
@@ -227,3 +254,25 @@ data class ParsingResult(
     val annotatedString: AnnotatedString,
     val mentions: ImmutableList<Mention>,
 )
+
+fun AnnotatedString.dump(): String {
+    val annotationDescriptions = mutableListOf<String>()
+    return buildString {
+        append(this@dump.toString())
+        for (style in spanStyles) {
+            annotationDescriptions.add("[span: ${style.start} - ${style.end}: $style]")
+        }
+        for (paragraphStyle in paragraphStyles.reversed()) {
+            if (this.getOrNull(paragraphStyle.end) != '\n') { insert(paragraphStyle.end, "\n") }
+            if (this.getOrNull(paragraphStyle.start) != '\n') { insert(paragraphStyle.start, "\n") }
+            annotationDescriptions.add("[paragraph: ${paragraphStyle.start} - ${paragraphStyle.end}: $paragraphStyle]")
+        }
+        for (annotation in getStringAnnotations(0, length)) {
+            annotationDescriptions.add("[annotation: ${annotation.start} - ${annotation.end}: `${annotation.tag}`]")
+        }
+        if (annotationDescriptions.isNotEmpty()) {
+            append("\n")
+            append(annotationDescriptions.joinToString("\n"))
+        }
+    }
+}

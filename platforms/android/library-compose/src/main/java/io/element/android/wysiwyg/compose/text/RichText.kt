@@ -1,7 +1,7 @@
 package io.element.android.wysiwyg.compose.text
 
 import androidx.compose.foundation.text.InlineTextContent
-import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,10 +21,13 @@ import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,87 +44,91 @@ fun RichText(
 ) {
     var textLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
     val textMeasurer = rememberTextMeasurer()
-    SelectionContainer {
-        Text(
-            text = text,
-            inlineContent = inlineContent,
-            onTextLayout = {
-                textLayout = it
-                onTextLayout(it)
-            },
-            modifier = modifier.drawWithCache {
-                val allAnnotations = text.getStringAnnotations(0, text.length)
-                val indentSources = text.getIndentSources(style)
-                onDrawWithContent {
-                    val layout = textLayout
-                    if (layout != null) {
-                        for ((index, annotation) in allAnnotations.withIndex()) {
-                            when (annotation.tag) {
-                                "ul" -> {
-                                    val extraIndentation = indentationToSubtract(
-                                        index,
-                                        annotation.start,
-                                        indentSources
-                                    )
-                                    drawUnorderedListItem(
-                                        annotation,
-                                        layout,
-                                        style,
-                                        extraIndentation.toPx()
-                                    )
-                                }
-
-                                "ol" -> {
-                                    val extraIndentation = indentationToSubtract(
-                                        index,
-                                        annotation.start,
-                                        indentSources
-                                    )
-                                    drawOrderedListItem(
-                                        annotation,
-                                        textMeasurer,
-                                        layout,
-                                        style,
-                                        extraIndentation.toPx()
-                                    )
-                                }
-
-                                "blockquote" -> {
-                                    val extraIndentation = indentationToSubtract(
-                                        index,
-                                        annotation.start,
-                                        indentSources
-                                    )
-                                    drawQuote(annotation, layout, style, extraIndentation.toPx())
-                                }
-
-                                "pre" -> {
-                                    val extraIndentation = indentationToSubtract(
-                                        index,
-                                        annotation.start,
-                                        indentSources
-                                    )
-                                    drawCodeBlock(
-                                        annotation,
-                                        layout,
-                                        style,
-                                        extraIndentation.toPx()
-                                    )
-                                }
-
-                                "code" -> {
-                                    drawInlineCode(annotation, layout, style)
-                                }
-
-                                else -> Unit
+    Text(
+        text = text,
+        inlineContent = inlineContent,
+        onTextLayout = {
+            textLayout = it
+            onTextLayout(it)
+        },
+        style = LocalTextStyle.current.copy(
+            fontSize = style.text.fontSize,
+            lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None),
+            lineHeight = style.text.lineHeight,
+            platformStyle = PlatformTextStyle(includeFontPadding = false)
+        ),
+        modifier = modifier.drawWithCache {
+            val allAnnotations = text.getStringAnnotations(0, text.length)
+            val indentSources = text.getIndentSources(style)
+            onDrawWithContent {
+                val layout = textLayout
+                if (layout != null) {
+                    for ((index, annotation) in allAnnotations.withIndex()) {
+                        when (annotation.tag) {
+                            "ul" -> {
+                                val extraIndentation = indentationToSubtract(
+                                    index,
+                                    annotation.start,
+                                    indentSources
+                                )
+                                drawUnorderedListItem(
+                                    annotation,
+                                    layout,
+                                    style,
+                                    extraIndentation.toPx()
+                                )
                             }
+
+                            "ol" -> {
+                                val extraIndentation = indentationToSubtract(
+                                    index,
+                                    annotation.start,
+                                    indentSources
+                                )
+                                drawOrderedListItem(
+                                    annotation,
+                                    textMeasurer,
+                                    layout,
+                                    style,
+                                    extraIndentation.toPx()
+                                )
+                            }
+
+                            "blockquote" -> {
+                                val extraIndentation = indentationToSubtract(
+                                    index,
+                                    annotation.start,
+                                    indentSources
+                                )
+                                drawQuote(annotation, layout, style, extraIndentation.toPx())
+                            }
+
+                            "pre" -> {
+                                val extraIndentation = indentationToSubtract(
+                                    index,
+                                    annotation.start,
+                                    indentSources
+                                )
+                                drawCodeBlock(
+                                    annotation,
+                                    layout,
+                                    style,
+                                    extraIndentation.toPx()
+                                )
+                            }
+
+                            "code" -> {
+                                drawInlineCode(annotation, layout, style)
+                            }
+
+                            else -> Unit
                         }
                     }
-                    drawContent()
                 }
-            },
-        )
-    }
+                drawContent()
+            }
+        },
+    )
 }
 
 private fun DrawScope.drawRoundRect(
@@ -217,13 +224,14 @@ private fun DrawScope.drawCodeBlock(
     style: RichTextEditorStyle,
     extraIndentation: Float = 0f,
 ) {
+    val verticalPadding = 1.dp
     val start = layout.getCursorRect(annotation.start).left
     val rect = layout.getPathForRange(annotation.start, annotation.end).getBounds()
     val codeBlockPadding = style.codeBlock.verticalPadding.roundToPx()
     val cornerRadius = style.codeBlock.background.cornerRadiusTopLeft.roundToPx().toFloat()
 
-    val offset = Offset(start - codeBlockPadding - extraIndentation, rect.top - codeBlockPadding)
-    val size = Size(layout.size.width.toFloat() + codeBlockPadding * 2 - start, rect.height + codeBlockPadding * 2)
+    val offset = Offset(start - codeBlockPadding - extraIndentation, rect.top + verticalPadding.roundToPx())
+    val size = Size(layout.size.width.toFloat() + codeBlockPadding * 2 - start, rect.height - verticalPadding.roundToPx()*2)
     drawRoundRect(
         color = style.codeBlock.background.color,
         topLeft = offset,
@@ -249,23 +257,42 @@ private fun DrawScope.drawInlineCode(
     style: RichTextEditorStyle,
 ) {
     val lineStart = layout.getLineForOffset(annotation.start)
-    val lineEnd = layout.getLineForOffset(annotation.end)
+    var lineEnd = layout.getLineForOffset(annotation.end)
+    // If the annotation ends at the end of the line and there is no new line character,
+    // only a paragraph style, the offset we get will be for the next line.
+    // We need to work around it.
+    if (layout.getLineStart(lineEnd) == annotation.end) {
+        lineEnd--
+    }
+    val lastOffset = layout.getLineEnd(lineEnd)
     val isSameLine = lineStart == lineEnd
     val start = layout.getCursorRect(annotation.start).left
-    val end = layout.getCursorRect(annotation.end).right
+    val end = if (isSameLine && annotation.end == lastOffset) {
+        if (layoutDirection == LayoutDirection.Ltr) {
+            layout.getLineRight(lineEnd)
+        } else {
+            layout.getLineLeft(lineEnd)
+        }
+    } else {
+        layout.getCursorRect(annotation.end).right
+    }
     val radius = style.inlineCode.background.singleLine.cornerRadiusTopLeft.roundToPx().toFloat()
+    val verticalExternalPadding = 1.dp.roundToPx()
+    val horizontalPadding = style.inlineCode.horizontalPadding.roundToPx()
+    val offset = Offset(start - horizontalPadding, layout.getLineTop(lineStart) + verticalExternalPadding.toFloat())
+    val size = Size(end - start + 2 * horizontalPadding, layout.getLineBottom(lineStart) - layout.getLineTop(lineStart) - verticalExternalPadding * 2)
     if (isSameLine) {
         drawRoundRect(
             color = style.inlineCode.background.singleLine.color,
-            topLeft = Offset(start, layout.getLineTop(lineStart)),
-            size = Size(end - start, layout.getLineBottom(lineStart) - layout.getLineTop(lineStart)),
+            topLeft = offset,
+            size = size,
             cornerRadius = CornerRadius(radius, radius),
             style = Fill,
         )
         drawRoundRect(
             color = style.inlineCode.background.singleLine.borderColor,
-            topLeft = Offset(start, layout.getLineTop(lineStart)),
-            size = Size(end - start, layout.getLineBottom(lineStart) - layout.getLineTop(lineStart)),
+            topLeft = offset,
+            size = size,
             cornerRadius = CornerRadius(radius, radius),
             style = Stroke(style.inlineCode.background.singleLine.borderWidth.roundToPx().toFloat()),
         )
