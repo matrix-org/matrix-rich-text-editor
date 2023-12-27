@@ -28,7 +28,7 @@ import io.element.android.wysiwyg.display.TextDisplay
  * @param resolveRoomMentionDisplay A function to resolve the [TextDisplay] of an `@room` mention.
  * @param style The styles to use for any customisable elements.
  * @param releaseOnDetach Whether to release the view when the composable is detached from the composition or not.
- * Setting this to `false` is specially useful in Lazy composables that to reuse these views. Defaults to `true`.
+ * Setting this to `false` is specially useful in Lazy composables that need to reuse these views. Defaults to `true`.
  */
 @Composable
 fun EditorStyledText(
