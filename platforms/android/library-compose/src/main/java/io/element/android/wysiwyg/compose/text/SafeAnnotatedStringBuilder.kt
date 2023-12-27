@@ -26,7 +26,7 @@ class SafeAnnotatedStringBuilder(capacity: Int = 16): Appendable {
 
     companion object {
         private val annotatedStringConstructor = AnnotatedString::class.constructors.first {
-            it.parameters.lastOrNull()?.name == "annotations"
+            it.parameters.size == 4
         }
     }
 
