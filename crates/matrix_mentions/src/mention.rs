@@ -31,6 +31,7 @@ pub enum MentionKind {
 }
 
 impl MentionKind {
+    pub fn is_user(&self) -> bool { matches!(self, MentionKind::User) }
     pub fn is_room(&self) -> bool {
         matches!(self, MentionKind::Room(_))
     }

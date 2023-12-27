@@ -396,6 +396,17 @@ class SafeAnnotatedStringBuilder(capacity: Int = 16): Appendable {
             pushStyle(lastStyle)
         }
     }
+
+    fun getStringAnnotations(start: Int, end: Int): List<Range<out Any>> {
+        return annotations
+            .filter { it.start <= start && it.end >= end && it.item is String }
+            .fastMap { it.toRange() }
+
+    }
+
+    override fun toString(): String {
+        return text.toString()
+    }
 }
 
 /**

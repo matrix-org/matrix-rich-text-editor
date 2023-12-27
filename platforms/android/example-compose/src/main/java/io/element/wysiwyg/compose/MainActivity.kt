@@ -1,6 +1,5 @@
 package io.element.wysiwyg.compose
 
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -16,8 +15,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.InlineTextContent
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,7 +44,6 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
-import io.element.android.wysiwyg.compose.EditorStyledText
 import io.element.android.wysiwyg.compose.RichTextEditor
 import io.element.android.wysiwyg.compose.RichTextEditorDefaults
 import io.element.android.wysiwyg.compose.StyledHtmlConverter
@@ -60,6 +60,7 @@ import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import uniffi.wysiwyg_composer.ComposerAction
+import uniffi.wysiwyg_composer.MentionKind
 import uniffi.wysiwyg_composer.newMentionDetector
 
 class MainActivity : ComponentActivity() {
@@ -102,10 +103,11 @@ class MainActivity : ComponentActivity() {
                     richTextEditorStyle = style,
                     getLinkMention = { text, url ->
                         mentionDetector?.let { detector ->
-                            if (detector.isMention(url)) {
-                                Mention.User(text, url)
-                            } else {
-                                null
+                            when (detector.getMentionKind(url, text)) {
+                                MentionKind.User -> Mention.User(text, url)
+                                is MentionKind.Room -> Mention.Room(text, url)
+                                MentionKind.Everyone -> Mention.NotifyEveryone
+                                else -> null
                             }
                         }
                     }
@@ -212,7 +214,8 @@ class MainActivity : ComponentActivity() {
                             inlineContent = inlineContent,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
+                                .padding(16.dp)
+                                .verticalScroll(rememberScrollState()),
                         )
 
 //                        EditorStyledText(

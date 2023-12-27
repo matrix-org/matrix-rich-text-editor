@@ -38,11 +38,14 @@ class HtmlToComposeTextParser(
     private var parseChildren = false
 
     fun parse(html: String): ParsingResult {
+        mentions.clear()
+
         val document = Jsoup.parse(html)
         val annotatedString = buildSafeAnnotatedString {
             for (child in document.children()) {
                 processNode(child)
             }
+            addAtRoomAnnotations(toString(), mentions)
         }
         if (BuildConfig.DEBUG) {
             Timber.d(annotatedString.dump())
@@ -275,6 +278,18 @@ fun AnnotatedString.dump(): String {
         if (annotationDescriptions.isNotEmpty()) {
             append("\n")
             append(annotationDescriptions.joinToString("\n"))
+        }
+    }
+}
+
+private fun SafeAnnotatedStringBuilder.addAtRoomAnnotations(text: String, mentions: MutableList<Mention>) {
+    Regex(Regex.escape("@room")).findAll(text).forEach eachMatch@{ match ->
+        val start = match.range.first
+        val end = match.range.last + 1
+        val noInlineAnnotations = getStringAnnotations(start, end).none { it.tag == INLINE_CONTENT_TAG }
+        if (noInlineAnnotations) {
+            addStringAnnotation(INLINE_CONTENT_TAG, "mention:@room", start, end)
+            mentions.add(Mention.NotifyEveryone)
         }
     }
 }
