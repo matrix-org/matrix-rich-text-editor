@@ -27,6 +27,8 @@ import io.element.android.wysiwyg.display.TextDisplay
  * @param resolveMentionDisplay A function to resolve the [TextDisplay] of a mention.
  * @param resolveRoomMentionDisplay A function to resolve the [TextDisplay] of an `@room` mention.
  * @param style The styles to use for any customisable elements.
+ * @param releaseOnDetach Whether to release the view when the composable is detached from the composition or not.
+ * Setting this to `false` is specially useful in Lazy composables that to reuse these views. Defaults to `true`.
  */
 @Composable
 fun EditorStyledText(
@@ -37,6 +39,7 @@ fun EditorStyledText(
     onLinkClickedListener: ((String) -> Unit) = {},
     onTextLayout: (Layout) -> Unit = {},
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
+    releaseOnDetach: Boolean = true,
 ) {
     val typeface by style.text.rememberTypeface()
     val mentionDisplayHandler = remember(resolveMentionDisplay, resolveRoomMentionDisplay) {
@@ -70,6 +73,9 @@ fun EditorStyledText(
             }
             view.onLinkClickedListener = onLinkClickedListener
             view.onTextLayout = onTextLayout
-        }
+        },
+        onReset = { view: EditorStyledTextView ->
+            view.setText("", TextView.BufferType.SPANNABLE)
+        }.takeIf { releaseOnDetach },
     )
 }
