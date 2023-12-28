@@ -1,5 +1,6 @@
 package io.element.android.wysiwyg.compose.text
 
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
@@ -20,7 +21,9 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextMeasurer
@@ -34,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import io.element.android.wysiwyg.compose.RichTextEditorDefaults
 import io.element.android.wysiwyg.compose.RichTextEditorStyle
 
+@OptIn(ExperimentalTextApi::class)
 @Composable
 fun RichText(
     text: AnnotatedString,
@@ -41,9 +45,27 @@ fun RichText(
     inlineContent: Map<String, InlineTextContent> = emptyMap(),
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
     onTextLayout: (TextLayoutResult) -> Unit = {},
+    onLinkClicked: (String) -> Unit = {},
 ) {
     var textLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
     val textMeasurer = rememberTextMeasurer()
+
+    val onClick = { offset: Int ->
+        if (offset in text.indices) {
+            val annotations = text.getUrlAnnotations(offset, offset)
+            for (annotation in annotations) {
+                onLinkClicked(annotation.item.url)
+            }
+        }
+    }
+
+    val pressIndicator = Modifier.pointerInput(onClick) {
+        detectTapGestures { pos ->
+            textLayout?.let { layoutResult ->
+                onClick(layoutResult.getOffsetForPosition(pos))
+            }
+        }
+    }
     Text(
         text = text,
         inlineContent = inlineContent,
@@ -57,7 +79,9 @@ fun RichText(
             lineHeight = style.text.lineHeight,
             platformStyle = PlatformTextStyle(includeFontPadding = false)
         ),
-        modifier = modifier.drawRichText(text, textLayout, style, textMeasurer)
+        modifier = modifier
+            .drawRichText(text, textLayout, style, textMeasurer)
+            .then(pressIndicator)
     )
 }
 
