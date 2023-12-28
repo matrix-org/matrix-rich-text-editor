@@ -66,16 +66,16 @@ fun EditorStyledText(
             view.applyStyleInCompose(style)
             view.updateStyle(style.toStyleConfig(view.context), mentionDisplayHandler)
             view.typeface = typeface
+            view.onLinkClickedListener = onLinkClickedListener
+            view.onTextLayout = onTextLayout
             if (text is Spanned) {
                 view.setText(text, TextView.BufferType.SPANNABLE)
             } else {
                 view.setHtml(text.toString())
             }
-            view.onLinkClickedListener = onLinkClickedListener
-            view.onTextLayout = onTextLayout
         },
         onReset = { view: EditorStyledTextView ->
             view.setText("", TextView.BufferType.SPANNABLE)
-        }.takeIf { releaseOnDetach },
+        }.takeUnless { releaseOnDetach },
     )
 }
