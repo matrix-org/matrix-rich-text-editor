@@ -1,5 +1,6 @@
 package io.element.android.wysiwyg.compose
 
+import android.net.Uri
 import android.view.View
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.compose.runtime.Composable
@@ -41,6 +42,7 @@ import timber.log.Timber
  * @param resolveRoomMentionDisplay A function to resolve the [TextDisplay] of an `@room` mention.
  * @param onTyping Called when the user starts or stops typing in the editor.
  * @param onError Called when an internal error occurs
+ * @param onRichContentSelected Called when user uses the keyboard to send a rich content
  */
 @Composable
 fun RichTextEditor(
@@ -53,6 +55,7 @@ fun RichTextEditor(
     resolveRoomMentionDisplay: () -> TextDisplay = RichTextEditorDefaults.RoomMentionDisplay,
     onTyping: (Boolean) -> Unit = {},
     onError: (Throwable) -> Unit = {},
+    onRichContentSelected: ((Uri) -> Unit)? = null,
 ) {
     val isPreview = LocalInspectionMode.current
 
@@ -69,6 +72,7 @@ fun RichTextEditor(
             resolveMentionDisplay = resolveMentionDisplay,
             resolveRoomMentionDisplay = resolveRoomMentionDisplay,
             onTyping = onTyping,
+            onRichContentSelected = onRichContentSelected,
         )
     }
 }
@@ -84,6 +88,7 @@ private fun RealEditor(
     resolveMentionDisplay: (text: String, url: String) -> TextDisplay,
     resolveRoomMentionDisplay: () -> TextDisplay,
     onTyping: (Boolean) -> Unit,
+    onRichContentSelected: ((Uri) -> Unit)?,
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -154,6 +159,7 @@ private fun RealEditor(
                 setHtml(state.internalHtml)
                 setSelection(state.selection.first, state.selection.second)
 
+                setOnRichContentSelected(onRichContentSelected)
                 // Only start listening for text changes after the initial state has been restored
                 if (registerStateUpdates) {
                     coroutineScope.launch(context = Dispatchers.Main) {

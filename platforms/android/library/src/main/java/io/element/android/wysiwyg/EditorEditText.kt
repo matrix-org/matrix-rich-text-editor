@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Context.CLIPBOARD_SERVICE
 import android.graphics.Canvas
+import android.net.Uri
 import android.os.Build
 import android.os.Parcelable
 import android.text.Selection
@@ -18,10 +19,12 @@ import android.widget.EditText
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.core.graphics.withTranslation
+import androidx.core.view.ViewCompat
 import androidx.lifecycle.*
 import io.element.android.wysiwyg.display.MentionDisplayHandler
 import io.element.android.wysiwyg.inputhandlers.InterceptInputConnection
 import io.element.android.wysiwyg.internal.display.MemoizingMentionDisplayHandler
+import io.element.android.wysiwyg.internal.utils.UriContentListener
 import io.element.android.wysiwyg.internal.view.EditorEditTextAttributeReader
 import io.element.android.wysiwyg.internal.view.viewModel
 import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
@@ -274,6 +277,16 @@ class EditorEditText : AppCompatEditText {
         codeBlockBgHelper = SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(styleConfig.codeBlock)
 
         htmlConverter = createHtmlConverter(styleConfig, mentionDisplayHandler)
+    }
+
+    fun setOnRichContentSelected(onRichContentSelected: ((Uri) -> Unit)?) {
+        if (onRichContentSelected != null) {
+            ViewCompat.setOnReceiveContentListener(
+                this,
+                arrayOf("image/*"),
+                UriContentListener { onRichContentSelected(it) }
+            )
+        }
     }
 
     private fun addHardwareKeyInterceptor() {
