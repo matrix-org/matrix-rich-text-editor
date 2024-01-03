@@ -423,7 +423,7 @@ internal class HtmlToSpansParser(
             // If there was no NBSP char, add a new one as an extra character
             text.append(NBSP)
             addPendingSpan(ExtraCharacterSpan(), pos, pos + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-        } else if (text.length > pos && text[pos] == NBSP) {
+        } else if (text.length == pos + 1 && text[pos] == NBSP) {
             // If there was one, set it as an extra character
             addPendingSpan(ExtraCharacterSpan(), pos, pos + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
         }
