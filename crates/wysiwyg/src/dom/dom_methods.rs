@@ -545,6 +545,14 @@ where
                                 loc.node_handle.clone(),
                             ));
                             first_text_node = false;
+                        } else if matches!(loc.kind, Paragraph) {
+                            let has_no_children = self.lookup_container(&loc.node_handle).children().is_empty();
+                            if has_no_children {
+                                action_list.push(DomAction::remove_node(
+                                    loc.node_handle.clone(),
+                                ));
+                                first_text_node = false;
+                            }
                         }
                     } else if container_node.is_formatting_node()
                         && container_node.is_empty()
