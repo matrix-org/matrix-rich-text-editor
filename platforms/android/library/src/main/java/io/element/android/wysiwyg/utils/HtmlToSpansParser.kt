@@ -104,11 +104,15 @@ internal class HtmlToSpansParser(
     fun convert(): Spanned {
         spansToAdd.clear()
         parser.parse(InputSource(StringReader(html)))
-        for (spanToAdd in spansToAdd) {
-            text.setSpan(spanToAdd.span, spanToAdd.start, spanToAdd.end, spanToAdd.flags)
+        if (text.isNotEmpty()) {
+            for (spanToAdd in spansToAdd) {
+                val start = spanToAdd.start.coerceIn(0, text.length)
+                val end = spanToAdd.end.coerceIn(0, text.length)
+                text.setSpan(spanToAdd.span, start, end, spanToAdd.flags)
+            }
+            text.removePlaceholderSpans()
+            text.addAtRoomSpans()
         }
-        text.removePlaceholderSpans()
-        text.addAtRoomSpans()
         if (BuildConfig.DEBUG) text.assertOnlyAllowedSpans()
         return text
     }

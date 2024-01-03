@@ -572,6 +572,14 @@ class EditorEditText : AppCompatEditText {
         super.onDraw(canvas)
     }
 
+    override fun setSelection(start: Int, stop: Int) {
+        if (editableText.isEmpty()) return
+        super.setSelection(
+            start.coerceIn(0, editableText.length),
+            stop.coerceIn(0, editableText.length)
+        )
+    }
+
     /**
      * Force redisplay the current editor model.
      *
