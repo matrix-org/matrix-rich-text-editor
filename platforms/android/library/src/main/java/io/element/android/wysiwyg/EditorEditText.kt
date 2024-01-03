@@ -259,6 +259,14 @@ class EditorEditText : AppCompatEditText {
 
                 return false
             }
+            android.R.id.undo -> {
+                undo()
+                return false
+            }
+            android.R.id.redo -> {
+                redo()
+                return false
+            }
 
             else -> return super.onTextContextMenuItem(id)
         }
@@ -292,28 +300,38 @@ class EditorEditText : AppCompatEditText {
     private fun addHardwareKeyInterceptor() {
         // This seems to be the only way to prevent EditText from automatically handling key strokes
         setOnKeyListener { _, keyCode, event ->
-            if (keyCode == KeyEvent.KEYCODE_ENTER) {
-                if (event.action == MotionEvent.ACTION_DOWN) {
-                    inputConnection?.sendHardwareKeyboardInput(event)
+            when {
+                keyCode == KeyEvent.KEYCODE_ENTER -> {
+                    if (event.action == MotionEvent.ACTION_DOWN) {
+                        inputConnection?.sendHardwareKeyboardInput(event)
+                    }
+                    true
                 }
-                true
-            } else if (event.action != MotionEvent.ACTION_DOWN) {
-                false
-            } else if (event.isMovementKey()) {
-                false
-            } else if (event.metaState != 0 && event.unicodeChar == 0) {
-                // Is a modifier key
-                false
-            } else if (event.isPrintableCharacter() ||
-                keyCode == KeyEvent.KEYCODE_DEL ||
-                keyCode == KeyEvent.KEYCODE_FORWARD_DEL
-            ) {
-                // Consume printable characters
-                inputConnection?.sendHardwareKeyboardInput(event)
-                true
-            } else {
-                // Don't consume other key codes (HW back button, i.e.)
-                false
+                event.action != MotionEvent.ACTION_DOWN -> false
+                event.isMovementKey() -> false
+                event.keyCode == KeyEvent.KEYCODE_Z && event.isCtrlPressed && event.isShiftPressed -> {
+                    redo()
+                    true
+                }
+                event.keyCode == KeyEvent.KEYCODE_Z && event.isCtrlPressed -> {
+                    undo()
+                    true
+                }
+                event.metaState != 0 && event.unicodeChar == 0 -> {
+                    // Is a modifier key
+                    false
+                }
+                event.isPrintableCharacter() ||
+                    keyCode == KeyEvent.KEYCODE_DEL ||
+                    keyCode == KeyEvent.KEYCODE_FORWARD_DEL -> {
+                    // Consume printable characters
+                    inputConnection?.sendHardwareKeyboardInput(event)
+                    true
+                }
+                else -> {
+                    // Don't consume other key codes (HW back button, i.e.)
+                    false
+                }
             }
         }
     }
