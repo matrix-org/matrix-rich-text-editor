@@ -545,7 +545,7 @@ where
                                 loc.node_handle.clone(),
                             ));
                             first_text_node = false;
-                        } else if matches!(loc.kind, Paragraph) {
+                        } else if !first_text_node && matches!(loc.kind, Paragraph) {
                             let has_no_children = self.lookup_container(&loc.node_handle).children().is_empty();
                             if has_no_children {
                                 action_list.push(DomAction::remove_node(

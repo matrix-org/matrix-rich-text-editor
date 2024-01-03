@@ -481,3 +481,12 @@ fn pressing_enter_in_the_middle_of_a_multiline_block_quote() {
     model.enter();
     assert_eq!(tx(&model), "<blockquote><p>line_0</p><p>&nbsp;</p><p>|line_1</p><p>line_2</p></blockquote>")
 }
+
+#[test]
+fn several_new_lines_inside_block_node_then_text() {
+    let mut model = cm("<blockquote><p>Ok|</p></blockquote>");
+    model.enter();
+    model.enter();
+    model.replace_text_in("o".into(), 4, 4);
+    assert_eq!(tx(&model), "<blockquote><p>Ok</p></blockquote><p>o|</p>");
+}

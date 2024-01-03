@@ -224,7 +224,7 @@ where
             } else {
                 start
             };
-            self.state.start = Location::from(start + len);
+            self.state.start = Location::from(min(start + len, self.state.dom.text_len()));
             self.state.end = self.state.start;
         }
 
