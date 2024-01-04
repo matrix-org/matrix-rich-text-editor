@@ -548,6 +548,8 @@ where
                         } else if !first_text_node
                             && matches!(loc.kind, Paragraph)
                         {
+                            // FIXME: Workaround for empty paragraphs. This is a hack, but trying to fix the root cause
+                            // breaks lots of other behaviours resulting in dozens of failing tests.
                             let has_no_children = self
                                 .lookup_container(&loc.node_handle)
                                 .children()
