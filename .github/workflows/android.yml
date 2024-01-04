@@ -57,28 +57,28 @@ jobs:
             :library:assembleDebugUnitTest :library:assembleDebugAndroidTest ${{ env.CI_GRADLE_ARG_PROPERTIES }}
           cache-read-only: false
 
-      - name: AVD cache
-        uses: actions/cache@v3
-        id: avd-cache
-        with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: avd-${{ matrix.api-level }}
+#      - name: AVD cache
+#        uses: actions/cache@v3
+#        id: avd-cache
+#        with:
+#          path: |
+#            ~/.android/avd/*
+#            ~/.android/adb*
+#          key: avd-${{ matrix.api-level }}
 
-      - name: Create AVD and generate snapshot for caching
-        if: steps.avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          working-directory: platforms/android
-          api-level: ${{ matrix.api-level }}
-          profile: ${{ env.DEVICE }}
-          arch: ${{ env.ARCH }}
-          force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: true
-          enable-hw-keyboard: true
-          script: echo "Generated AVD snapshot for caching."
+#      - name: Create AVD and generate snapshot for caching
+#        if: steps.avd-cache.outputs.cache-hit != 'true'
+#        uses: reactivecircus/android-emulator-runner@v2
+#        with:
+#          working-directory: platforms/android
+#          api-level: ${{ matrix.api-level }}
+#          profile: ${{ env.DEVICE }}
+#          arch: ${{ env.ARCH }}
+#          force-avd-creation: false
+#          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+#          disable-animations: true
+#          enable-hw-keyboard: true
+#          script: echo "Generated AVD snapshot for caching."
 
       - name: Run all tests with coverage
         uses: reactivecircus/android-emulator-runner@v2
