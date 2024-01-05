@@ -1,5 +1,17 @@
 # Changelog
 
+# [2.24.0] - 2024-01-05
+
+### Added
+- [Android] Add support for handling rich content from the keyboard (images, gifs, stickers, etc.).
+
+### Fixed
+- [Common] Fix deletion of several selected paragraphs, especially those with no content.
+- [Android] Fix incorrect detection of NBSP chars as extra characters while parsing HTML.
+- [Android] Destroy (as in free its memory) the current `ComposerModel` when it panics, before we replace it with a new instance.
+- [Android] When updating the selection, make sure it's inside the bounds of the existing text.
+- [Android] When creating the `SpannableString` while parsing the HTML, make sure every span is inside the bounds of its text.
+
 # [2.23.0] - 2023-12-26
 
 ### Changed
