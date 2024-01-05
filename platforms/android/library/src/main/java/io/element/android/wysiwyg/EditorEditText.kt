@@ -215,7 +215,7 @@ class EditorEditText : AppCompatEditText {
     }
 
     /**
-     * Override cut & paste events so output is redirected to the [inputProcessor].
+     * Override context menu actions, such as cut & paste so its input is redirected to the [viewModel].
      */
     override fun onTextContextMenuItem(id: Int): Boolean {
         when (id) {
@@ -240,9 +240,8 @@ class EditorEditText : AppCompatEditText {
                     setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
                 }
 
-                return false
+                return true
             }
-
             android.R.id.paste, android.R.id.pasteAsPlainText -> {
                 val clipBoardManager =
                     context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
@@ -257,17 +256,16 @@ class EditorEditText : AppCompatEditText {
                     setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
                 }
 
-                return false
+                return true
             }
             android.R.id.undo -> {
                 undo()
-                return false
+                return true
             }
             android.R.id.redo -> {
                 redo()
-                return false
+                return true
             }
-
             else -> return super.onTextContextMenuItem(id)
         }
     }
