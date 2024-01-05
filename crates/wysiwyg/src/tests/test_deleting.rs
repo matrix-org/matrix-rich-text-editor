@@ -1015,3 +1015,18 @@ fn delete_word_from_edge_of_link() {
         "<a href=\"https://matrix.org\">| words</a>",
     );
 }
+
+#[test]
+fn backspacing_several_paragraphs_with_only_nbsps() {
+    let mut model =
+        cm("<p>{ </p><p>second</p><p>third</p><p> </p><p>fifth}|</p>");
+    model.backspace();
+    assert_eq!(tx(&model), "<p>&nbsp;|</p>")
+}
+
+#[test]
+fn backspacing_paragraphs_with_nbsp_at_start() {
+    let mut model = cm("<p> |test</p>");
+    model.backspace();
+    assert_eq!(tx(&model), "<p>|test</p>")
+}

@@ -545,6 +545,21 @@ where
                                 loc.node_handle.clone(),
                             ));
                             first_text_node = false;
+                        } else if !first_text_node
+                            && matches!(loc.kind, Paragraph)
+                        {
+                            // FIXME: Workaround for empty paragraphs. This is a hack, but trying to fix the root cause
+                            // breaks lots of other behaviours resulting in dozens of failing tests.
+                            let has_no_children = self
+                                .lookup_container(&loc.node_handle)
+                                .children()
+                                .is_empty();
+                            if has_no_children {
+                                action_list.push(DomAction::remove_node(
+                                    loc.node_handle.clone(),
+                                ));
+                                first_text_node = false;
+                            }
                         }
                     } else if container_node.is_formatting_node()
                         && container_node.is_empty()

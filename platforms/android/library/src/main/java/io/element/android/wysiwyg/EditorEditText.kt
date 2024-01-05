@@ -215,7 +215,7 @@ class EditorEditText : AppCompatEditText {
     }
 
     /**
-     * Override cut & paste events so output is redirected to the [inputProcessor].
+     * Override context menu actions, such as cut & paste so its input is redirected to the [viewModel].
      */
     override fun onTextContextMenuItem(id: Int): Boolean {
         when (id) {
@@ -240,9 +240,8 @@ class EditorEditText : AppCompatEditText {
                     setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
                 }
 
-                return false
+                return true
             }
-
             android.R.id.paste, android.R.id.pasteAsPlainText -> {
                 val clipBoardManager =
                     context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
@@ -257,9 +256,16 @@ class EditorEditText : AppCompatEditText {
                     setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
                 }
 
-                return false
+                return true
             }
-
+            android.R.id.undo -> {
+                undo()
+                return true
+            }
+            android.R.id.redo -> {
+                redo()
+                return true
+            }
             else -> return super.onTextContextMenuItem(id)
         }
     }
@@ -292,28 +298,38 @@ class EditorEditText : AppCompatEditText {
     private fun addHardwareKeyInterceptor() {
         // This seems to be the only way to prevent EditText from automatically handling key strokes
         setOnKeyListener { _, keyCode, event ->
-            if (keyCode == KeyEvent.KEYCODE_ENTER) {
-                if (event.action == MotionEvent.ACTION_DOWN) {
-                    inputConnection?.sendHardwareKeyboardInput(event)
+            when {
+                keyCode == KeyEvent.KEYCODE_ENTER -> {
+                    if (event.action == MotionEvent.ACTION_DOWN) {
+                        inputConnection?.sendHardwareKeyboardInput(event)
+                    }
+                    true
                 }
-                true
-            } else if (event.action != MotionEvent.ACTION_DOWN) {
-                false
-            } else if (event.isMovementKey()) {
-                false
-            } else if (event.metaState != 0 && event.unicodeChar == 0) {
-                // Is a modifier key
-                false
-            } else if (event.isPrintableCharacter() ||
-                keyCode == KeyEvent.KEYCODE_DEL ||
-                keyCode == KeyEvent.KEYCODE_FORWARD_DEL
-            ) {
-                // Consume printable characters
-                inputConnection?.sendHardwareKeyboardInput(event)
-                true
-            } else {
-                // Don't consume other key codes (HW back button, i.e.)
-                false
+                event.action != MotionEvent.ACTION_DOWN -> false
+                event.isMovementKey() -> false
+                event.keyCode == KeyEvent.KEYCODE_Z && event.isCtrlPressed && event.isShiftPressed -> {
+                    redo()
+                    true
+                }
+                event.keyCode == KeyEvent.KEYCODE_Z && event.isCtrlPressed -> {
+                    undo()
+                    true
+                }
+                event.metaState != 0 && event.unicodeChar == 0 -> {
+                    // Is a modifier key
+                    false
+                }
+                event.isPrintableCharacter() ||
+                    keyCode == KeyEvent.KEYCODE_DEL ||
+                    keyCode == KeyEvent.KEYCODE_FORWARD_DEL -> {
+                    // Consume printable characters
+                    inputConnection?.sendHardwareKeyboardInput(event)
+                    true
+                }
+                else -> {
+                    // Don't consume other key codes (HW back button, i.e.)
+                    false
+                }
             }
         }
     }
@@ -552,6 +568,14 @@ class EditorEditText : AppCompatEditText {
             }
         }
         super.onDraw(canvas)
+    }
+
+    override fun setSelection(start: Int, stop: Int) {
+        if (editableText.isEmpty()) return
+        super.setSelection(
+            start.coerceIn(0, editableText.length),
+            stop.coerceIn(0, editableText.length)
+        )
     }
 
     /**

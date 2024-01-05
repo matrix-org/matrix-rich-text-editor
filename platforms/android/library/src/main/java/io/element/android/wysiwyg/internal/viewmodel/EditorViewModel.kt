@@ -235,6 +235,7 @@ internal class EditorViewModel(
 
         if (error is InternalException) { // InternalException means Rust panic
             // Recover from the crash
+            (composer as? ComposerModel)?.destroy()
             composer = provideComposer()
 
             if (attemptContentRecovery) {
