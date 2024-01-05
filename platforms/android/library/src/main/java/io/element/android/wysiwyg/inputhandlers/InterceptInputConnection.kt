@@ -60,6 +60,15 @@ internal class InterceptInputConnection(
         return baseInputConnection.commitCorrection(correctionInfo)
     }
 
+    @RequiresApi(Build.VERSION_CODES.N_MR1)
+    override fun commitContent(
+        inputContentInfo: InputContentInfo,
+        flags: Int,
+        opts: Bundle?
+    ): Boolean {
+        return baseInputConnection.commitContent(inputContentInfo, flags, opts)
+    }
+
     override fun performEditorAction(actionCode: Int): Boolean {
         return baseInputConnection.performEditorAction(actionCode)
     }
