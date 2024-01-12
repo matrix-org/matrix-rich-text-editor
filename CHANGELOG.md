@@ -1,5 +1,10 @@
 # Changelog
 
+# [2.25.0] - 2024-01-12
+
+### Fixed
+- [iOS] Fixed a bug that prevented dictation to work properly on iOS 17 and above.
+
 # [2.24.0] - 2024-01-05
 
 ### Added
