@@ -62,30 +62,22 @@ public class WysiwygTextView: UITextView {
     private func commonInit() {
         contentMode = .redraw
         NotificationCenter.default.addObserver(self,
-                                               selector: #selector(textInputCurrentInputModeDidChange),
-                                               name: UITextInputMode.currentInputModeDidChangeNotification,
+                                               selector: #selector(dictationDidStart),
+                                               name: .init("UIKeyboardDidBeginDictationNotification"),
                                                object: nil)
     }
     
-    @objc private func textInputCurrentInputModeDidChange(notification: Notification) {
-        // We don't care about the input mode if this is not the first responder
-        guard isFirstResponder else {
-            return
-        }
-        
-        guard let inputMode = textInputMode?.primaryLanguage,
-              inputMode == "dictation" else {
-            isDictationRunning = false
-            return
-        }
+    @objc private func dictationDidStart(notification: Notification) {
         isDictationRunning = true
     }
     
     override public func dictationRecordingDidEnd() {
+        super.dictationRecordingDidEnd()
         isDictationRunning = false
     }
     
     override public func dictationRecognitionFailed() {
+        super.dictationRecognitionFailed()
         isDictationRunning = false
     }
 
