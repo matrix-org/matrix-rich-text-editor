@@ -72,12 +72,12 @@ public class WysiwygTextView: UITextView {
     }
     
     override public func dictationRecordingDidEnd() {
-        super.dictationRecordingDidEnd()
+        // Do not call super, this is an optional objc protocol
         isDictationRunning = false
     }
     
     override public func dictationRecognitionFailed() {
-        super.dictationRecognitionFailed()
+        // Do not call super this is an optional objc protocol
         isDictationRunning = false
     }
 
