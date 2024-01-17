@@ -1,5 +1,10 @@
 # Changelog
 
+# [2.26.0] - 2024-01-17
+
+### Fixed
+- [iOS] Fixed an issue that made the RTE crash when ending dictation.
+
 # [2.25.0] - 2024-01-12
 
 ### Fixed
