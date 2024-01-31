@@ -262,7 +262,8 @@ fn replacing_text_with_empty_paragraphs_removes_nbsps_from_them() {
 ├>p
 └>p
   └>"2"
-"#);
+"#
+    );
 }
 
 #[test]
