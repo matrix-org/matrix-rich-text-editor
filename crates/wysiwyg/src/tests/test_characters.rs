@@ -251,6 +251,22 @@ fn multiple_spaces_between_text() {
 }
 
 #[test]
+fn replacing_text_with_empty_paragraphs_removes_nbsps_from_them() {
+    let mut model = cm("|");
+    replace_text(&mut model, "1\n\u{A0}\n2");
+    assert_eq!(
+        model.to_tree().to_string(),
+        r#"
+├>p
+│ └>"1"
+├>p
+└>p
+  └>"2"
+"#
+    );
+}
+
+#[test]
 fn typing_html_does_not_break_anything() {
     let mut model = cm("|");
     replace_text(&mut model, "<");
