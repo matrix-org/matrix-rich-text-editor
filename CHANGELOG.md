@@ -1,5 +1,11 @@
 # Changelog
 
+# [2.27.0] - 2024-02-01
+
+### Fixed
+- [Common] Remove NBSP chars in replace_text for empty paragraphs (#926)
+- [Common] Fix delete word not replacing text (#833)
+
 # [2.26.0] - 2024-01-17
 
 ### Fixed
