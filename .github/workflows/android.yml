@@ -57,6 +57,12 @@ jobs:
             :library:assembleDebugUnitTest :library:assembleDebugAndroidTest ${{ env.CI_GRADLE_ARG_PROPERTIES }}
           cache-read-only: false
 
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
       - name: AVD cache
         uses: actions/cache@v3
         id: avd-cache
@@ -79,12 +85,6 @@ jobs:
           disable-animations: true
           enable-hw-keyboard: true
           script: echo "Generated AVD snapshot for caching."
-
-      - name: Enable KVM group perms
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
 
       - name: Run all tests with coverage
         uses: reactivecircus/android-emulator-runner@v2
