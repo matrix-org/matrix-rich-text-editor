@@ -85,7 +85,7 @@ public struct WysiwygComposerView: View {
 
     @ViewBuilder
     private var placeholderView: some View {
-        if viewModel.isContentEmpty, !viewModel.textView.isDictationRunning {
+        if viewModel.isContentEmpty, viewModel.textView?.isDictationRunning != true {
             Text(placeholder)
                 .font(Font(UIFont.preferredFont(forTextStyle: .body)))
                 .foregroundColor(placeholderColor)
@@ -121,8 +121,15 @@ struct UITextViewWrapper: UIViewRepresentable {
     }
     
     func makeUIView(context: Context) -> WysiwygTextView {
-        let textView = viewModel.textView
-        
+        // Default text container have a slightly different behaviour
+        // than what iOS would use if textContainer is nil, this
+        // fixes issues with background color not working on nealine characters.
+        let layoutManager = NSLayoutManager()
+        let textStorage = NSTextStorage()
+        let textContainer = NSTextContainer()
+        textStorage.addLayoutManager(layoutManager)
+        layoutManager.addTextContainer(textContainer)
+        let textView = WysiwygTextView(frame: .zero, textContainer: textContainer)
         textView.accessibilityIdentifier = "WysiwygComposer"
         textView.font = UIFont.preferredFont(forTextStyle: .body)
         textView.autocapitalizationType = .sentences
@@ -137,12 +144,16 @@ struct UITextViewWrapper: UIViewRepresentable {
         textView.clipsToBounds = false
         textView.tintColor = UIColor.tintColor
         textView.wysiwygDelegate = context.coordinator
+        viewModel.textView = textView
         viewModel.updateCompressedHeightIfNeeded()
-
         return textView
     }
 
-    func updateUIView(_ uiView: WysiwygTextView, context: Context) { }
+    func updateUIView(_ uiView: WysiwygTextView, context: Context) { 
+        if uiView !== viewModel.textView {
+            viewModel.textView = uiView
+        }
+    }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(viewModel.replaceText,
