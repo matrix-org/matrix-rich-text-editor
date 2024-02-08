@@ -149,7 +149,7 @@ struct UITextViewWrapper: UIViewRepresentable {
         return textView
     }
 
-    func updateUIView(_ uiView: WysiwygTextView, context: Context) { 
+    func updateUIView(_ uiView: WysiwygTextView, context: Context) {
         if uiView !== viewModel.textView {
             viewModel.textView = uiView
         }

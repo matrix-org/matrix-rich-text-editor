@@ -22,7 +22,14 @@ final class WysiwygComposerViewModelTests: XCTestCase {
     var viewModel: WysiwygComposerViewModel!
 
     override func setUpWithError() throws {
+        let layoutManager = NSLayoutManager()
+        let textStorage = NSTextStorage()
+        let textContainer = NSTextContainer()
+        textStorage.addLayoutManager(layoutManager)
+        layoutManager.addTextContainer(textContainer)
+        let textView = WysiwygTextView(frame: .zero, textContainer: textContainer)
         viewModel = WysiwygComposerViewModel()
+        viewModel.textView = textView
         viewModel.clearContent()
     }
 
@@ -32,13 +39,13 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         let expectFalse = expectContentEmpty(false)
         _ = viewModel.replaceText(range: .zero,
                                   replacementText: "Test")
-        viewModel.textView.attributedText = viewModel.attributedContent.text
+        viewModel.textView?.attributedText = viewModel.attributedContent.text
         waitExpectation(expectation: expectFalse, timeout: 2.0)
 
         let expectTrue = expectContentEmpty(true)
         _ = viewModel.replaceText(range: .init(location: 0, length: viewModel.attributedContent.text.length),
                                   replacementText: "")
-        viewModel.textView.attributedText = viewModel.attributedContent.text
+        viewModel.textView?.attributedText = viewModel.attributedContent.text
         waitExpectation(expectation: expectTrue, timeout: 2.0)
     }
 
@@ -88,15 +95,15 @@ final class WysiwygComposerViewModelTests: XCTestCase {
 
     func testReconciliateRestoresFromModel() {
         _ = viewModel.replaceText(range: .zero, replacementText: "Some text")
-        viewModel.textView.attributedText = NSAttributedString(string: "Some text")
+        viewModel.textView?.attributedText = NSAttributedString(string: "Some text")
         reconciliate(to: "Home test", selectedRange: .zero)
-        XCTAssertEqual(viewModel.textView.text, "Some text")
+        XCTAssertEqual(viewModel.textView?.text, "Some text")
     }
 
     func testPlainTextMode() {
         _ = viewModel.replaceText(range: .zero,
                                   replacementText: "Some bold text")
-        viewModel.textView.attributedText = NSAttributedString(string: "Some bold text")
+        viewModel.textView?.attributedText = NSAttributedString(string: "Some bold text")
         viewModel.select(range: .init(location: 10, length: 4))
         viewModel.apply(.bold)
 
@@ -115,7 +122,7 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         let result = viewModel.replaceText(range: .init(location: 4, length: 0), replacementText: "abc")
         XCTAssertFalse(result)
         XCTAssertEqual(viewModel.content.html, "<a href=\"https://element.io\">test</a>abc")
-        XCTAssertTrue(viewModel.textView.attributedText.isEqual(to: viewModel.attributedContent.text))
+        XCTAssertTrue(viewModel.textView?.attributedText.isEqual(to: viewModel.attributedContent.text) == true)
     }
     
     func testReplaceTextPartiallyInsideAndAfterLinkIsNotAccepted() {
@@ -123,7 +130,7 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         let result = viewModel.replaceText(range: .init(location: 3, length: 1), replacementText: "abc")
         XCTAssertFalse(result)
         XCTAssertEqual(viewModel.content.html, "<a href=\"https://element.io\">tes</a>abc")
-        XCTAssertTrue(viewModel.textView.attributedText.isEqual(to: viewModel.attributedContent.text))
+        XCTAssertTrue(viewModel.textView?.attributedText.isEqual(to: viewModel.attributedContent.text) == true)
     }
     
     func testReplaceTextInsideLinkIsAccepted() {
@@ -148,11 +155,14 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         // Enter
         mockTrailingTyping("\n")
         mockTrailingTyping("Still formatted")
+        guard let textView = viewModel.textView else {
+            XCTFail("TextView should not be nil")
+            return
+        }
         XCTAssertTrue(
-            viewModel
-                .textView
+            textView
                 .attributedText
-                .fontSymbolicTraits(at: viewModel.textView.attributedText.length - 1)
+                .fontSymbolicTraits(at: textView.attributedText.length - 1)
                 .contains([.traitBold, .traitItalic])
         )
     }
@@ -242,7 +252,8 @@ extension WysiwygComposerViewModelTests {
     ///   - text: text to type
     ///   - location: index in text view's attributed string
     func mockTyping(_ text: String, at location: Int) {
-        guard location <= viewModel.textView.attributedText.length else {
+        guard let textView = viewModel.textView,
+              location <= textView.attributedText.length else {
             fatalError("Invalid location index")
         }
 
@@ -250,7 +261,7 @@ extension WysiwygComposerViewModelTests {
         let shouldAcceptChange = viewModel.replaceText(range: range, replacementText: text)
         if shouldAcceptChange {
             // Force apply since the text view should've updated by itself
-            viewModel.textView.apply(viewModel.attributedContent)
+            viewModel.textView?.apply(viewModel.attributedContent)
             viewModel.didUpdateText()
         }
     }
@@ -259,14 +270,18 @@ extension WysiwygComposerViewModelTests {
     ///
     /// - Parameter text: text to type
     func mockTrailingTyping(_ text: String) {
-        mockTyping(text, at: viewModel.textView.attributedText.length)
+        guard let textView = viewModel.textView else {
+            return
+        }
+        mockTyping(text, at: textView.attributedText.length)
     }
 
     /// Mock backspacing at given location.
     ///
     /// - Parameter location: index in text view's attributed string
     func mockBackspace(at location: Int) {
-        guard location <= viewModel.textView.attributedText.length else {
+        guard let textView = viewModel.textView,
+              location <= textView.attributedText.length else {
             fatalError("Invalid location index")
         }
 
@@ -274,14 +289,17 @@ extension WysiwygComposerViewModelTests {
         let shouldAcceptChange = viewModel.replaceText(range: range, replacementText: "")
         if shouldAcceptChange {
             // Force apply since the text view should've updated by itself
-            viewModel.textView.apply(viewModel.attributedContent)
+            viewModel.textView?.apply(viewModel.attributedContent)
             viewModel.didUpdateText()
         }
     }
 
     /// Mock backspacing from trailing position.
     func mockTrailingBackspace() {
-        mockBackspace(at: viewModel.textView.attributedText.length)
+        guard let textView = viewModel.textView else {
+            return
+        }
+        mockBackspace(at: textView.attributedText.length)
     }
 }
 
@@ -292,9 +310,9 @@ private extension WysiwygComposerViewModelTests {
     ///   - newText: New text to apply.
     ///   - selectedRange: Simulated selection in the text view.
     func reconciliate(to newText: String, selectedRange: NSRange) {
-        viewModel.textView.attributedText = NSAttributedString(string: newText)
+        viewModel.textView?.attributedText = NSAttributedString(string: newText)
         // Set selection where we want it, as setting the content automatically moves cursor to the end.
-        viewModel.textView.selectedRange = selectedRange
+        viewModel.textView?.selectedRange = selectedRange
         viewModel.didUpdateText()
     }
 }
