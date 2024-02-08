@@ -26,19 +26,17 @@ import UIKit
 public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, ObservableObject {
     // MARK: - Public
 
-    /// The textView that the model manages.
-    public private(set) var textView = {
-        // Default text container have a slightly different behaviour
-        // than what iOS would use if textContainer is nil, this
-        // fixes issues with background color not working on nealine characters.
-        let layoutManager = NSLayoutManager()
-        let textStorage = NSTextStorage()
-        let textContainer = NSTextContainer()
-        textStorage.addLayoutManager(layoutManager)
-        layoutManager.addTextContainer(textContainer)
-        return WysiwygTextView(frame: .zero, textContainer: textContainer)
-    }()
-
+    /// The textView that the model currently manages.
+    public var textView: WysiwygTextView? {
+        didSet {
+            guard let textView else {
+                return
+            }
+            textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
+            textView.apply(attributedContent)
+        }
+    }
+    
     /// The composer minimal height.
     public let minHeight: CGFloat
     /// The mention replacer defined by the hosting application.
@@ -79,7 +77,7 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     public var parserStyle: HTMLParserStyle {
         didSet {
             // In case of a color change, this will refresh the attributed text
-            textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
+            textView?.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
             let update = model.setContentFromHtml(html: content.html)
             applyUpdate(update)
             updateTextView()
@@ -141,7 +139,6 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         self.parserStyle = parserStyle
         self.mentionReplacer = mentionReplacer
 
-        textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
         model = ComposerModelWrapper()
         model.delegate = self
         // Publish composer empty state.
@@ -156,7 +153,10 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
                 guard let self = self else { return }
                 // Improves a lot the user experience by keeping the selected range always visible when there are changes in the size.
                 DispatchQueue.main.async {
-                    self.textView.scrollRangeToVisible(self.textView.selectedRange)
+                    guard let textView = self.textView else {
+                        return
+                    }
+                    textView.scrollRangeToVisible(textView.selectedRange)
                 }
             }
             .store(in: &cancellables)
@@ -221,7 +221,7 @@ public extension WysiwygComposerViewModel {
     /// Clear the content of the composer.
     func clearContent() {
         if plainTextMode {
-            textView.attributedText = NSAttributedString(string: "", attributes: defaultTextAttributes)
+            textView?.attributedText = NSAttributedString(string: "", attributes: defaultTextAttributes)
             updateCompressedHeightIfNeeded()
         } else {
             applyUpdate(model.clear())
@@ -283,6 +283,10 @@ public extension WysiwygComposerViewModel {
 
 public extension WysiwygComposerViewModel {
     func updateCompressedHeightIfNeeded() {
+        guard let textView else {
+            return
+        }
+        
         let idealTextHeight = textView
             .sizeThatFits(CGSize(width: textView.bounds.size.width,
                                  height: CGFloat.greatestFiniteMagnitude)
@@ -303,8 +307,8 @@ public extension WysiwygComposerViewModel {
         
         // This fixes a bug where the attributed string keeps link and inline code formatting
         // when they are the last formatting to be deleted
-        if textView.attributedText.length == 0 {
-            textView.typingAttributes = defaultTextAttributes
+        if textView?.attributedText.length == 0 {
+            textView?.typingAttributes = defaultTextAttributes
         }
 
         let update: ComposerUpdate
@@ -332,7 +336,7 @@ public extension WysiwygComposerViewModel {
         case let .update(newState):
             if newState[.link] != actionStates[.link] {
                 applyUpdate(update, skipTextViewUpdate: true)
-                textView.apply(attributedContent)
+                textView?.apply(attributedContent)
                 updateCompressedHeightIfNeeded()
                 return false
             }
@@ -346,7 +350,7 @@ public extension WysiwygComposerViewModel {
 
     func select(range: NSRange) {
         do {
-            guard let text = textView.attributedText, !plainTextMode else { return }
+            guard let text = textView?.attributedText, !plainTextMode else { return }
             let htmlSelection = try text.htmlRange(from: range)
             Logger.viewModel.logDebug(["Sel(att): \(range)",
                                        "Sel: \(htmlSelection)",
@@ -365,15 +369,17 @@ public extension WysiwygComposerViewModel {
 
     func didUpdateText() {
         if plainTextMode {
-            if textView.text.isEmpty != isContentEmpty {
-                isContentEmpty = textView.text.isEmpty
+            if let textView {
+                if textView.text.isEmpty != isContentEmpty {
+                    isContentEmpty = textView.text.isEmpty
+                }
+                plainTextContent = textView.attributedText
             }
-            plainTextContent = textView.attributedText
         } else {
             reconciliateIfNeeded()
             applyPendingFormatsIfNeeded()
         }
-
+        
         updateCompressedHeightIfNeeded()
     }
     
@@ -405,7 +411,7 @@ public extension WysiwygComposerViewModel {
 
     @available(iOS 16.0, *)
     func getIdealSize(_ proposal: ProposedViewSize) -> CGSize {
-        guard let width = proposal.width else { return .zero }
+        guard let textView, let width = proposal.width else { return .zero }
 
         let idealHeight = textView
             .sizeThatFits(CGSize(width: width, height: CGFloat.greatestFiniteMagnitude))
@@ -437,7 +443,7 @@ private extension WysiwygComposerViewModel {
             // Note: this makes replaceAll act like .keep on cases where we expect the text
             // view to be properly updated by the system.
             if !skipTextViewUpdate {
-                textView.apply(attributedContent)
+                textView?.apply(attributedContent)
                 updateCompressedHeightIfNeeded()
             }
         case let .select(startUtf16Codeunit: start,
@@ -543,7 +549,7 @@ private extension WysiwygComposerViewModel {
             if let mentionReplacer {
                 attributed = mentionReplacer.postProcessMarkdown(in: attributed)
             }
-            textView.attributedText = attributed
+            textView?.attributedText = attributed
             updateCompressedHeightIfNeeded()
         } else {
             let update = model.setContentFromMarkdown(markdown: computeMarkdownContent())
@@ -556,7 +562,7 @@ private extension WysiwygComposerViewModel {
     /// Reconciliate the content of the model with the content of the text view.
     func reconciliateIfNeeded() {
         do {
-            guard !textView.isDictationRunning,
+            guard let textView, !textView.isDictationRunning,
                   let replacement = try StringDiffer.replacement(from: attributedContent.text.htmlChars,
                                                                  to: textView.attributedText.htmlChars) else {
                 return
@@ -580,7 +586,7 @@ private extension WysiwygComposerViewModel {
             case StringDifferError.tooComplicated,
                  StringDifferError.insertionsDontMatchRemovals:
                 // Restore from the model, as otherwise the composer will enter a broken state
-                textView.apply(attributedContent)
+                textView?.apply(attributedContent)
                 updateCompressedHeightIfNeeded()
                 Logger.viewModel.logError(["Reconciliate failed, content has been restored from the model"],
                                           functionName: #function)
@@ -600,7 +606,7 @@ private extension WysiwygComposerViewModel {
     func applyPendingFormatsIfNeeded() {
         guard hasPendingFormats else { return }
 
-        textView.apply(attributedContent)
+        textView?.apply(attributedContent)
         updateCompressedHeightIfNeeded()
         hasPendingFormats = false
     }
@@ -609,6 +615,9 @@ private extension WysiwygComposerViewModel {
     ///
     /// - Returns: A markdown string.
     func computeMarkdownContent() -> String {
+        guard let textView else {
+            return ""
+        }
         let markdownContent: String
         if let mentionReplacer, let attributedText = textView.attributedText {
             // `MentionReplacer` should restore altered content to valid markdown.

@@ -60,7 +60,11 @@ extension WysiwygComposerViewModelTests {
         
     func testMentionsStatBySettingRoomIDMention() {
         viewModel.setMention(url: "https://matrix.to/#/!room:matrix.org", name: "Room", mentionType: .room)
-        XCTAssertEqual(viewModel.getMentionsState(), MentionsState(userIds: [], roomIds: ["!room:matrix.org"], roomAliases: [], hasAtRoomMention: false))
+        XCTAssertEqual(viewModel.getMentionsState(),
+                       MentionsState(userIds: [],
+                                     roomIds: ["!room:matrix.org"],
+                                     roomAliases: [],
+                                     hasAtRoomMention: false))
     }
     
     func testMentionsStateBySettingRoomIDMentionFromContent() {
