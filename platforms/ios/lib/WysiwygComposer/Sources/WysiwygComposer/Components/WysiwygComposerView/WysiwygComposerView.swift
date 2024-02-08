@@ -85,7 +85,7 @@ public struct WysiwygComposerView: View {
 
     @ViewBuilder
     private var placeholderView: some View {
-        if viewModel.isContentEmpty, viewModel.textView?.isDictationRunning != true {
+        if viewModel.isContentEmpty, !viewModel.textView.isDictationRunning {
             Text(placeholder)
                 .font(Font(UIFont.preferredFont(forTextStyle: .body)))
                 .foregroundColor(placeholderColor)
@@ -121,15 +121,7 @@ struct UITextViewWrapper: UIViewRepresentable {
     }
     
     func makeUIView(context: Context) -> WysiwygTextView {
-        // Default text container have a slightly different behaviour
-        // than what iOS would use if textContainer is nil, this
-        // fixes issues with background color not working on newline characters.
-        let layoutManager = NSLayoutManager()
-        let textStorage = NSTextStorage()
-        let textContainer = NSTextContainer()
-        textStorage.addLayoutManager(layoutManager)
-        layoutManager.addTextContainer(textContainer)
-        let textView = WysiwygTextView(frame: .zero, textContainer: textContainer)
+        let textView = WysiwygTextView()
         // Assign the textView to the view model ASAP
         viewModel.textView = textView
         textView.accessibilityIdentifier = "WysiwygComposer"
