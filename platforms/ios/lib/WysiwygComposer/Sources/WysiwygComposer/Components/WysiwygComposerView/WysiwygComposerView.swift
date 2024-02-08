@@ -130,6 +130,7 @@ struct UITextViewWrapper: UIViewRepresentable {
         textStorage.addLayoutManager(layoutManager)
         layoutManager.addTextContainer(textContainer)
         let textView = WysiwygTextView(frame: .zero, textContainer: textContainer)
+        viewModel.textView = textView
         textView.accessibilityIdentifier = "WysiwygComposer"
         textView.font = UIFont.preferredFont(forTextStyle: .body)
         textView.autocapitalizationType = .sentences
@@ -144,7 +145,6 @@ struct UITextViewWrapper: UIViewRepresentable {
         textView.clipsToBounds = false
         textView.tintColor = UIColor.tintColor
         textView.wysiwygDelegate = context.coordinator
-        viewModel.textView = textView
         viewModel.updateCompressedHeightIfNeeded()
         return textView
     }
