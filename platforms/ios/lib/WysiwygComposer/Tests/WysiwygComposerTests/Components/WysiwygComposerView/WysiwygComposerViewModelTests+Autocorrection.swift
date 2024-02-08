@@ -103,10 +103,10 @@ extension WysiwygComposerViewModelTests {
 
 private extension WysiwygComposerViewModelTests {
     func assertAutoCorrectEnabled() {
-        XCTAssertEqual(viewModel.textView?.autocorrectionType, .yes)
+        XCTAssertEqual(viewModel.textView.autocorrectionType, .yes)
     }
 
     func assertAutocorrectDisabled() {
-        XCTAssertEqual(viewModel.textView?.autocorrectionType, .no)
+        XCTAssertEqual(viewModel.textView.autocorrectionType, .no)
     }
 }

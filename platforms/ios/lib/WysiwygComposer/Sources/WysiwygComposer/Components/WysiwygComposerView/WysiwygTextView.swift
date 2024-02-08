@@ -45,9 +45,21 @@ public class WysiwygTextView: UITextView {
     /// Internal delegate for the text view.
     weak var wysiwygDelegate: WysiwygTextViewDelegate?
     
+    var mentionDisplayHelper: MentionDisplayHelper?
+    
     private let flusher = WysiwygPillsFlusher()
     
-    public var mentionDisplayHelper: MentionDisplayHelper?
+    public convenience init() {
+        // Default text container have a slightly different behaviour
+        // than what iOS would use if textContainer is nil, this
+        // fixes issues with background color not working on newline characters.
+        let layoutManager = NSLayoutManager()
+        let textStorage = NSTextStorage()
+        let textContainer = NSTextContainer()
+        textStorage.addLayoutManager(layoutManager)
+        layoutManager.addTextContainer(textContainer)
+        self.init(frame: .zero, textContainer: textContainer)
+    }
 
     override public init(frame: CGRect, textContainer: NSTextContainer?) {
         super.init(frame: frame, textContainer: textContainer)

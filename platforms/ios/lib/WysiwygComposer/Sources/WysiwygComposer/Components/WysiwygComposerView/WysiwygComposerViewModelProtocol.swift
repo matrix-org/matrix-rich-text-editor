@@ -19,7 +19,7 @@ import UIKit
 
 public protocol WysiwygComposerViewModelProtocol: AnyObject {
     /// The textView that the model manages.
-    var textView: WysiwygTextView? { get set }
+    var textView: WysiwygTextView { get set }
 
     /// Whether the current content of the composer is empty.
     var isContentEmpty: Bool { get }

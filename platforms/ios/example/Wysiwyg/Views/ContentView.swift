@@ -79,7 +79,7 @@ struct ContentView: View {
         }
         HStack {
             Spacer()
-            if viewModel.textView?.autocorrectionType == .yes {
+            if viewModel.textView.autocorrectionType == .yes {
                 Image(systemName: "text.badge.checkmark")
                     .foregroundColor(.green)
                     .padding(.horizontal, 16)
