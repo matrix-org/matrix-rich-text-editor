@@ -1,5 +1,9 @@
 # Changelog
 
+# [2.28.0] - 2024-02-08
+### Fixed
+- [iOS] Fixed an issue that broke the text view if the SwiftUI view was completely re-rendered.
+
 # [2.27.0] - 2024-02-01
 
 ### Fixed
