@@ -123,7 +123,7 @@ struct UITextViewWrapper: UIViewRepresentable {
     func makeUIView(context: Context) -> WysiwygTextView {
         // Default text container have a slightly different behaviour
         // than what iOS would use if textContainer is nil, this
-        // fixes issues with background color not working on nealine characters.
+        // fixes issues with background color not working on newline characters.
         let layoutManager = NSLayoutManager()
         let textStorage = NSTextStorage()
         let textContainer = NSTextContainer()
