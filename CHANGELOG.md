@@ -1,5 +1,9 @@
 # Changelog
 
+# [2.29.0] - 2024-02-08
+### Changed
+- [iOS] Improved the textView injection process in the view model.
+
 # [2.28.0] - 2024-02-08
 ### Fixed
 - [iOS] Fixed an issue that broke the text view if the SwiftUI view was completely re-rendered.
