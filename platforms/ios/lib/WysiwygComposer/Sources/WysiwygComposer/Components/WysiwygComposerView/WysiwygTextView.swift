@@ -45,7 +45,7 @@ public class WysiwygTextView: UITextView {
     /// Internal delegate for the text view.
     weak var wysiwygDelegate: WysiwygTextViewDelegate?
     
-    var mentionDisplayHelper: MentionDisplayHelper?
+    public var mentionDisplayHelper: MentionDisplayHelper?
     
     private let flusher = WysiwygPillsFlusher()
     
