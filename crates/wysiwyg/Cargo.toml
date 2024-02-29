@@ -35,7 +35,7 @@ regex="1.9.5"
 matrix_mentions = { path = "../matrix_mentions" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
-speculoos = "0.9"
+speculoos = "0.11.0"
 
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
 wasm-bindgen-test = "0.3.33"

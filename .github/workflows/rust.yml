@@ -21,7 +21,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Set Version
-      run: rustup default 1.74
+      run: rustup default 1.76
     - name: Set Component 
       run: rustup component add rustfmt clippy
     - name: Format
