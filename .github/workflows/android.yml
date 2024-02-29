@@ -84,6 +84,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           enable-hw-keyboard: true
+          disk-size: 3g
           script: echo "Generated AVD snapshot for caching."
 
       - name: Run all tests with coverage
