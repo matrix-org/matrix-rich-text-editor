@@ -82,7 +82,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           enable-hw-keyboard: true
-          disk-size: 3g
+          disk-size: 3G
           script: echo "Generated AVD snapshot for caching."
 
       - name: Run all tests with coverage
@@ -96,6 +96,7 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           enable-hw-keyboard: true
+          disk-size: 3G
           script: |
             chmod +x scripts/ci_test.sh
             scripts/ci_test.sh
