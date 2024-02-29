@@ -36,7 +36,8 @@ fun EditorStyledText(
     modifier: Modifier = Modifier,
     resolveMentionDisplay: (text: String, url: String) -> TextDisplay = RichTextEditorDefaults.MentionDisplay,
     resolveRoomMentionDisplay: () -> TextDisplay = RichTextEditorDefaults.RoomMentionDisplay,
-    onLinkClickedListener: ((String) -> Unit) = {},
+    onLinkClickedListener: ((String) -> Unit)? = null,
+    onLinkLongClickedListener: ((String) -> Unit)? = null,
     onTextLayout: (Layout) -> Unit = {},
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
     releaseOnDetach: Boolean = true,
@@ -67,6 +68,7 @@ fun EditorStyledText(
             view.updateStyle(style.toStyleConfig(view.context), mentionDisplayHandler)
             view.typeface = typeface
             view.onLinkClickedListener = onLinkClickedListener
+            view.onLinkLongClickedListener = onLinkLongClickedListener
             view.onTextLayout = onTextLayout
             if (text is Spanned) {
                 view.setText(text, TextView.BufferType.SPANNABLE)

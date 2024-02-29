@@ -61,6 +61,7 @@ open class EditorStyledTextView : AppCompatTextView {
     private var htmlConverter: HtmlConverter? = null
 
     var onLinkClickedListener: ((String) -> Unit)? = null
+    var onLinkLongClickedListener: ((String) -> Unit)? = null
 
     var onTextLayout: ((Layout) -> Unit)? = null
 
@@ -71,42 +72,59 @@ open class EditorStyledTextView : AppCompatTextView {
     var isNativeCodeEnabled: Boolean = !isInEditMode
 
     // This gesture detector will be used to detect clicks on spans
-    private val gestureDetector = GestureDetectorCompat(context, object : GestureDetector.SimpleOnGestureListener() {
+    private val gestureDetector =
+        GestureDetectorCompat(context, object : GestureDetector.SimpleOnGestureListener() {
 
-        override fun onDown(e: MotionEvent): Boolean {
-            // Find any spans with URLs in the coordinates
-            val spans = findSpansForTouchEvent(e)
-            return spans.any { it is URLSpan || it is PillSpan || it is CustomMentionSpan }
-        }
+            private fun hasAnyLinkListener() =
+                onLinkClickedListener != null || onLinkLongClickedListener != null
 
-        override fun onSingleTapUp(e: MotionEvent): Boolean {
-            // No need to detect user interaction if there is no listener
-            val onLinkClickedListener = this@EditorStyledTextView.onLinkClickedListener ?: return false
+            private fun handleLinkClicks(
+                motionEvent: MotionEvent, listener: (String) -> Unit
+            ): Boolean {
+                val spans = findSpansForTouchEvent(motionEvent)
+                for (span in spans) {
+                    when (span) {
+                        is URLSpan -> {
+                            listener(span.url)
+                            return true
+                        }
 
-            // Find any spans in the coordinates
-            val spans = findSpansForTouchEvent(e)
+                        is PillSpan -> {
+                            span.url?.let(listener)
+                            return true
+                        }
 
-            // Notify the link has been clicked
-            for (span in spans) {
-                when (span) {
-                    is URLSpan -> { // This includes LinkSpan
-                        onLinkClickedListener(span.url)
-                        return true
+                        is CustomMentionSpan -> {
+                            span.url?.let(listener)
+                            return true
+                        }
+
+                        else -> Unit
                     }
-                    is PillSpan -> {
-                        span.url?.let(onLinkClickedListener)
-                        return true
-                    }
-                    is CustomMentionSpan -> {
-                        span.url?.let(onLinkClickedListener)
-                        return true
-                    }
-                    else -> Unit
                 }
+                return false
             }
-            return false
-        }
-    })
+
+            override fun onDown(e: MotionEvent): Boolean {
+                // No need to detect user interaction if there is no listener
+                if (!hasAnyLinkListener()) return false
+                // Find any spans with URLs in the coordinates
+                val spans = findSpansForTouchEvent(e)
+                return spans.any { it is URLSpan || it is PillSpan || it is CustomMentionSpan }
+            }
+
+            override fun onLongPress(e: MotionEvent) {
+                // No need to process more if there is no listener
+                val onLinkLongClickedListener = onLinkLongClickedListener ?: return
+                handleLinkClicks(e, onLinkLongClickedListener)
+            }
+
+            override fun onSingleTapUp(e: MotionEvent): Boolean {
+                // No need to detect user interaction if there is no listener
+                val onLinkClickedListener = onLinkClickedListener ?: return false
+                return handleLinkClicks(e, onLinkClickedListener)
+            }
+        })
 
     init {
         setSpannableFactory(spannableFactory)
@@ -143,8 +161,10 @@ open class EditorStyledTextView : AppCompatTextView {
         this.styleConfig = styleConfig
         this.mentionDisplayHandler = mentionDisplayHandler
 
-        inlineCodeBgHelper = SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(styleConfig.inlineCode)
-        codeBlockBgHelper = SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(styleConfig.codeBlock)
+        inlineCodeBgHelper =
+            SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(styleConfig.inlineCode)
+        codeBlockBgHelper =
+            SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(styleConfig.codeBlock)
 
         htmlConverter = createHtmlConverter(styleConfig, mentionDisplayHandler)
     }
@@ -182,31 +202,42 @@ open class EditorStyledTextView : AppCompatTextView {
         updateStyle(styleConfig, mentionDisplayHandler)
     }
 
-    private fun createHtmlConverter(styleConfig: StyleConfig, mentionDisplayHandler: MentionDisplayHandler?): HtmlConverter {
-        return HtmlConverter.Factory.create(
-            context = context,
+    private fun createHtmlConverter(
+        styleConfig: StyleConfig, mentionDisplayHandler: MentionDisplayHandler?
+    ): HtmlConverter {
+        return HtmlConverter.Factory.create(context = context,
             styleConfig = styleConfig,
             mentionDisplayHandler = mentionDisplayHandler,
             isMention = mentionDetector?.let { detector ->
                 { _, url ->
                     detector.isMention(url)
                 }
-            }
-        )
+            })
     }
 
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
+    override fun onTouchEvent(event: MotionEvent): Boolean {
         // We pass the event to the gesture detector
-        val handled = event?.let { gestureDetector.onTouchEvent(it) }
-        // This will handle the default actions for any touch event in the TextView
-        super.onTouchEvent(event)
+        val handled = gestureDetector.onTouchEvent(event)
         // We return if we handled the event and want to intercept it or not
-        return handled ?: false
+        return if (!handled) {
+            // This will handle the default actions for any touch event in the TextView
+            super.onTouchEvent(event)
+        } else {
+            true
+        }
     }
 
     private fun findSpansForTouchEvent(event: MotionEvent): Array<out Any> {
+        val layout = this.layout ?: return emptyArray()
         // Find selection matching the pointer coordinates
         val offset = getOffsetForPosition(event.x, event.y)
-        return (text as? Spanned)?.getSpans<Any>(offset, offset).orEmpty()
+        // For links that wrap several lines, we want to avoid opening the link if the touch event
+        // happened on the empty space after the line wrapped.
+        val currentLineWidth = layout.getLineWidth(layout.getLineForOffset(offset))
+        return if (event.x <= currentLineWidth) {
+            (text as? Spanned)?.getSpans<Any>(offset, offset).orEmpty()
+        } else {
+            emptyArray()
+        }
     }
 }
