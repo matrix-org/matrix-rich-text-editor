@@ -53,8 +53,6 @@ jobs:
           ANDROID_NDK_TOOLCHAIN_DIR: ${{ env.ANDROID_NDK_HOME }}/toolchains
         with:
           build-root-directory: platforms/android
-          arguments: |
-            :library:assembleDebugUnitTest :library:assembleDebugAndroidTest ${{ env.CI_GRADLE_ARG_PROPERTIES }}
           cache-read-only: false
 
       - name: Enable KVM group perms
@@ -84,6 +82,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           enable-hw-keyboard: true
+          disk-size: 3g
           script: echo "Generated AVD snapshot for caching."
 
       - name: Run all tests with coverage

@@ -8,7 +8,6 @@ import android.widget.TextView
 import androidx.core.text.buildSpannedString
 import androidx.core.text.inSpans
 import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.matcher.ViewMatchers.withText
@@ -17,11 +16,13 @@ import io.element.android.wysiwyg.test.R
 import io.element.android.wysiwyg.test.utils.FakeLinkClickedListener
 import io.element.android.wysiwyg.test.utils.TestActivity
 import io.element.android.wysiwyg.test.utils.TextViewActions
+import io.element.android.wysiwyg.test.utils.clickXY
 import io.element.android.wysiwyg.view.spans.CustomMentionSpan
 import io.element.android.wysiwyg.view.spans.LinkSpan
 import io.element.android.wysiwyg.view.spans.PillSpan
 import org.junit.Rule
 import org.junit.Test
+
 
 internal class EditorStyledTextViewTest {
 
@@ -71,7 +72,7 @@ internal class EditorStyledTextViewTest {
             .perform(TextViewActions.setText(urlSpanText, TextView.BufferType.SPANNABLE))
             .perform(TextViewActions.setOnLinkClickedListener(fakeLinkClickedListener))
             .check(matches(withText(HELLO_WORLD)))
-            .perform(ViewActions.click())
+            .perform(clickXY(0f, 0f))
 
         fakeLinkClickedListener.assertLinkClicked(url = URL)
     }
@@ -87,7 +88,7 @@ internal class EditorStyledTextViewTest {
             .perform(TextViewActions.setText(linkSpanText, TextView.BufferType.SPANNABLE))
             .perform(TextViewActions.setOnLinkClickedListener(fakeLinkClickedListener))
             .check(matches(withText(HELLO_WORLD)))
-            .perform(ViewActions.click())
+            .perform(clickXY(0f, 0f))
 
         fakeLinkClickedListener.assertLinkClicked(url = URL)
     }
@@ -103,7 +104,7 @@ internal class EditorStyledTextViewTest {
             .perform(TextViewActions.setText(pillSpanText, TextView.BufferType.SPANNABLE))
             .perform(TextViewActions.setOnLinkClickedListener(fakeLinkClickedListener))
             .check(matches(withText(HELLO_WORLD)))
-            .perform(ViewActions.click())
+            .perform(clickXY(0f, 0f))
 
         fakeLinkClickedListener.assertLinkClicked(url = URL)
     }
@@ -119,7 +120,7 @@ internal class EditorStyledTextViewTest {
             .perform(TextViewActions.setText(mentionSpanText, TextView.BufferType.SPANNABLE))
             .perform(TextViewActions.setOnLinkClickedListener(fakeLinkClickedListener))
             .check(matches(withText(HELLO_WORLD)))
-            .perform(ViewActions.click())
+            .perform(clickXY(0f, 0f))
 
         fakeLinkClickedListener.assertLinkClicked(url = URL)
     }
@@ -130,15 +131,16 @@ internal class EditorStyledTextViewTest {
             .perform(TextViewActions.setHtml(MENTION_HTML))
             .perform(TextViewActions.setOnLinkClickedListener(fakeLinkClickedListener))
             .check(matches(withText(MENTION_TEXT)))
-            .perform(ViewActions.click())
+            .perform(clickXY(0f, 0f))
 
         fakeLinkClickedListener.assertLinkClicked(MENTION_URI)
     }
 }
 
 object DummyReplacementSpan : ReplacementSpan() {
-    override fun getSize(paint: Paint, text: CharSequence?, start: Int, end: Int, fm: Paint.FontMetricsInt?): Int = 1
+    override fun getSize(paint: Paint, text: CharSequence?, start: Int, end: Int, fm: Paint.FontMetricsInt?): Int = 100
 
     override fun draw(canvas: Canvas, text: CharSequence?, start: Int, end: Int, x: Float, top: Int, y: Int, bottom: Int, paint: Paint)  = Unit
 
 }
+
