@@ -419,7 +419,7 @@ where
 
     pub(crate) fn get_link_url(&self) -> Option<S> {
         let ContainerNodeKind::Link(url) = self.kind.clone() else {
-            return None
+            return None;
         };
         Some(url)
     }

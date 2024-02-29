@@ -198,7 +198,9 @@ where
         let list_item = self.lookup_node_mut(handle);
         let slice = list_item.slice_after(offset);
         let list = self.lookup_node_mut(&handle.parent_handle());
-        let DomNode::Container(list) = list else { panic!("List node is not a container") };
+        let DomNode::Container(list) = list else {
+            panic!("List node is not a container")
+        };
         list.insert_child(handle.index_in_parent() + 1, slice);
         self.join_nodes_in_container(&handle.parent_handle());
     }

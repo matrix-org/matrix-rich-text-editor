@@ -240,7 +240,8 @@ where
             // Now do the same for any children remaining in the tree
             if !block_node_is_paragraph {
                 let DomNode::Container(block_container) =
-                    self.state.dom.lookup_node_mut(&block_node_handle) else {
+                    self.state.dom.lookup_node_mut(&block_node_handle)
+                else {
                     panic!("Block container must be a container node");
                 };
                 let mut children = Vec::new();

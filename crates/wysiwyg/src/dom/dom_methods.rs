@@ -751,7 +751,9 @@ where
         &mut self,
         container_handle: &DomHandle,
     ) {
-        let DomNode::Container(container) = self.lookup_node_mut(container_handle) else {
+        let DomNode::Container(container) =
+            self.lookup_node_mut(container_handle)
+        else {
             return;
         };
 
@@ -1129,10 +1131,12 @@ where
 
 fn first_shrinkable_link_node_handle(range: &Range) -> Option<&DomLocation> {
     let Some(link_loc) = range.locations.iter().find(|loc| {
-            loc.kind == DomNodeKind::Link && !loc.is_covered() && (loc.is_start() || loc.leading_is_end())
-        }) else {
-            return None
-        };
+        loc.kind == DomNodeKind::Link
+            && !loc.is_covered()
+            && (loc.is_start() || loc.leading_is_end())
+    }) else {
+        return None;
+    };
     Some(link_loc)
 }
 

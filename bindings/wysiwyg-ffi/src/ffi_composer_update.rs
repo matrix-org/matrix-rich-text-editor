@@ -231,9 +231,11 @@ mod test {
     // https://github.com/matrix-org/matrix-rich-text-editor/issues/709
     fn insert_mention_at_cursor(model: &mut Arc<ComposerModel>) {
         let update = model.replace_text("@alic".into());
-        let MenuAction::Suggestion{suggestion_pattern} = update.menu_action() else {
-        panic!("No suggestion pattern found")
-    };
+        let MenuAction::Suggestion { suggestion_pattern } =
+            update.menu_action()
+        else {
+            panic!("No suggestion pattern found")
+        };
         model.insert_mention_at_suggestion(
             "https://matrix.to/#/@alice:matrix.org".into(),
             "Alice".into(),
