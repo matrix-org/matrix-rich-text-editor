@@ -200,7 +200,7 @@ mod sys {
                         _ => None,
                     };
 
-                    if is_mention && matches!(text, Some(_)) {
+                    if is_mention && text.is_some() {
                         self.current_path.push(DomNodeKind::Mention);
                         let mention = Self::new_mention(child, text.unwrap());
                         node.append_child(mention);
@@ -280,10 +280,10 @@ mod sys {
         where
             S: UnicodeString,
         {
-            DomNode::Container(
-                ContainerNode::new_formatting_from_tag(tag.into(), Vec::new())
-                    .unwrap_or_else(|| panic!("Unknown format tag {}", tag)),
-            )
+            DomNode::Container(ContainerNode::new_formatting_from_tag(
+                tag.into(),
+                Vec::new(),
+            ))
         }
 
         /// Create a br node
@@ -341,7 +341,7 @@ mod sys {
             S: UnicodeString,
         {
             DomNode::Container(ContainerNode::new_list(
-                ListType::try_from(S::from(tag)).unwrap(),
+                ListType::from(S::from(tag)),
                 Vec::new(),
             ))
         }

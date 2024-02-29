@@ -73,10 +73,10 @@ where
         format: S,
         children: Vec<DomNode<S>>,
     ) -> DomNode<S> {
-        DomNode::Container(
-            ContainerNode::new_formatting_from_tag(format.clone(), children)
-                .unwrap_or_else(|| panic!("Unknown format tag {format}")),
-        )
+        DomNode::Container(ContainerNode::new_formatting_from_tag(
+            format.clone(),
+            children,
+        ))
     }
 
     pub fn new_list(
