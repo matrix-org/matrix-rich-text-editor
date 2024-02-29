@@ -13,12 +13,12 @@ default-members = [
 resolver = "2"
 
 [workspace.package]
-rust-version = "1.71"
+rust-version = "1.76"
 
 [workspace.dependencies]
-uniffi = "0.25.2"
-uniffi_macros = "0.25.2"
-uniffi_build = "0.25.2"
+uniffi = "0.26.1"
+uniffi_macros = "0.26.1"
+uniffi_build = "0.26.1"
 
 [profile.release]
 opt-level = 'z'     # Optimize for size.

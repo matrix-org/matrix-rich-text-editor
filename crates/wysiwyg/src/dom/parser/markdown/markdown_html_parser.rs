@@ -77,6 +77,6 @@ impl MarkdownHTMLParser {
             // of a formatted codeblock
             .replace("\n</code>", "</code>");
 
-        Ok(S::try_from(html).unwrap())
+        Ok(S::from(html))
     }
 }

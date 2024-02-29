@@ -307,7 +307,7 @@ where
         self.indent_list_item_handles(&handles);
     }
 
-    fn indent_list_item_handles(&mut self, handles: &Vec<DomHandle>) {
+    fn indent_list_item_handles(&mut self, handles: &[DomHandle]) {
         // Pre-checks
         if handles.is_empty() {
             return;
@@ -326,10 +326,10 @@ where
         }
 
         // Sort handles to avoid issues where we delete a former handle so the rest become invalid
-        let mut sorted_handles = handles.clone();
+        let mut sorted_handles = handles.to_owned();
         sorted_handles.sort();
 
-        let first_handle = sorted_handles.get(0).unwrap();
+        let first_handle = sorted_handles.first().unwrap();
         let insert_into_handle = first_handle.prev_sibling();
 
         let parent_list_type = self
@@ -377,7 +377,7 @@ where
         self.unindent_handles(&handles);
     }
 
-    fn unindent_handles(&mut self, handles: &Vec<DomHandle>) {
+    fn unindent_handles(&mut self, handles: &[DomHandle]) {
         // Pre-checks
         if handles.is_empty() {
             return;
@@ -396,7 +396,7 @@ where
         }
 
         // Sort handles to avoid issues where we delete a former handle so the rest become invalid
-        let mut sorted_handles = handles.clone();
+        let mut sorted_handles = handles.to_owned();
         sorted_handles.sort();
 
         // We should always insert the new List inside the next ListItem sibling

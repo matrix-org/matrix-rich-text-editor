@@ -32,24 +32,34 @@ where
 
     fn add_quote(&mut self) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
-        let Some(wrap_result) = self.state.dom.find_nodes_to_wrap_in_block(s, e) else {
+        let Some(wrap_result) =
+            self.state.dom.find_nodes_to_wrap_in_block(s, e)
+        else {
             // No nodes to be wrapped found.
             // Adding an empty Quote block with a paragraph
             let range = self.state.dom.find_range(s, e);
             let leaves: Vec<&DomLocation> = range.leaves().collect();
-            let node = DomNode::new_quote(vec![DomNode::new_paragraph(Vec::new())]);
+            let node =
+                DomNode::new_quote(vec![DomNode::new_paragraph(Vec::new())]);
             if leaves.is_empty() {
-                if let Some(deepest_block_location) = range.deepest_block_node(None) {
-                    let mut block_node = self.state.dom.remove(&deepest_block_location.node_handle);
+                if let Some(deepest_block_location) =
+                    range.deepest_block_node(None)
+                {
+                    let mut block_node = self
+                        .state
+                        .dom
+                        .remove(&deepest_block_location.node_handle);
                     let node = if block_node.is_list_item() {
                         let list_item = block_node.as_container_mut().unwrap();
                         let children = list_item.remove_children();
                         list_item.append_child(DomNode::new_quote(children));
                         block_node
                     } else {
-                         DomNode::new_quote(vec![block_node])
+                        DomNode::new_quote(vec![block_node])
                     };
-                    self.state.dom.insert_at(&deepest_block_location.node_handle, node);
+                    self.state
+                        .dom
+                        .insert_at(&deepest_block_location.node_handle, node);
                 } else {
                     self.state.dom.append_at_end_of_document(node);
                 }
@@ -122,7 +132,9 @@ where
     fn remove_quote(&mut self) -> ComposerUpdate<S> {
         let (s, e) = self.safe_selection();
         let range = self.state.dom.find_range(s, e);
-        let Some(quote_location) = range.locations.iter().find(|l| l.kind == Quote) else {
+        let Some(quote_location) =
+            range.locations.iter().find(|l| l.kind == Quote)
+        else {
             return ComposerUpdate::keep();
         };
 
