@@ -228,8 +228,16 @@ open class EditorStyledTextView : AppCompatTextView {
     }
 
     private fun findSpansForTouchEvent(event: MotionEvent): Array<out Any> {
+        val layout = this.layout ?: return emptyArray()
         // Find selection matching the pointer coordinates
         val offset = getOffsetForPosition(event.x, event.y)
-        return (text as? Spanned)?.getSpans<Any>(offset, offset).orEmpty()
+        // For links that wrap several lines, we want to avoid opening the link if the touch event
+        // happened on the empty space after the line wrapped.
+        val currentLineWidth = layout.getLineWidth(layout.getLineForOffset(offset))
+        return if (event.x <= currentLineWidth) {
+            (text as? Spanned)?.getSpans<Any>(offset, offset).orEmpty()
+        } else {
+            emptyArray()
+        }
     }
 }
