@@ -16,6 +16,7 @@ import io.element.android.wysiwyg.internal.viewmodel.ReplaceTextResult
 import io.element.android.wysiwyg.utils.EditorIndexMapper
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
 import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
+import io.element.android.wysiwyg.utils.SuspendableTextWatcher
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -24,6 +25,7 @@ internal class InterceptInputConnection(
     private val baseInputConnection: InputConnection,
     private val editorEditText: TextView,
     private val viewModel: EditorViewModel,
+    private val suspendableTextWatcher: SuspendableTextWatcher,
 ) : BaseInputConnection(editorEditText, true) {
 
     override fun getEditable(): Editable {
@@ -361,8 +363,17 @@ internal class InterceptInputConnection(
 
     private fun replaceAll(charSequence: CharSequence) {
         editable.removeFormattingSpans()
-        editable.clear()
-        editable.append(charSequence)
+        // If new text is empty, we just clear the editable.
+        if (charSequence.isEmpty()) {
+            editable.clear()
+        } else {
+            // Otherwise we first clear the editable and then append the new text
+            // but we do this in a way that doesn't trigger the TextWatcher with an empty string.
+            suspendableTextWatcher.pause {
+                editable.clear()
+            }
+            editable.append(charSequence)
+        }
     }
 
     private fun editorIndex(composerIndex: Int, editable: Editable): Int {

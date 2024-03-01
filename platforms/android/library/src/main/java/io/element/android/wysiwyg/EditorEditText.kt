@@ -8,8 +8,10 @@ import android.graphics.Canvas
 import android.net.Uri
 import android.os.Build
 import android.os.Parcelable
+import android.text.Editable
 import android.text.Selection
 import android.text.Spanned
+import android.text.TextWatcher
 import android.util.AttributeSet
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -55,12 +57,16 @@ class EditorEditText : AppCompatEditText {
     private lateinit var inlineCodeBgHelper: SpanBackgroundHelper
     private lateinit var codeBlockBgHelper: SpanBackgroundHelper
 
-    private val viewModel: EditorViewModel by viewModel(
-        viewModelInitializer = {
-            val provideComposer = if (!isInEditMode) { { newComposerModel() } } else { { null } }
-            EditorViewModel(provideComposer)
+    private lateinit var textWatcherWrapper: TextWatcherWrapper
+
+    private val viewModel: EditorViewModel by viewModel(viewModelInitializer = {
+        val provideComposer = if (!isInEditMode) {
+            { newComposerModel() }
+        } else {
+            { null }
         }
-    )
+        EditorViewModel(provideComposer)
+    })
 
     private var mentionDisplayHandler: MentionDisplayHandler? = null
         set(value) {
@@ -75,7 +81,9 @@ class EditorEditText : AppCompatEditText {
             rerender()
         }
 
-    private fun createHtmlConverter(styleConfig: StyleConfig, mentionDisplayHandler: MentionDisplayHandler?): HtmlConverter? {
+    private fun createHtmlConverter(
+        styleConfig: StyleConfig, mentionDisplayHandler: MentionDisplayHandler?
+    ): HtmlConverter? {
         return HtmlConverter.Factory.create(
             context = context.applicationContext,
             styleConfig = styleConfig,
@@ -90,11 +98,19 @@ class EditorEditText : AppCompatEditText {
     constructor(context: Context) : this(context, null)
 
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
-        updateStyle(styleConfig = EditorEditTextAttributeReader(context, attrs).styleConfig, mentionDisplayHandler = mentionDisplayHandler)
+        updateStyle(
+            styleConfig = EditorEditTextAttributeReader(context, attrs).styleConfig,
+            mentionDisplayHandler = mentionDisplayHandler
+        )
     }
 
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
-        updateStyle(styleConfig = EditorEditTextAttributeReader(context, attrs).styleConfig, mentionDisplayHandler = mentionDisplayHandler)
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(
+        context, attrs, defStyleAttr
+    ) {
+        updateStyle(
+            styleConfig = EditorEditTextAttributeReader(context, attrs).styleConfig,
+            mentionDisplayHandler = mentionDisplayHandler
+        )
     }
 
     init {
@@ -209,7 +225,7 @@ class EditorEditText : AppCompatEditText {
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
         val baseInputConnection = requireNotNull(super.onCreateInputConnection(outAttrs))
         val inputConnection =
-            InterceptInputConnection(baseInputConnection, this, viewModel)
+            InterceptInputConnection(baseInputConnection, this, viewModel, getTextWatcherWrapper())
         this.inputConnection = inputConnection
         return inputConnection
     }
@@ -223,15 +239,13 @@ class EditorEditText : AppCompatEditText {
                 val clipboardManager =
                     context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
                 val clpData = ClipData.newPlainText(
-                    "newText",
-                    this.editableText.slice(this.selectionStart until this.selectionEnd)
+                    "newText", this.editableText.slice(this.selectionStart until this.selectionEnd)
                 )
                 clipboardManager.setPrimaryClip(clpData)
 
                 val result = viewModel.processInput(
                     EditorInputAction.DeleteIn(
-                        this.selectionStart,
-                        this.selectionEnd
+                        this.selectionStart, this.selectionEnd
                     )
                 )
 
@@ -242,6 +256,7 @@ class EditorEditText : AppCompatEditText {
 
                 return true
             }
+
             android.R.id.paste, android.R.id.pasteAsPlainText -> {
                 val clipBoardManager =
                     context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
@@ -258,14 +273,17 @@ class EditorEditText : AppCompatEditText {
 
                 return true
             }
+
             android.R.id.undo -> {
                 undo()
                 return true
             }
+
             android.R.id.redo -> {
                 redo()
                 return true
             }
+
             else -> return super.onTextContextMenuItem(id)
         }
     }
@@ -279,19 +297,19 @@ class EditorEditText : AppCompatEditText {
         this.styleConfig = styleConfig
         this.mentionDisplayHandler = mentionDisplayHandler
 
-        inlineCodeBgHelper = SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(styleConfig.inlineCode)
-        codeBlockBgHelper = SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(styleConfig.codeBlock)
+        inlineCodeBgHelper =
+            SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(styleConfig.inlineCode)
+        codeBlockBgHelper =
+            SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(styleConfig.codeBlock)
 
         htmlConverter = createHtmlConverter(styleConfig, mentionDisplayHandler)
     }
 
     fun setOnRichContentSelected(onRichContentSelected: ((Uri) -> Unit)?) {
         if (onRichContentSelected != null) {
-            ViewCompat.setOnReceiveContentListener(
-                this,
+            ViewCompat.setOnReceiveContentListener(this,
                 arrayOf("image/*"),
-                UriContentListener { onRichContentSelected(it) }
-            )
+                UriContentListener { onRichContentSelected(it) })
         }
     }
 
@@ -305,27 +323,30 @@ class EditorEditText : AppCompatEditText {
                     }
                     true
                 }
+
                 event.action != MotionEvent.ACTION_DOWN -> false
                 event.isMovementKey() -> false
                 event.keyCode == KeyEvent.KEYCODE_Z && event.isCtrlPressed && event.isShiftPressed -> {
                     redo()
                     true
                 }
+
                 event.keyCode == KeyEvent.KEYCODE_Z && event.isCtrlPressed -> {
                     undo()
                     true
                 }
+
                 event.metaState != 0 && event.unicodeChar == 0 -> {
                     // Is a modifier key
                     false
                 }
-                event.isPrintableCharacter() ||
-                    keyCode == KeyEvent.KEYCODE_DEL ||
-                    keyCode == KeyEvent.KEYCODE_FORWARD_DEL -> {
+
+                event.isPrintableCharacter() || keyCode == KeyEvent.KEYCODE_DEL || keyCode == KeyEvent.KEYCODE_FORWARD_DEL -> {
                     // Consume printable characters
                     inputConnection?.sendHardwareKeyboardInput(event)
                     true
                 }
+
                 else -> {
                     // Don't consume other key codes (HW back button, i.e.)
                     false
@@ -373,16 +394,14 @@ class EditorEditText : AppCompatEditText {
     }
 
     fun toggleCodeBlock(): Boolean {
-        val result = viewModel.processInput(EditorInputAction.CodeBlock)
-            ?: return false
+        val result = viewModel.processInput(EditorInputAction.CodeBlock) ?: return false
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
         return true
     }
 
     fun toggleQuote(): Boolean {
-        val result = viewModel.processInput(EditorInputAction.Quote)
-            ?: return false
+        val result = viewModel.processInput(EditorInputAction.Quote) ?: return false
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
         return true
@@ -411,8 +430,7 @@ class EditorEditText : AppCompatEditText {
      *
      * @return The link action or null if no action is available.
      */
-    fun getLinkAction(): LinkAction? =
-        viewModel.getLinkAction()
+    fun getLinkAction(): LinkAction? = viewModel.getLinkAction()
 
     /**
      * Set a link for the current selection. This method does nothing if there is no text selected.
@@ -556,8 +574,7 @@ class EditorEditText : AppCompatEditText {
     }
 
     @VisibleForTesting
-    internal fun testComposerCrashRecovery() =
-        viewModel.testComposerCrashRecovery()
+    internal fun testComposerCrashRecovery() = viewModel.testComposerCrashRecovery()
 
     override fun onDraw(canvas: Canvas) {
         // need to draw bg first so that text can be on top during super.onDraw()
@@ -573,9 +590,26 @@ class EditorEditText : AppCompatEditText {
     override fun setSelection(start: Int, stop: Int) {
         if (editableText.isEmpty()) return
         super.setSelection(
-            start.coerceIn(0, editableText.length),
-            stop.coerceIn(0, editableText.length)
+            start.coerceIn(0, editableText.length), stop.coerceIn(0, editableText.length)
         )
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        super.addTextChangedListener(getTextWatcherWrapper())
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        super.removeTextChangedListener(getTextWatcherWrapper())
+    }
+
+    override fun addTextChangedListener(watcher: TextWatcher) {
+        getTextWatcherWrapper().addDelegate(watcher)
+    }
+
+    override fun removeTextChangedListener(watcher: TextWatcher) {
+        getTextWatcherWrapper().removeDelegate(watcher)
     }
 
     /**
@@ -602,6 +636,52 @@ class EditorEditText : AppCompatEditText {
             setSelection(newStart, newEnd)
         }
     }
+
+    private fun getTextWatcherWrapper(): TextWatcherWrapper {
+        if (!this::textWatcherWrapper.isInitialized) {
+            textWatcherWrapper = TextWatcherWrapper()
+        }
+        return textWatcherWrapper
+    }
+
+    internal class TextWatcherWrapper : SuspendableTextWatcher {
+
+        private val delegates = mutableListOf<TextWatcher>()
+        private var isActive = true
+
+        override fun pause(block: () -> Unit) = synchronized(this) {
+            isActive = false
+            block()
+            isActive = true
+        }
+
+        fun addDelegate(delegate: TextWatcher) = synchronized(this) {
+            delegates.add(delegate)
+        }
+
+        fun removeDelegate(delegate: TextWatcher) = synchronized(this) {
+            delegates.remove(delegate)
+        }
+
+        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+            if (isActive) {
+                delegates.forEach { it.beforeTextChanged(s, start, count, after) }
+            }
+        }
+
+        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+            if (isActive) {
+                delegates.forEach { it.onTextChanged(s, start, before, count) }
+            }
+        }
+
+        override fun afterTextChanged(s: Editable?) {
+            if (isActive) {
+                delegates.forEach { it.afterTextChanged(s) }
+            }
+        }
+    }
+
 }
 
 private fun KeyEvent.isMovementKey(): Boolean {
