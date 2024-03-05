@@ -1,5 +1,11 @@
 # Changelog
 
+# [2.30.0] - 2024-01-04
+- [Rust] Bumped Rust version to `1.76`.
+- [Rust] Bumped UniFFi to `v0.26.1`.
+- [Rust] Bumped speculoos to `0.11.0`.
+- [Android] Fix touch handling for links: the listener should only fire once per click and tapping on an empty space next to a link wrapping several lines should not fire it.
+
 # [2.29.0] - 2024-02-08
 ### Changed
 - [iOS] Improved the textView injection process in the view model.
