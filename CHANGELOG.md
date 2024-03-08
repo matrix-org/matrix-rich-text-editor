@@ -1,5 +1,8 @@
 # Changelog
 
+# [2.31.0] - 2024-08-04
+- [iOS] Temporarily disabled auto correction until we fix the predictive text issue.
+
 # [2.30.0] - 2024-01-04
 - [Rust] Bumped Rust version to `1.76`.
 - [Rust] Bumped UniFFi to `v0.26.1`.
