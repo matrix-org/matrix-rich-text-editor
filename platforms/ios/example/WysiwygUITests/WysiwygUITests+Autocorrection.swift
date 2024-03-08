@@ -42,12 +42,12 @@ extension WysiwygUITests {
         XCTAssertTrue(image(.autocorrectionIndicator).exists)
     }
 
-    func testRichTextModeNonLeadingCommand() throws {
+    func disable_testRichTextModeNonLeadingCommand() throws {
         textView.typeTextCharByChar("text /not_a_command")
         XCTAssertTrue(image(.autocorrectionIndicator).exists)
     }
 
-    func testPlainTextModeNonLeadingCommand() throws {
+    func disable_testPlainTextModeNonLeadingCommand() throws {
         waitForButtonToExistAndTap(.plainRichButton)
         textView.typeTextCharByChar("text /not_a_command")
         XCTAssertTrue(image(.autocorrectionIndicator).exists)

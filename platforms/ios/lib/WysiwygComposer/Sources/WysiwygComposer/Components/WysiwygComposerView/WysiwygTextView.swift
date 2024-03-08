@@ -137,7 +137,7 @@ public class WysiwygTextView: UITextView {
         }
         didSet {
             // Disabled until we fix the predictive text issue
-            //toggleAutocorrectionIfNeeded()
+            // toggleAutocorrectionIfNeeded()
             delegate?.textViewDidChange?(self)
         }
     }
