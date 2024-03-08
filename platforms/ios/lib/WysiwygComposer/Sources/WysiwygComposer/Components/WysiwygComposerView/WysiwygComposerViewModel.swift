@@ -29,12 +29,16 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     /// The textView that the model currently manages, a default text view is provided, but you should always inject it from the UIWrapper
     public lazy var textView = {
         let textView = WysiwygTextView()
+        // Disabled until we fix the issue with the predictive text
+        textView.autocorrectionType = .no
         textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
         textView.mentionDisplayHelper = mentionDisplayHelper
         textView.apply(attributedContent)
         return textView
     }() {
         didSet {
+            // Disabled until we fix the issue with the predictive text
+            textView.autocorrectionType = .no
             textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
             textView.mentionDisplayHelper = mentionDisplayHelper
             textView.apply(attributedContent)

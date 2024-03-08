@@ -203,7 +203,8 @@ struct UITextViewWrapper: UIViewRepresentable {
                 functionName: #function
             )
             didUpdateText()
-            textView.toggleAutocorrectionIfNeeded()
+            // Disabled always until we fix the predictive text issue
+//            textView.toggleAutocorrectionIfNeeded()
             textView.invalidateIntrinsicContentSize()
         }
 
