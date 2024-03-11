@@ -26,6 +26,7 @@ private val defaultCodeBorderWidth = 1.dp
 object RichTextEditorDefaults {
     internal const val initialLineCount = 1
     internal const val initialHtml = ""
+    internal const val initialMarkdown = ""
     internal const val initialFocus = false
     internal val initialSelection = 0 to 0
 

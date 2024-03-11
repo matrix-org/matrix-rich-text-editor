@@ -31,12 +31,15 @@ import uniffi.wysiwyg_composer.MenuAction
  * that are displayed at the same time.
  *
  * @param initialHtml The HTML formatted content to initialise the state with.
+ * @param initialMarkdown The Markdown formatted content to initialise the state with.
  * @param initialLineCount The line count to initialise the state with.
  * @param initialFocus The focus value to initialise the state with.
+ * @param initialSelection The indexes of the selection to initialise the state with.
  */
 @Stable
 class RichTextEditorState(
     initialHtml: String = RichTextEditorDefaults.initialHtml,
+    initialMarkdown: String = RichTextEditorDefaults.initialMarkdown,
     initialLineCount: Int = RichTextEditorDefaults.initialLineCount,
     initialFocus: Boolean = RichTextEditorDefaults.initialFocus,
     initialSelection: Pair<Int, Int> = RichTextEditorDefaults.initialSelection,
@@ -167,7 +170,7 @@ class RichTextEditorState(
     /**
      * The content of the editor as markdown formatted for sending as a message.
      */
-    var messageMarkdown by mutableStateOf("")
+    var messageMarkdown by mutableStateOf(initialMarkdown)
         internal set
 
     /**
