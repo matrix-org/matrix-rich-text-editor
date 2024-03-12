@@ -17,9 +17,8 @@
 @testable import WysiwygComposer
 import XCTest
 
-// THESE TESTS ARE DISABLED UNTIL WE FIX THE PREDICTIVE TEXT ISSUE
 extension WysiwygComposerViewModelTests {
-    func disabled_testAutocorrectionIsDisabled() throws {
+    func testAutocorrectionIsDisabled() throws {
         mockTrailingTyping("/")
         assertAutocorrectDisabled()
 
@@ -30,7 +29,7 @@ extension WysiwygComposerViewModelTests {
         assertAutocorrectDisabled()
     }
 
-    func disabled_testAutocorrectionIsEnabled() throws {
+    func testAutocorrectionIsEnabled() throws {
         mockTrailingTyping("Just some text")
         assertAutoCorrectEnabled()
 
@@ -38,12 +37,12 @@ extension WysiwygComposerViewModelTests {
         assertAutoCorrectEnabled()
     }
 
-    func disabled_testDoubleSlashKeepAutocorrectionEnabled() throws {
+    func testDoubleSlashKeepAutocorrectionEnabled() throws {
         mockTrailingTyping("//")
         assertAutoCorrectEnabled()
     }
 
-    func disabled_testAutocorrectionIsReEnabled() throws {
+    func testAutocorrectionIsReEnabled() throws {
         mockTrailingTyping("/")
         assertAutocorrectDisabled()
 
@@ -59,7 +58,7 @@ extension WysiwygComposerViewModelTests {
         assertAutoCorrectEnabled()
     }
 
-    func disabled_testAutocorrectionAfterSetHtmlContent() {
+    func testAutocorrectionAfterSetHtmlContent() {
         viewModel.setHtmlContent("/join #some_room:matrix.org")
         assertAutocorrectDisabled()
 
@@ -80,7 +79,7 @@ extension WysiwygComposerViewModelTests {
 //        assertAutoCorrectEnabled()
 //    }
 
-    func disabled_testAutocorrectionAfterSetMarkdownContent() {
+    func testAutocorrectionAfterSetMarkdownContent() {
         viewModel.setMarkdownContent("/join #some_room:matrix.org")
         assertAutocorrectDisabled()
 
