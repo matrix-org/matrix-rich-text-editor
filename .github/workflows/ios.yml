@@ -40,7 +40,7 @@ jobs:
         profile: minimal
         override: true
         
-    - name: Set XCode 15.2
+    - name: Set Xcode 15.2
       run: sudo xcode-select -switch /Applications/Xcode_15.2.app
 
     - name: Install targets
