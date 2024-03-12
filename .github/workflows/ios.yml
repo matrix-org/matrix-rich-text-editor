@@ -42,12 +42,12 @@ jobs:
 
     - name: Install targets
       run: make targets-ios
+            
+    - name: Set Xcode 15.2
+      run: sudo xcode-select -switch /Applications/Xcode_15.2.app
 
     - name: Build framework & bindings
       run: make ios
-      
-    - name: Set Xcode 15.2
-      run: sudo xcode-select -switch /Applications/Xcode_15.2.app
 
     - name: Extract branch name
       shell: bash
