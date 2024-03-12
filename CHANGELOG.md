@@ -1,5 +1,9 @@
 # Changelog
 
+# [2.33.0] - 2024-12-04
+- [iOS] Re-enabled auto-correction but disabled inline predictions on iOS 17.
+- [iOS] Build workflow now uses Xcode 15.2.
+
 # [2.32.0] - 2024-11-04
 - [Android] Allow customising the initial Markdown value in `RichTextEditorState`.
 
