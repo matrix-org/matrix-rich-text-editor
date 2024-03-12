@@ -39,12 +39,12 @@ jobs:
         toolchain: 1.76
         profile: minimal
         override: true
+        
+    - name: Set XCode 15.2
+      run: sudo xcode-select -switch /Applications/Xcode_15.2.app
 
     - name: Install targets
       run: make targets-ios
-
-    - name: Set XCode 15.2
-      run: sudo xcode-select -switch /Applications/Xcode_15.2.app
 
     - name: Build framework & bindings
       run: make ios
