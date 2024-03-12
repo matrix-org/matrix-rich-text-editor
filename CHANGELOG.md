@@ -1,5 +1,8 @@
 # Changelog
 
+# [2.32.0] - 2024-11-04
+- [Android] Allow customising the initial Markdown value in `RichTextEditorState`.
+
 # [2.31.0] - 2024-08-04
 - [iOS] Temporarily disabled auto correction until we fix the predictive text issue.
 

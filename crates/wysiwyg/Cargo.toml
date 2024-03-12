@@ -7,7 +7,7 @@ description = "Model code to power a rich text editor for Matrix"
 keywords = ["matrix", "chat", "messaging", "composer", "wysiwyg"]
 license = "Apache-2.0"
 name = "wysiwyg"
-version = "2.31.0"
+version = "2.32.0"
 rust-version = { workspace = true }
 
 [features]
