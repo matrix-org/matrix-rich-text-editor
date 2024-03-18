@@ -16,7 +16,6 @@ import io.element.android.wysiwyg.poc.matrix.MatrixMentionMentionDisplayHandler
 import io.element.android.wysiwyg.poc.matrix.Mention
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
-import timber.log.Timber
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
 import uniffi.wysiwyg_composer.MenuAction
@@ -194,7 +193,6 @@ class RichTextEditor : LinearLayout {
     override fun requestFocus(direction: Int, previouslyFocusedRect: Rect?): Boolean {
         return binding.richTextEditText.requestFocus(direction, previouslyFocusedRect)
     }
-
 }
 
 interface OnSetLinkListener {

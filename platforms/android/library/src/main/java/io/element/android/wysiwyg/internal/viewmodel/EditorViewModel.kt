@@ -74,8 +74,8 @@ internal class EditorViewModel(
                     // This conversion to a plain String might be too simple
                     composer?.replaceTextIn(
                         action.value.toString(),
-                        action.start.toUInt(),
-                        action.end.toUInt()
+                        action.start,
+                        action.end
                     )
                 }
 

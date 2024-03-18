@@ -4,9 +4,11 @@ import android.app.Application
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import androidx.test.core.app.ApplicationProvider
+import io.element.android.wysiwyg.EditorTextWatcher
 import io.element.android.wysiwyg.fakes.createFakeStyleConfig
 import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
 import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
+import io.element.android.wysiwyg.test.utils.Editor
 import io.element.android.wysiwyg.test.utils.dumpSpans
 import io.element.android.wysiwyg.utils.HtmlConverter
 import io.element.android.wysiwyg.utils.NBSP
@@ -33,6 +35,7 @@ class InterceptInputConnectionIntegrationTest {
         viewModel = viewModel,
         editorEditText = textView,
         baseInputConnection = textView.onCreateInputConnection(EditorInfo()),
+        textWatcher = EditorTextWatcher(),
     )
 
     private val baseEditedSpans = listOf(

@@ -8,8 +8,10 @@ import android.graphics.Canvas
 import android.net.Uri
 import android.os.Build
 import android.os.Parcelable
+import android.text.Editable
 import android.text.Selection
 import android.text.Spanned
+import android.text.TextWatcher
 import android.util.AttributeSet
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -37,13 +39,15 @@ import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelperFactory
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
 import io.element.android.wysiwyg.view.spans.ReuseSourceSpannableFactory
+import timber.log.Timber
 import uniffi.wysiwyg_composer.*
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * An [EditText] that handles rich text editing.
  */
 class EditorEditText : AppCompatEditText {
-
+    private lateinit var textWatcher: EditorTextWatcher
     private var inputConnection: InterceptInputConnection? = null
 
     /**
@@ -209,7 +213,7 @@ class EditorEditText : AppCompatEditText {
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
         val baseInputConnection = requireNotNull(super.onCreateInputConnection(outAttrs))
         val inputConnection =
-            InterceptInputConnection(baseInputConnection, this, viewModel)
+            InterceptInputConnection(baseInputConnection, this, viewModel, textWatcher)
         this.inputConnection = inputConnection
         return inputConnection
     }
@@ -578,6 +582,18 @@ class EditorEditText : AppCompatEditText {
         )
     }
 
+    override fun addTextChangedListener(watcher: TextWatcher) {
+        if (!this::textWatcher.isInitialized) {
+            this.textWatcher = EditorTextWatcher()
+            super.addTextChangedListener(this.textWatcher)
+        }
+        textWatcher.addChild(watcher)
+    }
+
+    override fun removeTextChangedListener(watcher: TextWatcher) {
+        textWatcher.removeChild(watcher)
+    }
+
     /**
      * Force redisplay the current editor model.
      *
@@ -591,8 +607,14 @@ class EditorEditText : AppCompatEditText {
 
     private fun setTextFromComposerUpdate(text: CharSequence) {
         beginBatchEdit()
-        editableText.removeFormattingSpans()
-        editableText.replace(0, editableText.length, text)
+        textWatcher.inEditor {
+            val beforeLength = editableText.length
+            textWatcher.notifyBeforeTextChanged(editableText, 0, beforeLength, text.length)
+            editableText.removeFormattingSpans()
+            editableText.replace(0, editableText.length, text)
+            textWatcher.notifyOnTextChanged(editableText, 0, beforeLength, text.length)
+            textWatcher.notifyAfterTextChanged(editableText)
+        }
         endBatchEdit()
     }
 
@@ -614,4 +636,62 @@ private fun KeyEvent.isMovementKey(): Boolean {
 
 private fun KeyEvent.isPrintableCharacter(): Boolean {
     return isPrintingKey || keyCode == KeyEvent.KEYCODE_SPACE
+}
+
+class EditorTextWatcher: TextWatcher {
+    private val nestedWatchers: MutableList<TextWatcher> = mutableListOf()
+
+    private val updateIsFromEditor: AtomicBoolean = AtomicBoolean(false)
+
+    var updateCallback: (CharSequence, Int, Int, CharSequence?) -> Unit = { _, _, _, _ -> }
+
+    fun addChild(watcher: TextWatcher) {
+        nestedWatchers.add(watcher)
+    }
+
+    fun removeChild(watcher: TextWatcher) {
+        nestedWatchers.remove(watcher)
+    }
+
+    fun inEditor(block: () -> Unit) {
+        updateIsFromEditor.set(true)
+        block()
+        updateIsFromEditor.set(false)
+    }
+
+    private var beforeText: CharSequence? = null
+
+    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+        Timber.v("beforeTextChanged | text: \"$s\", start: $start, count: $count, after: $after")
+        if (!updateIsFromEditor.get()) {
+            beforeText = s?.subSequence(start, start + count)
+        }
+    }
+
+    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+        Timber.v("onTextChanged | text: \"$s\", start: $start, before: $before, count: $count")
+        if (!updateIsFromEditor.get()) {
+            val newText = s?.subSequence(start, start + count) ?: ""
+            updateCallback(newText, start, start + before, beforeText)
+        }
+    }
+
+    override fun afterTextChanged(s: Editable?) {
+        Timber.v("afterTextChanged")
+        if (!updateIsFromEditor.get()) {
+            beforeText = null
+        }
+    }
+
+    fun notifyBeforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+        nestedWatchers.forEach { it.beforeTextChanged(s, start, count, after) }
+    }
+
+    fun notifyOnTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+        nestedWatchers.forEach { it.onTextChanged(s, start, before, count) }
+    }
+
+    fun notifyAfterTextChanged(s: Editable?) {
+        nestedWatchers.forEach { it.afterTextChanged(s) }
+    }
 }
