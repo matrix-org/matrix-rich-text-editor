@@ -114,6 +114,11 @@ internal class InterceptInputConnection(
     // Called when started typing
     override fun setComposingText(text: CharSequence, newCursorPosition: Int): Boolean {
         val (start, end) = getCurrentCompositionOrSelection()
+        // Some Chinese keyboards send empty text when the user is typing English characters
+        if (text.isEmpty() && Selection.getSelectionStart(editable) == Selection.getSelectionEnd(editable)) {
+            finishComposingText()
+            return false
+        }
         val result = processTextEntry(text, start, end)
 
         return if (result != null) {
