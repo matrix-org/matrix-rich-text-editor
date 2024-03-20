@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Parcelable
 import android.text.Selection
 import android.text.Spanned
+import android.text.TextWatcher
 import android.util.AttributeSet
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -20,7 +21,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.core.graphics.withTranslation
 import androidx.core.view.ViewCompat
-import androidx.lifecycle.*
 import io.element.android.wysiwyg.display.MentionDisplayHandler
 import io.element.android.wysiwyg.inputhandlers.InterceptInputConnection
 import io.element.android.wysiwyg.internal.display.MemoizingMentionDisplayHandler
@@ -29,21 +29,27 @@ import io.element.android.wysiwyg.internal.view.EditorEditTextAttributeReader
 import io.element.android.wysiwyg.internal.view.viewModel
 import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
 import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
-import io.element.android.wysiwyg.utils.*
+import io.element.android.wysiwyg.utils.EditorIndexMapper
+import io.element.android.wysiwyg.utils.HtmlConverter
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
+import io.element.android.wysiwyg.utils.RustErrorCollector
 import io.element.android.wysiwyg.view.StyleConfig
 import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelper
 import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelperFactory
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
 import io.element.android.wysiwyg.view.spans.ReuseSourceSpannableFactory
-import uniffi.wysiwyg_composer.*
+import uniffi.wysiwyg_composer.ActionState
+import uniffi.wysiwyg_composer.ComposerAction
+import uniffi.wysiwyg_composer.MentionsState
+import uniffi.wysiwyg_composer.MenuAction
+import uniffi.wysiwyg_composer.newComposerModel
 
 /**
  * An [EditText] that handles rich text editing.
  */
 class EditorEditText : AppCompatEditText {
-
+    private lateinit var textWatcher: EditorTextWatcher
     private var inputConnection: InterceptInputConnection? = null
 
     /**
@@ -75,7 +81,7 @@ class EditorEditText : AppCompatEditText {
             rerender()
         }
 
-    private fun createHtmlConverter(styleConfig: StyleConfig, mentionDisplayHandler: MentionDisplayHandler?): HtmlConverter? {
+    private fun createHtmlConverter(styleConfig: StyleConfig, mentionDisplayHandler: MentionDisplayHandler?): HtmlConverter {
         return HtmlConverter.Factory.create(
             context = context.applicationContext,
             styleConfig = styleConfig,
@@ -209,7 +215,7 @@ class EditorEditText : AppCompatEditText {
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
         val baseInputConnection = requireNotNull(super.onCreateInputConnection(outAttrs))
         val inputConnection =
-            InterceptInputConnection(baseInputConnection, this, viewModel)
+            InterceptInputConnection(baseInputConnection, this, viewModel, textWatcher)
         this.inputConnection = inputConnection
         return inputConnection
     }
@@ -521,9 +527,6 @@ class EditorEditText : AppCompatEditText {
 
     /**
      * Set a mention link that applies to the current suggestion range
-     *
-     * @param url The url of the new link
-     * @param text The text to insert into the current suggestion range
      */
     fun insertAtRoomMentionAtSuggestion() {
         val result = viewModel.processInput(
@@ -578,6 +581,18 @@ class EditorEditText : AppCompatEditText {
         )
     }
 
+    override fun addTextChangedListener(watcher: TextWatcher) {
+        if (!this::textWatcher.isInitialized) {
+            this.textWatcher = EditorTextWatcher()
+            super.addTextChangedListener(this.textWatcher)
+        }
+        textWatcher.addChild(watcher)
+    }
+
+    override fun removeTextChangedListener(watcher: TextWatcher) {
+        textWatcher.removeChild(watcher)
+    }
+
     /**
      * Force redisplay the current editor model.
      *
@@ -591,8 +606,14 @@ class EditorEditText : AppCompatEditText {
 
     private fun setTextFromComposerUpdate(text: CharSequence) {
         beginBatchEdit()
-        editableText.removeFormattingSpans()
-        editableText.replace(0, editableText.length, text)
+        textWatcher.runInEditor {
+            val beforeLength = editableText.length
+            notifyBeforeTextChanged(editableText, 0, beforeLength, text.length)
+            editableText.removeFormattingSpans()
+            editableText.replace(0, editableText.length, text)
+            notifyOnTextChanged(editableText, 0, beforeLength, text.length)
+            notifyAfterTextChanged(editableText)
+        }
         endBatchEdit()
     }
 

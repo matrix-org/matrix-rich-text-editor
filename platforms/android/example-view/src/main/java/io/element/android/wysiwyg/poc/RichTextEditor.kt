@@ -10,6 +10,7 @@ import android.widget.ArrayAdapter
 import android.widget.LinearLayout
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
+import androidx.core.widget.addTextChangedListener
 import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.poc.databinding.ViewRichTextEditorBinding
 import io.element.android.wysiwyg.poc.matrix.MatrixMentionMentionDisplayHandler
@@ -42,6 +43,17 @@ class RichTextEditor : LinearLayout {
         super.onAttachedToWindow()
 
         with(binding) {
+            richTextEditText.addTextChangedListener(
+                beforeTextChanged = { text, start, count, after ->
+                    Timber.d("Before text changed: '$text', start: $start, count: $count, after: $after")
+                },
+                onTextChanged = { text, start, before, count ->
+                    Timber.d("Text changed: '$text', start: $start, before: $before, count: $count")
+                },
+                afterTextChanged = { text ->
+                    Timber.d("After text changed: '$text'")
+                }
+            )
             formattingSwitch.apply {
                 isChecked = true
                 setOnCheckedChangeListener { _, isChecked ->
@@ -194,7 +206,6 @@ class RichTextEditor : LinearLayout {
     override fun requestFocus(direction: Int, previouslyFocusedRect: Rect?): Boolean {
         return binding.richTextEditText.requestFocus(direction, previouslyFocusedRect)
     }
-
 }
 
 interface OnSetLinkListener {

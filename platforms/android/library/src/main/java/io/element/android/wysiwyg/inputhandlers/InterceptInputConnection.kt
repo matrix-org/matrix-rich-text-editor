@@ -10,6 +10,7 @@ import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import androidx.core.text.isDigitsOnly
+import io.element.android.wysiwyg.EditorTextWatcher
 import io.element.android.wysiwyg.internal.utils.TextRangeHelper
 import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
 import io.element.android.wysiwyg.internal.viewmodel.ReplaceTextResult
@@ -24,7 +25,13 @@ internal class InterceptInputConnection(
     private val baseInputConnection: InputConnection,
     private val editorEditText: TextView,
     private val viewModel: EditorViewModel,
+    private val textWatcher: EditorTextWatcher,
 ) : BaseInputConnection(editorEditText, true) {
+    init {
+        textWatcher.updateCallback = { updatedText, start, end, previousText ->
+            replaceTextInternal(start, end, updatedText, previousText)
+        }
+    }
 
     override fun getEditable(): Editable {
         return editorEditText.editableText
@@ -119,14 +126,14 @@ internal class InterceptInputConnection(
             finishComposingText()
             return false
         }
-        val result = processTextEntry(text, start, end)
+        val result = processTextEntry(text, start, end, null)
 
         return if (result != null) {
             beginBatchEdit()
             val newStart = start.coerceIn(0, result.text.length)
             val newEnd = (newStart + text.length).coerceIn(newStart, result.text.length)
 
-            replaceAll(result.text)
+            replaceAll(charSequence = result.text, start = start, end = end, newEnd = newEnd)
             val editorSelectionIndex = editorIndex(result.selection.last, editable)
             setSelection(editorSelectionIndex, editorSelectionIndex)
             setComposingRegion(newStart, newEnd)
@@ -138,9 +145,9 @@ internal class InterceptInputConnection(
     }
 
     // Called for suggestion from IME selected
-    override fun commitText(text: CharSequence?, newCursorPosition: Int): Boolean {
+    override fun commitText(text: CharSequence, newCursorPosition: Int): Boolean {
         val (start, end) = getCurrentCompositionOrSelection()
-        return replaceTextInternal(start, end, text)
+        return replaceTextInternal(start, end, text, null)
     }
 
     // In Android 13+, this is called instead of [commitText] when selecting suggestions from IME
@@ -151,19 +158,20 @@ internal class InterceptInputConnection(
         newCursorPosition: Int,
         textAttribute: TextAttribute?
     ): Boolean {
-        return replaceTextInternal(start, end, text)
+        return replaceTextInternal(start, end, text, null)
     }
 
     private fun replaceTextInternal(
         start: Int,
         end: Int,
-        text: CharSequence?,
+        text: CharSequence,
+        oldText: CharSequence?,
     ): Boolean {
-        val result = processTextEntry(text, start, end)
+        val result = processTextEntry(text, start, end, oldText?.toString())
 
         return if (result != null) {
             beginBatchEdit()
-            replaceAll(result.text)
+            replaceAll(charSequence = result.text, start = start, end = end, newEnd = start + text.length)
             val editorSelectionIndex = editorIndex(result.selection.last, editable)
             setSelection(editorSelectionIndex, editorSelectionIndex)
             setComposingRegion(editorSelectionIndex, editorSelectionIndex)
@@ -174,8 +182,8 @@ internal class InterceptInputConnection(
         }
     }
 
-    private fun processTextEntry(newText: CharSequence?, start: Int, end: Int): ReplaceTextResult? {
-        val previousText = editable.substring(start until end)
+    private fun processTextEntry(newText: CharSequence?, start: Int, end: Int, previousText: String?): ReplaceTextResult? {
+        val actualPreviousText = previousText ?: editable.substring(start until end)
         return withProcessor {
             when {
                 // Special case for whitespace, to keep the formatting status we need to add it first
@@ -186,7 +194,7 @@ internal class InterceptInputConnection(
                     // First add whitespace
                     var result = processInput(EditorInputAction.ReplaceTextIn(cEnd, cEnd, " "))
                     // Then replace text if needed
-                    if (toAppend != previousText) {
+                    if (toAppend != actualPreviousText) {
                         result = processInput(EditorInputAction.ReplaceTextIn(cStart, cEnd, toAppend))?.let {
                             // Fix selection to include whitespace at the end
                             val prevSelection = it.selection
@@ -199,18 +207,18 @@ internal class InterceptInputConnection(
                 newText?.lastOrNull() == '\n' -> {
                     processInput(EditorInputAction.InsertParagraph)
                 }
-                previousText.isNotEmpty() && newText?.startsWith(previousText) == true -> {
+                actualPreviousText.isNotEmpty() && newText?.startsWith(actualPreviousText) == true -> {
                     // Appending new text at the end
                     val pos = end - start
-                    val diff = newText.length - previousText.length
+                    val diff = newText.length - actualPreviousText.length
                     val toAppend = newText.substring(pos until pos + diff)
                     val (_, cEnd) = EditorIndexMapper.fromEditorToComposer(start, end, editable)
                         ?: error("Invalid indexes in composer $start, $end")
                     processInput(EditorInputAction.ReplaceTextIn(cEnd, cEnd, toAppend))
                 }
-                newText != null && previousText.startsWith(newText) -> {
+                newText != null && actualPreviousText.startsWith(newText) -> {
                     // Removing text from the end
-                    val diff = previousText.length - newText.length
+                    val diff = actualPreviousText.length - newText.length
                     val pos = end - diff
                     val (cStart, cEnd) = EditorIndexMapper.fromEditorToComposer(pos, end, editable)
                         ?: error("Invalid indexes in composer $pos, $end")
@@ -307,7 +315,7 @@ internal class InterceptInputConnection(
                 processInput(action)
             }
             if (result != null) {
-                replaceAll(result.text)
+                replaceAll(result.text, start = end, end = end + afterLength, newEnd = end)
                 val editorSelectionIndex = editorIndex(result.selection.first, editable)
                 setSelection(editorSelectionIndex, editorSelectionIndex)
                 setComposingRegion(editorSelectionIndex, editorSelectionIndex)
@@ -329,7 +337,7 @@ internal class InterceptInputConnection(
                 processInput(EditorInputAction.BackPress)
             }
             if (result != null) {
-                replaceAll(result.text)
+                replaceAll(result.text, start = start - beforeLength, end = start, newEnd = start - beforeLength)
                 val editorSelectionIndex = editorIndex(result.selection.first, editable)
                 setSelection(editorSelectionIndex, editorSelectionIndex)
                 setComposingRegion(editorSelectionIndex, editorSelectionIndex)
@@ -364,10 +372,21 @@ internal class InterceptInputConnection(
         return start to end
     }
 
-    private fun replaceAll(charSequence: CharSequence) {
-        editable.removeFormattingSpans()
-        editable.clear()
-        editable.append(charSequence)
+    private fun replaceAll(
+        charSequence: CharSequence,
+        start: Int = 0,
+        end: Int = editable.length,
+        newEnd: Int = charSequence.length
+    ) {
+        val clampedAfterCount = (newEnd.coerceAtMost(charSequence.length) - start).coerceAtLeast(0)
+        textWatcher.runInEditor {
+            notifyBeforeTextChanged(editable, start, end - start, clampedAfterCount)
+            editable.removeFormattingSpans()
+            editable.clear()
+            editable.append(charSequence)
+            notifyOnTextChanged(editable, start, end - start, clampedAfterCount)
+            notifyAfterTextChanged(editable)
+        }
     }
 
     private fun editorIndex(composerIndex: Int, editable: Editable): Int {
