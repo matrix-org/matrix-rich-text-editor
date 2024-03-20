@@ -1,5 +1,11 @@
 # Changelog
 
+# [2.34.0] - 2024-12-04
+- [Rust] Bumped UniFFi to revision `789a9023b522562a95618443cee5a0d4f111c4c7`.
+- [Android] reconcile UI text with editor text.
+- [Android] fix English characters for some Chinese keyboards.
+
+
 # [2.33.0] - 2024-12-04
 - [iOS] Re-enabled auto-correction but disabled inline predictions on iOS 17.
 - [iOS] Build workflow now uses Xcode 15.2.
