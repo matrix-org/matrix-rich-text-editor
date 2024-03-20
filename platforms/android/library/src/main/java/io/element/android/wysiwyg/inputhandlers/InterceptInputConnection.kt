@@ -133,7 +133,7 @@ internal class InterceptInputConnection(
             val newStart = start.coerceIn(0, result.text.length)
             val newEnd = (newStart + text.length).coerceIn(newStart, result.text.length)
 
-            replaceAll(result.text)
+            replaceAll(charSequence = result.text, start = start, end = end, newEnd = newEnd)
             val editorSelectionIndex = editorIndex(result.selection.last, editable)
             setSelection(editorSelectionIndex, editorSelectionIndex)
             setComposingRegion(newStart, newEnd)
@@ -145,7 +145,7 @@ internal class InterceptInputConnection(
     }
 
     // Called for suggestion from IME selected
-    override fun commitText(text: CharSequence?, newCursorPosition: Int): Boolean {
+    override fun commitText(text: CharSequence, newCursorPosition: Int): Boolean {
         val (start, end) = getCurrentCompositionOrSelection()
         return replaceTextInternal(start, end, text, null)
     }
@@ -164,14 +164,14 @@ internal class InterceptInputConnection(
     private fun replaceTextInternal(
         start: Int,
         end: Int,
-        text: CharSequence?,
+        text: CharSequence,
         oldText: CharSequence?,
     ): Boolean {
         val result = processTextEntry(text, start, end, oldText?.toString())
 
         return if (result != null) {
             beginBatchEdit()
-            replaceAll(result.text)
+            replaceAll(charSequence = result.text, start = start, end = end, newEnd = start + text.length)
             val editorSelectionIndex = editorIndex(result.selection.last, editable)
             setSelection(editorSelectionIndex, editorSelectionIndex)
             setComposingRegion(editorSelectionIndex, editorSelectionIndex)
@@ -315,7 +315,7 @@ internal class InterceptInputConnection(
                 processInput(action)
             }
             if (result != null) {
-                replaceAll(result.text)
+                replaceAll(result.text, start = end, end = end + afterLength, newEnd = end)
                 val editorSelectionIndex = editorIndex(result.selection.first, editable)
                 setSelection(editorSelectionIndex, editorSelectionIndex)
                 setComposingRegion(editorSelectionIndex, editorSelectionIndex)
@@ -337,7 +337,7 @@ internal class InterceptInputConnection(
                 processInput(EditorInputAction.BackPress)
             }
             if (result != null) {
-                replaceAll(result.text)
+                replaceAll(result.text, start = start - beforeLength, end = start, newEnd = start - beforeLength)
                 val editorSelectionIndex = editorIndex(result.selection.first, editable)
                 setSelection(editorSelectionIndex, editorSelectionIndex)
                 setComposingRegion(editorSelectionIndex, editorSelectionIndex)
@@ -372,14 +372,19 @@ internal class InterceptInputConnection(
         return start to end
     }
 
-    private fun replaceAll(charSequence: CharSequence) {
+    private fun replaceAll(
+        charSequence: CharSequence,
+        start: Int = 0,
+        end: Int = editable.length,
+        newEnd: Int = charSequence.length
+    ) {
+        val clampedAfterCount = (newEnd.coerceAtMost(charSequence.length) - start).coerceAtLeast(0)
         textWatcher.inEditor {
-            val beforeLength = editable.length
-            textWatcher.notifyBeforeTextChanged(editable, 0, beforeLength, charSequence.length)
+            textWatcher.notifyBeforeTextChanged(editable, start, end - start, clampedAfterCount)
             editable.removeFormattingSpans()
             editable.clear()
             editable.append(charSequence)
-            textWatcher.notifyOnTextChanged(editable, 0, beforeLength, charSequence.length)
+            textWatcher.notifyOnTextChanged(editable, start, end - start, clampedAfterCount)
             textWatcher.notifyAfterTextChanged(editable)
         }
     }
