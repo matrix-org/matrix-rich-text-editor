@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * A [TextWatcher] that intercepts changes in the underlying text and can have child watchers.
  */
-class EditorTextWatcher: TextWatcher {
+internal class EditorTextWatcher: TextWatcher {
     private val nestedWatchers: MutableList<TextWatcher> = mutableListOf()
     private val updateIsFromEditor: AtomicBoolean = AtomicBoolean(false)
 
