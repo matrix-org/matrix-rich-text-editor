@@ -10,12 +10,14 @@ import android.widget.ArrayAdapter
 import android.widget.LinearLayout
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
+import androidx.core.widget.addTextChangedListener
 import io.element.android.wysiwyg.EditorEditText
 import io.element.android.wysiwyg.poc.databinding.ViewRichTextEditorBinding
 import io.element.android.wysiwyg.poc.matrix.MatrixMentionMentionDisplayHandler
 import io.element.android.wysiwyg.poc.matrix.Mention
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
+import timber.log.Timber
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
 import uniffi.wysiwyg_composer.MenuAction
@@ -41,6 +43,17 @@ class RichTextEditor : LinearLayout {
         super.onAttachedToWindow()
 
         with(binding) {
+            richTextEditText.addTextChangedListener(
+                beforeTextChanged = { text, start, count, after ->
+                    Timber.d("Before text changed: '$text', start: $start, count: $count, after: $after")
+                },
+                onTextChanged = { text, start, before, count ->
+                    Timber.d("Text changed: '$text', start: $start, before: $before, count: $count")
+                },
+                afterTextChanged = { text ->
+                    Timber.d("After text changed: '$text'")
+                }
+            )
             formattingSwitch.apply {
                 isChecked = true
                 setOnCheckedChangeListener { _, isChecked ->

@@ -12,6 +12,8 @@ class EditorTextWatcher: TextWatcher {
     private val nestedWatchers: MutableList<TextWatcher> = mutableListOf()
     private val updateIsFromEditor: AtomicBoolean = AtomicBoolean(false)
 
+    var enableDebugLogs = false
+
     private var beforeText: CharSequence? = null
 
     /**
@@ -49,14 +51,18 @@ class EditorTextWatcher: TextWatcher {
     }
 
     override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-        Timber.v("beforeTextChanged | text: \"$s\", start: $start, count: $count, after: $after")
+        if (enableDebugLogs) {
+            Timber.v("beforeTextChanged | text: \"$s\", start: $start, count: $count, after: $after")
+        }
         if (!updateIsFromEditor.get()) {
             beforeText = s?.subSequence(start, start + count)
         }
     }
 
     override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-        Timber.v("onTextChanged | text: \"$s\", start: $start, before: $before, count: $count")
+        if (enableDebugLogs) {
+            Timber.v("onTextChanged | text: \"$s\", start: $start, before: $before, count: $count")
+        }
         if (!updateIsFromEditor.get()) {
             val newText = s?.subSequence(start, start + count) ?: ""
             updateCallback(newText, start, start + before, beforeText)
@@ -64,7 +70,9 @@ class EditorTextWatcher: TextWatcher {
     }
 
     override fun afterTextChanged(s: Editable?) {
-        Timber.v("afterTextChanged")
+        if (enableDebugLogs) {
+            Timber.v("afterTextChanged")
+        }
         if (!updateIsFromEditor.get()) {
             beforeText = null
         }
