@@ -1,12 +1,15 @@
 package io.element.android.wysiwyg.inputhandlers
 
 import android.app.Application
+import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import androidx.test.core.app.ApplicationProvider
+import io.element.android.wysiwyg.EditorTextWatcher
 import io.element.android.wysiwyg.fakes.createFakeStyleConfig
 import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
 import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
+import io.element.android.wysiwyg.test.utils.Editor
 import io.element.android.wysiwyg.test.utils.dumpSpans
 import io.element.android.wysiwyg.utils.HtmlConverter
 import io.element.android.wysiwyg.utils.NBSP
@@ -33,6 +36,7 @@ class InterceptInputConnectionIntegrationTest {
         viewModel = viewModel,
         editorEditText = textView,
         baseInputConnection = textView.onCreateInputConnection(EditorInfo()),
+        textWatcher = EditorTextWatcher(),
     )
 
     private val baseEditedSpans = listOf(
@@ -537,6 +541,20 @@ class InterceptInputConnectionIntegrationTest {
         assertThat(viewModel.getContentAsMessageHtml(), equalTo("Test"))
         assertThat(textView.selectionStart, equalTo(2))
         assertThat(textView.selectionEnd, equalTo(2))
+    }
+
+    @Test
+    fun testHalfWidthEnglishInChineseKeyboards() {
+        inputConnection.run {
+            sendHardwareKeyboardInput(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_T))
+            setComposingText("", 1)
+            sendHardwareKeyboardInput(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_E))
+            setComposingText("", 1)
+            sendHardwareKeyboardInput(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_S))
+            setComposingText("", 1)
+            sendHardwareKeyboardInput(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_T))
+        }
+        assertThat(textView.text.toString(), equalTo("test"))
     }
 
     private fun simulateInput(editorInputAction: EditorInputAction) =

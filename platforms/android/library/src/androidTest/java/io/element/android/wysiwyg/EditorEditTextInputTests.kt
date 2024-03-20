@@ -31,7 +31,13 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.element.android.wysiwyg.display.TextDisplay
 import io.element.android.wysiwyg.test.R
 import io.element.android.wysiwyg.test.rules.createFlakyEmulatorRule
-import io.element.android.wysiwyg.test.utils.*
+import io.element.android.wysiwyg.test.utils.AnyViewAction
+import io.element.android.wysiwyg.test.utils.EditorActions
+import io.element.android.wysiwyg.test.utils.ImeActions
+import io.element.android.wysiwyg.test.utils.ScreenshotFailureHandler
+import io.element.android.wysiwyg.test.utils.TestActivity
+import io.element.android.wysiwyg.test.utils.TestMentionDisplayHandler
+import io.element.android.wysiwyg.test.utils.selectionIsAt
 import io.element.android.wysiwyg.utils.NBSP
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import io.element.android.wysiwyg.view.models.InlineFormat
@@ -45,9 +51,12 @@ import io.mockk.verify
 import org.hamcrest.CoreMatchers
 import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.Description
-import org.hamcrest.MatcherAssert
-import org.hamcrest.Matchers
-import org.junit.*
+import org.junit.After
+import org.junit.Assert
+import org.junit.Before
+import org.junit.Ignore
+import org.junit.Rule
+import org.junit.Test
 import org.junit.runner.RunWith
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
@@ -145,7 +154,6 @@ class EditorEditTextInputTests {
         val emoji = "\uD83E\uDD17"
         onView(withId(R.id.rich_text_edit_text))
             // pressKey doesn't seem to work if no `typeText` is used before
-            .perform(pressKey(KeyEvent.KEYCODE_A))
             .perform(replaceText(emoji))
             .perform(pressKey(KeyEvent.KEYCODE_ENTER))
             .check(matches(withText(containsString(emoji + "\n"))))
@@ -569,15 +577,15 @@ class EditorEditTextInputTests {
 
         verify(exactly = 2) {
             // In future when we support parsing/loading of pasted html into the model
-            // we can make more assertions on that the corrrect formating is applied
-            textWatcher.invoke(match { it.toString() == ipsum + ipsum })
+            // we can make more assertions on that the correct formatting is applied
+            textWatcher(match { it.toString() == ipsum + ipsum })
         }
 
         confirmVerified(contentWatcher)
     }
 
 
-    private fun pasteFromClipboard(clipData: ClipData, pasteAsPlainText: Boolean){
+    private fun pasteFromClipboard(clipData: ClipData, pasteAsPlainText: Boolean) {
         scenarioRule.scenario.onActivity { activity ->
             val editor = activity.findViewById<EditorEditText>(R.id.rich_text_edit_text)
             val clipboardManager =
