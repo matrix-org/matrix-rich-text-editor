@@ -8,7 +8,6 @@ import android.graphics.Canvas
 import android.net.Uri
 import android.os.Build
 import android.os.Parcelable
-import android.text.Editable
 import android.text.Selection
 import android.text.Spanned
 import android.text.TextWatcher
@@ -22,7 +21,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.core.graphics.withTranslation
 import androidx.core.view.ViewCompat
-import androidx.lifecycle.*
 import io.element.android.wysiwyg.display.MentionDisplayHandler
 import io.element.android.wysiwyg.inputhandlers.InterceptInputConnection
 import io.element.android.wysiwyg.internal.display.MemoizingMentionDisplayHandler
@@ -31,17 +29,21 @@ import io.element.android.wysiwyg.internal.view.EditorEditTextAttributeReader
 import io.element.android.wysiwyg.internal.view.viewModel
 import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
 import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
-import io.element.android.wysiwyg.utils.*
+import io.element.android.wysiwyg.utils.EditorIndexMapper
+import io.element.android.wysiwyg.utils.HtmlConverter
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
+import io.element.android.wysiwyg.utils.RustErrorCollector
 import io.element.android.wysiwyg.view.StyleConfig
 import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelper
 import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelperFactory
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
 import io.element.android.wysiwyg.view.spans.ReuseSourceSpannableFactory
-import timber.log.Timber
-import uniffi.wysiwyg_composer.*
-import java.util.concurrent.atomic.AtomicBoolean
+import uniffi.wysiwyg_composer.ActionState
+import uniffi.wysiwyg_composer.ComposerAction
+import uniffi.wysiwyg_composer.MentionsState
+import uniffi.wysiwyg_composer.MenuAction
+import uniffi.wysiwyg_composer.newComposerModel
 
 /**
  * An [EditText] that handles rich text editing.
@@ -79,7 +81,7 @@ class EditorEditText : AppCompatEditText {
             rerender()
         }
 
-    private fun createHtmlConverter(styleConfig: StyleConfig, mentionDisplayHandler: MentionDisplayHandler?): HtmlConverter? {
+    private fun createHtmlConverter(styleConfig: StyleConfig, mentionDisplayHandler: MentionDisplayHandler?): HtmlConverter {
         return HtmlConverter.Factory.create(
             context = context.applicationContext,
             styleConfig = styleConfig,
@@ -525,9 +527,6 @@ class EditorEditText : AppCompatEditText {
 
     /**
      * Set a mention link that applies to the current suggestion range
-     *
-     * @param url The url of the new link
-     * @param text The text to insert into the current suggestion range
      */
     fun insertAtRoomMentionAtSuggestion() {
         val result = viewModel.processInput(
@@ -607,13 +606,13 @@ class EditorEditText : AppCompatEditText {
 
     private fun setTextFromComposerUpdate(text: CharSequence) {
         beginBatchEdit()
-        textWatcher.inEditor {
+        textWatcher.runInEditor {
             val beforeLength = editableText.length
-            textWatcher.notifyBeforeTextChanged(editableText, 0, beforeLength, text.length)
+            notifyBeforeTextChanged(editableText, 0, beforeLength, text.length)
             editableText.removeFormattingSpans()
             editableText.replace(0, editableText.length, text)
-            textWatcher.notifyOnTextChanged(editableText, 0, beforeLength, text.length)
-            textWatcher.notifyAfterTextChanged(editableText)
+            notifyOnTextChanged(editableText, 0, beforeLength, text.length)
+            notifyAfterTextChanged(editableText)
         }
         endBatchEdit()
     }
@@ -636,62 +635,4 @@ private fun KeyEvent.isMovementKey(): Boolean {
 
 private fun KeyEvent.isPrintableCharacter(): Boolean {
     return isPrintingKey || keyCode == KeyEvent.KEYCODE_SPACE
-}
-
-class EditorTextWatcher: TextWatcher {
-    private val nestedWatchers: MutableList<TextWatcher> = mutableListOf()
-
-    private val updateIsFromEditor: AtomicBoolean = AtomicBoolean(false)
-
-    var updateCallback: (CharSequence, Int, Int, CharSequence?) -> Unit = { _, _, _, _ -> }
-
-    fun addChild(watcher: TextWatcher) {
-        nestedWatchers.add(watcher)
-    }
-
-    fun removeChild(watcher: TextWatcher) {
-        nestedWatchers.remove(watcher)
-    }
-
-    fun inEditor(block: () -> Unit) {
-        updateIsFromEditor.set(true)
-        block()
-        updateIsFromEditor.set(false)
-    }
-
-    private var beforeText: CharSequence? = null
-
-    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-        Timber.v("beforeTextChanged | text: \"$s\", start: $start, count: $count, after: $after")
-        if (!updateIsFromEditor.get()) {
-            beforeText = s?.subSequence(start, start + count)
-        }
-    }
-
-    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-        Timber.v("onTextChanged | text: \"$s\", start: $start, before: $before, count: $count")
-        if (!updateIsFromEditor.get()) {
-            val newText = s?.subSequence(start, start + count) ?: ""
-            updateCallback(newText, start, start + before, beforeText)
-        }
-    }
-
-    override fun afterTextChanged(s: Editable?) {
-        Timber.v("afterTextChanged")
-        if (!updateIsFromEditor.get()) {
-            beforeText = null
-        }
-    }
-
-    fun notifyBeforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-        nestedWatchers.forEach { it.beforeTextChanged(s, start, count, after) }
-    }
-
-    fun notifyOnTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-        nestedWatchers.forEach { it.onTextChanged(s, start, before, count) }
-    }
-
-    fun notifyAfterTextChanged(s: Editable?) {
-        nestedWatchers.forEach { it.afterTextChanged(s) }
-    }
 }

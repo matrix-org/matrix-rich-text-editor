@@ -379,13 +379,13 @@ internal class InterceptInputConnection(
         newEnd: Int = charSequence.length
     ) {
         val clampedAfterCount = (newEnd.coerceAtMost(charSequence.length) - start).coerceAtLeast(0)
-        textWatcher.inEditor {
-            textWatcher.notifyBeforeTextChanged(editable, start, end - start, clampedAfterCount)
+        textWatcher.runInEditor {
+            notifyBeforeTextChanged(editable, start, end - start, clampedAfterCount)
             editable.removeFormattingSpans()
             editable.clear()
             editable.append(charSequence)
-            textWatcher.notifyOnTextChanged(editable, start, end - start, clampedAfterCount)
-            textWatcher.notifyAfterTextChanged(editable)
+            notifyOnTextChanged(editable, start, end - start, clampedAfterCount)
+            notifyAfterTextChanged(editable)
         }
     }
 
