@@ -3,6 +3,8 @@
 
 import PackageDescription
 
+// NOTE: Any updates to this file that also need to be mirrored on matrix-rich-text-editor-swift (unless they're related to testing).
+
 let package = Package(
     name: "WysiwygComposer",
     platforms: [
