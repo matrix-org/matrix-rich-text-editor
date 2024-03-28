@@ -15,3 +15,7 @@
 /platforms/ios/lib/coverage/*
 /build/
 .DS_Store
+
+# Swift release
+WysiwygComposerFFI.xcframework.zip
+matrix-rich-text-editor-swift
