@@ -12,6 +12,8 @@ internal class EditorTextWatcher: TextWatcher {
     private val nestedWatchers: MutableList<TextWatcher> = mutableListOf()
     private val updateIsFromEditor: AtomicBoolean = AtomicBoolean(false)
 
+    val isInEditorChange get() = updateIsFromEditor.get()
+
     var enableDebugLogs = false
 
     private var beforeText: CharSequence? = null

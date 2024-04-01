@@ -1,102 +1,39 @@
 package io.element.android.wysiwyg.inputhandlers
 
-import android.os.Build
-import android.os.Bundle
 import android.text.Editable
 import android.text.Selection
 import android.view.KeyEvent
-import android.view.inputmethod.*
+import android.view.inputmethod.BaseInputConnection.getComposingSpanEnd
+import android.view.inputmethod.BaseInputConnection.getComposingSpanStart
+import android.view.inputmethod.InputConnection
+import android.view.inputmethod.InputConnectionWrapper
+import android.view.inputmethod.TextAttribute
 import android.widget.TextView
-import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import androidx.core.text.isDigitsOnly
 import io.element.android.wysiwyg.EditorTextWatcher
 import io.element.android.wysiwyg.internal.utils.TextRangeHelper
 import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
+import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
 import io.element.android.wysiwyg.internal.viewmodel.ReplaceTextResult
 import io.element.android.wysiwyg.utils.EditorIndexMapper
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
-import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
 internal class InterceptInputConnection(
-    private val baseInputConnection: InputConnection,
-    private val editorEditText: TextView,
+    baseInputConnection: InputConnection,
+    editorEditText: TextView,
     private val viewModel: EditorViewModel,
     private val textWatcher: EditorTextWatcher,
-) : BaseInputConnection(editorEditText, true) {
+) : InputConnectionWrapper(baseInputConnection, true) {
+    private val editable = editorEditText.editableText
+
     init {
         textWatcher.updateCallback = { updatedText, start, end, previousText ->
             replaceTextInternal(start, end, updatedText, previousText)
         }
-    }
-
-    override fun getEditable(): Editable {
-        return editorEditText.editableText
-    }
-
-    override fun beginBatchEdit(): Boolean {
-        return baseInputConnection.beginBatchEdit()
-    }
-
-    override fun endBatchEdit(): Boolean {
-        return baseInputConnection.endBatchEdit()
-    }
-
-    @RequiresApi(Build.VERSION_CODES.N)
-    override fun closeConnection() {
-        // This should be enough as it will internally call baseInputConnection methods anyway
-        super.closeConnection()
-    }
-
-    override fun clearMetaKeyStates(states: Int): Boolean {
-        return baseInputConnection.clearMetaKeyStates(states)
-    }
-
-    override fun sendKeyEvent(event: KeyEvent?): Boolean {
-        return super.sendKeyEvent(event)
-    }
-
-    override fun commitCompletion(text: CompletionInfo?): Boolean {
-        return baseInputConnection.commitCompletion(text)
-    }
-
-    override fun commitCorrection(correctionInfo: CorrectionInfo?): Boolean {
-        return baseInputConnection.commitCorrection(correctionInfo)
-    }
-
-    @RequiresApi(Build.VERSION_CODES.N_MR1)
-    override fun commitContent(
-        inputContentInfo: InputContentInfo,
-        flags: Int,
-        opts: Bundle?
-    ): Boolean {
-        return baseInputConnection.commitContent(inputContentInfo, flags, opts)
-    }
-
-    override fun performEditorAction(actionCode: Int): Boolean {
-        return baseInputConnection.performEditorAction(actionCode)
-    }
-
-    override fun performContextMenuAction(id: Int): Boolean {
-        return baseInputConnection.performContextMenuAction(id)
-    }
-
-    // Used for 'Extract UI' of EditText (aka: full screen EditText in landscape)
-    override fun getExtractedText(request: ExtractedTextRequest?, flags: Int): ExtractedText {
-        return baseInputConnection.getExtractedText(request, flags)
-    }
-
-    override fun performPrivateCommand(action: String?, data: Bundle?): Boolean {
-        return baseInputConnection.performPrivateCommand(action, data)
-    }
-
-    @RequiresApi(Build.VERSION_CODES.S)
-    override fun setImeConsumesInput(imeConsumesInput: Boolean): Boolean {
-        baseInputConnection.setImeConsumesInput(imeConsumesInput)
-        return super.setImeConsumesInput(imeConsumesInput)
     }
 
     /**
@@ -340,10 +277,6 @@ internal class InterceptInputConnection(
         endBatchEdit()
 
         return handled
-    }
-
-    override fun requestCursorUpdates(cursorUpdateMode: Int): Boolean {
-        return baseInputConnection.requestCursorUpdates(cursorUpdateMode)
     }
 
     private fun getCurrentCompositionOrSelection(): Pair<Int, Int> {
