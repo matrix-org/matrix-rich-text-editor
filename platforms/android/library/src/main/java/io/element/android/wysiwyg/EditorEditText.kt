@@ -14,6 +14,7 @@ import android.text.TextWatcher
 import android.util.AttributeSet
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.view.inputmethod.BaseInputConnection
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.widget.EditText
@@ -77,8 +78,6 @@ class EditorEditText : AppCompatEditText {
         set(value) {
             field = value
             viewModel.htmlConverter = value
-
-            rerender()
         }
 
     private fun createHtmlConverter(styleConfig: StyleConfig, mentionDisplayHandler: MentionDisplayHandler?): HtmlConverter {
@@ -282,13 +281,23 @@ class EditorEditText : AppCompatEditText {
      * @param mentionDisplayHandler Used to decide how to display any mentions found in the HTML text.
      */
     fun updateStyle(styleConfig: StyleConfig, mentionDisplayHandler: MentionDisplayHandler?) {
-        this.styleConfig = styleConfig
-        this.mentionDisplayHandler = mentionDisplayHandler
+        var forceNewRendering = false
+        val hasNewStyle = !this::styleConfig.isInitialized || this.styleConfig != styleConfig
+        val hasNewMentionDisplayHandler = (this.mentionDisplayHandler as? MemoizingMentionDisplayHandler)
+            ?.delegateEquals(mentionDisplayHandler) != true
+        if (hasNewStyle || hasNewMentionDisplayHandler) {
+            this.styleConfig = styleConfig
+            this.mentionDisplayHandler = mentionDisplayHandler
+            forceNewRendering = true
+        }
 
         inlineCodeBgHelper = SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(styleConfig.inlineCode)
         codeBlockBgHelper = SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(styleConfig.codeBlock)
 
         htmlConverter = createHtmlConverter(styleConfig, mentionDisplayHandler)
+        if (forceNewRendering) {
+            rerender()
+        }
     }
 
     fun setOnRichContentSelected(onRichContentSelected: ((Uri) -> Unit)?) {
@@ -600,8 +609,14 @@ class EditorEditText : AppCompatEditText {
      * will be updated to reflect this.
      */
     private fun rerender() {
+        val compositionStart = BaseInputConnection.getComposingSpanStart(editableText)
+        val compositionEnd = BaseInputConnection.getComposingSpanEnd(editableText)
         val text = viewModel.rerender()
         setTextFromComposerUpdate(text)
+        val indices = text.indices
+        if (compositionStart in indices && compositionEnd in indices) {
+            inputConnection?.setComposingRegion(compositionStart, compositionEnd)
+        }
     }
 
     private fun setTextFromComposerUpdate(text: CharSequence) {

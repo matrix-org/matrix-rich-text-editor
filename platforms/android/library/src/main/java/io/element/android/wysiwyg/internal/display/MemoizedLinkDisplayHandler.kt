@@ -38,4 +38,8 @@ internal class MemoizingMentionDisplayHandler(
 
         return calculated
     }
+
+    fun delegateEquals(other: MentionDisplayHandler?): Boolean {
+        return delegate == other
+    }
 }
