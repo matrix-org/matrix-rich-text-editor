@@ -121,11 +121,6 @@ internal class InterceptInputConnection(
     // Called when started typing
     override fun setComposingText(text: CharSequence, newCursorPosition: Int): Boolean {
         val (start, end) = getCurrentCompositionOrSelection()
-        // Some Chinese keyboards send empty text when the user is typing English characters
-        if (text.isEmpty() && Selection.getSelectionStart(editable) == Selection.getSelectionEnd(editable)) {
-            finishComposingText()
-            return false
-        }
         val result = processTextEntry(text, start, end, null)
 
         return if (result != null) {
@@ -284,13 +279,10 @@ internal class InterceptInputConnection(
         // append to the current composition with the hardware keyboard.
         finishComposingText()
 
-        return if (newChars.isDigitsOnly()) {
-            // Digits should be sent using `commitText`, as that's the default behaviour in the IME
-            commitText(newChars, 1)
-        } else {
-            // Any other printable character can be sent using `setComposingText`
-            setComposingText(newChars, 1)
-        }
+        // We previously tried to have hardware keys behave as composing text, but it's not
+        // possible, we run into issues where existing keyboards (i.e. Trime) send empty composing
+        // text and that breaks the input. So we need to use `commitText` instead.
+        return commitText(newChars, 1)
     }
 
     override fun deleteSurroundingText(beforeLength: Int, afterLength: Int): Boolean {
