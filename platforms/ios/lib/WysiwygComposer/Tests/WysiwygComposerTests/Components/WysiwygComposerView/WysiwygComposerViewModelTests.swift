@@ -41,6 +41,21 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         viewModel.textView.attributedText = viewModel.attributedContent.text
         waitExpectation(expectation: expectTrue, timeout: 2.0)
     }
+    
+    func testIsContentEmptyAfterDeletingSingleSpace() {
+        // When typing a single space.
+        _ = viewModel.replaceText(range: .zero, replacementText: " ")
+        viewModel.textView.attributedText = NSAttributedString(string: " ")
+        viewModel.didUpdateText()
+        
+        // And then deleting that space.
+        _ = viewModel.replaceText(range: .init(location: 0, length: 1), replacementText: "")
+        viewModel.textView.attributedText = NSAttributedString(string: "")
+        viewModel.didUpdateText()
+        
+        // Then the content should be empty for the placeholder to be shown.
+        XCTAssertTrue(viewModel.isContentEmpty)
+    }
 
     func testSimpleTextInputIsAccepted() throws {
         let shouldChange = viewModel.replaceText(range: .zero,
