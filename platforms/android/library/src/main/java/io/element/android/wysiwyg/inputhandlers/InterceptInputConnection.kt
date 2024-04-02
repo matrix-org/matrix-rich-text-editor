@@ -24,11 +24,11 @@ import kotlin.math.min
 
 internal class InterceptInputConnection(
     baseInputConnection: InputConnection,
-    editorEditText: TextView,
+    private val editorEditText: TextView,
     private val viewModel: EditorViewModel,
     private val textWatcher: EditorTextWatcher,
 ) : InputConnectionWrapper(baseInputConnection, true) {
-    private val editable = editorEditText.editableText
+    private val editable get() = editorEditText.editableText
 
     init {
         textWatcher.updateCallback = { updatedText, start, end, previousText ->
