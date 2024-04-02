@@ -10,7 +10,7 @@ struct Release: AsyncParsableCommand {
     
     var apiToken = ProcessInfo.processInfo.environment["SWIFT_RELEASE_TOKEN"]!
     
-    var packageRepo = "pixlwave/rich-text-editor-test"
+    var packageRepo = "matrix-org/matrix-rich-text-editor-swift"
     var buildDirectory = URL(filePath: #file)
         .deletingLastPathComponent() // Release.swift
         .deletingLastPathComponent() // Sources
