@@ -79,6 +79,15 @@ extension NSAttributedString {
     ///   - range: the range on which the elements should be detected. Entire range if omitted
     /// - Returns: an array of matching ranges
     func discardableTextRanges(in range: NSRange? = nil) -> [NSRange] {
+        // When typing a space into an empty composer, the single space being disposable results in
+        // `applyReplaceAll` failing, leaving attributedContent out of sync. The reconciliation then
+        // adds a second space to the model that isn't in the text view.
+        if string == .zwsp {
+            // This fixes that, although it doesn't help in the case of adding a single space to e.g.
+            // a list/quote where the same result can be seen with the model having an extra space.
+            return []
+        }
+        
         var ranges = [NSRange]()
 
         enumerateTypedAttribute(.discardableText, in: range) { (isDiscardable: Bool, range: NSRange, _) in

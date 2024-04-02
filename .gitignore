@@ -1,6 +1,7 @@
 # ENV
 **/.python-version
 **/.vscode
+**/.idea
 **/.DS_Store
 # Generated
 /target/
