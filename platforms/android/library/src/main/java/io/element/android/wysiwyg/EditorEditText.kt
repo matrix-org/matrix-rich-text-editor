@@ -201,7 +201,7 @@ class EditorEditText : AppCompatEditText {
 
     override fun onSelectionChanged(selStart: Int, selEnd: Int) {
         super.onSelectionChanged(selStart, selEnd)
-        if (this.isInitialized) {
+        if (this.isInitialized && !this.textWatcher.isInEditorChange) {
             this.viewModel.updateSelection(editableText, selStart, selEnd)
         }
         selectionChangeListener?.selectionChanged(selStart, selEnd)
@@ -634,7 +634,7 @@ class EditorEditText : AppCompatEditText {
 
     private fun setSelectionFromComposerUpdate(start: Int, end: Int = start) {
         val (newStart, newEnd) = EditorIndexMapper.fromComposerToEditor(start, end, editableText)
-        if (newStart in editableText.indices && newEnd in 0..editableText.length) {
+        if (newStart in 0..editableText.length && newEnd in 0..editableText.length) {
             setSelection(newStart, newEnd)
         }
     }

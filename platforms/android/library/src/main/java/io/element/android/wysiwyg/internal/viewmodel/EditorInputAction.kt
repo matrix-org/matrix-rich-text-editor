@@ -108,5 +108,4 @@ internal sealed interface EditorInputAction {
     object Indent: EditorInputAction
 
     object Unindent: EditorInputAction
-
 }
