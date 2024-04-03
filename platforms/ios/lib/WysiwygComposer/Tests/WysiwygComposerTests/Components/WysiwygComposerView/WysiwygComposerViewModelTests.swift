@@ -56,6 +56,21 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         // Then the content should be empty for the placeholder to be shown.
         XCTAssertTrue(viewModel.isContentEmpty)
     }
+    
+    func testIsContentEmptyAfterDeletingMultilineContent() {
+        // When typing a new line.
+        _ = viewModel.replaceText(range: .zero, replacementText: "\n")
+        viewModel.textView.attributedText = NSAttributedString(string: "\n")
+        viewModel.didUpdateText()
+        
+        // And then deleting that new line.
+        _ = viewModel.replaceText(range: .init(location: 0, length: 1), replacementText: "")
+        viewModel.textView.attributedText = NSAttributedString(string: "")
+        viewModel.didUpdateText()
+        
+        // Then the content should be empty for the placeholder to be shown.
+        XCTAssertTrue(viewModel.isContentEmpty)
+    }
 
     func testSimpleTextInputIsAccepted() throws {
         let shouldChange = viewModel.replaceText(range: .zero,
