@@ -154,7 +154,7 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         model.delegate = self
         // Publish composer empty state.
         $attributedContent.sink { [unowned self] content in
-            isContentEmpty = content.text.length == 0
+            isContentEmpty = content.text.length == 0 || content.plainText == "\n" // An empty <p> is left when deleting multi-line content.
         }
         .store(in: &cancellables)
         

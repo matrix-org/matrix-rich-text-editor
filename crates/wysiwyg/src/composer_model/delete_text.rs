@@ -52,7 +52,7 @@ where
         if s == e {
             // We have no selection - check for special list behaviour
             // TODO: should probably also get inside here if our selection
-            // only contains a zero-wdith space.
+            // only contains a zero-width space.
             let range = self.state.dom.find_range(s, e);
             self.backspace_single_cursor(range)
         } else {
