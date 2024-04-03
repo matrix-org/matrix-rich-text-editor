@@ -1,5 +1,11 @@
 # Changelog
 
+# [2.36.0] - 2024-04-03
+- [Android] Fix text composition issues in Compose wrapper.
+- [Android] Simplify `InputConnection` implementation, make `OnSelectionChangedListener` more precise.
+- [iOS] Fix a couple of bugs detecting whether the content is empty or not.
+- [iOS] Release to [matrix-org/matrix-rich-text-editor-swift](https://github.com/matrix-org/matrix-rich-text-editor-swift), attaching the binaries to GitHub releases.
+
 # [2.35.0] - 2024-03-27
 - [iOS] Fix deployment with Xcode 15.3.
 
