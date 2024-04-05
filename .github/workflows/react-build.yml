@@ -43,6 +43,14 @@ jobs:
       - name: Test (with coverage!)
         working-directory: platforms/web
         run: yarn coverage
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: platforms/web/coverage/lcov.info
+          fail_ci_if_error: true
+          flags: unittests-react, unittests
+          # https://github.com/codecov/codecov-action/issues/557#issuecomment-1216749652
+          token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
