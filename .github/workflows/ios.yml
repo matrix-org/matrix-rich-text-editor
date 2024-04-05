@@ -3,9 +3,6 @@ name: iOS
 on:
   push:
     branches: [ main, "version-*" ]
-  pull_request:
-    branches: [ "main" ]
-    types: [ labeled, synchronize, opened, reopened ]
 
 env:
   CARGO_TERM_COLOR: always
