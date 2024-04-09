@@ -6,8 +6,6 @@ name: React build
 on:
   push:
     branches: ["main"]
-  pull_request:
-    branches: ["main"]
 
 concurrency:
   group: ${{ github.ref == 'refs/heads/main' && format('react-build-main-{0}', github.sha) || format('react-build-pr-{0}', github.ref)  }}
