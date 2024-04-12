@@ -6,7 +6,9 @@ import io.element.android.wysiwyg.display.MentionDisplayHandler
 import io.element.android.wysiwyg.test.fakes.createFakeStyleConfig
 import io.element.android.wysiwyg.test.utils.dumpSpans
 import org.hamcrest.MatcherAssert.assertThat
+import org.hamcrest.Matchers.contains
 import org.hamcrest.Matchers.equalTo
+import org.hamcrest.Matchers.not
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -152,6 +154,26 @@ class HtmlToSpansParserTest {
         )
         assertThat(
             spanned.toString(), equalTo("link\njonny\n@room")
+        )
+    }
+
+    @Test
+    fun testMentionWithNoTextIsIgnored() {
+        val html = """
+            foo<a href="https://matrix.to/#/@test:example.org" contenteditable="false"></a>bar
+        """.trimIndent()
+        val spanned = convertHtml(html, mentionDisplayHandler = object : MentionDisplayHandler {
+            override fun resolveAtRoomMentionDisplay(): TextDisplay =
+                TextDisplay.Pill
+
+            override fun resolveMentionDisplay(text: String, url: String): TextDisplay =
+                TextDisplay.Pill
+        })
+        assertThat(
+            spanned.dumpSpans(), not(contains("PillSpan"))
+        )
+        assertThat(
+            spanned.toString(), equalTo("foobar")
         )
     }
 
