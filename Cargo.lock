@@ -1397,7 +1397,7 @@ dependencies = [
 
 [[package]]
 name = "uniffi-wysiwyg-composer"
-version = "2.36.0"
+version = "2.37.0"
 dependencies = [
  "matrix_mentions",
  "uniffi",
@@ -1843,7 +1843,7 @@ dependencies = [
 
 [[package]]
 name = "wysiwyg"
-version = "2.36.0"
+version = "2.37.0"
 dependencies = [
  "cfg-if",
  "email_address",
@@ -1867,7 +1867,7 @@ dependencies = [
 
 [[package]]
 name = "wysiwyg-wasm"
-version = "2.36.0"
+version = "2.37.0"
 dependencies = [
  "console_error_panic_hook",
  "js-sys",
