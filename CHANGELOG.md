@@ -1,5 +1,9 @@
 # Changelog
 
+# [2.37.0] - 2024-04-12
+- [Android] Discard mentions with no associated text.
+- [iOS] iOS tests: Use xcresultparser instead of slather.
+
 # [2.36.0] - 2024-04-03
 - [Android] Fix text composition issues in Compose wrapper.
 - [Android] Simplify `InputConnection` implementation, make `OnSelectionChangedListener` more precise.
