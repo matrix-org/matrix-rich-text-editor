@@ -336,6 +336,9 @@ internal class HtmlToSpansParser(
         val url = last.span.link
         val innerText = text.subSequence(last.start, text.length).toString()
 
+        // Invalid mention, it's not mapped to any text
+        if (innerText.isEmpty()) return
+
         val isMention = isMention?.invoke(innerText, url) == true ||
                 last.span.data.containsKey("data-mention-type")
 
