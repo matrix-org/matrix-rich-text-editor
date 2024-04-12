@@ -23,10 +23,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Setup - Ruby and bundler dependencies
-      uses: ruby/setup-ruby@v1
-      with:
-        bundler-cache: true
+
+    - name: Install xcresultparser
+      run: brew install a7ex/homebrew-formulae/xcresultparser
 
     - name: Rust & Cargo cache
       uses: Swatinem/rust-cache@v2
@@ -58,16 +57,14 @@ jobs:
       working-directory: platforms/ios/example
       run: exec ./ios-test-coverage.sh
 
-    - name: Run slather for unit tests
-      run: bundle exec slather
-      env:
-        GIT_BRANCH: ${{ steps.get_branch.outputs.branch }}
-        CI_PULL_REQUEST: ${{ github.event.number }}
+    - name: Collect coverage
+      working-directory: platforms/ios/example
+      run: xcresultparser -q -o cobertura -t Wysiwyg -p $(pwd) tests.xcresult > tests.xml 
 
     - name: Upload unit test coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
-        directory: platforms/ios/lib/coverage
+        files: ./platforms/ios/example/tests.xml
         fail_ci_if_error: true
         flags: unittests-ios, unittests
         # https://github.com/codecov/codecov-action/issues/557#issuecomment-1216749652
@@ -77,16 +74,14 @@ jobs:
       working-directory: platforms/ios/example
       run: exec ./ios-ui-test-coverage.sh
 
-    - name: Run slather for ui tests
-      run: bundle exec slather
-      env:
-        GIT_BRANCH: ${{ steps.get_branch.outputs.branch }}
-        CI_PULL_REQUEST: ${{ github.event.number }}
+    - name: Collect coverage
+      working-directory: platforms/ios/example
+      run: xcresultparser -q -o cobertura -t Wysiwyg -p $(pwd) ui-tests.xcresult > ui-tests.xml 
 
     - name: Upload ui test coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
-        directory: platforms/ios/lib/coverage
+        files: ./platforms/ios/example/ui-tests.xml
         fail_ci_if_error: true
         flags: uitests-ios, uitests
         # https://github.com/codecov/codecov-action/issues/557#issuecomment-1216749652

@@ -8,5 +8,6 @@ xcodebuild \
   -sdk iphonesimulator \
   -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.2' \
   -derivedDataPath ./DerivedData \
+  -resultBundlePath tests.xcresult \
   -enableCodeCoverage YES \
   test
