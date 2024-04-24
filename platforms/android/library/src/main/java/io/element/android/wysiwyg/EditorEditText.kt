@@ -492,7 +492,7 @@ class EditorEditText : AppCompatEditText {
     }
 
     /**
-     * Get the editor content as clean HTML suitable for sending as a message
+     * Get the editor content as clean HTML suitable for sending as a message.
      */
     fun getContentAsMessageHtml(): String {
         return viewModel.getContentAsMessageHtml()
@@ -506,6 +506,13 @@ class EditorEditText : AppCompatEditText {
      * Get the text as markdown.
      */
     fun getMarkdown(): String = viewModel.getMarkdown()
+
+    /**
+     * Get the editor content as clean markdown suitable for sending as a message.
+     */
+    fun getContentAsMessageMarkdown(): String {
+        return viewModel.getContentAsMessageMarkdown()
+    }
 
     /**
      * Set the text as markdown, it will be turned into to HTML internally.
