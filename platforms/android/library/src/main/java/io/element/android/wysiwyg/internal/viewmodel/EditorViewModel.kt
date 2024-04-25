@@ -180,6 +180,14 @@ internal class EditorViewModel(
             recoveryContentPlainText
         }
 
+    fun getContentAsMessageMarkdown(): String = runCatching {
+        composer?.getContentAsMessageMarkdown().orEmpty()
+    }.onFailure(
+        ::onComposerFailure
+    ).getOrElse {
+        recoveryContentPlainText
+    }
+
     fun getMarkdown(): String = runCatching {
         composer?.getContentAsMarkdown().orEmpty()
     }.onFailure(

@@ -131,7 +131,7 @@ private fun RealEditor(
                     addTextChangedListener {
                         state.internalHtml = getInternalHtml()
                         state.messageHtml = getContentAsMessageHtml()
-                        state.messageMarkdown = getMarkdown()
+                        state.messageMarkdown = getContentAsMessageMarkdown()
 
                         onTyping(state.internalHtml.isNotEmpty())
 
