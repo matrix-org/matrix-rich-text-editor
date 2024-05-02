@@ -10,7 +10,6 @@ import android.view.inputmethod.InputConnectionWrapper
 import android.view.inputmethod.TextAttribute
 import android.widget.TextView
 import androidx.annotation.VisibleForTesting
-import androidx.core.text.isDigitsOnly
 import io.element.android.wysiwyg.EditorTextWatcher
 import io.element.android.wysiwyg.internal.utils.TextRangeHelper
 import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
@@ -130,7 +129,8 @@ internal class InterceptInputConnection(
                         result = processInput(EditorInputAction.ReplaceTextIn(cStart, cEnd, toAppend))?.let {
                             // Fix selection to include whitespace at the end
                             val prevSelection = it.selection
-                            it.copy(selection = prevSelection.first until prevSelection.last + 2)
+                            val newEnd = (prevSelection.last + 1).coerceAtMost(it.text.length)
+                            it.copy(selection = newEnd..newEnd)
                         }
                     }
                     result
@@ -160,7 +160,13 @@ internal class InterceptInputConnection(
                     // New composing text
                     val (cStart, cEnd) = EditorIndexMapper.fromEditorToComposer(start, end, editable)
                         ?: error("Invalid indexes in composer $start, $end")
-                    processInput(EditorInputAction.ReplaceTextIn(cStart, cEnd, newText.toString()))
+                    processInput(
+                        EditorInputAction.ReplaceTextIn(
+                            cStart,
+                            cEnd,
+                            newText.toString()
+                        )
+                    )
                 }
             }
         }
@@ -171,9 +177,9 @@ internal class InterceptInputConnection(
         val start = Selection.getSelectionStart(editable)
         val end = Selection.getSelectionEnd(editable)
 
-        val toDelete = if (start == end) 1 else abs(start - end)
         // We're going to copy backspace behaviour, the selection must be at the greater value
         val deletePos = max(start, end)
+        val toDelete = if (start == end) 1 else abs(start - end)
 
         // Imitate the software key backspace which updates the selection start to match the end.
         Selection.setSelection(editable, deletePos, deletePos)
@@ -235,19 +241,26 @@ internal class InterceptInputConnection(
                     editable, start = end, length = afterLength
                 )
 
-            val result = withProcessor {
-                val action = if (deleteTo - deleteFrom > 1) {
-                    EditorInputAction.DeleteIn(deleteFrom, deleteTo)
-                } else {
-                    EditorInputAction.Delete
+            // Translate editor indexes to Rust composer ones since `DeleteIn` expects composer indexes
+            val (cDeleteFrom, cDeleteTo) = EditorIndexMapper.fromEditorToComposer(deleteFrom, deleteTo, editable)
+                ?.let { it.first.toInt() to it.second.toInt() }
+                ?: (-1 to -1)
+
+            if (cDeleteFrom >= 0 && cDeleteTo >= 0) {
+                val result = withProcessor {
+                    val action = if (cDeleteFrom - cDeleteTo > 1) {
+                        EditorInputAction.DeleteIn(cDeleteFrom, cDeleteTo)
+                    } else {
+                        EditorInputAction.Delete
+                    }
+                    processInput(action)
                 }
-                processInput(action)
-            }
-            if (result != null) {
-                replaceAll(result.text, start = end, end = end + afterLength, newEnd = end)
-                val editorSelectionIndex = editorIndex(result.selection.first, editable)
-                setSelection(editorSelectionIndex, editorSelectionIndex)
-                setComposingRegion(editorSelectionIndex, editorSelectionIndex)
+                if (result != null) {
+                    replaceAll(result.text, start = end, end = end + afterLength, newEnd = end)
+                    val editorSelectionIndex = editorIndex(result.selection.first, editable)
+                    setSelection(editorSelectionIndex, editorSelectionIndex)
+                    setComposingRegion(editorSelectionIndex, editorSelectionIndex)
+                }
             }
             // TODO: handle result == null
             handled = true
@@ -260,13 +273,21 @@ internal class InterceptInputConnection(
                 )
 
             val result = withProcessor {
-                if (deleteTo - deleteFrom > 1) {
+                // Update the selection in case it went out of sync
+                if (abs(deleteTo - deleteFrom) == 1) {
+                    updateSelection(editable, deleteTo, deleteTo)
+                } else {
                     updateSelection(editable, deleteFrom, deleteTo)
                 }
                 processInput(EditorInputAction.BackPress)
             }
             if (result != null) {
-                replaceAll(result.text, start = start - beforeLength, end = start, newEnd = start - beforeLength)
+                replaceAll(
+                    result.text,
+                    start = start - beforeLength,
+                    end = start,
+                    newEnd = start - beforeLength
+                )
                 val editorSelectionIndex = editorIndex(result.selection.first, editable)
                 setSelection(editorSelectionIndex, editorSelectionIndex)
                 setComposingRegion(editorSelectionIndex, editorSelectionIndex)
