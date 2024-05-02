@@ -126,11 +126,14 @@ internal class InterceptInputConnection(
                     var result = processInput(EditorInputAction.ReplaceTextIn(cEnd, cEnd, " "))
                     // Then replace text if needed
                     if (toAppend != actualPreviousText) {
-                        result = processInput(EditorInputAction.ReplaceTextIn(cStart, cEnd, toAppend))?.let {
+                        result = processInput(EditorInputAction.ReplaceTextIn(cStart, cEnd, toAppend))?.let { replaceResult ->
                             // Fix selection to include whitespace at the end
-                            val prevSelection = it.selection
-                            val newEnd = (prevSelection.last + 1).coerceAtMost(it.text.length)
-                            it.copy(selection = newEnd..newEnd)
+                            val prevSelection = replaceResult.selection
+                            val newEnd = (prevSelection.last + 1).coerceAtMost(replaceResult.text.length)
+                            val newSelectionResult = processInput(
+                                EditorInputAction.UpdateSelection(newEnd.toUInt(), newEnd.toUInt())
+                            )
+                            newSelectionResult?.copy(selection = newSelectionResult.selection) ?: replaceResult
                         }
                     }
                     result
@@ -274,9 +277,7 @@ internal class InterceptInputConnection(
 
             val result = withProcessor {
                 // Update the selection in case it went out of sync
-                if (abs(deleteTo - deleteFrom) == 1) {
-                    updateSelection(editable, deleteTo, deleteTo)
-                } else {
+                if (abs(deleteTo - deleteFrom) != 1) {
                     updateSelection(editable, deleteFrom, deleteTo)
                 }
                 processInput(EditorInputAction.BackPress)

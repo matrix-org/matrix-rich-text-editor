@@ -108,4 +108,13 @@ internal sealed interface EditorInputAction {
     object Indent: EditorInputAction
 
     object Unindent: EditorInputAction
+
+    /**
+     * Sets the current selection to the [start]..[end] range in the composer,
+     * using composer indices. These may not match the UI text indices.
+     *
+     * @param start The start index of the selection in the composer.
+     * @param end The end index of the selection in the composer.
+     */
+    data class UpdateSelection(val start: UInt, val end: UInt) : EditorInputAction
 }
