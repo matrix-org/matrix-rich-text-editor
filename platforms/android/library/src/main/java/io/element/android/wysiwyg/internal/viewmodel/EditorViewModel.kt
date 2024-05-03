@@ -121,6 +121,7 @@ internal class EditorViewModel(
                 is EditorInputAction.Unindent -> composer?.unindent()
                 is EditorInputAction.InsertMentionAtSuggestion -> insertMentionAtSuggestion(action)
                 is EditorInputAction.InsertAtRoomMentionAtSuggestion -> insertAtRoomMentionAtSuggestion()
+                is EditorInputAction.UpdateSelection -> composer?.select(action.start, action.end)
             }
         }.onFailure(::onComposerFailure)
             .getOrNull()
