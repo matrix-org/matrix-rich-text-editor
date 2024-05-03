@@ -1,5 +1,9 @@
 # Changelog
 
+# [2.37.1] - 2024-05-03
+- [Android] Return pure Markdown in the `RichTextEditorState.messageMarkdown` property instead of MD + HTML for mention pills.
+- [Android] Fix selection indexes not being up to date when adding a punctuation mark using GBoard keyboard in Android < 13.
+
 # [2.37.0] - 2024-04-12
 - [Android] Discard mentions with no associated text.
 - [iOS] iOS tests: Use xcresultparser instead of slather.
