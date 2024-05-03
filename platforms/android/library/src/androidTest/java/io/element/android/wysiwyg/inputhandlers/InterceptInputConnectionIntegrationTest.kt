@@ -557,6 +557,23 @@ class InterceptInputConnectionIntegrationTest {
         assertThat(textView.text.toString(), equalTo("test"))
     }
 
+    @Test
+    fun testPunctuationSymbolAfterCommitingText() {
+        // This simulates the behaviour of Gboard on Android < 13 when adding a punctuation symbol
+        // after a committed word.
+        inputConnection.run {
+            // Manually entered letter
+            setComposingText("A", 1)
+            // Committed text from suggestions
+            commitText("Anything ", 1)
+            // Punctuation symbol added, first the extra whitespace is removed by the system
+            deleteSurroundingText(1, 0)
+            // Then the punctuation symbol is added instead
+            commitText(".", 1)
+        }
+        assertThat(textView.text.toString(), equalTo("Anything."))
+    }
+
     private fun simulateInput(editorInputAction: EditorInputAction) =
         viewModel.processInput(editorInputAction)?.let { (text, selection) ->
             textView.setText(text)

@@ -126,15 +126,20 @@ internal class InterceptInputConnection(
                     var result = processInput(EditorInputAction.ReplaceTextIn(cEnd, cEnd, " "))
                     // Then replace text if needed
                     if (toAppend != actualPreviousText) {
-                        result = processInput(EditorInputAction.ReplaceTextIn(cStart, cEnd, toAppend))?.let { replaceResult ->
-                            // Fix selection to include whitespace at the end
-                            val prevSelection = replaceResult.selection
-                            val newEnd = (prevSelection.last + 1).coerceAtMost(replaceResult.text.length)
-                            val newSelectionResult = processInput(
-                                EditorInputAction.UpdateSelection(newEnd.toUInt(), newEnd.toUInt())
-                            )
-                            newSelectionResult?.copy(selection = newSelectionResult.selection) ?: replaceResult
-                        }
+                        result = processInput(EditorInputAction.ReplaceTextIn(cStart, cEnd, toAppend))
+                            ?.let { replaceResult ->
+                                // Fix selection to include whitespace at the end
+                                val prevSelection = replaceResult.selection
+                                val newEnd = (prevSelection.last + 1).coerceAtMost(replaceResult.text.length)
+                                val newSelectionResult = processInput(
+                                    EditorInputAction.UpdateSelection(newEnd.toUInt(), newEnd.toUInt())
+                                )
+                                if (newSelectionResult != null) {
+                                    replaceResult.copy(selection = newSelectionResult.selection)
+                                } else {
+                                    replaceResult
+                                }
+                            }
                     }
                     result
                 }
