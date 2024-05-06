@@ -62,7 +62,7 @@ internal class EditorViewModel(
         composer?.log()
     }
 
-    fun processInput(action: EditorInputAction): ReplaceTextResult? {
+    fun processInput(action: EditorInputAction): ComposerResult? {
         val update = runCatching {
             when (action) {
                 is EditorInputAction.ReplaceText -> {
@@ -131,7 +131,7 @@ internal class EditorViewModel(
         return handleComposerUpdates(update)
     }
 
-    private fun handleComposerUpdates(update: ComposerUpdate?): ReplaceTextResult? {
+    private fun handleComposerUpdates(update: ComposerUpdate?): ComposerResult? {
         if (update != null) {
             val menuState = update.menuState()
             if (menuState is MenuState.Update) {
@@ -160,13 +160,16 @@ internal class EditorViewModel(
                 val mentionsState = getMentionsState()
                 mentionsStateCallback?.invoke(mentionsState)
 
-                ReplaceTextResult(
+                ComposerResult.ReplaceText(
                     text = stringToSpans(replacementHtml),
                     selection = textUpdate.startUtf16Codeunit.toInt()..textUpdate.endUtf16Codeunit.toInt(),
                 )
             }
 
-            is TextUpdate.Select,
+            is TextUpdate.Select -> {
+                val selection = textUpdate.startUtf16Codeunit.toInt()..textUpdate.endUtf16Codeunit.toInt()
+                ComposerResult.SelectionUpdated(selection = selection)
+            }
             is TextUpdate.Keep,
             null -> null
         }

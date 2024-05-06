@@ -12,9 +12,9 @@ import android.widget.TextView
 import androidx.annotation.VisibleForTesting
 import io.element.android.wysiwyg.EditorTextWatcher
 import io.element.android.wysiwyg.internal.utils.TextRangeHelper
+import io.element.android.wysiwyg.internal.viewmodel.ComposerResult
 import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
 import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
-import io.element.android.wysiwyg.internal.viewmodel.ReplaceTextResult
 import io.element.android.wysiwyg.utils.EditorIndexMapper
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
 import kotlin.math.abs
@@ -59,7 +59,7 @@ internal class InterceptInputConnection(
         val (start, end) = getCurrentCompositionOrSelection()
         val result = processTextEntry(text, start, end, null)
 
-        return if (result != null) {
+        return if (result is ComposerResult.ReplaceText) {
             beginBatchEdit()
             val newStart = start.coerceIn(0, result.text.length)
             val newEnd = (newStart + text.length).coerceIn(newStart, result.text.length)
@@ -100,7 +100,7 @@ internal class InterceptInputConnection(
     ): Boolean {
         val result = processTextEntry(text, start, end, oldText?.toString())
 
-        return if (result != null) {
+        return if (result is ComposerResult.ReplaceText) {
             beginBatchEdit()
             replaceAll(charSequence = result.text, start = start, end = end, newEnd = start + text.length)
             val editorSelectionIndex = editorIndex(result.selection.last, editable)
@@ -113,7 +113,7 @@ internal class InterceptInputConnection(
         }
     }
 
-    private fun processTextEntry(newText: CharSequence?, start: Int, end: Int, previousText: String?): ReplaceTextResult? {
+    private fun processTextEntry(newText: CharSequence?, start: Int, end: Int, previousText: String?): ComposerResult? {
         val actualPreviousText = previousText ?: editable.substring(start until end)
         return withProcessor {
             when {
@@ -126,7 +126,7 @@ internal class InterceptInputConnection(
                     var result = processInput(EditorInputAction.ReplaceTextIn(cEnd, cEnd, " "))
                     // Then replace text if needed
                     if (toAppend != actualPreviousText) {
-                        result = processInput(EditorInputAction.ReplaceTextIn(cStart, cEnd, toAppend))
+                        result = (processInput(EditorInputAction.ReplaceTextIn(cStart, cEnd, toAppend)) as? ComposerResult.ReplaceText)
                             ?.let { replaceResult ->
                                 // Fix selection to include whitespace at the end
                                 val prevSelection = replaceResult.selection
@@ -134,7 +134,7 @@ internal class InterceptInputConnection(
                                 val newSelectionResult = processInput(
                                     EditorInputAction.UpdateSelection(newEnd.toUInt(), newEnd.toUInt())
                                 )
-                                if (newSelectionResult != null) {
+                                if (newSelectionResult is ComposerResult.SelectionUpdated) {
                                     replaceResult.copy(selection = newSelectionResult.selection)
                                 } else {
                                     replaceResult
@@ -263,7 +263,7 @@ internal class InterceptInputConnection(
                     }
                     processInput(action)
                 }
-                if (result != null) {
+                if (result is ComposerResult.ReplaceText) {
                     replaceAll(result.text, start = end, end = end + afterLength, newEnd = end)
                     val editorSelectionIndex = editorIndex(result.selection.first, editable)
                     setSelection(editorSelectionIndex, editorSelectionIndex)
@@ -287,7 +287,7 @@ internal class InterceptInputConnection(
                 }
                 processInput(EditorInputAction.BackPress)
             }
-            if (result != null) {
+            if (result is ComposerResult.ReplaceText) {
                 replaceAll(
                     result.text,
                     start = start - beforeLength,
