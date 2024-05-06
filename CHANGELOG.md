@@ -1,5 +1,8 @@
 # Changelog
 
+# [2.37.2] - 2024-05-06
+- [Android] Fix selection mismatch on Android 14+ after using word completion.
+
 # [2.37.1] - 2024-05-03
 - [Android] Return pure Markdown in the `RichTextEditorState.messageMarkdown` property instead of MD + HTML for mention pills.
 - [Android] Fix selection indexes not being up to date when adding a punctuation mark using GBoard keyboard in Android < 13.
