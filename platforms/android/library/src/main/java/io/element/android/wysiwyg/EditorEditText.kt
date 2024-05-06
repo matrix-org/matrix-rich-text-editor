@@ -28,6 +28,7 @@ import io.element.android.wysiwyg.internal.display.MemoizingMentionDisplayHandle
 import io.element.android.wysiwyg.internal.utils.UriContentListener
 import io.element.android.wysiwyg.internal.view.EditorEditTextAttributeReader
 import io.element.android.wysiwyg.internal.view.viewModel
+import io.element.android.wysiwyg.internal.viewmodel.ComposerResult.ReplaceText
 import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
 import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
 import io.element.android.wysiwyg.utils.EditorIndexMapper
@@ -240,7 +241,7 @@ class EditorEditText : AppCompatEditText {
                     )
                 )
 
-                if (result != null) {
+                if (result is ReplaceText) {
                     setTextFromComposerUpdate(result.text)
                     setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
                 }
@@ -256,7 +257,7 @@ class EditorEditText : AppCompatEditText {
                     ?: return super.onTextContextMenuItem(id)
                 val result = viewModel.processInput(EditorInputAction.ReplaceText(copiedString))
 
-                if (result != null) {
+                if (result is ReplaceText) {
                     setTextFromComposerUpdate(result.text)
                     setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
                 }
@@ -363,7 +364,7 @@ class EditorEditText : AppCompatEditText {
 
         viewModel.updateSelection(editableText, 0, end)
 
-        val result = viewModel.processInput(EditorInputAction.ReplaceText(text.toString()))
+        val result = processInputAsTextResult(EditorInputAction.ReplaceText(text.toString()))
             ?: return super.setText(text, type)
 
         setTextFromComposerUpdate(result.text)
@@ -371,7 +372,7 @@ class EditorEditText : AppCompatEditText {
     }
 
     override fun append(text: CharSequence?, start: Int, end: Int) {
-        val result = viewModel.processInput(EditorInputAction.ReplaceText(text.toString()))
+        val result = processInputAsTextResult(EditorInputAction.ReplaceText(text.toString()))
             ?: return super.append(text, start, end)
 
         setTextFromComposerUpdate(result.text)
@@ -379,7 +380,7 @@ class EditorEditText : AppCompatEditText {
     }
 
     fun toggleInlineFormat(inlineFormat: InlineFormat): Boolean {
-        val result = viewModel.processInput(EditorInputAction.ApplyInlineFormat(inlineFormat))
+        val result = processInputAsTextResult(EditorInputAction.ApplyInlineFormat(inlineFormat))
             ?: return false
 
         setTextFromComposerUpdate(result.text)
@@ -388,30 +389,28 @@ class EditorEditText : AppCompatEditText {
     }
 
     fun toggleCodeBlock(): Boolean {
-        val result = viewModel.processInput(EditorInputAction.CodeBlock)
-            ?: return false
+        val result = processInputAsTextResult(EditorInputAction.CodeBlock) ?: return false
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
         return true
     }
 
     fun toggleQuote(): Boolean {
-        val result = viewModel.processInput(EditorInputAction.Quote)
-            ?: return false
+        val result = processInputAsTextResult(EditorInputAction.Quote) ?: return false
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
         return true
     }
 
     fun undo() {
-        val result = viewModel.processInput(EditorInputAction.Undo) ?: return
+        val result = processInputAsTextResult(EditorInputAction.Undo) ?: return
 
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
     }
 
     fun redo() {
-        val result = viewModel.processInput(EditorInputAction.Redo) ?: return
+        val result = processInputAsTextResult(EditorInputAction.Redo) ?: return
 
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
@@ -435,7 +434,7 @@ class EditorEditText : AppCompatEditText {
      * @param url The link URL to set or null to remove
      */
     fun setLink(url: String?) {
-        val result = viewModel.processInput(
+        val result = processInputAsTextResult(
             if (url != null) EditorInputAction.SetLink(url) else EditorInputAction.RemoveLink
         ) ?: return
 
@@ -457,35 +456,35 @@ class EditorEditText : AppCompatEditText {
      * @param text The new text to insert
      */
     fun insertLink(url: String, text: String) {
-        val result = viewModel.processInput(EditorInputAction.SetLinkWithText(url, text)) ?: return
+        val result = processInputAsTextResult(EditorInputAction.SetLinkWithText(url, text)) ?: return
 
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
     fun toggleList(ordered: Boolean) {
-        val result = viewModel.processInput(EditorInputAction.ToggleList(ordered)) ?: return
+        val result = processInputAsTextResult(EditorInputAction.ToggleList(ordered)) ?: return
 
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
     fun indent() {
-        val result = viewModel.processInput(EditorInputAction.Indent) ?: return
+        val result = processInputAsTextResult(EditorInputAction.Indent) ?: return
 
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
     fun unindent() {
-        val result = viewModel.processInput(EditorInputAction.Unindent) ?: return
+        val result = processInputAsTextResult(EditorInputAction.Unindent) ?: return
 
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
     fun setHtml(html: String) {
-        val result = viewModel.processInput(EditorInputAction.ReplaceAllHtml(html)) ?: return
+        val result = processInputAsTextResult(EditorInputAction.ReplaceAllHtml(html)) ?: return
 
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
@@ -518,8 +517,7 @@ class EditorEditText : AppCompatEditText {
      * Set the text as markdown, it will be turned into to HTML internally.
      */
     fun setMarkdown(markdown: String) {
-        val result =
-            viewModel.processInput(EditorInputAction.ReplaceAllMarkdown(markdown)) ?: return
+        val result = processInputAsTextResult(EditorInputAction.ReplaceAllMarkdown(markdown)) ?: return
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
     }
@@ -531,7 +529,7 @@ class EditorEditText : AppCompatEditText {
      * @param text The text to insert into the current suggestion range
      */
     fun insertMentionAtSuggestion(url: String, text: String) {
-        val result = viewModel.processInput(
+        val result = processInputAsTextResult(
             EditorInputAction.InsertMentionAtSuggestion(
                 text = text,
                 url = url,
@@ -545,7 +543,7 @@ class EditorEditText : AppCompatEditText {
      * Set a mention link that applies to the current suggestion range
      */
     fun insertAtRoomMentionAtSuggestion() {
-        val result = viewModel.processInput(
+        val result = processInputAsTextResult(
             EditorInputAction.InsertAtRoomMentionAtSuggestion
         ) ?: return
         setTextFromComposerUpdate(result.text)
@@ -558,7 +556,7 @@ class EditorEditText : AppCompatEditText {
      * @param text The text to insert into the current suggestion range
      */
     fun replaceTextSuggestion(text: String) {
-        val result = viewModel.processInput(
+        val result = processInputAsTextResult(
             EditorInputAction.ReplaceTextSuggestion(
                 value = text,
             )
@@ -644,6 +642,11 @@ class EditorEditText : AppCompatEditText {
         if (newStart in 0..editableText.length && newEnd in 0..editableText.length) {
             setSelection(newStart, newEnd)
         }
+    }
+
+    private fun EditorEditText.processInputAsTextResult(action: EditorInputAction): ReplaceText? {
+        val result = viewModel.processInput(action)
+        return result as? ReplaceText
     }
 }
 
