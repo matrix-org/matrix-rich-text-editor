@@ -212,7 +212,6 @@ class RichTextEditorState(
      * Whether the editor is ready to receive commands.
      */
     var isReadyToProcessActions: Boolean by mutableStateOf(false)
-        internal set
 
     /**
      * Request focus of the editor input field.
