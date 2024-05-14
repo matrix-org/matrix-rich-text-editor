@@ -14,14 +14,16 @@ import io.element.android.wysiwyg.compose.internal.FakeViewConnection
 import io.element.android.wysiwyg.compose.internal.ViewAction
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.parcelize.Parcelize
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
 import uniffi.wysiwyg_composer.MentionsState
 import uniffi.wysiwyg_composer.MenuAction
+import kotlin.coroutines.coroutineContext
 
 /**
  * A state holder for the [RichTextEditor] composable.
@@ -47,8 +49,8 @@ class RichTextEditorState(
     // A unique key for the most recent view to subscribe
     internal var activeViewKey: Any? by mutableStateOf(-1)
 
-    private val _viewActions = MutableSharedFlow<ViewAction>()
-    internal val viewActions: SharedFlow<ViewAction> = _viewActions.asSharedFlow()
+    private val _viewActions = MutableSharedFlow<ViewAction>(extraBufferCapacity = 10)
+    internal val viewActions: SharedFlow<ViewAction> = _viewActions
 
     /**
      * Toggle inline formatting on the current selection.
@@ -114,7 +116,16 @@ class RichTextEditorState(
      * Set the HTML content of the editor.
      */
     suspend fun setHtml(html: String) {
+        waitUntilReady()
         _viewActions.emit(ViewAction.SetHtml(html))
+    }
+
+    /**
+     * Set the Markdown content of the editor.
+     */
+    suspend fun setMarkdown(markdown: String) {
+        waitUntilReady()
+        _viewActions.emit(ViewAction.SetMarkdown(markdown))
     }
 
     /**
@@ -198,9 +209,16 @@ class RichTextEditorState(
         internal set
 
     /**
+     * Whether the editor is ready to receive commands.
+     */
+    var isReadyToProcessActions: Boolean by mutableStateOf(false)
+        internal set
+
+    /**
      * Request focus of the editor input field.
      */
     suspend fun requestFocus() {
+        waitUntilReady()
         _viewActions.emit(ViewAction.RequestFocus)
     }
 
@@ -251,6 +269,16 @@ class RichTextEditorState(
      */
     var mentionsState: MentionsState? by mutableStateOf(null)
 
+    fun onRelease() {
+        isReadyToProcessActions = false
+    }
+
+    private suspend fun waitUntilReady() {
+        while (!isReadyToProcessActions) {
+            coroutineContext.ensureActive()
+            delay(10)
+        }
+    }
 }
 
 /**

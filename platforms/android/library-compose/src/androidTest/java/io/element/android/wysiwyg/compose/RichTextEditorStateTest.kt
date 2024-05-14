@@ -140,4 +140,24 @@ class RichTextEditorStateTest {
 
         onView(withText("Original text")).check(matches(isDisplayed()))
     }
+
+    @Test
+    fun testSettingMarkdownText() = runTest {
+        val state = RichTextEditorState(
+            "Original text"
+        )
+        composeTestRule.setContent {
+            MaterialTheme {
+                RichTextEditor(
+                    state = state,
+                    registerStateUpdates = true
+                )
+            }
+        }
+
+        state.setMarkdown("**Updated text**")
+        composeTestRule.awaitIdle()
+
+        onView(withText("Updated text")).check(matches(isDisplayed()))
+    }
 }
