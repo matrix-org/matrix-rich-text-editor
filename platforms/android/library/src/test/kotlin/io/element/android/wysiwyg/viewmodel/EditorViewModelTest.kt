@@ -1,9 +1,9 @@
 package io.element.android.wysiwyg.viewmodel
 
+import io.element.android.wysiwyg.internal.viewmodel.ComposerResult
 import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
-import io.element.android.wysiwyg.internal.viewmodel.ReplaceTextResult
 import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
 import io.element.android.wysiwyg.mocks.MockComposer
 import io.element.android.wysiwyg.mocks.MockComposerUpdateFactory
@@ -69,7 +69,7 @@ internal class EditorViewModelTest {
             textUpdate = MockTextUpdateFactory.createReplaceAll(updatedParagraph, 2, 3),
             menuState = MenuState.Update(actionStates = actionStates),
         )
-        private val replaceTextResult = ReplaceTextResult(updatedParagraph, 2..3)
+        private val replaceTextResult = ComposerResult.ReplaceText(updatedParagraph, 2..3)
     }
 
     @Before

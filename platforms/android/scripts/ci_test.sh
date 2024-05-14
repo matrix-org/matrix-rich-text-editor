@@ -1,10 +1,13 @@
 #!/bin/bash
 
+# Exit immediately if unit tests fail
+set -e
+
 ./gradlew unitTestsWithCoverage $CI_GRADLE_ARG_PROPERTIES
 ./gradlew generateUnitTestCoverageReport $CI_GRADLE_ARG_PROPERTIES
 
 # Don't exit immediately from UI test failure to collect screenshots
-set +e 
+set +e
 
 ./gradlew instrumentationTestsWithCoverage $CI_GRADLE_ARG_PROPERTIES
 
