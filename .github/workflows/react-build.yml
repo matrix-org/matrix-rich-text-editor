@@ -44,7 +44,7 @@ jobs:
         working-directory: platforms/web
         run: yarn coverage
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           files: platforms/web/coverage/lcov.info
           fail_ci_if_error: true
