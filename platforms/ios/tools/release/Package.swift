@@ -11,7 +11,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
-        .package(url: "https://github.com/element-hq/swift-command-line-tools.git", revision: "a6ad90808f4f6cac615ab8496c6ff1bc5f9fa192")
+        .package(url: "https://github.com/element-hq/swift-command-line-tools.git", revision: "483396af716a59eb45379126389a063f7f9bee80")
         // .package(path: "../../../../../swift-command-line-tools")
     ],
     targets: [
