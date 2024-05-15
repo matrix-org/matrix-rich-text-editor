@@ -24,8 +24,7 @@ struct Release: AsyncParsableCommand {
         .deletingLastPathComponent() // platforms
     
     mutating func run() async throws {
-        let packageDirectory = try clonePackageRepo()
-        let package = Package(repository: packageRepo, directory: packageDirectory, apiToken: apiToken, urlSession: localOnly ? .releaseMock : .shared)
+        let package = try clonePackageRepo()
         Zsh.defaultDirectory = buildDirectory
         
         Log.info("Build directory: \(buildDirectory.path())")
@@ -38,19 +37,21 @@ struct Release: AsyncParsableCommand {
         try await package.makeRelease(with: product, uploading: zipFileURL)
     }
     
-    func clonePackageRepo() throws -> URL {
+    func clonePackageRepo() throws -> Package {
         Log.info("Checking out Swift package…")
-        let packageDirectory = buildDirectory.appending(component: "matrix-rich-text-editor-swift")
-        if !FileManager.default.fileExists(atPath: packageDirectory.path()) {
-            try Zsh.run(command: "git clone git@github.com:\(packageRepo.owner)/\(packageRepo.name) \(packageDirectory.path())")
-        }
-        try Zsh.run(command: "git fetch && git checkout main", directory: packageDirectory)
-        return packageDirectory
+        
+        let packageDirectory = buildDirectory.appending(component: packageRepo.name)
+        let git = try Git.clone(repository: URL(string: "git@github.com:\(packageRepo.owner)/\(packageRepo.name)")!, directory: packageDirectory)
+        try git.fetch()
+        try git.checkout(branch: "main")
+        
+        return Package(repository: packageRepo, directory: packageDirectory, apiToken: apiToken, urlSession: localOnly ? .releaseMock : .shared)
     }
     
     func build() throws -> BuildProduct {
-        let commitHash = try Zsh.run(command: "git rev-parse HEAD")!.trimmingCharacters(in: .whitespacesAndNewlines)
-        let branch = try Zsh.run(command: "git rev-parse --abbrev-ref HEAD")!.trimmingCharacters(in: .whitespacesAndNewlines)
+        let git = Git(directory: buildDirectory)
+        let commitHash = try git.commitHash
+        let branch = try git.branchName
         
         Log.info("Building \(branch) at \(commitHash)")
         
@@ -75,14 +76,16 @@ struct Release: AsyncParsableCommand {
     
     func commitAndPush(_ package: Package, with product: BuildProduct) throws {
         Log.info("Pushing changes")
-        try Zsh.run(command: "git add .", directory: package.directory)
-        try Zsh.run(command: "git commit -m 'Bump to version \(product.version) (\(product.sourceRepo.name)/\(product.branch) \(product.commitHash))'", directory: package.directory)
+        
+        let git = Git(directory: package.directory)
+        try git.add(files: ".")
+        try git.commit(message: "Bump to version \(product.version) (\(product.sourceRepo.name)/\(product.branch) \(product.commitHash))")
         
         guard !localOnly else {
             Log.info("Skipping push for --local-only")
             return
         }
         
-        try Zsh.run(command: "git push", directory: package.directory)
+        try git.push()
     }
 }
