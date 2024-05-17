@@ -21,7 +21,7 @@ class RichTextEditorActionsTest {
     val composeTestRule = createComposeRule()
 
     @get:Rule
-    val flakyEmulatorRule = createFlakyEmulatorRule()
+    val flakyEmulatorRule = createFlakyEmulatorRule(retry = false)
 
     @Test
     fun testBold() = runTest {

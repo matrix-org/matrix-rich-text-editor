@@ -33,6 +33,39 @@ import io.element.android.wysiwyg.view.PillStyleConfig
 import io.element.android.wysiwyg.view.StyleConfig
 import kotlin.math.roundToInt
 
+/**
+ * Applies the [RichTextEditorStyle] to the current [TextView].
+ */
+fun TextView.applyStyleInCompose(style: RichTextEditorStyle) {
+    includeFontPadding = style.text.includeFontPadding
+    setTextColor(style.text.color.toArgb())
+    setTextSize(TypedValue.COMPLEX_UNIT_SP, style.text.fontSize.value)
+    if (style.text.lineHeight.isSpecified && style.text.lineHeight.value > 0f) {
+        val lineHeightInPx = TypedValue.applyDimension(
+            style.text.lineHeight.type.toTypeUnit(),
+            style.text.lineHeight.value,
+            context.resources.displayMetrics
+        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            lineHeight = lineHeightInPx.roundToInt()
+        } else {
+            val fontHeightInPx = TypedValue.applyDimension(
+                style.text.fontSize.type.toTypeUnit(),
+                style.text.fontSize.value,
+                context.resources.displayMetrics
+            )
+            val extra = lineHeightInPx - fontHeightInPx
+            setLineSpacing(extra, 1f)
+        }
+    }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        val cursorDrawable = ContextCompat.getDrawable(context, R.drawable.cursor)
+        cursorDrawable?.setTint(style.cursor.color.toArgb())
+        textCursorDrawable = cursorDrawable
+        setLinkTextColor(style.link.color.toArgb())
+    }
+}
+
 internal fun RichTextEditorStyle.toStyleConfig(context: Context): StyleConfig = StyleConfig(
     bulletList = bulletList.toStyleConfig(context),
     inlineCode = inlineCode.toStyleConfig(context),
@@ -87,36 +120,6 @@ internal fun TextStyle.rememberTypeface(): State<Typeface> {
             fontSynthesis = fontSynthesis ?: FontSynthesis.All,
         )
     } as State<Typeface>
-}
-
-internal fun TextView.applyStyleInCompose(style: RichTextEditorStyle) {
-    includeFontPadding = style.text.includeFontPadding
-    setTextColor(style.text.color.toArgb())
-    setTextSize(TypedValue.COMPLEX_UNIT_SP, style.text.fontSize.value)
-    if (style.text.lineHeight.isSpecified && style.text.lineHeight.value > 0f) {
-        val lineHeightInPx = TypedValue.applyDimension(
-            style.text.lineHeight.type.toTypeUnit(),
-            style.text.lineHeight.value,
-            context.resources.displayMetrics
-        )
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            lineHeight = lineHeightInPx.roundToInt()
-        } else {
-            val fontHeightInPx = TypedValue.applyDimension(
-                style.text.fontSize.type.toTypeUnit(),
-                style.text.fontSize.value,
-                context.resources.displayMetrics
-            )
-            val extra = lineHeightInPx - fontHeightInPx
-            setLineSpacing(extra, 1f)
-        }
-    }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        val cursorDrawable = ContextCompat.getDrawable(context, R.drawable.cursor)
-        cursorDrawable?.setTint(style.cursor.color.toArgb())
-        textCursorDrawable = cursorDrawable
-        setLinkTextColor(style.link.color.toArgb())
-    }
 }
 
 private fun TextUnitType.toTypeUnit() = when (this) {

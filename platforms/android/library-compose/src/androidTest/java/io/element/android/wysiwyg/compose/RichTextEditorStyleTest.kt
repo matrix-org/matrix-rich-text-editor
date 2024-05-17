@@ -24,7 +24,7 @@ class RichTextEditorStyleTest {
     val composeTestRule = createComposeRule()
 
     @get:Rule
-    val flakyEmulatorRule = createFlakyEmulatorRule()
+    val flakyEmulatorRule = createFlakyEmulatorRule(retry = false)
 
     private val state = createState()
     private val bulletRadius = MutableStateFlow(2.dp)

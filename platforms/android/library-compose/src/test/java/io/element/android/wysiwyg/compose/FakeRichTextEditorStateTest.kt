@@ -1,5 +1,6 @@
 package io.element.android.wysiwyg.compose
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import app.cash.molecule.RecompositionMode
 import app.cash.molecule.moleculeFlow
@@ -13,12 +14,11 @@ import org.junit.Test
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
 
-
 class FakeRichTextEditorStateTest {
     @Test
     fun `toggleInlineFormat(bold) updates the state`() = runTest {
         moleculeFlow(RecompositionMode.Immediate) {
-            val state = rememberRichTextEditorState(fake = true)
+            val state = fakeRichTextEditorState()
             remember(state.actions) { state }
         }.test {
             val initialState = awaitItem()
@@ -31,7 +31,7 @@ class FakeRichTextEditorStateTest {
     @Test
     fun `toggleInlineFormat(italic) updates the state`() = runTest {
         moleculeFlow(RecompositionMode.Immediate) {
-            val state = rememberRichTextEditorState(fake = true)
+            val state = fakeRichTextEditorState()
             remember(state.actions) { state }
         }.test {
             val initialState = awaitItem()
@@ -44,7 +44,7 @@ class FakeRichTextEditorStateTest {
     @Test
     fun `toggleInlineFormat(underline) updates the state`() = runTest {
         moleculeFlow(RecompositionMode.Immediate) {
-            val state = rememberRichTextEditorState(fake = true)
+            val state = fakeRichTextEditorState()
             remember(state.actions){ state }
         }.test {
             val initialState = awaitItem()
@@ -57,7 +57,7 @@ class FakeRichTextEditorStateTest {
     @Test
     fun `toggleInlineFormat(strikethrough) updates the state`() = runTest {
         moleculeFlow(RecompositionMode.Immediate) {
-            val state = rememberRichTextEditorState(fake = true)
+            val state = fakeRichTextEditorState()
             remember(state.actions) { state }
         }.test {
             val initialState = awaitItem()
@@ -70,7 +70,7 @@ class FakeRichTextEditorStateTest {
     @Test
     fun `toggleInlineFormat(inlinecode) updates the state`() = runTest {
         moleculeFlow(RecompositionMode.Immediate) {
-            val state = rememberRichTextEditorState(fake = true)
+            val state = fakeRichTextEditorState()
             remember(state.actions) { state }
         }.test {
             val initialState = awaitItem()
@@ -83,7 +83,7 @@ class FakeRichTextEditorStateTest {
     @Test
     fun `toggleList(ordered) updates the state`() = runTest {
         moleculeFlow(RecompositionMode.Immediate) {
-            val state = rememberRichTextEditorState(fake = true)
+            val state = fakeRichTextEditorState()
             remember(state.actions) { state }
         }.test {
             val initialState = awaitItem()
@@ -96,7 +96,7 @@ class FakeRichTextEditorStateTest {
     @Test
     fun `toggleList(unordered) updates the state`() = runTest {
         moleculeFlow(RecompositionMode.Immediate) {
-            val state = rememberRichTextEditorState(fake = true)
+            val state = fakeRichTextEditorState()
             remember(state.actions) { state }
         }.test {
             val initialState = awaitItem()
@@ -109,7 +109,7 @@ class FakeRichTextEditorStateTest {
     @Test
     fun `toggleCodeBlock updates the state`() = runTest {
         moleculeFlow(RecompositionMode.Immediate) {
-            val state = rememberRichTextEditorState(fake = true)
+            val state = fakeRichTextEditorState()
             remember(state.actions) { state }
         }.test {
             val initialState = awaitItem()
@@ -122,7 +122,7 @@ class FakeRichTextEditorStateTest {
     @Test
     fun `toggleQuote updates the state`() = runTest {
         moleculeFlow(RecompositionMode.Immediate) {
-            val state = rememberRichTextEditorState(fake = true)
+            val state = fakeRichTextEditorState()
             remember(state.actions) { state }
         }.test {
             val initialState = awaitItem()
@@ -135,7 +135,7 @@ class FakeRichTextEditorStateTest {
     @Test
     fun `undo updates the state`() = runTest {
         moleculeFlow(RecompositionMode.Immediate) {
-            val state = rememberRichTextEditorState(fake = true)
+            val state = fakeRichTextEditorState()
             remember(state.actions) { state }
         }.test {
             val initialState = awaitItem()
@@ -148,7 +148,7 @@ class FakeRichTextEditorStateTest {
     @Test
     fun `redo updates the state`() = runTest {
         moleculeFlow(RecompositionMode.Immediate) {
-            val state = rememberRichTextEditorState(fake = true)
+            val state = fakeRichTextEditorState()
             remember(state.actions) { state }
         }.test {
             val initialState = awaitItem()
@@ -161,7 +161,7 @@ class FakeRichTextEditorStateTest {
     @Test
     fun `indent updates the state`() = runTest {
         moleculeFlow(RecompositionMode.Immediate) {
-            val state = rememberRichTextEditorState(fake = true)
+            val state = fakeRichTextEditorState()
             remember(state.actions) { state }
         }.test {
             val initialState = awaitItem()
@@ -174,7 +174,7 @@ class FakeRichTextEditorStateTest {
     @Test
     fun `unindent updates the state`() = runTest {
         moleculeFlow(RecompositionMode.Immediate) {
-            val state = rememberRichTextEditorState(fake = true)
+            val state = fakeRichTextEditorState()
             remember(state.actions) { state }
         }.test {
             val initialState = awaitItem()
@@ -187,7 +187,7 @@ class FakeRichTextEditorStateTest {
     @Test
     fun `setLink updates the state`() = runTest {
         moleculeFlow(RecompositionMode.Immediate) {
-            val state = rememberRichTextEditorState(fake = true)
+            val state = fakeRichTextEditorState()
             remember(state.linkAction) { state }
         }.test {
             val initialState = awaitItem()
@@ -200,7 +200,7 @@ class FakeRichTextEditorStateTest {
     @Test
     fun `removeLink updates the state`() = runTest {
         moleculeFlow(RecompositionMode.Immediate) {
-            val state = rememberRichTextEditorState(fake = true)
+            val state = fakeRichTextEditorState()
             remember(state.linkAction) { state }
         }.test {
             val initialState = awaitItem()
@@ -215,7 +215,7 @@ class FakeRichTextEditorStateTest {
     @Test
     fun `insertLink updates the state`() = runTest {
         moleculeFlow(RecompositionMode.Immediate) {
-            val state = rememberRichTextEditorState(fake = true)
+            val state = fakeRichTextEditorState()
             remember(state.linkAction) { state }
         }.test {
             val initialState = awaitItem()
@@ -228,7 +228,7 @@ class FakeRichTextEditorStateTest {
     @Test
     fun `toggling multiple times toggles state`() = runTest {
         moleculeFlow(RecompositionMode.Immediate) {
-            val state = rememberRichTextEditorState(fake = true)
+            val state = fakeRichTextEditorState()
             remember(state.actions) { state }
         }.test {
             val initialState = awaitItem()
@@ -252,14 +252,30 @@ class FakeRichTextEditorStateTest {
     @Test
     fun `setHtml updates the state`() = runTest {
         moleculeFlow(RecompositionMode.Immediate) {
-            val state = rememberRichTextEditorState(fake = true)
+            val state = fakeRichTextEditorState()
             remember(state.messageHtml, state.messageMarkdown) { state }
         }.test {
             val initialState = awaitItem()
             initialState.setHtml("<b>new html</b>")
             val nextState = awaitItem()
+            // We're testing a fake connection, so the HTML is not converted to markdown
             assertThat(nextState.messageHtml, equalTo("<b>new html</b>"))
             assertThat(nextState.messageMarkdown, equalTo("<b>new html</b>"))
+        }
+    }
+
+    @Test
+    fun `setMarkdown updates the state`() = runTest {
+        moleculeFlow(RecompositionMode.Immediate) {
+            val state = fakeRichTextEditorState()
+            remember(state.messageHtml, state.messageMarkdown) { state }
+        }.test {
+            val initialState = awaitItem()
+            initialState.setMarkdown("**new markdown**")
+            val nextState = awaitItem()
+            // We're testing a fake connection, so the markdown is not converted to HTML
+            assertThat(nextState.messageHtml, equalTo("**new markdown**"))
+            assertThat(nextState.messageMarkdown, equalTo("**new markdown**"))
         }
     }
 
@@ -307,7 +323,7 @@ class FakeRichTextEditorStateTest {
     @Test
     fun `requestFocus updates the state`() = runTest {
         moleculeFlow(RecompositionMode.Immediate) {
-            val state = rememberRichTextEditorState(fake = true)
+            val state = fakeRichTextEditorState()
             remember(state.hasFocus) { state }
         }.test {
             val initialState = awaitItem()
@@ -321,7 +337,7 @@ class FakeRichTextEditorStateTest {
     @Test
     fun `setSelection updates the state`() = runTest {
         moleculeFlow(RecompositionMode.Immediate) {
-            val state = rememberRichTextEditorState(fake = true)
+            val state = fakeRichTextEditorState()
             remember(state.selection) { state }
         }.test {
             val initialState = awaitItem()
@@ -331,5 +347,10 @@ class FakeRichTextEditorStateTest {
             initialState.setSelection(0, 1)
             assertThat(awaitItem().selection, equalTo(0 to 1))
         }
+    }
+    
+    @Composable
+    private fun fakeRichTextEditorState(): RichTextEditorState {
+        return rememberRichTextEditorState(fake = true).apply { isReadyToProcessActions = true }
     }
 }
