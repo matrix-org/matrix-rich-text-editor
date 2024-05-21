@@ -1,5 +1,8 @@
 # Changelog
 
+# [2.37.3] - 2024-05-21
+- [Android] Add `RichTextEditorState.setMarkdown(text)` function, which allows the usage of MD as the initial text of the rich text editor Compose wrapper.
+
 # [2.37.2] - 2024-05-06
 - [Android] Fix selection mismatch on Android 14+ after using word completion.
 
