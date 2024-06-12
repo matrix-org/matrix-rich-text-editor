@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use md_parser::Event;
 use pulldown_cmark as md_parser;
 
 use crate::{dom::MarkdownParseError, UnicodeString};
@@ -29,29 +30,37 @@ impl MarkdownHTMLParser {
         options.insert(Options::ENABLE_STRIKETHROUGH);
 
         let markdown = markdown.to_string();
-
-        let parser = Parser::new_ext(&markdown, options);
+        let parser_events: Vec<_> = Parser::new_ext(&markdown, options)
+            .map(|event| match event {
+                // this allows for line breaks to be parsed correctly from markdown
+                Event::SoftBreak => Event::HardBreak,
+                _ => event,
+            })
+            .collect();
 
         let mut html = String::new();
 
-        compile_to_html(&mut html, parser);
+        compile_to_html(&mut html, parser_events.into_iter());
 
         // By default, there is a `<p>…</p>\n` around the HTML content. That's the
         // correct way to handle a text block in Markdown. But it breaks our
         // assumption regarding the HTML markup. So let's remove it.
         let html = {
-            if !html.starts_with("<p>") {
-                &html[..]
-            } else {
+            // only remove the external <p> if there is only one
+            if html.starts_with("<p>") && html.matches("<p>").count() == 1 {
                 let p = "<p>".len();
                 let ppnl = "</p>\n".len();
 
-                &html[p..html.len() - ppnl]
+                html[p..html.len() - ppnl].to_string()
+            } else {
+                html[..].to_string()
             }
         };
 
-        // Remove any trailing newline characters from block tags
         let html = html
+            // Allow for having a newline between paragraphs
+            .replace("</p>\n<p>", "</p><p>&nbsp;</p><p>")
+            // Remove any trailing newline characters from block tags
             .replace("<ul>\n", "<ul>")
             .replace("</ul>\n", "</ul>")
             .replace("<ol>\n", "<ol>")
@@ -63,12 +72,11 @@ impl MarkdownHTMLParser {
             .replace("<pre>\n", "<pre>")
             .replace("</pre>\n", "</pre>")
             .replace("<p>\n", "<p>")
-            .replace("</p>\n", "</p>");
+            .replace("</p>\n", "</p>")
+            // Remove the newline from the end of the single code tag that wraps the content
+            // of a formatted codeblock
+            .replace("\n</code>", "</code>");
 
-        // Remove the newline from the end of the single code tag that wraps the content
-        // of a formatted codeblock
-        let html = html.replace("\n</code>", "</code>");
-
-        Ok(S::try_from(html).unwrap())
+        Ok(S::from(html))
     }
 }

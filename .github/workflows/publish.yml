@@ -17,8 +17,8 @@ env:
 
 jobs:
   ios:
-    name: Create Release PR on SwiftPM Repo
-    runs-on: macos-12
+    name: Publish to Swift repo
+    runs-on: macos-14
     steps:
       - name: 🧮 Checkout code
         uses: actions/checkout@v3
@@ -28,15 +28,15 @@ jobs:
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.71
+          toolchain: 1.76
           profile: minimal
           override: true
           
       - name: Install targets
         run: make targets-ios
           
-      - name: Set XCode 14.2
-        run: sudo xcode-select -switch /Applications/Xcode_14.2.app
+      - name: Set Xcode 15.2
+        run: sudo xcode-select -switch /Applications/Xcode_15.2.app
 
       - name: Set SwiftPM Repo credentials
         uses: de-vri-es/setup-git-credentials@v2
@@ -48,7 +48,10 @@ jobs:
         uses: dawidd6/action-get-tag@v1
           
       - name: Release iOS
-        run: ./release_ios.sh -t ${{ steps.tag.outputs.tag }}
+        working-directory: platforms/ios/tools/release
+        run: swift run release --version ${{ steps.tag.outputs.tag }}
+        env:
+          SWIFT_RELEASE_TOKEN: ${{ secrets.PAT }}
 
   android:
     name: Publish to maven

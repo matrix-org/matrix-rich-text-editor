@@ -1,0 +1,22 @@
+{
+  "pins" : [
+    {
+      "identity" : "swift-argument-parser",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-argument-parser.git",
+      "state" : {
+        "revision" : "46989693916f56d1186bd59ac15124caef896560",
+        "version" : "1.3.1"
+      }
+    },
+    {
+      "identity" : "swift-command-line-tools",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/element-hq/swift-command-line-tools.git",
+      "state" : {
+        "revision" : "483396af716a59eb45379126389a063f7f9bee80"
+      }
+    }
+  ],
+  "version" : 2
+}

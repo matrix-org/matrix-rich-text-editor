@@ -1,5 +1,138 @@
 # Changelog
 
+# [2.37.3] - 2024-05-21
+- [Android] Add `RichTextEditorState.setMarkdown(text)` function, which allows the usage of MD as the initial text of the rich text editor Compose wrapper.
+
+# [2.37.2] - 2024-05-06
+- [Android] Fix selection mismatch on Android 14+ after using word completion.
+
+# [2.37.1] - 2024-05-03
+- [Android] Return pure Markdown in the `RichTextEditorState.messageMarkdown` property instead of MD + HTML for mention pills.
+- [Android] Fix selection indexes not being up to date when adding a punctuation mark using GBoard keyboard in Android < 13.
+
+# [2.37.0] - 2024-04-12
+- [Android] Discard mentions with no associated text.
+- [iOS] iOS tests: Use xcresultparser instead of slather.
+
+# [2.36.0] - 2024-04-03
+- [Android] Fix text composition issues in Compose wrapper.
+- [Android] Simplify `InputConnection` implementation, make `OnSelectionChangedListener` more precise.
+- [iOS] Fix a couple of bugs detecting whether the content is empty or not.
+- [iOS] Release to [matrix-org/matrix-rich-text-editor-swift](https://github.com/matrix-org/matrix-rich-text-editor-swift), attaching the binaries to GitHub releases.
+
+# [2.35.0] - 2024-03-27
+- [iOS] Fix deployment with Xcode 15.3.
+
+# [2.34.0] - 2024-12-04
+- [Rust] Bumped UniFFi to revision `789a9023b522562a95618443cee5a0d4f111c4c7`.
+- [Android] reconcile UI text with editor text.
+- [Android] fix English characters for some Chinese keyboards.
+
+# [2.33.0] - 2024-12-04
+- [iOS] Re-enabled auto-correction but disabled inline predictions on iOS 17.
+- [iOS] Build workflow now uses Xcode 15.2.
+
+# [2.32.0] - 2024-11-04
+- [Android] Allow customising the initial Markdown value in `RichTextEditorState`.
+
+# [2.31.0] - 2024-08-04
+- [iOS] Temporarily disabled auto correction until we fix the predictive text issue.
+
+# [2.30.0] - 2024-01-04
+- [Rust] Bumped Rust version to `1.76`.
+- [Rust] Bumped UniFFi to `v0.26.1`.
+- [Rust] Bumped speculoos to `0.11.0`.
+- [Android] Fix touch handling for links: the listener should only fire once per click and tapping on an empty space next to a link wrapping several lines should not fire it.
+
+# [2.29.0] - 2024-02-08
+### Changed
+- [iOS] Improved the textView injection process in the view model.
+
+# [2.28.0] - 2024-02-08
+### Fixed
+- [iOS] Fixed an issue that broke the text view if the SwiftUI view was completely re-rendered.
+
+# [2.27.0] - 2024-02-01
+
+### Fixed
+- [Common] Remove NBSP chars in replace_text for empty paragraphs (#926)
+- [Common] Fix delete word not replacing text (#833)
+
+# [2.26.0] - 2024-01-17
+
+### Fixed
+- [iOS] Fixed an issue that made the RTE crash when ending dictation.
+
+# [2.25.0] - 2024-01-12
+
+### Fixed
+- [iOS] Fixed a bug that prevented dictation to work properly on iOS 17 and above.
+
+# [2.24.0] - 2024-01-05
+
+### Added
+- [Android] Add support for handling rich content from the keyboard (images, gifs, stickers, etc.).
+
+### Fixed
+- [Common] Fix deletion of several selected paragraphs, especially those with no content.
+- [Android] Fix incorrect detection of NBSP chars as extra characters while parsing HTML.
+- [Android] Destroy (as in free its memory) the current `ComposerModel` when it panics, before we replace it with a new instance.
+- [Android] When updating the selection, make sure it's inside the bounds of the existing text.
+- [Android] When creating the `SpannableString` while parsing the HTML, make sure every span is inside the bounds of its text.
+
+# [2.23.0] - 2023-12-26
+
+### Changed
+- [Android] `EditorStyledTextView` and `EditorStyledText` now have an `onTextLayout` lambda parameter to publish its text layout results.
+- [Android] Add `releaseOnDetach` param to `EditorStyledText` so it can be reused in lazy composables.
+
+# [2.22.0] - 2023-12-06
+
+### Fixed
+- [Android] Fix for user suggestions not updating the RTE text properly sometimes.
+- [Common] Fix for the editor crashing when adding a new line just after a mention.
+- [iOS] Fix for shift+enter key not working properly and refactored the Key Commands handling.
+- [Rust] Fix for markdown mode now correctly parsing multilined text.
+
+# [2.21.0] - 2023-12-06
+
+### Fixed
+
+- [Android] Fix line height changes in `EditorStyledText`
+- [Android] Fixes needed to get `EditorSyledTextView` to work with screenshot tests
+
+### Changed
+
+- [Android] Refactor text view test (#896)
+- [Android] Allow specifying line height for all API versions (#897)
+- [Android] Add typing callback (#900)
+
+# [2.20.0] - 2023-11-29
+
+### Fixed
+
+- Android: fix link click detection in `EditorStyledTextView`, as previously it consumed the touch event even when no link or mention was clicked.
+- Android: fix race condition when creating a new `MentionDetector` for `EditorStyledTextView`, which caused mentions to only be detected sometimes.
+- Android: handle all spans with URLs in the gesture detector of `EditorStyledTextView`.
+
+### Changed
+
+- Android: added `TextStyle.lineHeight` property to customise line height on `EditorStyledTextView`.
+- Android: bump JNA version to `v5.13.0`.
+
+# [2.19.0] - 2023-11-28
+
+### Fixed
+
+- Android: fix a bug with auto capitalisation.
+- Android: fix disappearing numbers with some keyboards.
+- Android: fix using emojis inside composing regions.
+- iOS: fix the position of the caret.
+- iOS: fix double space to full stop conversion shortcut
+
+### Changed
+- Common: remove uniffi fork from dependencies
+
 # [2.18.0] - 2023-11-17
 
 ### Fixed

@@ -30,7 +30,7 @@ class SnapshotTests: XCTestCase {
         let composerView = WysiwygComposerView(placeholder: "Placeholder",
                                                viewModel: viewModel,
                                                itemProviderHelper: nil,
-                                               keyCommandHandler: nil,
+                                               keyCommands: nil,
                                                pasteHandler: nil)
         hostingController = UIHostingController(rootView: VStack {
             // Set the composer's text view at the top of the controller.

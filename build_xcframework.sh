@@ -25,10 +25,8 @@ XCFRAMEWORK_ARM64_HEADERS_PATH="${XCFRAMEWORK_ARM64_PATH}/Headers"
 XCFRAMEWORK_ARM64_MODULES_PATH="${XCFRAMEWORK_ARM64_PATH}/Modules"
 XCFRAMEWORK_ARM64_LIBRARY_PATH="${XCFRAMEWORK_ARM64_PATH}/WysiwygComposerFFI"
 
-# Build libraries for each platform
-cargo build -p uniffi-wysiwyg-composer --release --target aarch64-apple-ios
-cargo build -p uniffi-wysiwyg-composer --release --target aarch64-apple-ios-sim
-cargo build -p uniffi-wysiwyg-composer --release --target x86_64-apple-ios
+# Build libraries for all platforms
+cargo build -p uniffi-wysiwyg-composer --release --target aarch64-apple-ios --target aarch64-apple-ios-sim --target x86_64-apple-ios
 
 # Merge x86 and simulator arm libraries with lipo
 mkdir -p target/ios-simulator
@@ -79,6 +77,8 @@ mv $ARM64_LIB_PATH $XCFRAMEWORK_ARM64_LIBRARY_PATH
 mv $SIM_LIB_PATH $XCFRAMEWORK_SIM_LIBRARY_PATH
 cp ${GENERATION_PATH}/*.h $XCFRAMEWORK_SIM_HEADERS_PATH
 mv ${GENERATION_PATH}/*.h $XCFRAMEWORK_ARM64_HEADERS_PATH
-cp "${TOOLS_PATH}/Info.plist" $XCFRAMEWORK_PATH
+cp "${TOOLS_PATH}/Framework-Info.plist" "${XCFRAMEWORK_SIM_PATH}/Info.plist"
+cp "${TOOLS_PATH}/Framework-Info.plist" "${XCFRAMEWORK_ARM64_PATH}/Info.plist"
+cp "${TOOLS_PATH}/XCFramework-Info.plist" "${XCFRAMEWORK_PATH}/Info.plist"
 cp "${TOOLS_PATH}/module.modulemap" $XCFRAMEWORK_SIM_MODULES_PATH
 cp "${TOOLS_PATH}/module.modulemap" $XCFRAMEWORK_ARM64_MODULES_PATH

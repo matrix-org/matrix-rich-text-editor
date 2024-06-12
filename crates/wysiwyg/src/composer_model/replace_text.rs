@@ -207,7 +207,7 @@ where
             let mut slices = text_string.split('\n').peekable();
             while let Some(slice) = slices.next() {
                 let (s, e) = self.safe_selection();
-                if !slice.is_empty() {
+                if !slice.is_empty() && slice != "\u{A0}" {
                     self.do_replace_text_in(S::from(slice), s, e);
                 }
                 if slices.peek().is_some() {
@@ -224,7 +224,8 @@ where
             } else {
                 start
             };
-            self.state.start = Location::from(start + len);
+            self.state.start =
+                Location::from(min(start + len, self.state.dom.text_len()));
             self.state.end = self.state.start;
         }
 

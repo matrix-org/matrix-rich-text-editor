@@ -41,6 +41,36 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         viewModel.textView.attributedText = viewModel.attributedContent.text
         waitExpectation(expectation: expectTrue, timeout: 2.0)
     }
+    
+    func testIsContentEmptyAfterDeletingSingleSpace() {
+        // When typing a single space.
+        _ = viewModel.replaceText(range: .zero, replacementText: " ")
+        viewModel.textView.attributedText = NSAttributedString(string: " ")
+        viewModel.didUpdateText()
+        
+        // And then deleting that space.
+        _ = viewModel.replaceText(range: .init(location: 0, length: 1), replacementText: "")
+        viewModel.textView.attributedText = NSAttributedString(string: "")
+        viewModel.didUpdateText()
+        
+        // Then the content should be empty for the placeholder to be shown.
+        XCTAssertTrue(viewModel.isContentEmpty)
+    }
+    
+    func testIsContentEmptyAfterDeletingMultilineContent() {
+        // When typing a new line.
+        _ = viewModel.replaceText(range: .zero, replacementText: "\n")
+        viewModel.textView.attributedText = NSAttributedString(string: "\n")
+        viewModel.didUpdateText()
+        
+        // And then deleting that new line.
+        _ = viewModel.replaceText(range: .init(location: 0, length: 1), replacementText: "")
+        viewModel.textView.attributedText = NSAttributedString(string: "")
+        viewModel.didUpdateText()
+        
+        // Then the content should be empty for the placeholder to be shown.
+        XCTAssertTrue(viewModel.isContentEmpty)
+    }
 
     func testSimpleTextInputIsAccepted() throws {
         let shouldChange = viewModel.replaceText(range: .zero,
@@ -115,7 +145,7 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         let result = viewModel.replaceText(range: .init(location: 4, length: 0), replacementText: "abc")
         XCTAssertFalse(result)
         XCTAssertEqual(viewModel.content.html, "<a href=\"https://element.io\">test</a>abc")
-        XCTAssertTrue(viewModel.textView.attributedText.isEqual(to: viewModel.attributedContent.text))
+        XCTAssertTrue(viewModel.textView.attributedText.isEqual(to: viewModel.attributedContent.text) == true)
     }
     
     func testReplaceTextPartiallyInsideAndAfterLinkIsNotAccepted() {
@@ -123,7 +153,7 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         let result = viewModel.replaceText(range: .init(location: 3, length: 1), replacementText: "abc")
         XCTAssertFalse(result)
         XCTAssertEqual(viewModel.content.html, "<a href=\"https://element.io\">tes</a>abc")
-        XCTAssertTrue(viewModel.textView.attributedText.isEqual(to: viewModel.attributedContent.text))
+        XCTAssertTrue(viewModel.textView.attributedText.isEqual(to: viewModel.attributedContent.text) == true)
     }
     
     func testReplaceTextInsideLinkIsAccepted() {

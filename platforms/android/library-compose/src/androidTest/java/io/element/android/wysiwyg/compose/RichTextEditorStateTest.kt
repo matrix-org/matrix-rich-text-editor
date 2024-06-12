@@ -18,9 +18,9 @@ import io.element.android.wysiwyg.test.rules.createFlakyEmulatorRule
 import io.element.android.wysiwyg.utils.NBSP
 import io.element.android.wysiwyg.view.models.InlineFormat
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
 
@@ -29,7 +29,7 @@ class RichTextEditorStateTest {
     val composeTestRule = createComposeRule()
 
     @get:Rule
-    val flakyEmulatorRule = createFlakyEmulatorRule()
+    val flakyEmulatorRule = createFlakyEmulatorRule(retry = false)
 
     @Test
     fun testSharingState() = runTest {
@@ -90,7 +90,7 @@ class RichTextEditorStateTest {
         state.setSelection(4)
         composeTestRule.awaitIdle()
         // Ensure line count is set
-        Assert.assertEquals(2, state.lineCount)
+        assertEquals(2, state.lineCount)
 
         // Hide and show the editor to simulate a configuration change
         hideEditor.emit(true)
@@ -100,9 +100,9 @@ class RichTextEditorStateTest {
 
         // If the text is found, the state was restored
         onView(withText("Hello\nworld")).check(matches(isDisplayed()))
-        Assert.assertEquals(state.selection, 4 to 4)
+        assertEquals(state.selection, 4 to 4)
         // Line count is kept
-        Assert.assertEquals(2, state.lineCount)
+        assertEquals(2, state.lineCount)
     }
 
     @Test
@@ -135,9 +135,32 @@ class RichTextEditorStateTest {
             }
         }
 
-        state.setHtml("Updated text")
+        // `setHtml` waits until the actions can be processed by the UI, but that won't happen
+        // with `registerStateUpdates = false`
+        val job = launch { state.setHtml("Updated text") }
         composeTestRule.awaitIdle()
+        job.cancel()
 
         onView(withText("Original text")).check(matches(isDisplayed()))
+    }
+
+    @Test
+    fun testSettingMarkdownText() = runTest {
+        val state = RichTextEditorState(
+            "Original text"
+        )
+        composeTestRule.setContent {
+            MaterialTheme {
+                RichTextEditor(
+                    state = state,
+                    registerStateUpdates = true
+                )
+            }
+        }
+
+        state.setMarkdown("**Updated text**")
+        composeTestRule.awaitIdle()
+
+        onView(withText("Updated text")).check(matches(isDisplayed()))
     }
 }

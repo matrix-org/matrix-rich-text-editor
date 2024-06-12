@@ -21,7 +21,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Set Version
-      run: rustup default 1.71
+      run: rustup default 1.76
     - name: Set Component 
       run: rustup component add rustfmt clippy
     - name: Format
@@ -35,7 +35,7 @@ jobs:
     - name: Generate code coverage
       run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         files: lcov.info
         fail_ci_if_error: true

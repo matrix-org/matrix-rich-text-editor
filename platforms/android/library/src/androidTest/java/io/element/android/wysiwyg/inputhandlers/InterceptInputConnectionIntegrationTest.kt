@@ -1,10 +1,13 @@
 package io.element.android.wysiwyg.inputhandlers
 
 import android.app.Application
+import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import androidx.test.core.app.ApplicationProvider
+import io.element.android.wysiwyg.EditorTextWatcher
 import io.element.android.wysiwyg.fakes.createFakeStyleConfig
+import io.element.android.wysiwyg.internal.viewmodel.ComposerResult
 import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
 import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
 import io.element.android.wysiwyg.test.utils.dumpSpans
@@ -33,6 +36,7 @@ class InterceptInputConnectionIntegrationTest {
         viewModel = viewModel,
         editorEditText = textView,
         baseInputConnection = textView.onCreateInputConnection(EditorInfo()),
+        textWatcher = EditorTextWatcher(),
     )
 
     private val baseEditedSpans = listOf(
@@ -485,9 +489,9 @@ class InterceptInputConnectionIntegrationTest {
     @Test
     fun testIncrementalCommitTextRespectsFormatting() {
         // Set initial text
-        val initialText = viewModel.processInput(
+        val initialText = (viewModel.processInput(
             EditorInputAction.ReplaceAllHtml("<strong>test</strong>")
-        )?.text
+        ) as? ComposerResult.ReplaceText)?.text
         textView.setText(initialText)
         // Disable bold at end of string
         textView.setSelection(4)
@@ -539,9 +543,67 @@ class InterceptInputConnectionIntegrationTest {
         assertThat(textView.selectionEnd, equalTo(2))
     }
 
+    @Test
+    fun testHalfWidthEnglishInChineseKeyboards() {
+        inputConnection.run {
+            sendHardwareKeyboardInput(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_T))
+            setComposingText("", 1)
+            sendHardwareKeyboardInput(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_E))
+            setComposingText("", 1)
+            sendHardwareKeyboardInput(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_S))
+            setComposingText("", 1)
+            sendHardwareKeyboardInput(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_T))
+        }
+        assertThat(textView.text.toString(), equalTo("test"))
+    }
+
+    @Test
+    fun testPunctuationSymbolAfterCommittingText() {
+        // This simulates the behaviour of Gboard on Android < 13 when adding a punctuation symbol
+        // after a committed word.
+        inputConnection.run {
+            // Manually entered letter
+            setComposingText("A", 1)
+            // Committed text from suggestions
+            commitText("Anything ", 1)
+            // Assert selection is properly updated
+            assertThat(textView.selectionEnd, equalTo(9))
+            // Punctuation symbol added, first the extra whitespace is removed by the system
+            deleteSurroundingText(1, 0)
+            // Then the punctuation symbol is added instead
+            commitText(".", 1)
+        }
+        assertThat(textView.text.toString(), equalTo("Anything."))
+    }
+
+    @Test
+    fun testPunctuationSymbolAfterCommittingText_Android14() {
+        // This simulates the behaviour of Gboard on Android < 13 when adding a punctuation symbol
+        // after a committed word.
+        inputConnection.run {
+            // Manually entered letter
+            setComposingText("A", 1)
+            // Committed text from suggestions
+            replaceText(0, 1, "Anything ", 1, null)
+            // Assert selection is properly updated
+            assertThat(textView.selectionEnd, equalTo(9))
+            // Punctuation symbol added, first the extra whitespace is removed by the system
+            deleteSurroundingText(1, 0)
+            // Then the punctuation symbol is added instead
+            commitText(".", 1)
+        }
+        assertThat(textView.text.toString(), equalTo("Anything."))
+    }
+
     private fun simulateInput(editorInputAction: EditorInputAction) =
-        viewModel.processInput(editorInputAction)?.let { (text, selection) ->
-            textView.setText(text)
-            textView.setSelection(selection.first, selection.last)
+        when (val result = viewModel.processInput(editorInputAction)) {
+            is ComposerResult.ReplaceText -> {
+                textView.setText(result.text)
+                textView.setSelection(result.selection.first, result.selection.last)
+            }
+            is ComposerResult.SelectionUpdated -> {
+                textView.setSelection(result.selection.first, result.selection.last)
+            }
+            null -> Unit
         }
 }

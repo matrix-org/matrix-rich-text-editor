@@ -52,7 +52,7 @@ where
         if s == e {
             // We have no selection - check for special list behaviour
             // TODO: should probably also get inside here if our selection
-            // only contains a zero-wdith space.
+            // only contains a zero-width space.
             let range = self.state.dom.find_range(s, e);
             self.backspace_single_cursor(range)
         } else {
@@ -261,17 +261,17 @@ where
                     node.offset_is_inside_node(current_offset, &direction);
 
                 // delete to the cursor
-                self.delete_to_cursor(current_position);
+                let update = self.delete_to_cursor(current_position);
 
                 // if we have stopped inside the node and we didn't start at whitespace, stop
                 if offset_is_inside_node && start_type != CharType::Whitespace {
-                    return ComposerUpdate::keep();
+                    return update;
                 }
 
                 // otherwise make a recursive call
                 let next_args = self.get_remove_word_arguments(&direction);
                 match next_args {
-                    None => ComposerUpdate::keep(),
+                    None => update,
                     Some(args) => {
                         let (location, next_type) = args;
                         let type_argument = if offset_is_inside_node {

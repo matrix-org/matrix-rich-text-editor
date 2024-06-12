@@ -26,19 +26,21 @@ import UIKit
 public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, ObservableObject {
     // MARK: - Public
 
-    /// The textView that the model manages.
-    public private(set) var textView = {
-        // Default text container have a slightly different behaviour
-        // than what iOS would use if textContainer is nil, this
-        // fixes issues with background color not working on nealine characters.
-        let layoutManager = NSLayoutManager()
-        let textStorage = NSTextStorage()
-        let textContainer = NSTextContainer()
-        textStorage.addLayoutManager(layoutManager)
-        layoutManager.addTextContainer(textContainer)
-        return WysiwygTextView(frame: .zero, textContainer: textContainer)
-    }()
-
+    /// The textView that the model currently manages, a default text view is provided, but you should always inject it from the UIWrapper
+    public lazy var textView = {
+        let textView = WysiwygTextView()
+        textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
+        textView.mentionDisplayHelper = mentionDisplayHelper
+        textView.apply(attributedContent)
+        return textView
+    }() {
+        didSet {
+            textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
+            textView.mentionDisplayHelper = mentionDisplayHelper
+            textView.apply(attributedContent)
+        }
+    }
+        
     /// The composer minimal height.
     public let minHeight: CGFloat
     /// The mention replacer defined by the hosting application.
@@ -115,6 +117,13 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         return WysiwygComposerContent(markdown: model.getContentAsMessageMarkdown(),
                                       html: model.getContentAsMessageHtml())
     }
+    
+    /// The mention helper that will be used by the underlying textView
+    public var mentionDisplayHelper: MentionDisplayHelper? {
+        didSet {
+            textView.mentionDisplayHelper = mentionDisplayHelper
+        }
+    }
 
     // MARK: - Private
 
@@ -152,12 +161,11 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         self.parserStyle = parserStyle
         self.mentionReplacer = mentionReplacer
 
-        textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
         model = ComposerModelWrapper()
         model.delegate = self
         // Publish composer empty state.
         $attributedContent.sink { [unowned self] content in
-            isContentEmpty = content.text.length == 0
+            isContentEmpty = content.text.length == 0 || content.plainText == "\n" // An empty <p> is left when deleting multi-line content.
         }
         .store(in: &cancellables)
         
@@ -415,7 +423,7 @@ public extension WysiwygComposerViewModel {
         } else {
             applyPendingFormatsIfNeeded()
         }
-
+        
         updateCompressedHeightIfNeeded()
     }
     

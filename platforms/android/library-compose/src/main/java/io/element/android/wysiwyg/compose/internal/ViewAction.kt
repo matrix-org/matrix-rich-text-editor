@@ -12,6 +12,7 @@ internal sealed class ViewAction {
     data object Indent: ViewAction()
     data object Unindent: ViewAction()
     data class SetHtml(val html: String): ViewAction()
+    data class SetMarkdown(val markdown: String): ViewAction()
     data object RequestFocus: ViewAction()
     data class SetLink(val url: String?): ViewAction()
     data object RemoveLink: ViewAction()

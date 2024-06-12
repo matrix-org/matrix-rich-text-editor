@@ -14,14 +14,16 @@ import io.element.android.wysiwyg.compose.internal.FakeViewConnection
 import io.element.android.wysiwyg.compose.internal.ViewAction
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.parcelize.Parcelize
 import uniffi.wysiwyg_composer.ActionState
 import uniffi.wysiwyg_composer.ComposerAction
 import uniffi.wysiwyg_composer.MentionsState
 import uniffi.wysiwyg_composer.MenuAction
+import kotlin.coroutines.coroutineContext
 
 /**
  * A state holder for the [RichTextEditor] composable.
@@ -31,12 +33,15 @@ import uniffi.wysiwyg_composer.MenuAction
  * that are displayed at the same time.
  *
  * @param initialHtml The HTML formatted content to initialise the state with.
+ * @param initialMarkdown The Markdown formatted content to initialise the state with.
  * @param initialLineCount The line count to initialise the state with.
  * @param initialFocus The focus value to initialise the state with.
+ * @param initialSelection The indexes of the selection to initialise the state with.
  */
 @Stable
 class RichTextEditorState(
     initialHtml: String = RichTextEditorDefaults.initialHtml,
+    initialMarkdown: String = RichTextEditorDefaults.initialMarkdown,
     initialLineCount: Int = RichTextEditorDefaults.initialLineCount,
     initialFocus: Boolean = RichTextEditorDefaults.initialFocus,
     initialSelection: Pair<Int, Int> = RichTextEditorDefaults.initialSelection,
@@ -44,8 +49,8 @@ class RichTextEditorState(
     // A unique key for the most recent view to subscribe
     internal var activeViewKey: Any? by mutableStateOf(-1)
 
-    private val _viewActions = MutableSharedFlow<ViewAction>()
-    internal val viewActions: SharedFlow<ViewAction> = _viewActions.asSharedFlow()
+    private val _viewActions = MutableSharedFlow<ViewAction>(extraBufferCapacity = 10)
+    internal val viewActions: SharedFlow<ViewAction> = _viewActions
 
     /**
      * Toggle inline formatting on the current selection.
@@ -111,7 +116,16 @@ class RichTextEditorState(
      * Set the HTML content of the editor.
      */
     suspend fun setHtml(html: String) {
+        waitUntilReady()
         _viewActions.emit(ViewAction.SetHtml(html))
+    }
+
+    /**
+     * Set the Markdown content of the editor.
+     */
+    suspend fun setMarkdown(markdown: String) {
+        waitUntilReady()
+        _viewActions.emit(ViewAction.SetMarkdown(markdown))
     }
 
     /**
@@ -167,7 +181,7 @@ class RichTextEditorState(
     /**
      * The content of the editor as markdown formatted for sending as a message.
      */
-    var messageMarkdown by mutableStateOf("")
+    var messageMarkdown by mutableStateOf(initialMarkdown)
         internal set
 
     /**
@@ -195,9 +209,15 @@ class RichTextEditorState(
         internal set
 
     /**
+     * Whether the editor is ready to receive commands.
+     */
+    var isReadyToProcessActions: Boolean by mutableStateOf(false)
+
+    /**
      * Request focus of the editor input field.
      */
     suspend fun requestFocus() {
+        waitUntilReady()
         _viewActions.emit(ViewAction.RequestFocus)
     }
 
@@ -248,6 +268,16 @@ class RichTextEditorState(
      */
     var mentionsState: MentionsState? by mutableStateOf(null)
 
+    fun onRelease() {
+        isReadyToProcessActions = false
+    }
+
+    private suspend fun waitUntilReady() {
+        while (!isReadyToProcessActions) {
+            coroutineContext.ensureActive()
+            delay(10)
+        }
+    }
 }
 
 /**

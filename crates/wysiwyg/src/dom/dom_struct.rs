@@ -276,7 +276,7 @@ where
     ) -> Vec<DomHandle> {
         let node = self.lookup_node(node_handle);
         let Some(parent) = node.as_container() else {
-            return vec![]
+            return vec![];
         };
         let ret = self.replace(node_handle, parent.children().clone());
         self.join_nodes_in_container(&node_handle.parent_handle());

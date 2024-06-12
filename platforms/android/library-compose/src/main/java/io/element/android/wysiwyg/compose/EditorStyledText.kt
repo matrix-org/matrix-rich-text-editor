@@ -1,11 +1,13 @@
 package io.element.android.wysiwyg.compose
 
+import android.text.Layout
 import android.text.Spanned
 import android.widget.TextView
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.viewinterop.AndroidView
 import io.element.android.wysiwyg.EditorStyledTextView
 import io.element.android.wysiwyg.compose.internal.applyStyleInCompose
@@ -25,6 +27,8 @@ import io.element.android.wysiwyg.display.TextDisplay
  * @param resolveMentionDisplay A function to resolve the [TextDisplay] of a mention.
  * @param resolveRoomMentionDisplay A function to resolve the [TextDisplay] of an `@room` mention.
  * @param style The styles to use for any customisable elements.
+ * @param releaseOnDetach Whether to release the view when the composable is detached from the composition or not.
+ * Setting this to `false` is specially useful in Lazy composables that need to reuse these views. Defaults to `true`.
  */
 @Composable
 fun EditorStyledText(
@@ -32,8 +36,11 @@ fun EditorStyledText(
     modifier: Modifier = Modifier,
     resolveMentionDisplay: (text: String, url: String) -> TextDisplay = RichTextEditorDefaults.MentionDisplay,
     resolveRoomMentionDisplay: () -> TextDisplay = RichTextEditorDefaults.RoomMentionDisplay,
-    onLinkClickedListener: ((String) -> Unit) = {},
+    onLinkClickedListener: ((String) -> Unit)? = null,
+    onLinkLongClickedListener: ((String) -> Unit)? = null,
+    onTextLayout: (Layout) -> Unit = {},
     style: RichTextEditorStyle = RichTextEditorDefaults.style(),
+    releaseOnDetach: Boolean = true,
 ) {
     val typeface by style.text.rememberTypeface()
     val mentionDisplayHandler = remember(resolveMentionDisplay, resolveRoomMentionDisplay) {
@@ -47,21 +54,30 @@ fun EditorStyledText(
             }
         }
     }
+
+    val isInEditMode = LocalInspectionMode.current
     AndroidView(
         modifier = modifier,
         factory = { context ->
-            EditorStyledTextView(context)
+            EditorStyledTextView(context).apply {
+                isNativeCodeEnabled = !isInEditMode
+            }
         },
         update = { view ->
             view.applyStyleInCompose(style)
-            view.typeface = typeface
             view.updateStyle(style.toStyleConfig(view.context), mentionDisplayHandler)
+            view.typeface = typeface
+            view.onLinkClickedListener = onLinkClickedListener
+            view.onLinkLongClickedListener = onLinkLongClickedListener
+            view.onTextLayout = onTextLayout
             if (text is Spanned) {
                 view.setText(text, TextView.BufferType.SPANNABLE)
             } else {
                 view.setHtml(text.toString())
             }
-            view.onLinkClickedListener = onLinkClickedListener
-        }
+        },
+        onReset = { view: EditorStyledTextView ->
+            view.setText("", TextView.BufferType.SPANNABLE)
+        }.takeUnless { releaseOnDetach },
     )
 }

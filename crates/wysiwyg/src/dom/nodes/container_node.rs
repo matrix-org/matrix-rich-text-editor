@@ -105,16 +105,15 @@ where
     pub fn new_formatting_from_tag(
         format: S,
         children: Vec<DomNode<S>>,
-    ) -> Option<Self> {
-        InlineFormatType::try_from(format.clone())
-            .map(|f| Self {
-                name: format,
-                kind: ContainerNodeKind::Formatting(f),
-                attrs: None,
-                children,
-                handle: DomHandle::new_unset(),
-            })
-            .ok()
+    ) -> Self {
+        let format_type = InlineFormatType::from(format.clone());
+        Self {
+            name: format,
+            kind: ContainerNodeKind::Formatting(format_type),
+            attrs: None,
+            children,
+            handle: DomHandle::new_unset(),
+        }
     }
 
     pub fn new_formatting(
@@ -419,7 +418,7 @@ where
 
     pub(crate) fn get_link_url(&self) -> Option<S> {
         let ContainerNodeKind::Link(url) = self.kind.clone() else {
-            return None
+            return None;
         };
         Some(url)
     }
@@ -462,7 +461,7 @@ where
     /// Returns whether this container first text-like
     /// child is a line break.
     pub fn has_leading_line_break(&self) -> bool {
-        let Some(first_child) = self.children.get(0) else {
+        let Some(first_child) = self.children.first() else {
             return false;
         };
         first_child.has_leading_line_break()

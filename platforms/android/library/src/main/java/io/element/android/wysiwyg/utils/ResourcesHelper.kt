@@ -1,11 +1,14 @@
 package io.element.android.wysiwyg.utils
 
-import android.app.Application
+import android.content.Context
 import android.util.DisplayMetrics
 import androidx.annotation.ColorRes
 import androidx.annotation.Dimension
 import androidx.core.content.res.ResourcesCompat
 
+/**
+ * This class provides access to resources needed to convert HTML to spans.
+ */
 internal interface ResourcesHelper {
     fun getDisplayMetrics(): DisplayMetrics
 
@@ -14,12 +17,15 @@ internal interface ResourcesHelper {
     fun getColor(@ColorRes colorId: Int): Int
 }
 
+/**
+ * This class provides access to Android resources needed to convert HTML to spans.
+ */
 internal class AndroidResourcesHelper(
-    private val application: Application,
+    private val context: Context,
 ) : ResourcesHelper {
 
     override fun getDisplayMetrics(): DisplayMetrics {
-        return application.resources.displayMetrics
+        return context.resources.displayMetrics
     }
 
     override fun dpToPx(dp: Int): Float {
@@ -27,6 +33,6 @@ internal class AndroidResourcesHelper(
     }
 
     override fun getColor(colorId: Int): Int {
-        return ResourcesCompat.getColor(application.resources, colorId, application.theme)
+        return ResourcesCompat.getColor(context.resources, colorId, context.theme)
     }
 }

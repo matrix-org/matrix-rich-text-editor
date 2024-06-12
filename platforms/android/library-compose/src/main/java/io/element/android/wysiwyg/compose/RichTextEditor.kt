@@ -1,6 +1,6 @@
 package io.element.android.wysiwyg.compose
 
-import android.text.InputType
+import android.net.Uri
 import android.view.View
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.compose.runtime.Composable
@@ -22,6 +22,7 @@ import io.element.android.wysiwyg.display.MentionDisplayHandler
 import io.element.android.wysiwyg.display.TextDisplay
 import io.element.android.wysiwyg.utils.RustErrorCollector
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -37,9 +38,12 @@ import timber.log.Timber
  * @param state The state holder for this composable. See [rememberRichTextEditorState].
  * @param registerStateUpdates If true, register the state for updates.
  * @param style The styles to use for any customisable elements
+ * @param inputType The input type for the editor. Defaults to [RichTextEditorDefaults.inputType].
  * @param resolveMentionDisplay A function to resolve the [TextDisplay] of a mention.
  * @param resolveRoomMentionDisplay A function to resolve the [TextDisplay] of an `@room` mention.
+ * @param onTyping Called when the user starts or stops typing in the editor.
  * @param onError Called when an internal error occurs
+ * @param onRichContentSelected Called when user uses the keyboard to send a rich content
  */
 @Composable
 fun RichTextEditor(
@@ -50,7 +54,9 @@ fun RichTextEditor(
     inputType: Int = RichTextEditorDefaults.inputType,
     resolveMentionDisplay: (text: String, url: String) -> TextDisplay = RichTextEditorDefaults.MentionDisplay,
     resolveRoomMentionDisplay: () -> TextDisplay = RichTextEditorDefaults.RoomMentionDisplay,
+    onTyping: (Boolean) -> Unit = {},
     onError: (Throwable) -> Unit = {},
+    onRichContentSelected: ((Uri) -> Unit)? = null,
 ) {
     val isPreview = LocalInspectionMode.current
 
@@ -65,7 +71,9 @@ fun RichTextEditor(
             inputType = inputType,
             onError = onError,
             resolveMentionDisplay = resolveMentionDisplay,
-            resolveRoomMentionDisplay = resolveRoomMentionDisplay
+            resolveRoomMentionDisplay = resolveRoomMentionDisplay,
+            onTyping = onTyping,
+            onRichContentSelected = onRichContentSelected,
         )
     }
 }
@@ -80,6 +88,8 @@ private fun RealEditor(
     onError: (Throwable) -> Unit,
     resolveMentionDisplay: (text: String, url: String) -> TextDisplay,
     resolveRoomMentionDisplay: () -> TextDisplay,
+    onTyping: (Boolean) -> Unit,
+    onRichContentSelected: ((Uri) -> Unit)?,
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -122,7 +132,10 @@ private fun RealEditor(
                     addTextChangedListener {
                         state.internalHtml = getInternalHtml()
                         state.messageHtml = getContentAsMessageHtml()
-                        state.messageMarkdown = getMarkdown()
+                        state.messageMarkdown = getContentAsMessageMarkdown()
+
+                        onTyping(state.internalHtml.isNotEmpty())
+
                         // Prevent the line count from being reset when the text Layout is not set
                         if (lineCount > 0) {
                             state.lineCount = lineCount
@@ -130,7 +143,7 @@ private fun RealEditor(
                     }
                     val shouldRestoreFocus = state.hasFocus
                     if (shouldRestoreFocus) {
-                        requestFocus()
+                        performClick()
                     }
                     onFocusChangeListener = View.OnFocusChangeListener { view, hasFocus ->
                         state.onFocusChanged(view.hashCode(), hasFocus)
@@ -147,34 +160,37 @@ private fun RealEditor(
                 setHtml(state.internalHtml)
                 setSelection(state.selection.first, state.selection.second)
 
+                setOnRichContentSelected(onRichContentSelected)
                 // Only start listening for text changes after the initial state has been restored
                 if (registerStateUpdates) {
                     coroutineScope.launch(context = Dispatchers.Main) {
-                        state.viewActions.collect {
-                            when (it) {
-                                is ViewAction.ToggleInlineFormat -> toggleInlineFormat(it.inlineFormat)
-                                is ViewAction.ToggleList -> toggleList(it.ordered)
-                                is ViewAction.ToggleCodeBlock -> toggleCodeBlock()
-                                is ViewAction.ToggleQuote -> toggleQuote()
-                                is ViewAction.Undo -> undo()
-                                is ViewAction.Redo -> redo()
-                                is ViewAction.Indent -> indent()
-                                is ViewAction.Unindent -> unindent()
-                                is ViewAction.SetHtml -> setHtml(it.html)
-                                is ViewAction.RequestFocus -> requestFocus()
-                                is ViewAction.SetLink -> setLink(it.url)
-                                is ViewAction.RemoveLink -> removeLink()
-                                is ViewAction.InsertLink -> insertLink(it.url, it.text)
-                                is ViewAction.ReplaceSuggestionText -> replaceTextSuggestion(it.text)
-                                is ViewAction.InsertMentionAtSuggestion -> insertMentionAtSuggestion(url = it.url, text = it.text)
-                                is ViewAction.InsertAtRoomMentionAtSuggestion -> insertAtRoomMentionAtSuggestion()
-                                is ViewAction.SetSelection -> setSelection(it.start, it.end)
+                        state.viewActions
+                            .onStart { state.isReadyToProcessActions = true }
+                            .collect {
+                                when (it) {
+                                    is ViewAction.ToggleInlineFormat -> toggleInlineFormat(it.inlineFormat)
+                                    is ViewAction.ToggleList -> toggleList(it.ordered)
+                                    is ViewAction.ToggleCodeBlock -> toggleCodeBlock()
+                                    is ViewAction.ToggleQuote -> toggleQuote()
+                                    is ViewAction.Undo -> undo()
+                                    is ViewAction.Redo -> redo()
+                                    is ViewAction.Indent -> indent()
+                                    is ViewAction.Unindent -> unindent()
+                                    is ViewAction.SetHtml -> setHtml(it.html)
+                                    is ViewAction.SetMarkdown -> setMarkdown(it.markdown)
+                                    is ViewAction.RequestFocus -> state.hasFocus = true
+                                    is ViewAction.SetLink -> setLink(it.url)
+                                    is ViewAction.RemoveLink -> removeLink()
+                                    is ViewAction.InsertLink -> insertLink(it.url, it.text)
+                                    is ViewAction.ReplaceSuggestionText -> replaceTextSuggestion(it.text)
+                                    is ViewAction.InsertMentionAtSuggestion -> insertMentionAtSuggestion(url = it.url, text = it.text)
+                                    is ViewAction.InsertAtRoomMentionAtSuggestion -> insertAtRoomMentionAtSuggestion()
+                                    is ViewAction.SetSelection -> setSelection(it.start, it.end)
+                                }
                             }
-                        }
                     }
                 }
             }
-
             view
         },
         update = { view ->
@@ -184,6 +200,15 @@ private fun RealEditor(
             view.typeface = typeface
             view.updateStyle(style.toStyleConfig(view.context), mentionDisplayHandler)
             view.rustErrorCollector = RustErrorCollector(onError)
+
+            if (registerStateUpdates && state.hasFocus && !view.hasFocus()) {
+                state.hasFocus = view.requestFocus()
+            }
+        },
+        onRelease = {
+            if (registerStateUpdates) {
+                state.onRelease()
+            }
         }
     )
 }

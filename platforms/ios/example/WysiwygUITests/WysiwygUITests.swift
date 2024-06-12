@@ -29,13 +29,16 @@ class WysiwygUITests: XCTestCase {
 
     func testMinMaxResizing() throws {
         sleep(1)
-        XCTAssertEqual(textView.frame.height, WysiwygSharedConstants.composerMinHeight)
+        XCTAssertEqual(textView.frame.height.roundedToFirstTwoDigits(),
+                       WysiwygSharedConstants.composerMinHeight.roundedToFirstTwoDigits())
         button(.minMaxButton).tap()
         sleep(1)
-        XCTAssertEqual(textView.frame.height, WysiwygSharedConstants.composerMaxExtendedHeight)
+        XCTAssertEqual(textView.frame.height.roundedToFirstTwoDigits(),
+                       WysiwygSharedConstants.composerMaxExtendedHeight.roundedToFirstTwoDigits())
         button(.minMaxButton).tap()
         sleep(1)
-        XCTAssertEqual(textView.frame.height, WysiwygSharedConstants.composerMinHeight)
+        XCTAssertEqual(textView.frame.height.roundedToFirstTwoDigits(),
+                       WysiwygSharedConstants.composerMinHeight.roundedToFirstTwoDigits())
     }
 
     func testCrashRecovery() throws {
@@ -187,5 +190,11 @@ extension XCUIElement {
     ///   - text: Text to type in the UI element.
     func typeTextCharByChar(_ text: String) {
         text.forEach { self.typeText(String($0)) }
+    }
+}
+
+private extension CGFloat {
+    func roundedToFirstTwoDigits() -> CGFloat {
+        CGFloat(self * 100).rounded() / 100.0
     }
 }

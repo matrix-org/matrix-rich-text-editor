@@ -5,42 +5,53 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Context.CLIPBOARD_SERVICE
 import android.graphics.Canvas
+import android.net.Uri
 import android.os.Build
 import android.os.Parcelable
 import android.text.Selection
 import android.text.Spanned
+import android.text.TextWatcher
 import android.util.AttributeSet
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.view.inputmethod.BaseInputConnection
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.widget.EditText
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.core.graphics.withTranslation
-import androidx.lifecycle.*
+import androidx.core.view.ViewCompat
 import io.element.android.wysiwyg.display.MentionDisplayHandler
 import io.element.android.wysiwyg.inputhandlers.InterceptInputConnection
 import io.element.android.wysiwyg.internal.display.MemoizingMentionDisplayHandler
+import io.element.android.wysiwyg.internal.utils.UriContentListener
 import io.element.android.wysiwyg.internal.view.EditorEditTextAttributeReader
 import io.element.android.wysiwyg.internal.view.viewModel
+import io.element.android.wysiwyg.internal.viewmodel.ComposerResult.ReplaceText
 import io.element.android.wysiwyg.internal.viewmodel.EditorInputAction
 import io.element.android.wysiwyg.internal.viewmodel.EditorViewModel
-import io.element.android.wysiwyg.utils.*
+import io.element.android.wysiwyg.utils.EditorIndexMapper
+import io.element.android.wysiwyg.utils.HtmlConverter
 import io.element.android.wysiwyg.utils.HtmlToSpansParser.FormattingSpans.removeFormattingSpans
+import io.element.android.wysiwyg.utils.RustErrorCollector
 import io.element.android.wysiwyg.view.StyleConfig
 import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelper
 import io.element.android.wysiwyg.view.inlinebg.SpanBackgroundHelperFactory
 import io.element.android.wysiwyg.view.models.InlineFormat
 import io.element.android.wysiwyg.view.models.LinkAction
 import io.element.android.wysiwyg.view.spans.ReuseSourceSpannableFactory
-import uniffi.wysiwyg_composer.*
+import uniffi.wysiwyg_composer.ActionState
+import uniffi.wysiwyg_composer.ComposerAction
+import uniffi.wysiwyg_composer.MentionsState
+import uniffi.wysiwyg_composer.MenuAction
+import uniffi.wysiwyg_composer.newComposerModel
 
 /**
  * An [EditText] that handles rich text editing.
  */
 class EditorEditText : AppCompatEditText {
-
+    private lateinit var textWatcher: EditorTextWatcher
     private var inputConnection: InterceptInputConnection? = null
 
     /**
@@ -68,11 +79,9 @@ class EditorEditText : AppCompatEditText {
         set(value) {
             field = value
             viewModel.htmlConverter = value
-
-            rerender()
         }
 
-    private fun createHtmlConverter(styleConfig: StyleConfig, mentionDisplayHandler: MentionDisplayHandler?): HtmlConverter? {
+    private fun createHtmlConverter(styleConfig: StyleConfig, mentionDisplayHandler: MentionDisplayHandler?): HtmlConverter {
         return HtmlConverter.Factory.create(
             context = context.applicationContext,
             styleConfig = styleConfig,
@@ -193,7 +202,7 @@ class EditorEditText : AppCompatEditText {
 
     override fun onSelectionChanged(selStart: Int, selEnd: Int) {
         super.onSelectionChanged(selStart, selEnd)
-        if (this.isInitialized) {
+        if (this.isInitialized && !this.textWatcher.isInEditorChange) {
             this.viewModel.updateSelection(editableText, selStart, selEnd)
         }
         selectionChangeListener?.selectionChanged(selStart, selEnd)
@@ -206,13 +215,13 @@ class EditorEditText : AppCompatEditText {
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection {
         val baseInputConnection = requireNotNull(super.onCreateInputConnection(outAttrs))
         val inputConnection =
-            InterceptInputConnection(baseInputConnection, this, viewModel)
+            InterceptInputConnection(baseInputConnection, this, viewModel, textWatcher)
         this.inputConnection = inputConnection
         return inputConnection
     }
 
     /**
-     * Override cut & paste events so output is redirected to the [inputProcessor].
+     * Override context menu actions, such as cut & paste so its input is redirected to the [viewModel].
      */
     override fun onTextContextMenuItem(id: Int): Boolean {
         when (id) {
@@ -232,14 +241,13 @@ class EditorEditText : AppCompatEditText {
                     )
                 )
 
-                if (result != null) {
+                if (result is ReplaceText) {
                     setTextFromComposerUpdate(result.text)
                     setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
                 }
 
-                return false
+                return true
             }
-
             android.R.id.paste, android.R.id.pasteAsPlainText -> {
                 val clipBoardManager =
                     context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
@@ -249,14 +257,21 @@ class EditorEditText : AppCompatEditText {
                     ?: return super.onTextContextMenuItem(id)
                 val result = viewModel.processInput(EditorInputAction.ReplaceText(copiedString))
 
-                if (result != null) {
+                if (result is ReplaceText) {
                     setTextFromComposerUpdate(result.text)
                     setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
                 }
 
-                return false
+                return true
             }
-
+            android.R.id.undo -> {
+                undo()
+                return true
+            }
+            android.R.id.redo -> {
+                redo()
+                return true
+            }
             else -> return super.onTextContextMenuItem(id)
         }
     }
@@ -267,40 +282,70 @@ class EditorEditText : AppCompatEditText {
      * @param mentionDisplayHandler Used to decide how to display any mentions found in the HTML text.
      */
     fun updateStyle(styleConfig: StyleConfig, mentionDisplayHandler: MentionDisplayHandler?) {
-        this.styleConfig = styleConfig
-        this.mentionDisplayHandler = mentionDisplayHandler
+        var forceNewRendering = false
+        val hasNewStyle = !this::styleConfig.isInitialized || this.styleConfig != styleConfig
+        val hasNewMentionDisplayHandler = (this.mentionDisplayHandler as? MemoizingMentionDisplayHandler)
+            ?.delegateEquals(mentionDisplayHandler) != true
+        if (hasNewStyle || hasNewMentionDisplayHandler) {
+            this.styleConfig = styleConfig
+            this.mentionDisplayHandler = mentionDisplayHandler
+            forceNewRendering = true
+        }
 
         inlineCodeBgHelper = SpanBackgroundHelperFactory.createInlineCodeBackgroundHelper(styleConfig.inlineCode)
         codeBlockBgHelper = SpanBackgroundHelperFactory.createCodeBlockBackgroundHelper(styleConfig.codeBlock)
 
         htmlConverter = createHtmlConverter(styleConfig, mentionDisplayHandler)
+        if (forceNewRendering) {
+            rerender()
+        }
+    }
+
+    fun setOnRichContentSelected(onRichContentSelected: ((Uri) -> Unit)?) {
+        if (onRichContentSelected != null) {
+            ViewCompat.setOnReceiveContentListener(
+                this,
+                arrayOf("image/*"),
+                UriContentListener { onRichContentSelected(it) }
+            )
+        }
     }
 
     private fun addHardwareKeyInterceptor() {
         // This seems to be the only way to prevent EditText from automatically handling key strokes
         setOnKeyListener { _, keyCode, event ->
-            if (keyCode == KeyEvent.KEYCODE_ENTER) {
-                if (event.action == MotionEvent.ACTION_DOWN) {
-                    inputConnection?.sendHardwareKeyboardInput(event)
+            when {
+                keyCode == KeyEvent.KEYCODE_ENTER -> {
+                    if (event.action == MotionEvent.ACTION_DOWN) {
+                        inputConnection?.sendHardwareKeyboardInput(event)
+                    }
+                    true
                 }
-                true
-            } else if (event.action != MotionEvent.ACTION_DOWN) {
-                false
-            } else if (event.isMovementKey()) {
-                false
-            } else if (event.metaState != 0 && event.unicodeChar == 0) {
-                // Is a modifier key
-                false
-            } else if (event.isPrintableCharacter() ||
-                keyCode == KeyEvent.KEYCODE_DEL ||
-                keyCode == KeyEvent.KEYCODE_FORWARD_DEL
-            ) {
-                // Consume printable characters
-                inputConnection?.sendHardwareKeyboardInput(event)
-                true
-            } else {
-                // Don't consume other key codes (HW back button, i.e.)
-                false
+                event.action != MotionEvent.ACTION_DOWN -> false
+                event.isMovementKey() -> false
+                event.keyCode == KeyEvent.KEYCODE_Z && event.isCtrlPressed && event.isShiftPressed -> {
+                    redo()
+                    true
+                }
+                event.keyCode == KeyEvent.KEYCODE_Z && event.isCtrlPressed -> {
+                    undo()
+                    true
+                }
+                event.metaState != 0 && event.unicodeChar == 0 -> {
+                    // Is a modifier key
+                    false
+                }
+                event.isPrintableCharacter() ||
+                    keyCode == KeyEvent.KEYCODE_DEL ||
+                    keyCode == KeyEvent.KEYCODE_FORWARD_DEL -> {
+                    // Consume printable characters
+                    inputConnection?.sendHardwareKeyboardInput(event)
+                    true
+                }
+                else -> {
+                    // Don't consume other key codes (HW back button, i.e.)
+                    false
+                }
             }
         }
     }
@@ -319,7 +364,7 @@ class EditorEditText : AppCompatEditText {
 
         viewModel.updateSelection(editableText, 0, end)
 
-        val result = viewModel.processInput(EditorInputAction.ReplaceText(text.toString()))
+        val result = processInputAsTextResult(EditorInputAction.ReplaceText(text.toString()))
             ?: return super.setText(text, type)
 
         setTextFromComposerUpdate(result.text)
@@ -327,7 +372,7 @@ class EditorEditText : AppCompatEditText {
     }
 
     override fun append(text: CharSequence?, start: Int, end: Int) {
-        val result = viewModel.processInput(EditorInputAction.ReplaceText(text.toString()))
+        val result = processInputAsTextResult(EditorInputAction.ReplaceText(text.toString()))
             ?: return super.append(text, start, end)
 
         setTextFromComposerUpdate(result.text)
@@ -335,7 +380,7 @@ class EditorEditText : AppCompatEditText {
     }
 
     fun toggleInlineFormat(inlineFormat: InlineFormat): Boolean {
-        val result = viewModel.processInput(EditorInputAction.ApplyInlineFormat(inlineFormat))
+        val result = processInputAsTextResult(EditorInputAction.ApplyInlineFormat(inlineFormat))
             ?: return false
 
         setTextFromComposerUpdate(result.text)
@@ -344,30 +389,28 @@ class EditorEditText : AppCompatEditText {
     }
 
     fun toggleCodeBlock(): Boolean {
-        val result = viewModel.processInput(EditorInputAction.CodeBlock)
-            ?: return false
+        val result = processInputAsTextResult(EditorInputAction.CodeBlock) ?: return false
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
         return true
     }
 
     fun toggleQuote(): Boolean {
-        val result = viewModel.processInput(EditorInputAction.Quote)
-            ?: return false
+        val result = processInputAsTextResult(EditorInputAction.Quote) ?: return false
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
         return true
     }
 
     fun undo() {
-        val result = viewModel.processInput(EditorInputAction.Undo) ?: return
+        val result = processInputAsTextResult(EditorInputAction.Undo) ?: return
 
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.first, result.selection.last)
     }
 
     fun redo() {
-        val result = viewModel.processInput(EditorInputAction.Redo) ?: return
+        val result = processInputAsTextResult(EditorInputAction.Redo) ?: return
 
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
@@ -391,7 +434,7 @@ class EditorEditText : AppCompatEditText {
      * @param url The link URL to set or null to remove
      */
     fun setLink(url: String?) {
-        val result = viewModel.processInput(
+        val result = processInputAsTextResult(
             if (url != null) EditorInputAction.SetLink(url) else EditorInputAction.RemoveLink
         ) ?: return
 
@@ -413,42 +456,42 @@ class EditorEditText : AppCompatEditText {
      * @param text The new text to insert
      */
     fun insertLink(url: String, text: String) {
-        val result = viewModel.processInput(EditorInputAction.SetLinkWithText(url, text)) ?: return
+        val result = processInputAsTextResult(EditorInputAction.SetLinkWithText(url, text)) ?: return
 
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
     fun toggleList(ordered: Boolean) {
-        val result = viewModel.processInput(EditorInputAction.ToggleList(ordered)) ?: return
+        val result = processInputAsTextResult(EditorInputAction.ToggleList(ordered)) ?: return
 
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
     fun indent() {
-        val result = viewModel.processInput(EditorInputAction.Indent) ?: return
+        val result = processInputAsTextResult(EditorInputAction.Indent) ?: return
 
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
     fun unindent() {
-        val result = viewModel.processInput(EditorInputAction.Unindent) ?: return
+        val result = processInputAsTextResult(EditorInputAction.Unindent) ?: return
 
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
     fun setHtml(html: String) {
-        val result = viewModel.processInput(EditorInputAction.ReplaceAllHtml(html)) ?: return
+        val result = processInputAsTextResult(EditorInputAction.ReplaceAllHtml(html)) ?: return
 
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
     }
 
     /**
-     * Get the editor content as clean HTML suitable for sending as a message
+     * Get the editor content as clean HTML suitable for sending as a message.
      */
     fun getContentAsMessageHtml(): String {
         return viewModel.getContentAsMessageHtml()
@@ -464,11 +507,17 @@ class EditorEditText : AppCompatEditText {
     fun getMarkdown(): String = viewModel.getMarkdown()
 
     /**
+     * Get the editor content as clean markdown suitable for sending as a message.
+     */
+    fun getContentAsMessageMarkdown(): String {
+        return viewModel.getContentAsMessageMarkdown()
+    }
+
+    /**
      * Set the text as markdown, it will be turned into to HTML internally.
      */
     fun setMarkdown(markdown: String) {
-        val result =
-            viewModel.processInput(EditorInputAction.ReplaceAllMarkdown(markdown)) ?: return
+        val result = processInputAsTextResult(EditorInputAction.ReplaceAllMarkdown(markdown)) ?: return
         setTextFromComposerUpdate(result.text)
         setSelectionFromComposerUpdate(result.selection.last)
     }
@@ -480,7 +529,7 @@ class EditorEditText : AppCompatEditText {
      * @param text The text to insert into the current suggestion range
      */
     fun insertMentionAtSuggestion(url: String, text: String) {
-        val result = viewModel.processInput(
+        val result = processInputAsTextResult(
             EditorInputAction.InsertMentionAtSuggestion(
                 text = text,
                 url = url,
@@ -492,12 +541,9 @@ class EditorEditText : AppCompatEditText {
 
     /**
      * Set a mention link that applies to the current suggestion range
-     *
-     * @param url The url of the new link
-     * @param text The text to insert into the current suggestion range
      */
     fun insertAtRoomMentionAtSuggestion() {
-        val result = viewModel.processInput(
+        val result = processInputAsTextResult(
             EditorInputAction.InsertAtRoomMentionAtSuggestion
         ) ?: return
         setTextFromComposerUpdate(result.text)
@@ -510,7 +556,7 @@ class EditorEditText : AppCompatEditText {
      * @param text The text to insert into the current suggestion range
      */
     fun replaceTextSuggestion(text: String) {
-        val result = viewModel.processInput(
+        val result = processInputAsTextResult(
             EditorInputAction.ReplaceTextSuggestion(
                 value = text,
             )
@@ -541,6 +587,26 @@ class EditorEditText : AppCompatEditText {
         super.onDraw(canvas)
     }
 
+    override fun setSelection(start: Int, stop: Int) {
+        if (editableText.isEmpty()) return
+        super.setSelection(
+            start.coerceIn(0, editableText.length),
+            stop.coerceIn(0, editableText.length)
+        )
+    }
+
+    override fun addTextChangedListener(watcher: TextWatcher) {
+        if (!this::textWatcher.isInitialized) {
+            this.textWatcher = EditorTextWatcher()
+            super.addTextChangedListener(this.textWatcher)
+        }
+        textWatcher.addChild(watcher)
+    }
+
+    override fun removeTextChangedListener(watcher: TextWatcher) {
+        textWatcher.removeChild(watcher)
+    }
+
     /**
      * Force redisplay the current editor model.
      *
@@ -548,22 +614,39 @@ class EditorEditText : AppCompatEditText {
      * will be updated to reflect this.
      */
     private fun rerender() {
+        val compositionStart = BaseInputConnection.getComposingSpanStart(editableText)
+        val compositionEnd = BaseInputConnection.getComposingSpanEnd(editableText)
         val text = viewModel.rerender()
         setTextFromComposerUpdate(text)
+        val indices = text.indices
+        if (compositionStart in indices && compositionEnd in indices) {
+            inputConnection?.setComposingRegion(compositionStart, compositionEnd)
+        }
     }
 
     private fun setTextFromComposerUpdate(text: CharSequence) {
         beginBatchEdit()
-        editableText.removeFormattingSpans()
-        editableText.replace(0, editableText.length, text)
+        textWatcher.runInEditor {
+            val beforeLength = editableText.length
+            notifyBeforeTextChanged(editableText, 0, beforeLength, text.length)
+            editableText.removeFormattingSpans()
+            editableText.replace(0, editableText.length, text)
+            notifyOnTextChanged(editableText, 0, beforeLength, text.length)
+            notifyAfterTextChanged(editableText)
+        }
         endBatchEdit()
     }
 
     private fun setSelectionFromComposerUpdate(start: Int, end: Int = start) {
         val (newStart, newEnd) = EditorIndexMapper.fromComposerToEditor(start, end, editableText)
-        if (newStart in editableText.indices && newEnd in 0..editableText.length) {
+        if (newStart in 0..editableText.length && newEnd in 0..editableText.length) {
             setSelection(newStart, newEnd)
         }
+    }
+
+    private fun EditorEditText.processInputAsTextResult(action: EditorInputAction): ReplaceText? {
+        val result = viewModel.processInput(action)
+        return result as? ReplaceText
     }
 }
 

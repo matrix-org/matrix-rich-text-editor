@@ -545,6 +545,21 @@ where
                                 loc.node_handle.clone(),
                             ));
                             first_text_node = false;
+                        } else if !first_text_node
+                            && matches!(loc.kind, Paragraph)
+                        {
+                            // FIXME: Workaround for empty paragraphs. This is a hack, but trying to fix the root cause
+                            // breaks lots of other behaviours resulting in dozens of failing tests.
+                            let has_no_children = self
+                                .lookup_container(&loc.node_handle)
+                                .children()
+                                .is_empty();
+                            if has_no_children {
+                                action_list.push(DomAction::remove_node(
+                                    loc.node_handle.clone(),
+                                ));
+                                first_text_node = false;
+                            }
                         }
                     } else if container_node.is_formatting_node()
                         && container_node.is_empty()
@@ -736,7 +751,9 @@ where
         &mut self,
         container_handle: &DomHandle,
     ) {
-        let DomNode::Container(container) = self.lookup_node_mut(container_handle) else {
+        let DomNode::Container(container) =
+            self.lookup_node_mut(container_handle)
+        else {
             return;
         };
 
@@ -904,10 +921,12 @@ where
 
         let is_container_node: bool;
         let is_text_node: bool;
+        let is_mention_node: bool;
         {
             let node = self.lookup_node(&cur_handle);
             is_container_node = node.is_container_node();
             is_text_node = node.is_text_node();
+            is_mention_node = node.is_mention_node();
         }
 
         if is_container_node {
@@ -926,6 +945,13 @@ where
                 from_handle,
                 to_handle,
             ));
+        } else if is_mention_node {
+            // Mentions only have 1 char length:
+            // If the offset is 0 the selection was before the node and the mention should be part of the new subtree.
+            // If it's 1 it should be kept in the current DOM (do nothing).
+            if start_offset == 0 {
+                nodes.push(self.remove(&cur_handle));
+            }
         } else {
             nodes.push(self.remove(&cur_handle));
         }
@@ -1105,10 +1131,12 @@ where
 
 fn first_shrinkable_link_node_handle(range: &Range) -> Option<&DomLocation> {
     let Some(link_loc) = range.locations.iter().find(|loc| {
-            loc.kind == DomNodeKind::Link && !loc.is_covered() && (loc.is_start() || loc.leading_is_end())
-        }) else {
-            return None
-        };
+        loc.kind == DomNodeKind::Link
+            && !loc.is_covered()
+            && (loc.is_start() || loc.leading_is_end())
+    }) else {
+        return None;
+    };
     Some(link_loc)
 }
 

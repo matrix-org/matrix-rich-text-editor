@@ -240,7 +240,8 @@ where
             // Now do the same for any children remaining in the tree
             if !block_node_is_paragraph {
                 let DomNode::Container(block_container) =
-                    self.state.dom.lookup_node_mut(&block_node_handle) else {
+                    self.state.dom.lookup_node_mut(&block_node_handle)
+                else {
                     panic!("Block container must be a container node");
                 };
                 let mut children = Vec::new();
@@ -479,5 +480,29 @@ mod test {
             <li>|</li>\
         </ul>"
         );
+    }
+
+    #[test]
+    fn test_enter_before_mention() {
+        let mut model = cm(
+            r#"|<a data-mention-type="user" href="https://matrix.to/#/@carol:matrix.org" contenteditable="false">@carol</a>"#,
+        );
+        model.enter();
+        assert_eq!(
+            tx(&model),
+            r#"<p>&nbsp;</p><p>|<a data-mention-type="user" href="https://matrix.to/#/@carol:matrix.org" contenteditable="false">@carol</a></p>"#
+        )
+    }
+
+    #[test]
+    fn test_enter_after_mention() {
+        let mut model = cm(
+            r#"<a data-mention-type="user" href="https://matrix.to/#/@carol:matrix.org" contenteditable="false">@carol</a>|"#,
+        );
+        model.enter();
+        assert_eq!(
+            tx(&model),
+            r#"<p><a data-mention-type="user" href="https://matrix.to/#/@carol:matrix.org" contenteditable="false">@carol</a></p><p>&nbsp;|</p>"#
+        )
     }
 }

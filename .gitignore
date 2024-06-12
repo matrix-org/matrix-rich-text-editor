@@ -1,6 +1,7 @@
 # ENV
 **/.python-version
 **/.vscode
+**/.idea
 **/.DS_Store
 # Generated
 /target/
@@ -15,3 +16,7 @@
 /platforms/ios/lib/coverage/*
 /build/
 .DS_Store
+
+# Swift release
+WysiwygComposerFFI.xcframework.zip
+matrix-rich-text-editor-swift

@@ -43,6 +43,7 @@ internal class FakeViewActionCollector(
             ViewAction.RemoveLink -> removeLink()
             ViewAction.RequestFocus -> requestFocus()
             is ViewAction.SetHtml -> setHtml(value.html)
+            is ViewAction.SetMarkdown -> setMarkdown(value.markdown)
             is ViewAction.SetLink -> setLink(value.url)
             ViewAction.ToggleCodeBlock -> toggleCodeBlock()
             is ViewAction.ToggleInlineFormat -> toggleInlineFormat(value.inlineFormat)
@@ -112,6 +113,11 @@ internal class FakeViewActionCollector(
     private fun setHtml(html: String) {
         state.messageHtml = html
         state.messageMarkdown = html
+    }
+
+    private fun setMarkdown(markdown: String) {
+        state.messageHtml = markdown
+        state.messageMarkdown = markdown
     }
 
     private fun requestFocus(): Boolean {

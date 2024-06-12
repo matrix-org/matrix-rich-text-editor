@@ -62,7 +62,7 @@ internal class EditorViewModel(
         composer?.log()
     }
 
-    fun processInput(action: EditorInputAction): ReplaceTextResult? {
+    fun processInput(action: EditorInputAction): ComposerResult? {
         val update = runCatching {
             when (action) {
                 is EditorInputAction.ReplaceText -> {
@@ -74,8 +74,8 @@ internal class EditorViewModel(
                     // This conversion to a plain String might be too simple
                     composer?.replaceTextIn(
                         action.value.toString(),
-                        action.start.toUInt(),
-                        action.end.toUInt()
+                        action.start,
+                        action.end
                     )
                 }
 
@@ -121,6 +121,7 @@ internal class EditorViewModel(
                 is EditorInputAction.Unindent -> composer?.unindent()
                 is EditorInputAction.InsertMentionAtSuggestion -> insertMentionAtSuggestion(action)
                 is EditorInputAction.InsertAtRoomMentionAtSuggestion -> insertAtRoomMentionAtSuggestion()
+                is EditorInputAction.UpdateSelection -> composer?.select(action.start, action.end)
             }
         }.onFailure(::onComposerFailure)
             .getOrNull()
@@ -130,7 +131,7 @@ internal class EditorViewModel(
         return handleComposerUpdates(update)
     }
 
-    private fun handleComposerUpdates(update: ComposerUpdate?): ReplaceTextResult? {
+    private fun handleComposerUpdates(update: ComposerUpdate?): ComposerResult? {
         if (update != null) {
             val menuState = update.menuState()
             if (menuState is MenuState.Update) {
@@ -159,13 +160,16 @@ internal class EditorViewModel(
                 val mentionsState = getMentionsState()
                 mentionsStateCallback?.invoke(mentionsState)
 
-                ReplaceTextResult(
+                ComposerResult.ReplaceText(
                     text = stringToSpans(replacementHtml),
                     selection = textUpdate.startUtf16Codeunit.toInt()..textUpdate.endUtf16Codeunit.toInt(),
                 )
             }
 
-            is TextUpdate.Select,
+            is TextUpdate.Select -> {
+                val selection = textUpdate.startUtf16Codeunit.toInt()..textUpdate.endUtf16Codeunit.toInt()
+                ComposerResult.SelectionUpdated(selection = selection)
+            }
             is TextUpdate.Keep,
             null -> null
         }
@@ -179,6 +183,14 @@ internal class EditorViewModel(
         }.getOrElse {
             recoveryContentPlainText
         }
+
+    fun getContentAsMessageMarkdown(): String = runCatching {
+        composer?.getContentAsMessageMarkdown().orEmpty()
+    }.onFailure(
+        ::onComposerFailure
+    ).getOrElse {
+        recoveryContentPlainText
+    }
 
     fun getMarkdown(): String = runCatching {
         composer?.getContentAsMarkdown().orEmpty()
@@ -235,6 +247,7 @@ internal class EditorViewModel(
 
         if (error is InternalException) { // InternalException means Rust panic
             // Recover from the crash
+            (composer as? ComposerModel)?.destroy()
             composer = provideComposer()
 
             if (attemptContentRecovery) {

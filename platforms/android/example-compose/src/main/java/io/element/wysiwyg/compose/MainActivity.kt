@@ -11,10 +11,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -101,6 +103,7 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
+                        var isTyping by remember { mutableStateOf(false) }
                         Surface(
                             modifier = Modifier
                                 .padding(8.dp)
@@ -121,7 +124,19 @@ class MainActivity : ComponentActivity() {
                                 onError = { Timber.e(it) },
                                 resolveMentionDisplay = { _,_ -> TextDisplay.Pill },
                                 resolveRoomMentionDisplay = { TextDisplay.Pill },
+                                onTyping = { isTyping = it }
                             )
+                        }
+                        if (isTyping) {
+                            Text(
+                                text = "Typing...",
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier
+                                    .height(32.dp)
+                                    .padding(horizontal = 8.dp)
+                            )
+                        } else {
+                            Spacer(Modifier.height(32.dp))
                         }
                         EditorStyledText(
                             text = htmlText,

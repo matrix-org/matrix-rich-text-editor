@@ -927,6 +927,13 @@ fn backspace_mention_from_end() {
 }
 
 #[test]
+fn backspace_word_returns_replace_all_update() {
+    let mut model = cm("Some text with multiple words|");
+    let update = model.backspace_word();
+    assert!(matches!(update.text_update, TextUpdate::ReplaceAll(_)))
+}
+
+#[test]
 fn delete_immutable_link_from_edge_of_link() {
     let mut model = cm(
         "<a contenteditable=\"false\" href=\"https://matrix.org\">|test</a>",
@@ -1014,4 +1021,19 @@ fn delete_word_from_edge_of_link() {
         restore_whitespace(&tx(&model)),
         "<a href=\"https://matrix.org\">| words</a>",
     );
+}
+
+#[test]
+fn backspacing_several_paragraphs_with_only_nbsps() {
+    let mut model =
+        cm("<p>{ </p><p>second</p><p>third</p><p> </p><p>fifth}|</p>");
+    model.backspace();
+    assert_eq!(tx(&model), "<p>&nbsp;|</p>")
+}
+
+#[test]
+fn backspacing_paragraphs_with_nbsp_at_start() {
+    let mut model = cm("<p> |test</p>");
+    model.backspace();
+    assert_eq!(tx(&model), "<p>|test</p>")
 }
