@@ -31,13 +31,13 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         let textView = WysiwygTextView()
         textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
         textView.mentionDisplayHelper = mentionDisplayHelper
-        textView.apply(attributedContent)
+        textView.apply(attributedContent, committed: &committedAttributedText)
         return textView
     }() {
         didSet {
             textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
             textView.mentionDisplayHelper = mentionDisplayHelper
-            textView.apply(attributedContent)
+            textView.apply(attributedContent, committed: &committedAttributedText)
         }
     }
         
@@ -435,12 +435,16 @@ public extension WysiwygComposerViewModel {
         let content = attributedContent.text.htmlChars.withNBSP
         let dotStart = textView.selectedRange.location - 1
         let dotEnd = textView.selectedRange.location
-        let dotStartIndex = text.index(text.startIndex, offsetBy: textView.selectedRange.location - 1)
+        guard dotEnd < text.count else {
+            return
+        }
+        let dotStartIndex = text.index(text.startIndex, offsetBy: dotStart)
         let dotEndIndex = text.index(after: dotStartIndex)
-        guard dotStartIndex < text.endIndex,
-              dotEndIndex <= text.endIndex,
-              dotStartIndex < content.endIndex,
-              dotEndIndex <= content.endIndex
+        guard
+            dotStartIndex < text.endIndex,
+            dotEndIndex <= text.endIndex,
+            dotStartIndex < content.endIndex,
+            dotEndIndex <= content.endIndex
         else {
             return
         }
@@ -491,6 +495,10 @@ public extension WysiwygComposerViewModel {
 
         return CGSize(width: width,
                       height: maximised ? maxExpandedHeight : min(maxCompressedHeight, max(minHeight, idealHeight)))
+    }
+    
+    func applyAtributedContent() {
+        textView.apply(attributedContent, committed: &committedAttributedText)
     }
 }
 
@@ -642,10 +650,6 @@ private extension WysiwygComposerViewModel {
         applyAtributedContent()
         updateCompressedHeightIfNeeded()
         hasPendingFormats = false
-    }
-    
-    func applyAtributedContent() {
-        textView.apply(attributedContent, committed: &committedAttributedText)
     }
 
     /// Compute the current content of the `UITextView`, as markdown.
