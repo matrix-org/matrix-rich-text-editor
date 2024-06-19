@@ -395,8 +395,7 @@ public extension WysiwygComposerViewModel {
     
     func select(range: NSRange) {
         do {
-            guard !plainTextMode else { return }
-            let text = committedAttributedText
+            guard let text = textView.attributedText, !plainTextMode else { return }
             let htmlSelection = try text.htmlRange(from: range)
             Logger.viewModel.logDebug(["Sel(att): \(range)",
                                        "Sel: \(htmlSelection)",
@@ -418,7 +417,7 @@ public extension WysiwygComposerViewModel {
             if textView.text.isEmpty != isContentEmpty {
                 isContentEmpty = textView.text.isEmpty
             }
-            plainTextContent = committedAttributedText
+            plainTextContent = textView.attributedText
         } else {
             let dotInserted = checkForDoubleSpaceToDotConversion()
             if !dotInserted {
@@ -438,7 +437,7 @@ public extension WysiwygComposerViewModel {
         let content = attributedContent.text.htmlChars.withNBSP
         let dotStart = textView.selectedRange.location - 1
         let dotEnd = textView.selectedRange.location
-        guard dotEnd <= text.count else {
+        guard dotStart >= 0, dotEnd <= text.count else {
             return false
         }
         let dotStartIndex = text.index(text.startIndex, offsetBy: dotStart)
