@@ -137,7 +137,7 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     private(set) var hasPendingFormats = false
     
     /// This is used as the source of truth of text commited to the editor, as opposed to text
-    /// that could be in the editor that is not yet committed (e.g. from intine predictive text or dictation ).
+    /// that could be in the editor that is not yet committed (e.g. from inline predictive text or dictation ).
     private lazy var committedAttributedText = NSAttributedString(string: "", attributes: defaultTextAttributes)
     
     private var lastReplaceTextUpdate: ReplaceTextUpdate?
@@ -348,7 +348,7 @@ public extension WysiwygComposerViewModel {
             && viewHasUncommitedText
             && range == attributedContent.selection && range.length == 0
         
-        // Are we replacing a some selected text by tapping the suggestion toolbar
+        // Are we replacing some selected text by tapping the suggestion toolbar
         // When this happens a range/replacementText of this combination is sent.
         let isReplacingWordWithSuggestion = replacementText == "" && !viewHasUncommitedText && range.length == 0
         
@@ -659,7 +659,7 @@ private extension WysiwygComposerViewModel {
             }
             
             // Don't use reconciliate if the replacement is only latin character languages
-            // as tit shouldn't be needed. It's needed for CJK.
+            // as it shouldn't be needed. It is needed for CJK lanuages like Japanese Kana.
             if replacement.text.containsLatinAndWhitespaceCharactersOnly {
                 return
             }
@@ -739,11 +739,6 @@ private extension WysiwygComposerViewModel {
 }
 
 private extension String {
-    /// Converts all whitespaces to NBSP to avoid diffs caused by HTML translations.
-    var withNBSP: String {
-        String(map { $0.isWhitespace ? Character.nbsp : $0 })
-    }
-
     var containsLatinAndWhitespaceCharactersOnly: Bool {
         range(of: "[^\\s\\p{Latin}]", options: .regularExpression) == nil
     }
