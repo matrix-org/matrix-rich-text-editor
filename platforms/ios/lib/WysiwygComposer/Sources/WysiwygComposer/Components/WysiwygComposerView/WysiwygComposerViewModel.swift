@@ -638,7 +638,7 @@ private extension WysiwygComposerViewModel {
             if let mentionReplacer {
                 attributed = mentionReplacer.postProcessMarkdown(in: attributed)
             }
-            committedAttributedText = attributed
+            textView.attributedText = attributed
             updateCompressedHeightIfNeeded()
         } else {
             let update = model.setContentFromMarkdown(markdown: computeMarkdownContent())
@@ -712,8 +712,8 @@ private extension WysiwygComposerViewModel {
     /// - Returns: A markdown string.
     func computeMarkdownContent() -> String {
         let markdownContent: String
-        if let mentionReplacer {
-            let attributedText = committedAttributedText
+        if let mentionReplacer,
+           let attributedText = textView.attributedText {
             // `MentionReplacer` should restore altered content to valid markdown.
             markdownContent = mentionReplacer.restoreMarkdown(in: attributedText)
         } else {
