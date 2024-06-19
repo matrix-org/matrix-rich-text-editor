@@ -414,29 +414,32 @@ public extension WysiwygComposerViewModel {
     }
 
     func didUpdateText() {
-        checkForDoubleSpaceToDotConversion()
         if plainTextMode {
             if textView.text.isEmpty != isContentEmpty {
                 isContentEmpty = textView.text.isEmpty
             }
             plainTextContent = committedAttributedText
         } else {
+            let dotInserted = checkForDoubleSpaceToDotConversion()
+            if !dotInserted {
+                reconciliateIfNeeded()
+            }
             applyPendingFormatsIfNeeded()
         }
         
         updateCompressedHeightIfNeeded()
     }
     
-    func checkForDoubleSpaceToDotConversion() {
+    func checkForDoubleSpaceToDotConversion() -> Bool {
         let text = textView.attributedText.htmlChars.withNBSP
         guard text.count > 0 else {
-            return
+            return false
         }
         let content = attributedContent.text.htmlChars.withNBSP
         let dotStart = textView.selectedRange.location - 1
         let dotEnd = textView.selectedRange.location
-        guard dotEnd < text.count else {
-            return
+        guard dotEnd <= text.count else {
+            return false
         }
         let dotStartIndex = text.index(text.startIndex, offsetBy: dotStart)
         let dotEndIndex = text.index(after: dotStartIndex)
@@ -446,7 +449,7 @@ public extension WysiwygComposerViewModel {
             dotStartIndex < content.endIndex,
             dotEndIndex <= content.endIndex
         else {
-            return
+            return false
         }
         let dotRange = dotStartIndex..<dotEndIndex
         let textPotentialDot = String(text[dotRange])
@@ -456,7 +459,9 @@ public extension WysiwygComposerViewModel {
                                                     start: UInt32(dotStart),
                                                     end: UInt32(dotEnd))
             applyUpdate(replaceUpdate, skipTextViewUpdate: true)
+            return true
         }
+        return false
     }
 
     func applyLinkOperation(_ linkOperation: WysiwygLinkOperation) {
@@ -642,6 +647,56 @@ private extension WysiwygComposerViewModel {
             plainTextContent = NSAttributedString()
         }
     }
+    
+    /// Reconciliate the content of the model with the content of the text view.
+    func reconciliateIfNeeded() {
+        do {
+            guard !textView.isDictationRunning,
+                  let replacement = try StringDiffer.replacement(from: attributedContent.text.htmlChars,
+                                                                 to: textView.attributedText.htmlChars)
+            else {
+                return
+            }
+            
+            // Don't use reconciliate if the replacement is only latin character languages
+            // as tit shouldn't be needed. It's needed for CJK.
+            if replacement.text.containsLatinAndWhitespaceCharactersOnly {
+                return
+            }
+            
+            // Reconciliate
+            Logger.viewModel.logDebug(["Reconciliate from \"\(attributedContent.text.string)\" to \"\(textView.text ?? "")\""],
+                                      functionName: #function)
+
+            let replaceUpdate = model.replaceTextIn(newText: replacement.text,
+                                                    start: UInt32(replacement.range.location),
+                                                    end: UInt32(replacement.range.upperBound))
+            applyUpdate(replaceUpdate, skipTextViewUpdate: true)
+
+            // Resync selectedRange
+            let rustSelection = try textView.attributedText.htmlRange(from: textView.selectedRange)
+            let selectUpdate = model.select(startUtf16Codeunit: UInt32(rustSelection.location),
+                                            endUtf16Codeunit: UInt32(rustSelection.upperBound))
+            applyUpdate(selectUpdate)
+        } catch {
+            switch error {
+            case StringDifferError.tooComplicated,
+                 StringDifferError.insertionsDontMatchRemovals:
+                // Restore from the model, as otherwise the composer will enter a broken state
+                applyAtributedContent()
+                updateCompressedHeightIfNeeded()
+                Logger.viewModel.logError(["Reconciliate failed, content has been restored from the model"],
+                                          functionName: #function)
+            case AttributedRangeError.outOfBoundsAttributedIndex,
+                 AttributedRangeError.outOfBoundsHtmlIndex:
+                // Just log here for now, the composer is already in a broken state
+                Logger.viewModel.logError(["Reconciliate failed due to out of bounds indexes"],
+                                          functionName: #function)
+            default:
+                break
+            }
+        }
+    }
 
     /// Updates the text view with the current content if we have some pending formats
     /// to apply (e.g. we hit the bold button with no selection).
@@ -687,6 +742,10 @@ private extension String {
     /// Converts all whitespaces to NBSP to avoid diffs caused by HTML translations.
     var withNBSP: String {
         String(map { $0.isWhitespace ? Character.nbsp : $0 })
+    }
+
+    var containsLatinAndWhitespaceCharactersOnly: Bool {
+        range(of: "[^\\s\\p{Latin}]", options: .regularExpression) == nil
     }
 }
 
