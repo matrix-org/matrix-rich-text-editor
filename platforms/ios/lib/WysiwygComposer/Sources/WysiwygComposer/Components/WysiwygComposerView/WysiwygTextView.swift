@@ -71,9 +71,6 @@ public class WysiwygTextView: UITextView {
     }
     
     private func commonInit() {
-//        if #available(iOS 17.0, *) {
-//            inlinePredictionType = .no
-//        }
         contentMode = .redraw
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(dictationDidStart),
