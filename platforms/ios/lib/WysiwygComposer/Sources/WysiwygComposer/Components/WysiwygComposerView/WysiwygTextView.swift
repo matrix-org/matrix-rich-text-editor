@@ -41,7 +41,6 @@ public protocol MentionDisplayHelper { }
 
 public class WysiwygTextView: UITextView {
     private(set) var isDictationRunning = false
-    
     /// Internal delegate for the text view.
     weak var wysiwygDelegate: WysiwygTextViewDelegate?
     
@@ -72,9 +71,6 @@ public class WysiwygTextView: UITextView {
     }
     
     private func commonInit() {
-        if #available(iOS 17.0, *) {
-            inlinePredictionType = .no
-        }
         contentMode = .redraw
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(dictationDidStart),
@@ -115,13 +111,15 @@ public class WysiwygTextView: UITextView {
     ///
     /// - Parameters:
     ///   - content: Content to apply.
-    func apply(_ content: WysiwygComposerAttributedContent) {
+    func apply(_ content: WysiwygComposerAttributedContent, committed: inout NSAttributedString) {
         guard content.text.length == 0
             || content.text != attributedText
             || content.selection != selectedRange
         else { return }
 
         performWithoutDelegate {
+            // Update committed text at the same time we update the text view.
+            committed = content.text
             self.attributedText = content.text
             // Set selection to {0, 0} then to expected position
             // avoids an issue with autocapitalization.

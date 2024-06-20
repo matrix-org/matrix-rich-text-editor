@@ -31,13 +31,13 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         let textView = WysiwygTextView()
         textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
         textView.mentionDisplayHelper = mentionDisplayHelper
-        textView.apply(attributedContent)
+        textView.apply(attributedContent, committed: &committedAttributedText)
         return textView
     }() {
         didSet {
             textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
             textView.mentionDisplayHelper = mentionDisplayHelper
-            textView.apply(attributedContent)
+            textView.apply(attributedContent, committed: &committedAttributedText)
         }
     }
         
@@ -135,7 +135,18 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     }
 
     private(set) var hasPendingFormats = false
-
+    
+    /// This is used as the source of truth of text commited to the editor, as opposed to text
+    /// that could be in the editor that is not yet committed (e.g. from inline predictive text or dictation ).
+    private lazy var committedAttributedText = NSAttributedString(string: "", attributes: defaultTextAttributes)
+    
+    private var lastReplaceTextUpdate: ReplaceTextUpdate?
+    
+    /// Wether the view contains uncommitted text(e.g. a predictive suggestion is shown in grey).
+    private var viewHasUncommitedText: Bool {
+        textView.attributedText.htmlChars.withNBSP != committedAttributedText.htmlChars.withNBSP
+    }
+    
     // MARK: - Public
 
     public init(minHeight: CGFloat = 22,
@@ -229,7 +240,7 @@ public extension WysiwygComposerViewModel {
     /// Clear the content of the composer.
     func clearContent() {
         if plainTextMode {
-            textView.attributedText = NSAttributedString(string: "", attributes: defaultTextAttributes)
+            committedAttributedText = NSAttributedString(string: "", attributes: defaultTextAttributes)
             updateCompressedHeightIfNeeded()
         } else {
             applyUpdate(model.clear())
@@ -300,12 +311,22 @@ public extension WysiwygComposerViewModel {
         compressedHeight = min(maxCompressedHeight, max(minHeight, idealTextHeight))
     }
 
+    // swiftlint:disable cyclomatic_complexity
     func replaceText(range: NSRange, replacementText: String) -> Bool {
         guard shouldReplaceText else {
             return false
         }
 
         guard !plainTextMode else {
+            return true
+        }
+        
+        let nextTextUpdate = ReplaceTextUpdate(date: Date.now, range: range, text: replacementText)
+        // This is to specifically to work around an issue when tapping on an inline predictive text suggestion within the text view.
+        // Even though we have the delegate disabled during modifications to the textview we still get some duplicate
+        // calls to this method in this case specifically. It's very unlikely we would get a valid subsequent call
+        // with the same range and replacement text within such a short period of time, so should be safe.
+        if let lastReplaceTextUpdate, lastReplaceTextUpdate.isDuplicate(of: nextTextUpdate) {
             return true
         }
         
@@ -316,21 +337,41 @@ public extension WysiwygComposerViewModel {
         }
 
         let update: ComposerUpdate
-        let shouldAcceptChange: Bool
+        let skipTextViewUpdate: Bool
 
+        // The system handles certain auto-compelete use-cases with somewhat unusual replacementText/range
+        // combinations, some of those edge cases are handled below.
+        
+        // Are we backspacing from an inline predictive text suggestion.
+        // When this happens a range/replacementText of this combination is sent.
+        let isExitingPredictiveText = replacementText == ""
+            && viewHasUncommitedText
+            && range == attributedContent.selection && range.length == 0
+        
+        // Are we replacing some selected text by tapping the suggestion toolbar
+        // When this happens a range/replacementText of this combination is sent.
+        let isReplacingWordWithSuggestion = replacementText == "" && !viewHasUncommitedText && range.length == 0
+        
+        let isNormalBackspace = attributedContent.selection.length == 0 && replacementText == ""
+        
+        // A no-op rte side is required here
+        if isReplacingWordWithSuggestion {
+            return true
+        }
+        
         if range != attributedContent.selection {
             select(range: range)
         }
-
-        if attributedContent.selection.length == 0, replacementText == "" {
+        
+        if isNormalBackspace || isExitingPredictiveText {
             update = model.backspace()
-            shouldAcceptChange = false
+            skipTextViewUpdate = false
         } else if replacementText.count == 1, replacementText[String.Index(utf16Offset: 0, in: replacementText)].isNewline {
             update = createEnterUpdate()
-            shouldAcceptChange = false
+            skipTextViewUpdate = false
         } else {
             update = model.replaceText(newText: replacementText)
-            shouldAcceptChange = true
+            skipTextViewUpdate = true
         }
         
         // Reconciliates the model with the text any time the link state changes
@@ -340,18 +381,18 @@ public extension WysiwygComposerViewModel {
         case let .update(newState):
             if newState[.link] != actionStates[.link] {
                 applyUpdate(update, skipTextViewUpdate: true)
-                textView.apply(attributedContent)
+                applyAtributedContent()
                 updateCompressedHeightIfNeeded()
                 return false
             }
         default: break
         }
         
-        applyUpdate(update, skipTextViewUpdate: shouldAcceptChange)
-
-        return shouldAcceptChange
+        applyUpdate(update, skipTextViewUpdate: skipTextViewUpdate)
+        lastReplaceTextUpdate = nextTextUpdate
+        return skipTextViewUpdate
     }
-
+    
     func select(range: NSRange) {
         do {
             guard let text = textView.attributedText, !plainTextMode else { return }
@@ -378,13 +419,50 @@ public extension WysiwygComposerViewModel {
             }
             plainTextContent = textView.attributedText
         } else {
-            reconciliateIfNeeded()
+            let dotInserted = checkForDoubleSpaceToDotConversion()
+            if !dotInserted {
+                reconciliateIfNeeded()
+            }
             applyPendingFormatsIfNeeded()
         }
         
         updateCompressedHeightIfNeeded()
     }
     
+    func checkForDoubleSpaceToDotConversion() -> Bool {
+        let text = textView.attributedText.htmlChars.withNBSP
+        guard text.count > 0 else {
+            return false
+        }
+        let content = attributedContent.text.htmlChars.withNBSP
+        let dotStart = textView.selectedRange.location - 1
+        let dotEnd = textView.selectedRange.location
+        guard dotStart >= 0, dotEnd <= text.count else {
+            return false
+        }
+        let dotStartIndex = text.index(text.startIndex, offsetBy: dotStart)
+        let dotEndIndex = text.index(after: dotStartIndex)
+        guard
+            dotStartIndex < text.endIndex,
+            dotEndIndex <= text.endIndex,
+            dotStartIndex < content.endIndex,
+            dotEndIndex <= content.endIndex
+        else {
+            return false
+        }
+        let dotRange = dotStartIndex..<dotEndIndex
+        let textPotentialDot = String(text[dotRange])
+        let contentPotentialDot = String(content[dotRange])
+        if textPotentialDot == ".", contentPotentialDot != "." {
+            let replaceUpdate = model.replaceTextIn(newText: ".",
+                                                    start: UInt32(dotStart),
+                                                    end: UInt32(dotEnd))
+            applyUpdate(replaceUpdate, skipTextViewUpdate: true)
+            return true
+        }
+        return false
+    }
+
     func applyLinkOperation(_ linkOperation: WysiwygLinkOperation) {
         let update: ComposerUpdate
         switch linkOperation {
@@ -422,6 +500,10 @@ public extension WysiwygComposerViewModel {
         return CGSize(width: width,
                       height: maximised ? maxExpandedHeight : min(maxCompressedHeight, max(minHeight, idealHeight)))
     }
+    
+    func applyAtributedContent() {
+        textView.apply(attributedContent, committed: &committedAttributedText)
+    }
 }
 
 // MARK: - Private
@@ -444,8 +526,12 @@ private extension WysiwygComposerViewModel {
             applyReplaceAll(codeUnits: codeUnits, start: start, end: end)
             // Note: this makes replaceAll act like .keep on cases where we expect the text
             // view to be properly updated by the system.
-            if !skipTextViewUpdate {
-                textView.apply(attributedContent)
+            if skipTextViewUpdate {
+                // We skip updating the text view as the system did that for us but that
+                // is not reflected in committedAttributedText yet, so update it.
+                committedAttributedText = attributedContent.text
+            } else {
+                applyAtributedContent()
                 updateCompressedHeightIfNeeded()
             }
         case let .select(startUtf16Codeunit: start,
@@ -560,15 +646,23 @@ private extension WysiwygComposerViewModel {
             plainTextContent = NSAttributedString()
         }
     }
-
+    
     /// Reconciliate the content of the model with the content of the text view.
     func reconciliateIfNeeded() {
         do {
             guard !textView.isDictationRunning,
                   let replacement = try StringDiffer.replacement(from: attributedContent.text.htmlChars,
-                                                                 to: textView.attributedText.htmlChars) else {
+                                                                 to: textView.attributedText.htmlChars)
+            else {
                 return
             }
+            
+            // Don't use reconciliate if the replacement is only latin character languages
+            // as it shouldn't be needed. It is needed for CJK lanuages like Japanese Kana.
+            if replacement.text.containsLatinAndWhitespaceCharactersOnly {
+                return
+            }
+            
             // Reconciliate
             Logger.viewModel.logDebug(["Reconciliate from \"\(attributedContent.text.string)\" to \"\(textView.text ?? "")\""],
                                       functionName: #function)
@@ -588,7 +682,7 @@ private extension WysiwygComposerViewModel {
             case StringDifferError.tooComplicated,
                  StringDifferError.insertionsDontMatchRemovals:
                 // Restore from the model, as otherwise the composer will enter a broken state
-                textView.apply(attributedContent)
+                applyAtributedContent()
                 updateCompressedHeightIfNeeded()
                 Logger.viewModel.logError(["Reconciliate failed, content has been restored from the model"],
                                           functionName: #function)
@@ -607,8 +701,7 @@ private extension WysiwygComposerViewModel {
     /// to apply (e.g. we hit the bold button with no selection).
     func applyPendingFormatsIfNeeded() {
         guard hasPendingFormats else { return }
-
-        textView.apply(attributedContent)
+        applyAtributedContent()
         updateCompressedHeightIfNeeded()
         hasPendingFormats = false
     }
@@ -618,7 +711,8 @@ private extension WysiwygComposerViewModel {
     /// - Returns: A markdown string.
     func computeMarkdownContent() -> String {
         let markdownContent: String
-        if let mentionReplacer, let attributedText = textView.attributedText {
+        if let mentionReplacer,
+           let attributedText = textView.attributedText {
             // `MentionReplacer` should restore altered content to valid markdown.
             markdownContent = mentionReplacer.restoreMarkdown(in: attributedText)
         } else {
@@ -643,6 +737,12 @@ private extension WysiwygComposerViewModel {
     }
 }
 
+private extension String {
+    var containsLatinAndWhitespaceCharactersOnly: Bool {
+        range(of: "[^\\s\\p{Latin}]", options: .regularExpression) == nil
+    }
+}
+
 // MARK: - ComposerModelWrapperDelegate
 
 extension WysiwygComposerViewModel: ComposerModelWrapperDelegate {
@@ -655,4 +755,19 @@ extension WysiwygComposerViewModel: ComposerModelWrapperDelegate {
 
 private extension Logger {
     static let viewModel = Logger(subsystem: subsystem, category: "ViewModel")
+}
+
+private struct ReplaceTextUpdate {
+    static let debounceThreshold = 0.1
+    var date: Date
+    var range: NSRange
+    var text: String
+}
+
+private extension ReplaceTextUpdate {
+    func isDuplicate(of other: ReplaceTextUpdate) -> Bool {
+        range == other.range
+            && text == other.text
+            && fabs(date.timeIntervalSince(other.date)) < Self.debounceThreshold
+    }
 }

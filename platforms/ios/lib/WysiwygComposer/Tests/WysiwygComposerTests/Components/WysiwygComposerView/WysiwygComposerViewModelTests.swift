@@ -280,7 +280,7 @@ extension WysiwygComposerViewModelTests {
         let shouldAcceptChange = viewModel.replaceText(range: range, replacementText: text)
         if shouldAcceptChange {
             // Force apply since the text view should've updated by itself
-            viewModel.textView.apply(viewModel.attributedContent)
+            viewModel.applyAtributedContent()
             viewModel.didUpdateText()
         }
     }
@@ -304,7 +304,7 @@ extension WysiwygComposerViewModelTests {
         let shouldAcceptChange = viewModel.replaceText(range: range, replacementText: "")
         if shouldAcceptChange {
             // Force apply since the text view should've updated by itself
-            viewModel.textView.apply(viewModel.attributedContent)
+            viewModel.applyAtributedContent()
             viewModel.didUpdateText()
         }
     }
