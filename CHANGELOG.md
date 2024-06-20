@@ -1,5 +1,9 @@
 # Changelog
 
+# [2.37.4] - 2024-06-20
+- [Android] Make `CustomMentionSpan` public.
+- [Rust] Escape text passed to `ComposerModel::set_link_with_text` and `insert_mention*` methods.
+
 # [2.37.3] - 2024-05-21
 - [Android] Add `RichTextEditorState.setMarkdown(text)` function, which allows the usage of MD as the initial text of the rich text editor Compose wrapper.
 
