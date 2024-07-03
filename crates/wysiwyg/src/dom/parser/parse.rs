@@ -237,10 +237,6 @@ mod sys {
                         last_container_mut_in(node),
                     );
 
-                    if let Some(container) = last_container_mut_in(node) {
-                        Dom::wrap_inline_nodes_into_paragraphs_at_container_node(container, true);
-                    }
-
                     self.current_path.remove(cur_path_idx);
                 }
                 "html" => {
@@ -803,7 +799,7 @@ mod sys {
         #[test]
         fn parse_quote() {
             assert_that!(
-                "<p>foo</p><blockquote>A quote</blockquote><p>bar</p>"
+                "<p>foo</p><blockquote><p>A quote</p></blockquote><p>bar</p>"
             )
             .roundtrips();
         }
@@ -925,7 +921,7 @@ mod sys {
         fn enter_after_setting_html_with_blockquote() {
             let mut model = cm("|");
             model.set_content_from_html(&utf16("<blockquote>A<b>test</b></blockquote>")).unwrap();
-            assert_eq!(tx(&model), "<blockquote><p>A<b>test|</b></p></blockquote>");
+            assert_eq!(tx(&model), "<blockquote>A<b>test|</b></blockquote>");
             model.enter();
             assert_eq!(
                 tx(&model),
