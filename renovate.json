@@ -18,10 +18,6 @@
       "groupName" : "Android"
     },
     {
-      "matchManagers": ["ruby-version"],
-      "groupName" : "Ruby"
-    },
-    {
       "matchManagers": ["npm"],
       "groupName" : "Web"
     },
