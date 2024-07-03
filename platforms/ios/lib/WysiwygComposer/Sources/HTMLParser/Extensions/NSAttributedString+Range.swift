@@ -194,8 +194,8 @@ extension NSMutableAttributedString {
     /// - Returns: self (discardable)
     @discardableResult
     func removeDiscardableContent() -> Self {
-        discardableTextRanges().reversed().forEach {
-            replaceCharacters(in: $0, with: "")
+        for discardableTextRange in discardableTextRanges().reversed() {
+            replaceCharacters(in: discardableTextRange, with: "")
         }
 
         return self
