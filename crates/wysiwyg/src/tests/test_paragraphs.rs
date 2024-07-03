@@ -272,6 +272,51 @@ fn simple_enter_in_quote_adds_new_paragraph() {
 }
 
 #[test]
+fn setting_html_with_line_blockquote_that_contains_a_single_line() {
+    let mut model = cm("|");
+    model
+        .set_content_from_html(&utf16("<blockquote>A</blockquote>"))
+        .unwrap();
+    assert_eq!(tx(&model), "<blockquote>A|</blockquote>");
+}
+
+#[test]
+fn setting_html_with_line_blockquote_that_contains_a_newline() {
+    let mut model = cm("|");
+    model
+        .set_content_from_html(&utf16("<blockquote>A<br>B</blockquote>"))
+        .unwrap();
+    assert_eq!(tx(&model), "<blockquote><p>A</p><p>B|</p></blockquote>");
+}
+
+#[test]
+fn enter_after_setting_html_with_blockquote_with_a_single_line() {
+    let mut model = cm("|");
+    model
+        .set_content_from_html(&utf16("<blockquote>A</blockquote>"))
+        .unwrap();
+    model.enter();
+    assert_eq!(
+        tx(&model),
+        "<blockquote><p>A</p><p>&nbsp;|</p></blockquote>"
+    );
+}
+
+#[test]
+fn enter_after_setting_html_with_blockquote_containing_formatting() {
+    let mut model = cm("|");
+    model
+        .set_content_from_html(&utf16("<blockquote>A<b>test</b></blockquote>"))
+        .unwrap();
+    assert_eq!(tx(&model), "<blockquote>A<b>test|</b></blockquote>");
+    model.enter();
+    assert_eq!(
+        tx(&model),
+        "<blockquote><p>A<b>test</b></p><p><b>|</b></p></blockquote>"
+    );
+}
+
+#[test]
 fn double_enter_in_quote_exits_the_quote() {
     let mut model =
         cm("<blockquote><p>Left</p><p>|</p><p>Right</p></blockquote>");

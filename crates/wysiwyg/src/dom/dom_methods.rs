@@ -756,7 +756,6 @@ where
         else {
             return;
         };
-
         let all_nodes_are_inline =
             container.children().iter().all(|n| !n.is_block_node());
         if all_nodes_are_inline {
