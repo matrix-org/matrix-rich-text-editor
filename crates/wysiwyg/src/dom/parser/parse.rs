@@ -37,6 +37,7 @@ where
 
 #[cfg(feature = "sys")]
 mod sys {
+    use std::ops::Not;
     use matrix_mentions::Mention;
 
     use super::super::padom_node::PaDomNode;
@@ -235,6 +236,11 @@ mod sys {
                         child,
                         last_container_mut_in(node),
                     );
+
+                    if let Some(container) = last_container_mut_in(node) {
+                        Dom::wrap_inline_nodes_into_paragraphs_at_container_node(container, true);
+                    }
+
                     self.current_path.remove(cur_path_idx);
                 }
                 "html" => {
@@ -396,9 +402,9 @@ mod sys {
         use speculoos::{assert_that, AssertionFailure, Spec};
         use widestring::Utf16String;
 
-        use crate::tests::testutils_composer_model::restore_whitespace;
+        use crate::tests::testutils_composer_model::{cm, restore_whitespace, tx};
         use crate::{ToHtml, ToTree};
-
+        use crate::tests::testutils_conversion::utf16;
         use super::*;
 
         trait Roundtrips<T> {
@@ -912,6 +918,18 @@ mod sys {
                   ├>mention "test", https://matrix.to/#/@test:example.org
                   └>" "
                 "#}
+            );
+        }
+
+        #[test]
+        fn enter_after_setting_html_with_blockquote() {
+            let mut model = cm("|");
+            model.set_content_from_html(&utf16("<blockquote>A<b>test</b></blockquote>")).unwrap();
+            assert_eq!(tx(&model), "<blockquote><p>A<b>test|</b></p></blockquote>");
+            model.enter();
+            assert_eq!(
+                tx(&model),
+                "<blockquote><p>A<b>test</b></p><p><b>|</b></p></blockquote>"
             );
         }
     }
