@@ -1,9 +1,9 @@
 plugins {
-    id 'com.android.library'
-    id 'org.jetbrains.kotlin.android'
-
     // Rust
     id 'org.mozilla.rust-android-gradle.rust-android'
+
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
 
     alias libs.plugins.jacoco.android
     alias libs.plugins.maven.publish
