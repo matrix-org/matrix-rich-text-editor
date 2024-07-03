@@ -296,16 +296,17 @@ fn enter_after_setting_html_with_blockquote_with_a_single_line() {
         .set_content_from_html(&utf16("<blockquote>A</blockquote>"))
         .unwrap();
     model.enter();
-    assert_eq!(tx(&model), "<blockquote><p>A</p><p>&nbsp;|</p></blockquote>");
+    assert_eq!(
+        tx(&model),
+        "<blockquote><p>A</p><p>&nbsp;|</p></blockquote>"
+    );
 }
 
 #[test]
 fn enter_after_setting_html_with_blockquote_containing_formatting() {
     let mut model = cm("|");
     model
-        .set_content_from_html(&utf16(
-            "<blockquote>A<b>test</b></blockquote>",
-        ))
+        .set_content_from_html(&utf16("<blockquote>A<b>test</b></blockquote>"))
         .unwrap();
     assert_eq!(tx(&model), "<blockquote>A<b>test|</b></blockquote>");
     model.enter();
