@@ -440,12 +440,6 @@ impl From<DomCreationError> for wysiwyg::DomCreationError {
     }
 }
 
-impl From<DomCreationError> for JsValue {
-    fn from(error: DomCreationError) -> Self {
-        JsValue::from_str(&error.to_string())
-    }
-}
-
 #[wasm_bindgen(getter_with_clone)]
 pub struct TextUpdate {
     pub keep: Option<Keep>,
