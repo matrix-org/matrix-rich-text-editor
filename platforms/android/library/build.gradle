@@ -7,6 +7,7 @@ plugins {
 
     alias libs.plugins.jacoco.android
     alias libs.plugins.maven.publish
+    alias libs.plugins.compose.compiler
 }
 
 if (project.hasProperty("coverage")) {
@@ -52,10 +53,6 @@ android {
     buildFeatures {
         buildConfig = true
         compose true // Enable classes to be marked as stable
-    }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion '1.5.14'
     }
 
     testOptions {
