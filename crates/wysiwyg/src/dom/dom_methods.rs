@@ -747,13 +747,18 @@ where
         }
     }
 
-    pub(crate) fn wrap_inline_nodes_into_paragraphs_at_container_node(
-        container: &mut ContainerNode<S>,
-        wrap_all_inline: bool,
-    ) where S: UnicodeString {
+    fn wrap_inline_nodes_into_paragraphs_at_container(
+        &mut self,
+        container_handle: &DomHandle,
+    ) {
+        let DomNode::Container(container) =
+            self.lookup_node_mut(container_handle)
+        else {
+            return;
+        };
         let all_nodes_are_inline =
             container.children().iter().all(|n| !n.is_block_node());
-        if all_nodes_are_inline && !wrap_all_inline {
+        if all_nodes_are_inline {
             return;
         }
         let all_nodes_are_block =
@@ -791,19 +796,6 @@ where
             let paragraph = DomNode::new_paragraph(removed);
             container.insert_child(start, paragraph);
         }
-    }
-
-    fn wrap_inline_nodes_into_paragraphs_at_container(
-        &mut self,
-        container_handle: &DomHandle,
-    ) {
-        let DomNode::Container(container) =
-            self.lookup_node_mut(container_handle)
-        else {
-            return;
-        };
-
-        Self::wrap_inline_nodes_into_paragraphs_at_container_node(container, false);
     }
 
     /// Returns two new subtrees as the result of splitting the Dom symmetrically without mutating
