@@ -803,6 +803,14 @@ mod sys {
         }
 
         #[test]
+        fn parse_quote_2() {
+            assert_that!(
+                "<p>foo</p><blockquote>A quote</blockquote><p>bar</p>"
+            )
+            .roundtrips();
+        }
+
+        #[test]
         fn parse_paragraph() {
             assert_that!("<p>foo</p><p>A paragraph</p><p>bar</p>").roundtrips();
         }
