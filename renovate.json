@@ -1,0 +1,32 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "packageRules" : [
+    {
+      "matchManagers": ["github-actions"],
+      "groupName" : "GitHub Actions"
+    },
+    {
+      "matchManagers": ["swift", "cocoapods"],
+      "groupName" : "Swift"
+    },
+    {
+      "matchManagers": ["gradle"],
+      "groupName" : "Android"
+    },
+    {
+      "matchManagers": ["ruby-version"],
+      "groupName" : "Ruby"
+    },
+    {
+      "matchManagers": ["npm"],
+      "groupName" : "Web"
+    },
+    {
+      "matchManagers": ["cargo"],
+      "groupName" : "Rust"
+    }
+  ]
+}
