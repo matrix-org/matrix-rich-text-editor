@@ -3,6 +3,7 @@
   "extends": [
     "config:recommended"
   ],
+  "ignoreDeps": ["Cocoanetics/DTCoreText"],
   "packageRules" : [
     {
       "matchManagers": ["github-actions"],
@@ -15,10 +16,6 @@
     {
       "matchManagers": ["gradle"],
       "groupName" : "Android"
-    },
-    {
-      "matchManagers": ["ruby-version"],
-      "groupName" : "Ruby"
     },
     {
       "matchManagers": ["npm"],

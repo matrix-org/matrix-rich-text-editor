@@ -235,6 +235,7 @@ mod sys {
                         child,
                         last_container_mut_in(node),
                     );
+
                     self.current_path.remove(cur_path_idx);
                 }
                 "html" => {
@@ -396,10 +397,9 @@ mod sys {
         use speculoos::{assert_that, AssertionFailure, Spec};
         use widestring::Utf16String;
 
+        use super::*;
         use crate::tests::testutils_composer_model::restore_whitespace;
         use crate::{ToHtml, ToTree};
-
-        use super::*;
 
         trait Roundtrips<T> {
             fn roundtrips(&self);
@@ -796,6 +796,14 @@ mod sys {
 
         #[test]
         fn parse_quote() {
+            assert_that!(
+                "<p>foo</p><blockquote><p>A quote</p></blockquote><p>bar</p>"
+            )
+            .roundtrips();
+        }
+
+        #[test]
+        fn parse_quote_2() {
             assert_that!(
                 "<p>foo</p><blockquote>A quote</blockquote><p>bar</p>"
             )
