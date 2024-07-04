@@ -2,3 +2,10 @@ src/images
 generated
 dist
 dist-demo
+cypress.config.ts
+vite-env.d.ts
+vite.config.ts
+vite.demo.config.ts
+scripts
+cypress
+example-wysiwyg

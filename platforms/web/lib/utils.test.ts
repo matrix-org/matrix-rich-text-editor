@@ -18,7 +18,7 @@ import { afterAll, beforeAll } from 'vitest';
 
 import { getUserOperatingSystem } from './utils';
 
-export const mockUserAgent = (ua: string) => {
+export const mockUserAgent = (ua: string): void => {
     Object.defineProperty(window.navigator, 'userAgent', {
         value: ua,
         writable: true,
